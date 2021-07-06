@@ -10,6 +10,9 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class Model {
 
+  static final String DEFAULT_WDT_MODEL_HOME = "/u01/wdt/models";
+  static final String DEFAULT_WDT_INSTALL_HOME = "/u01/wdt/weblogic-deploy";
+
   @ApiModelProperty(
       value = "WDT domain type: Legal values: WLS, RestrictedJRF, JRF. Defaults to WLS.",
       allowableValues = "WLS, RestrictedJRF, JRF")
@@ -20,6 +23,10 @@ public class Model {
 
   @ApiModelProperty("Location of the WebLogic Deploy Tooling model home. Defaults to /u01/wdt/models.")
   private String modelHome;
+
+  @ApiModelProperty("Location of the WebLogic Deploy Tooling installation. Defaults to /u01/wdt/weblogic-deploy.")
+  private String wdtInstallHome;
+
 
   @ApiModelProperty("Online update option for Model In Image dynamic update.")
   private OnlineUpdate onlineUpdate;
@@ -92,6 +99,19 @@ public class Model {
     return this;
   }
 
+  String getWdtInstallHome() {
+    return wdtInstallHome;
+  }
+
+  void setWdtInstallHome(String wdtInstallHome) {
+    this.wdtInstallHome = wdtInstallHome;
+  }
+
+  public Model withWdtInstallHome(String wdtInstallHome) {
+    this.wdtInstallHome = wdtInstallHome;
+    return this;
+  }
+
   public OnlineUpdate getOnlineUpdate() {
     return onlineUpdate;
   }
@@ -116,6 +136,7 @@ public class Model {
             .append("domainType", domainType)
             .append("configMap", configMap)
             .append("modelHome", modelHome)
+            .append("wdtInstallHome", wdtInstallHome)
             .append("runtimeEncryptionSecret", runtimeEncryptionSecret)
             .append("onlineUpdate", onlineUpdate);
 
@@ -125,7 +146,9 @@ public class Model {
   @Override
   public int hashCode() {
     HashCodeBuilder builder =
-        new HashCodeBuilder().append(domainType).append(configMap).append(modelHome).append(runtimeEncryptionSecret);
+        new HashCodeBuilder().append(domainType).append(configMap).append(modelHome)
+            .append(wdtInstallHome)
+            .append(runtimeEncryptionSecret);
 
     return builder.toHashCode();
   }
@@ -145,6 +168,7 @@ public class Model {
             .append(domainType, rhs.domainType)
             .append(configMap, rhs.configMap)
             .append(modelHome,rhs.modelHome)
+            .append(wdtInstallHome,rhs.wdtInstallHome)
             .append(runtimeEncryptionSecret, rhs.runtimeEncryptionSecret)
             .append(onlineUpdate, rhs.onlineUpdate);
 

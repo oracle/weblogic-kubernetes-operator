@@ -3,7 +3,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # Description
-#  This sample script creates a WebLogic domain home on an existing PV/PVC, and generates the domain resource
+#  This sample script updates a WebLogic domain home on an existing PV/PVC, and generates the domain resource
 #  yaml file, which can be used to restart the Kubernetes artifacts of the corresponding domain.
 #
 #  The domain creation inputs can be customized by editing create-domain-inputs.yaml
@@ -126,6 +126,8 @@ function initialize {
 
   validateCommonInputs
 
+  useWdt=true
+
   initOutputDir
 }
 
@@ -145,6 +147,10 @@ function createDomainConfigmap {
   if [ -d "${scriptDir}/common" ]; then
     cp ${scriptDir}/common/* ${externalFilesTmpDir}/
   fi
+  if [ -d "${scriptDir}/../../common" ]; then
+    cp ${scriptDir}/../../common/wdt-and-wit-utility.sh ${externalFilesTmpDir}/
+  fi
+
   cp ${domainOutputDir}/create-domain-inputs.yaml ${externalFilesTmpDir}/
  
   # Set the domainName in the inputs file that is contained in the configmap.
@@ -186,6 +192,8 @@ function createDomainConfigmap {
 #
 function updateDomainHome {
 
+  # set createDomainFilesDir to wdt - so domain can be updated regardless of wdt or wlst is used for creation
+  createDomainFilesDir="wdt"
   # create the config map for the job
   createDomainConfigmap
 
