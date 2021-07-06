@@ -2285,6 +2285,23 @@ public class CommonTestUtils {
   }
 
   /**
+   * Create docker registry secret with given parameters.
+   *
+   * @param secretName name of the secret to create
+   * @param namespace namespace in which to create the secret
+   */
+  public static void createDockerSecretIfSet(String namespace, String secretName) {
+    if (System.getenv("DOCKER_USERNAME") != null
+        && System.getenv("DOCKER_PASSWORD") != null
+        && System.getenv("DOCKER_EMAIL") != null) {
+      createDockerRegistrySecret(System.getenv("DOCKER_USERNAME"),
+          System.getenv("DOCKER_PASSWORD"),
+          System.getenv("DOCKER_EMAIL"),
+          "https://index.docker.io/v2/", secretName, namespace);
+    }
+  }
+
+  /**
    * Create a Docker registry secret in the specified namespace to pull base images.
    *
    * @param namespace the namespace in which the secret will be created
@@ -3282,7 +3299,7 @@ public class CommonTestUtils {
    * @param headers extra header info to pass to the REST url
    * @param application name of the application
    * @param target the weblogic target for the application
-   * @param username username to log into the system 
+   * @param username username to log into the system
    * @param password password for the username
    */
   public static boolean checkAppIsActive(
@@ -3297,16 +3314,16 @@ public class CommonTestUtils {
 
     LoggingFacade logger = getLogger();
     String curlString = String.format("curl -v --show-error --noproxy '*' "
-           + "--user " + username + ":" + password + " " + headers  
+           + "--user " + username + ":" + password + " " + headers
            + " -H X-Requested-By:MyClient -H Accept:application/json "
-           + "-H Content-Type:application/json " 
+           + "-H Content-Type:application/json "
            + " -d \"{ target: '" + target + "' }\" "
            + " -X POST "
            + "http://%s:%s/management/weblogic/latest/domainRuntime/deploymentManager/appDeploymentRuntimes/"
            + application + "/getState", host, port);
 
     logger.info("curl command {0}", curlString);
-    withStandardRetryPolicy 
+    withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for Application {0} to be active "
                 + "(elapsed time {1} ms, remaining time {2} ms)",

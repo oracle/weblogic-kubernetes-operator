@@ -15,6 +15,7 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1EnvVarSource;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
@@ -28,6 +29,7 @@ import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDockerSecretIfSet;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -63,6 +65,8 @@ public class MySQLDBUtils {
 
   //create the database pod
   private static void startMySQLDB(String name, String secretName, String namespace, String mySQLVImageVersion) {
+    String dockerSecretName = "mysql-secret";
+    createDockerSecretIfSet(namespace, dockerSecretName);
     Map<String, String> labels = new HashMap<>();
     labels.put("app", name);
     V1Pod mysqlPod = new V1Pod()
@@ -71,6 +75,7 @@ public class MySQLDBUtils {
             .namespace(namespace)
             .labels(labels))
         .spec(new V1PodSpec()
+            .imagePullSecrets(Arrays.asList(new V1LocalObjectReference().name(dockerSecretName)))
             .terminationGracePeriodSeconds(5L)
             .containers(Arrays.asList(new V1Container()
                 .image("mysql:".concat(mySQLVImageVersion))
