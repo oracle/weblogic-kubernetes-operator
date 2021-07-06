@@ -407,7 +407,7 @@ public class ItMiiCommonMount {
 
     //verify the new CommonMount image in the new patched domain
     commonMountList = domain1.getSpec().getServerPod().getCommonMounts();
-    ;
+    
     String cmImage = commonMountList.get(index).getImage();
     logger.info("In the new patched domain imageValue is: {0}", cmImage);
     assertTrue(cmImage.equalsIgnoreCase(newImageName), "common mount image was not updated"
@@ -504,9 +504,6 @@ public class ItMiiCommonMount {
         .redirect(true);
     Command.withParams(params).execute();
     return params.stdout().contains(dsInfo);
-
-
-    //return Command.withParams(params).executeAndVerify(expectedStr);
   }
 
 }
