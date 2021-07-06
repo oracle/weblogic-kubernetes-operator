@@ -111,7 +111,7 @@ public class JobHelper {
 
   private static boolean isIntrospectVersionChanged(Packet packet, DomainPresenceInfo info) {
     return Optional.ofNullable(packet.get(INTROSPECTION_STATE_LABEL))
-            .map(gen -> !gen.equals(getIntrospectVersion(info))).orElse(false);
+            .map(introspectVersionLabel -> !introspectVersionLabel.equals(getIntrospectVersion(info))).orElse(false);
   }
 
   private static boolean isGenerationChanged(Packet packet, DomainPresenceInfo info) {

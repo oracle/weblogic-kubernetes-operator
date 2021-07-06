@@ -325,7 +325,6 @@ public class ConfigMapHelper {
               .ifPresent(value -> addLabel(INTROSPECTION_STATE_LABEL, value));
         Optional.ofNullable(domain).map(Domain::getMetadata).map(V1ObjectMeta::getGeneration)
                 .ifPresent(value -> addLabel(INTROSPECTION_DOMAIN_SPEC_GENERATION, value.toString()));
-        LOGGER.info("DEBUG: After adding INTROSPECTION_DOMAIN_SPEC_GENERATION labels is  " + labels);
         V1ConfigMap existingMap = withoutTransientData(callResponse.getResult());
         if (existingMap == null) {
           return doNext(createConfigMap(getNext()), packet);
