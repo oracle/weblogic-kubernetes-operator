@@ -12,6 +12,7 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.FailureStatusSource;
 
 public class UnrecoverableErrorBuilderImpl implements FailureStatusSource {
+  public static final String STORAGE_ERROR_INVALID_OBJECT_CODE_4 = "StorageError: invalid object, Code: 4";
   private final String message;
   private final int code;
   private final ErrorBody errorBody;
@@ -66,7 +67,12 @@ public class UnrecoverableErrorBuilderImpl implements FailureStatusSource {
 
   public static boolean isNotFound(ApiException e) {
     int code = e.getCode();
-    return code == 404 || code == 410;
+    return code == 404 || code == 410 || isStorageError(code, e);
+  }
+
+  private static boolean isStorageError(int code, ApiException e) {
+    return code == 409 && Optional.ofNullable(e.getResponseBody())
+            .map(body -> body.contains(STORAGE_ERROR_INVALID_OBJECT_CODE_4)).orElse(false);
   }
 
   /**
