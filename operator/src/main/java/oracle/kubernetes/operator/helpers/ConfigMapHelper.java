@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.helpers;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -49,6 +50,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.yaml.snakeyaml.Yaml;
 
 import static java.lang.System.lineSeparator;
+import static java.time.temporal.ChronoUnit.MILLIS;
 import static oracle.kubernetes.operator.DomainStatusUpdater.BAD_TOPOLOGY;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.DOMAINZIP_HASH;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.DOMAIN_INPUTS_HASH;
@@ -508,7 +510,7 @@ public class ConfigMapHelper {
     }
 
     private long timeSinceJobStart(Packet packet) {
-      return System.currentTimeMillis() - ((Long) packet.get(JobHelper.START_TIME));
+      return ((OffsetDateTime)packet.get(JobHelper.START_TIME)).until(OffsetDateTime.now(), MILLIS);
     }
   }
 

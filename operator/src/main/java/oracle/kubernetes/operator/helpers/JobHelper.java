@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -50,6 +51,7 @@ import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 
+import static java.time.temporal.ChronoUnit.SECONDS;
 import static oracle.kubernetes.operator.DomainSourceType.FromModel;
 import static oracle.kubernetes.operator.DomainStatusUpdater.INSPECTING_DOMAIN_PROGRESS_REASON;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createProgressingStartedEventStep;
@@ -96,7 +98,7 @@ public class JobHelper {
     LOGGER.fine("isModelInImageUpdate: " + isModelInImageUpdate(packet, info));
     return topology == null
           || isBringingUpNewDomain(packet, info)
-          || introspectionRequested(packet)
+          || isIntrospectionRequestedAndRemove(packet)
           || isModelInImageUpdate(packet, info)
           || isIntrospectVersionChanged(packet, info);
   }
@@ -105,7 +107,7 @@ public class JobHelper {
     return runningServersCount(info) == 0 && creatingServers(info) && isGenerationChanged(packet, info);
   }
 
-  private static boolean introspectionRequested(Packet packet) {
+  private static boolean isIntrospectionRequestedAndRemove(Packet packet) {
     return packet.remove(ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED) != null;
   }
 
@@ -399,7 +401,7 @@ public class JobHelper {
       if (runIntrospector(packet, info)) {
         JobStepContext context = new DomainIntrospectorJobStepContext(packet);
 
-        packet.putIfAbsent(START_TIME, System.currentTimeMillis());
+        packet.putIfAbsent(START_TIME, OffsetDateTime.now());
 
         return doNext(
             Step.chain(
@@ -455,7 +457,7 @@ public class JobHelper {
 
         if (job != null) {
           packet.putIfAbsent(START_TIME, Optional.ofNullable(job.getMetadata())
-                  .map(m -> m.getCreationTimestamp()).map(t -> t.toInstant().toEpochMilli()).orElse(0L));
+                  .map(m -> m.getCreationTimestamp()).orElse(OffsetDateTime.now()));
           return doNext(Step.chain(
                   createProgressingStartedEventStep(info, INSPECTING_DOMAIN_PROGRESS_REASON, true, null),
                   readDomainIntrospectorPodLogStep(null),
@@ -465,7 +467,7 @@ public class JobHelper {
                   new DomainProcessorImpl.IntrospectionRequestStep(info),
                   createDomainIntrospectorJobStep(getNext())), packet);
         } else {
-          packet.putIfAbsent(START_TIME, System.currentTimeMillis());
+          packet.putIfAbsent(START_TIME, OffsetDateTime.now());
           return doNext(Step.chain(
                   ConfigMapHelper.readExistingIntrospectorConfigMap(namespace, info.getDomainUid()),
                   createDomainIntrospectorJobStep(getNext())), packet);
@@ -543,7 +545,10 @@ public class JobHelper {
         }
         //Introspector job is incomplete, update domain status and terminate processing
         Step nextStep = null;
-        if (System.currentTimeMillis() > getJobLazyDeletionTime(domainIntrospectorJob)) {
+        int retryIntervalSeconds = TuningParameters.getInstance().getMainTuning().domainPresenceRecheckIntervalSeconds;
+
+        if (OffsetDateTime.now().isAfter(
+                getJobCreationTime(domainIntrospectorJob).plus(retryIntervalSeconds, SECONDS))) {
           //Introspector job is incomplete and current time is greater than the lazy deletion time for the job,
           //update the domain status and execute the next step
           nextStep = getNext();
@@ -560,11 +565,9 @@ public class JobHelper {
       return doNext(packet);
     }
 
-    private Long getJobLazyDeletionTime(V1Job domainIntrospectorJob) {
-      int retryIntervalSeconds = TuningParameters.getInstance().getMainTuning().domainPresenceRecheckIntervalSeconds;
+    private OffsetDateTime getJobCreationTime(V1Job domainIntrospectorJob) {
       return Optional.ofNullable(domainIntrospectorJob.getMetadata())
-              .map(m -> m.getCreationTimestamp()).map(t -> t.toInstant().toEpochMilli()).orElse(0L)
-              + (retryIntervalSeconds * 1000L);
+              .map(m -> m.getCreationTimestamp()).orElse(OffsetDateTime.now());
     }
 
     private boolean isNotComplete(V1Job domainIntrospectorJob) {
