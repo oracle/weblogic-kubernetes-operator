@@ -37,8 +37,14 @@ import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
-import oracle.kubernetes.weblogic.domain.model.*;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
+import oracle.kubernetes.weblogic.domain.model.AuxiliaryImageVolume;
+import oracle.kubernetes.weblogic.domain.model.Cluster;
+import oracle.kubernetes.weblogic.domain.model.Configuration;
+import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.Model;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
@@ -56,7 +62,6 @@ import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
 import static oracle.kubernetes.operator.helpers.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.JOB;
-import static oracle.kubernetes.operator.helpers.Matchers.hasAuxiliaryImageInitContainer;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CUSTOM_COMMAND_SCRIPT;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CUSTOM_MOUNT_PATH;
@@ -340,8 +345,9 @@ public class DomainIntrospectorJobTest {
 
     assertThat(
             podTemplateInitContainers,
-            allOf(Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image:v1",
-                    "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND)));
+            allOf(Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+                "wdt-image:v1",
+                "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND)));
     assertThat(getJobPodSpec(job).getVolumes(),
             hasItem(new V1Volume().name(AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME).emptyDir(
                     new V1EmptyDirVolumeSource())));
@@ -420,7 +426,8 @@ public class DomainIntrospectorJobTest {
 
     V1Job job = runStepsAndGetJobs().get(0);
     assertThat(getPodTemplateInitContainers(job),
-            org.hamcrest.Matchers.allOf(Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+            org.hamcrest.Matchers.allOf(
+                Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
                     "wdt-image:v1", "ALWAYS", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND)));
   }
 
@@ -433,7 +440,8 @@ public class DomainIntrospectorJobTest {
 
     V1Job job = runStepsAndGetJobs().get(0);
     assertThat(getPodTemplateInitContainers(job),
-            org.hamcrest.Matchers.allOf(Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+            org.hamcrest.Matchers.allOf(
+                Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
                     "wdt-image:v1", "IfNotPresent", CUSTOM_COMMAND_SCRIPT)));
   }
 
@@ -445,10 +453,12 @@ public class DomainIntrospectorJobTest {
 
     V1Job job = runStepsAndGetJobs().get(0);
     assertThat(getPodTemplateInitContainers(job),
-            org.hamcrest.Matchers.allOf(Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+            org.hamcrest.Matchers.allOf(
+                Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
                     "wdt-image1:v1", "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND),
-                    Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 2, "wdt-image2:v1",
-                            "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND)));
+                    Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 2,
+                        "wdt-image2:v1",
+                        "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND)));
     assertThat(getPodTemplateContainers(job).get(0).getVolumeMounts(), hasSize(7));
     assertThat(getPodTemplateContainers(job).get(0).getVolumeMounts(),
             hasItem(new V1VolumeMount().name(AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME)

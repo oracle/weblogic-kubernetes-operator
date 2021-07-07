@@ -16,7 +16,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 @Description("Use an auxiliary image to automatically include directory content from additional images. "
         + "This is a useful alternative for including Model in Image model files, or other types of files, in a pod "
-        + "without requiring modifications to the pod's base image 'domain.spec.image'. "
+        + "without requiring modifications to the pod's base image `domain.spec.image`. "
         + "This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share "
         + "the files from the additional images with the pod.")
 public class AuxiliaryImage {
@@ -31,27 +31,27 @@ public class AuxiliaryImage {
   /**
    * The auxiliary image.
    */
-  @Description("The name of an image with files located in directory specified by 'spec.auxiliaryImageVolumes.mountPath' "
-          + "of the auxiliary image volume referenced by serverPod.auxiliaryImages.volume (which defaults to '/auxiliary').")
+  @Description("The name of an image with files located in directory specified by "
+      + "`spec.auxiliaryImageVolumes.mountPath` of the auxiliary image volume referenced by "
+      + "`serverPod.auxiliaryImages.volume`, which defaults to \"/auxiliary\".")
   @NotNull
   private String image;
 
-  @Description(
-          "The image pull policy for the container image. "
-                  + "Legal values are Always, Never, and IfNotPresent. "
-                  + "Defaults to Always if image ends in :latest; IfNotPresent, otherwise.")
+  @Description("The image pull policy for the container image. "
+      + "Legal values are Always, Never, and IfNotPresent. "
+      + "Defaults to Always if image ends in :latest; IfNotPresent, otherwise.")
   @EnumClass(ImagePullPolicy.class)
   private String imagePullPolicy;
 
-  @Description("The command for this init container. Defaults to 'cp -R $AUXILIARY_IMAGE_PATH/* $TARGET_MOUNT_PATH'. "
-          + "This is an advanced setting for customizing the container command for copying files from the container "
-          + "image to the auxiliary image emptyDir volume. Use the '$AUXILIARY_IMAGE_PATH' environment variable to reference "
-          + "the value configured in 'spec.auxiliaryImageVolumes.mountPath' (which defaults to '/auxiliary'). Use "
-          + "'$TARGET_MOUNT_PATH' to refer to the temporary directory created by the Operator that resolves to the "
-          + "auxiliary image's internal emptyDir volume.")
+  @Description("The command for this init container. Defaults to `cp -R $AUXILIARY_IMAGE_PATH/* $TARGET_MOUNT_PATH`. "
+      + "This is an advanced setting for customizing the container command for copying files from the container "
+      + "image to the auxiliary image emptyDir volume. Use the `$AUXILIARY_IMAGE_PATH` environment variable to "
+      + "reference the value configured in `spec.auxiliaryImageVolumes.mountPath`, which defaults to "
+      + "\"/auxiliary\". Use '$TARGET_MOUNT_PATH' to refer to the temporary directory created by the Operator that "
+      + "resolves to the auxiliary image's internal emptyDir volume.")
   private String command;
 
-  @Description("The name of an auxiliary image volume defined in 'spec.auxiliaryImageVolumes'. Required.")
+  @Description("The name of an auxiliary image volume defined in `spec.auxiliaryImageVolumes`. Required.")
   @NotNull
   private String volume;
 

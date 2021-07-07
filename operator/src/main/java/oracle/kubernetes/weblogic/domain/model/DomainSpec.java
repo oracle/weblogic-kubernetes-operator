@@ -281,9 +281,9 @@ public class DomainSpec extends BaseConfiguration {
   @Description("Models and overrides affecting the WebLogic domain configuration.")
   private Configuration configuration;
 
-  @Description("Configure auxiliary image volumes including their respective mount paths. Auxiliary image volumes are in "
-          + "turn referenced by one or more serverPod.auxiliaryImages mounts, and are internally implemented using a "
-          + "Kubernetes 'emptyDir' volume.")
+  @Description("Configure auxiliary image volumes including their respective mount paths. Auxiliary image volumes are "
+          + "in turn referenced by one or more `serverPod.auxiliaryImages` mounts, and are internally implemented "
+          + "using a Kubernetes `emptyDir` volume.")
   @Feature("AuxiliaryImage")
   private List<AuxiliaryImageVolume> auxiliaryImageVolumes;
 

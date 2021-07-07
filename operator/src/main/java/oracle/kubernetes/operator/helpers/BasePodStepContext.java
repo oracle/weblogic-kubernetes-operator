@@ -124,7 +124,8 @@ public abstract class BasePodStepContext extends StepContextBase {
     return AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + (index + 1);
   }
 
-  protected List<V1EnvVar> createEnv(AuxiliaryImage auxiliaryImage, List<AuxiliaryImageVolume> auxiliaryImageVolumes, String name) {
+  protected List<V1EnvVar> createEnv(AuxiliaryImage auxiliaryImage,
+                                     List<AuxiliaryImageVolume> auxiliaryImageVolumes, String name) {
     List<V1EnvVar> vars = new ArrayList<>();
     addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATH, getMountPath(auxiliaryImage, auxiliaryImageVolumes));
     addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_TARGET_PATH, AUXILIARY_IMAGE_TARGET_PATH);
@@ -310,14 +311,17 @@ public abstract class BasePodStepContext extends StepContextBase {
     return KubernetesConstants.CONTAINER_NAME;
   }
 
-  protected String getAuxiliaryImagePaths(List<AuxiliaryImage> auxiliaryImages, List<AuxiliaryImageVolume> auxiliaryImageVolumes) {
-    return Optional.ofNullable(auxiliaryImages).map(cmList -> createauxiliaryImagePathsEnv(cmList, auxiliaryImageVolumes))
-            .orElse(null);
+  protected String getAuxiliaryImagePaths(List<AuxiliaryImage> auxiliaryImages,
+                                          List<AuxiliaryImageVolume> auxiliaryImageVolumes) {
+    return Optional.ofNullable(auxiliaryImages).map(
+        aiList -> createauxiliaryImagePathsEnv(aiList, auxiliaryImageVolumes)).orElse(null);
   }
 
-  private String createauxiliaryImagePathsEnv(List<AuxiliaryImage> auxiliaryImages, List<AuxiliaryImageVolume> auxiliaryImageVolumes) {
+  private String createauxiliaryImagePathsEnv(List<AuxiliaryImage> auxiliaryImages,
+                                              List<AuxiliaryImageVolume> auxiliaryImageVolumes) {
     StringJoiner auxiliaryImagePaths = new StringJoiner(",","","");
-    auxiliaryImages.forEach(auxiliaryImage -> auxiliaryImagePaths.add(getMountPath(auxiliaryImage, auxiliaryImageVolumes)));
+    auxiliaryImages.forEach(auxiliaryImage -> auxiliaryImagePaths.add(
+        getMountPath(auxiliaryImage, auxiliaryImageVolumes)));
     return Arrays.stream(auxiliaryImagePaths.toString().split(Pattern.quote(","))).distinct()
             .filter(st -> !st.isEmpty()).collect(Collectors.joining(","));
   }

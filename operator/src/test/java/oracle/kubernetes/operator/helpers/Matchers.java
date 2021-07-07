@@ -115,11 +115,12 @@ public class Matchers {
   private static V1Container createAuxiliaryImageInitContainer(String name, String image, String imagePullPolicy,
                                                                String command, String volumeName) {
     return new V1Container().name(name).image(image).imagePullPolicy(imagePullPolicy)
-            .command(Arrays.asList(AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT)).args(null).volumeMounts(Arrays.asList(
-                    new V1VolumeMount().name(AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + volumeName)
-                            .mountPath(AUXILIARY_IMAGE_TARGET_PATH),
+        .command(Arrays.asList(AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT)).args(null)
+        .volumeMounts(Arrays.asList(
+            new V1VolumeMount().name(AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + volumeName)
+                .mountPath(AUXILIARY_IMAGE_TARGET_PATH),
                     new V1VolumeMount().name(SCRIPTS_VOLUME).mountPath(SCRIPTS_MOUNTS_PATH)))
-            .env(PodHelperTestBase.getAuxiliaryImageEnvVariables(image, command, name));
+        .env(PodHelperTestBase.getAuxiliaryImageEnvVariables(image, command, name));
   }
 
   private static V1Container createInitContainer(String name, String image, String serverName, String... command) {

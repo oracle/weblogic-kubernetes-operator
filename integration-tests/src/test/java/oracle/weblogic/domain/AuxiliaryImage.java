@@ -30,7 +30,8 @@ public class AuxiliaryImage {
                   + "Defaults to Always if image ends in :latest; IfNotPresent, otherwise.")
   private String imagePullPolicy;
 
-  @ApiModelProperty("The command for this init container. Defaults to 'cp -R $AUXILIARY_IMAGE_PATH/* $TARGET_MOUNT_PATH'. "
+  @ApiModelProperty(
+      "The command for this init container. Defaults to 'cp -R $AUXILIARY_IMAGE_PATH/* $TARGET_MOUNT_PATH'. "
           + "This is an advanced setting for customizing the container command for copying files from the container "
           + "image to the emptyDir volume. Use the '$AUXILIARY_IMAGE_PATH' environment variable to reference "
           + "the value configured in 'spec.auxiliaryImageVolumes.mountPath' (which defaults to '/auxiliary'). Use "

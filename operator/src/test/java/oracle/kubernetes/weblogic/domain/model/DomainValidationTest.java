@@ -117,7 +117,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
             .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")));
 
     assertThat(domain.getValidationFailures(resourceLookup),
-            contains(stringContainsInOrder("serverPod.AuxiliaryImages",
+            contains(stringContainsInOrder("serverPod.auxiliaryImages",
                     "there is no matching volume defined with name 'test'")));
   }
 
@@ -128,7 +128,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
             .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")));
 
     assertThat(domain.getValidationFailures(resourceLookup),
-            contains(stringContainsInOrder("serverPod.AuxiliaryImages",
+            contains(stringContainsInOrder("serverPod.auxiliaryImages",
                     "there is no matching volume defined with name 'test'")));
   }
 
@@ -139,7 +139,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
             .withAuxiliaryImages(Collections.singletonList(new AuxiliaryImage().image("wdt-image:v1")));
 
     assertThat(domain.getValidationFailures(resourceLookup),
-            contains(stringContainsInOrder("serverPod.AuxiliaryImages", "does not define a volume name")));
+            contains(stringContainsInOrder("serverPod.auxiliaryImages", "does not define a volume name")));
   }
 
   @Test
@@ -149,7 +149,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
             .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")));
 
     assertThat(domain.getValidationFailures(resourceLookup),
-            not(contains(stringContainsInOrder("AuxiliaryImages", "no volume defined with name 'test'"))));
+            not(contains(stringContainsInOrder("auxiliaryImages", "no volume defined with name 'test'"))));
   }
 
   @Test
@@ -158,7 +158,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
             .withAuxiliaryImageVolumes(Collections.singletonList(new AuxiliaryImageVolume()));
 
     assertThat(domain.getValidationFailures(resourceLookup),
-            contains(stringContainsInOrder("An item under 'spec.AuxiliaryImageVolumes'", "does not have a name",
+            contains(stringContainsInOrder("An item under 'spec.auxiliaryImageVolumes'", "does not have a name",
                     "A name is required")));
   }
 
@@ -171,7 +171,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
             .withAuxiliaryImageVolumes(auxiliaryImageVolumes);
 
     assertThat(domain.getValidationFailures(resourceLookup),
-            contains(stringContainsInOrder("More than one item under 'spec.AuxiliaryImageVolumes'", "/shared")));
+            contains(stringContainsInOrder("More than one item under 'spec.auxiliaryImageVolumes'", "/shared")));
   }
 
   @Test
@@ -183,7 +183,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
             .withAuxiliaryImageVolumes(auxiliaryImageVolumes);
 
     assertThat(domain.getValidationFailures(resourceLookup),
-            contains(stringContainsInOrder("More than one item under 'spec.AuxiliaryImageVolumes'",
+            contains(stringContainsInOrder("More than one item under 'spec.auxiliaryImageVolumes'",
                     TEST_VOLUME_NAME)));
   }
 

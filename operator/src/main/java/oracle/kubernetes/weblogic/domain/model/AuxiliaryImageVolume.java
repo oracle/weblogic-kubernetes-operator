@@ -12,8 +12,8 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 @Description("Configure auxiliary image volumes including their respective mount paths. Auxiliary image volumes are in "
-        + "turn referenced by one or more serverPod.auxiliaryImages mounts, and are internally implemented using a "
-        + "Kubernetes 'emptyDir' volume.")
+        + "turn referenced by one or more `serverPod.auxiliaryImages` mounts, and are internally implemented using a "
+        + "Kubernetes `emptyDir` volume.")
 public class AuxiliaryImageVolume {
 
   public static final String DEFAULT_AUXILIARY_IMAGE_PATH = "/auxiliary";
@@ -23,7 +23,7 @@ public class AuxiliaryImageVolume {
   private String name;
 
   @Description("The mount path. The files in the path are populated from the same named directory in the images "
-          + "supplied by each container in 'serverPod.auxiliaryImages'. Each volume must be configured with "
+          + "supplied by each container in `serverPod.auxiliaryImages`. Each volume must be configured with "
           + "a different mount path. Required.")
   @NotNull
   private String mountPath;

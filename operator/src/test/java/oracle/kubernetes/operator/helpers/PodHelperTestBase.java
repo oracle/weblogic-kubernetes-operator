@@ -129,7 +129,6 @@ import static oracle.kubernetes.operator.helpers.Matchers.ProbeMatcher.hasExpect
 import static oracle.kubernetes.operator.helpers.Matchers.VolumeMatcher.volume;
 import static oracle.kubernetes.operator.helpers.Matchers.VolumeMountMatcher.readOnlyVolumeMount;
 import static oracle.kubernetes.operator.helpers.Matchers.VolumeMountMatcher.writableVolumeMount;
-import static oracle.kubernetes.operator.helpers.Matchers.hasAuxiliaryImageInitContainer;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
 import static oracle.kubernetes.operator.helpers.Matchers.hasPvClaimVolume;
 import static oracle.kubernetes.operator.helpers.Matchers.hasResourceQuantity;
@@ -684,8 +683,9 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
             .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")));
 
     assertThat(getCreatedPodSpecInitContainers(),
-            allOf(Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image:v1",
-                    "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND)));
+            allOf(Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+                "wdt-image:v1",
+                "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND)));
     assertThat(getCreatedPod().getSpec().getVolumes(),
             hasItem(new V1Volume().name(getAuxiliaryImageVolumeName()).emptyDir(
                     new V1EmptyDirVolumeSource())));
@@ -745,12 +745,13 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
                     .imagePullPolicy("ALWAYS").volume(TEST_VOLUME_NAME)));
 
     assertThat(getCreatedPodSpecInitContainers(),
-            allOf(Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image:v1", "ALWAYS",
+            allOf(Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+                "wdt-image:v1", "ALWAYS",
                 AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND)));
   }
 
   @Test
-  public void whenDomainHasAuxiliaryImagesWithCustomCommand_createPodsWithAuxiliaryImageInitContainerHavingCustomCommand() {
+  public void whenDomainHasAuxImagesWithCustomCommand_createPodsWithAuxImageInitContainerHavingCustomCommand() {
     getConfigurator()
             .withAuxiliaryImageVolumes(Collections.singletonList(
                     new AuxiliaryImageVolume().mountPath(DEFAULT_AUXILIARY_IMAGE_PATH).name(TEST_VOLUME_NAME)))
@@ -758,8 +759,8 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
                     .command(CUSTOM_COMMAND_SCRIPT)));
 
     assertThat(getCreatedPodSpecInitContainers(),
-            allOf(Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image:v1",
-                    "IfNotPresent", CUSTOM_COMMAND_SCRIPT)));
+            allOf(Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+                "wdt-image:v1", "IfNotPresent", CUSTOM_COMMAND_SCRIPT)));
   }
 
   @Test
@@ -770,10 +771,12 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
             .withAuxiliaryImages(getAuxiliaryImages("wdt-image1:v1", "wdt-image2:v1"));
 
     assertThat(getCreatedPodSpecInitContainers(),
-            allOf(Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image1:v1",
-                    "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND),
-                    Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 2, "wdt-image2:v1",
-                            "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND)));
+            allOf(Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+                "wdt-image1:v1",
+                "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND),
+                Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 2,
+                    "wdt-image2:v1",
+                    "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND)));
     assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(), hasSize(4));
     assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
             hasItem(new V1VolumeMount().name(AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME)

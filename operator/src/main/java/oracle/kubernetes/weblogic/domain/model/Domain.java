@@ -1049,7 +1049,8 @@ public class Domain implements KubernetesObject {
     }
 
     private void checkDuplicateAuxiliaryImageVolume(AuxiliaryImageVolume auxiliaryImageVolume) {
-      if (auxiliaryImageVolumes.stream().anyMatch(aiv -> aiv.getMountPath().equals(auxiliaryImageVolume.getMountPath()))) {
+      if (auxiliaryImageVolumes.stream().anyMatch(
+          aiv -> aiv.getMountPath().equals(auxiliaryImageVolume.getMountPath()))) {
         failures.add(DomainValidationMessages.duplicateAIVMountPath(auxiliaryImageVolume.getMountPath()));
       } else if (auxiliaryImageVolumes.stream().anyMatch(aiv ->
               aiv.getName().equals(toDns1123LegalName(auxiliaryImageVolume.getName())))) {
