@@ -82,13 +82,11 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 import org.jetbrains.annotations.NotNull;
 
-import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static java.net.HttpURLConnection.HTTP_UNAVAILABLE;
 import static oracle.kubernetes.operator.calls.AsyncRequestStep.RESPONSE_COMPONENT_NAME;
-import static oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderImpl.STORAGE_ERROR_INVALID_OBJECT_CODE_4;
 
 @SuppressWarnings("WeakerAccess")
 public class KubernetesTestSupport extends FiberTestSupport {
@@ -374,19 +372,6 @@ public class KubernetesTestSupport extends FiberTestSupport {
   public void failOnReplaceWithStreamResetException(String resourceType, String name, String namespace) {
     ApiException ae = new ApiException("StreamResetException: stream was reset: NO_ERROR",
             new StreamResetException(ErrorCode.NO_ERROR), 0, null, null);
-    failure = new Failure(Operation.replace, resourceType, name, namespace, ae);
-  }
-
-  /**
-   * Specifies that a replace operation should fail if it matches the specified conditions. Applies to
-   * namespaced resources and replaces any existing failure checks.
-   *
-   * @param resourceType the type of resource
-   * @param name the name of the resource
-   * @param namespace the namespace containing the resource
-   */
-  public void failOnReplaceWithStorageErrorConflict(String resourceType, String name, String namespace) {
-    ApiException ae = new ApiException(HTTP_CONFLICT, null, STORAGE_ERROR_INVALID_OBJECT_CODE_4);
     failure = new Failure(Operation.replace, resourceType, name, namespace, ae);
   }
 
