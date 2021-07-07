@@ -39,7 +39,10 @@ import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
+import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -47,6 +50,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.LOGS_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -58,6 +62,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExist
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
@@ -66,6 +71,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyV
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installVoyagerIngressAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.isVoyagerPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
+import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
@@ -83,6 +89,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  */
 @DisplayName("Test sticky sessions management with Voyager, Traefik and ClusterService")
 @IntegrationTest
+@Tag("okdenv")
 class ItStickySession {
 
   // constants for creating domain image using model in image
@@ -151,12 +158,16 @@ class ItStickySession {
     domainNamespace = namespaces.get(3);
 
     // install and verify Voyager
-    voyagerHelmParams =
-        installAndVerifyVoyager(voyagerNamespace, cloudProvider, enableValidatingWebhook);
+    if (!OKD) {
+      voyagerHelmParams =
+          installAndVerifyVoyager(voyagerNamespace, cloudProvider, enableValidatingWebhook);
+    }
 
     // install and verify Traefik
-    traefikHelmParams =
-        installAndVerifyTraefik(traefikNamespace, 0, 0);
+    if (!OKD) {
+      traefikHelmParams =
+          installAndVerifyTraefik(traefikNamespace, 0, 0);
+    }
 
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
@@ -203,6 +214,7 @@ class ItStickySession {
    */
   @Test
   @DisplayName("Create a Voyager ingress resource and verify that two HTTP connections are sticky to the same server")
+  @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   public void testSameSessionStickinessUsingVoyager() {
     final String ingressName = domainUid + "-ingress-host-routing";
     final String ingressServiceName = VOYAGER_CHART_NAME + "-" + ingressName;
@@ -259,6 +271,7 @@ class ItStickySession {
    */
   @Test
   @DisplayName("Create a Traefik ingress resource and verify that two HTTP connections are sticky to the same server")
+  @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   public void testSameSessionStickinessUsingTraefik() {
     final String ingressServiceName = traefikHelmParams.getReleaseName();
     final String channelName = "web";
@@ -283,6 +296,42 @@ class ItStickySession {
   }
 
   /**
+   * Verify that using OKD routes, two HTTP requests sent to WebLogic
+   * are directed to same WebLogic server.
+   * The test uses a web application deployed on WebLogic cluster to track HTTP session.
+   * server-affinity is achieved by Traefik ingress controller based on HTTP session information.
+   */
+  @Test
+  @DisplayName("Create a Traefik ingress resource and verify that two HTTP connections are sticky to the same server")
+  @EnabledIfEnvironmentVariable(named = "OKD", matches = "true")
+  public void testSameSessionStickinessinOKD() {
+    final String serviceName = domainUid + "-cluster-" + clusterName;
+    //final String channelName = "web";
+
+    // create route for cluster service
+    String ingressHost = createRouteForOKD(serviceName, domainNamespace);
+
+    // Since the app seems to take a bit longer to be available, 
+    // checking if the app is running by executing the curl command
+    String curlString =
+        buildCurlCommand(ingressHost, 0, SESSMIGR_APP_WAR_NAME + "/?getCounter", " -b ");
+    logger.info("Command to set HTTP request or get HTTP response {0} ", curlString);
+    withStandardRetryPolicy 
+        .conditionEvaluationListener(
+            condition -> logger.info("Checking if app is available "
+                + "(elapsed time {0} ms, remaining time {1} ms)",
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> {
+          return () -> {
+            return exec(new String(curlString), true).stdout().contains("managed-server");
+          };
+        }));
+    // verify that two HTTP connections are sticky to the same server
+    sendHttpRequestsToTestSessionStickinessAndVerify(ingressHost, 0);
+  }
+
+  /**
    * Verify that using cluster service, two HTTP requests sent to WebLogic
    * are directed to same WebLogic server.
    * The test uses a web application deployed on WebLogic cluster to track HTTP session.
@@ -290,6 +339,7 @@ class ItStickySession {
    */
   @Test
   @DisplayName("Verify that two HTTP connections are sticky to the same server using cluster service")
+  @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   public void testSameSessionStickinessUsingClusterService() {
     //build cluster hostname
     String hostName = new StringBuffer()
@@ -513,12 +563,12 @@ class ItStickySession {
       final String httpHeaderFile = LOGS_DIR + "/headers";
       logger.info("Build a curl command with hostname {0} and port {1}", hostName, servicePort);
 
+      String hostAndPort = (OKD) ? hostName : K8S_NODEPORT_HOST + ":" + servicePort;
+
       curlCmd.append(" --noproxy '*' -H 'host: ")
           .append(hostName)
           .append("' http://")
-          .append(K8S_NODEPORT_HOST)
-          .append(":")
-          .append(servicePort)
+          .append(hostAndPort)
           .append("/")
           .append(curlUrlPath)
           .append(headerOption)

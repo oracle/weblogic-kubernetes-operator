@@ -284,6 +284,10 @@ public interface TestConstants {
   public static final String FSS_DIR = Optional.ofNullable(System.getenv("FSS_DIR"))
       .orElse("");
 
+  //OKD constants
+  public static final boolean OKD = Boolean.parseBoolean(Optional.ofNullable(System.getenv("OKD"))
+      .orElse("false"));
+
   // default name suffixes
   public String DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX = "-ext";
   public String DEFAULT_INTROSPECTOR_JOB_NAME_SUFFIX = "-introspector";
