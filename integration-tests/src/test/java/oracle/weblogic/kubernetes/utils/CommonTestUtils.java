@@ -505,7 +505,7 @@ public class CommonTestUtils {
         .featureGates("CommonMounts=true");
 
     // if (KIND_REPO == null) {
-      opParams.imagePullSecrets(secretNameMap);
+    opParams.imagePullSecrets(secretNameMap);
     // }
 
     if (domainNamespaceSelectionStrategy != null) {
