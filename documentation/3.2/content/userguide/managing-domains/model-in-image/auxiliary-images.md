@@ -26,7 +26,7 @@ description = "Auxiliary images are an alternative approach for supplying a doma
 The auxiliary images feature is a work in progress and is currently unsupported.
 Its configuration or behavior may change between releases and it is disabled by default.
 If you want to enable this feature, then set your operator's `"featureGates"`
-Helm configuration attribute to include `"AuxiliaryImages=true"`.
+Helm configuration attribute to include `"AuxiliaryImage=true"`.
 The `"featureGates"` attribute acknowledges use of an unsupported feature,
 will not be required after auxiliary images are fully supported,
 defaults to being unset, and accepts a comma-separated list.
@@ -179,8 +179,8 @@ Model In Image model files, application archives, and the WDT installation files
 
 1. Create a temporary directory for staging the auxiliary image's files and `cd` to this directory:
    ```shell
-   $ mkdir /tmp/mii-sample/cm-image/WLS-AI-v1
-   $ cd /tmp/mii-sample/cm-image/WLS-AI-v1
+   $ mkdir /tmp/mii-sample/ai-image/WLS-AI-v1
+   $ cd /tmp/mii-sample/ai-image/WLS-AI-v1
    ```
    We call this directory `WLS-AI-v1` to correspond with the image version tag that we plan to use for the auxiliary image.
 
@@ -204,11 +204,11 @@ Model In Image model files, application archives, and the WDT installation files
    In a later step, we will specify a domain resource `domain.spec.configuration.model.modelHome`
    attribute that references this directory.
 
-1. Run `docker build` using `/tmp/mii-sample/cm-docker-file/Dockerfile` to create your auxiliary
+1. Run `docker build` using `/tmp/mii-sample/ai-docker-file/Dockerfile` to create your auxiliary
    image using a small `busybox` image as the base image.
 
    ```shell
-   $ docker build -f /tmp/mii-sample/cm-docker-file/Dockerfile \
+   $ docker build -f /tmp/mii-sample/ai-docker-file/Dockerfile \
      --build-arg AUXILIARY_IMAGE_PATH=/auxiliary \
      --tag model-in-image:WLS-AI-v1 .
    ```
