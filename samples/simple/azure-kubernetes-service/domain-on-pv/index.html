@@ -12,20 +12,20 @@
     <title>Domain home on a PV :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1625602000" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1625602000" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1625602000" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1625602000" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1625602000" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1625602000" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1625602000" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1625602000" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1625602000" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1625602000" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1625619749" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1625619749" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1625619749" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1625619749" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1625619749" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1625619749" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1625619749" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1625619749" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1625619749" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1625619749" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1625602000"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1625619749"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1625602000"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1625602000"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1625619749"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1625619749"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1625602000"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1625619749"></script>
 
     
   </div>
@@ -3691,9 +3691,24 @@ Completed
 </code></pre>
     </div>
 </div>
-<p><strong>Note</strong>: If your output does not show a successful completion, you must
+<p>If your output does not show a successful completion, you must
 troubleshoot the reason and resolve it before proceeding to the next
 step.</p>
+
+<div class="notices note" ><p>This sample creates WebLogic Server pods with reasonable values for memory, CPU, and JVM heap size (as a percentage of memory). You can supply different values. Edit <code>~/azure/weblogic-on-aks/domain1.yaml</code> and set the desired values for <code>serverPodMemoryRequest</code>, <code>serverPodMemoryLimit</code>, <code>serverPodCpuRequest</code>, <code>serverPodCpuLimit</code> and <code>javaOptions</code> before running <code>./create-domain.sh -i ~/azure/weblogic-on-aks/domain1.yaml -o ~/azure -e -v</code>.</p>
+</div>
+
+<p>Here is an excerpt showing reasonable values:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">serverPodMemoryRequest</span>: <span style="color:#e6db74">&#34;1.5Gi&#34;</span>
+<span style="color:#f92672">serverPodCpuRequest</span>: <span style="color:#e6db74">&#34;250m&#34;</span>
+
+<span style="color:#f92672">serverPodMemoryLimit</span>: <span style="color:#e6db74">&#34;1.5Gi&#34;</span>
+<span style="color:#f92672">serverPodCpuLimit</span>: <span style="color:#e6db74">&#34;250m&#34;</span>
+
+<span style="color:#f92672">javaOptions</span>: -<span style="color:#ae81ff">Dweblogic.StdoutDebugEnabled=false -XX:MinRAMPercentage=25.0 -XX:MaxRAMPercentage=50.0</span>
+</code></pre></div><p>Notice that the <code>Limit</code> and <code>Request</code> values are the same for each of <code>serverPodMemory</code> and <code>serverPodCpu</code>.  This is intentional.  To learn why, see <a href="https://kubernetes.io/docs/tasks/configure-pod-container/quality-service-pod/#create-a-pod-that-gets-assigned-a-qos-class-of-guaranteed">Create a Pod that gets assigned a QoS class of Guaranteed</a>.  You must have allocated sufficient CPU and memory resources so that the pod can be scheduled for running by Kubernetes.  This is an example of <strong>capacity planning</strong>, a very important Kubernetes success factor. For more details on capacity planning with AKS, see <a href="https://techcommunity.microsoft.com/t5/core-infrastructure-and-security/azure-kubernetes-service-cluster-capacity-planning/ba-p/1474990">Azure Kubernetes Service Cluster Capacity Planning
+</a>.  For more details about Java and capacity planning, see <a href="/weblogic-kubernetes-operator/faq/resource-settings/">Java heap size and memory resource considerations</a>.</p>
+<p>The complete set of values that can be configured in this way is described in <a href="/weblogic-kubernetes-operator/samples/simple/domains/domain-home-on-pv/#configuration-parameters">configuration parameters</a>.   If you want further advanced domain configuration, then run <code>./create-domain.sh -i ~/azure/weblogic-on-aks/domain1.yaml -o ~/azure</code>, which will output a Kubernetes domain resource YAML file in <code>~/azure/weblogic-domains/domain.yaml</code>. Edit the <code>domain.yaml</code> file and use <code>kubectl create -f ~/azure/weblogic-domains/domain.yaml</code> to create domain resources.</p>
 </li>
 <li>
 <p>You must create <code>LoadBalancer</code> services for the Administration Server and the WLS cluster.  This enables WLS to service requests from outside the AKS cluster.</p>
@@ -6072,19 +6087,19 @@ $ az ad sp delete --id $SP_APP_ID
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1625602000"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1625602000"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1625602000"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1625602000"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1625602000"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1625602000"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1625619749"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1625619749"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1625619749"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1625619749"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1625619749"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1625619749"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1625602000"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1625602000"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1625602000"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1625619749"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1625619749"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1625619749"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1625602000"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1625619749"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
