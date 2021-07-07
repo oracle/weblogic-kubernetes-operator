@@ -227,7 +227,7 @@ public class ItFmwMiiDomain {
   @Order(2)
   @Test
   @DisplayName("Reuse the same RCU schema to restart JRF domain")
-  public void testReuseRCUschemalToRestartDomain() {
+  public void testReuseRCUschemaToRestartDomain() {
     saveAndRestoreOpssWalletfileSecret(fmwDomainNamespace, domainUid, opsswalletfileSecretName);
     shutdownDomain();
     patchDomainWithWalletFileSecret(opsswalletfileSecretName);
