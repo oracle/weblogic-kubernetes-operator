@@ -28,6 +28,9 @@ import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.NetworkingV1beta1HTTPIngressPath;
+import io.kubernetes.client.openapi.models.NetworkingV1beta1HTTPIngressRuleValue;
+import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressBackend;
 import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressRule;
 import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressTLS;
 import io.kubernetes.client.openapi.models.V1Affinity;
@@ -139,6 +142,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
@@ -158,6 +162,7 @@ import static oracle.weblogic.kubernetes.TestConstants.WDT_IMAGE_DOMAINHOME_BASE
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
+import static oracle.weblogic.kubernetes.TestConstants.WLS_DEFAULT_CHANNEL_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -189,6 +194,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPersistentVolume
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.installApache;
 import static oracle.weblogic.kubernetes.actions.TestActions.installElasticsearch;
 import static oracle.weblogic.kubernetes.actions.TestActions.installGrafana;
@@ -1645,6 +1651,153 @@ public class CommonTestUtils {
    */
   public static Callable<Boolean> isVoyagerPodReady(String namespace, String podName) {
     return isVoyagerReady(namespace, podName);
+  }
+
+  /**
+   * add security context constraints to the service account of db namespace.
+   * @param serviceAccount - service account to add to scc
+   * @param namespace - namespace to which the service account belongs
+   */
+  public static void addSccToDBSvcAccount(String serviceAccount, String namespace) {
+    assertTrue(new Command()
+        .withParams(new CommandParams()
+            .command("oc adm policy add-scc-to-user anyuid -z " + serviceAccount + " -n " + namespace))
+        .execute(), "oc expose service failed");
+  }
+
+  /**
+   * We need to expose the service as a route for ingress.
+   *
+   * @param serviceName - Name of the route and service
+   * @param namespace - Namespace where the route is exposed
+   */
+  public static String createRouteForOKD(String serviceName, String namespace) {
+    assertTrue(new Command()
+        .withParams(new CommandParams()
+            .command("oc expose service " + serviceName + " -n " + namespace))
+        .execute(), "oc expose service failed");
+    String command = "oc -n " + namespace + " get routes " + serviceName + "  '-o=jsonpath={.spec.host}'";
+
+    ExecResult result = Command.withParams(
+                         new CommandParams()
+                          .command(command))
+                          .executeAndReturnResult();
+
+    boolean success =
+            result != null
+            && result.exitValue() == 0
+            && result.stdout() != null
+            && result.stdout().contains(serviceName);
+
+    String outStr = "Did not get the route hostName \n";
+    outStr += ", command=\n{\n" + command + "\n}\n";
+    outStr += ", stderr=\n{\n" + (result != null ? result.stderr() : "") + "\n}\n";
+    outStr += ", stdout=\n{\n" + (result != null ? result.stdout() : "") + "\n}\n";
+
+    assertTrue(success, outStr);
+
+    getLogger().info("exitValue = {0}", result.exitValue());
+    getLogger().info("stdout = {0}", result.stdout());
+    getLogger().info("stderr = {0}", result.stderr());
+
+    String hostName = result.stdout();
+    getLogger().info("route hostname = {0}", hostName);
+
+    return hostName;
+  }
+
+  /**
+   * In OKD environment, the nodePort cannot be accessed directly. We need to create an ingress
+   *
+   * @param podName name of the pod - to create the ingress for its external service
+   * @param namespace namespace of the domain
+   * @return hostname to access the ingress
+   */
+  public static String createASIngressForOKD(String podName, String namespace) {
+    String asExtSvcName = getExternalServicePodName(podName);
+    getLogger().info("admin server external svc = {0}", asExtSvcName);
+
+    //String host = asExtSvcName + "-" + namespace;
+    String host = asExtSvcName;
+
+    int adminServicePort
+        = getServicePort(namespace, getExternalServicePodName(podName), WLS_DEFAULT_CHANNEL_NAME);
+    getLogger().info("admin service external port = {0}", adminServicePort);
+
+    String ingressName = asExtSvcName + "-ingress-path-routing";
+
+    List<NetworkingV1beta1IngressRule> ingressRules = new ArrayList<>();
+    List<NetworkingV1beta1HTTPIngressPath> httpIngressPaths = new ArrayList<>();
+
+    NetworkingV1beta1HTTPIngressPath httpIngressPath = new NetworkingV1beta1HTTPIngressPath()
+        .path("/")
+        .backend(new NetworkingV1beta1IngressBackend()
+            .serviceName(asExtSvcName)
+            .servicePort(new IntOrString(7001))
+        );
+    httpIngressPaths.add(httpIngressPath);
+
+    NetworkingV1beta1IngressRule ingressRule = new NetworkingV1beta1IngressRule()
+        .host(host)
+        .http(new NetworkingV1beta1HTTPIngressRuleValue()
+            .paths(httpIngressPaths));
+
+    ingressRules.add(ingressRule);
+
+    assertDoesNotThrow(() -> createIngress(ingressName, namespace, null, ingressRules, null));
+
+    // check the ingress was found in the domain namespace
+    assertThat(assertDoesNotThrow(() -> listIngresses(namespace)))
+        .as(String.format("Test ingress %s was found in namespace %s", ingressName, namespace))
+        .withFailMessage(String.format("Ingress %s was not found in namespace %s", ingressName, namespace))
+        .contains(ingressName);
+
+    getLogger().info("ingress {0} was created in namespace {1}", ingressName, namespace);
+    return host;
+  }
+
+  /**
+   * In OKD environment, the nodePort cannot be accessed directly. We need to create an ingress
+   *
+   * @param svcName - cluster service name
+   * @param namespace namespace of the domain
+   * @return hostname to access the ingress
+   */
+  public static String createClusterIngressForOKD(String svcName, String namespace) {
+
+    //String host = svcName + "-" + namespace;
+    String host = svcName;
+
+    String ingressName = host + "-ingress-path-routing";
+
+    List<NetworkingV1beta1IngressRule> ingressRules = new ArrayList<>();
+    List<NetworkingV1beta1HTTPIngressPath> httpIngressPaths = new ArrayList<>();
+
+    NetworkingV1beta1HTTPIngressPath httpIngressPath = new NetworkingV1beta1HTTPIngressPath()
+        .path("/")
+        .backend(new NetworkingV1beta1IngressBackend()
+            .serviceName(svcName)
+            .servicePort(new IntOrString(8001))
+        );
+    httpIngressPaths.add(httpIngressPath);
+
+    NetworkingV1beta1IngressRule ingressRule = new NetworkingV1beta1IngressRule()
+        .host(host)
+        .http(new NetworkingV1beta1HTTPIngressRuleValue()
+            .paths(httpIngressPaths));
+
+    ingressRules.add(ingressRule);
+
+    assertDoesNotThrow(() -> createIngress(ingressName, namespace, null, ingressRules, null));
+
+    // check the ingress was found in the domain namespace
+    assertThat(assertDoesNotThrow(() -> listIngresses(namespace)))
+        .as(String.format("Test ingress %s was found in namespace %s", ingressName, namespace))
+        .withFailMessage(String.format("Ingress %s was not found in namespace %s", ingressName, namespace))
+        .contains(ingressName);
+
+    getLogger().info("ingress {0} was created in namespace {1}", ingressName, namespace);
+    return host;
   }
 
   /**
@@ -3173,11 +3326,34 @@ public class CommonTestUtils {
       String namespace,
       String username,
       String password,
+      boolean expectValid) {
+
+    verifyCredentials(null, podName, namespace, username, password, expectValid);
+  }
+
+  /**
+   * Check that the given credentials are valid to access the WebLogic domain.
+   *
+   * @param host this is only for OKD - ingress host to access the service
+   * @param podName name of the admin server pod
+   * @param namespace name of the namespace that the pod is running in
+   * @param username WebLogic admin username
+   * @param password WebLogic admin password
+   * @param expectValid true if the check expects a successful result
+   */
+  public static void verifyCredentials(
+      String host,
+      String podName,
+      String namespace,
+      String username,
+      String password,
       boolean expectValid,
       String... args) {
     LoggingFacade logger = getLogger();
     String msg = expectValid ? "valid" : "invalid";
     logger.info("Check if the given WebLogic admin credentials are {0}", msg);
+    String finalHost = host != null ? host : K8S_NODEPORT_HOST;
+    logger.info("finalHost = {0}", finalHost);
     withQuickRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Checking that credentials {0}/{1} are {2}"
@@ -3190,9 +3366,9 @@ public class CommonTestUtils {
         .until(assertDoesNotThrow(
             expectValid
                 ?
-            () -> credentialsValid(K8S_NODEPORT_HOST, podName, namespace, username, password, args)
+            () -> credentialsValid(finalHost, podName, namespace, username, password, args)
                 :
-            () -> credentialsNotValid(K8S_NODEPORT_HOST, podName, namespace, username, password, args),
+            () -> credentialsNotValid(finalHost, podName, namespace, username, password, args),
             String.format(
                 "Failed to validate credentials %s/%s on pod %s in namespace %s",
                 username, password, podName, namespace)));
@@ -3369,7 +3545,7 @@ public class CommonTestUtils {
         pvName, domainUid, className);
     Path pvHostPath = null;
     // when tests are running in local box the PV directories need to exist
-    if (!OKE_CLUSTER) {
+    if (!OKE_CLUSTER && !OKD) {
       try {
         pvHostPath = Files.createDirectories(Paths.get(
             PV_ROOT, className, pvName));
@@ -3398,6 +3574,13 @@ public class CommonTestUtils {
           .storageClassName("oci-fss")
           .nfs(new V1NFSVolumeSource()
           .path(FSS_DIR)
+          .server(NFS_SERVER)
+          .readOnly(false));
+    } else if (OKD) {
+      v1pv.getSpec()
+          .storageClassName("okd-nfsmnt")
+          .nfs(new V1NFSVolumeSource()
+          .path(PV_ROOT)
           .server(NFS_SERVER)
           .readOnly(false));
     } else {
@@ -3439,6 +3622,9 @@ public class CommonTestUtils {
     if (OKE_CLUSTER) {
       v1pvc.getSpec()
           .storageClassName("oci-fss");
+    } else if (OKD) {
+      v1pvc.getSpec()
+          .storageClassName("okd-nfsmnt");
     } else {
       v1pvc.getSpec()
           .storageClassName("weblogic-domain-storage-class");
@@ -3506,17 +3692,8 @@ public class CommonTestUtils {
     logger.info("Running Kubernetes job to create domain for image: {1}: {2} "
         + " pvName: {3}, pvcName: {4}, domainScriptCM: {5}, namespace: {6}", image,
         pvName, pvcName, domainScriptCM, namespace);
-    V1Job jobBody = new V1Job()
-        .metadata(
-            new V1ObjectMeta()
-                .name("create-domain-onpv-job-" + pvName) // name of the create domain job
-                .namespace(namespace))
-        .spec(new V1JobSpec()
-            .backoffLimit(0) // try only once
-            .template(new V1PodTemplateSpec()
-                .spec(new V1PodSpec()
+    V1PodSpec podSpec = new V1PodSpec()
                     .restartPolicy("Never")
-                    .initContainers(Arrays.asList(createfixPVCOwnerContainer(pvName, "/shared")))
                     .containers(Arrays.asList(jobContainer  // container containing WLST or WDT details
                         .name("create-weblogic-domain-onpv-container")
                         .image(image)
@@ -3526,7 +3703,7 @@ public class CommonTestUtils {
                         .volumeMounts(Arrays.asList(
                             new V1VolumeMount()
                                 .name("create-weblogic-domain-job-cm-volume") // domain creation scripts volume
-                                .mountPath("/u01/weblogic"), // availble under /u01/weblogic inside pod
+                                .mountPath("/u01/weblogic"), // available under /u01/weblogic inside pod
                             new V1VolumeMount()
                                 .name(pvName) // location to write domain
                                 .mountPath("/shared"))))) // mounted under /shared inside pod
@@ -3543,7 +3720,19 @@ public class CommonTestUtils {
                                     .name(domainScriptCM)))) //config map containing domain scripts
                     .imagePullSecrets(Arrays.asList(
                         new V1LocalObjectReference()
-                            .name(BASE_IMAGES_REPO_SECRET))))));  // this secret is used only for non-kind cluster
+                            .name(BASE_IMAGES_REPO_SECRET)));
+    if (!OKD) {
+      podSpec.initContainers(Arrays.asList(createfixPVCOwnerContainer(pvName, "/shared")));
+    }
+    V1Job jobBody = new V1Job()
+        .metadata(
+            new V1ObjectMeta()
+                .name("create-domain-onpv-job-" + pvName) // name of the create domain job
+                .namespace(namespace))
+        .spec(new V1JobSpec()
+            .backoffLimit(0) // try only once
+            .template(new V1PodTemplateSpec()
+                .spec(podSpec)));
     String jobName = assertDoesNotThrow(()
         -> createNamespacedJob(jobBody), "Failed to create Job");
 

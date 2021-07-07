@@ -78,6 +78,7 @@ import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
@@ -114,6 +115,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressForDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVC;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
@@ -146,6 +148,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify the introspectVersion runs the introspector")
 @IntegrationTest
+@Tag("okdenv")
 public class ItIntrospectVersion {
 
   private static String opNamespace = null;
@@ -160,6 +163,9 @@ public class ItIntrospectVersion {
       + (WEBLOGIC_IMAGE_NAME + ":" + WLS_UPDATE_IMAGE_TAG).substring(TestConstants.BASE_IMAGES_REPO.length() + 1)
       : WEBLOGIC_IMAGE_NAME + ":" + WLS_UPDATE_IMAGE_TAG;
   private final String wlSecretName = "weblogic-credentials";
+
+  private static String adminSvcExtHost = null;
+  private static String clusterRouteHost = null;
 
   private Map<String, OffsetDateTime> podsWithTimeStamps = null;
 
@@ -204,8 +210,9 @@ public class ItIntrospectVersion {
     nodeportshttp = getNextFreePort();
     int nodeportshttps = getNextFreePort();
 
-    // install and verify NGINX
-    nginxHelmParams = installAndVerifyNginx(nginxNamespace, nodeportshttp, nodeportshttps);
+    if (!OKD) {
+      nginxHelmParams = installAndVerifyNginx(nginxNamespace, nodeportshttp, nodeportshttps);
+    }
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
@@ -240,6 +247,7 @@ public class ItIntrospectVersion {
 
     final String adminServerName = "admin-server";
     final String adminServerPodName = domainUid + "-" + adminServerName;
+    final String clusterServiceName = domainUid + "-cluster-" + clusterName;
 
     final String managedServerNameBase = "managed-server";
     String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
@@ -374,6 +382,11 @@ public class ItIntrospectVersion {
       checkPodReady(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
     }
 
+    if (OKD) {
+      adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), introDomainNamespace);
+      logger.info("admin svc host = {0}", adminSvcExtHost);
+    }
+
     // deploy application and verify all servers functions normally
     logger.info("Getting port for default channel");
     int defaultChannelPort = assertDoesNotThrow(()
@@ -391,15 +404,23 @@ public class ItIntrospectVersion {
     //deploy clusterview application
     logger.info("Deploying clusterview app {0} to cluster {1}",
         clusterViewAppPath, clusterName);
-    ExecResult result = null;
+    //ExecResult result = null;
     String targets = "{identity:[clusters,'mycluster']},{identity:[servers,'admin-server']}";
-    result = deployUsingRest(K8S_NODEPORT_HOST,
-        Integer.toString(serviceNodePort),
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
-        targets, clusterViewAppPath, null, "clusterview");
-    assertNotNull(result, "Application deployment failed");
-    logger.info("Application deployment returned {0}", result.toString());
-    assertEquals("202", result.stdout(), "Application deploymen failed with wrong HTTP status code");
+
+    String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + serviceNodePort;
+    logger.info("hostAndPort = {0} ", hostAndPort);
+
+    withStandardRetryPolicy.conditionEvaluationListener(
+        condition -> logger.info("Deploying the application using Rest"
+            + "(elapsed time {0} ms, remaining time {1} ms)",
+            condition.getElapsedTimeInMS(),
+            condition.getRemainingTimeInMS()))
+        .until((Callable<Boolean>) () -> {
+          ExecResult result = assertDoesNotThrow(() -> deployUsingRest(hostAndPort, 
+                       ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
+                       targets, clusterViewAppPath, null, "clusterview"));
+          return result.stdout().equals("202");
+        });
 
     List<String> managedServerNames = new ArrayList<String>();
     for (int i = 1; i <= replicaCount; i++) {
@@ -498,10 +519,14 @@ public class ItIntrospectVersion {
     }
 
     //create ingress controller
-    Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
-    clusterNameMsPortMap.put(clusterName, managedServerPort);
-    logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, introDomainNamespace);
-    createIngressForDomainAndVerify(domainUid, introDomainNamespace, clusterNameMsPortMap);
+    if (!OKD) {
+      Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
+      clusterNameMsPortMap.put(clusterName, managedServerPort);
+      logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, introDomainNamespace);
+      createIngressForDomainAndVerify(domainUid, introDomainNamespace, clusterNameMsPortMap);
+    } else {
+      clusterRouteHost = createRouteForOKD(clusterServiceName, introDomainNamespace);
+    }
 
     managedServerNames = new ArrayList<String>();
     for (int i = 1; i <= replicaCount + 1; i++) {
@@ -511,13 +536,24 @@ public class ItIntrospectVersion {
     //verify admin server accessibility and the health of cluster members
     verifyMemberHealth(adminServerPodName, managedServerNames, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
-    //access application in managed servers through NGINX load balancer
-    logger.info("Accessing the clusterview app through NGINX load balancer");
-    String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
-            + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet"
+    String curlRequest = null;
+
+    if (OKD) {
+      logger.info("cluster svc host = {0}", clusterRouteHost);
+      logger.info("Accessing the clusterview app through cluster route");
+      curlRequest = String.format("curl --silent --show-error --noproxy '*' "
+            + "http://%s/clusterview/ClusterViewServlet"
             + "\"?user=" + ADMIN_USERNAME_DEFAULT
-            + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"",
-        domainUid + "." + introDomainNamespace + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
+            + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"", clusterRouteHost);
+    } else {
+      //access application in managed servers through NGINX load balancer
+      logger.info("Accessing the clusterview app through NGINX load balancer");
+      curlRequest = String.format("curl --silent --show-error --noproxy '*' "
+                   + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet"
+                   + "\"?user=" + ADMIN_USERNAME_DEFAULT
+                   + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"",
+               domainUid + "." + introDomainNamespace + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
+    }
 
     // verify each managed server can see other member in the cluster
     verifyServerCommunication(curlRequest, managedServerNames);
@@ -662,13 +698,23 @@ public class ItIntrospectVersion {
     //verify admin server accessibility and the health of cluster members
     verifyMemberHealth(adminServerPodName, managedServerNames, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
-    //access application in managed servers through NGINX load balancer
-    logger.info("Accessing the clusterview app through NGINX load balancer");
-    String curlRequest = String.format("curl --silent --show-error --noproxy '*' "
-            + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet"
+    String curlRequest = null;
+    if (OKD) {
+      logger.info("cluster svc host = {0}", clusterRouteHost);
+      logger.info("Accessing the clusterview app through cluster route");
+      curlRequest = String.format("curl --silent --show-error --noproxy '*' "
+            + "http://%s/clusterview/ClusterViewServlet"
             + "\"?user=" + ADMIN_USERNAME_DEFAULT
-            + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"",
-        domainUid + "." + introDomainNamespace + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
+            + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"", clusterRouteHost);
+    } else {
+      //access application in managed servers through NGINX load balancer
+      logger.info("Accessing the clusterview app through NGINX load balancer");
+      curlRequest = String.format("curl --silent --show-error --noproxy '*' "
+                   + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet"
+                   + "\"?user=" + ADMIN_USERNAME_DEFAULT
+                   + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"",
+               domainUid + "." + introDomainNamespace + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
+    }
 
     // verify each managed server can see other member in the cluster
     verifyServerCommunication(curlRequest, managedServerNames);
@@ -810,9 +856,9 @@ public class ItIntrospectVersion {
     final boolean VALID = true;
     final boolean INVALID = false;
     logger.info("Check that after patching current credentials are not valid and new credentials are");
-    verifyCredentials(adminServerPodName, introDomainNamespace,
+    verifyCredentials(adminSvcExtHost, adminServerPodName, introDomainNamespace,
          ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, INVALID);
-    verifyCredentials(adminServerPodName, introDomainNamespace,
+    verifyCredentials(adminSvcExtHost, adminServerPodName, introDomainNamespace,
          ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH, VALID);
 
     List<String> managedServerNames = new ArrayList<String>();
@@ -1150,8 +1196,11 @@ public class ItIntrospectVersion {
         -> getServiceNodePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "default"),
         "Getting admin server node port failed");
 
+    String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + serviceNodePort;
+    logger.info("hostAndPort = {0} ", hostAndPort);
+
     logger.info("Checking the health of servers in cluster");
-    String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort
+    String url = "http://" + hostAndPort
         + "/clusterview/ClusterViewServlet?user=" + user + "&password=" + password;
 
     withStandardRetryPolicy.conditionEvaluationListener(

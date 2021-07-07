@@ -165,7 +165,7 @@ function buildWDTParams_MD5() {
 
   model_list=""
   archive_list=""
-  variable_list="${IMG_MODELS_HOME}/_k8s_generated_props.properties"
+  variable_list="/u01/_k8s_generated_props.properties"
 
   #
   # First build the command line parameters for WDT
