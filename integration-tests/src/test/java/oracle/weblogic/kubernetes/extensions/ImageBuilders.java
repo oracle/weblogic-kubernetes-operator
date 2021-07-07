@@ -256,11 +256,12 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
           }
 
           for (String image : images) {
-            if (KIND_REPO != null) {
+            logger.info("docker push image {0} to {1}", image, DOMAIN_IMAGES_REPO);
+            /* if (KIND_REPO != null) {
               logger.info("kind load docker-image {0} --name kind", image);
             } else {
               logger.info("docker push image {0} to {1}", image, DOMAIN_IMAGES_REPO);
-            }
+            } */
             withStandardRetryPolicy
                 .conditionEvaluationListener(
                     condition -> logger.info("Waiting for docker push to OCIR/kind for image {0} to be successful"

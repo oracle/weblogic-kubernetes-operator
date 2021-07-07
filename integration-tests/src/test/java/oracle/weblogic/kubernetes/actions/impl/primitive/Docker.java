@@ -10,7 +10,6 @@ import com.google.gson.JsonObject;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 
-import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
 /**
@@ -54,9 +53,9 @@ public class Docker {
    */
   public static boolean push(String image) {
     String cmdToExecute = String.format("docker push %s", image);
-    if (KIND_REPO != null) {
+    /* if (KIND_REPO != null) {
       cmdToExecute = String.format("kind load docker-image %s --name kind", image);
-    }
+    } */
     return new Command()
         .withParams(new CommandParams()
             .command(cmdToExecute))
