@@ -21,6 +21,7 @@ source $TESTDIR/util-misc.sh
 source $TESTDIR/test-env.sh
 
 trace "Running end to end MII sample test."
+echo "Is OKD set? $OKD"
 
 DRY_RUN=false
 DO_CLEANUP=false
@@ -268,7 +269,7 @@ doCommand -c export WDT_DOMAIN_TYPE=$WDT_DOMAIN_TYPE
 doCommand -c export DOMAIN_NAMESPACE=$DOMAIN_NAMESPACE
 doCommand -c mkdir -p \$WORKDIR
 doCommand -c cp -r \$MIISAMPLEDIR/* \$WORKDIR
-
+doCommand -c export OKD=$OKD
 
 #
 # Build pre-req (operator)
@@ -381,10 +382,19 @@ if [ "$DO_INITIAL_MAIN" = "true" ]; then
   doCommand -c "kubectl apply -f \$WORKDIR/\$DOMAIN_RESOURCE_FILENAME"
   doPodWait 3
 
+  if [ "$OKD" = "true" ]; then
+    # expose the cluster service as an route
+    doCommand -c "oc expose service \${DOMAIN_UID}-cluster-cluster-1 --hostname \${DOMAIN_UID}-cluster-cluster-1 -n \$DOMAIN_NAMESPACE"
+  fi
+
   if [ ! "$DRY_RUN" = "true" ]; then
     diefast # (cheat to speedup a subsequent roll/shutdown)
     testapp internal cluster-1 "Hello World!"
-    testapp traefik  cluster-1 "Hello World!"
+    if [ "$OKD" = "true" ]; then
+      testapp OKD  cluster-1 "Hello World!"
+    else
+      testapp traefik  cluster-1 "Hello World!"
+    fi
   fi
 
   dumpInfo
