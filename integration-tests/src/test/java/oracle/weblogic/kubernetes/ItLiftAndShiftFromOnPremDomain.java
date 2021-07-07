@@ -29,6 +29,7 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -37,6 +38,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
@@ -53,6 +55,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkAppIsRunning
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyTraefik;
@@ -82,6 +85,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 @DisplayName("Test to validate on-prem to k8s use case")
 @IntegrationTest
+@Tag("okdenv")
 public class ItLiftAndShiftFromOnPremDomain {
   private static String opNamespace = null;
   private static String traefikNamespace = null;
@@ -106,6 +110,8 @@ public class ItLiftAndShiftFromOnPremDomain {
   private Path zipFile;
 
   private static HelmParams traefikHelmParams = null;
+  private int traefikNodePort = 0;
+  private String hostName = null;
 
   /**
    * Install Operator.
@@ -142,9 +148,11 @@ public class ItLiftAndShiftFromOnPremDomain {
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
 
-    // install and verify Traefik
-    logger.info("Installing Traefik controller using helm");
-    traefikHelmParams = installAndVerifyTraefik(traefikNamespace, 0, 0);
+    if (!OKD) {
+      // install and verify Traefik
+      logger.info("Installing Traefik controller using helm");
+      traefikHelmParams = installAndVerifyTraefik(traefikNamespace, 0, 0);
+    }
 
   }
 
@@ -160,6 +168,7 @@ public class ItLiftAndShiftFromOnPremDomain {
     // admin/managed server name here should match with model yaml in MII_BASIC_WDT_MODEL_FILE
     final String adminServerPodName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";
+    final String clusterService = domainUid + "-cluster-cluster-1";
     final int replicaCount = 5;
 
     assertDoesNotThrow(() -> {
@@ -311,18 +320,24 @@ public class ItLiftAndShiftFromOnPremDomain {
       checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
 
-    // create ingress rules with path routing for Traefik
-    createTraefikIngressRoutingRules(domainNamespace);
+    if (!OKD) {
+      // create ingress rules with path routing for Traefik
+      createTraefikIngressRoutingRules(domainNamespace);
+    
+      traefikNodePort = getServiceNodePort(traefikNamespace, traefikHelmParams.getReleaseName(), "web");
+      assertTrue(traefikNodePort != -1,
+          "Could not get the default external service node port");
+      logger.info("Found the Traefik service nodePort {0}", traefikNodePort);
+      logger.info("The K8S_NODEPORT_HOST is {0}", K8S_NODEPORT_HOST);
+    } else {
+      hostName = createRouteForOKD(clusterService, domainNamespace);
+    }
 
-    int traefikNodePort = getServiceNodePort(traefikNamespace, traefikHelmParams.getReleaseName(), "web");
-    assertTrue(traefikNodePort != -1,
-        "Could not get the default external service node port");
-    logger.info("Found the Traefik service nodePort {0}", traefikNodePort);
-    logger.info("The K8S_NODEPORT_HOST is {0}", K8S_NODEPORT_HOST);
+    String hostAndPort = (OKD) ? hostName : K8S_NODEPORT_HOST + ":" + traefikNodePort;
+    logger.info("hostAndPort = {0} ", hostAndPort);
 
     String curlString = String.format("curl -v --show-error --noproxy '*' "
-            + "http://%s:%s/opdemo/?dsName=testDatasource",
-        K8S_NODEPORT_HOST, traefikNodePort);
+            + "http://%s/opdemo/?dsName=testDatasource", hostAndPort);
 
     // check and wait for the application to be accessible in admin pod
     checkAppIsRunning(

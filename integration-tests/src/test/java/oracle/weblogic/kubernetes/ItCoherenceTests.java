@@ -34,6 +34,7 @@ import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -67,13 +68,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 // which load and verify the cache.
 @DisplayName("Test to create a WebLogic domain with Coherence and verify the use of Coherence cache service")
 @IntegrationTest
+@Tag("okdenv")
 class ItCoherenceTests {
 
   // constants for Coherence
   private static final String PROXY_CLIENT_APP_NAME = "coherence-proxy-client";
   private static final String PROXY_SERVER_APP_NAME = "coherence-proxy-server";
   private static final String APP_LOC_ON_HOST = APP_DIR + "/" + PROXY_CLIENT_APP_NAME;
-  private static final String APP_LOC_IN_POD = "/u01/oracle/apps/" + PROXY_CLIENT_APP_NAME;
+  private static final String APP_LOC_IN_POD = "/u01/apps/" + PROXY_CLIENT_APP_NAME;
   private static final String PROXY_CLIENT_SCRIPT = "buildRunProxyClient.sh";
   private static final String OP_CACHE_LOAD = "load";
   private static final String OP_CACHE_VALIDATE = "validate";
@@ -143,7 +145,7 @@ class ItCoherenceTests {
    */
   @Test
   @DisplayName("Create domain with a Coherence cluster using WDT and test rolling restart")
-  public void testCohernceServerRollingRestart() {
+  public void testCoherenceServerRollingRestart() {
     final String successMarker = "CACHE-SUCCESS";
 
     // create a DomainHomeInImage image using WebLogic Image Tool

@@ -8,9 +8,18 @@ import java.util.Base64;
 import java.util.List;
 
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
+import io.kubernetes.client.openapi.models.V1ServiceAccount;
+import io.kubernetes.client.openapi.models.V1ServiceAccountList;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
+
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listServiceAccounts;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.readSecretByReference;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
 public class Secret {
 
@@ -44,21 +53,52 @@ public class Secret {
    */
   public static String getSecretOfServiceAccount(String namespace, String serviceAccountName) {
 
+    LoggingFacade logger = getLogger();
     List<V1Secret> v1Secrets = new ArrayList<>();
+    List<V1ServiceAccount> v1ServiceAccounts = new ArrayList<>();
+    List<V1Secret> v1SaSecrets = new ArrayList<>();
+    String token = null;
 
-    V1SecretList secretList = listSecrets(namespace);
-    if (secretList != null) {
-      v1Secrets = secretList.getItems();
-    }
+    if (!OKD) {
+      V1SecretList secretList = listSecrets(namespace);
+      if (secretList != null) {
+        v1Secrets = secretList.getItems();
+      }
 
-    for (V1Secret v1Secret : v1Secrets) {
-      if (v1Secret.getMetadata() != null && v1Secret.getMetadata().getName() != null) {
-        if (v1Secret.getMetadata().getName().startsWith(serviceAccountName)) {
-          return v1Secret.getMetadata().getName();
+      for (V1Secret v1Secret : v1Secrets) {
+        if (v1Secret.getMetadata() != null && v1Secret.getMetadata().getName() != null) {
+          logger.info(" secret name = {0}", v1Secret.getMetadata().getName());
+          if (v1Secret.getMetadata().getName().startsWith(serviceAccountName)) {
+            return v1Secret.getMetadata().getName();
+          }
         }
       }
-    }
+    } else {
+      logger.info("service account = {0}", serviceAccountName);
+      logger.info("namespace = {0}", namespace);
+      V1ServiceAccountList serviceAccountList = listServiceAccounts(namespace);
+      if (serviceAccountList != null) {
+        v1ServiceAccounts = serviceAccountList.getItems();
+      }
 
+      try {
+        for (V1ServiceAccount v1ServiceAccount : v1ServiceAccounts) {
+          if (v1ServiceAccount.getMetadata() != null && v1ServiceAccount.getMetadata().getName() != null) {
+            if (v1ServiceAccount.getMetadata().getName().startsWith(serviceAccountName)) {
+              List<V1ObjectReference> saSecretList = v1ServiceAccount.getSecrets();
+              for (V1ObjectReference reference : saSecretList) {
+                // Get the secret.
+                V1Secret secret = readSecretByReference(reference, namespace);
+                logger.info("secret token = {0}", secret.getMetadata().getName());
+                return secret.getMetadata().getName();
+              }
+            }
+          }
+        }
+      } catch (ApiException apie) {
+        logger.info(" got ApiException");
+      }
+    }
     return "";
   }
 

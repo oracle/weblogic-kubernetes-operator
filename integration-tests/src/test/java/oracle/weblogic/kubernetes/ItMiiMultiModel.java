@@ -6,6 +6,7 @@ package oracle.weblogic.kubernetes;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
@@ -25,11 +26,15 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
@@ -41,6 +46,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DEFAULT_CHANNEL_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
@@ -52,12 +58,14 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapAn
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -77,6 +85,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Test to create model-in-image domain with multiple WDT models")
 @IntegrationTest
+@Tag("okdenv")
 class ItMiiMultiModel {
 
   private static String domainNamespace = null;
@@ -111,6 +120,9 @@ class ItMiiMultiModel {
   private static final String dsName3 = "TestDataSource3";
 
   private static LoggingFacade logger = null;
+  private static String ingressHost = null;
+
+  private static ConditionFactory withStandardRetryPolicy = null;
 
   /**
    * Perform initialization for all the tests in this class.
@@ -124,6 +136,11 @@ class ItMiiMultiModel {
   @BeforeAll
   public static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
+    // create standard, reusable retry/backoff policy
+    withStandardRetryPolicy = with().pollDelay(2, SECONDS)
+      .and().with().pollInterval(10, SECONDS)
+      .atMost(5, MINUTES).await();
+
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
@@ -235,6 +252,7 @@ class ItMiiMultiModel {
     logger.info(String.format("Domain %s in namespace %s DataSource %s MaxCapacity is %s, as expected",
             domainUid1, domainNamespace, dsName3, expectedMaxCapacityDS3));
 
+    ingressHost = null;
   }
 
   /**
@@ -284,6 +302,7 @@ class ItMiiMultiModel {
     logger.info(String.format("Domain %s in namespace %s DataSource %s does not exist as expected",
             domainUid2, domainNamespace, dsName2));
 
+    ingressHost = null;
   }
 
   /**
@@ -362,7 +381,8 @@ class ItMiiMultiModel {
 
     logger.info(String.format("Domain %s in namespace %s DataSource %s does not exist as expected",
             domainUid3, domainNamespace, dsName2));
-
+    
+    ingressHost = null;
   }
 
   /**
@@ -495,12 +515,20 @@ class ItMiiMultiModel {
       String adminServerPodName,
       String namespace,
       String dsName) {
+
     int adminServiceNodePort = getServiceNodePort(
         namespace, getExternalServicePodName(adminServerPodName), WLS_DEFAULT_CHANNEL_NAME);
 
+    String serviceName = adminServerPodName + "-ext";
+    if (OKD && (ingressHost == null)) {
+      ingressHost = createRouteForOKD(serviceName, domainNamespace);
+    }
+
+    String hostAndPort = (OKD) ? ingressHost
+        : K8S_NODEPORT_HOST + ":" + adminServiceNodePort;
     String command = new StringBuffer()
         .append("curl --user " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
-        .append(" http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+        .append(" http://" + hostAndPort)
         .append("/management/wls/latest/datasources/id/" + dsName)
         .append(" --noproxy '*'")
         .append(" --silent --show-error ")
@@ -512,7 +540,15 @@ class ItMiiMultiModel {
         .saveResults(true)
         .redirect(true);
 
-    Command.withParams(params).execute();
+    withStandardRetryPolicy.conditionEvaluationListener(
+            condition -> logger.info("Get max capacity of data source"
+                            + "(elapsed time {0} ms, remaining time {1} ms)",
+                    condition.getElapsedTimeInMS(),
+                    condition.getRemainingTimeInMS()))
+            .until((Callable<Boolean>) () -> {
+              return Command.withParams(params).execute();
+            });
+    //Command.withParams(params).execute();
     return params.stdout();
   }
   
@@ -526,9 +562,16 @@ class ItMiiMultiModel {
     int adminServiceNodePort = getServiceNodePort(
         namespace, getExternalServicePodName(adminServerPodName), WLS_DEFAULT_CHANNEL_NAME);
 
+    String serviceName = adminServerPodName + "-ext";
+    if (OKD && (ingressHost == null)) {
+      ingressHost = createRouteForOKD(serviceName, domainNamespace);
+    }
+
+    String hostAndPort = (OKD) ? ingressHost
+        : K8S_NODEPORT_HOST + ":" + adminServiceNodePort;
     String command = new StringBuffer()
         .append("curl --user " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
-        .append(" http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+        .append(" http://" + hostAndPort)
         .append("/management/wls/latest/datasources")
         .append("/id/" + dsName)
         .append(" --noproxy '*'")
@@ -542,7 +585,16 @@ class ItMiiMultiModel {
 
     String expectedStr = String.format("'%s' was not found", dsName);
     
-    return Command.withParams(params).executeAndVerify(expectedStr);
+    withStandardRetryPolicy.conditionEvaluationListener(
+            condition -> logger.info("Get max capacity of data source"
+                            + "(elapsed time {0} ms, remaining time {1} ms)",
+                    condition.getElapsedTimeInMS(),
+                    condition.getRemainingTimeInMS()))
+            .until((Callable<Boolean>) () -> {
+              return Command.withParams(params).executeAndVerify(expectedStr);
+            });
+    return true;
+    //return Command.withParams(params).executeAndVerify(expectedStr);
   }
   
 }
