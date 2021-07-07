@@ -28,16 +28,7 @@ import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
-import oracle.weblogic.domain.AdminServer;
-import oracle.weblogic.domain.AdminService;
-import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
-import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
-import oracle.weblogic.domain.DomainSpec;
-import oracle.weblogic.domain.Model;
-import oracle.weblogic.domain.OnlineUpdate;
-import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.domain.*;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
@@ -248,7 +239,7 @@ public class CommonMiiTestUtils {
   }
 
   /**
-   * Create a domain object for a Kubernetes domain custom resource using the basic WLS image and MII common mount
+   * Create a domain object for a Kubernetes domain custom resource using the basic WLS image and MII auxiliary image
    * image.
    *
    * @param domainResourceName name of the domain resource
@@ -259,9 +250,9 @@ public class CommonMiiTestUtils {
    * @param encryptionSecretName name of the secret used to encrypt the models
    * @param replicaCount number of managed servers to start
    * @param clusterName name of the cluster to add in domain
-   * @param commonMountPath common mount path, parent location for Model in Image model and WDT installation files
-   * @param commonMountVolumeName common mount volume name
-   * @param commonMountImageName image names including tags, image contains the domain model, application archive if any
+   * @param auxiliaryImagePath auxiliary image path, parent location for Model in Image model and WDT installation files
+   * @param auxiliaryImageVolumeName auxiliary image volume name
+   * @param auxiliaryImageName image names including tags, image contains the domain model, application archive if any
    *                   and WDT installation files
    * @return domain object of the domain resource
    */
@@ -274,24 +265,24 @@ public class CommonMiiTestUtils {
       String encryptionSecretName,
       int replicaCount,
       String clusterName,
-      String commonMountPath,
-      String commonMountVolumeName,
-      String... commonMountImageName) {
+      String auxiliaryImagePath,
+      String auxiliaryImageVolumeName,
+      String... auxiliaryImageName) {
 
     Domain domainCR = CommonMiiTestUtils.createDomainResource(domainResourceName, domNamespace,
         baseImageName, adminSecretName, repoSecretName,
         encryptionSecretName, replicaCount, clusterName);
-    domainCR.spec().addCommonMountVolumesItem(new oracle.weblogic.domain.CommonMountVolume()
-        .mountPath(commonMountPath)
-        .name(commonMountVolumeName));
+    domainCR.spec().addAuxiliaryImageVolumesItem(new AuxiliaryImageVolume()
+        .mountPath(auxiliaryImagePath)
+        .name(auxiliaryImageVolumeName));
     domainCR.spec().configuration().model()
-        .withModelHome(commonMountPath + "/models")
-        .withWdtInstallHome(commonMountPath + "/weblogic-deploy");
-    for (String cmImageName: commonMountImageName) {
+        .withModelHome(auxiliaryImagePath + "/models")
+        .withWdtInstallHome(auxiliaryImagePath + "/weblogic-deploy");
+    for (String cmImageName: auxiliaryImageName) {
       domainCR.spec().serverPod()
-          .addCommonMountsItem(new oracle.weblogic.domain.CommonMount()
+          .addAuxiliaryImagesItem(new AuxiliaryImage()
               .image(cmImageName)
-              .volume(commonMountVolumeName)
+              .volume(auxiliaryImageVolumeName)
               .imagePullPolicy("IfNotPresent"));
     }
     return domainCR;

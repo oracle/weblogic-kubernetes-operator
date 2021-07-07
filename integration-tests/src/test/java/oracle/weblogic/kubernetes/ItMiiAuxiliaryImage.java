@@ -31,7 +31,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
-import static oracle.weblogic.kubernetes.TestConstants.MII_COMMONMOUNT_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
@@ -59,16 +59,16 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DisplayName("Test to create model in image domain using common mount")
+@DisplayName("Test to create model in image domain using auxiliary image")
 @IntegrationTest
-public class ItMiiCommonMount {
+public class ItMiiAuxiliaryImage {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private static LoggingFacade logger = null;
   private String domainUid = "domain1";
-  private static String miiCMImage1 = MII_COMMONMOUNT_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG + "1";
-  private static String miiCMImage2 = MII_COMMONMOUNT_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG + "2";
+  private static String miiCMImage1 = MII_AUXILIARY_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG + "1";
+  private static String miiCMImage2 = MII_AUXILIARY_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG + "2";
   ConditionFactory withStandardRetryPolicy
       = with().pollDelay(0, SECONDS)
       .and().with().pollInterval(10, SECONDS)
@@ -97,20 +97,20 @@ public class ItMiiCommonMount {
 
 
   /**
-   * Create a domain using multiple common mounts. One common mount containing the domain configuration and
-   * another common mount with JMS system resource, verify the domain is running and JMS resource is added.
+   * Create a domain using multiple auxiliary images. One auxiliary image containing the domain configuration and
+   * another auxiliary image with JMS system resource, verify the domain is running and JMS resource is added.
    */
   @Test
   @Order(1)
-  @DisplayName("Test to create domain using multiple common mounts")
-  public void testCreateDomainUsingMultipleCommonMounts() {
+  @DisplayName("Test to create domain using multiple auxiliary images")
+  public void testCreateDomainUsingMultipleAuxiliaryImages() {
 
     // admin/managed server name here should match with model yaml
     final String adminServerPodName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";
     final int replicaCount = 2;
-    final String commonMountVolumeName = "commonMountsVolume1";
-    final String commonMountPath = "/common";
+    final String auxiliaryImageVolumeName = "auxiliaryImageVolume1";
+    final String auxiliaryImagePath = "/auxiliary";
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
@@ -128,7 +128,7 @@ public class ItMiiCommonMount {
     createSecretWithUsernamePassword(encryptionSecretName, domainNamespace,
         "weblogicenc", "weblogicenc");
 
-    // create stage dir for first common mount with image1
+    // create stage dir for first auxiliary image with image1
     Path multipleCMPath1 = Paths.get(RESULTS_ROOT, "multiplecmimage1");
     assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleCMPath1.toFile()));
     assertDoesNotThrow(() -> Files.createDirectories(multipleCMPath1));
@@ -157,8 +157,8 @@ public class ItMiiCommonMount {
     unzipWDTInstallationFile(multipleCMPath1.toString());
 
     // create image1 with model and wdt installation files
-    createCommonMountImage(multipleCMPath1.toString(),
-        Paths.get(RESOURCE_DIR, "commonmount", "Dockerfile").toString(), miiCMImage1);
+    createAuxiliaryImage(multipleCMPath1.toString(),
+        Paths.get(RESOURCE_DIR, "auxiliaryimage", "Dockerfile").toString(), miiCMImage1);
 
     // push image1 to repo for multi node cluster
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
@@ -166,7 +166,7 @@ public class ItMiiCommonMount {
       assertTrue(dockerPush(miiCMImage1), String.format("docker push failed for image %s", miiCMImage1));
     }
 
-    // create stage dir for second common mount with image2
+    // create stage dir for second auxiliary image with image2
     Path multipleCMPath2 = Paths.get(RESULTS_ROOT, "multiplecmimage2");
     assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleCMPath2.toFile()));
     assertDoesNotThrow(() -> Files.createDirectories(multipleCMPath2));
@@ -180,8 +180,8 @@ public class ItMiiCommonMount {
         StandardCopyOption.REPLACE_EXISTING));
 
     // create image2 with model and wdt installation files
-    createCommonMountImage(multipleCMPath2.toString(),
-        Paths.get(RESOURCE_DIR, "commonmount", "Dockerfile").toString(), miiCMImage2);
+    createAuxiliaryImage(multipleCMPath2.toString(),
+        Paths.get(RESOURCE_DIR, "auxiliaryimage", "Dockerfile").toString(), miiCMImage2);
 
     // push image2 to repo for multi node cluster
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
@@ -189,16 +189,16 @@ public class ItMiiCommonMount {
       assertTrue(dockerPush(miiCMImage2), String.format("docker push failed for image %s", miiCMImage2));
     }
 
-    // create domain custom resource using 2 common mounts and images
-    logger.info("Creating domain custom resource with domainUid {0} and common mount images {1} {2}",
+    // create domain custom resource using 2 auxiliary images
+    logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
         domainUid, miiCMImage1, miiCMImage2);
     Domain domainCR = createDomainResource(domainUid, domainNamespace,
         WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG, adminSecretName, OCIR_SECRET_NAME,
-                    encryptionSecretName, replicaCount, "cluster-1", commonMountPath,
-                    commonMountVolumeName, miiCMImage1, miiCMImage2);
+                    encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
+                    auxiliaryImageVolumeName, miiCMImage1, miiCMImage2);
 
     // create domain and verify its running
-    logger.info("Creating domain {0} with common mount images {1} {2} in namespace {3}",
+    logger.info("Creating domain {0} with auxiliary images {1} {2} in namespace {3}",
         domainUid, miiCMImage1, miiCMImage2, domainNamespace);
     createDomainAndVerify(domainUid, domainCR, domainNamespace, adminServerPodName, managedServerPrefix, replicaCount);
 
@@ -225,10 +225,10 @@ public class ItMiiCommonMount {
     }
   }
 
-  private void createCommonMountImage(String stageDirPath, String dockerFileLocation, String cmImage) {
+  private void createAuxiliaryImage(String stageDirPath, String dockerFileLocation, String cmImage) {
     String cmdToExecute = String.format("cd %s && docker build -f %s %s -t %s .",
         stageDirPath, dockerFileLocation,
-        "--build-arg COMMON_MOUNT_PATH=/common", cmImage);
+        "--build-arg AUXILIARY_IMAGE_PATH=/auxiliary", cmImage);
     assertTrue(new Command()
         .withParams(new CommandParams()
             .command(cmdToExecute))
