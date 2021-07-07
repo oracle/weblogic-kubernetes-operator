@@ -51,6 +51,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_APP_NAME;
@@ -267,8 +268,10 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
 
         // set initialization success to true, not counting the istio installation as not all tests use istio
         isInitializationSuccessful = true;
-        logger.info("Installing istio before any test suites are run");
-        installIstio();
+        if (!OKD) {
+          logger.info("Installing istio before any test suites are run");
+          installIstio();
+        }
       } finally {
         // Initialization is done. Release all waiting other threads. The latch is now disabled so
         // other threads
@@ -310,8 +313,10 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
         && System.getenv("SKIP_CLEANUP").toLowerCase().equals("true")) {
       logger.info("Skipping RESULTS_ROOT clean up after test execution");
     } else {
-      logger.info("Uninstall istio after all test suites are run");
-      uninstallIstio();
+      if (!OKD) {
+        logger.info("Uninstall istio after all test suites are run");
+        uninstallIstio();
+      }
       logger.info("Cleanup WIT/WDT binary form {0}", RESULTS_ROOT);
       try {
         Files.deleteIfExists(Paths.get(RESULTS_ROOT, "wlthint3client.jar"));

@@ -14,7 +14,6 @@ import java.util.List;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.weblogic.domain.AdminServer;
@@ -32,6 +31,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -71,6 +71,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify liveness probe customization")
 @IntegrationTest
+@Tag("okdenv")
 public class ItLivenessProbeCustomization {
 
   private static String domainNamespace = null;
@@ -297,9 +298,7 @@ public class ItLivenessProbeCustomization {
                     .value("/u01/customLivenessProbe.sh"))
                 .resources(new V1ResourceRequirements()
                     .limits(new HashMap<>())
-                    .requests(new HashMap<>()))
-                .podSecurityContext(new V1PodSecurityContext()
-                    .runAsUser(0L)))
+                    .requests(new HashMap<>())))
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING"))
             .clusters(clusterList)

@@ -25,6 +25,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DEFAULT_CHANNEL_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getDomainCustomResource;
@@ -298,13 +299,14 @@ public class Domain {
     if (password == null) {
       password = ADMIN_PASSWORD_DEFAULT;
     }
+    String url = (OKD) ? host : host + ":" + adminServiceNodePort;
 
     // create a RESTful management services command that connects to admin server using given credentials to get
     // information about a managed server
     String managedServer1 = (args.length == 0) ? "managed-server1" : "managed-server1-c1";
     StringBuffer cmdString = new StringBuffer()
         .append("status=$(curl --user " + username + ":" + password)
-        .append(" http://" + host + ":" + adminServiceNodePort)
+        .append(" http://" + url)
         .append("/management/tenant-monitoring/servers/" + managedServer1)
         .append(" --silent --show-error")
         .append(" --noproxy '*'")
