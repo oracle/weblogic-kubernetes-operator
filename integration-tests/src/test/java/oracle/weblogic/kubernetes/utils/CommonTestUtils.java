@@ -500,13 +500,10 @@ public class CommonTestUtils {
     // operator chart values to override
     OperatorParams opParams = new OperatorParams()
         .helmParams(opHelmParams)
+        .imagePullSecrets(secretNameMap)
         .domainNamespaces(Arrays.asList(domainNamespace))
         .serviceAccount(opServiceAccount)
         .featureGates("CommonMounts=true");
-
-    // if (KIND_REPO == null) {
-    opParams.imagePullSecrets(secretNameMap);
-    // }
 
     if (domainNamespaceSelectionStrategy != null) {
       opParams.domainNamespaceSelectionStrategy(domainNamespaceSelectionStrategy);
