@@ -368,7 +368,7 @@ public class ServerPod {
     return this;
   }
 
-  List<CommonMount> getCommonMounts() {
+  public List<CommonMount> getCommonMounts() {
     return this.commonMounts;
   }
 
