@@ -968,9 +968,10 @@ public class ItIntrospectVersion {
 
   /**
    * Modify the domain scope property
-   * From: "image: container-registry.oracle.com/middleware/weblogic:12.2.1.4" to
+   * From: "image: container-registry.oracle.com/middleware/weblogic:ImageTagBeingUsed" to
    * To: "image: container-registry.oracle.com/middleware/weblogic:DateAndTimeStamp"
-   * e.g, "image:container-registry.oracle.com/middleware/weblogic:2021-07-08-162571383699"
+   * e.g, From ""image: container-registry.oracle.com/middleware/weblogic:12.2.1.4"
+   * To: "image:container-registry.oracle.com/middleware/weblogic:2021-07-08-162571383699"
    * Verify all the pods are restarted and back to ready state
    * Verify the admin server is accessible and cluster members are healthy
    * This test will be skipped if the image tag is the latest WebLogic image tag
