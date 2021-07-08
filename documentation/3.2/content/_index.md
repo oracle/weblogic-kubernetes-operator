@@ -54,3 +54,12 @@ maintained for one release after a replacement is available.
 #### Getting help
 
 See [Get help]({{< relref "userguide/introduction/get-help.md" >}}).
+
+#### Related projects
+
+* [Oracle Fusion Middleware on Kubernetes](https://oracle.github.io/fmw-kubernetes/)
+* [WebLogic Deploy Tooling](https://oracle.github.io/weblogic-deploy-tooling/)
+* [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/)
+* [WebLogic Monitoring Exporter](https://github.com/oracle/weblogic-monitoring-exporter)
+* [WebLogic Logging Exporter](https://github.com/oracle/weblogic-logging-exporter)
+* [WebLogic Remote Console](https://github.com/oracle/weblogic-remote-console)

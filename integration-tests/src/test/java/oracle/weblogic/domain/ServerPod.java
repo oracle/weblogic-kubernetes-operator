@@ -121,6 +121,18 @@ public class ServerPod {
   @ApiModelProperty("Additional volume mounts for the server pod.")
   private List<V1VolumeMount> volumeMounts = new ArrayList<>();
 
+  /**
+   * The common mount.
+   *
+   */
+  @ApiModelProperty("Use a common mount to automatically include directory content from additional images. "
+      + "This is a useful alternative for including Model in Image model files, or other types of files, in a pod "
+      + "without requiring modifications to the pod's base image 'domain.spec.image'. "
+      + "This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share "
+      + "the files from the additional images with the pod.")
+  private List<CommonMount> commonMounts = new ArrayList<>();
+
+
   public ServerPod env(List<V1EnvVar> env) {
     this.env = env;
     return this;
@@ -340,6 +352,28 @@ public class ServerPod {
 
   public void setReadinessGates(List<V1PodReadinessGate> readinessGates) {
     this.readinessGates = readinessGates;
+  }
+
+
+  /**
+   * Adds volume mounts item.
+   * @param commonMountsItem common mount
+   * @return this
+   */
+  public ServerPod addCommonMountsItem(CommonMount commonMountsItem) {
+    if (commonMounts == null) {
+      commonMounts = new ArrayList<>();
+    }
+    commonMounts.add(commonMountsItem);
+    return this;
+  }
+
+  List<CommonMount> getCommonMounts() {
+    return this.commonMounts;
+  }
+
+  void setCommonMounts(List<CommonMount> commonMounts) {
+    this.commonMounts = commonMounts;
   }
 
   public ServerPod restartPolicy(String restartPolicy) {

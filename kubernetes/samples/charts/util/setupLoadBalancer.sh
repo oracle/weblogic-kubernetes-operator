@@ -164,7 +164,7 @@ function waitForIngressPod() {
   ns=$2
 
   printInfo "Wait until ${type} ingress controller pod is running."
-  ipod=$(${kubernetesCli} -o name get po -n ${ns})
+  ipod=$(${kubernetesCli} -o name get po -n ${ns} | grep -v admission-patch)
   if [[ "${ipod}" != *$chart* ]]; then
    printError "Couldn't find the pod associated with ${type} helm deployment. List helm deployment status on namespace [${ns}]. "
    helm list -n ${ns}
@@ -228,6 +228,26 @@ function createVoyager() {
     printInfo "Voyager controller is already installed."
     exit 0;
   fi 
+
+  max=20
+  count=0
+  printInfo "Checking availability of voyager deployment [${chart}]"
+  while test $count -lt $max; do
+   status=$(${kubernetesCli} get deployment --namespace ${ns} -l "app.kubernetes.io/name=voyager,app.kubernetes.io/instance=${chart}" --no-headers 2> /dev/null | awk '{print $2}' || true)
+   if [ "${status}" == "1/1" ];  then
+      echo " "
+      printInfo "voyager deployment resource [${chart}] is available now."
+      ${kubernetesCli} get deployment --namespace ${ns} -l "app.kubernetes.io/name=voyager,app.kubernetes.io/instance=${chart}" 
+      break;
+   fi
+   count=`expr $count + 1`
+   echo -n "."
+   sleep 2
+  done
+  if test $count -eq $max; then
+    printError "voyager deployment resource can not be created" 
+    exit 1
+  fi
 
   waitForIngressPod voyager ${ns}
 
@@ -293,20 +313,23 @@ function createTraefik() {
 # Remove ingress related resources from default Namespace ( if any )
 function purgeDefaultResources() {
    printInfo "Remove ingress related resources from default Namespace (if any)"
-   crole=$(${kubernetesCli} get ClusterRole | grep ${chart} | awk '{print $1}')
-   if [ "x${crole}" != "x" ]; then 
-   ${kubernetesCli} get ClusterRole | grep ${chart} | awk '{print $1}' | xargs kubectl delete ClusterRole --ignore-not-found
-   fi
+  croles=$(${kubernetesCli} get ClusterRole | grep ${chart} | awk '{print $1}')
+  for crole in ${croles}; do 
+   printInfo "Deleting ClusterRole ${crole} from default Namespace"
+   ${kubernetesCli} delete ClusterRole ${crole} 
+  done
 
-   crb=$(${kubernetesCli} get ClusterRoleBinding | grep ${chart} | awk '{print $1}')
-   if [ x${crb} != "x" ]; then 
-  ${kubernetesCli} get ClusterRoleBinding | grep ${chart} | awk '{print $1}' | xargs kubectl delete ClusterRoleBinding 
-   fi
+  crbs=$(${kubernetesCli} get ClusterRoleBinding | grep ${chart} | awk '{print $1}')
+  for crb in ${crbs}; do 
+   printInfo "Deleting ClusterRoleBinding ${crb} from default Namespace"
+   ${kubernetesCli} delete ClusterRoleBinding ${crb} 
+  done
 
-   vwc=$(${kubernetesCli} get ValidatingWebhookConfiguration | grep ${chart} | awk '{print $1}')
-   if [ x${vwc} != "x" ]; then 
-  ${kubernetesCli} get ValidatingWebhookConfiguration | grep ${chart} | awk '{print $1}' | xargs kubectl delete ValidatingWebhookConfiguration 
-   fi
+  vwcs=$(${kubernetesCli} get ValidatingWebhookConfiguration | grep ${chart} | awk '{print $1}')
+  for vwc in ${vwcs}; do 
+    printInfo "Deleting ValidatingWebhookConfiguration ${vwc} from default Namespace"
+    ${kubernetesCli} delete ValidatingWebhookConfiguration ${vwc} 
+  done
 }
 
 # Remove voyager related resources from default Namespace ( if any )
@@ -342,7 +365,7 @@ function purgeVoyagerResources() {
    ${kubernetesCli} delete ClusterRole/${chart} --ignore-not-found
    ${kubernetesCli} delete ClusterRoleBinding/${chart} --ignore-not-found
    ${kubernetesCli} delete ClusterRoleBinding/${chart}-apiserver-auth-delegator  --ignore-not-found
-   kubectl delete RoleBinding/${chart}-apiserver-extension-server-authentication-reader -n kube-system --ignore-not-found
+   ${kubernetesCli} delete RoleBinding/${chart}-apiserver-extension-server-authentication-reader -n kube-system --ignore-not-found
 }
 
 function deleteIngress() {

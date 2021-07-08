@@ -34,6 +34,7 @@ import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -42,16 +43,17 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallVoyager;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
@@ -70,6 +72,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 // Test to associate a Coherence Cluster with multiple WebLogic server clusters.
 @DisplayName("Test to associate a Coherence Cluster with multiple WebLogic server clusters")
 @IntegrationTest
+@Tag("okdenv")
 class ItManagedCoherence {
 
   // constants for Coherence
@@ -133,9 +136,11 @@ class ItManagedCoherence {
     assertNotNull(namespaces.get(2), "Namespace list is null");
     domainNamespace = namespaces.get(2);
 
-    // install and verify Voyager
-    voyagerHelmParams =
-      installAndVerifyVoyager(voyagerNamespace, cloudProvider, enableValidatingWebhook);
+    // install and verify Voyager if not running on OKD
+    if (!OKD) {
+      voyagerHelmParams =
+          installAndVerifyVoyager(voyagerNamespace, cloudProvider, enableValidatingWebhook);
+    }
 
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
@@ -160,12 +165,6 @@ class ItManagedCoherence {
           .withFailMessage("uninstallVoyager() did not return true")
           .isTrue();
     }
-
-    // Delete domain custom resource
-    logger.info("Delete domain custom resource in namespace {0}", domainNamespace);
-    assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid, domainNamespace),
-        "deleteDomainCustomResource failed with ApiException");
-    logger.info("Deleted Domain Custom Resource " + domainUid + " from " + domainNamespace);
   }
 
   /**
@@ -187,35 +186,49 @@ class ItManagedCoherence {
     // create and verify a two-cluster WebLogic domain with a Coherence cluster
     createAndVerifyDomain(domImage);
 
-    // create Voyager ingress resource
-    Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
-    for (int i = 1; i <= NUMBER_OF_CLUSTERS; i++) {
-      clusterNameMsPortMap.put(CLUSTER_NAME_PREFIX + i, MANAGED_SERVER_PORT);
-    }
+    if (OKD) {
+      String cluster1HostName = domainUid + "-cluster-cluster-1";
+      String cluster2HostName = domainUid + "-cluster-cluster-2";
 
-    // get hostnames
-    List<String>  hostNames =
-        installVoyagerIngressAndVerify(domainUid, domainNamespace, ingressName, clusterNameMsPortMap);
+      final String cluster1IngressHost = createRouteForOKD(cluster1HostName, domainNamespace);
+      final String cluster2IngressHost = createRouteForOKD(cluster2HostName, domainNamespace);
 
-    // get ingress service Nodeport
-    int ingressServiceNodePort = assertDoesNotThrow(()
-        -> getServiceNodePort(domainNamespace, ingressServiceName, channelName),
-            "Getting admin server node port failed");
-    logger.info("Node port for {0} is: {1} :", ingressServiceName, ingressServiceNodePort);
+      // test adding data to the cache and retrieving them from the cache
+      boolean testCompletedSuccessfully = assertDoesNotThrow(()
+          -> coherenceCacheTest(cluster1IngressHost), "Test Coherence cache failed");
+      assertTrue(testCompletedSuccessfully, "Test Coherence cache failed");
+    } else {
 
-    // get hostname for each cluster
-    for (String hostName : hostNames) {
-      if (hostName.contains("cluster-1")) {
-        cluster1Hostname = hostName;
-      } else if (hostName.contains("cluster-2")) {
-        cluster2Hostname = hostName;
+      // create Voyager ingress resource
+      Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
+      for (int i = 1; i <= NUMBER_OF_CLUSTERS; i++) {
+        clusterNameMsPortMap.put(CLUSTER_NAME_PREFIX + i, MANAGED_SERVER_PORT);
       }
-    }
 
-    // test adding data to the cache and retrieving them from the cache
-    boolean testCompletedSuccessfully = assertDoesNotThrow(()
-        -> coherenceCacheTest(cluster1Hostname, ingressServiceNodePort), "Test Coherence cache failed");
-    assertTrue(testCompletedSuccessfully, "Test Coherence cache failed");
+      // get hostnames
+      List<String> hostNames =
+          installVoyagerIngressAndVerify(domainUid, domainNamespace, ingressName, clusterNameMsPortMap);
+
+      // get ingress service Nodeport
+      int ingressServiceNodePort = assertDoesNotThrow(()
+              -> getServiceNodePort(domainNamespace, ingressServiceName, channelName),
+          "Getting admin server node port failed");
+      logger.info("Node port for {0} is: {1} :", ingressServiceName, ingressServiceNodePort);
+
+      // get hostname for each cluster
+      for (String hostName : hostNames) {
+        if (hostName.contains("cluster-1")) {
+          cluster1Hostname = hostName;
+        } else if (hostName.contains("cluster-2")) {
+          cluster2Hostname = hostName;
+        }
+      }
+
+      // test adding data to the cache and retrieving them from the cache
+      boolean testCompletedSuccessfully = assertDoesNotThrow(()
+          -> coherenceCacheTest(cluster1Hostname, ingressServiceNodePort), "Test Coherence cache failed");
+      assertTrue(testCompletedSuccessfully, "Test Coherence cache failed");
+    }
   }
 
   private static String createAndVerifyDomainImage() {
@@ -341,21 +354,28 @@ class ItManagedCoherence {
         + "for %s in namespace %s", domainUid, domainNamespace));
   }
 
+  private boolean coherenceCacheTest(String hostName) {
+    return coherenceCacheTest(hostName,0); //OKD does not need a port number
+  }
+
   private boolean coherenceCacheTest(String hostName, int ingressServiceNodePort) {
     logger.info("Starting to test the cache");
+
+    String hostAndPort = (OKD) ? hostName : K8S_NODEPORT_HOST + ":" + ingressServiceNodePort;
+    logger.info("hostAndPort = {0} ", hostAndPort);
 
     // add the data to cache
     String[] firstNameList = {"Frodo", "Samwise", "Bilbo", "peregrin", "Meriadoc", "Gandalf"};
     String[] secondNameList = {"Baggins", "Gamgee", "Baggins", "Took", "Brandybuck", "TheGrey"};
     ExecResult result = null;
     for (int i = 0; i < firstNameList.length; i++) {
-      result = addDataToCache(firstNameList[i], secondNameList[i], hostName, ingressServiceNodePort);
+      result = addDataToCache(firstNameList[i], secondNameList[i], hostName, hostAndPort);
       logger.info("Data added to the cache " + result.stdout());
       assertTrue(result.stdout().contains(firstNameList[i]), "Did not add the expected record");
     }
 
     // check if cache size is 6
-    result = getCacheSize(hostName, ingressServiceNodePort);
+    result = getCacheSize(hostName, hostAndPort);
     logger.info("number of records in cache = " + result.stdout());
     if (!(result.stdout().equals("6"))) {
       logger.info("number of records in cache = " + result.stdout());
@@ -363,11 +383,11 @@ class ItManagedCoherence {
     }
 
     // get the data from cache
-    result = getCacheContents(hostName, ingressServiceNodePort);
+    result = getCacheContents(hostName, hostAndPort);
     logger.info("Cache contains the following entries \n" + result.stdout());
 
     // Now clear the cache
-    result = clearCache(hostName, ingressServiceNodePort);
+    result = clearCache(hostName, hostAndPort);
     logger.info("Cache is cleared and should be empty" + result.stdout());
     if (!(result.stdout().trim().equals("0"))) {
       logger.info("number of records in cache = " + result.stdout());
@@ -380,7 +400,7 @@ class ItManagedCoherence {
   private ExecResult addDataToCache(String firstName,
                                     String secondName,
                                     String hostName,
-                                    int ingressServiceNodePort) {
+                                    String hostAndPort) {
     logger.info("Add initial data to cache");
 
     StringBuffer curlCmd = new StringBuffer("curl --silent --show-error --noproxy '*' ");
@@ -393,9 +413,7 @@ class ItManagedCoherence {
         .append("-X POST -H 'host: ")
         .append(hostName)
         .append("' http://")
-        .append(K8S_NODEPORT_HOST)
-        .append(":")
-        .append(ingressServiceNodePort)
+        .append(hostAndPort)
         .append("/")
         .append(COHERENCE_APP_NAME)
         .append("/")
@@ -410,7 +428,7 @@ class ItManagedCoherence {
     return result;
   }
 
-  private ExecResult getCacheSize(String hostName, int ingressServiceNodePort) {
+  private ExecResult getCacheSize(String hostName, String hostAndPort) {
     logger.info("Get the number of records in cache");
 
     StringBuffer curlCmd = new StringBuffer("curl --silent --show-error --noproxy '*' ");
@@ -419,9 +437,7 @@ class ItManagedCoherence {
         .append("-H 'host: ")
         .append(hostName)
         .append("' http://")
-        .append(K8S_NODEPORT_HOST)
-        .append(":")
-        .append(ingressServiceNodePort)
+        .append(hostAndPort)
         .append("/")
         .append(COHERENCE_APP_NAME)
         .append("/")
@@ -436,7 +452,7 @@ class ItManagedCoherence {
     return result;
   }
 
-  private ExecResult getCacheContents(String hostName, int ingressServiceNodePort) {
+  private ExecResult getCacheContents(String hostName, String hostAndPort) {
     logger.info("Get the records from cache");
 
     StringBuffer curlCmd = new StringBuffer("curl --silent --show-error --noproxy '*' ");
@@ -445,9 +461,7 @@ class ItManagedCoherence {
         .append("-H 'host: ")
         .append(hostName)
         .append("' http://")
-        .append(K8S_NODEPORT_HOST)
-        .append(":")
-        .append(ingressServiceNodePort)
+        .append(hostAndPort)
         .append("/")
         .append(COHERENCE_APP_NAME)
         .append("/")
@@ -462,7 +476,7 @@ class ItManagedCoherence {
     return result;
   }
 
-  private ExecResult clearCache(String hostName, int ingressServiceNodePort) {
+  private ExecResult clearCache(String hostName, String hostAndPort) {
     logger.info("Clean the cache");
 
     StringBuffer curlCmd = new StringBuffer("curl --silent --show-error --noproxy '*' ");
@@ -471,9 +485,7 @@ class ItManagedCoherence {
         .append("-H 'host: ")
         .append(hostName)
         .append("' http://")
-        .append(K8S_NODEPORT_HOST)
-        .append(":")
-        .append(ingressServiceNodePort)
+        .append(hostAndPort)
         .append("/")
         .append(COHERENCE_APP_NAME)
         .append("/")

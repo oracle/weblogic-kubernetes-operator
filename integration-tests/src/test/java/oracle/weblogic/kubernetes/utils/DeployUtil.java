@@ -285,6 +285,32 @@ public class DeployUtil {
   public static ExecResult deployUsingRest(String host, String port,
             String userName, String password, String targets, 
             Path archivePath, String hostHeader, String appName) {
+    ExecResult result = null;
+    result = deployUsingRest(host + ":" + port, userName, password, targets, archivePath,
+           hostHeader, appName);
+    return result;
+  }
+
+  /**
+   * Deploy an application to a set of target using REST API with curl utility.
+   * Note the targets parameter should be a string with following format
+   *  {identity: [clusters,'cluster-1']}   for cluster target 
+   *  {identity: [servers, 'admin-server']} for server target 
+   *  OR a combination for multiple targets, for example 
+   *  {identity: [clusters,'mycluster']}, {identity: [servers,'admin-server']}
+   * @param hostAndPort name of the admin server host and the node port - 
+   *                    For OKD, the route host is used instead of host and port
+   * @param userName admin server user name
+   * @param password admin server password
+   * @param targets  the target string to deploy application
+   * @param archivePath local path of the application archive
+   * @param hostHeader Host header for the curl command 
+   * @param appName name of the application
+   * @return ExecResult 
+   */
+  public static ExecResult deployUsingRest(String hostAndPort,
+            String userName, String password, String targets, 
+            Path archivePath, String hostHeader, String appName) {
     final LoggingFacade logger = getLogger();
     ExecResult result = null;
     StringBuffer headerString = null;
@@ -310,7 +336,7 @@ public class DeployUtil {
         .append(" ] }\" ")
         .append(" -F \"sourcePath=@")
         .append(archivePath.toString() + "\" ")
-        .append("-X POST http://" + host + ":" + port)
+        .append("-X POST http://" + hostAndPort)
         .append("/management/weblogic/latest/edit/appDeployments); ")
         .append("echo ${status}");
 

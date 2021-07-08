@@ -69,6 +69,10 @@ public class UnrecoverableErrorBuilderImpl implements FailureStatusSource {
     return code == 404 || code == 410;
   }
 
+  public static boolean hasConflict(ApiException e) {
+    return e.getCode() == 409;
+  }
+
   /**
    * Create unrecoverable error builder.
    */
