@@ -78,6 +78,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
@@ -166,6 +167,7 @@ public class ItIntrospectVersion {
       : WEBLOGIC_IMAGE_NAME + ":" + WLS_UPDATE_IMAGE_TAG;
 
    */
+
   private final String wlSecretName = "weblogic-credentials";
 
   private static String adminSvcExtHost = null;
@@ -1012,8 +1014,11 @@ public class ItIntrospectVersion {
     logger.info("Currently the image name used for the domain is: {0}", imageName);
 
     //change image name to imageUpdate
-    String tag = TestUtils.getDateAndTimeStamp();
-    String imageUpdate = WEBLOGIC_IMAGE_NAME + ":" + tag;
+    String imageTag = TestUtils.getDateAndTimeStamp();
+    //String imageUpdate = WEBLOGIC_IMAGE_NAME + ":" + tag;
+    String imageUpdate = KIND_REPO != null ? KIND_REPO
+        + (WEBLOGIC_IMAGE_NAME + ":" + imageTag).substring(TestConstants.BASE_IMAGES_REPO.length() + 1)
+        : WEBLOGIC_IMAGE_NAME + ":" + imageTag;
     dockerTag(imageName, imageUpdate);
     dockerLoginAndPushImageToRegistry(imageUpdate);
 
