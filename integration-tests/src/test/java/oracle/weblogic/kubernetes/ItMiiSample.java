@@ -339,7 +339,7 @@ public class ItMiiSample {
   @Order(12)
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS initial use case using auxiliary image")
-  public void testCMWlsInitialUseCase() {
+  public void testAIWlsInitialUseCase() {
     callWlsInitialUseCase("true");
   }
 
@@ -357,7 +357,7 @@ public class ItMiiSample {
   @Order(13)
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update1 use case using auxiliary image")
-  public void testCMWlsUpdate1UseCase() {
+  public void testAIWlsUpdate1UseCase() {
     callWlsUpdate1UseCase("true");
   }
 
@@ -375,7 +375,7 @@ public class ItMiiSample {
   @Order(14)
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update2 use case using auxiliary image")
-  public void tesCMWlsUpdate2UseCase() {
+  public void tesAIWlsUpdate2UseCase() {
     callWlsUpdate2UseCase("true");
   }
 
@@ -393,7 +393,7 @@ public class ItMiiSample {
   @Order(15)
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update3 use case using auxiliary image")
-  public void testCMWlsUpdate3UseCase() {
+  public void testAIWlsUpdate3UseCase() {
     callWlsUpdate3UseCase("true");
   }
 
@@ -408,7 +408,7 @@ public class ItMiiSample {
   @Order(16)
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update4 use case using auxiliary image")
-  public void testCMWlsUpdate4UseCase() {
+  public void testAIWlsUpdate4UseCase() {
     callWlsUpdate4UseCase("true");
   }
 
@@ -426,7 +426,7 @@ public class ItMiiSample {
   @Order(17)
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF initial use case using auxiliary image")
-  public void testCMFmwInitialUseCase() {
+  public void testAIFmwInitialUseCase() {
     callFmwInitialUseCase("true");
   }
 
@@ -438,7 +438,7 @@ public class ItMiiSample {
   @Order(18)
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update1 use case using auxiliary image")
-  public void testCMFmwUpdate1UseCase() {
+  public void testAIFmwUpdate1UseCase() {
     callFmwUpdate1UseCase("true");
   }
 
@@ -450,7 +450,7 @@ public class ItMiiSample {
   @Order(19)
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update2 use case using auxiliary image")
-  public void testCMFmwUpdate2UseCase() {
+  public void testAIFmwUpdate2UseCase() {
     callFmwUpdate2UseCase("true");
   }
 
@@ -462,7 +462,7 @@ public class ItMiiSample {
   @Order(20)
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update3 use case using auxiliary image")
-  public void testCMFmwUpdate3UseCase() {
+  public void testAIFmwUpdate3UseCase() {
     callFmwUpdate3UseCase("true");
   }
 
@@ -477,7 +477,7 @@ public class ItMiiSample {
   @Order(21)
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update4 use case using auxiliary image")
-  public void testCMFmwUpdate4UseCase() {
+  public void testAIFmwUpdate4UseCase() {
     callFmwUpdate4UseCase("true");
   }
 
@@ -507,7 +507,7 @@ public class ItMiiSample {
   private static void assertImageExistsAndPushIfNeeded() {
     String imageName = envMap.get("MODEL_IMAGE_NAME");
     String imageVer = "notset";
-    String decoration = (envMap.get("DO_AI") != null && envMap.get("DO_AI").equalsIgnoreCase("true"))  ? "CM-" : "";
+    String decoration = (envMap.get("DO_AI") != null && envMap.get("DO_AI").equalsIgnoreCase("true"))  ? "AI-" : "";
 
     if (imageName.equals(MII_SAMPLE_WLS_IMAGE_NAME_V1)) {
       imageVer = "WLS-" + decoration + "v1";
