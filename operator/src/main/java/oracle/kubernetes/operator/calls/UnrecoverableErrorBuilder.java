@@ -28,12 +28,20 @@ public class UnrecoverableErrorBuilder {
     return callResponse.isFailure() && isNotFound(callResponse.getE());
   }
 
+  public static <T> boolean isAsyncCallConflictFailure(CallResponse<T> callResponse) {
+    return callResponse.isFailure() && hasConflict(callResponse.getE());
+  }
+
   private static boolean isUnrecoverable(ApiException e) {
     return UnrecoverableErrorBuilderImpl.isUnrecoverable(e);
   }
 
   private static boolean isNotFound(ApiException e) {
     return UnrecoverableErrorBuilderImpl.isNotFound(e);
+  }
+
+  private static boolean hasConflict(ApiException e) {
+    return UnrecoverableErrorBuilderImpl.hasConflict(e);
   }
 
   /**
