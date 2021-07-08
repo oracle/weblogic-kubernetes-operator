@@ -54,6 +54,7 @@ import io.kubernetes.client.openapi.models.V1NamespaceBuilder;
 import io.kubernetes.client.openapi.models.V1NamespaceList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectMetaBuilder;
+import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimList;
@@ -1602,6 +1603,27 @@ public class Kubernetes {
       getLogger().warning("Failed to list secrets, status code {0}", list.getHttpStatusCode());
       return null;
     }
+  }
+
+  /**
+   * Read a secret by its object reference.
+   *
+   * @param reference V1ObjectReference An object reference to the Secret you want to read.
+   * @param namespace The Namespace where Secret is defined.
+   * @return V1Secret The requested Secret.
+   * @throws ApiException if there is an API error.
+   */
+  public static V1Secret readSecretByReference(V1ObjectReference reference, String namespace)
+      throws ApiException {
+
+    if (reference.getNamespace() != null) {
+      namespace = reference.getNamespace();
+    }
+
+    V1Secret secret = coreV1Api.readNamespacedSecret(
+        reference.getName(), namespace, "false", Boolean.TRUE, Boolean.TRUE);
+
+    return secret;
   }
 
   // --------------------------- pv/pvc ---------------------------
