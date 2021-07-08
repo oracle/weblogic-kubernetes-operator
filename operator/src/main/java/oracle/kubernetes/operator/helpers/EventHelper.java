@@ -257,7 +257,8 @@ public class EventHelper {
         if (hasLoggedForbiddenNSWatchStoppedEvent(this, callResponse)) {
           return doNext(packet);
         }
-        if (UnrecoverableErrorBuilder.isAsyncCallNotFoundFailure(callResponse)) {
+        if (UnrecoverableErrorBuilder.isAsyncCallNotFoundFailure(callResponse)
+                || UnrecoverableErrorBuilder.isAsyncCallConflictFailure(callResponse)) {
           return doNext(Step.chain(createCreateEventCall(createEventModel(packet, eventData)), getNext()), packet);
         } else if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
           return onFailureNoRetry(packet, callResponse);

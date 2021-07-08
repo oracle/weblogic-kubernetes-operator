@@ -13,13 +13,8 @@ public enum DomainConditionType {
   Available,
   ConfigChangesPendingRestart {
     @Override
-    String getStatusMessage(DomainCondition condition) {
-      return condition.getMessage();
-    }
-
-    @Override
-    String getStatusReason(DomainCondition condition) {
-      return condition.getReason();
+    DomainConditionType[] typesToRemove() {
+      return new DomainConditionType[] {};
     }
   },
   Failed {
@@ -34,17 +29,13 @@ public enum DomainConditionType {
     }
 
     @Override
-    DomainConditionType[] typesToRemoveAlways() {
-      return new DomainConditionType[] {Progressing};
+    DomainConditionType[] typesToRemove() {
+      return new DomainConditionType[] {Progressing, Available};
     }
   };
 
   DomainConditionType[] typesToRemove() {
     return new DomainConditionType[] {Progressing, Available, Failed};
-  }
-
-  DomainConditionType[] typesToRemoveAlways() {
-    return new DomainConditionType[] {};
   }
 
   String getStatusMessage(DomainCondition condition) {

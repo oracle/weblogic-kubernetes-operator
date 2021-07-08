@@ -18,6 +18,7 @@ import org.junit.jupiter.api.Test;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.ConfigChangesPendingRestart;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progressing;
 import static oracle.kubernetes.weblogic.domain.model.DomainStatusTest.ClusterStatusMatcher.clusterStatus;
@@ -64,38 +65,12 @@ public class DomainStatusTest {
   }
 
   @Test
-  public void whenAddedConditionProgressing_addedItWithoutRemovingFailed() {
-    DomainCondition originalCondition1 = new DomainCondition(Failed).withStatus("True");
-    domainStatus.addCondition(originalCondition1);
-    DomainCondition originalCondition2 = new DomainCondition(Progressing).withStatus("True");
-    domainStatus.addCondition(originalCondition2);
+  public void whenAddedConditionIsFailed_retainOldFailedCondition() {
+    domainStatus.addCondition(new DomainCondition(Failed).withStatus("True").withMessage("problem 1"));
+    domainStatus.addCondition(new DomainCondition(Failed).withStatus("True").withMessage("problem 2"));
 
-    assertThat(domainStatus.getConditionWithType(Failed), sameInstance(originalCondition1));
-    assertThat(domainStatus.getConditionWithType(Progressing), sameInstance(originalCondition2));
-  }
-
-  @Test
-  public void whenAddedConditionFailed_removeProgressingCondition() {
-    DomainCondition originalCondition1 = new DomainCondition(Failed).withStatus("True");
-    domainStatus.addCondition(originalCondition1);
-    DomainCondition originalCondition2 = new DomainCondition(Progressing).withStatus("True");
-    domainStatus.addCondition(originalCondition2);
-
-    SystemClockTestSupport.increment();
-    domainStatus.addCondition(new DomainCondition(Failed).withStatus("True"));
-
-    assertThat(domainStatus.getConditionWithType(Failed), sameInstance(originalCondition1));
-    assertThat(domainStatus.getConditionWithType(Progressing), is(nullValue()));
-  }
-
-  @Test
-  public void whenAddedConditionIsFailed_replaceOldFailedCondition() {
-    domainStatus.addCondition(new DomainCondition(Failed).withStatus("False"));
-
-    domainStatus.addCondition(new DomainCondition(Failed).withStatus("True"));
-
-    assertThat(domainStatus, hasCondition(Failed).withStatus("True"));
-    assertThat(domainStatus, not(hasCondition(Failed).withStatus("False")));
+    assertThat(domainStatus, hasCondition(Failed).withMessage("problem 1"));
+    assertThat(domainStatus, hasCondition(Failed).withMessage("problem 2"));
   }
 
   @Test
@@ -176,6 +151,26 @@ public class DomainStatusTest {
 
     assertThat(domainStatus, hasCondition(Failed));
     assertThat(domainStatus, hasCondition(Progressing).withStatus("True"));
+  }
+
+  @Test
+  public void whenAddedConditionIsConfigChangesPending_doNotRemoveExistingFailedCondition() {
+    domainStatus.addCondition(new DomainCondition(Failed).withStatus("True"));
+
+    domainStatus.addCondition(new DomainCondition(ConfigChangesPendingRestart).withStatus("True"));
+
+    assertThat(domainStatus, hasCondition(Failed));
+    assertThat(domainStatus, hasCondition(ConfigChangesPendingRestart));
+  }
+
+  @Test
+  public void whenAddedConditionIsConfigChangesPending_doNotRemoveExistingAvailableCondition() {
+    domainStatus.addCondition(new DomainCondition(Available));
+
+    domainStatus.addCondition(new DomainCondition(ConfigChangesPendingRestart).withStatus("True"));
+
+    assertThat(domainStatus, hasCondition(Available));
+    assertThat(domainStatus, hasCondition(ConfigChangesPendingRestart));
   }
 
   @Test
