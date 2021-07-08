@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.helpers;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -49,6 +50,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.yaml.snakeyaml.Yaml;
 
 import static java.lang.System.lineSeparator;
+import static java.time.temporal.ChronoUnit.MILLIS;
 import static oracle.kubernetes.operator.DomainStatusUpdater.BAD_TOPOLOGY;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.DOMAINZIP_HASH;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.DOMAIN_INPUTS_HASH;
@@ -57,6 +59,7 @@ import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.NUM_CONF
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.SECRETS_MD_5;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.SIT_CONFIG_FILE_PREFIX;
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
+import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_VALIDATION_ERRORS;
 import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLabel;
@@ -319,8 +322,11 @@ public class ConfigMapHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
-        DomainPresenceInfo.fromPacket(packet).map(DomainPresenceInfo::getDomain).map(Domain::getIntrospectVersion)
+        Domain domain = DomainPresenceInfo.fromPacket(packet).map(DomainPresenceInfo::getDomain).orElse(null);
+        Optional.ofNullable(domain).map(Domain::getIntrospectVersion)
               .ifPresent(value -> addLabel(INTROSPECTION_STATE_LABEL, value));
+        Optional.ofNullable(domain).map(Domain::getMetadata).map(V1ObjectMeta::getGeneration)
+                .ifPresent(value -> addLabel(INTROSPECTION_DOMAIN_SPEC_GENERATION, value.toString()));
         V1ConfigMap existingMap = withoutTransientData(callResponse.getResult());
         if (existingMap == null) {
           return doNext(createConfigMap(getNext()), packet);
@@ -504,9 +510,8 @@ public class ConfigMapHelper {
     }
 
     private long timeSinceJobStart(Packet packet) {
-      return System.currentTimeMillis() - ((Long) packet.get(JobHelper.START_TIME));
+      return ((OffsetDateTime)packet.get(JobHelper.START_TIME)).until(OffsetDateTime.now(), MILLIS);
     }
-
   }
 
   static class IntrospectionLoader {
@@ -870,10 +875,24 @@ public class ConfigMapHelper {
 
       if (domainTopology != null) {
         recordTopology(packet, packet.getSpi(DomainPresenceInfo.class), domainTopology);
+        recordIntrospectVersionAndGeneration(result, packet);
         return doNext(DomainValidationSteps.createValidateDomainTopologyStep(getNext()), packet);
       } else {
         return doNext(packet);
       }
+    }
+
+    private void recordIntrospectVersionAndGeneration(V1ConfigMap result, Packet packet) {
+      Map<String, String> labels = Optional.ofNullable(result)
+              .map(V1ConfigMap::getMetadata)
+              .map(V1ObjectMeta::getLabels).orElse(null);
+
+      Optional.ofNullable(labels).map(l -> l.get(INTROSPECTION_STATE_LABEL))
+              .ifPresentOrElse(
+                      version -> packet.put(INTROSPECTION_STATE_LABEL, version),
+                      () -> packet.remove(INTROSPECTION_STATE_LABEL));
+      Optional.ofNullable(labels).map(l -> l.get(INTROSPECTION_DOMAIN_SPEC_GENERATION))
+              .ifPresent(generation -> packet.put(INTROSPECTION_DOMAIN_SPEC_GENERATION, generation));
     }
 
     private String getTopologyYaml(Map<String, String> data) {
