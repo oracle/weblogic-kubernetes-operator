@@ -278,6 +278,22 @@ public class EventHelperTest {
   }
 
   @Test
+  public void whenCreateEventTwice_fail409OnReplaceEvent_domainProcessingStartingEventCreatedTwice() {
+    testSupport.runSteps(Step.chain(
+            createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
+            createEventStep(new EventData(DOMAIN_PROCESSING_COMPLETED))));
+
+    dispatchAddedEventWatches();
+    CoreV1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), DOMAIN_PROCESSING_STARTING_EVENT);
+    testSupport.failOnReplace(EVENT, EventTestUtils.getName(event), NS, HTTP_CONFLICT);
+
+    testSupport.runSteps(Step.chain(createEventStep(new EventData(DOMAIN_PROCESSING_STARTING))));
+
+    assertThat("Found 2 DOMAIN_PROCESSING_STARTING events with count 1",
+            containsEventsWithCountOne(getEvents(testSupport), DOMAIN_PROCESSING_STARTING_EVENT, 2));
+  }
+
+  @Test
   public void whenCreateEventTwice_fail410OnReplaceEvent_domainProcessingStartingEventCreatedTwice() {
     testSupport.runSteps(Step.chain(
         createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
@@ -819,8 +835,8 @@ public class EventHelperTest {
 
     testSupport.runSteps(eventStep);
 
-    assertThat("Found 1 NAMESPACE_WATCHING_STOPPED event with expected count 2",
-        containsOneEventWithCount(getEvents(testSupport),
+    assertThat("Found 2 NAMESPACE_WATCHING_STOPPED event with expected count 1",
+            containsEventsWithCountOne(getEvents(testSupport),
             NAMESPACE_WATCHING_STOPPED_EVENT, 2), is(true));
   }
 
