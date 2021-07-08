@@ -1080,9 +1080,9 @@ class ItUsabilityOperatorHelmChart {
   }
 
   private static void checkReleaseStatus(
-      String operNamespace, 
-      String helmStatus, 
-      LoggingFacade logger, 
+      String operNamespace,
+      String helmStatus,
+      LoggingFacade logger,
       String opReleaseName) {
     // list Helm releases matching operator release name in operator namespace
     logger.info("Checking operator release {0} status in namespace {1}",
@@ -1188,6 +1188,7 @@ class ItUsabilityOperatorHelmChart {
         .append("/management/tenant-monitoring/servers/")
         .append(managedServer)
         .append(" --silent --show-error ")
+        .append(" --noproxy '*' ")
         .append(" -o /dev/null")
         .append(" -w %{http_code});")
         .append("echo ${status}");
