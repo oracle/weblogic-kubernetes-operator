@@ -814,7 +814,7 @@ class ItMonitoringExporter {
       assertNotNull(grafanaHelmParams, "Grafana failed to install");
       int nodeportgrafana = grafanaHelmParams.getNodePort();
       //wait until it starts dashboard
-      String curlCmd = String.format("curl -v  -H 'Content-Type: application/json' "
+      String curlCmd = String.format("curl -v --noproxy '*' -H 'Content-Type: application/json' "
                       + " -X GET http://admin:12345678@%s:%s/api/dashboards",
               K8S_NODEPORT_HOST, nodeportgrafana);
       withStandardRetryPolicy
@@ -829,7 +829,8 @@ class ItMonitoringExporter {
       logger.info("installing grafana dashboard");
       // url
       String curlCmd0 =
-              String.format("curl -v -H 'Content-Type: application/json' -H \"Content-Type: application/json\""
+              String.format("curl -v  --noproxy '*' -H 'Content-Type: application/json' "
+                              + "-H \"Content-Type: application/json\""
                               + "  -X POST http://admin:12345678@%s:%s/api/datasources/"
                               + "  --data-binary @%sgrafana/datasource.json",
                       K8S_NODEPORT_HOST, nodeportgrafana, monitoringExporterEndToEndDir);
@@ -838,14 +839,15 @@ class ItMonitoringExporter {
       assertDoesNotThrow(() -> ExecCommand.exec(curlCmd0));
 
       String curlCmd1 =
-              String.format("curl -v -H 'Content-Type: application/json' -H \"Content-Type: application/json\""
+              String.format("curl -v  --noproxy '*' -H 'Content-Type: application/json' "
+                              + "-H \"Content-Type: application/json\""
                               + "  -X POST http://admin:12345678@%s:%s/api/dashboards/db/"
                               + "  --data-binary @%sgrafana/dashboard.json",
                       K8S_NODEPORT_HOST, nodeportgrafana, monitoringExporterEndToEndDir);
       logger.info("Executing Curl cmd {0}", curlCmd1);
       assertDoesNotThrow(() -> ExecCommand.exec(curlCmd1));
 
-      String curlCmd2 = String.format("curl -v  -H 'Content-Type: application/json' "
+      String curlCmd2 = String.format("curl -v   --noproxy '*' -H 'Content-Type: application/json' "
                       + " -X GET http://admin:12345678@%s:%s/api/dashboards/db/weblogic-server-dashboard",
               K8S_NODEPORT_HOST, nodeportgrafana);
       withStandardRetryPolicy
