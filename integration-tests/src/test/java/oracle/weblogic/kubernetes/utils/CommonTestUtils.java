@@ -956,7 +956,7 @@ public class CommonTestUtils {
         .helmParams(apacheHelmParams)
         .imagePullSecrets(secretNameMap)
         .image(image)
-        .imagePullPolicy("Always")
+        .imagePullPolicy("IfNotPresent")
         .domainUID(domainUid);
 
     if (httpNodePort >= 0 && httpsNodePort >= 0) {
