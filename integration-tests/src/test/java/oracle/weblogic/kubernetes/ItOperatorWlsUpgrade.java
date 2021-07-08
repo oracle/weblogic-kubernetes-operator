@@ -198,25 +198,25 @@ public class ItOperatorWlsUpgrade {
   }
 
   /**
-   * Operator upgrade from 3.2.1 to latest.
+   * Operator upgrade from 3.2.4 to latest.
    */
   @ParameterizedTest
-  @DisplayName("Upgrade Operator from 3.2.1 to main")
+  @DisplayName("Upgrade Operator from 3.2.4 to main")
   @ValueSource(strings = { "domain-in-image", "model-in-image" })
-  public void testOperatorWlsUpgradeFrom321ToMain(String domainType) {
+  public void testOperatorWlsUpgradeFrom324ToMain(String domainType) {
     logger.info("Starting test testOperatorWlsUpgradeFrom321ToMain with domain type {0}", domainType);
-    upgradeOperator(domainType, "3.2.1", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+    upgradeOperator(domainType, "3.2.4", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
-   * Operator upgrade from 3.2.2 to latest.
+   * Operator upgrade from 3.2.5 to latest.
    */
   @ParameterizedTest
-  @DisplayName("Upgrade Operator from 3.2.2 to main")
+  @DisplayName("Upgrade Operator from 3.2.5 to main")
   @ValueSource(strings = { "domain-in-image", "model-in-image" })
-  public void testOperatorWlsUpgradeFrom322ToMain(String domainType) {
+  public void testOperatorWlsUpgradeFrom325ToMain(String domainType) {
     logger.info("Starting test testOperatorWlsUpgradeFrom322ToMain with domain type {0}", domainType);
-    upgradeOperator(domainType, "3.2.2", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+    upgradeOperator(domainType, "3.2.5", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
