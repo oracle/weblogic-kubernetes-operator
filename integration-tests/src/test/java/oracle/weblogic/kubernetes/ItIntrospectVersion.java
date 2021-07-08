@@ -162,11 +162,6 @@ public class ItIntrospectVersion {
   private static String nginxNamespace = null;
   private static int nodeportshttp;
   private static HelmParams nginxHelmParams = null;
-  /*private static String imageUpdate = KIND_REPO != null ? KIND_REPO
-      + (WEBLOGIC_IMAGE_NAME + ":" + WLS_UPDATE_IMAGE_TAG).substring(TestConstants.BASE_IMAGES_REPO.length() + 1)
-      : WEBLOGIC_IMAGE_NAME + ":" + WLS_UPDATE_IMAGE_TAG;
-
-   */
 
   private final String wlSecretName = "weblogic-credentials";
 
@@ -974,7 +969,8 @@ public class ItIntrospectVersion {
   /**
    * Modify the domain scope property
    * From: "image: container-registry.oracle.com/middleware/weblogic:12.2.1.4" to
-   * To: "image: container-registry.oracle.com/middleware/weblogic:14.1.1.0-11"
+   * To: "image: container-registry.oracle.com/middleware/weblogic:DateAndTimeStamp"
+   * e.g, "image:container-registry.oracle.com/middleware/weblogic:2021-07-08-162571383699"
    * Verify all the pods are restarted and back to ready state
    * Verify the admin server is accessible and cluster members are healthy
    * This test will be skipped if the image tag is the latest WebLogic image tag
@@ -1015,7 +1011,6 @@ public class ItIntrospectVersion {
 
     //change image name to imageUpdate
     String imageTag = TestUtils.getDateAndTimeStamp();
-    //String imageUpdate = WEBLOGIC_IMAGE_NAME + ":" + tag;
     String imageUpdate = KIND_REPO != null ? KIND_REPO
         + (WEBLOGIC_IMAGE_NAME + ":" + imageTag).substring(TestConstants.BASE_IMAGES_REPO.length() + 1)
         : WEBLOGIC_IMAGE_NAME + ":" + imageTag;
