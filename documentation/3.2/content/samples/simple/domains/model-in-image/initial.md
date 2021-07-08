@@ -395,18 +395,18 @@ Run the following `kubectl` commands to deploy the required secrets:
   $ kubectl -n sample-domain1-ns create secret generic \
     sample-domain1-weblogic-credentials \
      --from-literal=username=weblogic --from-literal=password=welcome1
-    ```
-    ```shell
+  ```
+  ```shell
   $ kubectl -n sample-domain1-ns label  secret \
     sample-domain1-weblogic-credentials \
     weblogic.domainUID=sample-domain1
-    ```
-    ```shell
+  ```
+  ```shell
   $ kubectl -n sample-domain1-ns create secret generic \
     sample-domain1-runtime-encryption-secret \
      --from-literal=password=my_runtime_password
-    ```
-    ```shell
+  ```
+  ```shell
   $ kubectl -n sample-domain1-ns label  secret \
     sample-domain1-runtime-encryption-secret \
     weblogic.domainUID=sample-domain1
@@ -444,18 +444,18 @@ Run the following `kubectl` commands to deploy the required secrets:
      --from-literal=rcu_prefix=FMW1 \
      --from-literal=rcu_schema_password=Oradoc_db1 \
      --from-literal=rcu_db_conn_string=oracle-db.default.svc.cluster.local:1521/devpdb.k8s
-    ```
-    ```shell
+  ```
+  ```shell
   $ kubectl -n sample-domain1-ns label  secret \
     sample-domain1-rcu-access \
     weblogic.domainUID=sample-domain1
-    ```
-    ```shell
+  ```
+  ```shell
   $ kubectl -n sample-domain1-ns create secret generic \
     sample-domain1-opss-wallet-password-secret \
      --from-literal=walletPassword=welcome1
-    ```
-    ```shell
+  ```
+  ```shell
   $ kubectl -n sample-domain1-ns label  secret \
     sample-domain1-opss-wallet-password-secret \
     weblogic.domainUID=sample-domain1

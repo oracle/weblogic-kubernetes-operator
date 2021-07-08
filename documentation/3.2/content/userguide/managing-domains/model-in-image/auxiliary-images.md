@@ -179,7 +179,7 @@ Model In Image model files, application archives, and the WDT installation files
 
 1. Create a temporary directory for staging the auxiliary image's files and `cd` to this directory:
    ```shell
-   $ mkdir /tmp/mii-sample/ai-image/WLS-AI-v1
+   $ mkdir -p /tmp/mii-sample/ai-image/WLS-AI-v1
    $ cd /tmp/mii-sample/ai-image/WLS-AI-v1
    ```
    We call this directory `WLS-AI-v1` to correspond with the image version tag that we plan to use for the auxiliary image.
