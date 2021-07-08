@@ -96,7 +96,7 @@ class ItSessionMigration {
   private static String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
   private static String finalPrimaryServerName = null;
   // Since the ServerTemplate section of the model file model.sessmigr.yaml
-  // does not explicitly specify ListenPort, the introspector/wdt generated 
+  // does not explicitly specify ListenPort, the introspector/wdt generated
   // default ListenPort for each dynamic server is set to 7100
   private static int managedServerPort = 7100;
   private static int replicaCount = 2;
@@ -456,6 +456,7 @@ class ItSessionMigration {
     int waittime = 5;
     return new StringBuilder()
         .append("curl --silent --show-error")
+        .append(" --noproxy '* ")
         .append(" --connect-timeout ").append(waittime).append(" --max-time ").append(waittime)
         .append(" http://")
         .append(clusterAddress)
