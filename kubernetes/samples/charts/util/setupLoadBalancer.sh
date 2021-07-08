@@ -164,7 +164,7 @@ function waitForIngressPod() {
   ns=$2
 
   printInfo "Wait until ${type} ingress controller pod is running."
-  ipod=$(${kubernetesCli} -o name get po -n ${ns})
+  ipod=$(${kubernetesCli} -o name get po -n ${ns} | grep -v admission-patch)
   if [[ "${ipod}" != *$chart* ]]; then
    printError "Couldn't find the pod associated with ${type} helm deployment. List helm deployment status on namespace [${ns}]. "
    helm list -n ${ns}
