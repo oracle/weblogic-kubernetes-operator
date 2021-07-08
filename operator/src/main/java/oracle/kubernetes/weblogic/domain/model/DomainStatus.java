@@ -5,6 +5,7 @@ package oracle.kubernetes.weblogic.domain.model;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -116,13 +117,10 @@ public class DomainStatus {
    */
   public DomainStatus addCondition(DomainCondition newCondition) {
     if (conditions.contains(newCondition)) {
-      conditions = conditions.stream()
-          .filter(c -> preserve(c, newCondition.getType().typesToRemoveAlways())).collect(Collectors.toList());
       return this;
     }
 
-    conditions = conditions.stream()
-        .filter(c -> preserve(c, newCondition.getType().typesToRemove())).collect(Collectors.toList());
+    conditions = conditions.stream().filter(c -> preserve(c, newCondition.getType())).collect(Collectors.toList());
 
     conditions.add(newCondition);
     reason = newCondition.getStatusReason();
@@ -130,14 +128,13 @@ public class DomainStatus {
     return this;
   }
 
-  private boolean preserve(DomainCondition condition, DomainConditionType[] types) {
-    for (DomainConditionType type : types) {
-      if (condition.getType() == type) {
-        return false;
-      }
+  // Returns true if adding a condition of the new type should not remove the specified condition.
+  private boolean preserve(DomainCondition condition, DomainConditionType newType) {
+    if (newType == condition.getType() && !"True".equalsIgnoreCase(condition.getStatus())) {
+      return false;
+    } else {
+      return !Arrays.asList(newType.typesToRemove()).contains(condition.getType());
     }
-
-    return true;
   }
 
   /**
