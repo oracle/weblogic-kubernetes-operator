@@ -147,8 +147,8 @@ spec:
     model:
       # Valid model domain types are 'WLS', 'JRF', and 'RestrictedJRF', default is 'WLS'
       domainType: "JRF"
-      modelHome: "/common/models"
-      wdtInstallHome: "/common/weblogic-deploy"
+      modelHome: "/auxiliary/models"
+      wdtInstallHome: "/auxiliary/weblogic-deploy"
 
       # Optional configmap for additional models and variable files
       #configMap: sample-domain1-wdt-config-map
