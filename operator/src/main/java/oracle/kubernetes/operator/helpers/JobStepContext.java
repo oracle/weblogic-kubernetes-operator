@@ -36,7 +36,7 @@ import oracle.kubernetes.operator.utils.ChecksumUtils;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.model.CommonMount;
+import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 
@@ -171,8 +171,8 @@ public abstract class JobStepContext extends BasePodStepContext {
     return getDomain().getWdtInstallHome();
   }
 
-  List<CommonMount> getCommonMounts() {
-    return getServerSpec().getCommonMounts();
+  List<AuxiliaryImage> getAuxiliaryImages() {
+    return getServerSpec().getAuxiliaryImages();
   }
 
   String getWdtDomainType() {
@@ -271,9 +271,9 @@ public abstract class JobStepContext extends BasePodStepContext {
     V1PodTemplateSpec podTemplateSpec = new V1PodTemplateSpec()
           .metadata(createPodTemplateMetadata())
           .spec(createPodSpec(tuningParameters));
-    Optional.ofNullable(getServerSpec().getCommonMounts()).ifPresent(commonMounts ->
-            addCommonMountInitContainers(podTemplateSpec.getSpec(), commonMounts));
-    addEmptyDirVolume(podTemplateSpec.getSpec(), info.getDomain().getCommonMountVolumes());
+    Optional.ofNullable(getServerSpec().getAuxiliaryImages()).ifPresent(auxiliaryImages ->
+            addAuxiliaryImageInitContainers(podTemplateSpec.getSpec(), auxiliaryImages));
+    addEmptyDirVolume(podTemplateSpec.getSpec(), info.getDomain().getAuxiliaryImageVolumes());
 
     return updateForDeepSubstitution(podTemplateSpec.getSpec(), podTemplateSpec);
   }
@@ -291,14 +291,14 @@ public abstract class JobStepContext extends BasePodStepContext {
     return metadata;
   }
 
-  protected V1PodSpec addCommonMountInitContainers(V1PodSpec podSpec, List<CommonMount> commonMounts) {
-    Optional.ofNullable(commonMounts).ifPresent(cl -> addInitContainers(podSpec, cl));
+  protected V1PodSpec addAuxiliaryImageInitContainers(V1PodSpec podSpec, List<AuxiliaryImage> auxiliaryImages) {
+    Optional.ofNullable(auxiliaryImages).ifPresent(cl -> addInitContainers(podSpec, cl));
     return podSpec;
   }
 
-  private V1PodSpec addInitContainers(V1PodSpec podSpec, List<CommonMount> commonMounts) {
-    IntStream.range(0, commonMounts.size()).forEach(idx ->
-        podSpec.addInitContainersItem(createInitContainerForCommonMount(commonMounts.get(idx), idx)));
+  private V1PodSpec addInitContainers(V1PodSpec podSpec, List<AuxiliaryImage> auxiliaryImages) {
+    IntStream.range(0, auxiliaryImages.size()).forEach(idx ->
+        podSpec.addInitContainersItem(createInitContainerForAuxiliaryImage(auxiliaryImages.get(idx), idx)));
     return podSpec;
   }
 
@@ -397,8 +397,8 @@ public abstract class JobStepContext extends BasePodStepContext {
             readOnlyVolumeMount(getVolumeName(getConfigOverrides(), CONFIGMAP_TYPE), OVERRIDES_CM_MOUNT_PATH));
     }
 
-    Optional.ofNullable(getServerSpec().getCommonMounts()).ifPresent(commonMounts ->
-            commonMounts.forEach(cm -> addVolumeMount(container, cm)));
+    Optional.ofNullable(getServerSpec().getAuxiliaryImages()).ifPresent(auxiliaryImages ->
+            auxiliaryImages.forEach(cm -> addVolumeMount(container, cm)));
 
     List<String> configOverrideSecrets = getConfigOverrideSecrets();
     for (String secretName : configOverrideSecrets) {

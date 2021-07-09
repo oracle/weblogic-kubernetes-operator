@@ -152,7 +152,7 @@ for phase in initial update1 update2 update3 update4; do
   # setup ingress yaml files
   $SCRIPTDIR/stage-and-create-ingresses.sh -dry
 
-  for IMAGE_TYPE in WLS WLS-CM JRF JRF-CM; do
+  for IMAGE_TYPE in WLS WLS-AI JRF JRF-AI; do
 
   export IMAGE_TYPE
   export WDT_DOMAIN_TYPE=${IMAGE_TYPE/-*/}

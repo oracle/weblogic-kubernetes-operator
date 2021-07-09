@@ -31,9 +31,9 @@ import static oracle.kubernetes.operator.helpers.Matchers.EnvVarMatcher.envVarWi
 import static oracle.kubernetes.operator.helpers.Matchers.EnvVarMatcher.envVarWithNameAndValue;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.SCRIPTS_MOUNTS_PATH;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.SCRIPTS_VOLUME;
-import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_INIT_CONTAINER_WRAPPER_SCRIPT;
-import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_TARGET_PATH;
-import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_VOLUME_NAME_PREFIX;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_TARGET_PATH;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_VOLUME_NAME_PREFIX;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
 
@@ -49,14 +49,14 @@ public class Matchers {
     return hasItem(createInitContainer(name, image, serverName, command));
   }
 
-  public static Matcher<Iterable<? super V1Container>> hasCommonMountInitContainer(
+  public static Matcher<Iterable<? super V1Container>> hasAuxiliaryImageInitContainer(
           String name, String image, String imagePullPolicy, String command) {
-    return hasCommonMountInitContainer(name, image, imagePullPolicy, command, TEST_VOLUME_NAME);
+    return hasAuxiliaryImageInitContainer(name, image, imagePullPolicy, command, TEST_VOLUME_NAME);
   }
 
-  public static Matcher<Iterable<? super V1Container>> hasCommonMountInitContainer(
+  public static Matcher<Iterable<? super V1Container>> hasAuxiliaryImageInitContainer(
           String name, String image, String imagePullPolicy, String command, String volumeName) {
-    return hasItem(createCommonMountInitContainer(name, image, imagePullPolicy, command, volumeName));
+    return hasItem(createAuxiliaryImageInitContainer(name, image, imagePullPolicy, command, volumeName));
   }
 
   public static Matcher<Iterable<? super V1Container>> hasInitContainerWithEnvVar(
@@ -112,14 +112,15 @@ public class Matchers {
     return new V1Container().name(name).image(image).command(Arrays.asList(command));
   }
 
-  private static V1Container createCommonMountInitContainer(String name, String image, String imagePullPolicy,
-                                                            String command, String volumeName) {
+  private static V1Container createAuxiliaryImageInitContainer(String name, String image, String imagePullPolicy,
+                                                               String command, String volumeName) {
     return new V1Container().name(name).image(image).imagePullPolicy(imagePullPolicy)
-            .command(Arrays.asList(COMMON_MOUNT_INIT_CONTAINER_WRAPPER_SCRIPT)).args(null).volumeMounts(Arrays.asList(
-                    new V1VolumeMount().name(COMMON_MOUNT_VOLUME_NAME_PREFIX + volumeName)
-                            .mountPath(COMMON_MOUNT_TARGET_PATH),
+        .command(Arrays.asList(AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT)).args(null)
+        .volumeMounts(Arrays.asList(
+            new V1VolumeMount().name(AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + volumeName)
+                .mountPath(AUXILIARY_IMAGE_TARGET_PATH),
                     new V1VolumeMount().name(SCRIPTS_VOLUME).mountPath(SCRIPTS_MOUNTS_PATH)))
-            .env(PodHelperTestBase.getCommonMountEnvVariables(image, command, name));
+        .env(PodHelperTestBase.getAuxiliaryImageEnvVariables(image, command, name));
   }
 
   private static V1Container createInitContainer(String name, String image, String serverName, String... command) {

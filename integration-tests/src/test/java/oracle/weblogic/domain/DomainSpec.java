@@ -162,10 +162,10 @@ public class DomainSpec {
   private MonitoringExporterSpecification monitoringExporter;
 
   @ApiModelProperty(
-      "Configure common mount volumes including their respective mount paths. Common mount volumes are in "
-      + "turn referenced by one or more serverPod.commonMounts mounts, and are internally implemented using a "
+      "Configure auxiliary image volumes including their respective mount paths. Auxiliary image volumes are in "
+      + "turn referenced by one or more serverPod.auxiliaryImages mounts, and are internally implemented using a "
       + "Kubernetes 'emptyDir' volume.")
-  private List<CommonMountVolume> commonMountVolumes;
+  private List<AuxiliaryImageVolume> auxiliaryImageVolumes;
 
 
   public DomainSpec domainUid(String domainUid) {
@@ -688,24 +688,24 @@ public class DomainSpec {
   }
 
   /**
-   * Adds common mount volume item.
-   * @param commonMountVolumesItem CommonMountVolumeItem
+   * Adds auxiliary image volume item.
+   * @param auxiliaryImageVolumesItem AuxiliaryImageVolumeItem
    * @return this
    */
-  public DomainSpec addCommonMountVolumesItem(CommonMountVolume commonMountVolumesItem) {
-    if (commonMountVolumes == null) {
-      commonMountVolumes = new ArrayList<>();
+  public DomainSpec addAuxiliaryImageVolumesItem(AuxiliaryImageVolume auxiliaryImageVolumesItem) {
+    if (auxiliaryImageVolumes == null) {
+      auxiliaryImageVolumes = new ArrayList<>();
     }
-    commonMountVolumes.add(commonMountVolumesItem);
+    auxiliaryImageVolumes.add(auxiliaryImageVolumesItem);
     return this;
   }
 
-  public List<CommonMountVolume> getCommonMountVolumes() {
-    return commonMountVolumes;
+  public List<AuxiliaryImageVolume> getAuxiliaryImageVolumes() {
+    return auxiliaryImageVolumes;
   }
 
-  public void setCommonMountVolumes(List<CommonMountVolume> commonMountVolumes) {
-    this.commonMountVolumes = commonMountVolumes;
+  public void setAuxiliaryImageVolumes(List<AuxiliaryImageVolume> auxiliaryImageVolumes) {
+    this.auxiliaryImageVolumes = auxiliaryImageVolumes;
   }
 
 
@@ -725,6 +725,7 @@ public class DomainSpec {
             .append("image", image)
             .append("imagePullPolicy", imagePullPolicy)
             .append("imagePullSecrets", imagePullSecrets)
+            .append("auxiliaryImageVolumes", auxiliaryImageVolumes)
             .append("replicas", replicas)
             .append("domainHomeInImage", domainHomeInImage)
             .append("domainHomeSourceType", domainHomeSourceType)
@@ -761,6 +762,7 @@ public class DomainSpec {
             .append(image)
             .append(imagePullPolicy)
             .append(imagePullSecrets)
+            .append(auxiliaryImageVolumes)
             .append(replicas)
             .append(domainHomeInImage)
             .append(domainHomeSourceType)
@@ -805,6 +807,7 @@ public class DomainSpec {
             .append(image, rhs.image)
             .append(imagePullPolicy, rhs.imagePullPolicy)
             .append(imagePullSecrets, rhs.imagePullSecrets)
+            .append(auxiliaryImageVolumes, rhs.auxiliaryImageVolumes)
             .append(replicas, rhs.replicas)
             .append(domainHomeInImage, rhs.domainHomeInImage)
             .append(domainHomeSourceType, rhs.domainHomeSourceType)

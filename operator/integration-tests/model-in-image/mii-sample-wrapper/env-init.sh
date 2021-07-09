@@ -21,11 +21,11 @@ if    [ ! "$WDT_DOMAIN_TYPE" = "WLS" ] \
 fi
 
 if    [ ! "$IMAGE_TYPE" = "WLS" ] \
-   && [ ! "$IMAGE_TYPE" = "WLS-CM" ] \
+   && [ ! "$IMAGE_TYPE" = "WLS-AI" ] \
    && [ ! "$IMAGE_TYPE" = "RestrictedJRF" ] \
    && [ ! "$IMAGE_TYPE" = "JRF" ] \
-   && [ ! "$IMAGE_TYPE" = "JRF-CM" ]; then
-  echo "@@ Error: Invalid image type IMAGE_TYPE '$IMAGE_TYPE': expected 'WLS', 'WLS-CM', 'JRF', 'JRF-CM' or 'RestrictedJRF'."
+   && [ ! "$IMAGE_TYPE" = "JRF-AI" ]; then
+  echo "@@ Error: Invalid image type IMAGE_TYPE '$IMAGE_TYPE': expected 'WLS', 'WLS-AI', 'JRF', 'JRF-AI' or 'RestrictedJRF'."
   exit 1
 fi
 
@@ -43,7 +43,7 @@ DOWNLOAD_WDT=${DOWNLOAD_WDT:-when-missing}
 WDT_INSTALLER_URL=${WDT_INSTALLER_URL:-https://github.com/oracle/weblogic-deploy-tooling/releases/latest}
 WIT_INSTALLER_URL=${WIT_INSTALLER_URL:-https://github.com/oracle/weblogic-image-tool/releases/latest}
 
-if [[ "$WDT_DOMAIN_TYPE" = "WLS" || "$WDT_DOMAIN_TYPE" = "WLS-CM" ]]; then
+if [[ "$WDT_DOMAIN_TYPE" = "WLS" || "$WDT_DOMAIN_TYPE" = "WLS-AI" ]]; then
   defaultBaseImage="container-registry.oracle.com/middleware/weblogic"
 else
   defaultBaseImage="container-registry.oracle.com/middleware/fmw-infrastructure"
@@ -58,10 +58,10 @@ MODEL_IMAGE_TAG=${MODEL_IMAGE_TAG:-${IMAGE_TYPE}-v1}
 MODEL_IMAGE="${MODEL_IMAGE_NAME}:${MODEL_IMAGE_TAG}"
 MODEL_IMAGE_BUILD=${MODEL_IMAGE_BUILD:-always}
 MODEL_DIR=${MODEL_DIR:-model-images/model-in-image__${MODEL_IMAGE_TAG}}
-COMMON_MOUNT_PATH=${COMMON_MOUNT_PATH:-/common}
-WDT_MODEL_HOME=${WDT_MODEL_HOME:-${COMMON_MOUNT_PATH}/models}
-WDT_INSTALL_HOME=${WDT_INSTALL_HOME:-${COMMON_MOUNT_PATH}/weblogic-deploy}
-COMMON_MOUNT_DOCKER_FILE_SOURCEDIR=${COMMON_MOUNT_DOCKER_FILE_SOURCEDIR:-cm-docker-file}
+AUXILIARY_IMAGE_PATH=${AUXILIARY_IMAGE_PATH:-/auxiliary}
+WDT_MODEL_HOME=${WDT_MODEL_HOME:-${AUXILIARY_IMAGE_PATH}/models}
+WDT_INSTALL_HOME=${WDT_INSTALL_HOME:-${AUXILIARY_IMAGE_PATH}/weblogic-deploy}
+AUXILIARY_IMAGE_DOCKER_FILE_SOURCEDIR=${AUXILIARY_IMAGE_DOCKER_FILE_SOURCEDIR:-ai-docker-file}
 
 IMAGE_PULL_SECRET_NAME=${IMAGE_PULL_SECRET_NAME:-""}
 

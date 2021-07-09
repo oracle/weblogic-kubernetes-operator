@@ -217,38 +217,38 @@ function checkEnv() {
 }
 
 #
-# initCommonMount
-#   purpose: Execute the COMMON_MOUNT_COMMAND specified as part of the common mount init container.
-#            If the specified COMMON_MOUNT_COMMAND is empty, it logs an error message and returns.
-#            If the COMMON_MOUNT_PATH directory doesn't exist or is empty, it logs error and returns.
-#            If the command execution fails, it logs errror message with failure details. Otherwise it
+# initAuxiliaryImage
+#   purpose: Execute the AUXILIARY_IMAGE_COMMAND specified as part of the auxiliary image init container.
+#            If the specified AUXILIARY_IMAGE_COMMAND is empty, it logs an error message and returns.
+#            If the AUXILIARY_IMAGE_PATH directory doesn't exist or is empty, it logs error and returns.
+#            If the command execution fails, it logs error message with failure details. Otherwise it
 #            logs a success message with details.
-#            See also 'commonMount.sh'.
-#            See also checkCommonMount in 'utils.sh'.
+#            See also 'auxImage.sh'.
+#            See also checkAuxiliaryImage in 'utils.sh'.
 #
-function initCommonMount() {
+function initAuxiliaryImage() {
 
-  if [ -z "${COMMON_MOUNT_COMMAND}" ]; then
-    trace SEVERE "Common Mount: The 'serverPod.commonMounts.command' is empty for the " \
-                "container image='$COMMON_MOUNT_CONTAINER_IMAGE'. Exiting."
+  if [ -z "${AUXILIARY_IMAGE_COMMAND}" ]; then
+    trace SEVERE "Auxiliary Image: The 'serverPod.auxiliaryImages.command' is empty for the " \
+                "container image='$AUXILIARY_IMAGE_CONTAINER_IMAGE'. Exiting."
     return
   fi
 
-  trace FINE "Common Mount: About to execute command '$COMMON_MOUNT_COMMAND' in container image='$COMMON_MOUNT_CONTAINER_IMAGE'. " \
-             "COMMON_MOUNT_PATH is '$COMMON_MOUNT_PATH' and COMMON_MOUNT_TARGET_PATH is '${COMMON_MOUNT_TARGET_PATH}'."
-  traceDirs before $COMMON_MOUNT_PATH
+  trace FINE "Auxiliary Image: About to execute command '$AUXILIARY_IMAGE_COMMAND' in container image='$AUXILIARY_IMAGE_CONTAINER_IMAGE'. " \
+             "AUXILIARY_IMAGE_PATH is '$AUXILIARY_IMAGE_PATH' and AUXILIARY_IMAGE_TARGET_PATH is '${AUXILIARY_IMAGE_TARGET_PATH}'."
+  traceDirs before $AUXILIARY_IMAGE_PATH
 
-  if [ ! -d ${COMMON_MOUNT_PATH} ] ||  [ -z "$(ls -A ${COMMON_MOUNT_PATH})" ]; then
-    trace SEVERE "Common Mount: Dir '${COMMON_MOUNT_PATH}' doesn't exist or is empty. Exiting."
+  if [ ! -d ${AUXILIARY_IMAGE_PATH} ] ||  [ -z "$(ls -A ${AUXILIARY_IMAGE_PATH})" ]; then
+    trace SEVERE "Auxiliary Image: Dir '${AUXILIARY_IMAGE_PATH}' doesn't exist or is empty. Exiting."
     return
   fi
 
-  trace FINE "Common Mount: About to execute COMMON_MOUNT_COMMAND='$COMMON_MOUNT_COMMAND' ."
-  results=$(eval $COMMON_MOUNT_COMMAND 2>&1)
+  trace FINE "Auxiliary Image: About to execute AUXILIARY_IMAGE_COMMAND='$AUXILIARY_IMAGE_COMMAND' ."
+  results=$(eval $AUXILIARY_IMAGE_COMMAND 2>&1)
   if [ $? -ne 0 ]; then
-    trace SEVERE "Common Mount: Command '$COMMON_MOUNT_COMMAND' execution failed in container image='$COMMON_MOUNT_CONTAINER_IMAGE' " \
-                "with COMMON_MOUNT_PATH=$COMMON_MOUNT_PATH. Error -> '$results' ."
+    trace SEVERE "Auxiliary Image: Command '$AUXILIARY_IMAGE_COMMAND' execution failed in container image='$AUXILIARY_IMAGE_CONTAINER_IMAGE' " \
+                "with AUXILIARY_IMAGE_PATH=$AUXILIARY_IMAGE_PATH. Error -> '$results' ."
   else
-    trace FINE "Common Mount: Command '$COMMON_MOUNT_COMMAND' executed successfully. Output -> '$results'."
+    trace FINE "Auxiliary Image: Command '$AUXILIARY_IMAGE_COMMAND' executed successfully. Output -> '$results'."
   fi
 }

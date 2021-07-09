@@ -1,34 +1,36 @@
 // Copyright (c) 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-package oracle.weblogic.domain;
+package oracle.kubernetes.weblogic.domain.model;
 
-import io.swagger.annotations.ApiModel;
-import io.swagger.annotations.ApiModelProperty;
+import java.util.Optional;
+
+import jakarta.validation.constraints.NotNull;
+import oracle.kubernetes.json.Description;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-@ApiModel(description = "Configure common mount volumes including their respective mount paths. "
-    + "Common mount volumes are in turn referenced by one or more serverPod.commonMounts mounts, "
-    + "and are internally implemented using a Kubernetes 'emptyDir' volume.")
-public class CommonMountVolume {
+public class AuxiliaryImageVolume {
 
-  @ApiModelProperty("The name of the common mount volume. Required.")
+  public static final String DEFAULT_AUXILIARY_IMAGE_PATH = "/auxiliary";
+
+  @Description("The name of the volume. Required.")
+  @NotNull
   private String name;
 
-  @ApiModelProperty(
-      "The common mount path. The files in the path are populated from the same named directory in the images "
-          + "supplied by each container in 'serverPod.commonMounts'. Each common mount volume must be configured with "
-          + "a different common mount path. Required.")
+  @Description("The mount path. The files in the path are populated from the same named directory in the images "
+          + "supplied by each container in `serverPod.auxiliaryImages`. Each volume must be configured with "
+          + "a different mount path. Required.")
+  @NotNull
   private String mountPath;
 
-  @ApiModelProperty("The emptyDir volume medium. This is an advanced setting that rarely needs to be configured. "
+  @Description("The emptyDir volume medium. This is an advanced setting that rarely needs to be configured. "
           + "Defaults to unset, which means the volume's files are stored on the local node's file system for "
           + "the life of the pod.")
   private String medium;
 
-  @ApiModelProperty("The emptyDir volume size limit. Defaults to unset.")
+  @Description("The emptyDir volume size limit. Defaults to unset.")
   private String sizeLimit;
 
   public String getName() {
@@ -39,21 +41,21 @@ public class CommonMountVolume {
     this.name = name;
   }
 
-  public CommonMountVolume name(String name) {
+  public AuxiliaryImageVolume name(String name) {
     this.name = name;
     return this;
   }
 
   public String getMountPath() {
-    return mountPath;
+    return Optional.ofNullable(mountPath).orElse(DEFAULT_AUXILIARY_IMAGE_PATH);
   }
 
   public void setMountPath(String mountPath) {
     this.mountPath = mountPath;
   }
 
-  public CommonMountVolume mountPath(String commonMountPath) {
-    this.mountPath = commonMountPath;
+  public AuxiliaryImageVolume mountPath(String mountPath) {
+    this.mountPath = mountPath;
     return this;
   }
 
@@ -65,7 +67,7 @@ public class CommonMountVolume {
     this.medium = medium;
   }
 
-  public CommonMountVolume medium(String medium) {
+  public AuxiliaryImageVolume medium(String medium) {
     this.medium = medium;
     return this;
   }
@@ -78,7 +80,7 @@ public class CommonMountVolume {
     this.sizeLimit = sizeLimit;
   }
 
-  public CommonMountVolume sizeLimit(String sizeLimit) {
+  public AuxiliaryImageVolume sizeLimit(String sizeLimit) {
     this.sizeLimit = sizeLimit;
     return this;
   }
@@ -109,11 +111,11 @@ public class CommonMountVolume {
     if (other == this) {
       return true;
     }
-    if (!(other instanceof CommonMountVolume)) {
+    if (!(other instanceof AuxiliaryImageVolume)) {
       return false;
     }
 
-    CommonMountVolume rhs = ((CommonMountVolume) other);
+    AuxiliaryImageVolume rhs = ((AuxiliaryImageVolume) other);
     EqualsBuilder builder =
             new EqualsBuilder()
                     .append(name, rhs.name)
