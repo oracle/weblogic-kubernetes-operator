@@ -112,7 +112,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainConfiguredWithAuxiliaryImageButNoCommomMountVolumes_reportError() {
+  public void whenDomainConfiguredWithAuxiliaryImageButNoAuxiliaryImageVolumes_reportError() {
     configureDomain(domain)
             .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")));
 
@@ -122,7 +122,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainConfiguredWithAuxiliaryImageButNoMatchingCommomMountVolumes_reportError() {
+  public void whenDomainConfiguredWithAuxiliaryImageButNoMatchingAuxiliaryImageVolumes_reportError() {
     configureDomain(domain)
             .withAuxiliaryImageVolumes(Collections.singletonList(new AuxiliaryImageVolume().name(WRONG_VOLUME_NAME)))
             .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")));
@@ -143,7 +143,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainConfiguredWithAuxiliaryImageAndMatchingCommomMountVolumes_noErrorsReported() {
+  public void whenDomainConfiguredWithAuxiliaryImageAndMatchingAuxiliaryImageVolumes_noErrorsReported() {
     configureDomain(domain)
             .withAuxiliaryImageVolumes(Collections.singletonList(new AuxiliaryImageVolume().name(TEST_VOLUME_NAME)))
             .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")));

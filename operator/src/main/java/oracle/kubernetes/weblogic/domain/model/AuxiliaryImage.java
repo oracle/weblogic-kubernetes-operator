@@ -14,11 +14,6 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-@Description("Use an auxiliary image to automatically include directory content from additional images. "
-        + "This is a useful alternative for including Model in Image model files, or other types of files, in a pod "
-        + "without requiring modifications to the pod's base image `domain.spec.image`. "
-        + "This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share "
-        + "the files from the additional images with the pod.")
 public class AuxiliaryImage {
 
   public static final String AUXILIARY_IMAGE_TARGET_PATH = "/tmpAuxiliaryImage";

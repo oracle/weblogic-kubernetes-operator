@@ -61,16 +61,17 @@ public abstract class BasePodStepContext extends StepContextBase {
     return auxiliaryImage.getVolume().equals(auxiliaryImageVolume.getName());
   }
 
-  protected void addVolumeMount(V1Container container, AuxiliaryImage cm) {
-    Optional.ofNullable(getMountPath(cm, info.getDomain().getAuxiliaryImageVolumes())).ifPresent(mountPath ->
-            addVolumeMountIfMissing(container, cm, mountPath));
+  protected void addVolumeMount(V1Container container, AuxiliaryImage auxiliaryImage) {
+    Optional.ofNullable(getMountPath(auxiliaryImage,
+        info.getDomain().getAuxiliaryImageVolumes())).ifPresent(mountPath ->
+            addVolumeMountIfMissing(container, auxiliaryImage, mountPath));
   }
 
-  protected void addVolumeMountIfMissing(V1Container container, AuxiliaryImage cm, String mountPath) {
+  protected void addVolumeMountIfMissing(V1Container container, AuxiliaryImage auxiliaryImage, String mountPath) {
     if (Optional.ofNullable(container.getVolumeMounts()).map(volumeMounts -> volumeMounts.stream().noneMatch(
-            volumeMount -> hasMatchingVolumeMountName(volumeMount, cm))).orElse(true)) {
+            volumeMount -> hasMatchingVolumeMountName(volumeMount, auxiliaryImage))).orElse(true)) {
       container.addVolumeMountsItem(
-              new V1VolumeMount().name(getDNS1123auxiliaryImageVolumeName(cm.getVolume()))
+              new V1VolumeMount().name(getDNS1123auxiliaryImageVolumeName(auxiliaryImage.getVolume()))
                       .mountPath(mountPath));
     }
   }
@@ -96,12 +97,13 @@ public abstract class BasePodStepContext extends StepContextBase {
         .securityContext(getServerSpec().getContainerSecurityContext());
   }
 
-  protected V1Volume createEmptyDirVolume(AuxiliaryImageVolume cmv) {
+  protected V1Volume createEmptyDirVolume(AuxiliaryImageVolume auxiliaryImageVolume) {
     V1EmptyDirVolumeSource emptyDirVolumeSource = new V1EmptyDirVolumeSource();
-    Optional.ofNullable(cmv.getMedium()).ifPresent(emptyDirVolumeSource::medium);
-    Optional.ofNullable(cmv.getSizeLimit())
+    Optional.ofNullable(auxiliaryImageVolume.getMedium()).ifPresent(emptyDirVolumeSource::medium);
+    Optional.ofNullable(auxiliaryImageVolume.getSizeLimit())
             .ifPresent(sl -> emptyDirVolumeSource.sizeLimit(Quantity.fromString((String) sl)));
-    return new V1Volume().name(getDNS1123auxiliaryImageVolumeName(cmv.getName())).emptyDir(emptyDirVolumeSource);
+    return new V1Volume()
+        .name(getDNS1123auxiliaryImageVolumeName(auxiliaryImageVolume.getName())).emptyDir(emptyDirVolumeSource);
   }
 
   public String getDNS1123auxiliaryImageVolumeName(String name) {

@@ -738,7 +738,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasAuxiliaryImagesWithImagePullPolicy_createPodsWithCMInitContainerHavingImagePullPolicy() {
+  public void whenDomainHasAuxiliaryImagesWithImagePullPolicy_createPodsWithAIInitContainerHavingImagePullPolicy() {
     getConfigurator()
             .withAuxiliaryImageVolumes(getAuxiliaryImageVolume(DEFAULT_AUXILIARY_IMAGE_PATH))
             .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")
