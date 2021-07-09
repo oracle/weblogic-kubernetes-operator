@@ -24,8 +24,10 @@ import org.apache.commons.io.FileUtils;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -71,6 +73,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Test to create model in image domain using auxiliary image")
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @IntegrationTest
 public class ItMiiAuxiliaryImage {
 
@@ -238,7 +241,7 @@ public class ItMiiAuxiliaryImage {
   @Test
   @Order(2)
   @DisplayName("Test to update data source url in the  domain using auxiliary image")
-  public void testUpdateDataSourceInDomainUsingAuxiliaryImage1() {
+  public void testUpdateDataSourceInDomainUsingAuxiliaryImage() {
 
     Path multipleAIPath1 = Paths.get(RESULTS_ROOT, "multipleauxiliaryimage1");
     Path modelsPath1 = Paths.get(multipleAIPath1.toString(), "models");
