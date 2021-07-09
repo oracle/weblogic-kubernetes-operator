@@ -9,36 +9,37 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-@ApiModel("Use a common mount to automatically include directory content from additional images. "
+@ApiModel("Use an auxiliary image to automatically include directory content from additional images. "
         + "This is a useful alternative for including Model in Image model files, or other types of files, in a pod "
         + "without requiring modifications to the pod's base image 'domain.spec.image'. "
         + "This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share "
         + "the files from the additional images with the pod.")
-public class CommonMount {
+public class AuxiliaryImage {
 
   /**
-   * The common mount.
+   * The auxiliary image.
    */
   @ApiModelProperty("The name of an image with files located in directory specified by "
-      + "'spec.commonMountVolumes.mountPath' of the common mount volume referenced by "
-      + "serverPod.commonMounts.volume (which defaults to '/common').")
+      + "'spec.auxiliaryImageVolumes.mountPath' of the auxiliary image volume referenced by "
+      + "serverPod.auxiliaryImage.volume (which defaults to '/auxiliary').")
   private String image;
 
   @ApiModelProperty(
-          "The image pull policy for the common mount container image. "
+          "The image pull policy for the container image. "
                   + "Legal values are Always, Never, and IfNotPresent. "
                   + "Defaults to Always if image ends in :latest; IfNotPresent, otherwise.")
   private String imagePullPolicy;
 
-  @ApiModelProperty("The command for this init container. Defaults to 'cp -R $COMMON_MOUNT_PATH/* $TARGET_MOUNT_PATH'. "
+  @ApiModelProperty(
+      "The command for this init container. Defaults to 'cp -R $AUXILIARY_IMAGE_PATH/* $TARGET_MOUNT_PATH'. "
           + "This is an advanced setting for customizing the container command for copying files from the container "
-          + "image to the common mount emptyDir volume. Use the '$COMMON_MOUNT_PATH' environment variable to reference "
-          + "the value configured in 'spec.commonMountVolumes.mountPath' (which defaults to '/common'). Use "
+          + "image to the emptyDir volume. Use the '$AUXILIARY_IMAGE_PATH' environment variable to reference "
+          + "the value configured in 'spec.auxiliaryImageVolumes.mountPath' (which defaults to '/auxiliary'). Use "
           + "'$TARGET_MOUNT_PATH' to refer to the temporary directory created by the Operator that resolves to the "
-          + "common mount's internal emptyDir volume.")
+          + "internal emptyDir volume.")
   private String command;
 
-  @ApiModelProperty("The name of a common mount volume defined in 'spec.commonMountVolumes'. Required.")
+  @ApiModelProperty("The name of a auxiliary image volume defined in 'spec.auxiliaryImageVolumes'. Required.")
   private String volume;
 
   public String getImage() {
@@ -49,7 +50,7 @@ public class CommonMount {
     this.image = image;
   }
 
-  public CommonMount image(String image) {
+  public AuxiliaryImage image(String image) {
     this.image = image;
     return this;
   }
@@ -62,7 +63,7 @@ public class CommonMount {
     this.imagePullPolicy = imagePullPolicy;
   }
 
-  public CommonMount imagePullPolicy(String imagePullPolicy) {
+  public AuxiliaryImage imagePullPolicy(String imagePullPolicy) {
     this.imagePullPolicy = imagePullPolicy;
     return this;
   }
@@ -75,7 +76,7 @@ public class CommonMount {
     this.command = command;
   }
 
-  public CommonMount command(String command) {
+  public AuxiliaryImage command(String command) {
     this.command = command;
     return this;
   }
@@ -88,7 +89,7 @@ public class CommonMount {
     this.volume = volume;
   }
 
-  public CommonMount volume(String volume) {
+  public AuxiliaryImage volume(String volume) {
     this.volume = volume;
     return this;
   }
@@ -109,11 +110,11 @@ public class CommonMount {
     if (other == this) {
       return true;
     }
-    if (!(other instanceof CommonMount)) {
+    if (!(other instanceof AuxiliaryImage)) {
       return false;
     }
 
-    CommonMount rhs = ((CommonMount) other);
+    AuxiliaryImage rhs = ((AuxiliaryImage) other);
     EqualsBuilder builder =
             new EqualsBuilder()
                     .append(image, rhs.image)

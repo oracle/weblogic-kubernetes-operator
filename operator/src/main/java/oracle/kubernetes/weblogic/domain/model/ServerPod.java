@@ -215,16 +215,16 @@ class ServerPod extends KubernetesResource {
   private final List<V1VolumeMount> volumeMounts = new ArrayList<>();
 
   /**
-   * The common mount.
+   * The auxiliary image.
    *
    */
-  @Description("Use a common mount to automatically include directory content from additional images. "
+  @Description("Use an auxiliary image to automatically include directory content from additional images. "
           + "This is a useful alternative for including Model in Image model files, or other types of files, in a pod "
           + "without requiring modifications to the pod's base image 'domain.spec.image'. "
           + "This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share "
           + "the files from the additional images with the pod.")
-  @Feature("CommonMounts")
-  private List<CommonMount> commonMounts;
+  @Feature("AuxiliaryImage")
+  private List<AuxiliaryImage> auxiliaryImages;
 
   private static void copyValues(V1ResourceRequirements to, V1ResourceRequirements from) {
     if (from != null) {
@@ -409,12 +409,12 @@ class ServerPod extends KubernetesResource {
         .periodSeconds(period);
   }
 
-  List<CommonMount> getCommonMounts() {
-    return this.commonMounts;
+  List<AuxiliaryImage> getAuxiliaryImages() {
+    return this.auxiliaryImages;
   }
 
-  void setCommonMounts(List<CommonMount> commonMounts) {
-    this.commonMounts = commonMounts;
+  void setAuxiliaryImages(List<AuxiliaryImage> auxiliaryImages) {
+    this.auxiliaryImages = auxiliaryImages;
   }
 
   ProbeTuning getLivenessProbeTuning() {
@@ -435,7 +435,7 @@ class ServerPod extends KubernetesResource {
     livenessProbe.copyValues(serverPod1.livenessProbe);
     readinessProbe.copyValues(serverPod1.readinessProbe);
     shutdown.copyValues(serverPod1.shutdown);
-    addCommonMount(serverPod1);
+    addAuxiliaryImage(serverPod1);
     for (V1Volume var : serverPod1.getAdditionalVolumes()) {
       addIfMissing(var);
     }
@@ -480,12 +480,12 @@ class ServerPod extends KubernetesResource {
     tolerations.addAll(serverPod1.tolerations);
   }
 
-  private void addCommonMount(ServerPod serverPod1) {
-    if (serverPod1.commonMounts != null) {
-      if (commonMounts == null) {
-        commonMounts = new ArrayList<>(serverPod1.commonMounts);
+  private void addAuxiliaryImage(ServerPod serverPod1) {
+    if (serverPod1.auxiliaryImages != null) {
+      if (auxiliaryImages == null) {
+        auxiliaryImages = new ArrayList<>(serverPod1.auxiliaryImages);
       } else {
-        commonMounts = Stream.of(serverPod1.commonMounts, commonMounts)
+        auxiliaryImages = Stream.of(serverPod1.auxiliaryImages, auxiliaryImages)
                 .flatMap(c -> c.stream())
                 .collect(Collectors.toList());
       }
@@ -786,7 +786,7 @@ class ServerPod extends KubernetesResource {
         .append("schedulerName", schedulerName)
         .append("tolerations", tolerations)
         .append("serviceAccountName", serviceAccountName)
-        .append("commonMounts", commonMounts)
+        .append("auxiliaryImages", auxiliaryImages)
         .toString();
   }
 
@@ -831,7 +831,7 @@ class ServerPod extends KubernetesResource {
         .append(schedulerName, that.schedulerName)
         .append(tolerations, that.tolerations)
         .append(serviceAccountName, that.serviceAccountName)
-        .append(commonMounts, that.commonMounts)
+        .append(auxiliaryImages, that.auxiliaryImages)
         .isEquals();
   }
 
@@ -860,7 +860,7 @@ class ServerPod extends KubernetesResource {
         .append(schedulerName)
         .append(tolerations)
         .append(serviceAccountName)
-        .append(commonMounts)
+        .append(auxiliaryImages)
         .toHashCode();
   }
 }

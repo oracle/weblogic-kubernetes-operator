@@ -1,7 +1,7 @@
 #!/bin/sh
 
-# Init container script for the common mount feature. 
-# See 'domain.spec.serverPod.commonMounts' for details.
+# Init container script for the auxiliary image feature.
+# See 'domain.spec.serverPod.auxiliaryImages' for details.
 
 # Notes:
 # This script purposely tries to exit zero even on failure as
@@ -14,11 +14,11 @@
 # 'executed successfully'.
 #
 # The main introspector and pod scripts will echo
-# the contents of /${COMMON_MOUNT_PATH}/common-mount-logs/
+# the contents of /${AUXILIARY_IMAGE_PATH}/auxiliary-image-logs/
 # and fail if they are missing, or if any do not
 # include 'executed successfully', or if the scripts
-# cannot create (touch) files in /${COMMON_MOUNT_PATH}.
-# (See also utils.sh checkCommonMount function)
+# cannot create (touch) files in /${AUXILIARY_IMAGE_PATH}.
+# (See also utils.sh checkAuxiliaryImage function)
 
 scriptDir="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 
@@ -28,10 +28,10 @@ source ${scriptDir}/utils_base.sh
 [ $? -ne 0 ] && echo "[SEVERE] Missing file ${scriptDir}/utils_base.sh" && exit 1
 UNKNOWN_SHELL=true
 
-checkEnv COMMON_MOUNT_TARGET_PATH COMMON_MOUNT_CONTAINER_NAME || exit 1
+checkEnv AUXILIARY_IMAGE_TARGET_PATH AUXILIARY_IMAGE_CONTAINER_NAME || exit 1
 
-initCommonMount > /tmp/commonMount.out 2>&1
-cat /tmp/commonMount.out
-mkdir -p ${COMMON_MOUNT_TARGET_PATH}/commonMountLogs
-cp /tmp/commonMount.out ${COMMON_MOUNT_TARGET_PATH}/commonMountLogs/${COMMON_MOUNT_CONTAINER_NAME}.out
+initAuxiliaryImage > /tmp/auxiliaryImage.out 2>&1
+cat /tmp/auxiliaryImage.out
+mkdir -p ${AUXILIARY_IMAGE_TARGET_PATH}/auxiliaryImageLogs
+cp /tmp/auxiliaryImage.out ${AUXILIARY_IMAGE_TARGET_PATH}/auxiliaryImageLogs/${AUXILIARY_IMAGE_CONTAINER_NAME}.out
 exit

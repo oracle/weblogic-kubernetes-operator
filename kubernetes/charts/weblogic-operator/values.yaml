@@ -119,7 +119,7 @@ elasticSearchPort: 9200
 # feature name and the value is "true". This will allow the operator team to release features that
 # are not yet ready to be enabled by default, but that are ready for testing by customers. Once a feature is
 # stable then it will be enabled by default and can not be disabled using this configuration.
-# featureGates: "...,CommonMounts=true"
+# featureGates: "...,AuxiliaryImage=true"
 
 # javaLoggingLevel specifies the Java logging level for the operator. This affects the operator pod's
 # log output and the contents of log files in the container's /logs/ directory.
