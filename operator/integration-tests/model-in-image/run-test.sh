@@ -39,7 +39,7 @@ DO_UPDATE2=false
 DO_UPDATE3_IMAGE=false
 DO_UPDATE3_MAIN=false
 DO_UPDATE4=false
-DO_CM=${DO_CM:-false}
+DO_AI=${DO_AI:-false}
 WDT_DOMAIN_TYPE=WLS
 
 function usage() {
@@ -63,7 +63,7 @@ function usage() {
     OPER_NAMESPACE        : sample-weblogic-operator-ns (used by -oper)
     BASE_IMAGE_NAME       : Base WebLogic Image
     BASE_IMAGE_TAG        : Base WebLogic Image Tag
-    DO_CM                 : false (run the tests in common mounts mode)
+    DO_AI                 : false (run the tests in auxiliary image mode)
 
     (see test-env.sh for full list)
 
@@ -75,7 +75,7 @@ function usage() {
                 Note that this depends on the db being deployed
                 and initialized via rcu. So either pre-deploy
                 the db and run rcu or pass '-db' and '-rcu' too.
-    -cm       : Run the tests in common mounts mode.
+    -ai       : Run the tests in auxiliary images mode.
     -assume-db: Assume Oracle DB is running.
                 If set, then the 'update4' test will include DB tests.
                 Defaults to true for '-jrf' or '-db'.
@@ -165,7 +165,7 @@ while [ ! -z "${1:-}" ]; do
     -check-sample)   DO_CHECK_SAMPLE="true" ;;
     -initial-image)  DO_INITIAL_IMAGE="true" ;;
     -initial-main)   DO_INITIAL_MAIN="true" ;;
-    -cm)             DO_CM="true" ;;
+    -ai)             DO_AI="true" ;;
     -update1)        DO_UPDATE1="true" ;;
     -update2)        DO_UPDATE2="true" ;;
     -update3-image)  DO_UPDATE3_IMAGE="true" ;;  
@@ -326,7 +326,7 @@ fi
 
 if [ "$DO_OPER" = "true" ]; then
   doCommand -c "echo ====== OPER DEPLOY ======"
-  doCommand "export DO_CM=$DO_CM"
+  doCommand "export DO_AI=$DO_AI"
   doCommand  "\$TESTDIR/deploy-operator.sh"
 fi
 
@@ -350,9 +350,9 @@ fi
 if [ "$DO_INITIAL_IMAGE" = "true" ]; then
   doCommand -c "echo ====== USE CASE: INITIAL-IMAGE ======"
 
-  if [ "$DO_CM" = "true" ]; then
-    doCommand -c "echo Running in common mounts mode"
-    doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-CM"
+  if [ "$DO_AI" = "true" ]; then
+    doCommand -c "echo Running in auxiliary image mode"
+    doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-AI"
   fi
   doCommand    "\$MIIWRAPPERDIR/stage-tooling.sh"
   doCommand    "\$MIIWRAPPERDIR/build-model-image.sh"
@@ -361,9 +361,9 @@ fi
 if [ "$DO_INITIAL_MAIN" = "true" ]; then
   doCommand -c "echo ====== USE CASE: INITIAL-MAIN ======"
 
-  if [ "$DO_CM" = "true" ]; then
-    doCommand -c "echo Running in common mounts mode"
-    doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-CM"
+  if [ "$DO_AI" = "true" ]; then
+    doCommand -c "echo Running in auxiliary image mode"
+    doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-AI"
   fi
   doCommand -c "export DOMAIN_UID=$DOMAIN_UID1"
   doCommand -c "export DOMAIN_RESOURCE_FILENAME=domain-resources/mii-initial.yaml"
@@ -409,9 +409,9 @@ fi
 if [ "$DO_UPDATE1" = "true" ]; then
   doCommand -c "echo ====== USE CASE: UPDATE1 ======"
 
-  if [ "$DO_CM" = "true" ]; then
-    doCommand -c "echo Running in common mounts mode"
-    doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-CM"
+  if [ "$DO_AI" = "true" ]; then
+    doCommand -c "echo Running in auxiliary image mode"
+    doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-AI"
   fi
   doCommand -c "export DOMAIN_UID=$DOMAIN_UID1"
   doCommand -c "export DOMAIN_RESOURCE_FILENAME=domain-resources/mii-update1.yaml"
@@ -447,9 +447,9 @@ fi
 if [ "$DO_UPDATE2" = "true" ]; then
   doCommand -c "echo ====== USE CASE: UPDATE2 ======"
 
-  if [ "$DO_CM" = "true" ]; then
-    doCommand -c "echo Running in common mounts mode"
-    doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-CM"
+  if [ "$DO_AI" = "true" ]; then
+    doCommand -c "echo Running in auxiliary image mode"
+    doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-AI"
   fi
   doCommand -c "export DOMAIN_UID=$DOMAIN_UID2"
   doCommand -c "export DOMAIN_RESOURCE_FILENAME=domain-resources/mii-update2.yaml"
@@ -487,9 +487,9 @@ fi
 
 if [ "$DO_UPDATE3_IMAGE" = "true" ]; then
   doCommand -c "echo ====== USE CASE: UPDATE3-IMAGE ======"
-  if [ "$DO_CM" = "true" ]; then
-    doCommand -c "echo Running in common mounts mode"
-    doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-CM"
+  if [ "$DO_AI" = "true" ]; then
+    doCommand -c "echo Running in auxiliary image mode"
+    doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-AI"
     doCommand -c "export MODEL_IMAGE_TAG=${IMAGE_TYPE}-v2"
   else
     doCommand -c "export MODEL_IMAGE_TAG=${WDT_DOMAIN_TYPE}-v2"
@@ -503,9 +503,9 @@ if [ "$DO_UPDATE3_MAIN" = "true" ]; then
 
   dumpInfo
 
-  if [ "$DO_CM" = "true" ]; then
-    doCommand -c "echo Running in common mounts mode"
-    doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-CM"
+  if [ "$DO_AI" = "true" ]; then
+    doCommand -c "echo Running in auxiliary image mode"
+    doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-AI"
     doCommand -c "export MODEL_IMAGE_TAG=${IMAGE_TYPE}-v2"
   else
     doCommand -c "export MODEL_IMAGE_TAG=${WDT_DOMAIN_TYPE}-v2"
@@ -545,9 +545,9 @@ fi
 if [ "$DO_UPDATE4" = "true" ]; then
   doCommand -c "echo ====== USE CASE: UPDATE4 ======"
 
-  if [ "$DO_CM" = "true" ]; then
-    doCommand -c "echo Running in common mounts mode"
-    doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-CM"
+  if [ "$DO_AI" = "true" ]; then
+    doCommand -c "echo Running in auxiliary image mode"
+    doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-AI"
   fi
 
   doCommand -c "export DOMAIN_UID=$DOMAIN_UID1"

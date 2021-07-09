@@ -26,16 +26,16 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.TuningParameters;
-import oracle.kubernetes.weblogic.domain.model.CommonMount;
-import oracle.kubernetes.weblogic.domain.model.CommonMountEnvVars;
-import oracle.kubernetes.weblogic.domain.model.CommonMountVolume;
+import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
+import oracle.kubernetes.weblogic.domain.model.AuxiliaryImageEnvVars;
+import oracle.kubernetes.weblogic.domain.model.AuxiliaryImageVolume;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 
 import static oracle.kubernetes.operator.helpers.LegalNames.toDns1123LegalName;
-import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX;
-import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_INIT_CONTAINER_WRAPPER_SCRIPT;
-import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_TARGET_PATH;
-import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_VOLUME_NAME_PREFIX;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_TARGET_PATH;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_VOLUME_NAME_PREFIX;
 
 public abstract class BasePodStepContext extends StepContextBase {
 
@@ -51,32 +51,33 @@ public abstract class BasePodStepContext extends StepContextBase {
 
   abstract ServerSpec getServerSpec();
 
-  String getMountPath(CommonMount commonMount, List<CommonMountVolume> commonMountVolumes) {
-    return commonMountVolumes.stream().filter(
-            commonMountVolume -> hasMatchingVolumeName(commonMountVolume, commonMount)).findFirst()
-            .map(CommonMountVolume::getMountPath).orElse(null);
+  String getMountPath(AuxiliaryImage auxiliaryImage, List<AuxiliaryImageVolume> auxiliaryImageVolumes) {
+    return auxiliaryImageVolumes.stream().filter(
+            auxiliaryImageVolume -> hasMatchingVolumeName(auxiliaryImageVolume, auxiliaryImage)).findFirst()
+            .map(AuxiliaryImageVolume::getMountPath).orElse(null);
   }
 
-  private boolean hasMatchingVolumeName(CommonMountVolume commonMountVolume, CommonMount commonMount) {
-    return commonMount.getVolume().equals(commonMountVolume.getName());
+  private boolean hasMatchingVolumeName(AuxiliaryImageVolume auxiliaryImageVolume, AuxiliaryImage auxiliaryImage) {
+    return auxiliaryImage.getVolume().equals(auxiliaryImageVolume.getName());
   }
 
-  protected void addVolumeMount(V1Container container, CommonMount cm) {
-    Optional.ofNullable(getMountPath(cm, info.getDomain().getCommonMountVolumes())).ifPresent(mountPath ->
-            addVolumeMountIfMissing(container, cm, mountPath));
+  protected void addVolumeMount(V1Container container, AuxiliaryImage auxiliaryImage) {
+    Optional.ofNullable(getMountPath(auxiliaryImage,
+        info.getDomain().getAuxiliaryImageVolumes())).ifPresent(mountPath ->
+            addVolumeMountIfMissing(container, auxiliaryImage, mountPath));
   }
 
-  protected void addVolumeMountIfMissing(V1Container container, CommonMount cm, String mountPath) {
+  protected void addVolumeMountIfMissing(V1Container container, AuxiliaryImage auxiliaryImage, String mountPath) {
     if (Optional.ofNullable(container.getVolumeMounts()).map(volumeMounts -> volumeMounts.stream().noneMatch(
-            volumeMount -> hasMatchingVolumeMountName(volumeMount, cm))).orElse(true)) {
+            volumeMount -> hasMatchingVolumeMountName(volumeMount, auxiliaryImage))).orElse(true)) {
       container.addVolumeMountsItem(
-              new V1VolumeMount().name(getDNS1123CommonMountVolumeName(cm.getVolume()))
+              new V1VolumeMount().name(getDNS1123auxiliaryImageVolumeName(auxiliaryImage.getVolume()))
                       .mountPath(mountPath));
     }
   }
 
-  private boolean hasMatchingVolumeMountName(V1VolumeMount volumeMount, CommonMount commonMount) {
-    return getDNS1123CommonMountVolumeName(commonMount.getVolume()).equals(volumeMount.getName());
+  private boolean hasMatchingVolumeMountName(V1VolumeMount volumeMount, AuxiliaryImage auxiliaryImage) {
+    return getDNS1123auxiliaryImageVolumeName(auxiliaryImage.getVolume()).equals(volumeMount.getName());
   }
 
   abstract String getContainerName();
@@ -96,58 +97,60 @@ public abstract class BasePodStepContext extends StepContextBase {
         .securityContext(getServerSpec().getContainerSecurityContext());
   }
 
-  protected V1Volume createEmptyDirVolume(CommonMountVolume cmv) {
+  protected V1Volume createEmptyDirVolume(AuxiliaryImageVolume auxiliaryImageVolume) {
     V1EmptyDirVolumeSource emptyDirVolumeSource = new V1EmptyDirVolumeSource();
-    Optional.ofNullable(cmv.getMedium()).ifPresent(emptyDirVolumeSource::medium);
-    Optional.ofNullable(cmv.getSizeLimit())
+    Optional.ofNullable(auxiliaryImageVolume.getMedium()).ifPresent(emptyDirVolumeSource::medium);
+    Optional.ofNullable(auxiliaryImageVolume.getSizeLimit())
             .ifPresent(sl -> emptyDirVolumeSource.sizeLimit(Quantity.fromString((String) sl)));
-    return new V1Volume().name(getDNS1123CommonMountVolumeName(cmv.getName())).emptyDir(emptyDirVolumeSource);
+    return new V1Volume()
+        .name(getDNS1123auxiliaryImageVolumeName(auxiliaryImageVolume.getName())).emptyDir(emptyDirVolumeSource);
   }
 
-  public String getDNS1123CommonMountVolumeName(String name) {
-    return toDns1123LegalName(COMMON_MOUNT_VOLUME_NAME_PREFIX + name);
+  public String getDNS1123auxiliaryImageVolumeName(String name) {
+    return toDns1123LegalName(AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + name);
   }
 
-  protected V1Container createInitContainerForCommonMount(CommonMount commonMount, int index) {
+  protected V1Container createInitContainerForAuxiliaryImage(AuxiliaryImage auxiliaryImage, int index) {
     return new V1Container().name(getName(index))
-        .image(commonMount.getImage())
-            .imagePullPolicy(commonMount.getImagePullPolicy())
-            .command(Collections.singletonList(COMMON_MOUNT_INIT_CONTAINER_WRAPPER_SCRIPT))
-            .env(createEnv(commonMount, info.getDomain().getCommonMountVolumes(), getName(index)))
+        .image(auxiliaryImage.getImage())
+            .imagePullPolicy(auxiliaryImage.getImagePullPolicy())
+            .command(Collections.singletonList(AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT))
+            .env(createEnv(auxiliaryImage, info.getDomain().getAuxiliaryImageVolumes(), getName(index)))
             .volumeMounts(Arrays.asList(
-                    new V1VolumeMount().name(getDNS1123CommonMountVolumeName(commonMount.getVolume()))
-                            .mountPath(COMMON_MOUNT_TARGET_PATH),
+                    new V1VolumeMount().name(getDNS1123auxiliaryImageVolumeName(auxiliaryImage.getVolume()))
+                            .mountPath(AUXILIARY_IMAGE_TARGET_PATH),
                     new V1VolumeMount().name(SCRIPTS_VOLUME).mountPath(SCRIPTS_MOUNTS_PATH)));
   }
 
   private String getName(int index) {
-    return COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + (index + 1);
+    return AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + (index + 1);
   }
 
-  protected List<V1EnvVar> createEnv(CommonMount commonMount, List<CommonMountVolume> commonMountVolumes, String name) {
+  protected List<V1EnvVar> createEnv(AuxiliaryImage auxiliaryImage,
+                                     List<AuxiliaryImageVolume> auxiliaryImageVolumes, String name) {
     List<V1EnvVar> vars = new ArrayList<>();
-    addEnvVar(vars, CommonMountEnvVars.COMMON_MOUNT_PATH, getMountPath(commonMount, commonMountVolumes));
-    addEnvVar(vars, CommonMountEnvVars.COMMON_MOUNT_TARGET_PATH, COMMON_MOUNT_TARGET_PATH);
-    addEnvVar(vars, CommonMountEnvVars.COMMON_MOUNT_COMMAND, commonMount.getCommand());
-    addEnvVar(vars, CommonMountEnvVars.COMMON_MOUNT_CONTAINER_IMAGE, commonMount.getImage());
-    addEnvVar(vars, CommonMountEnvVars.COMMON_MOUNT_CONTAINER_NAME, name);
+    addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATH, getMountPath(auxiliaryImage, auxiliaryImageVolumes));
+    addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_TARGET_PATH, AUXILIARY_IMAGE_TARGET_PATH);
+    addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_COMMAND, auxiliaryImage.getCommand());
+    addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_IMAGE, auxiliaryImage.getImage());
+    addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_NAME, name);
     return vars;
   }
 
-  protected void addEmptyDirVolume(V1PodSpec podSpec, List<CommonMountVolume> commonMountVolumes) {
-    Optional.ofNullable(commonMountVolumes).ifPresent(volumes -> volumes.forEach(commonMountVolume ->
-            addVolumeIfMissing(podSpec, commonMountVolume)));
+  protected void addEmptyDirVolume(V1PodSpec podSpec, List<AuxiliaryImageVolume> auxiliaryImageVolumes) {
+    Optional.ofNullable(auxiliaryImageVolumes).ifPresent(volumes -> volumes.forEach(auxiliaryImageVolume ->
+            addVolumeIfMissing(podSpec, auxiliaryImageVolume)));
   }
 
-  private void addVolumeIfMissing(V1PodSpec podSpec, CommonMountVolume commonMountVolume) {
+  private void addVolumeIfMissing(V1PodSpec podSpec, AuxiliaryImageVolume auxiliaryImageVolume) {
     if (Optional.ofNullable(podSpec.getVolumes()).map(volumes -> volumes.stream().noneMatch(
-            volume -> podHasMatchingVolumeName(volume, commonMountVolume))).orElse(true)) {
-      podSpec.addVolumesItem(createEmptyDirVolume(commonMountVolume));
+            volume -> podHasMatchingVolumeName(volume, auxiliaryImageVolume))).orElse(true)) {
+      podSpec.addVolumesItem(createEmptyDirVolume(auxiliaryImageVolume));
     }
   }
 
-  private boolean podHasMatchingVolumeName(V1Volume volume, CommonMountVolume commonMountVolume) {
-    return volume.getName().equals(commonMountVolume.getName());
+  private boolean podHasMatchingVolumeName(V1Volume volume, AuxiliaryImageVolume auxiliaryImageVolume) {
+    return volume.getName().equals(auxiliaryImageVolume.getName());
   }
 
   protected V1PodSpec createPodSpec(TuningParameters tuningParameters) {
@@ -310,15 +313,18 @@ public abstract class BasePodStepContext extends StepContextBase {
     return KubernetesConstants.CONTAINER_NAME;
   }
 
-  protected String getCommonMountPaths(List<CommonMount> commonMounts, List<CommonMountVolume> commonMountVolumes) {
-    return Optional.ofNullable(commonMounts).map(cmList -> createCommonMountPathsEnv(cmList, commonMountVolumes))
-            .orElse(null);
+  protected String getAuxiliaryImagePaths(List<AuxiliaryImage> auxiliaryImages,
+                                          List<AuxiliaryImageVolume> auxiliaryImageVolumes) {
+    return Optional.ofNullable(auxiliaryImages).map(
+        aiList -> createauxiliaryImagePathsEnv(aiList, auxiliaryImageVolumes)).orElse(null);
   }
 
-  private String createCommonMountPathsEnv(List<CommonMount> commonMounts, List<CommonMountVolume> commonMountVolumes) {
-    StringJoiner commonMountPaths = new StringJoiner(",","","");
-    commonMounts.forEach(commonMount -> commonMountPaths.add(getMountPath(commonMount, commonMountVolumes)));
-    return Arrays.stream(commonMountPaths.toString().split(Pattern.quote(","))).distinct()
+  private String createauxiliaryImagePathsEnv(List<AuxiliaryImage> auxiliaryImages,
+                                              List<AuxiliaryImageVolume> auxiliaryImageVolumes) {
+    StringJoiner auxiliaryImagePaths = new StringJoiner(",","","");
+    auxiliaryImages.forEach(auxiliaryImage -> auxiliaryImagePaths.add(
+        getMountPath(auxiliaryImage, auxiliaryImageVolumes)));
+    return Arrays.stream(auxiliaryImagePaths.toString().split(Pattern.quote(","))).distinct()
             .filter(st -> !st.isEmpty()).collect(Collectors.joining(","));
   }
 }

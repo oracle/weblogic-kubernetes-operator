@@ -57,9 +57,9 @@ source ${SCRIPTPATH}/utils.sh
 traceTiming "INTROSPECTOR '${DOMAIN_UID}' MAIN START"
 
 # 
-# if the common mount feature is active, verify the mount, and log mount information
+# if the auxiliary image feature is active, verify the mount, and log mount information
 #
-checkCommonMount || exit 1
+checkAuxiliaryImage || exit 1
 
 #
 # Local createFolder method which does an 'exit 1' instead of exitOrLoop for

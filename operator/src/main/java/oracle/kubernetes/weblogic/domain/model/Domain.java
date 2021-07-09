@@ -735,12 +735,12 @@ public class Domain implements KubernetesObject {
   }
 
   /**
-   * Returns the common mount volumes for the domain.
+   * Returns the auxiliary image volumes for the domain.
    *
-   * @return common mount volumes
+   * @return auxiliary volumes
    */
-  public List<CommonMountVolume> getCommonMountVolumes() {
-    return spec.getCommonMountVolumes();
+  public List<AuxiliaryImageVolume> getAuxiliaryImageVolumes() {
+    return spec.getAuxiliaryImageVolumes();
   }
 
   @Override
@@ -799,7 +799,7 @@ public class Domain implements KubernetesObject {
     private final List<String> failures = new ArrayList<>();
     private final Set<String> clusterNames = new HashSet<>();
     private final Set<String> serverNames = new HashSet<>();
-    private final Set<CommonMountVolume> commonMountVolumes = new HashSet<>();
+    private final Set<AuxiliaryImageVolume> auxiliaryImageVolumes = new HashSet<>();
 
     List<String> getValidationFailures(KubernetesResourceLookup kubernetesResources) {
       addDuplicateNames();
@@ -812,9 +812,9 @@ public class Domain implements KubernetesObject {
       addMissingModelConfigMap(kubernetesResources);
       verifyIstioExposingDefaultChannel();
       verifyIntrospectorJobName();
-      verifyCommonMounts();
-      verifyCommonMountVolumes();
-      addDuplicateCommonMountVolumeNames();
+      verifyAuxiliaryImages();
+      verifyAuxiliaryImageVolumes();
+      addDuplicateAuxiliaryImageVolumeNames();
 
       return failures;
     }
@@ -1006,56 +1006,57 @@ public class Domain implements KubernetesObject {
       return true;
     }
 
-    private void verifyCommonMounts() {
-      // if the common mount is specified, verify that specified volume exists in 'spec.commonMountVolumes'.
-      verifyCommonMounts(getAdminServerSpec().getCommonMounts());
-      getSpec().getManagedServers().forEach(managedServer -> verifyCommonMounts(managedServer.getCommonMounts()));
+    private void verifyAuxiliaryImages() {
+      // if the auxiliary image is specified, verify that specified volume exists in 'spec.auxiliaryImageVolumes'.
+      verifyAuxiliaryImages(getAdminServerSpec().getAuxiliaryImages());
+      getSpec().getManagedServers().forEach(managedServer -> verifyAuxiliaryImages(managedServer.getAuxiliaryImages()));
     }
 
-    private void verifyCommonMounts(List<CommonMount> commonMounts) {
-      Optional.ofNullable(commonMounts)
-              .ifPresent(cmList -> cmList.forEach(this::checkIfVolumeExists));
+    private void verifyAuxiliaryImages(List<AuxiliaryImage> auxiliaryImages) {
+      Optional.ofNullable(auxiliaryImages)
+              .ifPresent(aiList -> aiList.forEach(this::checkIfVolumeExists));
     }
 
-    private void checkIfVolumeExists(CommonMount cm) {
-      if (cm.getVolume() == null) {
-        failures.add(DomainValidationMessages.noCommonMountVolumeDefined());
-      } else if (Optional.ofNullable(getSpec().getCommonMountVolumes()).map(c -> c.stream()
-              .filter(commonMountVolume -> hasMatchingVolumeName(commonMountVolume, cm))
+    private void checkIfVolumeExists(AuxiliaryImage auxiliaryImage) {
+      if (auxiliaryImage.getVolume() == null) {
+        failures.add(DomainValidationMessages.noAuxiliaryImageVolumeDefined());
+      } else if (Optional.ofNullable(getSpec().getAuxiliaryImageVolumes()).map(c -> c.stream()
+              .filter(auxiliaryImageVolume -> hasMatchingVolumeName(auxiliaryImageVolume, auxiliaryImage))
               .collect(Collectors.toList())).orElse(new ArrayList<>()).isEmpty()) {
-        failures.add(DomainValidationMessages.noMatchingCommonMountVolumeDefined(cm.getVolume()));
+        failures.add(DomainValidationMessages.noMatchingAuxiliaryImageVolumeDefined(auxiliaryImage.getVolume()));
       }
     }
 
-    private boolean hasMatchingVolumeName(CommonMountVolume commonMountVolume, CommonMount commonMount) {
-      return commonMount.getVolume().equals(commonMountVolume.getName());
+    private boolean hasMatchingVolumeName(AuxiliaryImageVolume auxiliaryImageVolume, AuxiliaryImage auxiliaryImage) {
+      return auxiliaryImage.getVolume().equals(auxiliaryImageVolume.getName());
     }
 
-    private void verifyCommonMountVolumes() {
-      Optional.ofNullable(getSpec().getCommonMountVolumes())
-              .ifPresent(commonMountVolumes -> commonMountVolumes.forEach(this::checkNameAndMountPath));
+    private void verifyAuxiliaryImageVolumes() {
+      Optional.ofNullable(getSpec().getAuxiliaryImageVolumes())
+              .ifPresent(auxiliaryImageVolumes -> auxiliaryImageVolumes.forEach(this::checkNameAndMountPath));
     }
 
-    private void checkNameAndMountPath(CommonMountVolume cmv) {
-      if (cmv.getName() == null) {
-        failures.add(DomainValidationMessages.commonMountVolumeNameNotDefined());
+    private void checkNameAndMountPath(AuxiliaryImageVolume aiv) {
+      if (aiv.getName() == null) {
+        failures.add(DomainValidationMessages.auxiliaryImageVolumeNameNotDefined());
       }
     }
 
-    private void addDuplicateCommonMountVolumeNames() {
-      Optional.ofNullable(getSpec().getCommonMountVolumes())
-              .ifPresent(commonMountVolumes -> commonMountVolumes
-                      .forEach(this::checkDuplicateCommomMountVolume));
+    private void addDuplicateAuxiliaryImageVolumeNames() {
+      Optional.ofNullable(getSpec().getAuxiliaryImageVolumes())
+              .ifPresent(auxiliaryImageVolumes -> auxiliaryImageVolumes
+                      .forEach(this::checkDuplicateAuxiliaryImageVolume));
     }
 
-    private void checkDuplicateCommomMountVolume(CommonMountVolume commonMountVolume) {
-      if (commonMountVolumes.stream().anyMatch(cmv -> cmv.getMountPath().equals(commonMountVolume.getMountPath()))) {
-        failures.add(DomainValidationMessages.duplicateCMVMountPath(commonMountVolume.getMountPath()));
-      } else if (commonMountVolumes.stream().anyMatch(cmv ->
-              cmv.getName().equals(toDns1123LegalName(commonMountVolume.getName())))) {
-        failures.add(DomainValidationMessages.duplicateCommonMountVolumeName(commonMountVolume.getName()));
+    private void checkDuplicateAuxiliaryImageVolume(AuxiliaryImageVolume auxiliaryImageVolume) {
+      if (auxiliaryImageVolumes.stream().anyMatch(
+          aiv -> aiv.getMountPath().equals(auxiliaryImageVolume.getMountPath()))) {
+        failures.add(DomainValidationMessages.duplicateAIVMountPath(auxiliaryImageVolume.getMountPath()));
+      } else if (auxiliaryImageVolumes.stream().anyMatch(aiv ->
+              aiv.getName().equals(toDns1123LegalName(auxiliaryImageVolume.getName())))) {
+        failures.add(DomainValidationMessages.duplicateAuxiliaryImageVolumeName(auxiliaryImageVolume.getName()));
       } else {
-        commonMountVolumes.add(commonMountVolume);
+        auxiliaryImageVolumes.add(auxiliaryImageVolume);
       }
     }
 

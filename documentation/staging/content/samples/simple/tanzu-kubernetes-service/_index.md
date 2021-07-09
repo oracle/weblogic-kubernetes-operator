@@ -499,7 +499,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
       serverPod:
         # Optional new or overridden environment variables for the domain's pods
         # - This sample uses CUSTOM_DOMAIN_NAME in its image model file
-        #   to set the Weblogic domain name
+        #   to set the WebLogic domain name
         env:
         - name: CUSTOM_DOMAIN_NAME
           value: "domain1"

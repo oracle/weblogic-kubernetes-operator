@@ -29,7 +29,7 @@ import static oracle.kubernetes.operator.DomainSourceType.FromModel;
 import static oracle.kubernetes.operator.DomainSourceType.Image;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.helpers.DomainIntrospectorJobTest.TEST_VOLUME_NAME;
-import static oracle.kubernetes.operator.helpers.PodHelperTestBase.getCommonMount;
+import static oracle.kubernetes.operator.helpers.PodHelperTestBase.getAuxiliaryImage;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
@@ -112,78 +112,78 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainConfiguredWithCommonMountButNoCommomMountVolumes_reportError() {
+  public void whenDomainConfiguredWithAuxiliaryImageButNoAuxiliaryImageVolumes_reportError() {
     configureDomain(domain)
-            .withCommonMounts(Collections.singletonList(getCommonMount("wdt-image:v1")));
+            .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")));
 
     assertThat(domain.getValidationFailures(resourceLookup),
-            contains(stringContainsInOrder("serverPod.commonMounts",
+            contains(stringContainsInOrder("serverPod.auxiliaryImages",
                     "there is no matching volume defined with name 'test'")));
   }
 
   @Test
-  public void whenDomainConfiguredWithCommonMountButNoMatchingCommomMountVolumes_reportError() {
+  public void whenDomainConfiguredWithAuxiliaryImageButNoMatchingAuxiliaryImageVolumes_reportError() {
     configureDomain(domain)
-            .withCommonMountVolumes(Collections.singletonList(new CommonMountVolume().name(WRONG_VOLUME_NAME)))
-            .withCommonMounts(Collections.singletonList(getCommonMount("wdt-image:v1")));
+            .withAuxiliaryImageVolumes(Collections.singletonList(new AuxiliaryImageVolume().name(WRONG_VOLUME_NAME)))
+            .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")));
 
     assertThat(domain.getValidationFailures(resourceLookup),
-            contains(stringContainsInOrder("serverPod.commonMounts",
+            contains(stringContainsInOrder("serverPod.auxiliaryImages",
                     "there is no matching volume defined with name 'test'")));
   }
 
   @Test
-  public void whenDomainConfiguredWithCommonMountButNoVolumeName_reportError() {
+  public void whenDomainConfiguredWithAuxiliaryImageButNoVolumeName_reportError() {
     configureDomain(domain)
-            .withCommonMountVolumes(Collections.singletonList(new CommonMountVolume().name(TEST_VOLUME_NAME)))
-            .withCommonMounts(Collections.singletonList(new CommonMount().image("wdt-image:v1")));
+            .withAuxiliaryImageVolumes(Collections.singletonList(new AuxiliaryImageVolume().name(TEST_VOLUME_NAME)))
+            .withAuxiliaryImages(Collections.singletonList(new AuxiliaryImage().image("wdt-image:v1")));
 
     assertThat(domain.getValidationFailures(resourceLookup),
-            contains(stringContainsInOrder("serverPod.commonMounts", "does not define a volume name")));
+            contains(stringContainsInOrder("serverPod.auxiliaryImages", "does not define a volume name")));
   }
 
   @Test
-  public void whenDomainConfiguredWithCommonMountAndMatchingCommomMountVolumes_noErrorsReported() {
+  public void whenDomainConfiguredWithAuxiliaryImageAndMatchingAuxiliaryImageVolumes_noErrorsReported() {
     configureDomain(domain)
-            .withCommonMountVolumes(Collections.singletonList(new CommonMountVolume().name(TEST_VOLUME_NAME)))
-            .withCommonMounts(Collections.singletonList(getCommonMount("wdt-image:v1")));
+            .withAuxiliaryImageVolumes(Collections.singletonList(new AuxiliaryImageVolume().name(TEST_VOLUME_NAME)))
+            .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")));
 
     assertThat(domain.getValidationFailures(resourceLookup),
-            not(contains(stringContainsInOrder("commonMounts", "no volume defined with name 'test'"))));
+            not(contains(stringContainsInOrder("auxiliaryImages", "no volume defined with name 'test'"))));
   }
 
   @Test
-  public void whenDomainConfiguredWithCommonMountVolumesWithNullName_reportError() {
+  public void whenDomainConfiguredWithAuxiliaryImageVolumesWithNullName_reportError() {
     configureDomain(domain)
-            .withCommonMountVolumes(Collections.singletonList(new CommonMountVolume()));
+            .withAuxiliaryImageVolumes(Collections.singletonList(new AuxiliaryImageVolume()));
 
     assertThat(domain.getValidationFailures(resourceLookup),
-            contains(stringContainsInOrder("An item under 'spec.commonMountVolumes'", "does not have a name",
+            contains(stringContainsInOrder("An item under 'spec.auxiliaryImageVolumes'", "does not have a name",
                     "A name is required")));
   }
 
   @Test
-  public void whenDomainConfiguredWithCommonMountVolumesWithSameMountPath_reportError() {
-    List<CommonMountVolume> commonMountVolumes = new ArrayList<>();
-    commonMountVolumes.add(new CommonMountVolume().name("TestVolume").mountPath("/shared"));
-    commonMountVolumes.add(new CommonMountVolume().name("TestVolume").mountPath("/shared"));
+  public void whenDomainConfiguredWithAuxiliaryImageVolumesWithSameMountPath_reportError() {
+    List<AuxiliaryImageVolume> auxiliaryImageVolumes = new ArrayList<>();
+    auxiliaryImageVolumes.add(new AuxiliaryImageVolume().name("TestVolume").mountPath("/shared"));
+    auxiliaryImageVolumes.add(new AuxiliaryImageVolume().name("TestVolume").mountPath("/shared"));
     configureDomain(domain)
-            .withCommonMountVolumes(commonMountVolumes);
+            .withAuxiliaryImageVolumes(auxiliaryImageVolumes);
 
     assertThat(domain.getValidationFailures(resourceLookup),
-            contains(stringContainsInOrder("More than one item under 'spec.commonMountVolumes'", "/shared")));
+            contains(stringContainsInOrder("More than one item under 'spec.auxiliaryImageVolumes'", "/shared")));
   }
 
   @Test
-  public void whenDomainConfiguredWithCommonMountVolumesWithSameName_reportError() {
-    List<CommonMountVolume> commonMountVolumes = new ArrayList<>();
-    commonMountVolumes.add(new CommonMountVolume().name(TEST_VOLUME_NAME));
-    commonMountVolumes.add(new CommonMountVolume().name(TEST_VOLUME_NAME).mountPath("/common1"));
+  public void whenDomainConfiguredWithAuxiliaryImageVolumesWithSameName_reportError() {
+    List<AuxiliaryImageVolume> auxiliaryImageVolumes = new ArrayList<>();
+    auxiliaryImageVolumes.add(new AuxiliaryImageVolume().name(TEST_VOLUME_NAME));
+    auxiliaryImageVolumes.add(new AuxiliaryImageVolume().name(TEST_VOLUME_NAME).mountPath("/common1"));
     configureDomain(domain)
-            .withCommonMountVolumes(commonMountVolumes);
+            .withAuxiliaryImageVolumes(auxiliaryImageVolumes);
 
     assertThat(domain.getValidationFailures(resourceLookup),
-            contains(stringContainsInOrder("More than one item under 'spec.commonMountVolumes'",
+            contains(stringContainsInOrder("More than one item under 'spec.auxiliaryImageVolumes'",
                     TEST_VOLUME_NAME)));
   }
 

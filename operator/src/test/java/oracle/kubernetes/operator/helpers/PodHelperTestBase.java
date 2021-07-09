@@ -79,9 +79,9 @@ import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
-import oracle.kubernetes.weblogic.domain.model.CommonMount;
-import oracle.kubernetes.weblogic.domain.model.CommonMountEnvVars;
-import oracle.kubernetes.weblogic.domain.model.CommonMountVolume;
+import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
+import oracle.kubernetes.weblogic.domain.model.AuxiliaryImageEnvVars;
+import oracle.kubernetes.weblogic.domain.model.AuxiliaryImageVolume;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainValidationBaseTest;
@@ -129,7 +129,6 @@ import static oracle.kubernetes.operator.helpers.Matchers.ProbeMatcher.hasExpect
 import static oracle.kubernetes.operator.helpers.Matchers.VolumeMatcher.volume;
 import static oracle.kubernetes.operator.helpers.Matchers.VolumeMountMatcher.readOnlyVolumeMount;
 import static oracle.kubernetes.operator.helpers.Matchers.VolumeMountMatcher.writableVolumeMount;
-import static oracle.kubernetes.operator.helpers.Matchers.hasCommonMountInitContainer;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
 import static oracle.kubernetes.operator.helpers.Matchers.hasPvClaimVolume;
 import static oracle.kubernetes.operator.helpers.Matchers.hasResourceQuantity;
@@ -149,11 +148,11 @@ import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_
 import static oracle.kubernetes.operator.logging.MessageKeys.CYCLING_POD;
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
-import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND;
-import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX;
-import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_TARGET_PATH;
-import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_VOLUME_NAME_PREFIX;
-import static oracle.kubernetes.weblogic.domain.model.CommonMountVolume.DEFAULT_COMMON_MOUNT_PATH;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_TARGET_PATH;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_VOLUME_NAME_PREFIX;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImageVolume.DEFAULT_AUXILIARY_IMAGE_PATH;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -257,13 +256,13 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     return envVars;
   }
 
-  static List<V1EnvVar> getCommonMountEnvVariables(String image, String command, String name) {
+  static List<V1EnvVar> getAuxiliaryImageEnvVariables(String image, String command, String name) {
     List<V1EnvVar> envVars = new ArrayList<>();
-    envVars.add(createEnvVar(CommonMountEnvVars.COMMON_MOUNT_PATH, DEFAULT_COMMON_MOUNT_PATH));
-    envVars.add(createEnvVar(CommonMountEnvVars.COMMON_MOUNT_TARGET_PATH, COMMON_MOUNT_TARGET_PATH));
-    envVars.add(createEnvVar(CommonMountEnvVars.COMMON_MOUNT_COMMAND, command));
-    envVars.add(createEnvVar(CommonMountEnvVars.COMMON_MOUNT_CONTAINER_IMAGE, image));
-    envVars.add(createEnvVar(CommonMountEnvVars.COMMON_MOUNT_CONTAINER_NAME, name));
+    envVars.add(createEnvVar(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATH, DEFAULT_AUXILIARY_IMAGE_PATH));
+    envVars.add(createEnvVar(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_TARGET_PATH, AUXILIARY_IMAGE_TARGET_PATH));
+    envVars.add(createEnvVar(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_COMMAND, command));
+    envVars.add(createEnvVar(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_IMAGE, image));
+    envVars.add(createEnvVar(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_NAME, name));
     return envVars;
   }
 
@@ -678,125 +677,129 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasCommonMount_createPodsWithInitContainerEmptyDirVolumeAndVolumeMounts() {
+  public void whenDomainHasAuxiliaryImage_createPodsWithInitContainerEmptyDirVolumeAndVolumeMounts() {
     getConfigurator()
-            .withCommonMountVolumes(getCommonMountVolume(DEFAULT_COMMON_MOUNT_PATH))
-            .withCommonMounts(Collections.singletonList(getCommonMount("wdt-image:v1")));
+            .withAuxiliaryImageVolumes(getAuxiliaryImageVolume(DEFAULT_AUXILIARY_IMAGE_PATH))
+            .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")));
 
     assertThat(getCreatedPodSpecInitContainers(),
-            allOf(hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image:v1",
-                    "IfNotPresent", COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND)));
+            allOf(Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+                "wdt-image:v1",
+                "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND)));
     assertThat(getCreatedPod().getSpec().getVolumes(),
-            hasItem(new V1Volume().name(getCommonMountVolumeName()).emptyDir(
+            hasItem(new V1Volume().name(getAuxiliaryImageVolumeName()).emptyDir(
                     new V1EmptyDirVolumeSource())));
     assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
-            hasItem(new V1VolumeMount().name(getCommonMountVolumeName()).mountPath(DEFAULT_COMMON_MOUNT_PATH)));
+            hasItem(new V1VolumeMount().name(getAuxiliaryImageVolumeName()).mountPath(DEFAULT_AUXILIARY_IMAGE_PATH)));
   }
 
   @NotNull
-  protected String getCommonMountVolumeName() {
-    return getCommonMountVolumeName(TEST_VOLUME_NAME);
+  protected String getAuxiliaryImageVolumeName() {
+    return getAuxiliaryImageVolumeName(TEST_VOLUME_NAME);
   }
 
   @NotNull
-  protected String getCommonMountVolumeName(String testVolumeName) {
-    return COMMON_MOUNT_VOLUME_NAME_PREFIX + testVolumeName;
+  protected String getAuxiliaryImageVolumeName(String testVolumeName) {
+    return AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + testVolumeName;
   }
 
   @Test
-  public void whenDomainHasCommonMountAndVolumeWithCustomMountPath_createPodsWithVolumeMountHavingCustomMountPath() {
+  public void whenDomainHasAuxiliaryImageAndVolumeWithCustomMountPath_createPodsWithVolumeMountHavingCustomMountPath() {
     getConfigurator()
-            .withCommonMountVolumes(getCommonMountVolume(CUSTOM_MOUNT_PATH))
-            .withCommonMounts(getCommonMounts("wdt-image:v1"));
+            .withAuxiliaryImageVolumes(getAuxiliaryImageVolume(CUSTOM_MOUNT_PATH))
+            .withAuxiliaryImages(getAuxiliaryImages("wdt-image:v1"));
 
     assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
-            hasItem(new V1VolumeMount().name(getCommonMountVolumeName()).mountPath(CUSTOM_MOUNT_PATH)));
+            hasItem(new V1VolumeMount().name(getAuxiliaryImageVolumeName()).mountPath(CUSTOM_MOUNT_PATH)));
   }
 
   @Test
-  public void whenDomainHasCommonMountVolumeWithMedium_createPodsWithVolumeHavingSpecifiedMedium() {
+  public void whenDomainHasAuxiliaryImageVolumeWithMedium_createPodsWithVolumeHavingSpecifiedMedium() {
     getConfigurator()
-            .withCommonMountVolumes(Collections.singletonList(
-                    new CommonMountVolume().name(TEST_VOLUME_NAME).medium("Memory")))
-            .withCommonMounts(getCommonMounts("wdt-image:v1"));
+            .withAuxiliaryImageVolumes(Collections.singletonList(
+                    new AuxiliaryImageVolume().name(TEST_VOLUME_NAME).medium("Memory")))
+            .withAuxiliaryImages(getAuxiliaryImages("wdt-image:v1"));
 
     assertThat(getCreatedPod().getSpec().getVolumes(),
-            hasItem(new V1Volume().name(getCommonMountVolumeName()).emptyDir(
+            hasItem(new V1Volume().name(getAuxiliaryImageVolumeName()).emptyDir(
                     new V1EmptyDirVolumeSource().medium("Memory"))));
   }
 
   @Test
-  public void whenDomainHasCommonMountVolumeWithSizeLimit_createPodsWithVolumeHavingSpecifiedSizeLimit() {
+  public void whenDomainHasAuxiliaryImageVolumeWithSizeLimit_createPodsWithVolumeHavingSpecifiedSizeLimit() {
     getConfigurator()
-            .withCommonMountVolumes(Collections.singletonList(
-                    new CommonMountVolume().name(TEST_VOLUME_NAME).sizeLimit("100G")))
-            .withCommonMounts(getCommonMounts());
+            .withAuxiliaryImageVolumes(Collections.singletonList(
+                    new AuxiliaryImageVolume().name(TEST_VOLUME_NAME).sizeLimit("100G")))
+            .withAuxiliaryImages(getAuxiliaryImages());
 
     assertThat(getCreatedPod().getSpec().getVolumes(),
-            hasItem(new V1Volume().name(getCommonMountVolumeName()).emptyDir(
+            hasItem(new V1Volume().name(getAuxiliaryImageVolumeName()).emptyDir(
                     new V1EmptyDirVolumeSource().sizeLimit(Quantity.fromString("100G")))));
   }
 
   @Test
-  public void whenDomainHasCommonMountsWithImagePullPolicy_createPodsWithCMInitContainerHavingImagePullPolicy() {
+  public void whenDomainHasAuxiliaryImagesWithImagePullPolicy_createPodsWithAIInitContainerHavingImagePullPolicy() {
     getConfigurator()
-            .withCommonMountVolumes(getCommonMountVolume(DEFAULT_COMMON_MOUNT_PATH))
-            .withCommonMounts(Collections.singletonList(getCommonMount("wdt-image:v1")
+            .withAuxiliaryImageVolumes(getAuxiliaryImageVolume(DEFAULT_AUXILIARY_IMAGE_PATH))
+            .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")
                     .imagePullPolicy("ALWAYS").volume(TEST_VOLUME_NAME)));
 
     assertThat(getCreatedPodSpecInitContainers(),
-            allOf(hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image:v1", "ALWAYS",
-                    COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND)));
+            allOf(Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+                "wdt-image:v1", "ALWAYS",
+                AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND)));
   }
 
   @Test
-  public void whenDomainHasCommonMountsWithCustomCommand_createPodsWithCommonMountInitContainerHavingCustomCommand() {
+  public void whenDomainHasAuxImagesWithCustomCommand_createPodsWithAuxImageInitContainerHavingCustomCommand() {
     getConfigurator()
-            .withCommonMountVolumes(Collections.singletonList(
-                    new CommonMountVolume().mountPath(DEFAULT_COMMON_MOUNT_PATH).name(TEST_VOLUME_NAME)))
-            .withCommonMounts(Collections.singletonList(getCommonMount("wdt-image:v1")
+            .withAuxiliaryImageVolumes(Collections.singletonList(
+                    new AuxiliaryImageVolume().mountPath(DEFAULT_AUXILIARY_IMAGE_PATH).name(TEST_VOLUME_NAME)))
+            .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")
                     .command(CUSTOM_COMMAND_SCRIPT)));
 
     assertThat(getCreatedPodSpecInitContainers(),
-            allOf(hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image:v1",
-                    "IfNotPresent", CUSTOM_COMMAND_SCRIPT)));
+            allOf(Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+                "wdt-image:v1", "IfNotPresent", CUSTOM_COMMAND_SCRIPT)));
   }
 
   @Test
-  public void whenDomainHasMultipleCommonMounts_createPodsWithCommonMountInitContainersInCorrectOrder() {
+  public void whenDomainHasMultipleAuxiliaryImages_createPodsWithAuxiliaryImageInitContainersInCorrectOrder() {
     getConfigurator()
-            .withCommonMountVolumes(Collections.singletonList(
-                    new CommonMountVolume().mountPath(DEFAULT_COMMON_MOUNT_PATH).name(TEST_VOLUME_NAME)))
-            .withCommonMounts(getCommonMounts("wdt-image1:v1", "wdt-image2:v1"));
+            .withAuxiliaryImageVolumes(Collections.singletonList(
+                    new AuxiliaryImageVolume().mountPath(DEFAULT_AUXILIARY_IMAGE_PATH).name(TEST_VOLUME_NAME)))
+            .withAuxiliaryImages(getAuxiliaryImages("wdt-image1:v1", "wdt-image2:v1"));
 
     assertThat(getCreatedPodSpecInitContainers(),
-            allOf(hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image1:v1",
-                    "IfNotPresent", COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND),
-                    hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 2, "wdt-image2:v1",
-                            "IfNotPresent", COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND)));
+            allOf(Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+                "wdt-image1:v1",
+                "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND),
+                Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 2,
+                    "wdt-image2:v1",
+                    "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND)));
     assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(), hasSize(4));
     assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
-            hasItem(new V1VolumeMount().name(COMMON_MOUNT_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME)
-                    .mountPath(DEFAULT_COMMON_MOUNT_PATH)));
+            hasItem(new V1VolumeMount().name(AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME)
+                    .mountPath(DEFAULT_AUXILIARY_IMAGE_PATH)));
   }
 
   @NotNull
-  List<CommonMount> getCommonMounts(String... images) {
-    List<CommonMount> commonMountList = new ArrayList<>();
-    Arrays.stream(images).forEach(image -> commonMountList
-            .add(new CommonMount().image(image).volume(TEST_VOLUME_NAME)));
-    return commonMountList;
+  List<AuxiliaryImage> getAuxiliaryImages(String... images) {
+    List<AuxiliaryImage> auxiliaryImageList = new ArrayList<>();
+    Arrays.stream(images).forEach(image -> auxiliaryImageList
+            .add(new AuxiliaryImage().image(image).volume(TEST_VOLUME_NAME)));
+    return auxiliaryImageList;
   }
 
   @NotNull
-  List<CommonMountVolume> getCommonMountVolume(String... mountPath) {
-    CommonMountVolume cmv = new CommonMountVolume().name(TEST_VOLUME_NAME);
+  List<AuxiliaryImageVolume> getAuxiliaryImageVolume(String... mountPath) {
+    AuxiliaryImageVolume cmv = new AuxiliaryImageVolume().name(TEST_VOLUME_NAME);
     return Collections.singletonList(mountPath.length > 0 ? cmv.mountPath(mountPath[0]) : cmv);
   }
 
   @NotNull
-  public static CommonMount getCommonMount(String image) {
-    return new CommonMount().image(image).volume(TEST_VOLUME_NAME);
+  public static AuxiliaryImage getAuxiliaryImage(String image) {
+    return new AuxiliaryImage().image(image).volume(TEST_VOLUME_NAME);
   }
 
   @Test

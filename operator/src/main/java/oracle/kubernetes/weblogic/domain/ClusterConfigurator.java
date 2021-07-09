@@ -9,7 +9,7 @@ import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
-import oracle.kubernetes.weblogic.domain.model.CommonMount;
+import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 
 /** An interface for an object to configure a cluster in a test. */
 @SuppressWarnings("UnusedReturnValue")
@@ -135,6 +135,6 @@ public interface ClusterConfigurator extends ServiceConfigurator {
 
   ClusterConfigurator withMaxConcurrentShutdown(Integer maxConcurrentShutdown);
 
-  ClusterConfigurator withCommonMounts(List<CommonMount> commonMountList);
+  ClusterConfigurator withAuxiliaryImages(List<AuxiliaryImage> auxiliaryImageList);
 
 }
