@@ -389,7 +389,7 @@ function createWebLogicDomain {
       -s ${imagePullSecretName} \
       -d container-registry.oracle.com
 
-    # Create Weblogic Server Domain
+    # Create WebLogic Server Domain
     echo Creating WebLogic Server domain ${domainUID}
     bash ${dirCreateDomain}/create-domain.sh -i $domain1Output -o ${outputDir} -e -v
 

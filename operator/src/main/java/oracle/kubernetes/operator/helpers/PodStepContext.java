@@ -62,8 +62,8 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.weblogic.domain.model.CommonMount;
-import oracle.kubernetes.weblogic.domain.model.CommonMountEnvVars;
+import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
+import oracle.kubernetes.weblogic.domain.model.AuxiliaryImageEnvVars;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
@@ -807,22 +807,23 @@ public abstract class PodStepContext extends BasePodStepContext {
     for (V1Volume additionalVolume : getVolumes(getDomainUid())) {
       podSpec.addVolumesItem(additionalVolume);
     }
-    addEmptyDirVolume(podSpec, info.getDomain().getCommonMountVolumes());
+    addEmptyDirVolume(podSpec, info.getDomain().getAuxiliaryImageVolumes());
     return podSpec;
   }
 
   private List<V1Container> getInitContainers(TuningParameters tuningParameters) {
     List<V1Container> initContainers = new ArrayList<>();
-    Optional.ofNullable(getServerSpec().getCommonMounts()).ifPresent(commonMounts ->
-            getCommonMountInitContainers(commonMounts, initContainers));
+    Optional.ofNullable(getServerSpec().getAuxiliaryImages()).ifPresent(auxiliaryImages ->
+            getAuxiliaryImageInitContainers(auxiliaryImages, initContainers));
     initContainers.addAll(getServerSpec().getInitContainers().stream()
             .map(c -> c.env(createEnv(c, tuningParameters))).collect(Collectors.toList()));
     return initContainers;
   }
 
-  protected void getCommonMountInitContainers(List<CommonMount> commonMountList, List<V1Container> initContainers) {
-    Optional.ofNullable(commonMountList).ifPresent(cl -> IntStream.range(0, cl.size()).forEach(idx ->
-            initContainers.add(createInitContainerForCommonMount(cl.get(idx), idx))));
+  protected void getAuxiliaryImageInitContainers(List<AuxiliaryImage> auxiliaryImageList,
+                                                 List<V1Container> initContainers) {
+    Optional.ofNullable(auxiliaryImageList).ifPresent(cl -> IntStream.range(0, cl.size()).forEach(idx ->
+            initContainers.add(createInitContainerForAuxiliaryImage(cl.get(idx), idx))));
   }
 
   private List<V1EnvVar> createEnv(V1Container c, TuningParameters tuningParameters) {
@@ -863,8 +864,8 @@ public abstract class PodStepContext extends BasePodStepContext {
     for (V1VolumeMount additionalVolumeMount : getVolumeMounts()) {
       v1Container.addVolumeMountsItem(additionalVolumeMount);
     }
-    Optional.ofNullable(getServerSpec().getCommonMounts()).ifPresent(commonMounts ->
-            commonMounts.forEach(cm -> addVolumeMount(v1Container, cm)));
+    Optional.ofNullable(getServerSpec().getAuxiliaryImages()).ifPresent(auxiliaryImages ->
+            auxiliaryImages.forEach(cm -> addVolumeMount(v1Container, cm)));
     return v1Container;
   }
 
@@ -925,16 +926,16 @@ public abstract class PodStepContext extends BasePodStepContext {
     addEnvVar(vars, ServerEnvVars.SERVICE_NAME, LegalNames.toServerServiceName(getDomainUid(), getServerName()));
     addEnvVar(vars, ServerEnvVars.AS_SERVICE_NAME, LegalNames.toServerServiceName(getDomainUid(), getAsName()));
     Optional.ofNullable(getDataHome()).ifPresent(v -> addEnvVar(vars, ServerEnvVars.DATA_HOME, v));
-    Optional.ofNullable(getServerSpec().getCommonMounts()).ifPresent(cm -> addCommonMountEnv(cm, vars));
+    Optional.ofNullable(getServerSpec().getAuxiliaryImages()).ifPresent(cm -> addAuxiliaryImageEnv(cm, vars));
     addEnvVarIfTrue(mockWls(), vars, "MOCK_WLS");
   }
 
-  protected void addCommonMountEnv(List<CommonMount> commonMountList, List<V1EnvVar> vars) {
-    Optional.ofNullable(commonMountList).ifPresent(commonMounts -> {
+  protected void addAuxiliaryImageEnv(List<AuxiliaryImage> auxiliaryImageList, List<V1EnvVar> vars) {
+    Optional.ofNullable(auxiliaryImageList).ifPresent(auxiliaryImages -> {
       addEnvVar(vars, IntrospectorJobEnvVars.WDT_INSTALL_HOME, getWdtInstallHome());
       addEnvVar(vars, IntrospectorJobEnvVars.WDT_MODEL_HOME, getModelHome());
-      Optional.ofNullable(getCommonMountPaths(commonMountList, getDomain().getCommonMountVolumes()))
-              .ifPresent(c -> addEnvVar(vars, CommonMountEnvVars.COMMON_MOUNT_PATHS, c));
+      Optional.ofNullable(getAuxiliaryImagePaths(auxiliaryImageList, getDomain().getAuxiliaryImageVolumes()))
+              .ifPresent(c -> addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATHS, c));
     });
   }
 

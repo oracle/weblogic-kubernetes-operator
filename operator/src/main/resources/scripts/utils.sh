@@ -686,60 +686,60 @@ function adjustPath() {
 }
 
 #
-# checkCommonMount
-#   purpose: If the COMMON_MOUNT_PATH directory exists, it echoes the contents of output files
-#            in ${COMMON_MOUNT_PATH}/commonMountLogs dir. It returns 1 if a SEVERE message
-#            is found in any of the output files in ${COMMON_MOUNT_PATH}/commonMountLogs dirs.
+# checkAuxiliaryImage
+#   purpose: If the AUXILIARY_IMAGE_PATH directory exists, it echoes the contents of output files
+#            in ${AUXILIARY_IMAGE_PATH}/auxiliaryImagetLogs dir. It returns 1 if a SEVERE message
+#            is found in any of the output files in ${AUXILIARY_IMAGE_PATH}/auxiliaryImageLogs dirs.
 #            It also returns 1 if 'successfully' message is not found in the output files
-#            or if the COMMON_MOUNT_PATH directory is empty. Otherwise it returns 0 (success).
-#            See also 'commonMount.sh'.
-#            See also initCommonMount in 'utils_base.sh'.
+#            or if the AUXILIARY_IMAGE_PATH directory is empty. Otherwise it returns 0 (success).
+#            See also 'auxImage.sh'.
+#            See also initAuxiliaryImage in 'utils_base.sh'.
 #
-function checkCommonMount() {
-  # check commonMount results (if any)
-  if [ -z "$COMMON_MOUNT_PATHS" ]; then
-    trace FINE "Common Mount: Skipping common mount checks (no common mounts configured)."
+function checkAuxiliaryImage() {
+  # check auxiliary image results (if any)
+  if [ -z "$AUXILIARY_IMAGE_PATHS" ]; then
+    trace FINE "Auxiliary Image: Skipping auxiliary image checks (no auxiliary images configured)."
     return
   fi
 
-  trace FINE "Common Mount: COMMON_MOUNT_PATHS is '$COMMON_MOUNT_PATHS'."
-  for COMMON_MOUNT_PATH in ${COMMON_MOUNT_PATHS/,/ }; do
-    trace FINE "Common Mount: COMMON_MOUNT_PATH is '$COMMON_MOUNT_PATH'."
-    traceDirs $COMMON_MOUNT_PATH
-    touch ${COMMON_MOUNT_PATH}/testaccess.tmp
+  trace FINE "Auxiliary Image: AUXILIARY_IMAGE_PATHS is '$AUXILIARY_IMAGE_PATHS'."
+  for AUXILIARY_IMAGE_PATH in ${AUXILIARY_IMAGE_PATHS/,/ }; do
+    trace FINE "Auxiliary Image: AUXILIARY_IMAGE_PATH is '$AUXILIARY_IMAGE_PATH'."
+    traceDirs $AUXILIARY_IMAGE_PATH
+    touch ${AUXILIARY_IMAGE_PATH}/testaccess.tmp
     if [ $? -ne 0 ]; then
-      trace SEVERE "Common Mount: Cannot write to the COMMON_MOUNT_PATH '${COMMON_MOUNT_PATH}'. " \
-                   "This path is configurable using the domain resource 'spec.commonMountVolumes.mountPath' " \
+      trace SEVERE "Auxiliary Image: Cannot write to the AUXILIARY_IMAGE_PATH '${AUXILIARY_IMAGE_PATH}'. " \
+                   "This path is configurable using the domain resource 'spec.auxiliaryImageVolumes.mountPath' " \
                    "attribute." && return 1
     fi
-    rm -f ${COMMON_MOUNT_PATH}/testaccess.tmp || return 1
+    rm -f ${AUXILIARY_IMAGE_PATH}/testaccess.tmp || return 1
 
     # The container .out files embed their container name, the names will sort in the same order in which the containers ran
-    out_files=$(set -o pipefail ; ls -1 $COMMON_MOUNT_PATH/commonMountLogs/*.out 2>1 | sort --version-sort) \
-      || (trace SEVERE "Common Mount: Assertion failure. No files found in '$COMMON_MOUNT_PATH/commonMountLogs/*.out" \
+    out_files=$(set -o pipefail ; ls -1 $AUXILIARY_IMAGE_PATH/auxiliaryImageLogs/*.out 2>1 | sort --version-sort) \
+      || (trace SEVERE "Auxiliary Image: Assertion failure. No files found in '$AUXILIARY_IMAGE_PATH/auxiliaryImageLogs/*.out" \
       && return 1)
     severe_found=false
     for out_file in $out_files; do
       if [ "$(grep -c SEVERE $out_file)" != "0" ]; then
-        trace FINE "Common Mount: Error found in file '${out_file}' while initializing commonMount."
+        trace FINE "Auxiliary Image: Error found in file '${out_file}' while initializing auxiliaryImage."
         severe_found=true
       elif [ "$(grep -c successfully $out_file)" = "0" ]; then
-        trace SEVERE "Common Mount: Command execution was unsuccessful in file '${out_file}' while initializing commonMount. " \
+        trace SEVERE "Auxiliary Image: Command execution was unsuccessful in file '${out_file}' while initializing auxiliaryImage. " \
                      "Contents of '${out_file}':"
         cat $out_file
         severe_found=true
         continue
       fi
-      trace "Common Mount: Contents of '${out_file}':"
+      trace "Auxiliary Image: Contents of '${out_file}':"
       cat $out_file
-      trace "Common Mount: End of '${out_file}' contents"
+      trace "Auxiliary Image: End of '${out_file}' contents"
     done
     [ "${severe_found}" = "true" ] && return 1
-    rm -fr $COMMON_MOUNT_PATH/commonMountLogs
-    [ -z "$(ls -A $COMMON_MOUNT_PATH)" ] \
-      && trace SEVERE "Common Mount: No files found in '$COMMON_MOUNT_PATH'. " \
-       "Do your commonMount images have files in their '$COMMON_MOUNT_PATH' directories? " \
-       "This path is configurable using the domain resource 'spec.commonMountVolumes.mountPath' attribute." \
+    rm -fr $AUXILIARY_IMAGE_PATH/auxiliaryImageLogs
+    [ -z "$(ls -A $AUXILIARY_IMAGE_PATH)" ] \
+      && trace SEVERE "Auxiliary Image: No files found in '$AUXILIARY_IMAGE_PATH'. " \
+       "Do your auxiliary images have files in their '$AUXILIARY_IMAGE_PATH' directories? " \
+       "This path is configurable using the domain resource 'spec.auxiliaryImageVolumes.mountPath' attribute." \
       && return 1
   done
   return 0

@@ -50,16 +50,16 @@ spec:
   # - "IF_NEEDED" will start all non-clustered servers, including the administration server, and clustered servers up to their replica count.
   serverStartPolicy: "IF_NEEDED"
 
-  # Settings for common mount volume(s), see also 'serverPod.commonMounts'.
-  commonMountVolumes:
-  - name: commonMountsVolume1
-    mountPath: "/common"
+  # Settings for auxiliary image volume(s), see also 'serverPod.auxiliaryImages'.
+  auxiliaryImageVolumes:
+  - name: auxiliaryImageVolume1
+    mountPath: "/auxiliary"
 
   # Settings for all server pods in the domain including the introspector job pod
   serverPod:
     # Optional new or overridden environment variables for the domain's pods
     # - This sample uses CUSTOM_DOMAIN_NAME in its image model file 
-    #   to set the Weblogic domain name
+    #   to set the WebLogic domain name
     env:
     - name: CUSTOM_DOMAIN_NAME
       value: "domain1"
@@ -72,14 +72,14 @@ spec:
         cpu: "500m"
         memory: "1280Mi"
 
-    # Common mount image(s) containing WDT model, archives and install. See also:
-    #    'spec.commonMountVolumes'.
+    # Auxiliary image(s) containing WDT model, archives and install. See also:
+    #    'spec.auxiliaryImageVolumes'.
     #    'spec.configuration.model.modelHome'
     #    'spec.configuration.model.wdtInstallHome'
-    commonMounts:
-    - image: "model-in-image:JRF-CM-v1"
+    auxiliaryImages:
+    - image: "model-in-image:JRF-AI-v1"
       imagePullPolicy: IfNotPresent
-      volume: commonMountsVolume1
+      volume: auxiliaryImageVolume1
 
     # Optional volumes and mounts for the domain's pods. See also 'logHome'.
     #volumes:
@@ -147,8 +147,8 @@ spec:
     model:
       # Valid model domain types are 'WLS', 'JRF', and 'RestrictedJRF', default is 'WLS'
       domainType: "JRF"
-      modelHome: "/common/models"
-      wdtInstallHome: "/common/weblogic-deploy"
+      modelHome: "/auxiliary/models"
+      wdtInstallHome: "/auxiliary/weblogic-deploy"
 
       # Optional configmap for additional models and variable files
       #configMap: sample-domain1-wdt-config-map

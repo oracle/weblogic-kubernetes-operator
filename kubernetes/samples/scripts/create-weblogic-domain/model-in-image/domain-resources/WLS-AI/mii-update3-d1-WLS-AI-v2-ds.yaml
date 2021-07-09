@@ -1,4 +1,4 @@
-# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
 # This is an example of how to define a Domain resource.
@@ -6,10 +6,10 @@
 apiVersion: "weblogic.oracle/v8"
 kind: Domain
 metadata:
-  name: @@DOMAIN_UID@@
-  namespace: @@DOMAIN_NAMESPACE@@
+  name: sample-domain1
+  namespace: sample-domain1-ns
   labels:
-    weblogic.domainUID: @@DOMAIN_UID@@
+    weblogic.domainUID: sample-domain1
 
 spec:
   # Set to 'FromModel' to indicate 'Model in Image'.
@@ -17,22 +17,22 @@ spec:
 
   # The WebLogic Domain Home, this must be a location within
   # the image for 'Model in Image' domains.
-  domainHome: /u01/domains/@@DOMAIN_UID@@
+  domainHome: /u01/domains/sample-domain1
 
   # The WebLogic Server image that the Operator uses to start the domain
-  image: "@@BASE_IMAGE_NAME@@:@@BASE_IMAGE_TAG@@"
+  image: "container-registry.oracle.com/middleware/weblogic:12.2.1.4"
 
   # Defaults to "Always" if image tag (version) is ':latest'
   imagePullPolicy: "IfNotPresent"
 
   # Identify which Secret contains the credentials for pulling an image
   #imagePullSecrets:
-  #- name: @@IMAGE_PULL_SECRET_NAME@@
+  #- name: regsecret
   
   # Identify which Secret contains the WebLogic Admin credentials,
   # the secret must contain 'username' and 'password' fields.
   webLogicCredentialsSecret: 
-    name: @@DOMAIN_UID@@-weblogic-credentials
+    name: sample-domain1-weblogic-credentials
 
   # Whether to include the WebLogic Server stdout in the pod's stdout, default is true
   includeServerOutInPodLog: true
@@ -42,7 +42,7 @@ spec:
   
   # The location for domain log, server logs, server out, introspector out, and Node Manager log files
   # see also 'logHomeEnabled', 'volumes', and 'volumeMounts'.
-  #logHome: /shared/logs/@@DOMAIN_UID@@
+  #logHome: /shared/logs/sample-domain1
   
   # Set which WebLogic Servers the Operator will start
   # - "NEVER" will not start any server in the domain
@@ -50,42 +50,42 @@ spec:
   # - "IF_NEEDED" will start all non-clustered servers, including the administration server, and clustered servers up to their replica count.
   serverStartPolicy: "IF_NEEDED"
 
-  # Settings for common mount volume(s), see also 'serverPod.commonMounts'.
-  commonMountVolumes:
-  - name: commonMountsVolume1
-    mountPath: "@@COMMON_MOUNT_PATH@@"
+  # Settings for auxiliary image volume(s), see also 'serverPod.auxiliaryImages'.
+  auxiliaryImageVolumes:
+  - name: auxiliaryImageVolume1
+    mountPath: "/auxiliary"
 
   # Settings for all server pods in the domain including the introspector job pod
   serverPod:
     # Optional new or overridden environment variables for the domain's pods
     # - This sample uses CUSTOM_DOMAIN_NAME in its image model file 
-    #   to set the Weblogic domain name
+    #   to set the WebLogic domain name
     env:
     - name: CUSTOM_DOMAIN_NAME
-      value: "@@CUSTOM_DOMAIN_NAME@@"
+      value: "domain1"
     - name: JAVA_OPTIONS
       value: "-Dweblogic.StdoutDebugEnabled=false"
     - name: USER_MEM_ARGS
-      value: "-Djava.security.egd=file:/dev/./urandom -Xms256m -Xmx1024m "
+      value: "-Djava.security.egd=file:/dev/./urandom -Xms256m -Xmx512m "
     resources:
       requests:
-        cpu: "500m"
-        memory: "1280Mi"
+        cpu: "250m"
+        memory: "768Mi"
 
-    # Common mount image(s) containing WDT model, archives and install. See also:
-    #    'spec.commonMountVolumes'.
+    # Auxiliary image(s) containing WDT model, archives and install. See also:
+    #    'spec.auxiliaryImageVolumes'.
     #    'spec.configuration.model.modelHome'
     #    'spec.configuration.model.wdtInstallHome'
-    commonMounts:
-    - image: "@@MODEL_IMAGE_NAME@@:@@MODEL_IMAGE_TAG@@"
+    auxiliaryImages:
+    - image: "model-in-image:WLS-AI-v2"
       imagePullPolicy: IfNotPresent
-      volume: commonMountsVolume1
+      volume: auxiliaryImageVolume1
 
     # Optional volumes and mounts for the domain's pods. See also 'logHome'.
     #volumes:
     #- name: weblogic-domain-storage-volume
     #  persistentVolumeClaim:
-    #    claimName: @@DOMAIN_UID@@-weblogic-sample-pvc
+    #    claimName: sample-domain1-weblogic-sample-pvc
     #volumeMounts:
     #- mountPath: /shared
     #  name: weblogic-domain-storage-volume
@@ -101,11 +101,6 @@ spec:
     #  channels:
     #  - channelName: default
     #    nodePort: 30701
-    serverPod:
-      # Optional new or overridden environment variables for the admin pods
-      env:
-      - name: USER_MEM_ARGS
-        value: "-Djava.security.egd=file:/dev/./urandom -Xms512m -Xmx1024m "
    
   # The number of managed servers to start for unlisted clusters
   replicas: 1
@@ -146,29 +141,17 @@ spec:
     # Settings for domainHomeSourceType 'FromModel'
     model:
       # Valid model domain types are 'WLS', 'JRF', and 'RestrictedJRF', default is 'WLS'
-      domainType: "JRF"
-      modelHome: "@@WDT_MODEL_HOME@@"
-      wdtInstallHome: "@@WDT_INSTALL_HOME@@"
+      domainType: "WLS"
+      modelHome: "/auxiliary/models"
+      wdtInstallHome: "/auxiliary/weblogic-deploy"
 
       # Optional configmap for additional models and variable files
-      #configMap: @@DOMAIN_UID@@-wdt-config-map
+      configMap: sample-domain1-wdt-config-map
 
       # All 'FromModel' domains require a runtimeEncryptionSecret with a 'password' field
-      runtimeEncryptionSecret: @@DOMAIN_UID@@-runtime-encryption-secret
+      runtimeEncryptionSecret: sample-domain1-runtime-encryption-secret
 
     # Secrets that are referenced by model yaml macros
     # (the model yaml in the optional configMap or in the image)
     secrets:
-    #- @@DOMAIN_UID@@-datasource-secret
-    - @@DOMAIN_UID@@-rcu-access
-
-    # Increase the introspector job active timeout value for JRF use cases
-    introspectorJobActiveDeadlineSeconds: @@INTROSPECTOR_DEADLINE_SECONDS@@
-
-    opss:
-
-      # Name of secret with walletPassword for extracting the wallet, used for JRF domains
-      walletPasswordSecret: @@DOMAIN_UID@@-opss-wallet-password-secret
-
-      # Name of secret with walletFile containing base64 encoded opss wallet, used for JRF domains
-      #walletFileSecret: @@DOMAIN_UID@@-opss-walletfile-secret
+    - sample-domain1-datasource-secret
