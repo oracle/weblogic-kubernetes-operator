@@ -137,6 +137,8 @@ spec:
   - nobrl
 ```
 
+**Note:** This sample enables tag `nobrl` to prevent sending byte range lock requests to the server. If not using `nobrl`, file locking issues will happen during domain lifecycle management. If you don't want to enable it for specific requirements, you can apply the workarounds of [Handling NFS Locking Errors](https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/perfm/storetune.html#GUID-A1126893-C60F-4C39-BFCF-0D0F2436478D).
+
 We have provided another configuration file `pvc.yaml` for the `PersistentVolumeClaim`.  Both `pv.yaml` and `pvc.yaml` have exactly the same content for `storageClassName` attributes. This is required. We set the same value to the `metadata` property in both files. The following content is an example that uses the persistent volume claim name `wls-azurefile`.
 
 ```yaml
