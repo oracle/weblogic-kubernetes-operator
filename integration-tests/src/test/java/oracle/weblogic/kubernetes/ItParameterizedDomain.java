@@ -22,8 +22,13 @@ import java.util.stream.Stream;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1JobCondition;
+import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectMetaBuilder;
@@ -32,6 +37,9 @@ import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimSpec;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeSpec;
+import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
@@ -98,10 +106,12 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteClusterRoleBi
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getContainerRestartCount;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.copyFileToPod;
@@ -115,11 +125,13 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVe
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressForDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createJobAndWaitUntilComplete;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVPVCAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createfixPVCOwnerContainer;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
@@ -146,6 +158,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 /**
@@ -1232,7 +1245,7 @@ class ItParameterizedDomain {
             .value(HTTPS_PROXY));
 
     logger.info("Running a Kubernetes job to create the domain");
-    createDomainJob(WEBLOGIC_IMAGE_TO_USE_IN_SPEC, pvName, pvcName,
+    createDomainJob(pvName, pvcName,
         domainScriptConfigMapName, namespace, jobCreationContainer);
   }
 
@@ -1270,6 +1283,85 @@ class ItParameterizedDomain {
     boolean cmCreated = assertDoesNotThrow(() -> createConfigMap(configMap),
         String.format("Failed to create ConfigMap %s with files %s", configMapName, files));
     assertTrue(cmCreated, String.format("Failed while creating ConfigMap %s", configMapName));
+  }
+
+  /**
+   * Create a job to create a domain in persistent volume.
+   *
+   * @param pvName name of the persistent volume to create domain in
+   * @param pvcName name of the persistent volume claim
+   * @param domainScriptCM ConfigMap holding domain creation script files
+   * @param namespace name of the domain namespace in which the job is created
+   * @param jobContainer V1Container with job commands to create domain
+   */
+  private static void createDomainJob(String pvName,
+                                      String pvcName,
+                                      String domainScriptCM,
+                                      String namespace,
+                                      V1Container jobContainer) {
+    logger.info("Running Kubernetes job to create domain");
+    V1Job jobBody = new V1Job()
+        .metadata(
+            new V1ObjectMeta()
+                .name("create-domain-onpv-job-" + pvName) // name of the create domain job
+                .namespace(namespace))
+        .spec(new V1JobSpec()
+            .backoffLimit(0) // try only once
+            .template(new V1PodTemplateSpec()
+                .spec(new V1PodSpec()
+                    .restartPolicy("Never")
+                    .addInitContainersItem(createfixPVCOwnerContainer(pvName, "/u01/shared"))
+                    .addContainersItem(jobContainer  // container containing WLST or WDT details
+                        .name("create-weblogic-domain-onpv-container")
+                        .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
+                        .imagePullPolicy("IfNotPresent")
+                        .addPortsItem(new V1ContainerPort()
+                            .containerPort(7001))
+                        .volumeMounts(Arrays.asList(
+                            new V1VolumeMount()
+                                .name("create-weblogic-domain-job-cm-volume") // domain creation scripts volume
+                                .mountPath("/u01/weblogic"), // availble under /u01/weblogic inside pod
+                            new V1VolumeMount()
+                                .name(pvName) // location to write domain
+                                .mountPath("/u01/shared")))) // mounted under /u01/shared inside pod
+                    .volumes(Arrays.asList(
+                        new V1Volume()
+                            .name(pvName)
+                            .persistentVolumeClaim(
+                                new V1PersistentVolumeClaimVolumeSource()
+                                    .claimName(pvcName)),
+                        new V1Volume()
+                            .name("create-weblogic-domain-job-cm-volume")
+                            .configMap(
+                                new V1ConfigMapVolumeSource()
+                                    .name(domainScriptCM)))) //config map containing domain scripts
+                    .imagePullSecrets(Arrays.asList(
+                        new V1LocalObjectReference()
+                            .name(BASE_IMAGES_REPO_SECRET))))));  // this secret is used only for non-kind cluster
+
+    String jobName = createJobAndWaitUntilComplete(jobBody, namespace);
+
+    // check job status and fail test if the job failed to create domain
+    V1Job job = assertDoesNotThrow(() -> getJob(jobName, namespace),
+        "Getting the job failed");
+    if (job != null) {
+      V1JobCondition jobCondition = job.getStatus().getConditions().stream().filter(
+          v1JobCondition -> "Failed".equalsIgnoreCase(v1JobCondition.getType()))
+          .findAny()
+          .orElse(null);
+      if (jobCondition != null) {
+        logger.severe("Job {0} failed to create domain", jobName);
+        List<V1Pod> pods = assertDoesNotThrow(() -> listPods(
+            namespace, "job-name=" + jobName).getItems(),
+            "Listing pods failed");
+        if (!pods.isEmpty()) {
+          String podLog = assertDoesNotThrow(() -> getPodLog(pods.get(0).getMetadata().getName(), namespace),
+              "Failed to get pod log");
+          logger.severe(podLog);
+          fail("Domain create job failed");
+        }
+      }
+    }
   }
 
   /**
