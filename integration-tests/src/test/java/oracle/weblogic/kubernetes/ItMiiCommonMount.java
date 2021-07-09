@@ -153,7 +153,7 @@ public class ItMiiCommonMount {
     assertDoesNotThrow(() -> Files.createDirectories(multipleCMPath1));
     Path multipleCMPathToFile1 = Paths.get(RESULTS_ROOT, "multiplecmimage1/test.txt");
     String content = "1";
-    assertDoesNotThrow(() ->Files.write(multipleCMPathToFile1, content.getBytes()),
+    assertDoesNotThrow(() -> Files.write(multipleCMPathToFile1, content.getBytes()),
         "Can't write to file " + multipleCMPathToFile1);
 
     // create models dir and copy model, archive files if any for image1
@@ -203,7 +203,7 @@ public class ItMiiCommonMount {
     assertDoesNotThrow(() -> Files.createDirectories(modelsPath2));
     Path multipleCMPathToFile2 = Paths.get(RESULTS_ROOT, "multiplecmimage2/test.txt");
     String content2 = "2";
-    assertDoesNotThrow(() ->Files.write(multipleCMPathToFile2, content2.getBytes()),
+    assertDoesNotThrow(() -> Files.write(multipleCMPathToFile2, content2.getBytes()),
         "Can't write to file " + multipleCMPathToFile2);
     assertDoesNotThrow(() -> Files.copy(
         Paths.get(MODEL_DIR, "/model.jms2.yaml"),
