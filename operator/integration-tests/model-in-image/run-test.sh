@@ -75,7 +75,7 @@ function usage() {
                 Note that this depends on the db being deployed
                 and initialized via rcu. So either pre-deploy
                 the db and run rcu or pass '-db' and '-rcu' too.
-    -aux      : Run the tests in auxiliary images mode.
+    -ai       : Run the tests in auxiliary images mode.
     -assume-db: Assume Oracle DB is running.
                 If set, then the 'update4' test will include DB tests.
                 Defaults to true for '-jrf' or '-db'.
