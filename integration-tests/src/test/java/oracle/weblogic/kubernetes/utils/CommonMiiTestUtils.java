@@ -568,7 +568,7 @@ public class CommonMiiTestUtils {
     curlString.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
         .append(resourcePath)
         .append("/")
-        .append(" --silent --show-error ");
+        .append(" --silent --show-error --connect-timeout 300 --max-time 180 --noproxy '*' ");
     logger.info(callerName + ": curl command {0}", new String(curlString));
     try {
       result = exec(new String(curlString), true);
@@ -631,7 +631,7 @@ public class CommonMiiTestUtils {
 
     curlString.append(K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
         .append(resourcePath)
-        .append(" --silent --show-error ")
+        .append(" --silent --show-error --connect-timeout 300 --max-time 180 ")
         .append(" --noproxy '*' ")
         .append(" -o /dev/null ")
         .append(" -w %{http_code});")

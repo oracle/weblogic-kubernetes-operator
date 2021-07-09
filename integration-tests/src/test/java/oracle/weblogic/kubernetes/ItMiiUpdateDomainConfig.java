@@ -269,7 +269,7 @@ class ItMiiUpdateDomainConfig {
 
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    StringBuffer curlString = new StringBuffer("curl --user weblogic:welcome1 ");
+    StringBuffer curlString = new StringBuffer("curl --noproxy '*' --user weblogic:welcome1 ");
     curlString.append("\"http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
           .append("/management/weblogic/latest/domainConfig")
           .append("/JMSServers/TestClusterJmsServer")
@@ -316,7 +316,7 @@ class ItMiiUpdateDomainConfig {
     for (String pod : podNames) {
       String curlCmd = "for i in {1..100}; "
           + "do "
-          + "curl -v http://" + pod + ":8001/sample-war/index.jsp;"
+          + "curl --noproxy '*' -v http://" + pod + ":8001/sample-war/index.jsp;"
           + "done";
       withStandardRetryPolicy
           .conditionEvaluationListener(
@@ -1060,7 +1060,7 @@ class ItMiiUpdateDomainConfig {
     ExecResult result = null;
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    checkCluster = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
+    checkCluster = new StringBuffer("status=$(curl --noproxy '*' --user weblogic:welcome1 ");
     checkCluster.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
           .append("/management/tenant-monitoring/servers/")
           .append(managedServer)
@@ -1113,7 +1113,7 @@ class ItMiiUpdateDomainConfig {
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     ExecResult result = null;
 
-    curlString = new StringBuffer("curl --user weblogic:welcome1 ");
+    curlString = new StringBuffer("curl --noproxy '*' --user weblogic:welcome1 ");
     curlString.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
          .append("/management/wls/latest/datasources/id/")
          .append(resourcesName)

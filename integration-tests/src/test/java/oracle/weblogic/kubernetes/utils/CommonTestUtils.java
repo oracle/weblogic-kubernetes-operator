@@ -1474,8 +1474,8 @@ public class CommonTestUtils {
     // check the ingress is ready to route the app to the server pod
     if (nodeport != 0) {
       for (String ingressHost : ingressHostList) {
-        String curlCmd = "curl --silent --show-error --noproxy '*' -H 'host: " + ingressHost
-            + "' http://" + K8S_NODEPORT_HOST + ":" + nodeport
+        String curlCmd = "curl --silent --show-error --connect-timeout 300 --max-time 180 --noproxy '*' -H 'host: " 
+            + ingressHost + "' http://" + K8S_NODEPORT_HOST + ":" + nodeport
             + "/weblogic/ready --write-out %{http_code} -o /dev/null";
 
         logger.info("Executing curl command {0}", curlCmd);
@@ -1533,8 +1533,8 @@ public class CommonTestUtils {
     // check the ingress is ready to route the app to the server pod
     if (nodeport != 0) {
       for (String ingressHost : ingressHostList) {
-        String curlCmd = "curl --silent --show-error --noproxy '*' -H 'host: " + ingressHost
-            + "' http://" + K8S_NODEPORT_HOST + ":" + nodeport
+        String curlCmd = "curl --silent --show-error --connect-timeout 300 --max-time 180 --noproxy '*' -H 'host: " 
+            + ingressHost + "' http://" + K8S_NODEPORT_HOST + ":" + nodeport
             + "/weblogic/ready --write-out %{http_code} -o /dev/null";
 
         logger.info("Executing curl command {0}", curlCmd);
@@ -1622,8 +1622,8 @@ public class CommonTestUtils {
     // check the ingress is ready to route the app to the server pod
     if (ingressServiceNodePort != 0) {
       for (String ingressHost : ingressHostList) {
-        String curlCmd = "curl --silent --show-error --noproxy '*' -H 'host: " + ingressHost
-            + "' http://" + K8S_NODEPORT_HOST + ":" + ingressServiceNodePort
+        String curlCmd = "curl --silent --show-error --connect-timeout 300 --max-time 180 --noproxy '*' -H 'host: " 
+            + ingressHost + "' http://" + K8S_NODEPORT_HOST + ":" + ingressServiceNodePort
             + "/weblogic/ready --write-out %{http_code} -o /dev/null";
 
         logger.info("Executing curl command {0}", curlCmd);
@@ -3269,7 +3269,7 @@ public class CommonTestUtils {
       headerString = new StringBuffer("");
     }
     curlString.append(" --noproxy '*' ")
-         .append(" --silent --show-error ")
+         .append(" --silent --show-error --connect-timeout 300 --max-time 180 ")
          .append(headerString.toString())
          .append(url)
          .append(" -o /dev/null")
@@ -3349,7 +3349,7 @@ public class CommonTestUtils {
   ) {
 
     LoggingFacade logger = getLogger();
-    String curlString = String.format("curl -v --show-error --noproxy '*' "
+    String curlString = String.format("curl -v --show-error --connect-timeout 300 --max-time 180 --noproxy '*' "
            + "--user " + username + ":" + password + " " + headers
            + " -H X-Requested-By:MyClient -H Accept:application/json "
            + "-H Content-Type:application/json "
@@ -3796,7 +3796,7 @@ public class CommonTestUtils {
   public static boolean checkSystemResourceConfiguration(int nodePort, String resourcesType,
                                                    String resourcesName, String expectedStatusCode) {
     final LoggingFacade logger = getLogger();
-    StringBuffer curlString = new StringBuffer("status=$(curl --user ");
+    StringBuffer curlString = new StringBuffer("status=$(curl --noproxy '*' --user ");
     curlString.append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
         .append(" http://" + K8S_NODEPORT_HOST + ":" + nodePort)
         .append("/management/weblogic/latest/domainConfig")
@@ -3805,7 +3805,7 @@ public class CommonTestUtils {
         .append("/")
         .append(resourcesName)
         .append("/")
-        .append(" --silent --show-error ")
+        .append(" --silent --show-error --connect-timeout 300 --max-time 180 --noproxy '*' ")
         .append(" -o /dev/null ")
         .append(" -w %{http_code});")
         .append("echo ${status}");
@@ -3825,7 +3825,7 @@ public class CommonTestUtils {
    */
   public static boolean checkSystemResourceConfig(int nodePort, String resourcesPath, String expectedValue) {
     final LoggingFacade logger = getLogger();
-    StringBuffer curlString = new StringBuffer("curl --user ");
+    StringBuffer curlString = new StringBuffer("curl --connect-timeout 300 --max-time 180 --noproxy '*' --user ");
     curlString.append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
         .append(" http://" + K8S_NODEPORT_HOST + ":" + nodePort)
         .append("/management/weblogic/latest/domainConfig")
@@ -3849,7 +3849,7 @@ public class CommonTestUtils {
    */
   public static boolean checkSystemResourceRuntime(int nodePort, String resourcesUrl, String expectedValue) {
     final LoggingFacade logger = getLogger();
-    StringBuffer curlString = new StringBuffer("curl --user ");
+    StringBuffer curlString = new StringBuffer("curl --connect-timeout 300 --max-time 180 --noproxy '*' --user ");
     curlString.append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
         .append(" http://" + K8S_NODEPORT_HOST + ":" + nodePort)
         .append("/management/weblogic/latest/domainRuntime")
