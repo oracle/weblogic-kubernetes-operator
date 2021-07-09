@@ -12,20 +12,20 @@
     <title>Choose a domain home source type :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1625619750" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1625619750" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1625619750" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1625619750" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1625619750" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1625619750" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1625619750" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1625619750" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1625619750" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1625619750" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1625857473" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1625857473" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1625857473" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1625857473" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1625857473" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1625857473" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1625857473" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1625857473" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1625857473" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1625857473" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1625619750"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1625857473"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1625619750"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1625619750"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1625857473"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1625857473"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1625619750"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1625857473"></script>
 
     
   </div>
@@ -757,9 +757,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/common-mounts/" title="Common mounts" class="dd-item ">
-        <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/common-mounts/">
-        <b> </b>Common mounts
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/auxiliary-images/" title="Auxiliary images" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/auxiliary-images/">
+        <b> </b>Auxiliary images
         
         </a>
     </li>
@@ -3230,14 +3230,14 @@
 <li>Supply a WebLogic installation in an image and supply WebLogic configuration in one of three ways:
 <ul>
 <li>As WebLogic Deployment Tool (WDT) model YAML file layered on the WebLogic installation image.</li>
-<li>As WDT model YAML file supplied in separate <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/common-mounts/">common mount images</a>.</li>
+<li>As WDT model YAML file supplied in separate <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/auxiliary-images/">auxiliary images</a>.</li>
 <li>As WDT model YAML file in a Kubernetes ConfigMap.</li>
 </ul>
 </li>
 <li>Supply WebLogic applications in one of two ways:
 <ul>
 <li>Layered on the installation image.</li>
-<li>In common mount images.</li>
+<li>In auxiliary images.</li>
 </ul>
 </li>
 <li>Mutate WebLogic configuration by supplying a new image and rolling, or <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/runtime-updates/">model updates</a> supplied in a Kubernetes ConfigMap.</li>
@@ -3268,7 +3268,7 @@
 <tr>
 <td>You can deploy new applications using the Administration Console or WLST.</td>
 <td>If you want to deploy application updates, then you must create a new image.</td>
-<td>If you want to deploy application updates, then you must create a new image, which optionally can be a <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/common-mounts/">common mounts image</a> that doesn&rsquo;t include a WebLogic installation.</td>
+<td>If you want to deploy application updates, then you must create a new image, which optionally can be an <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/auxiliary-images/">auxiliary image</a> that doesn&rsquo;t include a WebLogic installation.</td>
 </tr>
 <tr>
 <td>You can use configuration overrides to mutate the domain configuration before it is deployed, but there are <a href="/weblogic-kubernetes-operator/userguide/managing-domains/configoverrides/#unsupported-overrides">limitations</a>.</td>
@@ -3288,7 +3288,7 @@
 <tr>
 <td>Patches can be applied by simply changing the image and rolling the domain.</td>
 <td>To apply patches, you must update the domain-specific image and then restart or roll the domain depending on the nature of the patch.</td>
-<td>Same as Domain in PV when using dedicated <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/common-mounts/">common mounts images</a> to supply model artifacts; same as Domain in Image otherwise.</td>
+<td>Same as Domain in PV when using dedicated <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/auxiliary-images/">auxiliary images</a> to supply model artifacts; same as Domain in Image otherwise.</td>
 </tr>
 <tr>
 <td>Many cloud providers do not provide persistent volumes that are shared across availability zones, so you may not be able to use a single persistent volume.  You may need to use some kind of volume replication technology or a clustered file system.</td>
@@ -3303,7 +3303,7 @@
 <tr>
 <td>There are fewer images to manage and store, which could provide significant storage and network savings.</td>
 <td>There are more images to manage and store in this approach.</td>
-<td>Same as Domain in Image unless you use the <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/common-mounts/">common mounts</a> approach. With common mounts, you can use a single image to distribute your WebLogic installation (similar to Domain on PV), plus one or more specific dedicated images that contain your WebLogic configuration and applications.</td>
+<td>Same as Domain in Image unless you use the <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/auxiliary-images/">auxiliary images</a> approach. With auxiliary images, you can use a single image to distribute your WebLogic installation (similar to Domain on PV), plus one or more specific dedicated images that contain your WebLogic configuration and applications.</td>
 </tr>
 <tr>
 <td>You may be able to use standard Oracle-provided images or, at least, a very small number of self-built images, for example, with patches installed.</td>
@@ -5395,19 +5395,19 @@
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1625619750"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1625619750"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1625619750"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1625619750"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1625619750"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1625619750"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1625857473"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1625857473"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1625857473"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1625857473"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1625857473"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1625857473"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1625619750"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1625619750"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1625619750"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1625857473"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1625857473"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1625857473"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1625619750"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1625857473"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

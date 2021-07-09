@@ -28,12 +28,12 @@ Contents  WebLogic Kubernetes Operator WebLogic Server image Directory structure
     </item>
     
     <item>
-      <title>Common mounts</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/common-mounts/</link>
+      <title>Auxiliary images</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/auxiliary-images/</link>
       <pubDate>Sat, 23 Feb 2019 16:45:16 -0500</pubDate>
       
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/common-mounts/</guid>
-      <description>Contents  Introduction References Configuration  Common mount images Common mount volumes and paths Model in Image paths   Sample  Step 1: Prerequisites Step 2: Create the common mounts image Step 3: Prepare and apply the domain resource Step 4: Invoke the web application    Introduction The common mounts feature is a work in progress and is currently unsupported. Its configuration or behavior may change between releases and it is disabled by default.</description>
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/auxiliary-images/</guid>
+      <description>Contents  Introduction References Configuration  Auxiliary images Auxiliary volumes and paths Model in Image paths   Sample  Step 1: Prerequisites Step 2: Create the auxiliary image Step 3: Prepare and apply the domain resource Step 4: Invoke the web application    Introduction The auxiliary images feature is a work in progress and is currently unsupported. Its configuration or behavior may change between releases and it is disabled by default.</description>
     </item>
     
     <item>

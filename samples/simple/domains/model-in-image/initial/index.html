@@ -12,20 +12,20 @@
     <title>Initial use case :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1625619749" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1625619749" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1625619749" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1625619749" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1625619749" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1625619749" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1625619749" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1625619749" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1625619749" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1625619749" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1625857472" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1625857472" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1625857472" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1625857472" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1625857472" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1625857472" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1625857472" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1625857472" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1625857472" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1625857472" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1625619749"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1625857472"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1625619749"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1625619749"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1625857472"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1625857472"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1625619749"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1625857472"></script>
 
     
   </div>
@@ -757,9 +757,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/common-mounts/" title="Common mounts" class="dd-item ">
-        <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/common-mounts/">
-        <b> </b>Common mounts
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/auxiliary-images/" title="Auxiliary images" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/auxiliary-images/">
+        <b> </b>Auxiliary images
         
         </a>
     </li>
@@ -3605,19 +3605,13 @@ If you are taking the <code>JRF</code> path through the sample, then substitute 
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl -n sample-domain1-ns create secret generic <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  sample-domain1-weblogic-credentials <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>   --from-literal<span style="color:#f92672">=</span>username<span style="color:#f92672">=</span>weblogic --from-literal<span style="color:#f92672">=</span>password<span style="color:#f92672">=</span>welcome1
-  <span style="color:#e6db74">```</span>
-  <span style="color:#e6db74">```</span>shell
-$ kubectl -n sample-domain1-ns label  secret <span style="color:#ae81ff">\
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl -n sample-domain1-ns label  secret <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  sample-domain1-weblogic-credentials <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  weblogic.domainUID<span style="color:#f92672">=</span>sample-domain1
-  <span style="color:#e6db74">```</span>
-  <span style="color:#e6db74">```</span>shell
-$ kubectl -n sample-domain1-ns create secret generic <span style="color:#ae81ff">\
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl -n sample-domain1-ns create secret generic <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  sample-domain1-runtime-encryption-secret <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>   --from-literal<span style="color:#f92672">=</span>password<span style="color:#f92672">=</span>my_runtime_password
-  <span style="color:#e6db74">```</span>
-  <span style="color:#e6db74">```</span>shell
-$ kubectl -n sample-domain1-ns label  secret <span style="color:#ae81ff">\
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl -n sample-domain1-ns label  secret <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  sample-domain1-runtime-encryption-secret <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  weblogic.domainUID<span style="color:#f92672">=</span>sample-domain1
 </code></pre></div><p>Some important details about these secrets:</p>
@@ -3673,19 +3667,13 @@ $ kubectl -n sample-domain1-ns label  secret <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>   --from-literal<span style="color:#f92672">=</span>rcu_prefix<span style="color:#f92672">=</span>FMW1 <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>   --from-literal<span style="color:#f92672">=</span>rcu_schema_password<span style="color:#f92672">=</span>Oradoc_db1 <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>   --from-literal<span style="color:#f92672">=</span>rcu_db_conn_string<span style="color:#f92672">=</span>oracle-db.default.svc.cluster.local:1521/devpdb.k8s
-  <span style="color:#e6db74">```</span>
-  <span style="color:#e6db74">```</span>shell
-$ kubectl -n sample-domain1-ns label  secret <span style="color:#ae81ff">\
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl -n sample-domain1-ns label  secret <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  sample-domain1-rcu-access <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  weblogic.domainUID<span style="color:#f92672">=</span>sample-domain1
-  <span style="color:#e6db74">```</span>
-  <span style="color:#e6db74">```</span>shell
-$ kubectl -n sample-domain1-ns create secret generic <span style="color:#ae81ff">\
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl -n sample-domain1-ns create secret generic <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  sample-domain1-opss-wallet-password-secret <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>   --from-literal<span style="color:#f92672">=</span>walletPassword<span style="color:#f92672">=</span>welcome1
-  <span style="color:#e6db74">```</span>
-  <span style="color:#e6db74">```</span>shell
-$ kubectl -n sample-domain1-ns label  secret <span style="color:#ae81ff">\
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl -n sample-domain1-ns label  secret <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  sample-domain1-opss-wallet-password-secret <span style="color:#ae81ff">\
 </span><span style="color:#ae81ff"></span>  weblogic.domainUID<span style="color:#f92672">=</span>sample-domain1
 </code></pre></div>
@@ -3760,7 +3748,7 @@ $ kubectl -n sample-domain1-ns label  secret <span style="color:#ae81ff">\
     <span style="color:#f92672">serverPod</span>:
       <span style="color:#75715e"># Optional new or overridden environment variables for the domain&#39;s pods</span>
       <span style="color:#75715e"># - This sample uses CUSTOM_DOMAIN_NAME in its image model file</span>
-      <span style="color:#75715e">#   to set the Weblogic domain name</span>
+      <span style="color:#75715e">#   to set the WebLogic domain name</span>
       <span style="color:#f92672">env</span>:
       - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">CUSTOM_DOMAIN_NAME</span>
         <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;domain1&#34;</span>
@@ -3892,7 +3880,7 @@ $ kubectl -n sample-domain1-ns label  secret <span style="color:#ae81ff">\
   <span style="color:#f92672">serverPod</span>:
     <span style="color:#75715e"># Optional new or overridden environment variables for the domain&#39;s pods</span>
     <span style="color:#75715e"># - This sample uses CUSTOM_DOMAIN_NAME in its image model file</span>
-    <span style="color:#75715e">#   to set the Weblogic domain name</span>
+    <span style="color:#75715e">#   to set the WebLogic domain name</span>
     <span style="color:#f92672">env</span>:
     - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">CUSTOM_DOMAIN_NAME</span>
       <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;domain1&#34;</span>
@@ -6276,19 +6264,19 @@ Found 0 local data sources:
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1625619749"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1625619749"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1625619749"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1625619749"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1625619749"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1625619749"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1625857472"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1625857472"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1625857472"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1625857472"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1625857472"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1625857472"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1625619749"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1625619749"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1625619749"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1625857472"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1625857472"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1625857472"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1625619749"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1625857472"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

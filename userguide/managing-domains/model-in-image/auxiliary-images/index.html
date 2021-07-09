@@ -4,28 +4,28 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="Hugo 0.82.0" />
-    <meta name="description" content="Common mounts are an alternative approach for supplying a domain&#39;s model files or other types of files.">
+    <meta name="description" content="Auxiliary images are an alternative approach for supplying a domain&#39;s model files or other types of files.">
 
 
     <link rel="icon" href="/weblogic-kubernetes-operator/images/favicon.png" type="image/png">
 
-    <title>Common mounts :: WebLogic Kubernetes Operator</title>
+    <title>Auxiliary images :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1625619749" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1625619749" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1625619749" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1625619749" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1625619749" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1625619749" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1625619749" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1625619749" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1625619749" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1625619749" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1625857472" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1625857472" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1625857472" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1625857472" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1625857472" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1625857472" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1625857472" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1625857472" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1625857472" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1625857472" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1625619749"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1625857472"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -39,7 +39,7 @@
     </style>
     
   </head>
-  <body class="" data-url="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/common-mounts/">
+  <body class="" data-url="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/auxiliary-images/">
     <nav id="sidebar" class="">
 
 
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1625619749"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1625619749"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1625857472"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1625857472"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1625619749"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1625857472"></script>
 
     
   </div>
@@ -757,9 +757,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/common-mounts/" title="Common mounts" class="dd-item active">
-        <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/common-mounts/">
-        <b> </b>Common mounts
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/auxiliary-images/" title="Auxiliary images" class="dd-item active">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/auxiliary-images/">
+        <b> </b>Auxiliary images
         
         </a>
     </li>
@@ -3171,7 +3171,7 @@
             
           
           
-            <a href='/weblogic-kubernetes-operator/'></a> > <a href='/weblogic-kubernetes-operator/userguide/'>User Guide</a> > <a href='/weblogic-kubernetes-operator/userguide/managing-domains/'>Manage WebLogic domains</a> > <a href='/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/'>Model in Image</a> > Common mounts
+            <a href='/weblogic-kubernetes-operator/'></a> > <a href='/weblogic-kubernetes-operator/userguide/'>User Guide</a> > <a href='/weblogic-kubernetes-operator/userguide/managing-domains/'>Manage WebLogic domains</a> > <a href='/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/'>Model in Image</a> > Auxiliary images
           
         
           
@@ -3216,7 +3216,7 @@
           
             <h1>
               
-              Common mounts
+              Auxiliary images
             </h1>
           
 
@@ -3229,15 +3229,15 @@
 <li><a href="#references">References</a></li>
 <li><a href="#configuration">Configuration</a>
 <ul>
-<li><a href="#common-mount-images">Common mount images</a></li>
-<li><a href="#common-mount-volumes-and-paths">Common mount volumes and paths</a></li>
+<li><a href="#auxiliary-images">Auxiliary images</a></li>
+<li><a href="#auxiliary-volumes-and-paths">Auxiliary volumes and paths</a></li>
 <li><a href="#model-in-image-paths">Model in Image paths</a></li>
 </ul>
 </li>
 <li><a href="#sample">Sample</a>
 <ul>
 <li><a href="#step-1-prerequisites">Step 1: Prerequisites</a></li>
-<li><a href="#step-2-create-the-common-mounts-image">Step 2: Create the common mounts image</a></li>
+<li><a href="#step-2-create-the-auxiliary-image">Step 2: Create the auxiliary image</a></li>
 <li><a href="#step-3-prepare-and-apply-the-domain-resource">Step 3: Prepare and apply the domain resource</a></li>
 <li><a href="#step-4-invoke-the-web-application">Step 4: Invoke the web application</a></li>
 </ul>
@@ -3245,16 +3245,16 @@
 </ul>
 <h3 id="introduction">Introduction</h3>
 
-<div class="notices warning" ><p>The common mounts feature is a work in progress and is currently unsupported.
+<div class="notices warning" ><p>The auxiliary images feature is a work in progress and is currently unsupported.
 Its configuration or behavior may change between releases and it is disabled by default.
 If you want to enable this feature, then set your operator&rsquo;s <code>&quot;featureGates&quot;</code>
-Helm configuration attribute to include <code>&quot;CommonMounts=true&quot;</code>.
+Helm configuration attribute to include <code>&quot;AuxiliaryImage=true&quot;</code>.
 The <code>&quot;featureGates&quot;</code> attribute acknowledges use of an unsupported feature,
-will not be required after common mounts is fully supported,
+will not be required after auxiliary images are fully supported,
 defaults to being unset, and accepts a comma-separated list.</p>
 </div>
 
-<p>Common mounts are an alternative approach for including Model in Image model files,
+<p>Auxiliary images are an alternative approach for including Model in Image model files,
 application archive files, WebLogic Deploying Tooling installation files,
 or other types of files, in your pods.
 This feature eliminates the need to provide these files in the image specified
@@ -3263,13 +3263,13 @@ in <code>domain.spec.image</code>.</p>
 <ul>
 <li>The domain resource&rsquo;s <code>domain.spec.image</code> directly references a base image
 that needs to include only a WebLogic installation and a Java installation.</li>
-<li>The domain resource&rsquo;s common mount related fields reference one or
+<li>The domain resource&rsquo;s auxiliary image related fields reference one or
 more smaller images that contain the desired Model in Image files.</li>
 <li>The domain resource&rsquo;s <code>domain.spec.configuration.model.wdtInstallHome</code>
 and <code>domain.spec.configuration.model.modelHome</code> fields are set to
 reference a directory that contains the files from the smaller images.</li>
 </ul>
-<p>The advantages of common mounts for Model In Image domains are:</p>
+<p>The advantages of auxiliary image for Model In Image domains are:</p>
 <ul>
 <li>Use or patch a WebLogic installation image without needing to include a WDT installation,
 application archive, or model artifacts within the image.</li>
@@ -3279,69 +3279,69 @@ configurations that are supplied in specific images.</li>
 WebLogic Deploy Tooling executable using specific images
 that do not contain a WebLogic installation.</li>
 </ul>
-<p>Common mounts internally
+<p>Auxiliary images internally
 use a Kubernetes <code>emptyDir</code> volume and Kubernetes <code>init</code> containers to share files
 from additional images.</p>
 <h3 id="references">References</h3>
 <ul>
 <li>
-<p>Run the <code>kubectl explain domain.spec.commonMountVolumes</code>
-and <code>kubectl explain domain.spec.serverPod.commonMounts</code> commands.</p>
+<p>Run the <code>kubectl explain domain.spec.auxiliaryImageVolumes</code>
+and <code>kubectl explain domain.spec.serverPod.auxiliaryImages</code> commands.</p>
 </li>
 <li>
-<p>See the <code>spec.commonMountVolumes</code> and <code>serverPod.commonMounts</code> sections
+<p>See the <code>spec.auxiliaryImageVolumes</code> and <code>serverPod.auxiliaryImages</code> sections
 in the domain resource
 <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md">schema</a>
 and <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/">documentation</a>.</p>
 </li>
 </ul>
 <h3 id="configuration">Configuration</h3>
-<p>This section describes a typical common mount configuration for the
+<p>This section describes a typical auxiliary image configuration for the
 Model in Image use case.</p>
-<h4 id="common-mount-images">Common mount images</h4>
-<p>One or more common mount images can be configured on a domain resource <code>serverPod</code>.
+<h4 id="auxiliary-images">Auxiliary images</h4>
+<p>One or more auxiliary images can be configured on a domain resource <code>serverPod</code>.
 A <code>serverPod</code> can be defined at the domain scope, which applies to every pod in
 the domain, plus the introspector job&rsquo;s pod, at a specific WebLogic cluster&rsquo;s scope,
 or at a specific WebLogic Server pod&rsquo;s scope. Typically, the domain scope is
 the most applicable for the Model in Image use case; for example:</p>
 <pre><code>spec:
   serverPod:
-    commonMounts:
+    auxiliaryImages:
     - image: model-in-image:v1
       imagePullPolicy: IfNotPresent
-      volume: commonMountsVolume1
+      volume: auxiliaryImageVolume1
 </code></pre>
-<div class="notices note" ><p>If image pull secrets are required for pulling common mounts images,
+<div class="notices note" ><p>If image pull secrets are required for pulling auxiliary images,
 then the secrets must be referenced using <code>domain.spec.imagePullSecrets</code>.</p>
 </div>
 
-<h4 id="common-mount-volumes-and-paths">Common mount volumes and paths</h4>
-<p>The <code>serverPod.commonMounts.volume</code> field refers to the name of a common
-mount volume defined in the <code>domain.spec.commonMountVolumes</code> section, and
-a common mount volume, in turn, defines a <code>mountPath</code>. The <code>mountPath</code>
-is the location of a directory in a common mount image, and
+<h4 id="auxiliary-volumes-and-paths">Auxiliary volumes and paths</h4>
+<p>The <code>serverPod.auxiliaryImages.volume</code> field refers to the name of an auxiliary
+image volume defined in the <code>domain.spec.auxiliaryImageVolumes</code> section, and
+an auxiliary image volume, in turn, defines a <code>mountPath</code>. The <code>mountPath</code>
+is the location of a directory in an auxiliary image, and
 is also the location in the main pod container (which will automatically contain
-a recursive copy of the common mount image directory). For example:</p>
+a recursive copy of the auxiliary image directory). For example:</p>
 <pre><code>  spec:
-    commonMountVolumes:
-    - name: commonMountsVolume1
-      mountPath: /common
+    auxiliaryImageVolumes:
+    - name: auxiliaryImageVolume1
+      mountPath: /auxiliary
 </code></pre><h4 id="model-in-image-paths">Model in Image paths</h4>
-<p>For the Model In Image common mount use case, you also need to
+<p>For the Model In Image auxiliary image use case, you also need to
 configure the <code>domain.spec.configuration.model.modelHome</code>
 and <code>domain.spec.configuration.model.wdtInstallHome</code> attributes
 to specify the location of the domain&rsquo;s WebLogic Deploy Tool (WDT)
 model files and the domain&rsquo;s WDT installation.
 These default to <code>/u01/wdt/models</code> and <code>/u01/wdt/weblogic-deploy</code>
 respectively, and must be changed to specify a directory in
-<code>domain.spec.commonMountVolumes.mountPath</code>. For example:</p>
+<code>domain.spec.auxiliaryImageVolumes.mountPath</code>. For example:</p>
 <pre><code>  configuration:
     model:
-      modelHome: &quot;/common/models&quot;
-      wdtInstallHome: &quot;/common/weblogic-deploy&quot;
+      modelHome: &quot;/auxiliary/models&quot;
+      wdtInstallHome: &quot;/auxiliary/weblogic-deploy&quot;
 </code></pre><h3 id="sample">Sample</h3>
 <p>This sample demonstrates deploying a Model in Image domain that uses
-common mounts to supply the domain&rsquo;s WDT model files,
+auxiliary images to supply the domain&rsquo;s WDT model files,
 application archive ZIP files, and WDT installation in a small, separate
 container image.</p>
 <h4 id="step-1-prerequisites">Step 1: Prerequisites</h4>
@@ -3353,7 +3353,7 @@ container image.</p>
 <ul>
 <li>Set up the operator and a namespace for the domain.</li>
 <li>Download a WebLogic Deploy Tool ZIP installation.</li>
-<li>Deploy a domain <em>without</em> common mounts.</li>
+<li>Deploy a domain <em>without</em> auxiliary images.</li>
 </ul>
 </li>
 <li>
@@ -3368,26 +3368,26 @@ $ /tmp/mii-sample/utils/wl-pod-wait.sh -p <span style="color:#ae81ff">0</span>
 </ul>
 </li>
 </ul>
-<h4 id="step-2-create-the-common-mounts-image">Step 2: Create the common mounts image</h4>
-<p>Follow these steps to create a common mounts image containing
+<h4 id="step-2-create-the-auxiliary-image">Step 2: Create the auxiliary image</h4>
+<p>Follow these steps to create a auxiliary image containing
 Model In Image model files, application archives, and the WDT installation files:</p>
 <ol>
 <li>
 <p>Create a model ZIP application archive and place it in the same directory
 where the model YAML file and model properties files are already in place
 for the initial use case:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ rm -f /tmp/mii-sample/model-images/model-in-image__WLS-CM-v1/archive.zip
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ rm -f /tmp/mii-sample/model-images/model-in-image__WLS-AI-v1/archive.zip
 $ cd /tmp/mii-sample/archives/archive-v1
-$ zip -r /tmp/mii-sample/model-images/model-in-image__WLS-CM-v1/archive.zip wlsdeploy
+$ zip -r /tmp/mii-sample/model-images/model-in-image__WLS-AI-v1/archive.zip wlsdeploy
 </code></pre></div><p>The <code>rm -f</code> command is included in case there&rsquo;s an
 old version of the archive ZIP from a
 previous run of this sample.</p>
 </li>
 <li>
-<p>Create a temporary directory for staging the common mount image&rsquo;s files and <code>cd</code> to this directory:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ mkdir /tmp/mii-sample/cm-image/WLS-CM-v1
-$ cd /tmp/mii-sample/cm-image/WLS-CM-v1
-</code></pre></div><p>We call this directory <code>WLS-CM-v1</code> to correspond with the image version tag that we plan to use for the common mount image.</p>
+<p>Create a temporary directory for staging the auxiliary image&rsquo;s files and <code>cd</code> to this directory:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ mkdir -p /tmp/mii-sample/ai-image/WLS-AI-v1
+$ cd /tmp/mii-sample/ai-image/WLS-AI-v1
+</code></pre></div><p>We call this directory <code>WLS-AI-v1</code> to correspond with the image version tag that we plan to use for the auxiliary image.</p>
 </li>
 <li>
 <p>Install WDT in the staging directory and remove its <code>weblogic-deploy/bin/*.cmd</code> files, which are not used in UNIX environments:</p>
@@ -3400,18 +3400,18 @@ attribute that references this WDT installation directory.</p>
 <li>
 <p>Create a <code>models</code> directory in the staging directory and copy the model YAML file, properties, and archive into it:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ mkdir ./models
-$ cp /tmp/mii-sample/model-images/model-in-image__WLS-CM-v1/model.10.yaml ./models
-$ cp /tmp/mii-sample/model-images/model-in-image__WLS-CM-v1/model.10.properties ./models
-$ cp /tmp/mii-sample/model-images/model-in-image__WLS-CM-v1/archive.zip ./models
+$ cp /tmp/mii-sample/model-images/model-in-image__WLS-AI-v1/model.10.yaml ./models
+$ cp /tmp/mii-sample/model-images/model-in-image__WLS-AI-v1/model.10.properties ./models
+$ cp /tmp/mii-sample/model-images/model-in-image__WLS-AI-v1/archive.zip ./models
 </code></pre></div><p>In a later step, we will specify a domain resource <code>domain.spec.configuration.model.modelHome</code>
 attribute that references this directory.</p>
 </li>
 <li>
-<p>Run <code>docker build</code> using <code>/tmp/mii-sample/cm-docker-file/Dockerfile</code> to create your common mount
+<p>Run <code>docker build</code> using <code>/tmp/mii-sample/ai-docker-file/Dockerfile</code> to create your auxiliary
 image using a small <code>busybox</code> image as the base image.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ docker build -f /tmp/mii-sample/cm-docker-file/Dockerfile <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --build-arg COMMON_MOUNT_PATH<span style="color:#f92672">=</span>/common <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>  --tag model-in-image:WLS-CM-v1 .
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ docker build -f /tmp/mii-sample/ai-docker-file/Dockerfile <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --build-arg AUXILIARY_IMAGE_PATH<span style="color:#f92672">=</span>/auxiliary <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --tag model-in-image:WLS-AI-v1 .
 </code></pre></div><p>See <code>./Dockerfile</code> for an explanation of each build argument.</p>
 
 <div class="expand">
@@ -3429,29 +3429,29 @@ image using a small <code>busybox</code> image as the base image.</p>
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # This is a sample Dockerfile for supplying Model in Image model files
-# and a WDT installation in a small separate &quot;common mount&quot;
+# and a WDT installation in a small separate auxiliary
 # image. This is an alternative to supplying the files directly
 # in the domain resource `domain.spec.image` image.
 
-# COMMON_MOUNT_PATH arg:
+# AUXILIARY_IMAGE_PATH arg:
 #   Parent location for Model in Image model and WDT installation files.
-#   Must match domain resource 'domain.spec.commonMountVolumes.mountPath'
+#   Must match domain resource 'domain.spec.auxiliaryImageVolumes.mountPath'
 #   For model-in-image, the following two domain resource attributes can
 #   be a directory in the mount path:
 #     1) 'domain.spec.configuration.model.modelHome'
 #     2) 'domain.spec.configuration.model.wdtInstallHome'
-#   Default '/common'.
+#   Default '/auxiliary'.
 #
 
 FROM busybox
-ARG COMMON_MOUNT_PATH=/common
+ARG AUXILIARY_IMAGE_PATH=/auxiliary
 ARG USER=oracle
 ARG USERID=1000
 ARG GROUP=root
-ENV COMMON_MOUNT_PATH=${COMMON_MOUNT_PATH}
+ENV AUXILIARY_IMAGE_PATH=${AUXILIARY_IMAGE_PATH}
 RUN adduser -D -u ${USERID} -G $GROUP $USER
-COPY ./ ${COMMON_MOUNT_PATH}/
-RUN chown -R $USER:$GROUP ${COMMON_MOUNT_PATH}
+COPY ./ ${AUXILIARY_IMAGE_PATH}/
+RUN chown -R $USER:$GROUP ${AUXILIARY_IMAGE_PATH}
 USER $USER
 </code></pre>
     </div>
@@ -3459,21 +3459,21 @@ USER $USER
 </li>
 <li>
 <p>After the image is created, it should have the WDT executables in
-<code>/common/weblogic-deploy</code>, and WDT model, property, and archive
-files in <code>/common/models</code>. You can run <code>ls</code> in the Docker
+<code>/auxiliary/weblogic-deploy</code>, and WDT model, property, and archive
+files in <code>/auxiliary/models</code>. You can run <code>ls</code> in the Docker
 image to verify this:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ docker run -it --rm model-in-image:WLS-CM-v1 ls -l /common
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ docker run -it --rm model-in-image:WLS-AI-v1 ls -l /auxiliary
   total <span style="color:#ae81ff">8</span>
   drwxr-xr-x    <span style="color:#ae81ff">1</span> oracle   root          <span style="color:#ae81ff">4096</span> Jun  <span style="color:#ae81ff">1</span> 21:53 models
   drwxr-xr-x    <span style="color:#ae81ff">1</span> oracle   root          <span style="color:#ae81ff">4096</span> May <span style="color:#ae81ff">26</span> 22:29 weblogic-deploy
 
-$ docker run -it --rm model-in-image:WLS-CM-v1 ls -l /common/models
+$ docker run -it --rm model-in-image:WLS-AI-v1 ls -l /auxiliary/models
   total <span style="color:#ae81ff">16</span>
   -rw-rw-r--    <span style="color:#ae81ff">1</span> oracle   root          <span style="color:#ae81ff">5112</span> Jun  <span style="color:#ae81ff">1</span> 21:52 archive.zip
   -rw-rw-r--    <span style="color:#ae81ff">1</span> oracle   root           <span style="color:#ae81ff">173</span> Jun  <span style="color:#ae81ff">1</span> 21:59 model.10.properties
   -rw-rw-r--    <span style="color:#ae81ff">1</span> oracle   root          <span style="color:#ae81ff">1515</span> Jun  <span style="color:#ae81ff">1</span> 21:59 model.10.yaml
 
-$ docker run -it --rm model-in-image:WLS-CM-v1 ls -l /common/weblogic-deploy
+$ docker run -it --rm model-in-image:WLS-AI-v1 ls -l /auxiliary/weblogic-deploy
   total <span style="color:#ae81ff">28</span>
   -rw-r-----    <span style="color:#ae81ff">1</span> oracle   root          <span style="color:#ae81ff">4673</span> Oct <span style="color:#ae81ff">22</span>  <span style="color:#ae81ff">2019</span> LICENSE.txt
   -rw-r-----    <span style="color:#ae81ff">1</span> oracle   root            <span style="color:#ae81ff">30</span> May <span style="color:#ae81ff">25</span> 11:40 VERSION.txt
@@ -3486,7 +3486,7 @@ $ docker run -it --rm model-in-image:WLS-CM-v1 ls -l /common/weblogic-deploy
 </ol>
 <h4 id="step-3-prepare-and-apply-the-domain-resource">Step 3: Prepare and apply the domain resource</h4>
 <p>Copy the following to a file called <code>/tmp/mii-sample/mii-initial.yaml</code> or similar,
-or you can directly use the file <code>/tmp/mii-sample/domain-resources/WLS-CM/mii-initial-d1-WLS-CM-v1.yaml</code>
+or you can directly use the file <code>/tmp/mii-sample/domain-resources/WLS-AI/mii-initial-d1-WLS-AI-v1.yaml</code>
 that is included in the sample source.</p>
 
 <div class="expand">
@@ -3495,7 +3495,7 @@ that is included in the sample source.</p>
         <span>
         
     	
-    	Click here to view the WLS Domain YAML file using common mounts.
+    	Click here to view the WLS Domain YAML file using auxiliary images.
     	
     	</span>
     </div>
@@ -3552,16 +3552,16 @@ that is included in the sample source.</p>
     <span style="color:#75715e"># - &#34;IF_NEEDED&#34; will start all non-clustered servers, including the administration server, and clustered servers up to their replica count.</span>
     <span style="color:#f92672">serverStartPolicy</span>: <span style="color:#e6db74">&#34;IF_NEEDED&#34;</span>
 
-    <span style="color:#75715e"># Settings for common mount volume(s), see also &#39;serverPod.commonMounts&#39;.</span>
-    <span style="color:#f92672">commonMountVolumes</span>:
-    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">commonMountsVolume1</span>
-      <span style="color:#f92672">mountPath</span>: <span style="color:#e6db74">&#34;/common&#34;</span>
+    <span style="color:#75715e"># Settings for auxiliary image volume(s), see also &#39;serverPod.auxiliaryImages&#39;.</span>
+    <span style="color:#f92672">auxiliaryImageVolumes</span>:
+    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">auxiliaryImageVolume1</span>
+      <span style="color:#f92672">mountPath</span>: <span style="color:#e6db74">&#34;/auxiliary&#34;</span>
 
     <span style="color:#75715e"># Settings for all server pods in the domain including the introspector job pod</span>
     <span style="color:#f92672">serverPod</span>:
       <span style="color:#75715e"># Optional new or overridden environment variables for the domain&#39;s pods</span>
       <span style="color:#75715e"># - This sample uses CUSTOM_DOMAIN_NAME in its image model file</span>
-      <span style="color:#75715e">#   to set the Weblogic domain name</span>
+      <span style="color:#75715e">#   to set the WebLogic domain name</span>
       <span style="color:#f92672">env</span>:
       - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">CUSTOM_DOMAIN_NAME</span>
         <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;domain1&#34;</span>
@@ -3574,14 +3574,14 @@ that is included in the sample source.</p>
           <span style="color:#f92672">cpu</span>: <span style="color:#e6db74">&#34;250m&#34;</span>
           <span style="color:#f92672">memory</span>: <span style="color:#e6db74">&#34;768Mi&#34;</span>
 
-      <span style="color:#75715e"># Common mount image(s) containing WDT model, archives and install. See also:</span>
-      <span style="color:#75715e">#    &#39;spec.commonMountVolumes&#39;.</span>
+      <span style="color:#75715e"># Auxiliary image(s) containing WDT model, archives and install. See also:</span>
+      <span style="color:#75715e">#    &#39;spec.auxiliaryImageVolumes&#39;.</span>
       <span style="color:#75715e">#    &#39;spec.configuration.model.modelHome&#39;</span>
       <span style="color:#75715e">#    &#39;spec.configuration.model.wdtInstallHome&#39;</span>
-      <span style="color:#f92672">commonMounts</span>:
-      - <span style="color:#f92672">image</span>: <span style="color:#e6db74">&#34;model-in-image:WLS-CM-v1&#34;</span>
+      <span style="color:#f92672">auxiliaryImages</span>:
+      - <span style="color:#f92672">image</span>: <span style="color:#e6db74">&#34;model-in-image:WLS-AI-v1&#34;</span>
         <span style="color:#f92672">imagePullPolicy</span>: <span style="color:#ae81ff">IfNotPresent</span>
-        <span style="color:#f92672">volume</span>: <span style="color:#ae81ff">commonMountsVolume1</span>
+        <span style="color:#f92672">volume</span>: <span style="color:#ae81ff">auxiliaryImageVolume1</span>
 
       <span style="color:#75715e"># Optional volumes and mounts for the domain&#39;s pods. See also &#39;logHome&#39;.</span>
       <span style="color:#75715e">#volumes:</span>
@@ -3644,8 +3644,8 @@ that is included in the sample source.</p>
       <span style="color:#f92672">model</span>:
         <span style="color:#75715e"># Valid model domain types are &#39;WLS&#39;, &#39;JRF&#39;, and &#39;RestrictedJRF&#39;, default is &#39;WLS&#39;</span>
         <span style="color:#f92672">domainType</span>: <span style="color:#e6db74">&#34;WLS&#34;</span>
-        <span style="color:#f92672">modelHome</span>: <span style="color:#e6db74">&#34;/common/models&#34;</span>
-        <span style="color:#f92672">wdtInstallHome</span>: <span style="color:#e6db74">&#34;/common/weblogic-deploy&#34;</span>
+        <span style="color:#f92672">modelHome</span>: <span style="color:#e6db74">&#34;/auxiliary/models&#34;</span>
+        <span style="color:#f92672">wdtInstallHome</span>: <span style="color:#e6db74">&#34;/auxiliary/weblogic-deploy&#34;</span>
 
         <span style="color:#75715e"># Optional configmap for additional models and variable files</span>
         <span style="color:#75715e">#configMap: sample-domain1-wdt-config-map</span>
@@ -3662,8 +3662,8 @@ that is included in the sample source.</p>
 </div>
 <p>You can compare this domain resource YAML file with the domain resource YAML file
 from the original initial use case (<code>/tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml</code>)
-to see the changes required for common mounts. For example:</p>
-<pre><code>$ diff /tmp/mii-sample/domain-resources/WLS-CM/mii-initial-d1-WLS-CM-v1.yaml /tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml
+to see the changes required for auxiliary images. For example:</p>
+<pre><code>$ diff /tmp/mii-sample/domain-resources/WLS-AI/mii-initial-d1-WLS-AI-v1.yaml /tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml
 1c1
 &lt; # Copyright (c) 2021, Oracle and/or its affiliates.
 ---
@@ -3673,26 +3673,26 @@ to see the changes required for common mounts. For example:</p>
 ---
 &gt;   image: &quot;model-in-image:WLS-v1&quot;
 53,57d52
-&lt;   # Settings for common mount volume(s), see also 'serverPod.commonMounts'.
-&lt;   commonMountVolumes:
-&lt;   - name: commonMountsVolume1
-&lt;     mountPath: &quot;/common&quot;
+&lt;   # Settings for auxiliary image volume(s), see also 'serverPod.auxiliaryImages'.
+&lt;   auxiliaryImageVolumes:
+&lt;   - name: auxiliaryImageVolume1
+&lt;     mountPath: &quot;/auxiliary&quot;
 &lt;
 75,83d69
-&lt;     # Common mount image(s) containing WDT model, archives and install. See also:
-&lt;     #    'spec.commonMountVolumes'.
+&lt;     # Auxiliary image(s) containing WDT model, archives and install. See also:
+&lt;     #    'spec.auxiliaryImageVolumes'.
 &lt;     #    'spec.configuration.model.modelHome'
 &lt;     #    'spec.configuration.model.wdtInstallHome'
-&lt;     commonMounts:
-&lt;     - image: &quot;model-in-image:WLS-CM-v1&quot;
+&lt;     auxiliaryImages:
+&lt;     - image: &quot;model-in-image:WLS-AI-v1&quot;
 &lt;       imagePullPolicy: IfNotPresent
-&lt;       volume: commonMountsVolume1
+&lt;       volume: auxiliaryImageVolume1
 &lt;
 145,146d130
-&lt;       modelHome: &quot;/common/models&quot;
-&lt;       wdtInstallHome: &quot;/common/weblogic-deploy&quot;
+&lt;       modelHome: &quot;/auxiliary/models&quot;
+&lt;       wdtInstallHome: &quot;/auxiliary/weblogic-deploy&quot;
 </code></pre><p>Run the following command to deploy the domain custom resource:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl apply -f /tmp/mii-sample/domain-resources/WLS-CM/mii-initial-d1-WLS-CM-v1.yaml
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl apply -f /tmp/mii-sample/domain-resources/WLS-AI/mii-initial-d1-WLS-AI-v1.yaml
 </code></pre></div><p><strong>Note</strong>: If you are choosing <em>not</em> to use the predefined Domain YAML file
 and instead created your own Domain YAML file earlier, then substitute your
 custom file name in the above command. Previously, we suggested naming it <code>/tmp/mii-sample/mii-initial.yaml</code>.</p>
@@ -3746,7 +3746,7 @@ sample-domain1-managed-server1      1/1     Running           0          43s
 <p>Alternatively, you can run <code>/tmp/mii-sample/utils/wl-pod-wait.sh -p 3</code>.
 This utility script exits successfully when the designated number of WebLogic
 Server pods reach a <code>ready</code> state and have <code>restartVersion</code>, <code>introspectVersion</code>,
-<code>spec.image</code>, and <code>spec.serverPod.commonMounts.image</code> values that match
+<code>spec.image</code>, and <code>spec.serverPod.auxiliaryImages.image</code> values that match
 their corresponding values in their domain resource.</p>
 
 <div class="expand">
@@ -3788,8 +3788,8 @@ their corresponding values in their domain resource.</p>
                       - same &#39;weblogic.introspectVersion&#39; label value as
                         the domain resource&#39;s &#39;spec.introspectVersion&#39;
                       - same image as the domain resource&#39;s &#39;spec.image&#39;
-                      - same common mount images as
-                        the domain resource&#39;s &#39;spec.serverPod.commonMounts&#39;
+                      - same auxiliary images as
+                        the domain resource&#39;s &#39;spec.serverPod.auxiliaryImages&#39;
 
     -t &lt;timeout&gt;    : Timeout in seconds. Defaults to &#39;1000&#39;.
 
@@ -3815,7 +3815,7 @@ their corresponding values in their domain resource.</p>
         <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">@@ [2021-06-14T20:35:35][seconds=0] Info: Waiting up to 1000 seconds for exactly &#39;3&#39; WebLogic Server pods to reach the following criteria:
 @@ [2021-06-14T20:35:35][seconds=0] Info:   ready=&#39;true&#39;
 @@ [2021-06-14T20:35:35][seconds=0] Info:   image=&#39;container-registry.oracle.com/middleware/weblogic:12.2.1.4&#39;
-@@ [2021-06-14T20:35:35][seconds=0] Info:   commonMountImages=&#39;model-in-image:WLS-CM-v1&#39;
+@@ [2021-06-14T20:35:35][seconds=0] Info:   auxiliaryImages=&#39;model-in-image:WLS-AI-v1&#39;
 @@ [2021-06-14T20:35:35][seconds=0] Info:   domainRestartVersion=&#39;1&#39;
 @@ [2021-06-14T20:35:35][seconds=0] Info:   introspectVersion=&#39;1&#39;
 @@ [2021-06-14T20:35:35][seconds=0] Info:   namespace=&#39;sample-domain1-ns&#39;
@@ -3826,73 +3826,73 @@ their corresponding values in their domain resource.</p>
 
 NAME                                 RVER  IVER  IMAGE  CMIMAGES                    READY  PHASE
 ----                                 ----  ----  -----  --------                    -----  -----
-&#39;sample-domain1-introspector-wz8q6&#39;  &#39;&#39;    &#39;&#39;    &#39;&#39;     &#39;model-in-image:WLS-CM-v1&#39;  &#39;&#39;     &#39;Pending&#39;
+&#39;sample-domain1-introspector-wz8q6&#39;  &#39;&#39;    &#39;&#39;    &#39;&#39;     &#39;model-in-image:WLS-AI-v1&#39;  &#39;&#39;     &#39;Pending&#39;
 
 @@ [2021-06-14T20:35:39][seconds=4] Info: &#39;0&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2021-06-14T20:35:39][seconds=4] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                                 RVER  IVER  IMAGE  CMIMAGES                    READY  PHASE
 ----                                 ----  ----  -----  --------                    -----  -----
-&#39;sample-domain1-introspector-wz8q6&#39;  &#39;&#39;    &#39;&#39;    &#39;&#39;     &#39;model-in-image:WLS-CM-v1&#39;  &#39;&#39;     &#39;Running&#39;
+&#39;sample-domain1-introspector-wz8q6&#39;  &#39;&#39;    &#39;&#39;    &#39;&#39;     &#39;model-in-image:WLS-AI-v1&#39;  &#39;&#39;     &#39;Running&#39;
 
 @@ [2021-06-14T20:36:51][seconds=76] Info: &#39;0&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2021-06-14T20:36:51][seconds=76] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                           RVER  IVER  IMAGE                                                         CMIMAGES                    READY    PHASE
 ----                           ----  ----  -----                                                         --------                    -----    -----
-&#39;sample-domain1-admin-server&#39;  &#39;1&#39;   &#39;1&#39;   &#39;container-registry.oracle.com/middleware/weblogic:12.2.1.4&#39;  &#39;model-in-image:WLS-CM-v1&#39;  &#39;false&#39;  &#39;Pending&#39;
+&#39;sample-domain1-admin-server&#39;  &#39;1&#39;   &#39;1&#39;   &#39;container-registry.oracle.com/middleware/weblogic:12.2.1.4&#39;  &#39;model-in-image:WLS-AI-v1&#39;  &#39;false&#39;  &#39;Pending&#39;
 
 @@ [2021-06-14T20:36:55][seconds=80] Info: &#39;0&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2021-06-14T20:36:55][seconds=80] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                           RVER  IVER  IMAGE                                                         CMIMAGES                    READY    PHASE
 ----                           ----  ----  -----                                                         --------                    -----    -----
-&#39;sample-domain1-admin-server&#39;  &#39;1&#39;   &#39;1&#39;   &#39;container-registry.oracle.com/middleware/weblogic:12.2.1.4&#39;  &#39;model-in-image:WLS-CM-v1&#39;  &#39;false&#39;  &#39;Running&#39;
+&#39;sample-domain1-admin-server&#39;  &#39;1&#39;   &#39;1&#39;   &#39;container-registry.oracle.com/middleware/weblogic:12.2.1.4&#39;  &#39;model-in-image:WLS-AI-v1&#39;  &#39;false&#39;  &#39;Running&#39;
 
 @@ [2021-06-14T20:37:34][seconds=119] Info: &#39;1&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2021-06-14T20:37:34][seconds=119] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                              RVER  IVER  IMAGE                                                         CMIMAGES                    READY    PHASE
 ----                              ----  ----  -----                                                         --------                    -----    -----
-&#39;sample-domain1-admin-server&#39;     &#39;1&#39;   &#39;1&#39;   &#39;container-registry.oracle.com/middleware/weblogic:12.2.1.4&#39;  &#39;model-in-image:WLS-CM-v1&#39;  &#39;true&#39;   &#39;Running&#39;
-&#39;sample-domain1-managed-server1&#39;  &#39;1&#39;   &#39;1&#39;   &#39;container-registry.oracle.com/middleware/weblogic:12.2.1.4&#39;  &#39;model-in-image:WLS-CM-v1&#39;  &#39;false&#39;  &#39;Pending&#39;
-&#39;sample-domain1-managed-server2&#39;  &#39;1&#39;   &#39;1&#39;   &#39;container-registry.oracle.com/middleware/weblogic:12.2.1.4&#39;  &#39;model-in-image:WLS-CM-v1&#39;  &#39;false&#39;  &#39;Pending&#39;
+&#39;sample-domain1-admin-server&#39;     &#39;1&#39;   &#39;1&#39;   &#39;container-registry.oracle.com/middleware/weblogic:12.2.1.4&#39;  &#39;model-in-image:WLS-AI-v1&#39;  &#39;true&#39;   &#39;Running&#39;
+&#39;sample-domain1-managed-server1&#39;  &#39;1&#39;   &#39;1&#39;   &#39;container-registry.oracle.com/middleware/weblogic:12.2.1.4&#39;  &#39;model-in-image:WLS-AI-v1&#39;  &#39;false&#39;  &#39;Pending&#39;
+&#39;sample-domain1-managed-server2&#39;  &#39;1&#39;   &#39;1&#39;   &#39;container-registry.oracle.com/middleware/weblogic:12.2.1.4&#39;  &#39;model-in-image:WLS-AI-v1&#39;  &#39;false&#39;  &#39;Pending&#39;
 
 @@ [2021-06-14T20:37:35][seconds=120] Info: &#39;1&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2021-06-14T20:37:35][seconds=120] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                              RVER  IVER  IMAGE                                                         CMIMAGES                    READY    PHASE
 ----                              ----  ----  -----                                                         --------                    -----    -----
-&#39;sample-domain1-admin-server&#39;     &#39;1&#39;   &#39;1&#39;   &#39;container-registry.oracle.com/middleware/weblogic:12.2.1.4&#39;  &#39;model-in-image:WLS-CM-v1&#39;  &#39;true&#39;   &#39;Running&#39;
-&#39;sample-domain1-managed-server1&#39;  &#39;1&#39;   &#39;1&#39;   &#39;container-registry.oracle.com/middleware/weblogic:12.2.1.4&#39;  &#39;model-in-image:WLS-CM-v1&#39;  &#39;false&#39;  &#39;Running&#39;
-&#39;sample-domain1-managed-server2&#39;  &#39;1&#39;   &#39;1&#39;   &#39;container-registry.oracle.com/middleware/weblogic:12.2.1.4&#39;  &#39;model-in-image:WLS-CM-v1&#39;  &#39;false&#39;  &#39;Pending&#39;
+&#39;sample-domain1-admin-server&#39;     &#39;1&#39;   &#39;1&#39;   &#39;container-registry.oracle.com/middleware/weblogic:12.2.1.4&#39;  &#39;model-in-image:WLS-AI-v1&#39;  &#39;true&#39;   &#39;Running&#39;
+&#39;sample-domain1-managed-server1&#39;  &#39;1&#39;   &#39;1&#39;   &#39;container-registry.oracle.com/middleware/weblogic:12.2.1.4&#39;  &#39;model-in-image:WLS-AI-v1&#39;  &#39;false&#39;  &#39;Running&#39;
+&#39;sample-domain1-managed-server2&#39;  &#39;1&#39;   &#39;1&#39;   &#39;container-registry.oracle.com/middleware/weblogic:12.2.1.4&#39;  &#39;model-in-image:WLS-AI-v1&#39;  &#39;false&#39;  &#39;Pending&#39;
 
 @@ [2021-06-14T20:37:37][seconds=122] Info: &#39;1&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2021-06-14T20:37:37][seconds=122] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                              RVER  IVER  IMAGE                                                         CMIMAGES                    READY    PHASE
 ----                              ----  ----  -----                                                         --------                    -----    -----
-&#39;sample-domain1-admin-server&#39;     &#39;1&#39;   &#39;1&#39;   &#39;container-registry.oracle.com/middleware/weblogic:12.2.1.4&#39;  &#39;model-in-image:WLS-CM-v1&#39;  &#39;true&#39;   &#39;Running&#39;
-&#39;sample-domain1-managed-server1&#39;  &#39;1&#39;   &#39;1&#39;   &#39;container-registry.oracle.com/middleware/weblogic:12.2.1.4&#39;  &#39;model-in-image:WLS-CM-v1&#39;  &#39;false&#39;  &#39;Running&#39;
-&#39;sample-domain1-managed-server2&#39;  &#39;1&#39;   &#39;1&#39;   &#39;container-registry.oracle.com/middleware/weblogic:12.2.1.4&#39;  &#39;model-in-image:WLS-CM-v1&#39;  &#39;false&#39;  &#39;Running&#39;
+&#39;sample-domain1-admin-server&#39;     &#39;1&#39;   &#39;1&#39;   &#39;container-registry.oracle.com/middleware/weblogic:12.2.1.4&#39;  &#39;model-in-image:WLS-AI-v1&#39;  &#39;true&#39;   &#39;Running&#39;
+&#39;sample-domain1-managed-server1&#39;  &#39;1&#39;   &#39;1&#39;   &#39;container-registry.oracle.com/middleware/weblogic:12.2.1.4&#39;  &#39;model-in-image:WLS-AI-v1&#39;  &#39;false&#39;  &#39;Running&#39;
+&#39;sample-domain1-managed-server2&#39;  &#39;1&#39;   &#39;1&#39;   &#39;container-registry.oracle.com/middleware/weblogic:12.2.1.4&#39;  &#39;model-in-image:WLS-AI-v1&#39;  &#39;false&#39;  &#39;Running&#39;
 
 @@ [2021-06-14T20:38:18][seconds=163] Info: &#39;2&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2021-06-14T20:38:18][seconds=163] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                              RVER  IVER  IMAGE                                                         CMIMAGES                    READY    PHASE
 ----                              ----  ----  -----                                                         --------                    -----    -----
-&#39;sample-domain1-admin-server&#39;     &#39;1&#39;   &#39;1&#39;   &#39;container-registry.oracle.com/middleware/weblogic:12.2.1.4&#39;  &#39;model-in-image:WLS-CM-v1&#39;  &#39;true&#39;   &#39;Running&#39;
-&#39;sample-domain1-managed-server1&#39;  &#39;1&#39;   &#39;1&#39;   &#39;container-registry.oracle.com/middleware/weblogic:12.2.1.4&#39;  &#39;model-in-image:WLS-CM-v1&#39;  &#39;false&#39;  &#39;Running&#39;
-&#39;sample-domain1-managed-server2&#39;  &#39;1&#39;   &#39;1&#39;   &#39;container-registry.oracle.com/middleware/weblogic:12.2.1.4&#39;  &#39;model-in-image:WLS-CM-v1&#39;  &#39;true&#39;   &#39;Running&#39;
+&#39;sample-domain1-admin-server&#39;     &#39;1&#39;   &#39;1&#39;   &#39;container-registry.oracle.com/middleware/weblogic:12.2.1.4&#39;  &#39;model-in-image:WLS-AI-v1&#39;  &#39;true&#39;   &#39;Running&#39;
+&#39;sample-domain1-managed-server1&#39;  &#39;1&#39;   &#39;1&#39;   &#39;container-registry.oracle.com/middleware/weblogic:12.2.1.4&#39;  &#39;model-in-image:WLS-AI-v1&#39;  &#39;false&#39;  &#39;Running&#39;
+&#39;sample-domain1-managed-server2&#39;  &#39;1&#39;   &#39;1&#39;   &#39;container-registry.oracle.com/middleware/weblogic:12.2.1.4&#39;  &#39;model-in-image:WLS-AI-v1&#39;  &#39;true&#39;   &#39;Running&#39;
 
 @@ [2021-06-14T20:38:20][seconds=165] Info: &#39;3&#39; WebLogic Server pods currently match all criteria, expecting &#39;3&#39;.
 @@ [2021-06-14T20:38:20][seconds=165] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
 
 NAME                              RVER  IVER  IMAGE                                                         CMIMAGES                    READY   PHASE
 ----                              ----  ----  -----                                                         --------                    -----   -----
-&#39;sample-domain1-admin-server&#39;     &#39;1&#39;   &#39;1&#39;   &#39;container-registry.oracle.com/middleware/weblogic:12.2.1.4&#39;  &#39;model-in-image:WLS-CM-v1&#39;  &#39;true&#39;  &#39;Running&#39;
-&#39;sample-domain1-managed-server1&#39;  &#39;1&#39;   &#39;1&#39;   &#39;container-registry.oracle.com/middleware/weblogic:12.2.1.4&#39;  &#39;model-in-image:WLS-CM-v1&#39;  &#39;true&#39;  &#39;Running&#39;
-&#39;sample-domain1-managed-server2&#39;  &#39;1&#39;   &#39;1&#39;   &#39;container-registry.oracle.com/middleware/weblogic:12.2.1.4&#39;  &#39;model-in-image:WLS-CM-v1&#39;  &#39;true&#39;  &#39;Running&#39;
+&#39;sample-domain1-admin-server&#39;     &#39;1&#39;   &#39;1&#39;   &#39;container-registry.oracle.com/middleware/weblogic:12.2.1.4&#39;  &#39;model-in-image:WLS-AI-v1&#39;  &#39;true&#39;  &#39;Running&#39;
+&#39;sample-domain1-managed-server1&#39;  &#39;1&#39;   &#39;1&#39;   &#39;container-registry.oracle.com/middleware/weblogic:12.2.1.4&#39;  &#39;model-in-image:WLS-AI-v1&#39;  &#39;true&#39;  &#39;Running&#39;
+&#39;sample-domain1-managed-server2&#39;  &#39;1&#39;   &#39;1&#39;   &#39;container-registry.oracle.com/middleware/weblogic:12.2.1.4&#39;  &#39;model-in-image:WLS-AI-v1&#39;  &#39;true&#39;  &#39;Running&#39;
 
 
 @@ [2021-06-14T20:38:20][seconds=165] Info: Success!
@@ -5991,19 +5991,19 @@ section of the initial use case.</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1625619749"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1625619749"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1625619749"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1625619749"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1625619749"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1625619749"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1625857472"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1625857472"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1625857472"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1625857472"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1625857472"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1625857472"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1625619749"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1625619749"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1625619749"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1625857472"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1625857472"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1625857472"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1625619749"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1625857472"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

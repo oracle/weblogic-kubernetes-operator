@@ -12,20 +12,20 @@
     <title>Runtime updates :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1625619749" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1625619749" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1625619749" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1625619749" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1625619749" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1625619749" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1625619749" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1625619749" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1625619749" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1625619749" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1625857472" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1625857472" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1625857472" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1625857472" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1625857472" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1625857472" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1625857472" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1625857472" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1625857472" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1625857472" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1625619749"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1625857472"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1625619749"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1625619749"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1625857472"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1625857472"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1625619749"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1625857472"></script>
 
     
   </div>
@@ -757,9 +757,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/common-mounts/" title="Common mounts" class="dd-item ">
-        <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/common-mounts/">
-        <b> </b>Common mounts
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/auxiliary-images/" title="Auxiliary images" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/auxiliary-images/">
+        <b> </b>Auxiliary images
         
         </a>
     </li>
@@ -3502,10 +3502,10 @@ Ensure the secrets are deployed to the same namespace as your domain.</p>
 <li>If the files are located in the image specified in the domain resource YAML file <code>spec.image</code>,
 then change this field to reference the image.</li>
 <li>If you are using
-<a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/common-mounts/">common mounts</a>
+<a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/auxiliary-images/">auxiliary images</a>
 to supply
-model files in an image, then change the corresponding <code>serverPod.commonMounts.image</code> field
-value to reference the new image or add a new <code>serverPod.commonMounts</code> mount for
+model files in an image, then change the corresponding <code>serverPod.auxiliaryImages.image</code> field
+value to reference the new image or add a new <code>serverPod.auxiliaryImages</code> mount for
 the new image.</li>
 </ul>
 </li>
@@ -3536,7 +3536,7 @@ and Model in Image <a href="/weblogic-kubernetes-operator/userguide/managing-dom
 see <a href="#using-the-wdt-discover-domain-and-compare-model-tools">Using the WDT Discover and Compare Model Tools</a>.</p>
 </li>
 <li>
-<p>If you specify multiple model files in your image, volumes (including those based on images from the <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/common-mounts/">common mounts</a> feature), or WDT ConfigMap,
+<p>If you specify multiple model files in your image, volumes (including those based on images from the <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/auxiliary-images/">auxiliary images</a> feature), or WDT ConfigMap,
 then the order in which they&rsquo;re loaded and merged is determined as described in
 <a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/model-files/#model-file-naming-and-loading-order">Model file naming and loading order</a>.</p>
 </li>
@@ -3561,10 +3561,10 @@ or <a href="#online-updates">Online updates</a>.</p>
 <li>If the files are located in the image specified in the domain resource YAML file <code>spec.image</code>,
 then change this field to reference the image.</li>
 <li>If you are using
-<a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/common-mounts/">common mounts</a>
+<a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/auxiliary-images/">auxiliary images</a>
 to supply
-model files in an image, then change the corresponding <code>serverPod.commonMounts.image</code> field
-value to reference the new image or add a new <code>serverPod.commonMounts</code> mount for
+model files in an image, then change the corresponding <code>serverPod.auxiliaryImages.image</code> field
+value to reference the new image or add a new <code>serverPod.auxiliaryImages</code> mount for
 the new image.</li>
 </ul>
 </li>
@@ -6335,19 +6335,19 @@ the <a href="/weblogic-kubernetes-operator/samples/simple/domains/lifecycle/">Do
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1625619749"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1625619749"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1625619749"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1625619749"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1625619749"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1625619749"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1625857472"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1625857472"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1625857472"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1625857472"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1625857472"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1625857472"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1625619749"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1625619749"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1625619749"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1625857472"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1625857472"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1625857472"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1625619749"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1625857472"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
