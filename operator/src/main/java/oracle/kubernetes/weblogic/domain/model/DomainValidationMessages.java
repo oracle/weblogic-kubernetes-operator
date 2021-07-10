@@ -28,22 +28,22 @@ class DomainValidationMessages {
   }
 
   /**
-   * Returns a validation message indicating that more than one common mount volume has same name
+   * Returns a validation message indicating that more than one auxiliary image volume has same name
    * after DNS-1123 conversion.
    * @param volumeName the duplicate volume name
    * @return the localized message
    */
-  static String duplicateCommonMountVolumeName(@Nonnull String volumeName) {
-    return getMessage(MessageKeys.DUPLICATE_COMMON_MOUNT_VOLUME_FOUND, volumeName);
+  static String duplicateAuxiliaryImageVolumeName(@Nonnull String volumeName) {
+    return getMessage(MessageKeys.DUPLICATE_AUXILIARY_IMAGE_VOLUME_FOUND, volumeName);
   }
 
   /**
-   * Returns a validation message indicating that more than one common mount volume has same mountPath.
+   * Returns a validation message indicating that more than one auxiliary image volume has same mountPath.
    * @param mountPath the duplicate mount path
    * @return the localized message
    */
-  static String duplicateCMVMountPath(@Nonnull String mountPath) {
-    return getMessage(MessageKeys.DUPLICATE_COMMON_MOUNT_PATH_FOUND, mountPath);
+  static String duplicateAIVMountPath(@Nonnull String mountPath) {
+    return getMessage(MessageKeys.DUPLICATE_AUXILIARY_IMAGE_PATH_FOUND, mountPath);
   }
 
   /**
@@ -138,16 +138,16 @@ class DomainValidationMessages {
     return getMessage(MessageKeys.ILLEGAL_INTROSPECTOR_JOB_NAME_LENGTH, domainUid, result, limit);
   }
 
-  public static String noMatchingCommonMountVolumeDefined(String volumeName) {
-    return getMessage(MessageKeys.NO_MATCHING_COMMON_MOUNT_VOLUME_DEFINED, volumeName);
+  public static String noMatchingAuxiliaryImageVolumeDefined(String volumeName) {
+    return getMessage(MessageKeys.NO_MATCHING_AUXILIARY_IMAGE_VOLUME_DEFINED, volumeName);
   }
 
-  public static String noCommonMountVolumeDefined() {
-    return getMessage(MessageKeys.NO_COMMON_MOUNT_VOLUME_DEFINED);
+  public static String noAuxiliaryImageVolumeDefined() {
+    return getMessage(MessageKeys.NO_AUXILIARY_IMAGE_VOLUME_DEFINED);
   }
 
-  public static String commonMountVolumeNameNotDefined() {
-    return getMessage(MessageKeys.COMMON_MOUNT_VOLUME_NAME_NOT_DEFINED);
+  public static String auxiliaryImageVolumeNameNotDefined() {
+    return getMessage(MessageKeys.AUXILIARY_IMAGE_VOLUME_NAME_NOT_DEFINED);
   }
 
   public static String exceedMaxClusterServiceName(String domainUid, String clusterName, String result, int limit) {

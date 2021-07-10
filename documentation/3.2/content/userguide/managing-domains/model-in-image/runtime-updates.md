@@ -257,10 +257,10 @@ For offline updates only, there are two additional options:
     - If the files are located in the image specified in the domain resource YAML file `spec.image`,
       then change this field to reference the image.
     - If you are using
-      [common mounts]({{< relref "/userguide/managing-domains/model-in-image/common-mounts.md" >}})
+      [auxiliary images]({{< relref "/userguide/managing-domains/model-in-image/auxiliary-images.md" >}})
       to supply
-      model files in an image, then change the corresponding `serverPod.commonMounts.image` field
-      value to reference the new image or add a new `serverPod.commonMounts` mount for
+      model files in an image, then change the corresponding `serverPod.auxiliaryImages.image` field
+      value to reference the new image or add a new `serverPod.auxiliaryImages` mount for
       the new image.
 
   - Change, add, or delete environment variables that are referenced by macros in your model files.
@@ -285,7 +285,7 @@ Model updates can include additions, changes, and deletions. For help generating
  - For a discussion about helper tooling that you can use to generate model change YAML,
    see [Using the WDT Discover and Compare Model Tools](#using-the-wdt-discover-domain-and-compare-model-tools).
 
- - If you specify multiple model files in your image, volumes (including those based on images from the [common mounts]({{< relref "/userguide/managing-domains/model-in-image/common-mounts.md" >}}) feature), or WDT ConfigMap,
+ - If you specify multiple model files in your image, volumes (including those based on images from the [auxiliary images]({{< relref "/userguide/managing-domains/model-in-image/auxiliary-images.md" >}}) feature), or WDT ConfigMap,
    then the order in which they're loaded and merged is determined as described in
    [Model file naming and loading order]({{< relref "/userguide/managing-domains/model-in-image/model-files/_index.md#model-file-naming-and-loading-order" >}}).
 
@@ -309,10 +309,10 @@ Use the following steps to initiate an offline configuration update to your mode
        - If the files are located in the image specified in the domain resource YAML file `spec.image`,
          then change this field to reference the image.
        - If you are using
-         [common mounts]({{< relref "/userguide/managing-domains/model-in-image/common-mounts.md" >}})
+         [auxiliary images]({{< relref "/userguide/managing-domains/model-in-image/auxiliary-images.md" >}})
          to supply
-         model files in an image, then change the corresponding `serverPod.commonMounts.image` field
-         value to reference the new image or add a new `serverPod.commonMounts` mount for
+         model files in an image, then change the corresponding `serverPod.auxiliaryImages.image` field
+         value to reference the new image or add a new `serverPod.auxiliaryImages` mount for
          the new image.
     1. If you are updating environment variables, change `domain.spec.serverPod.env`
        or `domain.spec.adminServer.serverPod.env` accordingly.

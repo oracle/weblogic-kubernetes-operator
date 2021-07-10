@@ -17,8 +17,8 @@ import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
-import oracle.kubernetes.weblogic.domain.model.CommonMount;
-import oracle.kubernetes.weblogic.domain.model.CommonMountVolume;
+import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
+import oracle.kubernetes.weblogic.domain.model.AuxiliaryImageVolume;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 
@@ -227,16 +227,16 @@ public abstract class DomainConfigurator {
       Integer initialDelay, Integer timeout, Integer period);
 
   /**
-   * Add common mounts for the domain resource.
+   * Add auxiliary images for the domain resource.
    *
    */
-  public abstract void withCommonMounts(List<CommonMount> cm);
+  public abstract void withAuxiliaryImages(List<AuxiliaryImage> ai);
 
   /**
-   * Add common mount volumes for the domain resource.
+   * Add auxiliary image volumes for the domain resource.
    *
    */
-  public abstract DomainConfigurator withCommonMountVolumes(List<CommonMountVolume> commonMountVolume);
+  public abstract DomainConfigurator withAuxiliaryImageVolumes(List<AuxiliaryImageVolume> auxiliaryImageVolume);
 
   /**
    * Sets the default settings for the liveness probe. Any settings left null will default to the

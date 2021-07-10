@@ -48,9 +48,9 @@ function copyIfChanged() {
 }
 
 # 
-# if the common mount feature is active, verify the mount, and log mount information
+# if the auxiliary image feature is active, verify the mount, and log mount information
 #
-checkCommonMount || exitOrLoop
+checkAuxiliaryImage || exitOrLoop
 
 #
 # Define function to start WebLogic

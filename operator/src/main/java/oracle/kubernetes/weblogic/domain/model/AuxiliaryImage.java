@@ -14,44 +14,39 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-@Description("Use a common mount to automatically include directory content from additional images. "
-        + "This is a useful alternative for including Model in Image model files, or other types of files, in a pod "
-        + "without requiring modifications to the pod's base image 'domain.spec.image'. "
-        + "This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share "
-        + "the files from the additional images with the pod.")
-public class CommonMount {
+public class AuxiliaryImage {
 
-  public static final String COMMON_MOUNT_TARGET_PATH = "/tmpCommonMount";
-  public static final String COMMON_MOUNT_VOLUME_NAME_PREFIX = "common-mount-volume-";
-  public static final String COMMON_MOUNT_INIT_CONTAINER_WRAPPER_SCRIPT = "/weblogic-operator/scripts/commonMount.sh";
-  public static final String COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX = "operator-common-container";
-  public static final String COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND
-          = "cp -R $COMMON_MOUNT_PATH/* $COMMON_MOUNT_TARGET_PATH";
+  public static final String AUXILIARY_IMAGE_TARGET_PATH = "/tmpAuxiliaryImage";
+  public static final String AUXILIARY_IMAGE_VOLUME_NAME_PREFIX = "aux-image-volume-";
+  public static final String AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT = "/weblogic-operator/scripts/auxImage.sh";
+  public static final String AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX = "operator-aux-container";
+  public static final String AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND
+          = "cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH";
 
   /**
-   * The common mount.
+   * The auxiliary image.
    */
-  @Description("The name of an image with files located in directory specified by 'spec.commonMountVolumes.mountPath' "
-          + "of the common mount volume referenced by serverPod.commonMounts.volume (which defaults to '/common').")
+  @Description("The name of an image with files located in directory specified by "
+      + "`spec.auxiliaryImageVolumes.mountPath` of the auxiliary image volume referenced by "
+      + "`serverPod.auxiliaryImages.volume`, which defaults to \"/auxiliary\".")
   @NotNull
   private String image;
 
-  @Description(
-          "The image pull policy for the common mount container image. "
-                  + "Legal values are Always, Never, and IfNotPresent. "
-                  + "Defaults to Always if image ends in :latest; IfNotPresent, otherwise.")
+  @Description("The image pull policy for the container image. "
+      + "Legal values are Always, Never, and IfNotPresent. "
+      + "Defaults to Always if image ends in :latest; IfNotPresent, otherwise.")
   @EnumClass(ImagePullPolicy.class)
   private String imagePullPolicy;
 
-  @Description("The command for this init container. Defaults to 'cp -R $COMMON_MOUNT_PATH/* $TARGET_MOUNT_PATH'. "
-          + "This is an advanced setting for customizing the container command for copying files from the container "
-          + "image to the common mount emptyDir volume. Use the '$COMMON_MOUNT_PATH' environment variable to reference "
-          + "the value configured in 'spec.commonMountVolumes.mountPath' (which defaults to '/common'). Use "
-          + "'$TARGET_MOUNT_PATH' to refer to the temporary directory created by the Operator that resolves to the "
-          + "common mount's internal emptyDir volume.")
+  @Description("The command for this init container. Defaults to `cp -R $AUXILIARY_IMAGE_PATH/* $TARGET_MOUNT_PATH`. "
+      + "This is an advanced setting for customizing the container command for copying files from the container "
+      + "image to the auxiliary image emptyDir volume. Use the `$AUXILIARY_IMAGE_PATH` environment variable to "
+      + "reference the value configured in `spec.auxiliaryImageVolumes.mountPath`, which defaults to "
+      + "\"/auxiliary\". Use '$TARGET_MOUNT_PATH' to refer to the temporary directory created by the Operator that "
+      + "resolves to the auxiliary image's internal emptyDir volume.")
   private String command;
 
-  @Description("The name of a common mount volume defined in 'spec.commonMountVolumes'. Required.")
+  @Description("The name of an auxiliary image volume defined in `spec.auxiliaryImageVolumes`. Required.")
   @NotNull
   private String volume;
 
@@ -63,7 +58,7 @@ public class CommonMount {
     this.image = image;
   }
 
-  public CommonMount image(String image) {
+  public AuxiliaryImage image(String image) {
     this.image = image;
     return this;
   }
@@ -76,21 +71,21 @@ public class CommonMount {
     this.imagePullPolicy = imagePullPolicy;
   }
 
-  public CommonMount imagePullPolicy(String imagePullPolicy) {
+  public AuxiliaryImage imagePullPolicy(String imagePullPolicy) {
     this.imagePullPolicy = imagePullPolicy;
     return this;
   }
 
   public String getCommand() {
     return Optional.ofNullable(command)
-            .orElse(COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND);
+            .orElse(AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND);
   }
 
   public void setCommand(String command) {
     this.command = command;
   }
 
-  public CommonMount command(String command) {
+  public AuxiliaryImage command(String command) {
     this.command = command;
     return this;
   }
@@ -103,7 +98,7 @@ public class CommonMount {
     this.volume = volume;
   }
 
-  public CommonMount volume(String volume) {
+  public AuxiliaryImage volume(String volume) {
     this.volume = volume;
     return this;
   }
@@ -124,11 +119,11 @@ public class CommonMount {
     if (other == this) {
       return true;
     }
-    if (!(other instanceof CommonMount)) {
+    if (!(other instanceof AuxiliaryImage)) {
       return false;
     }
 
-    CommonMount rhs = ((CommonMount) other);
+    AuxiliaryImage rhs = ((AuxiliaryImage) other);
     EqualsBuilder builder =
             new EqualsBuilder()
                     .append(image, rhs.image)
