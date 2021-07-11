@@ -201,10 +201,10 @@ public class ItMiiAuxiliaryImage {
     // create models dir and copy model, archive files if any
     Path modelsPath2 = Paths.get(multipleAIPath2.toString(), "models");
     assertDoesNotThrow(() -> Files.createDirectories(modelsPath2));
-    Path multipleCMPathToFile2 = Paths.get(RESULTS_ROOT, "multiplecmimage2/test.txt");
+    Path multipleAIPathToFile2 = Paths.get(RESULTS_ROOT, "multipleauxiliaryimage2/test.txt");
     String content2 = "2";
-    assertDoesNotThrow(() -> Files.write(multipleCMPathToFile2, content2.getBytes()),
-        "Can't write to file " + multipleCMPathToFile2);
+    assertDoesNotThrow(() -> Files.write(multipleAIPathToFile2, content2.getBytes()),
+        "Can't write to file " + multipleAIPathToFile2);
     assertDoesNotThrow(() -> Files.copy(
         Paths.get(MODEL_DIR, "/model.jms2.yaml"),
         Paths.get(modelsPath2.toString(), "/model.jms2.yaml"),
@@ -246,7 +246,7 @@ public class ItMiiAuxiliaryImage {
     assertDoesNotThrow(() -> FileUtils.deleteQuietly(Paths.get(RESULTS_ROOT, "/test.txt").toFile()));
     assertDoesNotThrow(() -> copyFileFromPod(domainNamespace,
         adminServerPodName, "weblogic-server",
-        auxiliaryImageVolumeName + "/test.txt",
+        auxiliaryImagePath + "/test.txt",
         Paths.get(RESULTS_ROOT, "/test.txt")), " Can't find file in the pod, or failed to copy");
 
     assertDoesNotThrow(() ->  {
