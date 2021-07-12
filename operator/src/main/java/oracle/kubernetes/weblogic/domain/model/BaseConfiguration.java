@@ -157,12 +157,12 @@ public abstract class BaseConfiguration {
     return serverPod.getReadinessProbeTuning();
   }
 
-  List<CommonMount> getCommonMounts() {
-    return serverPod.getCommonMounts();
+  List<AuxiliaryImage> getAuxiliaryImages() {
+    return serverPod.getAuxiliaryImages();
   }
 
-  void setCommonMounts(List<CommonMount> commonMountList) {
-    serverPod.setCommonMounts(commonMountList);
+  void setAuxiliaryImages(List<AuxiliaryImage> auxiliaryImageList) {
+    serverPod.setAuxiliaryImages(auxiliaryImageList);
   }
 
   Shutdown getShutdown() {

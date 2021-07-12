@@ -23,7 +23,7 @@ function usage() {
     This utility script exits successfully when the designated number of
     WebLogic Server pods in the given WebLogic Kubernetes Operator domain
     reach a 'ready' state and have 'restartVersion', 'introspectVersion',
-    'spec.image', and 'spec.serverPod.commonMounts.image' values that match
+    'spec.image', and 'spec.serverPod.auxiliaryImages.image' values that match
     their corresponding values in their domain resource.
 
     If the designated number of pods is zero, then this script exits
@@ -54,7 +54,7 @@ function usage() {
                         the domain resource's 'spec.introspectVersion'
                       - same image as the domain resource's 'spec.image'
                       - same image(s) as specified in the domain resource's
-                        optional 'spec.serverPod.commonMounts.image'
+                        optional 'spec.serverPod.auxiliaryImages.image'
 
     -t <timeout>    : Timeout in seconds. Defaults to '$timeout_secs'.
 
@@ -133,21 +133,21 @@ function sortlist() {
   xargs echo -n  | \
   tr ' ' ','
 }
-function sortCMImages() {
-  # sort "cmimages=;im2,im1;" field assuming comma or space sep list
+function sortAIImages() {
+  # sort "aiimages=;im2,im1;" field assuming comma or space sep list
   #   - stdin input, stdout output
   #   - spaces replaced with commas
   #   - input ignores trailing comma, output removes any trailing comma
-  #   - examples: see sortCMImagesUnitTest()
+  #   - examples: see sortAIImagesUnitTest()
   while read line
   do
-    echo -n "$line" | sed 's/\(^.*cmimages=;\).*/\1/'
-    echo -n "$line" | sed 's/.*cmimages=;\([^;]*\).*/\1/' | sortlist
-    echo "$line"    | sed 's/.*cmimages=;[^;]*\(;.*\)/\1/'
+    echo -n "$line" | sed 's/\(^.*aiimages=;\).*/\1/'
+    echo -n "$line" | sed 's/.*aiimages=;\([^;]*\).*/\1/' | sortlist
+    echo "$line"    | sed 's/.*aiimages=;[^;]*\(;.*\)/\1/'
   done
 }
-function _sortCMImagesUnitTest() {
-  local res=$(echo "$1" | sortCMImages)
+function _sortAIImagesUnitTest() {
+  local res=$(echo "$1" | sortAIImages)
   if [ ! "$res" = "$2" ]; then
     echo "unit test fail"
     echo " input ='$1'"
@@ -156,19 +156,19 @@ function _sortCMImagesUnitTest() {
     exit 1
   fi
 }
-function sortCMImagesUnitTest() {
-  _sortCMImagesUnitTest "foo=;bar; cmimages=;c,b; bar=;foo;"   "foo=;bar; cmimages=;b,c; bar=;foo;"
-  _sortCMImagesUnitTest "foo=;bar; cmimages=; c,b,; bar=;foo;" "foo=;bar; cmimages=;b,c; bar=;foo;"
-  _sortCMImagesUnitTest "foo=;bar; cmimages=;; bar=;foo;"      "foo=;bar; cmimages=;; bar=;foo;"
-  _sortCMImagesUnitTest "foo=;bar; cmimages=;a ; bar=;foo;"    "foo=;bar; cmimages=;a; bar=;foo;"
-  _sortCMImagesUnitTest "cmimages=;c b; bar=;foo; foo=;bar;"   "cmimages=;b,c; bar=;foo; foo=;bar;"
-  _sortCMImagesUnitTest "bar=;foo; foo=;bar; cmimages=; c b ;" "bar=;foo; foo=;bar; cmimages=;b,c;"
-  _sortCMImagesUnitTest "cmimages=;;"                          "cmimages=;;"
-  _sortCMImagesUnitTest "cmimages=; ;"                         "cmimages=;;"
-  _sortCMImagesUnitTest "cmimages=;,,;"                        "cmimages=;;"
+function sortAIImagesUnitTest() {
+  _sortAIImagesUnitTest "foo=;bar; aiimages=;c,b; bar=;foo;"   "foo=;bar; aiimages=;b,c; bar=;foo;"
+  _sortAIImagesUnitTest "foo=;bar; aiimages=; c,b,; bar=;foo;" "foo=;bar; aiimages=;b,c; bar=;foo;"
+  _sortAIImagesUnitTest "foo=;bar; aiimages=;; bar=;foo;"      "foo=;bar; aiimages=;; bar=;foo;"
+  _sortAIImagesUnitTest "foo=;bar; aiimages=;a ; bar=;foo;"    "foo=;bar; aiimages=;a; bar=;foo;"
+  _sortAIImagesUnitTest "aiimages=;c b; bar=;foo; foo=;bar;"   "aiimages=;b,c; bar=;foo; foo=;bar;"
+  _sortAIImagesUnitTest "bar=;foo; foo=;bar; aiimages=; c b ;" "bar=;foo; foo=;bar; aiimages=;b,c;"
+  _sortAIImagesUnitTest "aiimages=;;"                          "aiimages=;;"
+  _sortAIImagesUnitTest "aiimages=; ;"                         "aiimages=;;"
+  _sortAIImagesUnitTest "aiimages=;,,;"                        "aiimages=;;"
   return 0
 }
-sortCMImagesUnitTest
+sortAIImagesUnitTest
 
 
 function getDomainValue() {
@@ -193,8 +193,8 @@ function getDomainValue() {
   set -e
 }
 
-function getDomainCMImages() {
-  # get list of domain common mount images (if any) and place result in the env var named by $1
+function getDomainAIImages() {
+  # get list of domain auxiliary images (if any) and place result in the env var named by $1
   #   - if expected>0 and get fails, then echo an Error and exit script non-zero
   #   - result is a sorted comma separated list
   local attvalue
@@ -204,7 +204,7 @@ function getDomainCMImages() {
     kubectl \
       get domain ${DOMAIN_UID} \
       -n ${DOMAIN_NAMESPACE} \
-      -o=jsonpath="{range .spec.serverPod.commonMounts[*]}{.image}{','}{end}" \
+      -o=jsonpath="{range .spec.serverPod.auxiliaryImages[*]}{.image}{','}{end}" \
       2>&1
   )
   if [ $? -ne 0 ]; then
@@ -232,10 +232,10 @@ last_pod_count_secs=$SECONDS
 goal_RV_orig="--not-known--"
 goal_IV_orig="--not-known--"
 goal_image_orig="--not-known--"
-goal_cmimages_orig="--not-known--"
+goal_aiimages_orig="--not-known--"
 
 # col_headers must line up with the jpath
-col_headers1="NAME RVER IVER IMAGE CMIMAGES READY PHASE"
+col_headers1="NAME RVER IVER IMAGE AIIMAGES READY PHASE"
 col_headers2="---- ---- ---- ----- -------- ----- -----"
 
 # be careful! if changing jpath, then it must
@@ -251,8 +251,8 @@ jpath+='{range .items[*]}'
   jpath+='{";"}{.metadata.labels.weblogic\.introspectVersion}{";"}'
   jpath+='{" image="}'
   jpath+='{";"}{.spec.containers[?(@.name=="weblogic-server")].image}{";"}'
-  jpath+='{" cmimages="}'
-  jpath+='{";"}{.spec.initContainers[?(@.command[0]=="/weblogic-operator/scripts/commonMount.sh")].image}{";"}'
+  jpath+='{" aiimages="}'
+  jpath+='{";"}{.spec.initContainers[?(@.command[0]=="/weblogic-operator/scripts/auxImage.sh")].image}{";"}'
   jpath+='{" ready="}'
   jpath+='{";"}{.status.containerStatuses[?(@.name=="weblogic-server")].ready}{";"}'
   jpath+='{" phase="}'
@@ -267,7 +267,7 @@ while [ 1 -eq 1 ]; do
 
   #
   # Get the current domain resource's spec.restartVersion, spec.introspectVersion,
-  # spec.image, and cm images. If any of these fail then these functions
+  # spec.image, and ai images. If any of these fail then these functions
   # fail we assume that domain resource was not found and "exit 1" if goal pods != 0,
   # or return "" if goal pods == 0.
   #
@@ -275,9 +275,12 @@ while [ 1 -eq 1 ]; do
   getDomainValue ".spec.restartVersion"    goal_RV_current
   getDomainValue ".spec.introspectVersion" goal_IV_current
   getDomainValue ".spec.image"             goal_image_current
-  getDomainCMImages                        goal_cmimages_current
+  getDomainAIImages                        goal_aiimages_current
  
-  ret="${goal_RV_current}${goal_IV_current}${goal_image_current}${goal_cmimages_current}^M"
+  ret="${goal_RV_current}
+${goal_IV_current}
+${goal_image_current}
+${goal_aiimages_current}^M"
   if [ ! "${ret/Error:/}" = "${ret}" ]; then
     echo $ret
     exit 1
@@ -291,14 +294,14 @@ while [ 1 -eq 1 ]; do
   if [ ! "$goal_RV_orig" = "$goal_RV_current" ] \
      || [ ! "$goal_IV_orig" = "$goal_IV_current" ] \
      || [ ! "$goal_image_orig" = "$goal_image_current" ] \
-     || [ ! "$goal_cmimages_orig" = "$goal_cmimages_current" ]
+     || [ ! "$goal_aiimages_orig" = "$goal_aiimages_current" ]
   then
     [ "$reported" = "1" ] && echo
     reported=0
     goal_IV_orig="$goal_IV_current"
     goal_RV_orig="$goal_RV_current"
     goal_image_orig="$goal_image_current"
-    goal_cmimages_orig="$goal_cmimages_current"
+    goal_aiimages_orig="$goal_aiimages_current"
   fi
 
   #
@@ -327,21 +330,21 @@ while [ 1 -eq 1 ]; do
     regex="domainRestartVersion=;$goal_RV_current;"
     regex+=" introspectVersion=;$goal_IV_current;"
     regex+=" image=;$goal_image_current;"
-    regex+=" cmimages=;$goal_cmimages_current;"
+    regex+=" aiimages=;$goal_aiimages_current;"
     regex+=" ready=;true;"
 
     set +e # disable error checks as grep returns non-zero when it finds nothing (sigh)
     cur_pods=$( kubectl -n ${DOMAIN_NAMESPACE} get pods \
         -l weblogic.serverName,weblogic.domainUID="${DOMAIN_UID}" \
         -o=jsonpath="$jpath" \
-        | sortCMImages \
+        | sortAIImages \
         | grep "$regex" | wc -l )
     set -e
 
     lead_string="Waiting up to $timeout_secs seconds for exactly '$expected' WebLogic Server pods to reach the following criteria:"
     criteria="ready='true'"
     criteria+=" image='$goal_image_current'"
-    criteria+=" commonMountImages='$goal_cmimages_current'"
+    criteria+=" auxiliaryImages='$goal_aiimages_current'"
     criteria+=" domainRestartVersion='$goal_RV_current'"
     criteria+=" introspectVersion='$goal_IV_current'"
     criteria+=" namespace='$DOMAIN_NAMESPACE'"
@@ -376,7 +379,7 @@ while [ 1 -eq 1 ]; do
 
     kubectl -n ${DOMAIN_NAMESPACE} get pods \
       -l weblogic.domainUID="${DOMAIN_UID}" \
-      -o=jsonpath="$jpath" | sortCMImages > $tmpfilecur
+      -o=jsonpath="$jpath" | sortAIImages > $tmpfilecur
 
     set +e
     diff -q $tmpfilecur $tmpfileorig 2>&1 > /dev/null

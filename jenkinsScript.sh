@@ -82,19 +82,19 @@ which mvn
 mvn --version
 
 echo 'Info: Set up helm...'
-curl -LO --retry 3 https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz
+curl --ipv4 -LO --retry 3 https://get.helm.sh/helm-v${HELM_VERSION}-linux-amd64.tar.gz
 tar -xf helm-v${HELM_VERSION}-linux-amd64.tar.gz
 cp linux-amd64/helm ${WORKSPACE}/bin/helm
 helm version
 
 echo 'Info: Set up kubectl...'
-curl -LO --retry 3 https://storage.googleapis.com/kubernetes-release/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl
+curl --ipv4 -LO --retry 3 https://storage.googleapis.com/kubernetes-release/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl
 mv kubectl bin/kubectl
 chmod +x bin/kubectl
 kubectl version --client=true
 
 echo 'Info: Set up kind...'
-curl -Lo ./kind --retry 3 https://kind.sigs.k8s.io/dl/v${KIND_VERSION}/kind-$(uname)-amd64
+curl --ipv4 -Lo ./kind --retry 3 https://kind.sigs.k8s.io/dl/v${KIND_VERSION}/kind-$(uname)-amd64
 chmod +x ./kind
 mv ./kind bin/kind
 kind version

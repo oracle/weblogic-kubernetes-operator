@@ -37,9 +37,9 @@ import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
+import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
+import oracle.kubernetes.weblogic.domain.model.AuxiliaryImageVolume;
 import oracle.kubernetes.weblogic.domain.model.Cluster;
-import oracle.kubernetes.weblogic.domain.model.CommonMount;
-import oracle.kubernetes.weblogic.domain.model.CommonMountVolume;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
@@ -62,7 +62,6 @@ import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
 import static oracle.kubernetes.operator.helpers.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.JOB;
-import static oracle.kubernetes.operator.helpers.Matchers.hasCommonMountInitContainer;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CUSTOM_COMMAND_SCRIPT;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CUSTOM_MOUNT_PATH;
@@ -74,10 +73,10 @@ import static oracle.kubernetes.operator.logging.MessageKeys.NO_CLUSTER_IN_DOMAI
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.utils.LogMatcher.containsWarning;
-import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND;
-import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX;
-import static oracle.kubernetes.weblogic.domain.model.CommonMount.COMMON_MOUNT_VOLUME_NAME_PREFIX;
-import static oracle.kubernetes.weblogic.domain.model.CommonMountVolume.DEFAULT_COMMON_MOUNT_PATH;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_VOLUME_NAME_PREFIX;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImageVolume.DEFAULT_AUXILIARY_IMAGE_PATH;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasItem;
@@ -336,29 +335,30 @@ public class DomainIntrospectorJobTest {
   }
 
   @Test
-  public void whenJobCreatedWithCommonMountDefined_hasCommonMountInitContainerVolumeAndMounts() {
+  public void whenJobCreatedWithAuxiliaryImageDefined_hasAuxiliaryImageInitContainerVolumeAndMounts() {
     getConfigurator()
-            .withCommonMountVolumes(getCommonMountVolume(DEFAULT_COMMON_MOUNT_PATH))
-            .withCommonMounts(Collections.singletonList(getCommonMount("wdt-image:v1")));
+            .withAuxiliaryImageVolumes(getAuxiliaryImageVolume(DEFAULT_AUXILIARY_IMAGE_PATH))
+            .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")));
 
     V1Job job = runStepsAndGetJobs().get(0);
     List<V1Container> podTemplateInitContainers = getPodTemplateInitContainers(job);
 
     assertThat(
             podTemplateInitContainers,
-            allOf(hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 1, "wdt-image:v1",
-                    "IfNotPresent", COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND)));
+            allOf(Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+                "wdt-image:v1",
+                "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND)));
     assertThat(getJobPodSpec(job).getVolumes(),
-            hasItem(new V1Volume().name(COMMON_MOUNT_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME).emptyDir(
+            hasItem(new V1Volume().name(AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME).emptyDir(
                     new V1EmptyDirVolumeSource())));
     assertThat(getPodTemplateContainers(job).get(0).getVolumeMounts(),
-            hasItem(new V1VolumeMount().name(COMMON_MOUNT_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME)
-                    .mountPath(DEFAULT_COMMON_MOUNT_PATH)));
+            hasItem(new V1VolumeMount().name(AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME)
+                    .mountPath(DEFAULT_AUXILIARY_IMAGE_PATH)));
   }
 
   @NotNull
-  List<CommonMountVolume> getCommonMountVolume(String mountPath) {
-    return Collections.singletonList(new CommonMountVolume().mountPath(mountPath).name(TEST_VOLUME_NAME));
+  List<AuxiliaryImageVolume> getAuxiliaryImageVolume(String mountPath) {
+    return Collections.singletonList(new AuxiliaryImageVolume().mountPath(mountPath).name(TEST_VOLUME_NAME));
   }
 
   private List<V1Container> getCreatedPodSpecContainers(List<V1Job> jobs) {
@@ -366,99 +366,103 @@ public class DomainIntrospectorJobTest {
   }
 
   @NotNull
-  private List<CommonMount> getCommonMounts(String...images) {
-    List<CommonMount> commonMountList = new ArrayList<>();
-    Arrays.stream(images).forEach(image -> commonMountList.add(new CommonMount().image(image)
+  private List<AuxiliaryImage> getAuxiliaryImages(String...images) {
+    List<AuxiliaryImage> auxiliaryImageList = new ArrayList<>();
+    Arrays.stream(images).forEach(image -> auxiliaryImageList.add(new AuxiliaryImage().image(image)
             .volume(TEST_VOLUME_NAME)));
-    return commonMountList;
+    return auxiliaryImageList;
   }
 
   @NotNull
-  public static CommonMount getCommonMount(String image) {
-    return new CommonMount().image(image).volume(TEST_VOLUME_NAME);
+  public static AuxiliaryImage getAuxiliaryImage(String image) {
+    return new AuxiliaryImage().image(image).volume(TEST_VOLUME_NAME);
   }
 
   @Test
-  public void whenJobCreatedWithCommonMountAndVolumeHavingCustomMountPath_hasVolumeMountWithCustomMountPath() {
+  public void whenJobCreatedWithAuxiliaryImageAndVolumeHavingAuxiliaryImagePath_hasVolumeMountWithAuxiliaryImagePath() {
     DomainConfiguratorFactory.forDomain(domain)
-            .withCommonMountVolumes(getCommonMountVolume(CUSTOM_MOUNT_PATH))
-            .withCommonMounts(getCommonMounts("wdt-image:v1"));
+            .withAuxiliaryImageVolumes(getAuxiliaryImageVolume(CUSTOM_MOUNT_PATH))
+            .withAuxiliaryImages(getAuxiliaryImages("wdt-image:v1"));
 
     List<V1Job> jobs = runStepsAndGetJobs();
     assertThat(getCreatedPodSpecContainers(jobs).get(0).getVolumeMounts(),
-            hasItem(new V1VolumeMount().name(COMMON_MOUNT_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME)
+            hasItem(new V1VolumeMount().name(AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME)
                     .mountPath(CUSTOM_MOUNT_PATH)));
   }
 
   @Test
-  public void whenJobCreatedWithCommonMountVolumeWithMedium_createdJobPodsHasVolumeWithSpecifiedMedium() {
+  public void whenJobCreatedWithAuxiliaryImageVolumeWithMedium_createdJobPodsHasVolumeWithSpecifiedMedium() {
     getConfigurator()
-            .withCommonMountVolumes(Collections.singletonList(
-                    new CommonMountVolume().name(TEST_VOLUME_NAME).medium("Memory")))
-            .withCommonMounts(getCommonMounts("wdt-image:v1"));
+            .withAuxiliaryImageVolumes(Collections.singletonList(
+                    new AuxiliaryImageVolume().name(TEST_VOLUME_NAME).medium("Memory")))
+            .withAuxiliaryImages(getAuxiliaryImages("wdt-image:v1"));
 
     V1Job job = runStepsAndGetJobs().get(0);
     assertThat(getJobPodSpec(job).getVolumes(),
-            hasItem(new V1Volume().name(COMMON_MOUNT_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME).emptyDir(
+            hasItem(new V1Volume().name(AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME).emptyDir(
                     new V1EmptyDirVolumeSource().medium("Memory"))));
   }
 
 
   @Test
-  public void whenJobCreatedWithCommonMountVolumeWithSizeLimit_createdJobPodsHasVolumeWithSpecifiedSizeLimit() {
+  public void whenJobCreatedWithAuxiliaryImageVolumeWithSizeLimit_createdJobPodsHasVolumeWithSpecifiedSizeLimit() {
     getConfigurator()
-            .withCommonMountVolumes(Collections.singletonList(
-                    new CommonMountVolume().name(TEST_VOLUME_NAME).sizeLimit("100G")))
-            .withCommonMounts(getCommonMounts());
+            .withAuxiliaryImageVolumes(Collections.singletonList(
+                    new AuxiliaryImageVolume().name(TEST_VOLUME_NAME).sizeLimit("100G")))
+            .withAuxiliaryImages(getAuxiliaryImages());
 
     V1Job job = runStepsAndGetJobs().get(0);
     assertThat(getJobPodSpec(job).getVolumes(),
-            hasItem(new V1Volume().name(COMMON_MOUNT_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME).emptyDir(
+            hasItem(new V1Volume().name(AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME).emptyDir(
                     new V1EmptyDirVolumeSource().sizeLimit(Quantity.fromString("100G")))));
   }
 
   @Test
-  public void whenJobCreatedWithCommonMountWithImagePullPolicy_createJobPodHasImagePullPolicy() {
+  public void whenJobCreatedWithAuxiliaryImageWithImagePullPolicy_createJobPodHasImagePullPolicy() {
     getConfigurator()
-            .withCommonMountVolumes(getCommonMountVolume(DEFAULT_COMMON_MOUNT_PATH))
-            .withCommonMounts(Collections.singletonList(getCommonMount("wdt-image:v1")
+            .withAuxiliaryImageVolumes(getAuxiliaryImageVolume(DEFAULT_AUXILIARY_IMAGE_PATH))
+            .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")
                     .imagePullPolicy("ALWAYS")));
 
     V1Job job = runStepsAndGetJobs().get(0);
     assertThat(getPodTemplateInitContainers(job),
-            org.hamcrest.Matchers.allOf(hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 1,
-                    "wdt-image:v1", "ALWAYS", COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND)));
+            org.hamcrest.Matchers.allOf(
+                Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+                    "wdt-image:v1", "ALWAYS", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND)));
   }
 
   @Test
-  public void whenJobCreatedWithCommonMountAndCustomCommand_createJobPodsWithInitContainerHavingCustomCommand() {
+  public void whenJobCreatedWithAuxiliaryImageAndCustomCommand_createJobPodsWithInitContainerHavingCustomCommand() {
     getConfigurator()
-            .withCommonMountVolumes(getCommonMountVolume(DEFAULT_COMMON_MOUNT_PATH))
-            .withCommonMounts(Collections.singletonList(getCommonMount("wdt-image:v1")
+            .withAuxiliaryImageVolumes(getAuxiliaryImageVolume(DEFAULT_AUXILIARY_IMAGE_PATH))
+            .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")
                     .command(CUSTOM_COMMAND_SCRIPT)));
 
     V1Job job = runStepsAndGetJobs().get(0);
     assertThat(getPodTemplateInitContainers(job),
-            org.hamcrest.Matchers.allOf(hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 1,
+            org.hamcrest.Matchers.allOf(
+                Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
                     "wdt-image:v1", "IfNotPresent", CUSTOM_COMMAND_SCRIPT)));
   }
 
   @Test
-  public void whenJobCreatedWithMultipleCommonMounts_createdJobPodsHasMultipleInitContainers() {
+  public void whenJobCreatedWithMultipleAuxiliaryImages_createdJobPodsHasMultipleInitContainers() {
     getConfigurator()
-            .withCommonMountVolumes(getCommonMountVolume(DEFAULT_COMMON_MOUNT_PATH))
-            .withCommonMounts(getCommonMounts("wdt-image1:v1", "wdt-image2:v1"));
+            .withAuxiliaryImageVolumes(getAuxiliaryImageVolume(DEFAULT_AUXILIARY_IMAGE_PATH))
+            .withAuxiliaryImages(getAuxiliaryImages("wdt-image1:v1", "wdt-image2:v1"));
 
     V1Job job = runStepsAndGetJobs().get(0);
     assertThat(getPodTemplateInitContainers(job),
-            org.hamcrest.Matchers.allOf(hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 1,
-                    "wdt-image1:v1", "IfNotPresent", COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND),
-                    hasCommonMountInitContainer(COMMON_MOUNT_INIT_CONTAINER_NAME_PREFIX + 2, "wdt-image2:v1",
-                            "IfNotPresent", COMMON_MOUNT_DEFAULT_INIT_CONTAINER_COMMAND)));
+            org.hamcrest.Matchers.allOf(
+                Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+                    "wdt-image1:v1", "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND),
+                    Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 2,
+                        "wdt-image2:v1",
+                        "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND)));
     assertThat(getPodTemplateContainers(job).get(0).getVolumeMounts(), hasSize(7));
     assertThat(getPodTemplateContainers(job).get(0).getVolumeMounts(),
-            hasItem(new V1VolumeMount().name(COMMON_MOUNT_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME)
-                    .mountPath(DEFAULT_COMMON_MOUNT_PATH)));
+            hasItem(new V1VolumeMount().name(AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME)
+                    .mountPath(DEFAULT_AUXILIARY_IMAGE_PATH)));
   }
 
   @Test

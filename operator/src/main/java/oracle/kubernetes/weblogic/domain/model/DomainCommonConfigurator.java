@@ -58,12 +58,12 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
-  public void withCommonMounts(List<CommonMount> commonMounts) {
-    getDomainSpec().setCommonMounts(commonMounts);
+  public void withAuxiliaryImages(List<AuxiliaryImage> auxiliaryImages) {
+    getDomainSpec().setAuxiliaryImages(auxiliaryImages);
   }
 
-  public DomainConfigurator withCommonMountVolumes(List<CommonMountVolume> commonMountVolumes) {
-    getDomainSpec().setCommonMountVolumes(commonMountVolumes);
+  public DomainConfigurator withAuxiliaryImageVolumes(List<AuxiliaryImageVolume> auxiliaryImageVolumes) {
+    getDomainSpec().setAuxiliaryImageVolumes(auxiliaryImageVolumes);
     return this;
   }
 
@@ -498,8 +498,8 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
-    public ServerConfigurator withCommonMounts(List<CommonMount> commonMounts) {
-      server.setCommonMounts(commonMounts);
+    public ServerConfigurator withAuxiliaryImages(List<AuxiliaryImage> auxiliaryImages) {
+      server.setAuxiliaryImages(auxiliaryImages);
       return this;
     }
 
@@ -774,8 +774,8 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
-    public ClusterConfigurator withCommonMounts(List<CommonMount> commonMounts) {
-      cluster.setCommonMounts(commonMounts);
+    public ClusterConfigurator withAuxiliaryImages(List<AuxiliaryImage> auxiliaryImages) {
+      cluster.setAuxiliaryImages(auxiliaryImages);
       return this;
     }
 
