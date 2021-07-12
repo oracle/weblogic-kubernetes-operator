@@ -18,7 +18,6 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
-import oracle.kubernetes.json.Feature;
 import oracle.kubernetes.json.Pattern;
 import oracle.kubernetes.json.Range;
 import oracle.kubernetes.operator.DomainSourceType;
@@ -284,7 +283,6 @@ public class DomainSpec extends BaseConfiguration {
   @Description("Configure auxiliary image volumes including their respective mount paths. Auxiliary image volumes are "
           + "in turn referenced by one or more `serverPod.auxiliaryImages` mounts, and are internally implemented "
           + "using a Kubernetes `emptyDir` volume.")
-  @Feature("AuxiliaryImage")
   private List<AuxiliaryImageVolume> auxiliaryImageVolumes;
 
   /**
