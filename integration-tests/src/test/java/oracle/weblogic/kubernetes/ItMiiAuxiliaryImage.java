@@ -451,7 +451,6 @@ public class ItMiiAuxiliaryImage {
     assertTrue(checkSystemResourceConfiguration(adminServiceNodePort, "JMSSystemResources",
         "TestClusterJmsModule2", "200"), "JMSSystemResources not found");
     logger.info("Found the JMSSystemResource configuration");
-
   }
 
   private void checkConfiguredJDBCresouce(String domainNamespace, String adminServerPodName) {
