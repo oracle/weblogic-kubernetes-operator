@@ -13,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.openapi.models.CoreV1Event;
 import oracle.weblogic.domain.CommonMount;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
@@ -44,24 +45,30 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
+import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResource;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkEvent;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfig;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfiguration;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodsWithTimeStamps;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.FileUtils.unzipWDTInstallationFile;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_FAILED;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.getEvent;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -76,6 +83,7 @@ public class ItMiiCommonMount {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
+  private static String errorpathDomainNamespace = null;
   private static LoggingFacade logger = null;
   private String domainUid = "domain1";
   private static String miiCMImage1 = MII_COMMONMOUNT_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG + "1";
@@ -97,7 +105,7 @@ public class ItMiiCommonMount {
    *        JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(2) List<String> namespaces) {
+  public static void initAll(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
@@ -108,8 +116,12 @@ public class ItMiiCommonMount {
     assertNotNull(namespaces.get(1), "Namespace list is null");
     domainNamespace = namespaces.get(1);
 
+    logger.info("Creating unique namespace for errorpathDomain");
+    assertNotNull(namespaces.get(2), "Namespace list is null");
+    errorpathDomainNamespace = namespaces.get(2);
+
     // install and verify operator
-    installAndVerifyOperator(opNamespace, domainNamespace);
+    installAndVerifyOperator(opNamespace, domainNamespace, errorpathDomainNamespace);
   }
 
 
@@ -280,6 +292,260 @@ public class ItMiiCommonMount {
         "jdbc:oracle:thin:@\\/\\/localhost:7001\\/dbsvc"), "Can't find expected URL configuration for DataSource");
 
     logger.info("Found the DataResource configuration");
+  }
+
+  /**
+   * Negative Test to create domain with mismatch common mount path in common mount image and in commonMountVolumes.
+   * in commonMountVolumes, set mountPath to "/errorpath"
+   * in common mount image, set COMMON_MOUNT_PATH to "/common"
+   */
+  @Test
+  @Order(3)
+  @DisplayName("Negative Test to create domain with mismatch common mount path in common mount image and "
+      + "in commonMountVolumes")
+  public void testErrorPathDomainMismatchCommonDirectory() {
+
+    OffsetDateTime timestamp = now();
+    String errorPathCMImage1 = MII_COMMONMOUNT_IMAGE_NAME + ":errorpathimage1";
+
+    // admin/managed server name here should match with model yaml
+    final String commonMountVolumeName = "commonMountsVolume1";
+    final String commonMountPath = "/errorpath";
+
+    // Create the repo secret to pull the image
+    // this secret is used only for non-kind cluster
+    createOcirRepoSecret(errorpathDomainNamespace);
+
+    // create secret for admin credentials
+    logger.info("Create secret for admin credentials");
+    String adminSecretName = "weblogic-credentials";
+    createSecretWithUsernamePassword(adminSecretName, errorpathDomainNamespace,
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+
+    // create encryption secret
+    logger.info("Create encryption secret");
+    String encryptionSecretName = "encryptionsecret";
+    createSecretWithUsernamePassword(encryptionSecretName, errorpathDomainNamespace,
+        "weblogicenc", "weblogicenc");
+
+    // create stage dir for common mount image
+    Path errorpathCMPath1 = Paths.get(RESULTS_ROOT, "errorpathcmimage1");
+    assertDoesNotThrow(() -> FileUtils.deleteDirectory(errorpathCMPath1.toFile()));
+    assertDoesNotThrow(() -> Files.createDirectories(errorpathCMPath1));
+
+    // create models dir and copy model, archive files if any for image1
+    Path modelsPath1 = Paths.get(errorpathCMPath1.toString(), "models");
+    assertDoesNotThrow(() -> Files.createDirectories(modelsPath1));
+    assertDoesNotThrow(() -> Files.copy(
+        Paths.get(MODEL_DIR, MII_BASIC_WDT_MODEL_FILE),
+        Paths.get(modelsPath1.toString(), MII_BASIC_WDT_MODEL_FILE),
+        StandardCopyOption.REPLACE_EXISTING));
+
+    // unzip WDT installation file into work dir
+    unzipWDTInstallationFile(errorpathCMPath1.toString());
+
+    // create image1 with model and wdt installation files
+    createCommonMountImage(errorpathCMPath1.toString(),
+        Paths.get(RESOURCE_DIR, "commonmount", "Dockerfile").toString(), errorPathCMImage1);
+
+    // push image1 to repo for multi node cluster
+    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
+      logger.info("docker push image {0} to registry {1}", errorPathCMImage1, DOMAIN_IMAGES_REPO);
+      assertTrue(dockerPush(errorPathCMImage1), String.format("docker push failed for image %s", errorPathCMImage1));
+    }
+
+    // create domain custom resource using common mount and images
+    logger.info("Creating domain custom resource with domainUid {0} and common mount image {1}",
+        domainUid, errorPathCMImage1);
+    Domain domainCR = createDomainResource(domainUid, errorpathDomainNamespace,
+        WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG, adminSecretName, OCIR_SECRET_NAME,
+        encryptionSecretName, replicaCount, "cluster-1", commonMountPath,
+        commonMountVolumeName, errorPathCMImage1);
+
+    // create domain and verify it is failed
+    logger.info("Creating domain {0} with common mount image {1} in namespace {2}",
+        domainUid, errorPathCMImage1, errorpathDomainNamespace);
+
+    assertDoesNotThrow(() -> createDomainCustomResource(domainCR),
+        "createDomainCustomResource throws Exception");
+
+    // check the domain event contains the expected error msg
+    checkEvent(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED, "Warning", timestamp);
+    CoreV1Event event =
+        getEvent(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED, "Warning", timestamp);
+    String expectedErrorMsg = "Failed to complete processing domain resource domain1 due to: "
+        + "Common Mount: Dir '/errorpath' doesn't exist or is empty. Exiting.";
+    assertTrue(event.getMessage().contains(expectedErrorMsg),
+        String.format("The event message does not contain the expected error msg %s", expectedErrorMsg));
+
+    // delete domain1
+    deleteDomainResource(errorpathDomainNamespace, domainUid);
+  }
+
+  /**
+   * Negative Test to create domain without WDT binary.
+   */
+  @Test
+  @Order(4)
+  @DisplayName("Negative Test to create domain without WDT binary")
+  public void testErrorPathDomainMissingWDTBinary() {
+
+    OffsetDateTime timestamp = now();
+    String errorPathCMImage2 = MII_COMMONMOUNT_IMAGE_NAME + ":errorpathimage2";
+
+    // admin/managed server name here should match with model yaml
+    final String commonMountVolumeName = "commonMountsVolume1";
+    final String commonMountPath = "/common";
+
+    // Create the repo secret to pull the image
+    // this secret is used only for non-kind cluster
+    createOcirRepoSecret(errorpathDomainNamespace);
+
+    // create secret for admin credentials
+    logger.info("Create secret for admin credentials");
+    String adminSecretName = "weblogic-credentials";
+    createSecretWithUsernamePassword(adminSecretName, errorpathDomainNamespace,
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+
+    // create encryption secret
+    logger.info("Create encryption secret");
+    String encryptionSecretName = "encryptionsecret";
+    createSecretWithUsernamePassword(encryptionSecretName, errorpathDomainNamespace,
+        "weblogicenc", "weblogicenc");
+
+    // create stage dir for common mount image
+    Path errorpathCMPath2 = Paths.get(RESULTS_ROOT, "errorpathcmimage2");
+    assertDoesNotThrow(() -> FileUtils.deleteDirectory(errorpathCMPath2.toFile()));
+    assertDoesNotThrow(() -> Files.createDirectories(errorpathCMPath2));
+
+    // create models dir and copy model, archive files if any for image1
+    Path modelsPath2 = Paths.get(errorpathCMPath2.toString(), "models");
+    assertDoesNotThrow(() -> Files.createDirectories(modelsPath2));
+    assertDoesNotThrow(() -> Files.copy(
+        Paths.get(MODEL_DIR, MII_BASIC_WDT_MODEL_FILE),
+        Paths.get(modelsPath2.toString(), MII_BASIC_WDT_MODEL_FILE),
+        StandardCopyOption.REPLACE_EXISTING));
+
+    // create image1 with model and wdt installation files
+    createCommonMountImage(errorpathCMPath2.toString(),
+        Paths.get(RESOURCE_DIR, "commonmount", "Dockerfile").toString(), errorPathCMImage2);
+
+    // push image1 to repo for multi node cluster
+    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
+      logger.info("docker push image {0} to registry {1}", errorPathCMImage2, DOMAIN_IMAGES_REPO);
+      assertTrue(dockerPush(errorPathCMImage2), String.format("docker push failed for image %s", errorPathCMImage2));
+    }
+
+    // create domain custom resource using common mount and images
+    logger.info("Creating domain custom resource with domainUid {0} and common mount image {1}",
+        domainUid, errorPathCMImage2);
+    Domain domainCR = createDomainResource(domainUid, errorpathDomainNamespace,
+        WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG, adminSecretName, OCIR_SECRET_NAME,
+        encryptionSecretName, replicaCount, "cluster-1", commonMountPath,
+        commonMountVolumeName, errorPathCMImage2);
+
+    // create domain and verify it is failed
+    logger.info("Creating domain {0} with common mount image {1} in namespace {2}",
+        domainUid, errorPathCMImage2, errorpathDomainNamespace);
+
+    assertDoesNotThrow(() -> createDomainCustomResource(domainCR), "createDomainCustomResource throws Exception");
+
+    // check the domain event contains the expected error msg
+    checkEvent(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED, "Warning", timestamp);
+    CoreV1Event event =
+        getEvent(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED, "Warning", timestamp);
+    String expectedErrorMsg = "The domain resource 'spec.domainHomeSourceType' is 'FromModel'  and "
+        + "a WebLogic Deploy Tool (WDT) install is not located at  'spec.configuration.model.wdtInstallHome'  "
+        + "which is currently set to '/common/weblogic-deploy'";
+    assertTrue(event.getMessage().contains(expectedErrorMsg),
+        String.format("The event message does not contain the expected error msg %s", expectedErrorMsg));
+
+    // delete domain1
+    deleteDomainResource(errorpathDomainNamespace, domainUid);
+  }
+
+  /**
+   * Negative Test to create domain without domain model file, the common mount contains only sparse JMS config.
+   */
+  @Test
+  @Order(5)
+  @DisplayName("Negative Test to create domain without domain model file, only having sparse JMS config")
+  public void testErrorPathDomainMissingDomainConfig() {
+
+    OffsetDateTime timestamp = now();
+    String errorPathCMImage3 = MII_COMMONMOUNT_IMAGE_NAME + ":errorpathimage3";
+
+    // admin/managed server name here should match with model yaml
+    final String commonMountVolumeName = "commonMountsVolume1";
+    final String commonMountPath = "/common";
+
+    // Create the repo secret to pull the image
+    // this secret is used only for non-kind cluster
+    createOcirRepoSecret(errorpathDomainNamespace);
+
+    // create secret for admin credentials
+    logger.info("Create secret for admin credentials");
+    String adminSecretName = "weblogic-credentials";
+    createSecretWithUsernamePassword(adminSecretName, errorpathDomainNamespace,
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+
+    // create encryption secret
+    logger.info("Create encryption secret");
+    String encryptionSecretName = "encryptionsecret";
+    createSecretWithUsernamePassword(encryptionSecretName, errorpathDomainNamespace,
+        "weblogicenc", "weblogicenc");
+
+    // create stage dir for common mount image
+    Path errorpathCMPath3 = Paths.get(RESULTS_ROOT, "errorpathcmimage3");
+    assertDoesNotThrow(() -> FileUtils.deleteDirectory(errorpathCMPath3.toFile()));
+    assertDoesNotThrow(() -> Files.createDirectories(errorpathCMPath3));
+
+    // create models dir and copy model, archive files if any for image
+    Path modelsPath3 = Paths.get(errorpathCMPath3.toString(), "models");
+    assertDoesNotThrow(() -> Files.createDirectories(modelsPath3));
+    assertDoesNotThrow(() -> Files.copy(
+        Paths.get(MODEL_DIR, "model.jms2.yaml"),
+        Paths.get(modelsPath3.toString(), "model.jms2.yaml"),
+        StandardCopyOption.REPLACE_EXISTING));
+
+    // unzip WDT installation file into work dir
+    unzipWDTInstallationFile(errorpathCMPath3.toString());
+
+    // create image1 with model and wdt installation files
+    createCommonMountImage(errorpathCMPath3.toString(),
+        Paths.get(RESOURCE_DIR, "commonmount", "Dockerfile").toString(), errorPathCMImage3);
+
+    // push image1 to repo for multi node cluster
+    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
+      logger.info("docker push image {0} to registry {1}", errorPathCMImage3, DOMAIN_IMAGES_REPO);
+      assertTrue(dockerPush(errorPathCMImage3), String.format("docker push failed for image %s", errorPathCMImage3));
+    }
+
+    // create domain custom resource using common mount and images
+    logger.info("Creating domain custom resource with domainUid {0} and common mount image {1}",
+        domainUid, errorPathCMImage3);
+    Domain domainCR = createDomainResource(domainUid, errorpathDomainNamespace,
+        WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG, adminSecretName, OCIR_SECRET_NAME,
+        encryptionSecretName, replicaCount, "cluster-1", commonMountPath,
+        commonMountVolumeName, errorPathCMImage3);
+
+    // create domain and verify it is failed
+    logger.info("Creating domain {0} with common mount image {1} in namespace {2}",
+        domainUid, errorPathCMImage3, errorpathDomainNamespace);
+
+    assertDoesNotThrow(() -> createDomainCustomResource(domainCR), "createDomainCustomResource throws Exception");
+
+    // check the domain event contains the expected error msg
+    checkEvent(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED, "Warning", timestamp);
+    CoreV1Event event =
+        getEvent(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED, "Warning", timestamp);
+    String expectedErrorMsg =
+        "createDomain did not find the required domainInfo section in the model file /common/models/model.jms2.yaml";
+    assertTrue(event.getMessage().contains(expectedErrorMsg),
+        String.format("The event message does not contain the expected error msg %s", expectedErrorMsg));
+
+    // delete domain1
+    deleteDomainResource(errorpathDomainNamespace, domainUid);
   }
 
   private static void patchDomainWithCMImageAndVerify(String oldImageName, String newImageName,

@@ -159,7 +159,7 @@ public class K8sEvents {
         }
       }
     } catch (ApiException ex) {
-      Logger.getLogger(ItKubernetesEvents.class.getName()).log(Level.SEVERE, null, ex);
+      logger.log(Level.SEVERE, null, ex);
     }
     return false;
   }
