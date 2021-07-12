@@ -8,6 +8,7 @@ draft: false
 
 | Date | Version | Introduces backward incompatibilities? | Change |
 | --- | --- | --- | --- |
+| July 16, 2021 | v3.3.0 | no | Auxiliary image support. |
 | June 21, 2021 | v3.2.5 | no | Updated Oracle Linux libraries and resolved an issue related to repeated introspection. |
 | June 18, 2021 | v3.2.4 | no | Resolved several issues related to Istio, diagnostics, and recovery. |
 | May 21, 2021 | v3.2.3 | no | Resolved several issues, including an issue related to preserving the operator-generated internal certificate, corrected the monitoring exporter integration to include the Administration Server, enhanced the model-in-image support to not require the use of configuration overrides, and updated the domain-home-in-image samples to support the WebLogic Image Tool. |
@@ -41,6 +42,13 @@ draft: false
 | March 20, 2018 |  | yes | Several files and input parameters have been renamed.  This affects how operators and domains are created.  It also changes generated Kubernetes artifacts, therefore customers must recreate their operators and domains.
 
 ### Change log
+
+#### Operator 3.3.0
+
+* [Auxiliary images support](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/auxiliary-images/).
+* Resolved an issue related to Event creation failure with the error: "StorageError: invalid object, Code: 4" ([#2443](https://github.com/oracle/weblogic-kubernetes-operator/pull/2443)).
+* Improve the ability of the operator to use an existing introspection  ([#2430](https://github.com/oracle/weblogic-kubernetes-operator/pull/2430)).
+* All fixes included in 3.2.1 through 3.2.5 are included in 3.3.0.
 
 #### Operator 3.2.5
 
