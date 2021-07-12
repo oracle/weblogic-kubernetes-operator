@@ -14,7 +14,7 @@ import java.util.Map;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.CoreV1Event;
-import oracle.weblogic.domain.CommonMount;
+import oracle.weblogic.domain.AuxiliaryImage;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
@@ -25,18 +25,20 @@ import org.apache.commons.io.FileUtils;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
-import static oracle.weblogic.kubernetes.TestConstants.MII_COMMONMOUNT_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
@@ -77,18 +79,19 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@DisplayName("Test to create model in image domain using common mount")
+@DisplayName("Test to create model in image domain using auxiliary image")
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @IntegrationTest
-public class ItMiiCommonMount {
+public class ItMiiAuxiliaryImage {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private static String errorpathDomainNamespace = null;
   private static LoggingFacade logger = null;
   private String domainUid = "domain1";
-  private static String miiCMImage1 = MII_COMMONMOUNT_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG + "1";
-  private static String miiCMImage2 = MII_COMMONMOUNT_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG + "2";
-  private static String miiCMImage3 = MII_COMMONMOUNT_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG + "3";
+  private static String miiAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG + "1";
+  private static String miiAuxiliaryImage2 = MII_AUXILIARY_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG + "2";
+  private static String miiAuxiliaryImage3 = MII_AUXILIARY_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG + "3";
   private static Map<String, OffsetDateTime> podsWithTimeStamps = null;
   private final String adminServerPodName = domainUid + "-admin-server";
   private final String managedServerPrefix = domainUid + "-managed-server";
@@ -126,17 +129,17 @@ public class ItMiiCommonMount {
 
 
   /**
-   * Create a domain using multiple common mounts. One common mount containing the domain configuration and
-   * another common mount with JMS system resource, verify the domain is running and JMS resource is added.
+   * Create a domain using multiple auxiliary images. One auxiliary image containing the domain configuration and
+   * another auxiliary image with JMS system resource, verify the domain is running and JMS resource is added.
    */
   @Test
   @Order(1)
-  @DisplayName("Test to create domain using multiple common mounts")
-  public void testCreateDomainUsingMultipleCommonMounts() {
+  @DisplayName("Test to create domain using multiple auxiliary images")
+  public void testCreateDomainUsingMultipleAuxiliaryImages() {
 
     // admin/managed server name here should match with model yaml
-    final String commonMountVolumeName = "commonMountsVolume1";
-    final String commonMountPath = "/common";
+    final String auxiliaryImageVolumeName = "auxiliaryImageVolume1";
+    final String auxiliaryImagePath = "/auxiliary";
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
@@ -154,13 +157,13 @@ public class ItMiiCommonMount {
     createSecretWithUsernamePassword(encryptionSecretName, domainNamespace,
         "weblogicenc", "weblogicenc");
 
-    // create stage dir for first common mount with image1
-    Path multipleCMPath1 = Paths.get(RESULTS_ROOT, "multiplecmimage1");
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleCMPath1.toFile()));
-    assertDoesNotThrow(() -> Files.createDirectories(multipleCMPath1));
+    // create stage dir for first auxiliary image with image1
+    Path multipleAIPath1 = Paths.get(RESULTS_ROOT, "multipleauxiliaryimage1");
+    assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleAIPath1.toFile()));
+    assertDoesNotThrow(() -> Files.createDirectories(multipleAIPath1));
 
     // create models dir and copy model, archive files if any for image1
-    Path modelsPath1 = Paths.get(multipleCMPath1.toString(), "models");
+    Path modelsPath1 = Paths.get(multipleAIPath1.toString(), "models");
     assertDoesNotThrow(() -> Files.createDirectories(modelsPath1));
     assertDoesNotThrow(() -> Files.copy(
         Paths.get(MODEL_DIR, MII_BASIC_WDT_MODEL_FILE),
@@ -184,25 +187,25 @@ public class ItMiiCommonMount {
         StandardCopyOption.REPLACE_EXISTING));
 
     // unzip WDT installation file into work dir
-    unzipWDTInstallationFile(multipleCMPath1.toString());
+    unzipWDTInstallationFile(multipleAIPath1.toString());
 
     // create image1 with model and wdt installation files
-    createCommonMountImage(multipleCMPath1.toString(),
-        Paths.get(RESOURCE_DIR, "commonmount", "Dockerfile").toString(), miiCMImage1);
+    createAuxiliaryImage(multipleAIPath1.toString(),
+        Paths.get(RESOURCE_DIR, "auxiliaryimage", "Dockerfile").toString(), miiAuxiliaryImage1);
 
     // push image1 to repo for multi node cluster
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      logger.info("docker push image {0} to registry {1}", miiCMImage1, DOMAIN_IMAGES_REPO);
-      assertTrue(dockerPush(miiCMImage1), String.format("docker push failed for image %s", miiCMImage1));
+      logger.info("docker push image {0} to registry {1}", miiAuxiliaryImage1, DOMAIN_IMAGES_REPO);
+      assertTrue(dockerPush(miiAuxiliaryImage1), String.format("docker push failed for image %s", miiAuxiliaryImage1));
     }
 
-    // create stage dir for second common mount with image2
-    Path multipleCMPath2 = Paths.get(RESULTS_ROOT, "multiplecmimage2");
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleCMPath2.toFile()));
-    assertDoesNotThrow(() -> Files.createDirectories(multipleCMPath2));
+    // create stage dir for second auxiliary image with image2
+    Path multipleAIPath2 = Paths.get(RESULTS_ROOT, "multipleauxiliaryimage2");
+    assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleAIPath2.toFile()));
+    assertDoesNotThrow(() -> Files.createDirectories(multipleAIPath2));
 
     // create models dir and copy model, archive files if any
-    Path modelsPath2 = Paths.get(multipleCMPath2.toString(), "models");
+    Path modelsPath2 = Paths.get(multipleAIPath2.toString(), "models");
     assertDoesNotThrow(() -> Files.createDirectories(modelsPath2));
     assertDoesNotThrow(() -> Files.copy(
         Paths.get(MODEL_DIR, "/model.jms2.yaml"),
@@ -210,26 +213,26 @@ public class ItMiiCommonMount {
         StandardCopyOption.REPLACE_EXISTING));
 
     // create image2 with model and wdt installation files
-    createCommonMountImage(multipleCMPath2.toString(),
-        Paths.get(RESOURCE_DIR, "commonmount", "Dockerfile").toString(), miiCMImage2);
+    createAuxiliaryImage(multipleAIPath2.toString(),
+        Paths.get(RESOURCE_DIR, "auxiliaryimage", "Dockerfile").toString(), miiAuxiliaryImage2);
 
     // push image2 to repo for multi node cluster
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      logger.info("docker push image {0} to registry {1}", miiCMImage2, DOMAIN_IMAGES_REPO);
-      assertTrue(dockerPush(miiCMImage2), String.format("docker push failed for image %s", miiCMImage2));
+      logger.info("docker push image {0} to registry {1}", miiAuxiliaryImage2, DOMAIN_IMAGES_REPO);
+      assertTrue(dockerPush(miiAuxiliaryImage2), String.format("docker push failed for image %s", miiAuxiliaryImage2));
     }
 
-    // create domain custom resource using 2 common mounts and images
-    logger.info("Creating domain custom resource with domainUid {0} and common mount images {1} {2}",
-        domainUid, miiCMImage1, miiCMImage2);
+    // create domain custom resource using 2 auxiliary images
+    logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
+        domainUid, miiAuxiliaryImage1, miiAuxiliaryImage2);
     Domain domainCR = createDomainResource(domainUid, domainNamespace,
         WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG, adminSecretName, OCIR_SECRET_NAME,
-                    encryptionSecretName, replicaCount, "cluster-1", commonMountPath,
-                    commonMountVolumeName, miiCMImage1, miiCMImage2);
+        encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
+        auxiliaryImageVolumeName, miiAuxiliaryImage1, miiAuxiliaryImage2);
 
     // create domain and verify its running
-    logger.info("Creating domain {0} with common mount images {1} {2} in namespace {3}",
-        domainUid, miiCMImage1, miiCMImage2, domainNamespace);
+    logger.info("Creating domain {0} with auxiliary images {1} {2} in namespace {3}",
+        domainUid, miiAuxiliaryImage1, miiAuxiliaryImage2, domainNamespace);
     createDomainAndVerify(domainUid, domainCR, domainNamespace,
         adminServerPodName, managedServerPrefix, replicaCount);
 
@@ -243,20 +246,20 @@ public class ItMiiCommonMount {
   }
 
   /**
-   * Reuse created a domain with datasource using common mount containing the DataSource,
+   * Reuse created a domain with datasource using auxiliary image containing the DataSource,
    * verify the domain is running and JDBC DataSource resource is added.
    * Patch domain with updated JDBC URL info and verify the update.
    */
   @Test
   @Order(2)
-  @DisplayName("Test to update data source url in the  domain using common mount")
-  public void testUpdateDataSourceInDomainUsingCommonMount1() {
+  @DisplayName("Test to update data source url in the  domain using auxiliary image")
+  public void testUpdateDataSourceInDomainUsingAuxiliaryImage() {
 
-    Path multipleCMPath1 = Paths.get(RESULTS_ROOT, "multiplecmimage1");
-    Path modelsPath1 = Paths.get(multipleCMPath1.toString(), "models");
+    Path multipleAIPath1 = Paths.get(RESULTS_ROOT, "multipleauxiliaryimage1");
+    Path modelsPath1 = Paths.get(multipleAIPath1.toString(), "models");
 
 
-    // create stage dir for common mount with image3
+    // create stage dir for auxiliary image with image3
     // replace DataSource URL info in the  model file
     assertDoesNotThrow(() -> replaceStringInFile(Paths.get(modelsPath1.toString(),
         "/multi-model-one-ds.20.yaml").toString(), "xxx.xxx.x.xxx:1521",
@@ -266,13 +269,13 @@ public class ItMiiCommonMount {
         "dbsvc"),"Can't replace datasource url in the model file");
 
     // create image3 with model and wdt installation files
-    createCommonMountImage(multipleCMPath1.toString(),
-        Paths.get(RESOURCE_DIR, "commonmount", "Dockerfile").toString(), miiCMImage3);
+    createAuxiliaryImage(multipleAIPath1.toString(),
+        Paths.get(RESOURCE_DIR, "auxiliaryimage", "Dockerfile").toString(), miiAuxiliaryImage3);
 
     // push image3 to repo for multi node cluster
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      logger.info("docker push image {0} to registry {1}", miiCMImage3, DOMAIN_IMAGES_REPO);
-      assertTrue(dockerPush(miiCMImage3), String.format("docker push failed for image %s", miiCMImage3));
+      logger.info("docker push image {0} to registry {1}", miiAuxiliaryImage3, DOMAIN_IMAGES_REPO);
+      assertTrue(dockerPush(miiAuxiliaryImage3), String.format("docker push failed for image %s", miiAuxiliaryImage3));
     }
 
     // check configuration for DataSource in the running domain
@@ -285,7 +288,7 @@ public class ItMiiCommonMount {
 
     logger.info("Found the DataResource configuration");
 
-    patchDomainWithCMImageAndVerify(miiCMImage1, miiCMImage3, domainUid, domainNamespace);
+    patchDomainWithAuxiliaryImageAndVerify(miiAuxiliaryImage1, miiAuxiliaryImage3, domainUid, domainNamespace);
 
     assertTrue(checkSystemResourceConfig(adminServiceNodePort,
         "JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams",
@@ -306,7 +309,7 @@ public class ItMiiCommonMount {
   public void testErrorPathDomainMismatchCommonDirectory() {
 
     OffsetDateTime timestamp = now();
-    String errorPathCMImage1 = MII_COMMONMOUNT_IMAGE_NAME + ":errorpathimage1";
+    String errorPathCMImage1 = MII_AUXILIARY_IMAGE_NAME + ":errorpathimage1";
 
     // admin/managed server name here should match with model yaml
     final String commonMountVolumeName = "commonMountsVolume1";
@@ -345,7 +348,7 @@ public class ItMiiCommonMount {
     unzipWDTInstallationFile(errorpathCMPath1.toString());
 
     // create image1 with model and wdt installation files
-    createCommonMountImage(errorpathCMPath1.toString(),
+    createAuxiliaryImage(errorpathCMPath1.toString(),
         Paths.get(RESOURCE_DIR, "commonmount", "Dockerfile").toString(), errorPathCMImage1);
 
     // push image1 to repo for multi node cluster
@@ -391,7 +394,7 @@ public class ItMiiCommonMount {
   public void testErrorPathDomainMissingWDTBinary() {
 
     OffsetDateTime timestamp = now();
-    String errorPathCMImage2 = MII_COMMONMOUNT_IMAGE_NAME + ":errorpathimage2";
+    String errorPathCMImage2 = MII_AUXILIARY_IMAGE_NAME + ":errorpathimage2";
 
     // admin/managed server name here should match with model yaml
     final String commonMountVolumeName = "commonMountsVolume1";
@@ -427,7 +430,7 @@ public class ItMiiCommonMount {
         StandardCopyOption.REPLACE_EXISTING));
 
     // create image1 with model and wdt installation files
-    createCommonMountImage(errorpathCMPath2.toString(),
+    createAuxiliaryImage(errorpathCMPath2.toString(),
         Paths.get(RESOURCE_DIR, "commonmount", "Dockerfile").toString(), errorPathCMImage2);
 
     // push image1 to repo for multi node cluster
@@ -473,7 +476,7 @@ public class ItMiiCommonMount {
   public void testErrorPathDomainMissingDomainConfig() {
 
     OffsetDateTime timestamp = now();
-    String errorPathCMImage3 = MII_COMMONMOUNT_IMAGE_NAME + ":errorpathimage3";
+    String errorPathCMImage3 = MII_AUXILIARY_IMAGE_NAME + ":errorpathimage3";
 
     // admin/managed server name here should match with model yaml
     final String commonMountVolumeName = "commonMountsVolume1";
@@ -512,7 +515,7 @@ public class ItMiiCommonMount {
     unzipWDTInstallationFile(errorpathCMPath3.toString());
 
     // create image1 with model and wdt installation files
-    createCommonMountImage(errorpathCMPath3.toString(),
+    createAuxiliaryImage(errorpathCMPath3.toString(),
         Paths.get(RESOURCE_DIR, "commonmount", "Dockerfile").toString(), errorPathCMImage3);
 
     // push image1 to repo for multi node cluster
@@ -548,45 +551,46 @@ public class ItMiiCommonMount {
     deleteDomainResource(errorpathDomainNamespace, domainUid);
   }
 
-  private static void patchDomainWithCMImageAndVerify(String oldImageName, String newImageName,
-                                                      String domainUid, String domainNamespace) {
+  private static void patchDomainWithAuxiliaryImageAndVerify(String oldImageName, String newImageName,
+                                                             String domainUid, String domainNamespace) {
     String adminServerPodName = domainUid + "-admin-server";
     String managedServerPrefix = domainUid + "-managed-server";
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
     assertNotNull(domain1, "Got null domain resource ");
-    assertNotNull(domain1.getSpec().getServerPod().getCommonMounts(), domain1 + "/spec/serverPod/commonMounts is null");
-    List<CommonMount> commonMountList = domain1.getSpec().getServerPod().getCommonMounts();
-    assertFalse(commonMountList.isEmpty(), "CommonMount list is empty");
+    assertNotNull(domain1.getSpec().getServerPod().getAuxiliaryImages(),
+        domain1 + "/spec/serverPod/auxiliaryImages is null");
+    List<AuxiliaryImage> auxiliaryImageList = domain1.getSpec().getServerPod().getAuxiliaryImages();
+    assertFalse(auxiliaryImageList.isEmpty(), "AuxiliaryImage list is empty");
     String searchString;
     int index = 0;
 
-    CommonMount cmMount = commonMountList.stream()
-          .filter(commonMount -> oldImageName.equals(commonMount.getImage()))
-          .findAny()
-          .orElse(null);
-    assertNotNull(cmMount, "Can't find common Mount with Image name " + oldImageName
+    AuxiliaryImage ai = auxiliaryImageList.stream()
+        .filter(auxiliaryImage -> oldImageName.equals(auxiliaryImage.getImage()))
+        .findAny()
+        .orElse(null);
+    assertNotNull(ai, "Can't find auxiliary image with Image name " + oldImageName
         + "can't patch domain " + domainUid);
 
-    index = commonMountList.indexOf(cmMount);
-    searchString = "\"/spec/serverPod/commonMounts/" + index + "/image\"";
+    index = auxiliaryImageList.indexOf(ai);
+    searchString = "\"/spec/serverPod/auxiliaryImages/" + index + "/image\"";
     StringBuffer patchStr = new StringBuffer("[{");
     patchStr.append("\"op\": \"replace\",")
         .append(" \"path\": " + searchString + ",")
         .append(" \"value\":  \"" + newImageName + "\"")
         .append(" }]");
-    logger.info("Common Mount patch string: " +  patchStr);
+    logger.info("Auxiliary Image patch string: " +  patchStr);
 
     //get current timestamp before domain rolling restart to verify domain roll events
     podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace, adminServerPodName,
         managedServerPrefix, 2);
     V1Patch patch = new V1Patch((patchStr).toString());
 
-    boolean cmPatched = assertDoesNotThrow(() ->
+    boolean aiPatched = assertDoesNotThrow(() ->
             patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(Common Mount)  failed ");
-    assertTrue(cmPatched, "patchDomainCustomResource(common Mount) failed");
+        "patchDomainCustomResource(Auxiliary Image)  failed ");
+    assertTrue(aiPatched, "patchDomainCustomResource(auxiliary image) failed");
 
     domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
@@ -594,14 +598,15 @@ public class ItMiiCommonMount {
     assertNotNull(domain1, "Got null domain resource after patching");
     assertNotNull(domain1.getSpec(), domain1 + " /spec/serverPod is null");
     assertNotNull(domain1.getSpec().getServerPod(), domain1 + " /spec/serverPod is null");
-    assertNotNull(domain1.getSpec().getServerPod().getCommonMounts(), domain1 + "/spec/serverPod/commonMounts is null");
+    assertNotNull(domain1.getSpec().getServerPod().getAuxiliaryImages(),
+        domain1 + "/spec/serverPod/auxiliaryImages is null");
 
-    //verify the new CommonMount image in the new patched domain
-    commonMountList = domain1.getSpec().getServerPod().getCommonMounts();
-    
-    String cmImage = commonMountList.get(index).getImage();
-    logger.info("In the new patched domain imageValue is: {0}", cmImage);
-    assertTrue(cmImage.equalsIgnoreCase(newImageName), "common mount image was not updated"
+    //verify the new auxiliary image in the new patched domain
+    auxiliaryImageList = domain1.getSpec().getServerPod().getAuxiliaryImages();
+
+    String auxiliaryImage = auxiliaryImageList.get(index).getImage();
+    logger.info("In the new patched domain imageValue is: {0}", auxiliaryImage);
+    assertTrue(auxiliaryImage.equalsIgnoreCase(newImageName), "auxiliary image was not updated"
         + " in the new patched domain");
 
     // verify the server pods are rolling restarted and back to ready state
@@ -617,23 +622,23 @@ public class ItMiiCommonMount {
    */
   public void tearDownAll() {
     // delete images
-    if (miiCMImage1 != null) {
-      deleteImage(miiCMImage1);
+    if (miiAuxiliaryImage1 != null) {
+      deleteImage(miiAuxiliaryImage1);
     }
 
-    if (miiCMImage2 != null) {
-      deleteImage(miiCMImage2);
+    if (miiAuxiliaryImage2 != null) {
+      deleteImage(miiAuxiliaryImage2);
     }
 
-    if (miiCMImage3 != null) {
-      deleteImage(miiCMImage3);
+    if (miiAuxiliaryImage3 != null) {
+      deleteImage(miiAuxiliaryImage3);
     }
   }
 
-  private void createCommonMountImage(String stageDirPath, String dockerFileLocation, String cmImage) {
+  private void createAuxiliaryImage(String stageDirPath, String dockerFileLocation, String auxiliaryImage) {
     String cmdToExecute = String.format("cd %s && docker build -f %s %s -t %s .",
         stageDirPath, dockerFileLocation,
-        "--build-arg COMMON_MOUNT_PATH=/common", cmImage);
+        "--build-arg AUXILIARY_IMAGE_PATH=/auxiliary", auxiliaryImage);
     assertTrue(new Command()
         .withParams(new CommandParams()
             .command(cmdToExecute))

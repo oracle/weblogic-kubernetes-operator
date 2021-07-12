@@ -56,7 +56,7 @@ The following operator-populated environment variables are available for use in 
 
 `ORACLE_HOME` or `MW_HOME`: The Oracle Fusion Middleware software location as a file system path within the container.
 
-`WL_HOME`: The Weblogic Server installation location as a file system path within the container. 
+`WL_HOME`: The WebLogic Server installation location as a file system path within the container. 
 
 `DOMAIN_HOME`: The domain home location as a file system path within the container.
 

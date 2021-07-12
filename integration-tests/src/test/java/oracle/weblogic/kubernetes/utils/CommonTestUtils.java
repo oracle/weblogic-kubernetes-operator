@@ -513,7 +513,7 @@ public class CommonTestUtils {
         .imagePullSecrets(secretNameMap)
         .domainNamespaces(Arrays.asList(domainNamespace))
         .serviceAccount(opServiceAccount)
-        .featureGates("CommonMounts=true");
+        .featureGates("AuxiliaryImage=true");
 
     if (domainNamespaceSelectionStrategy != null) {
       opParams.domainNamespaceSelectionStrategy(domainNamespaceSelectionStrategy);

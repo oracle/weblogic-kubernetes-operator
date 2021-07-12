@@ -49,6 +49,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.BuildApplication;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
+import oracle.weblogic.kubernetes.utils.TestUtils;
 import org.awaitility.core.ConditionEvaluationListener;
 import org.awaitility.core.ConditionFactory;
 import org.awaitility.core.EvaluatedCondition;
@@ -89,6 +90,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getCurrentIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
@@ -118,6 +120,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
@@ -159,9 +162,7 @@ public class ItIntrospectVersion {
   private static String nginxNamespace = null;
   private static int nodeportshttp;
   private static HelmParams nginxHelmParams = null;
-  private static String imageUpdate = KIND_REPO != null ? KIND_REPO
-      + (WEBLOGIC_IMAGE_NAME + ":" + WLS_UPDATE_IMAGE_TAG).substring(TestConstants.BASE_IMAGES_REPO.length() + 1)
-      : WEBLOGIC_IMAGE_NAME + ":" + WLS_UPDATE_IMAGE_TAG;
+
   private final String wlSecretName = "weblogic-credentials";
 
   private static String adminSvcExtHost = null;
@@ -967,8 +968,10 @@ public class ItIntrospectVersion {
 
   /**
    * Modify the domain scope property
-   * From: "image: container-registry.oracle.com/middleware/weblogic:12.2.1.4" to
-   * To: "image: container-registry.oracle.com/middleware/weblogic:14.1.1.0-11"
+   * From: "image: container-registry.oracle.com/middleware/weblogic:ImageTagBeingUsed" to
+   * To: "image: container-registry.oracle.com/middleware/weblogic:DateAndTimeStamp"
+   * e.g, From ""image: container-registry.oracle.com/middleware/weblogic:12.2.1.4"
+   * To: "image:container-registry.oracle.com/middleware/weblogic:2021-07-08-162571383699"
    * Verify all the pods are restarted and back to ready state
    * Verify the admin server is accessible and cluster members are healthy
    * This test will be skipped if the image tag is the latest WebLogic image tag
@@ -1008,6 +1011,13 @@ public class ItIntrospectVersion {
     logger.info("Currently the image name used for the domain is: {0}", imageName);
 
     //change image name to imageUpdate
+    String imageTag = TestUtils.getDateAndTimeStamp();
+    String imageUpdate = KIND_REPO != null ? KIND_REPO
+        + (WEBLOGIC_IMAGE_NAME + ":" + imageTag).substring(TestConstants.BASE_IMAGES_REPO.length() + 1)
+        : WEBLOGIC_IMAGE_NAME + ":" + imageTag;
+    dockerTag(imageName, imageUpdate);
+    dockerLoginAndPushImageToRegistry(imageUpdate);
+
     StringBuffer patchStr = null;
     patchStr = new StringBuffer("[{");
     patchStr.append("\"op\": \"replace\",")

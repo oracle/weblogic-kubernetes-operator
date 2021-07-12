@@ -10,7 +10,7 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
-import oracle.kubernetes.weblogic.domain.model.CommonMount;
+import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 
 /** An interface for an object to configure a server in a test. */
 @SuppressWarnings("UnusedReturnValue")
@@ -90,7 +90,7 @@ public interface ServerConfigurator extends ServiceConfigurator {
 
   ServerConfigurator withInitContainer(V1Container initContainer);
 
-  ServerConfigurator withCommonMounts(List<CommonMount> commonMountList);
+  ServerConfigurator withAuxiliaryImages(List<AuxiliaryImage> auxiliaryImageList);
 
   ServerConfigurator withContainer(V1Container container);
 

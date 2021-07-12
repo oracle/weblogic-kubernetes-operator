@@ -122,15 +122,15 @@ public class ServerPod {
   private List<V1VolumeMount> volumeMounts = new ArrayList<>();
 
   /**
-   * The common mount.
+   * The auxiliary image.
    *
    */
-  @ApiModelProperty("Use a common mount to automatically include directory content from additional images. "
+  @ApiModelProperty("Use an auxiliary image to automatically include directory content from additional images. "
       + "This is a useful alternative for including Model in Image model files, or other types of files, in a pod "
       + "without requiring modifications to the pod's base image 'domain.spec.image'. "
       + "This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share "
       + "the files from the additional images with the pod.")
-  private List<CommonMount> commonMounts = new ArrayList<>();
+  private List<AuxiliaryImage> auxiliaryImages = new ArrayList<>();
 
 
   public ServerPod env(List<V1EnvVar> env) {
@@ -357,23 +357,23 @@ public class ServerPod {
 
   /**
    * Adds volume mounts item.
-   * @param commonMountsItem common mount
+   * @param auxiliaryImagesItem auxiliary image
    * @return this
    */
-  public ServerPod addCommonMountsItem(CommonMount commonMountsItem) {
-    if (commonMounts == null) {
-      commonMounts = new ArrayList<>();
+  public ServerPod addAuxiliaryImagesItem(AuxiliaryImage auxiliaryImagesItem) {
+    if (auxiliaryImages == null) {
+      auxiliaryImages = new ArrayList<>();
     }
-    commonMounts.add(commonMountsItem);
+    auxiliaryImages.add(auxiliaryImagesItem);
     return this;
   }
 
-  public List<CommonMount> getCommonMounts() {
-    return this.commonMounts;
+  public List<AuxiliaryImage> getAuxiliaryImages() {
+    return this.auxiliaryImages;
   }
 
-  void setCommonMounts(List<CommonMount> commonMounts) {
-    this.commonMounts = commonMounts;
+  void setAuxiliaryImages(List<AuxiliaryImage> auxiliaryImages) {
+    this.auxiliaryImages = auxiliaryImages;
   }
 
   public ServerPod restartPolicy(String restartPolicy) {

@@ -77,8 +77,8 @@ There are multiple methods for supplying Model in Image WDT artifacts:
       WDT binaries, WebLogic Server binaries, and WebLogic Server patches in an image.
       The [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample uses the WIT approach.
 
-  - __Use common mounts__:
-    Use [common mounts]({{< relref "/userguide/managing-domains/model-in-image/common-mounts.md" >}})
+  - __Use auxiliary images__:
+    Use [auxiliary images]({{< relref "/userguide/managing-domains/model-in-image/auxiliary-images.md" >}})
     to create one or more small images that contain the desired files. This automatically copies files
     from each of the small images into each pod's file system's
     `configuration.model.modelHome` or `configuration.model.wdtInstallHome` location.
