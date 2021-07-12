@@ -23,15 +23,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
-import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
-import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
@@ -39,7 +32,6 @@ import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getDateAndTimeStamp;
@@ -53,7 +45,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test model in image sample")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @IntegrationTest
-public class ItMiiSample {
+public class ItMiiWlsAuxiliaryImageSample {
 
   private static final String MII_SAMPLES_WORK_DIR = RESULTS_ROOT
       + "/model-in-image-sample-work-dir";
@@ -63,8 +55,6 @@ public class ItMiiSample {
   private static final String CURRENT_DATE_TIME = getDateAndTimeStamp();
   private static final String MII_SAMPLE_WLS_IMAGE_NAME_V1 = DOMAIN_IMAGES_REPO + "mii-" + CURRENT_DATE_TIME + "-wlsv1";
   private static final String MII_SAMPLE_WLS_IMAGE_NAME_V2 = DOMAIN_IMAGES_REPO + "mii-" + CURRENT_DATE_TIME + "-wlsv2";
-  private static final String MII_SAMPLE_JRF_IMAGE_NAME_V1 = DOMAIN_IMAGES_REPO + "mii-" + CURRENT_DATE_TIME + "-jrfv1";
-  private static final String MII_SAMPLE_JRF_IMAGE_NAME_V2 = DOMAIN_IMAGES_REPO + "mii-" + CURRENT_DATE_TIME + "-jrfv2";
   private static final String SUCCESS_SEARCH_STRING = "Finished without errors";
 
   private static String opNamespace = null;
@@ -74,6 +64,7 @@ public class ItMiiSample {
   private static Map<String, String> envMap = null;
   private static boolean previousTestSuccessful = true;
   private static LoggingFacade logger = null;
+  private static String useAuxiliaryImage = "true";
 
   private enum DomainType { 
     JRF, 
@@ -86,7 +77,7 @@ public class ItMiiSample {
    *        JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(4) List<String> namespaces) {
+  public static void initAll(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
@@ -100,10 +91,6 @@ public class ItMiiSample {
     logger.info("Creating unique namespace for Traefik");
     assertNotNull(namespaces.get(2), "Namespace list is null");
     traefikNamespace = namespaces.get(2);
-
-    logger.info("Creating unique namespace for Database");
-    assertNotNull(namespaces.get(3), "Namespace list is null");
-    dbNamespace = namespaces.get(3);
 
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
@@ -149,65 +136,45 @@ public class ItMiiSample {
     createOcirRepoSecret(domainNamespace);
     logger.info("Docker registry secret {0} created successfully in namespace {1}",
         OCIR_SECRET_NAME, domainNamespace);
-
-    // create ocr/ocir docker registry secret to pull the db images
-    // this secret is used only for non-kind cluster
-    createSecretForBaseImages(dbNamespace);
-    logger.info("Docker registry secret {0} created successfully in namespace {1}",
-        BASE_IMAGES_REPO_SECRET, dbNamespace);
   }
 
   /**
-   * Generate sample and verify that this matches the source
-   * checked into the mii sample git location.
-   */
-  @Test
-  @Order(1)
-  @DisabledIfEnvironmentVariable(named = "SKIP_CHECK_SAMPLE", matches = "true")
-  @DisplayName("Test to verify MII Sample source")
-  public void testCheckMiiSampleSource() {
-    envMap.remove("BASE_IMAGE_NAME");
-    execTestScriptAndAssertSuccess("-check-sample","Sample source doesn't match with the generated source");
-    envMap.put("BASE_IMAGE_NAME", WEBLOGIC_IMAGE_NAME);
-  }
-
-  /**
-   * Test to verify MII sample WLS initial use case. 
+   * Test to verify MII sample WLS initial use case using auxiliary image.
    * Builds image required for the initial use case, creates secrets, and
    * creates domain resource.
-   * Verifies all WebLogic Server pods are ready, are at the expected 
+   * Verifies all WebLogic Server pods are ready, are at the expected
    * restartVersion, and have the expected image.
    * Verifies the sample application is running
    * (response includes "Hello World!").
    */
   @Test
-  @Order(2)
+  @Order(1)
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
-  @DisplayName("Test to verify MII sample WLS initial use case")
-  public void testWlsInitialUseCase() {
+  @DisplayName("Test to verify MII sample WLS initial use case using auxiliary image")
+  public void testAIWlsInitialUseCase() {
     callWlsInitialUseCase();
   }
 
   /**
-   * Test to verify WLS update1 use case. 
-   * Adds a data source to initial domain via a configmap and updates the 
+   * Test to verify WLS update1 use case using auxiliary image.
+   * Adds a data source to initial domain via a configmap and updates the
    * domain resource restartVersion.
-   * Verifies all WebLogic Server pods roll to ready, roll to the expected 
+   * Verifies all WebLogic Server pods roll to ready, roll to the expected
    * restartVersion, and have the expected image.
    * Verifies the sample application is running
    * and detects the new datasource (response includes
    * "mynewdatasource").
    */
   @Test
-  @Order(3)
+  @Order(2)
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
-  @DisplayName("Test to verify MII sample WLS update1 use case")
-  public void testWlsUpdate1UseCase() {
+  @DisplayName("Test to verify MII sample WLS update1 use case using auxiliary image")
+  public void testAIWlsUpdate1UseCase() {
     callWlsUpdate1UseCase();
   }
 
   /**
-   * Test to verify WLS update2 use case.
+   * Test to verify WLS update2 use case using auxiliary image.
    * Deploys a second domain 'domain2' with a different domain UID,
    * different secrets, and different datasource config map,
    * but that is otherwise the same as the update1 domain.
@@ -217,113 +184,44 @@ public class ItMiiSample {
    * (response includes "domain1" or "domain2" depending on domain).
    */
   @Test
-  @Order(4)
+  @Order(3)
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
-  @DisplayName("Test to verify MII sample WLS update2 use case")
-  public void testWlsUpdate2UseCase() {
+  @DisplayName("Test to verify MII sample WLS update2 use case using auxiliary image")
+  public void tesAIWlsUpdate2UseCase() {
     callWlsUpdate2UseCase();
   }
 
   /**
-   * Test to verify update3 use case.
+   * Test to verify update3 use case using auxiliary image.
    * Deploys an updated WebLogic application to the running
    * domain from update1 using an updated Docker image,
    * and updates the domain resource restartVersion.
-   * Verifies all WebLogic Server pods roll to ready, roll to the expected 
+   * Verifies all WebLogic Server pods roll to ready, roll to the expected
    * restartVersion, and have the expected image.
    * Verifies the sample application is running
    * and is at the new version (response includes "v2").
    */
   @Test
-  @Order(5)
+  @Order(4)
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
-  @DisplayName("Test to verify MII sample WLS update3 use case")
-  public void testWlsUpdate3UseCase() {
+  @DisplayName("Test to verify MII sample WLS update3 use case using auxiliary image")
+  public void testAIWlsUpdate3UseCase() {
     callWlsUpdate3UseCase();
   }
 
   /**
-   * Test to verify WLS update4 use case.
+   * Test to verify WLS update4 use case using auxiliary image.
    * Update Work Manager Min and Max Threads Constraints via a configmap and updates the
    * domain resource introspectVersion.
    * Verifies the sample application is running
    * and detects the updated configured count for the Min and Max Threads Constraints.
    */
   @Test
-  @Order(6)
+  @Order(5)
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
-  @DisplayName("Test to verify MII sample WLS update4 use case")
-  public void testWlsUpdate4UseCase() {
+  @DisplayName("Test to verify MII sample WLS update4 use case using auxiliary image")
+  public void testAIWlsUpdate4UseCase() {
     callWlsUpdate4UseCase();
-  }
-
-  /**
-   * Test to verify MII sample JRF initial use case.
-   * Deploys a database and initializes it for RCU, 
-   * uses an FMW infra base image instead of WLS 
-   * base image, and uses a WDT model that's 
-   * specialized for JRF, but is otherwise similar to
-   * the WLS initial use case.
-   * @see #testWlsInitialUseCase for more...
-   */
-  @Test
-  @Order(7)
-  @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
-  @DisplayName("Test to verify MII sample JRF initial use case")
-  public void testFmwInitialUseCase() {
-    callFmwInitialUseCase();
-  }
-
-
-  /**
-   * Test to verify JRF update1 use case.
-   * @see #testWlsUpdate1UseCase for more...
-   */
-  @Test
-  @Order(8)
-  @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
-  @DisplayName("Test to verify MII sample JRF update1 use case")
-  public void testFmwUpdate1UseCase() {
-    callFmwUpdate1UseCase();
-  }
-
-  /**
-   * Test to verify JRF update2 use case.
-   * @see #testWlsUpdate2UseCase for more...
-   */
-  @Test
-  @Order(9)
-  @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
-  @DisplayName("Test to verify MII sample JRF update2 use case")
-  public void testFmwUpdate2UseCase() {
-    callFmwUpdate2UseCase();
-  }
-
-  /**
-   * Test to verify JRF update3 use case.
-   * @see #testWlsUpdate3UseCase for more...
-   */
-  @Test
-  @Order(10)
-  @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
-  @DisplayName("Test to verify MII sample JRF update3 use case")
-  public void testFmwUpdate3UseCase() {
-    callFmwUpdate3UseCase();
-  }
-
-  /**
-   * Test to verify WLS update4 use case.
-   * Update Work Manager Min and Max Threads Constraints via a configmap and updates the
-   * domain resource introspectVersion.
-   * Verifies the sample application is running
-   * and detects the updated configured count for the Min and Max Threads Constraints.
-   */
-  @Test
-  @Order(11)
-  @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
-  @DisplayName("Test to verify MII sample JRF update4 use case")
-  public void testFmwUpdate4UseCase() {
-    callFmwUpdate4UseCase();
   }
 
   /**
@@ -331,15 +229,6 @@ public class ItMiiSample {
    */
   @AfterAll
   public void tearDownAll() {
-    // db cleanup or deletion
-    if (envMap != null) {
-      logger.info("Running samples DB cleanup");
-      Command.withParams(new CommandParams()
-          .command(MII_SAMPLES_SCRIPT + " -precleandb")
-          .env(envMap)
-          .redirect(true)).execute();
-    }
-
     // uninstall traefik
     if (traefikNamespace != null) {
       logger.info("Uninstall traefik");
@@ -360,12 +249,6 @@ public class ItMiiSample {
     if (imageName.equals(MII_SAMPLE_WLS_IMAGE_NAME_V2)) {
       imageVer = "WLS-" + decoration + "v2";
     }
-    if (imageName.equals(MII_SAMPLE_JRF_IMAGE_NAME_V1)) {
-      imageVer = "JRF-" + decoration + "v1";
-    }
-    if (imageName.equals(MII_SAMPLE_JRF_IMAGE_NAME_V2)) {
-      imageVer = "JRF-" + decoration + "v2";
-    }
 
     String image = imageName + ":" + imageVer;
 
@@ -377,53 +260,35 @@ public class ItMiiSample {
     dockerLoginAndPushImageToRegistry(image);
   }
 
-  private static void execTestScriptAndAssertSuccess(
-      String args,
-      String errString 
-  ) {
-    // WLS is the the test script's default
-    execTestScriptAndAssertSuccess(DomainType.WLS, args, errString);
-  }
-
-  private static void execTestScriptAndAssertSuccess(
-      DomainType domainType,
-      String args,
-      String errString 
-  ) {
+  private static void execTestScriptAndAssertSuccess(String args, String errString) {
     for (String arg : args.split(",")) {
       Assumptions.assumeTrue(previousTestSuccessful);
       previousTestSuccessful = false;
 
       if (arg.equals("-check-image-and-push")) {
         assertImageExistsAndPushIfNeeded();
-
       } else {
-        String command = MII_SAMPLES_SCRIPT 
-                         + " "
-                         + arg
-                         + (domainType == DomainType.JRF ? " -jrf " : "");
+        String command = MII_SAMPLES_SCRIPT + " " + arg;
 
-        ExecResult result = Command.withParams(
-                              new CommandParams()
-                                .command(command)
-                                .env(envMap)
-                                .redirect(true)
-                            ).executeAndReturnResult();
+        ExecResult result =
+            Command.withParams(new CommandParams()
+                .command(command)
+                .env(envMap)
+                .redirect(true)
+            ).executeAndReturnResult();
 
-        boolean success = 
-               result != null 
+        boolean success = result != null
             && result.exitValue() == 0
             && result.stdout() != null
             && result.stdout().contains(SUCCESS_SEARCH_STRING);
 
         String outStr = errString;
-        outStr += ", domainType=" + domainType + "\n";
+        outStr += ", domainType=WLS\n";
         outStr += ", command=\n{\n" + command + "\n}\n";
         outStr += ", stderr=\n{\n" + (result != null ? result.stderr() : "") + "\n}\n";
         outStr += ", stdout=\n{\n" + (result != null ? result.stdout() : "") + "\n}\n";
 
         assertTrue(success, outStr);
-
       }
 
       previousTestSuccessful = true;
@@ -433,72 +298,28 @@ public class ItMiiSample {
   private void callWlsInitialUseCase() {
     previousTestSuccessful = true;
     envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_WLS_IMAGE_NAME_V1);
+    envMap.put("DO_AI", useAuxiliaryImage);
     execTestScriptAndAssertSuccess("-initial-image,-check-image-and-push,-initial-main", "Initial use case failed");
   }
 
   private void callWlsUpdate1UseCase() {
+    envMap.put("DO_AI", useAuxiliaryImage);
     execTestScriptAndAssertSuccess("-update1", "Update1 use case failed");
   }
 
   private void callWlsUpdate2UseCase() {
+    envMap.put("DO_AI", useAuxiliaryImage);
     execTestScriptAndAssertSuccess("-update2", "Update2 use case failed");
   }
 
   private void callWlsUpdate3UseCase() {
     envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_WLS_IMAGE_NAME_V2);
+    envMap.put("DO_AI", useAuxiliaryImage);
     execTestScriptAndAssertSuccess("-update3-image,-check-image-and-push,-update3-main", "Update3 use case failed");
   }
 
   private void callWlsUpdate4UseCase() {
+    envMap.put("DO_AI", useAuxiliaryImage);
     execTestScriptAndAssertSuccess("-update4", "Update4 use case failed");
   }
-
-  private void callFmwInitialUseCase() {
-    String dbImageName = (KIND_REPO != null
-        ? KIND_REPO + DB_IMAGE_NAME.substring(BASE_IMAGES_REPO.length() + 1) : DB_IMAGE_NAME);
-    String jrfBaseImageName = (KIND_REPO != null
-        ? KIND_REPO + FMWINFRA_IMAGE_NAME.substring(BASE_IMAGES_REPO.length() + 1) : FMWINFRA_IMAGE_NAME);
-
-    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_JRF_IMAGE_NAME_V1);
-    envMap.put("DB_IMAGE_NAME", dbImageName);
-    envMap.put("DB_IMAGE_TAG", DB_IMAGE_TAG);
-    envMap.put("DB_NODE_PORT", "none");
-    envMap.put("BASE_IMAGE_NAME", jrfBaseImageName);
-    envMap.put("BASE_IMAGE_TAG", FMWINFRA_IMAGE_TAG);
-    envMap.put("POD_WAIT_TIMEOUT_SECS", "1000"); // JRF pod waits on slow machines, can take at least 650 seconds
-    envMap.put("DB_NAMESPACE", dbNamespace);
-    envMap.put("DB_IMAGE_PULL_SECRET", BASE_IMAGES_REPO_SECRET); //ocr/ocir secret
-    envMap.put("INTROSPECTOR_DEADLINE_SECONDS", "600"); // introspector needs more time for JRF
-
-    // run JRF use cases irrespective of WLS use cases fail/pass
-    previousTestSuccessful = true;
-    execTestScriptAndAssertSuccess(DomainType.JRF,"-db,-rcu", "DB/RCU creation failed");
-    execTestScriptAndAssertSuccess(
-        DomainType.JRF,
-        "-initial-image,-check-image-and-push,-initial-main",
-        "Initial use case failed"
-    );
-  }
-
-  private void callFmwUpdate1UseCase() {
-    execTestScriptAndAssertSuccess(DomainType.JRF,"-update1", "Update1 use case failed");
-  }
-
-  private void callFmwUpdate2UseCase() {
-    execTestScriptAndAssertSuccess(DomainType.JRF,"-update2", "Update2 use case failed");
-  }
-
-  private void callFmwUpdate3UseCase() {
-    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_JRF_IMAGE_NAME_V2);
-    execTestScriptAndAssertSuccess(
-        DomainType.JRF,
-        "-update3-image,-check-image-and-push,-update3-main",
-        "Update3 use case failed"
-    );
-  }
-
-  private void callFmwUpdate4UseCase() {
-    execTestScriptAndAssertSuccess(DomainType.JRF,"-update4", "Update4 use case failed");
-  }
-
 }
