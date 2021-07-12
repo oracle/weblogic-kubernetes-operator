@@ -231,13 +231,6 @@ public class ItMiiAuxiliaryImage {
         adminServerPodName, managedServerPrefix, replicaCount);
 
     // check configuration for JMS
-    /*int adminServiceNodePort
-        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-    assertTrue(checkSystemResourceConfiguration(adminServiceNodePort, "JMSSystemResources",
-        "TestClusterJmsModule2", "200"), "JMSSystemResources not found");
-    logger.info("Found the JMSSystemResource configuration");
-    */
     checkConfiguredJMSresouce(domainNamespace, adminServerPodName);
   }
 
@@ -286,13 +279,6 @@ public class ItMiiAuxiliaryImage {
 
     patchDomainWithAuxiliaryImageAndVerify(miiAuxiliaryImage1, miiAuxiliaryImage3, domainUid, domainNamespace);
 
-    /*assertTrue(checkSystemResourceConfig(adminServiceNodePort,
-        "JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams",
-        "jdbc:oracle:thin:@\\/\\/localhost:7001\\/dbsvc"), "Can't find expected URL configuration for DataSource");
-
-    logger.info("Found the DataResource configuration");
-
-     */
     checkConfiguredJDBCresouce(domainNamespace, adminServerPodName);
   }
 
