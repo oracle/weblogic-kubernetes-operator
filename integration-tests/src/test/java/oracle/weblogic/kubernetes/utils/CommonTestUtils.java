@@ -223,7 +223,6 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsVa
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusMessageMatches;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusReasonMatches;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isApacheReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isElkStackPodReady;
@@ -2036,27 +2035,6 @@ public class CommonTestUtils {
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(() -> domainStatusReasonMatches(domain, statusReason)));
-  }
-
-  /**
-   * Check the status message of the domain matches the given message.
-   *
-   * @param domain  oracle.weblogic.domain.Domain object
-   * @param namespace the namespace in which the domain exists
-   * @param statusMessage the expected status message of the domain
-   */
-  public static void checkDomainStatusMessageMatches(Domain domain, String namespace, String statusMessage) {
-    LoggingFacade logger = getLogger();
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for the status message of the domain {0} in namespace {1} "
-                    + "is {2} (elapsed time {3}ms, remaining time {4}ms)",
-                domain,
-                namespace,
-                statusMessage,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> domainStatusMessageMatches(domain, statusMessage)));
   }
 
   /**

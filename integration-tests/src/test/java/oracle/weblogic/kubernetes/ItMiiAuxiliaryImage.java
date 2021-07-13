@@ -358,7 +358,6 @@ public class ItMiiAuxiliaryImage {
     // create domain and verify it is failed
     logger.info("Creating domain {0} with auxiliary image {1} in namespace {2}",
         domainUid, errorPathAuxiliaryImage1, errorpathDomainNamespace);
-
     assertDoesNotThrow(() -> createDomainCustomResource(domainCR), "createDomainCustomResource throws Exception");
 
     // check the domain event contains the expected error msg
@@ -421,7 +420,6 @@ public class ItMiiAuxiliaryImage {
     // create domain and verify it is failed
     logger.info("Creating domain {0} with common mount image {1} in namespace {2}",
         domainUid, errorPathAuxiliaryImage2, errorpathDomainNamespace);
-
     assertDoesNotThrow(() -> createDomainCustomResource(domainCR), "createDomainCustomResource throws Exception");
 
     // check the domain event contains the expected error msg
@@ -488,7 +486,6 @@ public class ItMiiAuxiliaryImage {
     // create domain and verify it is failed
     logger.info("Creating domain {0} with auxiliary image {1} in namespace {2}",
         domainUid, errorPathAuxiliaryImage3, errorpathDomainNamespace);
-
     assertDoesNotThrow(() -> createDomainCustomResource(domainCR), "createDomainCustomResource throws Exception");
 
     // check the domain event contains the expected error msg
@@ -564,7 +561,6 @@ public class ItMiiAuxiliaryImage {
     // create domain and verify it is failed
     logger.info("Creating domain {0} with auxiliary image {1} in namespace {2}",
         domainUid, errorPathAuxiliaryImage4, errorpathDomainNamespace);
-
     assertDoesNotThrow(() -> createDomainCustomResource(domainCR),
         "createDomainCustomResource throws Exception");
 

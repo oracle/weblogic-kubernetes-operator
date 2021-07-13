@@ -396,32 +396,6 @@ public class TestAssertions {
   }
 
   /**
-   * Check the status message of the domain matches the given message.
-   * @param domain  oracle.weblogic.domain.Domain object
-   * @param statusMessage the expected status message of the domain
-   * @return true if the status message matches, false otherwise
-   */
-  public static Callable<Boolean> domainStatusMessageMatches(oracle.weblogic.domain.Domain domain,
-                                                            String statusMessage) {
-    LoggingFacade logger = getLogger();
-    return () -> {
-      if (domain != null && domain.getStatus() != null && domain.getStatus().getReason() != null) {
-        logger.info("domain status reason: {0}", domain.getStatus().getReason());
-        return domain.getStatus().getReason().equalsIgnoreCase(statusMessage);
-      } else {
-        if (domain == null) {
-          logger.info("domain is null");
-        } else if (domain.getStatus() == null) {
-          logger.info("domain status is null");
-        } else {
-          logger.info("domain status reason is null");
-        }
-        return false;
-      }
-    };
-  }
-
-  /**
    * Check if a loadbalancer pod is ready.
    *
    * @param domainUid id of the WebLogic domain custom resource domain
