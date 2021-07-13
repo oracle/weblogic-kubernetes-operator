@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.OffsetDateTime;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -15,6 +16,7 @@ import java.util.Map;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import oracle.weblogic.domain.AuxiliaryImage;
+import oracle.weblogic.domain.AuxiliaryImageVolume;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
@@ -55,6 +57,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomReso
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkEvent;
@@ -96,6 +99,8 @@ public class ItMiiAuxiliaryImage {
   private final String adminServerPodName = domainUid + "-admin-server";
   private final String managedServerPrefix = domainUid + "-managed-server";
   private final int replicaCount = 2;
+  private String adminSecretName = "weblogic-credentials";
+  private String encryptionSecretName = "encryptionsecret";
 
   ConditionFactory withStandardRetryPolicy
       = with().pollDelay(0, SECONDS)
@@ -298,46 +303,30 @@ public class ItMiiAuxiliaryImage {
   }
 
   /**
-   * Negative Test to create domain with mismatch common mount path in common mount image and in commonMountVolumes.
-   * in commonMountVolumes, set mountPath to "/errorpath"
-   * in common mount image, set COMMON_MOUNT_PATH to "/common"
+   * Negative Test to create domain with mismatch mount path in auxiliary image and auxiliaryImageVolumes.
+   * in auxiliaryImageVolumes, set mountPath to "/errorpath"
+   * in auxiliary image, set AUXILIARY_IMAGE_PATH to "/auxiliary"
    */
   @Test
   @Order(3)
-  @DisplayName("Negative Test to create domain with mismatch common mount path in common mount image and "
-      + "in commonMountVolumes")
-  public void testErrorPathDomainMismatchCommonDirectory() {
+  @DisplayName("Negative Test to create domain with mismatch mount path in auxiliary image and auxiliaryImageVolumes")
+  public void testErrorPathDomainMismatchMountPath() {
 
     OffsetDateTime timestamp = now();
-    String errorPathCMImage1 = MII_AUXILIARY_IMAGE_NAME + ":errorpathimage1";
+    String errorPathAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + ":errorpathimage1";
 
-    // admin/managed server name here should match with model yaml
-    final String commonMountVolumeName = "commonMountsVolume1";
-    final String commonMountPath = "/errorpath";
+    final String auxiliaryImageVolumeName = "auxiliaryImageVolume1";
+    final String auxiliaryImagePath = "/errorpath";
 
-    // Create the repo secret to pull the image
-    // this secret is used only for non-kind cluster
-    createOcirRepoSecret(errorpathDomainNamespace);
+    createSecretsForDomain(adminSecretName, encryptionSecretName, errorpathDomainNamespace);
 
-    // create secret for admin credentials
-    logger.info("Create secret for admin credentials");
-    String adminSecretName = "weblogic-credentials";
-    createSecretWithUsernamePassword(adminSecretName, errorpathDomainNamespace,
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+    // create stage dir for auxiliary image
+    Path errorpathAIPath1 = Paths.get(RESULTS_ROOT, "errorpathauxiimage1");
+    assertDoesNotThrow(() -> FileUtils.deleteDirectory(errorpathAIPath1.toFile()));
+    assertDoesNotThrow(() -> Files.createDirectories(errorpathAIPath1));
 
-    // create encryption secret
-    logger.info("Create encryption secret");
-    String encryptionSecretName = "encryptionsecret";
-    createSecretWithUsernamePassword(encryptionSecretName, errorpathDomainNamespace,
-        "weblogicenc", "weblogicenc");
-
-    // create stage dir for common mount image
-    Path errorpathCMPath1 = Paths.get(RESULTS_ROOT, "errorpathcmimage1");
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(errorpathCMPath1.toFile()));
-    assertDoesNotThrow(() -> Files.createDirectories(errorpathCMPath1));
-
-    // create models dir and copy model, archive files if any for image1
-    Path modelsPath1 = Paths.get(errorpathCMPath1.toString(), "models");
+    // create models dir and copy model for image
+    Path modelsPath1 = Paths.get(errorpathAIPath1.toString(), "models");
     assertDoesNotThrow(() -> Files.createDirectories(modelsPath1));
     assertDoesNotThrow(() -> Files.copy(
         Paths.get(MODEL_DIR, MII_BASIC_WDT_MODEL_FILE),
@@ -345,39 +334,39 @@ public class ItMiiAuxiliaryImage {
         StandardCopyOption.REPLACE_EXISTING));
 
     // unzip WDT installation file into work dir
-    unzipWDTInstallationFile(errorpathCMPath1.toString());
+    unzipWDTInstallationFile(errorpathAIPath1.toString());
 
-    // create image1 with model and wdt installation files
-    createAuxiliaryImage(errorpathCMPath1.toString(),
-        Paths.get(RESOURCE_DIR, "commonmount", "Dockerfile").toString(), errorPathCMImage1);
+    // create image with model and wdt installation files
+    createAuxiliaryImage(errorpathAIPath1.toString(),
+        Paths.get(RESOURCE_DIR, "auxiliaryimage", "Dockerfile").toString(), errorPathAuxiliaryImage1);
 
-    // push image1 to repo for multi node cluster
+    // push image to repo for multi node cluster
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      logger.info("docker push image {0} to registry {1}", errorPathCMImage1, DOMAIN_IMAGES_REPO);
-      assertTrue(dockerPush(errorPathCMImage1), String.format("docker push failed for image %s", errorPathCMImage1));
+      logger.info("docker push image {0} to registry {1}", errorPathAuxiliaryImage1, DOMAIN_IMAGES_REPO);
+      assertTrue(dockerPush(errorPathAuxiliaryImage1),
+          String.format("docker push failed for image %s", errorPathAuxiliaryImage1));
     }
 
-    // create domain custom resource using common mount and images
-    logger.info("Creating domain custom resource with domainUid {0} and common mount image {1}",
-        domainUid, errorPathCMImage1);
+    // create domain custom resource using auxiliary images
+    logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
+        domainUid, errorPathAuxiliaryImage1);
     Domain domainCR = createDomainResource(domainUid, errorpathDomainNamespace,
         WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG, adminSecretName, OCIR_SECRET_NAME,
-        encryptionSecretName, replicaCount, "cluster-1", commonMountPath,
-        commonMountVolumeName, errorPathCMImage1);
+        encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
+        auxiliaryImageVolumeName, errorPathAuxiliaryImage1);
 
     // create domain and verify it is failed
-    logger.info("Creating domain {0} with common mount image {1} in namespace {2}",
-        domainUid, errorPathCMImage1, errorpathDomainNamespace);
+    logger.info("Creating domain {0} with auxiliary image {1} in namespace {2}",
+        domainUid, errorPathAuxiliaryImage1, errorpathDomainNamespace);
 
-    assertDoesNotThrow(() -> createDomainCustomResource(domainCR),
-        "createDomainCustomResource throws Exception");
+    assertDoesNotThrow(() -> createDomainCustomResource(domainCR), "createDomainCustomResource throws Exception");
 
     // check the domain event contains the expected error msg
     checkEvent(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED, "Warning", timestamp);
     CoreV1Event event =
         getEvent(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED, "Warning", timestamp);
     String expectedErrorMsg = "Failed to complete processing domain resource domain1 due to: "
-        + "Common Mount: Dir '/errorpath' doesn't exist or is empty. Exiting.";
+        + "Auxiliary Image: Dir '/errorpath' doesn't exist or is empty. Exiting.";
     assertTrue(event.getMessage().contains(expectedErrorMsg),
         String.format("The event message does not contain the expected error msg %s", expectedErrorMsg));
 
@@ -394,62 +383,48 @@ public class ItMiiAuxiliaryImage {
   public void testErrorPathDomainMissingWDTBinary() {
 
     OffsetDateTime timestamp = now();
-    String errorPathCMImage2 = MII_AUXILIARY_IMAGE_NAME + ":errorpathimage2";
+    String errorPathAuxiliaryImage2 = MII_AUXILIARY_IMAGE_NAME + ":errorpathimage2";
 
-    // admin/managed server name here should match with model yaml
-    final String commonMountVolumeName = "commonMountsVolume1";
-    final String commonMountPath = "/common";
+    final String auxiliaryImageVolumeName = "auxiliaryImageVolume1";
+    final String auxiliaryImagePath = "/auxiliary";
 
-    // Create the repo secret to pull the image
-    // this secret is used only for non-kind cluster
-    createOcirRepoSecret(errorpathDomainNamespace);
-
-    // create secret for admin credentials
-    logger.info("Create secret for admin credentials");
-    String adminSecretName = "weblogic-credentials";
-    createSecretWithUsernamePassword(adminSecretName, errorpathDomainNamespace,
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-
-    // create encryption secret
-    logger.info("Create encryption secret");
-    String encryptionSecretName = "encryptionsecret";
-    createSecretWithUsernamePassword(encryptionSecretName, errorpathDomainNamespace,
-        "weblogicenc", "weblogicenc");
+    createSecretsForDomain(adminSecretName, encryptionSecretName, errorpathDomainNamespace);
 
     // create stage dir for common mount image
-    Path errorpathCMPath2 = Paths.get(RESULTS_ROOT, "errorpathcmimage2");
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(errorpathCMPath2.toFile()));
-    assertDoesNotThrow(() -> Files.createDirectories(errorpathCMPath2));
+    Path errorpathAIPath2 = Paths.get(RESULTS_ROOT, "errorpathauxiimage2");
+    assertDoesNotThrow(() -> FileUtils.deleteDirectory(errorpathAIPath2.toFile()));
+    assertDoesNotThrow(() -> Files.createDirectories(errorpathAIPath2));
 
-    // create models dir and copy model, archive files if any for image1
-    Path modelsPath2 = Paths.get(errorpathCMPath2.toString(), "models");
+    // create models dir and copy model for image
+    Path modelsPath2 = Paths.get(errorpathAIPath2.toString(), "models");
     assertDoesNotThrow(() -> Files.createDirectories(modelsPath2));
     assertDoesNotThrow(() -> Files.copy(
         Paths.get(MODEL_DIR, MII_BASIC_WDT_MODEL_FILE),
         Paths.get(modelsPath2.toString(), MII_BASIC_WDT_MODEL_FILE),
         StandardCopyOption.REPLACE_EXISTING));
 
-    // create image1 with model and wdt installation files
-    createAuxiliaryImage(errorpathCMPath2.toString(),
-        Paths.get(RESOURCE_DIR, "commonmount", "Dockerfile").toString(), errorPathCMImage2);
+    // create image with model and no wdt installation files
+    createAuxiliaryImage(errorpathAIPath2.toString(),
+        Paths.get(RESOURCE_DIR, "auxiliaryimage", "Dockerfile").toString(), errorPathAuxiliaryImage2);
 
-    // push image1 to repo for multi node cluster
+    // push image to repo for multi node cluster
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      logger.info("docker push image {0} to registry {1}", errorPathCMImage2, DOMAIN_IMAGES_REPO);
-      assertTrue(dockerPush(errorPathCMImage2), String.format("docker push failed for image %s", errorPathCMImage2));
+      logger.info("docker push image {0} to registry {1}", errorPathAuxiliaryImage2, DOMAIN_IMAGES_REPO);
+      assertTrue(dockerPush(errorPathAuxiliaryImage2),
+          String.format("docker push failed for image %s", errorPathAuxiliaryImage2));
     }
 
-    // create domain custom resource using common mount and images
-    logger.info("Creating domain custom resource with domainUid {0} and common mount image {1}",
-        domainUid, errorPathCMImage2);
+    // create domain custom resource using auxiliary images
+    logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
+        domainUid, errorPathAuxiliaryImage2);
     Domain domainCR = createDomainResource(domainUid, errorpathDomainNamespace,
         WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG, adminSecretName, OCIR_SECRET_NAME,
-        encryptionSecretName, replicaCount, "cluster-1", commonMountPath,
-        commonMountVolumeName, errorPathCMImage2);
+        encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
+        auxiliaryImageVolumeName, errorPathAuxiliaryImage2);
 
     // create domain and verify it is failed
     logger.info("Creating domain {0} with common mount image {1} in namespace {2}",
-        domainUid, errorPathCMImage2, errorpathDomainNamespace);
+        domainUid, errorPathAuxiliaryImage2, errorpathDomainNamespace);
 
     assertDoesNotThrow(() -> createDomainCustomResource(domainCR), "createDomainCustomResource throws Exception");
 
@@ -459,7 +434,7 @@ public class ItMiiAuxiliaryImage {
         getEvent(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED, "Warning", timestamp);
     String expectedErrorMsg = "The domain resource 'spec.domainHomeSourceType' is 'FromModel'  and "
         + "a WebLogic Deploy Tool (WDT) install is not located at  'spec.configuration.model.wdtInstallHome'  "
-        + "which is currently set to '/common/weblogic-deploy'";
+        + "which is currently set to '/auxiliary/weblogic-deploy'";
     assertTrue(event.getMessage().contains(expectedErrorMsg),
         String.format("The event message does not contain the expected error msg %s", expectedErrorMsg));
 
@@ -468,7 +443,7 @@ public class ItMiiAuxiliaryImage {
   }
 
   /**
-   * Negative Test to create domain without domain model file, the common mount contains only sparse JMS config.
+   * Negative Test to create domain without domain model file, the auxiliary image contains only sparse JMS config.
    */
   @Test
   @Order(5)
@@ -476,35 +451,20 @@ public class ItMiiAuxiliaryImage {
   public void testErrorPathDomainMissingDomainConfig() {
 
     OffsetDateTime timestamp = now();
-    String errorPathCMImage3 = MII_AUXILIARY_IMAGE_NAME + ":errorpathimage3";
+    String errorPathAuxiliaryImage3 = MII_AUXILIARY_IMAGE_NAME + ":errorpathimage3";
 
-    // admin/managed server name here should match with model yaml
-    final String commonMountVolumeName = "commonMountsVolume1";
-    final String commonMountPath = "/common";
+    final String auxiliaryImageVolumeName = "auxiliaryImageVolume1";
+    final String auxiliaryImagePath = "/auxiliary";
 
-    // Create the repo secret to pull the image
-    // this secret is used only for non-kind cluster
-    createOcirRepoSecret(errorpathDomainNamespace);
+    createSecretsForDomain(adminSecretName, encryptionSecretName, errorpathDomainNamespace);
 
-    // create secret for admin credentials
-    logger.info("Create secret for admin credentials");
-    String adminSecretName = "weblogic-credentials";
-    createSecretWithUsernamePassword(adminSecretName, errorpathDomainNamespace,
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+    // create stage dir for auxiliary image
+    Path errorpathAIPath3 = Paths.get(RESULTS_ROOT, "errorpathauxiimage3");
+    assertDoesNotThrow(() -> FileUtils.deleteDirectory(errorpathAIPath3.toFile()));
+    assertDoesNotThrow(() -> Files.createDirectories(errorpathAIPath3));
 
-    // create encryption secret
-    logger.info("Create encryption secret");
-    String encryptionSecretName = "encryptionsecret";
-    createSecretWithUsernamePassword(encryptionSecretName, errorpathDomainNamespace,
-        "weblogicenc", "weblogicenc");
-
-    // create stage dir for common mount image
-    Path errorpathCMPath3 = Paths.get(RESULTS_ROOT, "errorpathcmimage3");
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(errorpathCMPath3.toFile()));
-    assertDoesNotThrow(() -> Files.createDirectories(errorpathCMPath3));
-
-    // create models dir and copy model, archive files if any for image
-    Path modelsPath3 = Paths.get(errorpathCMPath3.toString(), "models");
+    // create models dir and copy model for image
+    Path modelsPath3 = Paths.get(errorpathAIPath3.toString(), "models");
     assertDoesNotThrow(() -> Files.createDirectories(modelsPath3));
     assertDoesNotThrow(() -> Files.copy(
         Paths.get(MODEL_DIR, "model.jms2.yaml"),
@@ -512,29 +472,30 @@ public class ItMiiAuxiliaryImage {
         StandardCopyOption.REPLACE_EXISTING));
 
     // unzip WDT installation file into work dir
-    unzipWDTInstallationFile(errorpathCMPath3.toString());
+    unzipWDTInstallationFile(errorpathAIPath3.toString());
 
     // create image1 with model and wdt installation files
-    createAuxiliaryImage(errorpathCMPath3.toString(),
-        Paths.get(RESOURCE_DIR, "commonmount", "Dockerfile").toString(), errorPathCMImage3);
+    createAuxiliaryImage(errorpathAIPath3.toString(),
+        Paths.get(RESOURCE_DIR, "auxiliaryimage", "Dockerfile").toString(), errorPathAuxiliaryImage3);
 
-    // push image1 to repo for multi node cluster
+    // push image to repo for multi node cluster
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      logger.info("docker push image {0} to registry {1}", errorPathCMImage3, DOMAIN_IMAGES_REPO);
-      assertTrue(dockerPush(errorPathCMImage3), String.format("docker push failed for image %s", errorPathCMImage3));
+      logger.info("docker push image {0} to registry {1}", errorPathAuxiliaryImage3, DOMAIN_IMAGES_REPO);
+      assertTrue(dockerPush(errorPathAuxiliaryImage3),
+          String.format("docker push failed for image %s", errorPathAuxiliaryImage3));
     }
 
-    // create domain custom resource using common mount and images
-    logger.info("Creating domain custom resource with domainUid {0} and common mount image {1}",
-        domainUid, errorPathCMImage3);
+    // create domain custom resource using auxiliary images
+    logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
+        domainUid, errorPathAuxiliaryImage3);
     Domain domainCR = createDomainResource(domainUid, errorpathDomainNamespace,
         WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG, adminSecretName, OCIR_SECRET_NAME,
-        encryptionSecretName, replicaCount, "cluster-1", commonMountPath,
-        commonMountVolumeName, errorPathCMImage3);
+        encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
+        auxiliaryImageVolumeName, errorPathAuxiliaryImage3);
 
     // create domain and verify it is failed
-    logger.info("Creating domain {0} with common mount image {1} in namespace {2}",
-        domainUid, errorPathCMImage3, errorpathDomainNamespace);
+    logger.info("Creating domain {0} with auxiliary image {1} in namespace {2}",
+        domainUid, errorPathAuxiliaryImage3, errorpathDomainNamespace);
 
     assertDoesNotThrow(() -> createDomainCustomResource(domainCR), "createDomainCustomResource throws Exception");
 
@@ -543,7 +504,88 @@ public class ItMiiAuxiliaryImage {
     CoreV1Event event =
         getEvent(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED, "Warning", timestamp);
     String expectedErrorMsg =
-        "createDomain did not find the required domainInfo section in the model file /common/models/model.jms2.yaml";
+        "createDomain did not find the required domainInfo section in the model file /auxiliary/models/model.jms2.yaml";
+    assertTrue(event.getMessage().contains(expectedErrorMsg),
+        String.format("The event message does not contain the expected error msg %s", expectedErrorMsg));
+
+    // delete domain1
+    deleteDomainResource(errorpathDomainNamespace, domainUid);
+  }
+
+  /**
+   * Negative Test to create domain using a custom mount command that's guaranteed to fail, for example:  exit 1.
+   */
+  @Test
+  @Order(6)
+  @DisplayName("Negative Test to create domain using a custom mount command that's guaranteed to fail")
+  public void testErrorPathDomainWithFailCustomMountCommand() {
+
+    OffsetDateTime timestamp = now();
+    String errorPathAuxiliaryImage4 = MII_AUXILIARY_IMAGE_NAME + ":errorpathimage4";
+
+    final String auxiliaryImageVolumeName = "auxiliaryImageVolume1";
+    final String auxiliaryImagePath = "/auxiliary";
+
+    createSecretsForDomain(adminSecretName, encryptionSecretName, errorpathDomainNamespace);
+    
+    // create stage dir for auxiliary image
+    Path errorpathAIPath4 = Paths.get(RESULTS_ROOT, "errorpathauxiimage4");
+    assertDoesNotThrow(() -> FileUtils.deleteDirectory(errorpathAIPath4.toFile()));
+    assertDoesNotThrow(() -> Files.createDirectories(errorpathAIPath4));
+
+    // create models dir and copy model for image
+    Path modelsPath4 = Paths.get(errorpathAIPath4.toString(), "models");
+    assertDoesNotThrow(() -> Files.createDirectories(modelsPath4));
+    assertDoesNotThrow(() -> Files.copy(
+        Paths.get(MODEL_DIR, MII_BASIC_WDT_MODEL_FILE),
+        Paths.get(modelsPath4.toString(), MII_BASIC_WDT_MODEL_FILE),
+        StandardCopyOption.REPLACE_EXISTING));
+
+    // unzip WDT installation file into work dir
+    unzipWDTInstallationFile(errorpathAIPath4.toString());
+
+    // create image1 with model and wdt installation files
+    createAuxiliaryImage(errorpathAIPath4.toString(),
+        Paths.get(RESOURCE_DIR, "auxiliaryimage", "Dockerfile").toString(), errorPathAuxiliaryImage4);
+
+    // push image to repo for multi node cluster
+    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
+      logger.info("docker push image {0} to registry {1}", errorPathAuxiliaryImage4, DOMAIN_IMAGES_REPO);
+      assertTrue(dockerPush(errorPathAuxiliaryImage4),
+          String.format("docker push failed for image %s", errorPathAuxiliaryImage4));
+    }
+
+    // create domain custom resource using common mount and images
+    logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
+        domainUid, errorPathAuxiliaryImage4);
+    AuxiliaryImageVolume auxiliaryImageVolume = new AuxiliaryImageVolume()
+        .name(auxiliaryImageVolumeName)
+        .mountPath(auxiliaryImagePath);
+
+    AuxiliaryImage auxiliaryImage = new AuxiliaryImage()
+        .image(errorPathAuxiliaryImage4)
+        .imagePullPolicy("IfNotPresent")
+        .volume(auxiliaryImageVolumeName)
+        .command("exit 1");
+
+    Domain domainCR = createDomainResource(domainUid, errorpathDomainNamespace,
+        WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG, adminSecretName, OCIR_SECRET_NAME,
+        encryptionSecretName, replicaCount, "cluster-1", Arrays.asList(auxiliaryImageVolume),
+        Arrays.asList(auxiliaryImage));
+
+    // create domain and verify it is failed
+    logger.info("Creating domain {0} with auxiliary image {1} in namespace {2}",
+        domainUid, errorPathAuxiliaryImage4, errorpathDomainNamespace);
+
+    assertDoesNotThrow(() -> createDomainCustomResource(domainCR),
+        "createDomainCustomResource throws Exception");
+
+    // check the domain event contains the expected error msg
+    checkEvent(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED, "Warning", timestamp);
+    CoreV1Event event =
+        getEvent(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED, "Warning", timestamp);
+    String expectedErrorMsg = "Failed to complete processing domain resource domain1 due to: "
+        + "Auxiliary Image: Command 'exit 1' execution failed in container";
     assertTrue(event.getMessage().contains(expectedErrorMsg),
         String.format("The event message does not contain the expected error msg %s", expectedErrorMsg));
 
@@ -643,5 +685,24 @@ public class ItMiiAuxiliaryImage {
         .withParams(new CommandParams()
             .command(cmdToExecute))
         .execute(), String.format("Failed to execute", cmdToExecute));
+  }
+
+  private void createSecretsForDomain(String adminSecretName, String encryptionSecretName, String domainNamespace) {
+    if (!secretExists(OCIR_SECRET_NAME, domainNamespace)) {
+      createOcirRepoSecret(domainNamespace);
+    }
+
+    // create secret for admin credentials
+    logger.info("Create secret for admin credentials");
+    if (!secretExists(adminSecretName, domainNamespace)) {
+      createSecretWithUsernamePassword(adminSecretName, domainNamespace,
+          ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+    }
+
+    // create encryption secret
+    logger.info("Create encryption secret");
+    if (!secretExists(encryptionSecretName, domainNamespace)) {
+      createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc", "weblogicenc");
+    }
   }
 }
