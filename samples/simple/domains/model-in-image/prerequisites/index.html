@@ -12,20 +12,20 @@
     <title>Prerequisites :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1626196825" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1626196825" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1626196825" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1626196825" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1626196825" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1626196825" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1626196825" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1626196825" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1626196825" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1626196825" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1626196923" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1626196923" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1626196923" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1626196923" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1626196923" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1626196923" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1626196923" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1626196923" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1626196923" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1626196923" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1626196825"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.3.1.min.js?1626196923"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1626196825"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1626196825"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1626196923"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1626196923"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1626196825"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1626196923"></script>
 
     
   </div>
@@ -3511,10 +3511,10 @@ You will use WIT and its cached reference to the WDT installer later in the samp
 <ol>
 <li>Load the saved wallet file into a secret with a key named <code>walletFile</code> (again, assuming that your domain UID is <code>sample-domain1</code> and your namespace is <code>sample-domain1-ns</code>):</li>
 </ol>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">  $ kubectl -n sample-domain1-ns create secret generic sample-domain1-opss-walletfile-secret <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>     --from-file<span style="color:#f92672">=</span>walletFile<span style="color:#f92672">=</span>./ewallet.p12
-</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">  $ kubectl -n sample-domain1-ns label secret sample-domain1-opss-walletfile-secret <span style="color:#ae81ff">\
-</span><span style="color:#ae81ff"></span>     weblogic.domainUID<span style="color:#f92672">=</span><span style="color:#e6db74">`</span>sample-domain1<span style="color:#e6db74">`</span>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl -n sample-domain1-ns create secret generic sample-domain1-opss-walletfile-secret <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>   --from-file<span style="color:#f92672">=</span>walletFile<span style="color:#f92672">=</span>./ewallet.p12
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl -n sample-domain1-ns label secret sample-domain1-opss-walletfile-secret <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>   weblogic.domainUID<span style="color:#f92672">=</span><span style="color:#e6db74">`</span>sample-domain1<span style="color:#e6db74">`</span>
 </code></pre></div><p>Alternatively, use the sample&rsquo;s wallet utility:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">  $ /tmp/mii-sample/utils/opss-wallet.sh -n sample-domain1-ns -d sample-domain1 -wf ./ewallet.p12 -ws sample-domain1-opss-walletfile-secret
 </code></pre></div><pre><code>  # For help: /tmp/mii-sample/utils/opss-wallet.sh -?
@@ -5615,19 +5615,19 @@ You will use WIT and its cached reference to the WDT installer later in the samp
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1626196825"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1626196825"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1626196825"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1626196825"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1626196825"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1626196825"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1626196923"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1626196923"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1626196923"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1626196923"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1626196923"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1626196923"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1626196825"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1626196825"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1626196825"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1626196923"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1626196923"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1626196923"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1626196825"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1626196923"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
