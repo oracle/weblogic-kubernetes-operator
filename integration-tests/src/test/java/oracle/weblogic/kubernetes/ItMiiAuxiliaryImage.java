@@ -62,11 +62,13 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithU
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodsWithTimeStamps;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileFromPod;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.FileUtils.unzipWDTInstallationFile;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -149,6 +151,10 @@ public class ItMiiAuxiliaryImage {
     Path multipleAIPath1 = Paths.get(RESULTS_ROOT, "multipleauxiliaryimage1");
     assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleAIPath1.toFile()));
     assertDoesNotThrow(() -> Files.createDirectories(multipleAIPath1));
+    Path multipleAIPathToFile1 = Paths.get(RESULTS_ROOT, "multipleauxiliaryimage1/test.txt");
+    String content = "1";
+    assertDoesNotThrow(() -> Files.write(multipleAIPathToFile1, content.getBytes()),
+        "Can't write to file " + multipleAIPathToFile1);
 
     // create models dir and copy model, archive files if any for image1
     Path modelsPath1 = Paths.get(multipleAIPath1.toString(), "models");
@@ -195,6 +201,10 @@ public class ItMiiAuxiliaryImage {
     // create models dir and copy model, archive files if any
     Path modelsPath2 = Paths.get(multipleAIPath2.toString(), "models");
     assertDoesNotThrow(() -> Files.createDirectories(modelsPath2));
+    Path multipleAIPathToFile2 = Paths.get(RESULTS_ROOT, "multipleauxiliaryimage2/test.txt");
+    String content2 = "2";
+    assertDoesNotThrow(() -> Files.write(multipleAIPathToFile2, content2.getBytes()),
+        "Can't write to file " + multipleAIPathToFile2);
     assertDoesNotThrow(() -> Files.copy(
         Paths.get(MODEL_DIR, "/model.jms2.yaml"),
         Paths.get(modelsPath2.toString(), "/model.jms2.yaml"),
@@ -231,6 +241,19 @@ public class ItMiiAuxiliaryImage {
     assertTrue(checkSystemResourceConfiguration(adminServiceNodePort, "JMSSystemResources",
         "TestClusterJmsModule2", "200"), "JMSSystemResources not found");
     logger.info("Found the JMSSystemResource configuration");
+
+    //checking the order of loading for the common mount images, expecting file with content =2
+    assertDoesNotThrow(() -> FileUtils.deleteQuietly(Paths.get(RESULTS_ROOT, "/test.txt").toFile()));
+    assertDoesNotThrow(() -> copyFileFromPod(domainNamespace,
+        adminServerPodName, "weblogic-server",
+        auxiliaryImagePath + "/test.txt",
+        Paths.get(RESULTS_ROOT, "/test.txt")), " Can't find file in the pod, or failed to copy");
+
+    assertDoesNotThrow(() ->  {
+      String fileContent = Files.readAllLines(Paths.get(RESULTS_ROOT, "/test.txt")).get(0);
+      assertEquals("2", fileContent, "The content of the file from common mount path "
+          + fileContent + "does not match the expected 2");
+    }, "File from image2 was not loaded in the expected order");
   }
 
   /**
@@ -242,7 +265,6 @@ public class ItMiiAuxiliaryImage {
   @Order(2)
   @DisplayName("Test to update data source url in the  domain using auxiliary image")
   public void testUpdateDataSourceInDomainUsingAuxiliaryImage() {
-
     Path multipleAIPath1 = Paths.get(RESULTS_ROOT, "multipleauxiliaryimage1");
     Path modelsPath1 = Paths.get(multipleAIPath1.toString(), "models");
 
