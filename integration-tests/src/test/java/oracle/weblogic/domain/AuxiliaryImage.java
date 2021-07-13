@@ -19,7 +19,7 @@ public class AuxiliaryImage {
   /**
    * The auxiliary image.
    */
-  @ApiModelProperty("The name of an image with files located in directory specified by "
+  @ApiModelProperty("The name of an image with files located in the directory specified by "
       + "'spec.auxiliaryImageVolumes.mountPath' of the auxiliary image volume referenced by "
       + "serverPod.auxiliaryImage.volume (which defaults to '/auxiliary').")
   private String image;
@@ -35,7 +35,7 @@ public class AuxiliaryImage {
           + "This is an advanced setting for customizing the container command for copying files from the container "
           + "image to the emptyDir volume. Use the '$AUXILIARY_IMAGE_PATH' environment variable to reference "
           + "the value configured in 'spec.auxiliaryImageVolumes.mountPath' (which defaults to '/auxiliary'). Use "
-          + "'$TARGET_MOUNT_PATH' to refer to the temporary directory created by the Operator that resolves to the "
+          + "'$TARGET_MOUNT_PATH' to refer to the temporary directory created by the operator that resolves to the "
           + "internal emptyDir volume.")
   private String command;
 

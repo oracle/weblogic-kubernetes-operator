@@ -47,7 +47,7 @@ draft: false
 
 * [Auxiliary images support](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/auxiliary-images/).
 * Resolved an issue related to Event creation failure with the error: "StorageError: invalid object, Code: 4" ([#2443](https://github.com/oracle/weblogic-kubernetes-operator/pull/2443)).
-* Improve the ability of the operator to use an existing introspection  ([#2430](https://github.com/oracle/weblogic-kubernetes-operator/pull/2430)).
+* Improved the ability of the operator to use an existing introspection  ([#2430](https://github.com/oracle/weblogic-kubernetes-operator/pull/2430)).
 * All fixes included in 3.2.1 through 3.2.5 are included in 3.3.0.
 
 #### Operator 3.2.5

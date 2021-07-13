@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 5390f0e4a8c325f271741ff7f16d9b5ecf818b71dff0227847dd58bd58ae19de
+    weblogic.sha256: 82e9e9e60da33f393aec1dc45c2854e06a569fea839d3339e3dd7f86ce8d837c
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -1382,7 +1382,7 @@ spec:
                               type: string
                             image:
                               description: The name of an image with files located
-                                in directory specified by `spec.auxiliaryImageVolumes.mountPath`
+                                in the directory specified by `spec.auxiliaryImageVolumes.mountPath`
                                 of the auxiliary image volume referenced by `serverPod.auxiliaryImages.volume`,
                                 which defaults to "/auxiliary".
                               type: string
@@ -1405,7 +1405,7 @@ spec:
                                 environment variable to reference the value configured
                                 in `spec.auxiliaryImageVolumes.mountPath`, which defaults
                                 to "/auxiliary". Use '$TARGET_MOUNT_PATH' to refer
-                                to the temporary directory created by the Operator
+                                to the temporary directory created by the operator
                                 that resolves to the auxiliary image's internal emptyDir
                                 volume.
                               type: string
@@ -4130,7 +4130,7 @@ spec:
                                 type: string
                               image:
                                 description: The name of an image with files located
-                                  in directory specified by `spec.auxiliaryImageVolumes.mountPath`
+                                  in the directory specified by `spec.auxiliaryImageVolumes.mountPath`
                                   of the auxiliary image volume referenced by `serverPod.auxiliaryImages.volume`,
                                   which defaults to "/auxiliary".
                                 type: string
@@ -4154,7 +4154,7 @@ spec:
                                   to reference the value configured in `spec.auxiliaryImageVolumes.mountPath`,
                                   which defaults to "/auxiliary". Use '$TARGET_MOUNT_PATH'
                                   to refer to the temporary directory created by the
-                                  Operator that resolves to the auxiliary image's
+                                  operator that resolves to the auxiliary image's
                                   internal emptyDir volume.
                                 type: string
                         readinessProbe:
@@ -6891,7 +6891,7 @@ spec:
                           type: string
                         image:
                           description: The name of an image with files located in
-                            directory specified by `spec.auxiliaryImageVolumes.mountPath`
+                            the directory specified by `spec.auxiliaryImageVolumes.mountPath`
                             of the auxiliary image volume referenced by `serverPod.auxiliaryImages.volume`,
                             which defaults to "/auxiliary".
                           type: string
@@ -6913,7 +6913,7 @@ spec:
                             environment variable to reference the value configured
                             in `spec.auxiliaryImageVolumes.mountPath`, which defaults
                             to "/auxiliary". Use '$TARGET_MOUNT_PATH' to refer to
-                            the temporary directory created by the Operator that resolves
+                            the temporary directory created by the operator that resolves
                             to the auxiliary image's internal emptyDir volume.
                           type: string
                     type: array
@@ -9551,7 +9551,7 @@ spec:
                                 type: string
                               image:
                                 description: The name of an image with files located
-                                  in directory specified by `spec.auxiliaryImageVolumes.mountPath`
+                                  in the directory specified by `spec.auxiliaryImageVolumes.mountPath`
                                   of the auxiliary image volume referenced by `serverPod.auxiliaryImages.volume`,
                                   which defaults to "/auxiliary".
                                 type: string
@@ -9575,7 +9575,7 @@ spec:
                                   to reference the value configured in `spec.auxiliaryImageVolumes.mountPath`,
                                   which defaults to "/auxiliary". Use '$TARGET_MOUNT_PATH'
                                   to refer to the temporary directory created by the
-                                  Operator that resolves to the auxiliary image's
+                                  operator that resolves to the auxiliary image's
                                   internal emptyDir volume.
                                 type: string
                         readinessProbe:
