@@ -137,7 +137,7 @@ spec:
   - nobrl
 ```
 
-**Note:** This sample includes `nobrl` in the `mountOptions` to disable byte range file locking on the `azurefile` storage class.  This is necessary as of this writing because the `azurefile` storage class does not support advisory byte range locking.  This approach is documented in the [Azure Kubernetes Service FAQ](https://docs.microsoft.com/en-us/azure/aks/troubleshooting#what-are-the-default-mountoptions-when-using-azure-files).
+**Note:** This sample includes `nobrl` in the `mountOptions` to disable byte range file locking on the `azurefile` storage class.  Currently, this is necessary because the `azurefile` storage class does not support advisory byte range locking.  This approach is documented in the [Azure Kubernetes Service FAQ](https://docs.microsoft.com/en-us/azure/aks/troubleshooting#what-are-the-default-mountoptions-when-using-azure-files).
 
 --------
 
@@ -149,7 +149,7 @@ If it is not possible to use a different file system that fully supports advisor
 
 Here are several different approaches to disable file locking.
 
-- When using the `azurefile` storage class, you can universally disable locking on the entire file system by enabling the `nobrl` mount option, as shown above.
+- When using the `azurefile` storage class, you can universally disable locking on the entire file system by enabling the `nobrl` mount option, as shown previously.
 
    - Note that this affects all software using the same file system. Steps to reduce the consequent corruption risk will vary based on software, and will differ from the steps used for WebLogic.
 
@@ -158,7 +158,7 @@ Here are several different approaches to disable file locking.
    - When using the operator, you can provide this configuration without needing to modify your original configuration using [configuration overrides](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/configoverrides/) for Domain on PV or Domain in Image, or [runtime updates](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/runtime-updates/) for Model in Image
    - Note that this can be a substantial amount of work and error prone as it requires configuration updates for each individual default store, custom file store, and JMS paging store.
 
-- You can disable all file store locks on a particular WebLogic server JVM by _both_ applying patch `32471832` and setting `-Dweblogic.store.file.LockEnabled=false`. When using the operator, you can set command line  values using the `JAVA_OPTIONS` env var in `spec.serverPod.env` domain resource attribute. This will work for any operator domain home source type.
+- You can disable all file store locks on a particular WebLogic server JVM by _both_ applying patch `32471832` and setting `-Dweblogic.store.file.LockEnabled=false`. When using the operator, you can set command-line  values using the `JAVA_OPTIONS` env var in `spec.serverPod.env` domain resource attribute. This will work for any operator domain home source type.
 
 ##### Mitigating corruption risk when locking is disabled
 
@@ -168,7 +168,7 @@ It is important to mitigate the risk of WebLogic data corruption when locking is
 
    - File store service migration is not supported when file locking is disabled because it relies on file locks for safe behavior.
 
-   - Service migration is a WebLogic high availability option that is typically configured to enable data recovery on surviving WebLogic servers in a cluster upon an unexpected WebLogic server failure. It is also used to enable JMS and JTA data recovery from WebLogic servers that are shutdown due to a cluster shrink.
+   - Service migration is a WebLogic high availability option that is typically configured to enable data recovery on surviving WebLogic Servers in a cluster upon an unexpected WebLogic server failure. It is also used to enable JMS and JTA data recovery from WebLogic Servers that are shutdown due to a cluster shrink.
 
 - If at all possible, do not store important data in WebLogic default or custom file stores.
 
