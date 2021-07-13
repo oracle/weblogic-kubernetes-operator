@@ -322,15 +322,15 @@ __Important! Back up your wallet file to a safe location that can be retrieved l
 To reuse the wallet file in subsequent redeployments or to share the domain's OPSS tables between different domains:
 
 1. Load the saved wallet file into a secret with a key named `walletFile` (again, assuming that your domain UID is `sample-domain1` and your namespace is `sample-domain1-ns`):
-
-```shell
+   
+  ```shell
   $ kubectl -n sample-domain1-ns create secret generic sample-domain1-opss-walletfile-secret \
      --from-file=walletFile=./ewallet.p12
-```
-```shell
+  ```
+  ```shell
   $ kubectl -n sample-domain1-ns label secret sample-domain1-opss-walletfile-secret \
      weblogic.domainUID=`sample-domain1`
-```
+  ```
 
 Alternatively, use the sample's wallet utility:
 ```shell
