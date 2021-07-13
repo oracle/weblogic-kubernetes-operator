@@ -99,10 +99,6 @@ chmod +x ./kind
 mv ./kind bin/kind
 kind version
 
-echo 'Info: docker info...'
-docker info
-docker ps
-
 export TWO_CLUSTERS=false
 export RESULT_ROOT=${WORKSPACE}/RESULT_ROOT
 export BRANCH_NAME=${BRANCH}

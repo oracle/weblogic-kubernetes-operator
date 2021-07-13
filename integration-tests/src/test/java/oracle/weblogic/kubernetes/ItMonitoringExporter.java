@@ -1000,9 +1000,6 @@ class ItMonitoringExporter {
                                                 String secretName) throws ApiException {
     //build webhook image
     String imagePullPolicy = "IfNotPresent";
-    /* if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      imagePullPolicy = "Always";
-    } */
     String image = createImageAndPushToRepo(dockerFileDir,baseImageName, namespace, secretName, "");
     logger.info("Installing {0} in namespace {1}", baseImageName, namespace);
     if (baseImageName.equalsIgnoreCase(("webhook"))) {
@@ -1624,9 +1621,6 @@ class ItMonitoringExporter {
         e.printStackTrace();
       }
       String imagePullPolicy = "IfNotPresent";
-      /* if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-        imagePullPolicy = "Always";
-      } */
       domain.getSpec().monitoringExporter(new MonitoringExporterSpecification()
           .image(exporterImage)
           .imagePullPolicy(imagePullPolicy)

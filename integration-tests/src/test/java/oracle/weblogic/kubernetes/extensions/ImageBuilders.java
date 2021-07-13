@@ -257,7 +257,6 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
           }
 
           for (String image : images) {
-            // logger.info("docker push image {0} to {1}", image, DOMAIN_IMAGES_REPO);
             if (KIND_REPO != null) {
               logger.info("kind load docker-image {0} --name kind", image);
             } else {
