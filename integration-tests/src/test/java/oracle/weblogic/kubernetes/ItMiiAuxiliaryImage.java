@@ -362,13 +362,9 @@ public class ItMiiAuxiliaryImage {
     assertDoesNotThrow(() -> createDomainCustomResource(domainCR), "createDomainCustomResource throws Exception");
 
     // check the domain event contains the expected error msg
-    checkEvent(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED, "Warning", timestamp);
-    CoreV1Event event =
-        getEvent(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED, "Warning", timestamp);
     String expectedErrorMsg = "Failed to complete processing domain resource domain1 due to: "
         + "Auxiliary Image: Dir '/errorpath' doesn't exist or is empty. Exiting.";
-    assertTrue(event.getMessage().contains(expectedErrorMsg),
-        String.format("The event message does not contain the expected error msg %s", expectedErrorMsg));
+    verifyDomainEventContainsExpectedErrorMsg(timestamp, expectedErrorMsg);
 
     // delete domain1
     deleteDomainResource(errorpathDomainNamespace, domainUid);
@@ -429,14 +425,10 @@ public class ItMiiAuxiliaryImage {
     assertDoesNotThrow(() -> createDomainCustomResource(domainCR), "createDomainCustomResource throws Exception");
 
     // check the domain event contains the expected error msg
-    checkEvent(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED, "Warning", timestamp);
-    CoreV1Event event =
-        getEvent(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED, "Warning", timestamp);
     String expectedErrorMsg = "The domain resource 'spec.domainHomeSourceType' is 'FromModel'  and "
         + "a WebLogic Deploy Tool (WDT) install is not located at  'spec.configuration.model.wdtInstallHome'  "
         + "which is currently set to '/auxiliary/weblogic-deploy'";
-    assertTrue(event.getMessage().contains(expectedErrorMsg),
-        String.format("The event message does not contain the expected error msg %s", expectedErrorMsg));
+    verifyDomainEventContainsExpectedErrorMsg(timestamp, expectedErrorMsg);
 
     // delete domain1
     deleteDomainResource(errorpathDomainNamespace, domainUid);
@@ -500,13 +492,9 @@ public class ItMiiAuxiliaryImage {
     assertDoesNotThrow(() -> createDomainCustomResource(domainCR), "createDomainCustomResource throws Exception");
 
     // check the domain event contains the expected error msg
-    checkEvent(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED, "Warning", timestamp);
-    CoreV1Event event =
-        getEvent(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED, "Warning", timestamp);
     String expectedErrorMsg =
         "createDomain did not find the required domainInfo section in the model file /auxiliary/models/model.jms2.yaml";
-    assertTrue(event.getMessage().contains(expectedErrorMsg),
-        String.format("The event message does not contain the expected error msg %s", expectedErrorMsg));
+    verifyDomainEventContainsExpectedErrorMsg(timestamp, expectedErrorMsg);
 
     // delete domain1
     deleteDomainResource(errorpathDomainNamespace, domainUid);
@@ -527,7 +515,7 @@ public class ItMiiAuxiliaryImage {
     final String auxiliaryImagePath = "/auxiliary";
 
     createSecretsForDomain(adminSecretName, encryptionSecretName, errorpathDomainNamespace);
-    
+
     // create stage dir for auxiliary image
     Path errorpathAIPath4 = Paths.get(RESULTS_ROOT, "errorpathauxiimage4");
     assertDoesNotThrow(() -> FileUtils.deleteDirectory(errorpathAIPath4.toFile()));
@@ -581,13 +569,9 @@ public class ItMiiAuxiliaryImage {
         "createDomainCustomResource throws Exception");
 
     // check the domain event contains the expected error msg
-    checkEvent(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED, "Warning", timestamp);
-    CoreV1Event event =
-        getEvent(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED, "Warning", timestamp);
     String expectedErrorMsg = "Failed to complete processing domain resource domain1 due to: "
         + "Auxiliary Image: Command 'exit 1' execution failed in container";
-    assertTrue(event.getMessage().contains(expectedErrorMsg),
-        String.format("The event message does not contain the expected error msg %s", expectedErrorMsg));
+    verifyDomainEventContainsExpectedErrorMsg(timestamp, expectedErrorMsg);
 
     // delete domain1
     deleteDomainResource(errorpathDomainNamespace, domainUid);
@@ -704,5 +688,13 @@ public class ItMiiAuxiliaryImage {
     if (!secretExists(encryptionSecretName, domainNamespace)) {
       createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc", "weblogicenc");
     }
+  }
+
+  private void verifyDomainEventContainsExpectedErrorMsg(OffsetDateTime timestamp, String expectedErrorMsg) {
+    checkEvent(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED, "Warning", timestamp);
+    CoreV1Event event =
+        getEvent(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED, "Warning", timestamp);
+    assertTrue(event.getMessage().contains(expectedErrorMsg),
+        String.format("The event message does not contain the expected error msg %s", expectedErrorMsg));
   }
 }
