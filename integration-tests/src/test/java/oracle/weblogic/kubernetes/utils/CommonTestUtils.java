@@ -28,6 +28,7 @@ import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.NetworkingV1beta1HTTPIngressPath;
 import io.kubernetes.client.openapi.models.NetworkingV1beta1HTTPIngressRuleValue;
 import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressBackend;
@@ -192,6 +193,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPersistentVolumeClaim;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -250,6 +252,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEvent;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.getEvent;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
@@ -4376,4 +4379,132 @@ public class CommonTestUtils {
                 condition.getRemainingTimeInMS()))
         .until(domainDoesNotExist(domainUid, DOMAIN_VERSION, domainNS));
   }
+
+  private static Callable<Boolean> podLogContainsString(String namespace, String podName, String expectedString) {
+    return () -> {
+      String podLog;
+      try {
+        podLog = getPodLog(podName, namespace);
+        getLogger().info("pod log for pod {0} in namespace {1} : {2}", podName, namespace, podLog);
+      } catch (ApiException apiEx) {
+        getLogger().severe("got ApiException while getting pod log: ", apiEx);
+        return false;
+      }
+
+      return podLog.contains(expectedString);
+    };
+  }
+
+  /**
+   * Wait and check the pod log contains the expected string.
+   * @param namespace the namespace in which the pod exists
+   * @param podName the pod to get the log
+   * @param expectedString the expected string to check in the pod log
+   */
+  public static  void checkPodLogContainsString(String namespace, String podName, String expectedString) {
+
+    getLogger().info("Wait for string {0} existing in pod {1} in namespace {2}", expectedString, podName, namespace);
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> getLogger().info("Waiting for string {0} existing in pod {1} in namespace {2} "
+                    + "(elapsed time {3}ms, remaining time {4}ms)",
+                expectedString,
+                podName,
+                namespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> podLogContainsString(namespace, podName, expectedString),
+            "podLogContainsString failed with IOException, ApiException or InterruptedException"));
+  }
+
+  /**
+   * Check the domain event contains the expected error msg.
+   *
+   * @param opNamespace namespace in which the operator is running
+   * @param domainNamespace namespace in which the domain exists
+   * @param domainUid UID of the domain
+   * @param reason event to check for Created, Changed, deleted, processing etc
+   * @param type type of event, Normal of Warning
+   * @param timestamp the timestamp after which to see events
+   * @param expectedMsg the expected message in the domain event message
+   */
+  public static void checkDomainEventContainsExpectedMsg(String opNamespace,
+                                                         String domainNamespace,
+                                                         String domainUid,
+                                                         String reason,
+                                                         String type,
+                                                         OffsetDateTime timestamp,
+                                                         String expectedMsg) {
+    checkEvent(opNamespace, domainNamespace, domainUid, reason, type, timestamp);
+    CoreV1Event event =
+        getEvent(opNamespace, domainNamespace, domainUid, reason, type, timestamp);
+    if (event != null && event.getMessage() != null) {
+      assertTrue(event.getMessage().contains(expectedMsg),
+          String.format("The event message does not contain the expected msg %s", expectedMsg));
+    } else {
+      fail("event is null or event message is null");
+    }
+  }
+
+  /**
+   * Check the introspector pod log contains the expected message.
+   * @param domainUid domain uid of the domain
+   * @param domainNamespace namespace of the domain
+   * @param expectedMsg expected message in the introspector pod log
+   */
+  public static void checkIntrospectorPodLogContainsExpectedMsg(String domainUid,
+                                                                String domainNamespace,
+                                                                String expectedMsg) {
+    // verify the introspector pod is created
+    String introspectJobName = getIntrospectJobName(domainUid);
+
+    // check whether the introspector log contains the expected error message
+    getLogger().info("verifying that the introspector log contains the expected error message");
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition ->
+                getLogger().info(
+                    "Checking for the log of introspector pod contains the expected msg {0}. "
+                        + "Elapsed time {1}ms, remaining time {2}ms",
+                    expectedMsg,
+                    condition.getElapsedTimeInMS(),
+                    condition.getRemainingTimeInMS()))
+        .until(() ->
+            introspectorPodLogContainsExpectedErrorMsg(introspectJobName, domainUid, domainNamespace, expectedMsg));
+  }
+
+  private static boolean introspectorPodLogContainsExpectedErrorMsg(String introspectJobName,
+                                                                    String domainUid,
+                                                                    String namespace,
+                                                                    String errormsg) {
+    String introspectPodName;
+    V1Pod introspectorPod;
+
+    String labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+
+    try {
+      introspectorPod = getPod(namespace, labelSelector, introspectJobName);
+    } catch (ApiException apiEx) {
+      getLogger().severe("got ApiException while getting pod:", apiEx);
+      return false;
+    }
+
+    if (introspectorPod != null && introspectorPod.getMetadata() != null) {
+      introspectPodName = introspectorPod.getMetadata().getName();
+    } else {
+      return false;
+    }
+
+    String introspectorLog;
+    try {
+      introspectorLog = getPodLog(introspectPodName, namespace);
+      getLogger().info("introspector log: {0}", introspectorLog);
+    } catch (ApiException apiEx) {
+      getLogger().severe("got ApiException while getting pod log:", apiEx);
+      return false;
+    }
+
+    return introspectorLog.contains(errormsg);
+  }
+
 }

@@ -300,8 +300,7 @@ public class CommonMiiTestUtils {
   }
 
   /**
-   * Create a domain object for a Kubernetes domain custom resource using the basic WLS image and MII auxiliary image
-   * image.
+   * Create a domain object for a Kubernetes domain custom resource using the basic WLS image and auxiliary image.
    *
    * @param domainResourceName name of the domain resource
    * @param domNamespace Kubernetes namespace that the domain is hosted
@@ -315,7 +314,7 @@ public class CommonMiiTestUtils {
    * @param auxiliaryImages list of AuxiliaryImages
    * @return domain object of the domain resource
    */
-  public static Domain createDomainResource(
+  public static Domain createDomainResourceWithAuxiliaryImage(
       String domainResourceName,
       String domNamespace,
       String baseImageName,

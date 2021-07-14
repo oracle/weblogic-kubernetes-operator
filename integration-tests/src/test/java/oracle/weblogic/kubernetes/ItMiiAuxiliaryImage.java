@@ -8,15 +8,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.OffsetDateTime;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 
 import io.kubernetes.client.custom.V1Patch;
-import io.kubernetes.client.openapi.models.CoreV1Event;
 import oracle.weblogic.domain.AuxiliaryImage;
-import oracle.weblogic.domain.AuxiliaryImageVolume;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
@@ -35,6 +32,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
@@ -42,6 +40,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
@@ -54,13 +53,17 @@ import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResource;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkEvent;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkDomainEventContainsExpectedMsg;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkIntrospectorPodLogContainsExpectedMsg;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodLogContainsString;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfig;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfiguration;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
@@ -74,7 +77,6 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileFromPod;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.FileUtils.unzipWDTInstallationFile;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_FAILED;
-import static oracle.weblogic.kubernetes.utils.K8sEvents.getEvent;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -328,6 +330,7 @@ public class ItMiiAuxiliaryImage {
    * Negative Test to create domain with mismatch mount path in auxiliary image and auxiliaryImageVolumes.
    * in auxiliaryImageVolumes, set mountPath to "/errorpath"
    * in auxiliary image, set AUXILIARY_IMAGE_PATH to "/auxiliary"
+   * Check the error msg is in introspector log, domain events and operator log.
    */
   @Test
   @Order(3)
@@ -382,10 +385,18 @@ public class ItMiiAuxiliaryImage {
         domainUid, errorPathAuxiliaryImage1, errorpathDomainNamespace);
     assertDoesNotThrow(() -> createDomainCustomResource(domainCR), "createDomainCustomResource throws Exception");
 
+    // check the introspector log contains the expected error msg
+    String expectedErrorMsg = "Auxiliary Image: Dir '/errorpath' doesn't exist or is empty. Exiting.";
+    checkIntrospectorPodLogContainsExpectedMsg(domainUid, errorpathDomainNamespace, expectedErrorMsg);
+
     // check the domain event contains the expected error msg
-    String expectedErrorMsg = "Failed to complete processing domain resource domain1 due to: "
-        + "Auxiliary Image: Dir '/errorpath' doesn't exist or is empty. Exiting.";
-    verifyDomainEventContainsExpectedErrorMsg(timestamp, expectedErrorMsg);
+    checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
+        "Warning", timestamp, expectedErrorMsg);
+
+    // check the operator log contains the expected error msg
+    String operatorPodName =
+        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+    checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
 
     // delete domain1
     deleteDomainResource(errorpathDomainNamespace, domainUid);
@@ -393,6 +404,7 @@ public class ItMiiAuxiliaryImage {
 
   /**
    * Negative Test to create domain without WDT binary.
+   * Check the error msg in introspector log, domain events and operator log.
    */
   @Test
   @Order(4)
@@ -444,11 +456,20 @@ public class ItMiiAuxiliaryImage {
         domainUid, errorPathAuxiliaryImage2, errorpathDomainNamespace);
     assertDoesNotThrow(() -> createDomainCustomResource(domainCR), "createDomainCustomResource throws Exception");
 
-    // check the domain event contains the expected error msg
+    // check the introspector log contains the expected error msg
     String expectedErrorMsg = "The domain resource 'spec.domainHomeSourceType' is 'FromModel'  and "
         + "a WebLogic Deploy Tool (WDT) install is not located at  'spec.configuration.model.wdtInstallHome'  "
         + "which is currently set to '/auxiliary/weblogic-deploy'";
-    verifyDomainEventContainsExpectedErrorMsg(timestamp, expectedErrorMsg);
+    checkIntrospectorPodLogContainsExpectedMsg(domainUid, errorpathDomainNamespace, expectedErrorMsg);
+
+    // check the domain event contains the expected error msg
+    checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
+        "Warning", timestamp, expectedErrorMsg);
+
+    // check the operator log contains the expected error msg
+    String operatorPodName =
+        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+    checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
 
     // delete domain1
     deleteDomainResource(errorpathDomainNamespace, domainUid);
@@ -456,6 +477,7 @@ public class ItMiiAuxiliaryImage {
 
   /**
    * Negative Test to create domain without domain model file, the auxiliary image contains only sparse JMS config.
+   * Check the error message in introspector log, domain events and operator log
    */
   @Test
   @Order(5)
@@ -513,14 +535,27 @@ public class ItMiiAuxiliaryImage {
     // check the domain event contains the expected error msg
     String expectedErrorMsg =
         "createDomain did not find the required domainInfo section in the model file /auxiliary/models/model.jms2.yaml";
-    verifyDomainEventContainsExpectedErrorMsg(timestamp, expectedErrorMsg);
+    checkIntrospectorPodLogContainsExpectedMsg(domainUid, errorpathDomainNamespace, expectedErrorMsg);
+
+    // check the domain event contains the expected error msg
+    checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
+        "Warning", timestamp, expectedErrorMsg);
+
+    // check the operator log contains the expected error msg
+    String operatorPodName =
+        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+    checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
 
     // delete domain1
     deleteDomainResource(errorpathDomainNamespace, domainUid);
   }
 
   /**
-   * Negative Test to create domain using a custom mount command that's guaranteed to fail, for example:  exit 1.
+   * Negative Test to patch the existing domain using a custom mount command that's guaranteed to fail.
+   * Specify domain.spec.serverPod.auxiliaryImages.command to a custom mount command instead of the default one, which
+   * defaults to "cp -R $AUXILIARY_IMAGE_PATH/* $TARGET_MOUNT_PATH"
+   * Check the error msg in admin server pod log, domain events and operator pod log.
+   * Restore the domain by removing the custom mount command.
    */
   @Test
   @Order(6)
@@ -528,71 +563,64 @@ public class ItMiiAuxiliaryImage {
   public void testErrorPathDomainWithFailCustomMountCommand() {
 
     OffsetDateTime timestamp = now();
-    String errorPathAuxiliaryImage4 = MII_AUXILIARY_IMAGE_NAME + ":errorpathimage4";
 
-    final String auxiliaryImageVolumeName = "auxiliaryImageVolume1";
-    final String auxiliaryImagePath = "/auxiliary";
+    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
+            domainUid, domainNamespace));
+    assertNotNull(domain1, "Got null domain resource ");
+    assertNotNull(domain1.getSpec().getServerPod().getAuxiliaryImages(),
+        domain1 + "/spec/serverPod/auxiliaryImages is null");
 
-    createSecretsForDomain(adminSecretName, encryptionSecretName, errorpathDomainNamespace);
+    List<AuxiliaryImage> auxiliaryImageList = domain1.getSpec().getServerPod().getAuxiliaryImages();
+    assertFalse(auxiliaryImageList.isEmpty(), "AuxiliaryImage list is empty");
 
-    // create stage dir for auxiliary image
-    Path errorpathAIPath4 = Paths.get(RESULTS_ROOT, "errorpathauxiimage4");
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(errorpathAIPath4.toFile()));
-    assertDoesNotThrow(() -> Files.createDirectories(errorpathAIPath4));
+    // patch the first auxiliary image
+    String searchString = "\"/spec/serverPod/auxiliaryImages/0/command\"";
+    StringBuffer patchStr = new StringBuffer("[{");
+    patchStr.append("\"op\": \"add\",")
+        .append(" \"path\": " + searchString + ",")
+        .append(" \"value\":  \"exit 1\"")
+        .append(" }]");
+    logger.info("Auxiliary Image patch string: " +  patchStr);
 
-    // create models dir and copy model for image
-    Path modelsPath4 = Paths.get(errorpathAIPath4.toString(), "models");
-    assertDoesNotThrow(() -> Files.createDirectories(modelsPath4));
-    assertDoesNotThrow(() -> Files.copy(
-        Paths.get(MODEL_DIR, MII_BASIC_WDT_MODEL_FILE),
-        Paths.get(modelsPath4.toString(), MII_BASIC_WDT_MODEL_FILE),
-        StandardCopyOption.REPLACE_EXISTING));
+    V1Patch patch = new V1Patch((patchStr).toString());
 
-    // unzip WDT installation file into work dir
-    unzipWDTInstallationFile(errorpathAIPath4.toString());
-
-    // create image1 with model and wdt installation files
-    createAuxiliaryImage(errorpathAIPath4.toString(),
-        Paths.get(RESOURCE_DIR, "auxiliaryimage", "Dockerfile").toString(), errorPathAuxiliaryImage4);
-
-    // push image to repo for multi node cluster
-    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      logger.info("docker push image {0} to registry {1}", errorPathAuxiliaryImage4, DOMAIN_IMAGES_REPO);
-      assertTrue(dockerPush(errorPathAuxiliaryImage4),
-          String.format("docker push failed for image %s", errorPathAuxiliaryImage4));
-    }
-
-    // create domain custom resource using common mount and images
-    logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
-        domainUid, errorPathAuxiliaryImage4);
-    AuxiliaryImageVolume auxiliaryImageVolume = new AuxiliaryImageVolume()
-        .name(auxiliaryImageVolumeName)
-        .mountPath(auxiliaryImagePath);
-
-    AuxiliaryImage auxiliaryImage = new AuxiliaryImage()
-        .image(errorPathAuxiliaryImage4)
-        .imagePullPolicy("IfNotPresent")
-        .volume(auxiliaryImageVolumeName)
-        .command("exit 1");
-
-    Domain domainCR = createDomainResource(domainUid, errorpathDomainNamespace,
-        WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG, adminSecretName, OCIR_SECRET_NAME,
-        encryptionSecretName, replicaCount, "cluster-1", Arrays.asList(auxiliaryImageVolume),
-        Arrays.asList(auxiliaryImage));
-
-    // create domain and verify it is failed
-    logger.info("Creating domain {0} with auxiliary image {1} in namespace {2}",
-        domainUid, errorPathAuxiliaryImage4, errorpathDomainNamespace);
-    assertDoesNotThrow(() -> createDomainCustomResource(domainCR),
-        "createDomainCustomResource throws Exception");
+    boolean aiPatched = assertDoesNotThrow(() ->
+            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
+        "patchDomainCustomResource(Auxiliary Image)  failed ");
+    assertTrue(aiPatched, "patchDomainCustomResource(auxiliary image) failed");
 
     // check the domain event contains the expected error msg
-    String expectedErrorMsg = "Failed to complete processing domain resource domain1 due to: "
-        + "Auxiliary Image: Command 'exit 1' execution failed in container";
-    verifyDomainEventContainsExpectedErrorMsg(timestamp, expectedErrorMsg);
+    String expectedErrorMsg = "Auxiliary Image: Command 'exit 1' execution failed in container";
+    checkDomainEventContainsExpectedMsg(opNamespace, domainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
+        "Warning", timestamp, expectedErrorMsg);
 
-    // delete domain1
-    deleteDomainResource(errorpathDomainNamespace, domainUid);
+    // check the admin server log contains the expected error msg
+    final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+    checkPodLogContainsString(domainNamespace, adminServerPodName, expectedErrorMsg);
+
+    // check the operator log contains the expected error msg
+    String operatorPodName =
+        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+    checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
+
+    // restore domain1
+    // patch the first auxiliary image to remove the domain.spec.serverPod.auxiliaryImages.command
+    patchStr = new StringBuffer("[{");
+    patchStr.append("\"op\": \"remove\",")
+        .append(" \"path\": " + searchString)
+        .append(" }]");
+    logger.info("Auxiliary Image patch string: " +  patchStr);
+
+    V1Patch patch1 = new V1Patch((patchStr).toString());
+
+    aiPatched = assertDoesNotThrow(() ->
+            patchDomainCustomResource(domainUid, domainNamespace, patch1, "application/json-patch+json"),
+        "patchDomainCustomResource(Auxiliary Image)  failed ");
+    assertTrue(aiPatched, "patchDomainCustomResource(auxiliary image) failed");
+
+    // check the admin server is up and running
+    checkPodReady(adminServerPodName, domainUid, domainNamespace);
   }
 
   private static void patchDomainWithAuxiliaryImageAndVerify(String oldImageName, String newImageName,
@@ -706,13 +734,5 @@ public class ItMiiAuxiliaryImage {
     if (!secretExists(encryptionSecretName, domainNamespace)) {
       createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc", "weblogicenc");
     }
-  }
-
-  private void verifyDomainEventContainsExpectedErrorMsg(OffsetDateTime timestamp, String expectedErrorMsg) {
-    checkEvent(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED, "Warning", timestamp);
-    CoreV1Event event =
-        getEvent(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED, "Warning", timestamp);
-    assertTrue(event.getMessage().contains(expectedErrorMsg),
-        String.format("The event message does not contain the expected error msg %s", expectedErrorMsg));
   }
 }
