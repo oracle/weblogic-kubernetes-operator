@@ -259,7 +259,7 @@ public class PodHelper {
     return new DeletePodStep(serverName, next);
   }
 
-  static List<V1EnvVar> createCopy(List<V1EnvVar> envVars) {
+  public static List<V1EnvVar> createCopy(List<V1EnvVar> envVars) {
     ArrayList<V1EnvVar> copy = new ArrayList<>();
     if (envVars != null) {
       for (V1EnvVar envVar : envVars) {

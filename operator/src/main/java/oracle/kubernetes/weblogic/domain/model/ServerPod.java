@@ -43,6 +43,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static java.util.Collections.emptyList;
+import static oracle.kubernetes.operator.helpers.PodHelper.createCopy;
 
 class ServerPod extends KubernetesResource {
 
@@ -443,7 +444,7 @@ class ServerPod extends KubernetesResource {
       addIfMissing(var);
     }
     for (V1Container c : serverPod1.getInitContainers()) {
-      addInitContainerIfMissing(c);
+      addInitContainerIfMissing(copyContainer(c));
     }
     for (V1Container c : serverPod1.getContainers()) {
       addContainerIfMissing(c);
@@ -490,6 +491,17 @@ class ServerPod extends KubernetesResource {
                 .collect(Collectors.toList());
       }
     }
+  }
+
+  private V1Container copyContainer(V1Container c) {
+    return new V1Container().args(c.getArgs()).command(c.getCommand()).env(createCopy(c.getEnv()))
+            .envFrom(c.getEnvFrom()).image(c.getImage()).imagePullPolicy(c.getImagePullPolicy())
+            .lifecycle(c.getLifecycle()).livenessProbe(c.getLivenessProbe()).name(c.getName()).ports(c.getPorts())
+            .readinessProbe(c.getReadinessProbe()).resources(c.getResources()).securityContext(c.getSecurityContext())
+            .startupProbe(c.getStartupProbe()).stdin(c.getStdin()).stdinOnce(c.getStdinOnce())
+            .terminationMessagePath(c.getTerminationMessagePath())
+            .terminationMessagePolicy(c.getTerminationMessagePolicy()).tty(c.getTty())
+            .volumeDevices(c.getVolumeDevices()).volumeMounts(c.getVolumeMounts()).workingDir(c.getWorkingDir());
   }
 
   private void addIfMissing(V1Volume var) {
