@@ -3710,17 +3710,12 @@ public class CommonTestUtils {
         + " pvName: {3}, pvcName: {4}, domainScriptCM: {5}, namespace: {6}", image,
         pvName, pvcName, domainScriptCM, namespace);
 
-    V1PodTemplateSpec podTemplateSpec = new V1PodTemplateSpec();
-    if (podAnnotationsMap != null) {
-      podTemplateSpec.metadata(new V1ObjectMeta()
-          .annotations(podAnnotationsMap));
-    }
-
     V1PodSpec podSpec = new V1PodSpec()
                     .restartPolicy("Never")
                     .containers(Arrays.asList(jobContainer  // container containing WLST or WDT details
                         .name("create-weblogic-domain-onpv-container")
                         .image(image)
+                        .imagePullPolicy("IfNotPresent")
                         .ports(Arrays.asList(new V1ContainerPort()
                             .containerPort(7001)))
                         .volumeMounts(Arrays.asList(
@@ -3744,9 +3739,19 @@ public class CommonTestUtils {
                     .imagePullSecrets(Arrays.asList(
                         new V1LocalObjectReference()
                             .name(BASE_IMAGES_REPO_SECRET)));
+
+
     if (!OKD) {
       podSpec.initContainers(Arrays.asList(createfixPVCOwnerContainer(pvName, "/shared")));
     }
+
+    V1PodTemplateSpec podTemplateSpec = new V1PodTemplateSpec();
+    if (podAnnotationsMap != null) {
+      podTemplateSpec.metadata(new V1ObjectMeta()
+          .annotations(podAnnotationsMap));
+    }
+    podTemplateSpec.spec(podSpec);
+
     V1Job jobBody = new V1Job()
         .metadata(
             new V1ObjectMeta()
@@ -3754,8 +3759,7 @@ public class CommonTestUtils {
                 .namespace(namespace))
         .spec(new V1JobSpec()
             .backoffLimit(0) // try only once
-            .template(new V1PodTemplateSpec()
-                .spec(podSpec)));
+            .template(podTemplateSpec));
     String jobName = assertDoesNotThrow(()
         -> createNamespacedJob(jobBody), "Failed to create Job");
 
