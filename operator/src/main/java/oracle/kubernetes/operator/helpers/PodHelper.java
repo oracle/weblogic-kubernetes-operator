@@ -259,6 +259,12 @@ public class PodHelper {
     return new DeletePodStep(serverName, next);
   }
 
+  /**
+   * Copy list of V1EnvVar environment variables.
+   *
+   * @param envVars list of environment variables to copy
+   * @return List containing a copy of the original list.
+   */
   public static List<V1EnvVar> createCopy(List<V1EnvVar> envVars) {
     ArrayList<V1EnvVar> copy = new ArrayList<>();
     if (envVars != null) {
