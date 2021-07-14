@@ -92,7 +92,8 @@ public class DbUtils {
    * @throws Exception if any error occurs when setting up RCU database
    */
 
-  public static synchronized void setupDBandRCUschema(String dbImage, String fmwImage, String rcuSchemaPrefix, String dbNamespace,
+  public static synchronized void setupDBandRCUschema(String dbImage, String fmwImage, String rcuSchemaPrefix,
+       String dbNamespace,
       int dbPort, String dbUrl) throws ApiException {
     LoggingFacade logger = getLogger();
     // create pull secrets when running in non Kind Kubernetes cluster
