@@ -3706,8 +3706,8 @@ public class CommonTestUtils {
                                      String namespace, V1Container jobContainer, Map podAnnotationsMap) {
 
     LoggingFacade logger = getLogger();
-    logger.info("Running Kubernetes job to create domain for image: {1}: {2} "
-        + " pvName: {3}, pvcName: {4}, domainScriptCM: {5}, namespace: {6}", image,
+    logger.info("Running Kubernetes job to create domain for image: {1}"
+        + " pvName: {2}, pvcName: {3}, domainScriptCM: {4}, namespace: {5}", image,
         pvName, pvcName, domainScriptCM, namespace);
 
     V1PodSpec podSpec = new V1PodSpec()
