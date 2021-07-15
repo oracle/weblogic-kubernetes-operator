@@ -1222,6 +1222,24 @@ public class ItIntrospectVersion {
     // verify that introspectVersion is changed 
     assertTrue(ivAfter.equals("2"), "introspectVersion must change to 2");
 
+    // use introspectDomain.sh to initiate introspection
+    // with an explicit introspection with -i parameter
+    logger.info("Initiate introspection with explicit numeric version");
+    String extraParam3 = " -i  101";
+    assertDoesNotThrow(() -> executeLifecycleScript(INTROSPECT_DOMAIN_SCRIPT, extraParam3),
+        String.format("Failed to run %s", INTROSPECT_DOMAIN_SCRIPT));
+
+    //verify the introspector pod is created and runs
+    introspectPodNameBase = getIntrospectJobName(domainUid);
+    checkPodExists(introspectPodNameBase, domainUid, introDomainNamespace);
+
+    // get introspectVersion after running introspectDomain.sh
+    ivAfter = assertDoesNotThrow(() -> getCurrentIntrospectVersion(domainUid, introDomainNamespace));
+    logger.info("introspectVersion after running the script {0}",ivAfter);
+
+    // verify that introspectVersion is changed 
+    assertTrue(ivAfter.equals("101"), "introspectVersion must change to 101");
+
     //verify the pods are not restarted in any introspectVersion update
     verifyPodsNotRolled(introDomainNamespace, pods);
   }
