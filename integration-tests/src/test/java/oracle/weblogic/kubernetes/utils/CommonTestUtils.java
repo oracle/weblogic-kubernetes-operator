@@ -28,6 +28,7 @@ import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.NetworkingV1beta1HTTPIngressPath;
 import io.kubernetes.client.openapi.models.NetworkingV1beta1HTTPIngressRuleValue;
 import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressBackend;
@@ -185,12 +186,14 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.createService;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPersistentVolumeClaim;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -220,6 +223,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.checkHelmRele
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsNotValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.credentialsValid;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusReasonMatches;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isApacheReady;
@@ -247,6 +251,8 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceDoesNo
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEvent;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.getEvent;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
@@ -3867,6 +3873,27 @@ public class CommonTestUtils {
   }
 
   /**
+   * Get the introspector pod name.
+   * @param domainUid domain uid of the domain
+   * @param domainNamespace domain namespace in which introspector runs
+   * @return the introspector pod name
+   * @throws ApiException if Kubernetes API calls fail
+   */
+  public static String getIntrospectorPodName(String domainUid, String domainNamespace) throws ApiException {
+    checkPodExists(getIntrospectJobName(domainUid), domainUid, domainNamespace);
+
+    String labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+
+    V1Pod introspectorPod = getPod(domainNamespace, labelSelector, getIntrospectJobName(domainUid));
+
+    if (introspectorPod != null && introspectorPod.getMetadata() != null) {
+      return introspectorPod.getMetadata().getName();
+    } else {
+      return "";
+    }
+  }
+
+  /**
    * Set the inter-pod anti-affinity  for the domain custom resource
    * so that server instances spread over the available Nodes.
    *
@@ -4351,5 +4378,117 @@ public class CommonTestUtils {
       extraArgs.append(" --build-arg MAVEN_OPTS=\" " + mvnArgs.toString() + "\"");
     }
     return extraArgs.toString();
+  }
+
+  /**
+   * Wait until a given event is logged by the operator.
+   *
+   * @param opNamespace namespace in which the operator is running
+   * @param domainNamespace namespace in which the domain exists
+   * @param domainUid UID of the domain
+   * @param reason event to check for Created, Changed, deleted, processing etc
+   * @param type type of event, Normal of Warning
+   * @param timestamp the timestamp after which to see events
+   */
+  public static void checkEvent(
+      String opNamespace, String domainNamespace, String domainUid,
+      String reason, String type, OffsetDateTime timestamp) {
+    withStandardRetryPolicy
+        .conditionEvaluationListener(condition ->
+            getLogger().info("Waiting for domain event {0} to be logged in namespace {1} "
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                reason,
+                domainNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid, reason, type, timestamp));
+  }
+
+  /**
+   * Delete a domain in the specified namespace.
+   * @param domainNS the namespace in which the domain exists
+   * @param domainUid domain uid
+   */
+  public static void deleteDomainResource(String domainNS, String domainUid) {
+    //clean up domain resources in namespace and set namespace to label , managed by operator
+    getLogger().info("deleting domain custom resource {0}", domainUid);
+    assertTrue(deleteDomainCustomResource(domainUid, domainNS));
+
+    // wait until domain was deleted
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> getLogger().info("Waiting for domain {0} to be deleted in namespace {1} "
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                domainUid,
+                domainNS,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(domainDoesNotExist(domainUid, DOMAIN_VERSION, domainNS));
+  }
+
+  private static Callable<Boolean> podLogContainsString(String namespace, String podName, String expectedString) {
+    return () -> {
+      String podLog;
+      try {
+        podLog = getPodLog(podName, namespace);
+        getLogger().info("pod log for pod {0} in namespace {1} : {2}", podName, namespace, podLog);
+      } catch (ApiException apiEx) {
+        getLogger().severe("got ApiException while getting pod log: ", apiEx);
+        return false;
+      }
+
+      return podLog.contains(expectedString);
+    };
+  }
+
+  /**
+   * Wait and check the pod log contains the expected string.
+   * @param namespace the namespace in which the pod exists
+   * @param podName the pod to get the log
+   * @param expectedString the expected string to check in the pod log
+   */
+  public static  void checkPodLogContainsString(String namespace, String podName, String expectedString) {
+
+    getLogger().info("Wait for string {0} existing in pod {1} in namespace {2}", expectedString, podName, namespace);
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> getLogger().info("Waiting for string {0} existing in pod {1} in namespace {2} "
+                    + "(elapsed time {3}ms, remaining time {4}ms)",
+                expectedString,
+                podName,
+                namespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> podLogContainsString(namespace, podName, expectedString),
+            "podLogContainsString failed with IOException, ApiException or InterruptedException"));
+  }
+
+  /**
+   * Check the domain event contains the expected error msg.
+   *
+   * @param opNamespace namespace in which the operator is running
+   * @param domainNamespace namespace in which the domain exists
+   * @param domainUid UID of the domain
+   * @param reason event to check for Created, Changed, deleted, processing etc
+   * @param type type of event, Normal of Warning
+   * @param timestamp the timestamp after which to see events
+   * @param expectedMsg the expected message in the domain event message
+   */
+  public static void checkDomainEventContainsExpectedMsg(String opNamespace,
+                                                         String domainNamespace,
+                                                         String domainUid,
+                                                         String reason,
+                                                         String type,
+                                                         OffsetDateTime timestamp,
+                                                         String expectedMsg) {
+    checkEvent(opNamespace, domainNamespace, domainUid, reason, type, timestamp);
+    CoreV1Event event =
+        getEvent(opNamespace, domainNamespace, domainUid, reason, type, timestamp);
+    if (event != null && event.getMessage() != null) {
+      assertTrue(event.getMessage().contains(expectedMsg),
+          String.format("The event message does not contain the expected msg %s", expectedMsg));
+    } else {
+      fail("event is null or event message is null");
+    }
   }
 }
