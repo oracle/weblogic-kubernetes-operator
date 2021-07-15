@@ -204,7 +204,7 @@ public class ItMiiSampleHelper {
    */
   public void callInitialUseCase() {
     String useAuxiliaryImage = (getImageType().equalsIgnoreCase(ImageType.AUX.toString()))  ? "true" : "false";
-    String imageName = (getImageType().equalsIgnoreCase(DomainType.WLS.toString()))
+    String imageName = (getDomainType().equalsIgnoreCase(DomainType.WLS.toString()))
         ? MII_SAMPLE_WLS_IMAGE_NAME_V1 : MII_SAMPLE_JRF_IMAGE_NAME_V1;
     previousTestSuccessful = true;
     envMap.put("DO_AI", useAuxiliaryImage);
@@ -219,7 +219,6 @@ public class ItMiiSampleHelper {
           ? KIND_REPO + FMWINFRA_IMAGE_NAME.substring(BASE_IMAGES_REPO.length() + 1) : FMWINFRA_IMAGE_NAME);
       String dbNamespace = envMap.get("dbNamespace");
 
-      //envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_JRF_IMAGE_NAME_V1);
       envMap.put("DB_IMAGE_NAME", dbImageName);
       envMap.put("DB_IMAGE_TAG", DB_IMAGE_TAG);
       envMap.put("DB_NODE_PORT", "none");
@@ -229,7 +228,6 @@ public class ItMiiSampleHelper {
       envMap.put("DB_NAMESPACE", dbNamespace);
       envMap.put("DB_IMAGE_PULL_SECRET", BASE_IMAGES_REPO_SECRET); //ocr/ocir secret
       envMap.put("INTROSPECTOR_DEADLINE_SECONDS", "600"); // introspector needs more time for JRF
-      //envMap.put("DO_AI", useAuxiliaryImage);
 
       // run JRF use cases irrespective of WLS use cases fail/pass
       previousTestSuccessful = true;
@@ -275,7 +273,7 @@ public class ItMiiSampleHelper {
    */
   public void callUpdate3UseCase() {
     String useAuxiliaryImage = (getImageType().equalsIgnoreCase(ImageType.AUX.toString()))  ? "true" : "false";
-    String imageName = (getImageType().equalsIgnoreCase(DomainType.WLS.toString()))
+    String imageName = (getDomainType().equalsIgnoreCase(DomainType.WLS.toString()))
         ? MII_SAMPLE_WLS_IMAGE_NAME_V2 : MII_SAMPLE_JRF_IMAGE_NAME_V2;
     envMap.put("MODEL_IMAGE_NAME", imageName);
     envMap.put("DO_AI", useAuxiliaryImage);
