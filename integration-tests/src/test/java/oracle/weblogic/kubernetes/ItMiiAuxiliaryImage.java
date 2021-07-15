@@ -32,7 +32,6 @@ import org.junit.jupiter.api.TestMethodOrder;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
@@ -61,7 +60,6 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkDomainEventContainsExpectedMsg;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkIntrospectorPodLogContainsExpectedMsg;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodLogContainsString;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfig;
@@ -71,6 +69,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSec
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getIntrospectorPodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodsWithTimeStamps;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileFromPod;
@@ -330,7 +329,7 @@ public class ItMiiAuxiliaryImage {
    * Negative Test to create domain with mismatch mount path in auxiliary image and auxiliaryImageVolumes.
    * in auxiliaryImageVolumes, set mountPath to "/errorpath"
    * in auxiliary image, set AUXILIARY_IMAGE_PATH to "/auxiliary"
-   * Check the error msg is in introspector log, domain events and operator log.
+   * Check the error msg is in introspector pod log, domain events and operator pod log.
    */
   @Test
   @Order(3)
@@ -385,15 +384,16 @@ public class ItMiiAuxiliaryImage {
         domainUid, errorPathAuxiliaryImage1, errorpathDomainNamespace);
     assertDoesNotThrow(() -> createDomainCustomResource(domainCR), "createDomainCustomResource throws Exception");
 
-    // check the introspector log contains the expected error msg
+    // check the introspector pod log contains the expected error msg
     String expectedErrorMsg = "Auxiliary Image: Dir '/errorpath' doesn't exist or is empty. Exiting.";
-    checkIntrospectorPodLogContainsExpectedMsg(domainUid, errorpathDomainNamespace, expectedErrorMsg);
+    String introspectorPodName = assertDoesNotThrow(() -> getIntrospectorPodName(domainUid, errorpathDomainNamespace));
+    checkPodLogContainsString(errorpathDomainNamespace, introspectorPodName, expectedErrorMsg);
 
     // check the domain event contains the expected error msg
     checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
         "Warning", timestamp, expectedErrorMsg);
 
-    // check the operator log contains the expected error msg
+    // check the operator pod log contains the expected error msg
     String operatorPodName =
         assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
     checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
@@ -404,7 +404,7 @@ public class ItMiiAuxiliaryImage {
 
   /**
    * Negative Test to create domain without WDT binary.
-   * Check the error msg in introspector log, domain events and operator log.
+   * Check the error msg is in introspector pod log, domain events and operator pod log.
    */
   @Test
   @Order(4)
@@ -456,17 +456,18 @@ public class ItMiiAuxiliaryImage {
         domainUid, errorPathAuxiliaryImage2, errorpathDomainNamespace);
     assertDoesNotThrow(() -> createDomainCustomResource(domainCR), "createDomainCustomResource throws Exception");
 
-    // check the introspector log contains the expected error msg
+    // check the introspector pod log contains the expected error msg
     String expectedErrorMsg = "The domain resource 'spec.domainHomeSourceType' is 'FromModel'  and "
         + "a WebLogic Deploy Tool (WDT) install is not located at  'spec.configuration.model.wdtInstallHome'  "
         + "which is currently set to '/auxiliary/weblogic-deploy'";
-    checkIntrospectorPodLogContainsExpectedMsg(domainUid, errorpathDomainNamespace, expectedErrorMsg);
+    String introspectorPodName = assertDoesNotThrow(() -> getIntrospectorPodName(domainUid, errorpathDomainNamespace));
+    checkPodLogContainsString(errorpathDomainNamespace, introspectorPodName, expectedErrorMsg);
 
     // check the domain event contains the expected error msg
     checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
         "Warning", timestamp, expectedErrorMsg);
 
-    // check the operator log contains the expected error msg
+    // check the operator pod log contains the expected error msg
     String operatorPodName =
         assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
     checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
@@ -477,7 +478,7 @@ public class ItMiiAuxiliaryImage {
 
   /**
    * Negative Test to create domain without domain model file, the auxiliary image contains only sparse JMS config.
-   * Check the error message in introspector log, domain events and operator log
+   * Check the error message is in introspector pod log, domain events and operator pod log
    */
   @Test
   @Order(5)
@@ -532,16 +533,17 @@ public class ItMiiAuxiliaryImage {
         domainUid, errorPathAuxiliaryImage3, errorpathDomainNamespace);
     assertDoesNotThrow(() -> createDomainCustomResource(domainCR), "createDomainCustomResource throws Exception");
 
-    // check the domain event contains the expected error msg
+    // check the introspector pod log contains the expected error msg
     String expectedErrorMsg =
         "createDomain did not find the required domainInfo section in the model file /auxiliary/models/model.jms2.yaml";
-    checkIntrospectorPodLogContainsExpectedMsg(domainUid, errorpathDomainNamespace, expectedErrorMsg);
+    String introspectorPodName = assertDoesNotThrow(() -> getIntrospectorPodName(domainUid, errorpathDomainNamespace));
+    checkPodLogContainsString(errorpathDomainNamespace, introspectorPodName, expectedErrorMsg);
 
     // check the domain event contains the expected error msg
     checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
         "Warning", timestamp, expectedErrorMsg);
 
-    // check the operator log contains the expected error msg
+    // check the operator pod log contains the expected error msg
     String operatorPodName =
         assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
     checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
@@ -554,12 +556,12 @@ public class ItMiiAuxiliaryImage {
    * Negative Test to patch the existing domain using a custom mount command that's guaranteed to fail.
    * Specify domain.spec.serverPod.auxiliaryImages.command to a custom mount command instead of the default one, which
    * defaults to "cp -R $AUXILIARY_IMAGE_PATH/* $TARGET_MOUNT_PATH"
-   * Check the error msg in admin server pod log, domain events and operator pod log.
+   * Check the error msg in introspector pod log, domain events and operator pod log.
    * Restore the domain by removing the custom mount command.
    */
   @Test
   @Order(6)
-  @DisplayName("Negative Test to create domain using a custom mount command that's guaranteed to fail")
+  @DisplayName("Negative Test to patch domain using a custom mount command that's guaranteed to fail")
   public void testErrorPathDomainWithFailCustomMountCommand() {
 
     OffsetDateTime timestamp = now();
@@ -590,16 +592,16 @@ public class ItMiiAuxiliaryImage {
         "patchDomainCustomResource(Auxiliary Image)  failed ");
     assertTrue(aiPatched, "patchDomainCustomResource(auxiliary image) failed");
 
-    // check the domain event contains the expected error msg
+    // check the introspector pod log contains the expected error msg
     String expectedErrorMsg = "Auxiliary Image: Command 'exit 1' execution failed in container";
+    String introspectorPodName = assertDoesNotThrow(() -> getIntrospectorPodName(domainUid, domainNamespace));
+    checkPodLogContainsString(domainNamespace, introspectorPodName, expectedErrorMsg);
+
+    // check the domain event contains the expected error msg
     checkDomainEventContainsExpectedMsg(opNamespace, domainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
         "Warning", timestamp, expectedErrorMsg);
 
-    // check the admin server log contains the expected error msg
-    final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
-    checkPodLogContainsString(domainNamespace, adminServerPodName, expectedErrorMsg);
-
-    // check the operator log contains the expected error msg
+    // check the operator pod log contains the expected error msg
     String operatorPodName =
         assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
     checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);

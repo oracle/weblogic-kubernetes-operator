@@ -3848,6 +3848,27 @@ public class CommonTestUtils {
   }
 
   /**
+   * Get the introspector pod name.
+   * @param domainUid domain uid of the domain
+   * @param domainNamespace domain namespace in which introspector runs
+   * @return the introspector pod name
+   * @throws ApiException if Kubernetes API calls fail
+   */
+  public static String getIntrospectorPodName(String domainUid, String domainNamespace) throws ApiException {
+    checkPodExists(getIntrospectJobName(domainUid), domainUid, domainNamespace);
+
+    String labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+
+    V1Pod introspectorPod = getPod(domainNamespace, labelSelector, getIntrospectJobName(domainUid));
+
+    if (introspectorPod != null && introspectorPod.getMetadata() != null) {
+      return introspectorPod.getMetadata().getName();
+    } else {
+      return "";
+    }
+  }
+
+  /**
    * Set the inter-pod anti-affinity  for the domain custom resource
    * so that server instances spread over the available Nodes.
    *
@@ -4445,66 +4466,4 @@ public class CommonTestUtils {
       fail("event is null or event message is null");
     }
   }
-
-  /**
-   * Check the introspector pod log contains the expected message.
-   * @param domainUid domain uid of the domain
-   * @param domainNamespace namespace of the domain
-   * @param expectedMsg expected message in the introspector pod log
-   */
-  public static void checkIntrospectorPodLogContainsExpectedMsg(String domainUid,
-                                                                String domainNamespace,
-                                                                String expectedMsg) {
-    // verify the introspector pod is created
-    String introspectJobName = getIntrospectJobName(domainUid);
-
-    // check whether the introspector log contains the expected error message
-    getLogger().info("verifying that the introspector log contains the expected error message");
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition ->
-                getLogger().info(
-                    "Checking for the log of introspector pod contains the expected msg {0}. "
-                        + "Elapsed time {1}ms, remaining time {2}ms",
-                    expectedMsg,
-                    condition.getElapsedTimeInMS(),
-                    condition.getRemainingTimeInMS()))
-        .until(() ->
-            introspectorPodLogContainsExpectedErrorMsg(introspectJobName, domainUid, domainNamespace, expectedMsg));
-  }
-
-  private static boolean introspectorPodLogContainsExpectedErrorMsg(String introspectJobName,
-                                                                    String domainUid,
-                                                                    String namespace,
-                                                                    String errormsg) {
-    String introspectPodName;
-    V1Pod introspectorPod;
-
-    String labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
-
-    try {
-      introspectorPod = getPod(namespace, labelSelector, introspectJobName);
-    } catch (ApiException apiEx) {
-      getLogger().severe("got ApiException while getting pod:", apiEx);
-      return false;
-    }
-
-    if (introspectorPod != null && introspectorPod.getMetadata() != null) {
-      introspectPodName = introspectorPod.getMetadata().getName();
-    } else {
-      return false;
-    }
-
-    String introspectorLog;
-    try {
-      introspectorLog = getPodLog(introspectPodName, namespace);
-      getLogger().info("introspector log: {0}", introspectorLog);
-    } catch (ApiException apiEx) {
-      getLogger().severe("got ApiException while getting pod log:", apiEx);
-      return false;
-    }
-
-    return introspectorLog.contains(errormsg);
-  }
-
 }
