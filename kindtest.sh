@@ -289,6 +289,10 @@ if [ "$skip_tests" = true ] ; then
   exit 0
 fi
 
+echo 'docker info'
+docker info
+docker ps
+
 echo 'Clean up result root...'
 rm -rf "${RESULT_ROOT:?}/*"
 
