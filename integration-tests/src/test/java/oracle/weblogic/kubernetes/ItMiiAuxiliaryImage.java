@@ -9,6 +9,7 @@ import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.time.OffsetDateTime;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -60,8 +61,10 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkDomainEventContainsExpectedMsg;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodLogContainsString;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfig;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfiguration;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
@@ -70,6 +73,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithU
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getIntrospectorPodName;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodsWithTimeStamps;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileFromPod;
@@ -398,6 +402,14 @@ public class ItMiiAuxiliaryImage {
         assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
     checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
 
+    // check there are no admin server and managed server pods and services created
+    checkPodDoesNotExist(adminServerPodName, domainUid, errorpathDomainNamespace);
+    checkServiceDoesNotExist(adminServerPodName, errorpathDomainNamespace);
+    for (int i = 1; i <= replicaCount; i++) {
+      checkPodDoesNotExist(managedServerPrefix + i, domainUid, errorpathDomainNamespace);
+      checkServiceDoesNotExist(managedServerPrefix + i, errorpathDomainNamespace);
+    }
+
     // delete domain1
     deleteDomainResource(errorpathDomainNamespace, domainUid);
   }
@@ -471,6 +483,14 @@ public class ItMiiAuxiliaryImage {
     String operatorPodName =
         assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
     checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
+
+    // check there are no admin server and managed server pods and services created
+    checkPodDoesNotExist(adminServerPodName, domainUid, errorpathDomainNamespace);
+    checkServiceDoesNotExist(adminServerPodName, errorpathDomainNamespace);
+    for (int i = 1; i <= replicaCount; i++) {
+      checkPodDoesNotExist(managedServerPrefix + i, domainUid, errorpathDomainNamespace);
+      checkServiceDoesNotExist(managedServerPrefix + i, errorpathDomainNamespace);
+    }
 
     // delete domain1
     deleteDomainResource(errorpathDomainNamespace, domainUid);
@@ -548,6 +568,14 @@ public class ItMiiAuxiliaryImage {
         assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
     checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
 
+    // check there are no admin server and managed server pods and services created
+    checkPodDoesNotExist(adminServerPodName, domainUid, errorpathDomainNamespace);
+    checkServiceDoesNotExist(adminServerPodName, errorpathDomainNamespace);
+    for (int i = 1; i <= replicaCount; i++) {
+      checkPodDoesNotExist(managedServerPrefix + i, domainUid, errorpathDomainNamespace);
+      checkServiceDoesNotExist(managedServerPrefix + i, errorpathDomainNamespace);
+    }
+
     // delete domain1
     deleteDomainResource(errorpathDomainNamespace, domainUid);
   }
@@ -565,6 +593,14 @@ public class ItMiiAuxiliaryImage {
   public void testErrorPathDomainWithFailCustomMountCommand() {
 
     OffsetDateTime timestamp = now();
+
+    // get the creation time of the admin server pod before patching
+    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
+    pods.put(adminServerPodName, getPodCreationTime(domainNamespace, adminServerPodName));
+    // get the creation time of the managed server pods before patching
+    for (int i = 1; i <= replicaCount; i++) {
+      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
+    }
 
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
@@ -605,6 +641,18 @@ public class ItMiiAuxiliaryImage {
     String operatorPodName =
         assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
     checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
+
+    // verify the domain is not rolled
+    // TODO: enable this check once https://jira.oraclecorp.com/jira/browse/OWLS-90971 is fixed
+    /*
+    logger.info("sleep 2 minutes to make sure the domain is not restarted");
+    try {
+      Thread.sleep(120000);
+    } catch (InterruptedException ie) {
+      // ignore
+    }
+    verifyPodsNotRolled(domainNamespace, pods);
+    */
 
     // restore domain1
     // patch the first auxiliary image to remove the domain.spec.serverPod.auxiliaryImages.command
