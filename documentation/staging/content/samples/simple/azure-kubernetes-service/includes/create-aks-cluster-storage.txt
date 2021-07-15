@@ -137,6 +137,53 @@ spec:
   - nobrl
 ```
 
+**Note:** This sample includes `nobrl` in the `mountOptions` to disable byte range file locking on the `azurefile` storage class.  Currently, this is necessary because the `azurefile` storage class does not support advisory byte range locking.  This approach is documented in the [Azure Kubernetes Service FAQ](https://docs.microsoft.com/en-us/azure/aks/troubleshooting#what-are-the-default-mountoptions-when-using-azure-files).
+
+--------
+
+##### Additional important file locking information
+
+Some action must be taken to deal with the presence or absence of advisory byte range locking when running WebLogic on Kubernetes.  Failure to address this issue will cause WebLogic file store locking issues during domain lifecycle management.  When this happens, WebLogic will not be able to start.
+
+If it is not possible to use a different file system that fully supports advisory byte range locking, such as [NFS file shares in Azure Files](https://docs.microsoft.com/en-us/azure/storage/files/files-nfs-protocol#regional-availability), be aware that disabling locking risks data corruption and additional steps are required to mitigate this risk, as shown in the next section.
+
+Here are several different approaches to disable file locking.
+
+- When using the `azurefile` storage class, you can universally disable locking on the entire file system by enabling the `nobrl` mount option, as shown previously.
+
+   - Note that this affects all software using the same file system. Steps to reduce the consequent corruption risk will vary based on software, and will differ from the steps used for WebLogic.
+
+- You can disable file locking in the WebLogic configuration for each default file store, custom file store, and JMS paging store by following the steps outlined in [Handling NFS Locking Errors](https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/perfm/storetune.html#GUID-A1126893-C60F-4C39-BFCF-0D0F2436478D).
+
+   - When using the operator, you can provide this configuration without needing to modify your original configuration using [configuration overrides](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/configoverrides/) for Domain on PV or Domain in Image, or [runtime updates](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/runtime-updates/) for Model in Image
+   - Note that this can be a substantial amount of work and error prone as it requires configuration updates for each individual default store, custom file store, and JMS paging store.
+
+- You can disable all file store locks on a particular WebLogic server JVM by _both_ applying patch `32471832` and setting `-Dweblogic.store.file.LockEnabled=false`. When using the operator, you can set command-line  values using the `JAVA_OPTIONS` env var in `spec.serverPod.env` domain resource attribute. This will work for any operator domain home source type.
+
+##### Mitigating corruption risk when locking is disabled
+
+It is important to mitigate the risk of WebLogic data corruption when locking is disabled.
+
+- Do not configure [service migration](https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/clust/service_migration.html#GUID-AEECC92D-88DA-4E07-8C42-A24DBC1C7076) for WebLogic JTA default file stores or custom file stores.
+
+   - File store service migration is not supported when file locking is disabled because it relies on file locks for safe behavior.
+
+   - Service migration is a WebLogic high availability option that is typically configured to enable data recovery on surviving WebLogic Servers in a cluster upon an unexpected WebLogic server failure. It is also used to enable JMS and JTA data recovery from WebLogic Servers that are shutdown due to a cluster shrink.
+
+- If at all possible, do not store important data in WebLogic default or custom file stores.
+
+- Configure WebLogic JMS, JTA, and EJB Timers to use database storage instead of file storage.
+
+   - For example, use the 'TLOG-in-DB' feature for JTA and custom database stores instead of file stores for JMS.
+
+   - This will require a change to your original WebLogic configuration. It is not practical to use operator configuration overrides or runtime updates for this purpose because the changes are too extensive.
+
+- Note that it is fine to configure service migration for database stores even when file locking is disabled.
+
+- Take additional steps in your CI/CD processes to guard against the user errors that file locks normally help prevent.  In particular, ensure you have procedures in place to prevent administrators or testers from mistakenly starting a duplicate WebLogic domain in the same shared file system.
+
+--------
+
 We have provided another configuration file `pvc.yaml` for the `PersistentVolumeClaim`.  Both `pv.yaml` and `pvc.yaml` have exactly the same content for `storageClassName` attributes. This is required. We set the same value to the `metadata` property in both files. The following content is an example that uses the persistent volume claim name `wls-azurefile`.
 
 ```yaml

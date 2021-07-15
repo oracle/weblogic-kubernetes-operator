@@ -24,6 +24,8 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import oracle.weblogic.kubernetes.actions.impl.Operator;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
@@ -113,6 +115,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
   @Override
   public void beforeAll(ExtensionContext context) {
     LoggingFacade logger = getLogger();
+
     /* The pattern is that we have initialization code that we want to run once to completion
      * before any tests are executed. This method will be called before every test method. Therefore, the
      * very first time this method is called we will do the initialization. Since we assume that the tests
@@ -254,15 +257,29 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
           }
 
           for (String image : images) {
-            logger.info("docker push image {0} to {1}", image, DOMAIN_IMAGES_REPO);
+            if (KIND_REPO != null) {
+              logger.info("kind load docker-image {0} --name kind", image);
+            } else {
+              logger.info("docker push image {0} to {1}", image, DOMAIN_IMAGES_REPO);
+            }
             withStandardRetryPolicy
                 .conditionEvaluationListener(
-                    condition -> logger.info("Waiting for docker push to OCIR for image {0} to be successful"
+                    condition -> logger.info("Waiting for docker push to OCIR/kind for image {0} to be successful"
                             + "(elapsed time {1} ms, remaining time {2} ms)",
                         image,
                         condition.getElapsedTimeInMS(),
                         condition.getRemainingTimeInMS()))
                 .until(() -> dockerPush(image));
+          }
+
+          // list images for Kind cluster
+          if (KIND_REPO != null) {
+            new Command()
+                .withParams(new CommandParams()
+                    .command("docker exec kind-worker crictl images")
+                    .verbose(true)
+                    .saveResults(true))
+                .execute();
           }
         }
 
