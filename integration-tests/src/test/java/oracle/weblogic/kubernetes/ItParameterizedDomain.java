@@ -119,6 +119,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePort
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterRoleBindingExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterRoleExists;
 import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchDomainResource;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodLogContainsString;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
@@ -306,7 +307,7 @@ class ItParameterizedDomain {
     createMiiDomainNegative("miidomainnegative", miiDomainNegativeNamespace);
     String operatorPodName =
         assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
-    waitForPodLogContainsString(opNamespace, operatorPodName,
+    checkPodLogContainsString(opNamespace, operatorPodName,
         "Domain miidomainnegative is not valid: RuntimeEncryption secret '" + encryptionSecretName
         + "' not found in namespace '" + miiDomainNegativeNamespace + "'");
   }
@@ -1543,31 +1544,6 @@ class ItParameterizedDomain {
                 condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(() -> fileExistsInPod(namespace, podName, fileName),
             "fileExistsInPod failed with IOException, ApiException or InterruptedException"));
-  }
-
-  private Callable<Boolean> podLogContainsString(String namespace, String podName, String expectedString) {
-    return () -> {
-      logger.info("pod name: {0}", podName);
-      String podLog = getPodLog(podName, namespace);
-      logger.info("pod log: {0}", podLog);
-      return podLog.contains(expectedString);
-    };
-  }
-
-  private void waitForPodLogContainsString(String namespace, String podName, String expectedString) {
-
-    logger.info("Wait for string {0} existing in pod {1} in namespace {2}", expectedString, podName, namespace);
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for string {0} existing in pod {1} in namespace {2} "
-                    + "(elapsed time {3}ms, remaining time {4}ms)",
-                expectedString,
-                podName,
-                namespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> podLogContainsString(namespace, podName, expectedString),
-            "podLogContainsString failed with IOException, ApiException or InterruptedException"));
   }
 
   /**
