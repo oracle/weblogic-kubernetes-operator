@@ -464,6 +464,9 @@ if [ "$DO_UPDATE2" = "true" ]; then
   doCommand    "\$MIIWRAPPERDIR/stage-and-create-ingresses.sh"
   doCommand -c "\$WORKDIR/utils/create-configmap.sh -c \${DOMAIN_UID}-wdt-config-map -f \${WORKDIR}/model-configmaps/datasource -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
 
+  doCommand -c "kubectl -n \$DOMAIN_NAMESPACE delete domain \$DOMAIN_UID --ignore-not-found"
+  doPodWait 0
+
   doCommand -c "kubectl apply -f \$WORKDIR/\$DOMAIN_RESOURCE_FILENAME"
   doPodWait 3
 
