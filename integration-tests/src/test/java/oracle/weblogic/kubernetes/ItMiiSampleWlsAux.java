@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -12,9 +12,8 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.ExecResult;
+import oracle.weblogic.kubernetes.utils.ItMiiSampleHelper;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -23,53 +22,39 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
-import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.TestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Tests to verify MII sample.
+ * Tests to verify MII sample with WLS domain using auxiliary image.
  */
-@DisplayName("Test model in image sample")
+@DisplayName("Test model in image sample with WLS domain using auxiliary image")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @IntegrationTest
-public class ItMiiWlsAuxiliaryImageSample {
+public class ItMiiSampleWlsAux {
 
   private static final String MII_SAMPLES_WORK_DIR = RESULTS_ROOT
       + "/model-in-image-sample-work-dir";
   private static final String MII_SAMPLES_SCRIPT =
       "../operator/integration-tests/model-in-image/run-test.sh";
 
-  private static final String CURRENT_DATE_TIME = getDateAndTimeStamp();
-  private static final String MII_SAMPLE_WLS_IMAGE_NAME_V1 = DOMAIN_IMAGES_REPO + "mii-" + CURRENT_DATE_TIME + "-wlsv1";
-  private static final String MII_SAMPLE_WLS_IMAGE_NAME_V2 = DOMAIN_IMAGES_REPO + "mii-" + CURRENT_DATE_TIME + "-wlsv2";
-  private static final String SUCCESS_SEARCH_STRING = "Finished without errors";
-
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private static String traefikNamespace = null;
-  private static String dbNamespace = null;
   private static Map<String, String> envMap = null;
-  private static boolean previousTestSuccessful = true;
   private static LoggingFacade logger = null;
-  private static String useAuxiliaryImage = "true";
 
-  private enum DomainType { 
-    JRF, 
-    WLS 
-  }
+  private static ItMiiSampleHelper miiSampleHelper = null;
+  private static String domainType = "WLS";
+  private static String imageType = "AUX";
 
   /**
    * Install Operator.
@@ -123,14 +108,17 @@ public class ItMiiWlsAuxiliaryImageSample {
     if (wdtInstallerUrl != null) {
       envMap.put("WDT_INSTALLER_URL", wdtInstallerUrl);
     }
-
     logger.info("Env. variables to the script {0}", envMap);
 
+    miiSampleHelper = new ItMiiSampleHelper();
+    miiSampleHelper.setEnvMap(envMap);
+    miiSampleHelper.setDomainType(domainType);
+    miiSampleHelper.setImageType(imageType);
+
     // install traefik using the mii sample script
-    execTestScriptAndAssertSuccess("-traefik", "Traefik deployment failure");
+    miiSampleHelper.execTestScriptAndAssertSuccess("-traefik", "Traefik deployment failure");
 
     logger.info("Setting up docker secrets");
-
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
     createOcirRepoSecret(domainNamespace);
@@ -152,7 +140,7 @@ public class ItMiiWlsAuxiliaryImageSample {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS initial use case using auxiliary image")
   public void testAIWlsInitialUseCase() {
-    callWlsInitialUseCase();
+    miiSampleHelper.callInitialUseCase();
   }
 
   /**
@@ -170,7 +158,8 @@ public class ItMiiWlsAuxiliaryImageSample {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update1 use case using auxiliary image")
   public void testAIWlsUpdate1UseCase() {
-    callWlsUpdate1UseCase();
+    //miiSampleHelper.callWlsUpdate1UseCase();
+    miiSampleHelper.callUpdate1UseCase();
   }
 
   /**
@@ -188,7 +177,7 @@ public class ItMiiWlsAuxiliaryImageSample {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update2 use case using auxiliary image")
   public void tesAIWlsUpdate2UseCase() {
-    callWlsUpdate2UseCase();
+    miiSampleHelper.callUpdate2UseCase();
   }
 
   /**
@@ -206,7 +195,7 @@ public class ItMiiWlsAuxiliaryImageSample {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update3 use case using auxiliary image")
   public void testAIWlsUpdate3UseCase() {
-    callWlsUpdate3UseCase();
+    miiSampleHelper.callUpdate3UseCase();
   }
 
   /**
@@ -221,11 +210,11 @@ public class ItMiiWlsAuxiliaryImageSample {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update4 use case using auxiliary image")
   public void testAIWlsUpdate4UseCase() {
-    callWlsUpdate4UseCase();
+    miiSampleHelper.callUpdate4UseCase();
   }
 
   /**
-   * Delete DB deployment and Uninstall traefik.
+   * Uninstall traefik.
    */
   @AfterAll
   public void tearDownAll() {
@@ -236,90 +225,5 @@ public class ItMiiWlsAuxiliaryImageSample {
           .command("helm uninstall traefik-operator -n " + traefikNamespace)
           .redirect(true)).execute();
     }
-  }
-
-  private static void assertImageExistsAndPushIfNeeded() {
-    String imageName = envMap.get("MODEL_IMAGE_NAME");
-    String imageVer = "notset";
-    String decoration = (envMap.get("DO_AI") != null && envMap.get("DO_AI").equalsIgnoreCase("true"))  ? "AI-" : "";
-
-    if (imageName.equals(MII_SAMPLE_WLS_IMAGE_NAME_V1)) {
-      imageVer = "WLS-" + decoration + "v1";
-    }
-    if (imageName.equals(MII_SAMPLE_WLS_IMAGE_NAME_V2)) {
-      imageVer = "WLS-" + decoration + "v2";
-    }
-
-    String image = imageName + ":" + imageVer;
-
-    // Check image exists using docker images | grep image image.
-    assertTrue(doesImageExist(imageName), 
-               String.format("Image %s does not exist", image));
-
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(image);
-  }
-
-  private static void execTestScriptAndAssertSuccess(String args, String errString) {
-    for (String arg : args.split(",")) {
-      Assumptions.assumeTrue(previousTestSuccessful);
-      previousTestSuccessful = false;
-
-      if (arg.equals("-check-image-and-push")) {
-        assertImageExistsAndPushIfNeeded();
-      } else {
-        String command = MII_SAMPLES_SCRIPT + " " + arg;
-
-        ExecResult result =
-            Command.withParams(new CommandParams()
-                .command(command)
-                .env(envMap)
-                .redirect(true)
-            ).executeAndReturnResult();
-
-        boolean success = result != null
-            && result.exitValue() == 0
-            && result.stdout() != null
-            && result.stdout().contains(SUCCESS_SEARCH_STRING);
-
-        String outStr = errString;
-        outStr += ", domainType=WLS\n";
-        outStr += ", command=\n{\n" + command + "\n}\n";
-        outStr += ", stderr=\n{\n" + (result != null ? result.stderr() : "") + "\n}\n";
-        outStr += ", stdout=\n{\n" + (result != null ? result.stdout() : "") + "\n}\n";
-
-        assertTrue(success, outStr);
-      }
-
-      previousTestSuccessful = true;
-    }
-  }
-
-  private void callWlsInitialUseCase() {
-    previousTestSuccessful = true;
-    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_WLS_IMAGE_NAME_V1);
-    envMap.put("DO_AI", useAuxiliaryImage);
-    execTestScriptAndAssertSuccess("-initial-image,-check-image-and-push,-initial-main", "Initial use case failed");
-  }
-
-  private void callWlsUpdate1UseCase() {
-    envMap.put("DO_AI", useAuxiliaryImage);
-    execTestScriptAndAssertSuccess("-update1", "Update1 use case failed");
-  }
-
-  private void callWlsUpdate2UseCase() {
-    envMap.put("DO_AI", useAuxiliaryImage);
-    execTestScriptAndAssertSuccess("-update2", "Update2 use case failed");
-  }
-
-  private void callWlsUpdate3UseCase() {
-    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_WLS_IMAGE_NAME_V2);
-    envMap.put("DO_AI", useAuxiliaryImage);
-    execTestScriptAndAssertSuccess("-update3-image,-check-image-and-push,-update3-main", "Update3 use case failed");
-  }
-
-  private void callWlsUpdate4UseCase() {
-    envMap.put("DO_AI", useAuxiliaryImage);
-    execTestScriptAndAssertSuccess("-update4", "Update4 use case failed");
   }
 }

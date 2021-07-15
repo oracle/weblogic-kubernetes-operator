@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -12,9 +12,8 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.ExecResult;
+import oracle.weblogic.kubernetes.utils.ItMiiSampleHelper;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -23,63 +22,42 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
-import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
-import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.TestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Tests to verify MII sample.
+ * Tests to verify MII sample with JRF domain using auxiliary image.
  */
-@DisplayName("Test model in image sample")
+@DisplayName("Test model in image sample with JRF domain using auxiliary image")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @IntegrationTest
-public class ItMiiFmwAuxiliaryImageSample {
+public class ItMiiSampleFmwAux {
 
   private static final String MII_SAMPLES_WORK_DIR = RESULTS_ROOT
       + "/model-in-image-sample-work-dir";
   private static final String MII_SAMPLES_SCRIPT =
       "../operator/integration-tests/model-in-image/run-test.sh";
 
-  private static final String CURRENT_DATE_TIME = getDateAndTimeStamp();
-  private static final String MII_SAMPLE_WLS_IMAGE_NAME_V1 = DOMAIN_IMAGES_REPO + "mii-" + CURRENT_DATE_TIME + "-wlsv1";
-  private static final String MII_SAMPLE_WLS_IMAGE_NAME_V2 = DOMAIN_IMAGES_REPO + "mii-" + CURRENT_DATE_TIME + "-wlsv2";
-  private static final String MII_SAMPLE_JRF_IMAGE_NAME_V1 = DOMAIN_IMAGES_REPO + "mii-" + CURRENT_DATE_TIME + "-jrfv1";
-  private static final String MII_SAMPLE_JRF_IMAGE_NAME_V2 = DOMAIN_IMAGES_REPO + "mii-" + CURRENT_DATE_TIME + "-jrfv2";
-  private static final String SUCCESS_SEARCH_STRING = "Finished without errors";
-
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private static String traefikNamespace = null;
   private static String dbNamespace = null;
   private static Map<String, String> envMap = null;
-  private static boolean previousTestSuccessful = true;
   private static LoggingFacade logger = null;
-  private static String useAuxiliaryImage = "true";
 
-  private enum DomainType { 
-    JRF, 
-    WLS 
-  }
+  private static ItMiiSampleHelper miiSampleHelper = null;
+  private static String domainType = "JRF";
+  private static String imageType = "AUX";
 
   /**
    * Install Operator.
@@ -121,6 +99,7 @@ public class ItMiiFmwAuxiliaryImageSample {
     envMap.put("IMAGE_PULL_SECRET_NAME", OCIR_SECRET_NAME); //ocir secret
     envMap.put("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST);
     envMap.put("OKD", "" +  OKD);
+    envMap.put("dbNamespace", dbNamespace);
 
     // kind cluster uses openjdk which is not supported by image tool
     String witJavaHome = System.getenv("WIT_JAVA_HOME");
@@ -137,14 +116,17 @@ public class ItMiiFmwAuxiliaryImageSample {
     if (wdtInstallerUrl != null) {
       envMap.put("WDT_INSTALLER_URL", wdtInstallerUrl);
     }
-
     logger.info("Env. variables to the script {0}", envMap);
 
+    miiSampleHelper = new ItMiiSampleHelper();
+    miiSampleHelper.setEnvMap(envMap);
+    miiSampleHelper.setDomainType(domainType);
+    miiSampleHelper.setImageType(imageType);
+
     // install traefik using the mii sample script
-    execTestScriptAndAssertSuccess("-traefik", "Traefik deployment failure");
+    miiSampleHelper.execTestScriptAndAssertSuccess("-traefik", "Traefik deployment failure");
 
     logger.info("Setting up docker secrets");
-
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
     createOcirRepoSecret(domainNamespace);
@@ -172,7 +154,7 @@ public class ItMiiFmwAuxiliaryImageSample {
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF initial use case using auxiliary image")
   public void testAIFmwInitialUseCase() {
-    callFmwInitialUseCase();
+    miiSampleHelper.callInitialUseCase();
   }
 
   /**
@@ -184,7 +166,8 @@ public class ItMiiFmwAuxiliaryImageSample {
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update1 use case using auxiliary image")
   public void testAIFmwUpdate1UseCase() {
-    callFmwUpdate1UseCase();
+    //miiSampleHelper.callFmwUpdate1UseCase();
+    miiSampleHelper.callUpdate1UseCase();
   }
 
   /**
@@ -196,7 +179,7 @@ public class ItMiiFmwAuxiliaryImageSample {
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update2 use case using auxiliary image")
   public void testAIFmwUpdate2UseCase() {
-    callFmwUpdate2UseCase();
+    miiSampleHelper.callUpdate2UseCase();
   }
 
   /**
@@ -208,11 +191,11 @@ public class ItMiiFmwAuxiliaryImageSample {
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update3 use case using auxiliary image")
   public void testAIFmwUpdate3UseCase() {
-    callFmwUpdate3UseCase();
+    miiSampleHelper.callUpdate3UseCase();
   }
 
   /**
-   * Test to verify WLS update4 use case using auxiliary image.
+   * Test to verify JRF update4 use case using auxiliary image.
    * Update Work Manager Min and Max Threads Constraints via a configmap and updates the
    * domain resource introspectVersion.
    * Verifies the sample application is running
@@ -223,7 +206,7 @@ public class ItMiiFmwAuxiliaryImageSample {
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update4 use case using auxiliary image")
   public void testAIFmwUpdate4UseCase() {
-    callFmwUpdate4UseCase();
+    miiSampleHelper.callUpdate4UseCase();
   }
 
   /**
@@ -247,139 +230,5 @@ public class ItMiiFmwAuxiliaryImageSample {
           .command("helm uninstall traefik-operator -n " + traefikNamespace)
           .redirect(true)).execute();
     }
-  }
-
-  private static void assertImageExistsAndPushIfNeeded() {
-    String imageName = envMap.get("MODEL_IMAGE_NAME");
-    String imageVer = "notset";
-    String decoration = (envMap.get("DO_AI") != null && envMap.get("DO_AI").equalsIgnoreCase("true"))  ? "AI-" : "";
-
-    if (imageName.equals(MII_SAMPLE_WLS_IMAGE_NAME_V1)) {
-      imageVer = "WLS-" + decoration + "v1";
-    }
-    if (imageName.equals(MII_SAMPLE_WLS_IMAGE_NAME_V2)) {
-      imageVer = "WLS-" + decoration + "v2";
-    }
-    if (imageName.equals(MII_SAMPLE_JRF_IMAGE_NAME_V1)) {
-      imageVer = "JRF-" + decoration + "v1";
-    }
-    if (imageName.equals(MII_SAMPLE_JRF_IMAGE_NAME_V2)) {
-      imageVer = "JRF-" + decoration + "v2";
-    }
-
-    String image = imageName + ":" + imageVer;
-
-    // Check image exists using docker images | grep image image.
-    assertTrue(doesImageExist(imageName), 
-               String.format("Image %s does not exist", image));
-
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(image);
-  }
-
-  private static void execTestScriptAndAssertSuccess(
-      String args,
-      String errString 
-  ) {
-    // WLS is the the test script's default
-    execTestScriptAndAssertSuccess(DomainType.WLS, args, errString);
-  }
-
-  private static void execTestScriptAndAssertSuccess(
-      DomainType domainType,
-      String args,
-      String errString 
-  ) {
-    for (String arg : args.split(",")) {
-      Assumptions.assumeTrue(previousTestSuccessful);
-      previousTestSuccessful = false;
-
-      if (arg.equals("-check-image-and-push")) {
-        assertImageExistsAndPushIfNeeded();
-
-      } else {
-        String command = MII_SAMPLES_SCRIPT 
-                         + " "
-                         + arg
-                         + (domainType == DomainType.JRF ? " -jrf " : "");
-
-        ExecResult result = Command.withParams(
-                              new CommandParams()
-                                .command(command)
-                                .env(envMap)
-                                .redirect(true)
-                            ).executeAndReturnResult();
-
-        boolean success = 
-               result != null 
-            && result.exitValue() == 0
-            && result.stdout() != null
-            && result.stdout().contains(SUCCESS_SEARCH_STRING);
-
-        String outStr = errString;
-        outStr += ", domainType=" + domainType + "\n";
-        outStr += ", command=\n{\n" + command + "\n}\n";
-        outStr += ", stderr=\n{\n" + (result != null ? result.stderr() : "") + "\n}\n";
-        outStr += ", stdout=\n{\n" + (result != null ? result.stdout() : "") + "\n}\n";
-
-        assertTrue(success, outStr);
-
-      }
-
-      previousTestSuccessful = true;
-    }
-  }
-
-  private void callFmwInitialUseCase() {
-    String dbImageName = (KIND_REPO != null
-        ? KIND_REPO + DB_IMAGE_NAME.substring(BASE_IMAGES_REPO.length() + 1) : DB_IMAGE_NAME);
-    String jrfBaseImageName = (KIND_REPO != null
-        ? KIND_REPO + FMWINFRA_IMAGE_NAME.substring(BASE_IMAGES_REPO.length() + 1) : FMWINFRA_IMAGE_NAME);
-
-    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_JRF_IMAGE_NAME_V1);
-    envMap.put("DB_IMAGE_NAME", dbImageName);
-    envMap.put("DB_IMAGE_TAG", DB_IMAGE_TAG);
-    envMap.put("DB_NODE_PORT", "none");
-    envMap.put("BASE_IMAGE_NAME", jrfBaseImageName);
-    envMap.put("BASE_IMAGE_TAG", FMWINFRA_IMAGE_TAG);
-    envMap.put("POD_WAIT_TIMEOUT_SECS", "1000"); // JRF pod waits on slow machines, can take at least 650 seconds
-    envMap.put("DB_NAMESPACE", dbNamespace);
-    envMap.put("DB_IMAGE_PULL_SECRET", BASE_IMAGES_REPO_SECRET); //ocr/ocir secret
-    envMap.put("INTROSPECTOR_DEADLINE_SECONDS", "600"); // introspector needs more time for JRF
-    envMap.put("DO_AI", useAuxiliaryImage);
-
-    // run JRF use cases irrespective of WLS use cases fail/pass
-    previousTestSuccessful = true;
-    execTestScriptAndAssertSuccess(DomainType.JRF,"-db,-rcu", "DB/RCU creation failed");
-    execTestScriptAndAssertSuccess(
-        DomainType.JRF,
-        "-initial-image,-check-image-and-push,-initial-main",
-        "Initial use case failed"
-    );
-  }
-
-  private void callFmwUpdate1UseCase() {
-    envMap.put("DO_AI", useAuxiliaryImage);
-    execTestScriptAndAssertSuccess(DomainType.JRF,"-update1", "Update1 use case failed");
-  }
-
-  private void callFmwUpdate2UseCase() {
-    envMap.put("DO_AI", useAuxiliaryImage);
-    execTestScriptAndAssertSuccess(DomainType.JRF,"-update2", "Update2 use case failed");
-  }
-
-  private void callFmwUpdate3UseCase() {
-    envMap.put("MODEL_IMAGE_NAME", MII_SAMPLE_JRF_IMAGE_NAME_V2);
-    envMap.put("DO_AI", useAuxiliaryImage);
-    execTestScriptAndAssertSuccess(
-        DomainType.JRF,
-        "-update3-image,-check-image-and-push,-update3-main",
-        "Update3 use case failed"
-    );
-  }
-
-  private void callFmwUpdate4UseCase() {
-    envMap.put("DO_AI", useAuxiliaryImage);
-    execTestScriptAndAssertSuccess(DomainType.JRF,"-update4", "Update4 use case failed");
   }
 }
