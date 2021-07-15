@@ -3739,8 +3739,6 @@ public class CommonTestUtils {
                     .imagePullSecrets(Arrays.asList(
                         new V1LocalObjectReference()
                             .name(BASE_IMAGES_REPO_SECRET)));
-
-
     if (!OKD) {
       podSpec.initContainers(Arrays.asList(createfixPVCOwnerContainer(pvName, "/shared")));
     }
