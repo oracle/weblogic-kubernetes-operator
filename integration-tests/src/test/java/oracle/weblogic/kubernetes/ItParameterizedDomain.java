@@ -122,6 +122,7 @@ import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchDomainR
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressForDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createJobAndWaitUntilComplete;
@@ -1244,7 +1245,8 @@ class ItParameterizedDomain {
             .value(HTTPS_PROXY));
 
     logger.info("Running a Kubernetes job to create the domain");
-    createDomainJob(pvName, pvcName, domainScriptConfigMapName, namespace, jobCreationContainer);
+    createDomainJob(pvName, pvcName,
+        domainScriptConfigMapName, namespace, jobCreationContainer);
   }
 
   /**

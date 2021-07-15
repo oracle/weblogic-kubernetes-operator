@@ -102,7 +102,6 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
@@ -1001,9 +1000,6 @@ class ItMonitoringExporter {
                                                 String secretName) throws ApiException {
     //build webhook image
     String imagePullPolicy = "IfNotPresent";
-    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      imagePullPolicy = "Always";
-    }
     String image = createImageAndPushToRepo(dockerFileDir,baseImageName, namespace, secretName, "");
     logger.info("Installing {0} in namespace {1}", baseImageName, namespace);
     if (baseImageName.equalsIgnoreCase(("webhook"))) {
@@ -1625,9 +1621,6 @@ class ItMonitoringExporter {
         e.printStackTrace();
       }
       String imagePullPolicy = "IfNotPresent";
-      if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-        imagePullPolicy = "Always";
-      }
       domain.getSpec().monitoringExporter(new MonitoringExporterSpecification()
           .image(exporterImage)
           .imagePullPolicy(imagePullPolicy)

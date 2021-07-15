@@ -28,7 +28,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.ISTIO_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -407,9 +406,6 @@ public class IstioUtils {
         fail("Failed to read configuration file");
       }
       String imagePullPolicy = "IfNotPresent";
-      if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-        imagePullPolicy = "Always";
-      }
       domain.getSpec().monitoringExporter(new MonitoringExporterSpecification()
           .image(monexpImage)
           .imagePullPolicy(imagePullPolicy)
