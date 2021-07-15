@@ -38,12 +38,12 @@ import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
 import jakarta.validation.Valid;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.Feature;
+import oracle.kubernetes.operator.helpers.PodHelper;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static java.util.Collections.emptyList;
-import static oracle.kubernetes.operator.helpers.PodHelper.createCopy;
 
 class ServerPod extends KubernetesResource {
 
@@ -444,7 +444,7 @@ class ServerPod extends KubernetesResource {
       addIfMissing(var);
     }
     for (V1Container c : serverPod1.getInitContainers()) {
-      addInitContainerIfMissing(copyContainer(c));
+      addInitContainerIfMissing(createWithEnvCopy(c));
     }
     for (V1Container c : serverPod1.getContainers()) {
       addContainerIfMissing(c);
@@ -493,8 +493,8 @@ class ServerPod extends KubernetesResource {
     }
   }
 
-  private V1Container copyContainer(V1Container c) {
-    return new V1Container().args(c.getArgs()).command(c.getCommand()).env(createCopy(c.getEnv()))
+  private V1Container createWithEnvCopy(V1Container c) {
+    return new V1Container().args(c.getArgs()).command(c.getCommand()).env(PodHelper.createCopy(c.getEnv()))
             .envFrom(c.getEnvFrom()).image(c.getImage()).imagePullPolicy(c.getImagePullPolicy())
             .lifecycle(c.getLifecycle()).livenessProbe(c.getLivenessProbe()).name(c.getName()).ports(c.getPorts())
             .readinessProbe(c.getReadinessProbe()).resources(c.getResources()).securityContext(c.getSecurityContext())

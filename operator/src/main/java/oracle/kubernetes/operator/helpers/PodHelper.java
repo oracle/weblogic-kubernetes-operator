@@ -260,7 +260,7 @@ public class PodHelper {
   }
 
   /**
-   * Copy list of V1EnvVar environment variables.
+   * Create a copy of the list of V1EnvVar environment variables.
    *
    * @param envVars list of environment variables to copy
    * @return List containing a copy of the original list.
