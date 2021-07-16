@@ -17,6 +17,7 @@ import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Capabilities;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1ContainerBuilder;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
 import io.kubernetes.client.openapi.models.V1NodeAffinity;
@@ -43,6 +44,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static java.util.Collections.emptyList;
+import static oracle.kubernetes.operator.helpers.PodHelper.createCopy;
 
 class ServerPod extends KubernetesResource {
 
@@ -443,7 +445,7 @@ class ServerPod extends KubernetesResource {
       addIfMissing(var);
     }
     for (V1Container c : serverPod1.getInitContainers()) {
-      addInitContainerIfMissing(c);
+      addInitContainerIfMissing(createWithEnvCopy(c));
     }
     for (V1Container c : serverPod1.getContainers()) {
       addContainerIfMissing(c);
@@ -490,6 +492,10 @@ class ServerPod extends KubernetesResource {
                 .collect(Collectors.toList());
       }
     }
+  }
+
+  private V1Container createWithEnvCopy(V1Container c) {
+    return new V1ContainerBuilder(c).withEnv(createCopy(c.getEnv())).build();
   }
 
   private void addIfMissing(V1Volume var) {
