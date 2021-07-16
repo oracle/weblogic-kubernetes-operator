@@ -13,14 +13,13 @@ import java.util.Random;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.models.V1ContainerState;
-import io.kubernetes.client.openapi.models.V1ContainerStateTerminated;
-import io.kubernetes.client.openapi.models.V1ContainerStateWaiting;
-import io.kubernetes.client.openapi.models.V1ContainerStatus;
+import io.kubernetes.client.openapi.models.V1ContainerStateBuilder;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
+import io.kubernetes.client.openapi.models.V1PodConditionBuilder;
 import io.kubernetes.client.openapi.models.V1PodSpec;
-import io.kubernetes.client.openapi.models.V1PodStatus;
+import io.kubernetes.client.openapi.models.V1PodStatusBuilder;
 import oracle.kubernetes.operator.DomainProcessorDelegateStub;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
@@ -210,13 +209,16 @@ public class IntrospectionStatusTest {
   }
 
   private V1Pod createIntrospectorJobPod(V1ContainerState waitingState) {
-    return createIntrospectorJobPod(UID).status(
-        new V1PodStatus().addContainerStatusesItem(
-            new V1ContainerStatus()
-                .image(IMAGE_NAME)
-                .name(toJobIntrospectorName(UID))
-                .ready(false)
-                .state(waitingState)));
+    return createIntrospectorJobPod(UID)
+        .status(
+            new V1PodStatusBuilder()
+                .addNewContainerStatus()
+                .withImage(IMAGE_NAME)
+                .withName(toJobIntrospectorName(UID))
+                .withReady(false)
+                .withState(waitingState)
+                .endContainerStatus()
+                .build());
   }
 
   @SuppressWarnings("SameParameterValue")
@@ -235,55 +237,62 @@ public class IntrospectionStatusTest {
   private V1Pod createIntrospectorJobPodWithConditions(V1PodCondition condition) {
     return createIntrospectorJobPod(UID)
         .status(
-            new V1PodStatus()
-                .addConditionsItem(condition));
+            new V1PodStatusBuilder()
+                .withConditions(condition)
+                .build());
   }
 
   @SuppressWarnings("SameParameterValue")
   private V1Pod createIntrospectorJobPodWithPhase(String phase, String reason) {
     return createIntrospectorJobPod(UID)
         .status(
-            new V1PodStatus()
-                .phase(phase)
-                .reason(reason)
-                .message(MESSAGE));
+            new V1PodStatusBuilder()
+                .withPhase(phase)
+                .withReason(reason)
+                .withMessage(MESSAGE)
+                .build());
   }
 
   private V1Pod createIntrospectorJobPodWithPhaseReasonMessage(
       String phase, String reason, String message, V1ContainerState conState) {
     return createIntrospectorJobPod(UID)
         .status(
-            new V1PodStatus()
-                .phase(phase)
-                .reason(reason)
-                .message(message)
-                .addContainerStatusesItem(
-                    new V1ContainerStatus()
-                        .image(IMAGE_NAME)
-                        .name(toJobIntrospectorName(UID))
-                        .ready(false)
-                        .state(conState)));
+            new V1PodStatusBuilder()
+                .withPhase(phase)
+                .withReason(reason)
+                .withMessage(message)
+                .addNewContainerStatus()
+                .withImage(IMAGE_NAME)
+                .withName(toJobIntrospectorName(UID))
+                .withReady(false)
+                .withState(conState)
+                .endContainerStatus()
+                .build());
   }
 
   private V1ContainerState createTerminatedState(String reason, String message) {
-    return new V1ContainerState()
-        .terminated(new V1ContainerStateTerminated()
-            .reason(reason)
-            .message(message));
+    return new V1ContainerStateBuilder()
+        .withNewTerminated().withReason(reason)
+        .withMessage(message)
+        .endTerminated()
+        .build();
   }
 
   private V1ContainerState createWaitingState(String reason, String message) {
-    return new V1ContainerState()
-        .waiting(new V1ContainerStateWaiting()
-            .reason(reason)
-            .message(message));
+    return new V1ContainerStateBuilder()
+        .withNewWaiting()
+        .withReason(reason)
+        .withMessage(message)
+        .endWaiting()
+        .build();
   }
 
   @SuppressWarnings("SameParameterValue")
   private V1PodCondition createPodConditions(String reason, String message) {
-    return new V1PodCondition()
-        .reason(reason)
-        .message(message);
+    return new V1PodConditionBuilder()
+        .withReason(reason)
+        .withMessage(message)
+        .build();
   }
 
 
