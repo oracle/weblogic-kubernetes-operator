@@ -3,15 +3,10 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
-import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
-import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ItMiiSampleHelper;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -22,17 +17,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
-import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OKD;
-import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-
 /**
  * Tests to verify MII sample with WLS domain using auxiliary image.
  */
@@ -41,18 +25,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 @IntegrationTest
 public class ItMiiSampleWlsAux {
 
-  private static final String MII_SAMPLES_WORK_DIR = RESULTS_ROOT
-      + "/model-in-image-sample-work-dir";
-  private static final String MII_SAMPLES_SCRIPT =
-      "../operator/integration-tests/model-in-image/run-test.sh";
-
-  private static String opNamespace = null;
-  private static String domainNamespace = null;
-  private static String traefikNamespace = null;
-  private static Map<String, String> envMap = null;
-  private static LoggingFacade logger = null;
-
-  private static ItMiiSampleHelper miiSampleHelper = null;
+  //private static ItMiiSampleHelper miiSampleHelper = null;
   private static String domainType = "WLS";
   private static String imageType = "AUX";
 
@@ -62,68 +35,10 @@ public class ItMiiSampleWlsAux {
    *        JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) {
-    logger = getLogger();
-    // get a new unique opNamespace
-    logger.info("Creating unique namespace for Operator");
-    assertNotNull(namespaces.get(0), "Namespace list is null");
-    opNamespace = namespaces.get(0);
-
-    logger.info("Creating unique namespace for Domain");
-    assertNotNull(namespaces.get(1), "Namespace list is null");
-    domainNamespace = namespaces.get(1);
-
-    logger.info("Creating unique namespace for Traefik");
-    assertNotNull(namespaces.get(2), "Namespace list is null");
-    traefikNamespace = namespaces.get(2);
-
-    // install and verify operator
-    installAndVerifyOperator(opNamespace, domainNamespace);
-
-    // env variables to override default values in sample scripts
-    envMap = new HashMap<String, String>();
-    envMap.put("DOMAIN_NAMESPACE", domainNamespace);
-    envMap.put("TRAEFIK_NAMESPACE", traefikNamespace);
-    envMap.put("TRAEFIK_HTTP_NODEPORT", "0"); // 0-->dynamically choose the np
-    envMap.put("TRAEFIK_HTTPS_NODEPORT", "0"); // 0-->dynamically choose the np
-    envMap.put("WORKDIR", MII_SAMPLES_WORK_DIR);
-    envMap.put("BASE_IMAGE_NAME", WEBLOGIC_IMAGE_NAME);
-    envMap.put("BASE_IMAGE_TAG", WEBLOGIC_IMAGE_TAG);
-    envMap.put("IMAGE_PULL_SECRET_NAME", OCIR_SECRET_NAME); //ocir secret
-    envMap.put("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST);
-    envMap.put("OKD", "" +  OKD);
-
-    // kind cluster uses openjdk which is not supported by image tool
-    String witJavaHome = System.getenv("WIT_JAVA_HOME");
-    if (witJavaHome != null) {
-      envMap.put("JAVA_HOME", witJavaHome);
-    }
-
-    String witInstallerUrl = System.getProperty("wit.download.url");
-    if (witInstallerUrl != null) {
-      envMap.put("WIT_INSTALLER_URL", witInstallerUrl);
-    }
-
-    String wdtInstallerUrl = System.getProperty("wdt.download.url");
-    if (wdtInstallerUrl != null) {
-      envMap.put("WDT_INSTALLER_URL", wdtInstallerUrl);
-    }
-    logger.info("Env. variables to the script {0}", envMap);
-
-    miiSampleHelper = new ItMiiSampleHelper();
-    miiSampleHelper.setEnvMap(envMap);
-    miiSampleHelper.setDomainType(domainType);
-    miiSampleHelper.setImageType(imageType);
-
-    // install traefik using the mii sample script
-    miiSampleHelper.execTestScriptAndAssertSuccess("-traefik", "Traefik deployment failure");
-
-    logger.info("Setting up docker secrets");
-    // Create the repo secret to pull the image
-    // this secret is used only for non-kind cluster
-    createOcirRepoSecret(domainNamespace);
-    logger.info("Docker registry secret {0} created successfully in namespace {1}",
-        OCIR_SECRET_NAME, domainNamespace);
+  public static void init(@Namespaces(3) List<String> namespaces) {
+    ItMiiSampleHelper.setDomainType(domainType);
+    ItMiiSampleHelper.setImageType(imageType);
+    ItMiiSampleHelper.initAll(namespaces);
   }
 
   /**
@@ -140,7 +55,7 @@ public class ItMiiSampleWlsAux {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS initial use case using auxiliary image")
   public void testAIWlsInitialUseCase() {
-    miiSampleHelper.callInitialUseCase();
+    ItMiiSampleHelper.callInitialUseCase();
   }
 
   /**
@@ -158,8 +73,7 @@ public class ItMiiSampleWlsAux {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update1 use case using auxiliary image")
   public void testAIWlsUpdate1UseCase() {
-    //miiSampleHelper.callWlsUpdate1UseCase();
-    miiSampleHelper.callUpdate1UseCase();
+    ItMiiSampleHelper.callUpdate1UseCase();
   }
 
   /**
@@ -177,7 +91,7 @@ public class ItMiiSampleWlsAux {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update2 use case using auxiliary image")
   public void tesAIWlsUpdate2UseCase() {
-    miiSampleHelper.callUpdate2UseCase();
+    ItMiiSampleHelper.callUpdate2UseCase();
   }
 
   /**
@@ -195,7 +109,7 @@ public class ItMiiSampleWlsAux {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update3 use case using auxiliary image")
   public void testAIWlsUpdate3UseCase() {
-    miiSampleHelper.callUpdate3UseCase();
+    ItMiiSampleHelper.callUpdate3UseCase();
   }
 
   /**
@@ -210,20 +124,15 @@ public class ItMiiSampleWlsAux {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update4 use case using auxiliary image")
   public void testAIWlsUpdate4UseCase() {
-    miiSampleHelper.callUpdate4UseCase();
+    ItMiiSampleHelper.callUpdate4UseCase();
   }
 
   /**
    * Uninstall traefik.
    */
   @AfterAll
-  public void tearDownAll() {
+  public void tearDown() {
     // uninstall traefik
-    if (traefikNamespace != null) {
-      logger.info("Uninstall traefik");
-      Command.withParams(new CommandParams()
-          .command("helm uninstall traefik-operator -n " + traefikNamespace)
-          .redirect(true)).execute();
-    }
+    ItMiiSampleHelper.tearDownAll();
   }
 }

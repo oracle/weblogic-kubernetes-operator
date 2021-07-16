@@ -3,11 +3,14 @@
 
 package oracle.weblogic.kubernetes.utils;
 
+import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.DisplayName;
@@ -21,15 +24,25 @@ import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getDateAndTimeStamp;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Helper class to test to verify MII sample.
+ * Helper class to test and verify MII sample using or not-using auxiliary image.
  */
 @DisplayName("Helper class to test model in image sample")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -48,10 +61,15 @@ public class ItMiiSampleHelper {
   private static final String MII_SAMPLE_JRF_IMAGE_NAME_V2 = DOMAIN_IMAGES_REPO + "mii-" + CURRENT_DATE_TIME + "-jrfv2";
   private static final String SUCCESS_SEARCH_STRING = "Finished without errors";
 
-  private Map<String, String> envMap = null;
-  private boolean previousTestSuccessful = true;
-  private String domainTypeName = null;
-  private String imageTypeName = null;
+  private static String opNamespace = null;
+  private static String domainNamespace = null;
+  private static String traefikNamespace = null;
+  private static String dbNamespace = null;
+  private static Map<String, String> envMap = null;
+  private static LoggingFacade logger = null;
+  private static boolean previousTestSuccessful = true;
+  private static String domainTypeName = null;
+  private static String imageTypeName = null;
 
   private enum DomainType {
     JRF,
@@ -64,57 +82,89 @@ public class ItMiiSampleHelper {
   }
 
   /**
-   * Set env variables map.
-   * @param envMap a map contains env variables
+   * Install Operator.
+   * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
+   *        JUnit engine parameter resolution mechanism
    */
-  public void setEnvMap(Map<String, String> envMap) {
-    this.envMap = envMap;
-  }
+  public static void initAll(List<String> namespaces) {
+    logger = getLogger();
+    // get a new unique opNamespace
+    logger.info("Creating unique namespace for Operator");
+    assertNotNull(namespaces.get(0), "Namespace list is null");
+    opNamespace = namespaces.get(0);
 
-  /**
-   * Set domain type.
-   * @param domainTypeName domain type name
-   */
-  public void setDomainType(String domainTypeName) {
-    this.domainTypeName = domainTypeName;
-  }
+    logger.info("Creating unique namespace for Domain");
+    assertNotNull(namespaces.get(1), "Namespace list is null");
+    domainNamespace = namespaces.get(1);
 
-  /**
-   * Set image type.
-   * @param imageTypeName image type names
-   */
-  public void setImageType(String imageTypeName) {
-    this.imageTypeName = imageTypeName;
-  }
+    logger.info("Creating unique namespace for Traefik");
+    assertNotNull(namespaces.get(2), "Namespace list is null");
+    traefikNamespace = namespaces.get(2);
 
-  /**
-   * Get env variables map.
-   * @return a map containing env variables
-   */
-  public Map<String, String> getEnvMap() {
-    return this.envMap;
-  }
+    // install and verify operator
+    installAndVerifyOperator(opNamespace, domainNamespace);
 
-  /**
-   * Get domain type.
-   * @return domain type name
-   */
-  public String getDomainType() {
-    return this.domainTypeName;
-  }
+    // env variables to override default values in sample scripts
+    envMap = new HashMap<String, String>();
+    envMap.put("DOMAIN_NAMESPACE", domainNamespace);
+    envMap.put("TRAEFIK_NAMESPACE", traefikNamespace);
+    envMap.put("TRAEFIK_HTTP_NODEPORT", "0"); // 0-->dynamically choose the np
+    envMap.put("TRAEFIK_HTTPS_NODEPORT", "0"); // 0-->dynamically choose the np
+    envMap.put("WORKDIR", MII_SAMPLES_WORK_DIR);
+    envMap.put("BASE_IMAGE_NAME", WEBLOGIC_IMAGE_NAME);
+    envMap.put("BASE_IMAGE_TAG", WEBLOGIC_IMAGE_TAG);
+    envMap.put("IMAGE_PULL_SECRET_NAME", OCIR_SECRET_NAME); //ocir secret
+    envMap.put("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST);
+    envMap.put("OKD", "" +  OKD);
+    envMap.put("DO_AI", String.valueOf(auxiliaryImageEnabled()));
 
-  /**
-   * Get image type.
-   * @return  image type names
-   */
-  public String getImageType() {
-    return this.imageTypeName;
+    // kind cluster uses openjdk which is not supported by image tool
+    String witJavaHome = System.getenv("WIT_JAVA_HOME");
+    if (witJavaHome != null) {
+      envMap.put("JAVA_HOME", witJavaHome);
+    }
+
+    String witInstallerUrl = System.getProperty("wit.download.url");
+    if (witInstallerUrl != null) {
+      envMap.put("WIT_INSTALLER_URL", witInstallerUrl);
+    }
+
+    String wdtInstallerUrl = System.getProperty("wdt.download.url");
+    if (wdtInstallerUrl != null) {
+      envMap.put("WDT_INSTALLER_URL", wdtInstallerUrl);
+    }
+    logger.info("Env. variables to the script {0}", envMap);
+
+    // install traefik using the mii sample script
+    execTestScriptAndAssertSuccess("-traefik", "Traefik deployment failure");
+
+    logger.info("Setting up docker secrets");
+    // Create the repo secret to pull the image
+    // this secret is used only for non-kind cluster
+    createOcirRepoSecret(domainNamespace);
+    logger.info("Docker registry secret {0} created successfully in namespace {1}",
+        OCIR_SECRET_NAME, domainNamespace);
+
+    if (getDomainType().equalsIgnoreCase(DomainType.JRF.toString())) {
+      // install db for FMW test cases
+      logger.info("Creating unique namespace for Database");
+      assertNotNull(namespaces.get(3), "Namespace list is null");
+      dbNamespace = namespaces.get(3);
+
+      envMap.put("dbNamespace", dbNamespace);
+
+      // create ocr/ocir docker registry secret to pull the db images
+      // this secret is used only for non-kind cluster
+      createSecretForBaseImages(dbNamespace);
+      logger.info("Docker registry secret {0} created successfully in namespace {1}",
+          BASE_IMAGES_REPO_SECRET, dbNamespace);
+    }
   }
 
   /**
    * Verify that the image exists and push it to docker registry if necessary.
    */
-  public void assertImageExistsAndPushIfNeeded() {
+  public static void assertImageExistsAndPushIfNeeded() {
     String imageName = envMap.get("MODEL_IMAGE_NAME");
     String imageVer = "notset";
     String decoration = (envMap.get("DO_AI") != null && envMap.get("DO_AI").equalsIgnoreCase("true"))  ? "AI-" : "";
@@ -146,7 +196,7 @@ public class ItMiiSampleHelper {
    * @param args arguments to execute script
    * @param errString a string of detailed error
    */
-  public void execTestScriptAndAssertSuccess(String args, String errString) {
+  public static void execTestScriptAndAssertSuccess(String args, String errString) {
     // WLS is the the test script's default
     execTestScriptAndAssertSuccess(DomainType.WLS, args, errString);
   }
@@ -157,7 +207,7 @@ public class ItMiiSampleHelper {
    * @param args arguments to execute script
    * @param errString a string of detailed error
    */
-  public void execTestScriptAndAssertSuccess(DomainType domainType,
+  public static void execTestScriptAndAssertSuccess(DomainType domainType,
                                              String args,
                                              String errString) {
     for (String arg : args.split(",")) {
@@ -202,12 +252,10 @@ public class ItMiiSampleHelper {
   /**
    * Test MII sample WLS or JRF initial use case.
    */
-  public void callInitialUseCase() {
-    String useAuxiliaryImage = (getImageType().equalsIgnoreCase(ImageType.AUX.toString()))  ? "true" : "false";
+  public static void callInitialUseCase() {
     String imageName = (getDomainType().equalsIgnoreCase(DomainType.WLS.toString()))
         ? MII_SAMPLE_WLS_IMAGE_NAME_V1 : MII_SAMPLE_JRF_IMAGE_NAME_V1;
     previousTestSuccessful = true;
-    envMap.put("DO_AI", useAuxiliaryImage);
     envMap.put("MODEL_IMAGE_NAME", imageName);
 
     if (getDomainType().equalsIgnoreCase(DomainType.WLS.toString())) {
@@ -243,10 +291,7 @@ public class ItMiiSampleHelper {
   /**
    * Test MII sample WLS or JRF update1 use case.
    */
-  public void callUpdate1UseCase() {
-    String useAuxiliaryImage = (getImageType().equalsIgnoreCase(ImageType.AUX.toString()))  ? "true" : "false";
-    envMap.put("DO_AI", useAuxiliaryImage);
-
+  public static void callUpdate1UseCase() {
     if (getDomainType().equalsIgnoreCase(DomainType.WLS.toString())) {
       execTestScriptAndAssertSuccess("-update1", "Update1 use case failed");
     } else if (getDomainType().equalsIgnoreCase(DomainType.JRF.toString())) {
@@ -257,10 +302,7 @@ public class ItMiiSampleHelper {
   /**
    * Test MII sample WLS or JRF update2 use case.
    */
-  public void callUpdate2UseCase() {
-    String useAuxiliaryImage = (getImageType().equalsIgnoreCase(ImageType.AUX.toString()))  ? "true" : "false";
-    envMap.put("DO_AI", useAuxiliaryImage);
-
+  public static void callUpdate2UseCase() {
     if (getDomainType().equalsIgnoreCase(DomainType.WLS.toString())) {
       execTestScriptAndAssertSuccess("-update2", "Update2 use case failed");
     } else if (getDomainType().equalsIgnoreCase(DomainType.JRF.toString())) {
@@ -271,12 +313,10 @@ public class ItMiiSampleHelper {
   /**
    * Test MII sample WLS or JRF update3 use case.
    */
-  public void callUpdate3UseCase() {
-    String useAuxiliaryImage = (getImageType().equalsIgnoreCase(ImageType.AUX.toString()))  ? "true" : "false";
+  public static void callUpdate3UseCase() {
     String imageName = (getDomainType().equalsIgnoreCase(DomainType.WLS.toString()))
         ? MII_SAMPLE_WLS_IMAGE_NAME_V2 : MII_SAMPLE_JRF_IMAGE_NAME_V2;
     envMap.put("MODEL_IMAGE_NAME", imageName);
-    envMap.put("DO_AI", useAuxiliaryImage);
 
     if (getDomainType().equalsIgnoreCase(DomainType.WLS.toString())) {
       execTestScriptAndAssertSuccess("-update3-image,-check-image-and-push,-update3-main", "Update3 use case failed");
@@ -292,14 +332,91 @@ public class ItMiiSampleHelper {
   /**
    * Test MII sample WLS or JRF update4 use case.
    */
-  public void callUpdate4UseCase() {
-    String useAuxiliaryImage = (getImageType().equalsIgnoreCase(ImageType.AUX.toString()))  ? "true" : "false";
-    envMap.put("DO_AI", useAuxiliaryImage);
-
+  public static void callUpdate4UseCase() {
     if (getDomainType().equalsIgnoreCase(DomainType.WLS.toString())) {
       execTestScriptAndAssertSuccess("-update4", "Update4 use case failed");
     } else if (getDomainType().equalsIgnoreCase(DomainType.JRF.toString())) {
       execTestScriptAndAssertSuccess(DomainType.JRF,"-update4", "Update4 use case failed");
     }
+  }
+
+  /**
+   * Delete DB deployment for FMW test cases and Uninstall traefik.
+   */
+  public static void tearDownAll() {
+    logger = getLogger();
+    // uninstall traefik
+    if (traefikNamespace != null) {
+      logger.info("Uninstall traefik");
+      Command.withParams(new CommandParams()
+          .command("helm uninstall traefik-operator -n " + traefikNamespace)
+          .redirect(true)).execute();
+    }
+
+    // db cleanup or deletion
+    if (auxiliaryImageEnabled() && getDomainType().equalsIgnoreCase(DomainType.JRF.toString()) && envMap != null) {
+      logger.info("Running samples DB cleanup");
+      Command.withParams(new CommandParams()
+          .command(MII_SAMPLES_SCRIPT + " -precleandb")
+          .env(envMap)
+          .redirect(true)).execute();
+    }
+  }
+
+
+  /**
+   * Set env variables map.
+   * @param newEnvMap a map contains env variables
+   */
+  public static void setEnvMap(Map<String, String> newEnvMap) {
+    ItMiiSampleHelper.envMap = newEnvMap;
+  }
+
+  /**
+   * Set domain type.
+   * @param domainTypeName domain type name
+   */
+  public static void setDomainType(String domainTypeName) {
+    ItMiiSampleHelper.domainTypeName = domainTypeName;
+  }
+
+  /**
+   * Set image type.
+   * @param imageTypeName image type names
+   */
+  public static void setImageType(String imageTypeName) {
+    ItMiiSampleHelper.imageTypeName = imageTypeName;
+  }
+
+  /**
+   * Get env variables map.
+   * @return a map containing env variables
+   */
+  public static Map<String, String> getEnvMap() {
+    return ItMiiSampleHelper.envMap;
+  }
+
+  /**
+   * Get domain type.
+   * @return domain type name
+   */
+  public static String getDomainType() {
+    return ItMiiSampleHelper.domainTypeName;
+  }
+
+  /**
+   * Get image type.
+   * @return  image type names
+   */
+  public static String getImageType() {
+    return ItMiiSampleHelper.imageTypeName;
+  }
+
+  /**
+   * Check whether to use auxiliary image or not.
+   * @return  true to test auxiliary image and false to test non-auxiliary image
+   */
+  public static boolean auxiliaryImageEnabled() {
+    return (getImageType().equalsIgnoreCase(ImageType.AUX.toString()))  ? true : false;
   }
 }
