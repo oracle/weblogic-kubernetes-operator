@@ -13,6 +13,7 @@ import javax.annotation.Nullable;
 
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1EnvVarBuilder;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
@@ -272,10 +273,7 @@ public class PodHelper {
         // note that a deep copy of valueFrom is not needed here as, unlike with value, the
         // new V1EnvVarFrom objects would be created by the doDeepSubstitutions() method in
         // StepContextBase class.
-        copy.add(new V1EnvVar()
-            .name(envVar.getName())
-            .value(envVar.getValue())
-            .valueFrom(envVar.getValueFrom()));
+        copy.add(new V1EnvVarBuilder(envVar).build());
       }
     }
     return copy;
