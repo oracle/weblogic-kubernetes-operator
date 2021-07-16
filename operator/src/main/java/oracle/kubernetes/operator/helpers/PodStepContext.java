@@ -547,7 +547,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     boolean useCurrent = hasCorrectPodHash(currentPod) && canUseNewDomainZip(currentPod);
 
     if (!useCurrent) {
-      LOGGER.fine(
+      LOGGER.finer(
           MessageKeys.POD_DUMP,
           Yaml.dump(currentPod),
           Yaml.dump(getPodModel()));
