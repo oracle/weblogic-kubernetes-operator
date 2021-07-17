@@ -68,15 +68,15 @@ public class ItMiiSampleHelper {
   private static Map<String, String> envMap = null;
   private static LoggingFacade logger = null;
   private static boolean previousTestSuccessful = true;
-  private static String domainTypeName = null;
-  private static String imageTypeName = null;
+  private static DomainType domainTypeName = null;
+  private static ImageType imageTypeName = null;
 
-  private enum DomainType {
+  public enum DomainType {
     JRF,
     WLS
   }
 
-  private enum ImageType {
+  public enum ImageType {
     MAIN,
     AUX
   }
@@ -100,6 +100,9 @@ public class ItMiiSampleHelper {
     logger.info("Creating unique namespace for Traefik");
     assertNotNull(namespaces.get(2), "Namespace list is null");
     traefikNamespace = namespaces.get(2);
+
+    assertNotNull(domainTypeName, "DomainType name is null");
+    assertNotNull(imageTypeName, "ImageType name list is null");
 
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
@@ -136,7 +139,7 @@ public class ItMiiSampleHelper {
     logger.info("Env. variables to the script {0}", envMap);
 
     // install traefik using the mii sample script
-    execTestScriptAndAssertSuccess("-traefik", "Traefik deployment failure");
+    execTestScriptAndAssertSuccess(DomainType.WLS, "-traefik", "Traefik deployment failure");
 
     logger.info("Setting up docker secrets");
     // Create the repo secret to pull the image
@@ -145,7 +148,7 @@ public class ItMiiSampleHelper {
     logger.info("Docker registry secret {0} created successfully in namespace {1}",
         OCIR_SECRET_NAME, domainNamespace);
 
-    if (getDomainType().equalsIgnoreCase(DomainType.JRF.toString())) {
+    if (domainTypeName.equals(DomainType.JRF)) {
       // install db for FMW test cases
       logger.info("Creating unique namespace for Database");
       assertNotNull(namespaces.get(3), "Namespace list is null");
@@ -193,23 +196,13 @@ public class ItMiiSampleHelper {
 
   /**
    * Run script run-test.sh.
-   * @param args arguments to execute script
-   * @param errString a string of detailed error
-   */
-  public static void execTestScriptAndAssertSuccess(String args, String errString) {
-    // WLS is the the test script's default
-    execTestScriptAndAssertSuccess(DomainType.WLS, args, errString);
-  }
-
-  /**
-   * Run script run-test.sh.
    * @param domainType domain type
    * @param args arguments to execute script
    * @param errString a string of detailed error
    */
   public static void execTestScriptAndAssertSuccess(DomainType domainType,
-                                             String args,
-                                             String errString) {
+                                                    String args,
+                                                    String errString) {
     for (String arg : args.split(",")) {
       Assumptions.assumeTrue(previousTestSuccessful);
       previousTestSuccessful = false;
@@ -253,14 +246,12 @@ public class ItMiiSampleHelper {
    * Test MII sample WLS or JRF initial use case.
    */
   public static void callInitialUseCase() {
-    String imageName = (getDomainType().equalsIgnoreCase(DomainType.WLS.toString()))
+    String imageName = (domainTypeName.equals(DomainType.WLS))
         ? MII_SAMPLE_WLS_IMAGE_NAME_V1 : MII_SAMPLE_JRF_IMAGE_NAME_V1;
     previousTestSuccessful = true;
     envMap.put("MODEL_IMAGE_NAME", imageName);
 
-    if (getDomainType().equalsIgnoreCase(DomainType.WLS.toString())) {
-      execTestScriptAndAssertSuccess("-initial-image,-check-image-and-push,-initial-main", "Initial use case failed");
-    } else if (getDomainType().equalsIgnoreCase(DomainType.JRF.toString())) {
+    if (domainTypeName.equals(DomainType.JRF)) {
       String dbImageName = (KIND_REPO != null
           ? KIND_REPO + DB_IMAGE_NAME.substring(BASE_IMAGES_REPO.length() + 1) : DB_IMAGE_NAME);
       String jrfBaseImageName = (KIND_REPO != null
@@ -279,65 +270,28 @@ public class ItMiiSampleHelper {
 
       // run JRF use cases irrespective of WLS use cases fail/pass
       previousTestSuccessful = true;
-      execTestScriptAndAssertSuccess(DomainType.JRF, "-db,-rcu", "DB/RCU creation failed");
-      execTestScriptAndAssertSuccess(
-          DomainType.JRF,
-          "-initial-image,-check-image-and-push,-initial-main",
-          "Initial use case failed"
-      );
+      execTestScriptAndAssertSuccess(domainTypeName, "-db,-rcu", "DB/RCU creation failed");
     }
+
+    execTestScriptAndAssertSuccess(
+        domainTypeName,
+        "-initial-image,-check-image-and-push,-initial-main",
+        "Initial use case failed"
+    );
   }
 
   /**
    * Test MII sample WLS or JRF update1 use case.
    */
-  public static void callUpdate1UseCase() {
-    if (getDomainType().equalsIgnoreCase(DomainType.WLS.toString())) {
-      execTestScriptAndAssertSuccess("-update1", "Update1 use case failed");
-    } else if (getDomainType().equalsIgnoreCase(DomainType.JRF.toString())) {
-      execTestScriptAndAssertSuccess(DomainType.JRF,"-update1", "Update1 use case failed");
+  public static void callUpdateUseCase(String args,
+                                       String errString) {
+    if (args.contains("update3")) {
+      String imageName = (domainTypeName.equals(DomainType.WLS))
+          ? MII_SAMPLE_WLS_IMAGE_NAME_V2 : MII_SAMPLE_JRF_IMAGE_NAME_V2;
+      envMap.put("MODEL_IMAGE_NAME", imageName);
     }
-  }
 
-  /**
-   * Test MII sample WLS or JRF update2 use case.
-   */
-  public static void callUpdate2UseCase() {
-    if (getDomainType().equalsIgnoreCase(DomainType.WLS.toString())) {
-      execTestScriptAndAssertSuccess("-update2", "Update2 use case failed");
-    } else if (getDomainType().equalsIgnoreCase(DomainType.JRF.toString())) {
-      execTestScriptAndAssertSuccess(DomainType.JRF,"-update2", "Update2 use case failed");
-    }
-  }
-
-  /**
-   * Test MII sample WLS or JRF update3 use case.
-   */
-  public static void callUpdate3UseCase() {
-    String imageName = (getDomainType().equalsIgnoreCase(DomainType.WLS.toString()))
-        ? MII_SAMPLE_WLS_IMAGE_NAME_V2 : MII_SAMPLE_JRF_IMAGE_NAME_V2;
-    envMap.put("MODEL_IMAGE_NAME", imageName);
-
-    if (getDomainType().equalsIgnoreCase(DomainType.WLS.toString())) {
-      execTestScriptAndAssertSuccess("-update3-image,-check-image-and-push,-update3-main", "Update3 use case failed");
-    } else if (getDomainType().equalsIgnoreCase(DomainType.JRF.toString())) {
-      execTestScriptAndAssertSuccess(
-          DomainType.JRF,
-          "-update3-image,-check-image-and-push,-update3-main",
-          "Update3 use case failed"
-      );
-    }
-  }
-
-  /**
-   * Test MII sample WLS or JRF update4 use case.
-   */
-  public static void callUpdate4UseCase() {
-    if (getDomainType().equalsIgnoreCase(DomainType.WLS.toString())) {
-      execTestScriptAndAssertSuccess("-update4", "Update4 use case failed");
-    } else if (getDomainType().equalsIgnoreCase(DomainType.JRF.toString())) {
-      execTestScriptAndAssertSuccess(DomainType.JRF,"-update4", "Update4 use case failed");
-    }
+    execTestScriptAndAssertSuccess(domainTypeName, args, errString);
   }
 
   /**
@@ -354,7 +308,7 @@ public class ItMiiSampleHelper {
     }
 
     // db cleanup or deletion
-    if (auxiliaryImageEnabled() && getDomainType().equalsIgnoreCase(DomainType.JRF.toString()) && envMap != null) {
+    if (domainTypeName.equals(DomainType.JRF) && envMap != null) {
       logger.info("Running samples DB cleanup");
       Command.withParams(new CommandParams()
           .command(MII_SAMPLES_SCRIPT + " -precleandb")
@@ -376,7 +330,7 @@ public class ItMiiSampleHelper {
    * Set domain type.
    * @param domainTypeName domain type name
    */
-  public static void setDomainType(String domainTypeName) {
+  public static void setDomainType(DomainType domainTypeName) {
     ItMiiSampleHelper.domainTypeName = domainTypeName;
   }
 
@@ -384,7 +338,7 @@ public class ItMiiSampleHelper {
    * Set image type.
    * @param imageTypeName image type names
    */
-  public static void setImageType(String imageTypeName) {
+  public static void setImageType(ImageType imageTypeName) {
     ItMiiSampleHelper.imageTypeName = imageTypeName;
   }
 
@@ -400,15 +354,15 @@ public class ItMiiSampleHelper {
    * Get domain type.
    * @return domain type name
    */
-  public static String getDomainType() {
-    return ItMiiSampleHelper.domainTypeName;
+  public static DomainType getDomainType() {
+    return domainTypeName;
   }
 
   /**
    * Get image type.
    * @return  image type names
    */
-  public static String getImageType() {
+  public static ImageType getImageType() {
     return ItMiiSampleHelper.imageTypeName;
   }
 
@@ -417,6 +371,6 @@ public class ItMiiSampleHelper {
    * @return  true to test auxiliary image and false to test non-auxiliary image
    */
   public static boolean auxiliaryImageEnabled() {
-    return (getImageType().equalsIgnoreCase(ImageType.AUX.toString()))  ? true : false;
+    return (imageTypeName.equals(ImageType.AUX))  ? true : false;
   }
 }

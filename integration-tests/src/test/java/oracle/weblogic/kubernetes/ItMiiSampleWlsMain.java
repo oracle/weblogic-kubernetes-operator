@@ -28,9 +28,6 @@ import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 @IntegrationTest
 public class ItMiiSampleWlsMain {
 
-  private static String domainType = "WLS";
-  private static String imageType = "MAIN";
-
   /**
    * Install Operator.
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
@@ -38,8 +35,8 @@ public class ItMiiSampleWlsMain {
    */
   @BeforeAll
   public static void init(@Namespaces(3) List<String> namespaces) {
-    ItMiiSampleHelper.setDomainType(domainType);
-    ItMiiSampleHelper.setImageType(imageType);
+    ItMiiSampleHelper.setDomainType(ItMiiSampleHelper.DomainType.WLS);
+    ItMiiSampleHelper.setImageType(ItMiiSampleHelper.ImageType.MAIN);
     ItMiiSampleHelper.initAll(namespaces);
   }
 
@@ -54,7 +51,9 @@ public class ItMiiSampleWlsMain {
   public void testCheckMiiSampleSource() {
     Map<String, String> envMap = ItMiiSampleHelper.getEnvMap();
     envMap.remove("BASE_IMAGE_NAME");
-    ItMiiSampleHelper.execTestScriptAndAssertSuccess("-check-sample",
+    ItMiiSampleHelper.execTestScriptAndAssertSuccess(
+        ItMiiSampleHelper.DomainType.WLS,
+        "-check-sample",
         "Sample source doesn't match with the generated source");
     envMap.put("BASE_IMAGE_NAME", WEBLOGIC_IMAGE_NAME);
     ItMiiSampleHelper.setEnvMap(envMap);
@@ -92,7 +91,7 @@ public class ItMiiSampleWlsMain {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update1 use case")
   public void testWlsUpdate1UseCase() {
-    ItMiiSampleHelper.callUpdate1UseCase();
+    ItMiiSampleHelper.callUpdateUseCase("-update1", "Update1 use case failed");
   }
 
   /**
@@ -110,7 +109,7 @@ public class ItMiiSampleWlsMain {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update2 use case")
   public void testWlsUpdate2UseCase() {
-    ItMiiSampleHelper.callUpdate2UseCase();
+    ItMiiSampleHelper.callUpdateUseCase("-update2", "Update2 use case failed");
   }
 
   /**
@@ -128,7 +127,8 @@ public class ItMiiSampleWlsMain {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update3 use case")
   public void testWlsUpdate3UseCase() {
-    ItMiiSampleHelper.callUpdate3UseCase();
+    ItMiiSampleHelper.callUpdateUseCase("-update3-image,-check-image-and-push,-update3-main",
+        "Update3 use case failed");
   }
 
   /**
@@ -143,7 +143,7 @@ public class ItMiiSampleWlsMain {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update4 use case")
   public void testWlsUpdate4UseCase() {
-    ItMiiSampleHelper.callUpdate4UseCase();
+    ItMiiSampleHelper.callUpdateUseCase("-update4", "Update4 use case failed");
   }
 
   /**

@@ -25,9 +25,6 @@ import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 @IntegrationTest
 public class ItMiiSampleFmwAux {
 
-  private static String domainType = "JRF";
-  private static String imageType = "AUX";
-
   /**
    * Install Operator.
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
@@ -35,8 +32,8 @@ public class ItMiiSampleFmwAux {
    */
   @BeforeAll
   public static void init(@Namespaces(4) List<String> namespaces) {
-    ItMiiSampleHelper.setDomainType(domainType);
-    ItMiiSampleHelper.setImageType(imageType);
+    ItMiiSampleHelper.setDomainType(ItMiiSampleHelper.DomainType.JRF);
+    ItMiiSampleHelper.setImageType(ItMiiSampleHelper.ImageType.AUX);
     ItMiiSampleHelper.initAll(namespaces);
   }
 
@@ -66,7 +63,7 @@ public class ItMiiSampleFmwAux {
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update1 use case using auxiliary image")
   public void testAIFmwUpdate1UseCase() {
-    ItMiiSampleHelper.callUpdate1UseCase();
+    ItMiiSampleHelper.callUpdateUseCase("-update1", "Update1 use case failed");
   }
 
   /**
@@ -78,7 +75,7 @@ public class ItMiiSampleFmwAux {
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update2 use case using auxiliary image")
   public void testAIFmwUpdate2UseCase() {
-    ItMiiSampleHelper.callUpdate2UseCase();
+    ItMiiSampleHelper.callUpdateUseCase("-update2", "Update2 use case failed");
   }
 
   /**
@@ -90,7 +87,8 @@ public class ItMiiSampleFmwAux {
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update3 use case using auxiliary image")
   public void testAIFmwUpdate3UseCase() {
-    ItMiiSampleHelper.callUpdate3UseCase();
+    ItMiiSampleHelper.callUpdateUseCase("-update3-image,-check-image-and-push,-update3-main",
+        "Update3 use case failed");
   }
 
   /**
@@ -105,7 +103,7 @@ public class ItMiiSampleFmwAux {
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update4 use case using auxiliary image")
   public void testAIFmwUpdate4UseCase() {
-    ItMiiSampleHelper.callUpdate4UseCase();
+    ItMiiSampleHelper.callUpdateUseCase("-update4", "Update4 use case failed");
   }
 
   /**
