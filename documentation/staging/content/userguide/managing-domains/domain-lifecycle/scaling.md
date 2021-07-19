@@ -98,12 +98,12 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: weblogic-domain-cluster-role
 rules:
+- apiGroups: [""]
+  resources: ["services/status"]
+  verbs: ["get", "list", "watch"]
 - apiGroups: ["weblogic.oracle"]
   resources: ["domains"]
   verbs: ["get", "list", "patch", update"]
-- apiGroups: ["apiextensions.k8s.io"]
-  resources: ["customresourcedefinitions"]
-  verbs: ["get", "list"]
 ---
 ```
 ##### Operator REST endpoints
@@ -222,12 +222,12 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: weblogic-domain-cluster-role
 rules:
+- apiGroups: [""]
+  resources: ["services/status"]
+  verbs: ["get", "list", "watch"]
 - apiGroups: ["weblogic.oracle"]
   resources: ["domains"]
   verbs: ["get", "list", "patch", update"]
-- apiGroups: ["apiextensions.k8s.io"]
-  resources: ["customresourcedefinitions"]
-  verbs: ["get", "list"]
 ---
 #
 # creating role-bindings for cluster role
