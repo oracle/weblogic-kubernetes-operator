@@ -108,7 +108,7 @@
             <configuration>
               <includeScope>runtime</includeScope>
               <outputDirectory>${project.build.directory}/lib</outputDirectory>
-              <excludeGroupIds>io.prometheus,com.google.protobuf,org.jetbrains.kotlin,org.jetbrains.annotations</excludeGroupIds>
+              <excludeGroupIds>io.prometheus,com.google.protobuf</excludeGroupIds>
             </configuration>
           </execution>
         </executions>
