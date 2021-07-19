@@ -99,7 +99,7 @@ public class JobHelper {
     LOGGER.fine("isModelInImageUpdate: " + isModelInImageUpdate(packet, info));
     return topology == null
           || isBringingUpNewDomain(packet, info)
-          || isIntrospectionRequestedAndRemove(packet)
+          || checkIfIntrospectionRequestedAndReset(packet)
           || isModelInImageUpdate(packet, info)
           || isIntrospectVersionChanged(packet, info);
   }
@@ -108,7 +108,7 @@ public class JobHelper {
     return runningServersCount(info) == 0 && creatingServers(info) && isGenerationChanged(packet, info);
   }
 
-  private static boolean isIntrospectionRequestedAndRemove(Packet packet) {
+  private static boolean checkIfIntrospectionRequestedAndReset(Packet packet) {
     return packet.remove(DOMAIN_INTROSPECT_REQUESTED) != null;
   }
 
@@ -507,6 +507,7 @@ public class JobHelper {
   }
 
   private static class ReadDomainIntrospectorPodLogResponseStep extends ResponseStep<String> {
+    public static final String INTROSPECTION_FAILED = "INTROSPECTION_FAILED";
     private StringBuilder logMessage = new StringBuilder();
     private final List<String> severeStatuses = new ArrayList<>();
 
@@ -553,7 +554,7 @@ public class JobHelper {
                 getJobCreationTime(domainIntrospectorJob).plus(retryIntervalSeconds, SECONDS))) {
           //Introspector job is incomplete and current time is greater than the lazy deletion time for the job,
           //update the domain status and execute the next step
-          packet.put(DOMAIN_INTROSPECT_REQUESTED, "INTROSPECTION_FAILED");
+          packet.put(DOMAIN_INTROSPECT_REQUESTED, INTROSPECTION_FAILED);
           nextStep = getNext();
         }
 
