@@ -289,6 +289,10 @@ if [ "$skip_tests" = true ] ; then
   exit 0
 fi
 
+echo 'docker info'
+docker info
+docker ps
+
 echo 'Clean up result root...'
 rm -rf "${RESULT_ROOT:?}/*"
 
@@ -302,6 +306,6 @@ else
     time mvn -Dit.test="${test_filter}, !ItIstioCrossClusters*, !ItOCILoadBalancer" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log" || captureLogs
   else
     echo "Running mvn -Dit.test=${test_filter}, !ItOperatorWlsUpgrade, !ItDedicatedMode, !ItT3Channel, !ItOpUpgradeFmwDomainInPV, !ItOCILoadBalancer, !ItIstioCrossClusters* -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -Dwle.download.url=${wle_download_url} -DPARALLEL_CLASSES=${parallel_run} -DNUMBER_OF_THREADS=${threads}  -pl integration-tests -P ${maven_profile_name} verify"
-    time mvn -Dit.test="${test_filter}, !ItOperatorWlsUpgrade, !ItDedicatedMode, !ItT3Channel, !ItOpUpgradeFmwDomainInPV, !ItOCILoadBalancer, !ItIstioCrossClusters*" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log" || captureLogs
+    time mvn -Dit.test="${test_filter}, !ItOperatorWlsUpgrade, !ItFmwDomainInPVUsingWDT, !ItFmwDynamicDomainInPV, !ItDedicatedMode, !ItT3Channel, !ItOpUpgradeFmwDomainInPV, !ItOCILoadBalancer, !ItIstioCrossClusters*" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/kindtest.log" || captureLogs
   fi
 fi

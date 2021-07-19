@@ -37,6 +37,7 @@ import io.kubernetes.client.openapi.models.V1Probe;
 import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import io.kubernetes.client.util.Yaml;
 import jakarta.json.Json;
 import jakarta.json.JsonPatchBuilder;
 import oracle.kubernetes.operator.DomainSourceType;
@@ -545,11 +546,11 @@ public abstract class PodStepContext extends BasePodStepContext {
 
     boolean useCurrent = hasCorrectPodHash(currentPod) && canUseNewDomainZip(currentPod);
 
-    if (!useCurrent && AnnotationHelper.getDebugString(currentPod).length() > 0) {
-      LOGGER.fine(
+    if (!useCurrent) {
+      LOGGER.finer(
           MessageKeys.POD_DUMP,
-          AnnotationHelper.getDebugString(currentPod),
-          AnnotationHelper.getDebugString(getPodModel()));
+          Yaml.dump(currentPod),
+          Yaml.dump(getPodModel()));
     }
 
     return useCurrent;

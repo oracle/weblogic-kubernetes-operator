@@ -119,9 +119,11 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePort
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterRoleBindingExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterRoleExists;
 import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchDomainResource;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodLogContainsString;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressForDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createJobAndWaitUntilComplete;
@@ -202,6 +204,8 @@ class ItParameterizedDomain {
   private static String miiDomainNegativeNamespace = null;
   private static String miiImage = null;
   private static String encryptionSecretName = "encryptionsecret";
+  private static Map<String, Quantity> resourceRequest = new HashMap<>();
+  private static Map<String, Quantity> resourceLimit = new HashMap<>();
 
   private String curlCmd = null;
 
@@ -262,6 +266,11 @@ class ItParameterizedDomain {
     nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
     logger.info("NGINX http node port: {0}", nodeportshttp);
 
+    // set resource request and limit
+    resourceRequest.put("cpu", new Quantity("250m"));
+    resourceRequest.put("memory", new Quantity("768Mi"));
+    resourceLimit.put("cpu", new Quantity("2"));
+    resourceLimit.put("memory", new Quantity("2Gi"));
 
     // create model in image domain with multiple clusters
     miiDomain = createMiiDomainWithMultiClusters(miiDomainUid, miiDomainNamespace);
@@ -305,7 +314,7 @@ class ItParameterizedDomain {
     createMiiDomainNegative("miidomainnegative", miiDomainNegativeNamespace);
     String operatorPodName =
         assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
-    waitForPodLogContainsString(opNamespace, operatorPodName,
+    checkPodLogContainsString(opNamespace, operatorPodName,
         "Domain miidomainnegative is not valid: RuntimeEncryption secret '" + encryptionSecretName
         + "' not found in namespace '" + miiDomainNegativeNamespace + "'");
   }
@@ -924,7 +933,10 @@ class ItParameterizedDomain {
                     .value("-Dweblogic.StdoutDebugEnabled=false"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+                    .value("-Djava.security.egd=file:/dev/./urandom "))
+                .resources(new V1ResourceRequirements()
+                    .requests(resourceRequest)
+                    .limits(resourceLimit)))
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING")
                 .adminService(new AdminService()
@@ -1087,7 +1099,10 @@ class ItParameterizedDomain {
                         .claimName(pvcName)))
                 .addVolumeMountsItem(new V1VolumeMount()
                     .mountPath("/u01/shared")
-                    .name(pvName)))
+                    .name(pvName))
+                .resources(new V1ResourceRequirements()
+                    .limits(resourceLimit)
+                    .requests(resourceRequest)))
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING")
                 .adminService(new AdminService()
@@ -1244,7 +1259,8 @@ class ItParameterizedDomain {
             .value(HTTPS_PROXY));
 
     logger.info("Running a Kubernetes job to create the domain");
-    createDomainJob(pvName, pvcName, domainScriptConfigMapName, namespace, jobCreationContainer);
+    createDomainJob(pvName, pvcName,
+        domainScriptConfigMapName, namespace, jobCreationContainer);
   }
 
   /**
@@ -1424,8 +1440,8 @@ class ItParameterizedDomain {
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom "))
                 .resources(new V1ResourceRequirements()
-                    .limits(new HashMap<>())
-                    .requests(new HashMap<>())))
+                    .limits(resourceLimit)
+                    .requests(resourceRequest)))
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING")
                 .adminService(new AdminService()
@@ -1541,31 +1557,6 @@ class ItParameterizedDomain {
                 condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(() -> fileExistsInPod(namespace, podName, fileName),
             "fileExistsInPod failed with IOException, ApiException or InterruptedException"));
-  }
-
-  private Callable<Boolean> podLogContainsString(String namespace, String podName, String expectedString) {
-    return () -> {
-      logger.info("pod name: {0}", podName);
-      String podLog = getPodLog(podName, namespace);
-      logger.info("pod log: {0}", podLog);
-      return podLog.contains(expectedString);
-    };
-  }
-
-  private void waitForPodLogContainsString(String namespace, String podName, String expectedString) {
-
-    logger.info("Wait for string {0} existing in pod {1} in namespace {2}", expectedString, podName, namespace);
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for string {0} existing in pod {1} in namespace {2} "
-                    + "(elapsed time {3}ms, remaining time {4}ms)",
-                expectedString,
-                podName,
-                namespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> podLogContainsString(namespace, podName, expectedString),
-            "podLogContainsString failed with IOException, ApiException or InterruptedException"));
   }
 
   /**

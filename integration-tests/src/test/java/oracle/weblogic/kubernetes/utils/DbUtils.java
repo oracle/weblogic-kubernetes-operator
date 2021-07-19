@@ -92,7 +92,8 @@ public class DbUtils {
    * @throws Exception if any error occurs when setting up RCU database
    */
 
-  public static void setupDBandRCUschema(String dbImage, String fmwImage, String rcuSchemaPrefix, String dbNamespace,
+  public static synchronized void setupDBandRCUschema(String dbImage, String fmwImage, String rcuSchemaPrefix,
+       String dbNamespace,
       int dbPort, String dbUrl) throws ApiException {
     LoggingFacade logger = getLogger();
     // create pull secrets when running in non Kind Kubernetes cluster
@@ -255,7 +256,7 @@ public class DbUtils {
    * @param dbNamespace namespace of DB where RCU is
    * @throws ApiException when create RCU pod fails
    */
-  public static void createRcuSchema(String fmwBaseImageName, String rcuPrefix, String dbUrl,
+  public static synchronized void createRcuSchema(String fmwBaseImageName, String rcuPrefix, String dbUrl,
       String dbNamespace) throws ApiException {
     LoggingFacade logger = getLogger();
     logger.info("Create RCU pod for RCU prefix {0}", rcuPrefix);
