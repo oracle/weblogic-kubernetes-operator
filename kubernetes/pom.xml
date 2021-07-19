@@ -120,7 +120,7 @@
                                 <include>**/*AT.java</include>
                             </includes>
                             <argLine>
-                                --illegal-access=permit
+                                --add-opens java.base/java.time=ALL-UNNAMED
                             </argLine>
                         </configuration>
                         <executions>
