@@ -4,7 +4,6 @@
 package oracle.weblogic.kubernetes;
 
 import java.util.List;
-import java.util.Map;
 
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -17,8 +16,6 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
-
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 
 /**
  * Tests to verify MII sample.
@@ -35,9 +32,7 @@ public class ItMiiSampleWlsMain {
    */
   @BeforeAll
   public static void init(@Namespaces(3) List<String> namespaces) {
-    ItMiiSampleHelper.setDomainType(ItMiiSampleHelper.DomainType.WLS);
-    ItMiiSampleHelper.setImageType(ItMiiSampleHelper.ImageType.MAIN);
-    ItMiiSampleHelper.initAll(namespaces);
+    ItMiiSampleHelper.initAll(namespaces, ItMiiSampleHelper.DomainType.WLS, ItMiiSampleHelper.ImageType.MAIN);
   }
 
   /**
@@ -49,14 +44,8 @@ public class ItMiiSampleWlsMain {
   @DisabledIfEnvironmentVariable(named = "SKIP_CHECK_SAMPLE", matches = "true")
   @DisplayName("Test to verify MII Sample source")
   public void testCheckMiiSampleSource() {
-    Map<String, String> envMap = ItMiiSampleHelper.getEnvMap();
-    envMap.remove("BASE_IMAGE_NAME");
-    ItMiiSampleHelper.execTestScriptAndAssertSuccess(
-        ItMiiSampleHelper.DomainType.WLS,
-        "-check-sample",
+    ItMiiSampleHelper.callCheckMiiSampleSource("-check-sample",
         "Sample source doesn't match with the generated source");
-    envMap.put("BASE_IMAGE_NAME", WEBLOGIC_IMAGE_NAME);
-    ItMiiSampleHelper.setEnvMap(envMap);
   }
 
   /**

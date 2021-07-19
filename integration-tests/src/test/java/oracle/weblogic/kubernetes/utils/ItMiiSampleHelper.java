@@ -68,8 +68,8 @@ public class ItMiiSampleHelper {
   private static Map<String, String> envMap = null;
   private static LoggingFacade logger = null;
   private static boolean previousTestSuccessful = true;
-  private static DomainType domainTypeName = null;
-  private static ImageType imageTypeName = null;
+  private static DomainType domainType = null;
+  private static ImageType imageType = null;
 
   public enum DomainType {
     JRF,
@@ -85,9 +85,13 @@ public class ItMiiSampleHelper {
    * Install Operator.
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
    *        JUnit engine parameter resolution mechanism
+   * @param domainTypeParam domain type names
+   * @param imageTypeParam image type names
    */
-  public static void initAll(List<String> namespaces) {
+  public static void initAll(List<String> namespaces, DomainType domainTypeParam, ImageType imageTypeParam) {
     logger = getLogger();
+    ItMiiSampleHelper.domainType = domainTypeParam;
+    ItMiiSampleHelper.imageType = imageTypeParam;
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
@@ -100,9 +104,6 @@ public class ItMiiSampleHelper {
     logger.info("Creating unique namespace for Traefik");
     assertNotNull(namespaces.get(2), "Namespace list is null");
     traefikNamespace = namespaces.get(2);
-
-    assertNotNull(domainTypeName, "DomainType name is null");
-    assertNotNull(imageTypeName, "ImageType name list is null");
 
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
@@ -119,7 +120,7 @@ public class ItMiiSampleHelper {
     envMap.put("IMAGE_PULL_SECRET_NAME", OCIR_SECRET_NAME); //ocir secret
     envMap.put("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST);
     envMap.put("OKD", "" +  OKD);
-    envMap.put("DO_AI", String.valueOf(auxiliaryImageEnabled()));
+    envMap.put("DO_AI", String.valueOf(imageType == ImageType.AUX));
 
     // kind cluster uses openjdk which is not supported by image tool
     String witJavaHome = System.getenv("WIT_JAVA_HOME");
@@ -148,7 +149,7 @@ public class ItMiiSampleHelper {
     logger.info("Docker registry secret {0} created successfully in namespace {1}",
         OCIR_SECRET_NAME, domainNamespace);
 
-    if (domainTypeName.equals(DomainType.JRF)) {
+    if (domainType.equals(DomainType.JRF)) {
       // install db for FMW test cases
       logger.info("Creating unique namespace for Database");
       assertNotNull(namespaces.get(3), "Namespace list is null");
@@ -231,6 +232,7 @@ public class ItMiiSampleHelper {
 
         String outStr = errString;
         outStr += ", domainType=" + domainType + "\n";
+        outStr += ", imageType=" + imageType + "\n";
         outStr += ", command=\n{\n" + command + "\n}\n";
         outStr += ", stderr=\n{\n" + (result != null ? result.stderr() : "") + "\n}\n";
         outStr += ", stdout=\n{\n" + (result != null ? result.stdout() : "") + "\n}\n";
@@ -246,12 +248,12 @@ public class ItMiiSampleHelper {
    * Test MII sample WLS or JRF initial use case.
    */
   public static void callInitialUseCase() {
-    String imageName = (domainTypeName.equals(DomainType.WLS))
+    String imageName = (domainType.equals(DomainType.WLS))
         ? MII_SAMPLE_WLS_IMAGE_NAME_V1 : MII_SAMPLE_JRF_IMAGE_NAME_V1;
     previousTestSuccessful = true;
     envMap.put("MODEL_IMAGE_NAME", imageName);
 
-    if (domainTypeName.equals(DomainType.JRF)) {
+    if (domainType.equals(DomainType.JRF)) {
       String dbImageName = (KIND_REPO != null
           ? KIND_REPO + DB_IMAGE_NAME.substring(BASE_IMAGES_REPO.length() + 1) : DB_IMAGE_NAME);
       String jrfBaseImageName = (KIND_REPO != null
@@ -270,11 +272,11 @@ public class ItMiiSampleHelper {
 
       // run JRF use cases irrespective of WLS use cases fail/pass
       previousTestSuccessful = true;
-      execTestScriptAndAssertSuccess(domainTypeName, "-db,-rcu", "DB/RCU creation failed");
+      execTestScriptAndAssertSuccess(domainType, "-db,-rcu", "DB/RCU creation failed");
     }
 
     execTestScriptAndAssertSuccess(
-        domainTypeName,
+        domainType,
         "-initial-image,-check-image-and-push,-initial-main",
         "Initial use case failed"
     );
@@ -286,12 +288,23 @@ public class ItMiiSampleHelper {
   public static void callUpdateUseCase(String args,
                                        String errString) {
     if (args.contains("update3")) {
-      String imageName = (domainTypeName.equals(DomainType.WLS))
+      String imageName = (domainType.equals(DomainType.WLS))
           ? MII_SAMPLE_WLS_IMAGE_NAME_V2 : MII_SAMPLE_JRF_IMAGE_NAME_V2;
       envMap.put("MODEL_IMAGE_NAME", imageName);
     }
 
-    execTestScriptAndAssertSuccess(domainTypeName, args, errString);
+    execTestScriptAndAssertSuccess(domainType, args, errString);
+  }
+
+  /**
+   * Test MII sample WLS or JRF update1 use case.
+   */
+  public static void callCheckMiiSampleSource(String args,
+                                              String errString) {
+    final String baseImageNameKey = "BASE_IMAGE_NAME";
+    envMap.remove(baseImageNameKey);
+    execTestScriptAndAssertSuccess(domainType, args, errString);
+    envMap.put(baseImageNameKey, WEBLOGIC_IMAGE_NAME);
   }
 
   /**
@@ -308,69 +321,12 @@ public class ItMiiSampleHelper {
     }
 
     // db cleanup or deletion
-    if (domainTypeName.equals(DomainType.JRF) && envMap != null) {
+    if (domainType.equals(DomainType.JRF) && envMap != null) {
       logger.info("Running samples DB cleanup");
       Command.withParams(new CommandParams()
           .command(MII_SAMPLES_SCRIPT + " -precleandb")
           .env(envMap)
           .redirect(true)).execute();
     }
-  }
-
-
-  /**
-   * Set env variables map.
-   * @param newEnvMap a map contains env variables
-   */
-  public static void setEnvMap(Map<String, String> newEnvMap) {
-    ItMiiSampleHelper.envMap = newEnvMap;
-  }
-
-  /**
-   * Set domain type.
-   * @param domainTypeName domain type name
-   */
-  public static void setDomainType(DomainType domainTypeName) {
-    ItMiiSampleHelper.domainTypeName = domainTypeName;
-  }
-
-  /**
-   * Set image type.
-   * @param imageTypeName image type names
-   */
-  public static void setImageType(ImageType imageTypeName) {
-    ItMiiSampleHelper.imageTypeName = imageTypeName;
-  }
-
-  /**
-   * Get env variables map.
-   * @return a map containing env variables
-   */
-  public static Map<String, String> getEnvMap() {
-    return ItMiiSampleHelper.envMap;
-  }
-
-  /**
-   * Get domain type.
-   * @return domain type name
-   */
-  public static DomainType getDomainType() {
-    return domainTypeName;
-  }
-
-  /**
-   * Get image type.
-   * @return  image type names
-   */
-  public static ImageType getImageType() {
-    return ItMiiSampleHelper.imageTypeName;
-  }
-
-  /**
-   * Check whether to use auxiliary image or not.
-   * @return  true to test auxiliary image and false to test non-auxiliary image
-   */
-  public static boolean auxiliaryImageEnabled() {
-    return (imageTypeName.equals(ImageType.AUX))  ? true : false;
   }
 }

@@ -32,9 +32,7 @@ public class ItMiiSampleWlsAux {
    */
   @BeforeAll
   public static void init(@Namespaces(3) List<String> namespaces) {
-    ItMiiSampleHelper.setDomainType(ItMiiSampleHelper.DomainType.WLS);
-    ItMiiSampleHelper.setImageType(ItMiiSampleHelper.ImageType.AUX);
-    ItMiiSampleHelper.initAll(namespaces);
+    ItMiiSampleHelper.initAll(namespaces, ItMiiSampleHelper.DomainType.WLS, ItMiiSampleHelper.ImageType.AUX);
   }
 
   /**
