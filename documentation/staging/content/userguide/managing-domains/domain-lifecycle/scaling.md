@@ -98,7 +98,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: weblogic-domain-cluster-role
 rules:
-- apiGrous: [""]
+- apiGroups: [""]
   resources: ["services/status"]
   verbs: ["get", "list", "watch"]
 - apiGroups: ["weblogic.oracle"]
@@ -222,7 +222,7 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: weblogic-domain-cluster-role
 rules:
-- apiGrous: [""]
+- apiGroups: [""]
   resources: ["services/status"]
   verbs: ["get", "list", "watch"]
 - apiGroups: ["weblogic.oracle"]
