@@ -70,12 +70,9 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
-                    <argLine>
-                        --illegal-access=permit
-                    </argLine>
                     <encoding>UTF-8</encoding>
                     <argLine>
-                        --illegal-access=permit
+                        --add-opens java.base/java.time=ALL-UNNAMED
                     </argLine>
                     <argLine>${failsafeArgLine}</argLine>
                     <failIfNoTests>false</failIfNoTests>

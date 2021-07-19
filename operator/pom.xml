@@ -92,7 +92,7 @@
           <includes>
             <exclude>**/*Test.java</exclude>
           </includes>
-          <argLine>--illegal-access=permit</argLine>
+          <argLine>--add-opens java.base/java.time=ALL-UNNAMED</argLine>
         </configuration>
       </plugin>
 
@@ -235,7 +235,8 @@
             <configuration>
               <executable>java</executable>
               <arguments>
-                <argument>--illegal-access=permit</argument>
+                <argument>--add-opens</argument>
+                <argument>java.base/java.time=ALL-UNNAMED</argument>
                 <argument>-classpath</argument>
                 <!-- automatically creates the classpath using all project dependencies,
                      also adding the project build directory -->
