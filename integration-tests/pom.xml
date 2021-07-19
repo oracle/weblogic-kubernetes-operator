@@ -307,7 +307,9 @@
                   **/ItT3Channel,
                   **/ItDedicatedMode,
                   **/ItOpUpgradeFmwDomainInPV,
-                  **/ItOperatorWlsUpgrade
+                  **/ItOperatorWlsUpgrade,
+                  **/ItFmwDynamicDomainInPV,
+                  **/ItFmwDomainInPVUsingWDT
                 </includes-failsafe>
             </properties>
         </profile>
