@@ -204,6 +204,8 @@ class ItParameterizedDomain {
   private static String miiDomainNegativeNamespace = null;
   private static String miiImage = null;
   private static String encryptionSecretName = "encryptionsecret";
+  private static Map<String, Quantity> resourceRequest = new HashMap<>();
+  private static Map<String, Quantity> resourceLimit = new HashMap<>();
 
   private String curlCmd = null;
 
@@ -264,6 +266,11 @@ class ItParameterizedDomain {
     nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
     logger.info("NGINX http node port: {0}", nodeportshttp);
 
+    // set resource request and limit
+    resourceRequest.put("cpu", new Quantity("250m"));
+    resourceRequest.put("memory", new Quantity("768Mi"));
+    resourceLimit.put("cpu", new Quantity("2"));
+    resourceLimit.put("memory", new Quantity("2Gi"));
 
     // create model in image domain with multiple clusters
     miiDomain = createMiiDomainWithMultiClusters(miiDomainUid, miiDomainNamespace);
@@ -926,7 +933,10 @@ class ItParameterizedDomain {
                     .value("-Dweblogic.StdoutDebugEnabled=false"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+                    .value("-Djava.security.egd=file:/dev/./urandom "))
+                .resources(new V1ResourceRequirements()
+                    .requests(resourceRequest)
+                    .limits(resourceLimit)))
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING")
                 .adminService(new AdminService()
@@ -1089,7 +1099,10 @@ class ItParameterizedDomain {
                         .claimName(pvcName)))
                 .addVolumeMountsItem(new V1VolumeMount()
                     .mountPath("/u01/shared")
-                    .name(pvName)))
+                    .name(pvName))
+                .resources(new V1ResourceRequirements()
+                    .limits(resourceLimit)
+                    .requests(resourceRequest)))
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING")
                 .adminService(new AdminService()
@@ -1427,8 +1440,8 @@ class ItParameterizedDomain {
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom "))
                 .resources(new V1ResourceRequirements()
-                    .limits(new HashMap<>())
-                    .requests(new HashMap<>())))
+                    .limits(resourceLimit)
+                    .requests(resourceRequest)))
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING")
                 .adminService(new AdminService()
