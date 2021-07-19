@@ -45,6 +45,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
+import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 import static oracle.kubernetes.weblogic.domain.model.CrdSchemaGenerator.createCrdSchemaGenerator;
 
@@ -205,7 +206,14 @@ public class CrdHelper {
     }
 
     static V1CustomResourceValidation getValidationFromCrdSchemaFile(String fileContents) {
-      return Yaml.getSnakeYaml().loadAs(new StringReader(fileContents), V1CustomResourceValidation.class);
+      return getSnakeYaml(V1CustomResourceValidation.class)
+          .loadAs(new StringReader(fileContents), V1CustomResourceValidation.class);
+    }
+
+    private static org.yaml.snakeyaml.Yaml getSnakeYaml(Class<?> type) {
+      return type != null ? new org.yaml.snakeyaml.Yaml(new Yaml.CustomConstructor(type),
+          new Yaml.CustomRepresenter()) :
+          new org.yaml.snakeyaml.Yaml(new SafeConstructor(), new Yaml.CustomRepresenter());
     }
 
     static V1CustomResourceSubresources createSubresources() {
