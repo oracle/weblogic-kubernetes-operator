@@ -57,6 +57,7 @@ import static oracle.kubernetes.operator.DomainStatusUpdater.INSPECTING_DOMAIN_P
 import static oracle.kubernetes.operator.DomainStatusUpdater.createProgressingStartedEventStep;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED_DETAIL;
 
@@ -108,7 +109,7 @@ public class JobHelper {
   }
 
   private static boolean isIntrospectionRequestedAndRemove(Packet packet) {
-    return packet.remove(ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED) != null;
+    return packet.remove(DOMAIN_INTROSPECT_REQUESTED) != null;
   }
 
   private static boolean isIntrospectVersionChanged(Packet packet, DomainPresenceInfo info) {
@@ -552,6 +553,7 @@ public class JobHelper {
                 getJobCreationTime(domainIntrospectorJob).plus(retryIntervalSeconds, SECONDS))) {
           //Introspector job is incomplete and current time is greater than the lazy deletion time for the job,
           //update the domain status and execute the next step
+          packet.put(DOMAIN_INTROSPECT_REQUESTED, "INTROSPECTION_FAILED");
           nextStep = getNext();
         }
 
