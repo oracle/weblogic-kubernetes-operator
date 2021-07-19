@@ -739,7 +739,9 @@ public class ItMiiAuxiliaryImage {
   }
 
   /**
-   * Negative Test to create domain with file in auxiliary image not accessible by oracle user.
+   * Negative Test to create domain with file , created by user tester with permission read only
+   * and not accessible by oracle user in auxiliary image
+   * via provided Dockerfile.
    * Check the error msg is in introspector pod log, domain events and operator pod log.
    */
   @Test
