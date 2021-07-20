@@ -8,7 +8,7 @@ draft: false
 
 | Date | Version | Introduces backward incompatibilities? | Change |
 | --- | --- | --- | --- |
-| July 16, 2021 | v3.3.0 | no | Auxiliary image support. |
+| July 20, 2021 | v3.3.0 | no | Auxiliary image support. |
 | June 21, 2021 | v3.2.5 | no | Updated Oracle Linux libraries and resolved an issue related to repeated introspection. |
 | June 18, 2021 | v3.2.4 | no | Resolved several issues related to Istio, diagnostics, and recovery. |
 | May 21, 2021 | v3.2.3 | no | Resolved several issues, including an issue related to preserving the operator-generated internal certificate, corrected the monitoring exporter integration to include the Administration Server, enhanced the model-in-image support to not require the use of configuration overrides, and updated the domain-home-in-image samples to support the WebLogic Image Tool. |
@@ -47,7 +47,9 @@ draft: false
 
 * [Auxiliary images support](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/auxiliary-images/).
 * Resolved an issue related to Event creation failure with the error: "StorageError: invalid object, Code: 4" ([#2443](https://github.com/oracle/weblogic-kubernetes-operator/pull/2443)).
-* Improved the ability of the operator to use an existing introspection  ([#2430](https://github.com/oracle/weblogic-kubernetes-operator/pull/2430)).
+* Improved the ability of the operator to use an existing introspection ([#2430](https://github.com/oracle/weblogic-kubernetes-operator/pull/2430)).
+* Upgraded core dependency versions, including upgrading the Kubernetes Java Client to 13.0.0 ([#2466](https://github.com/oracle/weblogic-kubernetes-operator/pull/2466)).
+* Corrected documentation of roles necessary for the scaling script ([#2464](https://github.com/oracle/weblogic-kubernetes-operator/pull/2464)).
 * All fixes included in 3.2.1 through 3.2.5 are included in 3.3.0.
 
 #### Operator 3.2.5
