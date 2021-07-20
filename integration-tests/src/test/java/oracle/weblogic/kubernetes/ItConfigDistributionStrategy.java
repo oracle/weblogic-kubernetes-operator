@@ -827,7 +827,8 @@ public class ItConfigDistributionStrategy {
             .namespace(domainNamespace))
         .spec(new DomainSpec()
             .configuration(new Configuration()
-                .overrideDistributionStrategy("DYNAMIC"))
+                .overrideDistributionStrategy("DYNAMIC")
+                .introspectorJobActiveDeadlineSeconds(300L))
             .domainUid(domainUid)
             .domainHome("/shared/domains/" + domainUid) // point to domain home in pv
             .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
