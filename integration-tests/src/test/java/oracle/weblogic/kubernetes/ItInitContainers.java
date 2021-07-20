@@ -167,7 +167,7 @@ class ItInitContainers {
    * Add initContainers at domain spec level and verify the admin server pod executes initContainer command.
    * Test fails if domain crd can't add the initContainers or
    * WebLogic server pods don't go through initialization and ready state.
-   * The following introsepct version usecase was added based on issue 
+   * The following introspect version usecase was added based on issue 
    * reported by OFSS team. With initContainer configured, the WebLogic server 
    * pod should not roll with modified introspect version without any update to 
    * domain resource.
