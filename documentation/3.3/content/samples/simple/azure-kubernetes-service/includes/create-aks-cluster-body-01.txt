@@ -1,0 +1,82 @@
+##### Create a Service Principal for AKS
+
+An AKS cluster requires either an [Azure Active Directory (AD) service principal](https://docs.microsoft.com/azure/active-directory/develop/app-objects-and-service-principals) or a [managed identity](https://docs.microsoft.com/azure/aks/use-managed-identity) to interact with Azure resources.
+
+We will use a service principal to create an AKS cluster. Follow the commands below to create a new service principal.
+
+Please run `az login` first. Do set the subscription you want to work with. You can get a list of your subscriptions by running `az account list`.
+
+```shell
+# Login
+$ az login
+
+# Set your working subscription
+$ export SUBSCRIPTION_ID=<your-subscription-id>
+$ az account set -s $SUBSCRIPTION_ID
+```
+
+Create the new service principal with the following commands:
+
+```shell
+# Create Service Principal
+$ export SP_NAME=myAKSClusterServicePrincipal
+$ az ad sp create-for-rbac --skip-assignment --name $SP_NAME
+
+# Copy the output to a file, we will use it later.
+```
+
+If you see an error similar to the following:
+
+```shell
+Found an existing application instance of "5pn2s201-nq4q-43n1-z942-p9r9571qr3rp". We will patch it
+Insufficient privileges to complete the operation.
+```
+
+The problem may be a pre-existing service principal with the same name.  Either delete the other service principal or pick a different name.
+
+Successful output will look like the following:
+
+```json
+{
+  "appId": "r3qnq743-61s9-4758-8163-4qpo87s72s54",
+  "displayName": "myAKSClusterServicePrincipal",
+  "name": "http://myAKSClusterServicePrincipal",
+  "password": "TfhR~uOJ1C1ftD5NS_LzJJj6UOjS2OwXfz",
+  "tenant": "82sr215n-0ns5-404e-9161-206r0oqyq999"
+}
+```
+
+Grant your service principal with a contributor role to create AKS resources.
+
+```shell
+# Use the <appId> from the output of the last command
+$ export SP_APP_ID=r3qnq743-61s9-4758-8163-4qpo87s72s54
+$ az role assignment create --assignee $SP_APP_ID --role Contributor
+```
+
+Successful output will look like the following:
+
+```json
+{
+  "canDelegate": null,
+  "id": "/subscriptions/p7844r91-o11q-4n7s-np6s-996308sopqo9/providers/Microsoft.Authorization/roleAssignments/4oq396os-rs95-4n6s-n3qo-sqqpnpo91035",
+  "name": "4oq396os-rs95-4n6s-n3qo-sqqpnpo91035",
+  "principalId": "952551r8-n129-4on3-oqo9-231n0s6011n3",
+  "principalType": "ServicePrincipal",
+  "roleDefinitionId": "/subscriptions/p7844r91-o11q-4n7s-np6s-996308sopqo9/providers/Microsoft.Authorization/roleDefinitions/o24988np-6180-42n0-no88-20s7382qq24p",
+  "scope": "/subscriptions/p7844r91-o11q-4n7s-np6s-996308sopqo9",
+}
+```
+
+##### Oracle Container Registry
+
+You will need an Oracle account. The following steps will direct you to accept the license agreement for WebLogic Server.  Make note of your Oracle Account password and email.  This sample pertains to 12.2.1.4, but other versions may work as well.
+
+  - In a web browser, navigate to https://container-registry.oracle.com and log in using the Oracle Single Sign-On authentication service. If you do not already have SSO credentials, at the top of the page, click the **Sign In** link to create them.
+  - The Oracle Container Registry provides a WebLogic Server 12.2.1.4.0 Docker image, which already has the necessary patches applied, and the Oracle WebLogic Server 12.2.1.4.0 and 14.1.1.0.0 images, which do not require any patches.
+  - Ensure that Docker desktop is running.  Find and then pull the WebLogic 12.2.1.4 install image:
+     ```shell
+     $ docker pull container-registry.oracle.com/middleware/weblogic:12.2.1.4
+     ```
+
+   If you have problems accessing the Oracle Container Registry, you can build your own Docker images from the [Oracle GitHub repository](https://github.com/oracle/docker-images/tree/main/OracleWebLogic/dockerfiles).

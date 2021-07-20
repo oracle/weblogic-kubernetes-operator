@@ -514,8 +514,7 @@ public class CommonTestUtils {
         .helmParams(opHelmParams)
         .imagePullSecrets(secretNameMap)
         .domainNamespaces(Arrays.asList(domainNamespace))
-        .serviceAccount(opServiceAccount)
-        .featureGates("AuxiliaryImage=true");
+        .serviceAccount(opServiceAccount);
 
     if (domainNamespaceSelectionStrategy != null) {
       opParams.domainNamespaceSelectionStrategy(domainNamespaceSelectionStrategy);
