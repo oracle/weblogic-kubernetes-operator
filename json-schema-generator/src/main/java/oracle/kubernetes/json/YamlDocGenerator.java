@@ -213,7 +213,7 @@ public class YamlDocGenerator {
           return specifiedType;
         case "array":
           Type subType = getItems();
-          return "array of " + subType.getString();
+          return "Array of " + subType.getString();
         default:
           return Optional.ofNullable(getReference()).orElse(specifiedType);
       }

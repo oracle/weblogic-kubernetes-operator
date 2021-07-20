@@ -84,7 +84,7 @@ public class YamlDocGeneratorTest {
   @Test
   public void whenPropertyTypeIsArrayOfStrings_generateType() throws NoSuchFieldException {
     String markdown = generateForProperty(getClass().getDeclaredField("myList"));
-    assertThat(markdown, containsString(tableEntry("`myList`", "array of string", "")));
+    assertThat(markdown, containsString(tableEntry("`myList`", "Array of string", "")));
   }
 
   @Test
@@ -109,7 +109,7 @@ public class YamlDocGeneratorTest {
         containsString(
             tableEntry(
                 "`simpleArray`",
-                "array of " + linkTo("Simple Object", "#simple-object"),
+                "Array of " + linkTo("Simple Object", "#simple-object"),
                 "An array")));
   }
 
