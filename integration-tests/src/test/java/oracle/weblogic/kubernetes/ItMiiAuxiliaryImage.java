@@ -63,6 +63,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomRe
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResource;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkDomainEventContainsExpectedMsg;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
@@ -708,8 +709,6 @@ public class ItMiiAuxiliaryImage {
     checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
 
     // verify the domain is not rolled
-    // TODO: enable this check once https://jira.oraclecorp.com/jira/browse/OWLS-90971 is fixed
-    /*
     logger.info("sleep 2 minutes to make sure the domain is not restarted");
     try {
       Thread.sleep(120000);
@@ -717,7 +716,6 @@ public class ItMiiAuxiliaryImage {
       // ignore
     }
     verifyPodsNotRolled(domainNamespace, pods);
-    */
 
     // restore domain1
     // patch the first auxiliary image to remove the domain.spec.serverPod.auxiliaryImages.command
