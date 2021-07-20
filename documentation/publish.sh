@@ -45,7 +45,7 @@ hugo -s 2.5 -d "${outdir}/2.5" -b https://oracle.github.io/weblogic-kubernetes-o
 hugo -s 2.6 -d "${outdir}/2.6" -b https://oracle.github.io/weblogic-kubernetes-operator/2.6
 hugo -s 3.0 -d "${outdir}/3.0" -b https://oracle.github.io/weblogic-kubernetes-operator/3.0
 hugo -s 3.1 -d "${outdir}/3.1" -b https://oracle.github.io/weblogic-kubernetes-operator/3.1
-hugo -s 3.2 -d "${outdir}/3.1" -b https://oracle.github.io/weblogic-kubernetes-operator/3.2
+hugo -s 3.2 -d "${outdir}/3.2" -b https://oracle.github.io/weblogic-kubernetes-operator/3.2
 
 echo "Copying static files into place..."
 cp -R charts domains swagger "${outdir}"

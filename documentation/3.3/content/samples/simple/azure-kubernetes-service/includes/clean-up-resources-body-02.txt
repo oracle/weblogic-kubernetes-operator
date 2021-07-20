@@ -1,0 +1,6 @@
+```shell
+$ az group delete --yes --no-wait --name $AKS_PERS_RESOURCE_GROUP
+$ az group delete --yes --no-wait --name "MC_$AKS_PERS_RESOURCE_GROUP"_"$AKS_CLUSTER_NAME"_"$AKS_PERS_LOCATION"
+$ az ad sp delete --id $SP_APP_ID
+```
+
