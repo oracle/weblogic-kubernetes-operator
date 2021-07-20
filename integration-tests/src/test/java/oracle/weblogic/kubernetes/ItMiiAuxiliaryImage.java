@@ -736,6 +736,108 @@ public class ItMiiAuxiliaryImage {
     checkPodReady(adminServerPodName, domainUid, domainNamespace);
   }
 
+  /**
+   * Negative Test to create domain with file , created by user tester with permission read only
+   * and not accessible by oracle user in auxiliary image
+   * via provided Dockerfile.
+   * Check the error msg is in introspector pod log, domain events and operator pod log.
+   */
+  @Test
+  @Order(7)
+  @DisplayName("Negative Test to create domain with file in auxiliary image not accessible by oracle user")
+  public void testErrorPathFilePermission() {
+
+    OffsetDateTime timestamp = now();
+    String errorPathAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + ":errorpathimage4";
+
+    final String auxiliaryImageVolumeName = "auxiliaryImageVolume1";
+    final String auxiliaryImagePath = "/auxiliary";
+
+    createSecretsForDomain(adminSecretName, encryptionSecretName, errorpathDomainNamespace);
+
+    // create stage dir for auxiliary image
+    Path errorpathAIPath1 = Paths.get(RESULTS_ROOT, "errorpathauxiimage4");
+    assertDoesNotThrow(() -> FileUtils.deleteDirectory(errorpathAIPath1.toFile()));
+    assertDoesNotThrow(() -> Files.createDirectories(errorpathAIPath1));
+
+    Path errorpathAIPathToFile = Paths.get(RESULTS_ROOT, "errorpathauxiimage4/test1.txt");
+    String content = "some text ";
+    assertDoesNotThrow(() -> Files.write(errorpathAIPathToFile, content.getBytes()),
+        "Can't write to file " + errorpathAIPathToFile);
+
+    // create models dir and copy model for image
+    Path modelsPath1 = Paths.get(errorpathAIPath1.toString(), "models");
+    assertDoesNotThrow(() -> Files.createDirectories(modelsPath1));
+    assertDoesNotThrow(() -> Files.copy(
+        Paths.get(MODEL_DIR, MII_BASIC_WDT_MODEL_FILE),
+        Paths.get(modelsPath1.toString(), MII_BASIC_WDT_MODEL_FILE),
+        StandardCopyOption.REPLACE_EXISTING));
+
+    // build app
+    assertTrue(buildAppArchive(defaultAppParams()
+            .srcDirList(Collections.singletonList(MII_BASIC_APP_NAME))
+            .appName(MII_BASIC_APP_NAME)),
+        String.format("Failed to create app archive for %s", MII_BASIC_APP_NAME));
+
+    // copy app archive to models
+    assertDoesNotThrow(() -> Files.copy(
+        Paths.get(ARCHIVE_DIR,  MII_BASIC_APP_NAME + ".zip"),
+        Paths.get(modelsPath1.toString(), MII_BASIC_APP_NAME + ".zip"),
+        StandardCopyOption.REPLACE_EXISTING));
+
+    // unzip WDT installation file into work dir
+    unzipWDTInstallationFile(errorpathAIPath1.toString());
+
+    // create image with model and wdt installation files
+    createAuxiliaryImage(errorpathAIPath1.toString(),
+        Paths.get(RESOURCE_DIR, "auxiliaryimage", "/negative/Dockerfile").toString(), errorPathAuxiliaryImage1);
+
+    // push image to repo for multi node cluster
+    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
+      logger.info("docker push image {0} to registry {1}", errorPathAuxiliaryImage1, DOMAIN_IMAGES_REPO);
+      assertTrue(dockerPush(errorPathAuxiliaryImage1),
+          String.format("docker push failed for image %s", errorPathAuxiliaryImage1));
+    }
+
+    // create domain custom resource using auxiliary images
+    logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
+        domainUid, errorPathAuxiliaryImage1);
+    Domain domainCR = createDomainResource(domainUid, errorpathDomainNamespace,
+        WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG, adminSecretName, OCIR_SECRET_NAME,
+        encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
+        auxiliaryImageVolumeName, errorPathAuxiliaryImage1);
+
+    // create domain and verify it is failed
+    logger.info("Creating domain {0} with auxiliary image {1} in namespace {2}",
+        domainUid, errorPathAuxiliaryImage1, errorpathDomainNamespace);
+    assertDoesNotThrow(() -> createDomainCustomResource(domainCR), "createDomainCustomResource throws Exception");
+
+    // check the introspector pod log contains the expected error msg
+    String expectedErrorMsg = "cp: can't open '/auxiliary/test1.txt': Permission denied";
+    String introspectorPodName = assertDoesNotThrow(() -> getIntrospectorPodName(domainUid, errorpathDomainNamespace));
+    checkPodLogContainsString(errorpathDomainNamespace, introspectorPodName, expectedErrorMsg);
+
+    // check the domain event contains the expected error msg
+    checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
+        "Warning", timestamp, expectedErrorMsg);
+
+    // check the operator pod log contains the expected error msg
+    String operatorPodName =
+        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+    checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
+
+    // check there are no admin server and managed server pods and services not created
+    checkPodDoesNotExist(adminServerPodName, domainUid, errorpathDomainNamespace);
+    checkServiceDoesNotExist(adminServerPodName, errorpathDomainNamespace);
+    for (int i = 1; i <= replicaCount; i++) {
+      checkPodDoesNotExist(managedServerPrefix + i, domainUid, errorpathDomainNamespace);
+      checkServiceDoesNotExist(managedServerPrefix + i, errorpathDomainNamespace);
+    }
+
+    // delete domain1
+    deleteDomainResource(errorpathDomainNamespace, domainUid);
+  }
+
   private static void patchDomainWithAuxiliaryImageAndVerify(String oldImageName, String newImageName,
                                                              String domainUid, String domainNamespace) {
     String adminServerPodName = domainUid + "-admin-server";
