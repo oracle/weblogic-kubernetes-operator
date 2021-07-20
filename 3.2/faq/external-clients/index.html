@@ -1,0 +1,5932 @@
+<!DOCTYPE html>
+<html lang="en" class="js csstransforms3d">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="description" content="This FAQ describes approaches for giving WebLogic applications access to WebLogic JMS or EJB resources when either the applications or their resources are located in Kubernetes. This includes between different Kubernetes namespaces within the same Kubernetes cluster, between different Kubernetes clusters, and between a non-Kubernetes location and Kubernetes.">
+
+
+    <link rel="icon" href="/weblogic-kubernetes-operator/3.2/images/favicon.png" type="image/png">
+
+    <title>External WebLogic clients :: WebLogic Kubernetes Operator</title>
+
+    
+    <link href="/weblogic-kubernetes-operator/3.2/css/nucleus.css?1626795921" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/fontawesome-all.min.css?1626795921" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/hybrid.css?1626795921" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/featherlight.min.css?1626795921" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/perfect-scrollbar.min.css?1626795921" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/auto-complete.css?1626795921" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/atom-one-dark-reasonable.css?1626795921" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/theme.css?1626795921" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/tabs.css?1626795921" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/hugo-theme.css?1626795921" rel="stylesheet">
+    
+    
+
+    <script src="/weblogic-kubernetes-operator/3.2/js/jquery-3.6.0.min.js?1626795921"></script>
+
+    <style>
+      :root #header + #content > #left > #rlblock_left{
+          display:none !important;
+      }
+      
+        :not(pre) > code + span.copy-to-clipboard {
+            display: none;
+        }
+      
+    </style>
+    
+  </head>
+  <body class="" data-url="/weblogic-kubernetes-operator/3.2/faq/external-clients/">
+    <nav id="sidebar" class="">
+
+
+
+  <div id="header-wrapper">
+    <div id="header">
+      <a id="logo" href="https://oracle.github.io/weblogic-kubernetes-operator/3.2">
+  <img src="https://oracle.github.io/weblogic-kubernetes-operator/3.2/images/logo.png" height="60"><br/>
+  Kubernetes Operator
+</a>
+
+    </div>
+    
+        <div class="searchbox">
+    <label for="search-by"><i class="fas fa-search"></i></label>
+    <input data-search-input id="search-by" type="search" placeholder="Search...">
+    <span data-search-clear=""><i class="fas fa-times"></i></span>
+</div>
+
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/lunr.min.js?1626795921"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/auto-complete.js?1626795921"></script>
+<script type="text/javascript">
+    
+        var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/3.2";
+    
+</script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/search.js?1626795921"></script>
+
+    
+  </div>
+
+    <div class="highlightable">
+    <ul class="topics">
+      <li><a  class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/3.2">Home</a></li>
+        
+          
+          
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/quickstart/" title="Quick Start" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/quickstart/">
+          <b> </b>Quick Start
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/quickstart/get-images/" title="Get images" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/quickstart/get-images/">
+        Get images
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/quickstart/install/" title="Install the operator and ingress controller" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/quickstart/install/">
+        Install the operator and ingress controller
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/quickstart/prepare/" title="Prepare for a domain" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/quickstart/prepare/">
+        Prepare for a domain
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/quickstart/create-domain/" title="Create a domain" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/quickstart/create-domain/">
+        Create a domain
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/quickstart/cleanup/" title="Clean up" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/quickstart/cleanup/">
+        Clean up
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+          
+          
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/" title="User Guide" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/userguide/">
+          <b> </b>User Guide
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/introduction/" title="Introduction" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/userguide/introduction/">
+          <b> </b>Introduction
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/introduction/terms/" title="Important terms" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/introduction/terms/">
+        Important terms
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/introduction/design/" title="Design philosophy" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/introduction/design/">
+        Design philosophy
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/introduction/architecture/" title="Architecture" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/introduction/architecture/">
+        Architecture
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/introduction/get-help/" title="Get help" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/introduction/get-help/">
+        Get help
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/prerequisites/introduction/" title="Operator prerequisites" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/prerequisites/introduction/">
+        Operator prerequisites
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/platforms/environments/" title="Supported platforms" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/platforms/environments/">
+        Supported platforms
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/prepare/" title="Setup checklist" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/userguide/prepare/">
+          Setup checklist
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-operators/" title="Manage operators" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-operators/">
+          Manage operators
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-operators/installation/" title="Install the operator" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-operators/installation/">
+        Install the operator
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-operators/using-helm/" title="Configure the operator using Helm" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-operators/using-helm/">
+        Configure the operator using Helm
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-operators/the-rest-api/" title="Use the operator&#39;s REST services" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-operators/the-rest-api/">
+        Use the operator&#39;s REST services
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/base-images/" title="WebLogic Server images" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/userguide/base-images/">
+          WebLogic Server images
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/" title="Manage WebLogic domains" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/">
+          Manage WebLogic domains
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/choosing-a-model/" title="Choose a domain home source type" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/choosing-a-model/">
+          <b> </b>Choose a domain home source type
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/prepare/" title="Prepare to run a domain" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/prepare/">
+        <b> </b>Prepare to run a domain
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/domain-resource/" title="Domain resource" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/domain-resource/">
+        <b> </b>Domain resource
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/persistent-storage/" title="Persistent storage" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/persistent-storage/">
+          <b> </b>Persistent storage
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/model-in-image/" title="Model in Image" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/model-in-image/">
+          <b> </b>Model in Image
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/model-in-image/overview/" title="Overview" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/model-in-image/overview/">
+        <b> </b>Overview
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/model-in-image/usage/" title="Usage" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/model-in-image/usage/">
+        <b> </b>Usage
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/model-in-image/auxiliary-images/" title="Auxiliary images" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/model-in-image/auxiliary-images/">
+        <b> </b>Auxiliary images
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/model-in-image/model-files/" title="Model files" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/model-in-image/model-files/">
+        <b> </b>Model files
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/model-in-image/runtime-updates/" title="Runtime updates" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/model-in-image/runtime-updates/">
+        <b> </b>Runtime updates
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/model-in-image/debugging/" title="Debugging" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/model-in-image/debugging/">
+        <b> </b>Debugging
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/configoverrides/" title="Configuration overrides" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/configoverrides/">
+          <b> </b>Configuration overrides
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/ingress/" title="Ingress" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/ingress/">
+          <b> </b>Ingress
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/accessing-the-domain/" title="Access the domain" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/accessing-the-domain/">
+          <b> </b>Access the domain
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/accessing-the-domain/admin-console/" title="Use the Remote Console" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/accessing-the-domain/admin-console/">
+        Use the Remote Console
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/accessing-the-domain/wlst/" title="Use WLST" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/accessing-the-domain/wlst/">
+        Use WLST
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/domain-lifecycle/" title="Domain life cycle" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/domain-lifecycle/">
+          <b> </b>Domain life cycle
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/domain-lifecycle/startup/" title="Startup and shutdown" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/domain-lifecycle/startup/">
+        Startup and shutdown
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/domain-lifecycle/restarting/" title="Restarting" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/domain-lifecycle/restarting/">
+        Restarting
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/domain-lifecycle/scaling/" title="Scaling" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/domain-lifecycle/scaling/">
+        Scaling
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/domain-lifecycle/introspection/" title="Domain introspection" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/domain-lifecycle/introspection/">
+        Domain introspection
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/domain-lifecycle/liveness-readiness-probe-customization/" title="Liveness and readiness probes customization" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/domain-lifecycle/liveness-readiness-probe-customization/">
+        Liveness and readiness probes customization
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/domain-events/" title="Domain events" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/domain-events/">
+        <b> </b>Domain events
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-fmw-domains/" title="Manage FMW Infrastructure domains" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-fmw-domains/">
+          Manage FMW Infrastructure domains
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/cicd/" title="CI/CD considerations" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/userguide/cicd/">
+          CI/CD considerations
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/cicd/layering/" title="Container image layering" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/cicd/layering/">
+        Container image layering
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/cicd/why-layering-matters/" title="Why layering matters" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/cicd/why-layering-matters/">
+        Why layering matters
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/cicd/choose-an-approach/" title="Choose an approach" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/cicd/choose-an-approach/">
+        Choose an approach
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/cicd/mutate-the-domain-layer/" title="Mutate the domain layer" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/cicd/mutate-the-domain-layer/">
+        Mutate the domain layer
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/cicd/how-to-copy-domains/" title="Copy domains" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/cicd/how-to-copy-domains/">
+        Copy domains
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/cicd/tools/" title="Tools" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/cicd/tools/">
+        Tools
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/istio/istio/" title="Istio support" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/istio/istio/">
+        Istio support
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/kubernetes/k8s-setup/" title="Set up Kubernetes" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/kubernetes/k8s-setup/">
+        Set up Kubernetes
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+          
+          
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/" title="Samples" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/">
+          <b> </b>Samples
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/" title="Simple samples" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/simple/">
+          <b> </b>Simple samples
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/credentials/" title="Credentials" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/simple/credentials/">
+          Credentials
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/storage/" title="Storage" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/simple/storage/">
+          Storage
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/database/" title="Run a database" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/simple/database/">
+          Run a database
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/domains/" title="Domains" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/simple/domains/">
+          Domains
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/domains/manually-create-domain/" title="Manually" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/simple/domains/manually-create-domain/">
+          Manually
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/domains/domain-home-on-pv/" title="Domain home on a PV" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/simple/domains/domain-home-on-pv/">
+          Domain home on a PV
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/domains/domain-home-in-image/" title="Domain home in image" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/simple/domains/domain-home-in-image/">
+          Domain home in image
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/" title="Model in image" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/">
+          Model in image
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/prerequisites/" title="Prerequisites" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/prerequisites/">
+        Prerequisites
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/initial/" title="Initial use case" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/initial/">
+        Initial use case
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/update1/" title="Update 1" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/update1/">
+        Update 1
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/update2/" title="Update 2" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/update2/">
+        Update 2
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/update3/" title="Update 3" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/update3/">
+        Update 3
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/update4/" title="Update 4" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/update4/">
+        Update 4
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/cleanup/" title="Cleanup" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/cleanup/">
+        Cleanup
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/domains/fmw-domain/" title="FMW Infrastructure domain on a PV" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/simple/domains/fmw-domain/">
+          FMW Infrastructure domain on a PV
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/domains/fmw-domain-home-in-image/" title="FMW Infrastructure domain home in image" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/simple/domains/fmw-domain-home-in-image/">
+          FMW Infrastructure domain home in image
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/domains/delete-domain/" title="Delete resources associated with the domain" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/simple/domains/delete-domain/">
+          Delete resources associated with the domain
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/domains/lifecycle/" title="Domain lifecycle operations" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/simple/domains/lifecycle/">
+          Domain lifecycle operations
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/rest/" title="REST APIs" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/simple/rest/">
+          REST APIs
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/ingress/" title="Ingress" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/simple/ingress/">
+          Ingress
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/elastic-stack/" title="Elastic Stack" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/simple/elastic-stack/">
+          Elastic Stack
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/elastic-stack/operator/" title="Operator" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/simple/elastic-stack/operator/">
+          Operator
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/elastic-stack/weblogic-domain/" title="WebLogic domain" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/simple/elastic-stack/weblogic-domain/">
+          WebLogic domain
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/azure-kubernetes-service/" title="Azure Kubernetes Service" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/simple/azure-kubernetes-service/">
+          Azure Kubernetes Service
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/azure-kubernetes-service/domain-on-pv/" title="Domain home on a PV" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/samples/simple/azure-kubernetes-service/domain-on-pv/">
+        Domain home on a PV
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/azure-kubernetes-service/model-in-image/" title="Model in Image" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/samples/simple/azure-kubernetes-service/model-in-image/">
+        Model in Image
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/azure-kubernetes-service/troubleshooting/" title="Troubleshooting" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/samples/simple/azure-kubernetes-service/troubleshooting/">
+        Troubleshooting
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/tanzu-kubernetes-service/" title="Tanzu Kubernetes Service" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/simple/tanzu-kubernetes-service/">
+          Tanzu Kubernetes Service
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+          
+          
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/developerguide/" title="Developer Guide" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/developerguide/">
+          <b> </b>Developer Guide
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/developerguide/contributing/" title="Contribute to the operator" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/developerguide/contributing/">
+        Contribute to the operator
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/developerguide/requirements/" title="Requirements" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/developerguide/requirements/">
+        Requirements
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/developerguide/building/" title="Building" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/developerguide/building/">
+        Building
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/developerguide/integration-tests/" title="Integration tests" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/developerguide/integration-tests/">
+        Integration tests
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/developerguide/branching/" title="Branching" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/developerguide/branching/">
+        Branching
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/developerguide/coding-standards/" title="Coding standards" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/developerguide/coding-standards/">
+        Coding standards
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/developerguide/code-structure/" title="Code structure" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/developerguide/code-structure/">
+        Code structure
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/developerguide/asynchronous-call-model/" title="Asynchronous call model" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/developerguide/asynchronous-call-model/">
+        Asynchronous call model
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/developerguide/domain-processing/" title="Domain processing" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/developerguide/domain-processing/">
+        Domain processing
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/developerguide/documentation/" title="Documentation" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/developerguide/documentation/">
+        Documentation
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/developerguide/backwards-compatibility/" title="Backward compatibility" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/developerguide/backwards-compatibility/">
+        Backward compatibility
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+          
+          
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/reference/" title="Reference" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/reference/">
+          <b> </b>Reference
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/reference/swagger/" title="Swagger" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/reference/swagger/">
+        Swagger
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/reference/domain-resource/" title="Domain resource" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/reference/domain-resource/">
+        Domain resource
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+          
+          
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/security/" title="Security" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/security/">
+          <b> </b>Security
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/security/certificates/" title="Certificates" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/security/certificates/">
+        Certificates
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/security/domain-security/" title="Domain security" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/security/domain-security/">
+          Domain security
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/security/domain-security/image-protection/" title="Container image protection" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/security/domain-security/image-protection/">
+        Container image protection
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/security/domain-security/weblogic-channels/" title="Channels" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/security/domain-security/weblogic-channels/">
+        Channels
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/security/encryption/" title="Encryption" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/security/encryption/">
+        Encryption
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/security/service-accounts/" title="Service accounts" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/security/service-accounts/">
+        Service accounts
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/security/rbac/" title="RBAC" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/security/rbac/">
+        RBAC
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/security/secrets/" title="Secrets" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/security/secrets/">
+        Secrets
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/security/openshift/" title="OpenShift" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/security/openshift/">
+        OpenShift
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+          
+          
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/faq/" title="Frequently asked questions" class="dd-item
+        parent
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/faq/">
+          Frequently asked questions
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/faq/newbie/" title="Answers for newcomers" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/faq/newbie/">
+        Answers for newcomers
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/faq/namespace-management/" title="Managing domain namespaces" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/faq/namespace-management/">
+        Managing domain namespaces
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/faq/cannot-pull-image/" title="Cannot pull image" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/faq/cannot-pull-image/">
+        Cannot pull image
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/faq/boot-identity-not-valid/" title="Boot identity not valid" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/faq/boot-identity-not-valid/">
+        Boot identity not valid
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/faq/domain-secret-mismatch/" title="Domain secret mismatch" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/faq/domain-secret-mismatch/">
+        Domain secret mismatch
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/faq/node-heating/" title="Node heating problem" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/faq/node-heating/">
+        Node heating problem
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/faq/fan/" title="Disabling Fast Application Notifications" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/faq/fan/">
+        Disabling Fast Application Notifications
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/faq/oci-fss-pv/" title="Using OCI File Storage (FSS) for persistent volumes" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/faq/oci-fss-pv/">
+        Using OCI File Storage (FSS) for persistent volumes
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/faq/oci-lb/" title="Using an OCI load balancer" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/faq/oci-lb/">
+        Using an OCI load balancer
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/faq/volumes/" title="Providing access to a PersistentVolumeClaim" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/faq/volumes/">
+        Providing access to a PersistentVolumeClaim
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/faq/configmaps/" title="Providing access to a ConfigMap" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/faq/configmaps/">
+        Providing access to a ConfigMap
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/faq/external-clients/" title="External WebLogic clients" class="dd-item active">
+        <a href="/weblogic-kubernetes-operator/3.2/faq/external-clients/">
+        External WebLogic clients
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/faq/coherence-requirements/" title="Coherence requirements" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/faq/coherence-requirements/">
+        Coherence requirements
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/faq/resource-settings/" title="Pod memory and CPU resources" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/faq/resource-settings/">
+        Pod memory and CPU resources
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+          
+        
+      <li><a  class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/3.2/release-notes">Release Notes</a></li>
+    </ul>
+
+    
+    
+
+    
+    <section id="footer">
+      <p>Created with <i class="fas fa-heart"></i> from <a href="https://www.oracle.com">Oracle</a></p>
+<p>&nbsp</p>
+<table border="1" bgcolor="white"><tbody><tr><td align="center"><p style="color: red">
+  You are viewing the archived documentation for version 3.2.x.
+  To view the documentation for the current release, please
+  <a href="https://oracle.github.io/weblogic-kubernetes-operator">click here</a>
+</p></td></tr></tbody></table>
+<p>&nbsp</p>
+<p><a href="https://github.com/oracle/weblogic-kubernetes-operator"><i class="fab fa-github"></i> GitHub repo</a></p>
+<p><a href="https://weblogic-slack-inviter.herokuapp.com/"><i class="fab fa-slack"></i> Public Slack #operator</a></p>
+
+    </section>
+  </div>
+</nav>
+
+
+
+
+        <section id="body">
+        <div id="overlay"></div>
+        <div class="padding highlightable">
+              
+              <div>
+                <div id="top-bar">
+                
+                
+                <div id="breadcrumbs" itemscope="" itemtype="http://data-vocabulary.org/Breadcrumb">
+                    <span id="sidebar-toggle-span">
+                        <a href="#" id="sidebar-toggle" data-sidebar-toggle="">
+                          <i class="fas fa-bars"></i>
+                        </a>
+                    </span>
+                  
+                  <span id="toc-menu"><i class="fas fa-list-alt"></i></span>
+                  
+                  <span class="links">
+                 
+                 
+                    
+          
+          
+            
+            
+          
+          
+            
+            
+          
+          
+            <a href='/weblogic-kubernetes-operator/3.2/'></a> > <a href='/weblogic-kubernetes-operator/3.2/faq/'>Frequently asked questions</a> > External WebLogic clients
+          
+        
+          
+        
+          
+        
+                 
+                  </span>
+                </div>
+                
+                    <div class="progress">
+    <div class="wrapper">
+<nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+    </div>
+</div>
+
+                
+              </div>
+            </div>
+            
+        <div id="head-tags">
+        
+        </div>
+        
+        <div id="body-inner">
+          
+            <h1>
+              
+              External WebLogic clients
+            </h1>
+          
+
+        
+
+
+<h4 id="contents">Contents</h4>
+<ul>
+<li><a href="#overview">Overview</a></li>
+<li><a href="#load-balancer-tunneling">Load balancer tunneling</a></li>
+<li><a href="#adding-a-weblogic-custom-channel">Adding a WebLogic custom channel</a>
+<ul>
+<li><a href="#when-is-a-weblogic-custom-channel-needed">When is a WebLogic custom channel needed?</a></li>
+<li><a href="#configuring-a-weblogic-custom-channel">Configuring a WebLogic custom channel</a></li>
+<li><a href="#weblogic-custom-channel-notes">WebLogic custom channel notes</a></li>
+</ul>
+</li>
+<li><a href="#kubernetes-nodeports">Kubernetes <code>NodePorts</code></a>
+<ul>
+<li><a href="#nodeport-overview"><code>NodePort</code> overview</a></li>
+<li><a href="#nodeport-warnings"><code>NodePort</code> warnings</a></li>
+<li><a href="#nodeport-steps"><code>NodePort</code> steps</a></li>
+<li><a href="#setting-up-a-nodeport">Setting up a <code>NodePort</code></a></li>
+<li><a href="#sample-nodeport-resource">Sample <code>NodePort</code> resource</a></li>
+<li><a href="#table-of-nodeport-attributes">Table of <code>NodePort</code> attributes</a></li>
+</ul>
+</li>
+<li><a href="#enabling-unknown-host-access">Enabling unknown host access</a>
+<ul>
+<li><a href="#when-is-it-necessary-to-enable-unknown-host-access">When is it necessary to enable unknown host access?</a></li>
+<li><a href="#how-to-enable-unknown-host-access">How to enable unknown host access</a></li>
+</ul>
+</li>
+<li><a href="#configuring-a-weblogic-server-affinity-load-balancing-algorithms">Configuring WebLogic Server affinity load balancing algorithms</a></li>
+<li><a href="#configuring-external-listen-addresses-for-weblogic-default-channels">Configuring external listen addresses for WebLogic default channels</a></li>
+<li><a href="#security-notes">Security notes</a></li>
+<li><a href="#optional-reading">Optional reading</a></li>
+</ul>
+<h4 id="overview">Overview</h4>
+<p>If a WebLogic EJB or JMS resource is located in the same
+Kubernetes namespace as an application that calls the resource, then:</p>
+<ul>
+<li>
+<p>No additional configuration steps are needed.</p>
+</li>
+<li>
+<p>The URL that the application specifies depends on both the location
+of the application and the location of its target resource.</p>
+<ul>
+<li>
+<p>If the application is running in a WebLogic Server JVM, and the
+JVM hosts the target resource or the JVM
+is located within the same WebLogic cluster
+as the target resource, then the application
+can simply specify the JNDI name of the resource and
+<em>it should not specify a URL</em>.</p>
+</li>
+<li>
+<p>If the application is running outside of one of the above locations,
+but is still in the same Kubernetes namespace as the target resource,
+then, in addition to a JNDI name, the application must also specify a <code>t3</code>
+or <code>t3s</code> URL that includes the DNS name of the target
+resource&rsquo;s Kubernetes ClusterIP service. To see the service DNS names
+for a deployed domain, run <code>kubectl -n MYNS get services</code>.</p>
+<p>Example URLs:</p>
+<ul>
+<li>
+<p>For a target resource that&rsquo;s hosted anywhere
+in WebLogic cluster <code>mycluster</code>
+with domain UID <code>myuid</code> where the cluster is listening
+on port <code>7001</code>:</p>
+<p><code>t3://myuid-cluster-mycluster:7001</code></p>
+</li>
+<li>
+<p>For a target resource that&rsquo;s hosted in a non-clustered
+WebLogic Server <code>myserver</code> that is part
+of a domain with a domain UID <code>myuid</code> where the server
+is listening on port <code>7001</code>:</p>
+<p><code>t3://myuid-myserver:7001</code></p>
+</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>If a WebLogic EJB or JMS resource is located in the same
+Kubernetes cluster as an application that calls the resource, but
+the application and resource are in different Kubernetes namespaces, then:</p>
+<ul>
+<li>
+<p>The URL used by the application can begin with <code>t3</code> or <code>t3s</code>, and the
+DNS address in the URL must be fully specified to differentiate the namespace.
+For example:</p>
+<ul>
+<li>If the target resource is in WebLogic cluster <code>mycluster</code> with
+domain UID <code>myuid</code> in namespace <code>myns</code>, and the cluster is
+listening on port <code>8001</code>, then the cluster service name
+that is generated by the operator will
+be <code>myuid-cluster-mycluster</code> and the full URL will be
+<code>t3://myuid-cluster-mycluster.myns:8001</code>.</li>
+<li>If the target resource is a WebLogic Server <code>myserver</code> with
+domain UID <code>myuid</code> in namespace <code>myns</code>, and the server is
+listening on port <code>7001</code>, then the server service name
+that is generated by the operator will
+be <code>myuid-myserver</code> and the full URL will be
+<code>t3://myuid-myserver.myns:7001</code>.</li>
+</ul>
+</li>
+<li>
+<p>The applications should access their target WebLogic Server or cluster
+using a <a href="#adding-a-weblogic-custom-channel">WebLogic custom T3 or T3S channel</a>
+that is configured on the target with the following configuration:</p>
+<ul>
+<li>Specify a public address that matches the same fully decorated
+DNS address that the applications will use. For example:
+<ul>
+<li>If the target resource is in WebLogic cluster <code>mycluster</code> that
+is part of domain with a domain UID <code>myuid</code> running in domain
+<code>myns</code>, then
+the cluster service name will be <code>myuid-cluster-mycluster</code>
+and the fully decorated name will be
+<code>myuid-cluster-mycluster.myns</code>.</li>
+<li>If the target resource is in WebLogic Server <code>myserver</code> that
+is part of domain with a domain UID <code>myuid</code> running in domain
+<code>myns</code>, then
+the server service name will be <code>myuid-myserver</code>
+and the fully decorated name will be
+<code>myuid-myserver.myns</code>.</li>
+</ul>
+</li>
+<li>Do not specify a public port. It should be the same as the
+the channel&rsquo;s listen port, which is the default. This is because
+there is no port mapping between namespaces.</li>
+<li>Do not enable <code>outbound enabled</code>.</li>
+<li>There is no need to enable tunneling, and you can continue
+to use URLs that begin with <code>t3</code> or <code>t3s</code>.
+Application URLs must specify the channel&rsquo;s port.</li>
+</ul>
+</li>
+<li>
+<p>If the applications run within a WebLogic
+Server JVM, then the WebLogic Server instances that host the target
+EJB or JMS resources may need to be configured to
+<a href="#enabling-unknown-host-access">enable unknown host access</a>.
+This should not be needed when the public address on the
+network channel is configured, as directed in the previous bulleted item.</p>
+</li>
+<li>
+<p>If JTA transactions span between domains
+in different namespaces, then additional configuration
+is required to ensure that JTA transaction managers
+can communicate with each-other between the domains:
+configure each server&rsquo;s default channel <code>External Listen Address</code>
+to a service name that is decorated with the server&rsquo;s namespace.
+For more information, see <a href="#configuring-external-listen-addresses-for-weblogic-default-channels">Configuring external listen addresses for WebLogic default channels</a>.</p>
+</li>
+</ul>
+<p>If a WebLogic EJB or JMS resource is hosted inside a Kubernetes
+cluster, but an application that calls the resource
+is hosted outside of the Kubernetes cluster, then:</p>
+<ul>
+<li>
+<p>There are two supported approaches for exposing an external
+address and port that the applications can use:</p>
+<ul>
+<li><a href="#load-balancer-tunneling">Load balancer tunneling</a> (preferred)</li>
+<li><a href="#kubernetes-nodeports">Kubernetes <code>NodePorts</code></a></li>
+</ul>
+</li>
+<li>
+<p>The applications must specify a URL that resolves to the external address.
+If tunneling, then this
+URL must begin with <code>http</code> or <code>https</code> instead of <code>t3</code> or <code>t3s</code>.
+For example, <code>http://my-lb-address:my-lb-port</code>.</p>
+</li>
+<li>
+<p>You may need to <a href="#enabling-unknown-host-access">enable unknown host access</a>
+on the WebLogic Server instances that host the EJB or JMS resources.</p>
+</li>
+<li>
+<p>If tunneling, then you may need to configure clusters that host EJB or
+JMS resources with a &lsquo;server affinity&rsquo; default load balancer algorithm.
+This can significantly speedup connection creation for EJB and JMS clients.
+See <a href="#configuring-weblogic-server-affinity-load-balancing-algorithms">Configuring WebLogic Server affinity load balancing algorithms</a>.</p>
+</li>
+<li>
+<p><strong>JTA NOTE</strong>: The operator does not directly support external WebLogic JTA access
+to a Kubernetes hosted WebLogic cluster. This is because external JTA access
+requires each server in a cluster to be individually addressable,
+but this conflicts with the current operator requirement that
+a network channel in a cluster have the same port across all servers in the cluster.
+If this is a requirement, then contact the WebLogic Kubernetes Operator team for potential solutions.</p>
+</li>
+</ul>
+<p>If a WebLogic EJB or JMS resource is hosted outside of
+a Kubernetes cluster, and the EJB or JMS applications
+that call the resource are located within the cluster, then:</p>
+<ul>
+<li>
+<p>You may need to <a href="#enabling-unknown-host-access">enable unknown host access</a>
+on the external WebLogic Server instance or instances.</p>
+</li>
+<li>
+<p>Plus, if the target server or servers can be accessed only by tunneling through a load balancer using HTTP:</p>
+<ul>
+<li><a href="#adding-a-weblogic-custom-channel">Set up an HTTP tunneling-enabled custom channel</a> on the external WebLogic Server instances.</li>
+<li>Specify URLs on the source server that resolve to the load balancer&rsquo;s address and that start with <code>http</code> instead of <code>t3</code>.</li>
+<li>Ensure the load balancer configures the HTTP flow to be &lsquo;sticky&rsquo;.</li>
+<li>You may need to configure clusters that host EJB or
+JMS resources with a &lsquo;server affinity&rsquo; default load balancer algorithm.
+This can significantly speedup tunneling connection creation for EJB and JMS clients.
+See <a href="#configuring-weblogic-server-affinity-load-balancing-algorithms">Configuring WebLogic Server affinity load balancing algorithms</a>.</li>
+</ul>
+</li>
+<li>
+<p><strong>JTA NOTE</strong>: WebLogic does not directly support JTA access to a cluster that is exposed
+using a single port. This is because external JTA requires each server in a cluster
+to be individually addressable.
+If this is a requirement, then contact the WebLogic Kubernetes Operator team for potential solutions.</p>
+</li>
+</ul>
+
+<div class="notices note" ><p>All DNS addresses must be &lsquo;DNS-1123&rsquo; compliant;
+this means that any DNS names created using the name of a service,
+pod, WebLogic Server, WebLogic cluster, and such,
+must be lowercase with underscores converted to dashes (hyphens).
+For example, if a WebLogic Server instance is named <code>My_Server</code>
+and the domain UID is <code>MyUid</code>, then its listen
+address within the namespace will be <code>myuid-my-server</code>.
+For more information on Kubernetes resource compliant naming,
+please see <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/#meet-kubernetes-resource-name-restrictions">Meet Kubernetes resource name restrictions</a>.</p>
+</div>
+
+<h4 id="load-balancer-tunneling">Load balancer tunneling</h4>
+<p>Load balancer tunneling is the preferred approach for giving applications that are hosted outside of a Kubernetes cluster access to EJB and JMS resources that are hosted within the cluster. This approach involves configuring a network channel on the resource&rsquo;s WebLogic cluster, ensuring the network channel accepts T3 protocol traffic that&rsquo;s tunneled over HTTP, deploying a load balancer that redirects external HTTP network traffic to the network channel, and ensuring that the applications specify a URL that resolves the load balancer&rsquo;s network address where the URL begins with <code>http</code> or <code>https</code>.</p>
+<p>Here are the steps:</p>
+<ul>
+<li>
+<p>In WebLogic, configure a custom channel for the T3 protocol that enables HTTP tunneling, and specifies an external address and port that correspond to the address and port that remote applications will use to access the load balancer. See <a href="#adding-a-weblogic-custom-channel">Adding a WebLogic custom channel</a> for samples and details.</p>
+</li>
+<li>
+<p>Set up a load balancer that redirects HTTP traffic to the custom channel. For more information on load balancers, see <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/ingress/">Ingress</a>. If you&rsquo;re using OKE/OCI to host your Kubernetes cluster, also see <a href="/weblogic-kubernetes-operator/3.2/faq/oci-lb/">Using an OCI Load Balancer</a>.</p>
+</li>
+<li>
+<p><strong>Important</strong>: Ensure that the load balancer configures the HTTP flow to be &lsquo;sticky&rsquo; - for example, a Traefik load balancer has a <code>sticky sessions</code> option. This ensures that all of the packets of a tunneling client connection flow to the same pod, otherwise the connection will stall when its packets are load balanced to a different pod.</p>
+</li>
+<li>
+<p><strong>Important</strong>: For EJB and JMS resources that are targeted to a cluster, we recommend that you configure a default load balancer algorithm that provides server affinity (round-robin-affinity, weight-based-affinity, random-affinity) to speedup connection creation for EJB and JMS clients. See <a href="#configuring-weblogic-server-affinity-load-balancing-algorithms">Configuring WebLogic Server affinity load balancing algorithms</a>.</p>
+</li>
+<li>
+<p>If you are adding access for applications that are hosted on remote WebLogic Server instances, then the Kubernetes hosted servers may need to <a href="#enabling-unknown-host-access">enable unknown host access</a>.</p>
+</li>
+<li>
+<p>Remote applications can then access the custom channel using an <code>http://</code> URL instead of a <code>t3://</code> URL.</p>
+</li>
+<li>
+<p>Review the <a href="#security-notes">Security notes</a>.</p>
+</li>
+</ul>
+<h4 id="adding-a-weblogic-custom-channel">Adding a WebLogic custom channel</h4>
+<p>The following sections describe WebLogic custom channel considerations and configuration.</p>
+<h5 id="when-is-a-weblogic-custom-channel-needed">When is a WebLogic custom channel needed?</h5>
+<p>WebLogic implicitly creates a multi-protocol default channel that spans the <code>Listen Address</code> and <code>Port</code> fields specified on each server in the cluster, but this channel is usually unsuitable for external network traffic from EJB and JMS applications. Instead, you may need to configure an additional, dedicated WebLogic custom channel to handle remote EJB or JMS application network traffic.</p>
+<p>A custom channel provides a way to configure an external listen address and port for use by external applications, unlike a default channel. External listen address or port configuration is needed when a channel&rsquo;s configured listen address or port would not work if used to form a URL in the remote application. This is because remote EJB and JMS applications internally use their application&rsquo;s channel&rsquo;s configured network information to reconnect to WebLogic when needed. (The EJB and JMS applications do not always use the initial URL specified in the application&rsquo;s JNDI context.)</p>
+<p>A custom channel can be locked down using two-way SSL as a way to prevent access by unauthorized external JMS and EJB applications, only accepts protocols that are explicitly enabled for the channel, and can be configured to be the only channel that accepts EJB/JMS applications that tunnel over HTTP. A default channel may often be deliberately unencrypted for convenient internal use, or, if used externally, is used for web traffic (not tunneling traffic) only. In addition, a default channel supports several protocols but it&rsquo;s a best practice to limit the protocols that can be accessed by external applications. Finally, external applications may require access using HTTP tunneling in order to make connections, but it&rsquo;s often inadvisable to enable tunneling for an unsecured default channel that&rsquo;s already servicing external HTTP traffic. This is because enabling HTTP tunneling would potentially allow unauthorized external JMS and EJB applications unsecured access to the WebLogic cluster through the same HTTP path.</p>
+<h5 id="configuring-a-weblogic-custom-channel">Configuring a WebLogic custom channel</h5>
+<p>The basic requirements for configuring a custom channel for remote EJB and JMS access are:</p>
+<ul>
+<li>
+<p>Configure a T3 protocol network access point (NAP) with the same name and port on each server (the operator will set the listen address for you).</p>
+</li>
+<li>
+<p>Configure the external listen address and port on each NAP to match the address and port component of a URL your applications can use. For example, if you are providing access to remote applications using a load balancer, then these should match the address and port of the load balancer.</p>
+</li>
+<li>
+<p>If you want WebLogic T3 applications to tunnel through HTTP, then enable HTTP tunneling on each NAP. This is often necessary for load balancers.</p>
+</li>
+<li>
+<p>Do <em>NOT</em> set <code>outbound-enabled</code> to <code>true</code> on the network access point (the default is <code>false</code>), because this may cause internal network traffic to stall in an attempt to route through the network access point.</p>
+</li>
+<li>
+<p>For operator controlled WebLogic clusters, ensure you haven&rsquo;t enabled <code>calculated-listen-ports</code> for WebLogic dynamic cluster servers. The operator requires that a channel have the same port on each server in a cluster, but <code>calculated-listen-ports</code> causes the port to be different on each server.</p>
+</li>
+<li>
+<p>For clusters that are <em>not</em> operator controlled, minimally ensure that the server&rsquo;s default channel <code>ListenAddress</code> is configured. Oracle strongly recommends configuring a <code>ListenAddress</code> on all WebLogic Server instances. Note that if a NAP&rsquo;s <code>ListenAddress</code> is left blank, then it will use the default channel&rsquo;s <code>ListenAddress</code>. (This is not a concern for operator controlled clusters as the operator sets the listen addresses on every WebLogic Server instance.)</p>
+</li>
+</ul>
+<p>For example, here is a snippet of a WebLogic domain <code>config.xml</code> file for channel <code>MyChannel</code> defined for an operator controlled WebLogic dynamic cluster named <code>cluster-1</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-xml" data-lang="xml"><span style="color:#f92672">&lt;server-template&gt;</span>
+  <span style="color:#f92672">&lt;name&gt;</span>cluster-1-template<span style="color:#f92672">&lt;/name&gt;</span>
+  <span style="color:#f92672">&lt;listen-port&gt;</span>8001<span style="color:#f92672">&lt;/listen-port&gt;</span>
+  <span style="color:#f92672">&lt;cluster&gt;</span>cluster-1<span style="color:#f92672">&lt;/cluster&gt;</span>
+  <span style="color:#f92672">&lt;network-access-point&gt;</span>
+    <span style="color:#f92672">&lt;name&gt;</span>MyChannel<span style="color:#f92672">&lt;/name&gt;</span>
+    <span style="color:#f92672">&lt;protocol&gt;</span>t3<span style="color:#f92672">&lt;/protocol&gt;</span>
+    <span style="color:#f92672">&lt;public-address&gt;</span>some.public.address.com<span style="color:#f92672">&lt;/public-address&gt;</span>
+    <span style="color:#f92672">&lt;listen-port&gt;</span>7999<span style="color:#f92672">&lt;/listen-port&gt;</span>
+    <span style="color:#f92672">&lt;public-port&gt;</span>30999<span style="color:#f92672">&lt;/public-port&gt;</span>
+    <span style="color:#f92672">&lt;http-enabled-for-this-protocol&gt;</span>true<span style="color:#f92672">&lt;/http-enabled-for-this-protocol&gt;</span>
+    <span style="color:#f92672">&lt;tunneling-enabled&gt;</span>true<span style="color:#f92672">&lt;/tunneling-enabled&gt;</span>
+    <span style="color:#f92672">&lt;outbound-enabled&gt;</span>false<span style="color:#f92672">&lt;/outbound-enabled&gt;</span>
+    <span style="color:#f92672">&lt;enabled&gt;</span>true<span style="color:#f92672">&lt;/enabled&gt;</span>
+    <span style="color:#f92672">&lt;two-way-ssl-enabled&gt;</span>false<span style="color:#f92672">&lt;/two-way-ssl-enabled&gt;</span>
+    <span style="color:#f92672">&lt;client-certificate-enforced&gt;</span>false<span style="color:#f92672">&lt;/client-certificate-enforced&gt;</span>
+  <span style="color:#f92672">&lt;/network-access-point&gt;</span>
+<span style="color:#f92672">&lt;/server-template&gt;</span>
+<span style="color:#f92672">&lt;cluster&gt;</span>
+  <span style="color:#f92672">&lt;name&gt;</span>cluster-1<span style="color:#f92672">&lt;/name&gt;</span>
+  <span style="color:#f92672">&lt;cluster-messaging-mode&gt;</span>unicast<span style="color:#f92672">&lt;/cluster-messaging-mode&gt;</span>
+  <span style="color:#f92672">&lt;dynamic-servers&gt;</span>
+    <span style="color:#f92672">&lt;name&gt;</span>cluster-1<span style="color:#f92672">&lt;/name&gt;</span>
+    <span style="color:#f92672">&lt;server-template&gt;</span>cluster-1-template<span style="color:#f92672">&lt;/server-template&gt;</span>
+    <span style="color:#f92672">&lt;maximum-dynamic-server-count&gt;</span>5<span style="color:#f92672">&lt;/maximum-dynamic-server-count&gt;</span>
+    <span style="color:#f92672">&lt;calculated-listen-ports&gt;</span>false<span style="color:#f92672">&lt;/calculated-listen-ports&gt;</span>
+    <span style="color:#f92672">&lt;server-name-prefix&gt;</span>managed-server<span style="color:#f92672">&lt;/server-name-prefix&gt;</span>
+    <span style="color:#f92672">&lt;dynamic-cluster-size&gt;</span>5<span style="color:#f92672">&lt;/dynamic-cluster-size&gt;</span>
+    <span style="color:#f92672">&lt;max-dynamic-cluster-size&gt;</span>5<span style="color:#f92672">&lt;/max-dynamic-cluster-size&gt;</span>
+  <span style="color:#f92672">&lt;/dynamic-servers&gt;</span>
+<span style="color:#f92672">&lt;/cluster&gt;</span>
+</code></pre></div><p>Here is a snippet of offline WLST code that corresponds to the above <code>config.xml</code> file snippet:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-javascript" data-lang="javascript">  <span style="color:#a6e22e">templateName</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;cluster-1-template&#34;</span>
+  <span style="color:#a6e22e">cd</span>(<span style="color:#e6db74">&#39;/ServerTemplates/%s&#39;</span> <span style="color:#f92672">%</span> <span style="color:#a6e22e">templateName</span>)
+  <span style="color:#a6e22e">templateChannelName</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;MyChannel&#34;</span>
+  <span style="color:#a6e22e">create</span>(<span style="color:#a6e22e">templateChannelName</span>, <span style="color:#e6db74">&#39;NetworkAccessPoint&#39;</span>)
+  <span style="color:#a6e22e">cd</span>(<span style="color:#e6db74">&#39;NetworkAccessPoints/%s&#39;</span> <span style="color:#f92672">%</span> <span style="color:#a6e22e">templateChannelName</span>)
+  <span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;Protocol&#39;</span>, <span style="color:#e6db74">&#39;t3&#39;</span>)
+  <span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;ListenPort&#39;</span>, <span style="color:#ae81ff">7999</span>)
+  <span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;PublicPort&#39;</span>, <span style="color:#ae81ff">30999</span>)
+  <span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;PublicAddress&#39;</span>, <span style="color:#e6db74">&#39;some.public.address.com&#39;</span>)
+  <span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;HttpEnabledForThisProtocol&#39;</span>, <span style="color:#66d9ef">true</span>)
+  <span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;TunnelingEnabled&#39;</span>, <span style="color:#66d9ef">true</span>)
+  <span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;OutboundEnabled&#39;</span>, <span style="color:#66d9ef">false</span>)
+  <span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;Enabled&#39;</span>, <span style="color:#66d9ef">true</span>)
+  <span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;TwoWaySslEnabled&#39;</span>, <span style="color:#66d9ef">false</span>)
+  <span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;ClientCertificateEnforced&#39;</span>, <span style="color:#66d9ef">false</span>)
+</code></pre></div><p>Here is a snippet of WDT model YAML file configuration that corresponds to the above snippets:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">topology</span>:
+    <span style="color:#f92672">Cluster</span>:
+        <span style="color:#f92672">&#39;cluster-1&#39;</span>:
+            <span style="color:#f92672">DynamicServers</span>:
+                <span style="color:#f92672">ServerTemplate</span>:  <span style="color:#e6db74">&#39;cluster-1-template&#39;</span>
+                <span style="color:#f92672">ServerNamePrefix</span>: <span style="color:#e6db74">&#39;managed-server&#39;</span>
+                <span style="color:#f92672">DynamicClusterSize</span>: <span style="color:#e6db74">&#39;5&#39;</span>
+                <span style="color:#f92672">MaxDynamicClusterSize</span>: <span style="color:#e6db74">&#39;5&#39;</span>
+                <span style="color:#f92672">MinDynamicClusterSize</span>: <span style="color:#e6db74">&#39;0&#39;</span>
+                <span style="color:#f92672">CalculatedListenPorts</span>: <span style="color:#66d9ef">false</span>
+    <span style="color:#f92672">ServerTemplate</span>:
+        <span style="color:#f92672">&#39;cluster-1-template&#39;</span>:
+            <span style="color:#f92672">Cluster</span>: <span style="color:#e6db74">&#39;cluster-1&#39;</span>
+            <span style="color:#f92672">ListenPort</span>: <span style="color:#ae81ff">8001</span>
+            <span style="color:#f92672">NetworkAccessPoint</span>:
+              <span style="color:#f92672">MyT3Channel</span>:
+                <span style="color:#f92672">Protocol</span>: <span style="color:#e6db74">&#39;t3&#39;</span>
+                <span style="color:#f92672">ListenPort</span>: <span style="color:#ae81ff">7999</span>
+                <span style="color:#f92672">PublicPort</span>: <span style="color:#ae81ff">30999</span>
+                <span style="color:#f92672">PublicAddress</span>: <span style="color:#e6db74">&#39;some.public.address.com&#39;</span>
+                <span style="color:#f92672">HttpEnabledForThisProtocol</span>: <span style="color:#66d9ef">true</span>
+                <span style="color:#f92672">TunnelingEnabled</span>: <span style="color:#66d9ef">true</span>
+                <span style="color:#f92672">OutboundEnabled</span>: <span style="color:#66d9ef">false</span>
+                <span style="color:#f92672">Enabled</span>: <span style="color:#66d9ef">true</span>
+                <span style="color:#f92672">TwoWaySslEnabled</span>: <span style="color:#66d9ef">false</span>
+                <span style="color:#f92672">ClientCertificateEnforced</span>: <span style="color:#66d9ef">false</span>
+</code></pre></div><p>In this example:</p>
+<ul>
+<li>
+<p>WebLogic binds the custom network channel to port <code>7999</code> and the default network channel to <code>8001</code>.</p>
+</li>
+<li>
+<p>The operator will automatically create a Kubernetes Service named <code>DOMAIN_UID-cluster-cluster-1</code> for both the custom and default channel.</p>
+</li>
+<li>
+<p>The operator will automatically set the <code>ListenAddress</code> on each WebLogic Server instance for each of its channels.</p>
+</li>
+<li>
+<p>Internal applications running in the same Kubernetes cluster as the channel can access the cluster using <code>t3://DOMAIN_UID-cluster-cluster-1:8001</code>.</p>
+</li>
+<li>
+<p>External applications would be expected to access the cluster using the custom channel with URLs like <code>t3://some.public.address.com:30999</code> or, if using tunneling, <code>http://some.public.address.com:30999</code>.</p>
+</li>
+</ul>
+<h5 id="weblogic-custom-channel-notes">WebLogic custom channel notes</h5>
+<ul>
+<li>
+<p>Channel configuration for a configured cluster requires configuring the same network access point on each server. The operator currently doesn&rsquo;t test or support network channels that have a different configuration on each server in the cluster.</p>
+</li>
+<li>
+<p>Additional steps are required for external applications beyond configuring the custom channel - see <a href="#overview">Overview</a>.</p>
+</li>
+</ul>
+<h4 id="kubernetes-nodeports">Kubernetes <code>NodePorts</code></h4>
+<p>The following sections provide detailed information about Kubernetes <code>NodePorts</code>.</p>
+<h5 id="nodeport-overview"><code>NodePort</code> overview</h5>
+<p>Kubernetes <code>NodePorts</code> provide an alternative approach for giving external WebLogic EJB or JMS applications access to a Kubernetes hosted WebLogic cluster. This approach involves configuring a network channel on the desired WebLogic cluster that accepts T3 protocol traffic, and exposing a Kubernetes <code>NodePort</code> that redirects external network traffic on the Kubernetes Nodes to the network channel.</p>
+<h5 id="nodeport-warnings"><code>NodePort</code> warnings</h5>
+<p>Although <a href="#kubernetes-nodeports">Kubernetes <code>NodePorts</code></a> are good for use in demos and getting-started guides, they are usually not suited for production systems for multiple reasons, including:</p>
+<ul>
+<li>They can directly expose internal applications to the outside world.</li>
+<li>They bypass almost all network security in Kubernetes.</li>
+<li>They allow all protocols (load balancers can limit to the HTTP protocol).</li>
+<li>They cannot expose standard, low-numbered ports like 80 and 443 (or even 8080 and 8443).</li>
+<li>Some Kubernetes cloud environments cannot expose usable <code>NodePorts</code> because their Kubernetes clusters run on a private network that cannot be reached by external clients.</li>
+</ul>
+<p><a href="#load-balancer-tunneling">Load balancer tunneling</a> is the preferred approach over <a href="#kubernetes-nodeports">Kubernetes <code>NodePorts</code></a>.</p>
+<h5 id="nodeport-steps"><code>NodePort</code> steps</h5>
+<p>Here are the high level steps:</p>
+<ul>
+<li>
+<p>Review <a href="#nodeport-warnings"><code>NodePort</code> warnings</a>.</p>
+</li>
+<li>
+<p>In WebLogic, configure a custom channel for the T3 protocol that specifies an external address and port that are suitable for remote application use. See <a href="#adding-a-weblogic-custom-channel">Adding a WebLogic custom channel</a>.</p>
+</li>
+<li>
+<p>Define a Kubernetes <code>NodePort</code> to publicly expose the WebLogic ports. See <a href="#setting-up-a-nodeport">Setting up a <code>NodePort</code></a>.</p>
+</li>
+<li>
+<p>If you are adding access for remote WebLogic Server instances, then the Kubernetes hosted servers may need to <a href="#enabling-unknown-host-access">enable unknown host access</a>.</p>
+</li>
+<li>
+<p>Review the <a href="#security-notes">Security notes</a>.</p>
+</li>
+</ul>
+<h5 id="setting-up-a-nodeport">Setting up a <code>NodePort</code></h5>
+<p>A Kubernetes <code>NodePort</code> exposes a port on each worker node in the Kubernetes cluster (they are not typically exposed on masters), where the port is accessible from outside of a Kubernetes cluster. This port redirects network traffic to pods within the Kubernetes cluster. Setting up a Kubernetes <code>NodePort</code> is one approach for giving external WebLogic applications access to JMS or EJBs.</p>
+<p>If an EJB or JMS service is running on an Administration Server, then you can skip the rest of this section and use the <code>spec.adminServer.adminService.channels</code> Domain field to have the operator create a <code>NodePort</code> for you. See <a href="/weblogic-kubernetes-operator/3.2/reference/domain-resource/">Reference - Domain</a>. Otherwise, if the EJB or JMS service is running in a WebLogic cluster or standalone WebLogic Server Managed Server, and you desire to provide access to the service using a <code>NodePort</code>, then the <code>NodePort</code> must be exposed &lsquo;manually&rsquo; - see the following sample and table.</p>
+
+<div class="notices note" ><p>Setting up a <code>NodePort</code> usually also requires setting up a custom network channel. See <a href="#adding-a-weblogic-custom-channel">Adding a WebLogic custom channel</a>.</p>
+</div>
+
+<h5 id="sample-nodeport-resource">Sample <code>NodePort</code> resource</h5>
+<p>The following <code>NodePort</code> YAML file exposes an external node port of <code>30999</code> and internal port <code>7999</code> for a domain UID of <code>DOMAIN_UID</code>, a domain name of <code>DOMAIN_NAME</code>, and a cluster name of <code>CLUSTER_NAME</code>. It assumes that <code>7999</code> corresponds to a T3 protocol port of a channel that&rsquo;s configured on your WebLogic cluster.</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
+<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Service</span>
+<span style="color:#f92672">metadata</span>:
+  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">default</span>
+  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">DOMAIN_UID-cluster-CLUSTER_NAME-ext</span>
+  <span style="color:#f92672">labels</span>:
+    <span style="color:#f92672">weblogic.domainUID</span>: <span style="color:#ae81ff">DOMAIN_UID</span>
+<span style="color:#f92672">spec</span>:
+  <span style="color:#f92672">type</span>: <span style="color:#ae81ff">NodePort</span>
+  <span style="color:#f92672">externalTrafficPolicy</span>: <span style="color:#ae81ff">Cluster</span>
+  <span style="color:#f92672">sessionAffinity</span>: <span style="color:#ae81ff">ClientIP</span>
+  <span style="color:#f92672">selector</span>:
+    <span style="color:#f92672">weblogic.domainUID</span>: <span style="color:#ae81ff">DOMAIN_UID</span>
+    <span style="color:#f92672">weblogic.clusterName</span>: <span style="color:#ae81ff">CLUSTER_NAME</span>
+  <span style="color:#f92672">ports</span>:
+  - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">myclustert3channel</span>
+    <span style="color:#f92672">nodePort</span>: <span style="color:#ae81ff">30999</span>
+    <span style="color:#f92672">port</span>: <span style="color:#ae81ff">7999</span>
+    <span style="color:#f92672">protocol</span>: <span style="color:#ae81ff">TCP</span>
+    <span style="color:#f92672">targetPort</span>: <span style="color:#ae81ff">7999</span>
+</code></pre></div><h5 id="table-of-nodeport-attributes">Table of <code>NodePort</code> attributes</h5>
+<table>
+<thead>
+<tr>
+<th>Attribute</th>
+<th>Description</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>metadata.name</code></td>
+<td>For this particular use case, the <code>NodePort</code> name can be arbitrary as long as it is DNS compatible. But, as a convention, it&rsquo;s recommended to use <code>DOMAIN_UID-cluster-CLUSTER_NAME-ext</code>. To ensure the name is DNS compatible, use all lowercase and convert any underscores (<code>_</code>) to dashes (<code>-</code>).</td>
+</tr>
+<tr>
+<td><code>metadata.namespace</code></td>
+<td>Must match the namespace of your WebLogic cluster.</td>
+</tr>
+<tr>
+<td><code>metadata.labels</code></td>
+<td>Optional. It&rsquo;s helpful to set a <code>weblogic.domainUid</code> label so that cleanup scripts can locate all Kubernetes resources associated with a particular domain UID.</td>
+</tr>
+<tr>
+<td><code>spec.type</code></td>
+<td>Must be <code>NodePort</code>.</td>
+</tr>
+<tr>
+<td><code>spec.externalTrafficPolicy</code></td>
+<td>Set to <code>Cluster</code> for most use cases. This may lower performance, but ensures that a client that attaches to a node without any pods that match the <code>spec.selector</code> will be rerouted to a node with pods that do match. If set to <code>Local</code>, then connections to a particular node will route only to that node&rsquo;s pods and will fail if the node doesn&rsquo;t host any pods with the given <code>spec.selector</code>. It&rsquo;s recommended for applications of a <code>spec.externalTrafficPolicy: Local</code> <code>NodePort</code> to use a URL that resolves to a list of all nodes, such as <code>t3://mynode1,mynode2:30999</code>, so that a client connect attempt will implicitly try <code>mynode2</code> if <code>mynode1</code> fails (alternatively, use a round-robin DNS address in place of <code>mynode1,mynode2</code>).</td>
+</tr>
+<tr>
+<td><code>spec.sessionAffinity</code></td>
+<td>Set to <code>ClientIP</code> to ensure an HTTP tunneling connection always routes to the same pod, otherwise the connection may hang and fail.</td>
+</tr>
+<tr>
+<td><code>spec.selector</code></td>
+<td>Specifies a <code>weblogic.domainUID</code> and <code>weblogic.clusterName</code> to associate the <code>NodePort</code> resource with your cluster&rsquo;s pods. The operator automatically sets these labels on the WebLogic cluster pods that it deploys for you.</td>
+</tr>
+<tr>
+<td><code>spec.ports.name</code></td>
+<td>This name is arbitrary.</td>
+</tr>
+<tr>
+<td><code>spec.ports.nodePort</code></td>
+<td>The external port that applications will use. This must match the external port that&rsquo;s configured on the WebLogic configured channels/network access points. By default, Kubernetes requires that this value range from <code>30000</code> to <code>32767</code>.</td>
+</tr>
+<tr>
+<td><code>spec.ports.port</code> and <code>spec.targetPort</code></td>
+<td>These must match the port that&rsquo;s configured on the WebLogic configured channel/network access points.</td>
+</tr>
+</tbody>
+</table>
+<h4 id="enabling-unknown-host-access">Enabling unknown host access</h4>
+<p>The following sections describe when and how to enable unknown host access.</p>
+<h5 id="when-is-it-necessary-to-enable-unknown-host-access">When is it necessary to enable unknown host access?</h5>
+<p>If a source WebLogic Server attempts to initiate an EJB, JMS, or JTA connection with a target WebLogic Server, then the target WebLogic Server will reject the connection by default, if it cannot find the source server&rsquo;s listen address in its DNS. Such a failed connection attempt can yield log messages or exceptions like <code>&quot;...RJVM has already been shutdown...&quot;</code> or <code>&quot;...address was valid earlier, but now we get...&quot;</code>.</p>
+<p>This means that it&rsquo;s usually necessary to enable unknown host access on an external WebLogic Server instance so that it can support EJB, JMS, or JTA communication that is initiated by an operator hosted WebLogic Server. For example, if an operator hosted WebLogic Server with service address <code>mydomainuid-myservername</code> initiates a JMS connection to a remote WebLogic Server, then the remote server will implicitly attempt to look up <code>mydomainuid-myservername</code> in its DNS as part of the connection setup, and this lookup will typically fail.</p>
+<p>Similarly, this also means that it&rsquo;s necessary to enable unknown host access on an operator hosted WebLogic Server that accepts EJB or JMS connection requests from external WebLogic Server instances when the external WebLogic Server&rsquo;s listen addresses cannot be resolved by the DNS running in the Kuberneters cluster.</p>
+<h5 id="how-to-enable-unknown-host-access">How to enable unknown host access</h5>
+<p>To enable an &lsquo;unknown host&rsquo; source WebLogic Server to initiate EJB, JMS, or JTA communication with a target WebLogic Server:</p>
+<ul>
+<li>Set the <code>weblogic.rjvm.allowUnknownHost</code> Java system property to <code>true</code> on each target WebLogic Server instance.
+<ul>
+<li>For operator hosted WebLogic Server instances, you can set this property by including <code>-Dweblogic.rjvm.allowUnknownHost=true</code> in the <code>JAVA_OPTIONS</code> <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables">Domain environment variable</a> defined in the domain resource&rsquo;s <code>spec.serverPod.env</code> attribute.</li>
+</ul>
+</li>
+<li>Also apply patch 30656708 on each target WebLogic Server instance for versions 12.2.1.4 (PS4) or earlier.</li>
+</ul>
+<h4 id="configuring-weblogic-server-affinity-load-balancing-algorithms">Configuring WebLogic Server affinity load balancing algorithms</h4>
+<p>When providing external clients access to EJB and JMS resources using load balancer tunneling, we recommend that you configure a server affinity load balancing algorithm for the cluster in which the resources are targeted.  Using a server affinity based algorithm reduces the amount of time it takes for EJB and JMS standalone or server hosted clients to establish a connection through a tunneling port. It does this by ensuring that the clients prefer communicating with a target server instance which already has an established connection to the client, where this server instance is implicitly picked when such clients create their JNDI context.  See <a href="https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/clust/load_balancing.html#GUID-2470EEE9-F6F9-44EF-BA54-671728E93DE6">Load Balancing for EJBs and RMI Objects</a> in <em>Load Balancing in a Cluster</em>.</p>
+<p>Here is a snippet of offline WLST code for enabling server affinity in a cluster &lsquo;cluster-1&rsquo;:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-javascript" data-lang="javascript"><span style="color:#a6e22e">clusterName</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;cluster-1&#34;</span>
+<span style="color:#a6e22e">cd</span>(<span style="color:#e6db74">&#39;/Clusters/%s&#39;</span> <span style="color:#f92672">%</span> <span style="color:#a6e22e">clusterName</span>)
+<span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;DefaultLoadAlgorithm&#39;</span>, <span style="color:#e6db74">&#39;round-robin-affinity&#39;</span>)
+</code></pre></div><p>Here is a snippet of WDT model YAML file configuration for enabling server affinity in a cluster &lsquo;cluster-1&rsquo;:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">topology</span>:
+    <span style="color:#f92672">Cluster</span>:
+        <span style="color:#f92672">&#39;cluster-1&#39;</span>:
+            <span style="color:#f92672">DynamicServers</span>:
+                <span style="color:#f92672">ServerTemplate</span>:  <span style="color:#e6db74">&#39;cluster-1-template&#39;</span>
+                <span style="color:#f92672">ServerNamePrefix</span>: <span style="color:#e6db74">&#39;managed-server&#39;</span>
+                <span style="color:#f92672">DynamicClusterSize</span>: <span style="color:#e6db74">&#39;5&#39;</span>
+                <span style="color:#f92672">MaxDynamicClusterSize</span>: <span style="color:#e6db74">&#39;5&#39;</span>
+                <span style="color:#f92672">MinDynamicClusterSize</span>: <span style="color:#e6db74">&#39;0&#39;</span>
+                <span style="color:#f92672">CalculatedListenPorts</span>: <span style="color:#66d9ef">false</span>
+            <span style="color:#f92672">DefaultLoadAlgorithm</span>: <span style="color:#e6db74">&#39;round-robin-affinity&#39;</span>
+</code></pre></div><h4 id="configuring-external-listen-addresses-for-weblogic-default-channels">Configuring external listen addresses for WebLogic default channels</h4>
+<p>WebLogic Server provides an external listen address/DNS name feature to enable external JMS and EJB clients to properly reestablish and/or load balance connections to servers with listen addresses that aren&rsquo;t directly available in the client&rsquo;s DNS (such as through a firewall or a load balancer, or between different namespaces in Kubernetes). For more information on external listen addresses, see the <code>ExternalDNSName</code> attribute in the <a href="https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/wlmbr/mbeans/ServerMBean.html#ExternalDNSName"> ServerMBean </a> reference.</p>
+<p>Here is a snippet of offline WLST code for setting the external listen address for a standalone server named <code>AdminServer</code> in namespace <code>weblogic-domain</code> for domain-uid <code>domain1</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-javascript" data-lang="javascript"><span style="color:#a6e22e">serverName</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;AdminServer&#34;</span>
+<span style="color:#a6e22e">domainUid</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;domain1&#34;</span>
+<span style="color:#a6e22e">nameSpace</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;weblogic-domain&#34;</span>
+<span style="color:#a6e22e">address</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">domainUid</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#39;_&#39;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">serverName</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#39;_&#39;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">nameSpace</span>
+<span style="color:#a6e22e">externalDNSName</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">address</span>.<span style="color:#a6e22e">lower</span>().<span style="color:#a6e22e">replace</span>(<span style="color:#e6db74">&#39;_&#39;</span>,<span style="color:#e6db74">&#39;-&#39;</span>) <span style="color:#960050;background-color:#1e0010">#</span> <span style="color:#a6e22e">DNS</span> <span style="color:#a6e22e">names</span> <span style="color:#a6e22e">must</span> <span style="color:#a6e22e">be</span> <span style="color:#a6e22e">DNS</span><span style="color:#f92672">-</span><span style="color:#ae81ff">1123</span> <span style="color:#a6e22e">compliant</span>
+<span style="color:#a6e22e">cd</span>(<span style="color:#e6db74">&#39;/Servers/%s&#39;</span> <span style="color:#f92672">%</span> <span style="color:#a6e22e">serverName</span>)
+<span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;ExternalDNSName&#39;</span>, <span style="color:#a6e22e">externalDNSName</span>)
+</code></pre></div><p>Here is a snippet of offline WLST code for setting the external listen address for a server template named <code>cluster-1-template</code> in namespace <code>weblogic-domain</code> for domain-uid <code>domain1</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-javascript" data-lang="javascript"><span style="color:#a6e22e">templateName</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;cluster-1-template&#34;</span>
+<span style="color:#a6e22e">serverName</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;managed-server${id}&#34;</span>
+<span style="color:#a6e22e">domainUid</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;domain1&#34;</span>
+<span style="color:#a6e22e">nameSpace</span> <span style="color:#f92672">=</span> <span style="color:#e6db74">&#34;weblogic-domain&#34;</span>
+<span style="color:#a6e22e">address</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">domainUid</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#39;_&#39;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">serverName</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#39;_&#39;</span> <span style="color:#f92672">+</span> <span style="color:#a6e22e">nameSpace</span>
+<span style="color:#a6e22e">externalDNSName</span> <span style="color:#f92672">=</span> <span style="color:#a6e22e">address</span>.<span style="color:#a6e22e">lower</span>().<span style="color:#a6e22e">replace</span>(<span style="color:#e6db74">&#39;_&#39;</span>,<span style="color:#e6db74">&#39;-&#39;</span>) <span style="color:#960050;background-color:#1e0010">#</span> <span style="color:#a6e22e">DNS</span> <span style="color:#a6e22e">names</span> <span style="color:#a6e22e">must</span> <span style="color:#a6e22e">be</span> <span style="color:#a6e22e">DNS</span><span style="color:#f92672">-</span><span style="color:#ae81ff">1123</span> <span style="color:#a6e22e">compliant</span>
+<span style="color:#a6e22e">cd</span>(<span style="color:#e6db74">&#39;/ServerTemplates/%s&#39;</span> <span style="color:#f92672">%</span> <span style="color:#a6e22e">templateName</span>)
+<span style="color:#a6e22e">set</span>(<span style="color:#e6db74">&#39;ExternalDNSName&#39;</span>, <span style="color:#a6e22e">externalDNSName</span>)
+</code></pre></div>
+<div class="notices note" ><p>The server name contains the server template macro &ldquo;${id}&rdquo; in which the correct instance ID will be substituted by the WebLogic Server runtime.  See <a href="https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/domcf/server_templates.html#GUID-EA003F89-C8E4-4CE1-81DF-6FF25F92D21B">Using Macros</a> in <em>Server Templates</em>.</p>
+</div>
+
+<p>Here is a snippet of WDT model YAML file configuration to set the <code>ExternalDNSName</code> attribute for both a standalone server and for a server template:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">topology</span>:
+    <span style="color:#f92672">Cluster</span>:
+        <span style="color:#e6db74">&#34;cluster-1&#34;</span>:
+          <span style="color:#f92672">DynamicServers</span>:
+            <span style="color:#f92672">ServerTemplate</span>:  <span style="color:#e6db74">&#34;cluster-1-template&#34;</span>
+            <span style="color:#f92672">ServerNamePrefix</span>: <span style="color:#e6db74">&#34;managed-server&#34;</span>
+            <span style="color:#f92672">DynamicClusterSize</span>: <span style="color:#ae81ff">5</span>
+            <span style="color:#f92672">MaxDynamicClusterSize</span>: <span style="color:#ae81ff">5</span>
+            <span style="color:#f92672">CalculatedListenPorts</span>: <span style="color:#66d9ef">false</span>
+      <span style="color:#f92672">Server</span>:
+        <span style="color:#e6db74">&#34;admin-server&#34;</span>:
+          <span style="color:#f92672">ListenPort</span>: <span style="color:#ae81ff">7001</span>
+          <span style="color:#f92672">ExternalDNSName</span>: <span style="color:#e6db74">&#39;@@ENV:DOMAIN_UID@@-admin-server.@@ENV:NAMESPACE@@&#39;</span>
+      <span style="color:#f92672">ServerTemplate</span>:
+        <span style="color:#e6db74">&#34;cluster-1-template&#34;</span>:
+          <span style="color:#f92672">Cluster</span>: <span style="color:#e6db74">&#34;cluster-1&#34;</span>
+          <span style="color:#f92672">ListenPort </span>: <span style="color:#ae81ff">8001</span>
+          <span style="color:#f92672">ExternalDNSName</span>: <span style="color:#e6db74">&#39;@@ENV:DOMAIN_UID@@-managed-server${id}.@@ENV:NAMESPACE@@&#39;</span>
+</code></pre></div>
+<div class="notices note" ><p>In the previous example, <code>DOMAIN_UID</code> and <code>NAMESPACE</code> are assumed to already be &lsquo;DNS-1123&rsquo; compliant.
+Alternatively, you can substitute the macros with DNS-1123 acceptable values
+(changed to lowercase and underscores converted to dashes).
+For more information on Kubernetes resource compliant naming,
+please see <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/#meet-kubernetes-resource-name-restrictions">Meet Kubernetes resource name restrictions</a>.</p>
+</div>
+
+<h4 id="security-notes">Security notes</h4>
+<ul>
+<li>
+<p>With some cloud providers, a load balancer or <code>NodePort</code> may implicitly expose a port to the public Internet. See also <a href="#nodeport-warnings"><code>NodePort</code> warnings</a>.</p>
+</li>
+<li>
+<p>If an externally available port supports a protocol suitable for WebLogic applications, note that WebLogic allows access to JNDI entries, EJB/RMI applications, and JMS by anonymous users by default.</p>
+</li>
+<li>
+<p>You can configure a custom channel with a secure protocol and two-way SSL to help prevent external access by unwanted applications. See <a href="#when-is-a-weblogic-custom-channel-needed">When is a WebLogic custom channel needed?</a>.</p>
+</li>
+</ul>
+<h4 id="optional-reading">Optional reading</h4>
+<ul>
+<li>
+<p>For a description of the WebLogic URL syntax for JMS, EJB, and JNDI applications
+see <a href="https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/jmsad/best_practice.html#GUID-CFA6D7B9-6059-4098-801C-30F0EE31C1AA">Understanding WebLogic URLs</a>.</p>
+</li>
+<li>
+<p>If JMS applications need to specify a URL and the applications are hosted
+on a WebLogic Server or cluster, then, as a best practice, the application
+should simply be coded to use local JNDI names for its JMS Connection Factories
+and JMS Destinations,
+and these local JNDI names should be configured in WebLogic to map to the remote
+location using a Foreign JMS Server. A Foreign JMS Server maps the local
+JNDI name of a JMS Connection Factory or JMS Destination
+to a remote JNDI name located at a
+different URL, where the local JNDI name, remote JNDI name, remote user name,
+remote password, and remote URL are all configurable.
+See <a href="https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/jmsad/best_practice.html#GUID-9F7CF546-2649-4E5E-B117-ABBB445EA7C1">Integrating Remote JMS Destinations</a>.</p>
+</li>
+<li>
+<p>For a detailed description of using T3 in combination with port mapping, see <a href="https://blogs.oracle.com/weblogicserver/t3-rmi-communication-for-weblogic-server-running-on-kubernetes">T3 RMI Communication for WebLogic Server Running on Kubernetes</a>.</p>
+</li>
+</ul>
+
+
+<footer class="footline">
+	
+</footer>
+
+        
+        </div>
+        
+
+      </div>
+
+    <div id="navigation">
+        
+        
+
+        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+            
+        
+
+        
+
+
+	 
+	 
+		
+			<a class="nav nav-prev" href="/weblogic-kubernetes-operator/3.2/faq/configmaps/" title="Providing access to a ConfigMap"> <i class="fa fa-chevron-left"></i></a>
+		
+		
+			<a class="nav nav-next" href="/weblogic-kubernetes-operator/3.2/faq/coherence-requirements/" title="Coherence requirements" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
+		
+	
+    </div>
+
+    </section>
+
+    <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
+      <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
+    </div>
+    <script src="/weblogic-kubernetes-operator/3.2/js/clipboard.min.js?1626795921"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/perfect-scrollbar.min.js?1626795921"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/perfect-scrollbar.jquery.min.js?1626795921"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/jquery.sticky.js?1626795921"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/featherlight.min.js?1626795921"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/highlight.pack.js?1626795921"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/modernizr.custom-3.6.0.js?1626795921"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/learn.js?1626795921"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/hugo-learn.js?1626795921"></script>
+    
+        
+            <script src="/weblogic-kubernetes-operator/3.2/mermaid/mermaid.js?1626795921"></script>
+        
+        <script>
+            mermaid.initialize({ startOnLoad: true });
+        </script>
+    
+    
+
+  </body>
+</html>
+

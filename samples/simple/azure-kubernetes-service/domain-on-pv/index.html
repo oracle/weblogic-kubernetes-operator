@@ -12,20 +12,20 @@
     <title>Domain home on a PV :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1626787526" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1626787526" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1626787526" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1626787526" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1626787526" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1626787526" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1626787526" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1626787526" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1626787526" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1626787526" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1626795915" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1626795915" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1626795915" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1626795915" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1626795915" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1626795915" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1626795915" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1626795915" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1626795915" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1626795915" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1626787526"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1626795915"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1626787526"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1626787526"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1626795915"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1626795915"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1626787526"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1626795915"></script>
 
     
   </div>
@@ -3303,7 +3303,7 @@ $ az role assignment create --assignee $SP_APP_ID --role Contributor
 
 <h5 id="clone-weblogic-kubernetes-operator-repository">Clone WebLogic Kubernetes Operator repository</h5>
 <p>Clone the <a href="https://github.com/oracle/weblogic-kubernetes-operator">WebLogic Kubernetes Operator repository</a> to your machine. We will use several scripts in this repository to create a WebLogic domain. This sample was tested with v3.1.1, but should work with the latest release.</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ git clone --branch v3.2.5 https://github.com/oracle/weblogic-kubernetes-operator.git
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ git clone --branch v3.3.0 https://github.com/oracle/weblogic-kubernetes-operator.git
 </code></pre></div>
 <div class="notices info" ><p>The following sections of the sample instructions will guide you, step-by-step, through the process of setting up a WebLogic cluster on AKS - remaining as close as possible to a native Kubernetes experience. This lets you understand and customize each step. If you wish to have a more automated experience that abstracts some lower level details, you can skip to the <a href="#automation">Automation</a> section.</p>
 </div>
@@ -3474,7 +3474,67 @@ Completed
   - <span style="color:#ae81ff">gid=1000</span>
   - <span style="color:#ae81ff">mfsymlinks</span>
   - <span style="color:#ae81ff">nobrl</span>
-</code></pre></div><p>We have provided another configuration file <code>pvc.yaml</code> for the <code>PersistentVolumeClaim</code>.  Both <code>pv.yaml</code> and <code>pvc.yaml</code> have exactly the same content for <code>storageClassName</code> attributes. This is required. We set the same value to the <code>metadata</code> property in both files. The following content is an example that uses the persistent volume claim name <code>wls-azurefile</code>.</p>
+</code></pre></div><p><strong>Note:</strong> This sample includes <code>nobrl</code> in the <code>mountOptions</code> to disable byte range file locking on the <code>azurefile</code> storage class.  Currently, this is necessary because the <code>azurefile</code> storage class does not support advisory byte range locking.  This approach is documented in the <a href="https://docs.microsoft.com/en-us/azure/aks/troubleshooting#what-are-the-default-mountoptions-when-using-azure-files">Azure Kubernetes Service FAQ</a>.</p>
+<hr>
+<h5 id="additional-important-file-locking-information">Additional important file locking information</h5>
+<p>Some action must be taken to deal with the presence or absence of advisory byte range locking when running WebLogic on Kubernetes.  Failure to address this issue will cause WebLogic file store locking issues during domain lifecycle management.  When this happens, WebLogic will not be able to start.</p>
+<p>If it is not possible to use a different file system that fully supports advisory byte range locking, such as <a href="https://docs.microsoft.com/en-us/azure/storage/files/files-nfs-protocol#regional-availability">NFS file shares in Azure Files</a>, be aware that disabling locking risks data corruption and additional steps are required to mitigate this risk, as shown in the next section.</p>
+<p>Here are several different approaches to disable file locking.</p>
+<ul>
+<li>
+<p>When using the <code>azurefile</code> storage class, you can universally disable locking on the entire file system by enabling the <code>nobrl</code> mount option, as shown previously.</p>
+<ul>
+<li>Note that this affects all software using the same file system. Steps to reduce the consequent corruption risk will vary based on software, and will differ from the steps used for WebLogic.</li>
+</ul>
+</li>
+<li>
+<p>You can disable file locking in the WebLogic configuration for each default file store, custom file store, and JMS paging store by following the steps outlined in <a href="https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/perfm/storetune.html#GUID-A1126893-C60F-4C39-BFCF-0D0F2436478D">Handling NFS Locking Errors</a>.</p>
+<ul>
+<li>When using the operator, you can provide this configuration without needing to modify your original configuration using <a href="https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/configoverrides/">configuration overrides</a> for Domain on PV or Domain in Image, or <a href="https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/runtime-updates/">runtime updates</a> for Model in Image</li>
+<li>Note that this can be a substantial amount of work and error prone as it requires configuration updates for each individual default store, custom file store, and JMS paging store.</li>
+</ul>
+</li>
+<li>
+<p>You can disable all file store locks on a particular WebLogic server JVM by <em>both</em> applying patch <code>32471832</code> and setting <code>-Dweblogic.store.file.LockEnabled=false</code>. When using the operator, you can set command-line  values using the <code>JAVA_OPTIONS</code> env var in <code>spec.serverPod.env</code> domain resource attribute. This will work for any operator domain home source type.</p>
+</li>
+</ul>
+<h5 id="mitigating-corruption-risk-when-locking-is-disabled">Mitigating corruption risk when locking is disabled</h5>
+<p>It is important to mitigate the risk of WebLogic data corruption when locking is disabled.</p>
+<ul>
+<li>
+<p>Do not configure <a href="https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/clust/service_migration.html#GUID-AEECC92D-88DA-4E07-8C42-A24DBC1C7076">service migration</a> for WebLogic JTA default file stores or custom file stores.</p>
+<ul>
+<li>
+<p>File store service migration is not supported when file locking is disabled because it relies on file locks for safe behavior.</p>
+</li>
+<li>
+<p>Service migration is a WebLogic high availability option that is typically configured to enable data recovery on surviving WebLogic Servers in a cluster upon an unexpected WebLogic server failure. It is also used to enable JMS and JTA data recovery from WebLogic Servers that are shutdown due to a cluster shrink.</p>
+</li>
+</ul>
+</li>
+<li>
+<p>If at all possible, do not store important data in WebLogic default or custom file stores.</p>
+</li>
+<li>
+<p>Configure WebLogic JMS, JTA, and EJB Timers to use database storage instead of file storage.</p>
+<ul>
+<li>
+<p>For example, use the &lsquo;TLOG-in-DB&rsquo; feature for JTA and custom database stores instead of file stores for JMS.</p>
+</li>
+<li>
+<p>This will require a change to your original WebLogic configuration. It is not practical to use operator configuration overrides or runtime updates for this purpose because the changes are too extensive.</p>
+</li>
+</ul>
+</li>
+<li>
+<p>Note that it is fine to configure service migration for database stores even when file locking is disabled.</p>
+</li>
+<li>
+<p>Take additional steps in your CI/CD processes to guard against the user errors that file locks normally help prevent.  In particular, ensure you have procedures in place to prevent administrators or testers from mistakenly starting a duplicate WebLogic domain in the same shared file system.</p>
+</li>
+</ul>
+<hr>
+<p>We have provided another configuration file <code>pvc.yaml</code> for the <code>PersistentVolumeClaim</code>.  Both <code>pv.yaml</code> and <code>pvc.yaml</code> have exactly the same content for <code>storageClassName</code> attributes. This is required. We set the same value to the <code>metadata</code> property in both files. The following content is an example that uses the persistent volume claim name <code>wls-azurefile</code>.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">apiVersion</span>: <span style="color:#ae81ff">v1</span>
 <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">PersistentVolumeClaim</span>
 <span style="color:#f92672">metadata</span>:
@@ -6087,19 +6147,19 @@ $ az ad sp delete --id $SP_APP_ID
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1626787526"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1626787526"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1626787526"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1626787526"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1626787526"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1626787526"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1626795915"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1626795915"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1626795915"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1626795915"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1626795915"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1626795915"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1626787526"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1626787526"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1626787526"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1626795915"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1626795915"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1626795915"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1626787526"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1626795915"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

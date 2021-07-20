@@ -33,7 +33,7 @@ Contents  WebLogic Kubernetes Operator WebLogic Server image Directory structure
       <pubDate>Sat, 23 Feb 2019 16:45:16 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/auxiliary-images/</guid>
-      <description>Contents  Introduction References Configuration  Auxiliary images Auxiliary volumes and paths Model in Image paths   Sample  Step 1: Prerequisites Step 2: Create the auxiliary image Step 3: Prepare and apply the domain resource Step 4: Invoke the web application    Introduction The auxiliary images feature is a work in progress and is currently unsupported. Its configuration or behavior may change between releases and it is disabled by default.</description>
+      <description>Contents  Introduction References Configuration  Auxiliary images Auxiliary volumes and paths Model in Image paths   Sample  Step 1: Prerequisites Step 2: Create the auxiliary image Step 3: Prepare and apply the domain resource Step 4: Invoke the web application    Introduction Auxiliary images are an alternative approach for including Model in Image model files, application archive files, WebLogic Deploying Tooling installation files, or other types of files, in your pods.</description>
     </item>
     
     <item>

@@ -1,0 +1,6295 @@
+<!DOCTYPE html>
+<html lang="en" class="js csstransforms3d">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="generator" content="Hugo 0.82.0" />
+    <meta name="description" content="">
+
+
+    <link rel="icon" href="/weblogic-kubernetes-operator/3.2/images/favicon.png" type="image/png">
+
+    <title>Initial use case :: WebLogic Kubernetes Operator</title>
+
+    
+    <link href="/weblogic-kubernetes-operator/3.2/css/nucleus.css?1626795921" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/fontawesome-all.min.css?1626795921" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/hybrid.css?1626795921" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/featherlight.min.css?1626795921" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/perfect-scrollbar.min.css?1626795921" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/auto-complete.css?1626795921" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/atom-one-dark-reasonable.css?1626795921" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/theme.css?1626795921" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/tabs.css?1626795921" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/3.2/css/hugo-theme.css?1626795921" rel="stylesheet">
+    
+    
+
+    <script src="/weblogic-kubernetes-operator/3.2/js/jquery-3.6.0.min.js?1626795921"></script>
+
+    <style>
+      :root #header + #content > #left > #rlblock_left{
+          display:none !important;
+      }
+      
+        :not(pre) > code + span.copy-to-clipboard {
+            display: none;
+        }
+      
+    </style>
+    
+  </head>
+  <body class="" data-url="/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/initial/">
+    <nav id="sidebar" class="">
+
+
+
+  <div id="header-wrapper">
+    <div id="header">
+      <a id="logo" href="https://oracle.github.io/weblogic-kubernetes-operator/3.2">
+  <img src="https://oracle.github.io/weblogic-kubernetes-operator/3.2/images/logo.png" height="60"><br/>
+  Kubernetes Operator
+</a>
+
+    </div>
+    
+        <div class="searchbox">
+    <label for="search-by"><i class="fas fa-search"></i></label>
+    <input data-search-input id="search-by" type="search" placeholder="Search...">
+    <span data-search-clear=""><i class="fas fa-times"></i></span>
+</div>
+
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/lunr.min.js?1626795921"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/auto-complete.js?1626795921"></script>
+<script type="text/javascript">
+    
+        var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator\/3.2";
+    
+</script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/3.2/js/search.js?1626795921"></script>
+
+    
+  </div>
+
+    <div class="highlightable">
+    <ul class="topics">
+      <li><a  class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/3.2">Home</a></li>
+        
+          
+          
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/quickstart/" title="Quick Start" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/quickstart/">
+          <b> </b>Quick Start
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/quickstart/get-images/" title="Get images" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/quickstart/get-images/">
+        Get images
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/quickstart/install/" title="Install the operator and ingress controller" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/quickstart/install/">
+        Install the operator and ingress controller
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/quickstart/prepare/" title="Prepare for a domain" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/quickstart/prepare/">
+        Prepare for a domain
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/quickstart/create-domain/" title="Create a domain" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/quickstart/create-domain/">
+        Create a domain
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/quickstart/cleanup/" title="Clean up" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/quickstart/cleanup/">
+        Clean up
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+          
+          
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/" title="User Guide" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/userguide/">
+          <b> </b>User Guide
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/introduction/" title="Introduction" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/userguide/introduction/">
+          <b> </b>Introduction
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/introduction/terms/" title="Important terms" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/introduction/terms/">
+        Important terms
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/introduction/design/" title="Design philosophy" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/introduction/design/">
+        Design philosophy
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/introduction/architecture/" title="Architecture" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/introduction/architecture/">
+        Architecture
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/introduction/get-help/" title="Get help" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/introduction/get-help/">
+        Get help
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/prerequisites/introduction/" title="Operator prerequisites" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/prerequisites/introduction/">
+        Operator prerequisites
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/platforms/environments/" title="Supported platforms" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/platforms/environments/">
+        Supported platforms
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/prepare/" title="Setup checklist" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/userguide/prepare/">
+          Setup checklist
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-operators/" title="Manage operators" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-operators/">
+          Manage operators
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-operators/installation/" title="Install the operator" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-operators/installation/">
+        Install the operator
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-operators/using-helm/" title="Configure the operator using Helm" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-operators/using-helm/">
+        Configure the operator using Helm
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-operators/the-rest-api/" title="Use the operator&#39;s REST services" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-operators/the-rest-api/">
+        Use the operator&#39;s REST services
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/base-images/" title="WebLogic Server images" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/userguide/base-images/">
+          WebLogic Server images
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/" title="Manage WebLogic domains" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/">
+          Manage WebLogic domains
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/choosing-a-model/" title="Choose a domain home source type" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/choosing-a-model/">
+          <b> </b>Choose a domain home source type
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/prepare/" title="Prepare to run a domain" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/prepare/">
+        <b> </b>Prepare to run a domain
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/domain-resource/" title="Domain resource" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/domain-resource/">
+        <b> </b>Domain resource
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/persistent-storage/" title="Persistent storage" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/persistent-storage/">
+          <b> </b>Persistent storage
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/model-in-image/" title="Model in Image" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/model-in-image/">
+          <b> </b>Model in Image
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/model-in-image/overview/" title="Overview" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/model-in-image/overview/">
+        <b> </b>Overview
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/model-in-image/usage/" title="Usage" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/model-in-image/usage/">
+        <b> </b>Usage
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/model-in-image/auxiliary-images/" title="Auxiliary images" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/model-in-image/auxiliary-images/">
+        <b> </b>Auxiliary images
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/model-in-image/model-files/" title="Model files" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/model-in-image/model-files/">
+        <b> </b>Model files
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/model-in-image/runtime-updates/" title="Runtime updates" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/model-in-image/runtime-updates/">
+        <b> </b>Runtime updates
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/model-in-image/debugging/" title="Debugging" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/model-in-image/debugging/">
+        <b> </b>Debugging
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/configoverrides/" title="Configuration overrides" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/configoverrides/">
+          <b> </b>Configuration overrides
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/ingress/" title="Ingress" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/ingress/">
+          <b> </b>Ingress
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/accessing-the-domain/" title="Access the domain" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/accessing-the-domain/">
+          <b> </b>Access the domain
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/accessing-the-domain/admin-console/" title="Use the Remote Console" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/accessing-the-domain/admin-console/">
+        Use the Remote Console
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/accessing-the-domain/wlst/" title="Use WLST" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/accessing-the-domain/wlst/">
+        Use WLST
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/domain-lifecycle/" title="Domain life cycle" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/domain-lifecycle/">
+          <b> </b>Domain life cycle
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/domain-lifecycle/startup/" title="Startup and shutdown" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/domain-lifecycle/startup/">
+        Startup and shutdown
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/domain-lifecycle/restarting/" title="Restarting" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/domain-lifecycle/restarting/">
+        Restarting
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/domain-lifecycle/scaling/" title="Scaling" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/domain-lifecycle/scaling/">
+        Scaling
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/domain-lifecycle/introspection/" title="Domain introspection" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/domain-lifecycle/introspection/">
+        Domain introspection
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/domain-lifecycle/liveness-readiness-probe-customization/" title="Liveness and readiness probes customization" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/domain-lifecycle/liveness-readiness-probe-customization/">
+        Liveness and readiness probes customization
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/domain-events/" title="Domain events" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/domain-events/">
+        <b> </b>Domain events
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/managing-fmw-domains/" title="Manage FMW Infrastructure domains" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-fmw-domains/">
+          Manage FMW Infrastructure domains
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/cicd/" title="CI/CD considerations" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/userguide/cicd/">
+          CI/CD considerations
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/cicd/layering/" title="Container image layering" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/cicd/layering/">
+        Container image layering
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/cicd/why-layering-matters/" title="Why layering matters" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/cicd/why-layering-matters/">
+        Why layering matters
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/cicd/choose-an-approach/" title="Choose an approach" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/cicd/choose-an-approach/">
+        Choose an approach
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/cicd/mutate-the-domain-layer/" title="Mutate the domain layer" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/cicd/mutate-the-domain-layer/">
+        Mutate the domain layer
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/cicd/how-to-copy-domains/" title="Copy domains" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/cicd/how-to-copy-domains/">
+        Copy domains
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/cicd/tools/" title="Tools" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/cicd/tools/">
+        Tools
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/istio/istio/" title="Istio support" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/istio/istio/">
+        Istio support
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/userguide/kubernetes/k8s-setup/" title="Set up Kubernetes" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/userguide/kubernetes/k8s-setup/">
+        Set up Kubernetes
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+          
+          
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/" title="Samples" class="dd-item
+        parent
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/">
+          <b> </b>Samples
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/" title="Simple samples" class="dd-item
+        parent
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/simple/">
+          <b> </b>Simple samples
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/credentials/" title="Credentials" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/simple/credentials/">
+          Credentials
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/storage/" title="Storage" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/simple/storage/">
+          Storage
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/database/" title="Run a database" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/simple/database/">
+          Run a database
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/domains/" title="Domains" class="dd-item
+        parent
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/simple/domains/">
+          Domains
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/domains/manually-create-domain/" title="Manually" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/simple/domains/manually-create-domain/">
+          Manually
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/domains/domain-home-on-pv/" title="Domain home on a PV" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/simple/domains/domain-home-on-pv/">
+          Domain home on a PV
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/domains/domain-home-in-image/" title="Domain home in image" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/simple/domains/domain-home-in-image/">
+          Domain home in image
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/" title="Model in image" class="dd-item
+        parent
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/">
+          Model in image
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/prerequisites/" title="Prerequisites" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/prerequisites/">
+        Prerequisites
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/initial/" title="Initial use case" class="dd-item active">
+        <a href="/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/initial/">
+        Initial use case
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/update1/" title="Update 1" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/update1/">
+        Update 1
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/update2/" title="Update 2" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/update2/">
+        Update 2
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/update3/" title="Update 3" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/update3/">
+        Update 3
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/update4/" title="Update 4" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/update4/">
+        Update 4
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/cleanup/" title="Cleanup" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/cleanup/">
+        Cleanup
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/domains/fmw-domain/" title="FMW Infrastructure domain on a PV" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/simple/domains/fmw-domain/">
+          FMW Infrastructure domain on a PV
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/domains/fmw-domain-home-in-image/" title="FMW Infrastructure domain home in image" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/simple/domains/fmw-domain-home-in-image/">
+          FMW Infrastructure domain home in image
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/domains/delete-domain/" title="Delete resources associated with the domain" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/simple/domains/delete-domain/">
+          Delete resources associated with the domain
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/domains/lifecycle/" title="Domain lifecycle operations" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/simple/domains/lifecycle/">
+          Domain lifecycle operations
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/rest/" title="REST APIs" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/simple/rest/">
+          REST APIs
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/ingress/" title="Ingress" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/simple/ingress/">
+          Ingress
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/elastic-stack/" title="Elastic Stack" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/simple/elastic-stack/">
+          Elastic Stack
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/elastic-stack/operator/" title="Operator" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/simple/elastic-stack/operator/">
+          Operator
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/elastic-stack/weblogic-domain/" title="WebLogic domain" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/simple/elastic-stack/weblogic-domain/">
+          WebLogic domain
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/azure-kubernetes-service/" title="Azure Kubernetes Service" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/simple/azure-kubernetes-service/">
+          Azure Kubernetes Service
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/azure-kubernetes-service/domain-on-pv/" title="Domain home on a PV" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/samples/simple/azure-kubernetes-service/domain-on-pv/">
+        Domain home on a PV
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/azure-kubernetes-service/model-in-image/" title="Model in Image" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/samples/simple/azure-kubernetes-service/model-in-image/">
+        Model in Image
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/azure-kubernetes-service/troubleshooting/" title="Troubleshooting" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/samples/simple/azure-kubernetes-service/troubleshooting/">
+        Troubleshooting
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/samples/simple/tanzu-kubernetes-service/" title="Tanzu Kubernetes Service" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/samples/simple/tanzu-kubernetes-service/">
+          Tanzu Kubernetes Service
+          
+      </a>
+      
+      
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+          
+          
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/developerguide/" title="Developer Guide" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/developerguide/">
+          <b> </b>Developer Guide
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/developerguide/contributing/" title="Contribute to the operator" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/developerguide/contributing/">
+        Contribute to the operator
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/developerguide/requirements/" title="Requirements" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/developerguide/requirements/">
+        Requirements
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/developerguide/building/" title="Building" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/developerguide/building/">
+        Building
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/developerguide/integration-tests/" title="Integration tests" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/developerguide/integration-tests/">
+        Integration tests
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/developerguide/branching/" title="Branching" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/developerguide/branching/">
+        Branching
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/developerguide/coding-standards/" title="Coding standards" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/developerguide/coding-standards/">
+        Coding standards
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/developerguide/code-structure/" title="Code structure" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/developerguide/code-structure/">
+        Code structure
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/developerguide/asynchronous-call-model/" title="Asynchronous call model" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/developerguide/asynchronous-call-model/">
+        Asynchronous call model
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/developerguide/domain-processing/" title="Domain processing" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/developerguide/domain-processing/">
+        Domain processing
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/developerguide/documentation/" title="Documentation" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/developerguide/documentation/">
+        Documentation
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/developerguide/backwards-compatibility/" title="Backward compatibility" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/developerguide/backwards-compatibility/">
+        Backward compatibility
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+          
+          
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/reference/" title="Reference" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/reference/">
+          <b> </b>Reference
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/reference/swagger/" title="Swagger" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/reference/swagger/">
+        Swagger
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/reference/domain-resource/" title="Domain resource" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/reference/domain-resource/">
+        Domain resource
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+          
+          
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/security/" title="Security" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/security/">
+          <b> </b>Security
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+            
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/security/certificates/" title="Certificates" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/security/certificates/">
+        Certificates
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/security/domain-security/" title="Domain security" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/security/domain-security/">
+          Domain security
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/security/domain-security/image-protection/" title="Container image protection" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/security/domain-security/image-protection/">
+        Container image protection
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/security/domain-security/weblogic-channels/" title="Channels" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/security/domain-security/weblogic-channels/">
+        Channels
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/security/encryption/" title="Encryption" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/security/encryption/">
+        Encryption
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/security/service-accounts/" title="Service accounts" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/security/service-accounts/">
+        Service accounts
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/security/rbac/" title="RBAC" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/security/rbac/">
+        RBAC
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/security/secrets/" title="Secrets" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/security/secrets/">
+        Secrets
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/security/openshift/" title="OpenShift" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/security/openshift/">
+        OpenShift
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+          
+          
+
+
+
+
+ 
+  
+    
+    <li data-nav-id="/weblogic-kubernetes-operator/3.2/faq/" title="Frequently asked questions" class="dd-item
+        
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/3.2/faq/">
+          Frequently asked questions
+          
+      </a>
+      
+      
+        <ul>
+          
+          
+          
+
+        
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/faq/newbie/" title="Answers for newcomers" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/faq/newbie/">
+        Answers for newcomers
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/faq/namespace-management/" title="Managing domain namespaces" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/faq/namespace-management/">
+        Managing domain namespaces
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/faq/cannot-pull-image/" title="Cannot pull image" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/faq/cannot-pull-image/">
+        Cannot pull image
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/faq/boot-identity-not-valid/" title="Boot identity not valid" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/faq/boot-identity-not-valid/">
+        Boot identity not valid
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/faq/domain-secret-mismatch/" title="Domain secret mismatch" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/faq/domain-secret-mismatch/">
+        Domain secret mismatch
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/faq/node-heating/" title="Node heating problem" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/faq/node-heating/">
+        Node heating problem
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/faq/fan/" title="Disabling Fast Application Notifications" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/faq/fan/">
+        Disabling Fast Application Notifications
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/faq/oci-fss-pv/" title="Using OCI File Storage (FSS) for persistent volumes" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/faq/oci-fss-pv/">
+        Using OCI File Storage (FSS) for persistent volumes
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/faq/oci-lb/" title="Using an OCI load balancer" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/faq/oci-lb/">
+        Using an OCI load balancer
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/faq/volumes/" title="Providing access to a PersistentVolumeClaim" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/faq/volumes/">
+        Providing access to a PersistentVolumeClaim
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/faq/configmaps/" title="Providing access to a ConfigMap" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/faq/configmaps/">
+        Providing access to a ConfigMap
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/faq/external-clients/" title="External WebLogic clients" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/faq/external-clients/">
+        External WebLogic clients
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/faq/coherence-requirements/" title="Coherence requirements" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/faq/coherence-requirements/">
+        Coherence requirements
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/3.2/faq/resource-settings/" title="Pod memory and CPU resources" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/3.2/faq/resource-settings/">
+        Pod memory and CPU resources
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+        
+        </ul>
+      
+    </li>
+  
+ 
+
+          
+        
+      <li><a  class="padding" href="https://oracle.github.io/weblogic-kubernetes-operator/3.2/release-notes">Release Notes</a></li>
+    </ul>
+
+    
+    
+
+    
+    <section id="footer">
+      <p>Created with <i class="fas fa-heart"></i> from <a href="https://www.oracle.com">Oracle</a></p>
+<p>&nbsp</p>
+<table border="1" bgcolor="white"><tbody><tr><td align="center"><p style="color: red">
+  You are viewing the archived documentation for version 3.2.x.
+  To view the documentation for the current release, please
+  <a href="https://oracle.github.io/weblogic-kubernetes-operator">click here</a>
+</p></td></tr></tbody></table>
+<p>&nbsp</p>
+<p><a href="https://github.com/oracle/weblogic-kubernetes-operator"><i class="fab fa-github"></i> GitHub repo</a></p>
+<p><a href="https://weblogic-slack-inviter.herokuapp.com/"><i class="fab fa-slack"></i> Public Slack #operator</a></p>
+
+    </section>
+  </div>
+</nav>
+
+
+
+
+        <section id="body">
+        <div id="overlay"></div>
+        <div class="padding highlightable">
+              
+              <div>
+                <div id="top-bar">
+                
+                
+                <div id="breadcrumbs" itemscope="" itemtype="http://data-vocabulary.org/Breadcrumb">
+                    <span id="sidebar-toggle-span">
+                        <a href="#" id="sidebar-toggle" data-sidebar-toggle="">
+                          <i class="fas fa-bars"></i>
+                        </a>
+                    </span>
+                  
+                  <span id="toc-menu"><i class="fas fa-list-alt"></i></span>
+                  
+                  <span class="links">
+                 
+                 
+                    
+          
+          
+            
+            
+          
+          
+            
+            
+          
+          
+            
+            
+          
+          
+            
+            
+          
+          
+            
+            
+          
+          
+            <a href='/weblogic-kubernetes-operator/3.2/'></a> > <a href='/weblogic-kubernetes-operator/3.2/samples/'>Samples</a> > <a href='/weblogic-kubernetes-operator/3.2/samples/simple/'>Simple samples</a> > <a href='/weblogic-kubernetes-operator/3.2/samples/simple/domains/'>Domains</a> > <a href='/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/'>Model in image</a> > Initial use case
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+          
+        
+                 
+                  </span>
+                </div>
+                
+                    <div class="progress">
+    <div class="wrapper">
+<nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+    </div>
+</div>
+
+                
+              </div>
+            </div>
+            
+        <div id="head-tags">
+        
+        </div>
+        
+        <div id="body-inner">
+          
+            <h1>
+              
+              Initial use case
+            </h1>
+          
+
+        
+
+
+<h4 id="contents">Contents</h4>
+<ul>
+<li><a href="#overview">Overview</a></li>
+<li>Image creation
+<ul>
+<li><a href="#image-creation---introduction">Image creation - Introduction</a></li>
+<li><a href="#understanding-your-first-archive">Understanding your first archive</a></li>
+<li><a href="#staging-a-zip-file-of-the-archive">Staging a ZIP file of the archive</a></li>
+<li><a href="#staging-model-files">Staging model files</a></li>
+<li><a href="#creating-the-image-with-wit">Creating the image with WIT</a></li>
+</ul>
+</li>
+<li>Deploy resources
+<ul>
+<li><a href="#deploy-resources---introduction">Deploy resources - Introduction</a></li>
+<li><a href="#secrets">Secrets</a></li>
+<li><a href="#domain-resource">Domain resource</a></li>
+</ul>
+</li>
+</ul>
+<h4 id="overview">Overview</h4>
+<p>In this use case, you set up an initial WebLogic domain. This involves:</p>
+<ul>
+<li>A WDT archive ZIP file that contains your applications.</li>
+<li>A WDT model that describes your WebLogic configuration.</li>
+<li>A container image that contains your WDT model files and archive.</li>
+<li>Creating secrets for the domain.</li>
+<li>Creating a Domain YAML for the domain that references your Secrets and image.</li>
+</ul>
+<p>After the Domain is deployed, the operator starts an &lsquo;introspector job&rsquo; that converts your models into a WebLogic configuration, and then passes this configuration to each WebLogic Server in the domain.</p>
+
+<div class="notices note" ><p>Perform the steps in <a href="/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/prerequisites/">Prerequisites for all domain types</a> before performing the steps in this use case.<br>
+If you are taking the <code>JRF</code> path through the sample, then substitute <code>JRF</code> for <code>WLS</code> in your image names and directory paths. Also note that the JRF-v1 model YAML file differs from the WLS-v1 YAML file (it contains an additional <code>domainInfo -&gt; RCUDbInfo</code> stanza).</p>
+</div>
+
+<h4 id="image-creation---introduction">Image creation - Introduction</h4>
+<p>The goal of the initial use case &lsquo;image creation&rsquo; is to demonstrate using the WebLogic Image Tool to create an image named <code>model-in-image:WLS-v1</code> from files that you will stage to <code>/tmp/mii-sample/model-images/model-in-image:WLS-v1/</code>. The staged files will contain a web application in a WDT archive, and WDT model configuration for a WebLogic Administration Server called <code>admin-server</code> and a WebLogic cluster called <code>cluster-1</code>.</p>
+<p>Overall, a Model in Image image must contain a WebLogic installation and a WebLogic Deploy Tooling installation in its <code>/u01/wdt/weblogic-deploy</code> directory. In addition, if you have WDT model archive files, then the image must also contain these files in its <code>/u01/wdt/models</code> directory. Finally, an image optionally may also contain your WDT model YAML file and properties files in the same <code>/u01/wdt/models</code> directory. If you do not specify a WDT model YAML file in your <code>/u01/wdt/models</code> directory, then the model YAML file must be supplied dynamically using a Kubernetes ConfigMap that is referenced by your Domain <code>spec.model.configMap</code> field. We provide an example of using a model ConfigMap later in this sample.</p>
+<p>Here are the steps for creating the image <code>model-in-image:WLS-v1</code>:</p>
+<ul>
+<li><a href="#understanding-your-first-archive">Understanding your first archive</a></li>
+<li><a href="#staging-a-zip-file-of-the-archive">Staging a ZIP file of the archive</a></li>
+<li><a href="#staging-model-files">Staging model files</a></li>
+<li><a href="#creating-the-image-with-wit">Creating the image with WIT</a></li>
+</ul>
+<h4 id="understanding-your-first-archive">Understanding your first archive</h4>
+<p>The sample includes a predefined archive directory in <code>/tmp/mii-sample/archives/archive-v1</code> that you will use to create an archive ZIP file for the image.</p>
+<p>The archive top directory, named <code>wlsdeploy</code>, contains a directory named <code>applications</code>, which includes an &lsquo;exploded&rsquo; sample JSP web application in the directory, <code>myapp-v1</code>. Three useful aspects to remember about WDT archives are:</p>
+<ul>
+<li>A model image can contain multiple WDT archives.</li>
+<li>WDT archives can contain multiple applications, libraries, and other components.</li>
+<li>WDT archives have a <a href="https://oracle.github.io/weblogic-deploy-tooling/concepts/archive/">well defined directory structure</a>, which always has <code>wlsdeploy</code> as the top directory.</li>
+</ul>
+
+<div class="expand">
+    <div class="expand-label" style="cursor: pointer;" onclick="$h = $(this);$h.next('div').slideToggle(100,function () {$h.children('i').attr('class',function () {return $h.next('div').is(':visible') ? 'fas fa-chevron-down' : 'fas fa-chevron-right';});});">
+        <i style="font-size:x-small;" class="fas fa-chevron-right"></i>
+        <span>
+        
+    	
+    	If you are interested in the web application source, click here to see the JSP code.
+    	
+    	</span>
+    </div>
+    <div class="expand-content" style="display: none;">
+        <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-java" data-lang="java"><span style="color:#f92672">&lt;%--</span> Copyright <span style="color:#f92672">(</span>c<span style="color:#f92672">)</span> 2019<span style="color:#f92672">,</span> 2021<span style="color:#f92672">,</span> Oracle and<span style="color:#f92672">/</span>or its affiliates<span style="color:#f92672">.</span> <span style="color:#f92672">--%&gt;</span>
+<span style="color:#f92672">&lt;%--</span> Licensed under the Universal Permissive License v 1<span style="color:#f92672">.</span><span style="color:#a6e22e">0</span> as shown at https<span style="color:#f92672">:</span><span style="color:#75715e">//oss.oracle.com/licenses/upl. --%&gt;
+</span><span style="color:#75715e"></span><span style="color:#f92672">&lt;%</span><span style="color:#960050;background-color:#1e0010">@</span> page import<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;javax.naming.InitialContext&#34;</span> <span style="color:#f92672">%&gt;</span>
+<span style="color:#f92672">&lt;%</span><span style="color:#960050;background-color:#1e0010">@</span> page import<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;javax.management.*&#34;</span> <span style="color:#f92672">%&gt;</span>
+<span style="color:#f92672">&lt;%</span><span style="color:#960050;background-color:#1e0010">@</span> page import<span style="color:#f92672">=</span><span style="color:#e6db74">&#34;java.io.*&#34;</span> <span style="color:#f92672">%&gt;</span>
+<span style="color:#f92672">&lt;%</span>
+  InitialContext ic <span style="color:#f92672">=</span> <span style="color:#66d9ef">null</span><span style="color:#f92672">;</span>
+  <span style="color:#66d9ef">try</span> <span style="color:#f92672">{</span>
+    ic <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> InitialContext<span style="color:#f92672">();</span>
+
+    String srName<span style="color:#f92672">=</span>System<span style="color:#f92672">.</span><span style="color:#a6e22e">getProperty</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;weblogic.Name&#34;</span><span style="color:#f92672">);</span>
+    String domainUID<span style="color:#f92672">=</span>System<span style="color:#f92672">.</span><span style="color:#a6e22e">getenv</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;DOMAIN_UID&#34;</span><span style="color:#f92672">);</span>
+    String domainName<span style="color:#f92672">=</span>System<span style="color:#f92672">.</span><span style="color:#a6e22e">getenv</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;CUSTOM_DOMAIN_NAME&#34;</span><span style="color:#f92672">);</span>
+
+    out<span style="color:#f92672">.</span><span style="color:#a6e22e">println</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;&lt;html&gt;&lt;body&gt;&lt;pre&gt;&#34;</span><span style="color:#f92672">);</span>
+    out<span style="color:#f92672">.</span><span style="color:#a6e22e">println</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;*****************************************************************&#34;</span><span style="color:#f92672">);</span>
+    out<span style="color:#f92672">.</span><span style="color:#a6e22e">println</span><span style="color:#f92672">();</span>
+    out<span style="color:#f92672">.</span><span style="color:#a6e22e">println</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;Hello World! This is version &#39;v1&#39; of the mii-sample JSP web-app.&#34;</span><span style="color:#f92672">);</span>
+    out<span style="color:#f92672">.</span><span style="color:#a6e22e">println</span><span style="color:#f92672">();</span>
+    out<span style="color:#f92672">.</span><span style="color:#a6e22e">println</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;Welcome to WebLogic Server &#39;&#34;</span> <span style="color:#f92672">+</span> srName <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;&#39;!&#34;</span><span style="color:#f92672">);</span>
+    out<span style="color:#f92672">.</span><span style="color:#a6e22e">println</span><span style="color:#f92672">();</span>
+    out<span style="color:#f92672">.</span><span style="color:#a6e22e">println</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;  domain UID  = &#39;&#34;</span> <span style="color:#f92672">+</span> domainUID <span style="color:#f92672">+</span><span style="color:#e6db74">&#34;&#39;&#34;</span><span style="color:#f92672">);</span>
+    out<span style="color:#f92672">.</span><span style="color:#a6e22e">println</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;  domain name = &#39;&#34;</span> <span style="color:#f92672">+</span> domainName <span style="color:#f92672">+</span><span style="color:#e6db74">&#34;&#39;&#34;</span><span style="color:#f92672">);</span>
+    out<span style="color:#f92672">.</span><span style="color:#a6e22e">println</span><span style="color:#f92672">();</span>
+
+    MBeanServer mbs <span style="color:#f92672">=</span> <span style="color:#f92672">(</span>MBeanServer<span style="color:#f92672">)</span>ic<span style="color:#f92672">.</span><span style="color:#a6e22e">lookup</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;java:comp/env/jmx/runtime&#34;</span><span style="color:#f92672">);</span>
+
+    <span style="color:#75715e">// display the current server&#39;s cluster name
+</span><span style="color:#75715e"></span>
+    Set<span style="color:#f92672">&lt;</span>ObjectInstance<span style="color:#f92672">&gt;</span> clusterRuntimes <span style="color:#f92672">=</span> mbs<span style="color:#f92672">.</span><span style="color:#a6e22e">queryMBeans</span><span style="color:#f92672">(</span><span style="color:#66d9ef">new</span> ObjectName<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;*:Type=ClusterRuntime,*&#34;</span><span style="color:#f92672">),</span> <span style="color:#66d9ef">null</span><span style="color:#f92672">);</span>
+    out<span style="color:#f92672">.</span><span style="color:#a6e22e">println</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;Found &#34;</span> <span style="color:#f92672">+</span> clusterRuntimes<span style="color:#f92672">.</span><span style="color:#a6e22e">size</span><span style="color:#f92672">()</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34; local cluster runtime&#34;</span> <span style="color:#f92672">+</span> <span style="color:#f92672">(</span>String<span style="color:#f92672">)((</span>clusterRuntimes<span style="color:#f92672">.</span><span style="color:#a6e22e">size</span><span style="color:#f92672">()!=</span>1<span style="color:#f92672">)?</span><span style="color:#e6db74">&#34;s&#34;</span><span style="color:#f92672">:</span><span style="color:#e6db74">&#34;&#34;</span><span style="color:#f92672">)</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;:&#34;</span><span style="color:#f92672">);</span>
+    <span style="color:#66d9ef">for</span> <span style="color:#f92672">(</span>ObjectInstance clusterRuntime <span style="color:#f92672">:</span> clusterRuntimes<span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
+       String cName <span style="color:#f92672">=</span> <span style="color:#f92672">(</span>String<span style="color:#f92672">)</span>mbs<span style="color:#f92672">.</span><span style="color:#a6e22e">getAttribute</span><span style="color:#f92672">(</span>clusterRuntime<span style="color:#f92672">.</span><span style="color:#a6e22e">getObjectName</span><span style="color:#f92672">(),</span> <span style="color:#e6db74">&#34;Name&#34;</span><span style="color:#f92672">);</span>
+       out<span style="color:#f92672">.</span><span style="color:#a6e22e">println</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;  Cluster &#39;&#34;</span> <span style="color:#f92672">+</span> cName <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;&#39;&#34;</span><span style="color:#f92672">);</span>
+    <span style="color:#f92672">}</span>
+    out<span style="color:#f92672">.</span><span style="color:#a6e22e">println</span><span style="color:#f92672">();</span>
+
+    <span style="color:#75715e">// display the Work Manager configuration created by the sample
+</span><span style="color:#75715e"></span>
+    Set<span style="color:#f92672">&lt;</span>ObjectInstance<span style="color:#f92672">&gt;</span> minTCRuntimes <span style="color:#f92672">=</span> mbs<span style="color:#f92672">.</span><span style="color:#a6e22e">queryMBeans</span><span style="color:#f92672">(</span><span style="color:#66d9ef">new</span> ObjectName<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;*:Type=MinThreadsConstraintRuntime,Name=SampleMinThreads,*&#34;</span><span style="color:#f92672">),</span> <span style="color:#66d9ef">null</span><span style="color:#f92672">);</span>
+    <span style="color:#66d9ef">for</span> <span style="color:#f92672">(</span>ObjectInstance minTCRuntime <span style="color:#f92672">:</span> minTCRuntimes<span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
+       String cName <span style="color:#f92672">=</span> <span style="color:#f92672">(</span>String<span style="color:#f92672">)</span>mbs<span style="color:#f92672">.</span><span style="color:#a6e22e">getAttribute</span><span style="color:#f92672">(</span>minTCRuntime<span style="color:#f92672">.</span><span style="color:#a6e22e">getObjectName</span><span style="color:#f92672">(),</span> <span style="color:#e6db74">&#34;Name&#34;</span><span style="color:#f92672">);</span>
+       <span style="color:#66d9ef">int</span> count <span style="color:#f92672">=</span> <span style="color:#f92672">(</span><span style="color:#66d9ef">int</span><span style="color:#f92672">)</span>mbs<span style="color:#f92672">.</span><span style="color:#a6e22e">getAttribute</span><span style="color:#f92672">(</span>minTCRuntime<span style="color:#f92672">.</span><span style="color:#a6e22e">getObjectName</span><span style="color:#f92672">(),</span> <span style="color:#e6db74">&#34;ConfiguredCount&#34;</span><span style="color:#f92672">);</span>
+       out<span style="color:#f92672">.</span><span style="color:#a6e22e">println</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;Found min threads constraint runtime named &#39;&#34;</span> <span style="color:#f92672">+</span> cName <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;&#39; with configured count: &#34;</span> <span style="color:#f92672">+</span> count<span style="color:#f92672">);</span>
+    <span style="color:#f92672">}</span>
+    out<span style="color:#f92672">.</span><span style="color:#a6e22e">println</span><span style="color:#f92672">();</span>
+
+    Set<span style="color:#f92672">&lt;</span>ObjectInstance<span style="color:#f92672">&gt;</span> maxTCRuntimes <span style="color:#f92672">=</span> mbs<span style="color:#f92672">.</span><span style="color:#a6e22e">queryMBeans</span><span style="color:#f92672">(</span><span style="color:#66d9ef">new</span> ObjectName<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;*:Type=MaxThreadsConstraintRuntime,Name=SampleMaxThreads,*&#34;</span><span style="color:#f92672">),</span> <span style="color:#66d9ef">null</span><span style="color:#f92672">);</span>
+    <span style="color:#66d9ef">for</span> <span style="color:#f92672">(</span>ObjectInstance maxTCRuntime <span style="color:#f92672">:</span> maxTCRuntimes<span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
+       String cName <span style="color:#f92672">=</span> <span style="color:#f92672">(</span>String<span style="color:#f92672">)</span>mbs<span style="color:#f92672">.</span><span style="color:#a6e22e">getAttribute</span><span style="color:#f92672">(</span>maxTCRuntime<span style="color:#f92672">.</span><span style="color:#a6e22e">getObjectName</span><span style="color:#f92672">(),</span> <span style="color:#e6db74">&#34;Name&#34;</span><span style="color:#f92672">);</span>
+       <span style="color:#66d9ef">int</span> count <span style="color:#f92672">=</span> <span style="color:#f92672">(</span><span style="color:#66d9ef">int</span><span style="color:#f92672">)</span>mbs<span style="color:#f92672">.</span><span style="color:#a6e22e">getAttribute</span><span style="color:#f92672">(</span>maxTCRuntime<span style="color:#f92672">.</span><span style="color:#a6e22e">getObjectName</span><span style="color:#f92672">(),</span> <span style="color:#e6db74">&#34;ConfiguredCount&#34;</span><span style="color:#f92672">);</span>
+       out<span style="color:#f92672">.</span><span style="color:#a6e22e">println</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;Found max threads constraint runtime named &#39;&#34;</span> <span style="color:#f92672">+</span> cName <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;&#39; with configured count: &#34;</span> <span style="color:#f92672">+</span> count<span style="color:#f92672">);</span>
+    <span style="color:#f92672">}</span>
+    out<span style="color:#f92672">.</span><span style="color:#a6e22e">println</span><span style="color:#f92672">();</span>
+
+    <span style="color:#75715e">// display local data sources
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// - note that data source tests are expected to fail until the sample Update 4 use case updates the data source&#39;s secret
+</span><span style="color:#75715e"></span>
+    ObjectName jdbcRuntime <span style="color:#f92672">=</span> <span style="color:#66d9ef">new</span> ObjectName<span style="color:#f92672">(</span><span style="color:#e6db74">&#34;com.bea:ServerRuntime=&#34;</span> <span style="color:#f92672">+</span> srName <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;,Name=&#34;</span> <span style="color:#f92672">+</span> srName <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;,Type=JDBCServiceRuntime&#34;</span><span style="color:#f92672">);</span>
+    ObjectName<span style="color:#f92672">[]</span> dataSources <span style="color:#f92672">=</span> <span style="color:#f92672">(</span>ObjectName<span style="color:#f92672">[])</span>mbs<span style="color:#f92672">.</span><span style="color:#a6e22e">getAttribute</span><span style="color:#f92672">(</span>jdbcRuntime<span style="color:#f92672">,</span> <span style="color:#e6db74">&#34;JDBCDataSourceRuntimeMBeans&#34;</span><span style="color:#f92672">);</span>
+    out<span style="color:#f92672">.</span><span style="color:#a6e22e">println</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;Found &#34;</span> <span style="color:#f92672">+</span> dataSources<span style="color:#f92672">.</span><span style="color:#a6e22e">length</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34; local data source&#34;</span> <span style="color:#f92672">+</span> <span style="color:#f92672">(</span>String<span style="color:#f92672">)((</span>dataSources<span style="color:#f92672">.</span><span style="color:#a6e22e">length</span><span style="color:#f92672">!=</span>1<span style="color:#f92672">)?</span><span style="color:#e6db74">&#34;s&#34;</span><span style="color:#f92672">:</span><span style="color:#e6db74">&#34;&#34;</span><span style="color:#f92672">)</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;:&#34;</span><span style="color:#f92672">);</span>
+    <span style="color:#66d9ef">for</span> <span style="color:#f92672">(</span>ObjectName dataSource <span style="color:#f92672">:</span> dataSources<span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
+       String dsName  <span style="color:#f92672">=</span> <span style="color:#f92672">(</span>String<span style="color:#f92672">)</span>mbs<span style="color:#f92672">.</span><span style="color:#a6e22e">getAttribute</span><span style="color:#f92672">(</span>dataSource<span style="color:#f92672">,</span> <span style="color:#e6db74">&#34;Name&#34;</span><span style="color:#f92672">);</span>
+       String dsState <span style="color:#f92672">=</span> <span style="color:#f92672">(</span>String<span style="color:#f92672">)</span>mbs<span style="color:#f92672">.</span><span style="color:#a6e22e">getAttribute</span><span style="color:#f92672">(</span>dataSource<span style="color:#f92672">,</span> <span style="color:#e6db74">&#34;State&#34;</span><span style="color:#f92672">);</span>
+       String dsTest  <span style="color:#f92672">=</span> <span style="color:#f92672">(</span>String<span style="color:#f92672">)</span>mbs<span style="color:#f92672">.</span><span style="color:#a6e22e">invoke</span><span style="color:#f92672">(</span>dataSource<span style="color:#f92672">,</span> <span style="color:#e6db74">&#34;testPool&#34;</span><span style="color:#f92672">,</span> <span style="color:#66d9ef">new</span> Object<span style="color:#f92672">[]</span> <span style="color:#f92672">{},</span> <span style="color:#66d9ef">new</span> String<span style="color:#f92672">[]</span> <span style="color:#f92672">{});</span>
+       out<span style="color:#f92672">.</span><span style="color:#a6e22e">println</span><span style="color:#f92672">(</span>
+           <span style="color:#e6db74">&#34;  Datasource &#39;&#34;</span> <span style="color:#f92672">+</span> dsName <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;&#39;: &#34;</span>
+           <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34; State=&#39;&#34;</span> <span style="color:#f92672">+</span> dsState <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;&#39;,&#34;</span>
+           <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34; testPool=&#39;&#34;</span> <span style="color:#f92672">+</span> <span style="color:#f92672">(</span>String<span style="color:#f92672">)(</span>dsTest<span style="color:#f92672">==</span><span style="color:#66d9ef">null</span> <span style="color:#f92672">?</span> <span style="color:#e6db74">&#34;Passed&#34;</span> <span style="color:#f92672">:</span> <span style="color:#e6db74">&#34;Failed&#34;</span><span style="color:#f92672">)</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;&#39;&#34;</span>
+       <span style="color:#f92672">);</span>
+       <span style="color:#66d9ef">if</span> <span style="color:#f92672">(</span>dsTest <span style="color:#f92672">!=</span> <span style="color:#66d9ef">null</span><span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
+         out<span style="color:#f92672">.</span><span style="color:#a6e22e">println</span><span style="color:#f92672">(</span>
+               <span style="color:#e6db74">&#34;    ---TestPool Failure Reason---\n&#34;</span>
+             <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;    NOTE: Ignore &#39;mynewdatasource&#39; failures until the MII sample&#39;s Update 4 use case.\n&#34;</span>
+             <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;    ---\n&#34;</span>
+             <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;    &#34;</span> <span style="color:#f92672">+</span> dsTest<span style="color:#f92672">.</span><span style="color:#a6e22e">replaceAll</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;\n&#34;</span><span style="color:#f92672">,</span><span style="color:#e6db74">&#34;\n   &#34;</span><span style="color:#f92672">).</span><span style="color:#a6e22e">replaceAll</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;\n *\n&#34;</span><span style="color:#f92672">,</span><span style="color:#e6db74">&#34;\n&#34;</span><span style="color:#f92672">)</span> <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;\n&#34;</span>
+             <span style="color:#f92672">+</span> <span style="color:#e6db74">&#34;    -----------------------------&#34;</span><span style="color:#f92672">);</span>
+       <span style="color:#f92672">}</span>
+    <span style="color:#f92672">}</span>
+    out<span style="color:#f92672">.</span><span style="color:#a6e22e">println</span><span style="color:#f92672">();</span>
+
+    out<span style="color:#f92672">.</span><span style="color:#a6e22e">println</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;*****************************************************************&#34;</span><span style="color:#f92672">);</span>
+
+  <span style="color:#f92672">}</span> <span style="color:#66d9ef">catch</span> <span style="color:#f92672">(</span>Throwable t<span style="color:#f92672">)</span> <span style="color:#f92672">{</span>
+    t<span style="color:#f92672">.</span><span style="color:#a6e22e">printStackTrace</span><span style="color:#f92672">(</span><span style="color:#66d9ef">new</span> PrintStream<span style="color:#f92672">(</span>response<span style="color:#f92672">.</span><span style="color:#a6e22e">getOutputStream</span><span style="color:#f92672">()));</span>
+  <span style="color:#f92672">}</span> <span style="color:#66d9ef">finally</span> <span style="color:#f92672">{</span>
+    out<span style="color:#f92672">.</span><span style="color:#a6e22e">println</span><span style="color:#f92672">(</span><span style="color:#e6db74">&#34;&lt;/pre&gt;&lt;/body&gt;&lt;/html&gt;&#34;</span><span style="color:#f92672">);</span>
+    <span style="color:#66d9ef">if</span> <span style="color:#f92672">(</span>ic <span style="color:#f92672">!=</span> <span style="color:#66d9ef">null</span><span style="color:#f92672">)</span> ic<span style="color:#f92672">.</span><span style="color:#a6e22e">close</span><span style="color:#f92672">();</span>
+  <span style="color:#f92672">}</span>
+<span style="color:#f92672">%&gt;</span>
+</code></pre></div>
+    </div>
+</div>
+<p>The application displays important details about the WebLogic Server instance that it&rsquo;s running on: namely its domain name, cluster name, and server name, as well as the names of any data sources that are targeted to the server. Also, you can see that application output reports that it&rsquo;s at version <code>v1</code>; you will update this to <code>v2</code> in a later use case that demonstrates upgrading the application.</p>
+<h4 id="staging-a-zip-file-of-the-archive">Staging a ZIP file of the archive</h4>
+<p>When you create the image, you will use the files in the staging directory, <code>/tmp/mii-sample/model-images/model-in-image__WLS-v1</code>. In preparation, you need it to contain a ZIP file of the WDT application archive.</p>
+<p>Run the following commands to create your application archive ZIP file and put it in the expected directory:</p>
+<pre><code># Delete existing archive.zip in case we have an old leftover version
+</code></pre><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ rm -f /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip
+</code></pre></div><pre><code># Move to the directory which contains the source files for our archive
+</code></pre><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ cd /tmp/mii-sample/archives/archive-v1
+</code></pre></div><pre><code># Zip the archive to the location will later use when we run the WebLogic Image Tool
+</code></pre><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ zip -r /tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip wlsdeploy
+</code></pre></div><h4 id="staging-model-files">Staging model files</h4>
+<p>In this step, you explore the staged WDT model YAML file and properties in the <code>/tmp/mii-sample/model-images/model-in-image__WLS-v1</code> directory. The model in this directory references the web application in your archive, configures a WebLogic Server Administration Server, and configures a WebLogic cluster. It consists of only two files, <code>model.10.properties</code>, a file with a single property, and, <code>model.10.yaml</code>, a YAML file with your WebLogic configuration <code>model.10.yaml</code>.</p>
+<pre><code>CLUSTER_SIZE=5
+</code></pre><p>Here is the WLS <code>model.10.yaml</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">domainInfo</span>:
+    <span style="color:#f92672">AdminUserName</span>: <span style="color:#e6db74">&#39;@@SECRET:__weblogic-credentials__:username@@&#39;</span>
+    <span style="color:#f92672">AdminPassword</span>: <span style="color:#e6db74">&#39;@@SECRET:__weblogic-credentials__:password@@&#39;</span>
+    <span style="color:#f92672">ServerStartMode</span>: <span style="color:#e6db74">&#39;prod&#39;</span>
+
+<span style="color:#f92672">topology</span>:
+    <span style="color:#f92672">Name</span>: <span style="color:#e6db74">&#39;@@ENV:CUSTOM_DOMAIN_NAME@@&#39;</span>
+    <span style="color:#f92672">AdminServerName</span>: <span style="color:#e6db74">&#39;admin-server&#39;</span>
+    <span style="color:#f92672">Cluster</span>:
+        <span style="color:#f92672">&#39;cluster-1&#39;</span>:
+            <span style="color:#f92672">DynamicServers</span>:
+                <span style="color:#f92672">ServerTemplate</span>:  <span style="color:#e6db74">&#39;cluster-1-template&#39;</span>
+                <span style="color:#f92672">ServerNamePrefix</span>: <span style="color:#e6db74">&#39;managed-server&#39;</span>
+                <span style="color:#f92672">DynamicClusterSize</span>: <span style="color:#e6db74">&#39;@@PROP:CLUSTER_SIZE@@&#39;</span>
+                <span style="color:#f92672">MaxDynamicClusterSize</span>: <span style="color:#e6db74">&#39;@@PROP:CLUSTER_SIZE@@&#39;</span>
+                <span style="color:#f92672">MinDynamicClusterSize</span>: <span style="color:#e6db74">&#39;0&#39;</span>
+                <span style="color:#f92672">CalculatedListenPorts</span>: <span style="color:#66d9ef">false</span>
+    <span style="color:#f92672">Server</span>:
+        <span style="color:#f92672">&#39;admin-server&#39;</span>:
+            <span style="color:#f92672">ListenPort</span>: <span style="color:#ae81ff">7001</span>
+    <span style="color:#f92672">ServerTemplate</span>:
+        <span style="color:#f92672">&#39;cluster-1-template&#39;</span>:
+            <span style="color:#f92672">Cluster</span>: <span style="color:#e6db74">&#39;cluster-1&#39;</span>
+            <span style="color:#f92672">ListenPort</span>: <span style="color:#ae81ff">8001</span>
+
+<span style="color:#f92672">appDeployments</span>:
+    <span style="color:#f92672">Application</span>:
+        <span style="color:#f92672">myapp</span>:
+            <span style="color:#f92672">SourcePath</span>: <span style="color:#e6db74">&#39;wlsdeploy/applications/myapp-v1&#39;</span>
+            <span style="color:#f92672">ModuleType</span>: <span style="color:#ae81ff">ear</span>
+            <span style="color:#f92672">Target</span>: <span style="color:#e6db74">&#39;cluster-1&#39;</span>
+
+<span style="color:#f92672">resources</span>:
+  <span style="color:#f92672">SelfTuning</span>:
+    <span style="color:#f92672">MinThreadsConstraint</span>:
+      <span style="color:#f92672">SampleMinThreads</span>:
+        <span style="color:#f92672">Target</span>: <span style="color:#e6db74">&#39;cluster-1&#39;</span>
+        <span style="color:#f92672">Count</span>: <span style="color:#ae81ff">1</span>
+    <span style="color:#f92672">MaxThreadsConstraint</span>:
+      <span style="color:#f92672">SampleMaxThreads</span>:
+        <span style="color:#f92672">Target</span>: <span style="color:#e6db74">&#39;cluster-1&#39;</span>
+        <span style="color:#f92672">Count</span>: <span style="color:#ae81ff">10</span>
+    <span style="color:#f92672">WorkManager</span>:
+      <span style="color:#f92672">SampleWM</span>:
+        <span style="color:#f92672">Target</span>: <span style="color:#e6db74">&#39;cluster-1&#39;</span>
+        <span style="color:#f92672">MinThreadsConstraint</span>: <span style="color:#e6db74">&#39;SampleMinThreads&#39;</span>
+        <span style="color:#f92672">MaxThreadsConstraint</span>: <span style="color:#e6db74">&#39;SampleMaxThreads&#39;</span>
+</code></pre></div>
+<div class="expand">
+    <div class="expand-label" style="cursor: pointer;" onclick="$h = $(this);$h.next('div').slideToggle(100,function () {$h.children('i').attr('class',function () {return $h.next('div').is(':visible') ? 'fas fa-chevron-down' : 'fas fa-chevron-right';});});">
+        <i style="font-size:x-small;" class="fas fa-chevron-right"></i>
+        <span>
+        
+    	
+    	Click here to view the JRF `model.10.yaml`, and note the `RCUDbInfo` stanza and its references to a `DOMAIN_UID-rcu-access` secret.
+    	
+    	</span>
+    </div>
+    <div class="expand-content" style="display: none;">
+        <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">domainInfo</span>:
+    <span style="color:#f92672">AdminUserName</span>: <span style="color:#e6db74">&#39;@@SECRET:__weblogic-credentials__:username@@&#39;</span>
+    <span style="color:#f92672">AdminPassword</span>: <span style="color:#e6db74">&#39;@@SECRET:__weblogic-credentials__:password@@&#39;</span>
+    <span style="color:#f92672">ServerStartMode</span>: <span style="color:#e6db74">&#39;prod&#39;</span>
+    <span style="color:#f92672">RCUDbInfo</span>:
+        <span style="color:#f92672">rcu_prefix</span>: <span style="color:#e6db74">&#39;@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_prefix@@&#39;</span>
+        <span style="color:#f92672">rcu_schema_password</span>: <span style="color:#e6db74">&#39;@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_schema_password@@&#39;</span>
+        <span style="color:#f92672">rcu_db_conn_string</span>: <span style="color:#e6db74">&#39;@@SECRET:@@ENV:DOMAIN_UID@@-rcu-access:rcu_db_conn_string@@&#39;</span>
+
+<span style="color:#f92672">topology</span>:
+    <span style="color:#f92672">AdminServerName</span>: <span style="color:#e6db74">&#39;admin-server&#39;</span>
+    <span style="color:#f92672">Name</span>: <span style="color:#e6db74">&#39;@@ENV:CUSTOM_DOMAIN_NAME@@&#39;</span>
+    <span style="color:#f92672">Cluster</span>:
+        <span style="color:#f92672">&#39;cluster-1&#39;</span>:
+    <span style="color:#f92672">Server</span>:
+        <span style="color:#f92672">&#39;admin-server&#39;</span>:
+            <span style="color:#f92672">ListenPort</span>: <span style="color:#ae81ff">7001</span>
+        <span style="color:#f92672">&#39;managed-server1-c1-&#39;</span>:
+            <span style="color:#f92672">Cluster</span>: <span style="color:#e6db74">&#39;cluster-1&#39;</span>
+            <span style="color:#f92672">ListenPort</span>: <span style="color:#ae81ff">8001</span>
+        <span style="color:#f92672">&#39;managed-server2-c1-&#39;</span>:
+            <span style="color:#f92672">Cluster</span>: <span style="color:#e6db74">&#39;cluster-1&#39;</span>
+            <span style="color:#f92672">ListenPort</span>: <span style="color:#ae81ff">8001</span>
+        <span style="color:#f92672">&#39;managed-server3-c1-&#39;</span>:
+            <span style="color:#f92672">Cluster</span>: <span style="color:#e6db74">&#39;cluster-1&#39;</span>
+            <span style="color:#f92672">ListenPort</span>: <span style="color:#ae81ff">8001</span>
+        <span style="color:#f92672">&#39;managed-server4-c1-&#39;</span>:
+            <span style="color:#f92672">Cluster</span>: <span style="color:#e6db74">&#39;cluster-1&#39;</span>
+            <span style="color:#f92672">ListenPort</span>: <span style="color:#ae81ff">8001</span>
+
+<span style="color:#f92672">appDeployments</span>:
+    <span style="color:#f92672">Application</span>:
+        <span style="color:#f92672">myapp</span>:
+            <span style="color:#f92672">SourcePath</span>: <span style="color:#e6db74">&#39;wlsdeploy/applications/myapp-v1&#39;</span>
+            <span style="color:#f92672">ModuleType</span>: <span style="color:#ae81ff">ear</span>
+            <span style="color:#f92672">Target</span>: <span style="color:#e6db74">&#39;cluster-1&#39;</span>
+
+<span style="color:#f92672">resources</span>:
+  <span style="color:#f92672">SelfTuning</span>:
+    <span style="color:#f92672">MinThreadsConstraint</span>:
+      <span style="color:#f92672">SampleMinThreads</span>:
+        <span style="color:#f92672">Target</span>: <span style="color:#e6db74">&#39;cluster-1&#39;</span>
+        <span style="color:#f92672">Count</span>: <span style="color:#ae81ff">1</span>
+    <span style="color:#f92672">MaxThreadsConstraint</span>:
+      <span style="color:#f92672">SampleMaxThreads</span>:
+        <span style="color:#f92672">Target</span>: <span style="color:#e6db74">&#39;cluster-1&#39;</span>
+        <span style="color:#f92672">Count</span>: <span style="color:#ae81ff">10</span>
+    <span style="color:#f92672">WorkManager</span>:
+      <span style="color:#f92672">SampleWM</span>:
+        <span style="color:#f92672">Target</span>: <span style="color:#e6db74">&#39;cluster-1&#39;</span>
+        <span style="color:#f92672">MinThreadsConstraint</span>: <span style="color:#e6db74">&#39;SampleMinThreads&#39;</span>
+        <span style="color:#f92672">MaxThreadsConstraint</span>: <span style="color:#e6db74">&#39;SampleMaxThreads&#39;</span>
+</code></pre></div>
+    </div>
+</div>
+<p>The model files:</p>
+<ul>
+<li>
+<p>Define a WebLogic domain with:</p>
+<ul>
+<li>Cluster <code>cluster-1</code></li>
+<li>Administration Server <code>admin-server</code></li>
+<li>A <code>cluster-1</code> targeted <code>ear</code> application that&rsquo;s located in the WDT archive ZIP file at <code>wlsdeploy/applications/myapp-v1</code></li>
+<li>A Work Manager <code>SampleWM</code> configured with minimum threads constraint <code>SampleMinThreads</code> and maximum threads constraint <code>SampleMaxThreads</code></li>
+</ul>
+</li>
+<li>
+<p>Leverage macros to inject external values:</p>
+<ul>
+<li>The property file <code>CLUSTER_SIZE</code> property is referenced in the model YAML file <code>DynamicClusterSize</code> and <code>MaxDynamicClusterSize</code> fields using a PROP macro.</li>
+<li>The model file domain name is injected using a custom environment variable named <code>CUSTOM_DOMAIN_NAME</code> using an ENV macro.
+<ul>
+<li>You set this environment variable later in this sample using an <code>env</code> field in its Domain.</li>
+<li><em>This conveniently provides a simple way to deploy multiple differently named domains using the same model image.</em></li>
+</ul>
+</li>
+<li>The model file administrator user name and password are set using a <code>weblogic-credentials</code> secret macro reference to the WebLogic credential secret.
+<ul>
+<li>This secret is in turn referenced using the <code>webLogicCredentialsSecret</code> field in the Domain.</li>
+<li>The <code>weblogic-credentials</code> is a reserved name that always dereferences to the owning Domain actual WebLogic credentials secret name.</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p>A Model in Image image can contain multiple properties files, archive ZIP files, and YAML files but in this sample you use just one of each. For a complete discussion of Model in Images model file naming conventions, file loading order, and macro syntax, see <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/model-in-image/model-files/">Model files</a> in the Model in Image user documentation.</p>
+<h4 id="creating-the-image-with-wit">Creating the image with WIT</h4>
+<blockquote>
+<p><strong>Note</strong>: If you are using JRF in this sample, substitute <code>JRF</code> for each occurrence of <code>WLS</code> in the <code>imagetool</code> command line below, plus substitute <code>container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.4</code> for the <code>--fromImage</code> value.</p>
+</blockquote>
+<p>At this point, you have staged all of the files needed for image <code>model-in-image:WLS-v1</code>; they include:</p>
+<ul>
+<li><code>/tmp/mii-sample/model-images/weblogic-deploy.zip</code></li>
+<li><code>/tmp/mii-sample/model-images/model-in-image__WLS-v1/model.10.yaml</code></li>
+<li><code>/tmp/mii-sample/model-images/model-in-image__WLS-v1/model.10.properties</code></li>
+<li><code>/tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip</code></li>
+</ul>
+<p>If you don&rsquo;t see the <code>weblogic-deploy.zip</code> file, then you missed a step in the <a href="/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/prerequisites/">prerequisites</a>.</p>
+<p>Now, you use the Image Tool to create an image named <code>model-in-image:WLS-v1</code> that&rsquo;s layered on a base WebLogic image. You&rsquo;ve already set up this tool during the prerequisite steps.</p>
+<p>Run the following commands to create the model image and verify that it worked:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ cd /tmp/mii-sample/model-images
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ ./imagetool/bin/imagetool.sh update <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --tag model-in-image:WLS-v1 <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --fromImage container-registry.oracle.com/middleware/weblogic:12.2.1.4 <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --wdtModel      ./model-in-image__WLS-v1/model.10.yaml <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --wdtVariables  ./model-in-image__WLS-v1/model.10.properties <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --wdtArchive    ./model-in-image__WLS-v1/archive.zip <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --wdtModelOnly <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --wdtDomainType WLS <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  --chown oracle:root
+</code></pre></div><p>If you don&rsquo;t see the <code>imagetool</code> directory, then you missed a step in the <a href="/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/prerequisites/">prerequisites</a>.</p>
+<p>This command runs the WebLogic Image Tool in its Model in Image mode, and does the following:</p>
+<ul>
+<li>Builds the final container image as a layer on the <code>container-registry.oracle.com/middleware/weblogic:12.2.1.4</code> base image.</li>
+<li>Copies the WDT ZIP file that&rsquo;s referenced in the WIT cache into the image.
+<ul>
+<li>Note that you cached WDT in WIT using the keyword <code>latest</code> when you set up the cache during the sample prerequisites steps.</li>
+<li>This lets WIT implicitly assume it&rsquo;s the desired WDT version and removes the need to pass a <code>-wdtVersion</code> flag.</li>
+</ul>
+</li>
+<li>Copies the specified WDT model, properties, and application archives to image location <code>/u01/wdt/models</code>.</li>
+</ul>
+<p>When the command succeeds, it should end with output like the following:</p>
+<pre><code>[INFO   ] Build successful. Build time=36s. Image tag=model-in-image:WLS-v1
+</code></pre><p>Also, if you run the <code>docker images</code> command, then you will see an image named <code>model-in-image:WLS-v1</code>.</p>
+<blockquote>
+<p>Note: If you have Kubernetes cluster worker nodes that are remote to your local machine, then you need to put the image in a location that these nodes can access. See <a href="#ensuring-your-kubernetes-cluster-can-access-images">Ensuring your Kubernetes cluster can access images</a>.</p>
+</blockquote>
+<h4 id="deploy-resources---introduction">Deploy resources - Introduction</h4>
+<p>In this section, you will deploy the new image to namespace <code>sample-domain1-ns</code>, including the following steps:</p>
+<ul>
+<li>Create a Secret containing your WebLogic administrator user name and password.</li>
+<li>Create a Secret containing your Model in Image runtime encryption password:
+<ul>
+<li>All Model in Image domains must supply a runtime encryption Secret with a <code>password</code> value.</li>
+<li>It is used to encrypt configuration that is passed around internally by the operator.</li>
+<li>The value must be kept private but can be arbitrary; you can optionally supply a different secret value every time you restart the domain.</li>
+</ul>
+</li>
+<li>If your domain type is <code>JRF</code>, create secrets containing your RCU access URL, credentials, and prefix.</li>
+<li>Deploy a Domain YAML file that references the new image.</li>
+<li>Wait for the domain&rsquo;s Pods to start and reach their ready state.</li>
+</ul>
+<h4 id="secrets">Secrets</h4>
+<p>First, create the secrets needed by both <code>WLS</code> and <code>JRF</code> type model domains. In this case, you have two secrets.</p>
+<p>Run the following <code>kubectl</code> commands to deploy the required secrets:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl -n sample-domain1-ns create secret generic <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  sample-domain1-weblogic-credentials <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>   --from-literal<span style="color:#f92672">=</span>username<span style="color:#f92672">=</span>weblogic --from-literal<span style="color:#f92672">=</span>password<span style="color:#f92672">=</span>welcome1
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl -n sample-domain1-ns label  secret <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  sample-domain1-weblogic-credentials <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  weblogic.domainUID<span style="color:#f92672">=</span>sample-domain1
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl -n sample-domain1-ns create secret generic <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  sample-domain1-runtime-encryption-secret <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>   --from-literal<span style="color:#f92672">=</span>password<span style="color:#f92672">=</span>my_runtime_password
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl -n sample-domain1-ns label  secret <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  sample-domain1-runtime-encryption-secret <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  weblogic.domainUID<span style="color:#f92672">=</span>sample-domain1
+</code></pre></div><p>Some important details about these secrets:</p>
+<ul>
+<li>
+<p>The WebLogic credentials secret:</p>
+<ul>
+<li>It is required and must contain <code>username</code> and <code>password</code> fields.</li>
+<li>It must be referenced by the <code>spec.webLogicCredentialsSecret</code> field in your Domain.</li>
+<li>It also must be referenced by macros in the <code>domainInfo.AdminUserName</code> and <code>domainInfo.AdminPassWord</code> fields in your model YAML file.</li>
+</ul>
+</li>
+<li>
+<p>The Model WDT runtime secret:</p>
+<ul>
+<li>This is a special secret required by Model in Image.</li>
+<li>It must contain a <code>password</code> field.</li>
+<li>It must be referenced using the <code>spec.model.runtimeEncryptionSecret</code> field in its Domain.</li>
+<li>It must remain the same for as long as the domain is deployed to Kubernetes but can be changed between deployments.</li>
+<li>It is used to encrypt data as it&rsquo;s internally passed using log files from the domain&rsquo;s introspector job and on to its WebLogic Server pods.</li>
+</ul>
+</li>
+<li>
+<p>Deleting and recreating the secrets:</p>
+<ul>
+<li>You delete a secret before creating it, otherwise the create command will fail if the secret already exists.</li>
+<li>This allows you to change the secret when using the <code>kubectl create secret</code> command.</li>
+</ul>
+</li>
+<li>
+<p>You name and label secrets using their associated domain UID for two reasons:</p>
+<ul>
+<li>To make it obvious which secrets belong to which domains.</li>
+<li>To make it easier to clean up a domain. Typical cleanup scripts use the <code>weblogic.domainUID</code> label as a convenience for finding all resources associated with a domain.</li>
+</ul>
+</li>
+</ul>
+<p>If you&rsquo;re following the <code>JRF</code> path through the sample, then you also need to deploy the additional secret referenced by macros in the <code>JRF</code> model <code>RCUDbInfo</code> clause, plus an <code>OPSS</code> wallet password secret. For details about the uses of these secrets, see the <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/model-in-image/">Model in Image</a> user documentation.</p>
+
+<div class="expand">
+    <div class="expand-label" style="cursor: pointer;" onclick="$h = $(this);$h.next('div').slideToggle(100,function () {$h.children('i').attr('class',function () {return $h.next('div').is(':visible') ? 'fas fa-chevron-down' : 'fas fa-chevron-right';});});">
+        <i style="font-size:x-small;" class="fas fa-chevron-right"></i>
+        <span>
+        
+    	
+    	Click here for the commands for deploying additional secrets for JRF.
+    	
+    	</span>
+    </div>
+    <div class="expand-content" style="display: none;">
+        <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl -n sample-domain1-ns create secret generic <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  sample-domain1-rcu-access <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>   --from-literal<span style="color:#f92672">=</span>rcu_prefix<span style="color:#f92672">=</span>FMW1 <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>   --from-literal<span style="color:#f92672">=</span>rcu_schema_password<span style="color:#f92672">=</span>Oradoc_db1 <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>   --from-literal<span style="color:#f92672">=</span>rcu_db_conn_string<span style="color:#f92672">=</span>oracle-db.default.svc.cluster.local:1521/devpdb.k8s
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl -n sample-domain1-ns label  secret <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  sample-domain1-rcu-access <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  weblogic.domainUID<span style="color:#f92672">=</span>sample-domain1
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl -n sample-domain1-ns create secret generic <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  sample-domain1-opss-wallet-password-secret <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>   --from-literal<span style="color:#f92672">=</span>walletPassword<span style="color:#f92672">=</span>welcome1
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl -n sample-domain1-ns label  secret <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  sample-domain1-opss-wallet-password-secret <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  weblogic.domainUID<span style="color:#f92672">=</span>sample-domain1
+</code></pre></div>
+    </div>
+</div>
+<h4 id="domain-resource">Domain resource</h4>
+<p>Now, you create a Domain YAML file. A Domain is the key resource that tells the operator how to deploy a WebLogic domain.</p>
+<p>Copy the following to a file called <code>/tmp/mii-sample/mii-initial.yaml</code> or similar, or use the file <code>/tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml</code> that is included in the sample source.</p>
+
+<div class="expand">
+    <div class="expand-label" style="cursor: pointer;" onclick="$h = $(this);$h.next('div').slideToggle(100,function () {$h.children('i').attr('class',function () {return $h.next('div').is(':visible') ? 'fas fa-chevron-down' : 'fas fa-chevron-right';});});">
+        <i style="font-size:x-small;" class="fas fa-chevron-right"></i>
+        <span>
+        
+    	
+    	Click here to view the WLS Domain YAML file.
+    	
+    	</span>
+    </div>
+    <div class="expand-content" style="display: none;">
+        <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">  <span style="color:#75715e">#</span>
+  <span style="color:#75715e"># This is an example of how to define a Domain resource.</span>
+  <span style="color:#75715e">#</span>
+  <span style="color:#f92672">apiVersion</span>: <span style="color:#e6db74">&#34;weblogic.oracle/v8&#34;</span>
+  <span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Domain</span>
+  <span style="color:#f92672">metadata</span>:
+    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">sample-domain1</span>
+    <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">sample-domain1-ns</span>
+    <span style="color:#f92672">labels</span>:
+      <span style="color:#f92672">weblogic.domainUID</span>: <span style="color:#ae81ff">sample-domain1</span>
+
+  <span style="color:#f92672">spec</span>:
+    <span style="color:#75715e"># Set to &#39;FromModel&#39; to indicate &#39;Model in Image&#39;.</span>
+    <span style="color:#f92672">domainHomeSourceType</span>: <span style="color:#ae81ff">FromModel</span>
+
+    <span style="color:#75715e"># The WebLogic Domain Home, this must be a location within</span>
+    <span style="color:#75715e"># the image for &#39;Model in Image&#39; domains.</span>
+    <span style="color:#f92672">domainHome</span>: <span style="color:#ae81ff">/u01/domains/sample-domain1</span>
+
+    <span style="color:#75715e"># The WebLogic Server image that the Operator uses to start the domain</span>
+    <span style="color:#f92672">image</span>: <span style="color:#e6db74">&#34;model-in-image:WLS-v1&#34;</span>
+
+    <span style="color:#75715e"># Defaults to &#34;Always&#34; if image tag (version) is &#39;:latest&#39;</span>
+    <span style="color:#f92672">imagePullPolicy</span>: <span style="color:#e6db74">&#34;IfNotPresent&#34;</span>
+
+    <span style="color:#75715e"># Identify which Secret contains the credentials for pulling an image</span>
+    <span style="color:#75715e">#imagePullSecrets:</span>
+    <span style="color:#75715e">#- name: regsecret</span>
+
+    <span style="color:#75715e"># Identify which Secret contains the WebLogic Admin credentials,</span>
+    <span style="color:#75715e"># the secret must contain &#39;username&#39; and &#39;password&#39; fields.</span>
+    <span style="color:#f92672">webLogicCredentialsSecret</span>:
+      <span style="color:#f92672">name</span>: <span style="color:#ae81ff">sample-domain1-weblogic-credentials</span>
+
+    <span style="color:#75715e"># Whether to include the WebLogic Server stdout in the pod&#39;s stdout, default is true</span>
+    <span style="color:#f92672">includeServerOutInPodLog</span>: <span style="color:#66d9ef">true</span>
+
+    <span style="color:#75715e"># Whether to enable overriding your log file location, see also &#39;logHome&#39;</span>
+    <span style="color:#75715e">#logHomeEnabled: false</span>
+
+    <span style="color:#75715e"># The location for domain log, server logs, server out, introspector out, and Node Manager log files</span>
+    <span style="color:#75715e"># see also &#39;logHomeEnabled&#39;, &#39;volumes&#39;, and &#39;volumeMounts&#39;.</span>
+    <span style="color:#75715e">#logHome: /shared/logs/sample-domain1</span>
+
+    <span style="color:#75715e"># Set which WebLogic Servers the Operator will start</span>
+    <span style="color:#75715e"># - &#34;NEVER&#34; will not start any server in the domain</span>
+    <span style="color:#75715e"># - &#34;ADMIN_ONLY&#34; will start up only the administration server (no managed servers will be started)</span>
+    <span style="color:#75715e"># - &#34;IF_NEEDED&#34; will start all non-clustered servers, including the administration server, and clustered servers up to their replica count.</span>
+    <span style="color:#f92672">serverStartPolicy</span>: <span style="color:#e6db74">&#34;IF_NEEDED&#34;</span>
+
+    <span style="color:#75715e"># Settings for all server pods in the domain including the introspector job pod</span>
+    <span style="color:#f92672">serverPod</span>:
+      <span style="color:#75715e"># Optional new or overridden environment variables for the domain&#39;s pods</span>
+      <span style="color:#75715e"># - This sample uses CUSTOM_DOMAIN_NAME in its image model file</span>
+      <span style="color:#75715e">#   to set the WebLogic domain name</span>
+      <span style="color:#f92672">env</span>:
+      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">CUSTOM_DOMAIN_NAME</span>
+        <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;domain1&#34;</span>
+      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">JAVA_OPTIONS</span>
+        <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;-Dweblogic.StdoutDebugEnabled=false&#34;</span>
+      - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">USER_MEM_ARGS</span>
+        <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom &#34;</span>
+
+      <span style="color:#75715e"># Optional volumes and mounts for the domain&#39;s pods. See also &#39;logHome&#39;.</span>
+      <span style="color:#75715e">#volumes:</span>
+      <span style="color:#75715e">#- name: weblogic-domain-storage-volume</span>
+      <span style="color:#75715e">#  persistentVolumeClaim:</span>
+      <span style="color:#75715e">#    claimName: sample-domain1-weblogic-sample-pvc</span>
+      <span style="color:#75715e">#volumeMounts:</span>
+      <span style="color:#75715e">#- mountPath: /shared</span>
+      <span style="color:#75715e">#  name: weblogic-domain-storage-volume</span>
+
+    <span style="color:#75715e"># The desired behavior for starting the domain&#39;s administration server.</span>
+    <span style="color:#f92672">adminServer</span>:
+      <span style="color:#75715e"># The serverStartState legal values are &#34;RUNNING&#34; or &#34;ADMIN&#34;</span>
+      <span style="color:#75715e"># &#34;RUNNING&#34; means the listed server will be started up to &#34;RUNNING&#34; mode</span>
+      <span style="color:#75715e"># &#34;ADMIN&#34; means the listed server will be start up to &#34;ADMIN&#34; mode</span>
+      <span style="color:#f92672">serverStartState</span>: <span style="color:#e6db74">&#34;RUNNING&#34;</span>
+      <span style="color:#75715e"># Setup a Kubernetes node port for the administration server default channel</span>
+      <span style="color:#75715e">#adminService:</span>
+      <span style="color:#75715e">#  channels:</span>
+      <span style="color:#75715e">#  - channelName: default</span>
+      <span style="color:#75715e">#    nodePort: 30701</span>
+
+    <span style="color:#75715e"># The number of managed servers to start for unlisted clusters</span>
+    <span style="color:#f92672">replicas</span>: <span style="color:#ae81ff">1</span>
+
+    <span style="color:#75715e"># The desired behavior for starting a specific cluster&#39;s member servers</span>
+    <span style="color:#f92672">clusters</span>:
+    - <span style="color:#f92672">clusterName</span>: <span style="color:#ae81ff">cluster-1</span>
+      <span style="color:#f92672">serverStartState</span>: <span style="color:#e6db74">&#34;RUNNING&#34;</span>
+      <span style="color:#f92672">replicas</span>: <span style="color:#ae81ff">2</span>
+
+    <span style="color:#75715e"># Change the `restartVersion` to force the introspector job to rerun</span>
+    <span style="color:#75715e"># and apply any new model configuration, to also force a subsequent</span>
+    <span style="color:#75715e"># roll of your domain&#39;s WebLogic Server pods.</span>
+    <span style="color:#f92672">restartVersion</span>: <span style="color:#e6db74">&#39;1&#39;</span>
+
+    <span style="color:#f92672">configuration</span>:
+
+      <span style="color:#75715e"># Settings for domainHomeSourceType &#39;FromModel&#39;</span>
+      <span style="color:#f92672">model</span>:
+        <span style="color:#75715e"># Valid model domain types are &#39;WLS&#39;, &#39;JRF&#39;, and &#39;RestrictedJRF&#39;, default is &#39;WLS&#39;</span>
+        <span style="color:#f92672">domainType</span>: <span style="color:#e6db74">&#34;WLS&#34;</span>
+
+        <span style="color:#75715e"># Optional configmap for additional models and variable files</span>
+        <span style="color:#75715e">#configMap: sample-domain1-wdt-config-map</span>
+
+        <span style="color:#75715e"># All &#39;FromModel&#39; domains require a runtimeEncryptionSecret with a &#39;password&#39; field</span>
+        <span style="color:#f92672">runtimeEncryptionSecret</span>: <span style="color:#ae81ff">sample-domain1-runtime-encryption-secret</span>
+
+      <span style="color:#75715e"># Secrets that are referenced by model yaml macros</span>
+      <span style="color:#75715e"># (the model yaml in the optional configMap or in the image)</span>
+      <span style="color:#75715e">#secrets:</span>
+      <span style="color:#75715e">#- sample-domain1-datasource-secret</span>
+</code></pre></div>
+    </div>
+</div>
+
+<div class="expand">
+    <div class="expand-label" style="cursor: pointer;" onclick="$h = $(this);$h.next('div').slideToggle(100,function () {$h.children('i').attr('class',function () {return $h.next('div').is(':visible') ? 'fas fa-chevron-down' : 'fas fa-chevron-right';});});">
+        <i style="font-size:x-small;" class="fas fa-chevron-right"></i>
+        <span>
+        
+    	
+    	Click here to view the JRF Domain YAML file.
+    	
+    	</span>
+    </div>
+    <div class="expand-content" style="display: none;">
+        <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#75715e"># Copyright (c) 2020, 2021, Oracle and/or its affiliates.</span>
+<span style="color:#75715e"># Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.</span>
+<span style="color:#75715e">#</span>
+<span style="color:#75715e"># This is an example of how to define a Domain resource.</span>
+<span style="color:#75715e">#</span>
+<span style="color:#f92672">apiVersion</span>: <span style="color:#e6db74">&#34;weblogic.oracle/v8&#34;</span>
+<span style="color:#f92672">kind</span>: <span style="color:#ae81ff">Domain</span>
+<span style="color:#f92672">metadata</span>:
+  <span style="color:#f92672">name</span>: <span style="color:#ae81ff">sample-domain1</span>
+  <span style="color:#f92672">namespace</span>: <span style="color:#ae81ff">sample-domain1-ns</span>
+  <span style="color:#f92672">labels</span>:
+    <span style="color:#f92672">weblogic.domainUID</span>: <span style="color:#ae81ff">sample-domain1</span>
+
+<span style="color:#f92672">spec</span>:
+  <span style="color:#75715e"># Set to &#39;FromModel&#39; to indicate &#39;Model in Image&#39;.</span>
+  <span style="color:#f92672">domainHomeSourceType</span>: <span style="color:#ae81ff">FromModel</span>
+
+  <span style="color:#75715e"># The WebLogic Domain Home, this must be a location within</span>
+  <span style="color:#75715e"># the image for &#39;Model in Image&#39; domains.</span>
+  <span style="color:#f92672">domainHome</span>: <span style="color:#ae81ff">/u01/domains/sample-domain1</span>
+
+  <span style="color:#75715e"># The WebLogic Server image that the Operator uses to start the domain</span>
+  <span style="color:#f92672">image</span>: <span style="color:#e6db74">&#34;model-in-image:JRF-v1&#34;</span>
+
+  <span style="color:#75715e"># Defaults to &#34;Always&#34; if image tag (version) is &#39;:latest&#39;</span>
+  <span style="color:#f92672">imagePullPolicy</span>: <span style="color:#e6db74">&#34;IfNotPresent&#34;</span>
+
+  <span style="color:#75715e"># Identify which Secret contains the credentials for pulling an image</span>
+  <span style="color:#75715e">#imagePullSecrets:</span>
+  <span style="color:#75715e">#- name: regsecret</span>
+
+  <span style="color:#75715e"># Identify which Secret contains the WebLogic Admin credentials,</span>
+  <span style="color:#75715e"># the secret must contain &#39;username&#39; and &#39;password&#39; fields.</span>
+  <span style="color:#f92672">webLogicCredentialsSecret</span>:
+    <span style="color:#f92672">name</span>: <span style="color:#ae81ff">sample-domain1-weblogic-credentials</span>
+
+  <span style="color:#75715e"># Whether to include the WebLogic Server stdout in the pod&#39;s stdout, default is true</span>
+  <span style="color:#f92672">includeServerOutInPodLog</span>: <span style="color:#66d9ef">true</span>
+
+  <span style="color:#75715e"># Whether to enable overriding your log file location, see also &#39;logHome&#39;</span>
+  <span style="color:#75715e">#logHomeEnabled: false</span>
+
+  <span style="color:#75715e"># The location for domain log, server logs, server out, introspector out, and Node Manager log files</span>
+  <span style="color:#75715e"># see also &#39;logHomeEnabled&#39;, &#39;volumes&#39;, and &#39;volumeMounts&#39;.</span>
+  <span style="color:#75715e">#logHome: /shared/logs/sample-domain1</span>
+
+  <span style="color:#75715e"># Set which WebLogic Servers the Operator will start</span>
+  <span style="color:#75715e"># - &#34;NEVER&#34; will not start any server in the domain</span>
+  <span style="color:#75715e"># - &#34;ADMIN_ONLY&#34; will start up only the administration server (no managed servers will be started)</span>
+  <span style="color:#75715e"># - &#34;IF_NEEDED&#34; will start all non-clustered servers, including the administration server, and clustered servers up to their replica count.</span>
+  <span style="color:#f92672">serverStartPolicy</span>: <span style="color:#e6db74">&#34;IF_NEEDED&#34;</span>
+
+  <span style="color:#75715e"># Settings for all server pods in the domain including the introspector job pod</span>
+  <span style="color:#f92672">serverPod</span>:
+    <span style="color:#75715e"># Optional new or overridden environment variables for the domain&#39;s pods</span>
+    <span style="color:#75715e"># - This sample uses CUSTOM_DOMAIN_NAME in its image model file</span>
+    <span style="color:#75715e">#   to set the WebLogic domain name</span>
+    <span style="color:#f92672">env</span>:
+    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">CUSTOM_DOMAIN_NAME</span>
+      <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;domain1&#34;</span>
+    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">JAVA_OPTIONS</span>
+      <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;-Dweblogic.StdoutDebugEnabled=false&#34;</span>
+    - <span style="color:#f92672">name</span>: <span style="color:#ae81ff">USER_MEM_ARGS</span>
+      <span style="color:#f92672">value</span>: <span style="color:#e6db74">&#34;-XX:+UseContainerSupport -Djava.security.egd=file:/dev/./urandom &#34;</span>
+
+    <span style="color:#75715e"># Optional volumes and mounts for the domain&#39;s pods. See also &#39;logHome&#39;.</span>
+    <span style="color:#75715e">#volumes:</span>
+    <span style="color:#75715e">#- name: weblogic-domain-storage-volume</span>
+    <span style="color:#75715e">#  persistentVolumeClaim:</span>
+    <span style="color:#75715e">#    claimName: sample-domain1-weblogic-sample-pvc</span>
+    <span style="color:#75715e">#volumeMounts:</span>
+    <span style="color:#75715e">#- mountPath: /shared</span>
+    <span style="color:#75715e">#  name: weblogic-domain-storage-volume</span>
+
+  <span style="color:#75715e"># The desired behavior for starting the domain&#39;s administration server.</span>
+  <span style="color:#f92672">adminServer</span>:
+    <span style="color:#75715e"># The serverStartState legal values are &#34;RUNNING&#34; or &#34;ADMIN&#34;</span>
+    <span style="color:#75715e"># &#34;RUNNING&#34; means the listed server will be started up to &#34;RUNNING&#34; mode</span>
+    <span style="color:#75715e"># &#34;ADMIN&#34; means the listed server will be start up to &#34;ADMIN&#34; mode</span>
+    <span style="color:#f92672">serverStartState</span>: <span style="color:#e6db74">&#34;RUNNING&#34;</span>
+    <span style="color:#75715e"># Setup a Kubernetes node port for the administration server default channel</span>
+    <span style="color:#75715e">#adminService:</span>
+    <span style="color:#75715e">#  channels:</span>
+    <span style="color:#75715e">#  - channelName: default</span>
+    <span style="color:#75715e">#    nodePort: 30701</span>
+
+  <span style="color:#75715e"># The number of managed servers to start for unlisted clusters</span>
+  <span style="color:#f92672">replicas</span>: <span style="color:#ae81ff">1</span>
+
+  <span style="color:#75715e"># The desired behavior for starting a specific cluster&#39;s member servers</span>
+  <span style="color:#f92672">clusters</span>:
+  - <span style="color:#f92672">clusterName</span>: <span style="color:#ae81ff">cluster-1</span>
+    <span style="color:#f92672">serverStartState</span>: <span style="color:#e6db74">&#34;RUNNING&#34;</span>
+    <span style="color:#f92672">replicas</span>: <span style="color:#ae81ff">2</span>
+
+  <span style="color:#75715e"># Change the restartVersion to force the introspector job to rerun</span>
+  <span style="color:#75715e"># and apply any new model configuration, to also force a subsequent</span>
+  <span style="color:#75715e"># roll of your domain&#39;s WebLogic Server pods.</span>
+  <span style="color:#f92672">restartVersion</span>: <span style="color:#e6db74">&#39;1&#39;</span>
+
+  <span style="color:#f92672">configuration</span>:
+
+    <span style="color:#75715e"># Settings for domainHomeSourceType &#39;FromModel&#39;</span>
+    <span style="color:#f92672">model</span>:
+      <span style="color:#75715e"># Valid model domain types are &#39;WLS&#39;, &#39;JRF&#39;, and &#39;RestrictedJRF&#39;, default is &#39;WLS&#39;</span>
+      <span style="color:#f92672">domainType</span>: <span style="color:#e6db74">&#34;JRF&#34;</span>
+
+      <span style="color:#75715e"># Optional configmap for additional models and variable files</span>
+      <span style="color:#75715e">#configMap: sample-domain1-wdt-config-map</span>
+
+      <span style="color:#75715e"># All &#39;FromModel&#39; domains require a runtimeEncryptionSecret with a &#39;password&#39; field</span>
+      <span style="color:#f92672">runtimeEncryptionSecret</span>: <span style="color:#ae81ff">sample-domain1-runtime-encryption-secret</span>
+
+    <span style="color:#75715e"># Secrets that are referenced by model yaml macros</span>
+    <span style="color:#75715e"># (the model yaml in the optional configMap or in the image)</span>
+    <span style="color:#f92672">secrets</span>:
+    <span style="color:#75715e">#- sample-domain1-datasource-secret</span>
+    - <span style="color:#ae81ff">sample-domain1-rcu-access</span>
+
+    <span style="color:#75715e"># Increase the introspector job active timeout value for JRF use cases</span>
+    <span style="color:#f92672">introspectorJobActiveDeadlineSeconds</span>: <span style="color:#ae81ff">300</span>
+
+    <span style="color:#f92672">opss</span>:
+
+      <span style="color:#75715e"># Name of secret with walletPassword for extracting the wallet, used for JRF domains</span>
+      <span style="color:#f92672">walletPasswordSecret</span>: <span style="color:#ae81ff">sample-domain1-opss-wallet-password-secret</span>
+
+      <span style="color:#75715e"># Name of secret with walletFile containing base64 encoded opss wallet, used for JRF domains</span>
+      <span style="color:#75715e">#walletFileSecret: sample-domain1-opss-walletfile-secret</span>
+</code></pre></div>
+    </div>
+</div>
+<blockquote>
+<p><strong>Note</strong>: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain&rsquo;s image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See <a href="/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/#ensuring-your-kubernetes-cluster-can-access-images">Ensuring your Kubernetes cluster can access images</a>.</p>
+</blockquote>
+<p>Run the following command to create the domain custom resource:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl apply -f /tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml
+</code></pre></div><blockquote>
+<p>Note: If you are choosing <em>not</em> to use the predefined Domain YAML file and instead created your own Domain YAML file earlier, then substitute your custom file name in the above command. Previously, we suggested naming it <code>/tmp/mii-sample/mii-initial.yaml</code>.</p>
+</blockquote>
+<p>If you run <code>kubectl get pods -n sample-domain1-ns --watch</code>, then you will see the introspector job run and your WebLogic Server pods start. The output will look something like this:</p>
+
+<div class="expand">
+    <div class="expand-label" style="cursor: pointer;" onclick="$h = $(this);$h.next('div').slideToggle(100,function () {$h.children('i').attr('class',function () {return $h.next('div').is(':visible') ? 'fas fa-chevron-down' : 'fas fa-chevron-right';});});">
+        <i style="font-size:x-small;" class="fas fa-chevron-right"></i>
+        <span>
+        
+    	
+    	Click here to expand.
+    	
+    	</span>
+    </div>
+    <div class="expand-content" style="display: none;">
+        <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl get pods -n sample-domain1-ns --watch
+  <span style="color:#e6db74">```</span>
+  <span style="color:#e6db74">```</span>
+NAME                                         READY   STATUS    RESTARTS   AGE
+sample-domain1-introspector-lqqj9   0/1   Pending   <span style="color:#ae81ff">0</span>     0s
+sample-domain1-introspector-lqqj9   0/1   ContainerCreating   <span style="color:#ae81ff">0</span>     0s
+sample-domain1-introspector-lqqj9   1/1   Running   <span style="color:#ae81ff">0</span>     1s
+sample-domain1-introspector-lqqj9   0/1   Completed   <span style="color:#ae81ff">0</span>     65s
+sample-domain1-introspector-lqqj9   0/1   Terminating   <span style="color:#ae81ff">0</span>     65s
+sample-domain1-admin-server   0/1   Pending   <span style="color:#ae81ff">0</span>     0s
+sample-domain1-admin-server   0/1   ContainerCreating   <span style="color:#ae81ff">0</span>     0s
+sample-domain1-admin-server   0/1   Running   <span style="color:#ae81ff">0</span>     1s
+sample-domain1-admin-server   1/1   Running   <span style="color:#ae81ff">0</span>     32s
+sample-domain1-managed-server1   0/1   Pending   <span style="color:#ae81ff">0</span>     0s
+sample-domain1-managed-server2   0/1   Pending   <span style="color:#ae81ff">0</span>     0s
+sample-domain1-managed-server1   0/1   ContainerCreating   <span style="color:#ae81ff">0</span>     0s
+sample-domain1-managed-server2   0/1   ContainerCreating   <span style="color:#ae81ff">0</span>     0s
+sample-domain1-managed-server1   0/1   Running   <span style="color:#ae81ff">0</span>     2s
+sample-domain1-managed-server2   0/1   Running   <span style="color:#ae81ff">0</span>     2s
+sample-domain1-managed-server1   1/1   Running   <span style="color:#ae81ff">0</span>     43s
+sample-domain1-managed-server2   1/1   Running   <span style="color:#ae81ff">0</span>     42s
+</code></pre></div>
+    </div>
+</div>
+<p>Alternatively, you can run <code>/tmp/mii-sample/utils/wl-pod-wait.sh -p 3</code>. This is a utility script that provides useful information about a domain&rsquo;s pods and waits for them to reach a <code>ready</code> state, reach their target <code>restartVersion</code>, and reach their target <code>image</code> before exiting.</p>
+
+<div class="expand">
+    <div class="expand-label" style="cursor: pointer;" onclick="$h = $(this);$h.next('div').slideToggle(100,function () {$h.children('i').attr('class',function () {return $h.next('div').is(':visible') ? 'fas fa-chevron-down' : 'fas fa-chevron-right';});});">
+        <i style="font-size:x-small;" class="fas fa-chevron-right"></i>
+        <span>
+        
+    	
+    	Click here to display the `wl-pod-wait.sh` usage.
+    	
+    	</span>
+    </div>
+    <div class="expand-content" style="display: none;">
+        <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">  $ ./wl-pod-wait.sh -?
+  <span style="color:#e6db74">```</span>
+  <span style="color:#e6db74">```</span>
+  Usage:
+
+    wl-pod-wait.sh <span style="color:#f92672">[</span>-n mynamespace<span style="color:#f92672">]</span> <span style="color:#f92672">[</span>-d mydomainuid<span style="color:#f92672">]</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>       <span style="color:#f92672">[</span>-p expected_pod_count<span style="color:#f92672">]</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>       <span style="color:#f92672">[</span>-t timeout_secs<span style="color:#f92672">]</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>       <span style="color:#f92672">[</span>-q<span style="color:#f92672">]</span>
+
+    Exits non-zero <span style="color:#66d9ef">if</span> <span style="color:#e6db74">&#39;timeout_secs&#39;</span> is reached before <span style="color:#e6db74">&#39;pod_count&#39;</span> is reached.
+
+  Parameters:
+
+    -d &lt;domain_uid&gt; : Defaults to <span style="color:#e6db74">&#39;sample-domain1&#39;</span>.
+
+    -n &lt;namespace&gt;  : Defaults to <span style="color:#e6db74">&#39;sample-domain1-ns&#39;</span>.
+
+    -p <span style="color:#ae81ff">0</span>            : Wait <span style="color:#66d9ef">until</span> there are no running WebLogic Server pods
+                      <span style="color:#66d9ef">for</span> a domain. The default.
+
+    -p &lt;pod_count&gt;  : Wait <span style="color:#66d9ef">until</span> all of the following are true
+                      <span style="color:#66d9ef">for</span> exactly <span style="color:#e6db74">&#39;pod_count&#39;</span> WebLogic Server pods
+                      in the domain:
+                      - ready
+                      - same <span style="color:#e6db74">&#39;weblogic.domainRestartVersion&#39;</span> label value as
+                        the domain resource<span style="color:#e6db74">&#39;s &#39;</span>spec.restartVersion<span style="color:#e6db74">&#39;
+</span><span style="color:#e6db74">                      - same &#39;</span>weblogic.introspectVersion<span style="color:#e6db74">&#39; label value as
+</span><span style="color:#e6db74">                        the domain resource&#39;</span>s <span style="color:#e6db74">&#39;spec.introspectVersion&#39;</span>
+                      - same image as the the domain resource<span style="color:#e6db74">&#39;s image
+</span><span style="color:#e6db74">
+</span><span style="color:#e6db74">    -t &lt;timeout&gt;    : Timeout in seconds. Defaults to &#39;</span>1000<span style="color:#960050;background-color:#1e0010">&#39;</span>.
+
+    -q              : Quiet mode. Show only a count of wl pods that
+                      have reached the desired criteria.
+
+    -?              : This help.
+</code></pre></div>
+    </div>
+</div>
+
+<div class="expand">
+    <div class="expand-label" style="cursor: pointer;" onclick="$h = $(this);$h.next('div').slideToggle(100,function () {$h.children('i').attr('class',function () {return $h.next('div').is(':visible') ? 'fas fa-chevron-down' : 'fas fa-chevron-right';});});">
+        <i style="font-size:x-small;" class="fas fa-chevron-right"></i>
+        <span>
+        
+    	
+    	Click here to view sample output from `wl-pod-wait.sh`.
+    	
+    	</span>
+    </div>
+    <div class="expand-content" style="display: none;">
+        <pre><code>@@ [2020-04-30T13:50:42][seconds=0] Info: Waiting up to 1000 seconds for exactly '3' WebLogic Server pods to reach the following criteria:
+@@ [2020-04-30T13:50:42][seconds=0] Info:   ready='true'
+@@ [2020-04-30T13:50:42][seconds=0] Info:   image='model-in-image:WLS-v1'
+@@ [2020-04-30T13:50:42][seconds=0] Info:   domainRestartVersion='1'
+@@ [2020-04-30T13:50:42][seconds=0] Info:   namespace='sample-domain1-ns'
+@@ [2020-04-30T13:50:42][seconds=0] Info:   domainUID='sample-domain1'
+
+@@ [2020-04-30T13:50:42][seconds=0] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-04-30T13:50:42][seconds=0] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
+
+NAME                                          VERSION  IMAGE  READY  PHASE
+--------------------------------------------  -------  -----  -----  ---------
+'sample-domain1-introspector-rkdkg'           ''       ''     ''     'Pending'
+
+@@ [2020-04-30T13:50:45][seconds=3] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-04-30T13:50:45][seconds=3] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
+
+NAME                                          VERSION  IMAGE  READY  PHASE
+--------------------------------------------  -------  -----  -----  ---------
+'sample-domain1-introspector-rkdkg'           ''       ''     ''     'Running'
+
+
+@@ [2020-04-30T13:51:50][seconds=68] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-04-30T13:51:50][seconds=68] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
+
+NAME  VERSION  IMAGE  READY  PHASE
+----  -------  -----  -----  -----
+
+@@ [2020-04-30T13:51:59][seconds=77] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-04-30T13:51:59][seconds=77] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
+
+NAME                           VERSION  IMAGE                    READY    PHASE
+-----------------------------  -------  -----------------------  -------  ---------
+'sample-domain1-admin-server'  '1'      'model-in-image:WLS-v1'  'false'  'Pending'
+
+@@ [2020-04-30T13:52:02][seconds=80] Info: '0' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-04-30T13:52:02][seconds=80] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
+
+NAME                           VERSION  IMAGE                    READY    PHASE
+-----------------------------  -------  -----------------------  -------  ---------
+'sample-domain1-admin-server'  '1'      'model-in-image:WLS-v1'  'false'  'Running'
+
+@@ [2020-04-30T13:52:32][seconds=110] Info: '1' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-04-30T13:52:32][seconds=110] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
+
+NAME                              VERSION  IMAGE                    READY    PHASE
+--------------------------------  -------  -----------------------  -------  ---------
+'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v1'  'true'   'Running'
+'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v1'  'false'  'Pending'
+'sample-domain1-managed-server2'  '1'      'model-in-image:WLS-v1'  'false'  'Pending'
+
+@@ [2020-04-30T13:52:34][seconds=112] Info: '1' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-04-30T13:52:34][seconds=112] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
+
+NAME                              VERSION  IMAGE                    READY    PHASE
+--------------------------------  -------  -----------------------  -------  ---------
+'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v1'  'true'   'Running'
+'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v1'  'false'  'Running'
+'sample-domain1-managed-server2'  '1'      'model-in-image:WLS-v1'  'false'  'Running'
+
+@@ [2020-04-30T13:53:14][seconds=152] Info: '3' WebLogic Server pods currently match all criteria, expecting '3'.
+@@ [2020-04-30T13:53:14][seconds=152] Info: Introspector and WebLogic Server pods with same namespace and domain-uid:
+
+NAME                              VERSION  IMAGE                    READY   PHASE
+--------------------------------  -------  -----------------------  ------  ---------
+'sample-domain1-admin-server'     '1'      'model-in-image:WLS-v1'  'true'  'Running'
+'sample-domain1-managed-server1'  '1'      'model-in-image:WLS-v1'  'true'  'Running'
+'sample-domain1-managed-server2'  '1'      'model-in-image:WLS-v1'  'true'  'Running'
+
+
+@@ [2020-04-30T13:53:14][seconds=152] Info: Success!
+
+</code></pre>
+    </div>
+</div>
+<p>If you see an error, then consult <a href="/weblogic-kubernetes-operator/3.2/userguide/managing-domains/model-in-image/debugging/">Debugging</a> in the Model in Image user guide.</p>
+<h4 id="invoke-the-web-application">Invoke the web application</h4>
+<p>Now that all the initial use case resources have been deployed, you can invoke the sample web application through the Traefik ingress controller&rsquo;s NodePort.</p>
+<p><strong>Note</strong>: The web application will display a list of any data sources it finds, but at this point, we don&rsquo;t expect it to find any because the model doesn&rsquo;t contain any.</p>
+<p>Send a web application request to the load balancer:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ curl -s -S -m <span style="color:#ae81ff">10</span> -H <span style="color:#e6db74">&#39;host: sample-domain1-cluster-cluster-1.mii-sample.org&#39;</span> <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>   http://localhost:30305/myapp_war/index.jsp
+</code></pre></div><p>Or, if Traefik is unavailable and your Administration Server pod is running, you can use <code>kubectl exec</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl exec -n sample-domain1-ns sample-domain1-admin-server -- bash -c <span style="color:#ae81ff">\
+</span><span style="color:#ae81ff"></span>  <span style="color:#e6db74">&#34;curl -s -S -m 10 http://sample-domain1-cluster-cluster-1:8001/myapp_war/index.jsp&#34;</span>
+</code></pre></div><p>You will see output like the following:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-html" data-lang="html">&lt;<span style="color:#f92672">html</span>&gt;&lt;<span style="color:#f92672">body</span>&gt;&lt;<span style="color:#f92672">pre</span>&gt;
+*****************************************************************
+
+Hello World! This is version &#39;v1&#39; of the mii-sample JSP web-app.
+
+Welcome to WebLogic Server &#39;managed-server2&#39;!
+
+  domain UID  = &#39;sample-domain1&#39;
+  domain name = &#39;domain1&#39;
+
+Found 1 local cluster runtime:
+  Cluster &#39;cluster-1&#39;
+
+Found min threads constraint runtime named &#39;SampleMinThreads&#39; with configured count: 1
+
+Found max threads constraint runtime named &#39;SampleMaxThreads&#39; with configured count: 10
+
+Found 0 local data sources:
+
+*****************************************************************
+&lt;/<span style="color:#f92672">pre</span>&gt;&lt;/<span style="color:#f92672">body</span>&gt;&lt;/<span style="color:#f92672">html</span>&gt;
+</code></pre></div><p><strong>Note</strong>: If you&rsquo;re running your <code>curl</code> commands on a remote machine, then substitute <code>localhost</code> with an external address suitable for contacting your Kubernetes cluster. A Kubernetes cluster address that often works can be obtained by using the address just after <code>https://</code> in the KubeDNS line of the output from the <code>kubectl cluster-info</code> command.</p>
+<p>If you want to continue to the <a href="/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/update1/">Update 1</a> use case, then leave your domain running.</p>
+<p>To remove the resources you have created in this sample, see <a href="/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/cleanup/">Cleanup</a>.</p>
+
+
+<footer class="footline">
+	
+</footer>
+
+        
+        </div>
+        
+
+      </div>
+
+    <div id="navigation">
+        
+        
+
+        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                        
+                        
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                        
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+            
+        
+
+        
+
+
+	 
+	 
+		
+			<a class="nav nav-prev" href="/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/prerequisites/" title="Prerequisites"> <i class="fa fa-chevron-left"></i></a>
+		
+		
+			<a class="nav nav-next" href="/weblogic-kubernetes-operator/3.2/samples/simple/domains/model-in-image/update1/" title="Update 1" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
+		
+	
+    </div>
+
+    </section>
+
+    <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
+      <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
+    </div>
+    <script src="/weblogic-kubernetes-operator/3.2/js/clipboard.min.js?1626795921"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/perfect-scrollbar.min.js?1626795921"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/perfect-scrollbar.jquery.min.js?1626795921"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/jquery.sticky.js?1626795921"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/featherlight.min.js?1626795921"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/highlight.pack.js?1626795921"></script>
+    <script>hljs.initHighlightingOnLoad();</script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/modernizr.custom-3.6.0.js?1626795921"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/learn.js?1626795921"></script>
+    <script src="/weblogic-kubernetes-operator/3.2/js/hugo-learn.js?1626795921"></script>
+    
+        
+            <script src="/weblogic-kubernetes-operator/3.2/mermaid/mermaid.js?1626795921"></script>
+        
+        <script>
+            mermaid.initialize({ startOnLoad: true });
+        </script>
+    
+    
+
+  </body>
+</html>
+
