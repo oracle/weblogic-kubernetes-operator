@@ -31,7 +31,7 @@ In this use case, you set up an initial WebLogic domain. This involves:
 After the Domain is deployed, the operator starts an 'introspector job' that converts your models into a WebLogic configuration, and then passes this configuration to each WebLogic Server in the domain.
 
 {{% notice note %}}
-Perform the steps in [Prerequisites for all domain types]({{< relref "/samples/simple/domains/model-in-image/prerequisites.md" >}}) before performing the steps in this use case.  
+Perform the steps in [Prerequisites for all domain types]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}}) before performing the steps in this use case.  
 If you are taking the `JRF` path through the sample, then substitute `JRF` for `WLS` in your image names and directory paths. Also note that the JRF-v1 model YAML file differs from the WLS-v1 YAML file (it contains an additional `domainInfo -> RCUDbInfo` stanza).
 {{% /notice %}}
 
@@ -330,7 +330,7 @@ At this point, you have staged all of the files needed for image `model-in-image
   - `/tmp/mii-sample/model-images/model-in-image__WLS-v1/model.10.properties`
   - `/tmp/mii-sample/model-images/model-in-image__WLS-v1/archive.zip`
 
-If you don't see the `weblogic-deploy.zip` file, then you missed a step in the [prerequisites]({{< relref "/samples/simple/domains/model-in-image/prerequisites.md" >}}).
+If you don't see the `weblogic-deploy.zip` file, then you missed a step in the [prerequisites]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}}).
 
 Now, you use the Image Tool to create an image named `model-in-image:WLS-v1` that's layered on a base WebLogic image. You've already set up this tool during the prerequisite steps.
 
@@ -352,7 +352,7 @@ Run the following commands to create the model image and verify that it worked:
     --chown oracle:root
   ```
 
-If you don't see the `imagetool` directory, then you missed a step in the [prerequisites]({{< relref "/samples/simple/domains/model-in-image/prerequisites.md" >}}).
+If you don't see the `imagetool` directory, then you missed a step in the [prerequisites]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}}).
 
 This command runs the WebLogic Image Tool in its Model in Image mode, and does the following:
 
@@ -724,7 +724,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
   ```
   {{% /expand %}}
 
-  > **Note**: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain's image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/simple/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
+  > **Note**: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain's image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
   Run the following command to create the domain custom resource:
 
@@ -933,6 +933,6 @@ You will see output like the following:
 
  **Note**: If you're running your `curl` commands on a remote machine, then substitute `localhost` with an external address suitable for contacting your Kubernetes cluster. A Kubernetes cluster address that often works can be obtained by using the address just after `https://` in the KubeDNS line of the output from the `kubectl cluster-info` command.
 
- If you want to continue to the [Update 1]({{< relref "/samples/simple/domains/model-in-image/update1.md" >}}) use case, then leave your domain running.
+ If you want to continue to the [Update 1]({{< relref "/samples/domains/model-in-image/update1.md" >}}) use case, then leave your domain running.
 
- To remove the resources you have created in this sample, see [Cleanup]({{< relref "/samples/simple/domains/model-in-image/cleanup.md" >}}).
+ To remove the resources you have created in this sample, see [Cleanup]({{< relref "/samples/domains/model-in-image/cleanup.md" >}}).

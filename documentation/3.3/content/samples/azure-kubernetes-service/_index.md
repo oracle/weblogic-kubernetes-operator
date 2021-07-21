@@ -11,9 +11,9 @@ description: "Sample for using the operator to set up a WLS cluster on the Azure
    - [Introduction](#introduction)
      - [Azure Kubernetes Service cluster](#azure-kubernetes-service-cluster)
      - [Domain home source types](#domain-home-source-types)
-   - [Domain in PV]({{< relref "/samples/simple/azure-kubernetes-service/domain-on-pv.md" >}}): Running the WebLogic cluster on AKS with domain home on PV
-   - [Model in Image]({{< relref "/samples/simple/azure-kubernetes-service/model-in-image.md" >}}): Running the WebLogic cluster on AKS with domain model in image
-   - [Troubleshooting]({{< relref "/samples/simple/azure-kubernetes-service/troubleshooting.md" >}})
+   - [Domain in PV]({{< relref "/samples/azure-kubernetes-service/domain-on-pv.md" >}}): Running the WebLogic cluster on AKS with domain home on PV
+   - [Model in Image]({{< relref "/samples/azure-kubernetes-service/model-in-image.md" >}}): Running the WebLogic cluster on AKS with domain model in image
+   - [Troubleshooting]({{< relref "/samples/azure-kubernetes-service/troubleshooting.md" >}})
 
 
 ### Introduction
@@ -30,13 +30,13 @@ To learn more, see the [What is Azure Kubernetes Service?](https://docs.microsof
 
 This sample demonstrates running the WebLogic cluster on AKS using two domain home types. The instructions for each are self-contained and independent. This section lists the domain home source types recommended for use with AKS, along with some benefits of each. For complete details on domain home source types, see [Choose a domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}).
 
-- [Model in Image]({{< relref "/samples/simple/azure-kubernetes-service/model-in-image.md" >}}): running the WebLogic cluster on AKS with domain home in image offers the following benefits:
+- [Model in Image]({{< relref "/samples/azure-kubernetes-service/model-in-image.md" >}}): running the WebLogic cluster on AKS with domain home in image offers the following benefits:
 
    - Reuse image to create different domains with different `domainUID` and different configurations.
    - Mutate the domain home configuration with additional model files supplied in a `ConfigMap`.  Many such changes do not need to restart the entire domain for the change to take effect.
    - The model file syntax is far simpler and less error prone than the configuration override syntax, and, unlike configuration overrides, allows you to directly add data sources and JMS modules.
 
-- [Domain in PV]({{< relref "/samples/simple/azure-kubernetes-service/domain-on-pv.md" >}}): running the WebLogic cluster on AKS with domain home in PV offers the following benefits:
+- [Domain in PV]({{< relref "/samples/azure-kubernetes-service/domain-on-pv.md" >}}): running the WebLogic cluster on AKS with domain home in PV offers the following benefits:
 
    - Use standard Oracle-provided images with patches installed.
    - No Docker environment required. You are able to run your business quickly without building knowledge of Docker.
