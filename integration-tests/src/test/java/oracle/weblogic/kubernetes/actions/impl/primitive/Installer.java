@@ -56,8 +56,22 @@ public class Installer {
         .location(WDT_DOWNLOAD_URL)
         .verify(true)
         .unzip(false);
-  } 
-  
+  }
+
+  /**
+   * Create an InstallParams with the default values for WDT.
+   * @param locationURL wdt download url
+   * @return an InstallParams instance
+   */
+  public static InstallParams installWdtParams(String locationURL) {
+    return new InstallParams()
+        .defaults()
+        .type(WDT)
+        .location(locationURL)
+        .verify(true)
+        .unzip(false);
+  }
+
   /**
    * Create an InstallParams with the default values for WIT.
    * @return an InstallParams instance 

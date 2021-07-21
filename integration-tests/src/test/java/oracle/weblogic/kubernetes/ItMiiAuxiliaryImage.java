@@ -104,11 +104,15 @@ public class ItMiiAuxiliaryImage {
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private static String errorpathDomainNamespace = null;
+  private static String wdtDomainNamespace = null;
   private static LoggingFacade logger = null;
   private String domainUid = "domain1";
   private static String miiAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG + "1";
   private static String miiAuxiliaryImage2 = MII_AUXILIARY_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG + "2";
   private static String miiAuxiliaryImage3 = MII_AUXILIARY_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG + "3";
+  private static String miiAuxiliaryImage4 = MII_AUXILIARY_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG + "4";
+  private static String miiAuxiliaryImage5 = MII_AUXILIARY_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG + "5";
+  private static String miiAuxiliaryImage6 = MII_AUXILIARY_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG + "6";
   private static Map<String, OffsetDateTime> podsWithTimeStamps = null;
   private final String adminServerPodName = domainUid + "-admin-server";
   private final String managedServerPrefix = domainUid + "-managed-server";
@@ -127,7 +131,7 @@ public class ItMiiAuxiliaryImage {
    *        JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) {
+  public static void initAll(@Namespaces(4) List<String> namespaces) {
     logger = getLogger();
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
@@ -142,8 +146,12 @@ public class ItMiiAuxiliaryImage {
     assertNotNull(namespaces.get(2), "Namespace list is null");
     errorpathDomainNamespace = namespaces.get(2);
 
+    logger.info("Creating unique namespace for wdtDomainNamespace");
+    assertNotNull(namespaces.get(3), "Namespace list is null");
+    wdtDomainNamespace = namespaces.get(3);
+
     // install and verify operator
-    installAndVerifyOperator(opNamespace, domainNamespace, errorpathDomainNamespace);
+    installAndVerifyOperator(opNamespace, domainNamespace, errorpathDomainNamespace,wdtDomainNamespace);
   }
 
 
@@ -836,6 +844,156 @@ public class ItMiiAuxiliaryImage {
 
     // delete domain1
     deleteDomainResource(errorpathDomainNamespace, domainUid);
+  }
+
+  /**
+   * Create a domain using multiple auxiliary images.
+   * One auxiliary image (image1) contains the domain configuration and
+   * another auxiliary image (image2) with WDT only,
+   * update WDT version by patching with another auxiliary image (image3)
+   * and verify the domain is running.
+   */
+  @Test
+  @Order(8)
+  @DisplayName("Test to update WDT version using  auxiliary images")
+  public void testUpdateWDTVersionUsingMultipleAuxiliaryImages() {
+
+    // admin/managed server name here should match with model yaml
+    final String auxiliaryImageVolumeName = "auxiliaryImageVolume1";
+    final String auxiliaryImagePath = "/auxiliary";
+
+    // Create the repo secret to pull the image
+    // this secret is used only for non-kind cluster
+    createOcirRepoSecret(wdtDomainNamespace);
+
+    // create secret for admin credentials
+    logger.info("Create secret for admin credentials");
+    String adminSecretName = "weblogic-credentials";
+    createSecretWithUsernamePassword(adminSecretName, wdtDomainNamespace,
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+
+    // create encryption secret
+    logger.info("Create encryption secret");
+    String encryptionSecretName = "encryptionsecret";
+    createSecretWithUsernamePassword(encryptionSecretName, wdtDomainNamespace,
+        "weblogicenc", "weblogicenc");
+
+    // create stage dir for first auxiliary image containing domain configuration
+    Path multipleAIPath1 = Paths.get(RESULTS_ROOT, "multipleauxiliaryimage1");
+    assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleAIPath1.toFile()));
+    assertDoesNotThrow(() -> Files.createDirectories(multipleAIPath1));
+
+    // create models dir and copy model, archive files if any for image1
+    Path modelsPath1 = Paths.get(multipleAIPath1.toString(), "models");
+    assertDoesNotThrow(() -> Files.createDirectories(modelsPath1));
+    assertDoesNotThrow(() -> Files.copy(
+        Paths.get(MODEL_DIR, MII_BASIC_WDT_MODEL_FILE),
+        Paths.get(modelsPath1.toString(), MII_BASIC_WDT_MODEL_FILE),
+        StandardCopyOption.REPLACE_EXISTING));
+    assertDoesNotThrow(() -> Files.copy(
+        Paths.get(MODEL_DIR, "multi-model-one-ds.20.yaml"),
+        Paths.get(modelsPath1.toString(), "multi-model-one-ds.20.yaml"),
+        StandardCopyOption.REPLACE_EXISTING));
+
+    // build app
+    assertTrue(buildAppArchive(defaultAppParams()
+            .srcDirList(Collections.singletonList(MII_BASIC_APP_NAME))
+            .appName(MII_BASIC_APP_NAME)),
+        String.format("Failed to create app archive for %s", MII_BASIC_APP_NAME));
+
+    // copy app archive to models
+    assertDoesNotThrow(() -> Files.copy(
+        Paths.get(ARCHIVE_DIR,  MII_BASIC_APP_NAME + ".zip"),
+        Paths.get(modelsPath1.toString(), MII_BASIC_APP_NAME + ".zip"),
+        StandardCopyOption.REPLACE_EXISTING));
+
+    // create image1 with domain configuration only
+    createAuxiliaryImage(multipleAIPath1.toString(),
+        Paths.get(RESOURCE_DIR, "auxiliaryimage", "Dockerfile").toString(), miiAuxiliaryImage4);
+
+    // push image1 to repo for multi node cluster
+    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
+      logger.info("docker push image {0} to registry {1}", miiAuxiliaryImage4, DOMAIN_IMAGES_REPO);
+      assertTrue(dockerPush(miiAuxiliaryImage4), String.format("docker push failed for image %s", miiAuxiliaryImage4));
+    }
+
+    // create stage dir for second auxiliary image
+    Path multipleAIPath2 = Paths.get(RESULTS_ROOT, "multipleauxiliaryimage2");
+    assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleAIPath2.toFile()));
+    assertDoesNotThrow(() -> Files.createDirectories(multipleAIPath2));
+
+    Path modelsPath2 = Paths.get(multipleAIPath2.toString(), "models");
+    assertDoesNotThrow(() -> Files.createDirectories(modelsPath2));
+
+    // unzip 1.9.15 version WDT installation file into work dir
+    String wdtURL = "https://github.com/oracle/weblogic-deploy-tooling/releases/release-1.9.15";
+    unzipWDTInstallationFile(multipleAIPath2.toString(), wdtURL);
+
+    // create image2 with wdt installation files only
+    createAuxiliaryImage(multipleAIPath2.toString(),
+        Paths.get(RESOURCE_DIR, "auxiliaryimage", "Dockerfile").toString(), miiAuxiliaryImage5);
+
+    // push image2 to repo for multi node cluster
+    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
+      logger.info("docker push image {0} to registry {1}", miiAuxiliaryImage5, DOMAIN_IMAGES_REPO);
+      assertTrue(dockerPush(miiAuxiliaryImage5), String.format("docker push failed for image %s", miiAuxiliaryImage5));
+    }
+
+    // create stage dir for third auxiliary image with latest wdt installation files only
+    Path multipleAIPath3 = Paths.get(RESULTS_ROOT, "multipleauxiliaryimage3");
+    assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleAIPath3.toFile()));
+    assertDoesNotThrow(() -> Files.createDirectories(multipleAIPath3));
+
+    Path modelsPath3 = Paths.get(multipleAIPath3.toString(), "models");
+    assertDoesNotThrow(() -> Files.createDirectories(modelsPath3));
+
+    // unzip WDT installation file into work dir
+    unzipWDTInstallationFile(multipleAIPath3.toString());
+
+    // create image3 with newest version of wdt installation files
+    createAuxiliaryImage(multipleAIPath3.toString(),
+        Paths.get(RESOURCE_DIR, "auxiliaryimage", "Dockerfile").toString(), miiAuxiliaryImage6);
+
+    // push image3 to repo for multi node cluster
+    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
+      logger.info("docker push image {0} to registry {1}", miiAuxiliaryImage6, DOMAIN_IMAGES_REPO);
+      assertTrue(dockerPush(miiAuxiliaryImage6), String.format("docker push failed for image %s", miiAuxiliaryImage6));
+    }
+
+    // create domain custom resource using 2 auxiliary images ( image1, image2)
+    logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
+        domainUid, miiAuxiliaryImage4, miiAuxiliaryImage5);
+    Domain domainCR = createDomainResource(domainUid, wdtDomainNamespace,
+        WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG, adminSecretName, OCIR_SECRET_NAME,
+        encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
+        auxiliaryImageVolumeName, miiAuxiliaryImage4, miiAuxiliaryImage5);
+
+    // create domain and verify its running
+    logger.info("Creating domain {0} with auxiliary images {1} {2} in namespace {3}",
+        domainUid, miiAuxiliaryImage4, miiAuxiliaryImage5, wdtDomainNamespace);
+    createDomainAndVerify(domainUid, domainCR, wdtDomainNamespace,
+        adminServerPodName, managedServerPrefix, replicaCount);
+
+    // check configuration for DataSource in the running domain
+    int adminServiceNodePort
+        = getServiceNodePort(wdtDomainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
+    assertTrue(checkSystemResourceConfig(adminServiceNodePort,
+        "JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams",
+        "jdbc:oracle:thin:@\\/\\/xxx.xxx.x.xxx:1521\\/ORCLCDB"),"Can't find expected URL configuration for DataSource");
+
+    logger.info("Found the DataResource configuration");
+
+    //updating wdt to latest version by patching the domain with image3
+    patchDomainWithAuxiliaryImageAndVerify(miiAuxiliaryImage5, miiAuxiliaryImage6, domainUid, wdtDomainNamespace);
+    // check configuration for DataSource in the running domain
+    adminServiceNodePort
+        = getServiceNodePort(wdtDomainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
+    assertTrue(checkSystemResourceConfig(adminServiceNodePort,
+        "JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams",
+        "jdbc:oracle:thin:@\\/\\/xxx.xxx.x.xxx:1521\\/ORCLCDB"),"Can't find expected URL configuration for DataSource");
+
   }
 
   private static void patchDomainWithAuxiliaryImageAndVerify(String oldImageName, String newImageName,
