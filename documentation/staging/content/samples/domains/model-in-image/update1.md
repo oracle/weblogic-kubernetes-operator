@@ -20,7 +20,7 @@ Here are the steps:
 
 1. Ensure that you have a running domain.
 
-    Make sure you have deployed the domain from the [Initial]({{< relref "/samples/simple/domains/model-in-image/initial.md" >}}) use case.
+    Make sure you have deployed the domain from the [Initial]({{< relref "/samples/domains/model-in-image/initial.md" >}}) use case.
 
 1. Create a data source model YAML file.
 
@@ -82,7 +82,7 @@ Here are the steps:
       weblogic.domainUID=sample-domain1
    ```
 
-    We deliberately specify an incorrect password and a low maximum pool capacity because we will demonstrate dynamically correcting the data source attributes in the [Update 4]({{< relref "/samples/simple/domains/model-in-image/update4.md" >}}) use case without requiring rolling the domain.
+    We deliberately specify an incorrect password and a low maximum pool capacity because we will demonstrate dynamically correcting the data source attributes in the [Update 4]({{< relref "/samples/domains/model-in-image/update4.md" >}}) use case without requiring rolling the domain.
 
     You name and label secrets using their associated domain UID for two reasons:
      - To make it obvious which secret belongs to which domains.
@@ -114,7 +114,7 @@ Here are the steps:
 
     - Option 1: Update a copy of your Domain YAML file from the Initial use case.
 
-      - In the [Initial]({{< relref "/samples/simple/domains/model-in-image/initial.md" >}}) use case, we suggested creating a Domain YAML file named `/tmp/mii-sample/mii-initial.yaml` or using the `/tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml` file that is supplied with the sample.
+      - In the [Initial]({{< relref "/samples/domains/model-in-image/initial.md" >}}) use case, we suggested creating a Domain YAML file named `/tmp/mii-sample/mii-initial.yaml` or using the `/tmp/mii-sample/domain-resources/WLS/mii-initial-d1-WLS-v1.yaml` file that is supplied with the sample.
         - We suggest copying the original Domain YAML file and naming the copy `/tmp/mii-sample/mii-update1.yaml` before making any changes.
 
         - Working on a copy is not strictly necessary, but it helps keep track of your work for the different use cases in this sample and provides you a backup of your previous work.
@@ -145,7 +145,7 @@ Here are the steps:
 
       - Apply your changed Domain YAML file:
 
-        > **Note**: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, then you need to put the Domain YAML file's image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/simple/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
+        > **Note**: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, then you need to put the Domain YAML file's image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
         ```shell
         $ kubectl apply -f /tmp/mii-sample/mii-update1.yaml
@@ -153,7 +153,7 @@ Here are the steps:
 
     - Option 2: Use the updated Domain YAML file that is supplied with the sample:
 
-        > **Note**: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, then you need to put the Domain YAML file's image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/simple/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
+        > **Note**: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, then you need to put the Domain YAML file's image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
         ```shell
         $ kubectl apply -f /tmp/miisample/domain-resources/WLS/mii-update1-d1-WLS-v1-ds.yaml
@@ -484,10 +484,10 @@ Here are the steps:
 
     ```
 
-A `TestPool Failure` is expected because we will demonstrate dynamically correcting the data source attributes in [Update 4]({{< relref "/samples/simple/domains/model-in-image/update4.md" >}}).
+A `TestPool Failure` is expected because we will demonstrate dynamically correcting the data source attributes in [Update 4]({{< relref "/samples/domains/model-in-image/update4.md" >}}).
 
 If you see an error other than the expected `TestPool Failure`, then consult [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}) in the Model in Image user guide.
 
-If you plan to run the [Update 3]({{< relref "/samples/simple/domains/model-in-image/update3.md" >}}) or [Update 4]({{< relref "/samples/simple/domains/model-in-image/update4.md" >}}) use case, then leave your domain running.
+If you plan to run the [Update 3]({{< relref "/samples/domains/model-in-image/update3.md" >}}) or [Update 4]({{< relref "/samples/domains/model-in-image/update4.md" >}}) use case, then leave your domain running.
 
-To remove the resources you have created in the samples, see [Cleanup]({{< relref "/samples/simple/domains/model-in-image/cleanup.md" >}}).
+To remove the resources you have created in the samples, see [Cleanup]({{< relref "/samples/domains/model-in-image/cleanup.md" >}}).

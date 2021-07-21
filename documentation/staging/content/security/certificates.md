@@ -41,4 +41,4 @@ $ helm -n weblogic-operator-ns upgrade weblogic-operator kubernetes/charts/weblo
 #### Additional reading
 * [Configure the external REST interface SSL/TLS identity]({{<relref "/userguide/managing-operators/_index.md#optional-configure-the-operators-external-rest-https-interface">}})
 * [REST interface configuration settings]({{<relref "/userguide/managing-operators/using-helm#rest-interface-configuration">}})
-* [Sample to create external certificate and key]({{<relref "/samples/simple/rest/_index.md#sample-to-create-certificate-and-key">}})
+* [Sample to create external certificate and key]({{<relref "/samples/rest/_index.md#sample-to-create-certificate-and-key">}})

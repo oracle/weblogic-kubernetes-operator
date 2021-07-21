@@ -9,7 +9,7 @@ description: "Helm is used to create and deploy necessary operator resources and
 ### Overview
 
 Helm is a framework that helps you manage Kubernetes applications, and Helm charts help you define and install Helm applications into a Kubernetes cluster. The operator's Helm chart is located in the `kubernetes/charts/weblogic-operator` directory.
-  
+
 
 ### Install Helm
 
@@ -62,7 +62,7 @@ should contain valid host names, expiration dates, and key constraints.
 {{% /notice %}}
 
 For more detailed information about the sample script and how to run it, see
-the [REST APIs]({{<relref "/samples/simple/rest/_index.md#sample-to-create-certificate-and-key">}}).
+the [REST APIs]({{<relref "/samples/rest/_index.md#sample-to-create-certificate-and-key">}}).
 
 #### Optional: Elastic Stack (Elasticsearch, Logstash, and Kibana) integration
 
