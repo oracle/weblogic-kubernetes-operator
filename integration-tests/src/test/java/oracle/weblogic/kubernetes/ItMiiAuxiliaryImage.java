@@ -112,6 +112,10 @@ public class ItMiiAuxiliaryImage {
   private static String miiAuxiliaryImage4 = MII_AUXILIARY_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG + "4";
   private static String miiAuxiliaryImage5 = MII_AUXILIARY_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG + "5";
   private static String miiAuxiliaryImage6 = MII_AUXILIARY_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG + "6";
+  private static String errorPathAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + ":errorpathimage1";
+  private static String errorPathAuxiliaryImage2 = MII_AUXILIARY_IMAGE_NAME + ":errorpathimage2";
+  private static String errorPathAuxiliaryImage3 = MII_AUXILIARY_IMAGE_NAME + ":errorpathimage3";
+  private static String errorPathAuxiliaryImage4 = MII_AUXILIARY_IMAGE_NAME + ":errorpathimage4";
   private static Map<String, OffsetDateTime> podsWithTimeStamps = null;
   private final String adminServerPodName = domainUid + "-admin-server";
   private final String managedServerPrefix = domainUid + "-managed-server";
@@ -418,7 +422,6 @@ public class ItMiiAuxiliaryImage {
   public void testErrorPathDomainMismatchMountPath() {
 
     OffsetDateTime timestamp = now();
-    String errorPathAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + ":errorpathimage1";
 
     final String auxiliaryImageVolumeName = "auxiliaryImageVolume1";
     final String auxiliaryImagePath = "/errorpath";
@@ -450,7 +453,7 @@ public class ItMiiAuxiliaryImage {
     // push image to repo for multi node cluster
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
       logger.info("docker push image {0} to registry {1}", errorPathAuxiliaryImage1, DOMAIN_IMAGES_REPO);
-      dockerLoginAndPushImageToRegistry(miiAuxiliaryImage1);
+      dockerLoginAndPushImageToRegistry(errorPathAuxiliaryImage1);
     }
 
     // create domain custom resource using auxiliary images
@@ -502,7 +505,6 @@ public class ItMiiAuxiliaryImage {
   public void testErrorPathDomainMissingWDTBinary() {
 
     OffsetDateTime timestamp = now();
-    String errorPathAuxiliaryImage2 = MII_AUXILIARY_IMAGE_NAME + ":errorpathimage2";
 
     final String auxiliaryImageVolumeName = "auxiliaryImageVolume1";
     final String auxiliaryImagePath = "/auxiliary";
@@ -532,7 +534,7 @@ public class ItMiiAuxiliaryImage {
     // push image to repo for multi node cluster
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
       logger.info("docker push image {0} to registry {1}", errorPathAuxiliaryImage2, DOMAIN_IMAGES_REPO);
-      dockerLoginAndPushImageToRegistry(miiAuxiliaryImage2);
+      dockerLoginAndPushImageToRegistry(errorPathAuxiliaryImage2);
     }
 
     // create domain custom resource using auxiliary images
@@ -588,7 +590,6 @@ public class ItMiiAuxiliaryImage {
   public void testErrorPathDomainMissingDomainConfig() {
 
     OffsetDateTime timestamp = now();
-    String errorPathAuxiliaryImage3 = MII_AUXILIARY_IMAGE_NAME + ":errorpathimage3";
 
     final String auxiliaryImageVolumeName = "auxiliaryImageVolume1";
     final String auxiliaryImagePath = "/auxiliary";
@@ -622,7 +623,7 @@ public class ItMiiAuxiliaryImage {
     // push image to repo for multi node cluster
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
       logger.info("docker push image {0} to registry {1}", errorPathAuxiliaryImage3, DOMAIN_IMAGES_REPO);
-      dockerLoginAndPushImageToRegistry(miiAuxiliaryImage3);
+      dockerLoginAndPushImageToRegistry(errorPathAuxiliaryImage3);
     }
 
     // create domain custom resource using auxiliary images
@@ -771,7 +772,6 @@ public class ItMiiAuxiliaryImage {
   public void testErrorPathFilePermission() {
 
     OffsetDateTime timestamp = now();
-    String errorPathAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + ":errorpathimage4";
 
     final String auxiliaryImageVolumeName = "auxiliaryImageVolume1";
     final String auxiliaryImagePath = "/auxiliary";
@@ -817,25 +817,25 @@ public class ItMiiAuxiliaryImage {
 
     // create image with model and wdt installation files
     createAuxiliaryImage(errorpathAIPath1.toString(),
-        Paths.get(RESOURCE_DIR, "auxiliaryimage", "/negative/Dockerfile").toString(), errorPathAuxiliaryImage1);
+        Paths.get(RESOURCE_DIR, "auxiliaryimage", "/negative/Dockerfile").toString(), errorPathAuxiliaryImage4);
 
     // push image to repo for multi node cluster
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      logger.info("docker push image {0} to registry {1}", errorPathAuxiliaryImage1, DOMAIN_IMAGES_REPO);
-      dockerLoginAndPushImageToRegistry(miiAuxiliaryImage1);
+      logger.info("docker push image {0} to registry {1}", errorPathAuxiliaryImage4, DOMAIN_IMAGES_REPO);
+      dockerLoginAndPushImageToRegistry(errorPathAuxiliaryImage4);
     }
 
     // create domain custom resource using auxiliary images
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
-        domainUid, errorPathAuxiliaryImage1);
+        domainUid, errorPathAuxiliaryImage4);
     Domain domainCR = createDomainResource(domainUid, errorpathDomainNamespace,
         WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
-        auxiliaryImageVolumeName, errorPathAuxiliaryImage1);
+        auxiliaryImageVolumeName, errorPathAuxiliaryImage4);
 
     // create domain and verify it is failed
     logger.info("Creating domain {0} with auxiliary image {1} in namespace {2}",
-        domainUid, errorPathAuxiliaryImage1, errorpathDomainNamespace);
+        domainUid, errorPathAuxiliaryImage4, errorpathDomainNamespace);
     assertDoesNotThrow(() -> createDomainCustomResource(domainCR), "createDomainCustomResource throws Exception");
 
     // check the introspector pod log contains the expected error message
@@ -1115,6 +1115,22 @@ public class ItMiiAuxiliaryImage {
 
     if (miiAuxiliaryImage6 != null) {
       deleteImage(miiAuxiliaryImage6);
+    }
+
+    if (errorPathAuxiliaryImage1 != null) {
+      deleteImage(errorPathAuxiliaryImage1);
+    }
+
+    if (errorPathAuxiliaryImage2 != null) {
+      deleteImage(errorPathAuxiliaryImage2);
+    }
+
+    if (errorPathAuxiliaryImage3 != null) {
+      deleteImage(errorPathAuxiliaryImage3);
+    }
+
+    if (errorPathAuxiliaryImage4 != null) {
+      deleteImage(errorPathAuxiliaryImage4);
     }
   }
 
