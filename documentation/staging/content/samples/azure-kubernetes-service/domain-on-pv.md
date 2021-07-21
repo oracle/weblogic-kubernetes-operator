@@ -20,9 +20,9 @@ This sample demonstrates how to use the [WebLogic Kubernetes Operator](/weblogic
  - [Troubleshooting](#troubleshooting)
  - [Useful links](#useful-links)
 
-{{< readfile file="/samples/simple/azure-kubernetes-service/includes/prerequisites-01.txt" >}}
+{{< readfile file="/samples/azure-kubernetes-service/includes/prerequisites-01.txt" >}}
 
-{{< readfile file="/samples/simple/azure-kubernetes-service/includes/create-aks-cluster-body-01.txt" >}}
+{{< readfile file="/samples/azure-kubernetes-service/includes/create-aks-cluster-body-01.txt" >}}
 
 ##### Clone WebLogic Kubernetes Operator repository
 
@@ -35,11 +35,11 @@ $ git clone --branch v3.3.0 https://github.com/oracle/weblogic-kubernetes-operat
 {{% notice info %}} The following sections of the sample instructions will guide you, step-by-step, through the process of setting up a WebLogic cluster on AKS - remaining as close as possible to a native Kubernetes experience. This lets you understand and customize each step. If you wish to have a more automated experience that abstracts some lower level details, you can skip to the [Automation](#automation) section.
 {{% /notice %}}
 
-{{< readfile file="/samples/simple/azure-kubernetes-service/includes/create-aks-cluster-body-02.txt" >}}
+{{< readfile file="/samples/azure-kubernetes-service/includes/create-aks-cluster-body-02.txt" >}}
 
- **Note**: If you run into VM size failure, see [Troubleshooting - Virtual Machine size is not supported]({{< relref "/samples/simple/azure-kubernetes-service/troubleshooting#virtual-machine-size-is-not-supported" >}}).
+ **Note**: If you run into VM size failure, see [Troubleshooting - Virtual Machine size is not supported]({{< relref "/samples/azure-kubernetes-service/troubleshooting#virtual-machine-size-is-not-supported" >}}).
 
-{{< readfile file="/samples/simple/azure-kubernetes-service/includes/create-aks-cluster-storage.txt" >}}
+{{< readfile file="/samples/azure-kubernetes-service/includes/create-aks-cluster-storage.txt" >}}
 
 
 #### Install WebLogic Kubernetes Operator into the AKS cluster
@@ -190,7 +190,7 @@ We need to set up the domain configuration for the WebLogic domain.
 
 2. Now let's ask the operator to create a WebLogic Server domain within the AKS cluster.
 
-   For complete details on domain creation, see [Domain home on a PV - Use the script to create a domain]({{< relref "/samples/simple/domains/domain-home-on-pv#use-the-script-to-create-a-domain" >}}).  If you do not want the complete details and just want to continue with the domain creation for AKS, invoke the `create-domain.sh` script as shown next.
+   For complete details on domain creation, see [Domain home on a PV - Use the script to create a domain]({{< relref "/samples/domains/domain-home-on-pv#use-the-script-to-create-a-domain" >}}).  If you do not want the complete details and just want to continue with the domain creation for AKS, invoke the `create-domain.sh` script as shown next.
 
    ```
    # cd kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv
@@ -319,7 +319,7 @@ We need to set up the domain configuration for the WebLogic domain.
     Notice that the `Limit` and `Request` values are the same for each of `serverPodMemory` and `serverPodCpu`.  This is intentional.  To learn why, see [Create a Pod that gets assigned a QoS class of Guaranteed](https://kubernetes.io/docs/tasks/configure-pod-container/quality-service-pod/#create-a-pod-that-gets-assigned-a-qos-class-of-guaranteed).  You must have allocated sufficient CPU and memory resources so that the pod can be scheduled for running by Kubernetes.  This is an example of **capacity planning**, a very important Kubernetes success factor. For more details on capacity planning with AKS, see [Azure Kubernetes Service Cluster Capacity Planning
 ](https://techcommunity.microsoft.com/t5/core-infrastructure-and-security/azure-kubernetes-service-cluster-capacity-planning/ba-p/1474990).  For more details about Java and capacity planning, see [Java heap size and memory resource considerations]({{< relref "/faq/resource-settings.md" >}}).
 
-    The complete set of values that can be configured in this way is described in [configuration parameters]({{< relref "/samples/simple/domains/domain-home-on-pv/#configuration-parameters" >}}).   If you want further advanced domain configuration, then run `./create-domain.sh -i ~/azure/weblogic-on-aks/domain1.yaml -o ~/azure`, which will output a Kubernetes domain resource YAML file in `~/azure/weblogic-domains/domain.yaml`. Edit the `domain.yaml` file and use `kubectl create -f ~/azure/weblogic-domains/domain.yaml` to create domain resources.
+    The complete set of values that can be configured in this way is described in [configuration parameters]({{< relref "/samples/domains/domain-home-on-pv/#configuration-parameters" >}}).   If you want further advanced domain configuration, then run `./create-domain.sh -i ~/azure/weblogic-on-aks/domain1.yaml -o ~/azure`, which will output a Kubernetes domain resource YAML file in `~/azure/weblogic-domains/domain.yaml`. Edit the `domain.yaml` file and use `kubectl create -f ~/azure/weblogic-domains/domain.yaml` to create domain resources.
 
 4. You must create `LoadBalancer` services for the Administration Server and the WLS cluster.  This enables WLS to service requests from outside the AKS cluster.
 
@@ -504,9 +504,9 @@ For input values, you can edit `kubernetes/samples/scripts/create-weblogic-domai
 
 | Name in YAML file | Example value | Notes |
 |-------------------|---------------|-------|
-| `azureServicePrincipalAppId` | `nr086o75-pn59-4782-no5n-nq2op0rsr1q6` | Application ID of your service principal; refer to the application ID in the [Create Service Principal]({{< relref "/samples/simple/azure-kubernetes-service/domain-on-pv#create-a-service-principal-for-aks" >}}) section. |
-| `azureServicePrincipalClientSecret` | `8693089o-q190-45ps-9319-or36252s3s90` | A client secret of your service principal; refer to the client secret in the [Create Service Principal]({{< relref "/samples/simple/azure-kubernetes-service/domain-on-pv#create-a-service-principal-for-aks" >}}) section. |
-| `azureServicePrincipalTenantId` | `72s988os-86s1-cafe-babe-2q7pq011qo47` | Tenant (Directory ) ID of your service principal; refer to the client secret in the [Create Service Principal]({{< relref "/samples/simple/azure-kubernetes-service/domain-on-pv#create-a-service-principal-for-aks" >}}) section. |
+| `azureServicePrincipalAppId` | `nr086o75-pn59-4782-no5n-nq2op0rsr1q6` | Application ID of your service principal; refer to the application ID in the [Create Service Principal]({{< relref "/samples/azure-kubernetes-service/domain-on-pv#create-a-service-principal-for-aks" >}}) section. |
+| `azureServicePrincipalClientSecret` | `8693089o-q190-45ps-9319-or36252s3s90` | A client secret of your service principal; refer to the client secret in the [Create Service Principal]({{< relref "/samples/azure-kubernetes-service/domain-on-pv#create-a-service-principal-for-aks" >}}) section. |
+| `azureServicePrincipalTenantId` | `72s988os-86s1-cafe-babe-2q7pq011qo47` | Tenant (Directory ) ID of your service principal; refer to the client secret in the [Create Service Principal]({{< relref "/samples/azure-kubernetes-service/domain-on-pv#create-a-service-principal-for-aks" >}}) section. |
 | `dockerEmail` | `yourDockerEmail` | Oracle Single Sign-On (SSO) account email, used to pull the WebLogic Server Docker image. |
 | `dockerPassword` | `yourDockerPassword`| Password for Oracle SSO account, used to pull the WebLogic Server Docker image, in clear text. |
 | `dockerUserName` | `yourDockerId` | The same value as `dockerEmail`.  |
@@ -593,16 +593,16 @@ The logs are stored in the Azure file share. Follow these steps to access the lo
 
 #### Clean up resources
 
-{{< readfile file="/samples/simple/azure-kubernetes-service/includes/clean-up-resources-body-01.txt" >}}
+{{< readfile file="/samples/azure-kubernetes-service/includes/clean-up-resources-body-01.txt" >}}
 
 If you created the AKS cluster step by step, run the following commands to clean up resources.
 
-{{< readfile file="/samples/simple/azure-kubernetes-service/includes/clean-up-resources-body-02.txt" >}}
+{{< readfile file="/samples/azure-kubernetes-service/includes/clean-up-resources-body-02.txt" >}}
 
 #### Troubleshooting
 
-For troubleshooting advice, see [Troubleshooting]({{< relref "/samples/simple/azure-kubernetes-service/troubleshooting.md" >}}).
+For troubleshooting advice, see [Troubleshooting]({{< relref "/samples/azure-kubernetes-service/troubleshooting.md" >}}).
 
 #### Useful links
 
-- [Domain on a PV]({{< relref "/samples/simple/domains/domain-home-on-pv/_index.md" >}}) sample
+- [Domain on a PV]({{< relref "/samples/domains/domain-home-on-pv/_index.md" >}}) sample

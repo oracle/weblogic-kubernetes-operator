@@ -4,14 +4,14 @@ date: 2019-02-23T17:32:31-05:00
 weight: 5
 ---
 
-The Update 3 use case demonstrates deploying an updated WebLogic application to the running [Update 1]({{< relref "/samples/simple/domains/model-in-image/update1.md" >}}) use case domain using an updated image.
+The Update 3 use case demonstrates deploying an updated WebLogic application to the running [Update 1]({{< relref "/samples/domains/model-in-image/update1.md" >}}) use case domain using an updated image.
 
 In the use case, you will:
 
  - Create an image `model-in-image:WLS-v2` that is similar to the currently active `model-in-image:WLS-v1` image, but with the following updates:
    - An updated web application `v2` at the `myapp-v2` directory path within the WDT application archive instead of `myapp-v1`.
    - An updated model YAML file within the image that points to the new web application path.
- - Apply an updated Domain YAML file that references the new image while still referencing the original [Update 1]({{< relref "/samples/simple/domains/model-in-image/update1.md" >}}) use case secrets and model ConfigMap.
+ - Apply an updated Domain YAML file that references the new image while still referencing the original [Update 1]({{< relref "/samples/domains/model-in-image/update1.md" >}}) use case secrets and model ConfigMap.
 
 After the updated Domain YAML file is applied, the operator will:
 
@@ -25,21 +25,21 @@ Note that the old version of the application `v1` remains in the new image's arc
 
 Here are the steps for this use case:
 
-1. Make sure you have deployed the domain from the [Update 1]({{< relref "/samples/simple/domains/model-in-image/update1.md" >}}) use case.
+1. Make sure you have deployed the domain from the [Update 1]({{< relref "/samples/domains/model-in-image/update1.md" >}}) use case.
 
 2. Create an updated image.
 
-   Recall that a goal of the [Initial]({{< relref "/samples/simple/domains/model-in-image/initial.md" >}}) use case was to demonstrate using the WebLogic Image Tool to create an image named `model-in-image:WLS-v1` from files that were staged in `/tmp/mii-sample/model-images/model-in-image:WLS-v1/`. The staged files included a web application in a WDT ZIP archive, and WDT model configuration for a WebLogic Administration Server called `admin-server` and a WebLogic cluster called `cluster-1`. The final image was called `model-in-image:WLS-v1` and, in addition to having a copy of the staged files in its `/u01/wdt/models` directory, also contained a WebLogic installation and a WebLogic Deploy Tooling installation.
+   Recall that a goal of the [Initial]({{< relref "/samples/domains/model-in-image/initial.md" >}}) use case was to demonstrate using the WebLogic Image Tool to create an image named `model-in-image:WLS-v1` from files that were staged in `/tmp/mii-sample/model-images/model-in-image:WLS-v1/`. The staged files included a web application in a WDT ZIP archive, and WDT model configuration for a WebLogic Administration Server called `admin-server` and a WebLogic cluster called `cluster-1`. The final image was called `model-in-image:WLS-v1` and, in addition to having a copy of the staged files in its `/u01/wdt/models` directory, also contained a WebLogic installation and a WebLogic Deploy Tooling installation.
 
-   In this use case, you will follow similar steps to the [Initial]({{< relref "/samples/simple/domains/model-in-image/initial.md" >}}) use case in order to create a new image with an updated application and model, plus deploy the updated model and application to the running [Update 1]({{< relref "/samples/simple/domains/model-in-image/update1.md" >}}) use case domain.
+   In this use case, you will follow similar steps to the [Initial]({{< relref "/samples/domains/model-in-image/initial.md" >}}) use case in order to create a new image with an updated application and model, plus deploy the updated model and application to the running [Update 1]({{< relref "/samples/domains/model-in-image/update1.md" >}}) use case domain.
 
    - Understanding your updated WDT archive.
 
-     The updated archive for this use case is in directory `/tmp/mii-sample/archives/archive-v2`. You will use it to create an archive ZIP file for the image. This archive is similar to the `/tmp/mii-sample/archives/archive-v1` from the [Initial]({{< relref "/samples/simple/domains/model-in-image/initial.md" >}}) use case with the following differences:
+     The updated archive for this use case is in directory `/tmp/mii-sample/archives/archive-v2`. You will use it to create an archive ZIP file for the image. This archive is similar to the `/tmp/mii-sample/archives/archive-v1` from the [Initial]({{< relref "/samples/domains/model-in-image/initial.md" >}}) use case with the following differences:
      - It includes an updated version of the application in `./wlsdeploy/applications/myapp-v2` (while keeping the original application in directory `./wlsdeploy/applications/myapp-v1`).
      - The application in `./wlsdeploy/applications/myapp-v2/myapp_war/index.jsp` contains a single difference from the original application: it changes the line `out.println("Hello World! This is version 'v1' of the mii-sample JSP web-app.");` to `out.println("Hello World! This is version 'v2' of the mii-sample JSP web-app.");`.
 
-     For additional information about archives, see [Understanding your first archive]({{< relref "/samples/simple/domains/model-in-image/initial#understanding-your-first-archive" >}}) in the Initial use case.
+     For additional information about archives, see [Understanding your first archive]({{< relref "/samples/domains/model-in-image/initial#understanding-your-first-archive" >}}) in the Initial use case.
 
    - Stage a ZIP file of the WDT archive.
 
@@ -83,7 +83,7 @@ Here are the steps for this use case:
                  Target: 'cluster-1'
      ```
 
-     If you would like to review the entire original model before this change, see [Staging model files]({{< relref "/samples/simple/domains/model-in-image/initial#staging-model-files" >}})  in the Initial use case.
+     If you would like to review the entire original model before this change, see [Staging model files]({{< relref "/samples/domains/model-in-image/initial#staging-model-files" >}})  in the Initial use case.
 
    - Create a new image from your staged model files using WIT.
 
@@ -96,7 +96,7 @@ Here are the steps for this use case:
      - `/tmp/mii-sample/model-images/model-in-image__WLS-v2/model.10.properties`
      - `/tmp/mii-sample/model-images/model-in-image__WLS-v2/archive.zip`
 
-     If you don't see the `weblogic-deploy.zip` file, then you missed a step in the [prerequisites]({{< relref "/samples/simple/domains/model-in-image/prerequisites.md" >}}).
+     If you don't see the `weblogic-deploy.zip` file, then you missed a step in the [prerequisites]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}}).
 
      Now, you use the Image Tool to create an image named `model-in-image:WLS-v2` that's layered on a base WebLogic image. You've already set up this tool during the prerequisite steps.
 
@@ -117,7 +117,7 @@ Here are the steps for this use case:
        --chown oracle:root
      ```
 
-     If you don't see the `imagetool` directory, then you missed a step in the [prerequisites]({{< relref "/samples/simple/domains/model-in-image/prerequisites.md" >}}).
+     If you don't see the `imagetool` directory, then you missed a step in the [prerequisites]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}}).
 
      This command runs the WebLogic Image Tool in its Model in Image mode, and does the following:
      - Builds the final container image as a layer on the `container-registry.oracle.com/middleware/weblogic:12.2.1.4` base image.
@@ -134,7 +134,7 @@ Here are the steps for this use case:
 
      Also, if you run the `docker images` command, then you will see an image named `model-in-image:WLS-v2`.
 
-     > **Note**: If you have Kubernetes cluster worker nodes that are remote to your local machine, then you need to put the image in a location that these nodes can access. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/simple/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
+     > **Note**: If you have Kubernetes cluster worker nodes that are remote to your local machine, then you need to put the image in a location that these nodes can access. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
 #### Deploy resources - Introduction
 
@@ -144,7 +144,7 @@ Here are the steps for this use case:
 
    - Option 1: Update a copy of your Domain YAML file from the Update 1 use case.
 
-     - In the [Update 1]({{< relref "/samples/simple/domains/model-in-image/update1.md" >}}) use case, we suggested creating a file named `/tmp/mii-sample/mii-update1.yaml` or using the `/tmp/mii-sample/domain-resources/WLS/mii-update1-d1-WLS-v1-ds.yaml` file that is supplied with the sample.
+     - In the [Update 1]({{< relref "/samples/domains/model-in-image/update1.md" >}}) use case, we suggested creating a file named `/tmp/mii-sample/mii-update1.yaml` or using the `/tmp/mii-sample/domain-resources/WLS/mii-update1-d1-WLS-v1-ds.yaml` file that is supplied with the sample.
 
        - We suggest copying this Domain YAML file and naming the copy `/tmp/mii-sample/mii-update3.yaml` before making any changes.
 
@@ -163,7 +163,7 @@ Here are the steps for this use case:
 
       - Apply your changed Domain YAML file:
 
-          > **Note**: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain YAML file's image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/simple/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
+          > **Note**: Before you deploy the domain custom resource, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain YAML file's image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
           ```shell
           $ kubectl apply -f /tmp/mii-sample/mii-update3.yaml
@@ -171,7 +171,7 @@ Here are the steps for this use case:
 
     - Option 2: Use the updated Domain YAML file that is supplied with the sample:
 
-        > **Note**: Before you deploy the Domain YAML file, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain YAML file's image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/simple/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
+        > **Note**: Before you deploy the Domain YAML file, determine if you have Kubernetes cluster worker nodes that are remote to your local machine. If so, you need to put the Domain YAML file's image in a location that these nodes can access and you may also need to modify your Domain YAML file to reference the new location. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
         ```shell
         $ kubectl apply -f /tmp/miisample/domain-resources/WLS/mii-update3-d1-WLS-v2-ds.yaml
@@ -441,10 +441,10 @@ Here are the steps for this use case:
     </pre></body></html>
     ```
 
-A `TestPool Failure` is expected because we will demonstrate dynamically correcting the data source attributes in [Update 4]({{< relref "/samples/simple/domains/model-in-image/update4.md" >}}).
+A `TestPool Failure` is expected because we will demonstrate dynamically correcting the data source attributes in [Update 4]({{< relref "/samples/domains/model-in-image/update4.md" >}}).
 
 If you see an error other than the expected `TestPool Failure`, then consult [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}) in the Model in Image user guide.
 
-If you plan to run the [Update 4]({{< relref "/samples/simple/domains/model-in-image/update4.md" >}}) use case, then leave your domain running.
+If you plan to run the [Update 4]({{< relref "/samples/domains/model-in-image/update4.md" >}}) use case, then leave your domain running.
 
-To remove the resources you have created in the samples, see [Cleanup]({{< relref "/samples/simple/domains/model-in-image/cleanup.md" >}}).
+To remove the resources you have created in the samples, see [Cleanup]({{< relref "/samples/domains/model-in-image/cleanup.md" >}}).

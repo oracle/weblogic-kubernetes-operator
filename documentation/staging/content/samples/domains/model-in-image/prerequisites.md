@@ -188,7 +188,7 @@ weight: 1
 
 ### Additional prerequisites for JRF domains
 
-> __NOTE__: If you're using a `WLS` domain type, skip this section and continue [here]({{< relref "/samples/simple/domains/model-in-image/initial.md" >}}).
+> __NOTE__: If you're using a `WLS` domain type, skip this section and continue [here]({{< relref "/samples/domains/model-in-image/initial.md" >}}).
 
 #### JRF Prerequisites Contents
 
@@ -238,7 +238,7 @@ A JRF domain requires an infrastructure database and requires initializing this 
 
      This script will deploy a database in the `default` namespace with the connect string `oracle-db.default.svc.cluster.local:1521/devpdb.k8s`, and administration password `Oradoc_db1`.
 
-     This step is based on the steps documented in [Run a Database]({{< relref "/samples/simple/database/_index.md" >}}).
+     This step is based on the steps documented in [Run a Database]({{< relref "/samples/database/_index.md" >}}).
 
      __NOTE__: If your Kubernetes cluster nodes do not all have access to the database image in a local cache, then deploy a Kubernetes `docker secret` to the default namespace with login credentials for `container-registry.oracle.com`, and pass the name of this secret as a parameter to `start-db-service.sh` using `-s your-image-pull-secret`. Alternatively, copy the database image to each local Docker cache in the cluster.  For more information, see the [Cannot pull image FAQ]({{<relref "/faq/cannot-pull-image">}}).
 
@@ -322,7 +322,7 @@ __Important! Back up your wallet file to a safe location that can be retrieved l
 To reuse the wallet file in subsequent redeployments or to share the domain's OPSS tables between different domains:
 
 1. Load the saved wallet file into a secret with a key named `walletFile` (again, assuming that your domain UID is `sample-domain1` and your namespace is `sample-domain1-ns`):
-   
+
   ```shell
   $ kubectl -n sample-domain1-ns create secret generic sample-domain1-opss-walletfile-secret \
      --from-file=walletFile=./ewallet.p12

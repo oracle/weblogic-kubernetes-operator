@@ -8,21 +8,21 @@ This use case demonstrates dynamically changing the Work Manager threads constra
 
 In the use case, you will:
 
- - Update the ConfigMap containing the WDT model created in the [Update 1]({{< relref "/samples/simple/domains/model-in-image/update1.md" >}}) use case with changes to the Work Manager threads constraint configuration.
- - Update the data source secret created in the [Update 1]({{< relref "/samples/simple/domains/model-in-image/update1.md" >}}) use case to provide the correct password and an increased maximum pool capacity.
+ - Update the ConfigMap containing the WDT model created in the [Update 1]({{< relref "/samples/domains/model-in-image/update1.md" >}}) use case with changes to the Work Manager threads constraint configuration.
+ - Update the data source secret created in the [Update 1]({{< relref "/samples/domains/model-in-image/update1.md" >}}) use case to provide the correct password and an increased maximum pool capacity.
  - Update the Domain YAML file to enable the Model in Image online update feature.
  - Update the Domain YAML file to trigger a domain introspection, which applies the new configuration values without restarting servers.
  - Optionally, start a database (to demonstrate that the updated data source attributes have taken effect).
 
 Here are the steps:
 
-1. Make sure that you have deployed the domain from the [Update 1]({{< relref "/samples/simple/domains/model-in-image/update1.md" >}}) use case, or have deployed an updated version of this same domain from the [Update 3]({{< relref "/samples/simple/domains/model-in-image/update3.md" >}}) use case.
+1. Make sure that you have deployed the domain from the [Update 1]({{< relref "/samples/domains/model-in-image/update1.md" >}}) use case, or have deployed an updated version of this same domain from the [Update 3]({{< relref "/samples/domains/model-in-image/update3.md" >}}) use case.
 
    There should be three WebLogic Server pods with names that start with `sample-domain1` running in the `sample-domain1-ns` namespace, a domain named `sample-domain1`, a ConfigMap named `sample-domain1-wdt-config-map`, and a Secret named `sample-domain1-datasource-secret`.
 
 1. Add the Work Manager threads constraint configuration WDT model updates to the existing data source model updates in the Model in Image model ConfigMap.
 
-   In this step, we will update the model ConfigMap from the [Update 1]({{< relref "/samples/simple/domains/model-in-image/update1.md" >}}) use case with the desired changes to the minimum and maximum threads constraints.
+   In this step, we will update the model ConfigMap from the [Update 1]({{< relref "/samples/domains/model-in-image/update1.md" >}}) use case with the desired changes to the minimum and maximum threads constraints.
 
    Here's an example model configuration that updates the configured count values for the `SampleMinThreads` minimum threads constraint and `SampleMaxThreads` maximum threads constraint:
    ```yaml
@@ -85,7 +85,7 @@ Here are the steps:
     - If you are taking the `JRF` path through the sample, then the database will already be running.
 
     - If you are taking the `WLS` path through the sample, then you can deploy the database by:
-      - Following the first step in [Set up and initialize an infrastructure database]({{< relref "/samples/simple/domains/model-in-image/prerequisites#set-up-and-initialize-an-infrastructure-database" >}}). This step is titled, "Ensure that you have access to the database image, and then create a deployment using it."
+      - Following the first step in [Set up and initialize an infrastructure database]({{< relref "/samples/domains/model-in-image/prerequisites#set-up-and-initialize-an-infrastructure-database" >}}). This step is titled, "Ensure that you have access to the database image, and then create a deployment using it."
       - You can skip the remaining steps (they are only needed for `JRF`).
 
 1. Update your Domain YAML file to enable `onlineUpdate`.
@@ -318,4 +318,4 @@ If you see any other error, then consult [Debugging]({{< relref "/userguide/mana
 
 This completes the sample scenarios.
 
-To remove the resources you have created in the samples, see [Cleanup]({{< relref "/samples/simple/domains/model-in-image/cleanup.md" >}}).
+To remove the resources you have created in the samples, see [Cleanup]({{< relref "/samples/domains/model-in-image/cleanup.md" >}}).

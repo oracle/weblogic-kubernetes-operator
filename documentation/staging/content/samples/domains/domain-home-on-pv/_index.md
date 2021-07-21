@@ -17,7 +17,7 @@ The following prerequisites must be met prior to running the create domain scrip
 * Make sure the WebLogic Kubernetes Operator is running.
 * The operator requires an image with Oracle WebLogic Server 12.2.1.3.0 with patch 29135930 applied, or Oracle WebLogic Server 12.2.1.4.0, or Oracle WebLogic Server 14.1.1.0.0. The existing WebLogic Server image, `container-registry.oracle.com/middleware/weblogic:12.2.1.3`, has all the necessary patches applied. For details on how to obtain or create the image, see [WebLogic Server images]({{< relref "/userguide/base-images/_index.md#create-or-obtain-weblogic-server-images" >}}).
 * Create a Kubernetes Namespace for the domain unless you intend to use the default namespace.
-* In the same Kubernetes Namespace, create the Kubernetes PersistentVolume (PV) where the domain home will be hosted, and the Kubernetes PersistentVolumeClaim (PVC) for the domain. For samples to create a PV and PVC, see [Create sample PV and PVC]({{< relref "/samples/simple/storage/_index.md" >}}). By default, the `create-domain.sh` script creates a domain with the `domainUID` set to `domain1` and expects the PVC `domain1-weblogic-sample-pvc` to be present. You can create `domain1-weblogic-sample-pvc` using [create-pv-pvc.sh](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc.sh) with an inputs file that has the `domainUID` set to `domain1`.
+* In the same Kubernetes Namespace, create the Kubernetes PersistentVolume (PV) where the domain home will be hosted, and the Kubernetes PersistentVolumeClaim (PVC) for the domain. For samples to create a PV and PVC, see [Create sample PV and PVC]({{< relref "/samples/storage/_index.md" >}}). By default, the `create-domain.sh` script creates a domain with the `domainUID` set to `domain1` and expects the PVC `domain1-weblogic-sample-pvc` to be present. You can create `domain1-weblogic-sample-pvc` using [create-pv-pvc.sh](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/scripts/create-weblogic-domain-pv-pvc/create-pv-pvc.sh) with an inputs file that has the `domainUID` set to `domain1`.
 * Create the Kubernetes Secrets `username` and `password` of the administrative account in the same Kubernetes Namespace as the domain.
 
 {{% notice note %}}
@@ -448,7 +448,7 @@ The most common cause is a poor choice of value for `weblogicDomainStoragePath` 
 ```shell
 $ create-pv-pvc.sh
 ```
-   You should [delete the resources for your sample domain]({{< relref "/samples/simple/domains/delete-domain/_index.md" >}}), correct the value in that file, and rerun the commands to create the PV/PVC and the credential before you attempt to rerun:
+   You should [delete the resources for your sample domain]({{< relref "/samples/domains/delete-domain/_index.md" >}}), correct the value in that file, and rerun the commands to create the PV/PVC and the credential before you attempt to rerun:
 ```shell
 $ create-domain.sh
 ```

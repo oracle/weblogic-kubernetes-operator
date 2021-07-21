@@ -15,14 +15,14 @@ description: "Sample for supplying a WebLogic Deploy Tooling (WDT) model that th
      - [Ensuring your Kubernetes cluster can access images](#ensuring-your-kubernetes-cluster-can-access-images)
    - [References](#references)
    - Sample steps
-     - [Prerequisites for all domain types]({{< relref "/samples/simple/domains/model-in-image/prerequisites#prerequisites-for-all-domain-types" >}})
-     - [Additional prerequisites for JRF domains]({{< relref "/samples/simple/domains/model-in-image/prerequisites#additional-prerequisites-for-jrf-domains" >}})
-     - [Initial]({{< relref "/samples/simple/domains/model-in-image/initial.md" >}}): Deploying an initial WebLogic domain
-     - [Update 1]({{< relref "/samples/simple/domains/model-in-image/update1.md" >}}): Dynamically adding a data source using a model ConfigMap and a domain restart (roll)
-     - [Update 2]({{< relref "/samples/simple/domains/model-in-image/update2.md" >}}): Deploying an additional domain
-     - [Update 3]({{< relref "/samples/simple/domains/model-in-image/update3.md" >}}): Updating an application using an updated image and a domain restart (roll)
-     - [Update 4]({{< relref "/samples/simple/domains/model-in-image/update4.md" >}}): Dynamically updating the WebLogic configuration without restarting (rolling) servers
-     - [Cleanup]({{< relref "/samples/simple/domains/model-in-image/cleanup.md" >}})
+     - [Prerequisites for all domain types]({{< relref "/samples/domains/model-in-image/prerequisites#prerequisites-for-all-domain-types" >}})
+     - [Additional prerequisites for JRF domains]({{< relref "/samples/domains/model-in-image/prerequisites#additional-prerequisites-for-jrf-domains" >}})
+     - [Initial]({{< relref "/samples/domains/model-in-image/initial.md" >}}): Deploying an initial WebLogic domain
+     - [Update 1]({{< relref "/samples/domains/model-in-image/update1.md" >}}): Dynamically adding a data source using a model ConfigMap and a domain restart (roll)
+     - [Update 2]({{< relref "/samples/domains/model-in-image/update2.md" >}}): Deploying an additional domain
+     - [Update 3]({{< relref "/samples/domains/model-in-image/update3.md" >}}): Updating an application using an updated image and a domain restart (roll)
+     - [Update 4]({{< relref "/samples/domains/model-in-image/update4.md" >}}): Dynamically updating the WebLogic configuration without restarting (rolling) servers
+     - [Cleanup]({{< relref "/samples/domains/model-in-image/cleanup.md" >}})
 
 
 ### Introduction
@@ -44,7 +44,7 @@ The `JRF` domain path through the sample includes additional steps required for 
 
 This sample demonstrates five Model in Image use cases:
 
-- [Initial]({{< relref "/samples/simple/domains/model-in-image/initial.md" >}}): An initial WebLogic domain with the following characteristics:
+- [Initial]({{< relref "/samples/domains/model-in-image/initial.md" >}}): An initial WebLogic domain with the following characteristics:
 
    - Image `model-in-image:WLS-v1` with:
      - A WebLogic installation
@@ -63,7 +63,7 @@ This sample demonstrates five Model in Image use cases:
      - `spec.image: model-in-image:WLS-v1`
      - References to the secrets
 
-- [Update 1]({{< relref "/samples/simple/domains/model-in-image/update1.md" >}}): Demonstrates updating the initial domain by dynamically adding a data source using a model ConfigMap and then restarting (rolling) the domain to propagate the change.
+- [Update 1]({{< relref "/samples/domains/model-in-image/update1.md" >}}): Demonstrates updating the initial domain by dynamically adding a data source using a model ConfigMap and then restarting (rolling) the domain to propagate the change.
 
    - Image `model-in-image:WLS-v1`:
      - Same image as Initial use case
@@ -75,7 +75,7 @@ This sample demonstrates five Model in Image use cases:
      - `spec.model.configMap` referencing the ConfigMap
      - References to data source secrets
 
-- [Update 2]({{< relref "/samples/simple/domains/model-in-image/update2.md" >}}): Demonstrates deploying a second domain (similar to the Update 1 use case domain).
+- [Update 2]({{< relref "/samples/domains/model-in-image/update2.md" >}}): Demonstrates deploying a second domain (similar to the Update 1 use case domain).
 
   - Image `model-in-image:WLS-v1`:
     - Same image as the Initial and Update 1 use cases
@@ -86,7 +86,7 @@ This sample demonstrates five Model in Image use cases:
     - Its secret/ConfigMap references are decorated with `sample-domain2` instead of `sample-domain1`
     - Has a changed `env` variable that sets a new domain name
 
-- [Update 3]({{< relref "/samples/simple/domains/model-in-image/update3.md" >}}): Demonstrates deploying an updated image with an updated application to the Update 1 use case domain and then restarting (rolling) its domain to propagate the change.
+- [Update 3]({{< relref "/samples/domains/model-in-image/update3.md" >}}): Demonstrates deploying an updated image with an updated application to the Update 1 use case domain and then restarting (rolling) its domain to propagate the change.
 
   - Image `model-in-image:WLS-v2`, similar to `model-in-image:WLS-v1` image with:
     - An updated web application `v2` at the `myapp-v2` directory path instead of `myapp-v1`
@@ -96,7 +96,7 @@ This sample demonstrates five Model in Image use cases:
   - A Domain:
     - Same as the Update 1 use case, except `spec.image` is `model-in-image:WLS-v2`
 
-- [Update 4]({{< relref "/samples/simple/domains/model-in-image/update4.md" >}}): Demonstrates dynamically updating the running Update 1 or Update 3 WebLogic domain configuration without requiring a domain restart (roll).
+- [Update 4]({{< relref "/samples/domains/model-in-image/update4.md" >}}): Demonstrates dynamically updating the running Update 1 or Update 3 WebLogic domain configuration without requiring a domain restart (roll).
 
    - Image `model-in-image:WLS-v1` or `model-in-image:WLS-v2`:
      - Same image as Update 1 or Update 3 use cases

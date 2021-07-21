@@ -412,7 +412,7 @@ password will be the password you provided for regular schema users during RCU c
 #### Creating an FMW Infrastructure domain
 
 Now that you have your images and you have created your RCU schemas, you are ready
-to create your domain.  We provide a [sample]({{< relref "/samples/simple/domains/fmw-domain/_index.md" >}})
+to create your domain.  We provide a [sample]({{< relref "/samples/domains/fmw-domain/_index.md" >}})
 that demonstrates how to create an FMW Infrastructure domain.
 
 #### Patching the FMW Infrastructure image
@@ -449,4 +449,4 @@ for more information.
 
 #### Additional considerations for Model in Image
 
-If you are using Model in Image, then see the [Model in Image sample]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}), which demonstrates a JRF model and its RCU schema setup, and see [Model in Image requirements for JRF domain types]({{< relref "/userguide/managing-domains/model-in-image/usage/_index.md#requirements-for-jrf-domain-types" >}}).
+If you are using Model in Image, then see the [Model in Image sample]({{< relref "/samples/domains/model-in-image/_index.md" >}}), which demonstrates a JRF model and its RCU schema setup, and see [Model in Image requirements for JRF domain types]({{< relref "/userguide/managing-domains/model-in-image/usage/_index.md#requirements-for-jrf-domain-types" >}}).
