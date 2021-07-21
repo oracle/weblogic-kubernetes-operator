@@ -93,7 +93,7 @@ The following example shows how to set up an ephemeral Oracle database with the 
    $ start-db-service.sh
    ```
 
-   This step is based on the steps documented in [Run a Database]({{< relref "/samples/simple/database/_index.md" >}}).
+   This step is based on the steps documented in [Run a Database]({{< relref "/samples/database/_index.md" >}}).
 
 ### MySQL database in Kubernetes
 

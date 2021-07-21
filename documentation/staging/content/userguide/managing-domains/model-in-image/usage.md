@@ -29,7 +29,7 @@ Deploy the operator and ensure that it is monitoring the desired namespace for y
 
 Model in Image requires an image with a WebLogic Server installation.
 
-- You can start with a WebLogic Server 12.2.1.3 or later Oracle Container Registry pre-built base image such as `container-registry.oracle.com/middleware/weblogic:12.2.1.3` for WLS domains or `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3` for JRF domains. For an example of this approach for both WLS and JRF domains, see the [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample. For detailed instructions on how to log in to the Oracle Container Registry and accept the license agreement for an image (required to allow pulling an Oracle Container Registry image), see this [document]({{< relref "/userguide/base-images/_index.md#obtain-standard-images-from-the-oracle-container-registry" >}}).
+- You can start with a WebLogic Server 12.2.1.3 or later Oracle Container Registry pre-built base image such as `container-registry.oracle.com/middleware/weblogic:12.2.1.3` for WLS domains or `container-registry.oracle.com/middleware/fmw-infrastructure:12.2.1.3` for JRF domains. For an example of this approach for both WLS and JRF domains, see the [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}) sample. For detailed instructions on how to log in to the Oracle Container Registry and accept the license agreement for an image (required to allow pulling an Oracle Container Registry image), see this [document]({{< relref "/userguide/base-images/_index.md#obtain-standard-images-from-the-oracle-container-registry" >}}).
 
 - Or, you can manually build your own base image, as described in [Preparing a Base Image]({{< relref "/userguide/base-images/_index.md#create-a-custom-image-with-patches-applied" >}}). This is useful if you want your base images to include additional patches. Note that any 12.2.1.3 image must also include patch 29135930 (the pre-built images already contain this patch).
 
@@ -75,7 +75,7 @@ There are multiple methods for supplying Model in Image WDT artifacts:
       on top of your base image into a new image.
     - The _WebLogic Image Tool_ (WIT) has built-in options for layering WDT model files,
       WDT binaries, WebLogic Server binaries, and WebLogic Server patches in an image.
-      The [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample uses the WIT approach.
+      The [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}) sample uses the WIT approach.
 
   - __Use auxiliary images__:
     Use [auxiliary images]({{< relref "/userguide/managing-domains/model-in-image/auxiliary-images.md" >}})
@@ -176,7 +176,7 @@ The following Domain fields are specific to Model in Image domains.
  - For fully specified Model in Image Domain YAML file examples,
    see the operator source directory
    `kubernetes/samples/scripts/create-weblogic-domain/model-in-image/domain-resources`
-   for the [Model in Image sample]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}).
+   for the [Model in Image sample]({{< relref "/samples/domains/model-in-image/_index.md" >}}).
    The `WLS` and `JRF` subdirectories in this directory correspond to the `configuration.model.domainType`.
 
 #### Always use external state
@@ -289,6 +289,6 @@ Follow these steps to ensure that a JRF domain can continue to access its RCU da
 
 ##### JRF references
 
-For an example of using JRF in combination with Model in Image, see the [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample.
+For an example of using JRF in combination with Model in Image, see the [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}) sample.
 
 See also, [Specifying RCU connection information in the model](https://github.com/oracle/weblogic-deploy-tooling/blob/main/documentation/1.9/content/rcuinfo.md) in the WDT documentation.
