@@ -20,10 +20,10 @@ This sample demonstrates how to use the [WebLogic Kubernetes Operator](/weblogic
  - [Troubleshooting](#troubleshooting)
  - [Useful links](#useful-links)
 
-{{< readfile file="/samples/simple/azure-kubernetes-service/includes/prerequisites-02.txt" >}}
+{{< readfile file="/samples/azure-kubernetes-service/includes/prerequisites-02.txt" >}}
 
 
-{{< readfile file="/samples/simple/azure-kubernetes-service/includes/create-aks-cluster-body-01.txt" >}}
+{{< readfile file="/samples/azure-kubernetes-service/includes/create-aks-cluster-body-01.txt" >}}
 
 ##### Clone WebLogic Kubernetes Operator repository
 
@@ -36,9 +36,9 @@ $ git clone --branch v3.3.0 https://github.com/oracle/weblogic-kubernetes-operat
 $ cd weblogic-kubernetes-operator
 ```
 
-{{< readfile file="/samples/simple/azure-kubernetes-service/includes/create-aks-cluster-body-02.txt" >}}
+{{< readfile file="/samples/azure-kubernetes-service/includes/create-aks-cluster-body-02.txt" >}}
 
-**Note**: If you run into VM size failure, see [Troubleshooting - Virtual Machine size is not supported]({{< relref "/samples/simple/azure-kubernetes-service/troubleshooting#virtual-machine-size-is-not-supported" >}}).
+**Note**: If you run into VM size failure, see [Troubleshooting - Virtual Machine size is not supported]({{< relref "/samples/azure-kubernetes-service/troubleshooting#virtual-machine-size-is-not-supported" >}}).
 
 
 #### Install WebLogic Kubernetes Operator
@@ -117,11 +117,11 @@ weblogic-operator-775b668c8f-nwwnn   1/1     Running   0          32s
 ```
 
 {{% notice note %}}
-You can sepcify the operator image by changing value of `--set image`. If you run into failures, see [Troubleshooting - WebLogic Kubernetes Operator installation failure]({{< relref "/samples/simple/azure-kubernetes-service/troubleshooting#weblogic-kubernetes-operator-installation-failure" >}}).
+You can sepcify the operator image by changing value of `--set image`. If you run into failures, see [Troubleshooting - WebLogic Kubernetes Operator installation failure]({{< relref "/samples/azure-kubernetes-service/troubleshooting#weblogic-kubernetes-operator-installation-failure" >}}).
 {{% /notice %}}
 
 {{% notice info %}}
-If you have a Docker image built with domain models following [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}), you can go to [Create WebLogic domain](#create-weblogic-domain) directly.
+If you have a Docker image built with domain models following [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}), you can go to [Create WebLogic domain](#create-weblogic-domain) directly.
 {{% /notice %}}
 
 #### Create Docker image
@@ -352,7 +352,7 @@ model-in-image          WLS-v1   012d3bfa3536   5 days ago      1.13GB
 ```
 
 {{% notice note %}}
-You may run into a `Dockerfile` parsing error if your Docker buildkit is enabled, see [Troubleshooting - WebLogic Image Tool failure]({{< relref "/samples/simple/azure-kubernetes-service/troubleshooting#weblogic-image-tool-failure" >}}).
+You may run into a `Dockerfile` parsing error if your Docker buildkit is enabled, see [Troubleshooting - WebLogic Image Tool failure]({{< relref "/samples/azure-kubernetes-service/troubleshooting#weblogic-image-tool-failure" >}}).
 {{% /notice %}}
 
 ##### Pushing the image to Azure Container Registry
@@ -399,7 +399,7 @@ Finally, connect AKS to the ACR.  For more details on connecting ACR to an exist
 $ az aks update --name $AKS_CLUSTER_NAME --resource-group $AKS_PERS_RESOURCE_GROUP --attach-acr $AKS_PERS_RESOURCE_GROUP
 ```
 
-If you see an error that seems related to you not being an **Owner on this subscription**, please refer to the troubleshooting section [Cannot attach ACR due to not being Owner of subscription]({{< relref "/samples/simple/azure-kubernetes-service/troubleshooting#cannot-attach-acr-due-to-not-being-owner-of-subscription" >}}).
+If you see an error that seems related to you not being an **Owner on this subscription**, please refer to the troubleshooting section [Cannot attach ACR due to not being Owner of subscription]({{< relref "/samples/azure-kubernetes-service/troubleshooting#cannot-attach-acr-due-to-not-being-owner-of-subscription" >}}).
 
 Successful output will be a JSON object with the entry `"type": "Microsoft.ContainerService/ManagedClusters"`.
 
@@ -895,19 +895,19 @@ Found 0 local data sources:
 
 #### Rolling updates
 
-Naturally, you will want to deploy newer versions of the EAR application, located in the WDT archive ZIP file at `wlsdeploy/applications/myapp-v1`. To learn how to do this, follow the steps in [Update 3]({{< relref "/samples/simple/domains/model-in-image/update3" >}}).
+Naturally, you will want to deploy newer versions of the EAR application, located in the WDT archive ZIP file at `wlsdeploy/applications/myapp-v1`. To learn how to do this, follow the steps in [Update 3]({{< relref "/samples/domains/model-in-image/update3" >}}).
 
 #### Clean up resources
 
 Run the following commands to clean up resources.
 
-{{< readfile file="/samples/simple/azure-kubernetes-service/includes/clean-up-resources-body-02.txt" >}}
+{{< readfile file="/samples/azure-kubernetes-service/includes/clean-up-resources-body-02.txt" >}}
 
 #### Troubleshooting
 
-For troubleshooting advice, see [Troubleshooting]({{< relref "/samples/simple/azure-kubernetes-service/troubleshooting.md" >}}).
+For troubleshooting advice, see [Troubleshooting]({{< relref "/samples/azure-kubernetes-service/troubleshooting.md" >}}).
 
 #### Useful links
 
 - [Model in Image]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}) user documentation
-- [Model in Image]({{< relref "/samples/simple/domains/model-in-image/_index.md" >}}) sample
+- [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}) sample

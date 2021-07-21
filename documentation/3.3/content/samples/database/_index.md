@@ -2,9 +2,15 @@
 title: "Run a database"
 date: 2019-02-23T16:43:10-05:00
 weight: 2
-description: "Run a database in Kubernetes."
+description: "Run an ephemeral database in Kubernetes that is suitable for sample or basic testing purposes."
 
 ---
+
+### Contents
+
+ - [Overview](#overview)
+ - [Oracle database in Kubernetes](#oracle-database-in-kubernetes)
+ - [MySQL database in Kubernetes](#mysql-database-in-kubernetes)
 
 ### Overview
 
@@ -92,8 +98,6 @@ The following example shows how to set up an ephemeral Oracle database with the 
    ```shell
    $ start-db-service.sh
    ```
-
-   This step is based on the steps documented in [Run a Database]({{< relref "/samples/simple/database/_index.md" >}}).
 
 ### MySQL database in Kubernetes
 
