@@ -2,7 +2,7 @@
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
-    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/elastic-stack/operator/</loc>
+    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/elastic-stack/operator/</loc>
     <lastmod>2019-10-01T14:32:31-05:00</lastmod>
   </url><url>
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/faq/newbie/</loc>
@@ -17,16 +17,16 @@
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/security/certificates/</loc>
     <lastmod>2019-03-06T21:14:18-05:00</lastmod>
   </url><url>
-    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/credentials/</loc>
+    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/credentials/</loc>
     <lastmod>2019-02-23T17:32:31-05:00</lastmod>
   </url><url>
-    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/domains/manually-create-domain/</loc>
+    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/manually-create-domain/</loc>
     <lastmod>2019-02-23T17:32:31-05:00</lastmod>
   </url><url>
-    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/prerequisites/</loc>
+    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/prerequisites/</loc>
     <lastmod>2019-02-23T17:32:31-05:00</lastmod>
   </url><url>
-    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/storage/</loc>
+    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/storage/</loc>
     <lastmod>2019-02-23T17:32:31-05:00</lastmod>
   </url><url>
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/developerguide/contributing/</loc>
@@ -34,9 +34,6 @@
   </url><url>
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/developerguide/requirements/</loc>
     <lastmod>2019-02-23T17:19:19-05:00</lastmod>
-  </url><url>
-    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/</loc>
-    <lastmod>2019-02-23T17:11:34-05:00</lastmod>
   </url><url>
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/</loc>
     <lastmod>2019-02-23T17:04:41-05:00</lastmod>
@@ -59,10 +56,10 @@
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/quickstart/</loc>
     <lastmod>2019-02-22T15:27:38-05:00</lastmod>
   </url><url>
-    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/azure-kubernetes-service/domain-on-pv/</loc>
+    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/domain-on-pv/</loc>
     <lastmod>2020-07-12T18:22:31-05:00</lastmod>
   </url><url>
-    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/elastic-stack/weblogic-domain/</loc>
+    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/elastic-stack/weblogic-domain/</loc>
     <lastmod>2019-10-01T14:32:31-05:00</lastmod>
   </url><url>
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/faq/namespace-management/</loc>
@@ -89,10 +86,10 @@
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/admin-console/</loc>
     <lastmod>2019-02-23T17:39:15-05:00</lastmod>
   </url><url>
-    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/domains/domain-home-on-pv/</loc>
+    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/domain-home-on-pv/</loc>
     <lastmod>2019-02-23T17:32:31-05:00</lastmod>
   </url><url>
-    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/initial/</loc>
+    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/initial/</loc>
     <lastmod>2019-02-23T17:32:31-05:00</lastmod>
   </url><url>
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-operators/using-helm/</loc>
@@ -101,7 +98,7 @@
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/</loc>
     <lastmod>2019-02-23T16:43:45-05:00</lastmod>
   </url><url>
-    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/database/</loc>
+    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/database/</loc>
     <lastmod>2019-02-23T16:43:10-05:00</lastmod>
   </url><url>
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/userguide/prerequisites/introduction/</loc>
@@ -113,10 +110,10 @@
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/userguide/</loc>
     <lastmod>2019-02-22T15:27:48-05:00</lastmod>
   </url><url>
-    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/azure-kubernetes-service/model-in-image/</loc>
+    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/model-in-image/</loc>
     <lastmod>2020-11-24T18:22:31-05:00</lastmod>
   </url><url>
-    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/azure-kubernetes-service/troubleshooting/</loc>
+    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/troubleshooting/</loc>
     <lastmod>2020-11-24T18:22:31-05:00</lastmod>
   </url><url>
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/faq/boot-identity-not-valid/</loc>
@@ -134,13 +131,13 @@
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/security/encryption/</loc>
     <lastmod>2019-02-23T17:36:29-05:00</lastmod>
   </url><url>
-    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/domains/domain-home-in-image/</loc>
+    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/domain-home-in-image/</loc>
     <lastmod>2019-02-23T17:32:31-05:00</lastmod>
   </url><url>
-    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/domains/</loc>
+    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/</loc>
     <lastmod>2019-02-23T17:32:31-05:00</lastmod>
   </url><url>
-    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/update1/</loc>
+    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/update1/</loc>
     <lastmod>2019-02-23T17:32:31-05:00</lastmod>
   </url><url>
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/developerguide/building/</loc>
@@ -176,13 +173,13 @@
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/security/service-accounts/</loc>
     <lastmod>2019-02-23T17:36:12-05:00</lastmod>
   </url><url>
-    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/</loc>
+    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/</loc>
     <lastmod>2019-02-23T17:32:31-05:00</lastmod>
   </url><url>
-    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/rest/</loc>
+    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/rest/</loc>
     <lastmod>2019-02-23T17:32:31-05:00</lastmod>
   </url><url>
-    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/update2/</loc>
+    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/update2/</loc>
     <lastmod>2019-02-23T17:32:31-05:00</lastmod>
   </url><url>
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/developerguide/integration-tests/</loc>
@@ -209,16 +206,16 @@
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/</loc>
     <lastmod>2020-03-11T16:45:16-05:00</lastmod>
   </url><url>
-    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain/</loc>
+    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/fmw-domain/</loc>
     <lastmod>2019-04-18T07:32:31-05:00</lastmod>
   </url><url>
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/userguide/cicd/how-to-copy-domains/</loc>
     <lastmod>2019-04-11T13:48:15-04:00</lastmod>
   </url><url>
-    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/ingress/</loc>
+    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/ingress/</loc>
     <lastmod>2019-02-23T17:32:31-05:00</lastmod>
   </url><url>
-    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/update3/</loc>
+    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/update3/</loc>
     <lastmod>2019-02-23T17:32:31-05:00</lastmod>
   </url><url>
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/developerguide/coding-standards/</loc>
@@ -239,7 +236,7 @@
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/faq/fan/</loc>
     <lastmod>2019-10-11T17:20:00-05:00</lastmod>
   </url><url>
-    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/domains/fmw-domain-home-in-image/</loc>
+    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/fmw-domain-home-in-image/</loc>
     <lastmod>2019-04-18T07:32:31-05:00</lastmod>
   </url><url>
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/userguide/cicd/tools/</loc>
@@ -254,10 +251,10 @@
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/security/secrets/</loc>
     <lastmod>2019-02-23T17:36:33-05:00</lastmod>
   </url><url>
-    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/elastic-stack/</loc>
+    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/elastic-stack/</loc>
     <lastmod>2019-02-23T17:32:31-05:00</lastmod>
   </url><url>
-    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/update4/</loc>
+    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/update4/</loc>
     <lastmod>2019-02-23T17:32:31-05:00</lastmod>
   </url><url>
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/developerguide/code-structure/</loc>
@@ -284,10 +281,10 @@
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/</loc>
     <lastmod>2019-02-23T17:39:00-05:00</lastmod>
   </url><url>
-    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/domains/model-in-image/cleanup/</loc>
+    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/model-in-image/cleanup/</loc>
     <lastmod>2019-02-23T17:32:31-05:00</lastmod>
   </url><url>
-    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/domains/delete-domain/</loc>
+    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/delete-domain/</loc>
     <lastmod>2019-02-23T17:32:31-05:00</lastmod>
   </url><url>
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/developerguide/asynchronous-call-model/</loc>
@@ -299,7 +296,7 @@
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/developerguide/</loc>
     <lastmod>2019-02-22T15:27:54-05:00</lastmod>
   </url><url>
-    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/azure-kubernetes-service/</loc>
+    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/</loc>
     <lastmod>2020-07-12T18:22:31-05:00</lastmod>
   </url><url>
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/faq/oci-lb/</loc>
@@ -308,7 +305,7 @@
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/userguide/cicd/</loc>
     <lastmod>2019-04-11T13:01:55-04:00</lastmod>
   </url><url>
-    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/domains/lifecycle/</loc>
+    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/lifecycle/</loc>
     <lastmod>2019-02-23T17:32:31-05:00</lastmod>
   </url><url>
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/developerguide/domain-processing/</loc>
@@ -320,7 +317,7 @@
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/reference/</loc>
     <lastmod>2019-02-22T16:16:39-05:00</lastmod>
   </url><url>
-    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/tanzu-kubernetes-service/</loc>
+    <loc>https://oracle.github.io/weblogic-kubernetes-operator/samples/tanzu-kubernetes-service/</loc>
     <lastmod>2020-11-16T13:34:31-05:00</lastmod>
   </url><url>
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/faq/volumes/</loc>

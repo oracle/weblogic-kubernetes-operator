@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Azure Kubernetes Service on WebLogic Kubernetes Operator</title>
+    <link>https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/</link>
+    <description>Recent content in Azure Kubernetes Service on WebLogic Kubernetes Operator</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sun, 12 Jul 2020 18:22:31 -0500</lastBuildDate><atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Domain home on a PV</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/domain-on-pv/</link>
+      <pubDate>Sun, 12 Jul 2020 18:22:31 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/domain-on-pv/</guid>
+      <description>This sample demonstrates how to use the WebLogic Kubernetes Operator (hereafter &amp;ldquo;the operator&amp;rdquo;) to set up a WebLogic Server (WLS) cluster on the Azure Kubernetes Service (AKS) using the model in persistence volume approach. After going through the steps, your WLS domain runs on an AKS cluster instance and you can manage your WLS domain by accessing the WebLogic Server Administration Console.
+Contents  Prerequisites Create an AKS cluster Install WebLogic Kubernetes Operator Create WebLogic domain Automation Deploy sample application Access WebLogic Server logs Clean up resources Troubleshooting Useful links  Prerequisites This sample assumes the following prerequisite environment.</description>
+    </item>
+    
+    <item>
+      <title>Model in Image</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/model-in-image/</link>
+      <pubDate>Tue, 24 Nov 2020 18:22:31 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/model-in-image/</guid>
+      <description>This sample demonstrates how to use the WebLogic Kubernetes Operator (hereafter &amp;ldquo;the operator&amp;rdquo;) to set up a WebLogic Server (WLS) cluster on the Azure Kubernetes Service (AKS) using the model in image approach. After going through the steps, your WLS domain runs on an AKS cluster instance and you can manage your WLS domain by interacting with the operator.
+Contents  Prerequisites Create an AKS cluster Install WebLogic Kubernetes Operator Create Docker image Create WebLogic domain Invoke the web application Rolling updates Clean up resource Troubleshooting Useful links  Prerequisites This sample assumes the following prerequisite environment.</description>
+    </item>
+    
+    <item>
+      <title>Troubleshooting</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/troubleshooting/</link>
+      <pubDate>Tue, 24 Nov 2020 18:22:31 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/troubleshooting/</guid>
+      <description>Access Administration Console: Possible causes for Administration Console inaccessibility Domain debugging Pod Error: How to get details of the pod error WebLogic Image Tool failure WebLogic Kubernetes Operator installation failure  System pods are pending WebLogic Kubernetes Operator ErrImagePull   WSL2 bad timestamp Cannot attach ACR due to not being Owner of subscription Virtual Machine size is not supported  Get pod error details You may get the following message while creating the WebLogic domain: &amp;quot;the job status is not Completed!</description>
+    </item>
+    
+  </channel>
+</rss>
