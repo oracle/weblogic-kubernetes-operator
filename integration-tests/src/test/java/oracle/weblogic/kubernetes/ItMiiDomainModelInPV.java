@@ -37,6 +37,7 @@ import oracle.weblogic.kubernetes.utils.TestUtils;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -54,6 +55,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OKE_CLUSTER;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
@@ -74,6 +76,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVe
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVC;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createfixPVCOwnerContainer;
@@ -95,6 +98,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Verify MII domain can be created from model file in PV location and custom wdtModelHome")
 @IntegrationTest
+@Tag("okdenv")
 public class ItMiiDomainModelInPV {
 
   private static String domainNamespace = null;
@@ -132,6 +136,7 @@ public class ItMiiDomainModelInPV {
   private static String wlsImage;
   private static boolean isUseSecret;
 
+  private static String adminSvcExtHost = null;
 
   /**
    * 1. Get namespaces for operator and WebLogic domain.
@@ -231,7 +236,9 @@ public class ItMiiDomainModelInPV {
           + modelMountPath
           + "/. -maxdepth 1 ! -name '.snapshot' ! -name '.' -print0 | xargs -r -0  chown -R 1000:root";
     }
-    execInPod(pvPod, null, true, argCommand);
+    if (!OKD) {
+      execInPod(pvPod, null, true, argCommand);
+    }
   }
 
   /**
@@ -313,13 +320,20 @@ public class ItMiiDomainModelInPV {
   private static void verifyMemberHealth(String adminServerPodName, List<String> managedServerNames,
       String user, String password) {
 
+    // In OKD environment, we cannot access the nodeport - have to craete a route
+    if (OKD) {
+      adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
+      logger.info("admin svc host = {0}", adminSvcExtHost);
+    }
+
     logger.info("Getting node port for default channel");
     int serviceNodePort = assertDoesNotThrow(()
         -> getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
         "Getting admin server node port failed");
 
+    String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + serviceNodePort;
     logger.info("Checking the health of servers in cluster");
-    String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort
+    String url = "http://" + hostAndPort
         + "/clusterview/ClusterViewServlet?user=" + user + "&password=" + password;
 
     withStandardRetryPolicy.conditionEvaluationListener(
@@ -348,9 +362,7 @@ public class ItMiiDomainModelInPV {
     createSecretForBaseImages(namespace);
 
     final String podName = "weblogic-pv-pod-" + namespace;
-    V1Pod podBody = new V1Pod()
-        .spec(new V1PodSpec()
-            .initContainers(Arrays.asList(createfixPVCOwnerContainer(pvName, modelMountPath)))
+    V1PodSpec podSpec = new V1PodSpec()
             .containers(Arrays.asList(
                 new V1Container()
                     .name("weblogic-container")
@@ -370,7 +382,13 @@ public class ItMiiDomainModelInPV {
                     .name(pvName) // the persistent volume that needs to be archived
                     .persistentVolumeClaim(
                         new V1PersistentVolumeClaimVolumeSource()
-                            .claimName(pvcName)))))
+                            .claimName(pvcName)))); 
+    if (!OKD) {
+      podSpec.initContainers(Arrays.asList(createfixPVCOwnerContainer(pvName, modelMountPath)));
+    }
+
+    V1Pod podBody = new V1Pod()
+        .spec(podSpec)
         .metadata(new V1ObjectMeta().name(podName))
         .apiVersion("v1")
         .kind("Pod");

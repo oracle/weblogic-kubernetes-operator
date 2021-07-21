@@ -41,6 +41,8 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -52,6 +54,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -64,6 +67,7 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
@@ -93,6 +97,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createJobAndWaitU
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVC;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createfixPVCOwnerContainer;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
@@ -120,6 +125,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test logHome on PV, add SystemResources, Clusters to model in image domain")
 @IntegrationTest
+@Tag("okdenv")
 class ItMiiUpdateDomainConfig {
 
   private static String opNamespace = null;
@@ -136,6 +142,7 @@ class ItMiiUpdateDomainConfig {
   private final String managedServerPrefix = domainUid + "-managed-server";
   private final String adminServerName = "admin-server";
   private final String clusterName = "cluster-1";
+  private String adminSvcExtHost = null;
 
   private static LoggingFacade logger = null;
 
@@ -203,8 +210,10 @@ class ItMiiUpdateDomainConfig {
     createPV(pvName, domainUid, ItMiiUpdateDomainConfig.class.getSimpleName());
     createPVC(pvName, pvcName, domainUid, domainNamespace);
 
-    // create job to change permissions on PV hostPath
-    createJobToChangePermissionsOnPvHostPath(pvName, pvcName, domainNamespace);
+    if (!OKD) {
+      // create job to change permissions on PV hostPath
+      createJobToChangePermissionsOnPvHostPath(pvName, pvcName, domainNamespace);
+    }
 
     // create the domain CR with a pre-defined configmap
     createDomainResource(domainUid, domainNamespace, adminSecretName,
@@ -241,6 +250,12 @@ class ItMiiUpdateDomainConfig {
           domainNamespace);
       checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
+   
+    // In OKD env, adminServers' external service nodeport cannot be accessed directly. 
+    // We have to create a route for the admins server external service.
+    if (OKD && (adminSvcExtHost == null)) {
+      adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace); 
+    }
   }
 
   /**
@@ -269,14 +284,36 @@ class ItMiiUpdateDomainConfig {
 
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    StringBuffer curlString = new StringBuffer("curl --user weblogic:welcome1 ");
-    curlString.append("\"http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+
+    String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + adminServiceNodePort;
+    logger.info("hostAndPort = {0} ", hostAndPort);
+
+    String curlString = new StringBuffer()
+          .append("curl --user weblogic:welcome1 ")
+          .append("\"http://" + hostAndPort)
           .append("/management/weblogic/latest/domainConfig")
           .append("/JMSServers/TestClusterJmsServer")
           .append("?fields=notes&links=none\"")
-          .append(" --silent ");
+          .append(" --silent ").toString();
     logger.info("checkJmsServerConfig: curl command {0}", new String(curlString));
     ExecResult result = null;
+
+    CommandParams params = Command
+        .defaultCommandParams()
+        .command(curlString)
+        .verbose(true)
+        .saveResults(true)
+        .redirect(true);
+
+    withStandardRetryPolicy.conditionEvaluationListener(
+            condition -> logger.info("Check the environment variable with special characters."
+                            + "(elapsed time {0} ms, remaining time {1} ms)",
+                    condition.getElapsedTimeInMS(),
+                    condition.getRemainingTimeInMS()))
+            .until((Callable<Boolean>) () -> {
+              return Command.withParams(params).executeAndVerify("${DOMAIN_UID}~##!'%*$(ls)");
+            });
+    /*
     try {
       result = exec(new String(curlString), true);
       getLogger().info("The command returned exit value: "
@@ -289,6 +326,7 @@ class ItMiiUpdateDomainConfig {
     } catch (Exception e) {
       getLogger().info("Got exception, command failed with errors " + e.getMessage());
     }
+    */
   }
 
   /**
@@ -353,15 +391,15 @@ class ItMiiUpdateDomainConfig {
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-    assertTrue(checkSystemResourceConfiguration(adminServiceNodePort, "JDBCSystemResources",
+    assertTrue(checkSystemResourceConfiguration(adminSvcExtHost, adminServiceNodePort, "JDBCSystemResources",
         "TestDataSource", "200"), "JDBCSystemResource not found");
     logger.info("Found the JDBCSystemResource configuration");
 
-    assertTrue(checkSystemResourceConfiguration(adminServiceNodePort,"JMSSystemResources",
+    assertTrue(checkSystemResourceConfiguration(adminSvcExtHost, adminServiceNodePort,"JMSSystemResources",
         "TestClusterJmsModule", "200"), "JMSSystemResources not found");
     logger.info("Found the JMSSystemResource configuration");
 
-    assertTrue(checkSystemResourceConfiguration(adminServiceNodePort,"WLDFSystemResources",
+    assertTrue(checkSystemResourceConfiguration(adminSvcExtHost, adminServiceNodePort,"WLDFSystemResources",
         "TestWldfModule", "200"), "WLDFSystemResources not found");
     logger.info("Found the WLDFSystemResource configuration");
 
@@ -434,9 +472,9 @@ class ItMiiUpdateDomainConfig {
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-    assertTrue(checkSystemResourceConfiguration(adminServiceNodePort, "JDBCSystemResources",
+    assertTrue(checkSystemResourceConfiguration(adminSvcExtHost, adminServiceNodePort, "JDBCSystemResources",
          "TestDataSource", "404"), "JDBCSystemResource should be deleted");
-    assertTrue(checkSystemResourceConfiguration(adminServiceNodePort, "JMSSystemResources",
+    assertTrue(checkSystemResourceConfiguration(adminSvcExtHost, adminServiceNodePort, "JMSSystemResources",
          "TestClusterJmsModule", "404"), "JMSSystemResources should be deleted");
   }
 
@@ -500,11 +538,11 @@ class ItMiiUpdateDomainConfig {
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-    assertTrue(checkSystemResourceConfiguration(adminServiceNodePort,"JDBCSystemResources",
+    assertTrue(checkSystemResourceConfiguration(adminSvcExtHost, adminServiceNodePort,"JDBCSystemResources",
           "TestDataSource2", "200"), "JDBCSystemResource not found");
     logger.info("Found the JDBCSystemResource configuration");
 
-    assertTrue(checkSystemResourceConfiguration(adminServiceNodePort, "JMSSystemResources",
+    assertTrue(checkSystemResourceConfiguration(adminSvcExtHost, adminServiceNodePort, "JMSSystemResources",
           "TestClusterJmsModule2", "200"), "JMSSystemResources not found");
     logger.info("Found the JMSSystemResource configuration");
 
@@ -733,7 +771,7 @@ class ItMiiUpdateDomainConfig {
   @Order(9)
   @DisplayName("Change the WebLogic Admin credential of the domain")
   public void testMiiUpdateWebLogicCredential() {
-    verifyUpdateWebLogicCredential(domainNamespace, domainUid, adminServerPodName,
+    verifyUpdateWebLogicCredential(adminSvcExtHost, domainNamespace, domainUid, adminServerPodName,
         managedServerPrefix, replicaCount);
   }
 
@@ -853,7 +891,7 @@ class ItMiiUpdateDomainConfig {
     javapCmd.append(" -it ");
     javapCmd.append(adminServerPodName);
     javapCmd.append(" -- /bin/bash -c \"");
-    javapCmd.append("java -cp ");
+    javapCmd.append("cd /u01; java -cp ");
     javapCmd.append(jarLocation);
     javapCmd.append(":.");
     javapCmd.append(" JmsTestClient ");
@@ -896,7 +934,7 @@ class ItMiiUpdateDomainConfig {
   // Build JMS Client inside the Admin Server Pod
   private void buildClientOnPod() {
 
-    String destLocation = "/u01/oracle/JmsTestClient.java";
+    String destLocation = "/u01/JmsTestClient.java";
     assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
              adminServerPodName, "",
              Paths.get(RESOURCE_DIR, "tunneling", "JmsTestClient.java"),
@@ -911,7 +949,7 @@ class ItMiiUpdateDomainConfig {
     javacCmd.append(" -- /bin/bash -c \"");
     javacCmd.append("javac -cp ");
     javacCmd.append(jarLocation);
-    javacCmd.append(" JmsTestClient.java ");
+    javacCmd.append(" /u01/JmsTestClient.java ");
     javacCmd.append(" \"");
     logger.info("javac command {0}", javacCmd.toString());
     ExecResult result = assertDoesNotThrow(
@@ -1060,8 +1098,12 @@ class ItMiiUpdateDomainConfig {
     ExecResult result = null;
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+
+    String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + adminServiceNodePort;
+    logger.info("hostAndPort = {0} ", hostAndPort);
+
     checkCluster = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
-    checkCluster.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+    checkCluster.append("http://" + hostAndPort)
           .append("/management/tenant-monitoring/servers/")
           .append(managedServer)
           .append(" --silent --show-error ")
@@ -1111,10 +1153,14 @@ class ItMiiUpdateDomainConfig {
   private ExecResult checkJdbcRuntime(String resourcesName) {
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+
+    String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + adminServiceNodePort;
+    logger.info("hostAndPort = {0} ", hostAndPort);
+
     ExecResult result = null;
 
     curlString = new StringBuffer("curl --user weblogic:welcome1 ");
-    curlString.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+    curlString.append("http://" + hostAndPort)
          .append("/management/wls/latest/datasources/id/")
          .append(resourcesName)
          .append("/")

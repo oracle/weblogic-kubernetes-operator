@@ -4018,10 +4018,28 @@ public class CommonTestUtils {
    */
   public static boolean checkSystemResourceConfiguration(int nodePort, String resourcesType,
                                                    String resourcesName, String expectedStatusCode) {
+    return checkSystemResourceConfiguration(null, nodePort, resourcesType, resourcesName, expectedStatusCode);
+  }
+
+  /**
+   * Check the system resource configuration using REST API.
+   * @param adminSvcExtHost Used only in OKD env - this is the route host created for AS external service
+   * @param nodePort admin node port
+   * @param resourcesType type of the resource
+   * @param resourcesName name of the resource
+   * @param expectedStatusCode expected status code
+   * @return true if the REST API results matches expected status code
+   */
+  public static boolean checkSystemResourceConfiguration(String adminSvcExtHost, int nodePort, String resourcesType,
+                                                   String resourcesName, String expectedStatusCode) {
     final LoggingFacade logger = getLogger();
+
+    String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + nodePort;
+    logger.info("hostAndPort = {0} ", hostAndPort);
+
     StringBuffer curlString = new StringBuffer("status=$(curl --user ");
     curlString.append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
-        .append(" http://" + K8S_NODEPORT_HOST + ":" + nodePort)
+        .append(" http://" + hostAndPort)
         .append("/management/weblogic/latest/domainConfig")
         .append("/")
         .append(resourcesType)
@@ -4047,10 +4065,27 @@ public class CommonTestUtils {
    * @return true if the REST API results matches expected status code
    */
   public static boolean checkSystemResourceConfig(int nodePort, String resourcesPath, String expectedValue) {
+    return checkSystemResourceConfig(null, nodePort, resourcesPath, expectedValue);
+  }
+
+  /**
+   * Check the system resource configuration using REST API.
+   * @param adminSvcExtHost Used only in OKD env - this is the route host created for AS external service
+   * @param nodePort admin node port
+   * @param resourcesPath path of the resource
+   * @param expectedValue expected value returned in the REST call
+   * @return true if the REST API results matches expected status code
+   */
+  public static boolean checkSystemResourceConfig(String adminSvcExtHost, int nodePort,
+                                       String resourcesPath, String expectedValue) {
     final LoggingFacade logger = getLogger();
+
+    String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + nodePort;
+    logger.info("hostAndPort = {0} ", hostAndPort);
+
     StringBuffer curlString = new StringBuffer("curl --user ");
     curlString.append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
-        .append(" http://" + K8S_NODEPORT_HOST + ":" + nodePort)
+        .append(" http://" + hostAndPort)
         .append("/management/weblogic/latest/domainConfig")
         .append("/")
         .append(resourcesPath)
@@ -4065,16 +4100,22 @@ public class CommonTestUtils {
 
   /**
    * Check the system resource runtime using REST API.
+   * @param adminSvcExtHost Used only in OKD env - this is the route host created for AS external service
    * @param nodePort admin node port
    * @param resourcesUrl url of the resource
    * @param expectedValue expected value returned in the REST call
    * @return true if the REST API results matches expected value
    */
-  public static boolean checkSystemResourceRuntime(int nodePort, String resourcesUrl, String expectedValue) {
+  public static boolean checkSystemResourceRuntime(String adminSvcExtHost, int nodePort, 
+                                            String resourcesUrl, String expectedValue) {
     final LoggingFacade logger = getLogger();
+
+    String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + nodePort;
+    logger.info("hostAndPort = {0} ", hostAndPort);
+
     StringBuffer curlString = new StringBuffer("curl --user ");
     curlString.append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
-        .append(" http://" + K8S_NODEPORT_HOST + ":" + nodePort)
+        .append(" http://" + hostAndPort)
         .append("/management/weblogic/latest/domainRuntime")
         .append("/")
         .append(resourcesUrl)
