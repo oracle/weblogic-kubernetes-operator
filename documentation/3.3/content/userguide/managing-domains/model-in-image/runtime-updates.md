@@ -346,7 +346,7 @@ for advice.
 #### Offline update sample
 
 For an offline update sample which adds a data source, see the
-[Update 1 use case]({{< relref "/samples/simple/domains/model-in-image/update1.md" >}})
+[Update 1 use case]({{< relref "/samples/domains/model-in-image/update1.md" >}})
 in the Model in Image sample.
 
 ### Online updates
@@ -810,7 +810,7 @@ _Here are some of the expected WebLogic pod labels after an online update succes
 #### Online update sample
 
 For an online update sample which alters a data source and Work Manager, see the
-[Update 4 use case]({{< relref "/samples/simple/domains/model-in-image/update4.md" >}})
+[Update 4 use case]({{< relref "/samples/domains/model-in-image/update4.md" >}})
 in the Model in Image sample.
 
 ### Appendices
@@ -939,4 +939,4 @@ the Domain `spec.introspectVersion`. Here are some common ways to alter either o
      the `kubernetes/samples/scripts/create-weblogic-domain/model-in-image/utils/`
      directory.
    - Or, see the more advanced `introspectDomain.sh` and `rollDomain.sh` among
-     the [Domain lifecycle sample scripts]({{< relref "/samples/simple/domains/lifecycle/_index.md">}}).
+     the [Domain lifecycle sample scripts]({{< relref "/samples/domains/lifecycle/_index.md">}}).

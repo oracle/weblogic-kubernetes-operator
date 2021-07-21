@@ -136,7 +136,7 @@ to build the image and apply the patches.
 #### Create a custom image with your domain inside the image
 
 You can also create an image with the WebLogic domain inside the image.
-[Samples]({{< relref "/samples/simple/domains/domain-home-in-image/_index.md" >}})
+[Samples]({{< relref "/samples/domains/domain-home-in-image/_index.md" >}})
 are provided that demonstrate how to create the image using either:
 
 * WLST to define the domain, or
