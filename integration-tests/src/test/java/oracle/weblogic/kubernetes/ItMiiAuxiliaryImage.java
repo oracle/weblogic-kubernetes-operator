@@ -53,7 +53,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
-import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
@@ -186,8 +185,10 @@ public class ItMiiAuxiliaryImage {
 
     // create stage dir for first auxiliary image with image1
     Path multipleAIPath1 = Paths.get(RESULTS_ROOT, "multipleauxiliaryimage1");
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleAIPath1.toFile()));
-    assertDoesNotThrow(() -> Files.createDirectories(multipleAIPath1));
+    assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleAIPath1.toFile()),
+        "Delete directory failed");
+    assertDoesNotThrow(() -> Files.createDirectories(multipleAIPath1),
+        "Create directory failed");
     Path multipleAIPathToFile1 = Paths.get(RESULTS_ROOT, "multipleauxiliaryimage1/test.txt");
     String content = "1";
     assertDoesNotThrow(() -> Files.write(multipleAIPathToFile1, content.getBytes()),
@@ -227,13 +228,15 @@ public class ItMiiAuxiliaryImage {
     // push image1 to repo for multi node cluster
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
       logger.info("docker push image {0} to registry {1}", miiAuxiliaryImage1, DOMAIN_IMAGES_REPO);
-      assertTrue(dockerPush(miiAuxiliaryImage1), String.format("docker push failed for image %s", miiAuxiliaryImage1));
+      dockerLoginAndPushImageToRegistry(miiAuxiliaryImage1);
     }
 
     // create stage dir for second auxiliary image with image2
     Path multipleAIPath2 = Paths.get(RESULTS_ROOT, "multipleauxiliaryimage2");
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleAIPath2.toFile()));
-    assertDoesNotThrow(() -> Files.createDirectories(multipleAIPath2));
+    assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleAIPath2.toFile()),
+        "Delete directory failed");
+    assertDoesNotThrow(() -> Files.createDirectories(multipleAIPath2),
+        "Create directory failed");
 
     // create models dir and copy model, archive files if any
     Path modelsPath2 = Paths.get(multipleAIPath2.toString(), "models");
@@ -254,7 +257,7 @@ public class ItMiiAuxiliaryImage {
     // push image2 to repo for multi node cluster
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
       logger.info("docker push image {0} to registry {1}", miiAuxiliaryImage2, DOMAIN_IMAGES_REPO);
-      assertTrue(dockerPush(miiAuxiliaryImage2), String.format("docker push failed for image %s", miiAuxiliaryImage2));
+      dockerLoginAndPushImageToRegistry(miiAuxiliaryImage2);
     }
 
     // create domain custom resource using 2 auxiliary images
@@ -317,7 +320,7 @@ public class ItMiiAuxiliaryImage {
     // push image3 to repo for multi node cluster
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
       logger.info("docker push image {0} to registry {1}", miiAuxiliaryImage3, DOMAIN_IMAGES_REPO);
-      assertTrue(dockerPush(miiAuxiliaryImage3), String.format("docker push failed for image %s", miiAuxiliaryImage3));
+      dockerLoginAndPushImageToRegistry(miiAuxiliaryImage3);
     }
 
     // check configuration for DataSource in the running domain
@@ -407,7 +410,7 @@ public class ItMiiAuxiliaryImage {
    * Negative Test to create domain with mismatch mount path in auxiliary image and auxiliaryImageVolumes.
    * in auxiliaryImageVolumes, set mountPath to "/errorpath"
    * in auxiliary image, set AUXILIARY_IMAGE_PATH to "/auxiliary"
-   * Check the error msg is in introspector pod log, domain events and operator pod log.
+   * Check the error message is in introspector pod log, domain events and operator pod log.
    */
   @Test
   @Order(3)
@@ -424,8 +427,10 @@ public class ItMiiAuxiliaryImage {
 
     // create stage dir for auxiliary image
     Path errorpathAIPath1 = Paths.get(RESULTS_ROOT, "errorpathauxiimage1");
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(errorpathAIPath1.toFile()));
-    assertDoesNotThrow(() -> Files.createDirectories(errorpathAIPath1));
+    assertDoesNotThrow(() -> FileUtils.deleteDirectory(errorpathAIPath1.toFile()),
+        "Delete directory failed");
+    assertDoesNotThrow(() -> Files.createDirectories(errorpathAIPath1),
+        "Create directory failed");
 
     // create models dir and copy model for image
     Path modelsPath1 = Paths.get(errorpathAIPath1.toString(), "models");
@@ -445,8 +450,7 @@ public class ItMiiAuxiliaryImage {
     // push image to repo for multi node cluster
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
       logger.info("docker push image {0} to registry {1}", errorPathAuxiliaryImage1, DOMAIN_IMAGES_REPO);
-      assertTrue(dockerPush(errorPathAuxiliaryImage1),
-          String.format("docker push failed for image %s", errorPathAuxiliaryImage1));
+      dockerLoginAndPushImageToRegistry(miiAuxiliaryImage1);
     }
 
     // create domain custom resource using auxiliary images
@@ -462,16 +466,16 @@ public class ItMiiAuxiliaryImage {
         domainUid, errorPathAuxiliaryImage1, errorpathDomainNamespace);
     assertDoesNotThrow(() -> createDomainCustomResource(domainCR), "createDomainCustomResource throws Exception");
 
-    // check the introspector pod log contains the expected error msg
+    // check the introspector pod log contains the expected error message
     String expectedErrorMsg = "Auxiliary Image: Dir '/errorpath' doesn't exist or is empty. Exiting.";
     String introspectorPodName = assertDoesNotThrow(() -> getIntrospectorPodName(domainUid, errorpathDomainNamespace));
     checkPodLogContainsString(errorpathDomainNamespace, introspectorPodName, expectedErrorMsg);
 
-    // check the domain event contains the expected error msg
+    // check the domain event contains the expected error message
     checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
         "Warning", timestamp, expectedErrorMsg);
 
-    // check the operator pod log contains the expected error msg
+    // check the operator pod log contains the expected error message
     String operatorPodName =
         assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
     checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
@@ -490,7 +494,7 @@ public class ItMiiAuxiliaryImage {
 
   /**
    * Negative Test to create domain without WDT binary.
-   * Check the error msg is in introspector pod log, domain events and operator pod log.
+   * Check the error message is in introspector pod log, domain events and operator pod log.
    */
   @Test
   @Order(4)
@@ -507,16 +511,19 @@ public class ItMiiAuxiliaryImage {
 
     // create stage dir for common mount image
     Path errorpathAIPath2 = Paths.get(RESULTS_ROOT, "errorpathauxiimage2");
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(errorpathAIPath2.toFile()));
-    assertDoesNotThrow(() -> Files.createDirectories(errorpathAIPath2));
+    assertDoesNotThrow(() -> FileUtils.deleteDirectory(errorpathAIPath2.toFile()),
+        "Delete directory failed");
+    assertDoesNotThrow(() -> Files.createDirectories(errorpathAIPath2),
+        "Create directory failed");
 
     // create models dir and copy model for image
     Path modelsPath2 = Paths.get(errorpathAIPath2.toString(), "models");
-    assertDoesNotThrow(() -> Files.createDirectories(modelsPath2));
+    assertDoesNotThrow(() -> Files.createDirectories(modelsPath2),
+        "Create directory failed");
     assertDoesNotThrow(() -> Files.copy(
         Paths.get(MODEL_DIR, MII_BASIC_WDT_MODEL_FILE),
         Paths.get(modelsPath2.toString(), MII_BASIC_WDT_MODEL_FILE),
-        StandardCopyOption.REPLACE_EXISTING));
+        StandardCopyOption.REPLACE_EXISTING), "Copy files failed");
 
     // create image with model and no wdt installation files
     createAuxiliaryImage(errorpathAIPath2.toString(),
@@ -525,8 +532,7 @@ public class ItMiiAuxiliaryImage {
     // push image to repo for multi node cluster
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
       logger.info("docker push image {0} to registry {1}", errorPathAuxiliaryImage2, DOMAIN_IMAGES_REPO);
-      assertTrue(dockerPush(errorPathAuxiliaryImage2),
-          String.format("docker push failed for image %s", errorPathAuxiliaryImage2));
+      dockerLoginAndPushImageToRegistry(miiAuxiliaryImage2);
     }
 
     // create domain custom resource using auxiliary images
@@ -542,20 +548,22 @@ public class ItMiiAuxiliaryImage {
         domainUid, errorPathAuxiliaryImage2, errorpathDomainNamespace);
     assertDoesNotThrow(() -> createDomainCustomResource(domainCR), "createDomainCustomResource throws Exception");
 
-    // check the introspector pod log contains the expected error msg
+    // check the introspector pod log contains the expected error message
     String expectedErrorMsg = "The domain resource 'spec.domainHomeSourceType' is 'FromModel'  and "
         + "a WebLogic Deploy Tool (WDT) install is not located at  'spec.configuration.model.wdtInstallHome'  "
         + "which is currently set to '/auxiliary/weblogic-deploy'";
-    String introspectorPodName = assertDoesNotThrow(() -> getIntrospectorPodName(domainUid, errorpathDomainNamespace));
+    String introspectorPodName = assertDoesNotThrow(() -> getIntrospectorPodName(domainUid, errorpathDomainNamespace),
+        "Can't get introspector pod's name");
     checkPodLogContainsString(errorpathDomainNamespace, introspectorPodName, expectedErrorMsg);
 
-    // check the domain event contains the expected error msg
+    // check the domain event contains the expected error message
     checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
         "Warning", timestamp, expectedErrorMsg);
 
-    // check the operator pod log contains the expected error msg
+    // check the operator pod log contains the expected error message
     String operatorPodName =
-        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace),
+            "Can't get operator pod's name");
     checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
 
     // check there are no admin server and managed server pods and services created
@@ -589,16 +597,20 @@ public class ItMiiAuxiliaryImage {
 
     // create stage dir for auxiliary image
     Path errorpathAIPath3 = Paths.get(RESULTS_ROOT, "errorpathauxiimage3");
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(errorpathAIPath3.toFile()));
-    assertDoesNotThrow(() -> Files.createDirectories(errorpathAIPath3));
+    assertDoesNotThrow(() -> FileUtils.deleteDirectory(errorpathAIPath3.toFile()),
+        "Delete directory failed");
+    assertDoesNotThrow(() -> Files.createDirectories(errorpathAIPath3),
+        "Create directory failed");
 
     // create models dir and copy model for image
     Path modelsPath3 = Paths.get(errorpathAIPath3.toString(), "models");
-    assertDoesNotThrow(() -> Files.createDirectories(modelsPath3));
+    assertDoesNotThrow(() -> Files.createDirectories(modelsPath3),
+        "Create directory failed");
     assertDoesNotThrow(() -> Files.copy(
         Paths.get(MODEL_DIR, "model.jms2.yaml"),
         Paths.get(modelsPath3.toString(), "model.jms2.yaml"),
-        StandardCopyOption.REPLACE_EXISTING));
+        StandardCopyOption.REPLACE_EXISTING),
+        "Copy files failed");
 
     // unzip WDT installation file into work dir
     unzipWDTInstallationFile(errorpathAIPath3.toString());
@@ -610,8 +622,7 @@ public class ItMiiAuxiliaryImage {
     // push image to repo for multi node cluster
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
       logger.info("docker push image {0} to registry {1}", errorPathAuxiliaryImage3, DOMAIN_IMAGES_REPO);
-      assertTrue(dockerPush(errorPathAuxiliaryImage3),
-          String.format("docker push failed for image %s", errorPathAuxiliaryImage3));
+      dockerLoginAndPushImageToRegistry(miiAuxiliaryImage3);
     }
 
     // create domain custom resource using auxiliary images
@@ -627,19 +638,21 @@ public class ItMiiAuxiliaryImage {
         domainUid, errorPathAuxiliaryImage3, errorpathDomainNamespace);
     assertDoesNotThrow(() -> createDomainCustomResource(domainCR), "createDomainCustomResource throws Exception");
 
-    // check the introspector pod log contains the expected error msg
+    // check the introspector pod log contains the expected error message
     String expectedErrorMsg =
         "createDomain did not find the required domainInfo section in the model file /auxiliary/models/model.jms2.yaml";
-    String introspectorPodName = assertDoesNotThrow(() -> getIntrospectorPodName(domainUid, errorpathDomainNamespace));
+    String introspectorPodName = assertDoesNotThrow(() -> getIntrospectorPodName(domainUid, errorpathDomainNamespace),
+        "Get introspector's pod name failed");
     checkPodLogContainsString(errorpathDomainNamespace, introspectorPodName, expectedErrorMsg);
 
-    // check the domain event contains the expected error msg
+    // check the domain event contains the expected error message
     checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
         "Warning", timestamp, expectedErrorMsg);
 
-    // check the operator pod log contains the expected error msg
+    // check the operator pod log contains the expected error message
     String operatorPodName =
-        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace),
+            "Get operator's pod name failed");
     checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
 
     // check there are no admin server and managed server pods and services created
@@ -658,7 +671,7 @@ public class ItMiiAuxiliaryImage {
    * Negative Test to patch the existing domain using a custom mount command that's guaranteed to fail.
    * Specify domain.spec.serverPod.auxiliaryImages.command to a custom mount command instead of the default one, which
    * defaults to "cp -R $AUXILIARY_IMAGE_PATH/* $TARGET_MOUNT_PATH"
-   * Check the error msg in introspector pod log, domain events and operator pod log.
+   * Check the error message in introspector pod log, domain events and operator pod log.
    * Restore the domain by removing the custom mount command.
    */
   @Test
@@ -702,18 +715,20 @@ public class ItMiiAuxiliaryImage {
         "patchDomainCustomResource(Auxiliary Image)  failed ");
     assertTrue(aiPatched, "patchDomainCustomResource(auxiliary image) failed");
 
-    // check the introspector pod log contains the expected error msg
+    // check the introspector pod log contains the expected error message
     String expectedErrorMsg = "Auxiliary Image: Command 'exit 1' execution failed in container";
-    String introspectorPodName = assertDoesNotThrow(() -> getIntrospectorPodName(domainUid, domainNamespace));
+    String introspectorPodName = assertDoesNotThrow(() -> getIntrospectorPodName(domainUid, domainNamespace),
+        "Get introspector's pod name failed");
     checkPodLogContainsString(domainNamespace, introspectorPodName, expectedErrorMsg);
 
-    // check the domain event contains the expected error msg
+    // check the domain event contains the expected error message
     checkDomainEventContainsExpectedMsg(opNamespace, domainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
         "Warning", timestamp, expectedErrorMsg);
 
-    // check the operator pod log contains the expected error msg
+    // check the operator pod log contains the expected error message
     String operatorPodName =
-        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace),
+            "Get operator's pod name failed");
     checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
 
     // verify the domain is not rolled
@@ -748,7 +763,7 @@ public class ItMiiAuxiliaryImage {
    * Negative Test to create domain with file , created by user tester with permission read only
    * and not accessible by oracle user in auxiliary image
    * via provided Dockerfile.
-   * Check the error msg is in introspector pod log, domain events and operator pod log.
+   * Check the error message is in introspector pod log, domain events and operator pod log.
    */
   @Test
   @Order(7)
@@ -765,8 +780,10 @@ public class ItMiiAuxiliaryImage {
 
     // create stage dir for auxiliary image
     Path errorpathAIPath1 = Paths.get(RESULTS_ROOT, "errorpathauxiimage4");
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(errorpathAIPath1.toFile()));
-    assertDoesNotThrow(() -> Files.createDirectories(errorpathAIPath1));
+    assertDoesNotThrow(() -> FileUtils.deleteDirectory(errorpathAIPath1.toFile()),
+        "Can't delete directory");
+    assertDoesNotThrow(() -> Files.createDirectories(errorpathAIPath1),
+        "Can't create directory");
 
     Path errorpathAIPathToFile = Paths.get(RESULTS_ROOT, "errorpathauxiimage4/test1.txt");
     String content = "some text ";
@@ -775,11 +792,13 @@ public class ItMiiAuxiliaryImage {
 
     // create models dir and copy model for image
     Path modelsPath1 = Paths.get(errorpathAIPath1.toString(), "models");
-    assertDoesNotThrow(() -> Files.createDirectories(modelsPath1));
+    assertDoesNotThrow(() -> Files.createDirectories(modelsPath1),
+        "Can't create directory");
     assertDoesNotThrow(() -> Files.copy(
         Paths.get(MODEL_DIR, MII_BASIC_WDT_MODEL_FILE),
         Paths.get(modelsPath1.toString(), MII_BASIC_WDT_MODEL_FILE),
-        StandardCopyOption.REPLACE_EXISTING));
+        StandardCopyOption.REPLACE_EXISTING),
+        "Can't copy files");
 
     // build app
     assertTrue(buildAppArchive(defaultAppParams()
@@ -791,7 +810,7 @@ public class ItMiiAuxiliaryImage {
     assertDoesNotThrow(() -> Files.copy(
         Paths.get(ARCHIVE_DIR,  MII_BASIC_APP_NAME + ".zip"),
         Paths.get(modelsPath1.toString(), MII_BASIC_APP_NAME + ".zip"),
-        StandardCopyOption.REPLACE_EXISTING));
+        StandardCopyOption.REPLACE_EXISTING), "Can't copy files");
 
     // unzip WDT installation file into work dir
     unzipWDTInstallationFile(errorpathAIPath1.toString());
@@ -803,8 +822,7 @@ public class ItMiiAuxiliaryImage {
     // push image to repo for multi node cluster
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
       logger.info("docker push image {0} to registry {1}", errorPathAuxiliaryImage1, DOMAIN_IMAGES_REPO);
-      assertTrue(dockerPush(errorPathAuxiliaryImage1),
-          String.format("docker push failed for image %s", errorPathAuxiliaryImage1));
+      dockerLoginAndPushImageToRegistry(miiAuxiliaryImage1);
     }
 
     // create domain custom resource using auxiliary images
@@ -820,18 +838,20 @@ public class ItMiiAuxiliaryImage {
         domainUid, errorPathAuxiliaryImage1, errorpathDomainNamespace);
     assertDoesNotThrow(() -> createDomainCustomResource(domainCR), "createDomainCustomResource throws Exception");
 
-    // check the introspector pod log contains the expected error msg
+    // check the introspector pod log contains the expected error message
     String expectedErrorMsg = "cp: can't open '/auxiliary/test1.txt': Permission denied";
-    String introspectorPodName = assertDoesNotThrow(() -> getIntrospectorPodName(domainUid, errorpathDomainNamespace));
+    String introspectorPodName = assertDoesNotThrow(() -> getIntrospectorPodName(domainUid, errorpathDomainNamespace),
+        "Can't get introspector's pod name");
     checkPodLogContainsString(errorpathDomainNamespace, introspectorPodName, expectedErrorMsg);
 
-    // check the domain event contains the expected error msg
+    // check the domain event contains the expected error message
     checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
         "Warning", timestamp, expectedErrorMsg);
 
-    // check the operator pod log contains the expected error msg
+    // check the operator pod log contains the expected error message
     String operatorPodName =
-        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace),
+            "Can't get operator's pod name");
     checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
 
     // check there are no admin server and managed server pods and services not created
@@ -880,8 +900,10 @@ public class ItMiiAuxiliaryImage {
 
     // create stage dir for first auxiliary image containing domain configuration
     Path multipleAIPath1 = Paths.get(RESULTS_ROOT, "multipleauxiliaryimage1");
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleAIPath1.toFile()));
-    assertDoesNotThrow(() -> Files.createDirectories(multipleAIPath1));
+    assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleAIPath1.toFile()),
+        "Delete directory failed");
+    assertDoesNotThrow(() -> Files.createDirectories(multipleAIPath1),
+        "Failed to create directory");
 
     // create models dir and copy model, archive files if any for image1
     Path modelsPath1 = Paths.get(multipleAIPath1.toString(), "models");
@@ -889,11 +911,11 @@ public class ItMiiAuxiliaryImage {
     assertDoesNotThrow(() -> Files.copy(
         Paths.get(MODEL_DIR, MII_BASIC_WDT_MODEL_FILE),
         Paths.get(modelsPath1.toString(), MII_BASIC_WDT_MODEL_FILE),
-        StandardCopyOption.REPLACE_EXISTING));
+        StandardCopyOption.REPLACE_EXISTING), "Failed to copy file");
     assertDoesNotThrow(() -> Files.copy(
         Paths.get(MODEL_DIR, "multi-model-one-ds.20.yaml"),
         Paths.get(modelsPath1.toString(), "multi-model-one-ds.20.yaml"),
-        StandardCopyOption.REPLACE_EXISTING));
+        StandardCopyOption.REPLACE_EXISTING), "Failed to copy file");
 
     // build app
     assertTrue(buildAppArchive(defaultAppParams()
@@ -905,7 +927,7 @@ public class ItMiiAuxiliaryImage {
     assertDoesNotThrow(() -> Files.copy(
         Paths.get(ARCHIVE_DIR,  MII_BASIC_APP_NAME + ".zip"),
         Paths.get(modelsPath1.toString(), MII_BASIC_APP_NAME + ".zip"),
-        StandardCopyOption.REPLACE_EXISTING));
+        StandardCopyOption.REPLACE_EXISTING), "Failed to copy file");
 
     // create image1 with domain configuration only
     createAuxiliaryImage(multipleAIPath1.toString(),
@@ -914,16 +936,17 @@ public class ItMiiAuxiliaryImage {
     // push image1 to repo for multi node cluster
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
       logger.info("docker push image {0} to registry {1}", miiAuxiliaryImage4, DOMAIN_IMAGES_REPO);
-      assertTrue(dockerPush(miiAuxiliaryImage4), String.format("docker push failed for image %s", miiAuxiliaryImage4));
+      dockerLoginAndPushImageToRegistry(miiAuxiliaryImage4);
     }
 
     // create stage dir for second auxiliary image
     Path multipleAIPath2 = Paths.get(RESULTS_ROOT, "multipleauxiliaryimage2");
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleAIPath2.toFile()));
-    assertDoesNotThrow(() -> Files.createDirectories(multipleAIPath2));
+    assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleAIPath2.toFile()),
+        "Delete directory failed");
+    assertDoesNotThrow(() -> Files.createDirectories(multipleAIPath2), "Create directory failed");
 
     Path modelsPath2 = Paths.get(multipleAIPath2.toString(), "models");
-    assertDoesNotThrow(() -> Files.createDirectories(modelsPath2));
+    assertDoesNotThrow(() -> Files.createDirectories(modelsPath2), "Create directory failed");
 
     // unzip 1.9.15 version WDT installation file into work dir
     String wdtURL = "https://github.com/oracle/weblogic-deploy-tooling/releases/release-1.9.15";
@@ -936,16 +959,19 @@ public class ItMiiAuxiliaryImage {
     // push image2 to repo for multi node cluster
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
       logger.info("docker push image {0} to registry {1}", miiAuxiliaryImage5, DOMAIN_IMAGES_REPO);
-      assertTrue(dockerPush(miiAuxiliaryImage5), String.format("docker push failed for image %s", miiAuxiliaryImage5));
+      dockerLoginAndPushImageToRegistry(miiAuxiliaryImage5);
     }
 
     // create stage dir for third auxiliary image with latest wdt installation files only
     Path multipleAIPath3 = Paths.get(RESULTS_ROOT, "multipleauxiliaryimage3");
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleAIPath3.toFile()));
-    assertDoesNotThrow(() -> Files.createDirectories(multipleAIPath3));
+    assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleAIPath3.toFile()),
+        "Delete directory failed");
+    assertDoesNotThrow(() -> Files.createDirectories(multipleAIPath3),
+        "Create directory failed");
 
     Path modelsPath3 = Paths.get(multipleAIPath3.toString(), "models");
-    assertDoesNotThrow(() -> Files.createDirectories(modelsPath3));
+    assertDoesNotThrow(() -> Files.createDirectories(modelsPath3),
+        "Create directory failed");
 
     // unzip WDT installation file into work dir
     unzipWDTInstallationFile(multipleAIPath3.toString());
@@ -957,7 +983,8 @@ public class ItMiiAuxiliaryImage {
     // push image3 to repo for multi node cluster
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
       logger.info("docker push image {0} to registry {1}", miiAuxiliaryImage6, DOMAIN_IMAGES_REPO);
-      assertTrue(dockerPush(miiAuxiliaryImage6), String.format("docker push failed for image %s", miiAuxiliaryImage6));
+      //assertTrue(dockerLoginAndPushImageToRegistry(miiAuxiliaryImage6), String.format("docker push failed for image %s", miiAuxiliaryImage6));
+      dockerLoginAndPushImageToRegistry(miiAuxiliaryImage6);
     }
 
     // create domain custom resource using 2 auxiliary images ( image1, image2)
@@ -1077,6 +1104,18 @@ public class ItMiiAuxiliaryImage {
 
     if (miiAuxiliaryImage3 != null) {
       deleteImage(miiAuxiliaryImage3);
+    }
+
+    if (miiAuxiliaryImage4 != null) {
+      deleteImage(miiAuxiliaryImage4);
+    }
+
+    if (miiAuxiliaryImage5 != null) {
+      deleteImage(miiAuxiliaryImage5);
+    }
+
+    if (miiAuxiliaryImage6 != null) {
+      deleteImage(miiAuxiliaryImage6);
     }
   }
 
