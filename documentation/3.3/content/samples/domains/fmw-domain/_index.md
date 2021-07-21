@@ -26,7 +26,7 @@ The following prerequisites must be met prior to running the create domain scrip
 * Create a Kubernetes Namespace for the domain unless you intend to use the default namespace.
 * In the same Kubernetes Namespace, create the Kubernetes PersistentVolume (PV) where the domain
   home will be hosted, and the Kubernetes PersistentVolumeClaim (PVC) for the domain. For samples
-  to create a PV and PVC, see [Create sample PV and PVC]({{< relref "/samples/simple/storage/_index.md" >}}).
+  to create a PV and PVC, see [Create sample PV and PVC]({{< relref "/samples/storage/_index.md" >}}).
   By default, the `create-domain.sh` script creates a domain with the `domainUID` set to `domain1`
   and expects the PVC `domain1-weblogic-sample-pvc` to be present. You can create
   `domain1-weblogic-sample-pvc` using
