@@ -983,7 +983,6 @@ public class ItMiiAuxiliaryImage {
     // push image3 to repo for multi node cluster
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
       logger.info("docker push image {0} to registry {1}", miiAuxiliaryImage6, DOMAIN_IMAGES_REPO);
-      //assertTrue(dockerLoginAndPushImageToRegistry(miiAuxiliaryImage6), String.format("docker push failed for image %s", miiAuxiliaryImage6));
       dockerLoginAndPushImageToRegistry(miiAuxiliaryImage6);
     }
 
