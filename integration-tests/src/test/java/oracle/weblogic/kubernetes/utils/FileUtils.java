@@ -323,15 +323,16 @@ public class FileUtils {
    * @param unzipLocation location to unzip the files
    */
   public static void unzipWDTInstallationFile(String unzipLocation) {
-    unzipWDTInstallationFile(unzipLocation, WDT_DOWNLOAD_URL);
+    unzipWDTInstallationFile(unzipLocation, WDT_DOWNLOAD_URL, WDT_DOWNLOAD_FILENAME_DEFAULT);
   }
 
   /**
    * Download and unzip the WDT installation files.
    * @param unzipLocation location to unzip the files
+   * @param wdtFileName zip archive file name
    */
-  public static void unzipWDTInstallationFile(String unzipLocation, String locationURL) {
-    Path wlDeployZipFile = Paths.get(DOWNLOAD_DIR, WDT_DOWNLOAD_FILENAME_DEFAULT);
+  public static void unzipWDTInstallationFile(String unzipLocation, String locationURL, String wdtFileName) {
+    Path wlDeployZipFile = Paths.get(DOWNLOAD_DIR, wdtFileName);
     if (!Files.exists(wlDeployZipFile)) {
       assertTrue(Installer.withParams(
           installWdtParams(locationURL))

@@ -50,6 +50,7 @@ import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_FILENAME_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
@@ -131,8 +132,9 @@ public class ItMiiAuxiliaryImage {
 
   /**
    * Install Operator.
+   *
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
-   *        JUnit engine parameter resolution mechanism
+   *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
   public static void initAll(@Namespaces(4) List<String> namespaces) {
@@ -155,7 +157,7 @@ public class ItMiiAuxiliaryImage {
     wdtDomainNamespace = namespaces.get(3);
 
     // install and verify operator
-    installAndVerifyOperator(opNamespace, domainNamespace, errorpathDomainNamespace,wdtDomainNamespace);
+    installAndVerifyOperator(opNamespace, domainNamespace, errorpathDomainNamespace, wdtDomainNamespace);
   }
 
 
@@ -219,7 +221,7 @@ public class ItMiiAuxiliaryImage {
 
     // copy app archive to models
     assertDoesNotThrow(() -> Files.copy(
-        Paths.get(ARCHIVE_DIR,  MII_BASIC_APP_NAME + ".zip"),
+        Paths.get(ARCHIVE_DIR, MII_BASIC_APP_NAME + ".zip"),
         Paths.get(modelsPath1.toString(), MII_BASIC_APP_NAME + ".zip"),
         StandardCopyOption.REPLACE_EXISTING));
 
@@ -289,7 +291,7 @@ public class ItMiiAuxiliaryImage {
         auxiliaryImagePath + "/test.txt",
         Paths.get(RESULTS_ROOT, "/test.txt")), " Can't find file in the pod, or failed to copy");
 
-    assertDoesNotThrow(() ->  {
+    assertDoesNotThrow(() -> {
       String fileContent = Files.readAllLines(Paths.get(RESULTS_ROOT, "/test.txt")).get(0);
       assertEquals("2", fileContent, "The content of the file from auxiliary image path "
           + fileContent + "does not match the expected 2");
@@ -313,10 +315,10 @@ public class ItMiiAuxiliaryImage {
     // replace DataSource URL info in the  model file
     assertDoesNotThrow(() -> replaceStringInFile(Paths.get(modelsPath1.toString(),
         "/multi-model-one-ds.20.yaml").toString(), "xxx.xxx.x.xxx:1521",
-        "localhost:7001"),"Can't replace datasource url in the model file");
+        "localhost:7001"), "Can't replace datasource url in the model file");
     assertDoesNotThrow(() -> replaceStringInFile(Paths.get(modelsPath1.toString(),
         "/multi-model-one-ds.20.yaml").toString(), "ORCLCDB",
-        "dbsvc"),"Can't replace datasource url in the model file");
+        "dbsvc"), "Can't replace datasource url in the model file");
 
     // create image3 with model and wdt installation files
     createAuxiliaryImage(multipleAIPath1.toString(),
@@ -334,7 +336,8 @@ public class ItMiiAuxiliaryImage {
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
     assertTrue(checkSystemResourceConfig(adminServiceNodePort,
         "JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams",
-        "jdbc:oracle:thin:@\\/\\/xxx.xxx.x.xxx:1521\\/ORCLCDB"),"Can't find expected URL configuration for DataSource");
+        "jdbc:oracle:thin:@\\/\\/xxx.xxx.x.xxx:1521\\/ORCLCDB"),
+        "Can't find expected URL configuration for DataSource");
 
     logger.info("Found the DataResource configuration");
 
@@ -708,7 +711,7 @@ public class ItMiiAuxiliaryImage {
         .append(" \"path\": " + searchString + ",")
         .append(" \"value\":  \"exit 1\"")
         .append(" }]");
-    logger.info("Auxiliary Image patch string: " +  patchStr);
+    logger.info("Auxiliary Image patch string: " + patchStr);
 
     V1Patch patch = new V1Patch((patchStr).toString());
 
@@ -748,7 +751,7 @@ public class ItMiiAuxiliaryImage {
     patchStr.append("\"op\": \"remove\",")
         .append(" \"path\": " + searchString)
         .append(" }]");
-    logger.info("Auxiliary Image patch string: " +  patchStr);
+    logger.info("Auxiliary Image patch string: " + patchStr);
 
     V1Patch patch1 = new V1Patch((patchStr).toString());
 
@@ -809,7 +812,7 @@ public class ItMiiAuxiliaryImage {
 
     // copy app archive to models
     assertDoesNotThrow(() -> Files.copy(
-        Paths.get(ARCHIVE_DIR,  MII_BASIC_APP_NAME + ".zip"),
+        Paths.get(ARCHIVE_DIR, MII_BASIC_APP_NAME + ".zip"),
         Paths.get(modelsPath1.toString(), MII_BASIC_APP_NAME + ".zip"),
         StandardCopyOption.REPLACE_EXISTING), "Can't copy files");
 
@@ -926,7 +929,7 @@ public class ItMiiAuxiliaryImage {
 
     // copy app archive to models
     assertDoesNotThrow(() -> Files.copy(
-        Paths.get(ARCHIVE_DIR,  MII_BASIC_APP_NAME + ".zip"),
+        Paths.get(ARCHIVE_DIR, MII_BASIC_APP_NAME + ".zip"),
         Paths.get(modelsPath1.toString(), MII_BASIC_APP_NAME + ".zip"),
         StandardCopyOption.REPLACE_EXISTING), "Failed to copy file");
 
@@ -950,8 +953,11 @@ public class ItMiiAuxiliaryImage {
     assertDoesNotThrow(() -> Files.createDirectories(modelsPath2), "Create directory failed");
 
     // unzip older version WDT installation file into work dir
-    String wdtURL = "https://github.com/oracle/weblogic-deploy-tooling/releases/release-" + WDT_TEST_VERSION;
-    unzipWDTInstallationFile(multipleAIPath2.toString(), wdtURL);
+    String wdtURL = "https://github.com/oracle/weblogic-deploy-tooling/releases/download/release-"
+        + WDT_TEST_VERSION + "/"
+        + WDT_DOWNLOAD_FILENAME_DEFAULT;
+    unzipWDTInstallationFile(multipleAIPath2.toString(), wdtURL,
+        "weblogic-deploy" + WDT_TEST_VERSION + ".zip");
 
     // create image2 with wdt installation files only
     createAuxiliaryImage(multipleAIPath2.toString(),
@@ -1007,19 +1013,37 @@ public class ItMiiAuxiliaryImage {
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
     assertTrue(checkSystemResourceConfig(adminServiceNodePort,
         "JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams",
-        "jdbc:oracle:thin:@\\/\\/xxx.xxx.x.xxx:1521\\/ORCLCDB"),"Can't find expected URL configuration for DataSource");
+        "jdbc:oracle:thin:@\\/\\/xxx.xxx.x.xxx:1521\\/ORCLCDB"),
+        "Can't find expected URL configuration for DataSource");
 
     logger.info("Found the DataResource configuration");
+    //check WDT version in the image equals the  provided WDT_TEST_VERSION
+
+    assertDoesNotThrow(() -> {
+      String wdtVersion = checkWDTVersion(wdtDomainNamespace, auxiliaryImagePath);
+      assertEquals("WebLogic Deploy Tooling " + WDT_TEST_VERSION, wdtVersion,
+          " Used WDT in the auxiliary image does not match the expected");
+    }, "Can't retrieve wdt version file or version does match the expected");
 
     //updating wdt to latest version by patching the domain with image3
     patchDomainWithAuxiliaryImageAndVerify(miiAuxiliaryImage5, miiAuxiliaryImage6, domainUid, wdtDomainNamespace);
+
+    //check that WDT version is changed
+    assertDoesNotThrow(() -> {
+      String wdtVersion = checkWDTVersion(wdtDomainNamespace, auxiliaryImagePath);
+      assertNotEquals("WebLogic Deploy Tooling " + WDT_TEST_VERSION,wdtVersion,
+          " Used WDT in the auxiliary image was not updated");
+    }, "Can't retrieve wdt version file "
+        + "or wdt was not updated after patching with auxiliary image");
+
     // check configuration for DataSource in the running domain
     adminServiceNodePort
         = getServiceNodePort(wdtDomainNamespace, getExternalServicePodName(adminServerPodName), "default");
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
     assertTrue(checkSystemResourceConfig(adminServiceNodePort,
         "JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams",
-        "jdbc:oracle:thin:@\\/\\/xxx.xxx.x.xxx:1521\\/ORCLCDB"),"Can't find expected URL configuration for DataSource");
+        "jdbc:oracle:thin:@\\/\\/xxx.xxx.x.xxx:1521\\/ORCLCDB"),
+        "Can't find expected URL configuration for DataSource");
 
   }
 
@@ -1052,7 +1076,7 @@ public class ItMiiAuxiliaryImage {
         .append(" \"path\": " + searchString + ",")
         .append(" \"value\":  \"" + newImageName + "\"")
         .append(" }]");
-    logger.info("Auxiliary Image patch string: " +  patchStr);
+    logger.info("Auxiliary Image patch string: " + patchStr);
 
     //get current timestamp before domain rolling restart to verify domain roll events
     podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace, adminServerPodName,
@@ -1183,4 +1207,14 @@ public class ItMiiAuxiliaryImage {
     logger.info("Found the DataResource configuration");
   }
 
+  private String checkWDTVersion(String domainNamespace, String auxiliaryImagePath) throws Exception {
+    assertDoesNotThrow(() -> FileUtils.deleteQuietly(Paths.get(RESULTS_ROOT, "/WDTversion.txt").toFile()));
+    assertDoesNotThrow(() -> copyFileFromPod(domainNamespace,
+        adminServerPodName, "weblogic-server",
+        auxiliaryImagePath + "/weblogic-deploy/VERSION.txt",
+        Paths.get(RESULTS_ROOT, "/WDTversion.txt")), " Can't find file in the pod, or failed to copy");
+
+
+    return Files.readAllLines(Paths.get(RESULTS_ROOT, "/WDTversion.txt")).get(0);
+  }
 }
