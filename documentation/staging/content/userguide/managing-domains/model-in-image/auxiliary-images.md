@@ -265,7 +265,7 @@ domain-image-A:v1 (first)
 domain-image-B:v1
 cl-image-A:v1
 cl-image-B:v1
-app-image:v2 (last)
+ms-image-A:v1 (last)
 ```
 
 ### Sample
