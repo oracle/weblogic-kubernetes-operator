@@ -3,17 +3,33 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.Optional;
+import javax.annotation.Nonnull;
+
 import io.kubernetes.client.openapi.models.V1Service;
+import io.kubernetes.client.openapi.models.V1ServicePort;
+import io.kubernetes.client.openapi.models.V1ServiceSpec;
+import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.ServiceConfigurator;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import static oracle.kubernetes.operator.logging.MessageKeys.EXTERNAL_CHANNEL_SERVICE_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.EXTERNAL_CHANNEL_SERVICE_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.EXTERNAL_CHANNEL_SERVICE_REPLACED;
+import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 public class ExternalServiceHelperTest extends ServiceHelperTest {
+
+  private static final int NODE_PORT = 2300;
+  private static final int LISTEN_PORT = 2100;
 
   public ExternalServiceHelperTest() {
     super(new ExternalServiceTestFacade());
@@ -95,6 +111,36 @@ public class ExternalServiceHelperTest extends ServiceHelperTest {
     String getExpectedSelectorValue() {
       return getServerName();
     }
+  }
+
+  @ParameterizedTest
+  @ValueSource(strings = {"http", "https", "tcp", "tls"})
+  void whenIstioPortAdded_createExternalPort(String protocol) {
+    final String configuredChannelName = "istio";
+    final String channelName = protocol + "-" + configuredChannelName;
+    configureDomain().withIstio()
+        .configureAdminServer().configureAdminService().withChannel(configuredChannelName, NODE_PORT);
+    getServerConfig().addNetworkAccessPoint(
+        new NetworkAccessPoint(channelName, "t3", LISTEN_PORT, 0));
+
+    final V1ServicePort createdPort = getServerPortWithName(channelName);
+    assertThat(createdPort, notNullValue());
+    assertThat(createdPort.getPort(), equalTo(LISTEN_PORT));
+    assertThat(createdPort.getNodePort(), equalTo(NODE_PORT));
+  }
+
+  V1ServicePort getServerPortWithName(String name) {
+    return getCreatedServicePorts().stream()
+          .filter(p -> name.equals(p.getName()))
+          .findFirst().orElse(null);
+  }
+
+  @Nonnull
+  private List<V1ServicePort> getCreatedServicePorts() {
+    return Optional.ofNullable(createService())
+          .map(V1Service::getSpec)
+          .map(V1ServiceSpec::getPorts)
+          .orElse(Collections.emptyList());
   }
 
 }
