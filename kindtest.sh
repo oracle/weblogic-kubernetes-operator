@@ -315,6 +315,6 @@ else
 fi
 
 echo "Collect journalctl logs"
-docker exec -it kind-worker journalctl --utc --dmesg --system > "${RESULT_ROOT}/journalctl-kind-worker.out"
-docker exec -it kind-control-plane journalctl --utc --dmesg --system > "${RESULT_ROOT}/journalctl-kind-control-plane.out"
-docker exec -it kind-registry journalctl --utc --dmesg --system > "${RESULT_ROOT}/journalctl-kind-registry.out"
+docker exec kind-worker journalctl --utc --dmesg --system > "${RESULT_ROOT}/journalctl-kind-worker.out"
+docker exec kind-control-plane journalctl --utc --dmesg --system > "${RESULT_ROOT}/journalctl-kind-control-plane.out"
+docker exec kind-registry journalctl --utc --dmesg --system > "${RESULT_ROOT}/journalctl-kind-registry.out"
