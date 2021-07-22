@@ -14,6 +14,7 @@ description = "Auxiliary images are an alternative approach for supplying a doma
    - [Auxiliary images](#auxiliary-images)
    - [Auxiliary volumes and paths](#auxiliary-volumes-and-paths)
    - [Model in Image paths](#model-in-image-paths)
+ - [Auxiliary images file loading order](#auxiliary-images-file-loading-order)
  - [Sample](#sample)
     - [Step 1: Prerequisites](#step-1-prerequisites)
     - [Step 2: Create the auxiliary image](#step-2-create-the-auxiliary-image)
@@ -21,6 +22,16 @@ description = "Auxiliary images are an alternative approach for supplying a doma
     - [Step 4: Invoke the web application](#step-4-invoke-the-web-application)
 
 ### Introduction
+
+{{% notice warning %}}
+The auxiliary images feature is a work in progress and is currently unsupported.
+Its configuration or behavior may change between releases and it is disabled by default.
+If you want to enable this feature, then set your operator's `"featureGates"`
+Helm configuration attribute to include `"AuxiliaryImage=true"`.
+The `"featureGates"` attribute acknowledges use of an unsupported feature,
+will not be required after auxiliary images are fully supported,
+defaults to being unset, and accepts a comma-separated list.
+{{% /notice %}}
 
 Auxiliary images are an alternative approach for including Model in Image model files,
 application archive files, WebLogic Deploying Tooling installation files,
@@ -123,6 +134,79 @@ respectively, and must be changed to specify a directory in
       wdtInstallHome: "/auxiliary/weblogic-deploy"
 ```
 
+### File merge order
+Refer to this section if you need to control the order in which files from auxiliary images 
+are included in the Pod's main container. 
+
+If you specify multiple auxiliary images at a particular scope, then the files from those 
+images will be included in the order in which images appear under `serverPod.auxiliaryImages`.
+If you specify the multiple auxiliary images at the different scopes, then the files from the
+auxiliary images specified at the domain scope will be included first, the files from the auxiliary
+images at the WebLogic cluster scope will be included next and finally, the files from auxiliary images
+at the server scope will be included.  
+If you have the same files (under the same mountPath) in these auxiliary images, then the files from the
+auxiliary image at the WebLogic cluster scope will override the same files from the auxiliary image at the
+domain scope. Similarly, files from the auxiliary images at the server scope will 
+override the same files from the auxiliary image at the WebLogic cluster scope.
+
+If you have overlapping directories under the `mountPath` of different auxiliary images,
+then the directories from the auxiliary images that are loaded last will overwrite the directories
+from the previously loaded auxiliary images. If this is not your intention, then you can customize
+the `copyCommand` for the auxiliary image. E.g. you can save the directory created from a previous
+auxiliary image before performing a recursive copy. To save a previously created directory `mydir`
+under `mountPath` with name `mydir_v1`, you can do this:
+```
+mv $TARGET_MOUNT_PATH/mydir $TARGET_MOUNT_PATH/mydir_v1; cp -R $COMMON_MOUNT_PATH/mydir/* $TARGET_MOUNT_PATH/mydir
+```
+
+If you have two or more model files that refer to the same configuration provided in the same auxiliary
+image or multiple auxiliary images, refer to
+[Model file naming and loading order]({{< relref "/userguide/managing-domains/model-in-image/model-files#model-file-naming-and-loading-order">}})
+for model files loading order.
+
+For example, if you have these auxiliary images are defined at the domain, the WebLogic cluster,
+and the server scope (myserver is part of the mycluster).
+
+```
+apiVersion: "weblogic.oracle/v8"
+kind: Domain
+metadata:
+  name: sample-domain1
+  namespace: sample-domain1-ns
+  labels:
+    weblogic.domainUID: sample-domain1
+spec:
+  serverPod:
+    auxiliaryImages:
+    - image: model-in-image:v1
+      volume: auxiliaryImageVolume1
+    - image: app-image:v1
+      volume: auxiliaryImageVolume1
+  cluster:
+  - name: mycluster
+    serverPod:
+      auxiliaryImages:
+      - image: model-in-image:v2
+        volume: auxiliaryImageVolume1
+      - image: second-app-image:v1
+        volume: auxiliaryImageVolume1
+  managedServers:
+  - serverName: "myserver"
+    serverPod:
+      auxiliaryImages:
+      - image: app-image:v2
+        volume: auxiliaryImageVolume1
+
+```
+Then the files from different auxiliary images will be included in the below order.
+
+```
+model-in-image:v1 (first)
+app-image:v1
+model-in-image:v2
+second-app-image:v1
+app-image:v2 (last)
+```
 ### Sample
 
 This sample demonstrates deploying a Model in Image domain that uses
