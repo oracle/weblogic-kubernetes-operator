@@ -44,6 +44,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.WDT_TEST_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
@@ -281,7 +282,7 @@ public class ItMiiAuxiliaryImage {
     // check configuration for JMS
     checkConfiguredJMSresouce(domainNamespace, adminServerPodName);
 
-    //checking the order of loading for the common mount images, expecting file with content =2
+    //checking the order of loading for the auxiliary images, expecting file with content =2
     assertDoesNotThrow(() -> FileUtils.deleteQuietly(Paths.get(RESULTS_ROOT, "/test.txt").toFile()));
     assertDoesNotThrow(() -> copyFileFromPod(domainNamespace,
         adminServerPodName, "weblogic-server",
@@ -290,7 +291,7 @@ public class ItMiiAuxiliaryImage {
 
     assertDoesNotThrow(() ->  {
       String fileContent = Files.readAllLines(Paths.get(RESULTS_ROOT, "/test.txt")).get(0);
-      assertEquals("2", fileContent, "The content of the file from common mount path "
+      assertEquals("2", fileContent, "The content of the file from auxiliary image path "
           + fileContent + "does not match the expected 2");
     }, "File from image2 was not loaded in the expected order");
   }
@@ -511,7 +512,7 @@ public class ItMiiAuxiliaryImage {
 
     createSecretsForDomain(adminSecretName, encryptionSecretName, errorpathDomainNamespace);
 
-    // create stage dir for common mount image
+    // create stage dir for auxiliary image
     Path errorpathAIPath2 = Paths.get(RESULTS_ROOT, "errorpathauxiimage2");
     assertDoesNotThrow(() -> FileUtils.deleteDirectory(errorpathAIPath2.toFile()),
         "Delete directory failed");
@@ -546,7 +547,7 @@ public class ItMiiAuxiliaryImage {
         auxiliaryImageVolumeName, errorPathAuxiliaryImage2);
 
     // create domain and verify it is failed
-    logger.info("Creating domain {0} with common mount image {1} in namespace {2}",
+    logger.info("Creating domain {0} with auxiliary image {1} in namespace {2}",
         domainUid, errorPathAuxiliaryImage2, errorpathDomainNamespace);
     assertDoesNotThrow(() -> createDomainCustomResource(domainCR), "createDomainCustomResource throws Exception");
 
@@ -948,8 +949,8 @@ public class ItMiiAuxiliaryImage {
     Path modelsPath2 = Paths.get(multipleAIPath2.toString(), "models");
     assertDoesNotThrow(() -> Files.createDirectories(modelsPath2), "Create directory failed");
 
-    // unzip 1.9.15 version WDT installation file into work dir
-    String wdtURL = "https://github.com/oracle/weblogic-deploy-tooling/releases/release-1.9.15";
+    // unzip older version WDT installation file into work dir
+    String wdtURL = "https://github.com/oracle/weblogic-deploy-tooling/releases/release-" + WDT_TEST_VERSION;
     unzipWDTInstallationFile(multipleAIPath2.toString(), wdtURL);
 
     // create image2 with wdt installation files only
