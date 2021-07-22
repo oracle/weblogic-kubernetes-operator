@@ -14,7 +14,7 @@ description = "Auxiliary images are an alternative approach for supplying a doma
    - [Auxiliary images](#auxiliary-images)
    - [Auxiliary volumes and paths](#auxiliary-volumes-and-paths)
    - [Model in Image paths](#model-in-image-paths)
- - [Auxiliary images file loading order](#auxiliary-images-file-loading-order)
+ - [File merge order](#file-merge-order)
  - [Sample](#sample)
     - [Step 1: Prerequisites](#step-1-prerequisites)
     - [Step 2: Create the auxiliary image](#step-2-create-the-auxiliary-image)
@@ -22,17 +22,6 @@ description = "Auxiliary images are an alternative approach for supplying a doma
     - [Step 4: Invoke the web application](#step-4-invoke-the-web-application)
 
 ### Introduction
-
-{{% notice warning %}}
-The auxiliary images feature is a work in progress and is currently unsupported.
-Its configuration or behavior may change between releases and it is disabled by default.
-If you want to enable this feature, then set your operator's `"featureGates"`
-Helm configuration attribute to include `"AuxiliaryImage=true"`.
-The `"featureGates"` attribute acknowledges use of an unsupported feature,
-will not be required after auxiliary images are fully supported,
-defaults to being unset, and accepts a comma-separated list.
-{{% /notice %}}
-
 Auxiliary images are an alternative approach for including Model in Image model files,
 application archive files, WebLogic Deploying Tooling installation files,
 or other types of files, in your pods.
