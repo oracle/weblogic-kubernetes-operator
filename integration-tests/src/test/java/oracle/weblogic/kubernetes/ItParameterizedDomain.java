@@ -206,7 +206,6 @@ class ItParameterizedDomain {
   private static String encryptionSecretName = "encryptionsecret";
   private static Map<String, Quantity> resourceRequest = new HashMap<>();
   private static Map<String, Quantity> resourceLimit = new HashMap<>();
-  private static Map<String, Quantity> resourceLimit1 = new HashMap<>();
 
   private String curlCmd = null;
 
@@ -269,11 +268,9 @@ class ItParameterizedDomain {
 
     // set resource request and limit
     resourceRequest.put("cpu", new Quantity("250m"));
-    resourceRequest.put("memory", new Quantity("256Mi"));
+    resourceRequest.put("memory", new Quantity("768Mi"));
     resourceLimit.put("cpu", new Quantity("2"));
     resourceLimit.put("memory", new Quantity("2Gi"));
-    resourceLimit1.put("cpu", new Quantity("2"));
-    resourceLimit1.put("memory", new Quantity("256Mi"));
 
     // create model in image domain with multiple clusters
     miiDomain = createMiiDomainWithMultiClusters(miiDomainUid, miiDomainNamespace);
@@ -908,12 +905,7 @@ class ItParameterizedDomain {
       clusterList.add(new Cluster()
           .clusterName(CLUSTER_NAME_PREFIX + i)
           .replicas(replicaCount)
-          .serverStartState("RUNNING")
-              .serverPod(new ServerPod()
-              .resources(new V1ResourceRequirements()
-                      .requests(resourceRequest)
-                      .limits(resourceLimit1)))
-      );
+          .serverStartState("RUNNING"));
     }
 
     // create the domain CR
