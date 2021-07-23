@@ -241,7 +241,7 @@ public interface TestConstants {
   public static final String WDT_BASIC_IMAGE_DOMAINTYPE = "wdt";
   public static final String WDT_BASIC_APP_NAME = "sample-app";
   public static final String WDT_TEST_VERSION = Optional.ofNullable(System.getenv(
-      "WDT_VERSION"))
+      "WDT_TEST_VERSION"))
       .orElse("1.9.15");
 
   //monitoring constants
