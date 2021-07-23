@@ -90,7 +90,7 @@ For a description of model file macro references to secrets and environment vari
 
 Refer to this section if you need to control the order in which your model files are loaded.  The order is important when two or more model files refer to the same configuration, because the last model that's loaded has the highest precedence.
 
-During domain home creation, model, and property files are first loaded from the `configuration.models.modelHome` directory within the image, which defaults to `/u01/wdt/models`, and are then loaded from the optional WDT ConfigMap, described in [Optional WDT model ConfigMap]({{< relref "/userguide/managing-domains/model-in-image/usage/_index.md#optional-wdt-model-configmap" >}}).
+During domain home creation, model and property files are first loaded from the `configuration.models.modelHome` directory within the image, which defaults to `/u01/wdt/models`. After the `modelHome` files are all loaded, the domain home creation then loads files from the optional WDT ConfigMap, described in [Optional WDT model ConfigMap]({{< relref "/userguide/managing-domains/model-in-image/usage/_index.md#optional-wdt-model-configmap" >}}). If a `modelHome` file and ConfigMap file both have the same name, then both files are loaded.
 
 The loading order within each of these locations is first determined using the convention `filename.##.yaml` and `filename.##.properties`, where `##` are digits that specify the desired order when sorted numerically. Additional details:
 
@@ -101,7 +101,11 @@ The loading order within each of these locations is first determined using the c
  * File names that don't include `.##.` sort _before_ other files as if they implicitly have the lowest possible `.##.`  
  * If two files share the same number, the loading order is determined alphabetically as a tie-breaker.
 
-If an image file and ConfigMap file both have the same name, then both files are loaded.
+> Note: If `configuration.models.modelHome` files are supplied by combining multiple
+[Auxiliary images]({{< relref "/userguide/managing-domains/model-in-image/auxiliary-images.md" >}}),
+then the files in this directory are populated according to their
+[Auxiliary image merge order]({{< relref "/userguide/managing-domains/model-in-image/auxiliary-images#file-merge-order" >}})
+before the loading order is determined.
 
 For example, if you have these files in the model home directory `/u01/wdt/models`:
 
@@ -128,6 +132,8 @@ y.yaml,main-model.10.yaml,my-model.10.yaml,jdbc.20.yaml,z.yaml,jdbc-dev-urlprops
 Property files (ending in `.properties`) use the same sorting algorithm, but they are appended together into a single file prior to passing them to the WebLogic Deploy Tool.
 
 ### Model file macros
+
+WDT models can have macros that reference secrets or environment variables.
 
 #### Using secrets in model files
 
