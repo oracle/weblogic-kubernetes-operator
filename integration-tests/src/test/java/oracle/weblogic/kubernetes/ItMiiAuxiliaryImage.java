@@ -48,6 +48,7 @@ import static oracle.weblogic.kubernetes.TestConstants.WDT_TEST_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_FILENAME_DEFAULT;
@@ -957,7 +958,7 @@ public class ItMiiAuxiliaryImage {
         + WDT_TEST_VERSION + "/"
         + WDT_DOWNLOAD_FILENAME_DEFAULT;
     unzipWDTInstallationFile(multipleAIPath2.toString(), wdtURL,
-        "weblogic-deploy" + WDT_TEST_VERSION + ".zip");
+        DOWNLOAD_DIR + "/ver" +WDT_TEST_VERSION );
 
     // create image2 with wdt installation files only
     createAuxiliaryImage(multipleAIPath2.toString(),

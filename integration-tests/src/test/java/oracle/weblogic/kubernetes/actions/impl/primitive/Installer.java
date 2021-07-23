@@ -145,44 +145,48 @@ public class Installer {
    * @return true if the command succeeds 
    */
   public boolean download() {
- 
+    return download(DOWNLOAD_DIR);
+  }
+
+  public boolean download(String downloadDir) {
+
     boolean downloadSucceeded = true;
     boolean unzipSucceeded = true;
     if (params.verify()
-        && new File(DOWNLOAD_DIR, getInstallerFileName(params.type())).exists()) {
+        && new File(downloadDir, getInstallerFileName(params.type())).exists()) {
       getLogger().fine("File {0} already exists.", getInstallerFileName(params.type()));
     } else {
-      // check and make sure DOWNLOAD_DIR exists; will create it if it is missing
-      checkDirectory(DOWNLOAD_DIR);
-      
+      // check and make sure downloadDir exists; will create it if it is missing
+      checkDirectory(downloadDir);
+
       // we are about to download the installer. We need to get the real version that is requested
       try {
-        params.location(getActualLocationIfNeeded(params.location(), params.type()));
+        params.location(getActualLocationIfNeeded(params.location(), params.type(), downloadDir));
       } catch (RuntimeException re) {
         // already logged
         return false;
       }
-      
+
       downloadSucceeded = Command.withParams(
-          defaultCommandParams() 
-              .command(buildDownloadCommand())
+          defaultCommandParams()
+              .command(buildDownloadCommand(downloadDir))
               .redirect(params.redirect()))
           .execute();
     }
     if (params.unzip()) {
       // only unzip WIT once
       if (!(doesFileExist(IMAGE_TOOL)) || !(doesFileExist(REMOTECONSOLE_FILE))) {
-        unzipSucceeded = unzip();
+        unzipSucceeded = unzip(downloadDir);
       }
     }
     return downloadSucceeded && unzipSucceeded;
   }
 
-  private boolean unzip() {
+  private boolean unzip(String downloadDir) {
     String command = String.format(
         "unzip -o -d %s %s/%s", 
         WORK_DIR,
-        DOWNLOAD_DIR,
+        downloadDir,
         getInstallerFileName(params.type()));
 
     return Command.withParams(
@@ -192,11 +196,11 @@ public class Installer {
         .execute();
   }
 
-  private String buildDownloadCommand() {
+  private String buildDownloadCommand(String downloadDir) {
     String command = String.format(
         "curl -fL %s -o %s/%s",
         params.location(),
-        DOWNLOAD_DIR,
+        downloadDir,
         getInstallerFileName(params.type()));
     return command;
   }
@@ -211,7 +215,8 @@ public class Installer {
    */
   private String getActualLocationIfNeeded(
       String location,
-      String type
+      String type,
+      String downloadDir
   ) throws RuntimeException {
     String actualLocation = location;
     if (needToGetActualLocation(location, type)) {
@@ -219,7 +224,7 @@ public class Installer {
       String command = String.format(
           "curl -fL %s -o %s/%s-%s",
           location,
-          DOWNLOAD_DIR,
+          downloadDir,
           type,
           TMP_FILE_NAME);
  
@@ -241,7 +246,7 @@ public class Installer {
 
       command = String.format(
           "cat %s/%s-%s | grep 'releases/download' | awk '{ split($0,a,/href=\"/);%s | %s", 
-          DOWNLOAD_DIR, 
+          downloadDir,
           type, 
           TMP_FILE_NAME, 
           " print a[2] }'", 
