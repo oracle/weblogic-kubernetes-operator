@@ -42,7 +42,7 @@ Instead:
   and `domain.spec.configuration.model.modelHome` fields are set to
   reference a directory that contains the files from the smaller images.
 
-The advantages of auxiliary image for Model In Image domains are:
+The advantages of auxiliary images for Model In Image domains are:
 
 - Use or patch a WebLogic installation image without needing to include a WDT installation,
   application archive, or model artifacts within the image.
@@ -99,14 +99,14 @@ One or more auxiliary images can be configured in a domain resource
 Each array entry must define an `image` and `volume`
 where `image` is the name of an auxiliary image
 and the `volume` is the name of an [auxiliary image volume](#auxiliary-volumes-and-paths)
-as described above.
-You can optionally also specify an `imagePullPolicy`,
+as described previously.
+Optionally , you can also specify an `imagePullPolicy`,
 which defaults to `Always` if the `image` ends in `:latest` and to `IfNotPresent`,
 otherwise.
-You can also optionally customize
+Also, optionally, you can customize
 the command that is used to merge (copy) the auxiliary image's files
 into the auxiliary image volume during pod startup (this is rarely 
-needed, see [Performing replaces instead of merges](#performing-replaces-instead-of-merges) below for an example).
+needed, see [Performing replaces instead of merges](#performing-replaces-instead-of-merges) for an example).
 For details 
 about each field, see the [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md#auxiliary-image).
 
@@ -297,7 +297,7 @@ container image.
 
 #### Step 2: Create the auxiliary image
 
-Follow these steps to create a auxiliary image containing
+Follow these steps to create an auxiliary image containing
 Model In Image model files, application archives, and the WDT installation files:
 
 1. Create a model ZIP application archive and place it in the same directory
@@ -622,7 +622,7 @@ $ kubectl apply -f /tmp/mii-sample/domain-resources/WLS-AI/mii-initial-d1-WLS-AI
 
 **Note**: If you are choosing _not_ to use the predefined Domain YAML file
   and instead created your own Domain YAML file earlier, then substitute your
-  custom file name in the above command. Previously, we suggested naming it `/tmp/mii-sample/mii-initial.yaml`.
+  custom file name in the previous command. Previously, we suggested naming it `/tmp/mii-sample/mii-initial.yaml`.
 
 Now, if you run `kubectl get pods -n sample-domain1-ns --watch`, then you will see
 the introspector job run and your WebLogic Server pods start. The output will look something like this:
