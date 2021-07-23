@@ -12,20 +12,20 @@
     <title>Auxiliary images :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1627058242" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1627058242" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1627058242" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1627058242" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1627058242" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1627058242" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1627058242" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1627058242" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1627058242" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1627058242" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1627059678" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1627059678" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1627059678" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1627059678" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1627059678" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1627059678" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1627059678" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1627059678" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1627059678" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1627059678" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1627058242"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1627059678"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1627058242"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1627058242"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1627059678"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1627059678"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1627058242"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1627059678"></script>
 
     
   </div>
@@ -3158,6 +3158,7 @@
         <li><a href="#introduction">Introduction</a></li>
         <li><a href="#references">References</a></li>
         <li><a href="#configuration">Configuration</a></li>
+        <li><a href="#merge-order">Merge order</a></li>
         <li><a href="#sample">Sample</a></li>
       </ul>
     </li>
@@ -3191,9 +3192,16 @@
 <li><a href="#references">References</a></li>
 <li><a href="#configuration">Configuration</a>
 <ul>
-<li><a href="#auxiliary-images">Auxiliary images</a></li>
 <li><a href="#auxiliary-volumes-and-paths">Auxiliary volumes and paths</a></li>
+<li><a href="#auxiliary-images">Auxiliary images</a></li>
 <li><a href="#model-in-image-paths">Model in Image paths</a></li>
+</ul>
+</li>
+<li><a href="#merge-order">Merge order</a>
+<ul>
+<li><a href="#expected-merge-order">Expected merge order</a></li>
+<li><a href="#performing-replaces-instead-of-merges">Performing replaces instead of merges</a></li>
+<li><a href="#merge-ordering-example">Merge ordering example</a></li>
 </ul>
 </li>
 <li><a href="#sample">Sample</a>
@@ -3221,7 +3229,7 @@ more smaller images that contain the desired Model in Image files.</li>
 and <code>domain.spec.configuration.model.modelHome</code> fields are set to
 reference a directory that contains the files from the smaller images.</li>
 </ul>
-<p>The advantages of auxiliary image for Model In Image domains are:</p>
+<p>The advantages of auxiliary images for Model In Image domains are:</p>
 <ul>
 <li>Use or patch a WebLogic installation image without needing to include a WDT installation,
 application archive, or model artifacts within the image.</li>
@@ -3250,11 +3258,41 @@ and <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-res
 <h3 id="configuration">Configuration</h3>
 <p>This section describes a typical auxiliary image configuration for the
 Model in Image use case.</p>
-<h4 id="auxiliary-images">Auxiliary images</h4>
-<p>One or more auxiliary images can be configured on a domain resource <code>serverPod</code>.
-A <code>serverPod</code> can be defined at the domain scope, which applies to every pod in
+<h4 id="auxiliary-volumes-and-paths">Auxiliary volumes and paths</h4>
+<p>A domain resource <code>domain.spec.auxiliaryImageVolumes</code>
+auxiliary image volume defines a <code>mountPath</code>, <code>name</code>, plus
+<a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md#auxiliary-image-volume">additional optional fields</a>.
+The <code>mountPath</code> field is the location of a directory in an auxiliary image, and
+is also the location in the main pod container (which will automatically contain
+a recursive copy of the auxiliary image directory). The <code>name</code> field is
+arbitrary, and is in turn referenced by one or more auxiliary images that
+are defined separately using
+<a href="#auxiliary-images">Auxiliary images</a> configuration.</p>
+<p>For example:</p>
+<pre><code>  spec:
+    auxiliaryImageVolumes:
+    - name: auxiliaryImageVolume1
+      mountPath: /auxiliary
+</code></pre><h4 id="auxiliary-images">Auxiliary images</h4>
+<p>One or more auxiliary images can be configured in a domain resource
+<code>serverPod.auxiliaryImage</code> array.
+Each array entry must define an <code>image</code> and <code>volume</code>
+where <code>image</code> is the name of an auxiliary image
+and the <code>volume</code> is the name of an <a href="#auxiliary-volumes-and-paths">auxiliary image volume</a>
+as described previously.
+Optionally , you can also specify an <code>imagePullPolicy</code>,
+which defaults to <code>Always</code> if the <code>image</code> ends in <code>:latest</code> and to <code>IfNotPresent</code>,
+otherwise.
+Also, optionally, you can customize
+the command that is used to merge (copy) the auxiliary image&rsquo;s files
+into the auxiliary image volume during pod startup (this is rarely
+needed, see <a href="#performing-replaces-instead-of-merges">Performing replaces instead of merges</a> for an example).
+For details
+about each field, see the <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md#auxiliary-image">schema</a>.</p>
+<p>A <code>serverPod</code> can be defined at the domain scope, which applies to every pod in
 the domain, plus the introspector job&rsquo;s pod, at a specific WebLogic cluster&rsquo;s scope,
-or at a specific WebLogic Server pod&rsquo;s scope. Typically, the domain scope is
+or at a specific WebLogic Server pod&rsquo;s scope.
+Typically, the domain scope is
 the most applicable for the Model in Image use case; for example:</p>
 <pre><code>spec:
   serverPod:
@@ -3267,18 +3305,7 @@ the most applicable for the Model in Image use case; for example:</p>
 then the secrets must be referenced using <code>domain.spec.imagePullSecrets</code>.</p>
 </div>
 
-<h4 id="auxiliary-volumes-and-paths">Auxiliary volumes and paths</h4>
-<p>The <code>serverPod.auxiliaryImages.volume</code> field refers to the name of an auxiliary
-image volume defined in the <code>domain.spec.auxiliaryImageVolumes</code> section, and
-an auxiliary image volume, in turn, defines a <code>mountPath</code>. The <code>mountPath</code>
-is the location of a directory in an auxiliary image, and
-is also the location in the main pod container (which will automatically contain
-a recursive copy of the auxiliary image directory). For example:</p>
-<pre><code>  spec:
-    auxiliaryImageVolumes:
-    - name: auxiliaryImageVolume1
-      mountPath: /auxiliary
-</code></pre><h4 id="model-in-image-paths">Model in Image paths</h4>
+<h4 id="model-in-image-paths">Model in Image paths</h4>
 <p>For the Model In Image auxiliary image use case, you also need to
 configure the <code>domain.spec.configuration.model.modelHome</code>
 and <code>domain.spec.configuration.model.wdtInstallHome</code> attributes
@@ -3291,6 +3318,113 @@ respectively, and must be changed to specify a directory in
     model:
       modelHome: &quot;/auxiliary/models&quot;
       wdtInstallHome: &quot;/auxiliary/weblogic-deploy&quot;
+</code></pre>
+<div class="notices warning" ><p>If multiple auxiliary images supply different versions of a WebLogic Deploy Tool installation
+to the same <code>wdtInstallHome</code> path, then it is recommended
+to ensure that the newer version completely replaces the older version
+instead of merges with it. See <a href="#performing-replaces-instead-of-merges">Performing replaces instead of merges</a>.</p>
+</div>
+
+<h3 id="merge-order">Merge order</h3>
+<p>Refer to this section if you need to control the merge order of files from
+multiple auxiliary images that all reference the same volume, or if
+you want to customize the command that is used to copy the
+files from an auxiliary image into its volume. You can
+use command customization to force &ldquo;replace&rdquo; behavior instead
+of merge behavior.</p>
+<h4 id="expected-merge-order">Expected merge order</h4>
+<p>By default, the files from multiple auxiliary images that share
+the same volume are merged. Specifically:</p>
+<ul>
+<li>
+<p>Files from later images in the merge overwrite same named files from earlier images.</p>
+</li>
+<li>
+<p>The contents of overlapping directories from multiple images are combined.</p>
+</li>
+</ul>
+<p>The expected merge order for auxiliary images that share
+the same auxiliary image volume is:</p>
+<ul>
+<li>
+<p>If you specify auxiliary images at different <code>serverPod</code> scopes,
+and they all share the same volume, then the files from the
+domain scope will be merged first, the cluster scope second,
+and the server scope last.</p>
+</li>
+<li>
+<p>If you specify multiple auxiliary images at the same scope,
+and they all share the same volume, then the files
+will be merged in the order in which images appear
+under <code>serverPod.auxiliaryImages</code>.</p>
+</li>
+</ul>
+<p><strong>Note:</strong> If the results of a merge yield two or more
+differently named <code>domain.spec.configuration.model.ModelHome</code> model files in
+an auxilliary image volume, then refer to
+<a href="/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/model-files/#model-file-naming-and-loading-order">Model file naming and loading order</a>
+for the model files loading order.</p>
+<h4 id="performing-replaces-instead-of-merges">Performing replaces instead of merges</h4>
+<p>If multiple auxiliary images share the same volume
+and you prefer that a particular same named directory from a later
+image completely replaces a directory from a previous
+image instead of combining the two directories,
+then you can customize the command that the second image uses to populate
+the shared volume in order to force a replace.</p>
+<p>For example, you can customize the
+the second image&rsquo;s <code>serverPod.auxiliaryImage.command</code> field
+to first delete the directory that was already copied from the
+earlier image and then have it perform a normal copy:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">...
+spec:
+  ...
+  auxiliaryImageVolumes:
+  - name: aivolume
+    mountPath: /auxiliary
+  ...
+  serverPod:
+    auxiliaryImages:
+    - image: domain-image-A:v1
+      volume: aivolume
+    - image: domain-image-B:v1
+      volume: aivolume
+      <span style="color:#75715e"># the following command replaces &#39;mydir&#39; instead of merging it:</span>
+      command: <span style="color:#e6db74">&#39;rm -fr $TARGET_MOUNT_PATH/mydir; cp -R $COMMON_MOUNT_PATH/* $TARGET_MOUNT_PATH&#39;</span>
+</code></pre></div><h4 id="merge-ordering-example">Merge ordering example</h4>
+<p>Assuming you have auxiliary images are defined at the domain, the WebLogic cluster,
+and the server scope (myserver is part of the mycluster):</p>
+<pre><code>...
+spec:
+  auxiliaryImageVolumes:
+  - name: aivolume
+    mountPath: /auxiliary
+  serverPod:
+    auxiliaryImages:
+    - image: domain-image-A:v1
+      volume: aivolume
+    - image: domain-image-B:v1
+      volume: aivolume
+  cluster:
+  - name: mycluster
+    serverPod:
+      auxiliaryImages:
+      - image: cl-image-A:v1
+        volume: aivolume
+      - image: cl-image-B:v1
+        volume: aivolume
+  managedServers:
+  - serverName: &quot;myserver&quot;
+    serverPod:
+      auxiliaryImages:
+      - image: ms-image-A:v1
+        volume: aivolume
+
+</code></pre><p>Then the files from the images will be merged into their shared <code>aivolume</code> volume <code>/auxiliary</code> mount path in the following order:</p>
+<pre><code>domain-image-A:v1 (first)
+domain-image-B:v1
+cl-image-A:v1
+cl-image-B:v1
+ms-image-A:v1 (last)
 </code></pre><h3 id="sample">Sample</h3>
 <p>This sample demonstrates deploying a Model in Image domain that uses
 auxiliary images to supply the domain&rsquo;s WDT model files,
@@ -3321,7 +3455,7 @@ $ /tmp/mii-sample/utils/wl-pod-wait.sh -p <span style="color:#ae81ff">0</span>
 </li>
 </ul>
 <h4 id="step-2-create-the-auxiliary-image">Step 2: Create the auxiliary image</h4>
-<p>Follow these steps to create a auxiliary image containing
+<p>Follow these steps to create an auxiliary image containing
 Model In Image model files, application archives, and the WDT installation files:</p>
 <ol>
 <li>
@@ -3647,7 +3781,7 @@ to see the changes required for auxiliary images. For example:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl apply -f /tmp/mii-sample/domain-resources/WLS-AI/mii-initial-d1-WLS-AI-v1.yaml
 </code></pre></div><p><strong>Note</strong>: If you are choosing <em>not</em> to use the predefined Domain YAML file
 and instead created your own Domain YAML file earlier, then substitute your
-custom file name in the above command. Previously, we suggested naming it <code>/tmp/mii-sample/mii-initial.yaml</code>.</p>
+custom file name in the previous command. Previously, we suggested naming it <code>/tmp/mii-sample/mii-initial.yaml</code>.</p>
 <p>Now, if you run <code>kubectl get pods -n sample-domain1-ns --watch</code>, then you will see
 the introspector job run and your WebLogic Server pods start. The output will look something like this:</p>
 
@@ -5925,19 +6059,19 @@ section of the initial use case.</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1627058242"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1627058242"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1627058242"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1627058242"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1627058242"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1627058242"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1627059678"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1627059678"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1627059678"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1627059678"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1627059678"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1627059678"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1627058242"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1627058242"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1627058242"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1627059678"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1627059678"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1627059678"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1627058242"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1627059678"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
