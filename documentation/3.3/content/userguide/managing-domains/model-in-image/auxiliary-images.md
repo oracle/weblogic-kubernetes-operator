@@ -11,14 +11,18 @@ description = "Auxiliary images are an alternative approach for supplying a doma
  - [Introduction](#introduction)
  - [References](#references)
  - [Configuration](#configuration)
-   - [Auxiliary images](#auxiliary-images)
    - [Auxiliary volumes and paths](#auxiliary-volumes-and-paths)
+   - [Auxiliary images](#auxiliary-images)
    - [Model in Image paths](#model-in-image-paths)
+ - [Merge order](#merge-order)
+   - [Expected merge order](#expected-merge-order)
+   - [Performing replaces instead of merges](#performing-replaces-instead-of-merges)
+   - [Merge ordering example](#merge-ordering-example)
  - [Sample](#sample)
-    - [Step 1: Prerequisites](#step-1-prerequisites)
-    - [Step 2: Create the auxiliary image](#step-2-create-the-auxiliary-image)
-    - [Step 3: Prepare and apply the domain resource](#step-3-prepare-and-apply-the-domain-resource)
-    - [Step 4: Invoke the web application](#step-4-invoke-the-web-application)
+   - [Step 1: Prerequisites](#step-1-prerequisites)
+   - [Step 2: Create the auxiliary image](#step-2-create-the-auxiliary-image)
+   - [Step 3: Prepare and apply the domain resource](#step-3-prepare-and-apply-the-domain-resource)
+   - [Step 4: Invoke the web application](#step-4-invoke-the-web-application)
 
 ### Introduction
 
@@ -38,7 +42,7 @@ Instead:
   and `domain.spec.configuration.model.modelHome` fields are set to
   reference a directory that contains the files from the smaller images.
 
-The advantages of auxiliary image for Model In Image domains are:
+The advantages of auxiliary images for Model In Image domains are:
 
 - Use or patch a WebLogic installation image without needing to include a WDT installation,
   application archive, or model artifacts within the image.
@@ -67,12 +71,49 @@ from additional images.
 This section describes a typical auxiliary image configuration for the
 Model in Image use case.
 
+#### Auxiliary volumes and paths
+
+A domain resource `domain.spec.auxiliaryImageVolumes`
+auxiliary image volume defines a `mountPath`, `name`, plus
+[additional optional fields](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md#auxiliary-image-volume).
+The `mountPath` field is the location of a directory in an auxiliary image, and
+is also the location in the main pod container (which will automatically contain
+a recursive copy of the auxiliary image directory). The `name` field is 
+arbitrary, and is in turn referenced by one or more auxiliary images that 
+are defined separately using
+[Auxiliary images](#auxiliary-images) configuration.
+
+For example:
+
+```
+  spec:
+    auxiliaryImageVolumes:
+    - name: auxiliaryImageVolume1
+      mountPath: /auxiliary
+```
+
 #### Auxiliary images
 
-One or more auxiliary images can be configured on a domain resource `serverPod`.
+One or more auxiliary images can be configured in a domain resource
+`serverPod.auxiliaryImage` array.
+Each array entry must define an `image` and `volume`
+where `image` is the name of an auxiliary image
+and the `volume` is the name of an [auxiliary image volume](#auxiliary-volumes-and-paths)
+as described previously.
+Optionally , you can also specify an `imagePullPolicy`,
+which defaults to `Always` if the `image` ends in `:latest` and to `IfNotPresent`,
+otherwise.
+Also, optionally, you can customize
+the command that is used to merge (copy) the auxiliary image's files
+into the auxiliary image volume during pod startup (this is rarely 
+needed, see [Performing replaces instead of merges](#performing-replaces-instead-of-merges) for an example).
+For details 
+about each field, see the [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md#auxiliary-image).
+
 A `serverPod` can be defined at the domain scope, which applies to every pod in
 the domain, plus the introspector job's pod, at a specific WebLogic cluster's scope,
-or at a specific WebLogic Server pod's scope. Typically, the domain scope is
+or at a specific WebLogic Server pod's scope.
+Typically, the domain scope is
 the most applicable for the Model in Image use case; for example:
 
 ```
@@ -88,22 +129,6 @@ spec:
 If image pull secrets are required for pulling auxiliary images,
 then the secrets must be referenced using `domain.spec.imagePullSecrets`.
 {{% /notice %}}
-
-#### Auxiliary volumes and paths
-
-The `serverPod.auxiliaryImages.volume` field refers to the name of an auxiliary
-image volume defined in the `domain.spec.auxiliaryImageVolumes` section, and
-an auxiliary image volume, in turn, defines a `mountPath`. The `mountPath`
-is the location of a directory in an auxiliary image, and
-is also the location in the main pod container (which will automatically contain
-a recursive copy of the auxiliary image directory). For example:
-
-```
-  spec:
-    auxiliaryImageVolumes:
-    - name: auxiliaryImageVolume1
-      mountPath: /auxiliary
-```
 
 #### Model in Image paths
 
@@ -121,6 +146,126 @@ respectively, and must be changed to specify a directory in
     model:
       modelHome: "/auxiliary/models"
       wdtInstallHome: "/auxiliary/weblogic-deploy"
+```
+
+{{% notice warning %}}
+If multiple auxiliary images supply different versions of a WebLogic Deploy Tool installation
+to the same `wdtInstallHome` path, then it is recommended 
+to ensure that the newer version completely replaces the older version
+instead of merges with it. See [Performing replaces instead of merges](#performing-replaces-instead-of-merges).
+{{% /notice %}}
+
+### Merge order
+
+Refer to this section if you need to control the merge order of files from 
+multiple auxiliary images that all reference the same volume, or if 
+you want to customize the command that is used to copy the
+files from an auxiliary image into its volume. You can
+use command customization to force "replace" behavior instead
+of merge behavior.
+
+#### Expected merge order
+
+By default, the files from multiple auxiliary images that share
+the same volume are merged. Specifically:
+
+- Files from later images in the merge overwrite same named files from earlier images.
+
+- The contents of overlapping directories from multiple images are combined.
+
+The expected merge order for auxiliary images that share
+the same auxiliary image volume is:
+
+- If you specify auxiliary images at different `serverPod` scopes,
+  and they all share the same volume, then the files from the
+  domain scope will be merged first, the cluster scope second,
+  and the server scope last.
+
+- If you specify multiple auxiliary images at the same scope, 
+  and they all share the same volume, then the files
+  will be merged in the order in which images appear
+  under `serverPod.auxiliaryImages`.
+
+__Note:__ If the results of a merge yield two or more
+differently named `domain.spec.configuration.model.ModelHome` model files in
+an auxilliary image volume, then refer to
+[Model file naming and loading order]({{< relref "/userguide/managing-domains/model-in-image/model-files#model-file-naming-and-loading-order">}})
+for the model files loading order.
+
+#### Performing replaces instead of merges
+
+If multiple auxiliary images share the same volume
+and you prefer that a particular same named directory from a later
+image completely replaces a directory from a previous
+image instead of combining the two directories,
+then you can customize the command that the second image uses to populate
+the shared volume in order to force a replace.
+
+For example, you can customize the 
+the second image's `serverPod.auxiliaryImage.command` field
+to first delete the directory that was already copied from the
+earlier image and then have it perform a normal copy:
+
+```shell
+...
+spec:
+  ...
+  auxiliaryImageVolumes:
+  - name: aivolume
+    mountPath: /auxiliary
+  ...
+  serverPod:
+    auxiliaryImages:
+    - image: domain-image-A:v1
+      volume: aivolume
+    - image: domain-image-B:v1
+      volume: aivolume
+      # the following command replaces 'mydir' instead of merging it:
+      command: 'rm -fr $TARGET_MOUNT_PATH/mydir; cp -R $COMMON_MOUNT_PATH/* $TARGET_MOUNT_PATH'
+```
+
+#### Merge ordering example
+
+Assuming you have auxiliary images are defined at the domain, the WebLogic cluster,
+and the server scope (myserver is part of the mycluster):
+
+```
+...
+spec:
+  auxiliaryImageVolumes:
+  - name: aivolume
+    mountPath: /auxiliary
+  serverPod:
+    auxiliaryImages:
+    - image: domain-image-A:v1
+      volume: aivolume
+    - image: domain-image-B:v1
+      volume: aivolume
+  cluster:
+  - name: mycluster
+    serverPod:
+      auxiliaryImages:
+      - image: cl-image-A:v1
+        volume: aivolume
+      - image: cl-image-B:v1
+        volume: aivolume
+  managedServers:
+  - serverName: "myserver"
+    serverPod:
+      auxiliaryImages:
+      - image: ms-image-A:v1
+        volume: aivolume
+
+```
+
+Then the files from the images will be merged into their shared `aivolume` volume `/auxiliary` mount path in the following order:
+
+```
+domain-image-A:v1 (first)
+domain-image-B:v1
+cl-image-A:v1
+cl-image-B:v1
+ms-image-A:v1 (last)
 ```
 
 ### Sample
@@ -152,7 +297,7 @@ container image.
 
 #### Step 2: Create the auxiliary image
 
-Follow these steps to create a auxiliary image containing
+Follow these steps to create an auxiliary image containing
 Model In Image model files, application archives, and the WDT installation files:
 
 1. Create a model ZIP application archive and place it in the same directory
@@ -477,7 +622,7 @@ $ kubectl apply -f /tmp/mii-sample/domain-resources/WLS-AI/mii-initial-d1-WLS-AI
 
 **Note**: If you are choosing _not_ to use the predefined Domain YAML file
   and instead created your own Domain YAML file earlier, then substitute your
-  custom file name in the above command. Previously, we suggested naming it `/tmp/mii-sample/mii-initial.yaml`.
+  custom file name in the previous command. Previously, we suggested naming it `/tmp/mii-sample/mii-initial.yaml`.
 
 Now, if you run `kubectl get pods -n sample-domain1-ns --watch`, then you will see
 the introspector job run and your WebLogic Server pods start. The output will look something like this:
