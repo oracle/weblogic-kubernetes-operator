@@ -958,7 +958,7 @@ public class ItMiiAuxiliaryImage {
         + WDT_TEST_VERSION + "/"
         + WDT_DOWNLOAD_FILENAME_DEFAULT;
     unzipWDTInstallationFile(multipleAIPath2.toString(), wdtURL,
-        DOWNLOAD_DIR + "/ver" +WDT_TEST_VERSION );
+        DOWNLOAD_DIR + "/ver" + WDT_TEST_VERSION);
 
     // create image2 with wdt installation files only
     createAuxiliaryImage(multipleAIPath2.toString(),

@@ -148,6 +148,11 @@ public class Installer {
     return download(DOWNLOAD_DIR);
   }
 
+  /**
+   * Download and install the tool using the params.
+   * @param downloadDir download directory
+   * @return true if the command succeeds
+   */
   public boolean download(String downloadDir) {
 
     boolean downloadSucceeded = true;
