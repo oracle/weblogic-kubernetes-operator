@@ -150,6 +150,10 @@ public class ItFmwMiiDomain {
 
   /**
    * Create a basic FMW model in image domain.
+   * Create the FMW domain with introspectVersion
+   * After domain is created and introspector exists restart the operator.
+   * Verify the restarted operator can find the existing introspector and wait for it to complete
+   * rather than replacing a new introspector.
    * Verify Pod is ready and service exists for both admin server and managed servers.
    * Verify EM console is accessible.
    */
@@ -223,6 +227,7 @@ public class ItFmwMiiDomain {
         fmwMiiImage);
 
     createDomainAndVerify(domain, fmwDomainNamespace);
+
     //verify the introspector pod is created and runs
     logger.info("Verifying introspector pod is created, runs");
     String introspectPodNameBase = getIntrospectJobName(domainUid);
@@ -234,11 +239,13 @@ public class ItFmwMiiDomain {
 
     logger.info("Is going to restart operator in the namespace: " + opNamespace);
     restartOperator(opNamespace);
+    //verify introspectorVersion does not change
     checkPodExists(introspectPodNameBase, domainUid, fmwDomainNamespace);
     String introspectVersion2 =
         assertDoesNotThrow(() -> getCurrentIntrospectVersion(domainUid, fmwDomainNamespace));
     logger.info("After operator restart introspectVersion is: " + introspectVersion2);
     assertEquals(introspectVersion1, introspectVersion2, "introspectVersion changes after operator restart");
+
     verifyDomainReady(fmwDomainNamespace, domainUid, replicaCount);
   }
 
