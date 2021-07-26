@@ -237,7 +237,7 @@ public class ItFmwMiiDomain {
         assertDoesNotThrow(() -> getCurrentIntrospectVersion(domainUid, fmwDomainNamespace));
     logger.info("Before restarting operator introspectVersion is: " + introspectVersion1);
 
-    logger.info("Is going to restart operator in the namespace: " + opNamespace);
+    logger.info("Restarting operator in the namespace: " + opNamespace);
     restartOperator(opNamespace);
     //verify introspectorVersion does not change
     checkPodExists(introspectPodNameBase, domainUid, fmwDomainNamespace);
