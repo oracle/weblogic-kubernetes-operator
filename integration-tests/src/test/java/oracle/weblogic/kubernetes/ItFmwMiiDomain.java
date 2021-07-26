@@ -11,6 +11,7 @@ import java.util.List;
 import io.kubernetes.client.custom.V1Patch;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -233,14 +234,20 @@ public class ItFmwMiiDomain {
     String introspectPodNameBase = getIntrospectJobName(domainUid);
     logger.info("Checking introspector pod exists and introspect version");
     checkPodExists(introspectPodNameBase, domainUid, fmwDomainNamespace);
+    String introspectPodName = assertDoesNotThrow(() -> Kubernetes.listPods(fmwDomainNamespace, null)
+        .getItems().get(0).getMetadata().getName(),
+        String.format("Get intrspector pod name failed with ApiException in namespace %s", fmwDomainNamespace));
     String introspectVersion1 =
         assertDoesNotThrow(() -> getCurrentIntrospectVersion(domainUid, fmwDomainNamespace));
-    logger.info("Before restarting operator introspectVersion is: " + introspectVersion1);
+    logger.info("Before restarting operator introspector pod name is: {0}, introspectVersion is: {1}",
+        introspectPodName, introspectVersion1);
 
     logger.info("Restarting operator in the namespace: " + opNamespace);
     restartOperator(opNamespace);
-    //verify introspectorVersion does not change
-    checkPodExists(introspectPodNameBase, domainUid, fmwDomainNamespace);
+    //verify the exact same introspector pod exists and Version does not change
+    logger.info("Checking the exact same introspector pod {0} exists in the namespace {1}",
+        introspectPodName, fmwDomainNamespace);
+    checkPodExists(introspectPodName, domainUid, fmwDomainNamespace);
     String introspectVersion2 =
         assertDoesNotThrow(() -> getCurrentIntrospectVersion(domainUid, fmwDomainNamespace));
     logger.info("After operator restart introspectVersion is: " + introspectVersion2);
