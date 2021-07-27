@@ -300,6 +300,51 @@ public class CommonMiiTestUtils {
   }
 
   /**
+   * Create a domain object for a Kubernetes domain custom resource using the basic WLS image and auxiliary image.
+   *
+   * @param domainResourceName name of the domain resource
+   * @param domNamespace Kubernetes namespace that the domain is hosted
+   * @param baseImageName name of the base image to use
+   * @param adminSecretName name of the new WebLogic admin credentials secret
+   * @param repoSecretName name of the secret for pulling the WebLogic image
+   * @param encryptionSecretName name of the secret used to encrypt the models
+   * @param replicaCount number of managed servers to start
+   * @param clusterName name of the cluster to add in domain
+   * @param auxiliaryImageVolumes list of AuxiliaryImageVolumes
+   * @param auxiliaryImages list of AuxiliaryImages
+   * @return domain object of the domain resource
+   */
+  public static Domain createDomainResourceWithAuxiliaryImage(
+      String domainResourceName,
+      String domNamespace,
+      String baseImageName,
+      String adminSecretName,
+      String repoSecretName,
+      String encryptionSecretName,
+      int replicaCount,
+      String clusterName,
+      List<AuxiliaryImageVolume> auxiliaryImageVolumes,
+      List<AuxiliaryImage> auxiliaryImages) {
+
+    Domain domainCR = CommonMiiTestUtils.createDomainResource(domainResourceName, domNamespace,
+        baseImageName, adminSecretName, repoSecretName,
+        encryptionSecretName, replicaCount, clusterName);
+
+    for (AuxiliaryImageVolume auxiliaryImageVolume : auxiliaryImageVolumes) {
+      domainCR.spec().addAuxiliaryImageVolumesItem(auxiliaryImageVolume);
+      domainCR.spec().configuration().model()
+          .withModelHome(auxiliaryImageVolume.getMountPath() + "/models")
+          .withWdtInstallHome(auxiliaryImageVolume.getMountPath() + "/weblogic-deploy");
+    }
+
+    for (AuxiliaryImage auxiliaryImage : auxiliaryImages) {
+      domainCR.spec().serverPod().addAuxiliaryImagesItem(auxiliaryImage);
+    }
+
+    return domainCR;
+  }
+
+  /**
    * Create a domain object for a Kubernetes domain custom resource using the basic model-in-image
    * image.
    *

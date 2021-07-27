@@ -51,6 +51,9 @@ function checkJavaVersion {
   fi
 }
 
+# Record start time in a format appropriate for journalctl --since
+start_time=$(date +"%Y-%m-%d %H:%M:%S")
+
 echo "WORKSPACE ${WORKSPACE}"
 
 checkEnvVars  \
@@ -122,5 +125,8 @@ helm repo update
 
 echo "Info: Run tests.."
 sh -x ./kindtest.sh -t "${IT_TEST}" -v ${KUBE_VERSION} -p ${PARALLEL_RUN} -d ${WDT_DOWNLOAD_URL} -i ${WIT_DOWNLOAD_URL} -x ${NUMBER_OF_THREADS} -m ${MAVEN_PROFILE_NAME}
+
+mkdir -m777 -p "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results"
+journalctl --utc --dmesg --system --since "$start_time" > "${WORKSPACE}/logdir/${BUILD_TAG}/wl_k8s_test_results/journalctl-compute.out"
 
 

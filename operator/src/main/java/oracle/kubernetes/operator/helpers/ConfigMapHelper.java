@@ -203,7 +203,7 @@ public class ConfigMapHelper {
 
   static synchronized Map<String, String> loadScriptsFromClasspath(String domainNamespace) {
     Map<String, String> scripts = scriptReader.loadFilesFromClasspath();
-    LOGGER.fine(MessageKeys.SCRIPT_LOADED, domainNamespace);
+    LOGGER.finer(MessageKeys.SCRIPT_LOADED, domainNamespace);
     return scripts;
   }
 

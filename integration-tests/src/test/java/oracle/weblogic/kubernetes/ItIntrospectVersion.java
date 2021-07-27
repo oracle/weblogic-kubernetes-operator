@@ -65,9 +65,6 @@ import org.junit.jupiter.api.extension.ConditionEvaluationResult;
 import org.junit.jupiter.api.extension.ExecutionCondition;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.junit.jupiter.api.extension.ExtensionContext;
-import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.EmptySource;
-import org.junit.jupiter.params.provider.ValueSource;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -105,6 +102,7 @@ import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomRe
 import static oracle.weblogic.kubernetes.actions.impl.Pod.getPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
@@ -1098,21 +1096,19 @@ public class ItIntrospectVersion {
   }
 
   /**
-   * Rerun a WebLogic domain's introspect job by explicitly initiating the introspection
-   * using the sample script introspectDomain.sh script.
-   * Test that after running introspectDomain.sh w/wo a introspectVersion value specified,
-   * the introspection is explicitly initiating and introspectVersion in the domain is changed.
-   * Use ParameterizedTest to test introspectVersion = "", "v1", "8v", "v.1"
-   * Verify the introspector pod is created and runs
-   * Verifies introspection is changed.
-   * Verifies accessing sample application in admin server works.
+   * Update the introspectVersion of the domain resource using lifecycle script.
+   * Refer to kubernetes/samples/scripts/domain-lifecycle/introspectDomain.sh
+   * The usecase update the introspectVersion by passing differnt value to -i 
+   * option (non-numeic, non-numeric with space, no value) and make sure that 
+   * the introspectVersion is updated accrodingly in both domain sepc level 
+   * and server pod level. 
+   * It also verifies the intospector job is started/stoped and none of the 
+   * server pod is rolled since there is no change to resource configuration.
    */
+  @Test
   @Order(7)
-  @ParameterizedTest
-  @EmptySource
-  @ValueSource(strings = {"v1", "8v", "v.1"})
   @DisplayName("Test to use sample scripts to explicitly initiate introspection")
-  public void testInitiateIntrospection(String introspectVersion) {
+  public void tesIntrospectDomainScript() {
     final String adminServerName = "admin-server";
     final String adminServerPodName = domainUid + "-" + adminServerName;
     final String managedServerNameBase = "managed-server";
@@ -1128,14 +1124,26 @@ public class ItIntrospectVersion {
       checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
     }
 
+    // get the pod creation time stamps
+    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
+    // get the creation time of the admin server pod before patching
+    OffsetDateTime adminPodCreationTime = getPodCreationTime(introDomainNamespace, adminServerPodName);
+    pods.put(adminServerPodName, adminPodCreationTime);
+    // get the creation time of the managed server pods before patching
+    for (int i = 1; i <= replicaCount; i++) {
+      pods.put(managedServerPodNamePrefix + i,
+          getPodCreationTime(introDomainNamespace, managedServerPodNamePrefix + i));
+    }
+
     // get introspectVersion before running introspectDomain.sh
-    String introspectVersionBf =
+    String ivBefore =
         assertDoesNotThrow(() -> getCurrentIntrospectVersion(domainUid, introDomainNamespace));
+    logger.info("introspectVersion before running the script {0}",ivBefore);
 
     // use introspectDomain.sh to initiate introspection
-    logger.info("Initiate introspection with introspectDomain.sh script");
-    String extraParam = (introspectVersion.isEmpty()) ? "" : " -i " + introspectVersion;
-
+    logger.info("Initiate introspection with non numeric string (vX.Y)");
+    String introspectVersion = "vX.Y";
+    String extraParam = " -i " + introspectVersion;
     assertDoesNotThrow(() -> executeLifecycleScript(INTROSPECT_DOMAIN_SCRIPT, extraParam),
         String.format("Failed to run %s", INTROSPECT_DOMAIN_SCRIPT));
 
@@ -1145,16 +1153,95 @@ public class ItIntrospectVersion {
     checkPodDoesNotExist(introspectPodNameBase, domainUid, introDomainNamespace);
 
     // get introspectVersion after running introspectDomain.sh
-    String introspectVersionAf =
-        assertDoesNotThrow(() -> getCurrentIntrospectVersion(domainUid, introDomainNamespace));
+    String ivAfter = assertDoesNotThrow(() -> getCurrentIntrospectVersion(domainUid, introDomainNamespace));
+    logger.info("introspectVersion after running the script {0}",ivAfter);
 
-    // verify that introspectVersion is changed after running introspectDomain.sh
-    assertFalse(introspectVersionBf.equals(introspectVersionAf),
-        "introspectVersion should change from " + introspectVersionBf + " to " + introspectVersionAf);
+    // verify that introspectVersion is changed 
+    assertTrue(ivAfter.equals(introspectVersion),
+        "introspectVersion must change to  "  + introspectVersion);
+
+    assertFalse(ivAfter.equals(ivBefore),
+        "introspectVersion should change from " + ivBefore + " to " + ivAfter);
 
     // verify when a domain resource has spec.introspectVersion configured,
-    // after a cluster is scaled up, new server pods have the label "weblogic.introspectVersion" set as well.
+    // after a introspectVersion is modified, new server pods have the label
+    // "weblogic.introspectVersion" set as well.
     verifyIntrospectVersionLabelInPod(replicaCount);
+
+    // use introspectDomain.sh to initiate introspection
+    logger.info("Initiate introspection with non numeric string with space");
+    introspectVersion = "My Version";
+    String extraParam2 = " -i " + "\"" + introspectVersion + "\"";
+    assertDoesNotThrow(() -> executeLifecycleScript(INTROSPECT_DOMAIN_SCRIPT, extraParam2),
+        String.format("Failed to run %s", INTROSPECT_DOMAIN_SCRIPT));
+
+    //verify the introspector pod is created and runs
+    introspectPodNameBase = getIntrospectJobName(domainUid);
+    checkPodExists(introspectPodNameBase, domainUid, introDomainNamespace);
+
+    // get introspectVersion after running introspectDomain.sh
+    ivAfter = assertDoesNotThrow(() -> getCurrentIntrospectVersion(domainUid, introDomainNamespace));
+    logger.info("introspectVersion after running the script {0}",ivAfter);
+
+    // verify that introspectVersion is changed 
+    assertTrue(ivAfter.equals(introspectVersion),
+        "introspectVersion must change to  "  + introspectVersion);
+
+    // use introspectDomain.sh to initiate introspection
+    // Since the current version is non-numeric the updated version is 
+    // updated to 1 
+    logger.info("Initiate introspection with no explicit version(1)");
+    assertDoesNotThrow(() -> executeLifecycleScript(INTROSPECT_DOMAIN_SCRIPT, ""),
+        String.format("Failed to run %s", INTROSPECT_DOMAIN_SCRIPT));
+
+    //verify the introspector pod is created and runs
+    introspectPodNameBase = getIntrospectJobName(domainUid);
+    checkPodExists(introspectPodNameBase, domainUid, introDomainNamespace);
+
+    // get introspectVersion after running introspectDomain.sh
+    ivAfter = assertDoesNotThrow(() -> getCurrentIntrospectVersion(domainUid, introDomainNamespace));
+    logger.info("introspectVersion after running the script {0}",ivAfter);
+
+    // verify that introspectVersion is changed 
+    assertTrue(ivAfter.equals("1"), "introspectVersion must change to 1");
+
+    // use introspectDomain.sh to initiate introspection
+    // Since the current version is 1, the updated version must be set to 2 
+    logger.info("Initiate introspection with no explicit version (2)");
+    assertDoesNotThrow(() -> executeLifecycleScript(INTROSPECT_DOMAIN_SCRIPT, ""),
+        String.format("Failed to run %s", INTROSPECT_DOMAIN_SCRIPT));
+
+    //verify the introspector pod is created and runs
+    introspectPodNameBase = getIntrospectJobName(domainUid);
+    checkPodExists(introspectPodNameBase, domainUid, introDomainNamespace);
+
+    // get introspectVersion after running introspectDomain.sh
+    ivAfter = assertDoesNotThrow(() -> getCurrentIntrospectVersion(domainUid, introDomainNamespace));
+    logger.info("introspectVersion after running the script {0}",ivAfter);
+
+    // verify that introspectVersion is changed 
+    assertTrue(ivAfter.equals("2"), "introspectVersion must change to 2");
+
+    // use introspectDomain.sh to initiate introspection
+    // with an explicit introspection with -i parameter
+    logger.info("Initiate introspection with explicit numeric version");
+    String extraParam3 = " -i  101";
+    assertDoesNotThrow(() -> executeLifecycleScript(INTROSPECT_DOMAIN_SCRIPT, extraParam3),
+        String.format("Failed to run %s", INTROSPECT_DOMAIN_SCRIPT));
+
+    //verify the introspector pod is created and runs
+    introspectPodNameBase = getIntrospectJobName(domainUid);
+    checkPodExists(introspectPodNameBase, domainUid, introDomainNamespace);
+
+    // get introspectVersion after running introspectDomain.sh
+    ivAfter = assertDoesNotThrow(() -> getCurrentIntrospectVersion(domainUid, introDomainNamespace));
+    logger.info("introspectVersion after running the script {0}",ivAfter);
+
+    // verify that introspectVersion is changed 
+    assertTrue(ivAfter.equals("101"), "introspectVersion must change to 101");
+
+    //verify the pods are not restarted in any introspectVersion update
+    verifyPodsNotRolled(introDomainNamespace, pods);
   }
 
   /**

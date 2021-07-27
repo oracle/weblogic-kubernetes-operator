@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: bfcd3cf6919ea8927a28caee994885390e993e9bc497d45009abf7c2fd3232ad
+    weblogic.sha256: 82e9e9e60da33f393aec1dc45c2854e06a569fea839d3339e3dd7f86ce8d837c
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -1362,6 +1362,52 @@ spec:
                             key:
                               type: string
                             operator:
+                              type: string
+                        type: array
+                      auxiliaryImages:
+                        description: Use an auxiliary image to automatically include
+                          directory content from additional images. This is a useful
+                          alternative for including Model in Image model files, or
+                          other types of files, in a pod without requiring modifications
+                          to the pod's base image 'domain.spec.image'. This feature
+                          internally uses a Kubernetes emptyDir volume and Kubernetes
+                          init containers to share the files from the additional images
+                          with the pod.
+                        items:
+                          type: object
+                          properties:
+                            volume:
+                              description: The name of an auxiliary image volume defined
+                                in `spec.auxiliaryImageVolumes`. Required.
+                              type: string
+                            image:
+                              description: The name of an image with files located
+                                in the directory specified by `spec.auxiliaryImageVolumes.mountPath`
+                                of the auxiliary image volume referenced by `serverPod.auxiliaryImages.volume`,
+                                which defaults to "/auxiliary".
+                              type: string
+                            imagePullPolicy:
+                              description: The image pull policy for the container
+                                image. Legal values are Always, Never, and IfNotPresent.
+                                Defaults to Always if image ends in :latest; IfNotPresent,
+                                otherwise.
+                              type: string
+                              enum:
+                              - Always
+                              - Never
+                              - IfNotPresent
+                            command:
+                              description: The command for this init container. Defaults
+                                to `cp -R $AUXILIARY_IMAGE_PATH/* $TARGET_MOUNT_PATH`.
+                                This is an advanced setting for customizing the container
+                                command for copying files from the container image
+                                to the auxiliary image emptyDir volume. Use the `$AUXILIARY_IMAGE_PATH`
+                                environment variable to reference the value configured
+                                in `spec.auxiliaryImageVolumes.mountPath`, which defaults
+                                to "/auxiliary". Use '$TARGET_MOUNT_PATH' to refer
+                                to the temporary directory created by the operator
+                                that resolves to the auxiliary image's internal emptyDir
+                                volume.
                               type: string
                         type: array
                       readinessProbe:
@@ -4064,6 +4110,52 @@ spec:
                               key:
                                 type: string
                               operator:
+                                type: string
+                        auxiliaryImages:
+                          description: Use an auxiliary image to automatically include
+                            directory content from additional images. This is a useful
+                            alternative for including Model in Image model files,
+                            or other types of files, in a pod without requiring modifications
+                            to the pod's base image 'domain.spec.image'. This feature
+                            internally uses a Kubernetes emptyDir volume and Kubernetes
+                            init containers to share the files from the additional
+                            images with the pod.
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              volume:
+                                description: The name of an auxiliary image volume
+                                  defined in `spec.auxiliaryImageVolumes`. Required.
+                                type: string
+                              image:
+                                description: The name of an image with files located
+                                  in the directory specified by `spec.auxiliaryImageVolumes.mountPath`
+                                  of the auxiliary image volume referenced by `serverPod.auxiliaryImages.volume`,
+                                  which defaults to "/auxiliary".
+                                type: string
+                              imagePullPolicy:
+                                description: The image pull policy for the container
+                                  image. Legal values are Always, Never, and IfNotPresent.
+                                  Defaults to Always if image ends in :latest; IfNotPresent,
+                                  otherwise.
+                                type: string
+                                enum:
+                                - Always
+                                - Never
+                                - IfNotPresent
+                              command:
+                                description: The command for this init container.
+                                  Defaults to `cp -R $AUXILIARY_IMAGE_PATH/* $TARGET_MOUNT_PATH`.
+                                  This is an advanced setting for customizing the
+                                  container command for copying files from the container
+                                  image to the auxiliary image emptyDir volume. Use
+                                  the `$AUXILIARY_IMAGE_PATH` environment variable
+                                  to reference the value configured in `spec.auxiliaryImageVolumes.mountPath`,
+                                  which defaults to "/auxiliary". Use '$TARGET_MOUNT_PATH'
+                                  to refer to the temporary directory created by the
+                                  operator that resolves to the auxiliary image's
+                                  internal emptyDir volume.
                                 type: string
                         readinessProbe:
                           description: Settings for the readiness probe associated
@@ -6782,6 +6874,49 @@ spec:
                         operator:
                           type: string
                     type: array
+                  auxiliaryImages:
+                    description: Use an auxiliary image to automatically include directory
+                      content from additional images. This is a useful alternative
+                      for including Model in Image model files, or other types of
+                      files, in a pod without requiring modifications to the pod's
+                      base image 'domain.spec.image'. This feature internally uses
+                      a Kubernetes emptyDir volume and Kubernetes init containers
+                      to share the files from the additional images with the pod.
+                    items:
+                      type: object
+                      properties:
+                        volume:
+                          description: The name of an auxiliary image volume defined
+                            in `spec.auxiliaryImageVolumes`. Required.
+                          type: string
+                        image:
+                          description: The name of an image with files located in
+                            the directory specified by `spec.auxiliaryImageVolumes.mountPath`
+                            of the auxiliary image volume referenced by `serverPod.auxiliaryImages.volume`,
+                            which defaults to "/auxiliary".
+                          type: string
+                        imagePullPolicy:
+                          description: The image pull policy for the container image.
+                            Legal values are Always, Never, and IfNotPresent. Defaults
+                            to Always if image ends in :latest; IfNotPresent, otherwise.
+                          type: string
+                          enum:
+                          - Always
+                          - Never
+                          - IfNotPresent
+                        command:
+                          description: The command for this init container. Defaults
+                            to `cp -R $AUXILIARY_IMAGE_PATH/* $TARGET_MOUNT_PATH`.
+                            This is an advanced setting for customizing the container
+                            command for copying files from the container image to
+                            the auxiliary image emptyDir volume. Use the `$AUXILIARY_IMAGE_PATH`
+                            environment variable to reference the value configured
+                            in `spec.auxiliaryImageVolumes.mountPath`, which defaults
+                            to "/auxiliary". Use '$TARGET_MOUNT_PATH' to refer to
+                            the temporary directory created by the operator that resolves
+                            to the auxiliary image's internal emptyDir volume.
+                          type: string
+                    type: array
                   readinessProbe:
                     description: Settings for the readiness probe associated with
                       a WebLogic Server instance.
@@ -8308,6 +8443,33 @@ spec:
                         type: object
                     type: object
                 type: object
+              auxiliaryImageVolumes:
+                description: Configure auxiliary image volumes including their respective
+                  mount paths. Auxiliary image volumes are in turn referenced by one
+                  or more `serverPod.auxiliaryImages` mounts, and are internally implemented
+                  using a Kubernetes `emptyDir` volume.
+                items:
+                  type: object
+                  properties:
+                    sizeLimit:
+                      description: The emptyDir volume size limit. Defaults to unset.
+                      type: string
+                    mountPath:
+                      description: The mount path. The files in the path are populated
+                        from the same named directory in the images supplied by each
+                        container in `serverPod.auxiliaryImages`. Each volume must
+                        be configured with a different mount path. Required.
+                      type: string
+                    name:
+                      description: The name of the volume. Required.
+                      type: string
+                    medium:
+                      description: The emptyDir volume medium. This is an advanced
+                        setting that rarely needs to be configured. Defaults to unset,
+                        which means the volume's files are stored on the local node's
+                        file system for the life of the pod.
+                      type: string
+                type: array
               managedServers:
                 description: Lifecycle options for individual Managed Servers, including
                   Java options, environment variables, additional Pod content, and
@@ -9369,6 +9531,52 @@ spec:
                               key:
                                 type: string
                               operator:
+                                type: string
+                        auxiliaryImages:
+                          description: Use an auxiliary image to automatically include
+                            directory content from additional images. This is a useful
+                            alternative for including Model in Image model files,
+                            or other types of files, in a pod without requiring modifications
+                            to the pod's base image 'domain.spec.image'. This feature
+                            internally uses a Kubernetes emptyDir volume and Kubernetes
+                            init containers to share the files from the additional
+                            images with the pod.
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              volume:
+                                description: The name of an auxiliary image volume
+                                  defined in `spec.auxiliaryImageVolumes`. Required.
+                                type: string
+                              image:
+                                description: The name of an image with files located
+                                  in the directory specified by `spec.auxiliaryImageVolumes.mountPath`
+                                  of the auxiliary image volume referenced by `serverPod.auxiliaryImages.volume`,
+                                  which defaults to "/auxiliary".
+                                type: string
+                              imagePullPolicy:
+                                description: The image pull policy for the container
+                                  image. Legal values are Always, Never, and IfNotPresent.
+                                  Defaults to Always if image ends in :latest; IfNotPresent,
+                                  otherwise.
+                                type: string
+                                enum:
+                                - Always
+                                - Never
+                                - IfNotPresent
+                              command:
+                                description: The command for this init container.
+                                  Defaults to `cp -R $AUXILIARY_IMAGE_PATH/* $TARGET_MOUNT_PATH`.
+                                  This is an advanced setting for customizing the
+                                  container command for copying files from the container
+                                  image to the auxiliary image emptyDir volume. Use
+                                  the `$AUXILIARY_IMAGE_PATH` environment variable
+                                  to reference the value configured in `spec.auxiliaryImageVolumes.mountPath`,
+                                  which defaults to "/auxiliary". Use '$TARGET_MOUNT_PATH'
+                                  to refer to the temporary directory created by the
+                                  operator that resolves to the auxiliary image's
+                                  internal emptyDir volume.
                                 type: string
                         readinessProbe:
                           description: Settings for the readiness probe associated

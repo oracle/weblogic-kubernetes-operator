@@ -3,7 +3,9 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 import io.kubernetes.client.openapi.models.V1Container;
@@ -26,7 +28,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -40,7 +41,8 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
-import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
+import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodInitializing;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
@@ -48,6 +50,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVe
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.upgradeAndVerifyOperator;
@@ -160,16 +163,16 @@ class ItInitContainers {
   }
 
 
-  @AfterAll
-  public void tearDownAll() {
-    //delete operator
-    uninstallOperator(opHelmParams);
-  }
-
   /**
    * Add initContainers at domain spec level and verify the admin server pod executes initContainer command.
    * Test fails if domain crd can't add the initContainers or
    * WebLogic server pods don't go through initialization and ready state.
+   * The following introspect version usecase was added based on issue 
+   * reported by OFSS team. With initContainer configured, the WebLogic server 
+   * pod should not roll with modified introspect version without any update to 
+   * domain resource.
+   * Update the introspect version with out any change to domain resource
+   * Make sure no WebLogic server pod get rolled.
    */
   @Test
   @DisplayName("Add initContainers at domain spec level and verify the server pods execute initContainer command "
@@ -190,6 +193,23 @@ class ItInitContainers {
         domain1Uid,"Hi from Domain"),
         "failed to init busybox container command for managed server2");
 
+    // get the pod creation time stamps
+    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
+    // get the creation time of the admin server pod before patching
+    OffsetDateTime adminPodCreationTime = getPodCreationTime(domain1Namespace,domain1Uid + "-admin-server");
+    String adminServerPodName = domain1Uid + adminServerPrefix;
+    pods.put(adminServerPodName, adminPodCreationTime);
+    // get the creation time of the managed server pods before patching
+    String managedServerNameBase = "managed-server";
+    String managedServerPodNamePrefix = domain1Uid + "-managed-server";
+    for (int i = 1; i <= replicaCount; i++) {
+      pods.put(managedServerPodNamePrefix + i,
+          getPodCreationTime(domain1Namespace, managedServerPodNamePrefix + i));
+    }
+    patchDomainResourceWithNewIntrospectVersion(domain1Uid,domain1Namespace);
+    //verify the pods are not restarted in any introspectVersion update
+    verifyPodsNotRolled(domain1Namespace, pods);
+   
   }
 
   private boolean checkPodLogContainMsg(String podName, String podNamespace, String domainUid, String msg) {
@@ -341,7 +361,9 @@ class ItInitContainers {
             .addCommandItem("echo").addArgsItem("\"Hi from Domain\"")
             .name("busybox")
             .imagePullPolicy("IfNotPresent")
-            .image("busybox"));
+            .image("busybox").addEnvItem(new V1EnvVar()
+                                    .name("DOMAIN_NAME")
+                                    .value("xyz")));
         setPodAntiAffinity(domain);
         break;
       case "adminServer":

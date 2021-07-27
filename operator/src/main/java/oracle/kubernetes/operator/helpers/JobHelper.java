@@ -57,6 +57,7 @@ import static oracle.kubernetes.operator.DomainStatusUpdater.INSPECTING_DOMAIN_P
 import static oracle.kubernetes.operator.DomainStatusUpdater.createProgressingStartedEventStep;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED_DETAIL;
 
@@ -98,7 +99,7 @@ public class JobHelper {
     LOGGER.fine("isModelInImageUpdate: " + isModelInImageUpdate(packet, info));
     return topology == null
           || isBringingUpNewDomain(packet, info)
-          || isIntrospectionRequestedAndRemove(packet)
+          || checkIfIntrospectionRequestedAndReset(packet)
           || isModelInImageUpdate(packet, info)
           || isIntrospectVersionChanged(packet, info);
   }
@@ -107,8 +108,8 @@ public class JobHelper {
     return runningServersCount(info) == 0 && creatingServers(info) && isGenerationChanged(packet, info);
   }
 
-  private static boolean isIntrospectionRequestedAndRemove(Packet packet) {
-    return packet.remove(ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED) != null;
+  private static boolean checkIfIntrospectionRequestedAndReset(Packet packet) {
+    return packet.remove(DOMAIN_INTROSPECT_REQUESTED) != null;
   }
 
   private static boolean isIntrospectVersionChanged(Packet packet, DomainPresenceInfo info) {
@@ -506,6 +507,7 @@ public class JobHelper {
   }
 
   private static class ReadDomainIntrospectorPodLogResponseStep extends ResponseStep<String> {
+    public static final String INTROSPECTION_FAILED = "INTROSPECTION_FAILED";
     private StringBuilder logMessage = new StringBuilder();
     private final List<String> severeStatuses = new ArrayList<>();
 
@@ -552,6 +554,7 @@ public class JobHelper {
                 getJobCreationTime(domainIntrospectorJob).plus(retryIntervalSeconds, SECONDS))) {
           //Introspector job is incomplete and current time is greater than the lazy deletion time for the job,
           //update the domain status and execute the next step
+          packet.put(DOMAIN_INTROSPECT_REQUESTED, INTROSPECTION_FAILED);
           nextStep = getNext();
         }
 

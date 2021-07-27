@@ -9,7 +9,7 @@
     <parent>
         <groupId>oracle.kubernetes</groupId>
         <artifactId>operator-parent</artifactId>
-        <version>3.2.5</version>
+        <version>3.3.0</version>
     </parent>
 
     <artifactId>installation-tests</artifactId>
@@ -120,7 +120,7 @@
                                 <include>**/*AT.java</include>
                             </includes>
                             <argLine>
-                                --illegal-access=permit
+                                --add-opens java.base/java.time=ALL-UNNAMED
                             </argLine>
                         </configuration>
                         <executions>

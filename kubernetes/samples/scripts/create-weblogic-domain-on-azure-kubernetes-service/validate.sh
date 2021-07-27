@@ -309,7 +309,7 @@ function validateOperator {
 function validateDomain {
     ret=$(kubectl get domain | grep "${domainUID}")
     if [ -n "$ret" ]; then
-        fail "${domainUID} is created! Please create a new domain or follow the page to delete it https://oracle.github.io/weblogic-kubernetes-operator/samples/simple/domains/domain-home-on-pv/#delete-the-generated-domain-home."
+        fail "${domainUID} is created! Please create a new domain or follow the page to delete it https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/domain-home-on-pv/#delete-the-generated-domain-home."
     fi
 }
 
