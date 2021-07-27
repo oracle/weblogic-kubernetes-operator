@@ -40,15 +40,11 @@ topology:
         'cluster-1-template':
             ListenPort: 8001
             Cluster: 'cluster-1'
-            JTAMigratableTarget:
-                Cluster: 'cluster-1'
             SSL:
                 ListenPort: 8100
         'cluster-2-template':
             ListenPort: 8001
             Cluster: 'cluster-2'
-            JTAMigratableTarget:
-                Cluster: 'cluster-2'
             SSL:
                 ListenPort: 8100
 resources:
