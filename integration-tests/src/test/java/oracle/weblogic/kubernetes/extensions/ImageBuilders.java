@@ -377,8 +377,11 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
     Path scriptPath = Paths.get(RESOURCE_DIR, "bash-scripts", "ocirtoken.sh");
     String cmd = scriptPath.toFile().getAbsolutePath();
     ExecResult result = null;
+    Map<String,String> credentials = new HashMap<>();
+    credentials.put("-u", OCIR_USERNAME);
+    credentials.put("-p", OCIR_PASSWORD);
     try {
-      result = ExecCommand.exec(cmd, true);
+      result = ExecCommand.exec(cmd, true, credentials);
     } catch (Exception e) {
       logger.info("Got exception while running command: {0}", cmd);
       logger.info(e.toString());
