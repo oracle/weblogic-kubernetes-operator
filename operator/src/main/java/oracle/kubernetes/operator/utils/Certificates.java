@@ -21,8 +21,8 @@ public class Certificates {
   static final String EXTERNAL_CERTIFICATE_KEY = EXTERNAL_ID_DIR + "externalOperatorKey";
   static final String EXTERNAL_CERTIFICATE = EXTERNAL_ID_DIR + "externalOperatorCert";
   private static final String INTERNAL_ID_DIR = OPERATOR_DIR + "internal-identity/";
-  static final String INTERNAL_CERTIFICATE_KEY = INTERNAL_ID_DIR + "internalOperatorKey";
-  static final String INTERNAL_CERTIFICATE = INTERNAL_ID_DIR + "internalOperatorCert";
+  public static final String INTERNAL_CERTIFICATE_KEY = INTERNAL_ID_DIR + "internalOperatorKey";
+  public static final String INTERNAL_CERTIFICATE = INTERNAL_ID_DIR + "internalOperatorCert";
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static Function<String, Path> GET_PATH = Paths::get;
