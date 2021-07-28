@@ -41,10 +41,10 @@ import static oracle.kubernetes.operator.utils.SelfSignedCertGenerator.writeStri
 public class InitializeInternalIdentityStep extends Step {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  public static final String OPERATOR_CM = "weblogic-operator-cm";
-  public static final String OPERATOR_SECRETS = "weblogic-operator-secrets";
-  public static final String SHA_256_WITH_RSA = "SHA256withRSA";
-  public static final String COMMON_NAME = "weblogic-operator";
+  private static final String OPERATOR_CM = "weblogic-operator-cm";
+  private static final String OPERATOR_SECRETS = "weblogic-operator-secrets";
+  private static final String SHA_256_WITH_RSA = "SHA256withRSA";
+  private static final String COMMON_NAME = "weblogic-operator";
 
   public InitializeInternalIdentityStep(Step next) {
     super(next);
@@ -92,26 +92,6 @@ public class InitializeInternalIdentityStep extends Step {
     return new ReadSecretResponseStep(next, internalOperatorKey);
   }
 
-  protected static final V1Secret createModel(V1Secret secret, Key internalOperatorKey) {
-    byte[] encodedKey = Base64.getEncoder().encode(internalOperatorKey.getEncoded());
-    if (secret == null) {
-      Map<String, byte[]> data = new HashMap<>();
-      data.put("internalOperatorKey", encodedKey);
-      return new V1Secret().kind("Secret").apiVersion("v1").metadata(createMetadata()).data(data);
-    } else {
-      Map data = Optional.ofNullable(secret.getData()).orElse(new HashMap<>());
-      data.put("internalOperatorKey", encodedKey);
-      return new V1Secret().kind("Secret").apiVersion("v1").metadata(secret.getMetadata()).data(data);
-    }
-  }
-
-  private static V1ObjectMeta createMetadata() {
-    Map labels = new HashMap<>();
-    labels.put("weblogic.operatorName", getOperatorNamespace());
-    return new V1ObjectMeta().name(OPERATOR_SECRETS).namespace(getOperatorNamespace())
-            .labels(labels);
-  }
-
   private static class ReadSecretResponseStep extends DefaultResponseStep<V1Secret> {
     final Key internalOperatorKey;
 
@@ -141,5 +121,25 @@ public class InitializeInternalIdentityStep extends Step {
     return new CallBuilder()
             .replaceSecretAsync(OPERATOR_SECRETS, getOperatorNamespace(), createModel(secret, internalOperatorKey),
                     new DefaultResponseStep<>(next));
+  }
+
+  protected static final V1Secret createModel(V1Secret secret, Key internalOperatorKey) {
+    byte[] encodedKey = Base64.getEncoder().encode(internalOperatorKey.getEncoded());
+    if (secret == null) {
+      Map<String, byte[]> data = new HashMap<>();
+      data.put("internalOperatorKey", encodedKey);
+      return new V1Secret().kind("Secret").apiVersion("v1").metadata(createMetadata()).data(data);
+    } else {
+      Map<String, byte[]> data = Optional.ofNullable(secret.getData()).orElse(new HashMap<>());
+      data.put("internalOperatorKey", encodedKey);
+      return new V1Secret().kind("Secret").apiVersion("v1").metadata(secret.getMetadata()).data(data);
+    }
+  }
+
+  private static V1ObjectMeta createMetadata() {
+    Map labels = new HashMap<>();
+    labels.put("weblogic.operatorName", getOperatorNamespace());
+    return new V1ObjectMeta().name(OPERATOR_SECRETS).namespace(getOperatorNamespace())
+            .labels(labels);
   }
 }

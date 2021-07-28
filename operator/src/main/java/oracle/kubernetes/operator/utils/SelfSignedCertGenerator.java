@@ -58,9 +58,6 @@ public final class SelfSignedCertGenerator {
 
   public static final String INTERNAL_WEBLOGIC_OPERATOR_SVC = "internal-weblogic-operator-svc";
 
-  private SelfSignedCertGenerator() {
-  }
-
   /**
    * Generates a key pair using the BouncyCastle lib.
    *
@@ -114,7 +111,7 @@ public final class SelfSignedCertGenerator {
     Date notAfter = Date.from(now.plus(Duration.ofDays(days)));
 
     ContentSigner contentSigner = new JcaContentSignerBuilder(hashAlgorithm).build(keyPair.getPrivate());
-    X500Name x500Name = createStdBuilder(cn).build();
+    X500Name x500Name = createX500NameBuilder(cn).build();
     X509v3CertificateBuilder certificateBuilder =
             new JcaX509v3CertificateBuilder(x500Name,
                     BigInteger.valueOf(now.toEpochMilli()),
@@ -139,14 +136,14 @@ public final class SelfSignedCertGenerator {
         new GeneralName(GeneralName.dNSName, host + "." + getOperatorNamespace() + ".svc.cluster.local")});
   }
 
-  private static X500NameBuilder createStdBuilder(String cn) {
+  private static X500NameBuilder createX500NameBuilder(String cn) {
     X500NameBuilder builder = new X500NameBuilder(RFC4519Style.INSTANCE);
+    builder.addRDN(RFC4519Style.cn, cn);
     builder.addRDN(RFC4519Style.c, "US");
     builder.addRDN(RFC4519Style.st, "CALIFORNIA");
     builder.addRDN(RFC4519Style.l, "REDWOOD CITY");
     builder.addRDN(RFC4519Style.o, "WebLogic");
     builder.addRDN(RFC4519Style.ou, "Development");
-    builder.addRDN(RFC4519Style.cn, cn);
     return builder;
   }
 

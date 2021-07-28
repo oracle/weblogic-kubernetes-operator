@@ -190,7 +190,7 @@ public class CallBuilder {
                   requestParams.namespace,
                   (V1Patch) requestParams.body,
                   callback));
-  private final CallFactory<V1Secret> replaceSecretAsync =
+  private final CallFactory<V1Secret> replaceSecret =
           (requestParams, usage, cont, callback) ->
                   wrap(
                           replaceSecretAsync(
@@ -1136,7 +1136,7 @@ public class CallBuilder {
     return createRequestAsync(
             responseStep,
             new RequestParams("replaceSecretAsync", namespace, name, body, ""),
-            replaceSecretAsync);
+            replaceSecret);
   }
 
   private Call replaceSecretAsync(
