@@ -31,7 +31,7 @@ import oracle.kubernetes.operator.work.Step;
 import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
-import static oracle.kubernetes.operator.logging.MessageKeys.INTERNAL_CERTIFICATE_GENERATION_FAILED;
+import static oracle.kubernetes.operator.logging.MessageKeys.INTERNAL_IDENTITY_INITIALIZATION_FAILED;
 import static oracle.kubernetes.operator.utils.Certificates.INTERNAL_CERTIFICATE;
 import static oracle.kubernetes.operator.utils.Certificates.INTERNAL_CERTIFICATE_KEY;
 import static oracle.kubernetes.operator.utils.SelfSignedCertGenerator.createKeyPair;
@@ -60,19 +60,14 @@ public class InitializeInternalIdentityStep extends Step {
       return doNext(recordInternalOperatorCert(cert,
               recordInternalOperatorKey(keyPair.getPrivate(), getNext())), packet);
     } catch (Exception e) {
-      LOGGER.severe(INTERNAL_CERTIFICATE_GENERATION_FAILED, e.getMessage());
-      throw new RuntimeException(e);
+      LOGGER.severe(INTERNAL_IDENTITY_INITIALIZATION_FAILED, e.toString());
+      return doNext(getNext(), packet);
     }
   }
 
-  private static Step recordInternalOperatorCert(X509Certificate cert, Step next) {
+  private static Step recordInternalOperatorCert(X509Certificate cert, Step next) throws IOException {
     JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
-
-    try {
-      patchBuilder.add("/data/internalOperatorCert", getBase64Encoded(cert));
-    } catch (Exception e) {
-      LOGGER.severe(INTERNAL_CERTIFICATE_GENERATION_FAILED, e.getMessage());
-    }
+    patchBuilder.add("/data/internalOperatorCert", getBase64Encoded(cert));
 
     return new CallBuilder()
             .patchConfigMapAsync(OPERATOR_CM, getOperatorNamespace(),

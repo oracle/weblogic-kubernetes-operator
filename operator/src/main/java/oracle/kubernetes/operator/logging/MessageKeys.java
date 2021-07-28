@@ -142,7 +142,7 @@ public class MessageKeys {
   public static final String DOMAIN_ROLL_COMPLETED = "WLSKO-0191";
   public static final String EXECUTE_MAKE_RIGHT_DOMAIN = "WLSKO-0192";
   public static final String LOG_WAITING_COUNT = "WLSKO-0193";
-  public static final String INTERNAL_CERTIFICATE_GENERATION_FAILED = "WLSKO-0194";
+  public static final String INTERNAL_IDENTITY_INITIALIZATION_FAILED = "WLSKO-0194";
 
 
   // domain status messages
