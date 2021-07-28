@@ -32,19 +32,14 @@ import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getCurrentIntrospectVersion;
-import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.startOperator;
-import static oracle.weblogic.kubernetes.actions.TestActions.stopOperator;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyUpdateWebLogicCredential;
+import static oracle.weblogic.kubernetes.utils.CommonOperatorUtils.restartOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDeleted;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
@@ -398,37 +393,5 @@ public class ItFmwMiiDomain {
 
     return patchDomainCustomResource(domainUid, fmwDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
   }
-
-  private void restartOperator(String opNamespace) {
-
-    // get operator pod name
-    String operatorPodName = assertDoesNotThrow(
-        () -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
-    assertNotNull(operatorPodName, "Operator pod name returned is null");
-    logger.info("Operator pod name {0}", operatorPodName);
-
-    // stop operator by changing replica to 0 in operator deployment
-    assertTrue(stopOperator(opNamespace), "Couldn't stop the Operator");
-
-    // check operator pod is not running
-    checkPodDoesNotExist(operatorPodName, null, opNamespace);
-
-    // start operator by changing replica to 1 in operator deployment
-    assertTrue(startOperator(opNamespace), "Couldn't start the Operator");
-
-    // check operator is running
-    logger.info("Check Operator pod is running in namespace {0}", opNamespace);
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for operator to be running in namespace {0} "
-                    + "(elapsed time {1}ms, remaining time {2}ms)",
-                opNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(operatorIsReady(opNamespace));
-
-    logger.info("Operator pod is restarted in namespace {0}", opNamespace);
-
-  }
-
+  
 }
