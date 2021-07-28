@@ -155,8 +155,8 @@ class ItIstioManagedCoherence {
    * and can also be retrieved from cache.
    */
   @Test
-  @DisplayName("Create a two-cluster domain with a Coherence cluster using WDT and test interaction with cache data")
-  public void testIstioCreateCoherenceDomainInImageUsingWdt() {
+  @DisplayName("Two cluster domain with a Coherence cluster with ISTIO and test interaction with cache data")
+  public void testIstioMultiClusterCoherenceDomain() {
 
     // create a DomainHomeInImage image using WebLogic Image Tool
     String domImage = createAndVerifyDomainImage();

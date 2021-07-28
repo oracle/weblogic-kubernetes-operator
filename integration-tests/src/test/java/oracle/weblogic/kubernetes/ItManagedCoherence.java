@@ -160,8 +160,8 @@ class ItManagedCoherence {
    * Verify that data can be added and stored in the cache and can also be retrieved from cache.
    */
   @Test
-  @DisplayName("Create a two-cluster domain with a Coherence cluster using WDT and test interaction with cache data")
-  public void testMutiClusterCoherenceDomain() {
+  @DisplayName("Two cluster domain with a Coherence cluster and test interaction with cache data")
+  public void testMultiClusterCoherenceDomain() {
     String ingressName = domainUid + "-ingress-host-routing";
     String ingressServiceName = VOYAGER_CHART_NAME + "-" + ingressName;
     String channelName = "tcp-80";
