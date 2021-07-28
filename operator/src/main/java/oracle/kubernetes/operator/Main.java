@@ -9,9 +9,9 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.io.StringWriter;
 import java.security.KeyPair;
 import java.security.PrivateKey;
-import java.security.cert.CertificateEncodingException;
 import java.security.cert.X509Certificate;
 import java.time.OffsetDateTime;
 import java.util.Base64;
@@ -72,9 +72,9 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
+import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
-import static oracle.kubernetes.operator.logging.MessageKeys.CERTIFICATE_ENCODING_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTERNAL_CERTIFICATE_GENERATION_FAILED;
 import static oracle.kubernetes.operator.utils.Certificates.INTERNAL_CERTIFICATE;
 import static oracle.kubernetes.operator.utils.Certificates.INTERNAL_CERTIFICATE_KEY;
@@ -623,7 +623,7 @@ public class Main {
   public static class InternalCertStep extends Step {
 
     public static final String SHA_256_WITH_RSA = "SHA256withRSA";
-    public static final String INTERNAL_WEBLOGIC_OPERATOR_SVC = "internal-weblogic-operator-svc";
+    public static final String COMMON_NAME = "weblogic-operator";
 
     public InternalCertStep(Step next) {
       super(next);
@@ -636,7 +636,7 @@ public class Main {
       try {
         keyPair = createKeyPair();
         writePem(keyPair.getPrivate(), new File(INTERNAL_CERTIFICATE_KEY));
-        cert = SelfSignedCertGenerator.generate(keyPair, SHA_256_WITH_RSA, INTERNAL_WEBLOGIC_OPERATOR_SVC, 3650);
+        cert = SelfSignedCertGenerator.generate(keyPair, SHA_256_WITH_RSA, COMMON_NAME, 3650);
         writeStringToFile(getBase64Encoded(cert), new File(INTERNAL_CERTIFICATE));
       } catch (Exception e) {
         LOGGER.severe(INTERNAL_CERTIFICATE_GENERATION_FAILED, e.getMessage());
@@ -651,8 +651,8 @@ public class Main {
 
     try {
       patchBuilder.add("/data/internalOperatorCert", getBase64Encoded(cert));
-    } catch (CertificateEncodingException cce) {
-      LOGGER.severe(CERTIFICATE_ENCODING_FAILED, cce.getMessage());
+    } catch (Exception e) {
+      LOGGER.severe(INTERNAL_CERTIFICATE_GENERATION_FAILED, e.getMessage());
     }
 
     return new CallBuilder()
@@ -661,8 +661,12 @@ public class Main {
                     new V1Patch(patchBuilder.build().toString()), new DefaultResponseStep<>(next));
   }
 
-  private static String getBase64Encoded(X509Certificate cert) throws CertificateEncodingException {
-    return cert != null ? Base64.getEncoder().encodeToString(cert.getEncoded()) : "";
+  private static String getBase64Encoded(X509Certificate cert) throws IOException {
+    StringWriter writer = new StringWriter();
+    JcaPEMWriter pemWriter = new JcaPEMWriter(writer);
+    pemWriter.writeObject(cert);
+    pemWriter.flush();
+    return Base64.getEncoder().encodeToString(writer.toString().getBytes());
   }
 
   private static Step recordInternalOperatorKey(KeyPair keyPair, Step next) {

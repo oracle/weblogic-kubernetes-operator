@@ -25,7 +25,6 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Date;
 
-import org.bouncycastle.asn1.pkcs.PKCSObjectIdentifiers;
 import org.bouncycastle.asn1.x500.X500Name;
 import org.bouncycastle.asn1.x500.X500NameBuilder;
 import org.bouncycastle.asn1.x500.style.RFC4519Style;
@@ -115,7 +114,7 @@ public final class SelfSignedCertGenerator {
     final Date notAfter = Date.from(now.plus(Duration.ofDays(days)));
 
     final ContentSigner contentSigner = new JcaContentSignerBuilder(hashAlgorithm).build(keyPair.getPrivate());
-    final X500Name x500Name = createStdBuilder().build();
+    final X500Name x500Name = createStdBuilder(cn).build();
     final X509v3CertificateBuilder certificateBuilder =
             new JcaX509v3CertificateBuilder(x500Name,
                     BigInteger.valueOf(now.toEpochMilli()),
@@ -140,16 +139,15 @@ public final class SelfSignedCertGenerator {
         new GeneralName(GeneralName.dNSName, host + "." + getOperatorNamespace() + ".svc.cluster.local")});
   }
 
-  private static X500NameBuilder createStdBuilder() {
+  private static X500NameBuilder createStdBuilder(String cn) {
     X500NameBuilder builder = new X500NameBuilder(RFC4519Style.INSTANCE);
 
     builder.addRDN(RFC4519Style.c, "US");
+    builder.addRDN(RFC4519Style.st, "CALIFORNIA");
+    builder.addRDN(RFC4519Style.l, "REDWOOD CITY");
     builder.addRDN(RFC4519Style.o, "WebLogic");
     builder.addRDN(RFC4519Style.ou, "Development");
-    builder.addRDN(RFC4519Style.ou, "weblogic-operator");
-    builder.addRDN(RFC4519Style.l, "REDWOOD CITY");
-    builder.addRDN(RFC4519Style.st, "CALIFORNIA");
-    builder.addRDN(PKCSObjectIdentifiers.pkcs_9_at_emailAddress, "feedback-crypto@bouncycastle.org");
+    builder.addRDN(RFC4519Style.cn, cn);
 
     return builder;
   }
