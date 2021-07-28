@@ -3,13 +3,7 @@
 
 package oracle.kubernetes.operator.utils;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.Writer;
 import java.math.BigInteger;
-import java.nio.file.Files;
-import java.security.Key;
 import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
@@ -42,7 +36,6 @@ import org.bouncycastle.crypto.params.RSAKeyGenerationParameters;
 import org.bouncycastle.crypto.params.RSAKeyParameters;
 import org.bouncycastle.crypto.params.RSAPrivateCrtKeyParameters;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 import org.bouncycastle.operator.ContentSigner;
 import org.bouncycastle.operator.OperatorCreationException;
 import org.bouncycastle.operator.jcajce.JcaContentSignerBuilder;
@@ -147,33 +140,4 @@ public final class SelfSignedCertGenerator {
     return builder;
   }
 
-  /**
-   * Writes the specified key to the file in PEM format.
-   *
-   * @param key Key to be written
-   * @param path File path for the file containing Key in PEM format
-   *
-   * @throws IOException when writing the PEM contents to file.
-   */
-  public static void writePem(Key key, File path) throws IOException {
-    path.getParentFile().mkdirs();
-    JcaPEMWriter writer = new JcaPEMWriter(new FileWriter(path));
-    writer.writeObject(key);
-    writer.flush();
-  }
-
-  /**
-   * Writes the specified String to the file.
-   *
-   * @param encodedContent String to be written
-   * @param path File path for the file containing string
-   *
-   * @throws IOException when writing the PEM contents to file.
-   */
-  public static void writeStringToFile(String encodedContent, File path) throws IOException {
-    path.getParentFile().mkdirs();
-    Writer wr = Files.newBufferedWriter(path.toPath());
-    wr.write(encodedContent);
-    wr.flush();
-  }
 }

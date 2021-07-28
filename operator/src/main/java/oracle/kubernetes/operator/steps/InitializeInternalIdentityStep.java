@@ -6,6 +6,8 @@ package oracle.kubernetes.operator.steps;
 import java.io.File;
 import java.io.IOException;
 import java.io.StringWriter;
+import java.io.Writer;
+import java.nio.file.Files;
 import java.security.Key;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
@@ -35,8 +37,6 @@ import static oracle.kubernetes.operator.logging.MessageKeys.INTERNAL_IDENTITY_I
 import static oracle.kubernetes.operator.utils.Certificates.INTERNAL_CERTIFICATE;
 import static oracle.kubernetes.operator.utils.Certificates.INTERNAL_CERTIFICATE_KEY;
 import static oracle.kubernetes.operator.utils.SelfSignedCertGenerator.createKeyPair;
-import static oracle.kubernetes.operator.utils.SelfSignedCertGenerator.writePem;
-import static oracle.kubernetes.operator.utils.SelfSignedCertGenerator.writeStringToFile;
 
 public class InitializeInternalIdentityStep extends Step {
 
@@ -54,15 +54,39 @@ public class InitializeInternalIdentityStep extends Step {
   public NextAction apply(Packet packet) {
     try {
       KeyPair keyPair = createKeyPair();
-      writePem(keyPair.getPrivate(), new File(INTERNAL_CERTIFICATE_KEY));
+      String key = convertToPEM(keyPair.getPrivate());
+      writeToFile(key, new File(INTERNAL_CERTIFICATE_KEY));
       X509Certificate cert = SelfSignedCertGenerator.generate(keyPair, SHA_256_WITH_RSA, COMMON_NAME, 3650);
-      writeStringToFile(getBase64Encoded(cert), new File(INTERNAL_CERTIFICATE));
+      writeToFile(getBase64Encoded(cert), new File(INTERNAL_CERTIFICATE));
       return doNext(recordInternalOperatorCert(cert,
-              recordInternalOperatorKey(keyPair.getPrivate(), getNext())), packet);
+              recordInternalOperatorKey(key, getNext())), packet);
     } catch (Exception e) {
       LOGGER.severe(INTERNAL_IDENTITY_INITIALIZATION_FAILED, e.toString());
       return doNext(getNext(), packet);
     }
+  }
+
+  private static String convertToPEM(Key key) throws IOException {
+    StringWriter writer = new StringWriter();
+    JcaPEMWriter pemWriter = new JcaPEMWriter(writer);
+    pemWriter.writeObject(key);
+    pemWriter.flush();
+    return writer.toString();
+  }
+
+  private static void writeToFile(String content, File path) throws IOException {
+    path.getParentFile().mkdirs();
+    Writer wr = Files.newBufferedWriter(path.toPath());
+    wr.write(content);
+    wr.flush();
+  }
+
+  private static String getBase64Encoded(X509Certificate cert) throws IOException {
+    StringWriter writer = new StringWriter();
+    JcaPEMWriter pemWriter = new JcaPEMWriter(writer);
+    pemWriter.writeObject(cert);
+    pemWriter.flush();
+    return Base64.getEncoder().encodeToString(writer.toString().getBytes());
   }
 
   private static Step recordInternalOperatorCert(X509Certificate cert, Step next) throws IOException {
@@ -75,27 +99,19 @@ public class InitializeInternalIdentityStep extends Step {
                     new V1Patch(patchBuilder.build().toString()), new DefaultResponseStep<>(next));
   }
 
-  private static String getBase64Encoded(X509Certificate cert) throws IOException {
-    StringWriter writer = new StringWriter();
-    JcaPEMWriter pemWriter = new JcaPEMWriter(writer);
-    pemWriter.writeObject(cert);
-    pemWriter.flush();
-    return Base64.getEncoder().encodeToString(writer.toString().getBytes());
-  }
-
-  private static Step recordInternalOperatorKey(Key key, Step next) {
+  private static Step recordInternalOperatorKey(String key, Step next) {
     return new CallBuilder().readSecretAsync(OPERATOR_SECRETS,
             getOperatorNamespace(), readSecretResponseStep(next, key));
   }
 
-  private static ResponseStep<V1Secret> readSecretResponseStep(Step next, Key internalOperatorKey) {
+  private static ResponseStep<V1Secret> readSecretResponseStep(Step next, String internalOperatorKey) {
     return new ReadSecretResponseStep(next, internalOperatorKey);
   }
 
   private static class ReadSecretResponseStep extends DefaultResponseStep<V1Secret> {
-    final Key internalOperatorKey;
+    final String internalOperatorKey;
 
-    ReadSecretResponseStep(Step next, Key internalOperatorKey) {
+    ReadSecretResponseStep(Step next, String internalOperatorKey) {
       super(next);
       this.internalOperatorKey = internalOperatorKey;
     }
@@ -111,27 +127,26 @@ public class InitializeInternalIdentityStep extends Step {
     }
   }
 
-  private static Step createSecret(Step next, Key internalOperatorKey) {
+  private static Step createSecret(Step next, String internalOperatorKey) {
     return new CallBuilder()
             .createSecretAsync(getOperatorNamespace(),
                     createModel(null, internalOperatorKey), new DefaultResponseStep<>(next));
   }
 
-  private static Step replaceSecret(Step next, V1Secret secret, Key internalOperatorKey) {
+  private static Step replaceSecret(Step next, V1Secret secret, String internalOperatorKey) {
     return new CallBuilder()
             .replaceSecretAsync(OPERATOR_SECRETS, getOperatorNamespace(), createModel(secret, internalOperatorKey),
                     new DefaultResponseStep<>(next));
   }
 
-  protected static final V1Secret createModel(V1Secret secret, Key internalOperatorKey) {
-    byte[] encodedKey = Base64.getEncoder().encode(internalOperatorKey.getEncoded());
+  protected static final V1Secret createModel(V1Secret secret, String internalOperatorKey) {
     if (secret == null) {
       Map<String, byte[]> data = new HashMap<>();
-      data.put("internalOperatorKey", encodedKey);
+      data.put("internalOperatorKey", internalOperatorKey.getBytes());
       return new V1Secret().kind("Secret").apiVersion("v1").metadata(createMetadata()).data(data);
     } else {
       Map<String, byte[]> data = Optional.ofNullable(secret.getData()).orElse(new HashMap<>());
-      data.put("internalOperatorKey", encodedKey);
+      data.put("internalOperatorKey", internalOperatorKey.getBytes());
       return new V1Secret().kind("Secret").apiVersion("v1").metadata(secret.getMetadata()).data(data);
     }
   }
