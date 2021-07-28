@@ -3,22 +3,14 @@
 
 package oracle.kubernetes.operator;
 
-import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
-import java.io.StringWriter;
-import java.security.KeyPair;
-import java.security.PrivateKey;
-import java.security.cert.X509Certificate;
 import java.time.OffsetDateTime;
-import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashMap;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ScheduledExecutorService;
@@ -31,15 +23,11 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
-import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.CoreV1EventList;
 import io.kubernetes.client.openapi.models.V1Namespace;
 import io.kubernetes.client.openapi.models.V1NamespaceList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.util.Watch;
-import jakarta.json.Json;
-import jakarta.json.JsonPatchBuilder;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.FailureStatusSourceException;
 import oracle.kubernetes.operator.helpers.CallBuilder;
@@ -58,7 +46,7 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.rest.RestConfigImpl;
 import oracle.kubernetes.operator.rest.RestServer;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
-import oracle.kubernetes.operator.utils.SelfSignedCertGenerator;
+import oracle.kubernetes.operator.steps.InitializeInternalIdentityStep;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Container;
 import oracle.kubernetes.operator.work.ContainerResolver;
@@ -72,15 +60,8 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
-import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
-import static oracle.kubernetes.operator.logging.MessageKeys.INTERNAL_CERTIFICATE_GENERATION_FAILED;
-import static oracle.kubernetes.operator.utils.Certificates.INTERNAL_CERTIFICATE;
-import static oracle.kubernetes.operator.utils.Certificates.INTERNAL_CERTIFICATE_KEY;
-import static oracle.kubernetes.operator.utils.SelfSignedCertGenerator.createKeyPair;
-import static oracle.kubernetes.operator.utils.SelfSignedCertGenerator.writePem;
-import static oracle.kubernetes.operator.utils.SelfSignedCertGenerator.writeStringToFile;
 
 /** A Kubernetes Operator for WebLogic. */
 public class Main {
@@ -98,8 +79,6 @@ public class Main {
       new AtomicReference<>(SystemClock.now());
   private static final Semaphore shutdownSignal = new Semaphore(0);
   private static final int DEFAULT_STUCK_POD_RECHECK_SECONDS = 30;
-  public static final String OPERATOR_CM = "weblogic-operator-cm";
-  public static final String OPERATOR_SECRETS = "weblogic-operator-secrets";
 
   private final MainDelegate delegate;
   private final StuckPodProcessing stuckPodProcessing;
@@ -332,11 +311,11 @@ public class Main {
   }
 
   private Step createStartupSteps() {
-    return createInternalCertStep(Namespaces.getSelection(new StartupStepsVisitor()));
+    return createInitializeInternalIdentityStep(Namespaces.getSelection(new StartupStepsVisitor()));
   }
 
-  private Step createInternalCertStep(Step next) {
-    return new InternalCertStep(next);
+  private Step createInitializeInternalIdentityStep(Step next) {
+    return new InitializeInternalIdentityStep(next);
   }
 
   private Step createOperatorNamespaceEventListStep() {
@@ -620,113 +599,4 @@ public class Main {
     }
   }
 
-  public static class InternalCertStep extends Step {
-
-    public static final String SHA_256_WITH_RSA = "SHA256withRSA";
-    public static final String COMMON_NAME = "weblogic-operator";
-
-    public InternalCertStep(Step next) {
-      super(next);
-    }
-
-    @Override
-    public NextAction apply(Packet packet) {
-      X509Certificate cert = null;
-      KeyPair keyPair = null;
-      try {
-        keyPair = createKeyPair();
-        writePem(keyPair.getPrivate(), new File(INTERNAL_CERTIFICATE_KEY));
-        cert = SelfSignedCertGenerator.generate(keyPair, SHA_256_WITH_RSA, COMMON_NAME, 3650);
-        writeStringToFile(getBase64Encoded(cert), new File(INTERNAL_CERTIFICATE));
-      } catch (Exception e) {
-        LOGGER.severe(INTERNAL_CERTIFICATE_GENERATION_FAILED, e.getMessage());
-      }
-
-      return doNext(recordInternalOperatorCert(cert, recordInternalOperatorKey(keyPair, getNext())), packet);
-    }
-  }
-
-  private static Step recordInternalOperatorCert(X509Certificate cert, Step next) {
-    JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
-
-    try {
-      patchBuilder.add("/data/internalOperatorCert", getBase64Encoded(cert));
-    } catch (Exception e) {
-      LOGGER.severe(INTERNAL_CERTIFICATE_GENERATION_FAILED, e.getMessage());
-    }
-
-    return new CallBuilder()
-            .patchConfigMapAsync(OPERATOR_CM, getOperatorNamespace(),
-                    null,
-                    new V1Patch(patchBuilder.build().toString()), new DefaultResponseStep<>(next));
-  }
-
-  private static String getBase64Encoded(X509Certificate cert) throws IOException {
-    StringWriter writer = new StringWriter();
-    JcaPEMWriter pemWriter = new JcaPEMWriter(writer);
-    pemWriter.writeObject(cert);
-    pemWriter.flush();
-    return Base64.getEncoder().encodeToString(writer.toString().getBytes());
-  }
-
-  private static Step recordInternalOperatorKey(KeyPair keyPair, Step next) {
-    return new CallBuilder().readSecretAsync(OPERATOR_SECRETS,
-            getOperatorNamespace(), readSecretResponseStep(next, keyPair.getPrivate()));
-  }
-
-  private static ResponseStep<V1Secret> readSecretResponseStep(Step next, PrivateKey internalOperatorKey) {
-    return new ReadSecretResponseStep(next, internalOperatorKey);
-  }
-
-  protected static final V1Secret createModel(V1Secret secret, PrivateKey internalOperatorKey) {
-    byte[] encodedKey = Base64.getEncoder().encode(internalOperatorKey.getEncoded());
-    if (secret == null) {
-      Map<String, byte[]> data = new HashMap<>();
-      data.put("internalOperatorKey", encodedKey);
-      return new V1Secret().kind("Secret").apiVersion("v1").metadata(createMetadata()).data(data);
-    } else {
-      Map data = Optional.ofNullable(secret.getData()).orElse(new HashMap<>());
-      data.put("internalOperatorKey", encodedKey);
-      return new V1Secret().kind("Secret").apiVersion("v1").metadata(secret.getMetadata()).data(data);
-    }
-  }
-
-  private static V1ObjectMeta createMetadata() {
-    Map labels = new HashMap<>();
-    labels.put("weblogic.operatorName", getOperatorNamespace());
-    return new V1ObjectMeta().name(OPERATOR_SECRETS).namespace(getOperatorNamespace())
-            .labels(labels);
-  }
-
-  private static class ReadSecretResponseStep extends DefaultResponseStep<V1Secret> {
-    final PrivateKey internalOperatorKey;
-
-    ReadSecretResponseStep(Step next, PrivateKey internalOperatorKey) {
-      super(next);
-      this.internalOperatorKey = internalOperatorKey;
-    }
-
-    @Override
-    public NextAction onSuccess(Packet packet, CallResponse<V1Secret> callResponse) {
-      V1Secret existingSecret = callResponse.getResult();
-      if (existingSecret == null) {
-        return doNext(createSecret(getNext(), internalOperatorKey), packet);
-      } else {
-        return doNext(replaceSecret(getNext(), existingSecret, internalOperatorKey), packet);
-      }
-    }
-
-  }
-
-  private static Step createSecret(Step next, PrivateKey internalOperatorKey) {
-    return new CallBuilder()
-            .createSecretAsync(getOperatorNamespace(),
-                    createModel(null, internalOperatorKey), new DefaultResponseStep<>(next));
-  }
-
-  private static Step replaceSecret(Step next, V1Secret secret, PrivateKey internalOperatorKey) {
-    return new CallBuilder()
-            .replaceSecretAsync(OPERATOR_SECRETS, getOperatorNamespace(), createModel(secret, internalOperatorKey),
-                    new DefaultResponseStep<>(next));
-  }
 }

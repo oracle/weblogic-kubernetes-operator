@@ -199,15 +199,6 @@ public class CallBuilder {
                                   requestParams.namespace,
                                   (V1Secret) requestParams.body,
                                   callback));
-  private final CallFactory<V1Secret> patchSecret =
-          (requestParams, usage, cont, callback) ->
-                  wrap(
-                          patchSecretAsync(
-                                  usage,
-                                  requestParams.name,
-                                  requestParams.namespace,
-                                  (V1Patch) requestParams.body,
-                                  callback));
   private final CallFactory<V1Pod> createPod =
       (requestParams, usage, cont, callback) ->
           wrap(
@@ -1157,31 +1148,6 @@ public class CallBuilder {
           throws ApiException {
     return new CoreV1Api(client)
             .replaceNamespacedSecretAsync(name, namespace, body, pretty, dryRun, null, callback);
-  }
-
-  private Call patchSecretAsync(
-          ApiClient client, String name, String namespace, V1Patch patch, ApiCallback<V1Secret> callback)
-          throws ApiException {
-    return new CoreV1Api(client)
-            .patchNamespacedSecretAsync(name, namespace, patch, pretty, null, null, null, callback);
-  }
-
-  /**
-   * Asynchronous step for patching a secret.
-   *
-   * @param name Name
-   * @param namespace Namespace
-   * @param domainUid Identifier of the domain that the ConfigMap is associated with
-   * @param patchBody instructions on what to patch
-   * @param responseStep Response step for when call completes
-   * @return Asynchronous step
-   */
-  public Step patchSecretAsync(
-          String name, String namespace, String domainUid, V1Patch patchBody, ResponseStep<V1Secret> responseStep) {
-    return createRequestAsync(
-            responseStep,
-            new RequestParams("patchSecret", namespace, name, patchBody, domainUid),
-            patchSecret);
   }
 
   private Call listPodAsync(

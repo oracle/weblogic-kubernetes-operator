@@ -71,18 +71,18 @@ public final class SelfSignedCertGenerator {
    */
   public static KeyPair createKeyPair() throws NoSuchAlgorithmException, InvalidKeySpecException {
 
-    final RSAKeyPairGenerator gen = new RSAKeyPairGenerator();
+    RSAKeyPairGenerator rsaKeyPairGenerator = new RSAKeyPairGenerator();
 
-    gen.init(new RSAKeyGenerationParameters(BigInteger.valueOf(3), new SecureRandom(), 2048, 80));
-    final AsymmetricCipherKeyPair keypair = gen.generateKeyPair();
+    rsaKeyPairGenerator.init(new RSAKeyGenerationParameters(BigInteger.valueOf(3), new SecureRandom(), 2048, 80));
+    AsymmetricCipherKeyPair keypair = rsaKeyPairGenerator.generateKeyPair();
 
-    final RSAKeyParameters publicKey = (RSAKeyParameters) keypair.getPublic();
-    final RSAPrivateCrtKeyParameters privateKey = (RSAPrivateCrtKeyParameters) keypair.getPrivate();
+    RSAKeyParameters publicKey = (RSAKeyParameters) keypair.getPublic();
+    RSAPrivateCrtKeyParameters privateKey = (RSAPrivateCrtKeyParameters) keypair.getPrivate();
 
-    final PublicKey pubKey = KeyFactory.getInstance("RSA").generatePublic(
+    PublicKey pubKey = KeyFactory.getInstance("RSA").generatePublic(
             new RSAPublicKeySpec(publicKey.getModulus(), publicKey.getExponent()));
 
-    final PrivateKey privKey = KeyFactory.getInstance("RSA").generatePrivate(
+    PrivateKey privKey = KeyFactory.getInstance("RSA").generatePrivate(
             new RSAPrivateCrtKeySpec(publicKey.getModulus(), publicKey.getExponent(),
                     privateKey.getExponent(), privateKey.getP(), privateKey.getQ(),
                     privateKey.getDP(), privateKey.getDQ(), privateKey.getQInv()));
@@ -109,13 +109,13 @@ public final class SelfSignedCertGenerator {
                                          final String cn,
                                          final int days)
           throws OperatorCreationException, CertificateException, CertIOException {
-    final Instant now = Instant.now();
-    final Date notBefore = Date.from(now);
-    final Date notAfter = Date.from(now.plus(Duration.ofDays(days)));
+    Instant now = Instant.now();
+    Date notBefore = Date.from(now);
+    Date notAfter = Date.from(now.plus(Duration.ofDays(days)));
 
-    final ContentSigner contentSigner = new JcaContentSignerBuilder(hashAlgorithm).build(keyPair.getPrivate());
-    final X500Name x500Name = createStdBuilder(cn).build();
-    final X509v3CertificateBuilder certificateBuilder =
+    ContentSigner contentSigner = new JcaContentSignerBuilder(hashAlgorithm).build(keyPair.getPrivate());
+    X500Name x500Name = createStdBuilder(cn).build();
+    X509v3CertificateBuilder certificateBuilder =
             new JcaX509v3CertificateBuilder(x500Name,
                     BigInteger.valueOf(now.toEpochMilli()),
                     notBefore,
@@ -141,14 +141,12 @@ public final class SelfSignedCertGenerator {
 
   private static X500NameBuilder createStdBuilder(String cn) {
     X500NameBuilder builder = new X500NameBuilder(RFC4519Style.INSTANCE);
-
     builder.addRDN(RFC4519Style.c, "US");
     builder.addRDN(RFC4519Style.st, "CALIFORNIA");
     builder.addRDN(RFC4519Style.l, "REDWOOD CITY");
     builder.addRDN(RFC4519Style.o, "WebLogic");
     builder.addRDN(RFC4519Style.ou, "Development");
     builder.addRDN(RFC4519Style.cn, cn);
-
     return builder;
   }
 
