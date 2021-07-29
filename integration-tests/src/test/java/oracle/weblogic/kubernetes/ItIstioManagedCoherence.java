@@ -80,7 +80,7 @@ class ItIstioManagedCoherence {
   private static final String COHERENCE_IMAGE_NAME = "coherence-managed-image";
 
   // constants for WebLogic domain
-  private static final String domainUid = "coherence-istio-managed-domain";
+  private static final String domainUid = "coherence-managed-domain";
   private static final int NUMBER_OF_CLUSTERS = 2;
   private static final String CLUSTER_NAME_PREFIX = "cluster-";
   private static final int MANAGED_SERVER_PORT = 8001;
