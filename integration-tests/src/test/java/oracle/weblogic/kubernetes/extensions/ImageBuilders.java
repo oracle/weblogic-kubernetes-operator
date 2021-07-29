@@ -361,6 +361,8 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
     if (DOMAIN_IMAGES_REPO.contains("ocir.io")) {
       String token = getOcirToken();
       if (token != null) {
+        logger.info("Deleting these images from OCIR");
+        logger.info(String.join(", ", pushedImages));
         for (String image : pushedImages) {
           deleteImageOcir(token, image);
         }
