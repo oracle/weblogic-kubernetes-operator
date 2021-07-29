@@ -9,7 +9,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -360,7 +359,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
 
     // delete images from OCIR, if necessary
     if (DOMAIN_IMAGES_REPO.contains("ocir.io")) {
-      String token = getOcirTokenShell();
+      String token = getOcirToken();
       if (token != null) {
         for (String image : pushedImages) {
           deleteImageOcir(token, image);
@@ -373,7 +372,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
     }
   }
 
-  private String getOcirTokenShell() {
+  private String getOcirToken() {
     LoggingFacade logger = getLogger();
     Path scriptPath = Paths.get(RESOURCE_DIR, "bash-scripts", "ocirtoken.sh");
     StringBuilder cmd = new StringBuilder()
@@ -561,40 +560,6 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
       String kindRepoImage = KIND_REPO + image.substring(BASE_IMAGES_REPO.length() + 1);
       return dockerPull(image) && dockerTag(image, kindRepoImage) && dockerPush(kindRepoImage);
     });
-  }
-
-  private String getOcirTokenJava() {
-    LoggingFacade logger = getLogger();
-    String message = OCIR_USERNAME + ":" + OCIR_PASSWORD;
-    String encodedCredentials = Base64.getEncoder().encodeToString(message.getBytes());
-    String headers = "\"Authorization: Basic " + encodedCredentials + "\"";
-    String ocirRegistryUrl = "https://" + OCIR_REGISTRY + "/20180419/docker/token";
-    StringBuilder command = new StringBuilder()
-        .append("curl -sk")
-        .append(" -H ")
-        .append(headers)
-        .append(" ")
-        .append(ocirRegistryUrl);
-    ExecResult result = null;
-    try {
-      result = ExecCommand.exec(command.toString());
-    } catch (IOException | InterruptedException e) {
-      logger.info("Got exception while running command: {0}", command);
-      logger.info(e.toString());
-    }
-    String token = null;
-    if (result != null) {
-      logger.info("result.stdout: \n{0}", result.stdout());
-      logger.info("result.stderr: \n{0}", result.stderr());
-      try {
-        JsonNode tree = new ObjectMapper().readTree(result.stdout());
-        token = tree.path("token").asText();
-        logger.info("Got authrization token: \n{0}", token);
-      } catch (JsonProcessingException ex) {
-        logger.severe(ex.getLocalizedMessage());
-      }
-    }
-    return token;
   }
 
 }
