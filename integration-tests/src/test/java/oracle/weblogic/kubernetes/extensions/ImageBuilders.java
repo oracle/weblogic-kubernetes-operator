@@ -6,6 +6,7 @@ package oracle.weblogic.kubernetes.extensions;
 
 import java.io.IOException;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Base64;
@@ -69,6 +70,7 @@ import static oracle.weblogic.kubernetes.TestConstants.WLS_UPDATE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.STAGE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
@@ -358,7 +360,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
 
     // delete images from OCIR, if necessary
     if (DOMAIN_IMAGES_REPO.contains("ocir.io")) {
-      String token = getOcirToken();
+      String token = getOcirTokenJava();
       if (token != null) {
         for (String image : pushedImages) {
           deleteImageOcir(token, image);
@@ -369,6 +371,30 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
     for (Handler handler : logger.getUnderlyingLogger().getHandlers()) {
       handler.close();
     }
+  }
+
+  private String getOcirTokenShell() {
+    LoggingFacade logger = getLogger();
+    Path scriptPath = Paths.get(RESOURCE_DIR, "bash-scripts", "ocirtoken.sh");
+    StringBuilder cmd = new StringBuilder()
+        .append(scriptPath.toFile().getAbsolutePath())
+        .append(" -u " + OCIR_USERNAME)
+        .append(" -p \"" + OCIR_PASSWORD + "\"")
+        .append(" -e " + OCIR_REGISTRY);
+    ExecResult result = null;
+    try {
+      logger.info("Running command..\n{0}", cmd.toString());
+      result = ExecCommand.exec(cmd.toString(), true);
+    } catch (Exception e) {
+      logger.info("Got exception while running command: {0}", cmd);
+      logger.info(e.toString());
+    }
+    if (result != null) {
+      logger.info("result.stdout: \n{0}", result.stdout());
+      logger.info("result.stderr: \n{0}", result.stderr());
+    }
+
+    return result != null ? result.stdout().trim() : null;
   }
 
   private void deleteImageOcir(String token, String imageName) {
@@ -537,7 +563,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
     });
   }
 
-  private String getOcirToken() {
+  private String getOcirTokenJava() {
     LoggingFacade logger = getLogger();
     String message = OCIR_USERNAME + ":" + OCIR_PASSWORD;
     String encodedCredentials = Base64.getEncoder().encodeToString(message.getBytes());
