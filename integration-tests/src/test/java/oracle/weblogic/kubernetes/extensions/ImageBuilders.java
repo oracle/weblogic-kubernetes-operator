@@ -6,9 +6,9 @@ package oracle.weblogic.kubernetes.extensions;
 
 import java.io.IOException;
 import java.nio.file.Files;
-import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -69,7 +69,6 @@ import static oracle.weblogic.kubernetes.TestConstants.WLS_UPDATE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.STAGE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WIT_BUILD_DIR;
@@ -372,28 +371,6 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
     }
   }
 
-  private String getOcirToken() {
-    LoggingFacade logger = getLogger();
-    Path scriptPath = Paths.get(RESOURCE_DIR, "bash-scripts", "ocirtoken.sh");
-    String cmd = scriptPath.toFile().getAbsolutePath();
-    ExecResult result = null;
-    Map<String,String> credentials = new HashMap<>();
-    credentials.put("-u", OCIR_USERNAME);
-    credentials.put("-p", OCIR_PASSWORD);
-    try {
-      result = ExecCommand.exec(cmd, true, credentials);
-    } catch (Exception e) {
-      logger.info("Got exception while running command: {0}", cmd);
-      logger.info(e.toString());
-    }
-    if (result != null) {
-      logger.info("result.stdout: \n{0}", result.stdout());
-      logger.info("result.stderr: \n{0}", result.stderr());
-    }
-
-    return result != null ? result.stdout().trim() : null;
-  }
-
   private void deleteImageOcir(String token, String imageName) {
     LoggingFacade logger = getLogger();
     int firstSlashIdx = imageName.indexOf('/');
@@ -558,6 +535,40 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
       String kindRepoImage = KIND_REPO + image.substring(BASE_IMAGES_REPO.length() + 1);
       return dockerPull(image) && dockerTag(image, kindRepoImage) && dockerPush(kindRepoImage);
     });
+  }
+
+  private String getOcirToken() {
+    LoggingFacade logger = getLogger();
+    String message = OCIR_USERNAME + ":" + OCIR_PASSWORD;
+    String encodedCredentials = Base64.getEncoder().encodeToString(message.getBytes());
+    String headers = "\"Authorization: Basic " + encodedCredentials + "\"";
+    String ocirRegistryUrl = "https://" + OCIR_REGISTRY + "/20180419/docker/token";
+    StringBuilder command = new StringBuilder()
+        .append("curl -sk")
+        .append(" -H ")
+        .append(headers)
+        .append(" ")
+        .append(ocirRegistryUrl);
+    ExecResult result = null;
+    try {
+      result = ExecCommand.exec(command.toString());
+    } catch (IOException | InterruptedException e) {
+      logger.info("Got exception while running command: {0}", command);
+      logger.info(e.toString());
+    }
+    String token = null;
+    if (result != null) {
+      logger.info("result.stdout: \n{0}", result.stdout());
+      logger.info("result.stderr: \n{0}", result.stderr());
+      try {
+        JsonNode tree = new ObjectMapper().readTree(result.stdout());
+        token = tree.path("token").asText();
+        logger.info("Got authrization token: \n{0}", token);
+      } catch (JsonProcessingException ex) {
+        logger.severe(ex.getLocalizedMessage());
+      }
+    }
+    return token;
   }
 
 }
