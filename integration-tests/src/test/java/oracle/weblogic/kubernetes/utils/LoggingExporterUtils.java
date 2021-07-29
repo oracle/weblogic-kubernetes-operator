@@ -5,6 +5,9 @@ package oracle.weblogic.kubernetes.utils;
 
 import java.util.Map;
 
+import oracle.weblogic.kubernetes.actions.TestActions;
+import oracle.weblogic.kubernetes.actions.impl.LoggingExporterParams;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTPS_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
@@ -23,10 +26,6 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.isElkStackPod
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-
-import oracle.weblogic.kubernetes.actions.TestActions;
-import oracle.weblogic.kubernetes.actions.impl.LoggingExporterParams;
-import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 public class LoggingExporterUtils {
   /**

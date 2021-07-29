@@ -1,3 +1,6 @@
+// Copyright (c) 2021, Oracle and/or its affiliates.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
 package oracle.weblogic.kubernetes.utils;
 
 import java.text.DateFormat;
@@ -9,6 +12,15 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.google.gson.JsonObject;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.openapi.models.V1SecretList;
+import oracle.weblogic.kubernetes.actions.impl.Namespace;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Docker;
+import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
@@ -47,16 +59,6 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import com.google.gson.JsonObject;
-import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1Secret;
-import io.kubernetes.client.openapi.models.V1SecretList;
-import oracle.weblogic.kubernetes.actions.impl.Namespace;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Docker;
-import oracle.weblogic.kubernetes.actions.impl.primitive.WitParams;
-import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 public class ImageUtils {
 
