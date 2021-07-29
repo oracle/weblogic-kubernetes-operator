@@ -68,19 +68,19 @@ public class InitializeInternalIdentityStep extends Step {
 
   private static String convertToPEM(Object object) throws IOException {
     StringWriter writer = new StringWriter();
-    JcaPEMWriter pemWriter = new JcaPEMWriter(writer);
-    pemWriter.writeObject(object);
-    pemWriter.flush();
-    pemWriter.close();
+    try (JcaPEMWriter pemWriter = new JcaPEMWriter(writer)) {
+      pemWriter.writeObject(object);
+      pemWriter.flush();
+    }
     return writer.toString();
   }
 
   private static void writeToFile(String content, File path) throws IOException {
     path.getParentFile().mkdirs();
-    Writer wr = Files.newBufferedWriter(path.toPath());
-    wr.write(content);
-    wr.flush();
-    wr.close();
+    try (Writer wr = Files.newBufferedWriter(path.toPath())) {
+      wr.write(content);
+      wr.flush();
+    }
   }
 
   private static String getBase64Encoded(X509Certificate cert) throws IOException {
