@@ -384,7 +384,6 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
         .append(" -e " + OCIR_REGISTRY);
     ExecResult result = null;
     try {
-      logger.info("Running command..\n{0}", cmd.toString());
       result = ExecCommand.exec(cmd.toString(), true);
     } catch (Exception e) {
       logger.info("Got exception while running command: {0}", cmd);
