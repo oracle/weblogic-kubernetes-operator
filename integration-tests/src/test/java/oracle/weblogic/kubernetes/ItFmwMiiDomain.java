@@ -11,6 +11,7 @@ import java.util.List;
 import io.kubernetes.client.custom.V1Patch;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -33,10 +34,13 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.getCurrentIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyUpdateWebLogicCredential;
+import static oracle.weblogic.kubernetes.utils.CommonOperatorUtils.restartOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDeleted;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
@@ -44,6 +48,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOpsswalletp
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createRcuAccessSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.patchServerStartPolicy;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.updateRcuAccessSecret;
@@ -54,6 +59,7 @@ import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -140,6 +146,10 @@ public class ItFmwMiiDomain {
 
   /**
    * Create a basic FMW model in image domain.
+   * Create the FMW domain with introspectVersion
+   * After domain is created and introspector exists restart the operator.
+   * Verify the restarted operator can find the existing introspector and wait for it to complete
+   * rather than replacing a new introspector.
    * Verify Pod is ready and service exists for both admin server and managed servers.
    * Verify EM console is accessible.
    */
@@ -213,6 +223,31 @@ public class ItFmwMiiDomain {
         fmwMiiImage);
 
     createDomainAndVerify(domain, fmwDomainNamespace);
+
+    //verify the introspector pod is created and runs
+    logger.info("Verifying introspector pod is created, runs");
+    String introspectPodNameBase = getIntrospectJobName(domainUid);
+    logger.info("Checking introspector pod exists and introspect version");
+    checkPodExists(introspectPodNameBase, domainUid, fmwDomainNamespace);
+    String introspectPodName = assertDoesNotThrow(() -> Kubernetes.listPods(fmwDomainNamespace, null)
+        .getItems().get(0).getMetadata().getName(),
+        String.format("Get intrspector pod name failed with ApiException in namespace %s", fmwDomainNamespace));
+    String introspectVersion1 =
+        assertDoesNotThrow(() -> getCurrentIntrospectVersion(domainUid, fmwDomainNamespace));
+    logger.info("Before restarting operator introspector pod name is: {0}, introspectVersion is: {1}",
+        introspectPodName, introspectVersion1);
+
+    logger.info("Restarting operator in the namespace: " + opNamespace);
+    restartOperator(opNamespace);
+    //verify the exact same introspector pod exists and Version does not change
+    logger.info("Checking the exact same introspector pod {0} exists in the namespace {1}",
+        introspectPodName, fmwDomainNamespace);
+    checkPodExists(introspectPodName, domainUid, fmwDomainNamespace);
+    String introspectVersion2 =
+        assertDoesNotThrow(() -> getCurrentIntrospectVersion(domainUid, fmwDomainNamespace));
+    logger.info("After operator restart introspectVersion is: " + introspectVersion2);
+    assertEquals(introspectVersion1, introspectVersion2, "introspectVersion changes after operator restart");
+
     verifyDomainReady(fmwDomainNamespace, domainUid, replicaCount);
   }
 
@@ -358,4 +393,5 @@ public class ItFmwMiiDomain {
 
     return patchDomainCustomResource(domainUid, fmwDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
   }
+  
 }
