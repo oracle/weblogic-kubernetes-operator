@@ -8,7 +8,6 @@ import java.io.IOException;
 import java.io.StringWriter;
 import java.io.Writer;
 import java.nio.file.Files;
-import java.security.Key;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.util.Base64;
@@ -26,7 +25,6 @@ import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.utils.SelfSignedCertGenerator;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
@@ -36,7 +34,8 @@ import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorName
 import static oracle.kubernetes.operator.logging.MessageKeys.INTERNAL_IDENTITY_INITIALIZATION_FAILED;
 import static oracle.kubernetes.operator.utils.Certificates.INTERNAL_CERTIFICATE;
 import static oracle.kubernetes.operator.utils.Certificates.INTERNAL_CERTIFICATE_KEY;
-import static oracle.kubernetes.operator.utils.SelfSignedCertGenerator.createKeyPair;
+import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.createKeyPair;
+import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.generateCertificate;
 
 public class InitializeInternalIdentityStep extends Step {
 
@@ -45,6 +44,7 @@ public class InitializeInternalIdentityStep extends Step {
   private static final String OPERATOR_SECRETS = "weblogic-operator-secrets";
   private static final String SHA_256_WITH_RSA = "SHA256withRSA";
   private static final String COMMON_NAME = "weblogic-operator";
+  public static final int CERTIFICATE_VALIDITY_DAYS = 3650;
 
   public InitializeInternalIdentityStep(Step next) {
     super(next);
@@ -56,7 +56,7 @@ public class InitializeInternalIdentityStep extends Step {
       KeyPair keyPair = createKeyPair();
       String key = convertToPEM(keyPair.getPrivate());
       writeToFile(key, new File(INTERNAL_CERTIFICATE_KEY));
-      X509Certificate cert = SelfSignedCertGenerator.generate(keyPair, SHA_256_WITH_RSA, COMMON_NAME, 3650);
+      X509Certificate cert = generateCertificate(keyPair, SHA_256_WITH_RSA, COMMON_NAME, CERTIFICATE_VALIDITY_DAYS);
       writeToFile(getBase64Encoded(cert), new File(INTERNAL_CERTIFICATE));
       return doNext(recordInternalOperatorCert(cert,
               recordInternalOperatorKey(key, getNext())), packet);
@@ -66,11 +66,12 @@ public class InitializeInternalIdentityStep extends Step {
     }
   }
 
-  private static String convertToPEM(Key key) throws IOException {
+  private static String convertToPEM(Object object) throws IOException {
     StringWriter writer = new StringWriter();
     JcaPEMWriter pemWriter = new JcaPEMWriter(writer);
-    pemWriter.writeObject(key);
+    pemWriter.writeObject(object);
     pemWriter.flush();
+    pemWriter.close();
     return writer.toString();
   }
 
@@ -79,14 +80,11 @@ public class InitializeInternalIdentityStep extends Step {
     Writer wr = Files.newBufferedWriter(path.toPath());
     wr.write(content);
     wr.flush();
+    wr.close();
   }
 
   private static String getBase64Encoded(X509Certificate cert) throws IOException {
-    StringWriter writer = new StringWriter();
-    JcaPEMWriter pemWriter = new JcaPEMWriter(writer);
-    pemWriter.writeObject(cert);
-    pemWriter.flush();
-    return Base64.getEncoder().encodeToString(writer.toString().getBytes());
+    return Base64.getEncoder().encodeToString(convertToPEM(cert).getBytes());
   }
 
   private static Step recordInternalOperatorCert(X509Certificate cert, Step next) throws IOException {
