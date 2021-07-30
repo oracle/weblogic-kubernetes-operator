@@ -361,6 +361,8 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
     if (DOMAIN_IMAGES_REPO.contains("ocir.io")) {
       String token = getOcirToken();
       if (token != null) {
+        logger.info("Deleting these images from OCIR");
+        logger.info(String.join(", ", pushedImages));
         for (String image : pushedImages) {
           deleteImageOcir(token, image);
         }
@@ -375,10 +377,14 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
   private String getOcirToken() {
     LoggingFacade logger = getLogger();
     Path scriptPath = Paths.get(RESOURCE_DIR, "bash-scripts", "ocirtoken.sh");
-    String cmd = scriptPath.toFile().getAbsolutePath();
+    StringBuilder cmd = new StringBuilder()
+        .append(scriptPath.toFile().getAbsolutePath())
+        .append(" -u " + OCIR_USERNAME)
+        .append(" -p \"" + OCIR_PASSWORD + "\"")
+        .append(" -e " + OCIR_REGISTRY);
     ExecResult result = null;
     try {
-      result = ExecCommand.exec(cmd, true);
+      result = ExecCommand.exec(cmd.toString(), true);
     } catch (Exception e) {
       logger.info("Got exception while running command: {0}", cmd);
       logger.info(e.toString());
