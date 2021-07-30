@@ -16,7 +16,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.NO_EXTERNAL_CERTIFI
 import static oracle.kubernetes.operator.logging.MessageKeys.NO_INTERNAL_CERTIFICATE;
 
 public class Certificates {
-  private static final String OPERATOR_DIR = "/operator/";
+  public static final String OPERATOR_DIR = "/operator/";
   private static final String EXTERNAL_ID_DIR = OPERATOR_DIR + "external-identity/";
   static final String EXTERNAL_CERTIFICATE_KEY = EXTERNAL_ID_DIR + "externalOperatorKey";
   static final String EXTERNAL_CERTIFICATE = EXTERNAL_ID_DIR + "externalOperatorCert";
