@@ -182,6 +182,7 @@ public class MainTest extends ThreadFactoryTestBase {
   public void setUp() throws Exception {
     mementos.add(loggerControl);
     mementos.add(testSupport.install());
+    mementos.add(TestStepFactory.install());
     mementos.add(HelmAccessStub.install());
     mementos.add(TuningParametersStub.install());
     mementos.add(StubWatchFactory.install());
@@ -1185,6 +1186,21 @@ public class MainTest extends ThreadFactoryTestBase {
     @Override
     public SemanticVersion getProductVersion() {
       return SemanticVersion.TEST_VERSION;
+    }
+  }
+
+  static class TestStepFactory implements Main.NextStepFactory {
+    @SuppressWarnings("FieldCanBeLocal")
+    private static TestStepFactory factory = new TestStepFactory();
+
+    private static Memento install() throws NoSuchFieldException {
+      factory = new TestStepFactory();
+      return StaticStubSupport.install(Main.class, "NEXT_STEP_FACTORY", factory);
+    }
+
+    @Override
+    public Step createInternalInitializationStep(Step next) {
+      return next;
     }
   }
 }
