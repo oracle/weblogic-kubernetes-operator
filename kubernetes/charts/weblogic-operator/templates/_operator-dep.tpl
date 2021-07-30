@@ -112,7 +112,7 @@ spec:
             command:
             - "bash"
             - "/operator/livenessProbe.sh"
-          initialDelaySeconds: 20
+          initialDelaySeconds: 40
           periodSeconds: 5
         readinessProbe:
           exec:

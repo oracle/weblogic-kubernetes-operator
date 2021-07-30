@@ -7,6 +7,9 @@
 RETVAL=$(test -f /operator/debug-config/livenessProbeSuccessOverride ; echo $?)
 
 FILE=/operator/.alive
+if [ ! -f ${FILE} ]; then
+  exit $RETVAL
+fi
 OLDTIME=60
 CURTIME=$(date +%s)
 FILETIME=$(stat $FILE -c %Y)
