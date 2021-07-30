@@ -85,6 +85,8 @@ public class Main {
   private NamespaceWatcher namespaceWatcher;
   protected OperatorEventWatcher operatorNamespaceEventWatcher;
   private boolean warnedOfCrdAbsence;
+  private static NextStepFactory NEXT_STEP_FACTORY =
+          (next) -> createInitializeInternalIdentityStep(next);
 
   private static String getConfiguredServiceAccount() {
     return TuningParameters.getInstance().get("serviceaccount");
@@ -311,10 +313,11 @@ public class Main {
   }
 
   private Step createStartupSteps() {
-    return createInitializeInternalIdentityStep(Namespaces.getSelection(new StartupStepsVisitor()));
+
+    return NEXT_STEP_FACTORY.createInternalInitializationStep(Namespaces.getSelection(new StartupStepsVisitor()));
   }
 
-  private Step createInitializeInternalIdentityStep(Step next) {
+  private static Step createInitializeInternalIdentityStep(Step next) {
     return new InitializeInternalIdentityStep(next);
   }
 
@@ -597,6 +600,11 @@ public class Main {
         LOGGER.severe(MessageKeys.EXCEPTION, throwable);
       }
     }
+  }
+
+  // an interface to provide a hook for unit testing.
+  interface NextStepFactory {
+    Step createInternalInitializationStep(Step next);
   }
 
 }

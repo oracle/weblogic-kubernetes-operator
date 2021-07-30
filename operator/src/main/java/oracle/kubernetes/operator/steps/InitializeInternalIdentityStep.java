@@ -66,8 +66,8 @@ public class InitializeInternalIdentityStep extends Step {
         return createInternalIdentity(packet);
       }
     } catch (Exception e) {
-      LOGGER.severe(INTERNAL_IDENTITY_INITIALIZATION_FAILED, e.toString());
-      return doNext(getNext(), packet);
+      LOGGER.warning(INTERNAL_IDENTITY_INITIALIZATION_FAILED, e.toString());
+      throw new RuntimeException(e);
     }
   }
 
