@@ -13,22 +13,30 @@ topology:
     Cluster:
         'cluster-1':
             CoherenceClusterSystemResource: CoherenceCluster
+            CoherenceTier:
+                CoherenceWebFederatedStorageEnabled: false
+                CoherenceWebLocalStorageEnabled:     false
+                LocalStorageEnabled:                 false
             DynamicServers:
                 ServerNamePrefix: 'cluster-1-managed-server'
                 MaxDynamicClusterSize: 5
                 CalculatedListenPorts: false
                 MaximumDynamicServerCount: 5
-                ServerTemplate: 'cluster-1-template'
                 DynamicClusterSize: 5
+                ServerTemplate: 'cluster-1-template'
         'cluster-2':
             CoherenceClusterSystemResource: CoherenceCluster
+            CoherenceTier:
+                CoherenceWebFederatedStorageEnabled: false
+                CoherenceWebLocalStorageEnabled:     false
+                LocalStorageEnabled:                 true
             DynamicServers:
                 ServerNamePrefix: 'cluster-2-managed-server'
                 MaxDynamicClusterSize: 5
                 CalculatedListenPorts: false
                 MaximumDynamicServerCount: 5
-                ServerTemplate: 'cluster-2-template'
                 DynamicClusterSize: 5
+                ServerTemplate: 'cluster-2-template'
     Server:
         'admin-server':
             NetworkAccessPoint:
@@ -40,20 +48,19 @@ topology:
         'cluster-1-template':
             ListenPort: 8001
             Cluster: 'cluster-1'
-            JTAMigratableTarget:
-                Cluster: 'cluster-1'
-            SSL:
-                ListenPort: 8100
+            CoherenceClusterSystemResource: CoherenceCluster
+            CoherenceMemberConfig:
+              UnicastListenAddress:  'coherence-managed-domain-cluster-1-managed-server${id}' 
         'cluster-2-template':
             ListenPort: 8001
             Cluster: 'cluster-2'
-            JTAMigratableTarget:
-                Cluster: 'cluster-2'
-            SSL:
-                ListenPort: 8100
+            CoherenceClusterSystemResource: CoherenceCluster
+            CoherenceMemberConfig:
+              UnicastListenAddress:  'coherence-managed-domain-cluster-2-managed-server${id}' 
 resources:
     CoherenceClusterSystemResource:
         CoherenceCluster:
+            Target: 'cluster-1,cluster-2'
             CoherenceResource:
                 CoherenceClusterParams:
                     ClusteringMode: unicast

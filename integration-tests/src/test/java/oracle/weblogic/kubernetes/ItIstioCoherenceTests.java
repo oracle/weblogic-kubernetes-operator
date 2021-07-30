@@ -7,6 +7,7 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,12 +18,11 @@ import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.weblogic.domain.AdminServer;
-import oracle.weblogic.domain.AdminService;
-import oracle.weblogic.domain.Channel;
 import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
+import oracle.weblogic.domain.Istio;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -41,6 +41,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodIP;
@@ -67,7 +68,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test to create a WebLogic domain with Coherence and verify the use of Coherence cache service")
 @IntegrationTest
 @Tag("okdenv")
-class ItCoherenceTests {
+class ItIstioCoherenceTests {
 
   // constants for Coherence
   private static final String PROXY_CLIENT_APP_NAME = "coherence-proxy-client";
@@ -84,7 +85,7 @@ class ItCoherenceTests {
   private static final String COHERENCE_MODEL_PROP = "coherence-wdt-config.properties";
   private static final String COHERENCE_IMAGE_NAME = "coherence-image";
 
-  private static String domainUid = "coherence-domain";
+  private static String domainUid = "coherence-istio-domain";
   private static String clusterName = "cluster-1";
   private static String adminServerPodName = domainUid + "-admin-server";
   private static String managedServerPrefix = domainUid + "-managed-server";
@@ -121,6 +122,13 @@ class ItCoherenceTests {
     assertNotNull(namespaces.get(1), "Namespace list is null");
     domainNamespace = namespaces.get(1);
 
+    // Label the domain/operator namespace with istio-injection=enabled
+    Map<String, String> labelMap = new HashMap();
+    labelMap.put("istio-injection", "enabled");
+
+    assertDoesNotThrow(() -> addLabelsToNamespace(domainNamespace, labelMap));
+    assertDoesNotThrow(() -> addLabelsToNamespace(opNamespace, labelMap));
+
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
   }
@@ -132,7 +140,7 @@ class ItCoherenceTests {
    */
   @Test
   @DisplayName("Create domain with a Coherence cluster using WDT and test rolling restart")
-  public void testCoherenceServerRollingRestart() {
+  public void testIstioCoherenceServerRollingRestart() {
     final String successMarker = "CACHE-SUCCESS";
 
     // create a DomainHomeInImage image using WebLogic Image Tool
@@ -339,19 +347,18 @@ class ItCoherenceTests {
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
             .adminServer(new AdminServer()
-                .serverStartState("RUNNING")
-                .adminService(new AdminService()
-                    .addChannelsItem(new Channel()
-                        .channelName("default")
-                        .nodePort(0))))
+                            .serverStartState("RUNNING"))
             .addClustersItem(new Cluster()
-                .clusterName(clusterName)
-                .replicas(replicaCount)
-                .serverStartState("RUNNING"))
+                            .clusterName(clusterName)
+                            .replicas(replicaCount)
+                            .serverStartState("RUNNING"))
             .configuration(new Configuration()
-                .model(new Model()
-                    .domainType("WLS"))
-                .introspectorJobActiveDeadlineSeconds(300L)));
+                            .istio(new Istio()
+                                 .enabled(Boolean.TRUE)
+                                 .readinessPort(8888))
+                            .model(new Model()
+                                    .domainType("WLS"))
+                 .introspectorJobActiveDeadlineSeconds(300L)));
     setPodAntiAffinity(domain);
     logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
         domainUid, domainNamespace);

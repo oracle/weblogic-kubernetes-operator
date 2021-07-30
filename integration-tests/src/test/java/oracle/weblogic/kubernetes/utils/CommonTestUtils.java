@@ -1609,7 +1609,7 @@ public class CommonTestUtils {
         .conditionEvaluationListener(
             condition -> logger.info(
                 "Waiting for Voyager ingress to be ready in namespace {0} (elapsed time {1}ms, remaining time {2}ms)",
-                domainUid,
+                domainNamespace,
                 condition.getElapsedTimeInMS(),
                 condition.getRemainingTimeInMS()))
         .until(assertDoesNotThrow(() -> isVoyagerReady(domainNamespace, voyagerIngressName),
