@@ -15,8 +15,6 @@ function relay_SIGTERM {
 
 trap relay_SIGTERM SIGTERM
 
-/operator/initialize-internal-operator-identity.sh
-
 /operator/initialize-external-operator-identity.sh
 
 if [[ ! -z "$REMOTE_DEBUG_PORT" ]]; then
