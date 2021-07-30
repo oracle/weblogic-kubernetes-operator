@@ -72,22 +72,22 @@ public class InitializeInternalIdentityStep extends Step {
   }
 
   private void reuseInternalIdentity() throws IOException {
-      // copy the certificate and key from the operator's config map and secret
-      // to the locations the operator runtime expects
-      FileUtils.copyFile(internalCertFile, new File(INTERNAL_CERTIFICATE));
-      FileUtils.copyFile(internalKeyFile, new File(INTERNAL_CERTIFICATE_KEY));
+    // copy the certificate and key from the operator's config map and secret
+    // to the locations the operator runtime expects
+    FileUtils.copyFile(internalCertFile, new File(INTERNAL_CERTIFICATE));
+    FileUtils.copyFile(internalKeyFile, new File(INTERNAL_CERTIFICATE_KEY));
   }
 
   private NextAction createInternalIdentity(Packet packet) throws Exception {
-      KeyPair keyPair = createKeyPair();
-      String key = convertToPEM(keyPair.getPrivate());
-      writeToFile(key, new File(INTERNAL_CERTIFICATE_KEY));
-      X509Certificate cert = generateCertificate(keyPair, SHA_256_WITH_RSA, COMMON_NAME, CERTIFICATE_VALIDITY_DAYS);
-      writeToFile(getBase64Encoded(cert), new File(INTERNAL_CERTIFICATE));
-      // put the new certificate in the operator's config map so that it will be available
-      // the next time the operator is started
-      return doNext(recordInternalOperatorCert(cert,
-              recordInternalOperatorKey(key, getNext())), packet);
+    KeyPair keyPair = createKeyPair();
+    String key = convertToPEM(keyPair.getPrivate());
+    writeToFile(key, new File(INTERNAL_CERTIFICATE_KEY));
+    X509Certificate cert = generateCertificate(keyPair, SHA_256_WITH_RSA, COMMON_NAME, CERTIFICATE_VALIDITY_DAYS);
+    writeToFile(getBase64Encoded(cert), new File(INTERNAL_CERTIFICATE));
+    // put the new certificate in the operator's config map so that it will be available
+    // the next time the operator is started
+    return doNext(recordInternalOperatorCert(cert,
+            recordInternalOperatorKey(key, getNext())), packet);
   }
 
   private static String convertToPEM(Object object) throws IOException {
