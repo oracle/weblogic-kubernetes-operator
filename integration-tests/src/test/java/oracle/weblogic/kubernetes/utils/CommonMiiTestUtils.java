@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Job;
@@ -61,11 +62,14 @@ import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteConfigMap;
+import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
+import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listConfigMaps;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podIntrospectVersionUpdated;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
@@ -90,6 +94,7 @@ import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -339,6 +344,123 @@ public class CommonMiiTestUtils {
 
     for (AuxiliaryImage auxiliaryImage : auxiliaryImages) {
       domainCR.spec().serverPod().addAuxiliaryImagesItem(auxiliaryImage);
+    }
+
+    return domainCR;
+  }
+
+  /**
+   * Create a domain object for a Kubernetes domain custom resource using the basic WLS image
+   * and MII auxiliary images containing the doamin or/and cluster configuration.
+   *
+   * @param domainResourceName name of the domain resource
+   * @param domNamespace Kubernetes namespace that the domain is hosted
+   * @param baseImageName name of the base image to use
+   * @param adminSecretName name of the new WebLogic admin credentials secret
+   * @param repoSecretName name of the secret for pulling the WebLogic image
+   * @param encryptionSecretName name of the secret used to encrypt the models
+   * @param replicaCount number of managed servers to start
+   * @param clusterName name of the cluster to add in domain
+   * @param auxiliaryImagePathVolume a map of auxiliary image path, parent location for Model in Image model
+   *                                 and WDT installation files as the key and a list of auxiliary image volume names
+   *                                 as the values for the key
+   * @param auxiliaryImageDomainScopeNames a list of image names including tags, image contains the domain model,
+   *                                       application archive if any and WDT installation files
+   * @param auxiliaryImageClusterScopeNames a list of images containing the files to
+   *                                        config cluster scope auxiliary image
+   * @return domain object of the domain resource
+   */
+  public static Domain createDomainResourceWithAuxiliaryImageClusterScope(
+      String domainResourceName,
+      String domNamespace,
+      String baseImageName,
+      String adminSecretName,
+      String repoSecretName,
+      String encryptionSecretName,
+      int replicaCount,
+      String clusterName,
+      Map<String, List<String>> auxiliaryImagePathVolume,
+      List<String> auxiliaryImageDomainScopeNames,
+      List<String> auxiliaryImageClusterScopeNames) {
+
+    Domain domainCR = CommonMiiTestUtils.createDomainResource(domainResourceName,
+        domNamespace, baseImageName, adminSecretName, repoSecretName,
+        encryptionSecretName, replicaCount, clusterName);
+
+    auxiliaryImagePathVolume.forEach((auxiliaryImagePath, auxiliaryImageVolumes) -> {
+      System.out.println(auxiliaryImagePath + " - " + auxiliaryImageVolumes.toString());
+      for (String auxiliaryImageVolumeName : auxiliaryImageVolumes) {
+        domainCR.spec().addAuxiliaryImageVolumesItem(new AuxiliaryImageVolume()
+            .mountPath(auxiliaryImagePath)
+            .name(auxiliaryImageVolumeName));
+        domainCR.spec().configuration().model()
+            .withModelHome(auxiliaryImagePath + "/models")
+            .withWdtInstallHome(auxiliaryImagePath + "/weblogic-deploy");
+
+        appendDomainResourceDomainScopeAuxiliaryImage(domainCR, auxiliaryImageVolumeName,
+            auxiliaryImageDomainScopeNames);
+        appendDomainResourceClusterScopeAuxiliaryImage(domainCR, clusterName,
+            auxiliaryImageVolumeName, auxiliaryImageClusterScopeNames);
+      }
+    });
+
+    return domainCR;
+  }
+
+  /**
+   * Append domain scope config in a MII auxiliary image to domain object.
+   *
+   * @param domainCR domain object of the domain resource to add cluster scope auxiliary image configurations to
+   * @param auxiliaryImageVolumeName auxiliary image volume name
+   * @param auxiliaryImageDomainScopeNames a list of image names including tags, image contains the domain model,
+   *                                       application archive if any and WDT installation files
+   * @return domain object of the domain resource
+   */
+  public static Domain appendDomainResourceDomainScopeAuxiliaryImage(
+      Domain domainCR,
+      String auxiliaryImageVolumeName,
+      List<String> auxiliaryImageDomainScopeNames) {
+
+    for (String auxiliaryImageName: auxiliaryImageDomainScopeNames) {
+      domainCR.spec().serverPod()
+          .addAuxiliaryImagesItem(new AuxiliaryImage()
+              .image(auxiliaryImageName)
+              .volume(auxiliaryImageVolumeName)
+              .imagePullPolicy("IfNotPresent"));
+    }
+
+    return domainCR;
+  }
+
+  /**
+   * Append cluster scope config in a MII auxiliary image to domain object.
+   *
+   * @param domainCR domain object of the domain resource to add cluster scope auxiliary image configurations to
+   * @param clusterName name of the cluster to add in domain
+   * @param auxiliaryImageVolumeName auxiliary image volume name
+   * @param auxiliaryImageClusterScopeNames a list of image containing the files to
+   *                                        config cluster scope auxiliary images
+   * @return domain object of the domain resource
+   */
+  public static Domain appendDomainResourceClusterScopeAuxiliaryImage(
+      Domain domainCR,
+      String clusterName,
+      String auxiliaryImageVolumeName,
+      List<String> auxiliaryImageClusterScopeNames) {
+
+    for (String auxiliaryImageName: auxiliaryImageClusterScopeNames) {
+      domainCR.spec().getClusters()
+          .stream()
+          .forEach(
+              cluster -> {
+                if (cluster.getClusterName().equals(clusterName)) {
+                    cluster.serverPod().addAuxiliaryImagesItem(new AuxiliaryImage()
+                        .image(auxiliaryImageName)
+                        .volume(auxiliaryImageVolumeName)
+                        .imagePullPolicy("IfNotPresent"));
+                    }
+                }
+      );
     }
 
     return domainCR;
@@ -1002,5 +1124,119 @@ public class CommonMiiTestUtils {
 
     getLogger().info("Domain {0} in namespace {1} is fully started after changing WebLogic credentials secret",
         domainUid, domainNamespace);
+  }
+
+
+  /**
+   * Patch the domain CRD with a new auxiliary image to add new or replace existing
+   * auxiliary images at cluster scope. Verify the server pods in cluster are rolling
+   * restarted and back to ready state.
+   * @param domainNamespace namespace where the domain is
+   * @param managedServerPrefix prefix of the managed server
+   * @param replicaCount replica count of the domain
+   * @param clusterIndex index of cluster to add or replace the auxiliary image cluster config
+   * @param auxiliaryImageVolumeName auxiliary image volume name
+   * @param auxiliaryImageName image names containing the files to config cluster scope auxiliary image
+   * @param auxiliaryImageIndex location to add or replace the auxiliary image cluster config
+   * @param addOrReplace add or replace the auxiliary image cluster config
+   */
+  public static void patchDomainClusterWithAuxImageAndVerify(String domainUid,
+                                                             String domainNamespace,
+                                                             String managedServerPrefix,
+                                                             int replicaCount,
+                                                             int clusterIndex,
+                                                             String auxiliaryImageVolumeName,
+                                                             String auxiliaryImageName,
+                                                             int auxiliaryImageIndex,
+                                                             String addOrReplace) {
+
+    LoggingFacade logger = getLogger();
+
+    // create the map with server pods and their original creation timestamps
+    Map<String, OffsetDateTime> podsWithTimeStamps = new LinkedHashMap<>();
+    for (int i = 1; i <= replicaCount; i++) {
+      String managedServerPodName = managedServerPrefix + i;
+      podsWithTimeStamps.put(managedServerPodName,
+          assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", managedServerPodName),
+          String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
+          managedServerPodName, domainNamespace)));
+    }
+
+    // create patch string
+    StringBuffer patchStr = new StringBuffer("[")
+        .append("{\"op\":  \"" + addOrReplace + "\",")
+        .append(" \"path\": \"/spec/clusters/")
+        .append(clusterIndex)
+        .append("/serverPod/auxiliaryImages/")
+        .append(auxiliaryImageIndex)
+        .append("\", ")
+        .append("\"value\":  {\"image\": \"")
+        .append(auxiliaryImageName)
+        .append("\", ")
+        .append("\"imagePullPolicy\": \"IfNotPresent\", ")
+        .append("\"volume\": ")
+        .append("\"")
+        .append(auxiliaryImageVolumeName)
+        .append("\"}}]");
+
+    logger.info("Patch domain with auxiliary image patch string: " + patchStr);
+
+    // patch the domain and verify
+    V1Patch patch = new V1Patch((patchStr).toString());
+    boolean aiPatched = assertDoesNotThrow(() ->
+        patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
+        "patchDomainClusterWithAuxiliaryImageAndVerify failed ");
+    assertTrue(aiPatched, "patchDomainClusterWithAuxiliaryImageAndVerify failed");
+
+    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
+        domainUid, domainNamespace));
+    assertNotNull(domain1, "Got null domain resource after patching");
+    assertNotNull(domain1.getSpec().getClusters().get(clusterIndex).getServerPod().getAuxiliaryImages(),
+        domain1 + "/spec/serverPod/auxiliaryImages is null");
+
+    //verify that the domain is patched with new image
+    List<AuxiliaryImage> auxiliaryImageListAf =
+        domain1.getSpec().getClusters().get(clusterIndex).getServerPod().getAuxiliaryImages();
+    boolean doMainPatched = false;
+    for (AuxiliaryImage auxImage : auxiliaryImageListAf) {
+      if (auxImage.getImage().equals(auxiliaryImageName)) {
+        logger.info("Domain patched and cluster config {0} found", auxImage);
+        doMainPatched = true;
+        break;
+      }
+    }
+    assertTrue(doMainPatched, String.format("Image name %s should be patched", auxiliaryImageName));
+
+    // verify the server pods in cluster are rolling restarted and back to ready state
+    logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
+        domainUid, domainNamespace);
+    assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
+        String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
+  }
+
+  /**
+   * Read a file in a given pod.
+   * @param domainNamespace namespace where the domain is
+   * @param serverPodName WLS server pod name
+   * @param fileName file to read from
+   * @return ExecResult containing the content of the given file
+   */
+  public static ExecResult readFilesInPod(String domainNamespace,
+                                          String serverPodName,
+                                          String fileName) {
+    LoggingFacade logger = getLogger();
+    StringBuffer readFileCmd = new StringBuffer("kubectl exec -n ")
+        .append(domainNamespace)
+        .append(" ")
+        .append(serverPodName)
+        .append(" -- cat \"")
+        .append(fileName)
+        .append("\"");
+    logger.info("command to read file in pod {0} is: {1}", serverPodName, readFileCmd.toString());
+
+    ExecResult result = assertDoesNotThrow(() -> exec(readFileCmd.toString(), true));
+
+    return result;
   }
 }
