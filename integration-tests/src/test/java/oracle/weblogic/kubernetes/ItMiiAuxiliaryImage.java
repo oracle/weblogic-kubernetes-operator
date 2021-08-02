@@ -476,8 +476,8 @@ public class ItMiiAuxiliaryImage {
 
     // check the introspector pod log contains the expected error message
     String expectedErrorMsg = "Auxiliary Image: Dir '/errorpath' doesn't exist or is empty. Exiting.";
-    String introspectorPodName = assertDoesNotThrow(() -> getIntrospectorPodName(domainUid, errorpathDomainNamespace));
-    checkPodLogContainsString(errorpathDomainNamespace, introspectorPodName, expectedErrorMsg);
+    checkPodLogContainsString(errorpathDomainNamespace,
+        assertDoesNotThrow(() -> getIntrospectorPodName(domainUid, errorpathDomainNamespace)), expectedErrorMsg);
 
     // check the domain event contains the expected error message
     checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
@@ -559,9 +559,9 @@ public class ItMiiAuxiliaryImage {
     String expectedErrorMsg = "The domain resource 'spec.domainHomeSourceType' is 'FromModel'  and "
         + "a WebLogic Deploy Tool (WDT) install is not located at  'spec.configuration.model.wdtInstallHome'  "
         + "which is currently set to '/auxiliary/weblogic-deploy'";
-    String introspectorPodName = assertDoesNotThrow(() -> getIntrospectorPodName(domainUid, errorpathDomainNamespace),
-        "Can't get introspector pod's name");
-    checkPodLogContainsString(errorpathDomainNamespace, introspectorPodName, expectedErrorMsg);
+    checkPodLogContainsString(errorpathDomainNamespace,
+        assertDoesNotThrow(() -> getIntrospectorPodName(domainUid, errorpathDomainNamespace),
+            "Can't get introspector pod's name"), expectedErrorMsg);
 
     // check the domain event contains the expected error message
     checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
@@ -647,9 +647,9 @@ public class ItMiiAuxiliaryImage {
     // check the introspector pod log contains the expected error message
     String expectedErrorMsg =
         "createDomain did not find the required domainInfo section in the model file /auxiliary/models/model.jms2.yaml";
-    String introspectorPodName = assertDoesNotThrow(() -> getIntrospectorPodName(domainUid, errorpathDomainNamespace),
-        "Get introspector's pod name failed");
-    checkPodLogContainsString(errorpathDomainNamespace, introspectorPodName, expectedErrorMsg);
+    checkPodLogContainsString(errorpathDomainNamespace,
+        assertDoesNotThrow(() -> getIntrospectorPodName(domainUid, errorpathDomainNamespace),
+        "Get introspector's pod name failed"), expectedErrorMsg);
 
     // check the domain event contains the expected error message
     checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
@@ -723,9 +723,9 @@ public class ItMiiAuxiliaryImage {
 
     // check the introspector pod log contains the expected error message
     String expectedErrorMsg = "Auxiliary Image: Command 'exit 1' execution failed in container";
-    String introspectorPodName = assertDoesNotThrow(() -> getIntrospectorPodName(domainUid, domainNamespace),
-        "Get introspector's pod name failed");
-    checkPodLogContainsString(domainNamespace, introspectorPodName, expectedErrorMsg);
+    checkPodLogContainsString(domainNamespace,
+        assertDoesNotThrow(() -> getIntrospectorPodName(domainUid, domainNamespace),
+            "Get introspector's pod name failed"), expectedErrorMsg);
 
     // check the domain event contains the expected error message
     checkDomainEventContainsExpectedMsg(opNamespace, domainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
@@ -845,9 +845,9 @@ public class ItMiiAuxiliaryImage {
 
     // check the introspector pod log contains the expected error message
     String expectedErrorMsg = "cp: can't open '/auxiliary/test1.txt': Permission denied";
-    String introspectorPodName = assertDoesNotThrow(() -> getIntrospectorPodName(domainUid, errorpathDomainNamespace),
-        "Can't get introspector's pod name");
-    checkPodLogContainsString(errorpathDomainNamespace, introspectorPodName, expectedErrorMsg);
+    checkPodLogContainsString(errorpathDomainNamespace,
+        assertDoesNotThrow(() -> getIntrospectorPodName(domainUid, errorpathDomainNamespace),
+        "Can't get introspector's pod name"), expectedErrorMsg);
 
     // check the domain event contains the expected error message
     checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
