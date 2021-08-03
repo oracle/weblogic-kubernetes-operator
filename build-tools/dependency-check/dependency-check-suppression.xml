@@ -9,11 +9,19 @@
         <cpe>cpe:/a:kubernetes:kubernetes</cpe>
     </suppress>
     <suppress>
+        <packageUrl regex="true">^pkg:maven/io\.kubernetes/client\-java\-api\-fluent@.*$</packageUrl>
+        <cpe>cpe:/a:kubernetes:kubernetes</cpe>
+    </suppress>
+    <suppress>
         <packageUrl regex="true">^pkg:maven/io\.kubernetes/client\-java\-proto@.*$</packageUrl>
         <cpe>cpe:/a:kubernetes:kubernetes</cpe>
     </suppress>
     <suppress>
         <packageUrl regex="true">^pkg:maven/oracle\.kubernetes/weblogic\-kubernetes\-operator@.*$</packageUrl>
+        <cpe>cpe:/a:kubernetes:kubernetes</cpe>
+    </suppress>
+    <suppress>
+        <packageUrl regex="true">^pkg:maven/oracle\.kubernetes/operator\-swagger@.*$</packageUrl>
         <cpe>cpe:/a:kubernetes:kubernetes</cpe>
     </suppress>
     <suppress>
