@@ -14,20 +14,38 @@ import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.openapi.models.V1SecretList;
+import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
+import oracle.weblogic.kubernetes.actions.impl.PrometheusParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
+import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_REPO_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_WEBAPP_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MONITORING_EXPORTER_DOWNLOAD_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.installGrafana;
+import static oracle.weblogic.kubernetes.actions.TestActions.installPrometheus;
+import static oracle.weblogic.kubernetes.actions.TestActions.uninstallGrafana;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isGrafanaReady;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPrometheusReady;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkFile;
+import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.awaitility.Awaitility.with;
@@ -237,5 +255,169 @@ public class MonitoringUtils {
     assertNotNull(promCm.getData(), "Can't retreive the cm data for " + cmName + " after modification");
 
   }
+
+  /**
+   * Install Prometheus and wait up to five minutes until the prometheus pods are ready.
+   *
+   * @param promReleaseName the prometheus release name
+   * @param promNamespace the prometheus namespace in which the operator will be installed
+   * @param promValueFile the promeheus value.yaml file path
+   * @param promVersion the version of the prometheus helm chart
+   * @param promServerNodePort nodePort value for prometheus server
+   * @param alertManagerNodePort nodePort value for alertmanager
+   * @return the prometheus Helm installation parameters
+   */
+  public static HelmParams installAndVerifyPrometheus(String promReleaseName,
+                                                      String promNamespace,
+                                                      String promValueFile,
+                                                      String promVersion,
+                                                      int promServerNodePort,
+                                                      int alertManagerNodePort) {
+    LoggingFacade logger = getLogger();
+    // Helm install parameters
+    HelmParams promHelmParams = new HelmParams()
+        .releaseName(promReleaseName)
+        .namespace(promNamespace)
+        .repoUrl(PROMETHEUS_REPO_URL)
+        .repoName(PROMETHEUS_REPO_NAME)
+        .chartName("prometheus")
+        .chartValuesFile(promValueFile);
+
+    if (promVersion != null) {
+      promHelmParams.chartVersion(promVersion);
+    }
+
+    // prometheus chart values to override
+    PrometheusParams prometheusParams = new PrometheusParams()
+        .helmParams(promHelmParams)
+        .nodePortServer(promServerNodePort)
+        .nodePortAlertManager(alertManagerNodePort);
+
+    // install prometheus
+    logger.info("Installing prometheus in namespace {0}", promNamespace);
+    assertTrue(installPrometheus(prometheusParams),
+        String.format("Failed to install prometheus in namespace %s", promNamespace));
+    logger.info("Prometheus installed in namespace {0}", promNamespace);
+
+    // list Helm releases matching operator release name in operator namespace
+    logger.info("Checking prometheus release {0} status in namespace {1}",
+        promReleaseName, promNamespace);
+    assertTrue(isHelmReleaseDeployed(promReleaseName, promNamespace),
+        String.format("Prometheus release %s is not in deployed status in namespace %s",
+            promReleaseName, promNamespace));
+    logger.info("Prometheus release {0} status is deployed in namespace {1}",
+        promReleaseName, promNamespace);
+
+    // wait for the promethues pods to be ready
+    logger.info("Wait for the promethues pod is ready in namespace {0}", promNamespace);
+    CommonTestUtils.withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for prometheus to be running in namespace {0} "
+                    + "(elapsed time {1}ms, remaining time {2}ms)",
+                promNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> isPrometheusReady(promNamespace),
+            "prometheusIsReady failed with ApiException"));
+
+    return promHelmParams;
+  }
+
+  /**
+   * Install Grafana and wait up to five minutes until the grafana pod is ready.
+   *
+   * @param grafanaReleaseName the grafana release name
+   * @param grafanaNamespace the grafana namespace in which the operator will be installed
+   * @param grafanaValueFile the grafana value.yaml file path
+   * @param grafanaVersion the version of the grafana helm chart
+   * @return the grafana Helm installation parameters
+   */
+  public static GrafanaParams installAndVerifyGrafana(String grafanaReleaseName,
+                                                      String grafanaNamespace,
+                                                      String grafanaValueFile,
+                                                      String grafanaVersion) {
+    LoggingFacade logger = getLogger();
+    // Helm install parameters
+    HelmParams grafanaHelmParams = new HelmParams()
+        .releaseName(grafanaReleaseName)
+        .namespace(grafanaNamespace)
+        .repoUrl(GRAFANA_REPO_URL)
+        .repoName(GRAFANA_REPO_NAME)
+        .chartName("grafana")
+        .chartValuesFile(grafanaValueFile);
+
+    if (grafanaVersion != null) {
+      grafanaHelmParams.chartVersion(grafanaVersion);
+    }
+
+    boolean secretExists = false;
+    V1SecretList listSecrets = listSecrets(grafanaNamespace);
+    if (null != listSecrets) {
+      for (V1Secret item : listSecrets.getItems()) {
+        if (item.getMetadata().getName().equals("grafana-secret")) {
+          secretExists = true;
+          break;
+        }
+      }
+    }
+    if (!secretExists) {
+      //create grafana secret
+      createSecretWithUsernamePassword("grafana-secret", grafanaNamespace, "admin", "12345678");
+    }
+    // install grafana
+    logger.info("Installing grafana in namespace {0}", grafanaNamespace);
+    int grafanaNodePort = getNextFreePort();
+    logger.info("Installing grafana with node port {0}", grafanaNodePort);
+    // grafana chart values to override
+    GrafanaParams grafanaParams = new GrafanaParams()
+        .helmParams(grafanaHelmParams)
+        .nodePort(grafanaNodePort);
+    boolean isGrafanaInstalled = false;
+    try {
+      assertTrue(installGrafana(grafanaParams),
+          String.format("Failed to install grafana in namespace %s", grafanaNamespace));
+    } catch (AssertionError err) {
+      //retry with different nodeport
+      uninstallGrafana(grafanaHelmParams);
+      grafanaNodePort = getNextFreePort();
+      grafanaParams = new GrafanaParams()
+          .helmParams(grafanaHelmParams)
+          .nodePort(grafanaNodePort);
+      isGrafanaInstalled = installGrafana(grafanaParams);
+      if (!isGrafanaInstalled) {
+        //clean up
+        logger.info(String.format("Failed to install grafana in namespace %s with nodeport %s",
+            grafanaNamespace, grafanaNodePort));
+        uninstallGrafana(grafanaHelmParams);
+        return null;
+      }
+    }
+    logger.info("Grafana installed in namespace {0}", grafanaNamespace);
+
+    // list Helm releases matching grafana release name in  namespace
+    logger.info("Checking grafana release {0} status in namespace {1}",
+        grafanaReleaseName, grafanaNamespace);
+    assertTrue(isHelmReleaseDeployed(grafanaReleaseName, grafanaNamespace),
+        String.format("Grafana release %s is not in deployed status in namespace %s",
+            grafanaReleaseName, grafanaNamespace));
+    logger.info("Grafana release {0} status is deployed in namespace {1}",
+        grafanaReleaseName, grafanaNamespace);
+
+    // wait for the grafana pod to be ready
+    logger.info("Wait for the grafana pod is ready in namespace {0}", grafanaNamespace);
+    CommonTestUtils.withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for grafana to be running in namespace {0} "
+                    + "(elapsed time {1}ms, remaining time {2}ms)",
+                grafanaNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> isGrafanaReady(grafanaNamespace),
+            "grafanaIsReady failed with ApiException"));
+
+    //return grafanaHelmParams;
+    return grafanaParams;
+  }
+
 
 }
