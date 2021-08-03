@@ -46,12 +46,12 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.isVoyagerRead
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressAndRetryIfFail;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyTraefik;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyVoyager;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyWlsRemoteConsole;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.shutdownWlsRemoteConsole;
+import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
+import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyTraefik;
+import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyVoyager;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReturnedCode;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
