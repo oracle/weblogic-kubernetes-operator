@@ -19,6 +19,7 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Handler;
+import java.util.stream.Collectors;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
@@ -363,7 +364,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
       if (token != null) {
         logger.info("Deleting these images from OCIR");
         logger.info(String.join(", ", pushedImages));
-        for (String image : pushedImages) {
+        for (String image : pushedImages.stream().distinct().collect(Collectors.toList())) {
           deleteImageOcir(token, image);
         }
       }
