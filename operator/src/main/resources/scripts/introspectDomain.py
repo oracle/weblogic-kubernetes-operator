@@ -1089,6 +1089,8 @@ class SitConfigGenerator(Generator):
     self.writeListenAddress(template.getListenAddress(),listen_address)
     self.customizeNetworkAccessPoints(template,listen_address)
     self.customizeManagedIstioNetworkAccessPoint(listen_address, template)
+    if (self.getCoherenceClusterSystemResourceOrNone(template) is not None):
+      self.customizeCoherenceMemberConfig(listen_address)
     self.undent()
     self.writeln("</d:server-template>")
 
@@ -1162,6 +1164,21 @@ class SitConfigGenerator(Generator):
     self.writeln('<d:enabled %s>true</d:enabled>' % action)
     self.undent()
     self.writeln('</d:network-access-point>')
+
+  def getCoherenceClusterSystemResourceOrNone(self, serverOrTemplate):
+    try:
+      ret = serverOrTemplate.getCoherenceClusterSystemResource()
+    except:
+      trace("Ignoring getCoherenceClusterSystemResource () exception, this is expected.")
+      ret = None
+    return ret
+
+  def customizeCoherenceMemberConfig(self, listen_address):
+   self.writeln('<d:coherence-member-config f:combine-mode="add">')
+   self.indent()
+   self.writeln('<d:unicast-listen-address f:combine-mode="add">%s</d:unicast-listen-address>' % listen_address)
+   self.undent()
+   self.writeln('</d:coherence-member-config>')
 
   def customizeServerIstioNetworkAccessPoint(self, listen_address, server):
     istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")

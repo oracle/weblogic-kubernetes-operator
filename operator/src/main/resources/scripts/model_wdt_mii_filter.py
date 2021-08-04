@@ -206,6 +206,7 @@ def customizeServerTemplates(model):
         customizeServerTemplate(topology, template)
 
 
+
 def customizeServerTemplate(topology, template):
   server_name_prefix = getServerNamePrefix(topology, template)
   domain_uid = env.getDomainUID()
@@ -216,6 +217,8 @@ def customizeServerTemplate(topology, template):
   setServerListenAddress(template, listen_address)
   customizeNetworkAccessPoints(template, listen_address)
   customizeManagedIstioNetworkAccessPoint(template, listen_address)
+  if (getCoherenceClusterSystemResourceOrNone(template) is not None):
+    customizeCoherenceMemberConfig(template, listen_address)
 
 
 def getServerNamePrefix(topology, template):
@@ -375,6 +378,14 @@ def _writeIstioNAP(name, server, listen_address, listen_port, protocol, http_ena
   nap['TunnelingEnabled'] = 'false'
   nap['OutboundEnabled'] = 'true'
   nap['Enabled'] = 'true'
+
+def customizeCoherenceMemberConfig(server, listen_address):
+  if 'CoherenceMemberConfig ' not in server:
+    server['CoherenceMemberConfig'] = {}
+
+  cmc = server['CoherenceMemberConfig']
+  cmc['UnicastListenAddress'] = listen_address
+
 
 
 def customizeServerIstioNetworkAccessPoint(server, listen_address):
@@ -592,6 +603,11 @@ def getClusterOrNone(topology, name):
 
   return None
 
+def getCoherenceClusterSystemResourceOrNone(serverOrTemplate):
+  if 'CoherenceClusterSystemResource' not in serverOrTemplate:
+    return None
+
+  return serverOrTemplate['CoherenceClusterSystemResource']
 
 def getDynamicServerOrNone(cluster):
   if 'DynamicServers' not in cluster:
