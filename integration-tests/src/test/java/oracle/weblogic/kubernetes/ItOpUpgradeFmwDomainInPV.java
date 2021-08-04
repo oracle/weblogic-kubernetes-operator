@@ -91,7 +91,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Tests to upgrade Operator with FMW domain in PV using WLST")
 @IntegrationTest
-public class ItOpUpgradeFmwDomainInPV {
+class ItOpUpgradeFmwDomainInPV {
 
   private static ConditionFactory withStandardRetryPolicy;
   private static ConditionFactory withQuickRetryPolicy;
@@ -216,7 +216,7 @@ public class ItOpUpgradeFmwDomainInPV {
    */
   @Test
   @DisplayName("Upgrade Operator from 2.6.0 to main")
-  public void testOperatorFmwUpgradeFrom260ToMain() {
+  void testOperatorFmwUpgradeFrom260ToMain() {
     installAndUpgradeOperator("2.6.0", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX,  false);
   }
 
@@ -225,7 +225,7 @@ public class ItOpUpgradeFmwDomainInPV {
    */
   @Test
   @DisplayName("Upgrade Operator from 3.0.3 to main")
-  public void testOperatorFmwUpgradeFrom303ToMain() {
+  void testOperatorFmwUpgradeFrom303ToMain() {
     this.namespaces = namespaces;
     installAndUpgradeOperator("3.0.3", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
@@ -235,7 +235,7 @@ public class ItOpUpgradeFmwDomainInPV {
    */
   @Test
   @DisplayName("Upgrade Operator from 3.0.4 to main")
-  public void testOperatorFmwUpgradeFrom304ToMain() {
+  void testOperatorFmwUpgradeFrom304ToMain() {
     this.namespaces = namespaces;
     installAndUpgradeOperator("3.0.4", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
@@ -245,7 +245,7 @@ public class ItOpUpgradeFmwDomainInPV {
    */
   @Test
   @DisplayName("Upgrade Operator from 3.1.3 to main")
-  public void testOperatorFmwUpgradeFrom313ToMain() {
+  void testOperatorFmwUpgradeFrom313ToMain() {
     installAndUpgradeOperator("3.1.3", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
@@ -254,7 +254,7 @@ public class ItOpUpgradeFmwDomainInPV {
    */
   @Test
   @DisplayName("Upgrade Operator from 3.1.4 to main")
-  public void testOperatorFmwUpgradeFrom314ToMain() {
+  void testOperatorFmwUpgradeFrom314ToMain() {
     installAndUpgradeOperator("3.1.4", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
@@ -263,7 +263,7 @@ public class ItOpUpgradeFmwDomainInPV {
    */
   @Test
   @DisplayName("Upgrade Operator from 3.2.0 to main")
-  public void testOperatorFmwUpgradeFrom320ToMain() {
+  void testOperatorFmwUpgradeFrom320ToMain() {
     installAndUpgradeOperator("3.2.0", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
@@ -272,7 +272,7 @@ public class ItOpUpgradeFmwDomainInPV {
    */
   @Test
   @DisplayName("Upgrade Operator from 3.2.4 to main")
-  public void testOperatorFmwUpgradeFrom324ToMain() {
+  void testOperatorFmwUpgradeFrom324ToMain() {
     installAndUpgradeOperator("3.2.4", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
@@ -281,7 +281,7 @@ public class ItOpUpgradeFmwDomainInPV {
    */
   @Test
   @DisplayName("Upgrade Operator from 3.2.5 to main")
-  public void testOperatorFmwUpgradeFrom325ToMain() {
+  void testOperatorFmwUpgradeFrom325ToMain() {
     installAndUpgradeOperator("3.2.5", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 

@@ -62,7 +62,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test to a create FMW model in image domain "
     + "with introspect Config Map bigger then 1 Mb and start the domain")
 @IntegrationTest
-public class ItFmwBigCMMiiDomain {
+class ItFmwBigCMMiiDomain {
 
   private static String dbNamespace = null;
   private static String opNamespace = null;
@@ -150,7 +150,7 @@ public class ItFmwBigCMMiiDomain {
    */
   @Test
   @DisplayName("Create FMW Domain model in image with big introspector CM")
-  public void testFmwBigCMModelInImage() {
+  void testFmwBigCMModelInImage() {
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster

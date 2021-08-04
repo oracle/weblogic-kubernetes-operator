@@ -19,16 +19,16 @@ import static org.hamcrest.CoreMatchers.sameInstance;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class DomainPresenceInfoTest {
+class DomainPresenceInfoTest {
   private final DomainPresenceInfo info = new DomainPresenceInfo("ns", "domain");
 
   @Test
-  public void whenNoneDefined_getClusterServiceReturnsNull() {
+  void whenNoneDefined_getClusterServiceReturnsNull() {
     assertThat(info.getClusterService("cluster"), nullValue());
   }
 
   @Test
-  public void afterClusterServiceDefined_nextCallReturnsIt() {
+  void afterClusterServiceDefined_nextCallReturnsIt() {
     V1Service service = new V1Service();
     info.setClusterService("cluster", service);
 
@@ -36,12 +36,12 @@ public class DomainPresenceInfoTest {
   }
 
   @Test
-  public void whenNoneDefined_getServerServiceReturnsNull() {
+  void whenNoneDefined_getServerServiceReturnsNull() {
     assertThat(info.getServerService("admin"), nullValue());
   }
 
   @Test
-  public void afterServerServiceDefined_nextCallReturnsIt() {
+  void afterServerServiceDefined_nextCallReturnsIt() {
     V1Service service = new V1Service();
     info.setServerService("admin", service);
 
@@ -49,12 +49,12 @@ public class DomainPresenceInfoTest {
   }
 
   @Test
-  public void whenNoneDefined_getExternalServiceReturnsNull() {
+  void whenNoneDefined_getExternalServiceReturnsNull() {
     assertThat(info.getExternalService("admin"), nullValue());
   }
 
   @Test
-  public void afterExternalServiceDefined_nextCallReturnsIt() {
+  void afterExternalServiceDefined_nextCallReturnsIt() {
     V1Service service = new V1Service();
     info.setExternalService("admin", service);
 
@@ -62,12 +62,12 @@ public class DomainPresenceInfoTest {
   }
 
   @Test
-  public void whenNoneDefined_getServerPodReturnsNull() {
+  void whenNoneDefined_getServerPodReturnsNull() {
     assertThat(info.getServerPod("myserver"), nullValue());
   }
 
   @Test
-  public void afterServerPodDefined_nextCallReturnsIt() {
+  void afterServerPodDefined_nextCallReturnsIt() {
     V1Pod pod = new V1Pod();
     info.setServerPod("myserver", pod);
 
@@ -75,12 +75,12 @@ public class DomainPresenceInfoTest {
   }
 
   @Test
-  public void whenNoneDefined_getPodDisruptionBudgetReturnsNull() {
+  void whenNoneDefined_getPodDisruptionBudgetReturnsNull() {
     assertThat(info.getPodDisruptionBudget("cluster"), nullValue());
   }
 
   @Test
-  public void afterPodDisruptionBudgetDefined_nextCallReturnsIt() {
+  void afterPodDisruptionBudgetDefined_nextCallReturnsIt() {
     V1beta1PodDisruptionBudget pdb = new V1beta1PodDisruptionBudget();
     info.setPodDisruptionBudget("cluster", pdb);
 
@@ -88,7 +88,7 @@ public class DomainPresenceInfoTest {
   }
 
   @Test
-  public void afterValidationWarningsAdded_nextCallReturnsThem() {
+  void afterValidationWarningsAdded_nextCallReturnsThem() {
     final String warning1 = "warning1";
     final String warning2 = "warning2";
 
@@ -100,7 +100,7 @@ public class DomainPresenceInfoTest {
   }
 
   @Test
-  public void countReadyServers() {
+  void countReadyServers() {
     addServer("MS1", "cluster1");
     addReadyServer("MS2", "cluster1");
     addServer("MS3", "cluster2");
@@ -134,7 +134,7 @@ public class DomainPresenceInfoTest {
   }
 
   @Test
-  public void countScheduledServers() {
+  void countScheduledServers() {
     addServer("MS1", "cluster1");
     addScheduledServer("MS2", "cluster1");
     addServer("MS3", "cluster2");

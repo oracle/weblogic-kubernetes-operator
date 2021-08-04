@@ -17,7 +17,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_SERVICE_REP
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class ClusterServiceHelperTest extends ServiceHelperTest {
+class ClusterServiceHelperTest extends ServiceHelperTest {
 
   public ClusterServiceHelperTest() {
     super(new ClusterServiceTestFacade());
@@ -109,7 +109,7 @@ public class ClusterServiceHelperTest extends ServiceHelperTest {
   }
 
   @Test
-  public void whenCreated_modelHasSessionAffinity() {
+  void whenCreated_modelHasSessionAffinity() {
     V1Service model = createService();
 
     assertThat(

@@ -44,7 +44,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 /** This test class verifies the behavior of the PodWatcher. */
-public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1Pod> {
+class PodWatcherTest extends WatcherTestBase implements WatchListener<V1Pod> {
 
   private static final BigInteger INITIAL_RESOURCE_VERSION = new BigInteger("234");
   private static final String NS = "ns";
@@ -90,7 +90,7 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
   }
 
   @Test
-  public void initialRequest_specifiesStartingResourceVersionAndStandardLabelSelector() {
+  void initialRequest_specifiesStartingResourceVersionAndStandardLabelSelector() {
     sendInitialRequest(INITIAL_RESOURCE_VERSION);
 
     assertThat(
@@ -119,7 +119,7 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
   }
 
   @Test
-  public void waitForReady_returnsAStep() {
+  void waitForReady_returnsAStep() {
     AtomicBoolean stopping = new AtomicBoolean(true);
     PodWatcher watcher = createWatcher(stopping);
 
@@ -135,7 +135,7 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
   }
 
   @Test
-  public void whenPodInitiallyReady_waitForReadyProceedsImmediately() {
+  void whenPodInitiallyReady_waitForReadyProceedsImmediately() {
     AtomicBoolean stopping = new AtomicBoolean(false);
     PodWatcher watcher = createWatcher(stopping);
 
@@ -183,14 +183,14 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
   }
 
   @Test
-  public void whenPodReadyWhenWaitCreated_performNextStep() {
+  void whenPodReadyWhenWaitCreated_performNextStep() {
     startWaitForReady(this::markPodReady);
 
     assertThat(terminalStep.wasRun(), is(true));
   }
 
   @Test
-  public void whenPodNotReadyWhenWaitCreated_dontPerformNextStep() {
+  void whenPodNotReadyWhenWaitCreated_dontPerformNextStep() {
     startWaitForReady(this::dontChangePod);
 
     assertThat(terminalStep.wasRun(), is(false));
@@ -211,14 +211,14 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
   }
 
   @Test
-  public void whenPodReadyOnFirstRead_runNextStep() {
+  void whenPodReadyOnFirstRead_runNextStep() {
     startWaitForReadyThenReadPod(this::markPodReady);
 
     assertThat(terminalStep.wasRun(), is(true));
   }
 
   @Test
-  public void whenPodNotReadyOnFirstRead_dontRunNextStep() {
+  void whenPodNotReadyOnFirstRead_dontRunNextStep() {
     startWaitForReadyThenReadPod(this::dontChangePod);
 
     assertThat(terminalStep.wasRun(), is(false));
@@ -239,21 +239,21 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
   }
 
   @Test
-  public void whenPodReadyLater_runNextStep() {
+  void whenPodReadyLater_runNextStep() {
     sendPodModifiedWatchAfterWaitForReady(this::markPodReady);
 
     assertThat(terminalStep.wasRun(), is(true));
   }
 
   @Test
-  public void whenPodCreatedAndReadyLater_runNextStep() {
+  void whenPodCreatedAndReadyLater_runNextStep() {
     sendPodModifiedWatchAfterResourceCreatedAndWaitForReady(this::markPodReady);
 
     assertThat(terminalStep.wasRun(), is(true));
   }
 
   @Test
-  public void whenPodCreatedAndNotReadyAfterTimeout_executeMakeRightDomain() {
+  void whenPodCreatedAndNotReadyAfterTimeout_executeMakeRightDomain() {
     executeWaitForReady();
 
     testSupport.setTime(10, TimeUnit.SECONDS);
@@ -263,21 +263,21 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
   }
 
   @Test
-  public void whenPodNotReadyLater_dontRunNextStep() {
+  void whenPodNotReadyLater_dontRunNextStep() {
     sendPodModifiedWatchAfterWaitForReady(this::dontChangePod);
 
     assertThat(terminalStep.wasRun(), is(false));
   }
 
   @Test
-  public void whenPodNotReadyLaterAndThenReady_runNextStep() {
+  void whenPodNotReadyLaterAndThenReady_runNextStep() {
     sendPodModifiedWatchAfterWaitForReady(this::dontChangePod, this::markPodReady);
 
     assertThat(terminalStep.wasRun(), is(true));
   }
 
   @Test
-  public void whenPodNotReadyLaterAndThenReadyButNoWatchEvent_runNextStep() {
+  void whenPodNotReadyLaterAndThenReadyButNoWatchEvent_runNextStep() {
     makeModifiedPodReadyWithNoWatchEvent(this::markPodReady);
 
     testSupport.setTime(RECHECK_SECONDS, TimeUnit.SECONDS);
@@ -286,7 +286,7 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
   }
 
   @Test
-  public void whenIntrospectPodNotReadyWithTerminatedReason_logPodStatus() {
+  void whenIntrospectPodNotReadyWithTerminatedReason_logPodStatus() {
     sendIntrospectorPodModifiedWatchAfterWaitForReady(this::addContainerStateTerminatedReason);
 
     assertThat(terminalStep.wasRun(), is(false));
@@ -294,7 +294,7 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
   }
 
   @Test
-  public void whenIntrospectPodNotReadyWithWaitingMessage_logPodStatus() {
+  void whenIntrospectPodNotReadyWithWaitingMessage_logPodStatus() {
     sendIntrospectorPodModifiedWatchAfterWaitForReady(this::addContainerStateWaitingMessage);
 
     assertThat(terminalStep.wasRun(), is(false));
@@ -384,7 +384,7 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
   }
 
   @Test
-  public void whenPodDeletedOnFirstRead_runNextStep() {
+  void whenPodDeletedOnFirstRead_runNextStep() {
     AtomicBoolean stopping = new AtomicBoolean(false);
     PodWatcher watcher = createWatcher(stopping);
 
@@ -398,7 +398,7 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
   }
 
   @Test
-  public void whenPodNotDeletedOnFirstRead_dontRunNextStep() {
+  void whenPodNotDeletedOnFirstRead_dontRunNextStep() {
     AtomicBoolean stopping = new AtomicBoolean(false);
     PodWatcher watcher = createWatcher(stopping);
 
@@ -413,7 +413,7 @@ public class PodWatcherTest extends WatcherTestBase implements WatchListener<V1P
   }
 
   @Test
-  public void whenPodDeletedLater_runNextStep() {
+  void whenPodDeletedLater_runNextStep() {
     AtomicBoolean stopping = new AtomicBoolean(false);
     PodWatcher watcher = createWatcher(stopping);
 

@@ -140,7 +140,7 @@ class ItIstioCoherenceTests {
    */
   @Test
   @DisplayName("Create domain with a Coherence cluster using WDT and test rolling restart")
-  public void testIstioCoherenceServerRollingRestart() {
+  void testIstioCoherenceServerRollingRestart() {
     final String successMarker = "CACHE-SUCCESS";
 
     // create a DomainHomeInImage image using WebLogic Image Tool

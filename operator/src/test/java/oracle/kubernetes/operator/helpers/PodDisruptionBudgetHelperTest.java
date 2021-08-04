@@ -53,7 +53,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings("ConstantConditions")
-public class PodDisruptionBudgetHelperTest {
+class PodDisruptionBudgetHelperTest {
 
   static final String DOMAIN_NAME = "domain1";
   static final String NS = "namespace";
@@ -131,7 +131,7 @@ public class PodDisruptionBudgetHelperTest {
   }
 
   @Test
-  public void whenPdbCreated_createWithOwnerReference() {
+  void whenPdbCreated_createWithOwnerReference() {
     V1OwnerReference expectedReference = new V1OwnerReference()
         .apiVersion(KubernetesConstants.DOMAIN_GROUP + "/" + KubernetesConstants.DOMAIN_VERSION)
         .kind(KubernetesConstants.DOMAIN)
@@ -144,7 +144,7 @@ public class PodDisruptionBudgetHelperTest {
   }
 
   @Test
-  public void whenCreated_modelHasExpectedSelectors() {
+  void whenCreated_modelHasExpectedSelectors() {
     V1beta1PodDisruptionBudget model = createPDBModel(testSupport.getPacket());
 
     Map<String, String> labels = new HashMap<>();
@@ -156,7 +156,7 @@ public class PodDisruptionBudgetHelperTest {
   }
 
   @Test
-  public void whenCreated_modelMetadataHasExpectedLabels() {
+  void whenCreated_modelMetadataHasExpectedLabels() {
     V1beta1PodDisruptionBudget model = createPDBModel(testSupport.getPacket());
 
     assertThat(
@@ -166,7 +166,7 @@ public class PodDisruptionBudgetHelperTest {
   }
 
   @Test
-  public void whenCreated_modelHasExpectedMinAvailableSpec() {
+  void whenCreated_modelHasExpectedMinAvailableSpec() {
     configureCluster(getTestCluster()).withReplicas(3).withMaxUnavailable(1);
 
     V1beta1PodDisruptionBudget model = createPDBModel(testSupport.getPacket());
@@ -175,14 +175,14 @@ public class PodDisruptionBudgetHelperTest {
   }
 
   @Test
-  public void onRunWithNoPodDisruptionBudget_logCreatedMessage() {
+  void onRunWithNoPodDisruptionBudget_logCreatedMessage() {
     runPodDisruptionBudgetHelper();
 
     assertThat(logRecords, containsInfo(getPdbCreateLogMessage()));
   }
 
   @Test
-  public void onRunWithNoPodDisruptionBudget_createIt() {
+  void onRunWithNoPodDisruptionBudget_createIt() {
     consoleHandlerMemento.ignoreMessage(getPdbCreateLogMessage());
 
     runPodDisruptionBudgetHelper();
@@ -193,7 +193,7 @@ public class PodDisruptionBudgetHelperTest {
   }
 
   @Test
-  public void onFailedRun_reportFailure() {
+  void onFailedRun_reportFailure() {
     testSupport.addRetryStrategy(retryStrategy);
     testSupport.failOnResource(PODDISRUPTIONBUDGET, getPdbName(), NS, 500);
 
@@ -203,7 +203,7 @@ public class PodDisruptionBudgetHelperTest {
   }
 
   @Test
-  public void whenPodDisruptionBudgetCreationFailsDueToUnprocessableEntityFailure_reportInDomainStatus() {
+  void whenPodDisruptionBudgetCreationFailsDueToUnprocessableEntityFailure_reportInDomainStatus() {
     testSupport.defineResources(domainPresenceInfo.getDomain());
     testSupport.failOnResource(PODDISRUPTIONBUDGET, getPdbName(), NS, new UnrecoverableErrorBuilderImpl()
             .withReason("FieldValueNotFound")
@@ -217,7 +217,7 @@ public class PodDisruptionBudgetHelperTest {
   }
 
   @Test
-  public void whenPodDisruptionBudgetCreationFailsDueToUnprocessableEntityFailure_abortFiber() {
+  void whenPodDisruptionBudgetCreationFailsDueToUnprocessableEntityFailure_abortFiber() {
     testSupport.defineResources(domainPresenceInfo.getDomain());
     testSupport.failOnResource(PODDISRUPTIONBUDGET, getPdbName(), NS, new UnrecoverableErrorBuilderImpl()
             .withReason("FieldValueNotFound")
@@ -263,7 +263,7 @@ public class PodDisruptionBudgetHelperTest {
   }
 
   @Test
-  public void whenMatchingPodDisruptionBudgetRecordedInDomainPresence_logPdbExists() {
+  void whenMatchingPodDisruptionBudgetRecordedInDomainPresence_logPdbExists() {
     V1beta1PodDisruptionBudget originalPdb = createPDBModel(testSupport.getPacket());
     recordPodDisruptionBudget(domainPresenceInfo, originalPdb);
 

@@ -28,7 +28,6 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDoma
 import static oracle.kubernetes.operator.DomainSourceType.FromModel;
 import static oracle.kubernetes.operator.DomainSourceType.Image;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
-import static oracle.kubernetes.operator.helpers.DomainIntrospectorJobTest.TEST_VOLUME_NAME;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.getAuxiliaryImage;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
@@ -38,7 +37,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class DomainValidationTest extends DomainValidationBaseTest {
+class DomainValidationTest extends DomainValidationBaseTest {
 
   private static final String ENV_NAME1 = "MY_ENV";
   private static final String RAW_VALUE_1 = "123";
@@ -47,6 +46,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   private static final String BAD_MOUNT_PATH_1 = "$DOMAIN_HOME/servers/$SERVER_NAME";
   private static final String BAD_MOUNT_PATH_2 = "$(DOMAIN_HOME/servers/$(SERVER_NAME";
   private static final String BAD_MOUNT_PATH_3 = "$()DOMAIN_HOME/servers/SERVER_NAME";
+  public static final String TEST_VOLUME_NAME = "test";
   public static final String WRONG_VOLUME_NAME = "BadVolume";
 
   private final Domain domain = createTestDomain();
@@ -86,7 +86,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenManagerServerSpecsHaveUniqueNames_dontReportError() {
+  void whenManagerServerSpecsHaveUniqueNames_dontReportError() {
     domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("ms1"));
     domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("ms2"));
 
@@ -94,7 +94,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenManagerServerSpecsHaveDuplicateNames_reportError() {
+  void whenManagerServerSpecsHaveDuplicateNames_reportError() {
     domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("ms1"));
     domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("ms1"));
 
@@ -103,7 +103,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenManagerServerSpecsHaveDns1123DuplicateNames_reportError() {
+  void whenManagerServerSpecsHaveDns1123DuplicateNames_reportError() {
     domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("Server-1"));
     domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("server_1"));
 
@@ -112,7 +112,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainConfiguredWithAuxiliaryImageButNoAuxiliaryImageVolumes_reportError() {
+  void whenDomainConfiguredWithAuxiliaryImageButNoAuxiliaryImageVolumes_reportError() {
     configureDomain(domain)
             .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")));
 
@@ -122,7 +122,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainConfiguredWithAuxiliaryImageButNoMatchingAuxiliaryImageVolumes_reportError() {
+  void whenDomainConfiguredWithAuxiliaryImageButNoMatchingAuxiliaryImageVolumes_reportError() {
     configureDomain(domain)
             .withAuxiliaryImageVolumes(Collections.singletonList(new AuxiliaryImageVolume().name(WRONG_VOLUME_NAME)))
             .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")));
@@ -133,7 +133,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainConfiguredWithAuxiliaryImageButNoVolumeName_reportError() {
+  void whenDomainConfiguredWithAuxiliaryImageButNoVolumeName_reportError() {
     configureDomain(domain)
             .withAuxiliaryImageVolumes(Collections.singletonList(new AuxiliaryImageVolume().name(TEST_VOLUME_NAME)))
             .withAuxiliaryImages(Collections.singletonList(new AuxiliaryImage().image("wdt-image:v1")));
@@ -143,7 +143,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainConfiguredWithAuxiliaryImageAndMatchingAuxiliaryImageVolumes_noErrorsReported() {
+  void whenDomainConfiguredWithAuxiliaryImageAndMatchingAuxiliaryImageVolumes_noErrorsReported() {
     configureDomain(domain)
             .withAuxiliaryImageVolumes(Collections.singletonList(new AuxiliaryImageVolume().name(TEST_VOLUME_NAME)))
             .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")));
@@ -153,7 +153,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainConfiguredWithAuxiliaryImageVolumesWithNullName_reportError() {
+  void whenDomainConfiguredWithAuxiliaryImageVolumesWithNullName_reportError() {
     configureDomain(domain)
             .withAuxiliaryImageVolumes(Collections.singletonList(new AuxiliaryImageVolume()));
 
@@ -163,7 +163,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainConfiguredWithAuxiliaryImageVolumesWithSameMountPath_reportError() {
+  void whenDomainConfiguredWithAuxiliaryImageVolumesWithSameMountPath_reportError() {
     List<AuxiliaryImageVolume> auxiliaryImageVolumes = new ArrayList<>();
     auxiliaryImageVolumes.add(new AuxiliaryImageVolume().name("TestVolume").mountPath("/shared"));
     auxiliaryImageVolumes.add(new AuxiliaryImageVolume().name("TestVolume").mountPath("/shared"));
@@ -175,7 +175,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainConfiguredWithAuxiliaryImageVolumesWithSameName_reportError() {
+  void whenDomainConfiguredWithAuxiliaryImageVolumesWithSameName_reportError() {
     List<AuxiliaryImageVolume> auxiliaryImageVolumes = new ArrayList<>();
     auxiliaryImageVolumes.add(new AuxiliaryImageVolume().name(TEST_VOLUME_NAME));
     auxiliaryImageVolumes.add(new AuxiliaryImageVolume().name(TEST_VOLUME_NAME).mountPath("/common1"));
@@ -188,7 +188,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenClusterSpecsHaveUniqueNames_dontReportError() {
+  void whenClusterSpecsHaveUniqueNames_dontReportError() {
     domain.getSpec().getClusters().add(new Cluster().withClusterName("cluster1"));
     domain.getSpec().getClusters().add(new Cluster().withClusterName("cluster2"));
 
@@ -196,7 +196,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenClusterSpecsHaveDuplicateNames_reportError() {
+  void whenClusterSpecsHaveDuplicateNames_reportError() {
     domain.getSpec().getClusters().add(new Cluster().withClusterName("cluster1"));
     domain.getSpec().getClusters().add(new Cluster().withClusterName("cluster1"));
 
@@ -205,7 +205,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenClusterSpecsHaveDns1123DuplicateNames_reportError() {
+  void whenClusterSpecsHaveDns1123DuplicateNames_reportError() {
     domain.getSpec().getClusters().add(new Cluster().withClusterName("Cluster-1"));
     domain.getSpec().getClusters().add(new Cluster().withClusterName("cluster_1"));
 
@@ -214,14 +214,14 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenLogHomeDisabled_dontReportError() {
+  void whenLogHomeDisabled_dontReportError() {
     configureDomain(domain).withLogHomeEnabled(false);
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
 
   @Test
-  public void whenVolumeMountHasNonValidPath_reportError() {
+  void whenVolumeMountHasNonValidPath_reportError() {
     configureDomain(domain).withAdditionalVolumeMount("sharedlogs", "shared/logs");
 
     assertThat(domain.getValidationFailures(resourceLookup),
@@ -229,7 +229,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenVolumeMountHasLogHomeDirectory_dontReportError() {
+  void whenVolumeMountHasLogHomeDirectory_dontReportError() {
     configureDomain(domain).withLogHomeEnabled(true).withLogHome("/shared/logs/mydomain");
     configureDomain(domain).withAdditionalVolumeMount("sharedlogs", "/shared/logs");
 
@@ -237,7 +237,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenNoVolumeMountHasSpecifiedLogHomeDirectory_reportError() {
+  void whenNoVolumeMountHasSpecifiedLogHomeDirectory_reportError() {
     configureDomain(domain).withLogHomeEnabled(true).withLogHome("/private/log/mydomain");
     configureDomain(domain).withAdditionalVolumeMount("sharedlogs", "/shared/logs");
 
@@ -246,7 +246,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenNoVolumeMountHasImplicitLogHomeDirectory_reportError() {
+  void whenNoVolumeMountHasImplicitLogHomeDirectory_reportError() {
     configureDomain(domain).withLogHomeEnabled(true);
 
     assertThat(domain.getValidationFailures(resourceLookup),
@@ -254,7 +254,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasAdditionalVolumeMountsWithInvalidChar_1_reportError() {
+  void whenDomainHasAdditionalVolumeMountsWithInvalidChar_1_reportError() {
     configureDomain(domain)
         .withAdditionalVolumeMount("volume1", BAD_MOUNT_PATH_1);
 
@@ -264,7 +264,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasAdditionalVolumeMountsWithInvalidChar_2_reportError() {
+  void whenDomainHasAdditionalVolumeMountsWithInvalidChar_2_reportError() {
     configureDomain(domain)
         .withAdditionalVolumeMount("volume2", BAD_MOUNT_PATH_2);
 
@@ -274,7 +274,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasAdditionalVolumeMountsWithInvalidChar_3_reportError() {
+  void whenDomainHasAdditionalVolumeMountsWithInvalidChar_3_reportError() {
     configureDomain(domain)
         .withAdditionalVolumeMount("volume3", BAD_MOUNT_PATH_3);
 
@@ -284,7 +284,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasAdditionalVolumeMountsWithReservedVariables_dontReportError() {
+  void whenDomainHasAdditionalVolumeMountsWithReservedVariables_dontReportError() {
     configureDomain(domain)
         .withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_1);
 
@@ -292,7 +292,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasAdditionalVolumeMountsWithCustomVariables_dontReportError() {
+  void whenDomainHasAdditionalVolumeMountsWithCustomVariables_dontReportError() {
     configureDomain(domain)
         .withEnvironmentVariable(ENV_NAME1, RAW_VALUE_1)
         .withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
@@ -301,7 +301,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasAdditionalVolumeMountsWithNonExistingVariables_reportError() {
+  void whenDomainHasAdditionalVolumeMountsWithNonExistingVariables_reportError() {
     configureDomain(domain)
         .withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
 
@@ -311,7 +311,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainAdminServerHasAdditionalVolumeMountsWithInvalidChar_reportError() {
+  void whenDomainAdminServerHasAdditionalVolumeMountsWithInvalidChar_reportError() {
     configureDomain(domain)
         .configureAdminServer()
         .getAdminServer()
@@ -323,7 +323,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainAdminServerHasAdditionalVolumeMountsWithReservedVariables_dontReportError() {
+  void whenDomainAdminServerHasAdditionalVolumeMountsWithReservedVariables_dontReportError() {
     configureDomain(domain)
         .configureAdminServer()
         .getAdminServer()
@@ -333,7 +333,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainAdminServerHasAdditionalVolumeMountsWithCustomVariables_dontReportError() {
+  void whenDomainAdminServerHasAdditionalVolumeMountsWithCustomVariables_dontReportError() {
     configureDomain(domain)
         .withEnvironmentVariable(ENV_NAME1, RAW_VALUE_1)
         .configureAdminServer()
@@ -344,7 +344,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainAdminServerHasAdditionalVolumeMountsWithNonExistingVariables_reportError() {
+  void whenDomainAdminServerHasAdditionalVolumeMountsWithNonExistingVariables_reportError() {
     configureDomain(domain)
         .configureAdminServer()
         .getAdminServer()
@@ -355,7 +355,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
   
   @Test
-  public void whenClusterServerPodHasAdditionalVolumeMountsWithInvalidChar_reportError() {
+  void whenClusterServerPodHasAdditionalVolumeMountsWithInvalidChar_reportError() {
     configureDomain(domain)
         .configureCluster("Cluster-1").withAdditionalVolumeMount("volume1", BAD_MOUNT_PATH_1);
 
@@ -364,7 +364,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenClusterServerPodHasAdditionalVolumeMountsWithReservedVariables_dontReportError() {
+  void whenClusterServerPodHasAdditionalVolumeMountsWithReservedVariables_dontReportError() {
     configureDomain(domain)
         .configureCluster("Cluster-1").withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_1);
 
@@ -372,7 +372,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenClusterServerPodHasAdditionalVolumeMountsWithCustomVariables_dontReportError() {
+  void whenClusterServerPodHasAdditionalVolumeMountsWithCustomVariables_dontReportError() {
     configureDomain(domain)
         .withEnvironmentVariable(ENV_NAME1, RAW_VALUE_1)
         .configureCluster("Cluster-1").withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
@@ -381,7 +381,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenClusterServerPodHasAdditionalVolumeMountsWithNonExistingVariables_reportError() {
+  void whenClusterServerPodHasAdditionalVolumeMountsWithNonExistingVariables_reportError() {
     configureDomain(domain)
         .configureCluster("Cluster-1").withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_2);
 
@@ -390,14 +390,14 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenNonReservedEnvironmentVariableSpecifiedAtDomainLevel_dontReportError() {
+  void whenNonReservedEnvironmentVariableSpecifiedAtDomainLevel_dontReportError() {
     configureDomain(domain).withEnvironmentVariable("testname", "testValue");
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
 
   @Test
-  public void whenReservedEnvironmentVariablesSpecifiedAtDomainLevel_reportError() {
+  void whenReservedEnvironmentVariablesSpecifiedAtDomainLevel_reportError() {
     configureDomain(domain)
         .withEnvironmentVariable("ADMIN_NAME", "testValue")
         .withEnvironmentVariable("INTROSPECT_HOME", "/shared/home/introspection");
@@ -407,7 +407,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenReservedEnvironmentVariablesSpecifiedForAdminServer_reportError() {
+  void whenReservedEnvironmentVariablesSpecifiedForAdminServer_reportError() {
     configureDomain(domain)
         .configureAdminServer()
         .withEnvironmentVariable("LOG_HOME", "testValue")
@@ -418,7 +418,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenReservedEnvironmentVariablesSpecifiedAtServerLevel_reportError() {
+  void whenReservedEnvironmentVariablesSpecifiedAtServerLevel_reportError() {
     configureDomain(domain)
         .configureServer("ms1")
         .withEnvironmentVariable("SERVER_NAME", "testValue");
@@ -428,7 +428,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenReservedEnvironmentVariablesSpecifiedAtClusterLevel_reportError() {
+  void whenReservedEnvironmentVariablesSpecifiedAtClusterLevel_reportError() {
     configureDomain(domain)
         .configureCluster("cluster1")
         .withEnvironmentVariable("DOMAIN_HOME", "testValue");
@@ -438,12 +438,12 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenWebLogicCredentialsSecretNameFound_dontReportError() {
+  void whenWebLogicCredentialsSecretNameFound_dontReportError() {
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
 
   @Test
-  public void whenWebLogicCredentialsSecretNameFoundWithExplicitNamespace_dontReportError() {
+  void whenWebLogicCredentialsSecretNameFoundWithExplicitNamespace_dontReportError() {
     configureDomain(domain)
         .withWebLogicCredentialsSecret(SECRET_NAME, NS);
 
@@ -451,7 +451,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenWebLogicCredentialsSecretNamespaceUndefined_useDomainNamespace() {
+  void whenWebLogicCredentialsSecretNamespaceUndefined_useDomainNamespace() {
     configureDomain(domain)
         .withWebLogicCredentialsSecret(SECRET_NAME, null);
 
@@ -459,7 +459,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenWebLogicCredentialsSecretNameNotFound_reportError() {
+  void whenWebLogicCredentialsSecretNameNotFound_reportError() {
     resourceLookup.undefineResource(SECRET_NAME, KubernetesResourceType.Secret, NS);
 
     assertThat(domain.getValidationFailures(resourceLookup),
@@ -467,7 +467,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenBadWebLogicCredentialsSecretNamespaceSpecified_reportError() {
+  void whenBadWebLogicCredentialsSecretNamespaceSpecified_reportError() {
     resourceLookup.defineResource(SECRET_NAME, KubernetesResourceType.Secret, "badNamespace");
     configureDomain(domain)
         .withWebLogicCredentialsSecret(SECRET_NAME, "badNamespace");
@@ -477,7 +477,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenImagePullSecretSpecifiedButDoesNotExist_reportError() {
+  void whenImagePullSecretSpecifiedButDoesNotExist_reportError() {
     configureDomain(domain).withDefaultImagePullSecret(new V1LocalObjectReference().name("no-such-secret"));
 
     assertThat(domain.getValidationFailures(resourceLookup),
@@ -486,7 +486,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenImagePullSecretExists_dontReportError() {
+  void whenImagePullSecretExists_dontReportError() {
     resourceLookup.defineResource("a-secret", KubernetesResourceType.Secret, NS);
     configureDomain(domain).withDefaultImagePullSecret(new V1LocalObjectReference().name("a-secret"));
 
@@ -494,7 +494,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenConfigOverrideSecretSpecifiedButDoesNotExist_reportError() {
+  void whenConfigOverrideSecretSpecifiedButDoesNotExist_reportError() {
     configureDomain(domain).withConfigOverrideSecrets("override-secret");
 
     assertThat(domain.getValidationFailures(resourceLookup),
@@ -503,7 +503,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenConfigOverrideSecretExists_dontReportError() {
+  void whenConfigOverrideSecretExists_dontReportError() {
     resourceLookup.defineResource("override-secret", KubernetesResourceType.Secret, NS);
     configureDomain(domain).withConfigOverrideSecrets("override-secret");
 
@@ -511,7 +511,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenConfigOverrideCmExistsTypeImage_dontReportError() {
+  void whenConfigOverrideCmExistsTypeImage_dontReportError() {
     resourceLookup.defineResource("overrides-cm-image", KubernetesResourceType.ConfigMap, NS);
     configureDomain(domain).withConfigOverrides("overrides-cm-image").withDomainHomeSourceType(Image);
 
@@ -519,7 +519,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenConfigOverrideCmExistsTypeFromModel_reportError() {
+  void whenConfigOverrideCmExistsTypeFromModel_reportError() {
     resourceLookup.defineResource("overrides-cm-model", KubernetesResourceType.ConfigMap, NS);
     resourceLookup.defineResource("wdt-cm-secret", KubernetesResourceType.Secret, NS);
     configureDomain(domain).withConfigOverrides("overrides-cm-model")
@@ -532,7 +532,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenWdtConfigMapExists_fromModel_dontReportError() {
+  void whenWdtConfigMapExists_fromModel_dontReportError() {
     resourceLookup.defineResource("wdt-cm", KubernetesResourceType.ConfigMap, NS);
     resourceLookup.defineResource("wdt-cm-secret-model1", KubernetesResourceType.Secret, NS);
     configureDomain(domain)
@@ -544,7 +544,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenWdtConfigMapSpecifiedButDoesNotExist_fromModel_reportError() {
+  void whenWdtConfigMapSpecifiedButDoesNotExist_fromModel_reportError() {
     resourceLookup.defineResource("wdt-cm-secret-model2", KubernetesResourceType.Secret, NS);
     configureDomain(domain).withRuntimeEncryptionSecret("wdt-cm-secret-model2")
         .withModelConfigMap("wdt-configmap")
@@ -556,7 +556,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenWdtConfigMapSpecifiedButDoesNotExist_Image_dontReportError() {
+  void whenWdtConfigMapSpecifiedButDoesNotExist_Image_dontReportError() {
     configureDomain(domain).withDomainHomeSourceType(Image)
         .withModelConfigMap("wdt-configmap");
 
@@ -564,7 +564,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenRuntimeEncryptionSecretSpecifiedButDoesNotExist_Image_dontReportError() {
+  void whenRuntimeEncryptionSecretSpecifiedButDoesNotExist_Image_dontReportError() {
     configureDomain(domain).withDomainHomeSourceType(Image)
         .withRuntimeEncryptionSecret("runtime-secret");
 
@@ -572,14 +572,14 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenRuntimeEncryptionSecretUnspecified_Image_dontReportError() {
+  void whenRuntimeEncryptionSecretUnspecified_Image_dontReportError() {
     configureDomain(domain).withDomainHomeSourceType(Image);
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
 
   @Test
-  public void whenRuntimeEncryptionSecretSpecifiedButDoesNotExist_fromModel_reportError() {
+  void whenRuntimeEncryptionSecretSpecifiedButDoesNotExist_fromModel_reportError() {
     configureDomain(domain).withDomainHomeSourceType(FromModel)
         .withRuntimeEncryptionSecret("runtime-secret");
 
@@ -588,7 +588,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenRuntimeEncryptionSecretExists_fromModel_dontReportError() {
+  void whenRuntimeEncryptionSecretExists_fromModel_dontReportError() {
     configureDomain(domain).withDomainHomeSourceType(FromModel)
         .withRuntimeEncryptionSecret("runtime-good-secret");
     resourceLookup.defineResource("runtime-good-secret", KubernetesResourceType.Secret, NS);
@@ -597,7 +597,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenRuntimeEncryptionSecretUnspecified_fromModel_reportError() {
+  void whenRuntimeEncryptionSecretUnspecified_fromModel_reportError() {
     configureDomain(domain).withDomainHomeSourceType(FromModel);
 
     assertThat(domain.getValidationFailures(resourceLookup),
@@ -606,7 +606,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenWalletPasswordSecretSpecifiedButDoesNotExist_fromModel_reportError() {
+  void whenWalletPasswordSecretSpecifiedButDoesNotExist_fromModel_reportError() {
     configureDomain(domain).withDomainHomeSourceType(FromModel)
         .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
         .withOpssWalletPasswordSecret("wallet-password-secret-missing");
@@ -618,7 +618,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenWalletFileSecretSpecifiedButDoesNotExist_Image_reportError() {
+  void whenWalletFileSecretSpecifiedButDoesNotExist_Image_reportError() {
     configureDomain(domain).withDomainHomeSourceType(FromModel)
         .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
         .withOpssWalletFileSecret("wallet-file-secret-missing");
@@ -631,7 +631,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenWalletPasswordSecretExists_fromModel_dontReportError() {
+  void whenWalletPasswordSecretExists_fromModel_dontReportError() {
     configureDomain(domain).withDomainHomeSourceType(FromModel)
         .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
         .withOpssWalletPasswordSecret("wallet-password-secret-good");
@@ -642,7 +642,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenWalletFileSecretExists_fromModel_dontReportError() {
+  void whenWalletFileSecretExists_fromModel_dontReportError() {
     configureDomain(domain).withDomainHomeSourceType(FromModel)
         .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
         .withOpssWalletFileSecret("wallet-file-secret-good");
@@ -653,7 +653,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenWalletPasswordSecretUnspecified_fromModel_jrf_reportError() {
+  void whenWalletPasswordSecretUnspecified_fromModel_jrf_reportError() {
     configureDomain(domain).withDomainHomeSourceType(FromModel)
         .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
         .withDomainType("JRF");
@@ -665,7 +665,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenWalletFileSecretUnspecified_fromModel_jrf_dontReportError() {
+  void whenWalletFileSecretUnspecified_fromModel_jrf_dontReportError() {
     configureDomain(domain).withDomainHomeSourceType(FromModel)
         .withDomainType("JRF")
         .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
@@ -678,7 +678,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenWalletPasswordSecretUnspecified_Image_dontReportError() {
+  void whenWalletPasswordSecretUnspecified_Image_dontReportError() {
     configureDomain(domain).withDomainHomeSourceType(Image)
         .withOpssWalletFileSecret("wallet-file-secret");
 
@@ -688,7 +688,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenWalletPasswordSecretUnspecified_fromModel_wls_dontReportError() {
+  void whenWalletPasswordSecretUnspecified_fromModel_wls_dontReportError() {
     configureDomain(domain).withDomainHomeSourceType(Image)
         .withRuntimeEncryptionSecret("runtime-encryption-secret-good")
         .withDomainType("WLS")
@@ -701,7 +701,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenExposingDefaultChannelIfIstio_Enabled() {
+  void whenExposingDefaultChannelIfIstio_Enabled() {
     configureDomain(domain)
         .withDomainHomeSourceType(Image)
         .withIstio()
@@ -716,7 +716,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainUidExceedMaxAllowed_reportError() {
+  void whenDomainUidExceedMaxAllowed_reportError() {
     String domainUID = "mydomainthatislongerthan46charactersandshouldfail";
     Domain myDomain = createTestDomain(domainUID);
     configureDomain(myDomain)
@@ -732,7 +732,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainUidExceedMaxAllowedWithCustomSuffix_reportError() {
+  void whenDomainUidExceedMaxAllowedWithCustomSuffix_reportError() {
     String domainUID = "mydomainthatislongerthan42charactersandshould";
     Domain myDomain = createTestDomain(domainUID);
     configureDomain(myDomain)
@@ -749,7 +749,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainUidNotExceedMaxAllowedWithCustomSuffix_dontReportError() {
+  void whenDomainUidNotExceedMaxAllowedWithCustomSuffix_dontReportError() {
     String domainUID = "mydomainthatislongerthan42charactersandshould";
     Domain myDomain = createTestDomain(domainUID);
     configureDomain(myDomain)
@@ -765,7 +765,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainUidNotExceedMaxAllowedWithEmptyCustomSuffix_dontReportError() {
+  void whenDomainUidNotExceedMaxAllowedWithEmptyCustomSuffix_dontReportError() {
     String domainUID = "mydomainthatislongerthan42charactersandshould";
     Domain myDomain = createTestDomain(domainUID);
     configureDomain(myDomain)
@@ -781,7 +781,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainUidPlusASNameNotExceedMaxAllowed_externalServiceDisabled_dontReportError() {
+  void whenDomainUidPlusASNameNotExceedMaxAllowed_externalServiceDisabled_dontReportError() {
     String domainUID = "mydomainnamecontains32characters";
     Domain myDomain = createTestDomain(domainUID);
     String asName = "servernamecontains30character";
@@ -797,7 +797,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainUidPlusASNameNotExceedMaxAllowed_externalServiceEnabled_dontReportError() {
+  void whenDomainUidPlusASNameNotExceedMaxAllowed_externalServiceEnabled_dontReportError() {
     String domainUID = "mydomainnamecontains32characters";
     Domain myDomain = createTestDomain(domainUID);
     String asName = "servernamecontains26chars";
@@ -815,7 +815,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainUidPlusASNameExceedMaxAllowed_externalServiceEnabled_reportTwoErrors() {
+  void whenDomainUidPlusASNameExceedMaxAllowed_externalServiceEnabled_reportTwoErrors() {
     String domainUID = "mydomainnamecontains32characters";
     Domain myDomain = createTestDomain(domainUID);
     String asName = "servernamecontains32characterss";
@@ -836,7 +836,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainUidPlusASNameExceedMaxAllowed_externalServiceDisabled_reportOneError() {
+  void whenDomainUidPlusASNameExceedMaxAllowed_externalServiceDisabled_reportOneError() {
     String domainUID = "mydomainnamecontains32characters";
     Domain myDomain = createTestDomain(domainUID);
     String asName = "servernamecontains32characterss";
@@ -853,7 +853,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainUidPlusASNameOnlyExternalServiceExceedMaxAllowed_reportOneError() {
+  void whenDomainUidPlusASNameOnlyExternalServiceExceedMaxAllowed_reportOneError() {
     String domainUID = "mydomainnamecontains32characters";
     Domain myDomain = createTestDomain(domainUID);
     String asName = "servernamecontains30characters";
@@ -871,7 +871,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainUidPlusASNameNotExceedMaxAllowedWithCustomSuffix_dontReportError() {
+  void whenDomainUidPlusASNameNotExceedMaxAllowedWithCustomSuffix_dontReportError() {
     String domainUID = "mydomainnamecontains32characters";
     Domain myDomain = createTestDomain(domainUID);
     String asName = "servernamecontains21c";
@@ -889,7 +889,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainUidPlusASNameNotExceedMaxAllowedWithEmptyCustomSuffix_dontReportError() {
+  void whenDomainUidPlusASNameNotExceedMaxAllowedWithEmptyCustomSuffix_dontReportError() {
     String domainUID = "mydomainnamecontains32characters";
     Domain myDomain = createTestDomain(domainUID);
     String asName = "servernamecontains30characters";
@@ -907,7 +907,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainUidPlusASNameExceedMaxAllowedWithCustomSuffix_reportTwoErrors() {
+  void whenDomainUidPlusASNameExceedMaxAllowedWithCustomSuffix_reportTwoErrors() {
     String domainUID = "mydomainnamecontains32characters";
     Domain myDomain = createTestDomain(domainUID);
     String asName = "servernamecontains31characterss";
@@ -929,7 +929,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainUidPlusMSNameNotExceedMaxAllowed_dontReportError() {
+  void whenDomainUidPlusMSNameNotExceedMaxAllowed_dontReportError() {
     String domainUID = "mydomainnamecontains32characters";
     Domain myDomain = createTestDomain(domainUID);
     String msName = "servernamecontains29characte";
@@ -947,7 +947,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainUidPlusMSNameNotExceedMaxAllowedWithClusterSize9_dontReportError() {
+  void whenDomainUidPlusMSNameNotExceedMaxAllowedWithClusterSize9_dontReportError() {
     WlsDomainConfig domainConfigWithCluster = createDomainConfig("CLUSTER-9");
     String domainUID = "mydomainnamecontains32characters";
     Domain myDomain = createTestDomain(domainUID);
@@ -968,7 +968,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainUidPlusMSNameNotExceedMaxAllowedWithClusterSize99_dontReportError() {
+  void whenDomainUidPlusMSNameNotExceedMaxAllowedWithClusterSize99_dontReportError() {
     WlsDomainConfig domainConfigWithCluster = createDomainConfig("CLUSTER-99-good");
     String domainUID = "mydomainnamecontains32characters";
     Domain myDomain = createTestDomain(domainUID);
@@ -990,7 +990,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainUidPlusMSNameExceedMaxAllowedWithClusterSize9_reportError() {
+  void whenDomainUidPlusMSNameExceedMaxAllowedWithClusterSize9_reportError() {
     WlsDomainConfig domainConfigWithCluster = createDomainConfig("CLUSTER-9-bad");
     String domainUID = "mydomainnamecontains32characters";
     Domain myDomain = createTestDomain(domainUID);
@@ -1022,7 +1022,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainUidPlusMSNameExceedMaxAllowedWithClusterSize99_reportError() {
+  void whenDomainUidPlusMSNameExceedMaxAllowedWithClusterSize99_reportError() {
     WlsDomainConfig domainConfigWithCluster = createDomainConfig("CLUSTER-99-bad");
     String domainUID = "mydomainnamecontains32characterS";
     Domain myDomain = createTestDomain(domainUID);
@@ -1053,7 +1053,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainUidPlusMSNameExceedMaxAllowedWithClusterSize100_noExtrSpaceShouldBeReserved_dontReportError() {
+  void whenDomainUidPlusMSNameExceedMaxAllowedWithClusterSize100_noExtrSpaceShouldBeReserved_dontReportError() {
     WlsDomainConfig domainConfigWithCluster = createDomainConfig("CLUSTER-100-good");
     String domainUID = "mydomainnamecontains32charactess";
     Domain myDomain2 = createTestDomain(domainUID);
@@ -1075,7 +1075,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainUidPlusMSNameExceedMaxAllowedWithClusterSize9ButClusterPaddingDisabled_dontReportError() {
+  void whenDomainUidPlusMSNameExceedMaxAllowedWithClusterSize9ButClusterPaddingDisabled_dontReportError() {
     WlsDomainConfig domainConfigWithCluster = createDomainConfig("CLUSTER-9-bad-ok");
     String domainUID = "mydomainnamecontains32characters";
     Domain myDomain = createTestDomain(domainUID);
@@ -1104,7 +1104,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainUidPlusMSNameExceedMaxAllowedWithClusterSize99ButClusterPaddingDisabled_reportError() {
+  void whenDomainUidPlusMSNameExceedMaxAllowedWithClusterSize99ButClusterPaddingDisabled_reportError() {
     WlsDomainConfig domainConfigWithCluster = createDomainConfig("CLUSTER-99-bad-ok");
     String domainUID = "mydomainnamecontains32characterS";
     Domain myDomain = createTestDomain(domainUID);
@@ -1131,7 +1131,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainUidPlusClusterNameNotExceedMaxAllowed_dontReportError() {
+  void whenDomainUidPlusClusterNameNotExceedMaxAllowed_dontReportError() {
     String domainUID = "mydomainnamecontains32characters";
     Domain myDomain = createTestDomain(domainUID);
     String clusterName = "clusternamecontain21c";
@@ -1149,7 +1149,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainUidPlusClusterNameExceedMaxAllowed_reportError() {
+  void whenDomainUidPlusClusterNameExceedMaxAllowed_reportError() {
     String domainUID = "mydomainnamecontains32characters";
     Domain myDomain = createTestDomain(domainUID);
     String clusterName = "servernamecontains31characters";
@@ -1168,7 +1168,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainServerHasListenPort_dontReportError() {
+  void whenDomainServerHasListenPort_dontReportError() {
     String domainUID = "TestDomainForRest";
     WlsDomainConfig domainConfigWithCluster = createDomainConfig("TestClusterForRest");
     Domain myDomain = createTestDomain(domainUID);
@@ -1194,7 +1194,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainServerHasSSLListenPort_dontReportError() {
+  void whenDomainServerHasSSLListenPort_dontReportError() {
     String domainUID = "TestDomainForRest";
     WlsDomainConfig domainConfigWithCluster = createDomainConfig("TestClusterForRest");
     Domain myDomain = createTestDomain(domainUID);
@@ -1220,7 +1220,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainServerHasAdminPort_dontReportError() {
+  void whenDomainServerHasAdminPort_dontReportError() {
     String domainUID = "TestDomainForRest";
     WlsDomainConfig domainConfigWithCluster = createDomainConfig("TestClusterForRest");
     Domain myDomain = createTestDomain(domainUID);
@@ -1246,7 +1246,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainServerHasAdminNAP_dontReportError() {
+  void whenDomainServerHasAdminNAP_dontReportError() {
     String domainUID = "TestDomainForRest";
     WlsDomainConfig domainConfigWithCluster = createDomainConfig("TestClusterForRest");
     Domain myDomain = createTestDomain(domainUID);
@@ -1273,7 +1273,7 @@ public class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainServerNoAvailablePortForREST_reportError() {
+  void whenDomainServerNoAvailablePortForREST_reportError() {
     String domainUID = "TestDomainForRest";
     WlsDomainConfig domainConfigWithCluster = createDomainConfig("TestClusterForRest");
     Domain myDomain = createTestDomain(domainUID);

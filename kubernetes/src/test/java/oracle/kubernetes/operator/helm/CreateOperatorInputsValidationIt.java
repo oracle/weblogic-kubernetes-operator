@@ -15,7 +15,7 @@ import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.emptyString;
 
-public class CreateOperatorInputsValidationIt extends OperatorChartItBase {
+class CreateOperatorInputsValidationIt extends OperatorChartItBase {
 
   private static final String MUTEX = "%s can not be present when %s is defined";
 
@@ -48,7 +48,7 @@ public class CreateOperatorInputsValidationIt extends OperatorChartItBase {
   }
 
   @Test
-  public void whenStringSpecifiedForOperatorLevelProperties_reportError() throws Exception {
+  void whenStringSpecifiedForOperatorLevelProperties_reportError() throws Exception {
     for (String propertyName : OPERATOR_LEVEL_BOOLEAN_PROPERTIES) {
       setProperty(propertyName, "this is not a boolean");
     }
@@ -61,7 +61,7 @@ public class CreateOperatorInputsValidationIt extends OperatorChartItBase {
   }
 
   @Test
-  public void whenOperatorLevelBooleanPropertiesMissing_reportError() throws Exception {
+  void whenOperatorLevelBooleanPropertiesMissing_reportError() throws Exception {
     for (String propertyName : OPERATOR_LEVEL_BOOLEAN_PROPERTIES) {
       removeProperty(propertyName);
     }
@@ -74,7 +74,7 @@ public class CreateOperatorInputsValidationIt extends OperatorChartItBase {
   }
 
   @Test
-  public void whenOperatorLevelStringPropertiesMissing_reportError() throws Exception {
+  void whenOperatorLevelStringPropertiesMissing_reportError() throws Exception {
     for (String propertyName : OPERATOR_LEVEL_STRING_PROPERTIES) {
       removeProperty(propertyName);
     }
@@ -87,7 +87,7 @@ public class CreateOperatorInputsValidationIt extends OperatorChartItBase {
   }
 
   @Test
-  public void whenOperatorLevelEnumPropertiesMissing_reportError() throws Exception {
+  void whenOperatorLevelEnumPropertiesMissing_reportError() throws Exception {
     for (String propertyName : OPERATOR_LEVEL_ENUM_PROPERTIES) {
       removeProperty(propertyName);
     }
@@ -100,7 +100,7 @@ public class CreateOperatorInputsValidationIt extends OperatorChartItBase {
   }
 
   @Test
-  public void whenBadValuesSpecifiedForOperatorLevelEnumProperties_reportError() throws Exception {
+  void whenBadValuesSpecifiedForOperatorLevelEnumProperties_reportError() throws Exception {
     String badValue = "bogus";
     for (String propertyName : OPERATOR_LEVEL_ENUM_PROPERTIES) {
       setProperty(propertyName, badValue);
@@ -114,7 +114,7 @@ public class CreateOperatorInputsValidationIt extends OperatorChartItBase {
   }
 
   @Test
-  public void whenExternalRestEnabled_reportMissingRelatedParameters() throws Exception {
+  void whenExternalRestEnabled_reportMissingRelatedParameters() throws Exception {
     setProperty("externalRestEnabled", true);
 
     removeProperty("externalRestHttpsPort");
@@ -130,7 +130,7 @@ public class CreateOperatorInputsValidationIt extends OperatorChartItBase {
   }
 
   @Test
-  public void whenExternalRestNotEnabled_ignoreMissingRelatedParameters() throws Exception {
+  void whenExternalRestNotEnabled_ignoreMissingRelatedParameters() throws Exception {
     setProperty("externalRestEnabled", false);
 
     removeProperty("externalRestHttpsPort");
@@ -141,7 +141,7 @@ public class CreateOperatorInputsValidationIt extends OperatorChartItBase {
   }
 
   @Test
-  public void whenExternalRestEnabled_reportRelatedParameterErrorsLegacy() throws Exception {
+  void whenExternalRestEnabled_reportRelatedParameterErrorsLegacy() throws Exception {
     setProperty("externalRestEnabled", true);
 
     setProperty("externalRestHttpsPort", "Not a number");
@@ -157,7 +157,7 @@ public class CreateOperatorInputsValidationIt extends OperatorChartItBase {
   }
 
   @Test
-  public void whenExternalRestEnabled_reportRelatedParameterErrors() throws Exception {
+  void whenExternalRestEnabled_reportRelatedParameterErrors() throws Exception {
     setProperty("externalRestEnabled", true);
     setProperty("externalRestHttpsPort", "Not a number");
     setProperty("externalRestIdentitySecret", 1234);
@@ -170,7 +170,7 @@ public class CreateOperatorInputsValidationIt extends OperatorChartItBase {
   }
 
   @Test
-  public void whenExternalRestNotEnabled_ignoreRelatedParameterErrors() throws Exception {
+  void whenExternalRestNotEnabled_ignoreRelatedParameterErrors() throws Exception {
     setProperty("externalRestEnabled", false);
 
     setProperty("externalRestHttpsPort", "Not a number");
@@ -182,7 +182,7 @@ public class CreateOperatorInputsValidationIt extends OperatorChartItBase {
   }
 
   @Test
-  public void whenExternalOperatorSecret_ExcludeCertKeyErrors() throws Exception {
+  void whenExternalOperatorSecret_ExcludeCertKeyErrors() throws Exception {
     setProperty("externalRestEnabled", true);
 
     setProperty("externalRestIdentitySecret", "secretName");
@@ -197,7 +197,7 @@ public class CreateOperatorInputsValidationIt extends OperatorChartItBase {
   }
 
   @Test
-  public void whenRemoteDebugNodePortEnabled_reportMissingRelatedParameters() throws Exception {
+  void whenRemoteDebugNodePortEnabled_reportMissingRelatedParameters() throws Exception {
     setProperty("remoteDebugNodePortEnabled", true);
 
     removeProperty("internalDebugHttpPort");
@@ -210,7 +210,7 @@ public class CreateOperatorInputsValidationIt extends OperatorChartItBase {
   }
 
   @Test
-  public void whenRemoteDebugNodePortNotEnabled_ignoreMissingRelatedParameters() throws Exception {
+  void whenRemoteDebugNodePortNotEnabled_ignoreMissingRelatedParameters() throws Exception {
     setProperty("remoteDebugNodePortEnabled", false);
 
     removeProperty("internalDebugHttpPort");
@@ -220,7 +220,7 @@ public class CreateOperatorInputsValidationIt extends OperatorChartItBase {
   }
 
   @Test
-  public void whenRemoteDebugNodePortEnabled_reportRelatedParameterErrors() throws Exception {
+  void whenRemoteDebugNodePortEnabled_reportRelatedParameterErrors() throws Exception {
     setProperty("remoteDebugNodePortEnabled", true);
 
     setProperty("internalDebugHttpPort", true);
@@ -233,7 +233,7 @@ public class CreateOperatorInputsValidationIt extends OperatorChartItBase {
   }
 
   @Test
-  public void whenRemoteDebugNodePortNotEnabled_ignoreRelatedParameterErrors() throws Exception {
+  void whenRemoteDebugNodePortNotEnabled_ignoreRelatedParameterErrors() throws Exception {
     setProperty("remoteDebugNodePortEnabled", false);
 
     setProperty("internalDebugHttpPort", true);
@@ -243,7 +243,7 @@ public class CreateOperatorInputsValidationIt extends OperatorChartItBase {
   }
 
   @Test
-  public void whenElkIntegrationEnabled_reportMissingRelatedParameters() throws Exception {
+  void whenElkIntegrationEnabled_reportMissingRelatedParameters() throws Exception {
     setProperty("elkIntegrationEnabled", true);
 
     removeProperty("logStashImage");
@@ -259,7 +259,7 @@ public class CreateOperatorInputsValidationIt extends OperatorChartItBase {
   }
 
   @Test
-  public void whenElkIntegrationNotEnabled_ignoreMissingRelatedParameters() throws Exception {
+  void whenElkIntegrationNotEnabled_ignoreMissingRelatedParameters() throws Exception {
     setProperty("elkIntegrationEnabled", false);
 
     setProperty("logStashImage", true);
@@ -270,7 +270,7 @@ public class CreateOperatorInputsValidationIt extends OperatorChartItBase {
   }
 
   @Test
-  public void whenElkIntegrationEnabled_reportRelatedParametersErrors() throws Exception {
+  void whenElkIntegrationEnabled_reportRelatedParametersErrors() throws Exception {
     setProperty("elkIntegrationEnabled", true);
 
     setProperty("logStashImage", true);
@@ -286,7 +286,7 @@ public class CreateOperatorInputsValidationIt extends OperatorChartItBase {
   }
 
   @Test
-  public void whenElkIntegrationEnabled_ignoreRelatedParametersErrors() throws Exception {
+  void whenElkIntegrationEnabled_ignoreRelatedParametersErrors() throws Exception {
     setProperty("elkIntegrationEnabled", false);
 
     setProperty("logStashImage", true);
@@ -297,14 +297,14 @@ public class CreateOperatorInputsValidationIt extends OperatorChartItBase {
   }
 
   @Test
-  public void whenDomainNamespacesPrimitiveType_reportError() throws Exception {
+  void whenDomainNamespacesPrimitiveType_reportError() throws Exception {
     setProperty("domainNamespaces", true);
 
     assertThat(getProcessingError(), containsTypeError("domainNamespaces", "slice", "bool"));
   }
 
   @Test
-  public void whenImagePullSecretsPrimitiveType_reportError() throws Exception {
+  void whenImagePullSecretsPrimitiveType_reportError() throws Exception {
     setProperty("imagePullSecrets", true);
 
     assertThat(getProcessingError(), containsTypeError("imagePullSecrets", "slice", "bool"));

@@ -51,7 +51,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class NamespaceTest {
+class NamespaceTest {
   public static final VersionInfo TEST_VERSION_INFO = new VersionInfo().major("1").minor("18").gitVersion("0");
   public static final KubernetesVersion TEST_VERSION = new KubernetesVersion(TEST_VERSION_INFO);
 
@@ -84,7 +84,7 @@ public class NamespaceTest {
   }
 
   @Test
-  public void givenJobWatcherForNamespace_afterNamespaceDeletedAndRecreatedHaveDifferentWatcher() {
+  void givenJobWatcherForNamespace_afterNamespaceDeletedAndRecreatedHaveDifferentWatcher() {
     initializeNamespaces();
     JobWatcher oldWatcher = domainNamespaces.getJobWatcher(NS);
 
@@ -97,7 +97,7 @@ public class NamespaceTest {
   }
 
   @Test
-  public void whenDomainNamespaceRemovedFromDomainNamespaces_stopDomainWatchers() {
+  void whenDomainNamespaceRemovedFromDomainNamespaces_stopDomainWatchers() {
     initializeNamespaces();
     AtomicBoolean stopping = domainNamespaces.isStopping(NS);
 
@@ -144,7 +144,7 @@ public class NamespaceTest {
   }
 
   @Test
-  public void whenDomainNamespaceRemovedFromDomainNamespaces_isNoLongerInManagedNamespaces() {
+  void whenDomainNamespaceRemovedFromDomainNamespaces_isNoLongerInManagedNamespaces() {
     initializeNamespaces();
 
     unspecifyDomainNamespace(NS);
@@ -154,7 +154,7 @@ public class NamespaceTest {
   }
 
   @Test
-  public void whenDomainNamespaceRemovedFromDomainNamespaces_doNotShutdownDomain() {
+  void whenDomainNamespaceRemovedFromDomainNamespaces_doNotShutdownDomain() {
     initializeNamespaces();
 
     unspecifyDomainNamespace(NS);
@@ -172,7 +172,7 @@ public class NamespaceTest {
   }
 
   @Test
-  public void whenDomainNamespaceDeleted_stopDomainWatchers() {
+  void whenDomainNamespaceDeleted_stopDomainWatchers() {
     initializeNamespaces();
     AtomicBoolean stopping = domainNamespaces.isStopping(NS);
 
@@ -183,7 +183,7 @@ public class NamespaceTest {
   }
 
   @Test
-  public void whenDomainNamespaceDeleted_isNoLongerInManagedNamespaces() {
+  void whenDomainNamespaceDeleted_isNoLongerInManagedNamespaces() {
     initializeNamespaces();
 
     deleteNamespace(NS);
@@ -193,7 +193,7 @@ public class NamespaceTest {
   }
 
   @Test
-  public void whenStartNamespaceBeforeStepRunHit403OnEventCreation_namespaceStartingFlagCleared() {
+  void whenStartNamespaceBeforeStepRunHit403OnEventCreation_namespaceStartingFlagCleared() {
     String namespace = "TEST_NAMESPACE_1";
     defineNamespaces(namespace);
     specifyDomainNamespaces(namespace);
@@ -208,7 +208,7 @@ public class NamespaceTest {
   }
 
   @Test
-  public void whenStartNamespaceBeforeStepRunSucceeds_namespaceStartingFlagIsNotCleared() {
+  void whenStartNamespaceBeforeStepRunSucceeds_namespaceStartingFlagIsNotCleared() {
     String namespace = "TEST_NAMESPACE_2";
     defineNamespaces(namespace);
     specifyDomainNamespaces(namespace);
@@ -220,7 +220,7 @@ public class NamespaceTest {
   }
 
   @Test
-  public void whenStartNamespaceBeforeStepRun403OnEventCreation_thenSucceed_namespaceStartingFlagSet() {
+  void whenStartNamespaceBeforeStepRun403OnEventCreation_thenSucceed_namespaceStartingFlagSet() {
     String namespace = "TEST_NAMESPACE_3";
     testSupport.addRetryStrategy(retryStrategy);
     defineNamespaces(namespace);

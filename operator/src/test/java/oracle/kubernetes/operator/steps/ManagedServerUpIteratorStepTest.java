@@ -65,7 +65,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements WatchListener<V1Pod>,
+class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements WatchListener<V1Pod>,
         StubWatchFactory.AllWatchesClosedListener {
 
   protected static final String DOMAIN_NAME = "domain1";
@@ -227,7 +227,7 @@ public class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase imple
   }
 
   @Test
-  public void withMultipleServersAvailableToStart_onlyOneForEachClusterInitiallyStarts() {
+  void withMultipleServersAvailableToStart_onlyOneForEachClusterInitiallyStarts() {
     configureCluster(CLUSTER1).withMaxConcurrentStartup(0);
     configureCluster(CLUSTER2).withMaxConcurrentStartup(1);
     addWlsCluster(CLUSTER1, MS1, MS2);
@@ -255,7 +255,7 @@ public class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase imple
   }
 
   @Test
-  public void whenConcurrencyLimitDisabled_additionalClusteredServersStartsAfterPreviousIsScheduled() {
+  void whenConcurrencyLimitDisabled_additionalClusteredServersStartsAfterPreviousIsScheduled() {
     configureCluster(CLUSTER1).withMaxConcurrentStartup(0);
     addWlsCluster(CLUSTER1, MS1, MS2, MS3);
 
@@ -266,7 +266,7 @@ public class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase imple
   }
 
   @Test
-  public void whenConcurrencyLimitIs1_secondClusteredServerDoesNotStartIfFirstIsNotReady() {
+  void whenConcurrencyLimitIs1_secondClusteredServerDoesNotStartIfFirstIsNotReady() {
     configureCluster(CLUSTER1).withMaxConcurrentStartup(1);
     addWlsCluster(CLUSTER1, MS1, MS2);
 
@@ -277,7 +277,7 @@ public class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase imple
   }
 
   @Test
-  public void whileAdminServerStopped_canStartManagedServer() {
+  void whileAdminServerStopped_canStartManagedServer() {
     createDomainPresenceInfoWithNoAdminServer();
     addWlsCluster(CLUSTER1, MS1);
 
@@ -294,7 +294,7 @@ public class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase imple
   }
 
   @Test
-  public void whenConcurrencyLimitIs1_secondClusteredServerStartsAfterFirstIsReady() {
+  void whenConcurrencyLimitIs1_secondClusteredServerStartsAfterFirstIsReady() {
     configureCluster(CLUSTER1).withMaxConcurrentStartup(1);
     addWlsCluster(CLUSTER1, MS1, MS2);
 
@@ -305,7 +305,7 @@ public class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase imple
   }
 
   @Test
-  public void whenConcurrencyLimitIs2_secondClusteredServerStartsAfterFirstIsScheduledButNotThird() {
+  void whenConcurrencyLimitIs2_secondClusteredServerStartsAfterFirstIsScheduledButNotThird() {
     configureCluster(CLUSTER1).withMaxConcurrentStartup(2);
     addWlsCluster(CLUSTER1, MS1, MS2, MS3, MS4);
 
@@ -316,7 +316,7 @@ public class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase imple
   }
 
   @Test
-  public void whenConcurrencyLimitIs2_nextTwoStartAfterFirstTwoAreReady() {
+  void whenConcurrencyLimitIs2_nextTwoStartAfterFirstTwoAreReady() {
     configureCluster(CLUSTER1).withMaxConcurrentStartup(2);
     addWlsCluster(CLUSTER1, MS1, MS2, MS3, MS4);
 
@@ -327,7 +327,7 @@ public class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase imple
   }
 
   @Test
-  public void nonClusteredServers_ignoreConcurrencyLimit() {
+  void nonClusteredServers_ignoreConcurrencyLimit() {
     domain.getSpec().setMaxClusterConcurrentStartup(1);
     addWlsServers(MS1, MS2, MS3);
 
@@ -338,7 +338,7 @@ public class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase imple
   }
 
   @Test
-  public void withMultipleClusters_differentClusterScheduleAndStartDifferently() {
+  void withMultipleClusters_differentClusterScheduleAndStartDifferently() {
     configureCluster(CLUSTER1).withMaxConcurrentStartup(0);
     configureCluster(CLUSTER2).withMaxConcurrentStartup(1);
     addWlsCluster(CLUSTER1, MS1, MS2);
@@ -351,7 +351,7 @@ public class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase imple
   }
 
   @Test
-  public void whenClusteredServersAlreadyScheduled_canStartNonclusteredServer() {
+  void whenClusteredServersAlreadyScheduled_canStartNonclusteredServer() {
     domain.getSpec().setMaxClusterConcurrentStartup(1);
     Arrays.asList(MS1, MS2).forEach(this::addScheduledClusteredServer);
     addWlsServer(MS3);

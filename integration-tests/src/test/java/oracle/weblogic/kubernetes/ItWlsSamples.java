@@ -70,7 +70,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify the domain on pv, domain in image samples using wlst and wdt and domain lifecycle scripts")
 @IntegrationTest
-public class ItWlsSamples {
+class ItWlsSamples {
 
   public static final String SERVER_LIFECYCLE = "Server";
   public static final String CLUSTER_LIFECYCLE = "Cluster";
@@ -155,7 +155,7 @@ public class ItWlsSamples {
   @ParameterizedTest
   @MethodSource("paramProvider")
   @DisplayName("Test samples using domain in image")
-  public void testSampleDomainInImage(String model) {
+  void testSampleDomainInImage(String model) {
     String domainName = model.split(":")[1];
     String script = model.split(":")[0];
     String imageName = (KIND_REPO != null
@@ -217,7 +217,7 @@ public class ItWlsSamples {
   @ParameterizedTest
   @MethodSource("paramProvider")
   @DisplayName("Test samples using domain in pv")
-  public void testSampleDomainInPv(String model) {
+  void testSampleDomainInPv(String model) {
 
     String domainName = model.split(":")[1];
     String script = model.split(":")[0];
@@ -268,7 +268,7 @@ public class ItWlsSamples {
   @Order(3)
   @Test
   @DisplayName("Test server lifecycle samples scripts")
-  public void testServerLifecycleScripts() {
+  void testServerLifecycleScripts() {
 
     // Verify that stopServer script execution shuts down server pod and replica count is decremented
     String serverName = managedServerNameBase + "1";
@@ -292,7 +292,7 @@ public class ItWlsSamples {
   @Order(4)
   @Test
   @DisplayName("Test server lifecycle samples scripts with constant replica count")
-  public void testServerLifecycleScriptsWithConstantReplicaCount() {
+  void testServerLifecycleScriptsWithConstantReplicaCount() {
     String serverName = managedServerNameBase + "1";
     String keepReplicaCountConstantParameter = "-k";
     // Verify that replica count is not changed when using "-k" parameter and a replacement server is started
@@ -318,7 +318,7 @@ public class ItWlsSamples {
   @Order(5)
   @Test
   @DisplayName("Test cluster lifecycle scripts")
-  public void testClusterLifecycleScripts() {
+  void testClusterLifecycleScripts() {
 
     // Verify all clustered server pods are shut down after stopCluster script execution
     executeLifecycleScript(STOP_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, clusterName);
@@ -339,7 +339,7 @@ public class ItWlsSamples {
   @Order(6)
   @Test
   @DisplayName("Test domain lifecycle scripts")
-  public void testDomainLifecycleScripts() {
+  void testDomainLifecycleScripts() {
     // Verify all WebLogic server instance pods are shut down after stopDomain script execution
     executeLifecycleScript(STOP_DOMAIN_SCRIPT, DOMAIN, null);
     for (int i = 1; i <= replicaCount; i++) {
@@ -363,7 +363,7 @@ public class ItWlsSamples {
   @Order(7)
   @Test
   @DisplayName("Manage Traefik Ingress Controller with setupLoadBalancer")
-  public void testTraefikIngressController() {
+  void testTraefikIngressController() {
     setupSample();
     Path scriptBase = Paths.get(tempSamplePath.toString(), "charts/util");
     setupLoadBalancer(scriptBase, "traefik", " -c -n " + traefikNamespace);
@@ -376,7 +376,7 @@ public class ItWlsSamples {
   @Order(8)
   @Test
   @DisplayName("Manage Voyager Ingress Controller with setupLoadBalancer")
-  public void testVoyagerIngressController() {
+  void testVoyagerIngressController() {
     setupSample();
     Path scriptBase = Paths.get(tempSamplePath.toString(), "charts/util");
     setupLoadBalancer(scriptBase, "voyager", " -c -n " + voyagerNamespace);
@@ -389,7 +389,7 @@ public class ItWlsSamples {
   @Order(9)
   @Test
   @DisplayName("Manage Nginx Ingress Controller with setupLoadBalancer")
-  public void testNginxIngressController() {
+  void testNginxIngressController() {
     setupSample();
     Path scriptBase = Paths.get(tempSamplePath.toString(), "charts/util");
     setupLoadBalancer(scriptBase, "nginx", " -c -n " + nginxNamespace);

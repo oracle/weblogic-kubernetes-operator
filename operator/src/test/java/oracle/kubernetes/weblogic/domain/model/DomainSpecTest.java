@@ -10,24 +10,24 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class DomainSpecTest {
+class DomainSpecTest {
 
   @Test
-  public void whenEffectiveDomainSpecsWithDefaultImage_domainSpecEquals() {
+  void whenEffectiveDomainSpecsWithDefaultImage_domainSpecEquals() {
     DomainSpec spec1 = new DomainSpec().withImage(KubernetesConstants.DEFAULT_IMAGE);
     DomainSpec spec2 = new DomainSpec();
     assertThat("Expected effective image values to be equal", spec1, equalTo(spec2));
   }
 
   @Test
-  public void whenEffectiveDomainSpecsWithLatestImage_domainSpecNotEquals() {
+  void whenEffectiveDomainSpecsWithLatestImage_domainSpecNotEquals() {
     DomainSpec spec1 = new DomainSpec().withImage(getLatestDefaultImage());
     DomainSpec spec2 = new DomainSpec();
     assertThat("Expected effective image values to NOT be equal", spec1, not(equalTo(spec2)));
   }
 
   @Test
-  public void whenEffectiveImagePullPolicyWithDefaultImage_domainSpecImagePullPolicyEquals() {
+  void whenEffectiveImagePullPolicyWithDefaultImage_domainSpecImagePullPolicyEquals() {
     DomainSpec spec1 = new DomainSpec().withImage(KubernetesConstants.DEFAULT_IMAGE);
     DomainSpec spec2 = new DomainSpec();
     assertThat("Expected effective image pull policy values to be equal",
@@ -35,7 +35,7 @@ public class DomainSpecTest {
   }
 
   @Test
-  public void whenEffectiveImagePullPolicyWithLatestImage_domainSpecImagePullPolicyNotEquals() {
+  void whenEffectiveImagePullPolicyWithLatestImage_domainSpecImagePullPolicyNotEquals() {
     DomainSpec spec1 = new DomainSpec().withImage(getLatestDefaultImage());
     DomainSpec spec2 = new DomainSpec();
     assertThat("Expected effective image pull policy values to NOT be equal",
@@ -43,7 +43,7 @@ public class DomainSpecTest {
   }
 
   @Test
-  public void whenEffectiveImageWithDefaultImage_imageEquals() {
+  void whenEffectiveImageWithDefaultImage_imageEquals() {
     DomainSpec spec1 = new DomainSpec().withImage(KubernetesConstants.DEFAULT_IMAGE);
     DomainSpec spec2 = new DomainSpec();
     assertThat("Expected effective image values to be equal",
@@ -51,7 +51,7 @@ public class DomainSpecTest {
   }
 
   @Test
-  public void whenEffectiveImageWithLatestImage_imageNotEquals() {
+  void whenEffectiveImageWithLatestImage_imageNotEquals() {
     DomainSpec spec1 = new DomainSpec().withImage(getLatestDefaultImage());
     DomainSpec spec2 = new DomainSpec();
     assertThat("Expected effective image pull policy values to NOT be equal",
@@ -59,7 +59,7 @@ public class DomainSpecTest {
   }
 
   @Test
-  public void verifyThatDomainSpecWithoutAllowMinDynClusterSize_equalsToDomainSpecWithDefaultValue() {
+  void verifyThatDomainSpecWithoutAllowMinDynClusterSize_equalsToDomainSpecWithDefaultValue() {
     DomainSpec spec1 = new DomainSpec();
     DomainSpec spec2 = new DomainSpec();
     spec2.setAllowReplicasBelowMinDynClusterSize(KubernetesConstants.DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE);
@@ -69,7 +69,7 @@ public class DomainSpecTest {
   }
 
   @Test
-  public void verifyThatDomainSpecWithoutAllowMinDynClusterSize_notEqualsToDomainSpecWithFalse() {
+  void verifyThatDomainSpecWithoutAllowMinDynClusterSize_notEqualsToDomainSpecWithFalse() {
     DomainSpec spec1 = new DomainSpec();
     DomainSpec spec2 = new DomainSpec();
     spec2.setAllowReplicasBelowMinDynClusterSize(
@@ -80,7 +80,7 @@ public class DomainSpecTest {
   }
 
   @Test
-  public void verifyThatDomainSpecWithoutMaxClusterConcurrentStartup_equalsToDomainSpecWithDefaultValue() {
+  void verifyThatDomainSpecWithoutMaxClusterConcurrentStartup_equalsToDomainSpecWithDefaultValue() {
     DomainSpec spec1 = new DomainSpec();
     DomainSpec spec2 = new DomainSpec();
     spec2.setMaxClusterConcurrentStartup(KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP);
@@ -90,7 +90,7 @@ public class DomainSpecTest {
   }
 
   @Test
-  public void verifyThatDomainSpecWithoutMaxClusterConcurrentStartup_notEqualsToDomainSpecWithFalse() {
+  void verifyThatDomainSpecWithoutMaxClusterConcurrentStartup_notEqualsToDomainSpecWithFalse() {
     DomainSpec spec1 = new DomainSpec();
     DomainSpec spec2 = new DomainSpec();
     spec2.setMaxClusterConcurrentStartup(KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP
