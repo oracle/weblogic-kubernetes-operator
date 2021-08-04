@@ -11,20 +11,20 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class KubernetesApiNamesTest {
+class KubernetesApiNamesTest {
 
   @Test
-  public void matchTopLevelClass() {
+  void matchTopLevelClass() {
     assertThat(KubernetesApiNames.matches("io.k8s.api.core.v1.EnvVar", V1EnvVar.class), is(true));
   }
 
   @Test
-  public void matchNestedClass() {
+  void matchNestedClass() {
     assertThat(KubernetesApiNames.matches("io.k8s.api.core.v1.EnvVar", V1.EnvVar.class), is(true));
   }
 
   @Test
-  public void dontMatchOthers() {
+  void dontMatchOthers() {
     assertThat(KubernetesApiNames.matches("abc", V1EnvVarSource.class), is(false));
     assertThat(
         KubernetesApiNames.matches("io.k8s.api.core.v1.EnvVar", V1EnvVarSource.class), is(false));

@@ -18,7 +18,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class YamlDocGeneratorTest {
+class YamlDocGeneratorTest {
   private static final String K8S_VERSION = "1.13.5";
   private final SchemaGenerator schemaGenerator = new SchemaGenerator();
   @SuppressWarnings("unused")
@@ -38,7 +38,7 @@ public class YamlDocGeneratorTest {
   private SimpleObject[] simpleArray;
 
   @Test
-  public void generateMarkdownForProperty() throws NoSuchFieldException {
+  void generateMarkdownForProperty() throws NoSuchFieldException {
     String markdown = generateForProperty(getClass().getDeclaredField("annotatedDouble"));
     assertThat(
         markdown, containsString(tableEntry("`annotatedDouble`", "number", "An annotated field")));
@@ -61,7 +61,7 @@ public class YamlDocGeneratorTest {
   }
 
   @Test
-  public void whenSchemaHasUknownTypeAndNoReference_useAsSpecified() {
+  void whenSchemaHasUknownTypeAndNoReference_useAsSpecified() {
     Map<String, Object> schema = of("anInt", of("type", "integer"));
 
     String markdown = new YamlDocGenerator(schema).generateForProperty("anInt", schema);
@@ -70,25 +70,25 @@ public class YamlDocGeneratorTest {
   }
 
   @Test
-  public void whenPropertyTypeIsDateTime_doNotGenerateReference() throws NoSuchFieldException {
+  void whenPropertyTypeIsDateTime_doNotGenerateReference() throws NoSuchFieldException {
     String markdown = generateForProperty(getClass().getDeclaredField("dateTime"));
     assertThat(markdown, containsString(tableEntry("`dateTime`", "DateTime", "")));
   }
 
   @Test
-  public void whenPropertyTypeIsMap_doNotGenerateReference() throws NoSuchFieldException {
+  void whenPropertyTypeIsMap_doNotGenerateReference() throws NoSuchFieldException {
     String markdown = generateForProperty(getClass().getDeclaredField("notes"));
     assertThat(markdown, containsString(tableEntry("`notes`", "Map", "")));
   }
 
   @Test
-  public void whenPropertyTypeIsArrayOfStrings_generateType() throws NoSuchFieldException {
+  void whenPropertyTypeIsArrayOfStrings_generateType() throws NoSuchFieldException {
     String markdown = generateForProperty(getClass().getDeclaredField("myList"));
     assertThat(markdown, containsString(tableEntry("`myList`", "Array of string", "")));
   }
 
   @Test
-  public void whenPropertyTypeIsReferenceWithDescription_includeBoth() throws NoSuchFieldException {
+  void whenPropertyTypeIsReferenceWithDescription_includeBoth() throws NoSuchFieldException {
     String markdown = generateForProperty(getClass().getDeclaredField("simpleUsage"));
     assertThat(
         markdown,
@@ -101,7 +101,7 @@ public class YamlDocGeneratorTest {
   }
 
   @Test
-  public void whenPropertyTypeIsReferenceArrayWithDescription_includeBoth()
+  void whenPropertyTypeIsReferenceArrayWithDescription_includeBoth()
       throws NoSuchFieldException {
     String markdown = generateForProperty(getClass().getDeclaredField("simpleArray"));
     assertThat(
@@ -114,7 +114,7 @@ public class YamlDocGeneratorTest {
   }
 
   @Test
-  public void generateMarkdownForSimpleObject() {
+  void generateMarkdownForSimpleObject() {
     YamlDocGenerator generator = new YamlDocGenerator(new HashMap<>());
     String markdown = generator.generateForClass(generateSchema(SimpleObject.class));
     assertThat(
@@ -133,7 +133,7 @@ public class YamlDocGeneratorTest {
   }
 
   @Test
-  public void generateMarkdownForSimpleObjectWithHeader() {
+  void generateMarkdownForSimpleObjectWithHeader() {
     Map<String, Object> schema = generateSchema(SimpleObject.class);
     YamlDocGenerator generator = new YamlDocGenerator(schema);
     String markdown = generator.generate("simpleObject");
@@ -151,7 +151,7 @@ public class YamlDocGeneratorTest {
   }
 
   @Test
-  public void generateMarkdownForObjectWithReferences() {
+  void generateMarkdownForObjectWithReferences() {
     Map<String, Object> schema = generateSchema(ReferencingObject.class);
     YamlDocGenerator generator = new YamlDocGenerator(schema);
     String markdown = generator.generate("start");
@@ -169,7 +169,7 @@ public class YamlDocGeneratorTest {
   }
 
   @Test
-  public void whenKubernetesSchemaNotUsed_kubernetesMarkdownIsNull() {
+  void whenKubernetesSchemaNotUsed_kubernetesMarkdownIsNull() {
     Map<String, Object> schema = generateSchema(ReferencingObject.class);
     YamlDocGenerator generator = new YamlDocGenerator(schema);
     generator.generate("start");
@@ -177,7 +177,7 @@ public class YamlDocGeneratorTest {
   }
 
   @Test
-  public void generateMarkdownWithReferencedSections() {
+  void generateMarkdownWithReferencedSections() {
     Map<String, Object> schema = generateSchema(ReferencingObject.class);
     YamlDocGenerator generator = new YamlDocGenerator(schema);
     String markdown = generator.generate("start");
@@ -215,7 +215,7 @@ public class YamlDocGeneratorTest {
   }
 
   @Test
-  public void whenExternalSchemaSpecified_returnFileName() throws IOException {
+  void whenExternalSchemaSpecified_returnFileName() throws IOException {
     schemaGenerator.useKubernetesVersion(K8S_VERSION);
     Map<String, Object> schema = schemaGenerator.generate(KubernetesReferenceObject.class);
 
@@ -228,7 +228,7 @@ public class YamlDocGeneratorTest {
   }
 
   @Test
-  public void whenExternalSchemaSpecified_generateWithReferencedSections() throws IOException {
+  void whenExternalSchemaSpecified_generateWithReferencedSections() throws IOException {
     schemaGenerator.useKubernetesVersion(K8S_VERSION);
     Map<String, Object> schema = schemaGenerator.generate(KubernetesReferenceObject.class);
 
@@ -249,7 +249,7 @@ public class YamlDocGeneratorTest {
   }
 
   @Test
-  public void whenExternalSchemaSpecified_generateMarkdownForIt() throws IOException {
+  void whenExternalSchemaSpecified_generateMarkdownForIt() throws IOException {
     schemaGenerator.useKubernetesVersion(K8S_VERSION);
     Map<String, Object> schema = schemaGenerator.generate(KubernetesReferenceObject.class);
 
@@ -273,7 +273,7 @@ public class YamlDocGeneratorTest {
   }
 
   @Test
-  public void whenExternalSchemaSpecified_generateMarkdownForItsLinks() throws IOException {
+  void whenExternalSchemaSpecified_generateMarkdownForItsLinks() throws IOException {
     schemaGenerator.useKubernetesVersion(K8S_VERSION);
     Map<String, Object> schema = schemaGenerator.generate(KubernetesReferenceObject.class);
 
@@ -286,7 +286,7 @@ public class YamlDocGeneratorTest {
   }
 
   @Test
-  public void whenExternalSchemaSpecified_generateMarkdownForItsDependencies() throws IOException {
+  void whenExternalSchemaSpecified_generateMarkdownForItsDependencies() throws IOException {
     schemaGenerator.useKubernetesVersion(K8S_VERSION);
     Map<String, Object> schema = schemaGenerator.generate(KubernetesReferenceObject.class);
 

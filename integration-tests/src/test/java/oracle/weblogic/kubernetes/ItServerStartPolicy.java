@@ -257,7 +257,7 @@ class ItServerStartPolicy {
   @Order(0)
   @Test
   @DisplayName("Stop a server below Limit")
-  public void testStopManagedServerBeyondMinClusterLimit() {
+  void testStopManagedServerBeyondMinClusterLimit() {
     String serverPodName = domainUid + "-managed-server1";
     String serverPodName2 = domainUid + "-managed-server2";
 
@@ -293,7 +293,7 @@ class ItServerStartPolicy {
   @Order(1)
   @Test
   @DisplayName("Restart the Administration server with serverStartPolicy")
-  public void testAdminServerRestart() {
+  void testAdminServerRestart() {
 
     String configServerPodName = domainUid + "-config-cluster-server1";
     String dynamicServerPodName = domainUid + "-managed-server1";
@@ -339,7 +339,7 @@ class ItServerStartPolicy {
   @Order(2)
   @Test
   @DisplayName("Restart the configured cluster with serverStartPolicy")
-  public void testConfigClusterRestart() {
+  void testConfigClusterRestart() {
 
     String configServerPodName = domainUid + "-config-cluster-server1";
     String dynamicServerPodName = domainUid + "-managed-server1";
@@ -391,7 +391,7 @@ class ItServerStartPolicy {
   @Order(3)
   @Test
   @DisplayName("Restart the dynamic cluster with serverStartPolicy")
-  public void testDynamicClusterRestart() {
+  void testDynamicClusterRestart() {
 
     String dynamicServerPodName = domainUid + "-managed-server1";
     String configServerPodName = domainUid + "-config-cluster-server1";
@@ -443,7 +443,7 @@ class ItServerStartPolicy {
   @Order(4)
   @Test
   @DisplayName("Restart the Domain with serverStartPolicy")
-  public void testDomainRestart() {
+  void testDomainRestart() {
 
     String configServerPodName = domainUid + "-config-cluster-server1";
     String standaloneServerPodName = domainUid + "-standalone-managed";
@@ -533,7 +533,7 @@ class ItServerStartPolicy {
   @Order(5)
   @Test
   @DisplayName("Start/stop config cluster managed server by updating serverStartPolicy to ALWAYS/IF_NEEDED")
-  public void testConfigClusterStartServerAlways() {
+  void testConfigClusterStartServerAlways() {
     String serverName = "config-cluster-server2";
     String serverPodName = domainUid + "-" + serverName;
 
@@ -573,7 +573,7 @@ class ItServerStartPolicy {
   @Order(6)
   @Test
   @DisplayName("Start/stop dynamic cluster managed server by updating serverStartPolicy to ALWAYS/IF_NEEDED")
-  public void testDynamicClusterStartServerAlways() {
+  void testDynamicClusterStartServerAlways() {
     String serverName = "managed-server2";
     String serverPodName = domainUid + "-" + serverName;
 
@@ -616,7 +616,7 @@ class ItServerStartPolicy {
   @Order(7)
   @Test
   @DisplayName("Stop/Start a running config cluster managed server and verify the replica count is maintained")
-  public void testConfigClusterReplicaCountIsMaintained() {
+  void testConfigClusterReplicaCountIsMaintained() {
     String serverName = "config-cluster-server1";
     String serverPodName = domainUid + "-" + serverName;
     String serverPodName2 = domainUid + "-config-cluster-server2";
@@ -662,7 +662,7 @@ class ItServerStartPolicy {
   @Order(8)
   @Test
   @DisplayName("Stop/Start a running dynamic cluster managed server and verify the replica count ")
-  public void testDynamicClusterReplicaCountIsMaintained() {
+  void testDynamicClusterReplicaCountIsMaintained() {
     String serverPodName = domainUid + "-managed-server1";
     String serverPodName2 = domainUid + "-managed-server2";
     String keepReplicaCountConstantParameter = "-k";
@@ -701,7 +701,7 @@ class ItServerStartPolicy {
   @Order(9)
   @Test
   @DisplayName("Restart the standalone managed server with serverStartPolicy ALWAYS")
-  public void testStandaloneManagedRestartAlways() {
+  void testStandaloneManagedRestartAlways() {
     String serverName = "standalone-managed";
     String serverPodName = domainUid + "-" + serverName;
 
@@ -741,7 +741,7 @@ class ItServerStartPolicy {
   @Order(10)
   @Test
   @DisplayName("Restart the standalone managed server with serverStartPolicy IF_NEEDED")
-  public void testStandaloneManagedRestartIfNeeded() {
+  void testStandaloneManagedRestartIfNeeded() {
     String serverName = "standalone-managed";
     String serverPodName = domainUid + "-" + serverName;
 
@@ -776,7 +776,7 @@ class ItServerStartPolicy {
   @Order(11)
   @Test
   @DisplayName("Restart the standalone managed server with sample script")
-  public void testStandaloneManagedRestart() {
+  void testStandaloneManagedRestart() {
     String serverName = "standalone-managed";
     String serverPodName = domainUid + "-" + serverName;
     String keepReplicaCountConstantParameter = "-k";
@@ -824,7 +824,7 @@ class ItServerStartPolicy {
   @Order(12)
   @Test
   @DisplayName("Pick a dynamic cluster managed server randomly within the max cluster size and verify it starts")
-  public void testStartDynamicClusterServerRandomlyPicked() {
+  void testStartDynamicClusterServerRandomlyPicked() {
     String serverName = "managed-server3";
     String serverPodName3 = domainUid + "-" + serverName;
     String serverPodName1 = domainUid + "-managed-server1";
@@ -854,7 +854,7 @@ class ItServerStartPolicy {
   @Order(13)
   @Test
   @DisplayName("Verify that the sample script can not stop or start non-existing components")
-  public void testRestartNonExistingComponent() {
+  void testRestartNonExistingComponent() {
     String wrongServerName = "ms1";
     String regex = ".*" + wrongServerName + ".*\\s*is not part";
 
@@ -912,7 +912,7 @@ class ItServerStartPolicy {
   @Order(14)
   @Test
   @DisplayName("Verify that the sample script can not start a server that exceeds the max cluster size")
-  public void testStartManagedServerBeyondMaxClusterLimit() {
+  void testStartManagedServerBeyondMaxClusterLimit() {
     String configServerName = "config-cluster-server3";
     String dynServerName = "managed-server6";
 
@@ -939,7 +939,7 @@ class ItServerStartPolicy {
   @Order(15)
   @Test
   @DisplayName("verify the operator logs warning message when starting a server that exceeds max cluster size")
-  public void testOperatorLogWarningMsg() {
+  void testOperatorLogWarningMsg() {
     String operatorPodName =
         assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
     logger.info("operator pod name: {0}", operatorPodName);
@@ -969,7 +969,7 @@ class ItServerStartPolicy {
   @Order(16)
   @Test
   @DisplayName("Manage dynamic cluster server in absence of Administration Server")
-  public void testDynamicServerLifeCycleWithoutAdmin() {
+  void testDynamicServerLifeCycleWithoutAdmin() {
     String serverName = "managed-server1";
     // domainUid + "-" + serverName;
     String serverPodName = managedServerPrefix + "1";
@@ -1052,7 +1052,7 @@ class ItServerStartPolicy {
   @Order(17)
   @Test
   @DisplayName("Manage configured cluster server in absence of Administration Server")
-  public void testConfiguredServerLifeCycleWithoutAdmin() {
+  void testConfiguredServerLifeCycleWithoutAdmin() {
     String serverName = "config-cluster-server1";
     String serverPodName = domainUid + "-" + serverName;
 
@@ -1124,7 +1124,7 @@ class ItServerStartPolicy {
   @Order(18)
   @Test
   @DisplayName("Restart the dynamic cluster managed server using sample scripts with constant replica count")
-  public void testRestartingMSWithExplicitServerStartStateWhileKeepingReplicaConstant() {
+  void testRestartingMSWithExplicitServerStartStateWhileKeepingReplicaConstant() {
     String serverName = managedServerNamePrefix + 1;
     String serverPodName = managedServerPrefix + 1;
     String keepReplicasConstant = "-k";
@@ -1149,7 +1149,7 @@ class ItServerStartPolicy {
   @Order(19)
   @Test
   @DisplayName("Restart the dynamic cluster managed server using sample scripts with varying replica count")
-  public void testRestartingMSWithExplicitServerStartStateWhileVaryingReplicaCount() {
+  void testRestartingMSWithExplicitServerStartStateWhileVaryingReplicaCount() {
     String serverName = managedServerNamePrefix + 1;
     String serverPodName = managedServerPrefix + 1;
     String keepReplicasConstant = "-k";
@@ -1180,7 +1180,7 @@ class ItServerStartPolicy {
   @Order(20)
   @Test
   @DisplayName("Rolling restart the configured cluster with rollCluster.sh script")
-  public void testConfigClusterRollingRestart() {
+  void testConfigClusterRollingRestart() {
     String configServerName = "config-cluster-server1";
     String configServerPodName = domainUid + "-" + configServerName;
     String dynamicServerPodName = domainUid + "-managed-server1";
@@ -1230,7 +1230,7 @@ class ItServerStartPolicy {
   @Order(21)
   @Test
   @DisplayName("Rolling restart the dynamic cluster with rollCluster.sh script")
-  public void testDynamicClusterRollingRestart() {
+  void testDynamicClusterRollingRestart() {
     String dynamicServerName = "managed-server1";
     String dynamicServerPodName = domainUid + "-" + dynamicServerName;
     String configServerPodName = domainUid + "-config-cluster-server1";
@@ -1279,7 +1279,7 @@ class ItServerStartPolicy {
   @Order(22)
   @Test
   @DisplayName("Rolling restart the domain with rollDomain.shscript")
-  public void testConfigDomainRollingRestart() {
+  void testConfigDomainRollingRestart() {
     String configServerName = "config-cluster-server1";
     String dynamicServerName = "managed-server1";
     String configServerPodName = domainUid + "-" + configServerName;
@@ -1321,7 +1321,7 @@ class ItServerStartPolicy {
   @Order(23)
   @Test
   @DisplayName("Scale the configured cluster with scaleCluster.sh script")
-  public void testConfigClusterScale() {
+  void testConfigClusterScale() {
     int newReplicaCount = 2;
     String configServerName = "config-cluster-server" + newReplicaCount;
     String configServerPodName = domainUid + "-" + configServerName;
@@ -1370,7 +1370,7 @@ class ItServerStartPolicy {
   @Order(24)
   @Test
   @DisplayName("Scale the dynamic cluster with scaleCluster.sh script")
-  public void testDynamicClusterScale() {
+  void testDynamicClusterScale() {
     int newReplicaCount = 2;
     String dynamicServerName = "managed-server" + newReplicaCount;
     String dynamicServerPodName = domainUid + "-" + dynamicServerName;

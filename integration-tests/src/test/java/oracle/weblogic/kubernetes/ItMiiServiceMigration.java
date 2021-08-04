@@ -224,7 +224,7 @@ class ItMiiServiceMigration {
   @Test
   @Order(1)
   @DisplayName("Verify JMS Service migration with FileStore")
-  public void testMiiJmsServiceMigrationWithFileStore() {
+  void testMiiJmsServiceMigrationWithFileStore() {
 
     // build the standalone JMS Client on Admin pod after rolling restart
     String destLocation = "/u01/JmsSendReceiveClient.java";
@@ -260,7 +260,7 @@ class ItMiiServiceMigration {
   @Test
   @Order(2)
   @DisplayName("Verify JMS Service migration with JDBCStore")
-  public void testMiiJmsServiceMigrationWithJdbcStore() {
+  void testMiiJmsServiceMigrationWithJdbcStore() {
 
     // Restart the managed server(2) if shutdown by previous test method
     // Make sure that JMS server runtime JMSService@managed-server2 is
@@ -307,7 +307,7 @@ class ItMiiServiceMigration {
   @Test
   @Order(3)
   @DisplayName("Verify JTA Recovery Service migration to an active server")
-  public void testMiiJtaServiceMigration() {
+  void testMiiJtaServiceMigration() {
 
     // Restart the managed server(2) if shutdown by previous test method
     // Make sure that JTA Recovery service is active on managed-server2

@@ -40,7 +40,7 @@ import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class CrdSchemaGeneratorTest {
+class CrdSchemaGeneratorTest {
 
   private final List<Memento> mementos = new ArrayList<>();
 
@@ -68,7 +68,7 @@ public class CrdSchemaGeneratorTest {
   }
 
   @Test
-  public void whenMixOfEnabledDisabledFeatures_validateSchemaOnlyContainsEnabled() {
+  void whenMixOfEnabledDisabledFeatures_validateSchemaOnlyContainsEnabled() {
     final Map<String, Object> schema = createSchema(SomeObject.class);
 
     assertThat(schema, hasKey("properties"));

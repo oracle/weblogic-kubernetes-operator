@@ -15,25 +15,25 @@ import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.lessThan;
 
-public class OperatorUtilsTest {
+class OperatorUtilsTest {
 
   @Test
-  public void verifyThatMember2Foo_before_member12foo() {
+  void verifyThatMember2Foo_before_member12foo() {
     assertThat(compareSortingStrings("member2foo", "member12foo"), lessThan(0));
   }
 
   @Test
-  public void verifyThatCompareSortingStrings_worksOnStringWith20Digits() {
+  void verifyThatCompareSortingStrings_worksOnStringWith20Digits() {
     assertThat(compareSortingStrings("member2foo", "member12345678901234567890foo"), lessThan(0));
   }
 
   @Test
-  public void verifyThatCreateSortedMapWithNull_returnsEmptyMap() {
+  void verifyThatCreateSortedMapWithNull_returnsEmptyMap() {
     assertThat(createSortedMap(null), anEmptyMap());
   }
 
   @Test
-  public void verifyThatCreateSortedMap_returnsSortedMap() {
+  void verifyThatCreateSortedMap_returnsSortedMap() {
     Map<String, String> map = new HashMap<>();
     map.put("server2", "server2-value");
     map.put("server10", "server10-value");

@@ -144,7 +144,7 @@ class ItIstioMiiDomain {
   @Test
   @Order(1)
   @DisplayName("Create WebLogic Domain with mii model with istio")
-  public void testIstioModelInImage() {
+  void testIstioModelInImage() {
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
@@ -277,7 +277,7 @@ class ItIstioMiiDomain {
   @Test
   @Order(2)
   @DisplayName("Add a work manager to a model-in-image domain using dynamic update")
-  public void testMiiIstioDynamicUpdate() {
+  void testMiiIstioDynamicUpdate() {
     LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
     // get the creation time of the admin server pod before patching
     OffsetDateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);

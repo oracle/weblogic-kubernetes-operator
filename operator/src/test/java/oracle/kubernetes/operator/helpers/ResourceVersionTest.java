@@ -17,10 +17,10 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class ResourceVersionTest {
+class ResourceVersionTest {
 
   @Test
-  public void whenWellFormed_createIt() {
+  void whenWellFormed_createIt() {
     new ResourceVersion("v1");
     new ResourceVersion("v3");
     new ResourceVersion("v27");
@@ -37,14 +37,14 @@ public class ResourceVersionTest {
   }
 
   @Test
-  public void whenNotWellFormedButLegal_createIt() {
+  void whenNotWellFormedButLegal_createIt() {
     new ResourceVersion("token20");
     new ResourceVersion("r100");
     new ResourceVersion("prefix3");
   }
 
   @Test
-  public void whenParsed_verifyVersions() {
+  void whenParsed_verifyVersions() {
     ResourceVersion rv;
     rv = new ResourceVersion("v1");
     assertThat(rv.getVersion(), equalTo(1));
@@ -57,7 +57,7 @@ public class ResourceVersionTest {
   }
 
   @Test
-  public void whenNotWellFormedButLegalParsed_verifyVersions() {
+  void whenNotWellFormedButLegalParsed_verifyVersions() {
     ResourceVersion rv;
     rv = new ResourceVersion("token20");
     assertThat(rv.getVersion(), equalTo(20));
@@ -70,7 +70,7 @@ public class ResourceVersionTest {
   }
 
   @Test
-  public void whenParsed_verifyWellFormed() {
+  void whenParsed_verifyWellFormed() {
     ResourceVersion rv;
     rv = new ResourceVersion("v1");
     assert (rv.isWellFormed());
@@ -92,7 +92,7 @@ public class ResourceVersionTest {
   }
 
   @Test
-  public void whenParsed_verifyPrefix() {
+  void whenParsed_verifyPrefix() {
     ResourceVersion rv;
     rv = new ResourceVersion("v1");
     assertThat(rv.getPrefix(), equalTo("v"));
@@ -108,7 +108,7 @@ public class ResourceVersionTest {
   }
 
   @Test
-  public void whenParsed_verifyPrerelease() {
+  void whenParsed_verifyPrerelease() {
     ResourceVersion rv;
     rv = new ResourceVersion("v1");
     assertNull(rv.getPrerelease());
@@ -118,7 +118,7 @@ public class ResourceVersionTest {
   }
 
   @Test
-  public void whenParsed_verifyPrereleaseVersion() {
+  void whenParsed_verifyPrereleaseVersion() {
     ResourceVersion rv;
     rv = new ResourceVersion("v1");
     assertNull(rv.getPrereleaseVersion());
@@ -128,37 +128,37 @@ public class ResourceVersionTest {
   }
 
   @Test
-  public void whenNoDigits_throwIllegalArgument() {
+  void whenNoDigits_throwIllegalArgument() {
     assertThrows(IllegalArgumentException.class, () -> new ResourceVersion("nonumber"));
   }
 
   @Test
-  public void whenOnlyNumber_throwIllegalArgument() {
+  void whenOnlyNumber_throwIllegalArgument() {
     assertThrows(IllegalArgumentException.class, () -> new ResourceVersion("3"));
   }
 
   @Test
-  public void whenNumberFirst_throwIllegalArgument() {
+  void whenNumberFirst_throwIllegalArgument() {
     assertThrows(IllegalArgumentException.class, () -> new ResourceVersion("555v"));
   }
 
   @Test
-  public void whenIllegalPrerelease_throwIllegalArgument() {
+  void whenIllegalPrerelease_throwIllegalArgument() {
     assertThrows(IllegalArgumentException.class, () -> new ResourceVersion("v10gamma12"));
   }
 
   @Test
-  public void whenExtraTokenAlpha_throwIllegalArgument() {
+  void whenExtraTokenAlpha_throwIllegalArgument() {
     assertThrows(IllegalArgumentException.class, () -> new ResourceVersion("v5alpha7t"));
   }
 
   @Test
-  public void whenExtraTokenBeta_throwIllegalArgument() {
+  void whenExtraTokenBeta_throwIllegalArgument() {
     assertThrows(IllegalArgumentException.class, () -> new ResourceVersion("v3beta1alpha"));
   }
 
   @Test
-  public void whenMultipleValues_sort() {
+  void whenMultipleValues_sort() {
     List<String> values =
         Arrays.asList(
             "v11beta2",
@@ -194,7 +194,7 @@ public class ResourceVersionTest {
   }
 
   @Test
-  public void whenUsedInMap_findCorrectValue() {
+  void whenUsedInMap_findCorrectValue() {
     Map<ResourceVersion, String> map = new HashMap<>();
     map.put(new ResourceVersion("v1"), "value");
     map.put(new ResourceVersion("v2"), "value2");

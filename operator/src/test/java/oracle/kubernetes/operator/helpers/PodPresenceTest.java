@@ -54,7 +54,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class PodPresenceTest {
+class PodPresenceTest {
 
   private static final String CLUSTER = "cluster1";
   private static final String SERVER = "server1";
@@ -119,26 +119,26 @@ public class PodPresenceTest {
   }
 
   @Test
-  public void whenPodHasNoStatus_reportNotReady() {
+  void whenPodHasNoStatus_reportNotReady() {
     MatcherAssert.assertThat(PodHelper.isReady(pod), is(false));
   }
 
   @Test
-  public void whenPodPhaseNotRunning_reportNotReady() {
+  void whenPodPhaseNotRunning_reportNotReady() {
     pod.status(new V1PodStatus());
 
     MatcherAssert.assertThat(PodHelper.isReady(pod), is(false));
   }
 
   @Test
-  public void whenPodRunningButNoConditionsDefined_reportNotReady() {
+  void whenPodRunningButNoConditionsDefined_reportNotReady() {
     pod.status(new V1PodStatus().phase("Running"));
 
     MatcherAssert.assertThat(PodHelper.isReady(pod), is(false));
   }
 
   @Test
-  public void whenPodRunningButNoReadyConditionsDefined_reportNotReady() {
+  void whenPodRunningButNoReadyConditionsDefined_reportNotReady() {
     List<V1PodCondition> conditions = Collections.singletonList(new V1PodCondition().type("Huge"));
     pod.status(new V1PodStatus().phase("Running").conditions(conditions));
 
@@ -146,7 +146,7 @@ public class PodPresenceTest {
   }
 
   @Test
-  public void whenPodRunningButReadyConditionIsNotTrue_reportNotReady() {
+  void whenPodRunningButReadyConditionIsNotTrue_reportNotReady() {
     List<V1PodCondition> conditions =
         Collections.singletonList(new V1PodCondition().type("Ready").status("False"));
     pod.status(new V1PodStatus().phase("Running").conditions(conditions));
@@ -155,7 +155,7 @@ public class PodPresenceTest {
   }
 
   @Test
-  public void whenPodRunningAndReadyConditionIsTrue_reportReady() {
+  void whenPodRunningAndReadyConditionIsTrue_reportReady() {
     makePodReady(pod);
 
     MatcherAssert.assertThat(PodHelper.isReady(pod), is(true));
@@ -168,19 +168,19 @@ public class PodPresenceTest {
   }
 
   @Test
-  public void whenPodHasNoStatus_reportNotFailed() {
+  void whenPodHasNoStatus_reportNotFailed() {
     MatcherAssert.assertThat(PodHelper.isFailed(pod), is(false));
   }
 
   @Test
-  public void whenPodPhaseNotFailed_reportNotFailed() {
+  void whenPodPhaseNotFailed_reportNotFailed() {
     pod.status(new V1PodStatus().phase("Running"));
 
     MatcherAssert.assertThat(PodHelper.isFailed(pod), is(false));
   }
 
   @Test
-  public void whenPodPhaseIsFailed_reportFailed() {
+  void whenPodPhaseIsFailed_reportFailed() {
     pod.status(new V1PodStatus().phase("Failed"));
 
     MatcherAssert.assertThat(PodHelper.isFailed(pod), is(true));
@@ -188,27 +188,27 @@ public class PodPresenceTest {
 
   @SuppressWarnings("ConstantConditions")
   @Test
-  public void whenPodHasNoDomainUid_returnNull() {
+  void whenPodHasNoDomainUid_returnNull() {
     pod.getMetadata().getLabels().remove(DOMAINUID_LABEL);
     MatcherAssert.assertThat(PodHelper.getPodDomainUid(pod), nullValue());
   }
 
   @SuppressWarnings("ConstantConditions")
   @Test
-  public void whenPodHasDomainUid_returnIt() {
+  void whenPodHasDomainUid_returnIt() {
     pod.getMetadata().labels(ImmutableMap.of(DOMAINUID_LABEL, "domain1"));
 
     MatcherAssert.assertThat(PodHelper.getPodDomainUid(pod), equalTo("domain1"));
   }
 
   @Test
-  public void whenPodHasNoServerName_returnNull() {
+  void whenPodHasNoServerName_returnNull() {
     MatcherAssert.assertThat(PodHelper.getPodServerName(pod), nullValue());
   }
 
   @SuppressWarnings("ConstantConditions")
   @Test
-  public void whenPodHasServerName_returnIt() {
+  void whenPodHasServerName_returnIt() {
     pod.getMetadata().labels(ImmutableMap.of(SERVERNAME_LABEL, "myserver"));
 
     MatcherAssert.assertThat(PodHelper.getPodServerName(pod), equalTo("myserver"));
@@ -219,7 +219,7 @@ public class PodPresenceTest {
   // the timestamps for services increment with each creation
 
   @Test
-  public void onAddEventWithNoRecordedServerPod_addIt() {
+  void onAddEventWithNoRecordedServerPod_addIt() {
     V1Pod newPod = createServerPod();
     Watch.Response<V1Pod> event = WatchEvent.createAddedEvent(newPod).toWatchResponse();
 
@@ -229,7 +229,7 @@ public class PodPresenceTest {
   }
 
   @Test
-  public void onAddEventWithNewerServerPod_replaceCurrentValue() {
+  void onAddEventWithNewerServerPod_replaceCurrentValue() {
     V1Pod currentPod = createServerPod();
     V1Pod newerPod = createServerPod();
     info.setServerPod(SERVER, currentPod);
@@ -241,7 +241,7 @@ public class PodPresenceTest {
   }
 
   @Test
-  public void onAddEventWithOlderServerPod_keepCurrentValue() {
+  void onAddEventWithOlderServerPod_keepCurrentValue() {
     V1Pod olderPod = createServerPod();
     V1Pod currentPod = createServerPod();
     info.setServerPod(SERVER, currentPod);
@@ -253,7 +253,7 @@ public class PodPresenceTest {
   }
 
   @Test
-  public void onModifyEventWithNoRecordedServerPod_addIt() {
+  void onModifyEventWithNoRecordedServerPod_addIt() {
     V1Pod pod = createServerPod();
     Watch.Response<V1Pod> event = WatchEvent.createModifiedEvent(pod).toWatchResponse();
 
@@ -263,7 +263,7 @@ public class PodPresenceTest {
   }
 
   @Test
-  public void onModifyEventWithNewerServerPod_replaceCurrentValue() {
+  void onModifyEventWithNewerServerPod_replaceCurrentValue() {
     V1Pod currentPod = createServerPod();
     V1Pod newPod = createServerPod();
     info.setServerPod(SERVER, currentPod);
@@ -275,7 +275,7 @@ public class PodPresenceTest {
   }
 
   @Test
-  public void onModifyEventWithOlderServerPod_keepCurrentValue() {
+  void onModifyEventWithOlderServerPod_keepCurrentValue() {
     V1Pod olderPod = createServerPod();
     V1Pod currentPod = createServerPod();
     info.setServerPod(SERVER, currentPod);
@@ -287,7 +287,7 @@ public class PodPresenceTest {
   }
 
   @Test
-  public void onModifyEventWithPodNotReadyAndOldStatusRunning_setLastKnownStatusNull() {
+  void onModifyEventWithPodNotReadyAndOldStatusRunning_setLastKnownStatusNull() {
     V1Pod eventPod = createServerPod();
     V1Pod currentPod = createServerPod();
     info.updateLastKnownServerStatus(SERVER, RUNNING_STATE);
@@ -300,7 +300,7 @@ public class PodPresenceTest {
   }
 
   @Test
-  public void onModifyEventWithPodNotReadyAndOldStatusNotRunning_dontChangeIt() {
+  void onModifyEventWithPodNotReadyAndOldStatusNotRunning_dontChangeIt() {
     V1Pod eventPod = createServerPod();
     V1Pod currentPod = createServerPod();
     info.updateLastKnownServerStatus(SERVER, SUSPENDING_STATE);
@@ -313,7 +313,7 @@ public class PodPresenceTest {
   }
 
   @Test
-  public void onModifyEventWithPodReady_setLastKnownStatusRunning() {
+  void onModifyEventWithPodReady_setLastKnownStatusRunning() {
     V1Pod eventPod = createServerPod();
     V1Pod currentPod = createServerPod();
     makePodReady(eventPod);
@@ -326,7 +326,7 @@ public class PodPresenceTest {
   }
 
   @Test
-  public void onDeleteEventWithNoRecordedServerPod_ignoreIt() {
+  void onDeleteEventWithNoRecordedServerPod_ignoreIt() {
     V1Pod service = createServerPod();
     Watch.Response<V1Pod> event = WatchEvent.createDeletedEvent(service).toWatchResponse();
 
@@ -336,7 +336,7 @@ public class PodPresenceTest {
   }
 
   @Test
-  public void onDeleteEventWithOlderServerPod_keepCurrentValue() {
+  void onDeleteEventWithOlderServerPod_keepCurrentValue() {
     V1Pod oldPod = createServerPod();
     V1Pod currentPod = createServerPod();
     info.setServerPod(SERVER, currentPod);
@@ -348,7 +348,7 @@ public class PodPresenceTest {
   }
 
   @Test
-  public void onDeleteEventWithSameServerPod_removeIt() {
+  void onDeleteEventWithSameServerPod_removeIt() {
     V1Pod currentPod = createServerPod();
     info.setServerPod(SERVER, currentPod);
     Watch.Response<V1Pod> event = WatchEvent.createDeletedEvent(currentPod).toWatchResponse();
@@ -359,7 +359,7 @@ public class PodPresenceTest {
   }
 
   @Test
-  public void onDeleteEventWithNewerServerPod_removeIt() {
+  void onDeleteEventWithNewerServerPod_removeIt() {
     V1Pod currentPod = createServerPod();
     V1Pod newerPod = createServerPod();
     info.setServerPod(SERVER, currentPod);
@@ -371,7 +371,7 @@ public class PodPresenceTest {
   }
 
   @Test
-  public void afterDeleteEvent_setLastKnownStatus_Shutdown() {
+  void afterDeleteEvent_setLastKnownStatus_Shutdown() {
     V1Pod currentPod = createServerPod();
     V1Pod newerPod = createServerPod();
     info.setServerPod(SERVER, currentPod);
@@ -383,7 +383,7 @@ public class PodPresenceTest {
   }
 
   @Test
-  public void afterDeleteEvent_restoreRequiredPod() {
+  void afterDeleteEvent_restoreRequiredPod() {
     enableDomainProcessing();
     V1Pod currentPod = createServerPod();
     V1Pod newerPod = createServerPod();

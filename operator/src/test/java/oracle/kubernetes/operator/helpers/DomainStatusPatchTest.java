@@ -40,11 +40,11 @@ import static org.hamcrest.Matchers.hasItemInArray;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class DomainStatusPatchTest {
+class DomainStatusPatchTest {
   private final PatchBuilderStub builder = createStrictStub(PatchBuilderStub.class);
 
   @Test
-  public void whenExistingStatusNull_addStatus() {
+  void whenExistingStatusNull_addStatus() {
     DomainStatus status2 = new DomainStatus().withReplicas(2);
 
     computePatch(null, status2);
@@ -53,7 +53,7 @@ public class DomainStatusPatchTest {
   }
 
   @Test
-  public void whenExistingStatusNotNull_dontAddStatus() {
+  void whenExistingStatusNotNull_dontAddStatus() {
     DomainStatus status1 = new DomainStatus().withReplicas(3);
     DomainStatus status2 = new DomainStatus().withReplicas(2);
 
@@ -63,7 +63,7 @@ public class DomainStatusPatchTest {
   }
 
   @Test
-  public void whenOnlyNewStatusHasReplicas_addIt() {
+  void whenOnlyNewStatusHasReplicas_addIt() {
     DomainStatus status2 = new DomainStatus().withReplicas(2);
 
     computePatch(null, status2);
@@ -72,7 +72,7 @@ public class DomainStatusPatchTest {
   }
 
   @Test
-  public void whenOnlyExistingNewStatusHasReplicas_addIt() {
+  void whenOnlyExistingNewStatusHasReplicas_addIt() {
     DomainStatus status1 = new DomainStatus();
     DomainStatus status2 = new DomainStatus().withReplicas(2);
 
@@ -86,7 +86,7 @@ public class DomainStatusPatchTest {
   }
 
   @Test
-  public void whenOnlyOldStatusHasReplicas_removeIt() {
+  void whenOnlyOldStatusHasReplicas_removeIt() {
     DomainStatus status1 = new DomainStatus().withReplicas(2);
     DomainStatus status2 = new DomainStatus();
 
@@ -96,7 +96,7 @@ public class DomainStatusPatchTest {
   }
 
   @Test
-  public void whenBothHaveSameReplicas_ignoreIt() {
+  void whenBothHaveSameReplicas_ignoreIt() {
     DomainStatus status1 = new DomainStatus().withReplicas(2);
     DomainStatus status2 = new DomainStatus().withReplicas(2);
 
@@ -106,7 +106,7 @@ public class DomainStatusPatchTest {
   }
 
   @Test
-  public void whenBothHaveDifferentReplicas_replaceIt() {
+  void whenBothHaveDifferentReplicas_replaceIt() {
     DomainStatus status1 = new DomainStatus().withReplicas(2);
     DomainStatus status2 = new DomainStatus().withReplicas(3);
 
@@ -116,7 +116,7 @@ public class DomainStatusPatchTest {
   }
 
   @Test
-  public void whenOnlyNewHasMessage_addIt() {
+  void whenOnlyNewHasMessage_addIt() {
     DomainStatus status1 = new DomainStatus();
     DomainStatus status2 = new DomainStatus().withMessage("new and hot");
 
@@ -126,7 +126,7 @@ public class DomainStatusPatchTest {
   }
 
   @Test
-  public void whenBothHaveDifferentMessages_replaceIt() {
+  void whenBothHaveDifferentMessages_replaceIt() {
     DomainStatus status1 = new DomainStatus().withMessage("old and broken");
     DomainStatus status2 = new DomainStatus().withMessage("new and hot");
 
@@ -136,7 +136,7 @@ public class DomainStatusPatchTest {
   }
 
   @Test
-  public void whenOnlyOldHasReason_deleteIt() {
+  void whenOnlyOldHasReason_deleteIt() {
     DomainStatus status1 = new DomainStatus().withReason("just because");
     DomainStatus status2 = new DomainStatus();
 
@@ -146,7 +146,7 @@ public class DomainStatusPatchTest {
   }
 
   @Test
-  public void whenOnlyNewStatusHasConditions_addNewConditions() {
+  void whenOnlyNewStatusHasConditions_addNewConditions() {
     DomainStatus status1 = new DomainStatus();
     DomainStatus status2 = new DomainStatus()
           .addCondition(new DomainCondition(DomainConditionType.Available)
@@ -165,7 +165,7 @@ public class DomainStatusPatchTest {
   }
 
   @Test
-  public void whenOnlyOldStatusHasConditions_removeThem() {
+  void whenOnlyOldStatusHasConditions_removeThem() {
     DomainStatus status1 = new DomainStatus()
           .addCondition(new DomainCondition(DomainConditionType.Available)
                 .withReason("because").withMessage("hello").withStatus("true"))
@@ -179,7 +179,7 @@ public class DomainStatusPatchTest {
   }
 
   @Test
-  public void whenBothStatusesHaveConditions_replaceMismatches() {  // time to rethink this
+  void whenBothStatusesHaveConditions_replaceMismatches() {  // time to rethink this
     DomainStatus status1 = new DomainStatus()
           .addCondition(new DomainCondition(DomainConditionType.Available)
                 .withReason("ok now").withMessage("hello").withStatus("true"))
@@ -199,7 +199,7 @@ public class DomainStatusPatchTest {
   }
 
   @Test
-  public void whenBothStatusesHaveSameConditionTypeWithMismatch_replaceIt() {  // time to rethink this
+  void whenBothStatusesHaveSameConditionTypeWithMismatch_replaceIt() {  // time to rethink this
     DomainStatus status1 = new DomainStatus()
           .addCondition(new DomainCondition(DomainConditionType.Progressing)
                 .withReason("because").withMessage("Not There"));
@@ -215,7 +215,7 @@ public class DomainStatusPatchTest {
   }
 
   @Test
-  public void whenOnlyNewStatusHasClusters_addNewClusters() {
+  void whenOnlyNewStatusHasClusters_addNewClusters() {
     DomainStatus status1 = new DomainStatus();
     DomainStatus status2 = new DomainStatus()
           .addCluster(new ClusterStatus()
@@ -235,7 +235,7 @@ public class DomainStatusPatchTest {
   }
 
   @Test
-  public void whenOnlyOldStatusHasClusters_removeThem() {
+  void whenOnlyOldStatusHasClusters_removeThem() {
     DomainStatus status1 = new DomainStatus()
           .addCluster(new ClusterStatus()
               .withClusterName("cluster1").withReplicas(2).withReadyReplicas(4).withMaximumReplicas(10))
@@ -249,7 +249,7 @@ public class DomainStatusPatchTest {
   }
 
   @Test
-  public void whenBothStatusesHaveClusters_replaceChangedFieldsInMatchingOnes() {
+  void whenBothStatusesHaveClusters_replaceChangedFieldsInMatchingOnes() {
     DomainStatus status1 = new DomainStatus()
           .addCluster(new ClusterStatus()
               .withClusterName("cluster1").withReplicas(2).withReadyReplicas(4).withMaximumReplicas(10)
@@ -281,7 +281,7 @@ public class DomainStatusPatchTest {
   }
 
   @Test
-  public void excludingHealthWhenOnlyNewStatusHasServers_addThem() {
+  void excludingHealthWhenOnlyNewStatusHasServers_addThem() {
     DomainStatus status1 = new DomainStatus();
     DomainStatus status2 = new DomainStatus()
           .addServer(new ServerStatus()
@@ -301,7 +301,7 @@ public class DomainStatusPatchTest {
   }
 
   @Test
-  public void excludingHealthWhenOnlyOldStatusHasServers_removeThem() {
+  void excludingHealthWhenOnlyOldStatusHasServers_removeThem() {
     DomainStatus status1 = new DomainStatus()
           .addServer(new ServerStatus().withServerName("ms1").withClusterName("cluster1"))
           .addServer(new ServerStatus().withServerName("ms2").withClusterName("cluster1"));
@@ -319,7 +319,7 @@ public class DomainStatusPatchTest {
   }
 
   @Test
-  public void withHealthScalarsWhenOnlyNewStatusHasServers_addThem() {
+  void withHealthScalarsWhenOnlyNewStatusHasServers_addThem() {
     OffsetDateTime activationTime = now();
     DomainStatus status1 = new DomainStatus();
     DomainStatus status2 = new DomainStatus()
@@ -342,7 +342,7 @@ public class DomainStatusPatchTest {
   }
 
   @Test
-  public void withHealthScalarsWhenBothStatusesHasServers_modifyThem() {
+  void withHealthScalarsWhenBothStatusesHasServers_modifyThem() {
     OffsetDateTime activationTime = now();
     DomainStatus status1 = new DomainStatus()
           .addServer(new ServerStatus()
@@ -369,7 +369,7 @@ public class DomainStatusPatchTest {
   }
 
   @Test
-  public void withSubsystemHealthWhenOnlyNewStatusHasSubsystemValues_addThem() {
+  void withSubsystemHealthWhenOnlyNewStatusHasSubsystemValues_addThem() {
     OffsetDateTime activationTime = now();
     DomainStatus status1 = new DomainStatus()
           .addServer(new ServerStatus().withServerName("ms1"))
@@ -409,7 +409,7 @@ public class DomainStatusPatchTest {
   }
 
   @Test
-  public void whenSubsystemRemovedOrModified_patchAsNeeded() {
+  void whenSubsystemRemovedOrModified_patchAsNeeded() {
     OffsetDateTime activationTime = now();
     DomainStatus status1 = new DomainStatus()
           .addServer(new ServerStatus().withServerName("ms1")
@@ -445,7 +445,7 @@ public class DomainStatusPatchTest {
   }
 
   @Test
-  public void whenSubsystemSymptomsAddedAndRemoved_addAndRemove() {
+  void whenSubsystemSymptomsAddedAndRemoved_addAndRemove() {
     DomainStatus status1 = new DomainStatus()
           .addServer(new ServerStatus().withServerName("ms1")
                 .withHealth(new ServerHealth()

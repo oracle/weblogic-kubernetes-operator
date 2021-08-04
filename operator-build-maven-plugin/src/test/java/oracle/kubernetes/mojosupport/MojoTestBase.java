@@ -115,12 +115,12 @@ public abstract class MojoTestBase {
   }
 
   @Test
-  public void mojoExtendsBaseClass() {
+  void mojoExtendsBaseClass() {
     assertThat(mojo, instanceOf(AbstractMojo.class));
   }
 
   @Test
-  public void mojoHasGoalAnnotation() {
+  void mojoHasGoalAnnotation() {
     assertThat(getClassAnnotation(Mojo.class), notNullValue());
   }
 

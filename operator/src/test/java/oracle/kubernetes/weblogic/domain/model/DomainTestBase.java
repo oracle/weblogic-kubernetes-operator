@@ -66,17 +66,17 @@ public abstract class DomainTestBase {
   protected abstract DomainConfigurator configureDomain(Domain domain);
 
   @Test
-  public void canGetAdminServerInfoFromDomain() {
+  void canGetAdminServerInfoFromDomain() {
     assertThat(domain.getWebLogicCredentialsSecretName(), equalTo(SECRET_NAME));
   }
 
   @Test
-  public void canGetDomainInfoFromDomain() {
+  void canGetDomainInfoFromDomain() {
     assertThat(domain.getDomainUid(), equalTo(DOMAIN_UID));
   }
 
   @Test
-  public void adminServerSpecHasStandardValues() {
+  void adminServerSpecHasStandardValues() {
     ServerSpec spec = domain.getAdminServerSpec();
 
     verifyStandardFields(spec);
@@ -90,7 +90,7 @@ public abstract class DomainTestBase {
   }
 
   @Test
-  public void unconfiguredManagedServerSpecHasStandardValues() {
+  void unconfiguredManagedServerSpecHasStandardValues() {
     ServerSpec spec = domain.getServer("aServer", CLUSTER_NAME);
 
     verifyStandardFields(spec);
@@ -102,14 +102,14 @@ public abstract class DomainTestBase {
   }
 
   @Test
-  public void unconfiguredAdminServer_hasNoEnvironmentVariables() {
+  void unconfiguredAdminServer_hasNoEnvironmentVariables() {
     ServerSpec spec = domain.getAdminServerSpec();
 
     assertThat(spec.getEnvironmentVariables(), empty());
   }
 
   @Test
-  public void whenDefaultImageSpecified_serversHaveSpecifiedImage() {
+  void whenDefaultImageSpecified_serversHaveSpecifiedImage() {
     configureDomain(domain).withDefaultImage(IMAGE);
 
     assertThat(domain.getAdminServerSpec().getImage(), equalTo(IMAGE));
@@ -117,7 +117,7 @@ public abstract class DomainTestBase {
   }
 
   @Test
-  public void whenLatestImageSpecifiedAsDefault_serversHaveAlwaysPullPolicy() {
+  void whenLatestImageSpecifiedAsDefault_serversHaveAlwaysPullPolicy() {
     configureDomain(domain).withDefaultImage(IMAGE + LATEST_IMAGE_SUFFIX);
 
     assertThat(domain.getAdminServerSpec().getImagePullPolicy(), equalTo(ALWAYS_IMAGEPULLPOLICY));
@@ -127,7 +127,7 @@ public abstract class DomainTestBase {
   }
 
   @Test
-  public void whenNotSpecified_imageHasDefault() {
+  void whenNotSpecified_imageHasDefault() {
     domain.getSpec().setImage(null);
 
     ServerSpec spec = domain.getAdminServerSpec();
@@ -136,7 +136,7 @@ public abstract class DomainTestBase {
   }
 
   @Test
-  public void whenImageTagIsLatestAndPullPolicyNotSpecified_pullPolicyIsAlways() {
+  void whenImageTagIsLatestAndPullPolicyNotSpecified_pullPolicyIsAlways() {
     domain.getSpec().setImage("test:latest");
     domain.getSpec().setImagePullPolicy(null);
 
@@ -146,7 +146,7 @@ public abstract class DomainTestBase {
   }
 
   @Test
-  public void whenImageTagIsNotLatestAndPullPolicyNotSpecified_pullPolicyIsIfAbsent() {
+  void whenImageTagIsNotLatestAndPullPolicyNotSpecified_pullPolicyIsIfAbsent() {
     domain.getSpec().setImage("test:1.0");
     domain.getSpec().setImagePullPolicy(null);
 
@@ -156,7 +156,7 @@ public abstract class DomainTestBase {
   }
 
   @Test
-  public void whenImagePullPolicySpecifiedAsDefault_allServersHaveIt() {
+  void whenImagePullPolicySpecifiedAsDefault_allServersHaveIt() {
     configureDomain(domain).withDefaultImagePullPolicy(ALWAYS_IMAGEPULLPOLICY);
 
     assertThat(domain.getAdminServerSpec().getImagePullPolicy(), equalTo(ALWAYS_IMAGEPULLPOLICY));
@@ -166,7 +166,7 @@ public abstract class DomainTestBase {
   }
 
   @Test
-  public void whenDefaultImagePullSecretSpecified_allServersHaveIt() {
+  void whenDefaultImagePullSecretSpecified_allServersHaveIt() {
     V1LocalObjectReference secretReference = createSecretReference(PULL_SECRET_NAME);
     configureDomain(domain).withDefaultImagePullSecrets(secretReference);
 
@@ -181,7 +181,7 @@ public abstract class DomainTestBase {
   }
 
   @Test
-  public void whenSpecified_adminServerHasEnvironmentVariables() {
+  void whenSpecified_adminServerHasEnvironmentVariables() {
     configureAdminServer()
         .withEnvironmentVariable(NAME1, VALUE1)
         .withEnvironmentVariable(NAME2, VALUE2);
@@ -200,7 +200,7 @@ public abstract class DomainTestBase {
   }
 
   @Test
-  public void whenOtherServersDefined_adminServerHasNoEnvironmentVariables() {
+  void whenOtherServersDefined_adminServerHasNoEnvironmentVariables() {
     configureServer(SERVER1)
         .withEnvironmentVariable(NAME1, VALUE1)
         .withEnvironmentVariable(NAME2, VALUE2);
@@ -211,7 +211,7 @@ public abstract class DomainTestBase {
   }
 
   @Test
-  public void whenSpecified_adminServerDesiredStateIsAsSpecified() {
+  void whenSpecified_adminServerDesiredStateIsAsSpecified() {
     configureAdminServer().withDesiredState("ADMIN");
 
     ServerSpec spec = domain.getAdminServerSpec();
@@ -224,21 +224,21 @@ public abstract class DomainTestBase {
   }
 
   @Test
-  public void whenNotSpecified_adminServerDesiredStateIsRunning() {
+  void whenNotSpecified_adminServerDesiredStateIsRunning() {
     ServerSpec spec = domain.getAdminServerSpec();
 
     assertThat(spec.getDesiredState(), equalTo("RUNNING"));
   }
 
   @Test
-  public void whenNotSpecified_managedServerDesiredStateIsRunning() {
+  void whenNotSpecified_managedServerDesiredStateIsRunning() {
     ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getDesiredState(), equalTo("RUNNING"));
   }
 
   @Test
-  public void whenSpecified_managedServerDesiredStateIsAsSpecified() {
+  void whenSpecified_managedServerDesiredStateIsAsSpecified() {
     configureServer(SERVER1).withDesiredState("STAND-BY");
 
     ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
@@ -247,7 +247,7 @@ public abstract class DomainTestBase {
   }
 
   @Test
-  public void whenOnlyAsStateSpecified_managedServerDesiredStateIsRunning() {
+  void whenOnlyAsStateSpecified_managedServerDesiredStateIsRunning() {
     configureAdminServer().withDesiredState("ADMIN");
 
     ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
@@ -256,7 +256,7 @@ public abstract class DomainTestBase {
   }
 
   @Test
-  public void whenClusterStateSpecified_managedServerDesiredStateIsAsSpecified() {
+  void whenClusterStateSpecified_managedServerDesiredStateIsAsSpecified() {
     configureCluster(CLUSTER_NAME).withDesiredState("NEVER");
 
     ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
@@ -269,21 +269,21 @@ public abstract class DomainTestBase {
   }
 
   @Test
-  public void whenNoReplicaCountSpecified_canChangeIt() {
+  void whenNoReplicaCountSpecified_canChangeIt() {
     domain.setReplicaCount("cluster1", 7);
 
     assertThat(domain.getReplicaCount("cluster1"), equalTo(7));
   }
 
   @Test
-  public void afterReplicaCountSetForCluster_canReadIt() {
+  void afterReplicaCountSetForCluster_canReadIt() {
     configureCluster("cluster1").withReplicas(5);
 
     assertThat(domain.getReplicaCount("cluster1"), equalTo(5));
   }
 
   @Test
-  public void afterReplicaCountSetForCluster_canChangeIt() {
+  void afterReplicaCountSetForCluster_canChangeIt() {
     configureCluster("cluster1").withReplicas(5);
 
     domain.setReplicaCount("cluster1", 4);
@@ -291,42 +291,42 @@ public abstract class DomainTestBase {
   }
 
   @Test
-  public void afterReplicaCountMaxUnavailableSetForCluster_canReadMinAvailable() {
+  void afterReplicaCountMaxUnavailableSetForCluster_canReadMinAvailable() {
     configureCluster("cluster1").withReplicas(5).withMaxUnavailable(2);
 
     assertThat(domain.getMinAvailable("cluster1"), equalTo(3));
   }
 
   @Test
-  public void afterReplicaCountSetForCluster_canReadMinAvailable() {
+  void afterReplicaCountSetForCluster_canReadMinAvailable() {
     configureCluster("cluster1").withReplicas(5);
 
     assertThat(domain.getMinAvailable("cluster1"), equalTo(4));
   }
 
   @Test
-  public void afterReplicaCountMaxUnavailableSetForCluster_zeroMin() {
+  void afterReplicaCountMaxUnavailableSetForCluster_zeroMin() {
     configureCluster("cluster1").withReplicas(3).withMaxUnavailable(10);
 
     assertThat(domain.getMinAvailable("cluster1"), equalTo(0));
   }
 
   @Test
-  public void afterMaxUnavailableSetForCluster_canReadIt() {
+  void afterMaxUnavailableSetForCluster_canReadIt() {
     configureCluster("cluster1").withMaxUnavailable(5);
 
     assertThat(domain.getMaxUnavailable("cluster1"), equalTo(5));
   }
 
   @Test
-  public void afterAllowReplicasBelowMinDynamicClusterSizeSetForCluster_canReadIt() {
+  void afterAllowReplicasBelowMinDynamicClusterSizeSetForCluster_canReadIt() {
     configureCluster("cluster1").withAllowReplicasBelowDynClusterSize(false);
 
     assertThat(domain.isAllowReplicasBelowMinDynClusterSize("cluster1"), equalTo(false));
   }
 
   @Test
-  public void whenNotSpecified_allowReplicasBelowMinDynamicClusterSizeHasDefault() {
+  void whenNotSpecified_allowReplicasBelowMinDynamicClusterSizeHasDefault() {
     configureCluster("cluster1");
     configureDomain(domain).withAllowReplicasBelowMinDynClusterSize(null);
 
@@ -335,7 +335,7 @@ public abstract class DomainTestBase {
   }
 
   @Test
-  public void whenNotSpecified_allowReplicasBelowMinDynamicClusterSizeFromDomain() {
+  void whenNotSpecified_allowReplicasBelowMinDynamicClusterSizeFromDomain() {
     configureCluster("cluster1");
     configureDomain(domain).withAllowReplicasBelowMinDynClusterSize(false);
 
@@ -344,13 +344,13 @@ public abstract class DomainTestBase {
   }
 
   @Test
-  public void whenNoClusterSpec_allowReplicasBelowMinDynamicClusterSizeHasDefault() {
+  void whenNoClusterSpec_allowReplicasBelowMinDynamicClusterSizeHasDefault() {
     assertThat(domain.isAllowReplicasBelowMinDynClusterSize("cluster-with-no-spec"),
         equalTo(DEFAULT_ALLOW_REPLICAS_BELOW_MIN_DYN_CLUSTER_SIZE));
   }
 
   @Test
-  public void whenBothClusterAndDomainSpecified_allowReplicasBelowMinDynamicClusterSizeFromCluster() {
+  void whenBothClusterAndDomainSpecified_allowReplicasBelowMinDynamicClusterSizeFromCluster() {
     configureCluster("cluster1").withAllowReplicasBelowDynClusterSize(false);
     configureDomain(domain).withAllowReplicasBelowMinDynClusterSize(true);
 
@@ -359,14 +359,14 @@ public abstract class DomainTestBase {
   }
 
   @Test
-  public void afterMaxConcurrentStartupSetForCluster_canReadIt() {
+  void afterMaxConcurrentStartupSetForCluster_canReadIt() {
     configureCluster("cluster1").withMaxConcurrentStartup(3);
 
     assertThat(domain.getMaxConcurrentStartup("cluster1"), equalTo(3));
   }
 
   @Test
-  public void whenNotSpecified_maxConcurrentStartupHasDefault() {
+  void whenNotSpecified_maxConcurrentStartupHasDefault() {
     configureCluster("cluster1");
     configureDomain(domain).withMaxConcurrentStartup(null);
 
@@ -375,7 +375,7 @@ public abstract class DomainTestBase {
   }
 
   @Test
-  public void whenNotSpecified_maxConcurrentStartupFromDomain() {
+  void whenNotSpecified_maxConcurrentStartupFromDomain() {
     configureCluster("cluster1");
     configureDomain(domain).withMaxConcurrentStartup(2);
 
@@ -384,13 +384,13 @@ public abstract class DomainTestBase {
   }
 
   @Test
-  public void whenNoClusterSpec_maxConcurrentStartupHasDefault() {
+  void whenNoClusterSpec_maxConcurrentStartupHasDefault() {
     assertThat(domain.getMaxConcurrentStartup("cluster-with-no-spec"),
         equalTo(DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP));
   }
 
   @Test
-  public void whenBothClusterAndDomainSpecified_maxConcurrentStartupFromCluster() {
+  void whenBothClusterAndDomainSpecified_maxConcurrentStartupFromCluster() {
     configureCluster("cluster1").withMaxConcurrentStartup(1);
     configureDomain(domain).withMaxConcurrentStartup(0);
 
@@ -399,14 +399,14 @@ public abstract class DomainTestBase {
   }
 
   @Test
-  public void afterMaxConcurrentShutdownSetForCluster_canReadIt() {
+  void afterMaxConcurrentShutdownSetForCluster_canReadIt() {
     configureCluster("cluster1").withMaxConcurrentShutdown(3);
 
     assertThat(domain.getMaxConcurrentShutdown("cluster1"), equalTo(3));
   }
 
   @Test
-  public void whenNotSpecified_maxConcurrentShutdownHasDefault() {
+  void whenNotSpecified_maxConcurrentShutdownHasDefault() {
     configureCluster("cluster1");
     configureDomain(domain).withMaxConcurrentShutdown(null);
 
@@ -415,7 +415,7 @@ public abstract class DomainTestBase {
   }
 
   @Test
-  public void whenNotSpecified_maxConcurrentShutdownFromDomain() {
+  void whenNotSpecified_maxConcurrentShutdownFromDomain() {
     configureDomain(domain).withMaxConcurrentShutdown(2);
 
     assertThat(domain.getMaxConcurrentShutdown("cluster1"),
@@ -423,13 +423,13 @@ public abstract class DomainTestBase {
   }
 
   @Test
-  public void whenNoClusterSpec_maxConcurrentShutdownHasDefault() {
+  void whenNoClusterSpec_maxConcurrentShutdownHasDefault() {
     assertThat(domain.getMaxConcurrentShutdown("cluster-with-no-spec"),
             equalTo(DEFAULT_MAX_CLUSTER_CONCURRENT_SHUTDOWN));
   }
 
   @Test
-  public void whenBothClusterAndDomainSpecified_maxConcurrentShutdownFromCluster() {
+  void whenBothClusterAndDomainSpecified_maxConcurrentShutdownFromCluster() {
     configureCluster("cluster1").withMaxConcurrentShutdown(1);
     configureDomain(domain).withMaxConcurrentShutdown(0);
 
@@ -438,7 +438,7 @@ public abstract class DomainTestBase {
   }
 
   @Test
-  public void whenBothClusterAndServerStateSpecified_managedServerUsesServerState() {
+  void whenBothClusterAndServerStateSpecified_managedServerUsesServerState() {
     configureServer(SERVER1).withDesiredState("STAND-BY");
     configureCluster(CLUSTER_NAME).withDesiredState("NEVER");
 
@@ -448,7 +448,7 @@ public abstract class DomainTestBase {
   }
 
   @Test
-  public void whenSpecifiedOnServer_managedServerHasEnvironmentVariables() {
+  void whenSpecifiedOnServer_managedServerHasEnvironmentVariables() {
     configureServer(SERVER1)
         .withEnvironmentVariable(NAME1, VALUE1)
         .withEnvironmentVariable(NAME2, VALUE2);
@@ -459,7 +459,7 @@ public abstract class DomainTestBase {
   }
 
   @Test
-  public void whenSpecifiedOnCluster_managedServerHasEnvironmentVariables() {
+  void whenSpecifiedOnCluster_managedServerHasEnvironmentVariables() {
     configureCluster(CLUSTER_NAME)
         .withEnvironmentVariable(NAME1, VALUE1)
         .withEnvironmentVariable(NAME2, VALUE2);
@@ -470,7 +470,7 @@ public abstract class DomainTestBase {
   }
 
   @Test
-  public void whenDesiredStateAdminAndSpecifiedOnCluster_managedServerHasEnvironmentVariables() {
+  void whenDesiredStateAdminAndSpecifiedOnCluster_managedServerHasEnvironmentVariables() {
     configureCluster(CLUSTER_NAME)
         .withDesiredState("ADMIN")
         .withEnvironmentVariable("JAVA_OPTIONS", "value");
@@ -481,7 +481,7 @@ public abstract class DomainTestBase {
   }
 
   @Test
-  public void whenDomainReadFromYaml_unconfiguredServerHasDomainDefaults() throws IOException {
+  void whenDomainReadFromYaml_unconfiguredServerHasDomainDefaults() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     ServerSpec serverSpec = domain.getServer("server0", null);
 
@@ -493,7 +493,7 @@ public abstract class DomainTestBase {
   }
 
   @Test
-  public void whenDomainReadFromYaml_Server1OverridesDefaults() throws IOException {
+  void whenDomainReadFromYaml_Server1OverridesDefaults() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     ServerSpec serverSpec = domain.getServer("server1", null);
 
@@ -509,7 +509,7 @@ public abstract class DomainTestBase {
   }
 
   @Test
-  public void whenDomainReadFromYaml_Server2OverridesDefaults() throws IOException {
+  void whenDomainReadFromYaml_Server2OverridesDefaults() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
     ServerSpec serverSpec = domain.getServer("server2", null);
 
@@ -517,7 +517,7 @@ public abstract class DomainTestBase {
   }
 
   @Test
-  public void whenDomainReadFromYaml_Cluster2OverridesDefaults() throws IOException {
+  void whenDomainReadFromYaml_Cluster2OverridesDefaults() throws IOException {
     Domain domain = readDomain(DOMAIN_V2_SAMPLE_YAML);
 
     assertThat(domain.getReplicaCount("cluster2"), equalTo(5));

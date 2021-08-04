@@ -63,7 +63,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class IntrospectorConfigMapTest {
+class IntrospectorConfigMapTest {
 
   private static final int TEST_DATA_LIMIT = 1000;
   private static final int DATA_ALLOWANCE = 500;  // assumed size of data that will not be split
@@ -125,7 +125,7 @@ public class IntrospectorConfigMapTest {
   }
 
   @Test
-  public void whenNoTopologySpecified_continueProcessing() {
+  void whenNoTopologySpecified_continueProcessing() {
     testSupport.defineResources(
           createIntrospectorConfigMap(0, Map.of(TOPOLOGY_YAML, TOPOLOGY_VALUE, SECRETS_MD_5, MD5_SECRETS)));
     introspectResult.defineFile(SECRETS_MD_5, "not telling").addToPacket();
@@ -136,7 +136,7 @@ public class IntrospectorConfigMapTest {
   }
 
   @Test
-  public void whenNoTopologySpecified_dontUpdateConfigMap() {
+  void whenNoTopologySpecified_dontUpdateConfigMap() {
     testSupport.defineResources(
           createIntrospectorConfigMap(0, Map.of(TOPOLOGY_YAML, TOPOLOGY_VALUE, SECRETS_MD_5, MD5_SECRETS)));
     introspectResult.defineFile(SECRETS_MD_5, "not telling").addToPacket();
@@ -147,7 +147,7 @@ public class IntrospectorConfigMapTest {
   }
 
   @Test
-  public void whenNoTopologySpecified_addIntrospectionVersionLabel() {
+  void whenNoTopologySpecified_addIntrospectionVersionLabel() {
     forDomain(domain).withIntrospectVersion("4");
     testSupport.defineResources(
           createIntrospectorConfigMap(0, Map.of(TOPOLOGY_YAML, TOPOLOGY_VALUE, SECRETS_MD_5, MD5_SECRETS)));
@@ -175,7 +175,7 @@ public class IntrospectorConfigMapTest {
   }
 
   @Test
-  public void whenTopologyNotValid_reportInDomainStatus() {
+  void whenTopologyNotValid_reportInDomainStatus() {
     introspectResult.defineFile(TOPOLOGY_YAML,
           "domainValid: false", "validationErrors: [first problem, second problem]").addToPacket();
 
@@ -198,7 +198,7 @@ public class IntrospectorConfigMapTest {
   }
 
   @Test
-  public void whenTopologyNotValid_abortProcessing() {
+  void whenTopologyNotValid_abortProcessing() {
     introspectResult.defineFile(TOPOLOGY_YAML, "domainValid: false", "validationErrors: []").addToPacket();
 
     testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(terminalStep));
@@ -207,7 +207,7 @@ public class IntrospectorConfigMapTest {
   }
 
   @Test
-  public void whenTopologyPresent_continueProcessing() {
+  void whenTopologyPresent_continueProcessing() {
     introspectResult
           .defineFile(TOPOLOGY_YAML, "domainValid: true", "domain:", "  name: \"sample\"").addToPacket();
 
@@ -217,7 +217,7 @@ public class IntrospectorConfigMapTest {
   }
 
   @Test
-  public void whenTopologyPresent_addToPacket() {
+  void whenTopologyPresent_addToPacket() {
     introspectResult
           .defineFile(TOPOLOGY_YAML, "domainValid: true", "domain:", "  name: \"sample\"").addToPacket();
 
@@ -227,7 +227,7 @@ public class IntrospectorConfigMapTest {
   }
 
   @Test
-  public void whenTopologyAndDomainZipHashPresent_addToPacket() {
+  void whenTopologyAndDomainZipHashPresent_addToPacket() {
     introspectResult
           .defineFile(TOPOLOGY_YAML, "domainValid: true", "domain:", "  name: \"sample\"")
           .defineFile(DOMAINZIP_HASH, DOMAIN_HASH_VALUE)
@@ -239,7 +239,7 @@ public class IntrospectorConfigMapTest {
   }
 
   @Test
-  public void whenTopologyAndDomainZipHashPresent_addToConfigMap() {
+  void whenTopologyAndDomainZipHashPresent_addToConfigMap() {
     introspectResult
           .defineFile(TOPOLOGY_YAML, "domainValid: true", "domain:", "  name: \"sample\"")
           .defineFile(DOMAINZIP_HASH, DOMAIN_HASH_VALUE)
@@ -285,7 +285,7 @@ public class IntrospectorConfigMapTest {
   }
 
   @Test
-  public void whenTopologyAndMIISecretsHashPresent_addToPacket() {
+  void whenTopologyAndMIISecretsHashPresent_addToPacket() {
     introspectResult
           .defineFile(TOPOLOGY_YAML, "domainValid: true", "domain:", "  name: \"sample\"")
           .defineFile(SECRETS_MD_5, MD5_SECRETS)
@@ -297,7 +297,7 @@ public class IntrospectorConfigMapTest {
   }
 
   @Test
-  public void whenTopologyAndMIISecretsHashPresent_addToConfigMap() {
+  void whenTopologyAndMIISecretsHashPresent_addToConfigMap() {
     introspectResult
           .defineFile(TOPOLOGY_YAML, "domainValid: true", "domain:", "  name: \"sample\"")
           .defineFile(SECRETS_MD_5, MD5_SECRETS)
@@ -309,7 +309,7 @@ public class IntrospectorConfigMapTest {
   }
 
   @Test
-  public void whenDataTooLargeForSingleConfigMap_recordCountInMap() {
+  void whenDataTooLargeForSingleConfigMap_recordCountInMap() {
     introspectResult
           .defineFile(TOPOLOGY_YAML, "domainValid: true", "domain:", "  name: \"sample\"")
           .defineFile(LARGE_DATA_KEY, LARGE_DATA_VALUE)
@@ -321,7 +321,7 @@ public class IntrospectorConfigMapTest {
   }
 
   @Test
-  public void whenDataTooLargeForSingleConfigMap_recordCountInPacket() {
+  void whenDataTooLargeForSingleConfigMap_recordCountInPacket() {
     introspectResult
           .defineFile(TOPOLOGY_YAML, "domainValid: true", "domain:", "  name: \"sample\"")
           .defineFile(LARGE_DATA_KEY, LARGE_DATA_VALUE)
@@ -333,7 +333,7 @@ public class IntrospectorConfigMapTest {
   }
 
   @Test
-  public void whenDataTooLargeForSingleConfigMap_createMultipleMaps() {
+  void whenDataTooLargeForSingleConfigMap_createMultipleMaps() {
     introspectResult
           .defineFile(TOPOLOGY_YAML, "domainValid: true", "domain:", "  name: \"sample\"")
           .defineFile(LARGE_DATA_KEY, LARGE_DATA_VALUE)
@@ -345,7 +345,7 @@ public class IntrospectorConfigMapTest {
   }
 
   @Test
-  public void whenDomainHasRestartVersion_addToPacket() {
+  void whenDomainHasRestartVersion_addToPacket() {
     configureDomain().withRestartVersion(RESTART_VERSION);
     introspectResult
           .defineFile(TOPOLOGY_YAML, "domainValid: true", "domain:", "  name: \"sample\"")
@@ -361,7 +361,7 @@ public class IntrospectorConfigMapTest {
   }
 
   @Test
-  public void whenDomainIsModelInImage_addImageSpecHashToPacket() {
+  void whenDomainIsModelInImage_addImageSpecHashToPacket() {
     configureDomain().withDomainHomeSourceType(DomainSourceType.FromModel);
     introspectResult
           .defineFile(TOPOLOGY_YAML, "domainValid: true", "domain:", "  name: \"sample\"")
@@ -373,7 +373,7 @@ public class IntrospectorConfigMapTest {
   }
 
   @Test
-  public void whenDomainIsModelInImage_dontAddRangesForZipsThatFitInMainConfigMap() {
+  void whenDomainIsModelInImage_dontAddRangesForZipsThatFitInMainConfigMap() {
     configureDomain().withDomainHomeSourceType(DomainSourceType.FromModel);
     introspectResult
           .defineFile(TOPOLOGY_YAML, "domainValid: true", "domain:", "  name: \"sample\"")
@@ -403,7 +403,7 @@ public class IntrospectorConfigMapTest {
   }
 
   @Test
-  public void loadExistingEntriesFromIntrospectorConfigMap() {
+  void loadExistingEntriesFromIntrospectorConfigMap() {
     testSupport.defineResources(createIntrospectorConfigMap(0, Map.of(
           TOPOLOGY_YAML, TOPOLOGY_VALUE,
           SECRETS_MD_5, MD5_SECRETS,
@@ -431,7 +431,7 @@ public class IntrospectorConfigMapTest {
   }
 
   @Test
-  public void whenSitConfigEntriesMissingFromIntrospectionResult_removeFromConfigMap() {
+  void whenSitConfigEntriesMissingFromIntrospectionResult_removeFromConfigMap() {
     testSupport.defineResources(createIntrospectorConfigMap(0, Map.of(
           TOPOLOGY_YAML, TOPOLOGY_VALUE,
           "Sit-Cfg-1", "value1",
@@ -446,7 +446,7 @@ public class IntrospectorConfigMapTest {
   }
 
   @Test
-  public void whenNoTopologySpecified_dontRemoveSitConfigEntries() {
+  void whenNoTopologySpecified_dontRemoveSitConfigEntries() {
     testSupport.defineResources(
           createIntrospectorConfigMap(0, Map.of(TOPOLOGY_YAML, TOPOLOGY_VALUE, "Sit-Cfg-1", "value1")));
     introspectResult.defineFile(SECRETS_MD_5, "not telling").addToPacket();
@@ -457,7 +457,7 @@ public class IntrospectorConfigMapTest {
   }
 
   @Test
-  public void whenRequested_deleteAllIntrospectorConfigMaps() {
+  void whenRequested_deleteAllIntrospectorConfigMaps() {
     testSupport.defineResources(
           createIntrospectorConfigMap(0, Map.of()),
           createIntrospectorConfigMap(1, Map.of()),

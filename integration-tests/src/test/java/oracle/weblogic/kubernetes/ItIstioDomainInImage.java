@@ -126,7 +126,7 @@ class ItIstioDomainInImage {
    */
   @Test
   @DisplayName("Create WebLogic domainhome-in-image with istio")
-  public void testIstioDomainHomeInImage() {
+  void testIstioDomainHomeInImage() {
     final String managedServerPrefix = domainUid + "-managed-server";
     final int replicaCount = 2;
 

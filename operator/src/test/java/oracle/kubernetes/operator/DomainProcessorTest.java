@@ -109,7 +109,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class DomainProcessorTest {
+class DomainProcessorTest {
   private static final String ADMIN_NAME = "admin";
   private static final String CLUSTER = "cluster";
   private static final int MAX_SERVERS = 60;
@@ -192,7 +192,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenDomainSpecNotChanged_dontRunUpdateThread() {
+  void whenDomainSpecNotChanged_dontRunUpdateThread() {
     DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(newDomain));
 
     makeRightOperation.execute();
@@ -207,7 +207,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenDomainExplicitSet_runUpdateThread() {
+  void whenDomainExplicitSet_runUpdateThread() {
     DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
 
     processor.createMakeRightOperation(new DomainPresenceInfo(domain)).withExplicitRecheck().execute();
@@ -216,7 +216,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenDomainConfiguredForMaxServers_establishMatchingPresence() {
+  void whenDomainConfiguredForMaxServers_establishMatchingPresence() {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(MAX_SERVERS);
 
     DomainPresenceInfo info = new DomainPresenceInfo(domain);
@@ -232,7 +232,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenMakeRightRun_updateDomainStatus() {
+  void whenMakeRightRun_updateDomainStatus() {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
 
     processor.createMakeRightOperation(new DomainPresenceInfo(domain)).execute();
@@ -248,7 +248,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenDomainScaledDown_removeExcessPodsAndServices() {
+  void whenDomainScaledDown_removeExcessPodsAndServices() {
     defineServerResources(ADMIN_NAME);
     Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
 
@@ -265,7 +265,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenDomainScaledDown_withPreCreateServerService_doesNotRemoveServices() {
+  void whenDomainScaledDown_withPreCreateServerService_doesNotRemoveServices() {
     defineServerResources(ADMIN_NAME);
     Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
 
@@ -278,7 +278,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenStrandedResourcesExist_removeThem() {
+  void whenStrandedResourcesExist_removeThem() {
     V1Service service1 = createServerService("admin");
     V1Service service2 = createServerService("ms1");
     testSupport.defineResources(service1, service2);
@@ -289,7 +289,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenDomainShutDown_removeAllPodsServicesAndPodDisruptionBudgets() {
+  void whenDomainShutDown_removeAllPodsServicesAndPodDisruptionBudgets() {
     defineServerResources(ADMIN_NAME);
     Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
 
@@ -302,7 +302,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenDomainShutDown_ignoreNonOperatorServices() {
+  void whenDomainShutDown_ignoreNonOperatorServices() {
     defineServerResources(ADMIN_NAME);
     Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
     testSupport.defineResources(createNonOperatorService());
@@ -316,7 +316,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenDomainScaledUp_podDisruptionBudgetMinAvailableUpdated()
+  void whenDomainScaledUp_podDisruptionBudgetMinAvailableUpdated()
           throws JsonProcessingException {
     establishPreviousIntrospection(null, Arrays.asList(1, 2));
 
@@ -333,7 +333,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenDomainScaledDown_podDisruptionBudgetMinAvailableUpdated() throws JsonProcessingException {
+  void whenDomainScaledDown_podDisruptionBudgetMinAvailableUpdated() throws JsonProcessingException {
     establishPreviousIntrospection(null, Arrays.asList(1, 2, 3));
 
     domainConfigurator.configureCluster(CLUSTER).withReplicas(3);
@@ -354,7 +354,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenDomainShutDown_ignoreNonOperatorPodDisruptionBudgets() {
+  void whenDomainShutDown_ignoreNonOperatorPodDisruptionBudgets() {
     defineServerResources(ADMIN_NAME);
     Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
     testSupport.defineResources(createNonOperatorPodDisruptionBudget());
@@ -368,7 +368,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenClusterReplicas2_server3WithAlwaysPolicy_establishMatchingPresence() {
+  void whenClusterReplicas2_server3WithAlwaysPolicy_establishMatchingPresence() {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(2);
     domainConfigurator.configureServer(MS_PREFIX + 3).withServerStartPolicy(START_ALWAYS);
 
@@ -390,7 +390,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenClusterScaleUpToReplicas3_fromReplicas2_server3WithAlwaysPolicy_establishMatchingPresence()
+  void whenClusterScaleUpToReplicas3_fromReplicas2_server3WithAlwaysPolicy_establishMatchingPresence()
       throws JsonProcessingException {
     establishPreviousIntrospection(null, Arrays.asList(1, 3));
 
@@ -413,7 +413,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenClusterScaleDownToReplicas1_fromReplicas2_server3WithAlwaysPolicy_establishMatchingPresence()
+  void whenClusterScaleDownToReplicas1_fromReplicas2_server3WithAlwaysPolicy_establishMatchingPresence()
       throws JsonProcessingException {
     establishPreviousIntrospection(null, Arrays.asList(1,3));
 
@@ -440,7 +440,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenClusterReplicas3_server3And4WithAlwaysPolicy_establishMatchingPresence() {
+  void whenClusterReplicas3_server3And4WithAlwaysPolicy_establishMatchingPresence() {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(3);
 
     for (Integer i : Arrays.asList(3,4)) {
@@ -464,7 +464,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenMakeRightOperationHasNoDomainUpdates_domainProcessingEventsNotGenerated()
+  void whenMakeRightOperationHasNoDomainUpdates_domainProcessingEventsNotGenerated()
           throws JsonProcessingException {
     establishPreviousIntrospection(null, Arrays.asList(1, 2, 3, 4));
     for (Integer i : Arrays.asList(1,2,3,4)) {
@@ -485,7 +485,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenMakeRightOperationHasNoDomainUpdatesAndServiceOnlyServers_domainProcessingEventsNotGenerated()
+  void whenMakeRightOperationHasNoDomainUpdatesAndServiceOnlyServers_domainProcessingEventsNotGenerated()
           throws JsonProcessingException {
     establishPreviousIntrospection(null, Arrays.asList(1, 2, 3, 4));
     for (Integer i : Arrays.asList(1,2,3,4)) {
@@ -512,7 +512,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenScalingUpDomain_domainProcessingCompletedEventsGenerated()
+  void whenScalingUpDomain_domainProcessingCompletedEventsGenerated()
           throws JsonProcessingException {
     establishPreviousIntrospection(null, Arrays.asList(1, 2));
 
@@ -537,7 +537,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenClusterScaleUpToReplicas4_fromReplicas2_server3And4WithAlwaysPolicy_establishMatchingPresence()
+  void whenClusterScaleUpToReplicas4_fromReplicas2_server3And4WithAlwaysPolicy_establishMatchingPresence()
       throws JsonProcessingException {
     establishPreviousIntrospection(null, Arrays.asList(1, 3, 4));
 
@@ -564,7 +564,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenClusterReplicas2_server1And2And3WithAlwaysPolicy_establishMatchingPresence() {
+  void whenClusterReplicas2_server1And2And3WithAlwaysPolicy_establishMatchingPresence() {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(2);
 
     for (Integer i : Arrays.asList(1,2,3)) {
@@ -587,7 +587,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenClusterScaleDownToReplicas1_fromReplicas2_server1And2And3WithAlwaysPolicy_establishMatchingPresence()
+  void whenClusterScaleDownToReplicas1_fromReplicas2_server1And2And3WithAlwaysPolicy_establishMatchingPresence()
       throws JsonProcessingException {
     establishPreviousIntrospection(null, Arrays.asList(1, 2, 3));
 
@@ -614,7 +614,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenClusterReplicas2_server2NeverPolicy_establishMatchingPresence() {
+  void whenClusterReplicas2_server2NeverPolicy_establishMatchingPresence() {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(2);
     domainConfigurator.configureServer(MS_PREFIX + 2).withServerStartPolicy(START_NEVER);
     DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
@@ -633,7 +633,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenClusterReplicas2_allServersExcept5NeverPolicy_establishMatchingPresence() {
+  void whenClusterReplicas2_allServersExcept5NeverPolicy_establishMatchingPresence() {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(3);
     int[] servers = IntStream.rangeClosed(1, MAX_SERVERS).toArray();
     for (int i : servers) {
@@ -693,7 +693,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void onUpgradeFromV20_updateExternalService() {
+  void onUpgradeFromV20_updateExternalService() {
     domainConfigurator.configureAdminServer().configureAdminService().withChannel("name", 30701);
     testSupport.defineResources(createV20ExternalService());
     domainConfigurator.configureCluster(CLUSTER).withReplicas(MAX_SERVERS);
@@ -705,7 +705,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenNoExternalServiceNameSuffixConfigured_externalServiceNameContainsDefaultSuffix() {
+  void whenNoExternalServiceNameSuffixConfigured_externalServiceNameContainsDefaultSuffix() {
     domainConfigurator.configureAdminServer().configureAdminService().withChannel("name", 30701);
     DomainPresenceInfo info = new DomainPresenceInfo(domain);
     configureDomain(domain)
@@ -719,7 +719,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenExternalServiceNameSuffixConfigured_externalServiceNameContainsSuffix() {
+  void whenExternalServiceNameSuffixConfigured_externalServiceNameContainsSuffix() {
     domainConfigurator.configureAdminServer().configureAdminService().withChannel("name", 30701);
     TuningParameters.getInstance().put(LegalNames.EXTERNAL_SERVICE_NAME_SUFFIX_PARAM, "-my-external-service");
     DomainPresenceInfo info = new DomainPresenceInfo(domain);
@@ -738,7 +738,7 @@ public class DomainProcessorTest {
   private static final String INTROSPECTOR_MAP_NAME = UID + INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
 
   @Test
-  public void whenDomainHasRunningServersAndExistingTopology_dontRunIntrospectionJob() throws JsonProcessingException {
+  void whenDomainHasRunningServersAndExistingTopology_dontRunIntrospectionJob() throws JsonProcessingException {
     establishPreviousIntrospection(null);
 
     domainConfigurator.withIntrospectVersion(OLD_INTROSPECTION_STATE);
@@ -748,7 +748,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenDomainHasIntrospectVersionDifferentFromOldDomain_runIntrospectionJob() throws Exception {
+  void whenDomainHasIntrospectVersionDifferentFromOldDomain_runIntrospectionJob() throws Exception {
     establishPreviousIntrospection(null);
 
     domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
@@ -758,7 +758,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenIntrospectionJobRun_recordIt() throws Exception {
+  void whenIntrospectionJobRun_recordIt() throws Exception {
     establishPreviousIntrospection(null);
 
     domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
@@ -770,7 +770,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenIntrospectionJobNotComplete_waitForIt() throws Exception {
+  void whenIntrospectionJobNotComplete_waitForIt() throws Exception {
     establishPreviousIntrospection(null);
     jobStatus = createNotCompletedStatus();
 
@@ -829,7 +829,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void afterIntrospection_introspectorConfigMapHasUpToDateLabel() throws Exception {
+  void afterIntrospection_introspectorConfigMapHasUpToDateLabel() throws Exception {
     establishPreviousIntrospection(null);
 
     domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
@@ -853,7 +853,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void afterInitialIntrospection_serverPodsHaveInitialIntrospectVersionLabel() {
+  void afterInitialIntrospection_serverPodsHaveInitialIntrospectVersionLabel() {
     domainConfigurator.withIntrospectVersion(OLD_INTROSPECTION_STATE);
     testSupport.doOnCreate(POD, p -> recordPodCreation((V1Pod) p));
     domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
@@ -871,7 +871,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void afterIntrospection_serverPodsHaveUpToDateIntrospectVersionLabel() throws Exception {
+  void afterIntrospection_serverPodsHaveUpToDateIntrospectVersionLabel() throws Exception {
     establishPreviousIntrospection(null);
 
     domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
@@ -889,7 +889,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void afterScaleupClusterIntrospection_serverPodsHaveUpToDateIntrospectVersionLabel() throws Exception {
+  void afterScaleupClusterIntrospection_serverPodsHaveUpToDateIntrospectVersionLabel() throws Exception {
     establishPreviousIntrospection(null);
 
     domainConfigurator.configureCluster(CLUSTER).withReplicas(3);
@@ -908,7 +908,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void afterScaledownClusterIntrospection_serverPodsHaveUpToDateIntrospectVersionLabel() throws Exception {
+  void afterScaledownClusterIntrospection_serverPodsHaveUpToDateIntrospectVersionLabel() throws Exception {
     establishPreviousIntrospection(null);
 
     domainConfigurator.configureCluster(CLUSTER).withReplicas(1);
@@ -939,7 +939,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenDomainTypeIsDomainInPV_dontRerunIntrospectionJob() throws Exception {
+  void whenDomainTypeIsDomainInPV_dontRerunIntrospectionJob() throws Exception {
     establishPreviousIntrospection(this::configureForDomainInPV);
 
     makeRightOperation.execute();
@@ -958,7 +958,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenDomainTypeIsDomainInImage_dontRerunIntrospectionJob() throws Exception {
+  void whenDomainTypeIsDomainInImage_dontRerunIntrospectionJob() throws Exception {
     establishPreviousIntrospection(d -> configureDomain(d).withDomainHomeSourceType(Image));
 
     makeRightOperation.execute();
@@ -967,7 +967,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenDomainTypeIsFromModelDomainAndNoChanges_dontRerunIntrospectionJob() throws Exception {
+  void whenDomainTypeIsFromModelDomainAndNoChanges_dontRerunIntrospectionJob() throws Exception {
     establishPreviousIntrospection(this::configureForModelInImage);
     testSupport.defineResources(new V1Secret().metadata(new V1ObjectMeta().name("wdt-cm-secret").namespace(NS)));
 
@@ -990,7 +990,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenDomainTypeIsFromModelDomainAndImageHashChanged_runIntrospectionJob() throws Exception {
+  void whenDomainTypeIsFromModelDomainAndImageHashChanged_runIntrospectionJob() throws Exception {
     establishPreviousIntrospection(this::configureForModelInImage);
     testSupport.defineResources(new V1Secret().metadata(new V1ObjectMeta().name("wdt-cm-secret").namespace(NS)));
     cacheChangedDomainInputsHash();
@@ -1013,7 +1013,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenDomainTypeIsFromModelDomainAndManagedServerModified_runIntrospectionJobThenRoll() throws Exception {
+  void whenDomainTypeIsFromModelDomainAndManagedServerModified_runIntrospectionJobThenRoll() throws Exception {
     establishPreviousIntrospection(this::configureForModelInImage);
     testSupport.defineResources(new V1Secret().metadata(new V1ObjectMeta().name("wdt-cm-secret").namespace(NS)));
     testSupport.doOnCreate(POD, p -> recordPodCreation((V1Pod) p));
@@ -1027,7 +1027,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenDomainTypeIsFromModelOnlineUpdateSuccessUpdateRestartRequired() throws Exception {
+  void whenDomainTypeIsFromModelOnlineUpdateSuccessUpdateRestartRequired() throws Exception {
     getMIIOnlineUpdateIntrospectResult(DomainConditionType.ConfigChangesPendingRestart,
         ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED);
   }
@@ -1118,7 +1118,7 @@ public class DomainProcessorTest {
   private final Map<String,Boolean> introspectionRunBeforeUpdates = new HashMap<>();
 
   @Test
-  public void whenDomainTypeIsFromModelDomainAndNewServerCreated_dontRunIntrospectionJobFirst() throws Exception {
+  void whenDomainTypeIsFromModelDomainAndNewServerCreated_dontRunIntrospectionJobFirst() throws Exception {
     establishPreviousIntrospection(this::configureForModelInImage);
     testSupport.defineResources(new V1Secret().metadata(new V1ObjectMeta().name("wdt-cm-secret").namespace(NS)));
     testSupport.doOnCreate(POD, p -> recordPodCreation((V1Pod) p));
@@ -1129,7 +1129,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenDomainTypeIsFromModelDomainAndAdminServerModified_runIntrospectionJobFirst() throws Exception {
+  void whenDomainTypeIsFromModelDomainAndAdminServerModified_runIntrospectionJobFirst() throws Exception {
     establishPreviousIntrospection(this::configureForModelInImage);
     testSupport.defineResources(new V1Secret().metadata(new V1ObjectMeta().name("wdt-cm-secret").namespace(NS)));
     testSupport.doOnCreate(POD, p -> recordPodCreation((V1Pod) p));
@@ -1141,7 +1141,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void afterChangeTriggersIntrospection_doesNotRunIntrospectionOnNextExplicitMakeRight() throws Exception {
+  void afterChangeTriggersIntrospection_doesNotRunIntrospectionOnNextExplicitMakeRight() throws Exception {
     establishPreviousIntrospection(this::configureForModelInImage);
     testSupport.defineResources(new V1Secret().metadata(new V1ObjectMeta().name("wdt-cm-secret").namespace(NS)));
     testSupport.doOnCreate(POD, p -> recordPodCreation((V1Pod) p));
@@ -1155,7 +1155,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenDomainTypeIsFromModelDomainAndAdminServerModified_runIntrospectionJobFirst2() throws Exception {
+  void whenDomainTypeIsFromModelDomainAndAdminServerModified_runIntrospectionJobFirst2() throws Exception {
     establishPreviousIntrospection(this::configureForModelInImage);
     testSupport.defineResources(new V1Secret().metadata(new V1ObjectMeta().name("wdt-cm-secret").namespace(NS)));
     testSupport.doOnCreate(POD, p -> recordPodCreation((V1Pod) p));
@@ -1271,7 +1271,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenDomainIsNotValid_dontBringUpServers() {
+  void whenDomainIsNotValid_dontBringUpServers() {
     defineDuplicateServerNames();
 
     DomainPresenceInfo info = new DomainPresenceInfo(domain);
@@ -1289,7 +1289,7 @@ public class DomainProcessorTest {
   }
 
   @Test
-  public void whenDomainIsNotValid_updateStatus() {
+  void whenDomainIsNotValid_updateStatus() {
     defineDuplicateServerNames();
 
     processor.createMakeRightOperation(new DomainPresenceInfo(domain)).withExplicitRecheck().execute();

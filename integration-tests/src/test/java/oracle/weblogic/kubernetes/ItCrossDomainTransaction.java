@@ -86,7 +86,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify cross domain transaction is successful")
 @IntegrationTest
-public class ItCrossDomainTransaction {
+class ItCrossDomainTransaction {
 
   private static final String WDT_MODEL_FILE_DOMAIN1 = "model-crossdomaintransaction-domain1.yaml";
   private static final String WDT_MODEL_FILE_DOMAIN2 = "model-crossdomaintransaction-domain2.yaml";
@@ -346,7 +346,7 @@ public class ItCrossDomainTransaction {
   @Order(1)
   @Test
   @DisplayName("Check cross domain transaction works")
-  public void testCrossDomainTransaction() {
+  void testCrossDomainTransaction() {
 
     String curlRequest = String.format("curl -v --show-error --noproxy '*' "
             + "http://%s:%s/TxForward/TxForward?urls=t3://%s.%s:7001,t3://%s1.%s:8001,t3://%s1.%s:8001,t3://%s2.%s:8001",
@@ -381,7 +381,7 @@ public class ItCrossDomainTransaction {
   @Order(2)
   @Test
   @DisplayName("Check cross domain transaction with TMAfterTLogBeforeCommitExit property commits")
-  public void testCrossDomainTransactionWithFailInjection() {
+  void testCrossDomainTransactionWithFailInjection() {
 
     String curlRequest = String.format("curl -v --show-error --noproxy '*' "
             + "http://%s:%s/cdttxservlet/cdttxservlet?namespaces=%s,%s",
@@ -418,7 +418,7 @@ public class ItCrossDomainTransaction {
   @Order(3)
   @Test
   @DisplayName("Check cross domain transcated MDB communication ")
-  public void testCrossDomainTranscatedMDB() {
+  void testCrossDomainTranscatedMDB() {
 
     // No extra header info
     assertTrue(checkAppIsActive(K8S_NODEPORT_HOST,domain1AdminServiceNodePort,

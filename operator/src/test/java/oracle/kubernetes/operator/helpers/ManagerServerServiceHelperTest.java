@@ -13,7 +13,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_EXI
 import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_SERVICE_REPLACED;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class ManagerServerServiceHelperTest extends ServiceHelperTest {
+class ManagerServerServiceHelperTest extends ServiceHelperTest {
 
   public ManagerServerServiceHelperTest() {
     super(new ManagedServerTestFacade());

@@ -129,7 +129,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify the Kubernetes events for domain lifecycle")
 @IntegrationTest
-public class ItKubernetesEvents {
+class ItKubernetesEvents {
 
   private static String opNamespace = null;
   private static String domainNamespace1 = null;
@@ -209,7 +209,7 @@ public class ItKubernetesEvents {
   @Order(1)
   @Test
   @DisplayName("Test domain events for various successful domain life cycle changes")
-  public void testDomainK8SEventsSuccess() {
+  void testDomainK8SEventsSuccess() {
     OffsetDateTime timestamp = now();
     logger.info("Creating domain");
     createDomain();
@@ -228,7 +228,7 @@ public class ItKubernetesEvents {
   @Order(2)
   @Test
   @DisplayName("Test domain DomainValidationError event for non-existing managed server")
-  public void testDomainK8sEventsNonExistingManagedServer() {
+  void testDomainK8sEventsNonExistingManagedServer() {
     OffsetDateTime timestamp = now();
     logger.info("patch the domain resource with non-existing managed server");
     String patchStr
@@ -267,7 +267,7 @@ public class ItKubernetesEvents {
   @Order(3)
   @Test
   @DisplayName("Test domain DomainValidationError event for non-existing cluster")
-  public void testDomainK8sEventsNonExistingCluster() {
+  void testDomainK8sEventsNonExistingCluster() {
     OffsetDateTime timestamp = now();
     logger.info("patch the domain resource with new cluster");
     String patchStr
@@ -306,7 +306,7 @@ public class ItKubernetesEvents {
   @Order(4)
   @Test
   @DisplayName("Test domain events for failed/retried domain life cycle changes")
-  public void testDomainK8SEventsFailed() {
+  void testDomainK8SEventsFailed() {
     V1Patch patch;
     String patchStr;
 
@@ -355,7 +355,7 @@ public class ItKubernetesEvents {
    */
   @Order(5)
   @Test
-  public void testK8SEventsMultiClusterEvents() {
+  void testK8SEventsMultiClusterEvents() {
     createNewCluster();
     OffsetDateTime timestamp = now();
     scaleClusterWithRestApi(domainUid, cluster2Name, 1,
@@ -374,7 +374,7 @@ public class ItKubernetesEvents {
    */
   @Order(6)
   @Test
-  public void testDomainK8sEventsScalePastMax() {
+  void testDomainK8sEventsScalePastMax() {
     OffsetDateTime timestamp = now();
     try {
       logger.info("Scaling cluster using patching");
@@ -410,7 +410,7 @@ public class ItKubernetesEvents {
   @Order(7)
   @Test
   @DisplayName("Test domain completed event when domain is scaled.")
-  public void testScaleDomainAndVerifyCompletedEvent() {
+  void testScaleDomainAndVerifyCompletedEvent() {
     try {
       scaleDomainAndVerifyCompletedEvent(1, "scale down", true);
       scaleDomainAndVerifyCompletedEvent(2, "scale up", true);
@@ -425,7 +425,7 @@ public class ItKubernetesEvents {
    */
   @Order(8)
   @Test
-  public void testDomainK8sEventsScaleBelowMin() {
+  void testDomainK8sEventsScaleBelowMin() {
     OffsetDateTime timestamp = now();
     try {
       String patchStr
@@ -460,7 +460,7 @@ public class ItKubernetesEvents {
    */
   @Order(9)
   @Test
-  public void testDomainK8sEventsProcessingFailed() {
+  void testDomainK8sEventsProcessingFailed() {
     OffsetDateTime timestamp = now();
     try {
       createPV("sample-pv", domainUid, this.getClass().getSimpleName());
@@ -509,7 +509,7 @@ public class ItKubernetesEvents {
   @Order(10)
   @Test
   @DisplayName("Verify logHome property change rolls domain and relevant events are logged")
-  public void testLogHomeChangeEvents() {
+  void testLogHomeChangeEvents() {
 
     OffsetDateTime timestamp = now();
 
@@ -584,7 +584,7 @@ public class ItKubernetesEvents {
   @Order(11)
   @Test
   @DisplayName("Verify includeServerOutInPodLog property change rolls domain and relevant events are logged")
-  public void testIncludeServerOutInPodLog() {
+  void testIncludeServerOutInPodLog() {
 
     OffsetDateTime timestamp = now();
 
@@ -660,7 +660,7 @@ public class ItKubernetesEvents {
   @Order(13)
   @Test
   @DisplayName("Test domain events for various domain life cycle changes")
-  public void testDomainK8SEventsDelete() {
+  void testDomainK8SEventsDelete() {
     OffsetDateTime timestamp = now();
 
     deleteDomainCustomResource(domainUid, domainNamespace1);
@@ -693,7 +693,7 @@ public class ItKubernetesEvents {
   @Order(14)
   @ParameterizedTest
   @ValueSource(booleans = { true, false })
-  public void testK8SEventsStartStopWatchingNS(boolean enableClusterRoleBinding) {
+  void testK8SEventsStartStopWatchingNS(boolean enableClusterRoleBinding) {
     logger.info("testing testK8SEventsStartStopWatchingNS with enableClusterRoleBinding={0}",
         enableClusterRoleBinding);
     OffsetDateTime timestamp = now();
@@ -744,7 +744,7 @@ public class ItKubernetesEvents {
   @Order(15)
   @ParameterizedTest
   @ValueSource(booleans = { true, false })
-  public void testK8SEventsStartStopWatchingNSWithLabelSelector(boolean enableClusterRoleBinding) {
+  void testK8SEventsStartStopWatchingNSWithLabelSelector(boolean enableClusterRoleBinding) {
     logger.info("testing testK8SEventsStartStopWatchingNSWithLabelSelector with enableClusterRoleBinding={0}",
         enableClusterRoleBinding);
     OffsetDateTime timestamp = now();
@@ -810,7 +810,7 @@ public class ItKubernetesEvents {
   @Order(16)
   @ParameterizedTest
   @ValueSource(booleans = { true, false })
-  public void testK8SEventsStartStopWatchingNSWithRegExp(boolean enableClusterRoleBinding) {
+  void testK8SEventsStartStopWatchingNSWithRegExp(boolean enableClusterRoleBinding) {
     OffsetDateTime timestamp = now();
     logger.info("Adding a new domain namespace {0} in the operator watch list", domainNamespace5);
     // Helm upgrade parameters
@@ -859,7 +859,7 @@ public class ItKubernetesEvents {
    */
   @Order(17)
   @Test
-  public void testK8SEventsStartStopWatchingNSWithDedicated() {
+  void testK8SEventsStartStopWatchingNSWithDedicated() {
     OffsetDateTime timestamp = now();
 
     // Helm upgrade parameters

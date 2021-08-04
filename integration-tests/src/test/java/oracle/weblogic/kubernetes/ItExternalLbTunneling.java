@@ -265,7 +265,7 @@ class ItExternalLbTunneling {
   @Order(1)
   @Test
   @DisplayName("Verify RMI access to WLS through Voyager LoadBalancer")
-  public void testExternalRmiAccessThruVoyager() {
+  void testExternalRmiAccessThruVoyager() {
 
     assumeFalse(WEBLOGIC_SLIM, "Skipping RMI Tunnelling Test for slim image");
     // Build the standalone JMS Client to send and receive messages
@@ -315,7 +315,7 @@ class ItExternalLbTunneling {
   @Order(2)
   @Test
   @DisplayName("Verify RMI access to WLS through Traefik LoadBalancer")
-  public void testExternalRmiAccessThruTraefik() {
+  void testExternalRmiAccessThruTraefik() {
 
     assumeFalse(WEBLOGIC_SLIM, "Skipping RMI Tunnelling Test for slim image");
     // Build the standalone JMS Client to send and receive messages
@@ -371,7 +371,7 @@ class ItExternalLbTunneling {
   @Order(3)
   @Test
   @DisplayName("Verify RMI access WLS through NGINX LoadBalancer")
-  public void testExternalRmiAccessThruNginx() {
+  void testExternalRmiAccessThruNginx() {
 
     assumeFalse(WEBLOGIC_SLIM, "Skipping RMI Tunnelling Test for slim image");
     logger.info("Installing Nginx controller using helm");
@@ -435,7 +435,7 @@ class ItExternalLbTunneling {
   @Order(4)
   @Test
   @DisplayName("Verify tls RMI access WLS through Voyager loadBalancer")
-  public void testExternalRmiAccessThruVoyagerHttpsTunneling() {
+  void testExternalRmiAccessThruVoyagerHttpsTunneling() {
     assumeFalse(WEBLOGIC_SLIM, "Skipping RMI Tunnelling Test for slim image");
     // Build the standalone JMS Client to send and receive messages
     buildClient();
@@ -479,7 +479,7 @@ class ItExternalLbTunneling {
   @Order(5)
   @Test
   @DisplayName("Verify tls RMI access WLS through Traefik loadBalancer")
-  public void testExternalRmiAccessThruTraefikHttpsTunneling() {
+  void testExternalRmiAccessThruTraefikHttpsTunneling() {
 
     assumeFalse(WEBLOGIC_SLIM, "Skipping RMI Tunnelling Test for slim image");
 
@@ -530,7 +530,7 @@ class ItExternalLbTunneling {
   @Order(6)
   @Test
   @DisplayName("Verify tls RMI access WLS through NGNIX loadBalancer")
-  public void testExternalRmiAccessThruNginxHttpsTunneling() {
+  void testExternalRmiAccessThruNginxHttpsTunneling() {
 
     assumeFalse(WEBLOGIC_SLIM, "Skipping RMI Tunnelling Test for slim image");
     logger.info("Installing Nginx controller using helm");
