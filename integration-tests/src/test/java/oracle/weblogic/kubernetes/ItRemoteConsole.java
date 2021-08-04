@@ -165,7 +165,7 @@ class ItRemoteConsole {
    */
   @Test
   @DisplayName("Verify Connecting to Mii domain WLS Remote Console through Traefik is successful")
-  public void testWlsRemoteConsoleConnectionThroughTraefik() {
+  void testWlsRemoteConsoleConnectionThroughTraefik() {
 
     int traefikNodePort = getServiceNodePort(traefikNamespace, traefikHelmParams.getReleaseName(), "web");
     assertTrue(traefikNodePort != -1,
@@ -186,7 +186,7 @@ class ItRemoteConsole {
    */
   @Test
   @DisplayName("Verify Connecting to Mii domain WLS Remote Console through Voyager is successful")
-  public void testWlsRemoteConsoleConnectionThroughVoyager() {
+  void testWlsRemoteConsoleConnectionThroughVoyager() {
 
     assertTrue(voyagerNodePort != -1, "Could not get the default external service node port");
     logger.info("Found the Voyager service nodePort {0}", voyagerNodePort);
@@ -206,7 +206,7 @@ class ItRemoteConsole {
    */
   @Test
   @DisplayName("Verify Connecting to Mii domain WLS Remote Console through NGINX is successful")
-  public void testWlsRemoteConsoleConnectionThroughNginx() {
+  void testWlsRemoteConsoleConnectionThroughNginx() {
 
     assertTrue(nginxNodePort != -1, "Could not get the default external service node port");
     logger.info("Found the NGINX service nodePort {0}", nginxNodePort);

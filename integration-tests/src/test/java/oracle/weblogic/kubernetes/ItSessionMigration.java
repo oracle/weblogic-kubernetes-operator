@@ -172,7 +172,7 @@ class ItSessionMigration {
   @Test
   @Order(1)
   @DisplayName("Stop the primary server, verify that a new primary server is picked and HTTP session state is migrated")
-  public void testSessionMigration() {
+  void testSessionMigration() {
     final String primaryServerAttr = "primary";
     final String secondaryServerAttr = "secondary";
     final String sessionCreateTimeAttr = "sessioncreatetime";
@@ -234,7 +234,7 @@ class ItSessionMigration {
   @Test
   @Order(2)
   @DisplayName("Test that an annotation containing a slash in the name propagates to the server pod")
-  public void testPodAnnotationWithSlash() {
+  void testPodAnnotationWithSlash() {
     String managedServerPodName = domainUid + "-" + finalPrimaryServerName;
     V1Pod managedServerPod = null;
 

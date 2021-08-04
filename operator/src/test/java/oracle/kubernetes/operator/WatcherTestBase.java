@@ -119,7 +119,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
   protected abstract <T> T createObjectWithMetaData(V1ObjectMeta metaData);
 
   @Test
-  public void afterInitialRequest_watchIsClosed() {
+  void afterInitialRequest_watchIsClosed() {
     sendInitialRequest(INITIAL_RESOURCE_VERSION);
 
     assertThat(StubWatchFactory.getNumCloseCalls(), equalTo(1));
@@ -154,7 +154,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
   }
 
   @Test
-  public void receivedEvents_areSentToListeners() {
+  void receivedEvents_areSentToListeners() {
     Object object1 = createObjectWithMetaData();
     Object object2 = createObjectWithMetaData();
     StubWatchFactory.addCallResponses(createAddResponse(object1), createModifyResponse(object2));
@@ -166,7 +166,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
 
   @SuppressWarnings({"rawtypes"})
   @Test
-  public void afterFirstSetOfEvents_nextRequestSendsLastResourceVersion() {
+  void afterFirstSetOfEvents_nextRequestSendsLastResourceVersion() {
     Object object1 = createObjectWithMetaData();
     Object object2 = createObjectWithMetaData();
     Watch.Response[] firstSet = {createAddResponse(object1), createModifyResponse(object2)};
@@ -181,7 +181,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
   }
 
   @Test
-  public void afterHttpGoneError_nextRequestSendsIncludedResourceVersion() {
+  void afterHttpGoneError_nextRequestSendsIncludedResourceVersion() {
     StubWatchFactory.addCallResponses(createHttpGoneErrorResponse(NEXT_RESOURCE_VERSION));
     scheduleDeleteResponse(createObjectWithMetaData());
 
@@ -193,7 +193,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
   }
 
   @Test
-  public void afterHttpGoneErrorWithoutResourceVersion_nextRequestSendsResourceVersionZero() {
+  void afterHttpGoneErrorWithoutResourceVersion_nextRequestSendsResourceVersionZero() {
     StubWatchFactory.addCallResponses(createHttpGoneErrorWithoutResourceVersionResponse());
     scheduleDeleteResponse(createObjectWithMetaData());
 
@@ -203,7 +203,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
   }
 
   @Test
-  public void afterErrorWithoutStatus_nextRequestSendsResourceVersionZero() {
+  void afterErrorWithoutStatus_nextRequestSendsResourceVersionZero() {
     StubWatchFactory.addCallResponses(createErrorWithoutStatusResponse());
     scheduleDeleteResponse(createObjectWithMetaData());
 
@@ -213,7 +213,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
   }
 
   @Test
-  public void afterDelete_nextRequestSendsIncrementedResourceVersion() {
+  void afterDelete_nextRequestSendsIncrementedResourceVersion() {
     scheduleDeleteResponse(createObjectWithMetaData());
     scheduleAddResponse(createObjectWithMetaData());
 
@@ -225,7 +225,7 @@ public abstract class WatcherTestBase extends ThreadFactoryTestBase implements A
   }
 
   @Test
-  public void afterExceptionDuringNext_closeWatchAndTryAgain() {
+  void afterExceptionDuringNext_closeWatchAndTryAgain() {
     StubWatchFactory.throwExceptionOnNext(hasNextException);
     scheduleAddResponse(createObjectWithMetaData());
 

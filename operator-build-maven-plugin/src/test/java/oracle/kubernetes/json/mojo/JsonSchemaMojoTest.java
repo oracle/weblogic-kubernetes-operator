@@ -33,7 +33,7 @@ import static org.hamcrest.Matchers.sameInstance;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 @SuppressWarnings("SameParameterValue")
-public class JsonSchemaMojoTest extends MojoTestBase {
+class JsonSchemaMojoTest extends MojoTestBase {
 
   private static final List<String> EMPTY_CLASSPATH = new ArrayList<>();
   private static final String TARGET_DIR = "/target/dir";
@@ -70,17 +70,17 @@ public class JsonSchemaMojoTest extends MojoTestBase {
   }
 
   @Test
-  public void mojoAnnotatedWithName() {
+  void mojoAnnotatedWithName() {
     assertThat(getClassAnnotation(Mojo.class).getField("name"), equalTo("generate"));
   }
 
   @Test
-  public void mojoAnnotatedWithDefaultPhase() {
+  void mojoAnnotatedWithDefaultPhase() {
     assertThat(getClassAnnotation(Mojo.class).getField("defaultPhase"), equalTo(PROCESS_CLASSES));
   }
 
   @Test
-  public void hasClasspathElementsField_withAnnotation() throws NoSuchFieldException {
+  void hasClasspathElementsField_withAnnotation() throws NoSuchFieldException {
     Field classPathField = JsonSchemaMojo.class.getDeclaredField("compileClasspathElements");
     assertThat(classPathField.getType(), equalTo(List.class));
     assertThat(
@@ -89,7 +89,7 @@ public class JsonSchemaMojoTest extends MojoTestBase {
   }
 
   @Test
-  public void hasTargetDirField_withAnnotation() throws NoSuchFieldException {
+  void hasTargetDirField_withAnnotation() throws NoSuchFieldException {
     Field targetDirField = JsonSchemaMojo.class.getDeclaredField("targetDir");
     assertThat(targetDirField.getType(), equalTo(String.class));
     assertThat(
@@ -98,14 +98,14 @@ public class JsonSchemaMojoTest extends MojoTestBase {
   }
 
   @Test
-  public void hasExternalSchemasField_withAnnotation() throws NoSuchFieldException {
+  void hasExternalSchemasField_withAnnotation() throws NoSuchFieldException {
     Field externalSchemasField = JsonSchemaMojo.class.getDeclaredField("externalSchemas");
     assertThat(externalSchemasField.getType(), equalTo(List.class));
     assertThat(fieldAnnotations.get(externalSchemasField), hasKey(toDescription(Parameter.class)));
   }
 
   @Test
-  public void hasRootClassNameField_withAnnotation() throws NoSuchFieldException {
+  void hasRootClassNameField_withAnnotation() throws NoSuchFieldException {
     Field rootClassField = JsonSchemaMojo.class.getDeclaredField("rootClass");
     assertThat(rootClassField.getType(), equalTo(String.class));
     assertThat(
@@ -113,7 +113,7 @@ public class JsonSchemaMojoTest extends MojoTestBase {
   }
 
   @Test
-  public void hasIncludeAdditionalPropertiesField_withAnnotation() throws NoSuchFieldException {
+  void hasIncludeAdditionalPropertiesField_withAnnotation() throws NoSuchFieldException {
     Field includeAdditionalPropertiesField =
         JsonSchemaMojo.class.getDeclaredField("includeAdditionalProperties");
     assertThat(includeAdditionalPropertiesField.getType(), equalTo(boolean.class));
@@ -123,7 +123,7 @@ public class JsonSchemaMojoTest extends MojoTestBase {
   }
 
   @Test
-  public void hasSupportObjectReferencesField_withAnnotation() throws Exception {
+  void hasSupportObjectReferencesField_withAnnotation() throws Exception {
     Field supportObjectReferencesField =
         JsonSchemaMojo.class.getDeclaredField("supportObjectReferences");
     assertThat(supportObjectReferencesField.getType(), equalTo(boolean.class));
@@ -133,7 +133,7 @@ public class JsonSchemaMojoTest extends MojoTestBase {
   }
 
   @Test
-  public void hasKubernetesVersionField_withAnnotation() throws Exception {
+  void hasKubernetesVersionField_withAnnotation() throws Exception {
     Field supportObjectReferencesField = JsonSchemaMojo.class.getDeclaredField("kubernetesVersion");
     assertThat(supportObjectReferencesField.getType(), equalTo(String.class));
     assertThat(
@@ -142,7 +142,7 @@ public class JsonSchemaMojoTest extends MojoTestBase {
   }
 
   @Test
-  public void hasGenerateMarkdownField_withAnnotation() throws Exception {
+  void hasGenerateMarkdownField_withAnnotation() throws Exception {
     Field supportObjectReferencesField = JsonSchemaMojo.class.getDeclaredField("generateMarkdown");
     assertThat(supportObjectReferencesField.getType(), equalTo(boolean.class));
     assertThat(
@@ -151,7 +151,7 @@ public class JsonSchemaMojoTest extends MojoTestBase {
   }
 
   @Test
-  public void hasOutputFileField_withAnnotation() throws Exception {
+  void hasOutputFileField_withAnnotation() throws Exception {
     Field field = JsonSchemaMojo.class.getDeclaredField("outputFile");
     assertThat(field.getType(), equalTo(String.class));
     assertThat(fieldAnnotations.get(field), hasKey(toDescription(Parameter.class)));
@@ -159,7 +159,7 @@ public class JsonSchemaMojoTest extends MojoTestBase {
   }
 
   @Test
-  public void whenKubernetesVersionSpecified_passToGenerator() throws Exception {
+  void whenKubernetesVersionSpecified_passToGenerator() throws Exception {
     setMojoParameter("kubernetesVersion", "1.9.0");
 
     executeMojo();
@@ -168,7 +168,7 @@ public class JsonSchemaMojoTest extends MojoTestBase {
   }
 
   @Test
-  public void whenKubernetesVersionNotSpecified_passToGenerator() throws Exception {
+  void whenKubernetesVersionNotSpecified_passToGenerator() throws Exception {
     setMojoParameter("kubernetesVersion", null);
 
     executeMojo();
@@ -177,7 +177,7 @@ public class JsonSchemaMojoTest extends MojoTestBase {
   }
 
   @Test
-  public void whenExternalSchemaSpecified_passToGenerator() throws Exception {
+  void whenExternalSchemaSpecified_passToGenerator() throws Exception {
     setMojoParameter(
         "externalSchemas",
         singletonList(new ExternalSchema("http://schema.json", "src/cache/schema.json")));
@@ -190,7 +190,7 @@ public class JsonSchemaMojoTest extends MojoTestBase {
   }
 
   @Test
-  public void whenUnableToUseDefineSchema_haltTheBuild() throws Exception {
+  void whenUnableToUseDefineSchema_haltTheBuild() throws Exception {
     setMojoParameter(
         "externalSchemas",
         singletonList(new ExternalSchema("abcd://schema.json", "src/cache/schema.json")));
@@ -199,28 +199,28 @@ public class JsonSchemaMojoTest extends MojoTestBase {
   }
 
   @Test
-  public void whenNoClassSpecified_haltTheBuild() throws Exception {
+  void whenNoClassSpecified_haltTheBuild() throws Exception {
     setMojoParameter("rootClass", null);
 
     assertThrows(MojoExecutionException.class, this::executeMojo);
   }
 
   @Test
-  public void whenLookingForClassFile_specifyRelativeFilePath() throws Exception {
+  void whenLookingForClassFile_specifyRelativeFilePath() throws Exception {
     executeMojo();
 
     assertThat(main.getResourceName(), equalTo(classNameToPath(TEST_ROOT_CLASS) + ".class"));
   }
 
   @Test
-  public void whenRootClassNotFound_haltTheBuild() {
+  void whenRootClassNotFound_haltTheBuild() {
     main.setClasspathResource(null);
 
     assertThrows(MojoExecutionException.class, this::executeMojo);
   }
 
   @Test
-  public void useSpecifiedClasspath() throws Exception {
+  void useSpecifiedClasspath() throws Exception {
     String[] classpathElements = new String[] {"a", "b", "c"};
     setMojoParameter("compileClasspathElements", Arrays.asList(classpathElements));
     URL[] classPathUrls = new URL[] {new URL("file:abc"), new URL("file:bcd"), new URL("file:cde")};
@@ -234,21 +234,21 @@ public class JsonSchemaMojoTest extends MojoTestBase {
   }
 
   @Test
-  public void generateToExpectedLocation() throws Exception {
+  void generateToExpectedLocation() throws Exception {
     executeMojo();
 
     assertThat(main.getSchemaFile(), equalTo(SCHEMA_FILE));
   }
 
   @Test
-  public void whenGenerateMarkdownNotSpecified_dontGenerateMarkdown() throws Exception {
+  void whenGenerateMarkdownNotSpecified_dontGenerateMarkdown() throws Exception {
     executeMojo();
 
     assertThat(main.getMarkdownFile(), nullValue());
   }
 
   @Test
-  public void whenGenerateMarkdownSpecified_generateMarkdown() throws Exception {
+  void whenGenerateMarkdownSpecified_generateMarkdown() throws Exception {
     setMojoParameter("generateMarkdown", true);
 
     executeMojo();
@@ -257,7 +257,7 @@ public class JsonSchemaMojoTest extends MojoTestBase {
   }
 
   @Test
-  public void whenGenerateMarkdownSpecified_useGeneratedSchemaForMarkdown() throws Exception {
+  void whenGenerateMarkdownSpecified_useGeneratedSchemaForMarkdown() throws Exception {
     Map<String, Object> generatedSchema = Map.of();
     main.setGeneratedSchema(generatedSchema);
     setMojoParameter("generateMarkdown", true);
@@ -268,7 +268,7 @@ public class JsonSchemaMojoTest extends MojoTestBase {
   }
 
   @Test
-  public void whenSchemaMoreRecentThanClassFile_dontGenerateNewSchema() throws Exception {
+  void whenSchemaMoreRecentThanClassFile_dontGenerateNewSchema() throws Exception {
     fileSystem.defineFileContents(CLASS_FILE, "");
     fileSystem.defineFileContents(SCHEMA_FILE, "");
     fileSystem.touch(SCHEMA_FILE);
@@ -279,7 +279,7 @@ public class JsonSchemaMojoTest extends MojoTestBase {
   }
 
   @Test
-  public void whenClassFileMoreRecentThanSchema_generateNewSchema() throws Exception {
+  void whenClassFileMoreRecentThanSchema_generateNewSchema() throws Exception {
     fileSystem.defineFileContents(CLASS_FILE, "");
     fileSystem.defineFileContents(SCHEMA_FILE, "");
     fileSystem.touch(CLASS_FILE);
@@ -290,7 +290,7 @@ public class JsonSchemaMojoTest extends MojoTestBase {
   }
 
   @Test
-  public void whenOutputFileSpecified_generateToIt() throws Exception {
+  void whenOutputFileSpecified_generateToIt() throws Exception {
     setMojoParameter("outputFile", SPECIFIED_FILE_NAME);
     executeMojo();
 
@@ -298,7 +298,7 @@ public class JsonSchemaMojoTest extends MojoTestBase {
   }
 
   @Test
-  public void whenIncludeAdditionalPropertiesSet_setOnMain() throws Exception {
+  void whenIncludeAdditionalPropertiesSet_setOnMain() throws Exception {
     setMojoParameter("includeAdditionalProperties", true);
 
     executeMojo();
@@ -307,7 +307,7 @@ public class JsonSchemaMojoTest extends MojoTestBase {
   }
 
   @Test
-  public void whenSupportObjectReferencesSet_setOnMain() throws Exception {
+  void whenSupportObjectReferencesSet_setOnMain() throws Exception {
     setMojoParameter("supportObjectReferences", true);
 
     executeMojo();

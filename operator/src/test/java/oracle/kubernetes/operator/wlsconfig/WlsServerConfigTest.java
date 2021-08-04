@@ -8,7 +8,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class WlsServerConfigTest {
+class WlsServerConfigTest {
 
   static final int LISTEN_PORT = 8001;
   static final int SSL_LISTEN_PORT = 8002;
@@ -17,35 +17,35 @@ public class WlsServerConfigTest {
   static final int NAP_NON_ADMIN_PORT = 8081;
 
   @Test
-  public void verify_getLocalAdminProtocolChannelPort_returnsListenPort() {
+  void verify_getLocalAdminProtocolChannelPort_returnsListenPort() {
     WlsServerConfig wlsServerConfig = createConfigWithOnlyListenPort();
     assertThat(wlsServerConfig.getLocalAdminProtocolChannelPort(), is(LISTEN_PORT));
     assertThat(wlsServerConfig.isLocalAdminProtocolChannelSecure(), is(false));
   }
 
   @Test
-  public void verify_getLocalAdminProtocolChannelPort_returnsSslListenPort() {
+  void verify_getLocalAdminProtocolChannelPort_returnsSslListenPort() {
     WlsServerConfig wlsServerConfig = createConfigWithListenPortAndSslListenPort();
     assertThat(wlsServerConfig.getLocalAdminProtocolChannelPort(), is(SSL_LISTEN_PORT));
     assertThat(wlsServerConfig.isLocalAdminProtocolChannelSecure(), is(true));
   }
 
   @Test
-  public void verify_getLocalAdminProtocolChannelPort_returnsAdminPort() {
+  void verify_getLocalAdminProtocolChannelPort_returnsAdminPort() {
     WlsServerConfig wlsServerConfig = createConfigWithAllListenPorts();
     assertThat(wlsServerConfig.getLocalAdminProtocolChannelPort(), is(ADMIN_PORT));
     assertThat(wlsServerConfig.isLocalAdminProtocolChannelSecure(), is(true));
   }
 
   @Test
-  public void verify_getLocalAdminProtocolChannelPort_withAdminNap_returnsNapAdminPort() {
+  void verify_getLocalAdminProtocolChannelPort_withAdminNap_returnsNapAdminPort() {
     WlsServerConfig wlsServerConfig = createConfigWithAdminNap();
     assertThat(wlsServerConfig.getLocalAdminProtocolChannelPort(), is(NAP_ADMIN_PORT));
     assertThat(wlsServerConfig.isLocalAdminProtocolChannelSecure(), is(true));
   }
 
   @Test
-  public void verify_getLocalAdminProtocolChannelPort_withNonAdminNap_returnsAdminPort() {
+  void verify_getLocalAdminProtocolChannelPort_withNonAdminNap_returnsAdminPort() {
     WlsServerConfig wlsServerConfig = createConfigWithNonAdminNap();
     assertThat(wlsServerConfig.getLocalAdminProtocolChannelPort(), is(ADMIN_PORT));
     assertThat(wlsServerConfig.isLocalAdminProtocolChannelSecure(), is(true));

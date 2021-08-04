@@ -11,12 +11,12 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.hasSize;
 
 @SuppressWarnings("SameParameterValue")
-public class OperatorChartIt extends OperatorChartItBase {
+class OperatorChartIt extends OperatorChartItBase {
 
   private static final InstallArgs NO_VALUES_INSTALL_ARGS = newInstallArgs(Collections.emptyMap());
 
   @Test
-  public void whenChartsGenerated_haveTwoRoleBindings() throws Exception {
+  void whenChartsGenerated_haveTwoRoleBindings() throws Exception {
     ProcessedChart chart = getChart(NO_VALUES_INSTALL_ARGS);
 
     assertThat(chart.getDocuments("RoleBinding"), hasSize(2));

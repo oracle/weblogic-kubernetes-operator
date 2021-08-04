@@ -208,7 +208,7 @@ class ItMiiMultiModel {
    */
   @Test
   @DisplayName("Create model-in-image domain with a ConfigMap that contains multiple model files")
-  public void testMiiWithMultiModelCM() {
+  void testMiiWithMultiModelCM() {
     final String adminServerPodName = String.format("%s-%s", domainUid1, ADMIN_SERVER_NAME_BASE);
     final String managedServerPrefix = String.format("%s-%s", domainUid1, MANAGED_SERVER_NAME_BASE);
     final String expectedMaxCapacity = "40";
@@ -270,7 +270,7 @@ class ItMiiMultiModel {
    */
   @Test
   @DisplayName("Create a model-in-image domain with two WDT model files in the image")
-  public void testMiiWithMultiModelImage() {
+  void testMiiWithMultiModelImage() {
     final String adminServerPodName = String.format("%s-%s", domainUid2, ADMIN_SERVER_NAME_BASE);
     final String managedServerPrefix = String.format("%s-%s", domainUid2, MANAGED_SERVER_NAME_BASE);
     final String expectedMaxCapacity = "20";
@@ -331,7 +331,7 @@ class ItMiiMultiModel {
    */
   @Test
   @DisplayName("Create a model-in-image domain with two model files in both the image and the ConfigMap")
-  public void testMiiWithMultiModelImageAndCM() {
+  void testMiiWithMultiModelImageAndCM() {
     final String adminServerPodName = String.format("%s-%s", domainUid3, ADMIN_SERVER_NAME_BASE);
     final String managedServerPrefix = String.format("%s-%s", domainUid3, MANAGED_SERVER_NAME_BASE);
     final String configMapName = "ds-multi-model-image-cm";

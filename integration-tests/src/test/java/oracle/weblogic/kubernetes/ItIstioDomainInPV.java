@@ -85,7 +85,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Verify istio enabled WebLogic domain in domainhome-on-pv model")
 @IntegrationTest
-public class ItIstioDomainInPV  {
+class ItIstioDomainInPV  {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
@@ -145,7 +145,7 @@ public class ItIstioDomainInPV  {
    */
   @Test
   @DisplayName("Create WebLogic domain in PV with Istio")
-  public void testIstioDomainHomeInPv() {
+  void testIstioDomainHomeInPv() {
 
     final String managedServerNameBase = "wlst-ms-";
     String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;

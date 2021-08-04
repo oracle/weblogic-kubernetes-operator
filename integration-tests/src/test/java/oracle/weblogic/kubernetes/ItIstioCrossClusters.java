@@ -85,7 +85,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Verify cross Kubernetes Cluster domain transaction is successful")
 @IntegrationTest
 @DisabledIfEnvironmentVariable(named = "TWO_CLUSTERS", matches = "false")
-public class ItIstioCrossClusters {
+class ItIstioCrossClusters {
 
 
   private static final String WDT_MODEL_FILE_DOMAIN2 = "model-crossdomaintransaction-domain2.yaml";
@@ -269,7 +269,7 @@ public class ItIstioCrossClusters {
    */
   @Test
   @DisplayName("Check cross clusters domain transaction works")
-  public void testCrossDomainTransaction() {
+  void testCrossDomainTransaction() {
     createDomainAndApps();
     String curlRequest = String.format("curl -v --show-error --noproxy '*' "
             + "-H 'host:domain1-" + domain1Namespace + ".org' "
@@ -307,7 +307,7 @@ public class ItIstioCrossClusters {
    */
   @Test
   @DisplayName("Check cross domain transaction with TMAfterTLogBeforeCommitExit property commits")
-  public void testCrossDomainTransactionWithFailInjection() {
+  void testCrossDomainTransactionWithFailInjection() {
     logger.info("Getting admin server external service node port");
     String curlRequest = String.format("curl -v --show-error --noproxy '*' "
             + "-H 'host:domain1-" + domain1Namespace + ".org' "

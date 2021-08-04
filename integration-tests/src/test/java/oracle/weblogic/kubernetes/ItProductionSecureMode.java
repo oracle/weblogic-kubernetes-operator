@@ -208,7 +208,7 @@ class ItProductionSecureMode {
   @Test
   @Order(1)
   @DisplayName("Verify the secure service through administration port")
-  public void testVerifyProductionSecureMode() {
+  void testVerifyProductionSecureMode() {
     int defaultAdminPort = getServiceNodePort(
          domainNamespace, getExternalServicePodName(adminServerPodName), "default-admin");
     assertTrue(defaultAdminPort != -1,
@@ -269,7 +269,7 @@ class ItProductionSecureMode {
   @Test
   @Order(2)
   @DisplayName("Verify MII dynamic update with SSL enabled")
-  public void testMiiDynamicChangeWithSSLEnabled() {
+  void testMiiDynamicChangeWithSSLEnabled() {
 
     LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
 

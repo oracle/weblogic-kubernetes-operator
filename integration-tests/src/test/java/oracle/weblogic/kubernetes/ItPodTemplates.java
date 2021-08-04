@@ -101,7 +101,7 @@ class ItPodTemplates {
    */
   @Test
   @DisplayName("Test pod templates using all the variables for domain in image.")
-  public void testPodTemplateUsingVariablesDomainInImage() throws Exception {
+  void testPodTemplateUsingVariablesDomainInImage() throws Exception {
     try {
       logger.info("Add annotations to serverPod as $(DOMAIN_HOME) and $(LOG_HOME)");
       logger.info("Add labels to serverPod as $(DOMAIN_NAME), $(DOMAIN_UID), $(SERVER_NAME)");

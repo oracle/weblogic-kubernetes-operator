@@ -29,7 +29,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class EventProcessingTest {
+class EventProcessingTest {
   private static final String NS = "namespace";
   private static final String UID = "uid";
   private static final String ADMIN_NAME = "admin";
@@ -61,7 +61,7 @@ public class EventProcessingTest {
   }
 
   @Test
-  public void onNewEventWithNoInvolvedObject_doNothing() {
+  void onNewEventWithNoInvolvedObject_doNothing() {
     event.setInvolvedObject(null);
 
     dispatchEventWatch();
@@ -70,7 +70,7 @@ public class EventProcessingTest {
   }
 
   @Test
-  public void onNewEventWithNoMessage_doNothing() {
+  void onNewEventWithNoMessage_doNothing() {
     event.setMessage(null);
 
     dispatchEventWatch();
@@ -79,7 +79,7 @@ public class EventProcessingTest {
   }
 
   @Test
-  public void onNewEventWithNonReadinessProbeMessage_doNothing() {
+  void onNewEventWithNonReadinessProbeMessage_doNothing() {
     event.setMessage("ignore this");
 
     dispatchEventWatch();
@@ -88,7 +88,7 @@ public class EventProcessingTest {
   }
 
   @Test
-  public void onNewEventWithReadinessProbeMessageButNoMatchingNamespace_doNothing() {
+  void onNewEventWithReadinessProbeMessageButNoMatchingNamespace_doNothing() {
     presenceInfoMap.remove(NS);
 
     dispatchEventWatch();
@@ -97,7 +97,7 @@ public class EventProcessingTest {
   }
 
   @Test
-  public void onNewEventWithNoMatchingDomain_doNothing() {
+  void onNewEventWithNoMatchingDomain_doNothing() {
     presenceInfoMap.put(NS, Collections.emptyMap());
 
     dispatchEventWatch();
@@ -106,7 +106,7 @@ public class EventProcessingTest {
   }
 
   @Test
-  public void onNewEventThatDoesNotMatchDomain_doNothing() {
+  void onNewEventThatDoesNotMatchDomain_doNothing() {
     serverReference.setName(LegalNames.toEventName("uid2", ADMIN_NAME));
 
     dispatchEventWatch();
@@ -115,7 +115,7 @@ public class EventProcessingTest {
   }
 
   @Test
-  public void onNewEventThatMatches_updateLastKnownStatus() {
+  void onNewEventThatMatches_updateLastKnownStatus() {
     info.setServerPod(ADMIN_NAME, new V1Pod());
 
     dispatchEventWatch();

@@ -229,7 +229,7 @@ class ItElasticLogging {
    */
   @Test
   @DisplayName("Use Elasticsearch Count API to query logs of level=INFO and verify")
-  public void testLogLevelSearch() {
+  void testLogLevelSearch() {
     // Verify that number of logs is not zero and failed count is zero
     String regex = ".*count\":(\\d+),.*failed\":(\\d+)";
     String queryCriteria = "/_count?q=level:INFO";
@@ -245,7 +245,7 @@ class ItElasticLogging {
    */
   @Test
   @DisplayName("Use Elasticsearch Search APIs to query Operator log info and verify")
-  public void testOperatorLogSearch() {
+  void testOperatorLogSearch() {
     // Verify that log occurrence for Operator are not empty
     String regex = ".*took\":(\\d+),.*hits\":\\{(.+)\\}";
     String queryCriteria = "/_search?q=type:weblogic-operator";
@@ -262,7 +262,7 @@ class ItElasticLogging {
   @Disabled("Disabled the test due to JIRA OWLS-83899")
   @Test
   @DisplayName("Use Elasticsearch Search APIs to query Operator log info and verify")
-  public void testWebLogicLogSearch() {
+  void testWebLogicLogSearch() {
     // Verify that the admin status of "RUNNING" is found in query return from Elasticsearch repository
     verifyServerRunningInSearchResults(adminServerPodName);
 
@@ -278,7 +278,7 @@ class ItElasticLogging {
    */
   @Test
   @DisplayName("Use Elasticsearch Search APIs to query WebLogic log info in WLS server pod and verify")
-  public void testWlsLoggingExporter() throws Exception {
+  void testWlsLoggingExporter() throws Exception {
     Map<String, String> wlsMap = verifyLoggingExporterReady(opNamespace, null, WEBLOGIC_INDEX_KEY);
     // merge testVarMap and wlsMap
     testVarMap.putAll(wlsMap);

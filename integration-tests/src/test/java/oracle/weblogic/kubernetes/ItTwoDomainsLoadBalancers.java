@@ -176,7 +176,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify operator manages multiple domains")
 @IntegrationTest
-public class ItTwoDomainsLoadBalancers {
+class ItTwoDomainsLoadBalancers {
 
   private static final int numberOfDomains = 2;
   private static final int numberOfOperators = 2;
@@ -314,7 +314,7 @@ public class ItTwoDomainsLoadBalancers {
   @Order(1)
   @Test
   @DisplayName("Create domain on PV using WLST script")
-  public void testTwoDomainsManagedByTwoOperators() {
+  void testTwoDomainsManagedByTwoOperators() {
 
     // create two domains on PV using WLST
     createTwoDomainsOnPVUsingWlstAndVerify();
@@ -342,7 +342,7 @@ public class ItTwoDomainsLoadBalancers {
    */
   @Order(2)
   @Test
-  public void testTwoDomainsManagedByOneOperatorSharingPV() {
+  void testTwoDomainsManagedByOneOperatorSharingPV() {
     // create two domains sharing one PV in default namespace
     createTwoDomainsSharingPVUsingWlstAndVerify();
 
@@ -364,7 +364,7 @@ public class ItTwoDomainsLoadBalancers {
    */
   @Order(3)
   @Test
-  public void testDeployAppAndInstallIngressControllers() {
+  void testDeployAppAndInstallIngressControllers() {
 
     // install and verify Traefik
     logger.info("Installing Traefik controller using helm");
@@ -446,7 +446,7 @@ public class ItTwoDomainsLoadBalancers {
   @Order(4)
   @Test
   @DisplayName("Verify WebLogic admin console is accessible through NGINX path routing with HTTPS protocol")
-  public void testNginxTLSPathRoutingAdminServer() {
+  void testNginxTLSPathRoutingAdminServer() {
     assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");
     logger.info("Verifying WebLogic admin console is accessible through NGINX path routing with HTTPS protocol");
     for (int i = 0; i < numberOfDomains; i++) {
@@ -469,7 +469,7 @@ public class ItTwoDomainsLoadBalancers {
   @Order(5)
   @Test
   @DisplayName("Verify NGINX path routing with HTTPS protocol across two domains")
-  public void testNginxTLSPathRoutingAcrossDomains() {
+  void testNginxTLSPathRoutingAcrossDomains() {
 
     // verify NGINX path routing with HTTP protocol across two domains
     logger.info("Verifying NGINX path routing with HTTPS protocol across two domains");
@@ -485,7 +485,7 @@ public class ItTwoDomainsLoadBalancers {
   @Order(6)
   @Test
   @DisplayName("Verify WebLogic admin console is accessible through Voyager path routing with HTTPS protocol")
-  public void testVoyagerTLSPathRoutingAdminServer() {
+  void testVoyagerTLSPathRoutingAdminServer() {
     assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");
     logger.info("Verifying WebLogic admin console is accessible through Voyager path routing with HTTPS protocol");
     String ingressName = "voyager-tls-pathrouting";
@@ -506,7 +506,7 @@ public class ItTwoDomainsLoadBalancers {
   @Order(7)
   @Test
   @DisplayName("Verify WebLogic admin console is accessible through Traefik host routing with HTTP protocol")
-  public void testTraefikHostRoutingAdminServer() {
+  void testTraefikHostRoutingAdminServer() {
     assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");
     logger.info("Verifying WebLogic admin console is accessible through Traefik host routing with HTTP protocol");
     for (String domainUid : domainUids) {
@@ -524,7 +524,7 @@ public class ItTwoDomainsLoadBalancers {
   @Order(8)
   @Test
   @DisplayName("Verify Traefik host routing with HTTP protocol across two domains")
-  public void testTraefikHttpHostRoutingAcrossDomains() {
+  void testTraefikHttpHostRoutingAcrossDomains() {
 
     // verify Traefik host routing with HTTP protocol across two domains
     logger.info("Verifying Traefik host routing with HTTP protocol across two domains");
@@ -542,7 +542,7 @@ public class ItTwoDomainsLoadBalancers {
   @Order(9)
   @Test
   @DisplayName("Verify Traefik host routing with HTTPS protocol across two domains")
-  public void testTraefikHttpsHostRoutingAcrossDomains() {
+  void testTraefikHttpsHostRoutingAcrossDomains() {
 
     logger.info("Verifying Traefik host routing with HTTPS protocol across two domains");
     for (String domainUid : domainUids) {
@@ -557,7 +557,7 @@ public class ItTwoDomainsLoadBalancers {
   @Order(10)
   @Test
   @DisplayName("Verify Traefik path routing with HTTP protocol across two domains")
-  public void testTraefikPathRoutingAcrossDomains() {
+  void testTraefikPathRoutingAcrossDomains() {
 
     logger.info("Verifying Traefik path routing with HTTP protocol across two domains");
     for (String domainUid : domainUids) {
@@ -574,7 +574,7 @@ public class ItTwoDomainsLoadBalancers {
   @Order(11)
   @Test
   @DisplayName("Verify Voyager host routing with HTTP protocol across two domains")
-  public void testVoyagerHostHttpRoutingAcrossDomains() {
+  void testVoyagerHostHttpRoutingAcrossDomains() {
 
     // verify Voyager host routing with HTTP protocol across two domains
     logger.info("Verifying Voyager host routing with HTTP protocol across two domains");
@@ -594,7 +594,7 @@ public class ItTwoDomainsLoadBalancers {
   @Order(12)
   @Test
   @DisplayName("Verify Voyager host routing with HTTPS protocol across two domains")
-  public void testVoyagerHostHttpsRoutingAcrossDomains() {
+  void testVoyagerHostHttpsRoutingAcrossDomains() {
 
     // verify Voyager host routing with HTTPS protocol across two domains
     logger.info("Verifying Voyager host routing with HTTPS protocol across two domains");
@@ -614,7 +614,7 @@ public class ItTwoDomainsLoadBalancers {
   @Order(13)
   @Test
   @DisplayName("Verify Voyager path routing with HTTP protocol across two domains")
-  public void testVoyagerPathRoutingAcrossDomains() {
+  void testVoyagerPathRoutingAcrossDomains() {
 
     // verify Voyager path routing with HTTP protocol across two domains
     logger.info("Verifying Voyager path routing with HTTP protocol across two domains");
@@ -635,7 +635,7 @@ public class ItTwoDomainsLoadBalancers {
   @Order(14)
   @Test
   @DisplayName("verify Apache load balancer default sample through HTTP channel")
-  public void testApacheLoadBalancingDefaultSample() {
+  void testApacheLoadBalancingDefaultSample() {
 
     // verify Apache default sample
     logger.info("Verifying Apache default sample");
@@ -654,7 +654,7 @@ public class ItTwoDomainsLoadBalancers {
   @Order(15)
   @Test
   @DisplayName("verify Apache load balancer custom sample through HTTP and HTTPS channel")
-  public void testApacheLoadBalancingCustomSample() {
+  void testApacheLoadBalancingCustomSample() {
 
     // verify Apache custom sample
     logger.info("Verifying Apache custom sample");
@@ -678,7 +678,7 @@ public class ItTwoDomainsLoadBalancers {
   @Order(16)
   @Test
   @DisplayName("verify NGINX host routing with HTTP protocol across two domains")
-  public void testNginxHttpHostRoutingAcrossDomains() {
+  void testNginxHttpHostRoutingAcrossDomains() {
 
     // verify NGINX host routing with HTTP protocol
     logger.info("Verifying NGINX host routing with HTTP protocol");
@@ -697,7 +697,7 @@ public class ItTwoDomainsLoadBalancers {
   @Order(17)
   @Test
   @DisplayName("verify NGINX host routing with https protocol across two domains")
-  public void testNginxHttpsHostRoutingAcrossDomains() {
+  void testNginxHttpsHostRoutingAcrossDomains() {
 
     // verify NGINX host routing with HTTPS protocol across two domains
     logger.info("Verifying NGINX host routing with HTTPS protocol across two domains");
@@ -715,7 +715,7 @@ public class ItTwoDomainsLoadBalancers {
   @Order(18)
   @Test
   @DisplayName("Verify NGINX path routing with HTTP protocol across two domains")
-  public void testNginxPathRoutingAcrossDomains() {
+  void testNginxPathRoutingAcrossDomains() {
 
     // verify NGINX path routing with HTTP protocol across two domains
     logger.info("Verifying NGINX path routing with HTTP protocol across two domains");
@@ -733,7 +733,7 @@ public class ItTwoDomainsLoadBalancers {
   @Order(19)
   @Test
   @DisplayName("Verify Voyager path routing with HTTPS protocol across two domains")
-  public void testVoyagerTLSPathRoutingAcrossDomains() {
+  void testVoyagerTLSPathRoutingAcrossDomains() {
 
     // verify Voyager path routing with HTTP protocol across two domains
     logger.info("Verifying Voyager path routing with HTTPS protocol across two domains");
@@ -750,7 +750,7 @@ public class ItTwoDomainsLoadBalancers {
   @Order(20)
   @Test
   @DisplayName("Verify WebLogic admin console is accessible through Traefik path routing with HTTPS protocol")
-  public void testTraefikTLSPathRoutingAdminServer() {
+  void testTraefikTLSPathRoutingAdminServer() {
     assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");
     logger.info("Verifying WebLogic admin console is accessible through Traefik path routing with HTTPS protocol");
 
@@ -770,7 +770,7 @@ public class ItTwoDomainsLoadBalancers {
   @Order(21)
   @Test
   @DisplayName("Verify Traefik path routing with HTTPS protocol across two domains")
-  public void testTraefikTLSPathRoutingAcrossDomains() {
+  void testTraefikTLSPathRoutingAcrossDomains() {
 
     // verify Voyager path routing with HTTP protocol across two domains
     logger.info("Verifying Traefik path routing with HTTPS protocol across two domains");

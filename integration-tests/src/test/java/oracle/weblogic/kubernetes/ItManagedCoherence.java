@@ -161,7 +161,7 @@ class ItManagedCoherence {
    */
   @Test
   @DisplayName("Two cluster domain with a Coherence cluster and test interaction with cache data")
-  public void testMultiClusterCoherenceDomain() {
+  void testMultiClusterCoherenceDomain() {
     String ingressName = domainUid + "-ingress-host-routing";
     String ingressServiceName = VOYAGER_CHART_NAME + "-" + ingressName;
     String channelName = "tcp-80";

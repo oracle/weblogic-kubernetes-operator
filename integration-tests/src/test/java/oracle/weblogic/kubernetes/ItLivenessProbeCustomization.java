@@ -72,7 +72,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Verify liveness probe customization")
 @IntegrationTest
 @Tag("okdenv")
-public class ItLivenessProbeCustomization {
+class ItLivenessProbeCustomization {
 
   private static String domainNamespace = null;
 
@@ -136,7 +136,7 @@ public class ItLivenessProbeCustomization {
   @Test
   @Order(1)
   @DisplayName("Test customization of the liveness probe")
-  public void testCustomLivenessProbe() {
+  void testCustomLivenessProbe() {
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
@@ -208,7 +208,7 @@ public class ItLivenessProbeCustomization {
   @Test
   @Order(2)
   @DisplayName("Test custom liveness probe is not trigged")
-  public void testCustomLivenessProbeNotTrigged() {
+  void testCustomLivenessProbeNotTrigged() {
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));

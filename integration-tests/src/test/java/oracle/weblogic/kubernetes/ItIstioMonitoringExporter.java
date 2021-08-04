@@ -139,7 +139,7 @@ class ItIstioMonitoringExporter {
   @Test
   @DisplayName("Create istio provided prometheus and verify "
       + "it can monitor Weblogic domain via weblogic exporter webapp")
-  public void testIstioPrometheusViaExporterWebApp() {
+  void testIstioPrometheusViaExporterWebApp() {
     assertDoesNotThrow(() -> downloadMonitoringExporterApp(RESOURCE_DIR
         + "/exporter/exporter-config.yaml", RESULTS_ROOT), "Failed to download monitoring exporter application");
     String miiImage = createAndVerifyMiiImageWithMonitoringExporter(RESULTS_ROOT + "/wls-exporter.war",
@@ -164,7 +164,7 @@ class ItIstioMonitoringExporter {
   @Test
   @DisplayName("Create istio provided prometheus and verify "
       + "it can monitor Weblogic domain via weblogic exporter sidecar")
-  public void testIstioPrometheusWithSideCar() {
+  void testIstioPrometheusWithSideCar() {
     // create image with model files
     logger.info("Create image with model file and verify");
 

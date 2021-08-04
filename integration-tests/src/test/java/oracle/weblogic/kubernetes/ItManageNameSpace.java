@@ -189,7 +189,7 @@ class ItManageNameSpace {
   @Order(1)
   @DisplayName("install operator helm chart and domain, "
       + " using expression namespace management")
-  public void testNameSpaceManageByRegularExpression() {
+  void testNameSpaceManageByRegularExpression() {
     //create domain namespace
     String manageByExp1NS = "test-" +  domainNamespaces[0];
     String manageByExp2NS = "test-" +  domainNamespaces[1];
@@ -267,7 +267,7 @@ class ItManageNameSpace {
   @Order(2)
   @DisplayName("install operator helm chart and domain, "
       + " using label namespace management")
-  public void testNameSpaceManagedByLabelSelector() {
+  void testNameSpaceManagedByLabelSelector() {
     Map<String, String> managedByLabelDomains = new HashMap<>();
     managedByLabelDomains.put(domainNamespaces[0], domainsUid[0]);
     Map<String, String> unmanagedByLabelDomains = new HashMap<>();
@@ -337,7 +337,7 @@ class ItManageNameSpace {
   @Order(3)
   @DisplayName("install operator helm chart and domain, "
       + " with enableClusterRoleBinding")
-  public void testNameSpaceWithOperatorRbacFalse() {
+  void testNameSpaceWithOperatorRbacFalse() {
     String manageByLabelDomainNS = domainNamespaces[0] + "test4";
     String manageByLabelDomainUid = domainsUid[0] + "test4";
     assertDoesNotThrow(() -> createNamespace(manageByLabelDomainNS));

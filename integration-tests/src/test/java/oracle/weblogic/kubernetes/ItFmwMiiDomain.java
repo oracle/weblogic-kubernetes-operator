@@ -66,7 +66,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test to a create FMW model in image domain and start the domain")
 @IntegrationTest
-public class ItFmwMiiDomain {
+class ItFmwMiiDomain {
 
   private static String dbNamespace = null;
   private static String opNamespace = null;
@@ -156,7 +156,7 @@ public class ItFmwMiiDomain {
   @Order(1)
   @Test
   @DisplayName("Create FMW Domain model in image")
-  public void testFmwModelInImage() {
+  void testFmwModelInImage() {
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
     createOcirRepoSecret(fmwDomainNamespace);
@@ -262,7 +262,7 @@ public class ItFmwMiiDomain {
   @Order(2)
   @Test
   @DisplayName("Reuse the same RCU schema to restart JRF domain")
-  public void testReuseRCUschemaToRestartDomain() {
+  void testReuseRCUschemaToRestartDomain() {
     saveAndRestoreOpssWalletfileSecret(fmwDomainNamespace, domainUid, opsswalletfileSecretName);
     shutdownDomain();
     patchDomainWithWalletFileSecret(opsswalletfileSecretName);
@@ -279,7 +279,7 @@ public class ItFmwMiiDomain {
   @Order(3)
   @Test
   @DisplayName("Update RCU schema password")
-  public void testUpdateRcuSchemaPassword() {
+  void testUpdateRcuSchemaPassword() {
     shutdownDomain();
     logger.info("Updating RCU schema password with dbNamespace: {0}, RCU prefix: {1}, new schemapassword: {2}",
         dbNamespace, RCUSCHEMAPREFIX, RCUSCHEMAPASSWORDNEW);
@@ -307,7 +307,7 @@ public class ItFmwMiiDomain {
   @Order(4)
   @Test
   @DisplayName("Update WebLogic Credentials after updating RCU schema password")
-  public void testUpdateWebLogicCredentialAfterUpdateRcuSchemaPassword() {
+  void testUpdateWebLogicCredentialAfterUpdateRcuSchemaPassword() {
     verifyUpdateWebLogicCredential(fmwDomainNamespace, domainUid, adminServerPodName,
         managedServerPrefix, replicaCount, "-c1");
   }

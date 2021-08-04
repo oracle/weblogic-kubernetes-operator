@@ -118,7 +118,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify the overrideDistributionStrategy applies the overrides accordingly to the value set")
 @IntegrationTest
-public class ItConfigDistributionStrategy {
+class ItConfigDistributionStrategy {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
@@ -269,7 +269,7 @@ public class ItConfigDistributionStrategy {
   @Order(1)
   @Test
   @DisplayName("Test overrideDistributionStrategy set to DEFAULT")
-  public void testDefaultOverride() {
+  void testDefaultOverride() {
 
     //store the pod creation timestamps
     storePodCreationTimestamps();
@@ -325,7 +325,7 @@ public class ItConfigDistributionStrategy {
   @Order(2)
   @Test
   @DisplayName("Test new overrides are applied as per the files in recreated configmap")
-  public void testModifiedOverrideContent() {
+  void testModifiedOverrideContent() {
 
     //store the pod creation timestamps
     storePodCreationTimestamps();
@@ -434,7 +434,7 @@ public class ItConfigDistributionStrategy {
   @Order(3)
   @Test
   @DisplayName("Test overrideDistributionStrategy value DYNAMIC")
-  public void testDynamicOverride() {
+  void testDynamicOverride() {
 
     //patching the domain with /spec/configuration/overrideDistributionStrategy: DYNAMIC
     String patchStr = "["
@@ -512,7 +512,7 @@ public class ItConfigDistributionStrategy {
   @Order(4)
   @Test
   @DisplayName("Test overrideDistributionStrategy value ON_RESTART")
-  public void testOnRestartOverride() {
+  void testOnRestartOverride() {
 
     //patching the domain with /spec/configuration/overrideDistributionStrategy: ON_RESTART
     String patchStr = "["
@@ -616,7 +616,7 @@ public class ItConfigDistributionStrategy {
   @Order(5)
   @Test
   @DisplayName("Test invalid overrideDistributionStrategy value RESTART")
-  public void testOverrideNegative() {
+  void testOverrideNegative() {
 
     //patching the domain with /spec/configuration/overrideDistributionStrategy: RESTART
     String patchStr = "["

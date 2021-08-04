@@ -37,7 +37,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.VERIFY_ACCESS_DENIE
 import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class HealthCheckHelperTest {
+class HealthCheckHelperTest {
 
   // The log messages to be checked during this test
   private static final String[] LOG_KEYS = {
@@ -113,7 +113,7 @@ public class HealthCheckHelperTest {
   }
 
   @Test
-  public void whenRulesReviewSupported_accessGrantedForEverything() {
+  void whenRulesReviewSupported_accessGrantedForEverything() {
     expectSelfSubjectRulesReview();
 
     for (String ns : TARGET_NAMESPACES) {
@@ -123,7 +123,7 @@ public class HealthCheckHelperTest {
   }
 
   @Test
-  public void whenRulesReviewSupportedAndNoDomainNamespaceAccess_logWarning() {
+  void whenRulesReviewSupportedAndNoDomainNamespaceAccess_logWarning() {
     accessChecks.setMayAccessNamespace(false);
     expectSelfSubjectRulesReview();
 
@@ -138,7 +138,7 @@ public class HealthCheckHelperTest {
   // HERE
 
   @Test
-  public void whenRulesReviewSupportedAndNoOperatorNamespaceAccess_logWarning() {
+  void whenRulesReviewSupportedAndNoOperatorNamespaceAccess_logWarning() {
     accessChecks.setMayAccessNamespace(false);
     expectSelfSubjectRulesReview();
 

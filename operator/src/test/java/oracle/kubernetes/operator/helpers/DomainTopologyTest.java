@@ -19,8 +19,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-public class DomainTopologyTest {
-
+class DomainTopologyTest {
 
   private static final String DOMAIN_TOPOLOGY =
             "domainValid: true\n"
@@ -139,7 +138,7 @@ public class DomainTopologyTest {
       "domainValid: false\n" + "validationErrors:\n";
 
   @Test
-  public void parseDomainTopologyYaml() {
+  void parseDomainTopologyYaml() {
     DomainTopology domainTopology =
         DomainTopology.parseDomainTopologyYaml(DOMAIN_TOPOLOGY);
 
@@ -187,7 +186,7 @@ public class DomainTopologyTest {
   }
 
   @Test
-  public void parseDynamicServerTopologyYaml() {
+  void parseDynamicServerTopologyYaml() {
     DomainTopology domainTopology =
         DomainTopology.parseDomainTopologyYaml(DYNAMIC_SERVER_TOPOLOGY);
 
@@ -231,7 +230,7 @@ public class DomainTopologyTest {
   }
 
   @Test
-  public void parseMixedClusterTopologyYaml() {
+  void parseMixedClusterTopologyYaml() {
     DomainTopology domainTopology =
         DomainTopology.parseDomainTopologyYaml(MIXED_CLUSTER_TOPOLOGY);
 
@@ -310,7 +309,7 @@ public class DomainTopologyTest {
   }
 
   @Test
-  public void parseInvalidTopologyYamlWithValidationErrors() {
+  void parseInvalidTopologyYamlWithValidationErrors() {
     DomainTopology domainTopology = Objects.requireNonNull(DomainTopology.parseDomainTopologyYaml(INVALID_TOPOLOGY));
 
     assertFalse(domainTopology.getValidationErrors().isEmpty());
@@ -321,7 +320,7 @@ public class DomainTopologyTest {
   }
 
   @Test
-  public void parseInvalidTopologyYamlWithNoValidationErrors() {
+  void parseInvalidTopologyYamlWithNoValidationErrors() {
     DomainTopology domainTopology
           = Objects.requireNonNull(DomainTopology.parseDomainTopologyYaml(DOMAIN_INVALID_NO_ERRORS));
 

@@ -49,7 +49,7 @@ import static org.junit.Assert.fail;
  * Tests watches created by the WatchBuilder, verifying that they are created with the correct query
  * URLs and handle responses correctly.
  */
-public class WatchBuilderTest {
+class WatchBuilderTest {
 
   private static final String API_VERSION = "weblogic.oracle/" + KubernetesConstants.DOMAIN_VERSION;
   private static final String NAMESPACE = "testspace";
@@ -73,7 +73,7 @@ public class WatchBuilderTest {
   }
 
   @Test
-  public void whenDomainWatchReceivesAddResponse_returnItFromIterator() throws Exception {
+  void whenDomainWatchReceivesAddResponse_returnItFromIterator() throws Exception {
     Domain domain =
         new Domain()
             .withApiVersion(API_VERSION)
@@ -87,7 +87,7 @@ public class WatchBuilderTest {
   }
 
   @Test
-  public void whenDomainWatchReceivesBookmarkResponse_updateResourceVersion() throws Exception {
+  void whenDomainWatchReceivesBookmarkResponse_updateResourceVersion() throws Exception {
     Domain domain =
             new Domain()
                     .withApiVersion(API_VERSION)
@@ -122,7 +122,7 @@ public class WatchBuilderTest {
   }
 
   @Test
-  public void afterWatchClosed_returnClientToPool() throws Exception {
+  void afterWatchClosed_returnClientToPool() throws Exception {
     Domain domain =
         new Domain()
             .withApiVersion(API_VERSION)
@@ -138,7 +138,7 @@ public class WatchBuilderTest {
   }
 
   @Test
-  public void afterWatchError_closeDoesNotReturnClientToPool() {
+  void afterWatchError_closeDoesNotReturnClientToPool() {
 
     try (Watchable<Domain> domainWatch = new WatchBuilder().createDomainWatch(NAMESPACE)) {
       domainWatch.next();
@@ -151,7 +151,7 @@ public class WatchBuilderTest {
   }
 
   @Test
-  public void whenDomainWatchReceivesModifyAndDeleteResponses_returnBothFromIterator()
+  void whenDomainWatchReceivesModifyAndDeleteResponses_returnBothFromIterator()
       throws Exception {
     Domain domain1 =
         new Domain()
@@ -171,7 +171,7 @@ public class WatchBuilderTest {
   }
 
   @Test
-  public void whenDomainWatchReceivesErrorResponse_returnItFromIterator() throws Exception {
+  void whenDomainWatchReceivesErrorResponse_returnItFromIterator() throws Exception {
     StubWatchFactory.addCallResponses(createErrorResponse(HTTP_ENTITY_TOO_LARGE));
 
     Watchable<Domain> domainWatch = new WatchBuilder().createDomainWatch(NAMESPACE);
@@ -180,7 +180,7 @@ public class WatchBuilderTest {
   }
 
   @Test
-  public void whenServiceWatchSpecifiesParameters_verifyAndReturnResponse() throws Exception {
+  void whenServiceWatchSpecifiesParameters_verifyAndReturnResponse() throws Exception {
     String startResourceVersion = getNextResourceVersion();
     V1Service service =
         new V1Service()
@@ -204,7 +204,7 @@ public class WatchBuilderTest {
   }
 
   @Test
-  public void whenPodWatchSpecifiesParameters_verifyAndReturnResponse() throws Exception {
+  void whenPodWatchSpecifiesParameters_verifyAndReturnResponse() throws Exception {
     V1Pod pod =
         new V1Pod().apiVersion(API_VERSION).kind("Pod").metadata(createMetaData("pod4", NAMESPACE));
     StubWatchFactory.addCallResponses(createAddResponse(pod));
@@ -221,7 +221,7 @@ public class WatchBuilderTest {
   }
 
   @Test
-  public void whenPodWatchFindsNoData_hasNextReturnsFalse() throws Exception {
+  void whenPodWatchFindsNoData_hasNextReturnsFalse() throws Exception {
 
     Watchable<V1Pod> podWatch = new WatchBuilder().createPodWatch(NAMESPACE);
 

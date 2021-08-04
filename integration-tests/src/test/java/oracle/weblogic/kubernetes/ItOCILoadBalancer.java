@@ -105,7 +105,7 @@ class ItOCILoadBalancer {
   @Test
   @DisplayName("Test the sample-app app can be accessed"
       + " from all managed servers in the domain through OCI Load Balancer.")
-  public void testOCILoadBalancer() throws Exception {
+  void testOCILoadBalancer() throws Exception {
 
     // create and verify one cluster mii domain
     logger.info("Create domain and verify that it's running");

@@ -352,7 +352,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenPodCreatedWithoutExportConfiguration_hasPrometheusAnnotations() {
+  void whenPodCreatedWithoutExportConfiguration_hasPrometheusAnnotations() {
     assertThat(
         getCreatedPod().getMetadata().getAnnotations(),
         allOf(
@@ -362,7 +362,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenPodCreatedWithAdminNap_prometheusAnnotationsSpecifyPlainTextPort() {
+  void whenPodCreatedWithAdminNap_prometheusAnnotationsSpecifyPlainTextPort() {
     getServerTopology().addNetworkAccessPoint(new NetworkAccessPoint("test", "admin", 8001, 8001));
     getServerTopology().setListenPort(7001);
     getServerTopology().setSslListenPort(7002);
@@ -381,7 +381,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasMonitoringExporterConfiguration_hasPrometheusAnnotations() {
+  void whenDomainHasMonitoringExporterConfiguration_hasPrometheusAnnotations() {
     defineExporterConfiguration();
 
     assertThat(
@@ -509,7 +509,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenNoPod_createIt() {
+  void whenNoPod_createIt() {
     testSupport.runSteps(getStepFactory(), terminalStep);
 
     assertThat(testSupport.getResources(KubernetesTestSupport.POD), notNullValue());
@@ -517,12 +517,12 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenPodCreated_specHasOneContainer() {
+  void whenPodCreated_specHasOneContainer() {
     assertThat(getCreatedPod().getSpec().getContainers(), hasSize(1));
   }
 
   @Test
-  public void whenPodCreated_hasSha256HashAnnotationForRecipe() {
+  void whenPodCreated_hasSha256HashAnnotationForRecipe() {
     assertThat(getCreatedPod().getMetadata().getAnnotations(), hasKey(SHA256_ANNOTATION));
   }
 
@@ -542,7 +542,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   abstract String getReferenceMiiPodYaml();
 
   @Test
-  public void afterUpgradingPlainPortPodFrom30_patchIt() {
+  void afterUpgradingPlainPortPodFrom30_patchIt() {
     useProductionHash();
     initializeExistingPod(loadPodModel(getReferencePlainPortPodYaml_3_0()));
 
@@ -554,7 +554,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void afterUpgradingPlainPortPodFrom31_patchIt() {
+  void afterUpgradingPlainPortPodFrom31_patchIt() {
     useProductionHash();
     initializeExistingPod(loadPodModel(getReferencePlainPortPodYaml_3_1()));
 
@@ -566,7 +566,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void afterUpgradingSslPortPodFrom30_patchIt() {
+  void afterUpgradingSslPortPodFrom30_patchIt() {
     useProductionHash();
     getServerTopology().setSslListenPort(7002);
     initializeExistingPod(loadPodModel(getReferenceSslPortPodYaml_3_0()));
@@ -579,7 +579,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void afterUpgradingSslPortPodFrom31_patchIt() {
+  void afterUpgradingSslPortPodFrom31_patchIt() {
     useProductionHash();
     getServerTopology().setSslListenPort(7002);
     initializeExistingPod(loadPodModel(getReferenceSslPortPodYaml_3_1()));
@@ -596,7 +596,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void afterUpgradingMiiPodFrom31_patchIt() {
+  void afterUpgradingMiiPodFrom31_patchIt() {
     useProductionHash();
     testSupport.addToPacket(SECRETS_MD_5, "originalSecret");
     testSupport.addToPacket(DOMAINZIP_HASH, "originalSecret");
@@ -615,7 +615,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenPodCreatedWithLatestImage_useAlwaysPullPolicy() {
+  void whenPodCreatedWithLatestImage_useAlwaysPullPolicy() {
     defineDomainImage(LATEST_IMAGE);
 
     V1Container v1Container = getCreatedPodSpecContainer();
@@ -626,7 +626,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenPodCreatedWithVersionedImage_useIfNotPresentPolicy() {
+  void whenPodCreatedWithVersionedImage_useIfNotPresentPolicy() {
     defineDomainImage(VERSIONED_IMAGE);
 
     V1Container v1Container = getCreatedPodSpecContainer();
@@ -636,12 +636,12 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenPodCreatedWithoutPullSecret_doNotAddToPod() {
+  void whenPodCreatedWithoutPullSecret_doNotAddToPod() {
     assertThat(getCreatedPod().getSpec().getImagePullSecrets(), empty());
   }
 
   @Test
-  public void whenPodCreatedWithPullSecret_addToPod() {
+  void whenPodCreatedWithPullSecret_addToPod() {
     V1LocalObjectReference imagePullSecret = new V1LocalObjectReference().name("secret");
     configureDomain().withDefaultImagePullSecrets(imagePullSecret);
 
@@ -649,7 +649,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenPodCreated_withNoPvc_image_containerHasExpectedVolumeMounts() {
+  void whenPodCreated_withNoPvc_image_containerHasExpectedVolumeMounts() {
     configurator.withDomainHomeSourceType(DomainSourceType.Image);
     assertThat(
         getCreatedPodSpecContainer().getVolumeMounts(),
@@ -661,7 +661,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenPodCreated_withNoPvc_fromModel_containerHasExpectedVolumeMounts() {
+  void whenPodCreated_withNoPvc_fromModel_containerHasExpectedVolumeMounts() {
     reportInspectionWasRun();
     configurator.withDomainHomeSourceType(DomainSourceType.FromModel)
         .withRuntimeEncryptionSecret("my-runtime-encryption-secret");
@@ -677,7 +677,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasAuxiliaryImage_createPodsWithInitContainerEmptyDirVolumeAndVolumeMounts() {
+  void whenDomainHasAuxiliaryImage_createPodsWithInitContainerEmptyDirVolumeAndVolumeMounts() {
     getConfigurator()
             .withAuxiliaryImageVolumes(getAuxiliaryImageVolume(DEFAULT_AUXILIARY_IMAGE_PATH))
             .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")));
@@ -704,7 +704,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasAuxiliaryImageAndVolumeWithCustomMountPath_createPodsWithVolumeMountHavingCustomMountPath() {
+  void whenDomainHasAuxiliaryImageAndVolumeWithCustomMountPath_createPodsWithVolumeMountHavingCustomMountPath() {
     getConfigurator()
             .withAuxiliaryImageVolumes(getAuxiliaryImageVolume(CUSTOM_MOUNT_PATH))
             .withAuxiliaryImages(getAuxiliaryImages("wdt-image:v1"));
@@ -714,7 +714,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasAuxiliaryImageVolumeWithMedium_createPodsWithVolumeHavingSpecifiedMedium() {
+  void whenDomainHasAuxiliaryImageVolumeWithMedium_createPodsWithVolumeHavingSpecifiedMedium() {
     getConfigurator()
             .withAuxiliaryImageVolumes(Collections.singletonList(
                     new AuxiliaryImageVolume().name(TEST_VOLUME_NAME).medium("Memory")))
@@ -726,7 +726,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasAuxiliaryImageVolumeWithSizeLimit_createPodsWithVolumeHavingSpecifiedSizeLimit() {
+  void whenDomainHasAuxiliaryImageVolumeWithSizeLimit_createPodsWithVolumeHavingSpecifiedSizeLimit() {
     getConfigurator()
             .withAuxiliaryImageVolumes(Collections.singletonList(
                     new AuxiliaryImageVolume().name(TEST_VOLUME_NAME).sizeLimit("100G")))
@@ -738,7 +738,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasAuxiliaryImagesWithImagePullPolicy_createPodsWithAIInitContainerHavingImagePullPolicy() {
+  void whenDomainHasAuxiliaryImagesWithImagePullPolicy_createPodsWithAIInitContainerHavingImagePullPolicy() {
     getConfigurator()
             .withAuxiliaryImageVolumes(getAuxiliaryImageVolume(DEFAULT_AUXILIARY_IMAGE_PATH))
             .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")
@@ -751,7 +751,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasAuxImagesWithCustomCommand_createPodsWithAuxImageInitContainerHavingCustomCommand() {
+  void whenDomainHasAuxImagesWithCustomCommand_createPodsWithAuxImageInitContainerHavingCustomCommand() {
     getConfigurator()
             .withAuxiliaryImageVolumes(Collections.singletonList(
                     new AuxiliaryImageVolume().mountPath(DEFAULT_AUXILIARY_IMAGE_PATH).name(TEST_VOLUME_NAME)))
@@ -764,7 +764,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasMultipleAuxiliaryImages_createPodsWithAuxiliaryImageInitContainersInCorrectOrder() {
+  void whenDomainHasMultipleAuxiliaryImages_createPodsWithAuxiliaryImageInitContainersInCorrectOrder() {
     getConfigurator()
             .withAuxiliaryImageVolumes(Collections.singletonList(
                     new AuxiliaryImageVolume().mountPath(DEFAULT_AUXILIARY_IMAGE_PATH).name(TEST_VOLUME_NAME)))
@@ -803,7 +803,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenIntrospectionCreatesMultipleConfigMaps_createCorrespondingVolumeMounts() {
+  void whenIntrospectionCreatesMultipleConfigMaps_createCorrespondingVolumeMounts() {
     testSupport.addToPacket(NUM_CONFIG_MAPS, "3");
 
     assertThat(
@@ -831,42 +831,42 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenPodCreated_lifecyclePreStopHasStopServerCommand() {
+  void whenPodCreated_lifecyclePreStopHasStopServerCommand() {
     assertThat(
         getCreatedPodSpecContainer().getLifecycle().getPreStop().getExec().getCommand(),
         contains("/weblogic-operator/scripts/stopServer.sh"));
   }
 
   @Test
-  public void whenPodCreated_livenessProbeHasLivenessCommand() {
+  void whenPodCreated_livenessProbeHasLivenessCommand() {
     assertThat(
         getCreatedPodSpecContainer().getLivenessProbe().getExec().getCommand(),
         contains("/weblogic-operator/scripts/livenessProbe.sh"));
   }
 
   @Test
-  public void whenPodCreated_livenessProbeHasDefinedTuning() {
+  void whenPodCreated_livenessProbeHasDefinedTuning() {
     assertThat(
         getCreatedPodSpecContainer().getLivenessProbe(),
         hasExpectedTuning(LIVENESS_INITIAL_DELAY, LIVENESS_TIMEOUT, LIVENESS_PERIOD));
   }
 
   @Test
-  public void whenPodCreated_readinessProbeHasReadinessCommand() {
+  void whenPodCreated_readinessProbeHasReadinessCommand() {
     V1HTTPGetAction getAction = getCreatedPodSpecContainer().getReadinessProbe().getHttpGet();
     assertThat(getAction.getPath(), equalTo("/weblogic/ready"));
     assertThat(getAction.getPort().getIntValue(), equalTo(listenPort));
   }
 
   @Test
-  public void whenPodCreated_readinessProbeHasDefinedTuning() {
+  void whenPodCreated_readinessProbeHasDefinedTuning() {
     assertThat(
         getCreatedPodSpecContainer().getReadinessProbe(),
         hasExpectedTuning(READINESS_INITIAL_DELAY, READINESS_TIMEOUT, READINESS_PERIOD));
   }
 
   @Test
-  public void whenPodCreatedWithAdminPortEnabled_readinessProbeHasReadinessCommand() {
+  void whenPodCreatedWithAdminPortEnabled_readinessProbeHasReadinessCommand() {
     final Integer adminPort = 9002;
     domainTopology.getServerConfig(serverName).setAdminPort(adminPort);
     V1HTTPGetAction getAction = getCreatedPodSpecContainer().getReadinessProbe().getHttpGet();
@@ -876,28 +876,28 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenPodCreatedWithAdminPortEnabled_adminPortSecureEnvVarIsTrue() {
+  void whenPodCreatedWithAdminPortEnabled_adminPortSecureEnvVarIsTrue() {
     final Integer adminPort = 9002;
     domainTopology.getServerConfig(serverName).setAdminPort(adminPort);
     assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("ADMIN_PORT_SECURE", "true"));
   }
 
   @Test
-  public void whenPodCreatedWithOnRestartDistribution_dontAddDynamicUpdateEnvVar() {
+  void whenPodCreatedWithOnRestartDistribution_dontAddDynamicUpdateEnvVar() {
     configureDomain().withConfigOverrideDistributionStrategy(OverrideDistributionStrategy.ON_RESTART);
 
     assertThat(getCreatedPodSpecContainer().getEnv(), not(hasEnvVar("DYNAMIC_CONFIG_OVERRIDE")));
   }
 
   @Test
-  public void whenPodCreatedWithDynamicDistribution_addDynamicUpdateEnvVar() {
+  void whenPodCreatedWithDynamicDistribution_addDynamicUpdateEnvVar() {
     configureDomain().withConfigOverrideDistributionStrategy(OverrideDistributionStrategy.DYNAMIC);
 
     assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("DYNAMIC_CONFIG_OVERRIDE"));
   }
 
   @Test
-  public void whenDistributionStrategyModified_dontReplacePod() {
+  void whenDistributionStrategyModified_dontReplacePod() {
     configureDomain().withConfigOverrideDistributionStrategy(OverrideDistributionStrategy.DYNAMIC);
     initializeExistingPod();
 
@@ -906,7 +906,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenPodCreatedWithDomainV2Settings_livenessProbeHasConfiguredTuning() {
+  void whenPodCreatedWithDomainV2Settings_livenessProbeHasConfiguredTuning() {
     configureServer()
         .withLivenessProbeSettings(CONFIGURED_DELAY, CONFIGURED_TIMEOUT, CONFIGURED_PERIOD);
     assertThat(
@@ -915,7 +915,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenPodCreated_readinessProbeHasConfiguredTuning() {
+  void whenPodCreated_readinessProbeHasConfiguredTuning() {
     configureServer()
         .withReadinessProbeSettings(CONFIGURED_DELAY, CONFIGURED_TIMEOUT, CONFIGURED_PERIOD);
     assertThat(
@@ -937,7 +937,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenPodCreationFailsDueToUnprocessableEntityFailure_abortFiber() {
+  void whenPodCreationFailsDueToUnprocessableEntityFailure_abortFiber() {
     testSupport.failOnResource(POD, getPodName(), NS, new UnrecoverableErrorBuilderImpl()
         .withReason("FieldValueNotFound")
         .withMessage("Test this failure")
@@ -949,7 +949,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenPodCreationFailsDueToQuotaExceeded_reportInDomainStatus() {
+  void whenPodCreationFailsDueToQuotaExceeded_reportInDomainStatus() {
     testSupport.failOnResource(POD, getPodName(), NS, createQuotaExceededException());
 
     testSupport.runSteps(getStepFactory(), terminalStep);
@@ -967,7 +967,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenPodCreationFailsDueToQuotaExceeded_abortFiber() {
+  void whenPodCreationFailsDueToQuotaExceeded_abortFiber() {
     testSupport.failOnResource(POD, getPodName(), NS, createQuotaExceededException());
 
     testSupport.runSteps(getStepFactory(), terminalStep);
@@ -1019,7 +1019,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
 
   @SuppressWarnings("unchecked")
   @Test
-  public void whenPodCreated_hasPredefinedEnvVariables() {
+  void whenPodCreated_hasPredefinedEnvVariables() {
     assertThat(
         getCreatedPodSpecContainer().getEnv(),
         allOf(
@@ -1047,7 +1047,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenPodCreated_withLogHomeSpecified_hasLogHomeEnvVariable() {
+  void whenPodCreated_withLogHomeSpecified_hasLogHomeEnvVariable() {
     final String myLogHome = "/shared/mylogs/";
     domainPresenceInfo.getDomain().getSpec().setLogHomeEnabled(true);
     domainPresenceInfo.getDomain().getSpec().setLogHome("/shared/mylogs/");
@@ -1055,14 +1055,14 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenPodCreated_withoutLogHomeSpecified_hasDefaultLogHomeEnvVariable() {
+  void whenPodCreated_withoutLogHomeSpecified_hasDefaultLogHomeEnvVariable() {
     domainPresenceInfo.getDomain().getSpec().setLogHomeEnabled(true);
     domainPresenceInfo.getDomain().getSpec().setLogHome(null);
     assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("LOG_HOME", LOG_HOME + "/" + UID));
   }
 
   @Test
-  public void whenPodCreated_withLivenessCustomScriptSpecified_hasEnvVariable() {
+  void whenPodCreated_withLivenessCustomScriptSpecified_hasEnvVariable() {
     final String customScript = "/u01/customLiveness.sh";
     domainPresenceInfo.getDomain().getSpec().setLivenessProbeCustomScript(customScript);
     assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("LIVENESS_PROBE_CUSTOM_SCRIPT", customScript));
@@ -1072,7 +1072,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   private static final String OVERRIDE_DATA_HOME = OVERRIDE_DATA_DIR + File.separator + UID;
 
   @Test
-  public void whenPodCreated_withDataHomeSpecified_verifyDataHomeEnvDefined() {
+  void whenPodCreated_withDataHomeSpecified_verifyDataHomeEnvDefined() {
     domainPresenceInfo.getDomain().getSpec().setDataHome(OVERRIDE_DATA_DIR);
     assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar(ServerEnvVars.DATA_HOME, OVERRIDE_DATA_HOME));
   }
@@ -1080,12 +1080,12 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   private static final String EMPTY_DATA_HOME = "";
 
   @Test
-  public void whenPodCreated_withDataHomeNotSpecified_verifyDataHomeEnvNotDefined() {
+  void whenPodCreated_withDataHomeNotSpecified_verifyDataHomeEnvNotDefined() {
     assertThat(getCreatedPodSpecContainer().getEnv(), not(hasEnvVar(ServerEnvVars.DATA_HOME, EMPTY_DATA_HOME)));
   }
 
   @Test
-  public void whenPodCreated_withEmptyDataHomeSpecified_verifyDataHomeEnvNotDefined() {
+  void whenPodCreated_withEmptyDataHomeSpecified_verifyDataHomeEnvNotDefined() {
     domainPresenceInfo.getDomain().getSpec().setDataHome(EMPTY_DATA_HOME);
     assertThat(getCreatedPodSpecContainer().getEnv(), not(hasEnvVar(ServerEnvVars.DATA_HOME, EMPTY_DATA_HOME)));
   }
@@ -1093,18 +1093,18 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   private static final String NULL_DATA_HOME = null;
 
   @Test
-  public void whenPodCreated_withNullDataHomeSpecified_verifyDataHomeEnvNotDefined() {
+  void whenPodCreated_withNullDataHomeSpecified_verifyDataHomeEnvNotDefined() {
     domainPresenceInfo.getDomain().getSpec().setDataHome(NULL_DATA_HOME);
     assertThat(getCreatedPodSpecContainer().getEnv(), not(hasEnvVar(ServerEnvVars.DATA_HOME, NULL_DATA_HOME)));
   }
 
   @Test
-  public void whenDomainPresenceLacksClaims_adminPodSpecHasNoDomainStorageVolume() {
+  void whenDomainPresenceLacksClaims_adminPodSpecHasNoDomainStorageVolume() {
     assertThat(getVolumeWithName(getCreatedPod(), STORAGE_VOLUME_NAME), nullValue());
   }
 
   @Test
-  public void createdPod_hasConfigMapVolume() {
+  void createdPod_hasConfigMapVolume() {
     V1Volume credentialsVolume = getVolumeWithName(getCreatedPod(), CONFIGMAP_VOLUME_NAME);
 
     assertThat(credentialsVolume.getConfigMap().getName(), equalTo(SCRIPT_CONFIG_MAP_NAME));
@@ -1121,7 +1121,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenPodCreated_hasExpectedLabels() {
+  void whenPodCreated_hasExpectedLabels() {
     assertThat(
         getCreatedPod().getMetadata().getLabels(),
         allOf(
@@ -1132,7 +1132,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenPodCreated_containerUsesListenPort() {
+  void whenPodCreated_containerUsesListenPort() {
     final V1ContainerPort plainPort = getContainerPort("default");
 
     assertThat(plainPort, notNullValue());
@@ -1146,7 +1146,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenPodCreatedWithSslPort_containerUsesIt() {
+  void whenPodCreatedWithSslPort_containerUsesIt() {
     domainTopology.getServerConfig(serverName).setSslListenPort(SSL_PORT);
     final V1ContainerPort sslPort = getContainerPort("default-secure");
 
@@ -1156,7 +1156,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenPodCreatedWithAdminPortEnabled__containerUsesIt() {
+  void whenPodCreatedWithAdminPortEnabled__containerUsesIt() {
     final Integer adminPort = 9002;
     domainTopology.getServerConfig(serverName).setAdminPort(adminPort);
     final V1ContainerPort sslPort = getContainerPort("default-admin");
@@ -1178,12 +1178,12 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenPodHasUnknownCustomerLabel_ignoreIt() {
+  void whenPodHasUnknownCustomerLabel_ignoreIt() {
     verifyPodNotReplacedWhen(pod -> pod.getMetadata().putLabelsItem("customer.label", "value"));
   }
 
   @Test
-  public void whenPodLacksExpectedCustomerLabel_addIt() {
+  void whenPodLacksExpectedCustomerLabel_addIt() {
     initializeExistingPod();
     configurator.withPodLabel("customer.label", "value");
 
@@ -1193,7 +1193,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenPodLacksExpectedCustomerAnnotations_addIt() {
+  void whenPodLacksExpectedCustomerAnnotations_addIt() {
     initializeExistingPod();
     configurator.withPodAnnotation("customer.annotation", "value");
 
@@ -1203,7 +1203,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenPodCustomerLabelHasBadValue_replaceIt() {
+  void whenPodCustomerLabelHasBadValue_replaceIt() {
     configurator.withPodLabel("customer.label", "value");
     misconfigurePod(pod -> pod.getMetadata().putLabelsItem("customer.label", "badvalue"));
 
@@ -1213,7 +1213,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenPodCustomerAnnotationHasBadValue_replaceIt() {
+  void whenPodCustomerAnnotationHasBadValue_replaceIt() {
     configurator.withPodAnnotation("customer.annotation", "value");
     misconfigurePod(pod -> pod.getMetadata().putAnnotationsItem("customer.annotation", "badvalue"));
 
@@ -1223,7 +1223,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenPodLacksExpectedCustomerLabelAndRequestRequirement_replaceIt() {
+  void whenPodLacksExpectedCustomerLabelAndRequestRequirement_replaceIt() {
     initializeExistingPod();
 
     configurator.withPodLabel("expected.label", "value").withRequestRequirement("widgets", "10");
@@ -1259,12 +1259,12 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenPodHasUnknownCustomerAnnotations_ignoreIt() {
+  void whenPodHasUnknownCustomerAnnotations_ignoreIt() {
     verifyPodNotReplacedWhen(pod -> pod.getMetadata().putAnnotationsItem("annotation", "value"));
   }
 
   @Test
-  public void whenConfigurationModifiesPodSecurityContext_replacePod() {
+  void whenConfigurationModifiesPodSecurityContext_replacePod() {
     initializeExistingPod();
 
     configurator.withPodSecurityContext(new V1PodSecurityContext().runAsGroup(12345L));
@@ -1273,7 +1273,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenConfigurationAddsNodeSelector_replacePod() {
+  void whenConfigurationAddsNodeSelector_replacePod() {
     initializeExistingPod();
 
     configurator.withNodeSelector("key", "value");
@@ -1282,12 +1282,12 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenNullVsEmptyNodeSelector_dontReplaceIt() {
+  void whenNullVsEmptyNodeSelector_dontReplaceIt() {
     verifyPodNotReplacedWhen(pod -> pod.getSpec().setNodeSelector(null));
   }
 
   @Test
-  public void whenConfigurationModifiesContainerSecurityContext_replacePod() {
+  void whenConfigurationModifiesContainerSecurityContext_replacePod() {
     initializeExistingPod();
 
     configurator.withContainerSecurityContext(new V1SecurityContext().runAsGroup(9876L));
@@ -1296,7 +1296,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenPodLivenessProbeSettingsChanged_replacePod() {
+  void whenPodLivenessProbeSettingsChanged_replacePod() {
     initializeExistingPod();
 
     configurator.withDefaultLivenessProbeSettings(8, 7, 6);
@@ -1305,7 +1305,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenPodReadinessProbeSettingsChanged_replacePod() {
+  void whenPodReadinessProbeSettingsChanged_replacePod() {
     initializeExistingPod();
 
     configurator.withDefaultReadinessProbeSettings(5, 4, 3);
@@ -1314,7 +1314,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenPodRequestRequirementChanged_replacePod() {
+  void whenPodRequestRequirementChanged_replacePod() {
     initializeExistingPod();
 
     configurator.withRequestRequirement("resource", "5");
@@ -1323,12 +1323,12 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenPodRequestRequirementsEmptyVsNull_dontReplaceIt() {
+  void whenPodRequestRequirementsEmptyVsNull_dontReplaceIt() {
     verifyPodNotReplacedWhen(pod -> pod.getSpec().getContainers().get(0).resources(null));
   }
 
   @Test
-  public void whenPodLimitRequirementChanged_replacePod() {
+  void whenPodLimitRequirementChanged_replacePod() {
     initializeExistingPod();
 
     configurator.withLimitRequirement("limit", "7");
@@ -1341,7 +1341,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenExistingPodSpecHasK8sVolume_ignoreIt() {
+  void whenExistingPodSpecHasK8sVolume_ignoreIt() {
     verifyPodNotReplacedWhen(
         (pod) -> {
           pod.getSpec().addVolumesItem(new V1Volume().name("k8s"));
@@ -1354,7 +1354,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenExistingPodSpecHasK8sVolumeMount_ignoreIt() {
+  void whenExistingPodSpecHasK8sVolumeMount_ignoreIt() {
     verifyPodNotReplacedWhen(
         (pod) ->
             getSpecContainer(pod)
@@ -1365,7 +1365,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenPodConfigurationAddsVolume_replacePod() {
+  void whenPodConfigurationAddsVolume_replacePod() {
     initializeExistingPod();
 
     configureServer().withAdditionalVolume("dummy", "/dummy");
@@ -1374,7 +1374,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenPodConfigurationAddsImagePullSecret_replacePod() {
+  void whenPodConfigurationAddsImagePullSecret_replacePod() {
     initializeExistingPod();
 
     configureDomain().withDefaultImagePullSecrets(new V1LocalObjectReference().name("secret"));
@@ -1383,7 +1383,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenPodConfigurationAddsVolumeMount_replacePod() {
+  void whenPodConfigurationAddsVolumeMount_replacePod() {
     initializeExistingPod();
 
     configureServer().withAdditionalVolumeMount("dummy", "/dummy");
@@ -1392,7 +1392,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenPodConfigurationChangesImageName_replacePod() {
+  void whenPodConfigurationChangesImageName_replacePod() {
     initializeExistingPod();
 
     configureDomain().withDefaultImage(VERSIONED_IMAGE);
@@ -1401,7 +1401,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenPodConfigurationChangesImagePullPolicy_replacePod() {
+  void whenPodConfigurationChangesImagePullPolicy_replacePod() {
     initializeExistingPod();
 
     configureDomain().withDefaultImagePullPolicy("NONE");
@@ -1410,7 +1410,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainConfigurationAddsRestartVersion_replacePod() {
+  void whenDomainConfigurationAddsRestartVersion_replacePod() {
     initializeExistingPod();
 
     configureDomain().withRestartVersion("123");
@@ -1419,7 +1419,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenServerConfigurationAddsRestartVersion_replacePod() {
+  void whenServerConfigurationAddsRestartVersion_replacePod() {
     initializeExistingPod();
 
     configureServer().withRestartVersion("123");
@@ -1428,7 +1428,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenServerConfigurationAddsIntrospectionVersion_patchPod() {
+  void whenServerConfigurationAddsIntrospectionVersion_patchPod() {
     initializeExistingPod();
 
     configurator.withIntrospectVersion("123");
@@ -1440,7 +1440,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenServerConfigurationIntrospectionVersionTheSame_dontPatchPod() {
+  void whenServerConfigurationIntrospectionVersionTheSame_dontPatchPod() {
     initializeExistingPodWithIntrospectVersion("123");
 
     configurator.withIntrospectVersion("123");
@@ -1449,7 +1449,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenServerListenPortChanged_replacePod() {
+  void whenServerListenPortChanged_replacePod() {
     initializeExistingPod();
 
     setServerPort(12345);
@@ -1458,7 +1458,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenServerAddsNap_replacePod() {
+  void whenServerAddsNap_replacePod() {
     initializeExistingPod();
 
     getServerTopology().addNetworkAccessPoint(new NetworkAccessPoint("nap1", "TCP", 1234, 9001));
@@ -1467,7 +1467,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenMiiSecretsHashChanged_replacePod() {
+  void whenMiiSecretsHashChanged_replacePod() {
     testSupport.addToPacket(SECRETS_MD_5, "originalSecret");
     initializeExistingPod();
 
@@ -1477,7 +1477,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenMiiDomainZipHashChanged_replacePod() {
+  void whenMiiDomainZipHashChanged_replacePod() {
     testSupport.addToPacket(DOMAINZIP_HASH, "originalSecret");
     initializeExistingPod();
 
@@ -1487,14 +1487,14 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenMiiDynamicUpdateDynamicChangesOnlyButOnlineUpdateDisabled_replacePod() {
+  void whenMiiDynamicUpdateDynamicChangesOnlyButOnlineUpdateDisabled_replacePod() {
     initializeMiiUpdateTest(MII_DYNAMIC_UPDATE_SUCCESS);
 
     verifyPodReplaced();
   }
 
   @Test
-  public void whenMiiDynamicUpdateDynamicChangesOnly_dontReplacePod() {
+  void whenMiiDynamicUpdateDynamicChangesOnly_dontReplacePod() {
     configureDomain().withMIIOnlineUpdate();
     initializeMiiUpdateTest(MII_DYNAMIC_UPDATE_SUCCESS);
 
@@ -1517,7 +1517,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenMiiDynamicUpdateDynamicChangesOnly_updateDomainZipHash() {
+  void whenMiiDynamicUpdateDynamicChangesOnly_updateDomainZipHash() {
     configureDomain().withMIIOnlineUpdate();
     initializeMiiUpdateTest(MII_DYNAMIC_UPDATE_SUCCESS);
 
@@ -1527,7 +1527,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenMiiOnlineUpdateSettingEnabled_dontReplacePod() {
+  void whenMiiOnlineUpdateSettingEnabled_dontReplacePod() {
     testSupport.addToPacket(DOMAINZIP_HASH, "originalZip");
     disableAutoIntrospectOnNewMiiPods();
     initializeExistingPod();
@@ -1541,7 +1541,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenMiiNonDynamicUpdateDynamicChangesCommitOnly_dontReplacePod() {
+  void whenMiiNonDynamicUpdateDynamicChangesCommitOnly_dontReplacePod() {
     configureDomain().withMIIOnlineUpdate();
     initializeMiiUpdateTest(MII_DYNAMIC_UPDATE_RESTART_REQUIRED);
 
@@ -1549,7 +1549,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenMiiNonDynamicUpdateDynamicChangesCommitOnly_addRestartRequiredLabel() {
+  void whenMiiNonDynamicUpdateDynamicChangesCommitOnly_addRestartRequiredLabel() {
     configureDomain().withMIIOnlineUpdate();
     initializeMiiUpdateTest(MII_DYNAMIC_UPDATE_RESTART_REQUIRED);
 
@@ -1557,7 +1557,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenMiiNonDynamicUpdateDynamicChangesCommitAndRoll_replacePod() {
+  void whenMiiNonDynamicUpdateDynamicChangesCommitAndRoll_replacePod() {
     configureDomain().withMIIOnlineUpdateOnDynamicChangesUpdateAndRoll();
     initializeMiiUpdateTest(MII_DYNAMIC_UPDATE_RESTART_REQUIRED);
 
@@ -1569,7 +1569,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenNoPod_onFiveHundred() {
+  void whenNoPod_onFiveHundred() {
     testSupport.addRetryStrategy(retryStrategy);
     testSupport.failOnCreate(KubernetesTestSupport.POD, getPodName(), NS, 500);
 
@@ -1582,7 +1582,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenCompliantPodExists_logIt() {
+  void whenCompliantPodExists_logIt() {
     initializeExistingPod();
     testSupport.runSteps(getStepFactory(), terminalStep);
 
@@ -1741,14 +1741,14 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   abstract List<String> createStartCommand();
 
   @Test
-  public void whenDomainPresenceInfoLacksImageName_createdPodUsesDefaultImage() {
+  void whenDomainPresenceInfoLacksImageName_createdPodUsesDefaultImage() {
     configureDomain().withDefaultImage(null);
 
     assertThat(getCreatedPodSpecContainer().getImage(), equalTo(DEFAULT_IMAGE));
   }
 
   @Test
-  public void verifyStandardVolumes() {
+  void verifyStandardVolumes() {
     assertThat(
         getCreatedPod().getSpec().getVolumes(),
         allOf(hasItem(volume(INTROSPECTOR_VOLUME, UID + INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX)),
@@ -1757,7 +1757,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenIntrospectionCreatesMultipleConfigMaps_createCorrespondingVolumes() {
+  void whenIntrospectionCreatesMultipleConfigMaps_createCorrespondingVolumes() {
     testSupport.addToPacket(NUM_CONFIG_MAPS, "3");
 
     assertThat(
@@ -1768,7 +1768,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasAdditionalVolumes_createPodWithThem() {
+  void whenDomainHasAdditionalVolumes_createPodWithThem() {
     getConfigurator()
         .withAdditionalVolume("volume1", "/source-path1")
         .withAdditionalVolume("volume2", "/source-path2");
@@ -1779,7 +1779,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasAdditionalPvClaimVolume_createPodWithIt() {
+  void whenDomainHasAdditionalPvClaimVolume_createPodWithIt() {
     getConfigurator()
         .withAdditionalPvClaimVolume("volume1", "myPersistentVolumeClaim");
 
@@ -1789,7 +1789,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasAdditionalVolumeMounts_createAdminPodWithThem() {
+  void whenDomainHasAdditionalVolumeMounts_createAdminPodWithThem() {
     getConfigurator()
         .withAdditionalVolumeMount("volume1", "/destination-path1")
         .withAdditionalVolumeMount("volume2", "/destination-path2");
@@ -1801,7 +1801,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasAffinity_createPodWithIt() {
+  void whenDomainHasAffinity_createPodWithIt() {
     getConfigurator()
         .withAffinity(affinity);
 
@@ -1811,7 +1811,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenServerHasAffinity_createPodWithIt() {
+  void whenServerHasAffinity_createPodWithIt() {
     configureServer()
         .withAffinity(affinity);
 
@@ -1821,7 +1821,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasNodeSelector_createPodWithIt() {
+  void whenDomainHasNodeSelector_createPodWithIt() {
     getConfigurator()
         .withNodeSelector("os_arch", "x86_64");
 
@@ -1831,7 +1831,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenServerHasNodeSelector_createPodWithIt() {
+  void whenServerHasNodeSelector_createPodWithIt() {
     configureServer()
         .withNodeSelector("os_arch", "x86_64");
 
@@ -1841,7 +1841,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasNodeName_createPodWithIt() {
+  void whenDomainHasNodeName_createPodWithIt() {
     getConfigurator()
         .withNodeName("kube-01");
 
@@ -1851,7 +1851,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenServerHasNodeName_createPodWithIt() {
+  void whenServerHasNodeName_createPodWithIt() {
     configureServer()
         .withNodeName("kube-01");
 
@@ -1861,7 +1861,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasSchedulerName_createPodWithIt() {
+  void whenDomainHasSchedulerName_createPodWithIt() {
     getConfigurator()
         .withSchedulerName("my-scheduler");
 
@@ -1871,7 +1871,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenServerHasSchedulerName_createPodWithIt() {
+  void whenServerHasSchedulerName_createPodWithIt() {
     configureServer()
         .withSchedulerName("my-scheduler");
 
@@ -1881,7 +1881,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasRuntimeClassName_createPodWithIt() {
+  void whenDomainHasRuntimeClassName_createPodWithIt() {
     getConfigurator()
         .withRuntimeClassName("RuntimeClassName");
 
@@ -1891,7 +1891,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenServerHasRuntimeClassName_createPodWithIt() {
+  void whenServerHasRuntimeClassName_createPodWithIt() {
     configureServer()
         .withRuntimeClassName("RuntimeClassName");
 
@@ -1901,7 +1901,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasPriorityClassName_createPodWithIt() {
+  void whenDomainHasPriorityClassName_createPodWithIt() {
     getConfigurator()
         .withPriorityClassName("PriorityClassName");
 
@@ -1911,7 +1911,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenServerHasPriorityClassName_createPodWithIt() {
+  void whenServerHasPriorityClassName_createPodWithIt() {
     configureServer()
         .withPriorityClassName("PriorityClassName");
 
@@ -1921,7 +1921,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasRestartPolicy_createPodWithIt() {
+  void whenDomainHasRestartPolicy_createPodWithIt() {
     getConfigurator()
         .withRestartPolicy("Always");
 
@@ -1931,7 +1931,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenServerHasRestartPolicy_createPodWithIt() {
+  void whenServerHasRestartPolicy_createPodWithIt() {
     configureServer()
         .withRestartPolicy("Always");
 
@@ -1941,7 +1941,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasPodSecurityContext_createPodWithIt() {
+  void whenDomainHasPodSecurityContext_createPodWithIt() {
     getConfigurator()
         .withPodSecurityContext(podSecurityContext);
 
@@ -1951,7 +1951,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenServerHasPodSecurityContext_createPodWithIt() {
+  void whenServerHasPodSecurityContext_createPodWithIt() {
     configureServer()
         .withPodSecurityContext(podSecurityContext);
 
@@ -1961,7 +1961,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasContainerSecurityContext_createContainersWithIt() {
+  void whenDomainHasContainerSecurityContext_createContainersWithIt() {
     getConfigurator()
         .withContainerSecurityContext(containerSecurityContext);
 
@@ -1972,7 +1972,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenServerHasContainerSecurityContext_createContainersWithIt() {
+  void whenServerHasContainerSecurityContext_createContainersWithIt() {
     configureServer()
         .withContainerSecurityContext(containerSecurityContext);
 
@@ -1983,7 +1983,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenServerHasResources_createContainersWithThem() {
+  void whenServerHasResources_createContainersWithThem() {
     configureServer()
         .withLimitRequirement("cpu", "1Gi")
         .withRequestRequirement("memory", "250m");
@@ -1995,7 +1995,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasResources_createContainersWithThem() {
+  void whenDomainHasResources_createContainersWithThem() {
     getConfigurator()
         .withLimitRequirement("cpu", "1Gi")
         .withRequestRequirement("memory", "250m");
@@ -2007,7 +2007,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenPodCreated_createPodWithOwnerReference() {
+  void whenPodCreated_createPodWithOwnerReference() {
     V1OwnerReference expectedReference = new V1OwnerReference()
         .apiVersion(KubernetesConstants.DOMAIN_GROUP + "/" + KubernetesConstants.DOMAIN_VERSION)
         .kind(KubernetesConstants.DOMAIN)
@@ -2020,7 +2020,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
 
 
   @Test
-  public void whenDomainHomeChanged_domainRollStartEventCreatedWithCorrectMessage()
+  void whenDomainHomeChanged_domainRollStartEventCreatedWithCorrectMessage()
       throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
     initializeExistingPod();
     getConfiguredDomainSpec().setDomainHome("adfgg");
@@ -2035,7 +2035,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHomeChanged_domainRollStartEventCreatedWithCorrectNS()
+  void whenDomainHomeChanged_domainRollStartEventCreatedWithCorrectNS()
       throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
     initializeExistingPod();
     getConfiguredDomainSpec().setDomainHome("adfgg");
@@ -2047,7 +2047,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHomeChanged_butEventAlreadyGenerated_dontCreateDomainRollStartEvent()
+  void whenDomainHomeChanged_butEventAlreadyGenerated_dontCreateDomainRollStartEvent()
       throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
     initializeExistingPod();
     testSupport.addToPacket(DOMAIN_ROLL_START_EVENT_GENERATED, "true");
@@ -2062,7 +2062,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenImageChanged_domainRollStartEventCreatedWithCorrectMessage()
+  void whenImageChanged_domainRollStartEventCreatedWithCorrectMessage()
       throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
     initializeExistingPod();
     getConfiguredDomainSpec().setImage("adfgg");
@@ -2077,7 +2077,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenImageChanged_expectedLogMessageFound()
+  void whenImageChanged_expectedLogMessageFound()
       throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
     consoleHandlerMemento.collectLogMessages(logRecords, getDomainRollStartingKey());
     initializeExistingPod();
@@ -2090,7 +2090,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenInitContainerLivenessProbeChanged_domainRollStartEventCreatedWithCorrectMessage() {
+  void whenInitContainerLivenessProbeChanged_domainRollStartEventCreatedWithCorrectMessage() {
     initializeExistingPod();
     getConfigurator()
         .withContainer(new V1Container().livenessProbe(new V1Probe().periodSeconds(123)));
@@ -2105,7 +2105,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDefaultReadinessProbeChanged_domainRollStartEventCreatedWithCorrectMessage() {
+  void whenDefaultReadinessProbeChanged_domainRollStartEventCreatedWithCorrectMessage() {
     initializeExistingPod();
     getConfigurator()
         .withDefaultReadinessProbeSettings(12, 23, 45);
@@ -2121,7 +2121,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDefaultLivenessProbeChanged_domainRollStartEventCreatedWithCorrectMessage() {
+  void whenDefaultLivenessProbeChanged_domainRollStartEventCreatedWithCorrectMessage() {
     initializeExistingPod();
     getConfigurator()
         .withDefaultLivenessProbeSettings(12, 23, 45);
@@ -2137,7 +2137,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainZipHashChanged_domainRollStartEventCreatedWithCorrectMessage() {
+  void whenDomainZipHashChanged_domainRollStartEventCreatedWithCorrectMessage() {
     initializeExistingPod();
     disableAutoIntrospectOnNewMiiPods();
     testSupport.addToPacket(DOMAINZIP_HASH, "1234");
@@ -2152,7 +2152,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainZipHashChanged_butIsMIIDynamicUpdate_dontCreateDomainRollStartEvent() {
+  void whenDomainZipHashChanged_butIsMIIDynamicUpdate_dontCreateDomainRollStartEvent() {
     initializeExistingPod();
     disableAutoIntrospectOnNewMiiPods();
     testSupport.addToPacket(DOMAINZIP_HASH, "1234");
@@ -2169,7 +2169,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenImageDomainHomeAndRestartVersionChanged_expectedLogMessageFound()
+  void whenImageDomainHomeAndRestartVersionChanged_expectedLogMessageFound()
       throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
     consoleHandlerMemento.collectLogMessages(logRecords, getDomainRollStartingKey());
     initializeExistingPod();
@@ -2184,7 +2184,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenImageDomainHomeAndRestartVersionChanged_domainRollStartEventCreatedWithCorrectMessage()
+  void whenImageDomainHomeAndRestartVersionChanged_domainRollStartEventCreatedWithCorrectMessage()
       throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
     consoleHandlerMemento.collectLogMessages(logRecords, getDomainRollStartingKey());
     initializeExistingPod();
@@ -2211,7 +2211,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenImageDomainHomeAndWebLogicZipHashChanged_domainRollStartEventCreatedWithCorrectMessage()
+  void whenImageDomainHomeAndWebLogicZipHashChanged_domainRollStartEventCreatedWithCorrectMessage()
       throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
     consoleHandlerMemento.collectLogMessages(logRecords, getDomainRollStartingKey());
     initializeExistingPod();
@@ -2240,7 +2240,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenInitContainerLivenessProbeAndWebLogicZipHashChanged_domainRollStartEventCreatedWithCorrectMessage() {
+  void whenInitContainerLivenessProbeAndWebLogicZipHashChanged_domainRollStartEventCreatedWithCorrectMessage() {
     initializeExistingPod();
     getConfigurator()
         .withContainer(new V1Container().livenessProbe(new V1Probe().periodSeconds(123)));

@@ -91,7 +91,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Verify the JMS and WLDF system resources are overridden with values from override files")
 @IntegrationTest
-public class ItSystemResOverrides {
+class ItSystemResOverrides {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
@@ -171,7 +171,7 @@ public class ItSystemResOverrides {
    */
   @Test
   @DisplayName("Test JMS and WLDF system resources override")
-  public void testJmsWldfSystemResourceOverride() {
+  void testJmsWldfSystemResourceOverride() {
 
     //store the pod creation timestamps
     storePodCreationTimestamps();
