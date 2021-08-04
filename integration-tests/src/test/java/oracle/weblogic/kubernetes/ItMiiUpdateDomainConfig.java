@@ -249,7 +249,7 @@ class ItMiiUpdateDomainConfig {
   @Test
   @Order(0)
   @DisplayName("Check environment variable with special characters")
-  public void testMiiCustomEnv() {
+  void testMiiCustomEnv() {
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
@@ -298,7 +298,7 @@ class ItMiiUpdateDomainConfig {
   @Test
   @Order(1)
   @DisplayName("Check the server logs are written to PersistentVolume")
-  public void testMiiServerLogsAreOnPV() {
+  void testMiiServerLogsAreOnPV() {
     // check server logs are written on PV and look for string RUNNING in log
     checkLogsOnPV("grep RUNNING /shared/logs/" + adminServerName + ".log", adminServerPodName);
   }
@@ -311,7 +311,7 @@ class ItMiiUpdateDomainConfig {
   @Test
   @Order(2)
   @DisplayName("Check the HTTP server logs are written to PersistentVolume")
-  public void testMiiHttpServerLogsAreOnPV() {
+  void testMiiHttpServerLogsAreOnPV() {
     String[] podNames = {managedServerPrefix + "1", managedServerPrefix + "2"};
     for (String pod : podNames) {
       String curlCmd = "for i in {1..100}; "
@@ -348,7 +348,7 @@ class ItMiiUpdateDomainConfig {
   @Test
   @Order(3)
   @DisplayName("Verify the pre-configured SystemResources in the domain")
-  public void testMiiCheckSystemResources() {
+  void testMiiCheckSystemResources() {
 
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
@@ -388,7 +388,7 @@ class ItMiiUpdateDomainConfig {
   @Test
   @Order(4)
   @DisplayName("Delete SystemResources from the domain")
-  public void testMiiDeleteSystemResources() {
+  void testMiiDeleteSystemResources() {
 
     String configMapName = "deletesysrescm";
     createConfigMapAndVerify(
@@ -453,7 +453,7 @@ class ItMiiUpdateDomainConfig {
   @Test
   @Order(5)
   @DisplayName("Add new JDBC/JMS SystemResources to the domain")
-  public void testMiiAddSystemResources() {
+  void testMiiAddSystemResources() {
 
     logger.info("Use same database secret created in befreAll() method");
     String configMapName = "dsjmsconfigmap";
@@ -523,7 +523,7 @@ class ItMiiUpdateDomainConfig {
   @Test
   @Order(6)
   @DisplayName("Add a dynamic cluster to the domain with default replica count")
-  public void testMiiAddDynmicClusteriWithNoReplica() {
+  void testMiiAddDynmicClusteriWithNoReplica() {
 
     // This test uses the WebLogic domain created in the BeforeAll method
     // BeforeEach method ensures that the server pods are running
@@ -583,7 +583,7 @@ class ItMiiUpdateDomainConfig {
   @Test
   @Order(7)
   @DisplayName("Add a dynamic cluster to domain with non-zero replica count")
-  public void testMiiAddDynamicCluster() {
+  void testMiiAddDynamicCluster() {
 
     // This test uses the WebLogic domain created in the BeforeAll method
     // BeforeEach method ensures that the server pods are running
@@ -660,7 +660,7 @@ class ItMiiUpdateDomainConfig {
   @Test
   @Order(8)
   @DisplayName("Add a configured cluster to the domain")
-  public void testMiiAddConfiguredCluster() {
+  void testMiiAddConfiguredCluster() {
 
     // This test uses the WebLogic domain created in the BeforeAll method
     // BeforeEach method ensures that the server pods are running
@@ -732,7 +732,7 @@ class ItMiiUpdateDomainConfig {
   @Test
   @Order(9)
   @DisplayName("Change the WebLogic Admin credential of the domain")
-  public void testMiiUpdateWebLogicCredential() {
+  void testMiiUpdateWebLogicCredential() {
     verifyUpdateWebLogicCredential(domainNamespace, domainUid, adminServerPodName,
         managedServerPrefix, replicaCount);
   }
@@ -756,7 +756,7 @@ class ItMiiUpdateDomainConfig {
   @Test
   @Order(10)
   @DisplayName("Test modification to Dynamic cluster size parameters")
-  public void testMiiUpdateDynamicClusterSize() {
+  void testMiiUpdateDynamicClusterSize() {
 
     // Scale the cluster to replica count to 5
     logger.info("[Before Patching] updating the replica count to 5");

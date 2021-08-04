@@ -150,7 +150,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Verify the introspectVersion runs the introspector")
 @IntegrationTest
 @Tag("okdenv")
-public class ItIntrospectVersion {
+class ItIntrospectVersion {
 
   private static String opNamespace = null;
   private static String introDomainNamespace = null;
@@ -240,7 +240,7 @@ public class ItIntrospectVersion {
   @Order(1)
   @Test
   @DisplayName("Test introSpectVersion starting a introspector and updating domain status")
-  public void testDomainIntrospectVersionNotRolling() {
+  void testDomainIntrospectVersionNotRolling() {
 
     final String clusterName = "mycluster";
 
@@ -576,7 +576,7 @@ public class ItIntrospectVersion {
   @Order(2)
   @Test
   @DisplayName("Test introspectVersion rolling server pods when admin server port is changed")
-  public void testDomainIntrospectVersionRolling() {
+  void testDomainIntrospectVersionRolling() {
 
     final String clusterName = "mycluster";
 
@@ -735,7 +735,7 @@ public class ItIntrospectVersion {
   @Order(3)
   @Test
   @DisplayName("Test change WebLogic admin credentials for domain running in persistent volume")
-  public void testCredentialChange() {
+  void testCredentialChange() {
 
     final String adminServerName = "admin-server";
     final String adminServerPodName = domainUid + "-" + adminServerName;
@@ -884,7 +884,7 @@ public class ItIntrospectVersion {
   @Order(4)
   @Test
   @DisplayName("Test new cluster creation on demand using WLST and introspection")
-  public void testCreateNewCluster() {
+  void testCreateNewCluster() {
 
     final String clusterName = "cl2";
 
@@ -978,7 +978,7 @@ public class ItIntrospectVersion {
   @AssumeWebLogicImage
   @Test
   @DisplayName("Verify server pods are restarted by updating image name")
-  public void testUpdateImageName() {
+  void testUpdateImageName() {
 
     final String domainNamespace = introDomainNamespace;
     final String adminServerName = "admin-server";
@@ -1063,7 +1063,7 @@ public class ItIntrospectVersion {
   @Test
   @Order(6)
   @DisplayName("Scale up cluster-1 in domain1Namespace and verify label weblogic.introspectVersion set")
-  public void testDedicatedModeSameNamespaceScale() {
+  void testDedicatedModeSameNamespaceScale() {
     final String adminServerName = "admin-server";
     final String managedServerNameBase = "managed-server";
     final String adminServerPodName = domainUid + "-" + adminServerName;
@@ -1108,7 +1108,7 @@ public class ItIntrospectVersion {
   @Test
   @Order(7)
   @DisplayName("Test to use sample scripts to explicitly initiate introspection")
-  public void tesIntrospectDomainScript() {
+  void testIntrospectDomainScript() {
     final String adminServerName = "admin-server";
     final String adminServerPodName = domainUid + "-" + adminServerName;
     final String managedServerNameBase = "managed-server";

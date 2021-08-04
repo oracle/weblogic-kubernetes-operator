@@ -80,7 +80,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Setup operator, domain, applications for cross cluster domain transaction.")
 @IntegrationTest
 @DisabledIfEnvironmentVariable(named = "TWO_CLUSTERS", matches = "false")
-public class ItIstioCrossClustersSetup {
+class ItIstioCrossClustersSetup {
 
   private static final String WDT_MODEL_FILE_DOMAIN1 = "model-crossdomaintransaction-domain1.yaml";
   private static final String WDT_MODEL_DOMAIN1_PROPS = "model-crossdomaintransaction-domain1.properties";
@@ -133,7 +133,7 @@ public class ItIstioCrossClustersSetup {
 
   @Test
   @DisplayName("Build applications and create operator and domain in cluster1")
-  public void testInitCluster1() {
+  void testInitCluster1() {
     logger.info("Creating namespace for Operator in cluster1");
     assertDoesNotThrow(() -> Kubernetes.createNamespace(op1Namespace),
         "Failed to create namespace for operator in cluster1");

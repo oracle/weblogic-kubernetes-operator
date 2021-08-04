@@ -16,11 +16,11 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class HttpAsyncTestSupportTest {
+class HttpAsyncTestSupportTest {
   private final HttpAsyncTestSupport support = new HttpAsyncTestSupport();
 
   @Test
-  public void whenNoDefinedResponse_returnNotFoundResponse() {
+  void whenNoDefinedResponse_returnNotFoundResponse() {
     assertThat(getResponse(createGetRequest("http://nowhere")).statusCode(),
           equalTo(HttpURLConnection.HTTP_NOT_FOUND));
   }
@@ -44,7 +44,7 @@ public class HttpAsyncTestSupportTest {
   }
 
   @Test
-  public void whenOneGetResponseDefined_selectIt() {
+  void whenOneGetResponseDefined_selectIt() {
     support.defineResponse(createGetRequest("http://known"), createStub(HttpResponseStub.class, 200, "It works"));
 
     assertThat(getResponse(createGetRequest("http://known")).statusCode(), equalTo(200));
@@ -52,7 +52,7 @@ public class HttpAsyncTestSupportTest {
   }
 
   @Test
-  public void whenGetAndPostRequestDefined_selectGet() {
+  void whenGetAndPostRequestDefined_selectGet() {
     support.defineResponse(createPostRequest("http://this", "abc"), createStub(HttpResponseStub.class, 200, "Got it"));
     support.defineResponse(createGetRequest("http://this"), createStub(HttpResponseStub.class, 200, "It works"));
 
@@ -60,7 +60,7 @@ public class HttpAsyncTestSupportTest {
   }
 
   @Test
-  public void whenGetAndPostRequestDefined_selectPost() {
+  void whenGetAndPostRequestDefined_selectPost() {
     support.defineResponse(createPostRequest("http://this", "abc"), createStub(HttpResponseStub.class, 200, "Got it"));
     support.defineResponse(createGetRequest("http://this"), createStub(HttpResponseStub.class, 200, "It works"));
 
@@ -68,7 +68,7 @@ public class HttpAsyncTestSupportTest {
   }
 
   @Test
-  public void whenMultipleUrlsDefined_selectMatch() {
+  void whenMultipleUrlsDefined_selectMatch() {
     support.defineResponse(createGetRequest("http://that"), createStub(HttpResponseStub.class, 200, "Wrong"));
     support.defineResponse(createGetRequest("http://this"), createStub(HttpResponseStub.class, 200, "Got it"));
 
@@ -94,7 +94,7 @@ public class HttpAsyncTestSupportTest {
   }
 
   @Test
-  public void matchingFuture_markedComplete() {
+  void matchingFuture_markedComplete() {
     support.defineResponse(createGetRequest("http://known"), createStub(HttpResponseStub.class, 200, "It works"));
 
     assertThat(support.getFuture(createGetRequest("http://known")).isDone(), is(true));

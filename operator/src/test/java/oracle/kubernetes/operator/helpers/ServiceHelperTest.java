@@ -240,7 +240,7 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
   }
 
   @Test
-  public void whenCreated_createWithOwnerReference() {
+  void whenCreated_createWithOwnerReference() {
     V1OwnerReference expectedReference = new V1OwnerReference()
         .apiVersion(KubernetesConstants.DOMAIN_GROUP + "/" + KubernetesConstants.DOMAIN_VERSION)
         .kind(KubernetesConstants.DOMAIN)
@@ -257,7 +257,7 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
   }
 
   @Test
-  public void whenCreated_modelHasServiceType() {
+  void whenCreated_modelHasServiceType() {
     V1Service model = createService();
 
     assertThat(getServiceType(model), equalTo(testFacade.getExpectedServiceType().toString()));
@@ -268,14 +268,14 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
   }
 
   @Test
-  public void whenCreated_modelKubernetesTypeIsCorrect() {
+  void whenCreated_modelKubernetesTypeIsCorrect() {
     V1Service model = createService();
 
     assertThat(OperatorServiceType.getType(model), equalTo(testFacade.getType()));
   }
 
   @Test
-  public void whenCreated_modelHasExpectedSelectors() {
+  void whenCreated_modelHasExpectedSelectors() {
     V1Service model = createService();
 
     assertThat(
@@ -287,7 +287,7 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
   }
 
   @Test
-  public void whenCreated_modelIncludesExpectedNapPorts() {
+  void whenCreated_modelIncludesExpectedNapPorts() {
     V1Service model = createService();
 
     for (Map.Entry<String, Integer> entry : testFacade.getExpectedNapPorts().entrySet()) {
@@ -300,7 +300,7 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
   }
 
   @Test
-  public void whenCreated_modelIncludesStandardListenPorts() {
+  void whenCreated_modelIncludesStandardListenPorts() {
     V1Service model = createService();
 
     assertThat(model, containsPort("default", testFacade.getExpectedListenPort()));
@@ -309,7 +309,7 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
   }
 
   @Test
-  public void whenCreated_modelIncludesExpectedNodePorts() {
+  void whenCreated_modelIncludesExpectedNodePorts() {
     V1Service model = createService();
 
     assertThat(
@@ -329,7 +329,7 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
   }
 
   @Test
-  public void onRunWithNoService_logCreatedMessage() {
+  void onRunWithNoService_logCreatedMessage() {
     runServiceHelper();
 
     assertThat(logRecords, containsInfo(testFacade.getServiceCreateLogMessage()));
@@ -340,7 +340,7 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
   }
 
   @Test
-  public void onRunWithNoService_createIt() {
+  void onRunWithNoService_createIt() {
     consoleHandlerMemento.ignoreMessage(testFacade.getServiceCreateLogMessage());
 
     runServiceHelper();
@@ -351,7 +351,7 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
   }
 
   @Test
-  public void afterRun_createdServiceHasNoDuplicatePorts() {
+  void afterRun_createdServiceHasNoDuplicatePorts() {
     consoleHandlerMemento.ignoreMessage(testFacade.getServiceCreateLogMessage());
 
     runServiceHelper();
@@ -360,7 +360,7 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
   }
 
   @Test
-  public void onFailedRun_reportFailure() {
+  void onFailedRun_reportFailure() {
     testSupport.addRetryStrategy(retryStrategy);
     testSupport.failOnResource(SERVICE, testFacade.getServiceName(), NS, 500);
 
@@ -370,7 +370,7 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
   }
 
   @Test
-  public void whenServiceCreationFailsDueToUnprocessableEntityFailure_reportInDomainStatus() {
+  void whenServiceCreationFailsDueToUnprocessableEntityFailure_reportInDomainStatus() {
     testSupport.defineResources(domainPresenceInfo.getDomain());
     testSupport.failOnResource(SERVICE, testFacade.getServiceName(), NS, new UnrecoverableErrorBuilderImpl()
         .withReason("FieldValueNotFound")
@@ -384,7 +384,7 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
   }
 
   @Test
-  public void whenServiceCreationFailsDueToUnprocessableEntityFailure_abortFiber() {
+  void whenServiceCreationFailsDueToUnprocessableEntityFailure_abortFiber() {
     testSupport.defineResources(domainPresenceInfo.getDomain());
     testSupport.failOnResource(SERVICE, testFacade.getServiceName(), NS, new UnrecoverableErrorBuilderImpl()
         .withReason("FieldValueNotFound")
@@ -401,7 +401,7 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
   }
 
   @Test
-  public void whenMatchingServiceRecordedInDomainPresence_logServiceExists() {
+  void whenMatchingServiceRecordedInDomainPresence_logServiceExists() {
     V1Service originalService = createService();
     testFacade.recordService(domainPresenceInfo, originalService);
 
@@ -411,32 +411,32 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
   }
 
   @Test
-  public void whenConfiguredLabelAdded_replaceService() {
+  void whenConfiguredLabelAdded_replaceService() {
     verifyServiceReplaced(this::configureNewLabel);
   }
 
   @Test
-  public void whenConfiguredLabelChanged_replaceService() {
+  void whenConfiguredLabelChanged_replaceService() {
     verifyServiceReplaced(this::changeConfiguredLabel);
   }
 
   @Test
-  public void whenConfiguredAnnotationAdded_replaceService() {
+  void whenConfiguredAnnotationAdded_replaceService() {
     verifyServiceReplaced(this::configureNewAnnotation);
   }
 
   @Test
-  public void whenConfiguredAnnotationChanged_replaceService() {
+  void whenConfiguredAnnotationChanged_replaceService() {
     verifyServiceReplaced(this::changeConfiguredAnnotation);
   }
 
   @Test
-  public void whenConfiguredListenPortChanged_replaceService() {
+  void whenConfiguredListenPortChanged_replaceService() {
     verifyServiceReplaced(this::changeConfiguredListenPort);
   }
 
   @Test
-  public void whenConfiguredSslListenPortChanged_replaceService() {
+  void whenConfiguredSslListenPortChanged_replaceService() {
     verifyServiceReplaced(this::changeConfiguredSslListenPort);
   }
 
@@ -499,27 +499,27 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
   }
 
   @Test
-  public void whenServiceLabelAdded_dontReplaceService() {
+  void whenServiceLabelAdded_dontReplaceService() {
     verifyServiceNotReplaced(this::addNewLabel);
   }
 
   @Test
-  public void whenServiceLabelChanged_dontReplaceService() {
+  void whenServiceLabelChanged_dontReplaceService() {
     verifyServiceNotReplaced(this::changeLabel);
   }
 
   @Test
-  public void whenServiceAnnotationAdded_dontReplaceService() {
+  void whenServiceAnnotationAdded_dontReplaceService() {
     verifyServiceNotReplaced(this::addNewAnnotation);
   }
 
   @Test
-  public void whenServiceAnnotationChanged_dontReplaceService() {
+  void whenServiceAnnotationChanged_dontReplaceService() {
     verifyServiceNotReplaced(this::changeAnnotation);
   }
 
   @Test
-  public void whenServiceListenPortChanged_dontReplaceService() {
+  void whenServiceListenPortChanged_dontReplaceService() {
     verifyServiceNotReplaced(this::changeListenPort);
   }
 

@@ -10,10 +10,10 @@ import org.junit.jupiter.api.Test;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-public class MacroSubstitutorTest {
+class MacroSubstitutorTest {
 
   @Test
-  public void testMacros() {
+  void testMacros() {
     final int ID = 123;
     final String server = "ms-1";
     final String cluster = "cluster-1";

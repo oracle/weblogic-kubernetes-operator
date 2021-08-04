@@ -18,7 +18,7 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 /** This test class verifies the behavior of the ConfigMapWatcher. */
-public class ConfigMapWatcherTest extends WatcherTestBase implements WatchListener<V1ConfigMap> {
+class ConfigMapWatcherTest extends WatcherTestBase implements WatchListener<V1ConfigMap> {
 
   private static final BigInteger INITIAL_RESOURCE_VERSION = new BigInteger("456");
 
@@ -28,7 +28,7 @@ public class ConfigMapWatcherTest extends WatcherTestBase implements WatchListen
   }
 
   @Test
-  public void initialRequest_specifiesStartingResourceVersionAndStandardLabelSelector() {
+  void initialRequest_specifiesStartingResourceVersionAndStandardLabelSelector() {
     sendInitialRequest(INITIAL_RESOURCE_VERSION);
 
     assertThat(

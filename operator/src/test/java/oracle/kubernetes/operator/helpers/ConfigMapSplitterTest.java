@@ -25,7 +25,7 @@ import static oracle.kubernetes.operator.helpers.ConfigMapSplitterTest.TargetMat
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class ConfigMapSplitterTest {
+class ConfigMapSplitterTest {
 
   private static final int TEST_DATA_LIMIT = 1000;
   private static final String UNIT_DATA = "123456789";
@@ -52,7 +52,7 @@ public class ConfigMapSplitterTest {
   }
 
   @Test
-  public void whenDataWithinLimits_createOneTargetObject() {
+  void whenDataWithinLimits_createOneTargetObject() {
     data.put("a", "aValue");
     data.put("b", "bValue");
 
@@ -63,7 +63,7 @@ public class ConfigMapSplitterTest {
   }
 
   @Test
-  public void whenDataTooLarge_createMultipleTargetObjects() {
+  void whenDataTooLarge_createMultipleTargetObjects() {
     data.put("a", "aValue");
     data.put("b", LARGE_DATA_VALUE);
 
@@ -76,7 +76,7 @@ public class ConfigMapSplitterTest {
   }
 
   @Test
-  public void whenDataTooLarge_canReconstituteSplitValue() {
+  void whenDataTooLarge_canReconstituteSplitValue() {
     data.put("a", "aValue");
     data.put("b", "123456789".repeat(250));
 
@@ -87,7 +87,7 @@ public class ConfigMapSplitterTest {
   }
 
   @Test
-  public void whenDataSplit_recordNumTargetsInFirstResult() {
+  void whenDataSplit_recordNumTargetsInFirstResult() {
     data.put("a", "aValue");
     data.put("b", "123456789".repeat(250));
 

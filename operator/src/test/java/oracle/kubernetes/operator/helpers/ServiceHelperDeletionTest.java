@@ -18,7 +18,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class ServiceHelperDeletionTest extends ServiceHelperTestBase {
+class ServiceHelperDeletionTest extends ServiceHelperTestBase {
   private static final String UID = "uid1";
   private static final String SERVER_NAME = "server1";
   private static final String SERVICE_NAME = LegalNames.toServerServiceName(UID, SERVER_NAME);
@@ -40,7 +40,7 @@ public class ServiceHelperDeletionTest extends ServiceHelperTestBase {
   }
 
   @Test
-  public void afterDeleteServiceStepRun_serviceRemovedFromKubernetes() {
+  void afterDeleteServiceStepRun_serviceRemovedFromKubernetes() {
     testSupport.defineResources(service);
 
     testSupport.runSteps(ServiceHelper.deleteServicesStep(SERVER_NAME, null));
@@ -49,7 +49,7 @@ public class ServiceHelperDeletionTest extends ServiceHelperTestBase {
   }
 
   @Test
-  public void afterDeleteServiceStepRun_removeServiceFromSko() {
+  void afterDeleteServiceStepRun_removeServiceFromSko() {
     testSupport.defineResources(service);
 
     testSupport.runSteps(ServiceHelper.deleteServicesStep(SERVER_NAME, null));
@@ -58,14 +58,14 @@ public class ServiceHelperDeletionTest extends ServiceHelperTestBase {
   }
 
   @Test
-  public void whenServiceNotFound_removeServiceFromSko() {
+  void whenServiceNotFound_removeServiceFromSko() {
     testSupport.runSteps(ServiceHelper.deleteServicesStep(SERVER_NAME, null));
 
     assertThat(domainPresenceInfo.getServerService(SERVER_NAME), nullValue());
   }
 
   @Test
-  public void whenDeleteFails_reportCompletionFailure() {
+  void whenDeleteFails_reportCompletionFailure() {
     testSupport.failOnResource(SERVICE, SERVICE_NAME, NS, HTTP_BAD_REQUEST);
 
     testSupport.runSteps(ServiceHelper.deleteServicesStep(SERVER_NAME, null));
@@ -74,14 +74,14 @@ public class ServiceHelperDeletionTest extends ServiceHelperTestBase {
   }
 
   @Test
-  public void whenDeleteServiceStepRunWithNoService_doNotSendDeleteCall() {
+  void whenDeleteServiceStepRunWithNoService_doNotSendDeleteCall() {
     testSupport.runSteps(ServiceHelper.deleteServicesStep(SERVER_NAME, null));
 
     assertThat(domainPresenceInfo.getServerService(SERVER_NAME), nullValue());
   }
 
   @Test
-  public void afterDeleteServiceStepRun_runSpecifiedNextStep() {
+  void afterDeleteServiceStepRun_runSpecifiedNextStep() {
     TerminalStep terminalStep = new TerminalStep();
 
     testSupport.runSteps(ServiceHelper.deleteServicesStep(SERVER_NAME, terminalStep));

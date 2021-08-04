@@ -15,7 +15,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class UnprocessableEntityTest {
+class UnprocessableEntityTest {
 
   private static final String KIND = "Pod";
   private static final String NAME = "sample-domain1-admin-server";
@@ -44,7 +44,7 @@ public class UnprocessableEntityTest {
   }
 
   @Test
-  public void extractReasonFromException() {
+  void extractReasonFromException() {
     ApiException exception = new ApiException(422, Collections.emptyMap(), SAMPLE_MESSAGE_BODY);
 
     FailureStatusSource builder = UnrecoverableErrorBuilderImpl.fromFailedCall(
@@ -54,7 +54,7 @@ public class UnprocessableEntityTest {
   }
 
   @Test
-  public void extractMessageFromException() {
+  void extractMessageFromException() {
     ApiException exception = new ApiException(422, Collections.emptyMap(), SAMPLE_MESSAGE_BODY);
 
     FailureStatusSource builder = UnrecoverableErrorBuilderImpl.fromFailedCall(
@@ -64,7 +64,7 @@ public class UnprocessableEntityTest {
   }
 
   @Test
-  public void constructTestException() {
+  void constructTestException() {
     ApiException exception = new UnrecoverableErrorBuilderImpl()
         .withReason("SomethingWrong")
         .withMessage("This explanation")

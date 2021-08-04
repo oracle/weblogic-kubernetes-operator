@@ -30,7 +30,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 
-public class PodHelperTest {
+class PodHelperTest {
   private static final String UID = "uid1";
   private static final String SERVER_NAME = "server1";
   private static final String POD_NAME = LegalNames.toPodName(UID, SERVER_NAME);
@@ -65,7 +65,7 @@ public class PodHelperTest {
   }
 
   @Test
-  public void afterAddingFactoryToPacket_canRetrieveIt() {
+  void afterAddingFactoryToPacket_canRetrieveIt() {
     Packet packet = new Packet();
     PodAwaiterStepFactory factory = createStub(PodAwaiterStepFactory.class);
     PodHelper.addToPacket(packet, factory);
@@ -78,7 +78,7 @@ public class PodHelperTest {
   // from the pod (if any) in the SKO.
 
   @Test
-  public void afterDeletePodStepRun_markedForDeleteInSko() {
+  void afterDeletePodStepRun_markedForDeleteInSko() {
     testSupport.defineResources(pod);
     domainPresenceInfo.setServerPod(SERVER_NAME, pod);
 
@@ -89,7 +89,7 @@ public class PodHelperTest {
   }
 
   @Test
-  public void whenDeleteFails_reportCompletionFailure() {
+  void whenDeleteFails_reportCompletionFailure() {
     testSupport.failOnResource(POD, POD_NAME, NS, HTTP_BAD_REQUEST);
     domainPresenceInfo.setServerPod(SERVER_NAME, pod);
 
@@ -99,26 +99,26 @@ public class PodHelperTest {
   }
 
   @Test
-  public void whenDeletePodStepRunWithNoPod_doNotSendDeleteCall() {
+  void whenDeletePodStepRunWithNoPod_doNotSendDeleteCall() {
     testSupport.runSteps(PodHelper.deletePodStep(SERVER_NAME, terminalStep));
 
     MatcherAssert.assertThat(domainPresenceInfo.getServerPod(SERVER_NAME), nullValue());
   }
 
   @Test
-  public void afterDeletePodStepRun_runSpecifiedNextStep() {
+  void afterDeletePodStepRun_runSpecifiedNextStep() {
     testSupport.runSteps(PodHelper.deletePodStep(SERVER_NAME, terminalStep));
 
     MatcherAssert.assertThat(terminalStep.wasRun(), is(true));
   }
 
   @Test
-  public void whenPodHasNoStatus_isNotReady() {
+  void whenPodHasNoStatus_isNotReady() {
     assertThat(PodHelper.getReadyStatus(new V1Pod()), is(false));
   }
 
   @Test
-  public void whenPodPhaseNotRunning_isNotReady() {
+  void whenPodPhaseNotRunning_isNotReady() {
     V1Pod pod = new V1Pod()
           .status(new V1PodStatus()
                 .phase("Pending")
@@ -128,7 +128,7 @@ public class PodHelperTest {
   }
 
   @Test
-  public void whenPodRunningWithOnlyNonReadyConditions_isNotReady() {
+  void whenPodRunningWithOnlyNonReadyConditions_isNotReady() {
     V1Pod pod = new V1Pod()
           .status(new V1PodStatus()
                 .phase("Running")
@@ -138,7 +138,7 @@ public class PodHelperTest {
   }
 
   @Test
-  public void whenPodRunningWithOnlyReadyConditionNotTrue_isNotReady() {
+  void whenPodRunningWithOnlyReadyConditionNotTrue_isNotReady() {
     V1Pod pod = new V1Pod()
           .status(new V1PodStatus()
                 .phase("Running")
@@ -148,7 +148,7 @@ public class PodHelperTest {
   }
 
   @Test
-  public void whenPodRunningWithOnlyReadyConditionTrue_isReady() {
+  void whenPodRunningWithOnlyReadyConditionTrue_isReady() {
     V1Pod pod = new V1Pod()
           .status(new V1PodStatus()
                 .phase("Running")

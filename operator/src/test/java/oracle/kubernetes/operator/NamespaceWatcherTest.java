@@ -17,7 +17,7 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 /** This test class verifies the behavior of the NamespaceWatcher. */
-public class NamespaceWatcherTest extends WatcherTestBase 
+class NamespaceWatcherTest extends WatcherTestBase
     implements WatchListener<V1Namespace> {
 
   private static final BigInteger INITIAL_RESOURCE_VERSION = new BigInteger("456");
@@ -28,7 +28,7 @@ public class NamespaceWatcherTest extends WatcherTestBase
   }
 
   @Test
-  public void initialRequest_specifiesStartingResourceVersionAndStandardLabelSelector() {
+  void initialRequest_specifiesStartingResourceVersionAndStandardLabelSelector() {
     sendInitialRequest(INITIAL_RESOURCE_VERSION);
 
     assertThat(

@@ -12,11 +12,10 @@ import static oracle.kubernetes.mojo.shunit2.AnsiUtils.Format.RED_FG;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 
-public class AnsiUtilsTest {
-
+class AnsiUtilsTest {
 
   @Test
-  public void removeAnsiEscapeCharacters() {
+  void removeAnsiEscapeCharacters() {
     assertThat(AnsiUtils.withoutAnsiEscapeChars("\u001B[1;31mASSERT:\u001B[0mIt didn't work"),
           equalTo("ASSERT:It didn't work"));
     assertThat(AnsiUtils.withoutAnsiEscapeChars("Ran \u001B[1;36m2\u001B[0m tests."),
@@ -26,30 +25,30 @@ public class AnsiUtilsTest {
   }
 
   @Test
-  public void formatBoldTexts() {
+  void formatBoldTexts() {
     assertThat(AnsiUtils.createFormatter(BOLD).format("sample"),
           equalTo("\u001B[1msample\u001B[0m"));
   }
 
   @Test
-  public void formatBoldText() {
+  void formatBoldText() {
     assertThat(AnsiUtils.createFormatter(BOLD).format("sample"), equalTo("\u001B[1msample\u001B[0m"));
   }
 
   @Test
-  public void formatBoldRedText() {
+  void formatBoldRedText() {
     assertThat(AnsiUtils.createFormatter(BOLD, RED_FG).format("sample"),
           equalTo("\u001B[1;31msample\u001B[0m"));
   }
 
   @Test
-  public void formatBlueText() {
+  void formatBlueText() {
     assertThat(AnsiUtils.createFormatter(BLUE_FG).format("sample"),
           equalTo("\u001B[34msample\u001B[0m"));
   }
 
   @Test
-  public void formatGreenText() {
+  void formatGreenText() {
     assertThat(AnsiUtils.createFormatter(GREEN_FG).format("sample"),
           equalTo("\u001B[32msample\u001B[0m"));
   }

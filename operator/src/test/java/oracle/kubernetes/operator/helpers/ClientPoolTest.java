@@ -19,7 +19,7 @@ import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.sameInstance;
 
-public class ClientPoolTest {
+class ClientPoolTest {
 
   private final List<Memento> mementos = new ArrayList<>();
 
@@ -35,12 +35,12 @@ public class ClientPoolTest {
   }
 
   @Test
-  public void onTake_returnApiClient() {
+  void onTake_returnApiClient() {
     assertThat(ClientPool.getInstance().take(), instanceOf(ApiClient.class));
   }
 
   @Test
-  public void afterRecycle_takeReturnsSameClient() {
+  void afterRecycle_takeReturnsSameClient() {
     ApiClient apiClient = ClientPool.getInstance().take();
     ClientPool.getInstance().recycle(apiClient);
 
@@ -48,7 +48,7 @@ public class ClientPoolTest {
   }
 
   @Test
-  public void afterDiscard_takeReturnsDifferentClient() {
+  void afterDiscard_takeReturnsDifferentClient() {
     ApiClient apiClient = ClientPool.getInstance().take();
     ClientPool.getInstance().discard(apiClient);
 

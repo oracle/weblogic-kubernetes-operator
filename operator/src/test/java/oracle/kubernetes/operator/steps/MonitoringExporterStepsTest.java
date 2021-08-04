@@ -56,7 +56,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class MonitoringExporterStepsTest {
+class MonitoringExporterStepsTest {
 
   private static final int EXPORTER_PORT = 8000;
   private static final String ADMIN_SERVER = "admin-server";

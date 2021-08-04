@@ -34,7 +34,7 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
-public class WlsDomainConfigTest {
+class WlsDomainConfigTest {
 
   // The log messages to be checked during this test
   private static final String[] LOG_KEYS = {
@@ -364,7 +364,7 @@ public class WlsDomainConfigTest {
   }
 
   @Test
-  public void verifyDomainNameLoadedFromJsonString() {
+  void verifyDomainNameLoadedFromJsonString() {
     createDomainConfig(JSON_STRING_1_CLUSTER);
 
     assertEquals("base_domain", wlsDomainConfig.getName());
@@ -375,7 +375,7 @@ public class WlsDomainConfigTest {
   }
 
   @Test
-  public void verifyServersLoadedFromJsonString() {
+  void verifyServersLoadedFromJsonString() {
     createDomainConfig(JSON_STRING_1_CLUSTER);
     Map<String, WlsClusterConfig> wlsClusterConfigList = wlsDomainConfig.getClusterConfigs();
     assertEquals(1, wlsClusterConfigList.size());
@@ -395,7 +395,7 @@ public class WlsDomainConfigTest {
   }
 
   @Test
-  public void verifyDynamicServersLoadedFromJsonString() {
+  void verifyDynamicServersLoadedFromJsonString() {
     createDomainConfig(JSON_STRING_MIXED_CLUSTER);
     WlsClusterConfig wlsClusterConfig = wlsDomainConfig.getClusterConfig("DockerCluster");
     assertEquals(2, wlsClusterConfig.getDynamicClusterSize());
@@ -433,7 +433,7 @@ public class WlsDomainConfigTest {
   }
 
   @Test
-  public void verifyMachinesLoadedFromJsonString() {
+  void verifyMachinesLoadedFromJsonString() {
     createDomainConfig(JSON_STRING_1_CLUSTER);
     Map<String, WlsMachineConfig> wlsMachineConfigList = wlsDomainConfig.getMachineConfigs();
     assertEquals(2, wlsMachineConfigList.size());
@@ -452,14 +452,14 @@ public class WlsDomainConfigTest {
   }
 
   @Test
-  public void verifyGetServerConfigsDoesNotIncludeDynamicServers() {
+  void verifyGetServerConfigsDoesNotIncludeDynamicServers() {
     createDomainConfig(JSON_STRING_MIXED_CLUSTER);
 
     assertEquals(6, wlsDomainConfig.getServerConfigs().size());
   }
 
   @Test
-  public void verifyNetworkAccessPointsInDynamicServersLoadedFromJsonString() {
+  void verifyNetworkAccessPointsInDynamicServersLoadedFromJsonString() {
     createDomainConfig(JSON_STRING_MIXED_CLUSTER);
     WlsClusterConfig wlsClusterConfig = wlsDomainConfig.getClusterConfig("DockerCluster");
     assertEquals(2, wlsClusterConfig.getDynamicClusterSize());
@@ -496,7 +496,7 @@ public class WlsDomainConfigTest {
   }
 
   @Test
-  public void verifyServerWithNoChannelLoadedFromJsonString() {
+  void verifyServerWithNoChannelLoadedFromJsonString() {
     WlsDomainConfig wlsDomainConfig = WlsDomainConfig.create(JSON_STRING_1_CLUSTER);
 
     WlsServerConfig serverConfig = wlsDomainConfig.getServerConfig("ms-1");
@@ -504,7 +504,7 @@ public class WlsDomainConfigTest {
   }
 
   @Test
-  public void verifyNetworkAccessPointsLoadedFromJsonString() {
+  void verifyNetworkAccessPointsLoadedFromJsonString() {
     createDomainConfig(JSON_STRING_1_CLUSTER);
 
     WlsServerConfig serverConfig = wlsDomainConfig.getServerConfig("ms-0");
@@ -538,7 +538,7 @@ public class WlsDomainConfigTest {
   }
 
   @Test
-  public void verifySslConfigsLoadedFromJsonString() {
+  void verifySslConfigsLoadedFromJsonString() {
     createDomainConfig(JSON_STRING_1_CLUSTER);
 
     WlsServerConfig serverConfig = wlsDomainConfig.getServerConfig("ms-0");
@@ -551,7 +551,7 @@ public class WlsDomainConfigTest {
   }
 
   @Test
-  public void verifyMultipleClustersLoadedFromJsonString() {
+  void verifyMultipleClustersLoadedFromJsonString() {
     createDomainConfig(JSON_STRING_2_CLUSTERS);
     Map<String, WlsClusterConfig> wlsClusterConfigList = wlsDomainConfig.getClusterConfigs();
     assertEquals(2, wlsClusterConfigList.size());
@@ -569,7 +569,7 @@ public class WlsDomainConfigTest {
   }
 
   @Test
-  public void verifyGetClusterConfigsDoesNotReturnNull() {
+  void verifyGetClusterConfigsDoesNotReturnNull() {
     WlsClusterConfig wlsClusterConfig = wlsDomainConfig.getClusterConfig("DockerCluster");
     assertNotNull(wlsClusterConfig);
     assertEquals(0, wlsClusterConfig.getClusterSize());
@@ -580,17 +580,17 @@ public class WlsDomainConfigTest {
   }
 
   @Test
-  public void verifyGetServerConfigsReturnNullIfNotFound() {
+  void verifyGetServerConfigsReturnNullIfNotFound() {
     assertNull(wlsDomainConfig.getServerConfig("noSuchServer"));
   }
 
   @Test
-  public void verifyGetMachineConfigsReturnNullIfNotFound() {
+  void verifyGetMachineConfigsReturnNullIfNotFound() {
     assertNull(wlsDomainConfig.getMachineConfig("noSuchMachine"));
   }
 
   @Test
-  public void whenNoClustersDefined_returnEmptyArray() {
+  void whenNoClustersDefined_returnEmptyArray() {
     support.addWlsServer("server1");
     support.addWlsServer("server2");
 
@@ -598,7 +598,7 @@ public class WlsDomainConfigTest {
   }
 
   @Test
-  public void whenOneClusterDefined_returnItsName() {
+  void whenOneClusterDefined_returnItsName() {
     support.addWlsCluster("cluster1", "ms1", "ms2", "ms3");
     support.addWlsServer("server2");
 
@@ -606,7 +606,7 @@ public class WlsDomainConfigTest {
   }
 
   @Test
-  public void whenTwoClustersDefined_returnBothNames() {
+  void whenTwoClustersDefined_returnBothNames() {
     support.addWlsCluster("cluster1", "ms1", "ms2", "ms3");
     support.addWlsCluster("cluster2", "ms4", "ms5");
 
@@ -616,7 +616,7 @@ public class WlsDomainConfigTest {
   }
 
   @Test
-  public void whenTwoClustersDefined_returnReplicaLimits() {
+  void whenTwoClustersDefined_returnReplicaLimits() {
     support.addWlsCluster("cluster1", "ms1", "ms2", "ms3");
     support.addWlsCluster("cluster2", "ms4", "ms5");
 
@@ -625,7 +625,7 @@ public class WlsDomainConfigTest {
   }
 
   @Test
-  public void whenUnknownClusterName_returnZeroReplicaLimit() {
+  void whenUnknownClusterName_returnZeroReplicaLimit() {
     assertThat(support.createDomainConfig().getReplicaLimit("cluster3"), equalTo(0));
   }
 
@@ -650,17 +650,17 @@ public class WlsDomainConfigTest {
   }
 
   @Test
-  public void whenTopologyGenerated_containsDomainValidFlag() {
+  void whenTopologyGenerated_containsDomainValidFlag() {
     assertThat(wlsDomainConfig.toTopology(), hasJsonPath("domainValid", equalTo("true")));
   }
 
   @Test
-  public void whenTopologyGenerated_containsDomainName() {
+  void whenTopologyGenerated_containsDomainName() {
     assertThat(wlsDomainConfig.toTopology(), hasJsonPath("domain.name", equalTo("test-domain")));
   }
 
   @Test
-  public void whenTopologyGenerated_containsAdminServerName() {
+  void whenTopologyGenerated_containsAdminServerName() {
     wlsDomainConfig.withAdminServer("admin-server", "admin-host", 7001);
 
     assertThat(
@@ -668,7 +668,7 @@ public class WlsDomainConfigTest {
   }
 
   @Test
-  public void whenTopologyGenerated_containsAdminServerSpec() {
+  void whenTopologyGenerated_containsAdminServerSpec() {
     wlsDomainConfig.withAdminServer("admin-server", "admin-host", 7001);
 
     assertThat(
@@ -677,7 +677,7 @@ public class WlsDomainConfigTest {
   }
 
   @Test
-  public void whenYamlGenerated_containsClusterConfig() {
+  void whenYamlGenerated_containsClusterConfig() {
     wlsDomainConfig.withCluster(new WlsClusterConfig("cluster1"));
 
     assertThat(
@@ -686,7 +686,7 @@ public class WlsDomainConfigTest {
   }
 
   @Test
-  public void whenYamlGenerated_containsClusteredServerConfigs() {
+  void whenYamlGenerated_containsClusteredServerConfigs() {
     wlsDomainConfig.withCluster(
                 new WlsClusterConfig("cluster1")
                     .addServerConfig(new WlsServerConfig("ms1", "host1", 8001))
@@ -703,28 +703,28 @@ public class WlsDomainConfigTest {
   }
 
   @Test
-  public void containsServer_returnsTrue_forExistingStandaloneServer() {
+  void containsServer_returnsTrue_forExistingStandaloneServer() {
     wlsDomainConfig.addWlsServer("ms1","host1", 8001);
 
     assertThat(wlsDomainConfig.containsServer("ms1"), equalTo(true));
   }
 
   @Test
-  public void containsServer_returnsTrue_forExistingConfiguredClusteredServer() {
+  void containsServer_returnsTrue_forExistingConfiguredClusteredServer() {
     support.addWlsCluster("cluster-1", "ms1");
 
     assertThat(support.createDomainConfig().containsServer("ms1"), equalTo(true));
   }
 
   @Test
-  public void containsServer_returnsTrue_forExistingDynamicClusterServer() {
+  void containsServer_returnsTrue_forExistingDynamicClusterServer() {
     support.addDynamicWlsCluster("cluster-1", "ms1");
 
     assertThat(support.createDomainConfig().containsServer("ms1"), equalTo(true));
   }
 
   @Test
-  public void containsServer_returnsFalse_forNonExistingServer() {
+  void containsServer_returnsFalse_forNonExistingServer() {
     support.addWlsCluster("cluster-1", "ms1");
     support.addDynamicWlsCluster("dynamic-cluster", "dyn1");
     support.addWlsServer("standalone");
@@ -733,26 +733,26 @@ public class WlsDomainConfigTest {
   }
 
   @Test
-  public void containsServer_returnsFalse_forNullServerName() {
+  void containsServer_returnsFalse_forNullServerName() {
     assertThat(wlsDomainConfig.containsServer(null), equalTo(false));
   }
 
   @Test
-  public void containsCluster_returnsFalse_forNonExistingCluster() {
+  void containsCluster_returnsFalse_forNonExistingCluster() {
     support.addWlsCluster("cluster-1", "ms1");
 
     assertThat(support.createDomainConfig().containsCluster("notthere"), equalTo(false));
   }
 
   @Test
-  public void containsCluster_returnsTrue_forExistingCluster() {
+  void containsCluster_returnsTrue_forExistingCluster() {
     support.addWlsCluster("cluster-1", "ms1");
 
     assertThat(support.createDomainConfig().containsCluster("cluster-1"), equalTo(true));
   }
 
   @Test
-  public void containsCluster_returnsFalse_forNullServerName() {
+  void containsCluster_returnsFalse_forNullServerName() {
     assertThat(wlsDomainConfig.containsCluster(null), equalTo(false));
   }
 

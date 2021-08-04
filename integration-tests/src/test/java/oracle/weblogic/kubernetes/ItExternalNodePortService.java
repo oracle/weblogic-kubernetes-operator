@@ -211,7 +211,7 @@ class ItExternalNodePortService {
    */
   @Test
   @DisplayName("Verify RMI access to WLS through NodePort Service")
-  public void testExternalRmiAccessThruNodePortService() {
+  void testExternalRmiAccessThruNodePortService() {
 
     assumeFalse(WEBLOGIC_SLIM, "Skipping RMI Tunnelling Test for slim image");
     // Build the standalone JMS Client to send and receive messages

@@ -35,9 +35,9 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 
-public class PodCompatibilityTest {
+class PodCompatibilityTest {
   @Test
-  public void whenImagesDontMatch_createErrorMessage() {
+  void whenImagesDontMatch_createErrorMessage() {
     PodCompatibility.ContainerCompatibility compatibility =
         new PodCompatibility.ContainerCompatibility(
             new V1Container().image("abcde"), new V1Container().image("cdefg"));
@@ -48,7 +48,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenLivenessProbesDontMatch_createErrorMessage() {
+  void whenLivenessProbesDontMatch_createErrorMessage() {
     PodCompatibility.ContainerCompatibility compatibility =
         new PodCompatibility.ContainerCompatibility(
             new V1Container()
@@ -64,7 +64,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenResourcesDontMatch_createErrorMessage() {
+  void whenResourcesDontMatch_createErrorMessage() {
     PodCompatibility.ContainerCompatibility compatibility =
         new PodCompatibility.ContainerCompatibility(
             new V1Container()
@@ -77,7 +77,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenPortsDontMatch_createErrorMessage() {
+  void whenPortsDontMatch_createErrorMessage() {
     PodCompatibility.ContainerCompatibility compatibility =
         new PodCompatibility.ContainerCompatibility(
             new V1Container().addPortsItem(new V1ContainerPort().containerPort(1100)),
@@ -89,7 +89,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenEnvVarsDontMatch_createErrorMessage() {
+  void whenEnvVarsDontMatch_createErrorMessage() {
     String name = "aa";
     String value = "bb";
     PodCompatibility.ContainerCompatibility compatibility =
@@ -106,7 +106,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenOnlyCertificateForEnvVarsDontMatch_dontCreateErrorMessage() {
+  void whenOnlyCertificateForEnvVarsDontMatch_dontCreateErrorMessage() {
     PodCompatibility.ContainerCompatibility compatibility =
         new PodCompatibility.ContainerCompatibility(
             new V1Container().name("test").addEnvItem(envVar(INTERNAL_OPERATOR_CERT_ENV, "bb")),
@@ -116,7 +116,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenExpectedSubsetOfActual_reportCompatible() {
+  void whenExpectedSubsetOfActual_reportCompatible() {
     CompatibilityCheck check =
         new CompatibleSets<>("letters", ImmutableSet.of("a", "b"), ImmutableSet.of("b", "c", "a"));
 
@@ -124,7 +124,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenExpectedNotSubsetOfActual_reportNotCompatible() {
+  void whenExpectedNotSubsetOfActual_reportNotCompatible() {
     CompatibilityCheck check =
         new CompatibleSets<>(
             "letters", ImmutableSet.of("a", "b", "d"), ImmutableSet.of("b", "c", "a"));
@@ -133,7 +133,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenExpectedNotSubsetOfActual_reportMissingElements() {
+  void whenExpectedNotSubsetOfActual_reportMissingElements() {
     CompatibilityCheck check =
         new CompatibleSets<>(
             "letters",
@@ -146,7 +146,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenCanBeMapsAndExpectedAndActualDifferentValues_reportChangedElements() {
+  void whenCanBeMapsAndExpectedAndActualDifferentValues_reportChangedElements() {
     CompatibilityCheck check =
         CheckFactory.create(
             "letters",
@@ -158,7 +158,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void ignoreCertForComparisons() {
+  void ignoreCertForComparisons() {
     CompatibilityCheck check =
         CheckFactory.create(
                 "envVars",
@@ -174,7 +174,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenExpectedSubmapOfActual_reportCompatible() {
+  void whenExpectedSubmapOfActual_reportCompatible() {
     CompatibilityCheck check =
         new CompatibleMaps<>(
             "letters", ImmutableMap.of("a", 1, "b", 2), ImmutableMap.of("b", 2, "c", 3, "a", 1));
@@ -183,7 +183,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenExpectedNotSubmapOfActual_reportNotCompatible() {
+  void whenExpectedNotSubmapOfActual_reportNotCompatible() {
     CompatibilityCheck check =
         new CompatibleMaps<>(
             "letters",
@@ -194,7 +194,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenExpectedNotSubmapOfActual_reportMissingElements() {
+  void whenExpectedNotSubmapOfActual_reportMissingElements() {
     CompatibilityCheck check =
         new CompatibleMaps<>(
             "letters",
@@ -207,7 +207,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenActualKeysHaveDifferentValues_reportNotCompatible() {
+  void whenActualKeysHaveDifferentValues_reportNotCompatible() {
     CompatibilityCheck check =
         new CompatibleMaps<>(
             "letters", ImmutableMap.of("a", 1, "b", 2), ImmutableMap.of("b", 5, "c", 3, "a", 1));
@@ -216,7 +216,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenActualKeysHaveDifferentValues_reportMissingElements() {
+  void whenActualKeysHaveDifferentValues_reportMissingElements() {
     CompatibilityCheck check =
         new CompatibleMaps<>(
             "letters",
@@ -229,7 +229,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenImagesDontMatch_createDomainAndPodScopeErrorMessage() {
+  void whenImagesDontMatch_createDomainAndPodScopeErrorMessage() {
     PodCompatibility.ContainerCompatibility compatibility =
         new PodCompatibility.ContainerCompatibility(
             new V1Container().image("abcde"), new V1Container().image("cdefg"));
@@ -243,7 +243,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenImagesDontMatch_dontCreateUnknownScopeErrorMessage() {
+  void whenImagesDontMatch_dontCreateUnknownScopeErrorMessage() {
     PodCompatibility.ContainerCompatibility compatibility =
         new PodCompatibility.ContainerCompatibility(
             new V1Container().image("abcde"), new V1Container().image("cdefg"));
@@ -254,7 +254,7 @@ public class PodCompatibilityTest {
 
 
   @Test
-  public void whenImagePullPoliciesDontMatch_createDomainAndPodScopeErrorMessage() {
+  void whenImagePullPoliciesDontMatch_createDomainAndPodScopeErrorMessage() {
     PodCompatibility.ContainerCompatibility compatibility =
         new PodCompatibility.ContainerCompatibility(
             new V1Container().imagePullPolicy("abcde"), new V1Container().imagePullPolicy("cdefg"));
@@ -268,7 +268,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenImagePullPoliciesDontMatch_dontCreateUnknownScopeErrorMessage() {
+  void whenImagePullPoliciesDontMatch_dontCreateUnknownScopeErrorMessage() {
     PodCompatibility.ContainerCompatibility compatibility =
         new PodCompatibility.ContainerCompatibility(
             new V1Container().imagePullPolicy("abcde"), new V1Container().imagePullPolicy("cdefg"));
@@ -279,7 +279,7 @@ public class PodCompatibilityTest {
 
 
   @Test
-  public void whenVolumeMountsDontMatch_createUnknownAndPodScopeErrorMessage() {
+  void whenVolumeMountsDontMatch_createUnknownAndPodScopeErrorMessage() {
     PodCompatibility.ContainerCompatibility compatibility =
         new PodCompatibility.ContainerCompatibility(
             new V1Container().name("c1").addVolumeMountsItem(new V1VolumeMount().name("V1").mountPath("abcde")),
@@ -294,7 +294,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenVolumeMountsDontMatch_dontCreateDomainScopeErrorMessage() {
+  void whenVolumeMountsDontMatch_dontCreateDomainScopeErrorMessage() {
     PodCompatibility.ContainerCompatibility compatibility =
         new PodCompatibility.ContainerCompatibility(
             new V1Container().name("c1").addVolumeMountsItem(new V1VolumeMount().name("V1").mountPath("abcde")),
@@ -305,7 +305,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenRestartVersionsDontMatch_createDomainAndPodScopeErrorMessage() {
+  void whenRestartVersionsDontMatch_createDomainAndPodScopeErrorMessage() {
     PodCompatibility.PodMetadataCompatibility compatibility =
         new PodCompatibility.PodMetadataCompatibility(
             new V1ObjectMeta().putLabelsItem(LabelConstants.DOMAINRESTARTVERSION_LABEL, "12345"),
@@ -320,7 +320,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenRestartVersionsDontMatch_dontCreateUnknownScopeErrorMessage() {
+  void whenRestartVersionsDontMatch_dontCreateUnknownScopeErrorMessage() {
     PodCompatibility.PodMetadataCompatibility compatibility =
         new PodCompatibility.PodMetadataCompatibility(
             new V1ObjectMeta().putLabelsItem(LabelConstants.DOMAINRESTARTVERSION_LABEL, "12345"),
@@ -331,7 +331,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenLivenessProbesDontMatch_createDomainAndPodScopeErrorMessage() {
+  void whenLivenessProbesDontMatch_createDomainAndPodScopeErrorMessage() {
     PodCompatibility.ContainerCompatibility compatibility =
         new PodCompatibility.ContainerCompatibility(
             new V1Container()
@@ -350,7 +350,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenLivenessProbesDontMatch_dontCreateUnknownScopeErrorMessage() {
+  void whenLivenessProbesDontMatch_dontCreateUnknownScopeErrorMessage() {
     PodCompatibility.ContainerCompatibility compatibility =
         new PodCompatibility.ContainerCompatibility(
             new V1Container()
@@ -365,7 +365,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenResourcesDontMatch_dontCreateDomainScopeErrorMessage() {
+  void whenResourcesDontMatch_dontCreateDomainScopeErrorMessage() {
     PodCompatibility.ContainerCompatibility compatibility =
         new PodCompatibility.ContainerCompatibility(
             new V1Container()
@@ -377,7 +377,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenResourcesDontMatch_createUnknownAndPodScopeScopeErrorMessage() {
+  void whenResourcesDontMatch_createUnknownAndPodScopeScopeErrorMessage() {
     PodCompatibility.ContainerCompatibility compatibility =
         new PodCompatibility.ContainerCompatibility(
             new V1Container()
@@ -393,7 +393,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenPortsDontMatch_dontCreateDomainScopeErrorMessage() {
+  void whenPortsDontMatch_dontCreateDomainScopeErrorMessage() {
     PodCompatibility.ContainerCompatibility compatibility =
         new PodCompatibility.ContainerCompatibility(
             new V1Container().addPortsItem(new V1ContainerPort().containerPort(1100)),
@@ -404,7 +404,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenPortsDontMatch_createUnknownAndPodScopeErrorMessage() {
+  void whenPortsDontMatch_createUnknownAndPodScopeErrorMessage() {
     PodCompatibility.ContainerCompatibility compatibility =
         new PodCompatibility.ContainerCompatibility(
             new V1Container().addPortsItem(new V1ContainerPort().containerPort(1100)),
@@ -419,7 +419,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenEnvVarsDontMatch_dontCreateDomainScopeErrorMessage() {
+  void whenEnvVarsDontMatch_dontCreateDomainScopeErrorMessage() {
     String name = "aa";
     String value = "bb";
     PodCompatibility.ContainerCompatibility compatibility =
@@ -432,7 +432,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenEnvVarsDontMatch_createUnknownAndPodScopeErrorMessage() {
+  void whenEnvVarsDontMatch_createUnknownAndPodScopeErrorMessage() {
     String name = "aa";
     String value = "bb";
     PodCompatibility.ContainerCompatibility compatibility =
@@ -447,7 +447,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenDomainHomeEnvVarsDontMatch_createDomainAndPodScopeErrorMessage() {
+  void whenDomainHomeEnvVarsDontMatch_createDomainAndPodScopeErrorMessage() {
     String name = DOMAIN_HOME;
     String value = "/myhome";
     PodCompatibility.ContainerCompatibility compatibility =
@@ -462,7 +462,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenDomainHomeEnvVarsDontMatch_dontCreateUnknownScopeErrorMessage() {
+  void whenDomainHomeEnvVarsDontMatch_dontCreateUnknownScopeErrorMessage() {
     String name = DOMAIN_HOME;
     String value = "/myhome";
     PodCompatibility.ContainerCompatibility compatibility =
@@ -475,7 +475,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenLogHomeEnvVarsDontMatch_createDomainAndPodScopeErrorMessage() {
+  void whenLogHomeEnvVarsDontMatch_createDomainAndPodScopeErrorMessage() {
     String name = LOG_HOME;
     String value = "/myhome";
     PodCompatibility.ContainerCompatibility compatibility =
@@ -490,7 +490,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenLogHomeEnvVarsDontMatch_dontCreateUnknownScopeErrorMessage() {
+  void whenLogHomeEnvVarsDontMatch_dontCreateUnknownScopeErrorMessage() {
     String name = LOG_HOME;
     String value = "/myhome";
     PodCompatibility.ContainerCompatibility compatibility =
@@ -503,7 +503,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenOnlyCertificateForEnvVarsDontMatch_dontCreateAnyScopeErrorMessage() {
+  void whenOnlyCertificateForEnvVarsDontMatch_dontCreateAnyScopeErrorMessage() {
     PodCompatibility.ContainerCompatibility compatibility =
         new PodCompatibility.ContainerCompatibility(
             new V1Container().name("test").addEnvItem(envVar(INTERNAL_OPERATOR_CERT_ENV, "bb")),
@@ -515,7 +515,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenExpectedNotSubsetOfActual_dontReportDomainScopeMissingElements() {
+  void whenExpectedNotSubsetOfActual_dontReportDomainScopeMissingElements() {
     CompatibilityCheck check =
         new CompatibleSets<>(
             "letters",
@@ -526,7 +526,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenExpectedNotSubsetOfActual_reportUnknownAndPodScopeMissingElements() {
+  void whenExpectedNotSubsetOfActual_reportUnknownAndPodScopeMissingElements() {
     CompatibilityCheck check =
         new CompatibleSets<>(
             "letters",
@@ -542,7 +542,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenCanBeMapsAndExpectedAndActualDifferentValues_dontReportDomainScopeChangedElements() {
+  void whenCanBeMapsAndExpectedAndActualDifferentValues_dontReportDomainScopeChangedElements() {
     CompatibilityCheck check =
         CheckFactory.create(
             "letters",
@@ -553,7 +553,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenCanBeMapsAndExpectedAndActualDifferentValues_reportUnknownScopeChangedElements() {
+  void whenCanBeMapsAndExpectedAndActualDifferentValues_reportUnknownScopeChangedElements() {
     CompatibilityCheck check =
         CheckFactory.create(
             "letters",
@@ -565,7 +565,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void ignoreAllScopeCertForComparisons() {
+  void ignoreAllScopeCertForComparisons() {
     CompatibilityCheck check =
         CheckFactory.create(
             "envVars",
@@ -579,7 +579,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenExpectedNotSubmapOfActual_reportDomainScopeMissingElements() {
+  void whenExpectedNotSubmapOfActual_reportDomainScopeMissingElements() {
     CompatibilityCheck check =
         new CompatibleMaps<>(
             "env",
@@ -592,7 +592,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenExpectedNonDomainScopedNotSubmapOfActual_dontReportDomainScopeMissingElements() {
+  void whenExpectedNonDomainScopedNotSubmapOfActual_dontReportDomainScopeMissingElements() {
     CompatibilityCheck check =
         new CompatibleMaps<>(
             "letters",
@@ -605,7 +605,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenExpectedNonDomainScopedNotSubmapOfActual_dontReportUnknownScopeMissingElements() {
+  void whenExpectedNonDomainScopedNotSubmapOfActual_dontReportUnknownScopeMissingElements() {
     CompatibilityCheck check =
         new CompatibleMaps<>(
             "letters",
@@ -618,7 +618,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenExpectedNotSubmapOfActual_reportUnknownAndPodScopeMissingElements() {
+  void whenExpectedNotSubmapOfActual_reportUnknownAndPodScopeMissingElements() {
     CompatibilityCheck check =
         new CompatibleMaps<>(
             "letters",
@@ -634,7 +634,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenActualKeysHaveDifferentValues_dontReportDomainScopeAdditionalElements() {
+  void whenActualKeysHaveDifferentValues_dontReportDomainScopeAdditionalElements() {
     CompatibilityCheck check =
         new CompatibleMaps<>(
             "letters",
@@ -645,7 +645,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenActualKeysHaveDifferentValues_reportUnknownAndPodScopeMissingElements() {
+  void whenActualKeysHaveDifferentValues_reportUnknownAndPodScopeMissingElements() {
     CompatibilityCheck check =
         new CompatibleMaps<>(
             "letters",
@@ -661,7 +661,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenImagesDontMatch_andResourcesDontMatch_createDomainAScopeErrorMessageForImageOnly() {
+  void whenImagesDontMatch_andResourcesDontMatch_createDomainAScopeErrorMessageForImageOnly() {
     PodCompatibility.ContainerCompatibility compatibility =
         new PodCompatibility.ContainerCompatibility(
             new V1Container().image("abcde")
@@ -677,7 +677,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenImagesDontMatch_andResourcesDontMatch_createUnknownScopeErrorMessageForResourcesOnly() {
+  void whenImagesDontMatch_andResourcesDontMatch_createUnknownScopeErrorMessageForResourcesOnly() {
     PodCompatibility.ContainerCompatibility compatibility =
         new PodCompatibility.ContainerCompatibility(
             new V1Container().image("abcde")
@@ -693,7 +693,7 @@ public class PodCompatibilityTest {
   }
 
   @Test
-  public void whenImagesDontMatch_andResourcesDontMatch_createPodScopeErrorMessageForBoth() {
+  void whenImagesDontMatch_andResourcesDontMatch_createPodScopeErrorMessageForBoth() {
     PodCompatibility.ContainerCompatibility compatibility =
         new PodCompatibility.ContainerCompatibility(
             new V1Container().image("abcde")

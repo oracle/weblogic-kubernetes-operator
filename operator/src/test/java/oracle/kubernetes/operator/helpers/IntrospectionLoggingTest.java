@@ -26,7 +26,7 @@ import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class IntrospectionLoggingTest {
+class IntrospectionLoggingTest {
   private final Domain domain = DomainProcessorTestSetup.createTestDomain();
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
@@ -60,7 +60,7 @@ public class IntrospectionLoggingTest {
   private static final String INFO_EXTRA_2 = "still more";
 
   @Test
-  public void logIntrospectorMessages() {
+  void logIntrospectorMessages() {
     IntrospectionTestUtils.defineResources(testSupport,
           onSeparateLines(SEVERE_MESSAGE_1, WARNING_MESSAGE, INFO_MESSAGE));
 
@@ -77,7 +77,7 @@ public class IntrospectionLoggingTest {
   }
 
   @Test
-  public void whenIntrospectorMessageContainsAdditionalLines_logThem() {
+  void whenIntrospectorMessageContainsAdditionalLines_logThem() {
     String extendedInfoMessage = onSeparateLines(INFO_MESSAGE, INFO_EXTRA1, INFO_EXTRA_2);
     IntrospectionTestUtils.defineResources(testSupport, extendedInfoMessage);
 
@@ -88,7 +88,7 @@ public class IntrospectionLoggingTest {
   }
 
   @Test
-  public void whenJobLogContainsSevereError_copyToDomainStatus() {
+  void whenJobLogContainsSevereError_copyToDomainStatus() {
     IntrospectionTestUtils.defineResources(testSupport, SEVERE_MESSAGE_1);
 
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
@@ -100,7 +100,7 @@ public class IntrospectionLoggingTest {
   }
 
   @Test
-  public void whenJobLogContainsMultipleSevereErrors_copyToDomainStatus() {
+  void whenJobLogContainsMultipleSevereErrors_copyToDomainStatus() {
     IntrospectionTestUtils.defineResources(testSupport,
             onSeparateLines(SEVERE_MESSAGE_1, INFO_MESSAGE, INFO_EXTRA1, SEVERE_MESSAGE_2));
 
