@@ -66,7 +66,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  */
 @DisplayName("Verify the WebLogic server pods can run with domain created in persistent volume")
 @IntegrationTest
-public class ItFmwDomainInPVUsingWLST {
+class ItFmwDomainInPVUsingWLST {
 
   private static String dbNamespace = null;
   private static String opNamespace = null;
@@ -143,7 +143,7 @@ public class ItFmwDomainInPVUsingWLST {
    */
   @Test
   @DisplayName("Create JRF domain in PV using WLST script")
-  public void testFmwDomainInPvUsingWlst() {
+  void testFmwDomainInPvUsingWlst() {
     final String clusterName = "cluster-jrfdomain-inpv";
     final String adminServerName = "wlst-admin-server";
     final String adminServerPodName = domainUid + "-" + adminServerName;

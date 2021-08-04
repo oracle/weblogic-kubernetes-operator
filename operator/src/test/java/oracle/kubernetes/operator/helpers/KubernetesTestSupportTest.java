@@ -70,7 +70,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class KubernetesTestSupportTest {
+class KubernetesTestSupportTest {
 
   private static final String NS = "namespace1";
   private static final String POD_LOG_CONTENTS = "asdfghjkl";
@@ -94,7 +94,7 @@ public class KubernetesTestSupportTest {
   // tests for non-namespaced resources
 
   @Test
-  public void afterCreateCrd_crdExists() {
+  void afterCreateCrd_crdExists() {
     V1CustomResourceDefinition crd = createCrd("mycrd");
 
     TestResponseStep<V1CustomResourceDefinition> responseStep = new TestResponseStep<>();
@@ -104,7 +104,7 @@ public class KubernetesTestSupportTest {
   }
 
   @Test
-  public void afterCreateCrd_incrementNumCalls() {
+  void afterCreateCrd_incrementNumCalls() {
     V1CustomResourceDefinition crd = createCrd("mycrd");
 
     TestResponseStep<V1CustomResourceDefinition> responseStep = new TestResponseStep<>();
@@ -119,7 +119,7 @@ public class KubernetesTestSupportTest {
   }
 
   @Test
-  public void afterCreateCrd_crdReturnedInCallResponse() {
+  void afterCreateCrd_crdReturnedInCallResponse() {
     V1CustomResourceDefinition crd = createCrd("mycrd");
 
     TestResponseStep<V1CustomResourceDefinition> responseStep = new TestResponseStep<>();
@@ -129,7 +129,7 @@ public class KubernetesTestSupportTest {
   }
 
   @Test
-  public void whenCrdWithSameNameExists_createFails() {
+  void whenCrdWithSameNameExists_createFails() {
     testSupport.defineResources(createCrd("mycrd"));
 
     TestResponseStep<V1CustomResourceDefinition> responseStep = new TestResponseStep<>();
@@ -141,7 +141,7 @@ public class KubernetesTestSupportTest {
   }
 
   @Test
-  public void afterReplaceExistingCrd_crdExists() {
+  void afterReplaceExistingCrd_crdExists() {
     V1CustomResourceDefinition oldCrd = createCrd("mycrd");
     testSupport.defineResources(oldCrd);
 
@@ -156,7 +156,7 @@ public class KubernetesTestSupportTest {
   }
 
   @Test
-  public void afterReplaceDomainWithTimeStampEnabled_timeStampIsChanged() {
+  void afterReplaceDomainWithTimeStampEnabled_timeStampIsChanged() {
     Domain originalDomain = createDomain(NS, "domain1");
     testSupport.defineResources(originalDomain);
     testSupport.setAddCreationTimestamp(true);
@@ -170,7 +170,7 @@ public class KubernetesTestSupportTest {
   }
 
   @Test
-  public void afterReplaceDomainWithTimeStampDisabled_timeStampIsNotChanged() {
+  void afterReplaceDomainWithTimeStampDisabled_timeStampIsNotChanged() {
     Domain originalDomain = createDomain(NS, "domain1");
     testSupport.defineResources(originalDomain);
 
@@ -183,7 +183,7 @@ public class KubernetesTestSupportTest {
   }
 
   @Test
-  public void afterDomainStatusReplaced_resourceVersionIsIncremented() {
+  void afterDomainStatusReplaced_resourceVersionIsIncremented() {
     Domain originalDomain = createDomain(NS, "domain1");
     testSupport.defineResources(originalDomain);
     originalDomain.getMetadata().setResourceVersion("123");
@@ -200,7 +200,7 @@ public class KubernetesTestSupportTest {
   }
 
   @Test
-  public void afterPatchDomainWithTimeStampEnabled_timeStampIsNotChanged() {
+  void afterPatchDomainWithTimeStampEnabled_timeStampIsNotChanged() {
     Domain originalDomain = createDomain(NS, "domain1");
     testSupport.defineResources(originalDomain);
     testSupport.setAddCreationTimestamp(true);
@@ -216,7 +216,7 @@ public class KubernetesTestSupportTest {
   }
 
   @Test
-  public void afterPatchDomainAsynchronously_statusIsUnchanged() {
+  void afterPatchDomainAsynchronously_statusIsUnchanged() {
     Domain originalDomain = createDomain(NS, "domain").withStatus(new DomainStatus().withMessage("leave this"));
     testSupport.defineResources(originalDomain);
 
@@ -231,7 +231,7 @@ public class KubernetesTestSupportTest {
   }
 
   @Test
-  public void afterPatchDomainSynchronously_statusIsUnchanged() throws ApiException {
+  void afterPatchDomainSynchronously_statusIsUnchanged() throws ApiException {
     Domain originalDomain = createDomain(NS, "domain").withStatus(new DomainStatus().withMessage("leave this"));
     testSupport.defineResources(originalDomain);
 
@@ -249,7 +249,7 @@ public class KubernetesTestSupportTest {
   }
 
   @Test
-  public void afterReplaceDomainAsync_statusIsUnchanged() {
+  void afterReplaceDomainAsync_statusIsUnchanged() {
     Domain originalDomain = createDomain(NS, "domain1").withStatus(new DomainStatus().withMessage("leave this"));
     testSupport.defineResources(originalDomain);
 
@@ -268,7 +268,7 @@ public class KubernetesTestSupportTest {
   }
 
   @Test
-  public void afterReplaceDomainStatusAsync_specIsUnchanged() {
+  void afterReplaceDomainStatusAsync_specIsUnchanged() {
     Domain originalDomain = createDomain(NS, "domain1").withSpec(new DomainSpec().withReplicas(5));
     testSupport.defineResources(originalDomain);
 
@@ -281,7 +281,7 @@ public class KubernetesTestSupportTest {
   }
 
   @Test
-  public void afterReplaceDomainStatusSynchronously_specIsUnchanged() throws ApiException {
+  void afterReplaceDomainStatusSynchronously_specIsUnchanged() throws ApiException {
     Domain originalDomain = createDomain(NS, "domain1").withSpec(new DomainSpec().withReplicas(5));
     testSupport.defineResources(originalDomain);
 
@@ -297,7 +297,7 @@ public class KubernetesTestSupportTest {
   }
 
   @Test
-  public void afterCreateTokenReview_tokenReviewExists() throws ApiException {
+  void afterCreateTokenReview_tokenReviewExists() throws ApiException {
     V1TokenReview tokenReview = new V1TokenReview().metadata(new V1ObjectMeta().name("tr"));
 
     new CallBuilder().createTokenReview(tokenReview);
@@ -306,7 +306,7 @@ public class KubernetesTestSupportTest {
   }
 
   @Test
-  public void whenHttpErrorNotAssociatedWithResource_dontThrowException() throws ApiException {
+  void whenHttpErrorNotAssociatedWithResource_dontThrowException() throws ApiException {
     testSupport.failOnResource(TOKEN_REVIEW, "tr2", HTTP_BAD_REQUEST);
     V1TokenReview tokenReview = new V1TokenReview().metadata(new V1ObjectMeta().name("tr"));
 
@@ -314,7 +314,7 @@ public class KubernetesTestSupportTest {
   }
 
   @Test
-  public void whenHttpErrorAssociatedWithResource_throwException() {
+  void whenHttpErrorAssociatedWithResource_throwException() {
     testSupport.failOnResource(TOKEN_REVIEW, "tr", HTTP_BAD_REQUEST);
     V1TokenReview tokenReview = new V1TokenReview().metadata(new V1ObjectMeta().name("tr"));
 
@@ -322,7 +322,7 @@ public class KubernetesTestSupportTest {
   }
 
   @Test
-  public void afterCreateSubjectAccessReview_subjectAccessReviewExists() throws ApiException {
+  void afterCreateSubjectAccessReview_subjectAccessReviewExists() throws ApiException {
     V1SubjectAccessReview sar = new V1SubjectAccessReview().metadata(new V1ObjectMeta().name("rr"));
 
     new CallBuilder().createSubjectAccessReview(sar);
@@ -333,7 +333,7 @@ public class KubernetesTestSupportTest {
   // tests for namespaced resources
 
   @Test
-  public void afterCreatePod_podExists() {
+  void afterCreatePod_podExists() {
     V1Pod pod = createPod(NS, "mycrd");
 
     TestResponseStep<V1Pod> responseStep = new TestResponseStep<>();
@@ -347,7 +347,7 @@ public class KubernetesTestSupportTest {
   }
 
   @Test
-  public void afterCreatePodsWithSameNameAndDifferentNamespaces_bothExist() {
+  void afterCreatePodsWithSameNameAndDifferentNamespaces_bothExist() {
     V1Pod pod1 = createPod("ns1", "mycrd");
     V1Pod pod2 = createPod("ns2", "mycrd");
 
@@ -359,7 +359,7 @@ public class KubernetesTestSupportTest {
   }
 
   @Test
-  public void afterDeletePod_podsInDifferentNamespacesStillExist() {
+  void afterDeletePod_podsInDifferentNamespacesStillExist() {
     V1Pod pod1 = createPod("ns1", "mycrd");
     V1Pod pod2 = createPod("ns2", "mycrd");
     V1Pod pod3 = createPod("ns3", "another");
@@ -372,7 +372,7 @@ public class KubernetesTestSupportTest {
   }
 
   @Test
-  public void whenHttpErrorAssociatedWithResource_callResponseIsError() {
+  void whenHttpErrorAssociatedWithResource_callResponseIsError() {
     testSupport.failOnResource(POD, "pod1", "ns2", HTTP_BAD_REQUEST);
 
     TestResponseStep<Object> responseStep = new TestResponseStep<>();
@@ -383,7 +383,7 @@ public class KubernetesTestSupportTest {
   }
 
   @Test
-  public void whenHttpErrorNotAssociatedWithResource_ignoreIt() {
+  void whenHttpErrorNotAssociatedWithResource_ignoreIt() {
     testSupport.failOnResource(POD, "pod1", "ns2", HTTP_BAD_REQUEST);
 
     TestResponseStep<Object> responseStep = new TestResponseStep<>();
@@ -391,7 +391,7 @@ public class KubernetesTestSupportTest {
   }
 
   @Test
-  public void listPodSelectsByLabel() {
+  void listPodSelectsByLabel() {
     V1Pod pod1 = createLabeledPod("pod1", "ns1", ImmutableMap.of("k1", "v1", "k2", "v2"));
     V1Pod pod2 = createLabeledPod("pod2", "ns1", ImmutableMap.of("k1", "v2"));
     V1Pod pod3 = createLabeledPod("pod3", "ns1", ImmutableMap.of("k1", "v1", "k2", "v3"));
@@ -410,7 +410,7 @@ public class KubernetesTestSupportTest {
   }
 
   @Test
-  public void afterPatchPodWithoutExistingLabel_podHasLabel() {
+  void afterPatchPodWithoutExistingLabel_podHasLabel() {
     V1Pod pod1 = createLabeledPod("pod1", "ns1", ImmutableMap.of());
     testSupport.defineResources(pod1);
 
@@ -426,7 +426,7 @@ public class KubernetesTestSupportTest {
   }
 
   @Test
-  public void afterPatchPodWithExistingLabel_labelValueChanged() {
+  void afterPatchPodWithExistingLabel_labelValueChanged() {
     V1Pod pod1 = createLabeledPod("pod1", "ns1", ImmutableMap.of("k1", "v1"));
     testSupport.defineResources(pod1);
 
@@ -442,7 +442,7 @@ public class KubernetesTestSupportTest {
   }
 
   @Test
-  public void listDomain_returnsAllInNamespace() {
+  void listDomain_returnsAllInNamespace() {
     Domain dom1 = createDomain("ns1", "domain1");
     Domain dom2 = createDomain("ns1", "domain2");
     Domain dom3 = createDomain("ns2", "domain3");
@@ -459,7 +459,7 @@ public class KubernetesTestSupportTest {
   }
 
   @Test
-  public void listService_returnsAllInNamespace() {
+  void listService_returnsAllInNamespace() {
     V1Service s1 = createService("ns1", "service1");
     V1Service s2 = createService("ns1", "service2");
     V1Service s3 = createService("ns2", "service3");
@@ -476,7 +476,7 @@ public class KubernetesTestSupportTest {
   }
 
   @Test
-  public void listEventWithSelector_returnsMatches() {
+  void listEventWithSelector_returnsMatches() {
     CoreV1Event s1 = createEvent("ns1", "event1", "walk").involvedObject(kind("bird"));
     CoreV1Event s2 = createEvent("ns1", "event2", "walk");
     CoreV1Event s3 = createEvent("ns1", "event3", "walk").involvedObject(kind("bird"));
@@ -503,7 +503,7 @@ public class KubernetesTestSupportTest {
   }
 
   @Test
-  public void listSecrets_returnsAllInNamespace() {
+  void listSecrets_returnsAllInNamespace() {
     V1Secret s1 = createSecret("ns1", "secret1");
     V1Secret s2 = createSecret("ns1", "secret2");
     V1Secret s3 = createSecret("ns2", "secret3");
@@ -523,7 +523,7 @@ public class KubernetesTestSupportTest {
   }
 
   @Test
-  public void whenConfigMapNotFound_readStatusIsNotFound() {
+  void whenConfigMapNotFound_readStatusIsNotFound() {
     TestResponseStep<V1ConfigMap> endStep = new TestResponseStep<>();
     testSupport.runSteps(new CallBuilder().readConfigMapAsync("", "", "", endStep));
 
@@ -532,7 +532,7 @@ public class KubernetesTestSupportTest {
   }
 
   @Test
-  public void whenDefined_readPodLog() {
+  void whenDefined_readPodLog() {
     TestResponseStep<String> endStep = new TestResponseStep<>();
     testSupport.definePodLog("name", "namespace", POD_LOG_CONTENTS);
 
@@ -542,7 +542,7 @@ public class KubernetesTestSupportTest {
   }
 
   @Test
-  public void deleteNamespace_deletesAllMatchingNamespacedResources() {
+  void deleteNamespace_deletesAllMatchingNamespacedResources() {
     Domain dom1 = createDomain("ns1", "domain1");
     Domain dom2 = createDomain("ns2", "domain2");
     V1Service s1 = createService("ns1", "service1");

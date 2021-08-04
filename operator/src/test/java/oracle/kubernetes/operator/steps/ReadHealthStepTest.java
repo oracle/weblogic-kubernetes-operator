@@ -57,7 +57,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
-public class ReadHealthStepTest {
+class ReadHealthStepTest {
   static final String OK_RESPONSE =
       "{\n"
           + "    \"overallHealthState\": {\n"
@@ -155,7 +155,7 @@ public class ReadHealthStepTest {
   }
 
   @Test
-  public void whenReadAdminServerHealth_decrementRemainingServers() {
+  void whenReadAdminServerHealth_decrementRemainingServers() {
     selectServer(ADMIN_NAME);
     defineResponse(200, "", "http://127.0.0.1:3456");
 
@@ -183,7 +183,7 @@ public class ReadHealthStepTest {
 
 
   @Test
-  public void whenReadConfiguredManagedServerHealth_decrementRemainingServers() {
+  void whenReadConfiguredManagedServerHealth_decrementRemainingServers() {
     selectServer(CONFIGURED_MANAGED_SERVER1);
     configureServiceWithClusterName(CONFIGURED_CLUSTER_NAME);
     defineResponse(200, "");
@@ -197,7 +197,7 @@ public class ReadHealthStepTest {
   // todo test failure to read credentials
 
   @Test
-  public void whenReadDynamicManagedServerHealth_decrementRemainingServers() {
+  void whenReadDynamicManagedServerHealth_decrementRemainingServers() {
     selectServer(DYNAMIC_MANAGED_SERVER1);
     configureServiceWithClusterName(DYNAMIC_CLUSTER_NAME);
     defineResponse(200, "");
@@ -208,7 +208,7 @@ public class ReadHealthStepTest {
   }
 
   @Test
-  public void whenServerRunning_verifyServerHealth() {
+  void whenServerRunning_verifyServerHealth() {
     selectServer(MANAGED_SERVER1);
 
     defineResponse(200, OK_RESPONSE, "http://127.0.0.1:8001");
@@ -228,7 +228,7 @@ public class ReadHealthStepTest {
   }
 
   @Test
-  public void whenAdminPodIPNull_verifyServerHealth() {
+  void whenAdminPodIPNull_verifyServerHealth() {
     selectServer(ADMIN_NAME, true);
     defineResponse(200, OK_RESPONSE, "http://admin-server.Test:3456");
 
@@ -238,7 +238,7 @@ public class ReadHealthStepTest {
   }
 
   @Test
-  public void whenAdminPodIPNull_requestSendWithCredentials() {
+  void whenAdminPodIPNull_requestSendWithCredentials() {
     selectServer(ADMIN_NAME, true);
     defineResponse(200, OK_RESPONSE, "http://admin-server.Test:3456");
 
@@ -260,7 +260,7 @@ public class ReadHealthStepTest {
   }
 
   @Test
-  public void whenServerOverloaded_verifyServerHealth() {
+  void whenServerOverloaded_verifyServerHealth() {
     selectServer(MANAGED_SERVER1);
 
     defineResponse(500, "", "http://127.0.0.1:8001");
@@ -273,7 +273,7 @@ public class ReadHealthStepTest {
   }
 
   @Test
-  public void whenUnableToReadHealth_verifyNotAvailable() {
+  void whenUnableToReadHealth_verifyNotAvailable() {
     selectServer(MANAGED_SERVER1);
 
     defineResponse(404, "");
@@ -286,7 +286,7 @@ public class ReadHealthStepTest {
   }
 
   @Test
-  public void whenServerConfiguredWithServerListenPortOnly_readHealthUsingServerListenPort() {
+  void whenServerConfiguredWithServerListenPortOnly_readHealthUsingServerListenPort() {
     selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSService);
     WlsServerConfig server = getDynamicClusterServer2();
     server.setListenPort(8001);
@@ -298,7 +298,7 @@ public class ReadHealthStepTest {
   }
 
   @Test
-  public void whenServerConfiguredWithSSLPortOnly_readHealthUsingSSLPort() {
+  void whenServerConfiguredWithSSLPortOnly_readHealthUsingSSLPort() {
     selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSService);
     WlsServerConfig server = getDynamicClusterServer2();
     server.setSslListenPort(7002);
@@ -310,7 +310,7 @@ public class ReadHealthStepTest {
   }
 
   @Test
-  public void whenServerConfiguredWithServerListenPortAndSSLPort_readHealthUsingSSLPort() {
+  void whenServerConfiguredWithServerListenPortAndSSLPort_readHealthUsingSSLPort() {
     selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSService);
     WlsServerConfig server = getDynamicClusterServer2();
     server.setListenPort(8001);
@@ -323,7 +323,7 @@ public class ReadHealthStepTest {
   }
 
   @Test
-  public void whenServerConfiguredWithServerListenPortAndNonAdminNAP_readHealthUsingServerListenPort() {
+  void whenServerConfiguredWithServerListenPortAndNonAdminNAP_readHealthUsingServerListenPort() {
     selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSService);
     WlsServerConfig server = getDynamicClusterServer2();
     server.setListenPort(8001);
@@ -336,7 +336,7 @@ public class ReadHealthStepTest {
   }
 
   @Test
-  public void whenServerConfiguredWithServerSSLPortAndNonAdminNAP_readHealthUsingSSLPort() {
+  void whenServerConfiguredWithServerSSLPortAndNonAdminNAP_readHealthUsingSSLPort() {
     selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSService);
     WlsServerConfig server = getDynamicClusterServer2();
     server.setSslListenPort(7002);
@@ -349,7 +349,7 @@ public class ReadHealthStepTest {
   }
 
   @Test
-  public void whenServerConfiguredWithSSLPortAndAdminNAP_readHealthUsingAdminNAPPort() {
+  void whenServerConfiguredWithSSLPortAndAdminNAP_readHealthUsingAdminNAPPort() {
     selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSService);
     WlsServerConfig server = getDynamicClusterServer2();
     server.setSslListenPort(7002);
@@ -362,7 +362,7 @@ public class ReadHealthStepTest {
   }
 
   @Test
-  public void whenServerConfiguredWithServerListenPortAndAdminNAP_readHealthUsingAdminNAPPort() {
+  void whenServerConfiguredWithServerListenPortAndAdminNAP_readHealthUsingAdminNAPPort() {
     selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSService);
     WlsServerConfig server = getDynamicClusterServer2();
     server.setListenPort(8001);
@@ -376,7 +376,7 @@ public class ReadHealthStepTest {
   }
 
   @Test
-  public void whenServerConfiguredWithNonAdminNAPOnly_readHealthFailed() {
+  void whenServerConfiguredWithNonAdminNAPOnly_readHealthFailed() {
     selectServer(DYNAMIC_MANAGED_SERVER2, headlessMSService);
     WlsServerConfig server = getDynamicClusterServer2();
     server.addNetworkAccessPoint(new NetworkAccessPoint("nap1", "t3", 9001, 9001));
@@ -388,7 +388,7 @@ public class ReadHealthStepTest {
   }
 
   @Test
-  public void whenAuthorizedToReadHealth_verifySecretSet() {
+  void whenAuthorizedToReadHealth_verifySecretSet() {
     selectServer(MANAGED_SERVER1);
 
     defineResponse(200, "", "http://127.0.0.1:8001");
@@ -399,7 +399,7 @@ public class ReadHealthStepTest {
   }
 
   @Test
-  public void whenAuthorizedToReadHealthAndThenWait_verifySecretCleared() {
+  void whenAuthorizedToReadHealthAndThenWait_verifySecretCleared() {
     selectServer(MANAGED_SERVER1);
 
     defineResponse(200, "", "http://127.0.0.1:8001");
@@ -414,7 +414,7 @@ public class ReadHealthStepTest {
   }
 
   @Test
-  public void whenNotAuthorizedToReadHealth_verifySecretCleared() {
+  void whenNotAuthorizedToReadHealth_verifySecretCleared() {
     selectServer(MANAGED_SERVER1);
 
     defineResponse(403, "", "http://127.0.0.1:8001");

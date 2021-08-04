@@ -46,7 +46,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings("SameParameterValue")
-public class RestTest extends JerseyTest {
+class RestTest extends JerseyTest {
   private static final String V1 = "v1";
   private static final String OPERATOR_HREF = "/operator";
   private static final String V1_HREF = OPERATOR_HREF + "/" + V1;
@@ -96,28 +96,28 @@ public class RestTest extends JerseyTest {
   }
 
   @Test
-  public void whenNoAuthenticationHeader_rejectRequest() {
+  void whenNoAuthenticationHeader_rejectRequest() {
     excludeAuthorizationHeader();
 
     assertThat(createRequest(OPERATOR_HREF).get().getStatus(), equalTo(HTTP_UNAUTHORIZED));
   }
 
   @Test
-  public void whenAuthenticationHeaderLacksBearerPrefix_rejectRequest() {
+  void whenAuthenticationHeaderLacksBearerPrefix_rejectRequest() {
     removeBearerPrefix();
 
     assertThat(createRequest(OPERATOR_HREF).get().getStatus(), equalTo(HTTP_UNAUTHORIZED));
   }
 
   @Test
-  public void whenAuthenticationHeaderLacksAccessToken_rejectRequest() {
+  void whenAuthenticationHeaderLacksAccessToken_rejectRequest() {
     removeAccessToken();
 
     assertThat(createRequest(OPERATOR_HREF).get().getStatus(), equalTo(HTTP_UNAUTHORIZED));
   }
 
   @Test
-  public void operatorEndPoint_returnsVersion() {
+  void operatorEndPoint_returnsVersion() {
     Map result = getJsonResponse(OPERATOR_HREF);
 
     assertThat(result, hasJsonPath("$.items[0].version", equalTo("v1")));
@@ -142,7 +142,7 @@ public class RestTest extends JerseyTest {
   }
 
   @Test
-  public void v1EndPoint_returnsVersionAndLinks() {
+  void v1EndPoint_returnsVersionAndLinks() {
     Map result = getJsonResponse(V1_HREF);
 
     assertThat(result, hasJsonPath("$.version", equalTo("v1")));
@@ -153,7 +153,7 @@ public class RestTest extends JerseyTest {
   }
 
   @Test
-  public void latestVersionEndPoint_returnsVersionAndLinks() {
+  void latestVersionEndPoint_returnsVersionAndLinks() {
     Map result = getJsonResponse(LATEST_HREF);
 
     assertThat(result, hasJsonPath("$.version", equalTo("v1")));
@@ -163,12 +163,12 @@ public class RestTest extends JerseyTest {
   }
 
   @Test
-  public void nonexistingVersionEndPoint_fails() {
+  void nonexistingVersionEndPoint_fails() {
     assertThat(getResponseStatus(OPERATOR_HREF + "/v99"), equalTo(HTTP_NOT_FOUND));
   }
 
   @Test
-  public void swaggerEndPoint_returnsSwaggerFile() {
+  void swaggerEndPoint_returnsSwaggerFile() {
     Map result = getJsonResponse(SWAGGER_HREF);
 
     assertThat(result, hasJsonPath("$.swagger", equalTo("2.0")));
@@ -177,7 +177,7 @@ public class RestTest extends JerseyTest {
   }
 
   @Test
-  public void domainsEndPoint_returnsListOfDomainsAndLinks() {
+  void domainsEndPoint_returnsListOfDomainsAndLinks() {
     defineDomains("uid1", "uid2");
 
     Map result = getJsonResponse(DOMAINS_HREF);
@@ -194,7 +194,7 @@ public class RestTest extends JerseyTest {
   }
 
   @Test
-  public void existingDomainEndPoint_returnsDomainsUidAndClusterLink() {
+  void existingDomainEndPoint_returnsDomainsUidAndClusterLink() {
     defineDomains("uid1", "uid2");
 
     Map result = getJsonResponse(DOMAINS_HREF + "/uid1");
@@ -209,14 +209,14 @@ public class RestTest extends JerseyTest {
   }
 
   @Test
-  public void nonexistingDomainEndPoint_fails() {
+  void nonexistingDomainEndPoint_fails() {
     defineDomains("uid1", "uid2");
 
     assertThat(getResponseStatus(DOMAINS_HREF + "/uid3"), equalTo(HTTP_NOT_FOUND));
   }
 
   @Test
-  public void clustersEndPoint_returnsListOfClustersAndLinks() {
+  void clustersEndPoint_returnsListOfClustersAndLinks() {
     defineClusters("uid1", "cluster1", "cluster2");
 
     Map result = getJsonResponse(DOMAIN1_CLUSTERS_HREF);
@@ -238,7 +238,7 @@ public class RestTest extends JerseyTest {
   }
 
   @Test
-  public void existingClusterEndPoint_returnsClusterNameAndScalingLink() {
+  void existingClusterEndPoint_returnsClusterNameAndScalingLink() {
     defineClusters("uid1", "cluster1", "cluster2");
 
     Map result = getJsonResponse(DOMAIN1_CLUSTERS_HREF + "/cluster1");
@@ -258,14 +258,14 @@ public class RestTest extends JerseyTest {
   }
 
   @Test
-  public void nonexistingClusterEndPoint_fails() {
+  void nonexistingClusterEndPoint_fails() {
     defineClusters("uid1", "cluster1", "cluster2");
 
     assertThat(getResponseStatus(DOMAIN1_CLUSTERS_HREF + "/cluster3"), equalTo(HTTP_NOT_FOUND));
   }
 
   @Test
-  public void scaleExistingCluster() {
+  void scaleExistingCluster() {
     defineClusters("uid1", "cluster1", "cluster2");
 
     sendScaleRequest("cluster1", 3);
@@ -279,12 +279,12 @@ public class RestTest extends JerseyTest {
   }
 
   @Test
-  public void whenClusterUndefined_scalingIsRejected() {
+  void whenClusterUndefined_scalingIsRejected() {
     assertThat(sendScaleRequest("cluster1", 3).getStatus(), equalTo(HTTP_NOT_FOUND));
   }
 
   @Test
-  public void whenRequestedByHeaderMissing_scalingIsRejected() {
+  void whenRequestedByHeaderMissing_scalingIsRejected() {
     excludeRequestedByHeader();
     defineClusters("uid1", "cluster1", "cluster2");
 

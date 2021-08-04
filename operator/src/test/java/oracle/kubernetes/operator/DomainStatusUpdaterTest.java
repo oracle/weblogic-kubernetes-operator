@@ -62,7 +62,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class DomainStatusUpdaterTest {
+class DomainStatusUpdaterTest {
   private static final String NAME = UID;
   private final TerminalStep endStep = new TerminalStep();
   private final WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport("mydomain");
@@ -107,7 +107,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void statusStep_copiesServerStatesFromMaps() {
+  void statusStep_copiesServerStatesFromMaps() {
     testSupport.addToPacket(
         SERVER_STATE_MAP, ImmutableMap.of("server1", RUNNING_STATE, "server2", SHUTDOWN_STATE));
     testSupport.addToPacket(
@@ -146,7 +146,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void statusStep_copiesServerStatesFromMaps_standalone() {
+  void statusStep_copiesServerStatesFromMaps_standalone() {
     testSupport.addToPacket(
         SERVER_STATE_MAP, ImmutableMap.of("server1", RUNNING_STATE, "server2", SHUTDOWN_STATE));
     testSupport.addToPacket(
@@ -208,7 +208,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void statusStep_usesServerFromWlsConfig() {
+  void statusStep_usesServerFromWlsConfig() {
     configureServer("server4").withDesiredState(ADMIN_STATE);
     testSupport.addToPacket(SERVER_STATE_MAP, ImmutableMap.of("server3", RUNNING_STATE));
     testSupport.addToPacket(
@@ -243,7 +243,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void statusStep_copiesClusterFromWlsConfigAndNodeNameFromPod() {
+  void statusStep_copiesClusterFromWlsConfigAndNodeNameFromPod() {
     testSupport.addToPacket(SERVER_STATE_MAP, ImmutableMap.of("server2", STANDBY_STATE));
     testSupport.addToPacket(
         SERVER_HEALTH_MAP, ImmutableMap.of("server2", overallHealth("health2")));
@@ -267,7 +267,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void statusStep_updatesDomainWhenHadNoStatus() {
+  void statusStep_updatesDomainWhenHadNoStatus() {
     testSupport.addToPacket(SERVER_STATE_MAP, ImmutableMap.of("server1", RUNNING_STATE));
     testSupport.addToPacket(
         SERVER_HEALTH_MAP, ImmutableMap.of("server1", overallHealth("health1")));
@@ -293,7 +293,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void statusStep_shutdownDesiredState_ifServerHasNoStartupInfos() {
+  void statusStep_shutdownDesiredState_ifServerHasNoStartupInfos() {
     testSupport.addToPacket(SERVER_STATE_MAP, ImmutableMap.of("server1", RUNNING_STATE));
     testSupport.addToPacket(
         SERVER_HEALTH_MAP, ImmutableMap.of("server1", overallHealth("health1")));
@@ -319,7 +319,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void statusStep_shutdownDesiredState_ifStandAloneServerHasNoStartupInfos() {
+  void statusStep_shutdownDesiredState_ifStandAloneServerHasNoStartupInfos() {
     testSupport.addToPacket(SERVER_STATE_MAP, ImmutableMap.of("server1", RUNNING_STATE));
     testSupport.addToPacket(
         SERVER_HEALTH_MAP, ImmutableMap.of("server1", overallHealth("health1")));
@@ -343,7 +343,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void statusStep_shutdownDesiredState_ifServerIsServiceOnly() {
+  void statusStep_shutdownDesiredState_ifServerIsServiceOnly() {
     testSupport.addToPacket(SERVER_STATE_MAP, ImmutableMap.of("server1", RUNNING_STATE));
     testSupport.addToPacket(
         SERVER_HEALTH_MAP, ImmutableMap.of("server1", overallHealth("health1")));
@@ -370,7 +370,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void statusStep_shutdownDesiredState_ifStandAloneServerIsServiceOnly() {
+  void statusStep_shutdownDesiredState_ifStandAloneServerIsServiceOnly() {
     testSupport.addToPacket(SERVER_STATE_MAP, ImmutableMap.of("server1", RUNNING_STATE));
     testSupport.addToPacket(
         SERVER_HEALTH_MAP, ImmutableMap.of("server1", overallHealth("health1")));
@@ -395,7 +395,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void statusStep_containsValidationWarnings() {
+  void statusStep_containsValidationWarnings() {
     info.addValidationWarning(validationWarning);
     testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
 
@@ -405,7 +405,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void progressingStep_containsValidationWarnings() {
+  void progressingStep_containsValidationWarnings() {
     info.addValidationWarning(validationWarning);
     testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
 
@@ -415,7 +415,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void failedStepWithFailureMessage_doesNotContainValidationWarnings() {
+  void failedStepWithFailureMessage_doesNotContainValidationWarnings() {
     info.addValidationWarning(validationWarning);
     testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
 
@@ -425,7 +425,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void whenStatusUnchanged_statusStepDoesNotUpdateDomain() {
+  void whenStatusUnchanged_statusStepDoesNotUpdateDomain() {
     info = new DomainPresenceInfo(domain);
     testSupport.addDomainPresenceInfo(info);
     defineServerPod("server1");
@@ -455,14 +455,14 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void whenDomainHasNoClusters_statusLacksReplicaCount() {
+  void whenDomainHasNoClusters_statusLacksReplicaCount() {
     testSupport.runSteps(DomainStatusUpdater.createStatusUpdateStep(endStep));
 
     assertThat(getRecordedDomain().getStatus().getReplicas(), nullValue());
   }
 
   @Test
-  public void whenDomainHasOneCluster_statusReplicaCountShowsServersInThatCluster() {
+  void whenDomainHasOneCluster_statusReplicaCountShowsServersInThatCluster() {
     defineCluster("cluster1", "server1", "server2", "server3");
 
     WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport("mydomain");
@@ -478,7 +478,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void whenDomainHasMultipleClusters_statusLacksReplicaCount() {
+  void whenDomainHasMultipleClusters_statusLacksReplicaCount() {
     defineCluster("cluster1", "server1", "server2", "server3");
     defineCluster("cluster2", "server4", "server5", "server6", "server7");
     defineCluster("cluster3", "server8", "server9");
@@ -504,7 +504,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void whenAllDesiredServersRunning_establishAvailableCondition() {
+  void whenAllDesiredServersRunning_establishAvailableCondition() {
     setAllDesiredServersRunning();
 
     testSupport.runSteps(DomainStatusUpdater.createStatusUpdateStep(endStep));
@@ -526,7 +526,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void whenAllDesiredServersRunningAndMatchingAvailableConditionFound_ignoreIt() {
+  void whenAllDesiredServersRunningAndMatchingAvailableConditionFound_ignoreIt() {
     domain
         .getStatus()
         .addCondition(
@@ -548,7 +548,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void whenAllDesiredServersRunningAndMismatchedAvailableConditionReasonFound_changeIt() {
+  void whenAllDesiredServersRunningAndMismatchedAvailableConditionReasonFound_changeIt() {
     domain.getStatus().addCondition(new DomainCondition(Available).withStatus("True"));
     setAllDesiredServersRunning();
 
@@ -560,7 +560,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void whenAllDesiredServersRunningAndMismatchedAvailableConditionStatusFound_changeIt() {
+  void whenAllDesiredServersRunningAndMismatchedAvailableConditionStatusFound_changeIt() {
     domain
         .getStatus()
         .addCondition(new DomainCondition(Available).withReason(SERVERS_READY_REASON));
@@ -574,7 +574,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void whenAllDesiredServersRunningAndProgressingConditionFound_removeIt() {
+  void whenAllDesiredServersRunningAndProgressingConditionFound_removeIt() {
     domain.getStatus().addCondition(new DomainCondition(Progressing));
     setAllDesiredServersRunning();
 
@@ -584,7 +584,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void whenNotAllDesiredServersRunning_dontEstablishAvailableCondition() {
+  void whenNotAllDesiredServersRunning_dontEstablishAvailableCondition() {
     setDesiredServerNotRunning();
 
     testSupport.runSteps(DomainStatusUpdater.createStatusUpdateStep(endStep));
@@ -601,7 +601,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void whenNotAllDesiredServersRunningAndProgressingConditionFound_ignoreIt() {
+  void whenNotAllDesiredServersRunningAndProgressingConditionFound_ignoreIt() {
     domain.getStatus().addCondition(new DomainCondition(Progressing));
     setDesiredServerNotRunning();
 
@@ -617,7 +617,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void whenNotAllDesiredServersRunningAndProgressingConditionNotFound_addOne() {
+  void whenNotAllDesiredServersRunningAndProgressingConditionNotFound_addOne() {
     setDesiredServerNotRunning();
 
     WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport("mydomain");
@@ -632,7 +632,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void whenPodFailedAndProgressingConditionFound_removeIt() {
+  void whenPodFailedAndProgressingConditionFound_removeIt() {
     domain.getStatus().addCondition(new DomainCondition(Progressing));
     setDesiredServerNotRunning();
     failPod("server1");
@@ -643,14 +643,14 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void whenNoPodsFailed_dontEstablishFailedCondition() {
+  void whenNoPodsFailed_dontEstablishFailedCondition() {
     testSupport.runSteps(DomainStatusUpdater.createStatusUpdateStep(endStep));
 
     assertThat(getRecordedDomain(), not(hasCondition(Failed)));
   }
 
   @Test
-  public void whenNoPodsFailedAndFailedConditionFound_removeIt() {
+  void whenNoPodsFailedAndFailedConditionFound_removeIt() {
     domain.getStatus().addCondition(new DomainCondition(Failed));
 
     testSupport.runSteps(DomainStatusUpdater.createStatusUpdateStep(endStep));
@@ -659,7 +659,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void whenAtLeastOnePodFailed_establishFailedCondition() {
+  void whenAtLeastOnePodFailed_establishFailedCondition() {
     failPod("server1");
 
     testSupport.runSteps(DomainStatusUpdater.createStatusUpdateStep(endStep));
@@ -668,7 +668,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void whenAtLeastOnePodAndFailedConditionTrueFound_leaveIt() {
+  void whenAtLeastOnePodAndFailedConditionTrueFound_leaveIt() {
     domain.getStatus().addCondition(new DomainCondition(Failed).withStatus("True"));
     failPod("server2");
 
@@ -678,7 +678,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void whenAtLeastOnePodFailedAndFailedConditionFalseFound_changeIt() {
+  void whenAtLeastOnePodFailedAndFailedConditionFalseFound_changeIt() {
     domain.getStatus().addCondition(new DomainCondition(Failed).withStatus("False "));
     failPod("server2");
 
@@ -688,7 +688,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void whenAtLeastOnePodFailed_doneCreateAvailableCondition() {
+  void whenAtLeastOnePodFailed_doneCreateAvailableCondition() {
     domain.getStatus().addCondition(new DomainCondition(Failed).withStatus("False "));
     failPod("server2");
 
@@ -698,7 +698,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void whenAtLeastOnePodFailedAndAvailableConditionFound_removeIt() {
+  void whenAtLeastOnePodFailedAndAvailableConditionFound_removeIt() {
     domain.getStatus().addCondition(new DomainCondition(Available));
     failPod("server2");
 
@@ -708,7 +708,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void whenTwoConditionUpdatesScheduled_useResultOfFirstToComputeSecond() {
+  void whenTwoConditionUpdatesScheduled_useResultOfFirstToComputeSecond() {
     domain.getStatus().addCondition(new DomainCondition(Available).withStatus("False"));
     domain.getStatus().addCondition(new DomainCondition(Progressing).withStatus("True").withReason("Initial"));
 
@@ -791,7 +791,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void whenDomainHasNoStatus_progressingStepUpdatesItWithProgressingTrueAndReason() {
+  void whenDomainHasNoStatus_progressingStepUpdatesItWithProgressingTrueAndReason() {
     domain.setStatus(null);
 
     testSupport.runSteps(DomainStatusUpdater.createProgressingStep(reason, false, endStep));
@@ -800,7 +800,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void
+  void
       whenDomainHasNoProgressingCondition_progressingStepUpdatesItWithProgressingTrueAndReason() {
     testSupport.runSteps(DomainStatusUpdater.createProgressingStep(reason, false, endStep));
 
@@ -808,7 +808,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void
+  void
       whenDomainHasProgressingNonTrueCondition_progressingStepUpdatesItWithProgressingTrueAndReason() {
     domain.getStatus().addCondition(new DomainCondition(Progressing).withStatus("?"));
 
@@ -819,7 +819,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void whenDomainHasProgressingTrueConditionWithDifferentReason_progressingStepUpdatesReason() {
+  void whenDomainHasProgressingTrueConditionWithDifferentReason_progressingStepUpdatesReason() {
     domain
         .getStatus()
         .addCondition(
@@ -835,7 +835,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void whenDomainHasProgressingTrueConditionWithSameReason_progressingStepIgnoresIt() {
+  void whenDomainHasProgressingTrueConditionWithSameReason_progressingStepIgnoresIt() {
     domain
         .getStatus()
         .addCondition(new DomainCondition(Progressing).withStatus("True").withReason(reason));
@@ -846,7 +846,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void whenDomainHasFailedCondition_progressingStepShouldNotRemovesIt() {
+  void whenDomainHasFailedCondition_progressingStepShouldNotRemovesIt() {
     domain.getStatus().addCondition(new DomainCondition(Failed));
 
     testSupport.runSteps(DomainStatusUpdater.createProgressingStep(reason, false, endStep));
@@ -855,7 +855,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void whenDomainHasAvailableCondition_progressingStepRemovesIt() {
+  void whenDomainHasAvailableCondition_progressingStepRemovesIt() {
     domain.getStatus().addCondition(new DomainCondition(Available));
 
     testSupport.runSteps(DomainStatusUpdater.createProgressingStep(reason, false, endStep));
@@ -864,7 +864,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void whenDomainHasAvailableCondition_progressingStepWithPreserveAvailableIgnoresIt() {
+  void whenDomainHasAvailableCondition_progressingStepWithPreserveAvailableIgnoresIt() {
     domain.getStatus().addCondition(new DomainCondition(Available));
 
     testSupport.runSteps(DomainStatusUpdater.createProgressingStep(reason, true, endStep));
@@ -873,14 +873,14 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void whenDomainHasNoConditions_endProgressingStepDoesNothing() {
+  void whenDomainHasNoConditions_endProgressingStepDoesNothing() {
     testSupport.runSteps(DomainStatusUpdater.createEndProgressingStep(endStep));
 
     assertThat(testSupport.getNumCalls(), equalTo(0));
   }
 
   @Test
-  public void whenDomainHasProgressingTrueCondition_endProgressingStepRemovesIt() {
+  void whenDomainHasProgressingTrueCondition_endProgressingStepRemovesIt() {
     domain.getStatus().addCondition(new DomainCondition(Progressing).withStatus("True"));
 
     testSupport.runSteps(DomainStatusUpdater.createEndProgressingStep(endStep));
@@ -889,7 +889,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void whenDomainHasProgressingNotTrueCondition_endProgressingStepIgnoresIt() {
+  void whenDomainHasProgressingNotTrueCondition_endProgressingStepIgnoresIt() {
     domain.getStatus().addCondition(new DomainCondition(Progressing).withStatus("?"));
 
     testSupport.runSteps(DomainStatusUpdater.createEndProgressingStep(endStep));
@@ -898,7 +898,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void whenDomainHasAvailableCondition_endProgressingStepIgnoresIt() {
+  void whenDomainHasAvailableCondition_endProgressingStepIgnoresIt() {
     domain.getStatus().addCondition(new DomainCondition(Available));
 
     testSupport.runSteps(DomainStatusUpdater.createEndProgressingStep(endStep));
@@ -907,7 +907,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void whenDomainHasFailedCondition_endProgressingStepIgnoresIt() {
+  void whenDomainHasFailedCondition_endProgressingStepIgnoresIt() {
     domain.getStatus().addCondition(new DomainCondition(Failed));
 
     testSupport.runSteps(DomainStatusUpdater.createEndProgressingStep(endStep));
@@ -916,7 +916,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void whenDomainLacksStatus_availableStepUpdatesDomainWithAvailableTrueAndReason() {
+  void whenDomainLacksStatus_availableStepUpdatesDomainWithAvailableTrueAndReason() {
     domain.setStatus(null);
 
     testSupport.runSteps(DomainStatusUpdater.createAvailableStep(reason, endStep));
@@ -925,7 +925,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void
+  void
       whenDomainLacksAvailableCondition_availableStepUpdatesDomainWithAvailableTrueAndReason() {
     testSupport.runSteps(DomainStatusUpdater.createAvailableStep(reason, endStep));
 
@@ -933,7 +933,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void whenDomainHasAvailableFalseCondition_availableStepUpdatesItWithTrueAndReason() {
+  void whenDomainHasAvailableFalseCondition_availableStepUpdatesItWithTrueAndReason() {
     domain.getStatus().addCondition(new DomainCondition(Available).withStatus("False"));
 
     testSupport.runSteps(DomainStatusUpdater.createAvailableStep(reason, endStep));
@@ -943,7 +943,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void whenDomainHasProgressingCondition_availableStepRemovesIt() {
+  void whenDomainHasProgressingCondition_availableStepRemovesIt() {
     domain.getStatus().addCondition(new DomainCondition(Progressing));
 
     testSupport.runSteps(DomainStatusUpdater.createAvailableStep(reason, endStep));
@@ -953,7 +953,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void whenDomainHasFailedCondition_availableStepRemovesIt() {
+  void whenDomainHasFailedCondition_availableStepRemovesIt() {
     domain.getStatus().addCondition(new DomainCondition(Failed));
 
     testSupport.runSteps(DomainStatusUpdater.createAvailableStep(reason, endStep));
@@ -962,7 +962,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void whenDomainLacksStatus_failedStepUpdatesDomainWithFailedTrueAndException() {
+  void whenDomainLacksStatus_failedStepUpdatesDomainWithFailedTrueAndException() {
     domain.setStatus(null);
 
     testSupport.runSteps(DomainStatusUpdater.createFailureRelatedSteps(failure, endStep));
@@ -975,7 +975,7 @@ public class DomainStatusUpdaterTest {
   // ---
 
   @Test
-  public void whenDomainLacksFailedCondition_failedStepUpdatesDomainWithFailedTrueAndException() {
+  void whenDomainLacksFailedCondition_failedStepUpdatesDomainWithFailedTrueAndException() {
     testSupport.runSteps(DomainStatusUpdater.createFailureRelatedSteps(failure, endStep));
 
     assertThat(
@@ -984,7 +984,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void whenDomainHasFailedFalseCondition_failedStepUpdatesItWithTrueAndException() {
+  void whenDomainHasFailedFalseCondition_failedStepUpdatesItWithTrueAndException() {
     domain.getStatus().addCondition(new DomainCondition(Failed).withStatus("False"));
 
     testSupport.runSteps(DomainStatusUpdater.createFailureRelatedSteps(failure, endStep));
@@ -996,7 +996,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void whenDomainHasProgressingTrueCondition_failedStepRemovesIt() {
+  void whenDomainHasProgressingTrueCondition_failedStepRemovesIt() {
     domain.getStatus().addCondition(new DomainCondition(Progressing).withStatus("True"));
 
     testSupport.runSteps(DomainStatusUpdater.createFailureRelatedSteps(failure, endStep));
@@ -1005,7 +1005,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void whenPacketNotPopulatedBeforeUpdateServerStatus_resourceVersionUpdated() {
+  void whenPacketNotPopulatedBeforeUpdateServerStatus_resourceVersionUpdated() {
     setupInitialServerStatus();
     String cachedResourceVersion = getRecordedDomain().getMetadata().getResourceVersion();
 
@@ -1018,7 +1018,7 @@ public class DomainStatusUpdaterTest {
   }
 
   @Test
-  public void whenPacketPopulatedBeforeUpdateServerStatus_resourceVersionNotUpdated() {
+  void whenPacketPopulatedBeforeUpdateServerStatus_resourceVersionNotUpdated() {
     setupInitialServerStatus();
     String cachedResourceVersion = getRecordedDomain().getMetadata().getResourceVersion();
 

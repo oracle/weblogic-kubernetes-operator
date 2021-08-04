@@ -23,7 +23,7 @@ import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 @DisplayName("Test model in image sample with WLS domain using auxiliary image")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @IntegrationTest
-public class ItMiiSampleWlsAux {
+class ItMiiSampleWlsAux {
 
   /**
    * Install Operator.
@@ -48,7 +48,7 @@ public class ItMiiSampleWlsAux {
   @Order(1)
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS initial use case using auxiliary image")
-  public void testAIWlsInitialUseCase() {
+  void testAIWlsInitialUseCase() {
     ItMiiSampleHelper.callInitialUseCase();
   }
 
@@ -66,7 +66,7 @@ public class ItMiiSampleWlsAux {
   @Order(2)
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update1 use case using auxiliary image")
-  public void testAIWlsUpdate1UseCase() {
+  void testAIWlsUpdate1UseCase() {
     ItMiiSampleHelper.callUpdateUseCase("-update1", "Update1 use case failed");
   }
 
@@ -84,7 +84,7 @@ public class ItMiiSampleWlsAux {
   @Order(3)
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update2 use case using auxiliary image")
-  public void tesAIWlsUpdate2UseCase() {
+  void testAIWlsUpdate2UseCase() {
     ItMiiSampleHelper.callUpdateUseCase("-update2", "Update2 use case failed");
   }
 
@@ -102,7 +102,7 @@ public class ItMiiSampleWlsAux {
   @Order(4)
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update3 use case using auxiliary image")
-  public void testAIWlsUpdate3UseCase() {
+  void testAIWlsUpdate3UseCase() {
     ItMiiSampleHelper.callUpdateUseCase("-update3-image,-check-image-and-push,-update3-main",
         "Update3 use case failed");
   }
@@ -118,7 +118,7 @@ public class ItMiiSampleWlsAux {
   @Order(5)
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update4 use case using auxiliary image")
-  public void testAIWlsUpdate4UseCase() {
+  void testAIWlsUpdate4UseCase() {
     ItMiiSampleHelper.callUpdateUseCase("-update4", "Update4 use case failed");
   }
 

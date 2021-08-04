@@ -38,7 +38,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.junit.Assert.assertTrue;
 
-public class AsyncRequestStepTest {
+class AsyncRequestStepTest {
 
   private static final int TIMEOUT_SECONDS = 10;
   private static final int MAX_RETRY_COUNT = 2;
@@ -91,17 +91,17 @@ public class AsyncRequestStepTest {
   }
 
   @Test
-  public void afterFiberStarted_requestSent() {
+  void afterFiberStarted_requestSent() {
     assertTrue(callFactory.invokedWith(requestParams));
   }
 
   @Test
-  public void afterFiberStarted_timeoutStepScheduled() {
+  void afterFiberStarted_timeoutStepScheduled() {
     assertTrue(testSupport.hasItemScheduledAt(TIMEOUT_SECONDS, TimeUnit.SECONDS));
   }
 
   @Test
-  public void afterTimeout_newRequestSent() {
+  void afterTimeout_newRequestSent() {
     callFactory.clearRequest();
 
     testSupport.setTime(TIMEOUT_SECONDS + 1, TimeUnit.SECONDS);
@@ -110,14 +110,14 @@ public class AsyncRequestStepTest {
   }
 
   @Test
-  public void afterSuccessfulCallback_nextStepAppliedWithValue() {
+  void afterSuccessfulCallback_nextStepAppliedWithValue() {
     callFactory.sendSuccessfulCallback(smallList);
 
     assertThat(nextStep.result, equalTo(smallList));
   }
 
   @Test
-  public void afterSuccessfulCallbackLargeList_nextStepAppliedWithValue() {
+  void afterSuccessfulCallbackLargeList_nextStepAppliedWithValue() {
     callFactory.sendSuccessfulCallback(largeListPartOne);
 
     assertThat(nextStep.result, equalTo(largeListPartOne));
@@ -125,14 +125,14 @@ public class AsyncRequestStepTest {
   }
 
   @Test
-  public void afterSuccessfulCallback_packetDoesNotContainsResponse() {
+  void afterSuccessfulCallback_packetDoesNotContainsResponse() {
     testSupport.schedule(() -> callFactory.sendSuccessfulCallback(smallList));
 
     assertThat(testSupport.getPacketComponents(), not(hasKey(RESPONSE_COMPONENT_NAME)));
   }
 
   @Test
-  public void afterFailedCallback_packetContainsRetryStrategy() {
+  void afterFailedCallback_packetContainsRetryStrategy() {
     sendFailedCallback(HttpURLConnection.HTTP_UNAVAILABLE);
 
     assertThat(
@@ -147,7 +147,7 @@ public class AsyncRequestStepTest {
   }
 
   @Test
-  public void afterFailedCallback_retrySentAfterDelay() {
+  void afterFailedCallback_retrySentAfterDelay() {
     sendFailedCallback(HttpURLConnection.HTTP_UNAVAILABLE);
     callFactory.clearRequest();
 
@@ -157,21 +157,21 @@ public class AsyncRequestStepTest {
   }
 
   @Test
-  public void afterMultipleRetriesAndSuccessfulCallback_nextStepAppliedWithValue() {
+  void afterMultipleRetriesAndSuccessfulCallback_nextStepAppliedWithValue() {
     sendMultipleFailedCallbackWithSetTime(0, 2);
     testSupport.schedule(() -> callFactory.sendSuccessfulCallback(smallList));
     assertThat(nextStep.result, equalTo(smallList));
   }
 
   @Test
-  public void afterRetriesExhausted_fiberTerminatesWithException() {
+  void afterRetriesExhausted_fiberTerminatesWithException() {
     sendMultipleFailedCallbackWithSetTime(0, 3);
 
     testSupport.verifyCompletionThrowable(FailureStatusSourceException.class);
   }
 
   @Test
-  public void afterMultipleTimeoutsAndSuccessfulCallback_nextStepAppliedWithValue() {
+  void afterMultipleTimeoutsAndSuccessfulCallback_nextStepAppliedWithValue() {
     sendMultipleFailedCallbackWithSetTime(504, 2);
     testSupport.schedule(() -> callFactory.sendSuccessfulCallback(smallList));
     assertThat(nextStep.result, equalTo(smallList));
@@ -187,7 +187,7 @@ public class AsyncRequestStepTest {
   }
 
   @Test
-  public void afterMultipleTimeoutsAndRetriesExhausted_fiberTerminatesWithException() {
+  void afterMultipleTimeoutsAndRetriesExhausted_fiberTerminatesWithException() {
     sendMultipleFailedCallbackWithSetTime(504, 3);
 
     testSupport.verifyCompletionThrowable(FailureStatusSourceException.class);

@@ -43,7 +43,7 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 /**
  * Tests async processing of http requests during step processing.
  */
-public class HttpAsyncRequestStepTest {
+class HttpAsyncRequestStepTest {
 
   private final HttpResponseStepImpl responseStep = new HttpResponseStepImpl(null);
   private final Packet packet = new Packet();
@@ -73,12 +73,12 @@ public class HttpAsyncRequestStepTest {
   }
 
   @Test
-  public void classImplementsStep() {
+  void classImplementsStep() {
     assertThat(HttpAsyncRequestStep.class, typeCompatibleWith(Step.class));
   }
 
   @Test
-  public void constructorReturnsInstanceLinkedToResponse() {
+  void constructorReturnsInstanceLinkedToResponse() {
     assertThat(requestStep.getNext(), sameInstance(responseStep));
   }
 
@@ -88,7 +88,7 @@ public class HttpAsyncRequestStepTest {
   }
 
   @Test
-  public void whenRequestMade_suspendProcessing() {
+  void whenRequestMade_suspendProcessing() {
     NextAction action = requestStep.apply(packet);
 
     assertThat(FiberTestSupport.isSuspendRequested(action), is(true));
@@ -98,7 +98,7 @@ public class HttpAsyncRequestStepTest {
   // Note: in the following tests, the call to doOnExit simulates the behavior of the fiber
   // when it receives a doSuspend()
   @Test
-  public void whenResponseReceived_resumeFiber() {
+  void whenResponseReceived_resumeFiber() {
     final NextAction nextAction = requestStep.apply(packet);
 
     receiveResponseBeforeTimeout(nextAction, response);
@@ -118,7 +118,7 @@ public class HttpAsyncRequestStepTest {
 
 
   @Test
-  public void whenErrorResponseReceived_logMessage() {
+  void whenErrorResponseReceived_logMessage() {
     final NextAction nextAction = requestStep.apply(packet);
 
     receiveResponseBeforeTimeout(nextAction, createStub(HttpResponseStub.class, 500));
@@ -127,7 +127,7 @@ public class HttpAsyncRequestStepTest {
   }
 
   @Test
-  public void whenThrowableResponseReceived_logMessage() {
+  void whenThrowableResponseReceived_logMessage() {
     consoleMemento
         .collectLogMessages(logRecords, HTTP_REQUEST_GOT_THROWABLE)
         .withLogLevel(Level.WARNING);
@@ -139,7 +139,7 @@ public class HttpAsyncRequestStepTest {
   }
 
   @Test
-  public void whenResponseReceived_populatePacket() {
+  void whenResponseReceived_populatePacket() {
     NextAction nextAction = requestStep.apply(packet);
 
     receiveResponseBeforeTimeout(nextAction, response);
@@ -148,7 +148,7 @@ public class HttpAsyncRequestStepTest {
   }
 
   @Test
-  public void whenResponseTimesOut_resumeFiber() {
+  void whenResponseTimesOut_resumeFiber() {
     consoleMemento.ignoreMessage(HTTP_REQUEST_TIMED_OUT);
     NextAction nextAction = requestStep.apply(packet);
 
@@ -158,7 +158,7 @@ public class HttpAsyncRequestStepTest {
   }
 
   @Test
-  public void whenResponseTimesOut_packetHasNoResponse() {
+  void whenResponseTimesOut_packetHasNoResponse() {
     consoleMemento.ignoreMessage(HTTP_REQUEST_TIMED_OUT);
     HttpResponseStep.addToPacket(packet, response);
     NextAction nextAction = requestStep.apply(packet);
@@ -169,7 +169,7 @@ public class HttpAsyncRequestStepTest {
   }
 
   @Test
-  public void whenResponseTimesOut_logWarning() {
+  void whenResponseTimesOut_logWarning() {
     HttpResponseStep.addToPacket(packet, response);
     NextAction nextAction = requestStep.apply(packet);
 
@@ -179,7 +179,7 @@ public class HttpAsyncRequestStepTest {
   }
 
   @Test
-  public void whenTestSupportEnabled_retrieveCannedResult() throws NoSuchFieldException {
+  void whenTestSupportEnabled_retrieveCannedResult() throws NoSuchFieldException {
     HttpRequest request = HttpRequest.newBuilder().uri(URI.create("http://nowhere")).build();
     HttpAsyncTestSupport httpSupport = new HttpAsyncTestSupport();
     httpSupport.install();

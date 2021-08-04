@@ -57,7 +57,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  */
 @DisplayName("Test to creat a FMW domain in persistent volume using WDT")
 @IntegrationTest
-public class ItFmwDomainInPVUsingWDT {
+class ItFmwDomainInPVUsingWDT {
 
   private static ConditionFactory withStandardRetryPolicy;
 
@@ -150,7 +150,7 @@ public class ItFmwDomainInPVUsingWDT {
    */
   @Test
   @DisplayName("Create a FMW domainon on PV using WDT")
-  public void testFmwDomainOnPVUsingWdt() {
+  void testFmwDomainOnPVUsingWdt() {
     final String pvName = domainUid + "-" + domainNamespace + "-pv";
     final String pvcName = domainUid + "-" + domainNamespace + "-pvc";
     final int t3ChannelPort = getNextFreePort();

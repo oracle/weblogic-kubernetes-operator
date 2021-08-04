@@ -189,7 +189,7 @@ class ItMiiCustomSslStore {
   @Test
   @Order(1)
   @DisplayName("Verify JNDI Context can be accessed using t3s cluster URL")
-  public void testMiiGetCustomSSLContext() {
+  void testMiiGetCustomSSLContext() {
    
     // build the standalone Client on Admin pod after rolling restart
     String destLocation = "/u01/SslTestClient.java";

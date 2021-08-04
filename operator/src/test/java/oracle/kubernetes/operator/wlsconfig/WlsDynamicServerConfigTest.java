@@ -13,10 +13,10 @@ import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 
-public class WlsDynamicServerConfigTest {
+class WlsDynamicServerConfigTest {
 
   @Test
-  public void testCreateWithFixedPorts() {
+  void testCreateWithFixedPorts() {
     NetworkAccessPoint networkAccessPoint = new NetworkAccessPoint("Channel1", "t3", 10000, 30001);
     List<NetworkAccessPoint> networkAccessPointList = new ArrayList<>();
     networkAccessPointList.add(networkAccessPoint);
@@ -34,7 +34,7 @@ public class WlsDynamicServerConfigTest {
   }
 
   @Test
-  public void testCreateWithNullPorts() {
+  void testCreateWithNullPorts() {
     NetworkAccessPoint networkAccessPoint = new NetworkAccessPoint("Channel1", "t3", null, null);
     List<NetworkAccessPoint> networkAccessPointList = new ArrayList<>();
     networkAccessPointList.add(networkAccessPoint);
@@ -52,7 +52,7 @@ public class WlsDynamicServerConfigTest {
   }
 
   @Test
-  public void testCreateWithCalculatedPorts() {
+  void testCreateWithCalculatedPorts() {
     NetworkAccessPoint networkAccessPoint = new NetworkAccessPoint("Channel1", "t3", 10000, 30001);
     List<NetworkAccessPoint> networkAccessPointList = new ArrayList<>();
     networkAccessPointList.add(networkAccessPoint);
@@ -70,7 +70,7 @@ public class WlsDynamicServerConfigTest {
   }
 
   @Test
-  public void testCreateWithCalculatedDefaultPorts() {
+  void testCreateWithCalculatedDefaultPorts() {
     NetworkAccessPoint networkAccessPoint = new NetworkAccessPoint("Channel1", "t3", null, null);
     List<NetworkAccessPoint> networkAccessPointList = new ArrayList<>();
     networkAccessPointList.add(networkAccessPoint);
@@ -88,7 +88,7 @@ public class WlsDynamicServerConfigTest {
   }
 
   @Test
-  public void verifyAdminPortIsSetOnServerConfigs() {
+  void verifyAdminPortIsSetOnServerConfigs() {
     final int adminPort = 9002;
     List<NetworkAccessPoint> networkAccessPointList = new ArrayList<>();
     WlsServerConfig template =

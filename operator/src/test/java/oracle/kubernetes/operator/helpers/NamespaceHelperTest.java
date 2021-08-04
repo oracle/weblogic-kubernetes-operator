@@ -19,7 +19,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class NamespaceHelperTest {
+class NamespaceHelperTest {
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
 
@@ -36,34 +36,34 @@ public class NamespaceHelperTest {
   }
 
   @Test
-  public void whenGivenEmptyString_parseNamespaceReturnsDefault() {
+  void whenGivenEmptyString_parseNamespaceReturnsDefault() {
     assertThat(parseNamespaceList(""), contains(DEFAULT_NAMESPACE));
   }
 
   @Test
-  public void whenGivenNonEmptyString_parseNamespaceDoesNotReturnDefault() {
+  void whenGivenNonEmptyString_parseNamespaceDoesNotReturnDefault() {
     assertThat(parseNamespaceList("dev-domain"), not(contains(DEFAULT_NAMESPACE)));
   }
 
   @Test
-  public void whenGivenSingleTarget_parseNamespaceReturnsIt() {
+  void whenGivenSingleTarget_parseNamespaceReturnsIt() {
     assertThat(parseNamespaceList("dev-domain"), contains("dev-domain"));
   }
 
   @Test
-  public void whenGivenMultipleTargets_parseNamespaceReturnsAll() {
+  void whenGivenMultipleTargets_parseNamespaceReturnsAll() {
     assertThat(parseNamespaceList("dev-domain,domain1,test-domain"),
                containsInAnyOrder("dev-domain", "domain1", "test-domain"));
   }
 
   @Test
-  public void whenStringContainsLeadingSpaces_removeThem() {
+  void whenStringContainsLeadingSpaces_removeThem() {
     assertThat(parseNamespaceList(" test-domain, dev-domain"),
                containsInAnyOrder("dev-domain", "test-domain"));
   }
 
   @Test
-  public void whenGivenTrailingSpaces_removeThem() {
+  void whenGivenTrailingSpaces_removeThem() {
     assertThat(parseNamespaceList("dev-domain ,test-domain "),
                containsInAnyOrder("dev-domain", "test-domain"));
   }

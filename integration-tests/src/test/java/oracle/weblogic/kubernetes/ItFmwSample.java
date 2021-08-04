@@ -155,7 +155,7 @@ public class ItFmwSample {
   @ParameterizedTest
   @MethodSource("paramProvider")
   @DisplayName("Test FMW domain on PV sample")
-  public void testFmwDomainInPv(String model) {
+  void testFmwDomainInPv(String model) {
 
     String domainUid = model.split(":")[1];
     String script = model.split(":")[0];

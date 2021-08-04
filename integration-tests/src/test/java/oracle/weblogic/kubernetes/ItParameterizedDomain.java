@@ -309,7 +309,7 @@ class ItParameterizedDomain {
    */
   @Test
   @DisplayName("verify the operator log has expected error msg when encryption secret not created for a mii domain")
-  public void testOperatorLogSevereMsg() {
+  void testOperatorLogSevereMsg() {
     createMiiDomainNegative("miidomainnegative", miiDomainNegativeNamespace);
     String operatorPodName =
         assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
@@ -327,7 +327,7 @@ class ItParameterizedDomain {
   @ParameterizedTest
   @DisplayName("scale cluster by patching domain resource with three different type of domains")
   @MethodSource("domainProvider")
-  public void testScaleClustersByPatchingDomainResource(Domain domain) {
+  void testScaleClustersByPatchingDomainResource(Domain domain) {
     assertDomainNotNull(domain);
 
     // get the domain properties
@@ -372,7 +372,7 @@ class ItParameterizedDomain {
   @ParameterizedTest
   @DisplayName("scale cluster using REST API for three different type of domains")
   @MethodSource("domainProvider")
-  public void testScaleClustersWithRestApi(Domain domain) {
+  void testScaleClustersWithRestApi(Domain domain) {
     assertDomainNotNull(domain);
 
     // get domain properties
@@ -408,7 +408,7 @@ class ItParameterizedDomain {
   @ParameterizedTest
   @DisplayName("scale cluster using WLDF policy for three different type of domains")
   @MethodSource("domainProvider")
-  public void testScaleClustersWithWLDF(Domain domain) {
+  void testScaleClustersWithWLDF(Domain domain) {
     assertDomainNotNull(domain);
 
     // get domain properties
@@ -451,7 +451,7 @@ class ItParameterizedDomain {
   @ParameterizedTest
   @DisplayName("Test admin console login using admin node port")
   @MethodSource("domainProvider")
-  public void testAdminConsoleLoginUsingAdminNodePort(Domain domain) {
+  void testAdminConsoleLoginUsingAdminNodePort(Domain domain) {
 
     assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");
 
@@ -479,7 +479,7 @@ class ItParameterizedDomain {
   @ParameterizedTest
   @DisplayName("Test admin console login using ingress controller")
   @MethodSource("domainProvider")
-  public void testAdminConsoleLoginUsingIngressController(Domain domain) {
+  void testAdminConsoleLoginUsingIngressController(Domain domain) {
 
     assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");
 
@@ -502,7 +502,7 @@ class ItParameterizedDomain {
    */
   @Test
   @DisplayName("Test liveness probe of pod")
-  public void testLivenessProbe() {
+  void testLivenessProbe() {
     Domain domain = miiDomain;
     assertDomainNotNull(domain);
     String domainUid = domain.getSpec().getDomainUid();
@@ -597,7 +597,7 @@ class ItParameterizedDomain {
    */
   @Test
   @DisplayName("Test dataHome override in a domain with domain in image type")
-  public void testDataHomeOverrideDomainInImage() {
+  void testDataHomeOverrideDomainInImage() {
 
     assertDomainNotNull(domainInImage);
     String domainUid = domainInImage.getSpec().getDomainUid();
@@ -640,7 +640,7 @@ class ItParameterizedDomain {
    */
   @Test
   @DisplayName("Test dataHome override in a domain with model in image type")
-  public void testDataHomeOverrideMiiDomain() {
+  void testDataHomeOverrideMiiDomain() {
 
     assertDomainNotNull(miiDomain);
     String domainUid = miiDomain.getSpec().getDomainUid();
@@ -686,7 +686,7 @@ class ItParameterizedDomain {
    */
   @Test
   @DisplayName("Test dataHome override in a domain with domain on PV type")
-  public void testDataHomeOverrideDomainOnPV() {
+  void testDataHomeOverrideDomainOnPV() {
 
     assertDomainNotNull(domainOnPV);
     String domainUid = domainOnPV.getSpec().getDomainUid();
@@ -729,7 +729,7 @@ class ItParameterizedDomain {
    */
   @Test
   @DisplayName("Verify server pods are restarted only once by changing the imagePullPolicy in multi-cluster domain")
-  public void testMultiClustersRollingRestart() {
+  void testMultiClustersRollingRestart() {
     OffsetDateTime timestamp = now();
 
     // get the original domain resource before update

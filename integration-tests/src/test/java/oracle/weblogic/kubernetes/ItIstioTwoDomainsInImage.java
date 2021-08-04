@@ -141,7 +141,7 @@ class ItIstioTwoDomainsInImage {
    */
   @Test
   @DisplayName("Two WebLogic domainhome-in-image with single istio ingress")
-  public void testIstioTwoDomainsWithSingleIngress() {
+  void testIstioTwoDomainsWithSingleIngress() {
     final String managedServerPrefix1 = domainUid1 + "-managed-server";
     final String managedServerPrefix2 = domainUid2 + "-managed-server";
     final int replicaCount = 2;

@@ -47,7 +47,7 @@ import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings("SameParameterValue")
-public class ServicePresenceTest {
+class ServicePresenceTest {
 
   private static final String NS = "namespace";
   private static final String UID = "domain1";
@@ -98,14 +98,14 @@ public class ServicePresenceTest {
   }
 
   @Test
-  public void whenServiceHasNoDomainUid_returnNull() {
+  void whenServiceHasNoDomainUid_returnNull() {
     V1Service service = new V1Service().metadata(new V1ObjectMeta());
 
     assertThat(ServiceHelper.getServiceDomainUid(service), nullValue());
   }
 
   @Test
-  public void whenServiceHasDomainUid_returnIt() {
+  void whenServiceHasDomainUid_returnIt() {
     V1Service service =
         new V1Service()
             .metadata(new V1ObjectMeta().labels(ImmutableMap.of(DOMAINUID_LABEL, "domain1")));
@@ -114,14 +114,14 @@ public class ServicePresenceTest {
   }
 
   @Test
-  public void whenServiceHasNoServerName_returnNull() {
+  void whenServiceHasNoServerName_returnNull() {
     V1Service service = new V1Service().metadata(new V1ObjectMeta());
 
     assertThat(ServiceHelper.getServerName(service), nullValue());
   }
 
   @Test
-  public void whenServiceHasServerName_returnIt() {
+  void whenServiceHasServerName_returnIt() {
     V1Service service =
         new V1Service()
             .metadata(new V1ObjectMeta().labels(ImmutableMap.of(SERVERNAME_LABEL, "myserver")));
@@ -134,7 +134,7 @@ public class ServicePresenceTest {
   // the timestamps for services increment with each creation
 
   @Test
-  public void onAddEventWithNoRecordedClusterService_addIt() {
+  void onAddEventWithNoRecordedClusterService_addIt() {
     V1Service newService = createClusterService();
     Watch.Response<V1Service> event = WatchEvent.createAddedEvent(newService).toWatchResponse();
 
@@ -144,7 +144,7 @@ public class ServicePresenceTest {
   }
 
   @Test
-  public void onAddEventWithNewerClusterService_replaceCurrentValue() {
+  void onAddEventWithNewerClusterService_replaceCurrentValue() {
     V1Service currentService = createClusterService();
     V1Service newerService = createClusterService();
     info.setClusterService(CLUSTER, currentService);
@@ -156,7 +156,7 @@ public class ServicePresenceTest {
   }
 
   @Test
-  public void onAddEventWithOlderClusterService_keepCurrentValue() {
+  void onAddEventWithOlderClusterService_keepCurrentValue() {
     V1Service olderService = createClusterService();
     V1Service currentService = createClusterService();
     info.setClusterService(CLUSTER, currentService);
@@ -168,7 +168,7 @@ public class ServicePresenceTest {
   }
 
   @Test
-  public void onModifyEventWithNoRecordedClusterService_addIt() {
+  void onModifyEventWithNoRecordedClusterService_addIt() {
     V1Service service1 = createClusterService();
     Watch.Response<V1Service> event = WatchEvent.createModifiedEvent(service1).toWatchResponse();
 
@@ -178,7 +178,7 @@ public class ServicePresenceTest {
   }
 
   @Test
-  public void onModifyEventWithNewerClusterService_replaceCurrentValue() {
+  void onModifyEventWithNewerClusterService_replaceCurrentValue() {
     V1Service currentService = createClusterService();
     V1Service newService = createClusterService();
     info.setClusterService(CLUSTER, currentService);
@@ -190,7 +190,7 @@ public class ServicePresenceTest {
   }
 
   @Test
-  public void onModifyEventWithOlderClusterService_keepCurrentValue() {
+  void onModifyEventWithOlderClusterService_keepCurrentValue() {
     V1Service oldService = createClusterService();
     V1Service currentService = createClusterService();
     info.setClusterService(CLUSTER, currentService);
@@ -202,7 +202,7 @@ public class ServicePresenceTest {
   }
 
   @Test
-  public void onDeleteEventWithNoRecordedClusterService_ignoreIt() {
+  void onDeleteEventWithNoRecordedClusterService_ignoreIt() {
     V1Service service = createClusterService();
     Watch.Response<V1Service> event = WatchEvent.createDeletedEvent(service).toWatchResponse();
 
@@ -212,7 +212,7 @@ public class ServicePresenceTest {
   }
 
   @Test
-  public void onDeleteEventWithOlderClusterService_keepCurrentValue() {
+  void onDeleteEventWithOlderClusterService_keepCurrentValue() {
     V1Service oldService = createClusterService();
     V1Service currentService = createClusterService();
     info.setClusterService(CLUSTER, currentService);
@@ -224,7 +224,7 @@ public class ServicePresenceTest {
   }
 
   @Test
-  public void onDeleteEventWithSameClusterService_removeIt() {
+  void onDeleteEventWithSameClusterService_removeIt() {
     V1Service currentService = createClusterService();
     info.setClusterService(CLUSTER, currentService);
     Watch.Response<V1Service> event =
@@ -236,7 +236,7 @@ public class ServicePresenceTest {
   }
 
   @Test
-  public void onDeleteEventWithNewerClusterService_removeIt() {
+  void onDeleteEventWithNewerClusterService_removeIt() {
     V1Service currentService = createClusterService();
     V1Service newerService = createClusterService();
     info.setClusterService(CLUSTER, currentService);
@@ -248,7 +248,7 @@ public class ServicePresenceTest {
   }
 
   @Test
-  public void whenEventContainsServiceWithClusterNameAndNoTypeLabel_addAsClusterService() {
+  void whenEventContainsServiceWithClusterNameAndNoTypeLabel_addAsClusterService() {
     V1Service service =
         new V1Service()
             .metadata(
@@ -263,7 +263,7 @@ public class ServicePresenceTest {
   }
 
   @Test
-  public void onAddEventWithNoRecordedServerService_addIt() {
+  void onAddEventWithNoRecordedServerService_addIt() {
     V1Service newService = createServerService();
     Watch.Response<V1Service> event = WatchEvent.createAddedEvent(newService).toWatchResponse();
 
@@ -273,7 +273,7 @@ public class ServicePresenceTest {
   }
 
   @Test
-  public void onAddEventWithNewerServerService_replaceCurrentValue() {
+  void onAddEventWithNewerServerService_replaceCurrentValue() {
     V1Service currentService = createServerService();
     V1Service newerService = createServerService();
     info.setServerService(SERVER, currentService);
@@ -285,7 +285,7 @@ public class ServicePresenceTest {
   }
 
   @Test
-  public void onAddEventWithOlderServerService_keepCurrentValue() {
+  void onAddEventWithOlderServerService_keepCurrentValue() {
     V1Service olderService = createServerService();
     V1Service currentService = createServerService();
     info.setServerService(SERVER, currentService);
@@ -297,7 +297,7 @@ public class ServicePresenceTest {
   }
 
   @Test
-  public void onModifyEventWithNoRecordedServerService_addIt() {
+  void onModifyEventWithNoRecordedServerService_addIt() {
     V1Service service1 = createServerService();
     Watch.Response<V1Service> event = WatchEvent.createModifiedEvent(service1).toWatchResponse();
 
@@ -307,7 +307,7 @@ public class ServicePresenceTest {
   }
 
   @Test
-  public void onModifyEventWithNewerServerService_replaceCurrentValue() {
+  void onModifyEventWithNewerServerService_replaceCurrentValue() {
     V1Service currentService = createServerService();
     V1Service newService = createServerService();
     info.setServerService(SERVER, currentService);
@@ -319,7 +319,7 @@ public class ServicePresenceTest {
   }
 
   @Test
-  public void onModifyEventWithOlderServerService_keepCurrentValue() {
+  void onModifyEventWithOlderServerService_keepCurrentValue() {
     V1Service oldService = createServerService();
     V1Service currentService = createServerService();
     info.setServerService(SERVER, currentService);
@@ -331,7 +331,7 @@ public class ServicePresenceTest {
   }
 
   @Test
-  public void onDeleteEventWithNoRecordedServerService_ignoreIt() {
+  void onDeleteEventWithNoRecordedServerService_ignoreIt() {
     V1Service service = createServerService();
     Watch.Response<V1Service> event = WatchEvent.createDeletedEvent(service).toWatchResponse();
 
@@ -341,7 +341,7 @@ public class ServicePresenceTest {
   }
 
   @Test
-  public void onDeleteEventWithOlderServerService_keepCurrentValue() {
+  void onDeleteEventWithOlderServerService_keepCurrentValue() {
     V1Service oldService = createServerService();
     V1Service currentService = createServerService();
     info.setServerService(SERVER, currentService);
@@ -353,7 +353,7 @@ public class ServicePresenceTest {
   }
 
   @Test
-  public void onDeleteEventWithSameServerService_removeIt() {
+  void onDeleteEventWithSameServerService_removeIt() {
     V1Service currentService = createServerService();
     info.setServerService(SERVER, currentService);
     Watch.Response<V1Service> event =
@@ -365,7 +365,7 @@ public class ServicePresenceTest {
   }
 
   @Test
-  public void onDeleteEventWithNewerServerService_removeIt() {
+  void onDeleteEventWithNewerServerService_removeIt() {
     V1Service currentService = createServerService();
     V1Service newerService = createServerService();
     info.setServerService(SERVER, currentService);
@@ -377,7 +377,7 @@ public class ServicePresenceTest {
   }
 
   @Test
-  public void whenEventContainsServiceWithServerNameAndNoTypeLabel_addAsServerService() {
+  void whenEventContainsServiceWithServerNameAndNoTypeLabel_addAsServerService() {
     V1Service service =
         new V1Service()
             .metadata(
@@ -393,7 +393,7 @@ public class ServicePresenceTest {
   }
 
   @Test
-  public void onAddEventWithNoRecordedExternalService_addIt() {
+  void onAddEventWithNoRecordedExternalService_addIt() {
     V1Service newService = createExternalService();
     Watch.Response<V1Service> event = WatchEvent.createAddedEvent(newService).toWatchResponse();
 
@@ -403,7 +403,7 @@ public class ServicePresenceTest {
   }
 
   @Test
-  public void onAddEventWithNewerExternalService_replaceCurrentValue() {
+  void onAddEventWithNewerExternalService_replaceCurrentValue() {
     V1Service currentService = createExternalService();
     V1Service newerService = createExternalService();
     info.setExternalService(SERVER, currentService);
@@ -415,7 +415,7 @@ public class ServicePresenceTest {
   }
 
   @Test
-  public void onAddEventWithOlderExternalService_keepCurrentValue() {
+  void onAddEventWithOlderExternalService_keepCurrentValue() {
     V1Service olderService = createExternalService();
     V1Service currentService = createExternalService();
     info.setExternalService(SERVER, currentService);
@@ -427,7 +427,7 @@ public class ServicePresenceTest {
   }
 
   @Test
-  public void onModifyEventWithNoRecordedExternalService_addIt() {
+  void onModifyEventWithNoRecordedExternalService_addIt() {
     V1Service service1 = createExternalService();
     Watch.Response<V1Service> event = WatchEvent.createModifiedEvent(service1).toWatchResponse();
 
@@ -437,7 +437,7 @@ public class ServicePresenceTest {
   }
 
   @Test
-  public void onModifyEventWithNewerExternalService_replaceCurrentValue() {
+  void onModifyEventWithNewerExternalService_replaceCurrentValue() {
     V1Service currentService = createExternalService();
     V1Service newService = createExternalService();
     info.setExternalService(SERVER, currentService);
@@ -449,7 +449,7 @@ public class ServicePresenceTest {
   }
 
   @Test
-  public void onModifyEventWithOlderExternalService_keepCurrentValue() {
+  void onModifyEventWithOlderExternalService_keepCurrentValue() {
     V1Service oldService = createExternalService();
     V1Service currentService = createExternalService();
     info.setExternalService(SERVER, currentService);
@@ -461,7 +461,7 @@ public class ServicePresenceTest {
   }
 
   @Test
-  public void onDeleteEventWithNoRecordedExternalService_ignoreIt() {
+  void onDeleteEventWithNoRecordedExternalService_ignoreIt() {
     V1Service service = createExternalService();
     Watch.Response<V1Service> event = WatchEvent.createDeletedEvent(service).toWatchResponse();
 
@@ -471,7 +471,7 @@ public class ServicePresenceTest {
   }
 
   @Test
-  public void onDeleteEventWithOlderExternalService_keepCurrentValue() {
+  void onDeleteEventWithOlderExternalService_keepCurrentValue() {
     V1Service oldService = createExternalService();
     V1Service currentService = createExternalService();
     info.setExternalService(SERVER, currentService);
@@ -483,7 +483,7 @@ public class ServicePresenceTest {
   }
 
   @Test
-  public void onDeleteEventWithSameExternalService_removeIt() {
+  void onDeleteEventWithSameExternalService_removeIt() {
     V1Service currentService = createExternalService();
     info.setExternalService(SERVER, currentService);
     Watch.Response<V1Service> event =
@@ -495,7 +495,7 @@ public class ServicePresenceTest {
   }
 
   @Test
-  public void onDeleteEventWithNewerExternalService_removeIt() {
+  void onDeleteEventWithNewerExternalService_removeIt() {
     V1Service currentService = createExternalService();
     V1Service newerService = createExternalService();
     info.setExternalService(SERVER, currentService);
@@ -507,7 +507,7 @@ public class ServicePresenceTest {
   }
 
   @Test
-  public void whenEventContainsServiceWithNodePortAndNoTypeLabel_addAsExternalService() {
+  void whenEventContainsServiceWithNodePortAndNoTypeLabel_addAsExternalService() {
     V1Service service =
         new V1Service()
             .metadata(
@@ -553,7 +553,7 @@ public class ServicePresenceTest {
   }
 
   @Test
-  public void whenClusterServiceAdded_recordforCluster() {
+  void whenClusterServiceAdded_recordforCluster() {
     V1Service clusterService = createClusterService();
 
     ServiceHelper.addToPresence(info, clusterService);
@@ -562,7 +562,7 @@ public class ServicePresenceTest {
   }
 
   @Test
-  public void whenServerServiceAdded_recordforServer() {
+  void whenServerServiceAdded_recordforServer() {
     V1Service serverService = createServerService();
 
     ServiceHelper.addToPresence(info, serverService);
@@ -571,7 +571,7 @@ public class ServicePresenceTest {
   }
 
   @Test
-  public void whenExternalServiceAdded_recordforServer() {
+  void whenExternalServiceAdded_recordforServer() {
     V1Service externalService = createExternalService();
 
     ServiceHelper.addToPresence(info, externalService);

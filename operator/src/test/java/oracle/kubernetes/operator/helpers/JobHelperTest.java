@@ -97,7 +97,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class JobHelperTest extends DomainValidationBaseTest {
+class JobHelperTest extends DomainValidationBaseTest {
   private static final String RAW_VALUE_1 = "find uid1 at $(DOMAIN_HOME)";
   private static final String END_VALUE_1 = "find uid1 at /u01/oracle/user_projects/domains";
   protected static final String LONG_RESOURCE_NAME
@@ -156,21 +156,21 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void creatingServers_true_whenClusterReplicas_gt_0() {
+  void creatingServers_true_whenClusterReplicas_gt_0() {
     configureCluster("cluster1").withReplicas(1);
 
     assertThat(JobHelper.creatingServers(domainPresenceInfo), equalTo(true));
   }
 
   @Test
-  public void creatingServers_false_whenClusterReplicas_is_0() {
+  void creatingServers_false_whenClusterReplicas_is_0() {
     configureCluster("cluster1").withReplicas(0);
 
     assertThat(JobHelper.creatingServers(domainPresenceInfo), equalTo(false));
   }
 
   @Test
-  public void creatingServers_true_whenDomainReplicas_gt_0_and_cluster_has_no_replicas() {
+  void creatingServers_true_whenDomainReplicas_gt_0_and_cluster_has_no_replicas() {
     configureDomain().withDefaultReplicaCount(1);
 
     configureCluster("cluster1");
@@ -179,7 +179,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void creatingServers_false_whenDomainReplicas_is_0_and_cluster_has_no_replicas() {
+  void creatingServers_false_whenDomainReplicas_is_0_and_cluster_has_no_replicas() {
     configureDomain().withDefaultReplicaCount(0);
 
     configureCluster("cluster1");
@@ -188,19 +188,19 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void creatingServers_false_when_no_domain_nor_cluster_replicas() {
+  void creatingServers_false_when_no_domain_nor_cluster_replicas() {
     configureCluster("cluster1");
 
     assertThat(JobHelper.creatingServers(domainPresenceInfo), equalTo(false));
   }
 
   @Test
-  public void creatingServers_false_when_noCluster_and_Start_Never_startPolicy() {
+  void creatingServers_false_when_noCluster_and_Start_Never_startPolicy() {
     assertThat(JobHelper.creatingServers(domainPresenceInfo), equalTo(false));
   }
 
   @Test
-  public void creatingServers_true_when_noCluster_and_Start_If_Needed_startPolicy() {
+  void creatingServers_true_when_noCluster_and_Start_If_Needed_startPolicy() {
     configureDomain()
         .withDefaultServerStartPolicy(ConfigurationConstants.START_IF_NEEDED);
 
@@ -208,7 +208,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void creatingServers_true_when_noCluster_and_Start_Always_startPolicy() {
+  void creatingServers_true_when_noCluster_and_Start_Always_startPolicy() {
     configureDomain()
         .withDefaultServerStartPolicy(ConfigurationConstants.START_ALWAYS);
 
@@ -216,7 +216,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void creatingServers_false_when_server_with_Start_Never_startPolicy() {
+  void creatingServers_false_when_server_with_Start_Never_startPolicy() {
     configureServer("managed-server1")
         .withServerStartPolicy(ConfigurationConstants.START_NEVER);
 
@@ -224,7 +224,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void creatingServers_true_when_server_with_Start_If_Needed_startPolicy() {
+  void creatingServers_true_when_server_with_Start_If_Needed_startPolicy() {
     configureServer("managed-server1")
         .withServerStartPolicy(ConfigurationConstants.START_IF_NEEDED);
 
@@ -232,7 +232,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void creatingServers_true_when_server_with_Start_Always_startPolicy() {
+  void creatingServers_true_when_server_with_Start_Always_startPolicy() {
     configureServer("managed-server1")
         .withServerStartPolicy(ConfigurationConstants.START_ALWAYS);
 
@@ -240,7 +240,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasEnvironmentItems_introspectorPodStartupWithThem() {
+  void whenDomainHasEnvironmentItems_introspectorPodStartupWithThem() {
     configureDomain()
         .withEnvironmentVariable("item1", "value1")
         .withEnvironmentVariable("item2", "value2")
@@ -267,7 +267,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainIsOnlineUpdate_introspectorPodStartupWithThem() {
+  void whenDomainIsOnlineUpdate_introspectorPodStartupWithThem() {
     configureDomain()
         .withMIIOnlineUpdate();
 
@@ -289,7 +289,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainIsNotOnlineUpdate_introspectorPodStartupWithoutThem() {
+  void whenDomainIsNotOnlineUpdate_introspectorPodStartupWithoutThem() {
 
     V1JobSpec jobSpec = createJobSpec();
 
@@ -319,7 +319,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void introspectorPodStartsWithDefaultUser_Mem_Args_environmentVariable() {
+  void introspectorPodStartsWithDefaultUser_Mem_Args_environmentVariable() {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
@@ -329,7 +329,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasEmptyStringUser_Mem_Args_EnvironmentItem_introspectorPodStartupWithIt() {
+  void whenDomainHasEmptyStringUser_Mem_Args_EnvironmentItem_introspectorPodStartupWithIt() {
     configureDomain().withEnvironmentVariable("USER_MEM_ARGS", "");
 
     V1JobSpec jobSpec = createJobSpec();
@@ -342,7 +342,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasEnvironmentItemsWithVariables_introspectorPodStartupWithThem() {
+  void whenDomainHasEnvironmentItemsWithVariables_introspectorPodStartupWithThem() {
     configureDomain().withEnvironmentVariable("item1", RAW_VALUE_1);
 
     V1JobSpec jobSpec = createJobSpec();
@@ -358,7 +358,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   private static final String EMPTY_DATA_HOME = "";
 
   @Test
-  public void whenDomainHasEnvironmentVars_introspectorPodStartupVerifyDataHomeEnvNotDefined() {
+  void whenDomainHasEnvironmentVars_introspectorPodStartupVerifyDataHomeEnvNotDefined() {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(getMatchingContainerEnv(domainPresenceInfo, jobSpec),
@@ -375,7 +375,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   private static final String OVERRIDE_DATA_HOME = OVERRIDE_DATA_DIR + File.separator + UID;
 
   @Test
-  public void whenDomainHasEnvironmentVars_introspectorPodStartupVerifyDataHomeEnvDefined() {
+  void whenDomainHasEnvironmentVars_introspectorPodStartupVerifyDataHomeEnvDefined() {
     configureDomain().withDataHome(OVERRIDE_DATA_DIR);
 
     V1JobSpec jobSpec = createJobSpec();
@@ -388,7 +388,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasEnvironmentVars_introspectorPodStartupVerifyEmptyDataHome() {
+  void whenDomainHasEnvironmentVars_introspectorPodStartupVerifyEmptyDataHome() {
     configureDomain().withDataHome(EMPTY_DATA_HOME);
 
     V1JobSpec jobSpec = createJobSpec();
@@ -405,7 +405,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   private static final String NULL_DATA_HOME = null;
 
   @Test
-  public void whenDomainHasEnvironmentVars_introspectorPodStartupVerifyNullDataHome() {
+  void whenDomainHasEnvironmentVars_introspectorPodStartupVerifyNullDataHome() {
     configureDomain().withDataHome(NULL_DATA_HOME);
 
     V1JobSpec jobSpec = createJobSpec();
@@ -415,7 +415,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenAdminServerHasEnvironmentItems_introspectorPodStartupWithThem() {
+  void whenAdminServerHasEnvironmentItems_introspectorPodStartupWithThem() {
     configureDomain()
         .withEnvironmentVariable("item1", "domain-value1")
         .withEnvironmentVariable("item2", "domain-value2")
@@ -441,7 +441,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasValueFromEnvironmentItems_introspectorPodStartupWithThem() {
+  void whenDomainHasValueFromEnvironmentItems_introspectorPodStartupWithThem() {
     configureDomain()
         .withEnvironmentVariable(configMapKeyRefEnvVar)
         .withEnvironmentVariable(secretKeyRefEnvVar)
@@ -465,7 +465,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenAdminServerHasValueFromEnvironmentItems_introspectorPodStartupWithThem() {
+  void whenAdminServerHasValueFromEnvironmentItems_introspectorPodStartupWithThem() {
     configureDomain()
         .configureAdminServer()
         .withEnvironmentVariable(configMapKeyRefEnvVar)
@@ -490,7 +490,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void introspectorPodStartupWithNullAdminUsernamePasswordEnvVarValues() {
+  void introspectorPodStartupWithNullAdminUsernamePasswordEnvVarValues() {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
@@ -505,7 +505,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void
+  void
       whenDomainHasEnvironmentItemsWithVariable_createIntrospectorPodShouldNotChangeItsValue()
           throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
     DomainConfigurator domainConfigurator =
@@ -518,7 +518,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasAdditionalVolumesWithReservedVariables_createIntrospectorPodWithSubstitutions() {
+  void whenDomainHasAdditionalVolumesWithReservedVariables_createIntrospectorPodWithSubstitutions() {
     configureDomain()
         .withAdditionalVolumeMount("volume2", "/source-$(DOMAIN_UID)");
     runCreateJob();
@@ -544,7 +544,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasAdditionalVolumesWithCustomVariables_createIntrospectorPodWithSubstitutions() {
+  void whenDomainHasAdditionalVolumesWithCustomVariables_createIntrospectorPodWithSubstitutions() {
     resourceLookup.defineResource(SECRET_NAME, KubernetesResourceType.Secret, NS);
     resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
     resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
@@ -561,7 +561,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasAdditionalVolumesWithCustomVariablesInvalidValue_jobNotCreated() {
+  void whenDomainHasAdditionalVolumesWithCustomVariablesInvalidValue_jobNotCreated() {
     resourceLookup.defineResource(SECRET_NAME, KubernetesResourceType.Secret, NS);
     resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
     resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
@@ -582,7 +582,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasMultipleConfigOverrideSecretsWithLongNames_volumesCreatedWithShorterNames() {
+  void whenDomainHasMultipleConfigOverrideSecretsWithLongNames_volumesCreatedWithShorterNames() {
     resourceLookup.defineResource(LONG_RESOURCE_NAME, KubernetesResourceType.Secret, NS);
     resourceLookup.defineResource(SECOND_LONG_RESOURCE_NAME, KubernetesResourceType.Secret, NS);
 
@@ -601,7 +601,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasConfigMapOverrideWithLongConfigMapName_volumeCreatedWithShorterName() {
+  void whenDomainHasConfigMapOverrideWithLongConfigMapName_volumeCreatedWithShorterName() {
     resourceLookup.defineResource(LONG_RESOURCE_NAME, KubernetesResourceType.ConfigMap, NS);
 
     configureDomain()
@@ -615,7 +615,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasModelConfigMapOverrideWithLongModelCMName_volumeCreatedWithShorterName() {
+  void whenDomainHasModelConfigMapOverrideWithLongModelCMName_volumeCreatedWithShorterName() {
     resourceLookup.defineResource(LONG_RESOURCE_NAME, KubernetesResourceType.ConfigMap, NS);
 
     configureDomain()
@@ -630,7 +630,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasMultipleConfigOverrideSecretsWithLongAndShortNames_volumeCreatedWithCorrectNames() {
+  void whenDomainHasMultipleConfigOverrideSecretsWithLongAndShortNames_volumeCreatedWithCorrectNames() {
     resourceLookup.defineResource(SECRET_NAME, KubernetesResourceType.Secret, NS);
     resourceLookup.defineResource(LONG_RESOURCE_NAME, KubernetesResourceType.Secret, NS);
 
@@ -648,7 +648,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void verify_introspectorPodSpec_activeDeadlineSeconds_initial_values() {
+  void verify_introspectorPodSpec_activeDeadlineSeconds_initial_values() {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
@@ -667,7 +667,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void verify_introspectorPodSpec_activeDeadlineSeconds_retry_values() {
+  void verify_introspectorPodSpec_activeDeadlineSeconds_retry_values() {
     int failureCount = domainPresenceInfo.incrementAndGetFailureCount();
 
     V1JobSpec jobSpec = createJobSpec();
@@ -680,7 +680,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void verify_introspectorPodSpec_activeDeadlineSeconds_domain_overrides_values() {
+  void verify_introspectorPodSpec_activeDeadlineSeconds_domain_overrides_values() {
     configureDomain().withIntrospectorJobActiveDeadlineSeconds(600L);
    
     V1JobSpec jobSpec = createJobSpec();
@@ -690,21 +690,21 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void podTemplate_hasCreateByOperatorLabel() {
+  void podTemplate_hasCreateByOperatorLabel() {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(getTemplateLabel(jobSpec, LabelConstants.CREATEDBYOPERATOR_LABEL), equalTo("true"));
   }
 
   @Test
-  public void podTemplate_hasDomainUidLabel() {
+  void podTemplate_hasDomainUidLabel() {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(getTemplateLabel(jobSpec, LabelConstants.DOMAINUID_LABEL), equalTo(UID));
   }
 
   @Test
-  public void podTemplate_hasJobNameLabel() {
+  void podTemplate_hasJobNameLabel() {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
@@ -721,7 +721,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void introspectorPodSpec_alwaysCreatedWithNeverRestartPolicy() {
+  void introspectorPodSpec_alwaysCreatedWithNeverRestartPolicy() {
     configureDomain()
         .withRestartPolicy("Always");
     V1JobSpec jobSpec = createJobSpec();
@@ -732,7 +732,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void introspectorPodSpec_createdWithoutConfiguredReadinessGates() {
+  void introspectorPodSpec_createdWithoutConfiguredReadinessGates() {
     configureDomain()
         .withReadinessGate(new V1PodReadinessGate().conditionType("www.example.com/feature-1"));
     V1JobSpec jobSpec = createJobSpec();
@@ -743,7 +743,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void introspectorPodSpec_createdWithoutConfiguredInitContainers() {
+  void introspectorPodSpec_createdWithoutConfiguredInitContainers() {
     configureDomain()
         .withInitContainer(
             createContainer(
@@ -757,7 +757,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void introspectorPodSpec_createdWithoutConfiguredContainers() {
+  void introspectorPodSpec_createdWithoutConfiguredContainers() {
     configureDomain()
         .withContainer(
             createContainer(
@@ -772,7 +772,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void introspectorPodContainerSpec_hasJobNameAsContainerName() {
+  void introspectorPodContainerSpec_hasJobNameAsContainerName() {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
@@ -781,7 +781,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasContainerSecurityContext_introspectorPodContainersStartupWithIt() {
+  void whenDomainHasContainerSecurityContext_introspectorPodContainersStartupWithIt() {
     configureDomain().withContainerSecurityContext(containerSecurityContext);
     V1JobSpec jobSpec = createJobSpec();
 
@@ -789,14 +789,14 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenNotConfigured_introspectorPodContainers_hasEmptySecurityContext() {
+  void whenNotConfigured_introspectorPodContainers_hasEmptySecurityContext() {
     V1JobSpec jobSpec = createJobSpec();
 
     getContainerStream(jobSpec).forEach(c -> assertThat(c.getSecurityContext(), is(new V1SecurityContext())));
   }
 
   @Test
-  public void whenDomainHasPodSecurityContext_introspectorPodSpecStartupWithIt() {
+  void whenDomainHasPodSecurityContext_introspectorPodSpecStartupWithIt() {
     configureDomain().withPodSecurityContext(podSecurityContext);
     V1JobSpec jobSpec = createJobSpec();
 
@@ -806,7 +806,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenNotConfigured_introspectorPodSpec_hasEmptySecurityContext() {
+  void whenNotConfigured_introspectorPodSpec_hasEmptySecurityContext() {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
@@ -815,7 +815,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasAffinityConfigured_introspectorPodSpecStartupWithIt() {
+  void whenDomainHasAffinityConfigured_introspectorPodSpecStartupWithIt() {
     configureDomain().withAffinity(podAffinity);
     V1JobSpec jobSpec = createJobSpec();
 
@@ -825,7 +825,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenNotConfigured_introspectorPodSpec_hasNullAffinity() {
+  void whenNotConfigured_introspectorPodSpec_hasNullAffinity() {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
@@ -834,7 +834,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasNodeSelectorConfigured_introspectorPodSpecStartupWithIt() {
+  void whenDomainHasNodeSelectorConfigured_introspectorPodSpecStartupWithIt() {
     configureDomain().withNodeSelector("os", "linux");
     V1JobSpec jobSpec = createJobSpec();
 
@@ -844,7 +844,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenNotConfigured_introspectorPodSpec_hasEmptyNodeSelector() {
+  void whenNotConfigured_introspectorPodSpec_hasEmptyNodeSelector() {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
@@ -853,7 +853,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasNodeNameConfigured_introspectorPodSpecStartupWithIt() {
+  void whenDomainHasNodeNameConfigured_introspectorPodSpecStartupWithIt() {
     configureDomain().withNodeName("kube-02");
     V1JobSpec jobSpec = createJobSpec();
 
@@ -863,7 +863,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenNotConfigured_introspectorPodSpec_hasNullNodeName() {
+  void whenNotConfigured_introspectorPodSpec_hasNullNodeName() {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
@@ -872,7 +872,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasSchedulerNameConfigured_introspectorPodSpecStartupWithIt() {
+  void whenDomainHasSchedulerNameConfigured_introspectorPodSpecStartupWithIt() {
     configureDomain().withSchedulerName("my-scheduler");
     V1JobSpec jobSpec = createJobSpec();
 
@@ -882,7 +882,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenNotConfigured_introspectorPodSpec_hasNullSchedulerName() {
+  void whenNotConfigured_introspectorPodSpec_hasNullSchedulerName() {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
@@ -891,7 +891,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasRuntimeClassNameConfigured_introspectorPodSpecStartupWithIt() {
+  void whenDomainHasRuntimeClassNameConfigured_introspectorPodSpecStartupWithIt() {
     configureDomain().withRuntimeClassName("MyRuntimeClass");
     V1JobSpec jobSpec = createJobSpec();
 
@@ -901,7 +901,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenNotConfigured_introspectorPodSpec_hasNullRuntimeClassName() {
+  void whenNotConfigured_introspectorPodSpec_hasNullRuntimeClassName() {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
@@ -910,7 +910,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasImagePullSecretsConfigured_introspectorPodSpecStartupWithIt() {
+  void whenDomainHasImagePullSecretsConfigured_introspectorPodSpecStartupWithIt() {
     V1LocalObjectReference imagePullSecret = new V1LocalObjectReference().name("secret");
     configureDomain().withDefaultImagePullSecrets(imagePullSecret);
 
@@ -920,7 +920,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenNotConfigured_introspectorPodSpec_hasEmptyImagePullSecrets() {
+  void whenNotConfigured_introspectorPodSpec_hasEmptyImagePullSecrets() {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
@@ -929,7 +929,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasPriorityClassNameConfigured_introspectorPodSpecStartupWithIt() {
+  void whenDomainHasPriorityClassNameConfigured_introspectorPodSpecStartupWithIt() {
     configureDomain().withPriorityClassName("MyPriorityClass");
     V1JobSpec jobSpec = createJobSpec();
 
@@ -939,7 +939,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenNotConfigured_introspectorPodSpec_hasNullPriorityClassName() {
+  void whenNotConfigured_introspectorPodSpec_hasNullPriorityClassName() {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
@@ -948,7 +948,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasTolerationsConfigured_introspectorPodSpecStartupWithThem() {
+  void whenDomainHasTolerationsConfigured_introspectorPodSpecStartupWithThem() {
     configureDomain().withToleration(toleration);
     V1JobSpec jobSpec = createJobSpec();
 
@@ -958,7 +958,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenNotConfigured_introspectorPodSpec_hasNullTolerations() {
+  void whenNotConfigured_introspectorPodSpec_hasNullTolerations() {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
@@ -967,7 +967,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenDomainHasHttpAccessLogInLogHomeConfigured_introspectorPodSpecStartupWithIt() {
+  void whenDomainHasHttpAccessLogInLogHomeConfigured_introspectorPodSpecStartupWithIt() {
     configureDomain().withHttpAccessLogInLogHome(false);
     V1JobSpec jobSpec = createJobSpec();
 
@@ -977,7 +977,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenNotConfigured_introspectorPodSpec_hasTrueAccessLogInLogHomeEnvVar() {
+  void whenNotConfigured_introspectorPodSpec_hasTrueAccessLogInLogHomeEnvVar() {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(getMatchingContainerEnv(domainPresenceInfo, jobSpec),
@@ -986,7 +986,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenNoExistingTopologyRunIntrospector() {
+  void whenNoExistingTopologyRunIntrospector() {
     runCreateJob();
 
     assertThat(job, notNullValue());
@@ -998,7 +998,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenTopologyExistsAndNothingChanged_dontRunIntrospector() {
+  void whenTopologyExistsAndNothingChanged_dontRunIntrospector() {
     defineTopology();
 
     runCreateJob();
@@ -1007,7 +1007,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenIntrospectNotRequested_dontRunIntrospector() {
+  void whenIntrospectNotRequested_dontRunIntrospector() {
     defineTopology();
 
     runCreateJob();
@@ -1016,7 +1016,7 @@ public class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  public void whenIntrospectRequestSet_runIntrospector() {
+  void whenIntrospectRequestSet_runIntrospector() {
     defineTopology();
     testSupport.addToPacket(ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED, "123");
 

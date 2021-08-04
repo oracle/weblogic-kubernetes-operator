@@ -86,7 +86,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 @DisplayName("Test to validate on-prem to k8s use case")
 @IntegrationTest
 @Tag("okdenv")
-public class ItLiftAndShiftFromOnPremDomain {
+class ItLiftAndShiftFromOnPremDomain {
   private static String opNamespace = null;
   private static String traefikNamespace = null;
   private static String domainNamespace = null;
@@ -164,7 +164,7 @@ public class ItLiftAndShiftFromOnPremDomain {
    */
   @Test
   @DisplayName("Create model in image domain and verify external admin services")
-  public void testCreateMiiDomainWithClusterFromOnPremDomain() {
+  void testCreateMiiDomainWithClusterFromOnPremDomain() {
     // admin/managed server name here should match with model yaml in MII_BASIC_WDT_MODEL_FILE
     final String adminServerPodName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";

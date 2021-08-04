@@ -40,7 +40,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 /** Tests updates to a domain status from progress of the introspection job. */
-public class IntrospectionStatusTest {
+class IntrospectionStatusTest {
   private static final String CHAR_LOWER = "abcdefghijklmnopqrstuvwxyz";
   private static final Random random = new Random();
 
@@ -76,7 +76,7 @@ public class IntrospectionStatusTest {
   }
 
   @Test
-  public void whenNewIntrospectorJobPodStatusContainerStatusesNull_ignoreIt() {
+  void whenNewIntrospectorJobPodStatusContainerStatusesNull_ignoreIt() {
     V1Pod introspectorJobPod = createIntrospectorJobPod(createWaitingState(IMAGE_PULL_FAILURE, MESSAGE));
     Objects.requireNonNull(introspectorJobPod.getStatus()).containerStatuses(null);
 
@@ -88,7 +88,7 @@ public class IntrospectionStatusTest {
   }
 
   @Test
-  public void whenNewIntrospectorJobPodStatusNull_ignoreIt() {
+  void whenNewIntrospectorJobPodStatusNull_ignoreIt() {
     V1Pod introspectorJobPod = createIntrospectorJobPod(UID);
 
     processor.dispatchPodWatch(WatchEvent.createAddedEvent(introspectorJobPod).toWatchResponse());
@@ -99,7 +99,7 @@ public class IntrospectionStatusTest {
   }
 
   @Test
-  public void whenNewIntrospectorJobPodCreatedWithErrImagePullStatus_patchDomain() {
+  void whenNewIntrospectorJobPodCreatedWithErrImagePullStatus_patchDomain() {
     processor.dispatchPodWatch(
         WatchEvent.createAddedEvent(
             createIntrospectorJobPod(createWaitingState(IMAGE_PULL_FAILURE, MESSAGE)))
@@ -111,7 +111,7 @@ public class IntrospectionStatusTest {
   }
 
   @Test
-  public void whenNewIntrospectorJobPodCreatedWithNullMessage_ignoreIt() {
+  void whenNewIntrospectorJobPodCreatedWithNullMessage_ignoreIt() {
     processor.dispatchPodWatch(
         WatchEvent.createAddedEvent(
             createIntrospectorJobPod(createWaitingState(IMAGE_PULL_BACKOFF, null)))
@@ -123,7 +123,7 @@ public class IntrospectionStatusTest {
   }
 
   @Test
-  public void whenNewIntrospectorJobPodCreatedWithImagePullBackupStatus_patchDomain() {
+  void whenNewIntrospectorJobPodCreatedWithImagePullBackupStatus_patchDomain() {
     processor.dispatchPodWatch(
         WatchEvent.createAddedEvent(
             createIntrospectorJobPod(createWaitingState(IMAGE_PULL_BACKOFF, MESSAGE)))
@@ -135,7 +135,7 @@ public class IntrospectionStatusTest {
   }
 
   @Test
-  public void whenIntrospectorJobPodPendingWithUnschedulableStatus_patchDomain() {
+  void whenIntrospectorJobPodPendingWithUnschedulableStatus_patchDomain() {
     processor.dispatchPodWatch(
         WatchEvent.createModifiedEvent(
             createIntrospectorJobPodWithConditions(createPodConditions(UNSCHEDULABLE, MESSAGE)))
@@ -147,7 +147,7 @@ public class IntrospectionStatusTest {
   }
 
   @Test
-  public void whenIntrospectorJobPodPhaseFailed_patchDomain() {
+  void whenIntrospectorJobPodPhaseFailed_patchDomain() {
     processor.dispatchPodWatch(
         WatchEvent.createModifiedEvent(
             createIntrospectorJobPodWithPhase("Failed", DEADLINE_EXCEEDED))
@@ -159,7 +159,7 @@ public class IntrospectionStatusTest {
   }
 
   @Test
-  public void whenNewJobPodFailedBecauseDeletionAfterDeadlineExceeded_dontPatchDomain() {
+  void whenNewJobPodFailedBecauseDeletionAfterDeadlineExceeded_dontPatchDomain() {
     processor.dispatchPodWatch(
         WatchEvent.createModifiedEvent(
             createIntrospectorJobPodWithPhase("Failed", DEADLINE_EXCEEDED))
@@ -176,7 +176,7 @@ public class IntrospectionStatusTest {
   }
 
   @Test
-  public void whenNewJobPodFailedWithoutTerminatedAfterDeadlineExceeded_patchDomain() {
+  void whenNewJobPodFailedWithoutTerminatedAfterDeadlineExceeded_patchDomain() {
     processor.dispatchPodWatch(
         WatchEvent.createModifiedEvent(
             createIntrospectorJobPodWithPhase("Failed", DEADLINE_EXCEEDED))
@@ -193,7 +193,7 @@ public class IntrospectionStatusTest {
 
 
   @Test
-  public void whenNewIntrospectorJobPodStatusReasonNullAfterImagePullFailure_patchDomain() {
+  void whenNewIntrospectorJobPodStatusReasonNullAfterImagePullFailure_patchDomain() {
     processor.dispatchPodWatch(
         WatchEvent.createAddedEvent(
             createIntrospectorJobPod(createWaitingState(IMAGE_PULL_FAILURE, MESSAGE)))

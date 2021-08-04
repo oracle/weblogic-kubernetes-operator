@@ -24,14 +24,14 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class LoggingFormatterTest {
+class LoggingFormatterTest {
 
   private final LogRecord logRecord = new LogRecord(Level.INFO, "A simple one");
   private final LoggingFormatter formatter = new LoggingFormatter();
   private final FiberTestSupport testSupport = new FiberTestSupport();
 
   @Test
-  public void formatLogRecordWithParameters() throws JsonProcessingException {
+  void formatLogRecordWithParameters() throws JsonProcessingException {
     logRecord.setMessage("Insert {0} and {1}");
     logRecord.setParameters(new Object[]{"here", "there"});
 
@@ -45,7 +45,7 @@ public class LoggingFormatterTest {
   }
 
   @Test
-  public void extractLogLevel() throws JsonProcessingException {
+  void extractLogLevel() throws JsonProcessingException {
     logRecord.setLevel(Level.FINER);
     assertThat(getFormattedMessage().get("level"), equalTo("FINER"));
 
@@ -54,7 +54,7 @@ public class LoggingFormatterTest {
   }
 
   @Test
-  public void extractSourceIndicators() throws JsonProcessingException {
+  void extractSourceIndicators() throws JsonProcessingException {
     logRecord.setSourceClassName("theClass");
     logRecord.setSourceMethodName("itsMethod");
 
@@ -63,47 +63,47 @@ public class LoggingFormatterTest {
   }
 
   @Test
-  public void whenThrowableNotApiException_extractItsName() throws JsonProcessingException {
+  void whenThrowableNotApiException_extractItsName() throws JsonProcessingException {
     logRecord.setThrown(new RuntimeException("in the test"));
 
     assertThat(getFormattedMessage().get("exception"), containsString("java.lang.RuntimeException: in the test"));
   }
 
   @Test
-  public void whenThrowableIsApiException_extractAttributes() throws JsonProcessingException {
+  void whenThrowableIsApiException_extractAttributes() throws JsonProcessingException {
     logRecord.setThrown(new ApiException(420, Collections.emptyMap(), "a response"));
 
     assertThat(getFormattedMessage(), allOf(hasEntry("code", "420"), hasEntry("body", "a response")));
   }
 
   @Test
-  public void whenPacketLacksDomainPresence_domainUidIsEmpty() {
+  void whenPacketLacksDomainPresence_domainUidIsEmpty() {
     assertThat(getFormattedMessageInFiber().get("domainUID"), equalTo(""));
   }
 
   @Test
-  public void whenPacketContainsDomainPresence_retrieveDomainUid() {
+  void whenPacketContainsDomainPresence_retrieveDomainUid() {
     testSupport.addDomainPresenceInfo(new DomainPresenceInfo("test-ns", "test-uid"));
 
     assertThat(getFormattedMessageInFiber().get("domainUID"), equalTo("test-uid"));
   }
 
   @Test
-  public void whenPacketContainsLoggingContext_retrieveDomainUid() {
+  void whenPacketContainsLoggingContext_retrieveDomainUid() {
     testSupport.addLoggingContext(new LoggingContext().domainUid("test-lc-uid"));
 
     assertThat(getFormattedMessageInFiber().get("domainUID"), equalTo("test-lc-uid"));
   }
 
   @Test
-  public void whenNotInFiber_retrieveDomainUidFromThread() throws JsonProcessingException {
+  void whenNotInFiber_retrieveDomainUidFromThread() throws JsonProcessingException {
     try (LoggingContext stack = LoggingContext.setThreadContext().domainUid("test-uid")) {
       assertThat(getFormattedMessage().get("domainUID"), equalTo("test-uid"));
     }
   }
 
   @Test
-  public void whenPacketContainsDomainPresenceAndLoggingContext_retrieveDomainUidFromDomainPresence() {
+  void whenPacketContainsDomainPresenceAndLoggingContext_retrieveDomainUidFromDomainPresence() {
     testSupport.addDomainPresenceInfo(new DomainPresenceInfo("test-ns", "test-uid"));
     testSupport.addLoggingContext(new LoggingContext().namespace("test-lc-ns").domainUid("test-lc-uid"));
 
@@ -111,7 +111,7 @@ public class LoggingFormatterTest {
   }
 
   @Test
-  public void whenPacketContainsLoggingContextAndThreadLocalIsDefined_retrieveDomainUidFromLoggingContext() {
+  void whenPacketContainsLoggingContextAndThreadLocalIsDefined_retrieveDomainUidFromLoggingContext() {
     testSupport.addLoggingContext(new LoggingContext().domainUid("test-lc-uid1"));
     try (LoggingContext stack = LoggingContext.setThreadContext().namespace("test-lc-tl-uid")) {
       assertThat(getFormattedMessageInFiber().get("domainUID"), equalTo("test-lc-uid1"));
@@ -119,14 +119,14 @@ public class LoggingFormatterTest {
   }
 
   @Test
-  public void whenThreadLocalDefinedAndPacketContainsNoDomainPresenceOrLoggingContext_retrieveDomainUidFromThread() {
+  void whenThreadLocalDefinedAndPacketContainsNoDomainPresenceOrLoggingContext_retrieveDomainUidFromThread() {
     try (LoggingContext stack = LoggingContext.setThreadContext().domainUid("test-lc-tl-uid1")) {
       assertThat(getFormattedMessageInFiber().get("domainUID"), equalTo("test-lc-tl-uid1"));
     }
   }
 
   @Test
-  public void whenThreadLocalDefinedAndPacketNoDomainPresenceAndLoggingContextNoDUid_retrieveDomainUidFromThread() {
+  void whenThreadLocalDefinedAndPacketNoDomainPresenceAndLoggingContextNoDUid_retrieveDomainUidFromThread() {
     testSupport.addLoggingContext(new LoggingContext().namespace("test-lc-namespace"));
     try (LoggingContext stack = LoggingContext.setThreadContext().domainUid("test-lc-tl-uid1")) {
       assertThat(getFormattedMessageInFiber().get("domainUID"), equalTo("test-lc-tl-uid1"));
@@ -134,19 +134,19 @@ public class LoggingFormatterTest {
   }
 
   @Test
-  public void whenPacketLacksDomainPresence_domainNamespaceIsEmpty() {
+  void whenPacketLacksDomainPresence_domainNamespaceIsEmpty() {
     assertThat(getFormattedMessageInFiber().get("namespace"), equalTo(""));
   }
 
   @Test
-  public void whenPacketContainsDomainPresence_retrieveDomainNamespace() {
+  void whenPacketContainsDomainPresence_retrieveDomainNamespace() {
     testSupport.addDomainPresenceInfo(new DomainPresenceInfo("test-ns", "test-uid"));
 
     assertThat(getFormattedMessageInFiber().get("namespace"), equalTo("test-ns"));
   }
 
   @Test
-  public void whenPacketContainsDomainPresenceAndLoggingContext_retrieveDomainNamespaceFromDomainPresence() {
+  void whenPacketContainsDomainPresenceAndLoggingContext_retrieveDomainNamespaceFromDomainPresence() {
     testSupport.addDomainPresenceInfo(new DomainPresenceInfo("test-ns", "test-uid"));
     testSupport.addLoggingContext(new LoggingContext().namespace("test-lc-ns"));
 
@@ -154,14 +154,14 @@ public class LoggingFormatterTest {
   }
 
   @Test
-  public void whenPacketContainsLoggingContext_retrieveDomainNamespace() {
+  void whenPacketContainsLoggingContext_retrieveDomainNamespace() {
     testSupport.addLoggingContext(new LoggingContext().namespace("test-lc-ns"));
 
     assertThat(getFormattedMessageInFiber().get("namespace"), equalTo("test-lc-ns"));
   }
 
   @Test
-  public void whenPacketContainsLoggingContextAndThreadLocalIsDefined_retrieveNamespaceFromLoggingContext() {
+  void whenPacketContainsLoggingContextAndThreadLocalIsDefined_retrieveNamespaceFromLoggingContext() {
     testSupport.addLoggingContext(new LoggingContext().namespace("test-lc-ns1"));
     try (LoggingContext stack = LoggingContext.setThreadContext().namespace("test-lc-tl-ns")) {
       assertThat(getFormattedMessageInFiber().get("namespace"), equalTo("test-lc-ns1"));
@@ -169,14 +169,14 @@ public class LoggingFormatterTest {
   }
 
   @Test
-  public void whenThreadLocalDefinedAndPacketContainsNoDomainPresenceOrLoggingContext_retrieveNamespaceFromThread() {
+  void whenThreadLocalDefinedAndPacketContainsNoDomainPresenceOrLoggingContext_retrieveNamespaceFromThread() {
     try (LoggingContext stack = LoggingContext.setThreadContext().namespace("test-lc-tl-ns1")) {
       assertThat(getFormattedMessageInFiber().get("namespace"), equalTo("test-lc-tl-ns1"));
     }
   }
 
   @Test
-  public void whenNotInFiber_retrieveNamespaceFromThread() throws JsonProcessingException {
+  void whenNotInFiber_retrieveNamespaceFromThread() throws JsonProcessingException {
     try (LoggingContext stack = LoggingContext.setThreadContext().namespace("test-lc-tl-ns1")) {
       assertThat(getFormattedMessage().get("namespace"), equalTo("test-lc-tl-ns1"));
     }

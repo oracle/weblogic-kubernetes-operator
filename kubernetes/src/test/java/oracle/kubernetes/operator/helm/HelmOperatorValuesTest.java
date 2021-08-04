@@ -17,7 +17,7 @@ import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
 
-public class HelmOperatorValuesTest {
+class HelmOperatorValuesTest {
 
   private final int intValue = getRandomInt();
   private final String stringValue = Integer.toString(intValue);
@@ -28,28 +28,28 @@ public class HelmOperatorValuesTest {
   }
 
   @Test
-  public void whenServiceAccountSet_createdMapContainsValue() {
+  void whenServiceAccountSet_createdMapContainsValue() {
     operatorValues.serviceAccount(stringValue);
 
     assertThat(operatorValues.createMap(), hasEntry("serviceAccount", stringValue));
   }
 
   @Test
-  public void serviceAccountIsGettableStringValue() {
+  void serviceAccountIsGettableStringValue() {
     operatorValues.serviceAccount(stringValue);
 
     assertThat(operatorValues.getServiceAccount(), equalTo(stringValue));
   }
 
   @Test
-  public void whenCreatedFromMapWithoutServiceAccount_hasEmptyString() {
+  void whenCreatedFromMapWithoutServiceAccount_hasEmptyString() {
     HelmOperatorValues values = new HelmOperatorValues(ImmutableMap.of());
 
     assertThat(values.getServiceAccount(), equalTo(""));
   }
 
   @Test
-  public void whenCreatedFromMapWithServiceAccount_hasSpecifiedValue() {
+  void whenCreatedFromMapWithServiceAccount_hasSpecifiedValue() {
     HelmOperatorValues values =
         new HelmOperatorValues(ImmutableMap.of("serviceAccount", stringValue));
 
@@ -57,28 +57,28 @@ public class HelmOperatorValuesTest {
   }
 
   @Test
-  public void whenWeblogicOperatorImageSet_createdMapContainsValue() {
+  void whenWeblogicOperatorImageSet_createdMapContainsValue() {
     operatorValues.weblogicOperatorImage(stringValue);
 
     assertThat(operatorValues.createMap(), hasEntry("image", stringValue));
   }
 
   @Test
-  public void weblogicOperatorImageIsGettableStringValue() {
+  void weblogicOperatorImageIsGettableStringValue() {
     operatorValues.weblogicOperatorImage(stringValue);
 
     assertThat(operatorValues.getWeblogicOperatorImage(), equalTo(stringValue));
   }
 
   @Test
-  public void whenCreatedFromMapWithoutImage_hasEmptyString() {
+  void whenCreatedFromMapWithoutImage_hasEmptyString() {
     HelmOperatorValues values = new HelmOperatorValues(ImmutableMap.of());
 
     assertThat(values.getWeblogicOperatorImage(), equalTo(""));
   }
 
   @Test
-  public void whenCreatedFromMapWithImage_hasSpecifiedValue() {
+  void whenCreatedFromMapWithImage_hasSpecifiedValue() {
     HelmOperatorValues values = new HelmOperatorValues(ImmutableMap.of("image", stringValue));
 
     assertThat(values.getWeblogicOperatorImage(), equalTo(stringValue));
@@ -87,33 +87,33 @@ public class HelmOperatorValuesTest {
   // ----- javaLoggingLevel
 
   @Test
-  public void whenJavaLoggingLevelSet_createdMapContainsValue() {
+  void whenJavaLoggingLevelSet_createdMapContainsValue() {
     operatorValues.javaLoggingLevel(stringValue);
 
     assertThat(operatorValues.createMap(), hasEntry("javaLoggingLevel", stringValue));
   }
 
   @Test
-  public void whenJavaLoggingLevelNotSet_createdMapLacksValue() {
+  void whenJavaLoggingLevelNotSet_createdMapLacksValue() {
     assertThat(operatorValues.createMap(), not(hasKey("javaLoggingLevel")));
   }
 
   @Test
-  public void javaLoggingLevelIsGettableStringValue() {
+  void javaLoggingLevelIsGettableStringValue() {
     operatorValues.javaLoggingLevel(stringValue);
 
     assertThat(operatorValues.getJavaLoggingLevel(), equalTo(stringValue));
   }
 
   @Test
-  public void whenCreatedFromMapWithoutJavaLoggingLevel_hasEmptyString() {
+  void whenCreatedFromMapWithoutJavaLoggingLevel_hasEmptyString() {
     HelmOperatorValues values = new HelmOperatorValues(ImmutableMap.of());
 
     assertThat(values.getJavaLoggingLevel(), equalTo(""));
   }
 
   @Test
-  public void whenCreatedFromMapWithJavaLoggingLevel_hasSpecifiedValue() {
+  void whenCreatedFromMapWithJavaLoggingLevel_hasSpecifiedValue() {
     HelmOperatorValues values =
         new HelmOperatorValues(ImmutableMap.of("javaLoggingLevel", stringValue));
 
@@ -123,28 +123,28 @@ public class HelmOperatorValuesTest {
   // ------------ operatorNamespace
 
   @Test
-  public void whenWeblogicOperatorNamespaceSet_createdMapContainsValue() {
+  void whenWeblogicOperatorNamespaceSet_createdMapContainsValue() {
     operatorValues.namespace(stringValue);
 
     assertThat(operatorValues.createMap(), hasEntry("operatorNamespace", stringValue));
   }
 
   @Test
-  public void weblogicOperatorNamespaceIsGettableStringValue() {
+  void weblogicOperatorNamespaceIsGettableStringValue() {
     operatorValues.namespace(stringValue);
 
     assertThat(operatorValues.getNamespace(), equalTo(stringValue));
   }
 
   @Test
-  public void whenCreatedFromMapWithoutWeblogicOperatorNamespace_hasEmptyString() {
+  void whenCreatedFromMapWithoutWeblogicOperatorNamespace_hasEmptyString() {
     HelmOperatorValues values = new HelmOperatorValues(ImmutableMap.of());
 
     assertThat(values.getNamespace(), equalTo(""));
   }
 
   @Test
-  public void whenCreatedFromMapWithWeblogicOperatorNamespace_hasSpecifiedValue() {
+  void whenCreatedFromMapWithWeblogicOperatorNamespace_hasSpecifiedValue() {
     HelmOperatorValues values =
         new HelmOperatorValues(ImmutableMap.of("operatorNamespace", stringValue));
 
@@ -152,28 +152,28 @@ public class HelmOperatorValuesTest {
   }
 
   @Test
-  public void whenWeblogicOperatorImagePullPolicySet_createdMapContainsValue() {
+  void whenWeblogicOperatorImagePullPolicySet_createdMapContainsValue() {
     operatorValues.weblogicOperatorImagePullPolicy(stringValue);
 
     assertThat(operatorValues.createMap(), hasEntry("imagePullPolicy", stringValue));
   }
 
   @Test
-  public void weblogicOperatorImagePullPolicyIsGettableStringValue() {
+  void weblogicOperatorImagePullPolicyIsGettableStringValue() {
     operatorValues.weblogicOperatorImagePullPolicy(stringValue);
 
     assertThat(operatorValues.getWeblogicOperatorImagePullPolicy(), equalTo(stringValue));
   }
 
   @Test
-  public void whenCreatedFromMapWithoutImagePullPolicy_hasEmptyString() {
+  void whenCreatedFromMapWithoutImagePullPolicy_hasEmptyString() {
     HelmOperatorValues values = new HelmOperatorValues(ImmutableMap.of());
 
     assertThat(values.getWeblogicOperatorImagePullPolicy(), equalTo(""));
   }
 
   @Test
-  public void whenCreatedFromMapWithImagePullPolicy_hasSpecifiedValue() {
+  void whenCreatedFromMapWithImagePullPolicy_hasSpecifiedValue() {
     HelmOperatorValues values =
         new HelmOperatorValues(ImmutableMap.of("imagePullPolicy", stringValue));
 
@@ -181,7 +181,7 @@ public class HelmOperatorValuesTest {
   }
 
   @Test
-  public void whenCreatedFromMapWithExternalRestEnabled_hasSpecifiedValue() {
+  void whenCreatedFromMapWithExternalRestEnabled_hasSpecifiedValue() {
     HelmOperatorValues values =
         new HelmOperatorValues(ImmutableMap.of("externalRestEnabled", true));
 
@@ -189,7 +189,7 @@ public class HelmOperatorValuesTest {
   }
 
   @Test
-  public void whenCreatedFromMapWithoutExternalRestEnabled_hasEmptyString() {
+  void whenCreatedFromMapWithoutExternalRestEnabled_hasEmptyString() {
     HelmOperatorValues values = new HelmOperatorValues(ImmutableMap.of());
 
     assertThat(values.getExternalRestEnabled(), equalTo(""));
@@ -198,33 +198,33 @@ public class HelmOperatorValuesTest {
   // --------------- remoteDebugNodePortEnabled
 
   @Test
-  public void whenRemoteDebugNodePortEnabledTrue_createdMapContainsValue() {
+  void whenRemoteDebugNodePortEnabledTrue_createdMapContainsValue() {
     operatorValues.remoteDebugNodePortEnabled("true");
 
     assertThat(operatorValues.createMap(), hasEntry("remoteDebugNodePortEnabled", true));
   }
 
   @Test
-  public void whenRemoteDebugNodePortEnabledFalse_createdMapContainsValue() {
+  void whenRemoteDebugNodePortEnabledFalse_createdMapContainsValue() {
     operatorValues.remoteDebugNodePortEnabled("false");
 
     assertThat(operatorValues.createMap(), hasEntry("remoteDebugNodePortEnabled", false));
   }
 
   @Test
-  public void whenRemoteDebugNodePortEnabledNotSet_createdMapLacksValue() {
+  void whenRemoteDebugNodePortEnabledNotSet_createdMapLacksValue() {
     assertThat(operatorValues.createMap(), not(hasKey("remoteDebugNodePortEnabled")));
   }
 
   @Test
-  public void whenCreatedFromMapWithoutRemoteDebugNodePortEnabled_hasEmptyString() {
+  void whenCreatedFromMapWithoutRemoteDebugNodePortEnabled_hasEmptyString() {
     HelmOperatorValues values = new HelmOperatorValues(ImmutableMap.of());
 
     assertThat(values.getRemoteDebugNodePortEnabled(), equalTo(""));
   }
 
   @Test
-  public void whenCreatedFromMapWithRemoteDebugNodePortTrue_hasSpecifiedValue() {
+  void whenCreatedFromMapWithRemoteDebugNodePortTrue_hasSpecifiedValue() {
     HelmOperatorValues values =
         new HelmOperatorValues(ImmutableMap.of("remoteDebugNodePortEnabled", true));
 
@@ -232,7 +232,7 @@ public class HelmOperatorValuesTest {
   }
 
   @Test
-  public void whenCreatedFromMapWithRemoteDebugNodePortFalse_hasSpecifiedValue() {
+  void whenCreatedFromMapWithRemoteDebugNodePortFalse_hasSpecifiedValue() {
     HelmOperatorValues values =
         new HelmOperatorValues(ImmutableMap.of("remoteDebugNodePortEnabled", false));
 
@@ -242,33 +242,33 @@ public class HelmOperatorValuesTest {
   // --------------- suspendOnDebugStartup
 
   @Test
-  public void whenSuspendOnDebugStartupTrue_createdMapContainsValue() {
+  void whenSuspendOnDebugStartupTrue_createdMapContainsValue() {
     operatorValues.suspendOnDebugStartup("true");
 
     assertThat(operatorValues.createMap(), hasEntry("suspendOnDebugStartup", true));
   }
 
   @Test
-  public void whenSuspendOnDebugStartupFalse_createdMapContainsValue() {
+  void whenSuspendOnDebugStartupFalse_createdMapContainsValue() {
     operatorValues.suspendOnDebugStartup("false");
 
     assertThat(operatorValues.createMap(), hasEntry("suspendOnDebugStartup", false));
   }
 
   @Test
-  public void whenSuspendOnDebugStartupNotSet_createdMapLacksValue() {
+  void whenSuspendOnDebugStartupNotSet_createdMapLacksValue() {
     assertThat(operatorValues.createMap(), not(hasKey("suspendOnDebugStartup")));
   }
 
   @Test
-  public void whenCreatedFromMapWithoutSuspendOnDebugStartup_hasEmptyString() {
+  void whenCreatedFromMapWithoutSuspendOnDebugStartup_hasEmptyString() {
     HelmOperatorValues values = new HelmOperatorValues(ImmutableMap.of());
 
     assertThat(values.getSuspendOnDebugStartup(), equalTo(""));
   }
 
   @Test
-  public void whenCreatedFromMapWithSuspendOnDebugStartupTrue_hasSpecifiedValue() {
+  void whenCreatedFromMapWithSuspendOnDebugStartupTrue_hasSpecifiedValue() {
     HelmOperatorValues values =
         new HelmOperatorValues(ImmutableMap.of("suspendOnDebugStartup", true));
 
@@ -276,7 +276,7 @@ public class HelmOperatorValuesTest {
   }
 
   @Test
-  public void whenCreatedFromMapWithSuspendOnDebugStartupFalse_hasSpecifiedValue() {
+  void whenCreatedFromMapWithSuspendOnDebugStartupFalse_hasSpecifiedValue() {
     HelmOperatorValues values =
         new HelmOperatorValues(ImmutableMap.of("suspendOnDebugStartup", false));
 
@@ -286,33 +286,33 @@ public class HelmOperatorValuesTest {
   // --------------- elkIntegrationEnabled
 
   @Test
-  public void whenElkIntegrationEnabledTrue_createdMapContainsValue() {
+  void whenElkIntegrationEnabledTrue_createdMapContainsValue() {
     operatorValues.elkIntegrationEnabled("true");
 
     assertThat(operatorValues.createMap(), hasEntry("elkIntegrationEnabled", true));
   }
 
   @Test
-  public void whenElkIntegrationEnabledFalse_createdMapContainsValue() {
+  void whenElkIntegrationEnabledFalse_createdMapContainsValue() {
     operatorValues.elkIntegrationEnabled("false");
 
     assertThat(operatorValues.createMap(), hasEntry("elkIntegrationEnabled", false));
   }
 
   @Test
-  public void whenElkIntegrationEnabledNotSet_createdMapLacksValue() {
+  void whenElkIntegrationEnabledNotSet_createdMapLacksValue() {
     assertThat(operatorValues.createMap(), not(hasKey("elkIntegrationEnabled")));
   }
 
   @Test
-  public void whenCreatedFromMapWithoutElkIntegrationEnabled_hasEmptyString() {
+  void whenCreatedFromMapWithoutElkIntegrationEnabled_hasEmptyString() {
     HelmOperatorValues values = new HelmOperatorValues(ImmutableMap.of());
 
     assertThat(values.getElkIntegrationEnabled(), equalTo(""));
   }
 
   @Test
-  public void whenCreatedFromMapWithElkIntegrationTrue_hasSpecifiedValue() {
+  void whenCreatedFromMapWithElkIntegrationTrue_hasSpecifiedValue() {
     HelmOperatorValues values =
         new HelmOperatorValues(ImmutableMap.of("elkIntegrationEnabled", true));
 
@@ -320,7 +320,7 @@ public class HelmOperatorValuesTest {
   }
 
   @Test
-  public void whenCreatedFromMapWithElkIntegrationFalse_hasSpecifiedValue() {
+  void whenCreatedFromMapWithElkIntegrationFalse_hasSpecifiedValue() {
     HelmOperatorValues values =
         new HelmOperatorValues(ImmutableMap.of("elkIntegrationEnabled", false));
 
@@ -330,33 +330,33 @@ public class HelmOperatorValuesTest {
   // ----- externalRestHttpPort
 
   @Test
-  public void whenExternalRestHttpsPortSet_createdMapContainsValue() {
+  void whenExternalRestHttpsPortSet_createdMapContainsValue() {
     operatorValues.externalRestHttpsPort(stringValue);
 
     assertThat(operatorValues.createMap(), hasEntry("externalRestHttpsPort", intValue));
   }
 
   @Test
-  public void whenExternalRestHttpsPortNotSet_createdMapLacksValue() {
+  void whenExternalRestHttpsPortNotSet_createdMapLacksValue() {
     assertThat(operatorValues.createMap(), not(hasKey("externalRestHttpsPort")));
   }
 
   @Test
-  public void externalRestHttpsPortIsGettableStringValue() {
+  void externalRestHttpsPortIsGettableStringValue() {
     operatorValues.externalRestHttpsPort(stringValue);
 
     assertThat(operatorValues.getExternalRestHttpsPort(), equalTo(stringValue));
   }
 
   @Test
-  public void whenCreatedFromMapWithoutExternalRestHttpsPort_hasEmptyString() {
+  void whenCreatedFromMapWithoutExternalRestHttpsPort_hasEmptyString() {
     HelmOperatorValues values = new HelmOperatorValues(ImmutableMap.of());
 
     assertThat(values.getExternalRestHttpsPort(), equalTo(""));
   }
 
   @Test
-  public void whenCreatedFromMapWithExternalRestHttpsPort_hasSpecifiedValue() {
+  void whenCreatedFromMapWithExternalRestHttpsPort_hasSpecifiedValue() {
     HelmOperatorValues values =
         new HelmOperatorValues(ImmutableMap.of("externalRestHttpsPort", intValue));
 
@@ -366,33 +366,33 @@ public class HelmOperatorValuesTest {
   // ----- internalDebugHttpPort
 
   @Test
-  public void whenInternalDebugHttpPortSet_createdMapContainsValue() {
+  void whenInternalDebugHttpPortSet_createdMapContainsValue() {
     operatorValues.internalDebugHttpPort(stringValue);
 
     assertThat(operatorValues.createMap(), hasEntry("internalDebugHttpPort", intValue));
   }
 
   @Test
-  public void whenInternalDebugHttpPortNotSet_createdMapLacksValue() {
+  void whenInternalDebugHttpPortNotSet_createdMapLacksValue() {
     assertThat(operatorValues.createMap(), not(hasKey("internalDebugHttpPort")));
   }
 
   @Test
-  public void internalDebugHttpPortIsGettableStringValue() {
+  void internalDebugHttpPortIsGettableStringValue() {
     operatorValues.internalDebugHttpPort(stringValue);
 
     assertThat(operatorValues.getInternalDebugHttpPort(), equalTo(stringValue));
   }
 
   @Test
-  public void whenCreatedFromMapWithoutInternalDebugHttpPort_hasEmptyString() {
+  void whenCreatedFromMapWithoutInternalDebugHttpPort_hasEmptyString() {
     HelmOperatorValues values = new HelmOperatorValues(ImmutableMap.of());
 
     assertThat(values.getInternalDebugHttpPort(), equalTo(""));
   }
 
   @Test
-  public void whenCreatedFromMapWithInternalDebugHttpPort_hasSpecifiedValue() {
+  void whenCreatedFromMapWithInternalDebugHttpPort_hasSpecifiedValue() {
     HelmOperatorValues values =
         new HelmOperatorValues(ImmutableMap.of("internalDebugHttpPort", intValue));
 
@@ -402,12 +402,12 @@ public class HelmOperatorValuesTest {
   // ----- externalDebugHttpPort
 
   @Test
-  public void whenTargetNamespacesNotDefined_createdMapLacksValue() {
+  void whenTargetNamespacesNotDefined_createdMapLacksValue() {
     assertThat(operatorValues.createMap(), not(hasKey("domainNamespaces")));
   }
 
   @Test
-  public void whenSingleTargetNamespaceDefined_createdMapContainsValue() {
+  void whenSingleTargetNamespaceDefined_createdMapContainsValue() {
     operatorValues.domainNamespaces(stringValue);
 
     assertThat(getDomainNamespaces(), hasItem(stringValue));
@@ -419,21 +419,21 @@ public class HelmOperatorValuesTest {
   }
 
   @Test
-  public void whenMultipleTargetNamespaceDefined_createdMapContainsValue() {
+  void whenMultipleTargetNamespaceDefined_createdMapContainsValue() {
     operatorValues.domainNamespaces("aaa,bbb");
 
     assertThat(getDomainNamespaces(), hasItems("aaa", "bbb"));
   }
 
   @Test
-  public void whenCreatedFromMapWithoutDomainNamespaces_hasEmptyString() {
+  void whenCreatedFromMapWithoutDomainNamespaces_hasEmptyString() {
     HelmOperatorValues values = new HelmOperatorValues(ImmutableMap.of());
 
     assertThat(values.getDomainNamespaces(), equalTo(""));
   }
 
   @Test
-  public void whenCreatedFromMapWithSingleNamespace_hasSpecifiedValue() {
+  void whenCreatedFromMapWithSingleNamespace_hasSpecifiedValue() {
     HelmOperatorValues values =
         new HelmOperatorValues(ImmutableMap.of("domainNamespaces", ImmutableList.of("namespace1")));
 
@@ -441,7 +441,7 @@ public class HelmOperatorValuesTest {
   }
 
   @Test
-  public void whenCreatedFromMapWithMultipleNamespaces_hasSpecifiedValue() {
+  void whenCreatedFromMapWithMultipleNamespaces_hasSpecifiedValue() {
     HelmOperatorValues values =
         new HelmOperatorValues(
             ImmutableMap.of("domainNamespaces", ImmutableList.of("namespace1", "namespace2")));
@@ -452,33 +452,33 @@ public class HelmOperatorValuesTest {
   // ----- externalDebugHttpPort
 
   @Test
-  public void whenExternalDebugHttpPortSet_createdMapContainsValue() {
+  void whenExternalDebugHttpPortSet_createdMapContainsValue() {
     operatorValues.externalDebugHttpPort(stringValue);
 
     assertThat(operatorValues.createMap(), hasEntry("externalDebugHttpPort", intValue));
   }
 
   @Test
-  public void whenExternalDebugHttpPortNotSet_createdMapLacksValue() {
+  void whenExternalDebugHttpPortNotSet_createdMapLacksValue() {
     assertThat(operatorValues.createMap(), not(hasKey("externalDebugHttpPort")));
   }
 
   @Test
-  public void externalDebugHttpPortIsGettableStringValue() {
+  void externalDebugHttpPortIsGettableStringValue() {
     operatorValues.externalDebugHttpPort(stringValue);
 
     assertThat(operatorValues.getExternalDebugHttpPort(), equalTo(stringValue));
   }
 
   @Test
-  public void whenCreatedFromMapWithoutExternalDebugHttpPort_hasEmptyString() {
+  void whenCreatedFromMapWithoutExternalDebugHttpPort_hasEmptyString() {
     HelmOperatorValues values = new HelmOperatorValues(ImmutableMap.of());
 
     assertThat(values.getExternalDebugHttpPort(), equalTo(""));
   }
 
   @Test
-  public void whenCreatedFromMapWithExternalDebugHttpPort_hasSpecifiedValue() {
+  void whenCreatedFromMapWithExternalDebugHttpPort_hasSpecifiedValue() {
     HelmOperatorValues values =
         new HelmOperatorValues(ImmutableMap.of("externalDebugHttpPort", intValue));
 
@@ -488,33 +488,33 @@ public class HelmOperatorValuesTest {
   // --------------- dedicated
 
   @Test
-  public void whenDedicatedTrue_createdMapContainsValue() {
+  void whenDedicatedTrue_createdMapContainsValue() {
     operatorValues.dedicated("true");
 
     assertThat(operatorValues.createMap(), hasEntry("dedicated", true));
   }
 
   @Test
-  public void whenDedicatedFalse_createdMapContainsValue() {
+  void whenDedicatedFalse_createdMapContainsValue() {
     operatorValues.dedicated("false");
 
     assertThat(operatorValues.createMap(), hasEntry("dedicated", false));
   }
 
   @Test
-  public void whenDedicatedNotSet_createdMapLacksValue() {
+  void whenDedicatedNotSet_createdMapLacksValue() {
     assertThat(operatorValues.createMap(), not(hasKey("dedicated")));
   }
 
   @Test
-  public void whenCreatedFromMapWithoutDedicated_hasEmptyString() {
+  void whenCreatedFromMapWithoutDedicated_hasEmptyString() {
     HelmOperatorValues values = new HelmOperatorValues(ImmutableMap.of());
 
     assertThat(values.getDedicated(), equalTo(""));
   }
 
   @Test
-  public void whenCreatedFromMapWithDedicatedTrue_hasSpecifiedValue() {
+  void whenCreatedFromMapWithDedicatedTrue_hasSpecifiedValue() {
     HelmOperatorValues values =
         new HelmOperatorValues(ImmutableMap.of("dedicated", true));
 
@@ -522,7 +522,7 @@ public class HelmOperatorValuesTest {
   }
 
   @Test
-  public void whenCreatedFromMapWithDedicatedFalse_hasSpecifiedValue() {
+  void whenCreatedFromMapWithDedicatedFalse_hasSpecifiedValue() {
     HelmOperatorValues values =
         new HelmOperatorValues(ImmutableMap.of("dedicated", false));
 
@@ -530,7 +530,7 @@ public class HelmOperatorValuesTest {
   }
 
   @Test
-  public void whenCreatedFromMap_hasSpecifiedValues() {
+  void whenCreatedFromMap_hasSpecifiedValues() {
     HelmOperatorValues values =
         new HelmOperatorValues(
             new ImmutableMap.Builder<String, Object>()
