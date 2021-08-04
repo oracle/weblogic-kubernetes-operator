@@ -14,6 +14,8 @@ import java.util.List;
 import java.util.Map;
 
 import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.weblogic.domain.AuxiliaryImage;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
@@ -59,6 +61,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
@@ -79,7 +83,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVe
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getIntrospectorPodName;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodsWithTimeStamps;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileFromPod;
@@ -476,8 +480,7 @@ class ItMiiAuxiliaryImage {
 
     // check the introspector pod log contains the expected error message
     String expectedErrorMsg = "Auxiliary Image: Dir '/errorpath' doesn't exist or is empty. Exiting.";
-    String introspectorPodName = assertDoesNotThrow(() -> getIntrospectorPodName(domainUid, errorpathDomainNamespace));
-    checkPodLogContainsString(errorpathDomainNamespace, introspectorPodName, expectedErrorMsg);
+    verifyIntrospectorPodLogContainsExpectedErrorMsg(domainUid, errorpathDomainNamespace, expectedErrorMsg);
 
     // check the domain event contains the expected error message
     checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
@@ -559,9 +562,7 @@ class ItMiiAuxiliaryImage {
     String expectedErrorMsg = "The domain resource 'spec.domainHomeSourceType' is 'FromModel'  and "
         + "a WebLogic Deploy Tool (WDT) install is not located at  'spec.configuration.model.wdtInstallHome'  "
         + "which is currently set to '/auxiliary/weblogic-deploy'";
-    String introspectorPodName = assertDoesNotThrow(() -> getIntrospectorPodName(domainUid, errorpathDomainNamespace),
-        "Can't get introspector pod's name");
-    checkPodLogContainsString(errorpathDomainNamespace, introspectorPodName, expectedErrorMsg);
+    verifyIntrospectorPodLogContainsExpectedErrorMsg(domainUid, errorpathDomainNamespace, expectedErrorMsg);
 
     // check the domain event contains the expected error message
     checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
@@ -647,9 +648,7 @@ class ItMiiAuxiliaryImage {
     // check the introspector pod log contains the expected error message
     String expectedErrorMsg =
         "createDomain did not find the required domainInfo section in the model file /auxiliary/models/model.jms2.yaml";
-    String introspectorPodName = assertDoesNotThrow(() -> getIntrospectorPodName(domainUid, errorpathDomainNamespace),
-        "Get introspector's pod name failed");
-    checkPodLogContainsString(errorpathDomainNamespace, introspectorPodName, expectedErrorMsg);
+    verifyIntrospectorPodLogContainsExpectedErrorMsg(domainUid, errorpathDomainNamespace, expectedErrorMsg);
 
     // check the domain event contains the expected error message
     checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
@@ -723,9 +722,7 @@ class ItMiiAuxiliaryImage {
 
     // check the introspector pod log contains the expected error message
     String expectedErrorMsg = "Auxiliary Image: Command 'exit 1' execution failed in container";
-    String introspectorPodName = assertDoesNotThrow(() -> getIntrospectorPodName(domainUid, domainNamespace),
-        "Get introspector's pod name failed");
-    checkPodLogContainsString(domainNamespace, introspectorPodName, expectedErrorMsg);
+    verifyIntrospectorPodLogContainsExpectedErrorMsg(domainUid, domainNamespace, expectedErrorMsg);
 
     // check the domain event contains the expected error message
     checkDomainEventContainsExpectedMsg(opNamespace, domainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
@@ -845,9 +842,7 @@ class ItMiiAuxiliaryImage {
 
     // check the introspector pod log contains the expected error message
     String expectedErrorMsg = "cp: can't open '/auxiliary/test1.txt': Permission denied";
-    String introspectorPodName = assertDoesNotThrow(() -> getIntrospectorPodName(domainUid, errorpathDomainNamespace),
-        "Can't get introspector's pod name");
-    checkPodLogContainsString(errorpathDomainNamespace, introspectorPodName, expectedErrorMsg);
+    verifyIntrospectorPodLogContainsExpectedErrorMsg(domainUid, errorpathDomainNamespace, expectedErrorMsg);
 
     // check the domain event contains the expected error message
     checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
@@ -1218,4 +1213,59 @@ class ItMiiAuxiliaryImage {
 
     return Files.readAllLines(Paths.get(RESULTS_ROOT, "/WDTversion.txt")).get(0);
   }
+
+  private boolean introspectorPodLogContainsExpectedErrorMsg(String domainUid,
+                                                             String namespace,
+                                                             String errormsg) {
+    String introspectPodName;
+    V1Pod introspectorPod;
+
+    String introspectJobName = getIntrospectJobName(domainUid);
+    String labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+
+    try {
+      introspectorPod = getPod(namespace, labelSelector, introspectJobName);
+    } catch (ApiException apiEx) {
+      logger.severe("got ApiException while getting pod: {0}", apiEx);
+      return false;
+    }
+
+    if (introspectorPod != null && introspectorPod.getMetadata() != null) {
+      introspectPodName = introspectorPod.getMetadata().getName();
+      logger.info("found introspectore pod {0} in namespace {1}", introspectPodName, namespace);
+    } else {
+      return false;
+    }
+
+    String introspectorLog;
+    try {
+      introspectorLog = getPodLog(introspectPodName, namespace);
+      logger.info("introspector log: {0}", introspectorLog);
+    } catch (ApiException apiEx) {
+      logger.severe("got ApiException while getting pod log: {0}", apiEx);
+      return false;
+    }
+
+    return introspectorLog.contains(errormsg);
+  }
+
+  private void verifyIntrospectorPodLogContainsExpectedErrorMsg(String domainUid,
+                                                                String namespace,
+                                                                String expectedErrorMsg) {
+
+    // wait and check whether the introspector log contains the expected error message
+    logger.info("verifying that the introspector log contains the expected error message");
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition ->
+                logger.info(
+                    "Checking for the log of introspector pod contains the expected error msg {0}. "
+                        + "Elapsed time {1}ms, remaining time {2}ms",
+                    expectedErrorMsg,
+                    condition.getElapsedTimeInMS(),
+                    condition.getRemainingTimeInMS()))
+        .until(() ->
+            introspectorPodLogContainsExpectedErrorMsg(domainUid, namespace, expectedErrorMsg));
+  }
+
 }
