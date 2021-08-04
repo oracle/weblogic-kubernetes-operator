@@ -101,7 +101,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test to create model in image domain using auxiliary image")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @IntegrationTest
-public class ItMiiAuxiliaryImage {
+class ItMiiAuxiliaryImage {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
@@ -169,7 +169,7 @@ public class ItMiiAuxiliaryImage {
   @Test
   @Order(1)
   @DisplayName("Test to create domain using multiple auxiliary images")
-  public void testCreateDomainUsingMultipleAuxiliaryImages() {
+  void testCreateDomainUsingMultipleAuxiliaryImages() {
 
     // admin/managed server name here should match with model yaml
     final String auxiliaryImageVolumeName = "auxiliaryImageVolume1";
@@ -307,7 +307,7 @@ public class ItMiiAuxiliaryImage {
   @Test
   @Order(2)
   @DisplayName("Test to update data source url in the  domain using auxiliary image")
-  public void testUpdateDataSourceInDomainUsingAuxiliaryImage() {
+  void testUpdateDataSourceInDomainUsingAuxiliaryImage() {
     Path multipleAIPath1 = Paths.get(RESULTS_ROOT, "multipleauxiliaryimage1");
     Path modelsPath1 = Paths.get(multipleAIPath1.toString(), "models");
 
@@ -355,7 +355,7 @@ public class ItMiiAuxiliaryImage {
   @Test
   @Order(3)
   @DisplayName("Test to update Base Weblogic Image Name")
-  public void testUpdateBaseImageName() {
+  void testUpdateBaseImageName() {
     // get the original domain resource before update
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
@@ -424,7 +424,7 @@ public class ItMiiAuxiliaryImage {
   @Test
   @Order(3)
   @DisplayName("Negative Test to create domain with mismatch mount path in auxiliary image and auxiliaryImageVolumes")
-  public void testErrorPathDomainMismatchMountPath() {
+  void testErrorPathDomainMismatchMountPath() {
 
     OffsetDateTime timestamp = now();
 
@@ -507,7 +507,7 @@ public class ItMiiAuxiliaryImage {
   @Test
   @Order(4)
   @DisplayName("Negative Test to create domain without WDT binary")
-  public void testErrorPathDomainMissingWDTBinary() {
+  void testErrorPathDomainMissingWDTBinary() {
 
     OffsetDateTime timestamp = now();
 
@@ -592,7 +592,7 @@ public class ItMiiAuxiliaryImage {
   @Test
   @Order(5)
   @DisplayName("Negative Test to create domain without domain model file, only having sparse JMS config")
-  public void testErrorPathDomainMissingDomainConfig() {
+  void testErrorPathDomainMissingDomainConfig() {
 
     OffsetDateTime timestamp = now();
 
@@ -683,7 +683,7 @@ public class ItMiiAuxiliaryImage {
   @Test
   @Order(6)
   @DisplayName("Negative Test to patch domain using a custom mount command that's guaranteed to fail")
-  public void testErrorPathDomainWithFailCustomMountCommand() {
+  void testErrorPathDomainWithFailCustomMountCommand() {
 
     OffsetDateTime timestamp = now();
 
@@ -774,7 +774,7 @@ public class ItMiiAuxiliaryImage {
   @Test
   @Order(7)
   @DisplayName("Negative Test to create domain with file in auxiliary image not accessible by oracle user")
-  public void testErrorPathFilePermission() {
+  void testErrorPathFilePermission() {
 
     OffsetDateTime timestamp = now();
 
@@ -881,7 +881,7 @@ public class ItMiiAuxiliaryImage {
   @Test
   @Order(8)
   @DisplayName("Test to update WDT version using  auxiliary images")
-  public void testUpdateWDTVersionUsingMultipleAuxiliaryImages() {
+  void testUpdateWDTVersionUsingMultipleAuxiliaryImages() {
 
     // admin/managed server name here should match with model yaml
     final String auxiliaryImageVolumeName = "auxiliaryImageVolume1";

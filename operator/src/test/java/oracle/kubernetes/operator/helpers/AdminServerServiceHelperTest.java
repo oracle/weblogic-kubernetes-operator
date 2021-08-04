@@ -7,7 +7,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_CREAT
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_SERVICE_REPLACED;
 
-public class AdminServerServiceHelperTest extends ServiceHelperTest {
+class AdminServerServiceHelperTest extends ServiceHelperTest {
 
   public AdminServerServiceHelperTest() {
     super(new AdminServerTestFacade());

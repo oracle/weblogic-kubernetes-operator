@@ -18,7 +18,7 @@ import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class FiberTest {
+class FiberTest {
 
   private static final String STEPS = "steps";
   private static final String FIBERS = "fibers";
@@ -46,7 +46,7 @@ public class FiberTest {
   }
 
   @Test
-  public void runToEnd() {
+  void runToEnd() {
     runSteps(step1, step2, step3);
 
     assertThat(stepList, contains(step1, step2, step3));
@@ -57,14 +57,14 @@ public class FiberTest {
   }
 
   @Test
-  public void afterSuccessfulRun_executeCompletionCallback() {
+  void afterSuccessfulRun_executeCompletionCallback() {
     runSteps(step1, step2, step3);
 
     assertThat(completionCallback.completed, is(true));
   }
 
   @Test
-  public void whenStepRetries_runItAgain() {
+  void whenStepRetries_runItAgain() {
     runSteps(step1, retry, step3);
     testSupport.setTime(200, TimeUnit.MILLISECONDS);
 
@@ -72,21 +72,21 @@ public class FiberTest {
   }
 
   @Test
-  public void whenStepThrowsException_abortProcessing() {
+  void whenStepThrowsException_abortProcessing() {
     runSteps(step1, error, step3);
 
     assertThat(stepList, contains(step1, error));
   }
 
   @Test
-  public void whenStepThrowsException_captureThrowable() {
+  void whenStepThrowsException_captureThrowable() {
     runSteps(step1, error, step3);
 
     assertThat(throwablesList, contains(instanceOf(RuntimeException.class)));
   }
 
   @Test
-  public void whenStepRequestsSuspend_hasAccessToFiber() {
+  void whenStepRequestsSuspend_hasAccessToFiber() {
     runSteps(step1, new SuspendingStep(this::recordFiber), step3);
 
     assertThat(fiberList, contains(sameInstance(fiber)));
@@ -98,14 +98,14 @@ public class FiberTest {
   }
 
   @Test
-  public void whenStepRequestsSuspend_suspendProcessing() {
+  void whenStepRequestsSuspend_suspendProcessing() {
     runSteps(step1, suspend, step3);
 
     assertThat(stepList, contains(step1, suspend));
   }
 
   @Test
-  public void whenSuspendActionThrowsRuntimeException_rethrowFromFiber() {
+  void whenSuspendActionThrowsRuntimeException_rethrowFromFiber() {
     assertThrows(RuntimeException.class,
           () -> runSteps(step1, new SuspendingStep(this::throwException), step3));
   }
@@ -115,7 +115,7 @@ public class FiberTest {
   }
 
   @Test
-  public void whenSuspendActionThrowsError_rethrowFromFiber() {
+  void whenSuspendActionThrowsError_rethrowFromFiber() {
     assertThrows(Error.class,
           () -> runSteps(step1, new SuspendingStep(this::throwError), step3));
   }
@@ -125,7 +125,7 @@ public class FiberTest {
   }
 
   @Test
-  public void whenResumeAfterStepRequestsSuspend_completeProcessing() {
+  void whenResumeAfterStepRequestsSuspend_completeProcessing() {
     runSteps(step1, suspend, step3);
     fiber.resume(packet);
 

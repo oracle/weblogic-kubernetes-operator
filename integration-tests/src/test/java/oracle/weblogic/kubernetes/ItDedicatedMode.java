@@ -152,7 +152,7 @@ class ItDedicatedMode {
   @Order(1)
   @DisplayName("Set domainNamespaceSelectionStrategy to Dedicated for the Operator Helm Chart and "
       + "verify that a domain not deployed in operator's namespace doesn't come up")
-  public void testDedicatedModeDiffNamespace() {
+  void testDedicatedModeDiffNamespace() {
     // install and verify operator
     logger.info("Installing and verifying operator");
     installAndVerifyOperator(opNamespace, opNamespace + "-sa",
@@ -177,7 +177,7 @@ class ItDedicatedMode {
   @Order(2)
   @DisplayName("Set domainNamespaceSelectionStrategy to Dedicated for the Operator Helm Chart and "
       + "verify that the domain deployed in the operator's namespace comes up")
-  public void testDedicatedModeSameNamespace() {
+  void testDedicatedModeSameNamespace() {
     // create and verify the domain
     logger.info("Creating and verifying model in image domain");
     createDomain(domain1Namespace);
@@ -191,7 +191,7 @@ class ItDedicatedMode {
   @Test
   @Order(3)
   @DisplayName("Scale up cluster-1 in domain1Namespace and verify it succeeds")
-  public void testDedicatedModeSameNamespaceScale() {
+  void testDedicatedModeSameNamespaceScale() {
     // scale the cluster and check domain can be managed from the operator
     int externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
     logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
@@ -213,7 +213,7 @@ class ItDedicatedMode {
   @Order(4)
   @Disabled("Disable the test because the Operator has permission to overwrite the CRD")
   @DisplayName("Create a CRD with a lower than expected version and verify that Operator fails with error")
-  public void testDedicatedModeNlowerVersionCrd() {
+  void testDedicatedModeNlowerVersionCrd() {
     // delete existing CRD
     new Command()
         .withParams(new CommandParams()
@@ -251,7 +251,7 @@ class ItDedicatedMode {
   @Order(5)
   @Disabled("Disable the test because the Operator has permission to create the CRD")
   @DisplayName("Delete the CRD and verify that Operator fails with error")
-  public void testDedicatedModeNoCrd() {
+  void testDedicatedModeNoCrd() {
     // delete existing CRD
     logger.info("Delete existing CRD");
     new Command()

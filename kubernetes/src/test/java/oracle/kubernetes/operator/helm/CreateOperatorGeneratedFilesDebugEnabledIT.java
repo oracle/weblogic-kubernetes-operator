@@ -7,7 +7,7 @@ import oracle.kubernetes.operator.create.CreateOperatorGeneratedFilesDebugEnable
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
-public class CreateOperatorGeneratedFilesDebugEnabledIT
+class CreateOperatorGeneratedFilesDebugEnabledIT
     extends CreateOperatorGeneratedFilesDebugEnabledTestBase {
 
   @BeforeAll
@@ -17,13 +17,13 @@ public class CreateOperatorGeneratedFilesDebugEnabledIT
 
   @Test
   @Override
-  public void generatesCorrect_weblogicOperatorNamespace() {
+  protected void generatesCorrect_weblogicOperatorNamespace() {
     // the user is responsible for creating the namespace
   }
 
   @Test
   @Override
-  public void generatesCorrect_weblogicOperatorServiceAccount() {
+  protected void generatesCorrect_weblogicOperatorServiceAccount() {
     // the user is responsible for creating the service account
   }
 }

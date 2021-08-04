@@ -30,7 +30,7 @@ import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class VersionCheckTest {
+class VersionCheckTest {
 
   // The log messages to be checked during this test
   private static final String[] LOG_KEYS = {
@@ -94,7 +94,7 @@ public class VersionCheckTest {
 
   @ParameterizedTest
   @MethodSource("getTestParams")
-  public void test(TestType testType,
+  void test(TestType testType,
         String majorVersion,
         String minorVersion,
         String revision,

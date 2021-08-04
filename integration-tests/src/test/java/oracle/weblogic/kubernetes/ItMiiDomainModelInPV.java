@@ -246,7 +246,7 @@ public class ItMiiDomainModelInPV {
   @ParameterizedTest
   @MethodSource("paramProvider")
   @DisplayName("Create MII domain with model and application file from PV and custon wdtModelHome")
-  public void testMiiDomainWithModelAndApplicationInPV(Entry<String, String> params) {
+  void testMiiDomainWithModelAndApplicationInPV(Entry<String, String> params) {
 
     String domainUid = params.getKey();
     String image = params.getValue();

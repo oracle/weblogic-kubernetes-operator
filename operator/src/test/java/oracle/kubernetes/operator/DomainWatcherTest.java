@@ -19,7 +19,7 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
 
 /** This test class verifies the behavior of the DomainWatcher. */
-public class DomainWatcherTest extends WatcherTestBase implements WatchListener<Domain> {
+class DomainWatcherTest extends WatcherTestBase implements WatchListener<Domain> {
 
   private static final BigInteger INITIAL_RESOURCE_VERSION = new BigInteger("456");
   private static final String BOOKMARK_RESOURCE_VERSION = "987";
@@ -37,7 +37,7 @@ public class DomainWatcherTest extends WatcherTestBase implements WatchListener<
   }
 
   @Test
-  public void initialRequest_specifiesStartingResourceVersion() {
+  void initialRequest_specifiesStartingResourceVersion() {
     sendInitialRequest(INITIAL_RESOURCE_VERSION);
 
     assertThat(
@@ -46,14 +46,14 @@ public class DomainWatcherTest extends WatcherTestBase implements WatchListener<
   }
 
   @Test
-  public void whenWatcherReceivesBookmarkEvent_updateResourceVersion() {
+  void whenWatcherReceivesBookmarkEvent_updateResourceVersion() {
     Watcher<?> watcher = sendBookmarkRequest(INITIAL_RESOURCE_VERSION, BOOKMARK_RESOURCE_VERSION);
 
     assertThat(watcher.getResourceVersion(), is(BOOKMARK_RESOURCE_VERSION));
   }
 
   @Test
-  public void whenDomainAdded_createPersistentVolumeClaim() {
+  void whenDomainAdded_createPersistentVolumeClaim() {
     scheduleAddResponse(domain);
   }
 

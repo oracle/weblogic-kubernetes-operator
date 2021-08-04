@@ -49,7 +49,7 @@ import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.Assert.assertNotNull;
 
-public class CrdHelperTest {
+class CrdHelperTest {
   private static final KubernetesVersion KUBERNETES_VERSION_15 = new KubernetesVersion(1, 15);
   private static final KubernetesVersion KUBERNETES_VERSION_16 = new KubernetesVersion(1, 16);
 
@@ -143,14 +143,14 @@ public class CrdHelperTest {
   }
 
   @Test
-  public void whenCrdV1SupportedAndNoCrd_createIt() {
+  void whenCrdV1SupportedAndNoCrd_createIt() {
     testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION));
 
     assertThat(logRecords, containsInfo(CREATING_CRD));
   }
 
   @Test
-  public void whenNoCrd_retryOnFailureAndLogFailedMessageInOnFailureNoRetry() {
+  void whenNoCrd_retryOnFailureAndLogFailedMessageInOnFailureNoRetry() {
     testSupport.addRetryStrategy(retryStrategy);
     testSupport.failOnCreate(CUSTOM_RESOURCE_DEFINITION, KubernetesConstants.CRD_NAME, null, HTTP_UNAUTHORIZED);
 
@@ -161,7 +161,7 @@ public class CrdHelperTest {
   }
 
   @Test
-  public void whenNoCrd_proceedToNextStep() {
+  void whenNoCrd_proceedToNextStep() {
     testSupport.addRetryStrategy(retryStrategy);
     testSupport.failOnCreate(CUSTOM_RESOURCE_DEFINITION, KubernetesConstants.CRD_NAME, null, HTTP_UNAUTHORIZED);
 
@@ -173,7 +173,7 @@ public class CrdHelperTest {
   }
 
   @Test
-  public void whenExistingCrdHasCurrentApiVersionButOldProductVersion_replaceIt() {
+  void whenExistingCrdHasCurrentApiVersionButOldProductVersion_replaceIt() {
     testSupport.defineResources(defineCrd(PRODUCT_VERSION));
 
     testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION_FUTURE));
@@ -194,7 +194,7 @@ public class CrdHelperTest {
   }
 
   @Test
-  public void whenExistingCrdHasFutureVersion_dontReplaceIt() {
+  void whenExistingCrdHasFutureVersion_dontReplaceIt() {
     V1CustomResourceDefinition existing = defineCrd(PRODUCT_VERSION_FUTURE);
     existing
         .getSpec()
@@ -208,7 +208,7 @@ public class CrdHelperTest {
   }
 
   @Test
-  public void whenExistingCrdHasFutureVersionButNotCurrentStorage_updateIt() {
+  void whenExistingCrdHasFutureVersionButNotCurrentStorage_updateIt() {
     testSupport.defineResources(defineCrd(PRODUCT_VERSION_FUTURE));
 
     V1CustomResourceDefinition replacement = defineCrd(PRODUCT_VERSION_FUTURE);
@@ -225,7 +225,7 @@ public class CrdHelperTest {
   }
 
   @Test
-  public void whenReplaceFails_scheduleRetryAndLogFailedMessageInOnFailureNoRetry() {
+  void whenReplaceFails_scheduleRetryAndLogFailedMessageInOnFailureNoRetry() {
     testSupport.addRetryStrategy(retryStrategy);
     testSupport.defineResources(defineCrd(PRODUCT_VERSION_OLD));
     testSupport.failOnReplace(CUSTOM_RESOURCE_DEFINITION, KubernetesConstants.CRD_NAME, null, HTTP_UNAUTHORIZED);
@@ -238,7 +238,7 @@ public class CrdHelperTest {
   }
 
   @Test
-  public void whenReplaceFailsThrowsStreamException_scheduleRetryAndLogFailedMessageInOnFailureNoRetry() {
+  void whenReplaceFailsThrowsStreamException_scheduleRetryAndLogFailedMessageInOnFailureNoRetry() {
     testSupport.addRetryStrategy(retryStrategy);
     testSupport.defineResources(defineCrd(PRODUCT_VERSION_OLD));
     testSupport.failOnReplaceWithStreamResetException(CUSTOM_RESOURCE_DEFINITION, KubernetesConstants.CRD_NAME, null);

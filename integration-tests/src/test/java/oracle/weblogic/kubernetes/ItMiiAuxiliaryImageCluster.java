@@ -62,7 +62,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test to create model in image domain using auxiliary image containing the cluster configuration")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @IntegrationTest
-public class ItMiiAuxiliaryImageCluster {
+class ItMiiAuxiliaryImageCluster {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
@@ -113,7 +113,7 @@ public class ItMiiAuxiliaryImageCluster {
   @Test
   @Order(1)
   @DisplayName("Test to create domain using multiple auxiliary images containing the doamin and cluster configuration")
-  public void testCreateDomainUsingAuxiliaryImagesWClusterConfig() {
+  void testCreateDomainUsingAuxiliaryImagesWClusterConfig() {
     final List<String> auxiliaryImageDomainScopeNames = List.of(miiAuxiliaryImagePrefix + "1");
     final List<String> auxiliaryImageClusterScopeNames =
         List.of(miiAuxiliaryImagePrefix + "2", miiAuxiliaryImagePrefix + "3");
@@ -214,7 +214,7 @@ public class ItMiiAuxiliaryImageCluster {
   @Test
   @Order(2)
   @DisplayName("Patch a domain using auxiliary image to add a new cluster configuration")
-  public void testPatchDomainToAddClusterConfigUsingAuxiliaryImage() {
+  void testPatchDomainToAddClusterConfigUsingAuxiliaryImage() {
     final int addAuxImageLoc = 2;
     final String miiAuxiliaryImage = miiAuxiliaryImagePrefix + auxiliaryImageNumberIndex;
     auxiliaryImageNumberIndex += 1;
@@ -263,7 +263,7 @@ public class ItMiiAuxiliaryImageCluster {
   @Test
   @Order(3)
   @DisplayName("Patch a domain using auxiliary image to replace an existing cluster configuration")
-  public void testPatchDomainToReplaceClusterConfigUsingAuxiliaryImage() {
+  void testPatchDomainToReplaceClusterConfigUsingAuxiliaryImage() {
     final int replaceAuxImageLoc = 2;
     final String miiAuxiliaryImage = miiAuxiliaryImagePrefix + auxiliaryImageNumberIndex;
     auxiliaryImageNumberIndex += 1;
@@ -313,7 +313,7 @@ public class ItMiiAuxiliaryImageCluster {
   @Test
   @Order(4)
   @DisplayName("Verify that model files in an auxiliary images at the cluster scope are ignored")
-  public void testPatchDomainToAddModelsToClusterConfigIgnored() {
+  void testPatchDomainToAddModelsToClusterConfigIgnored() {
     final int addAuxImageLoc = 3;
     final String miiAuxiliaryImage = miiAuxiliaryImagePrefix + auxiliaryImageNumberIndex;
     auxiliaryImageNumberIndex += 1;

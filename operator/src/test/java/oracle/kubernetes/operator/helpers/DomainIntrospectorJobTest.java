@@ -87,7 +87,7 @@ import static org.hamcrest.core.AllOf.allOf;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings({"SameParameterValue"})
-public class DomainIntrospectorJobTest {
+class DomainIntrospectorJobTest {
   private static final String NODEMGR_HOME = "/u01/nodemanager";
   private static final String OVERRIDES_CM = "overrides-config-map";
   private static final String OVERRIDE_SECRET_1 = "override-secret-1";
@@ -226,7 +226,7 @@ public class DomainIntrospectorJobTest {
   }
 
   @Test
-  public void whenNoJob_createIt() throws JsonProcessingException {
+  void whenNoJob_createIt() throws JsonProcessingException {
     IntrospectionTestUtils.defineResources(testSupport, createDomainConfig("cluster-1"));
     testSupport.defineResources(
         new V1ConfigMap()
@@ -256,7 +256,7 @@ public class DomainIntrospectorJobTest {
   }
 
   @Test
-  public void whenNoJob_onFiveHundred() {
+  void whenNoJob_onFiveHundred() {
     testSupport.addRetryStrategy(retryStrategy);
     testSupport.failOnResource(KubernetesTestSupport.JOB, getJobName(), NS, 500);
 
@@ -267,7 +267,7 @@ public class DomainIntrospectorJobTest {
   }
 
   @Test
-  public void whenJobCreated_jobNameContainsDefaultSuffix() {
+  void whenJobCreated_jobNameContainsDefaultSuffix() {
     testSupport.runSteps(getStepFactory(), terminalStep);
     logRecords.clear();
 
@@ -282,7 +282,7 @@ public class DomainIntrospectorJobTest {
   }
 
   @Test
-  public void whenJobCreatedWithCustomIntrospectorJobnameSuffix_jobNameContainsConfiguredSuffix() {
+  void whenJobCreatedWithCustomIntrospectorJobnameSuffix_jobNameContainsConfiguredSuffix() {
     TuningParameters.getInstance().put(LegalNames.INTROSPECTOR_JOB_NAME_SUFFIX_PARAM, "-introspector-job");
     testSupport.runSteps(getStepFactory(), terminalStep);
     logRecords.clear();
@@ -291,7 +291,7 @@ public class DomainIntrospectorJobTest {
   }
 
   @Test
-  public void whenJobCreated_specHasOneContainer() {
+  void whenJobCreated_specHasOneContainer() {
     List<V1Job> jobs = runStepsAndGetJobs();
     assertThat(getPodTemplateContainers(jobs.get(0)), hasSize(1));
   }
@@ -307,7 +307,7 @@ public class DomainIntrospectorJobTest {
   }
 
   @Test
-  public void whenJobCreated_hasPredefinedEnvVariables() {
+  void whenJobCreated_hasPredefinedEnvVariables() {
     List<V1Job> jobs = runStepsAndGetJobs();
     List<V1Container> podTemplateContainers = getPodTemplateContainers(jobs.get(0));
     assertThat(
@@ -324,7 +324,7 @@ public class DomainIntrospectorJobTest {
   }
 
   @Test
-  public void whenJobCreatedWithModelHomeDefined_hasModelHomeEnvVariable() {
+  void whenJobCreatedWithModelHomeDefined_hasModelHomeEnvVariable() {
     getDomain().getSpec()
         .setConfiguration(new Configuration().withModel(new Model().withModelHome(WDT_MODEL_HOME)));
     List<V1Job> jobs = runStepsAndGetJobs();
@@ -335,7 +335,7 @@ public class DomainIntrospectorJobTest {
   }
 
   @Test
-  public void whenJobCreatedWithAuxiliaryImageDefined_hasAuxiliaryImageInitContainerVolumeAndMounts() {
+  void whenJobCreatedWithAuxiliaryImageDefined_hasAuxiliaryImageInitContainerVolumeAndMounts() {
     getConfigurator()
             .withAuxiliaryImageVolumes(getAuxiliaryImageVolume(DEFAULT_AUXILIARY_IMAGE_PATH))
             .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")));
@@ -379,7 +379,7 @@ public class DomainIntrospectorJobTest {
   }
 
   @Test
-  public void whenJobCreatedWithAuxiliaryImageAndVolumeHavingAuxiliaryImagePath_hasVolumeMountWithAuxiliaryImagePath() {
+  void whenJobCreatedWithAuxiliaryImageAndVolumeHavingAuxiliaryImagePath_hasVolumeMountWithAuxiliaryImagePath() {
     DomainConfiguratorFactory.forDomain(domain)
             .withAuxiliaryImageVolumes(getAuxiliaryImageVolume(CUSTOM_MOUNT_PATH))
             .withAuxiliaryImages(getAuxiliaryImages("wdt-image:v1"));
@@ -391,7 +391,7 @@ public class DomainIntrospectorJobTest {
   }
 
   @Test
-  public void whenJobCreatedWithAuxiliaryImageVolumeWithMedium_createdJobPodsHasVolumeWithSpecifiedMedium() {
+  void whenJobCreatedWithAuxiliaryImageVolumeWithMedium_createdJobPodsHasVolumeWithSpecifiedMedium() {
     getConfigurator()
             .withAuxiliaryImageVolumes(Collections.singletonList(
                     new AuxiliaryImageVolume().name(TEST_VOLUME_NAME).medium("Memory")))
@@ -405,7 +405,7 @@ public class DomainIntrospectorJobTest {
 
 
   @Test
-  public void whenJobCreatedWithAuxiliaryImageVolumeWithSizeLimit_createdJobPodsHasVolumeWithSpecifiedSizeLimit() {
+  void whenJobCreatedWithAuxiliaryImageVolumeWithSizeLimit_createdJobPodsHasVolumeWithSpecifiedSizeLimit() {
     getConfigurator()
             .withAuxiliaryImageVolumes(Collections.singletonList(
                     new AuxiliaryImageVolume().name(TEST_VOLUME_NAME).sizeLimit("100G")))
@@ -418,7 +418,7 @@ public class DomainIntrospectorJobTest {
   }
 
   @Test
-  public void whenJobCreatedWithAuxiliaryImageWithImagePullPolicy_createJobPodHasImagePullPolicy() {
+  void whenJobCreatedWithAuxiliaryImageWithImagePullPolicy_createJobPodHasImagePullPolicy() {
     getConfigurator()
             .withAuxiliaryImageVolumes(getAuxiliaryImageVolume(DEFAULT_AUXILIARY_IMAGE_PATH))
             .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")
@@ -432,7 +432,7 @@ public class DomainIntrospectorJobTest {
   }
 
   @Test
-  public void whenJobCreatedWithAuxiliaryImageAndCustomCommand_createJobPodsWithInitContainerHavingCustomCommand() {
+  void whenJobCreatedWithAuxiliaryImageAndCustomCommand_createJobPodsWithInitContainerHavingCustomCommand() {
     getConfigurator()
             .withAuxiliaryImageVolumes(getAuxiliaryImageVolume(DEFAULT_AUXILIARY_IMAGE_PATH))
             .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")
@@ -446,7 +446,7 @@ public class DomainIntrospectorJobTest {
   }
 
   @Test
-  public void whenJobCreatedWithMultipleAuxiliaryImages_createdJobPodsHasMultipleInitContainers() {
+  void whenJobCreatedWithMultipleAuxiliaryImages_createdJobPodsHasMultipleInitContainers() {
     getConfigurator()
             .withAuxiliaryImageVolumes(getAuxiliaryImageVolume(DEFAULT_AUXILIARY_IMAGE_PATH))
             .withAuxiliaryImages(getAuxiliaryImages("wdt-image1:v1", "wdt-image2:v1"));
@@ -466,7 +466,7 @@ public class DomainIntrospectorJobTest {
   }
 
   @Test
-  public void whenPodCreationFailsDueToUnprocessableEntityFailure_reportInDomainStatus() {
+  void whenPodCreationFailsDueToUnprocessableEntityFailure_reportInDomainStatus() {
     testSupport.failOnResource(JOB, getJobName(), NS, new UnrecoverableErrorBuilderImpl()
         .withReason("FieldValueNotFound")
         .withMessage("Test this failure")
@@ -483,7 +483,7 @@ public class DomainIntrospectorJobTest {
   }
 
   @Test
-  public void whenPodCreationFailsDueToUnprocessableEntityFailure_abortFiber() {
+  void whenPodCreationFailsDueToUnprocessableEntityFailure_abortFiber() {
     testSupport.failOnResource(JOB, getJobName(), NS, new UnrecoverableErrorBuilderImpl()
         .withReason("FieldValueNotFound")
         .withMessage("Test this failure")
@@ -495,7 +495,7 @@ public class DomainIntrospectorJobTest {
   }
 
   @Test
-  public void whenIntrospectorJobIsRun_validatesDomainTopology() throws JsonProcessingException {
+  void whenIntrospectorJobIsRun_validatesDomainTopology() throws JsonProcessingException {
     // create WlsDomainConfig with "cluster-2" whereas domain spec contains cluster-1
     IntrospectionTestUtils.defineResources(testSupport, createDomainConfig("cluster-2"));
 
@@ -507,7 +507,7 @@ public class DomainIntrospectorJobTest {
   }
 
   @Test
-  public void whenIntrospectorJobNotNeeded_doesNotValidatesDomainTopology() throws JsonProcessingException {
+  void whenIntrospectorJobNotNeeded_doesNotValidatesDomainTopology() throws JsonProcessingException {
     // create WlsDomainConfig with "cluster-2" whereas domain spec contains "cluster-1"
     WlsDomainConfig wlsDomainConfig = createDomainConfig("cluster-2");
     IntrospectionTestUtils.defineResources(testSupport, wlsDomainConfig);
@@ -523,7 +523,7 @@ public class DomainIntrospectorJobTest {
   }
 
   @Test
-  public void whenJobLogContainsSevereError_logJobInfosOnDelete() {
+  void whenJobLogContainsSevereError_logJobInfosOnDelete() {
     testSupport.defineResources(
         new V1Job().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS)).status(new V1JobStatus()));
     IntrospectionTestUtils.defineResources(testSupport, SEVERE_MESSAGE_1);
@@ -537,7 +537,7 @@ public class DomainIntrospectorJobTest {
   }
 
   @Test
-  public void whenJobLogContainsSevereError_logJobInfosOnReadPogLog() {
+  void whenJobLogContainsSevereError_logJobInfosOnReadPogLog() {
     testSupport.defineResources(
         new V1Job().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS)).status(new V1JobStatus()));
     IntrospectionTestUtils.defineResources(testSupport, SEVERE_MESSAGE_1);

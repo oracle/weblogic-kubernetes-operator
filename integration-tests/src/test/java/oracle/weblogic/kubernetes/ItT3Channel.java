@@ -126,7 +126,7 @@ class ItT3Channel {
    */
   @Test
   @DisplayName("Test admin server t3 channel access by deploying a application")
-  public void testAdminServerT3Channel() {
+  void testAdminServerT3Channel() {
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster

@@ -69,7 +69,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Test to creat a FMW dynamic domain in persistent volume using WLST")
 @IntegrationTest
-public class ItFmwDynamicDomainInPV {
+class ItFmwDynamicDomainInPV {
 
   private static ConditionFactory withStandardRetryPolicy;
 
@@ -149,7 +149,7 @@ public class ItFmwDynamicDomainInPV {
    */
   @Test
   @DisplayName("Create FMW Dynamic Domain in PV")
-  public void testFmwDynamicDomainInPV() {
+  void testFmwDynamicDomainInPV() {
     // create FMW dynamic domain and verify
     createFmwDomainAndVerify();
     verifyDomainReady();
