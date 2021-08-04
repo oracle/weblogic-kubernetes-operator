@@ -8,6 +8,8 @@ import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
 
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import org.awaitility.core.ConditionFactory;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
@@ -20,9 +22,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetry
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-
-import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import org.awaitility.core.ConditionFactory;
 
 public class ApplicationUtils {
   /**

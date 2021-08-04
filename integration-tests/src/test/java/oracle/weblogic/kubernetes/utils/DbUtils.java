@@ -645,7 +645,8 @@ public class DbUtils {
    * @param sysPassword DB sys password
    */
   public static void createRcuSecretWithUsernamePassword(String secretName, String namespace,
-                                                         String username, String password, String sysUsername, String sysPassword) {
+                                                         String username, String password,
+                                                         String sysUsername, String sysPassword) {
     Map<String, String> secretMap = new HashMap<>();
     secretMap.put("username", username);
     secretMap.put("password", password);

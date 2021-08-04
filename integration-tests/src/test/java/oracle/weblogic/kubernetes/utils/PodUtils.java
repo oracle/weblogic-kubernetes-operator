@@ -9,22 +9,6 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-
-import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
-import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.podInitializing;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
-import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
-import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertFalse;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
-
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1LabelSelector;
@@ -38,6 +22,20 @@ import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.Exec;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+
+import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.podInitializing;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
+import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 public class PodUtils {
   /**

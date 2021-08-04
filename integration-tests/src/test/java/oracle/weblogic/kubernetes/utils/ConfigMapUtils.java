@@ -12,6 +12,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import oracle.weblogic.kubernetes.TestConstants;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static java.nio.file.Files.readString;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
@@ -19,12 +24,6 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.V1ConfigMap;
-import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import oracle.weblogic.kubernetes.TestConstants;
-import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 public class ConfigMapUtils {
   /**

@@ -90,7 +90,6 @@ import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResou
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
-import static oracle.weblogic.kubernetes.utils.PodUtils.getIntrospectorPodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodsWithTimeStamps;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;

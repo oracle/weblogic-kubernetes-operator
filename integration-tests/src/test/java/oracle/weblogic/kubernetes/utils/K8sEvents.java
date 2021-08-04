@@ -61,6 +61,30 @@ public class K8sEvents {
   }
 
   /**
+   * Wait until a given event is logged by the operator.
+   *
+   * @param opNamespace namespace in which the operator is running
+   * @param domainNamespace namespace in which the domain exists
+   * @param domainUid UID of the domain
+   * @param reason event to check for Created, Changed, deleted, processing etc
+   * @param type type of event, Normal of Warning
+   * @param timestamp the timestamp after which to see events
+   */
+  public static void checkEvent(
+      String opNamespace, String domainNamespace, String domainUid,
+      String reason, String type, OffsetDateTime timestamp) {
+    withStandardRetryPolicy
+        .conditionEvaluationListener(condition ->
+            getLogger().info("Waiting for domain event {0} to be logged in namespace {1} "
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                reason,
+                domainNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid, reason, type, timestamp));
+  }
+
+  /**
    * Check if a given event is logged by the operator.
    *
    * @param opNamespace namespace in which the operator is running
@@ -309,30 +333,6 @@ public class K8sEvents {
       }
       return false;
     };
-  }
-
-  /**
-   * Wait until a given event is logged by the operator.
-   *
-   * @param opNamespace namespace in which the operator is running
-   * @param domainNamespace namespace in which the domain exists
-   * @param domainUid UID of the domain
-   * @param reason event to check for Created, Changed, deleted, processing etc
-   * @param type type of event, Normal of Warning
-   * @param timestamp the timestamp after which to see events
-   */
-  public static void checkEvent(
-      String opNamespace, String domainNamespace, String domainUid,
-      String reason, String type, OffsetDateTime timestamp) {
-    withStandardRetryPolicy
-        .conditionEvaluationListener(condition ->
-            getLogger().info("Waiting for domain event {0} to be logged in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                reason,
-                domainNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid, reason, type, timestamp));
   }
 
   /**

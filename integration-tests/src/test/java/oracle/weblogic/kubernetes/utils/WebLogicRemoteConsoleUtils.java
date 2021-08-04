@@ -4,9 +4,9 @@
 
 package oracle.weblogic.kubernetes.utils;
 
-import static org.assertj.core.api.Assertions.assertThat;
-
 import oracle.weblogic.kubernetes.actions.TestActions;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 public class WebLogicRemoteConsoleUtils {
 

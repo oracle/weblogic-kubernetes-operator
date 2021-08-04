@@ -3,6 +3,9 @@
 
 package oracle.weblogic.kubernetes.utils;
 
+import oracle.weblogic.domain.Domain;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
+
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
@@ -15,9 +18,6 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import oracle.weblogic.domain.Domain;
-import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 public class DomainUtils {
 

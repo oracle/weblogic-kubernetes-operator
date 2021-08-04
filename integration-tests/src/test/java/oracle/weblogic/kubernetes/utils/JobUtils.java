@@ -7,20 +7,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 
-
-import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
-import static oracle.weblogic.kubernetes.TestConstants.OKD;
-import static oracle.weblogic.kubernetes.actions.TestActions.createNamespacedJob;
-import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
-import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
-import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
-import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createfixPVCOwnerContainer;
-import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.fail;
-
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
@@ -37,6 +23,19 @@ import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.actions.TestActions.createNamespacedJob;
+import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
+import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createfixPVCOwnerContainer;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.fail;
 
 public class JobUtils {
 
@@ -79,8 +78,10 @@ public class JobUtils {
    * @param jobContainer V1Container with job commands to create domain
    */
   public static void createDomainJob(String image, String pvName,
-                                     String pvcName, String domainScriptCM, String namespace, V1Container jobContainer) {
-    createDomainJob(image, pvName, pvcName, domainScriptCM, namespace, jobContainer, null);
+                                     String pvcName, String domainScriptCM, String namespace,
+                                     V1Container jobContainer) {
+    createDomainJob(image, pvName, pvcName, domainScriptCM,
+        namespace, jobContainer, null);
   }
 
   /**
