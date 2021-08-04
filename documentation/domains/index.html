@@ -1295,7 +1295,7 @@ window.onload = function() {
           "$ref": "#/definitions/ServerService"
         },
         "domainHome": {
-          "description": "The directory containing the WebLogic domain configuration inside the container. Defaults to /shared/domains/\u003cdomainUID\u003e if `domainHomeSourceType` is PersistentVolume. Defaults to /u01/oracle/user_projects/domains/ if `domainHomeSourceType` is Image. Defaults to /u01/domains/\u003cdomainUID\u003e if `domainHomeSourceType` is FromModel.",
+          "description": "The directory containing the WebLogic domain configuration inside the container. Specifically when the `domainHomeSourceType` is Image, the directory may either be the directory container the WebLogic domain configuration or that directory\u0027s immediate parent. If the parent directory is specified then there must be exactly one subdirectory containing the domain configuration. Defaults to /shared/domains/\u003cdomainUID\u003e if `domainHomeSourceType` is PersistentVolume. Defaults to /u01/oracle/user_projects/domains/ if `domainHomeSourceType` is Image. Defaults to /u01/domains/\u003cdomainUID\u003e if `domainHomeSourceType` is FromModel.",
           "type": "string"
         },
         "domainHomeSourceType": {
