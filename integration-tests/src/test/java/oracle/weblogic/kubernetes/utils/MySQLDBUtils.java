@@ -28,6 +28,7 @@ import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.Namespace;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -85,7 +86,7 @@ public class MySQLDBUtils {
                     .name("mysql")
                     .containerPort(3306))))));
     V1Pod pod = assertDoesNotThrow(() -> Kubernetes.createPod(namespace, mysqlPod));
-    CommonTestUtils.checkPodReady(pod.getMetadata().getName(), null, namespace);
+    checkPodReady(pod.getMetadata().getName(), null, namespace);
   }
 
   //create services for MySQL database

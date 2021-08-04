@@ -21,6 +21,7 @@ import io.kubernetes.client.openapi.models.NetworkingV1beta1HTTPIngressPath;
 import io.kubernetes.client.openapi.models.NetworkingV1beta1HTTPIngressRuleValue;
 import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressBackend;
 import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressRule;
+import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressTLS;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
@@ -74,10 +75,10 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.isOCILoadBala
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isTraefikReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isVoyagerReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
+import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
+import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -697,6 +698,41 @@ public class LoadBalancerUtils {
     }
 
     return ingressHostList;
+  }
+
+  /**
+   * Create an ingress in specified namespace and retry up to maxRetries times if fail.
+   * @param maxRetries max number of retries
+   * @param isTLS whether the ingress uses TLS
+   * @param ingressName ingress name
+   * @param namespace namespace in which the ingress will be created
+   * @param annotations annotations of the ingress
+   * @param ingressRules a list of ingress rules
+   * @param tlsList list of ingress tls
+   */
+  public static void createIngressAndRetryIfFail(int maxRetries,
+                                                 boolean isTLS,
+                                                 String ingressName,
+                                                 String namespace,
+                                                 Map<String, String> annotations,
+                                                 List<NetworkingV1beta1IngressRule> ingressRules,
+                                                 List<NetworkingV1beta1IngressTLS> tlsList) {
+    for (int i = 0; i < maxRetries; i++) {
+      try {
+        if (isTLS) {
+          createIngress(ingressName, namespace, annotations, ingressRules, tlsList);
+        } else {
+          createIngress(ingressName, namespace, annotations, ingressRules, null);
+        }
+        break;
+      } catch (ApiException apiEx) {
+        try {
+          Thread.sleep(5000);
+        } catch (InterruptedException ignore) {
+          //ignore
+        }
+      }
+    }
   }
 
   /**

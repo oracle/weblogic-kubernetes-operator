@@ -14,8 +14,10 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.SimpleFileVisitor;
+import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
@@ -29,6 +31,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_FILENAME_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_URL;
@@ -345,4 +348,40 @@ public class FileUtils {
             .command(cmdToExecute))
         .execute(), String.format("Failed to unzip %s", wlDeployZipFile));
   }
+
+  /**
+   * Generate a text file in RESULTS_ROOT directory by replacing template value.
+   * @param inputTemplateFile input template file
+   * @param outputFile output file to be generated. This file will be copied to RESULTS_ROOT. If outputFile contains
+   *                   a directory, then the directory will created if it does not exist.
+   *                   example - crossdomxaction/istio-cdt-http-srvice.yaml
+   * @param templateMap map containing template variable(s) to be replaced
+   * @return path of the generated file - will be under RESULTS_ROOT
+   */
+  public static Path generateFileFromTemplate(
+      String inputTemplateFile, String outputFile,
+      Map<String, String> templateMap) throws IOException {
+
+    LoggingFacade logger = getLogger();
+
+    Path targetFileParent = Paths.get(outputFile).getParent();
+    if (targetFileParent != null) {
+      checkDirectory(targetFileParent.toString());
+    }
+    Path srcFile = Paths.get(inputTemplateFile);
+    Path targetFile = Paths.get(RESULTS_ROOT, outputFile);
+    logger.info("Copying  source file {0} to target file {1}", inputTemplateFile, targetFile.toString());
+
+    // Add the parent directory for the target file
+    Path parentDir = targetFile.getParent();
+    Files.createDirectories(parentDir);
+    Files.copy(srcFile, targetFile, StandardCopyOption.REPLACE_EXISTING);
+    String out = targetFile.toString();
+    for (Map.Entry<String, String> entry : templateMap.entrySet()) {
+      logger.info("Replacing String {0} with the value {1}", entry.getKey(), entry.getValue());
+      FileUtils.replaceStringInFile(out, entry.getKey(), entry.getValue());
+    }
+    return targetFile;
+  }
+
 }
