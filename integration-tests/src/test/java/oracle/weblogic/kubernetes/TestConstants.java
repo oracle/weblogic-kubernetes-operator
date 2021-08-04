@@ -6,7 +6,6 @@ package oracle.weblogic.kubernetes;
 import java.net.InetAddress;
 import java.util.Optional;
 
-
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
