@@ -6,6 +6,13 @@ package oracle.weblogic.kubernetes.utils;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.kubernetes.client.custom.IntOrString;
+import io.kubernetes.client.openapi.models.NetworkingV1beta1HTTPIngressPath;
+import io.kubernetes.client.openapi.models.NetworkingV1beta1HTTPIngressRuleValue;
+import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressBackend;
+import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressRule;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
+import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DEFAULT_CHANNEL_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.createIngress;
@@ -16,14 +23,6 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import io.kubernetes.client.custom.IntOrString;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1HTTPIngressPath;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1HTTPIngressRuleValue;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressBackend;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressRule;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
-import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 
 public class OKDUtils {
   /**
