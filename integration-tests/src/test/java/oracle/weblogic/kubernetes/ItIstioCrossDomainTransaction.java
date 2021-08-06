@@ -115,7 +115,7 @@ public class ItIstioCrossDomainTransaction {
   private final String domain2ManagedServerPrefix = domainUid2 + "-managed-server";
   private static String clusterName = "cluster-1";
   private static final String ORACLEDBURLPREFIX = "oracledb.";
-  private static final String ORACLEDBSUFFIX = ".svc.cluster.local:1521/devpdb.k8s";
+  private static String ORACLEDBSUFFIX = null;
   private static LoggingFacade logger = null;
   static String dbUrl;
   static int dbNodePort;
@@ -146,11 +146,12 @@ public class ItIstioCrossDomainTransaction {
     assertNotNull(namespaces.get(2), "Namespace list is null");
     domain2Namespace = namespaces.get(2);
 
+    final int dbListenerPort = getNextFreePort();
+    ORACLEDBSUFFIX = ".svc.cluster.local:" + dbListenerPort + "/devpdb.k8s";
     dbUrl = ORACLEDBURLPREFIX + domain2Namespace + ORACLEDBSUFFIX;
     createSecretForBaseImages(domain2Namespace);
 
     //Start oracleDB
-    final int dbListenerPort = getNextFreePort();
     assertDoesNotThrow(() -> {
       startOracleDB(DB_IMAGE_TO_USE_IN_SPEC, getNextFreePort(), domain2Namespace, dbListenerPort);
       String.format("Failed to start Oracle DB");

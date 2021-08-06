@@ -70,8 +70,6 @@ public class ItFmwMiiDomain {
   private static final String RCUSCHEMAPREFIX = "FMWDOMAINMII";
   private static final String ORACLEDBURLPREFIX = "oracledb.";
   private static String ORACLEDBSUFFIX = null;
-  //private static final String ORACLEDBSUFFIX = ".svc.cluster.local:1561/devpdb.k8s";
-  //private static final String ORACLEDBSUFFIX = ".svc.cluster.local:" + getNextFreePort(1025, 65000) + "/devpdb.k8s";
   private static final String RCUSYSUSERNAME = "sys";
   private static final String RCUSYSPASSWORD = "Oradoc_db1";
   private static final String RCUSCHEMAUSERNAME = "myrcuuser";

@@ -106,7 +106,6 @@ public class ItOpUpgradeFmwDomainInPV {
 
   private static final String RCUSCHEMAPREFIX = "fmwdomainpv";
   private static final String ORACLEDBURLPREFIX = "oracledb.";
-  //private static final String ORACLEDBSUFFIX = ".svc.cluster.local:1521/devpdb.k8s";
   private static String ORACLEDBSUFFIX = null;
   private static final String RCUSYSUSERNAME = "sys";
   private static final String RCUSYSPASSWORD = "Oradoc_db1";
@@ -165,7 +164,6 @@ public class ItOpUpgradeFmwDomainInPV {
     dbNamespace = namespaces.get(0);
     final int dbListenerPort = getNextFreePort();
     ORACLEDBSUFFIX = ".svc.cluster.local:" + dbListenerPort + "/devpdb.k8s";
-    dbUrl = ORACLEDBURLPREFIX + dbNamespace + ORACLEDBSUFFIX;
     dbUrl = ORACLEDBURLPREFIX + dbNamespace + ORACLEDBSUFFIX;
 
     logger.info("Assign a unique namespace for operator1");

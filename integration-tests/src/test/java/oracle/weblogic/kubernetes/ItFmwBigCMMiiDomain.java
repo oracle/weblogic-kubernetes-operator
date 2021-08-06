@@ -71,7 +71,6 @@ public class ItFmwBigCMMiiDomain {
 
   private static final String RCUSCHEMAPREFIX = "jrfdomainmii";
   private static final String ORACLEDBURLPREFIX = "oracledb.";
-  //private static final String ORACLEDBSUFFIX = ".svc.cluster.local:1521/devpdb.k8s";
   private static String ORACLEDBSUFFIX = null;
   private static final String RCUSYSUSERNAME = "sys";
   private static final String RCUSYSPASSWORD = "Oradoc_db1";

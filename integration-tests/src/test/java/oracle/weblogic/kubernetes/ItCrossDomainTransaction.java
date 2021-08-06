@@ -113,7 +113,6 @@ public class ItCrossDomainTransaction {
   private static String domain2AdminServerPodName = domainUid2 + "-admin-server";
   private final String domain2ManagedServerPrefix = domainUid2 + "-managed-server";
   private static final String ORACLEDBURLPREFIX = "oracledb.";
-  //private static final String ORACLEDBSUFFIX = ".svc.cluster.local:1521/devpdb.k8s";
   private static String ORACLEDBSUFFIX = null;
   private static LoggingFacade logger = null;
   static String dbUrl;

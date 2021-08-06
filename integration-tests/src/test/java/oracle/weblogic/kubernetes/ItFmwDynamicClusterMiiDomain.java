@@ -75,7 +75,6 @@ public class ItFmwDynamicClusterMiiDomain {
 
   private static final String RCUSCHEMAPREFIX = "jrfdomainmii";
   private static final String ORACLEDBURLPREFIX = "oracledb.";
-  //private static final String ORACLEDBSUFFIX = ".svc.cluster.local:1521/devpdb.k8s";
   private static String ORACLEDBSUFFIX = null;
   private static final String RCUSCHEMAPASSWORD = "Oradoc_db1";
   private static final String modelFile = "model-fmw-dynamicdomain.yaml";
