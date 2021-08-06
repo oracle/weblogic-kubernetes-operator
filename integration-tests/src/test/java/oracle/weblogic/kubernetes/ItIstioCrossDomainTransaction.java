@@ -150,8 +150,9 @@ public class ItIstioCrossDomainTransaction {
     createSecretForBaseImages(domain2Namespace);
 
     //Start oracleDB
+    final int dbListenerPort = getNextFreePort();
     assertDoesNotThrow(() -> {
-      startOracleDB(DB_IMAGE_TO_USE_IN_SPEC, getNextFreePort(), domain2Namespace);
+      startOracleDB(DB_IMAGE_TO_USE_IN_SPEC, getNextFreePort(), domain2Namespace, dbListenerPort);
       String.format("Failed to start Oracle DB");
     });
 
