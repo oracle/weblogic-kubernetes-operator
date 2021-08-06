@@ -261,7 +261,6 @@ public class DbUtils {
   public static synchronized void createRcuSchema(String fmwBaseImageName, String rcuPrefix, String dbUrl,
       String dbNamespace) throws ApiException {
     LoggingFacade logger = getLogger();
-    //logger.info("Create RCU pod for RCU prefix {0}", rcuPrefix);
     logger.info("Create RCU pod for for namespace: {0}, RCU prefix: {1}, "
          + "dbUrl: {2},  fmwImage: {3} ", dbNamespace, rcuPrefix, dbUrl, fmwBaseImageName);
     assertDoesNotThrow(() -> createRcuPod(fmwBaseImageName, dbUrl, dbNamespace),
