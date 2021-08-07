@@ -221,7 +221,7 @@ class ItIstioManagedCoherence {
 
     // create and verify a two-clusters WebLogic domain with a Coherence cluster
     createMiiDomainWithMultiClusters(miiDomainUid, miiDomainNamespace);
-    
+
     Map<String, String> templateMap  = new HashMap();
     templateMap.put("NAMESPACE", miiDomainNamespace);
     templateMap.put("DUID", miiDomainUid);
@@ -525,6 +525,7 @@ class ItIstioManagedCoherence {
   /**
    * Create model in image domain with multiple clusters.
    *
+   * @param domainUid the uid of the domain
    * @param domainNamespace namespace in which the domain will be created
    * @return oracle.weblogic.domain.Domain objects
    */
