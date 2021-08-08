@@ -16,15 +16,10 @@ WebLogic Server has a new, important feature to ensure and help you secure your 
 
 Warnings may be at the level of the JDK, or that SSL is not enabled. They may recommend that you take an external action like setting the right permissions in the `DOMAIN_HOME` file system. Some warnings may recommend updating your WebLogic configuration.
 
-Depending on your [domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}), you may need to:
+You can make the recommended configuration changes using an approach that depends on your [domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}):
 
+- For Domain in PV, use the WebLogic Scripting Tool (WLST), WebLogic Server Administration Console, WebLogic Deploy Tooling (WDT), or [configuration overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}}).
 
-- For Domain in PV, use the WebLogic Scripting Tool (WLST), WebLogic Server Administration Console, or WebLogic Deploy Tooling (WDT) to make the recommended configuration changes.
+- For Domain in Image, create a new image with the recommended changes or use [configuration overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}}).
 
-- For Domain in Image, create a new image with the recommended configuration changes.  
-
-- For Model in Image, make configuration changes in the model.
-
-     - For Model in Image domains, you may want to use [runtime updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}).
-
-     - For other domain home source types, you may want to use [configuration overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}}).
+- For Model in Image, supply model files with the recommended changes in its image's `modelHome` directory or use [runtime updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}).
