@@ -14,9 +14,7 @@ description: "Why am I seeing these security warnings?"
 
 WebLogic Server has a new, important feature to ensure and help you secure your WLS domains when running in production. With the July 2021 PSU applied, WebLogic Server regularly validates your domain configuration settings against a set of security configuration guidelines to determine whether the domain meets key security guidelines recommended by Oracle. For more information and additional details, see [MOS Doc 2788605.1](https://support.oracle.com/rs?type=doc&id=2788605.1) "WebLogic Server Security Warnings Displayed Through the Admin Console" and [Review Potential Security Issues](https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/lockd/secure.html#GUID-4148D1BE-2D54-4DA5-8E94-A35D48DCEF1D) in _Securing a Production Environment for Oracle WebLogic Server_.
 
-Warnings may be at the level of the JDK, or that SSL is not enabled. They may recommend that you take an external action like setting the right permissions in the `DOMAIN_HOME` file system. Some warnings may recommend updating your WebLogic configuration.
-
-You can make the recommended configuration changes using an approach that depends on your [domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}):
+Warnings may be at the level of the JDK, or that SSL is not enabled. Some warnings may recommend updating your WebLogic configuration. You can make the recommended configuration changes using an approach that depends on your [domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}):
 
 - For Domain in PV, use the WebLogic Scripting Tool (WLST), WebLogic Server Administration Console, WebLogic Deploy Tooling (WDT), or [configuration overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}}).
 
