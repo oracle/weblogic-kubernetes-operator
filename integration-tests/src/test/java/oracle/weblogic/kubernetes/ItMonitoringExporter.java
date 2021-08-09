@@ -130,29 +130,29 @@ import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.listPods;
 import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createImageAndPushToRepo;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressForDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVPVCAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.execInPod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDockerExtraArgs;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyGrafana;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyPrometheus;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndPushToRepo;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createIngressForDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.buildMonitoringExporterApp;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.checkMetricsViaPrometheus;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.cloneMonitoringExporter;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.downloadMonitoringExporterApp;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.editPrometheusCM;
+import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyGrafana;
+import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyPrometheus;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.searchForKey;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -351,7 +351,7 @@ class ItMonitoringExporter {
    */
   @Test
   @DisplayName("Test End to End example from MonitoringExporter github project.")
-  public void testEndToEndViaChart() throws Exception {
+  void testEndToEndViaChart() throws Exception {
     wdtImage = createAndVerifyDomainInImage();
     try {
       logger.info("Create wdt domain and verify that it's running");
@@ -405,7 +405,7 @@ class ItMonitoringExporter {
    */
   @Test
   @DisplayName("Test Basic Functionality of Monitoring Exporter SideCar.")
-  public void testSideCarBasicFunctionality() throws Exception {
+  void testSideCarBasicFunctionality() throws Exception {
 
     // create and verify one cluster mii domain
     logger.info("Create domain and verify that it's running");
@@ -494,7 +494,7 @@ class ItMonitoringExporter {
    */
   @Test
   @DisplayName("Test Basic Functionality of Monitoring Exporter SideCar for domain with two clusters.")
-  public void testSideCarBasicFunctionalityTwoClusters() throws Exception {
+  void testSideCarBasicFunctionalityTwoClusters() throws Exception {
 
     // create and verify one cluster mii domain
     logger.info("Create domain and verify that it's running");
@@ -522,7 +522,7 @@ class ItMonitoringExporter {
 
   @Test
   @DisplayName("Test Basic Functionality of Monitoring Exporter SideCar with ssl enabled.")
-  public void testSideCarBasicFunctionalityWithSSL() throws Exception {
+  void testSideCarBasicFunctionalityWithSSL() throws Exception {
 
     // create and verify one cluster mii domain
     logger.info("Create domain and verify that it's running");
@@ -553,7 +553,7 @@ class ItMonitoringExporter {
    */
   @Test
   @DisplayName("Test Basic Functionality of Monitoring Exporter.")
-  public void testBasicFunctionality() throws Exception {
+  void testBasicFunctionality() throws Exception {
     // create and verify one cluster mii domain
     logger.info("Create domain and verify that it's running");
     createAndVerifyDomain(miiImage, domain4Uid, domain4Namespace, "FromModel", 1, true);
@@ -616,7 +616,7 @@ class ItMonitoringExporter {
   //commented out untill Issue (see oracle/weblogic-monitoring-exporter#138) will be fixed
   //@Test
   @DisplayName("Test Accesability of Monitoring Exporter dashboard and metrics if admin port is enabled.")
-  public void testAdminPortEnabled() throws Exception {
+  void testAdminPortEnabled() throws Exception {
 
     // create and verify one cluster mii domain with admin port enabled
     logger.info("Create domain and verify that it's running");
@@ -645,7 +645,7 @@ class ItMonitoringExporter {
    */
   @Test
   @DisplayName("Test Monitoring Exporter access to metrics via https.")
-  public void testAccessExporterViaHttps() throws Exception {
+  void testAccessExporterViaHttps() throws Exception {
     String miiImage1 = null;
 
     try {

@@ -23,7 +23,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class CertificatesTest {
+class CertificatesTest {
 
   private final TestUtils.ConsoleHandlerMemento consoleHandlerMemento = TestUtils.silenceOperatorLogger();
   private final Collection<LogRecord> logRecords = new ArrayList<>();
@@ -43,12 +43,12 @@ public class CertificatesTest {
   }
 
   @Test
-  public void whenNoExternalKeyFile_returnNull() {
+  void whenNoExternalKeyFile_returnNull() {
     assertThat(Certificates.getOperatorExternalKeyFile(), nullValue());
   }
 
   @Test
-  public void whenExternalKeyFileDefined_returnPath() {
+  void whenExternalKeyFileDefined_returnPath() {
     InMemoryCertificates.defineOperatorExternalKeyFile("asdf");
 
     assertThat(
@@ -56,12 +56,12 @@ public class CertificatesTest {
   }
 
   @Test
-  public void whenNoInternalKeyFile_returnNull() {
+  void whenNoInternalKeyFile_returnNull() {
     assertThat(Certificates.getOperatorInternalKeyFile(), nullValue());
   }
 
   @Test
-  public void whenInternalKeyFileDefined_returnPath() {
+  void whenInternalKeyFileDefined_returnPath() {
     InMemoryCertificates.defineOperatorInternalKeyFile("asdf");
 
     assertThat(
@@ -69,42 +69,42 @@ public class CertificatesTest {
   }
 
   @Test
-  public void whenNoExternalCertificateFile_returnNull() {
+  void whenNoExternalCertificateFile_returnNull() {
     consoleHandlerMemento.ignoreMessage(NO_EXTERNAL_CERTIFICATE);
 
     assertThat(Certificates.getOperatorExternalCertificateData(), nullValue());
   }
 
   @Test
-  public void whenNoExternalCertificateFile_logConfigMessage() {
+  void whenNoExternalCertificateFile_logConfigMessage() {
     assertThat(Certificates.getOperatorExternalCertificateData(), nullValue());
 
     assertThat(logRecords, containsConfig(NO_EXTERNAL_CERTIFICATE));
   }
 
   @Test
-  public void whenExternalCertificateFileDefined_returnData() {
+  void whenExternalCertificateFileDefined_returnData() {
     InMemoryCertificates.defineOperatorExternalCertificateFile("asdf");
 
     assertThat(Certificates.getOperatorExternalCertificateData(), notNullValue());
   }
 
   @Test
-  public void whenNoInternalCertificateFile_returnNull() {
+  void whenNoInternalCertificateFile_returnNull() {
     consoleHandlerMemento.ignoreMessage(NO_INTERNAL_CERTIFICATE);
 
     assertThat(Certificates.getOperatorInternalCertificateData(), nullValue());
   }
 
   @Test
-  public void whenNoInternalCertificateFile_logConfigMessage() {
+  void whenNoInternalCertificateFile_logConfigMessage() {
     Certificates.getOperatorInternalCertificateData();
 
     assertThat(logRecords, containsConfig(NO_INTERNAL_CERTIFICATE));
   }
 
   @Test
-  public void whenInternalCertificateFileDefined_returnPath() {
+  void whenInternalCertificateFileDefined_returnPath() {
     InMemoryCertificates.defineOperatorInternalCertificateFile("asdf");
 
     assertThat(Certificates.getOperatorInternalCertificateData(), notNullValue());

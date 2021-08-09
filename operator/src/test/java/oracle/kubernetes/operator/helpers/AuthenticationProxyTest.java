@@ -17,7 +17,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class AuthenticationProxyTest {
+class AuthenticationProxyTest {
 
   private final List<Memento> mementos = new ArrayList<>();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
@@ -41,14 +41,14 @@ public class AuthenticationProxyTest {
   }
 
   @Test
-  public void verify_authorizationScope_isCluster_whenNamespaceIsNull() {
+  void verify_authorizationScope_isCluster_whenNamespaceIsNull() {
     AuthenticationProxy authorizationProxy = new AuthenticationProxy();
     authorizationProxy.check("", "", null);
     assertThat(authorizationProxyStub.scope, equalTo(Scope.cluster));
   }
 
   @Test
-  public void verify_authorizationScope_isNamespace_whenNamespaceIsDefined() {
+  void verify_authorizationScope_isNamespace_whenNamespaceIsDefined() {
     AuthenticationProxy authorizationProxy = new AuthenticationProxy();
     authorizationProxy.check("", "", "NS");
     assertThat(authorizationProxyStub.scope, equalTo(Scope.namespace));

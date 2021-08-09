@@ -19,7 +19,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.fail;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class InMemoryDatabaseTest {
+class InMemoryDatabaseTest {
 
   private static final String NS1 = "namespace1";
   private static final String NS2 = "namespace2";
@@ -35,7 +35,7 @@ public class InMemoryDatabaseTest {
       };
 
   @Test
-  public void whenItemAbsent_readThrowsException() {
+  void whenItemAbsent_readThrowsException() {
     try {
       database.read(keys().name(NAME1).namespace(NS1).map());
       fail("Should have thrown an InMemoryDatabaseException");
@@ -45,7 +45,7 @@ public class InMemoryDatabaseTest {
   }
 
   @Test
-  public void whenItemPresent_createThrowsException() {
+  void whenItemPresent_createThrowsException() {
     createItem(NAME1, NS1);
 
     try {
@@ -66,14 +66,14 @@ public class InMemoryDatabaseTest {
   }
 
   @Test
-  public void afterItemCreated_canRetrieveIt() {
+  void afterItemCreated_canRetrieveIt() {
     NetworkingV1beta1Ingress item = createItem(NAME1, NS1);
 
     assertThat(database.read(keys().name(NAME1).namespace(NS1).map()), equalTo(item));
   }
 
   @Test
-  public void whenItemAbsent_replaceThrowsException() {
+  void whenItemAbsent_replaceThrowsException() {
     try {
       database.replace(
           new NetworkingV1beta1Ingress().metadata(new V1ObjectMeta().namespace(NS1).name(NAME1)),
@@ -85,7 +85,7 @@ public class InMemoryDatabaseTest {
   }
 
   @Test
-  public void afterReplaceItem_canRetrieveNewItem() {
+  void afterReplaceItem_canRetrieveNewItem() {
     createItem(NAME1, NS1).kind("old item");
 
     NetworkingV1beta1Ingress replacement =
@@ -98,7 +98,7 @@ public class InMemoryDatabaseTest {
   }
 
   @Test
-  public void afterItemDeleted_cannotRetrieveIt() {
+  void afterItemDeleted_cannotRetrieveIt() {
     createItem(NAME1, NS1);
     database.delete(keys().name(NAME1).namespace(NS1).map());
 
@@ -107,7 +107,7 @@ public class InMemoryDatabaseTest {
   }
 
   @Test
-  public void whenItemToDeletedAbsent_throwException() {
+  void whenItemToDeletedAbsent_throwException() {
     try {
       database.delete(keys().name(NAME1).namespace(NS1).map());
       fail("Should have thrown an InMemoryDatabaseException");
@@ -117,7 +117,7 @@ public class InMemoryDatabaseTest {
   }
 
   @Test
-  public void afterItemsCreated_canListMatches() {
+  void afterItemsCreated_canListMatches() {
     NetworkingV1beta1Ingress item1 = createItem(NAME1, NS1);
     NetworkingV1beta1Ingress item2 = createItem(NAME2, NS1);
     NetworkingV1beta1Ingress item3 = createItem(NAME1, NS2);

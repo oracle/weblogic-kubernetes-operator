@@ -53,12 +53,12 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotEx
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -172,7 +172,7 @@ class ItSessionMigration {
   @Test
   @Order(1)
   @DisplayName("Stop the primary server, verify that a new primary server is picked and HTTP session state is migrated")
-  public void testSessionMigration() {
+  void testSessionMigration() {
     final String primaryServerAttr = "primary";
     final String secondaryServerAttr = "secondary";
     final String sessionCreateTimeAttr = "sessioncreatetime";
@@ -234,7 +234,7 @@ class ItSessionMigration {
   @Test
   @Order(2)
   @DisplayName("Test that an annotation containing a slash in the name propagates to the server pod")
-  public void testPodAnnotationWithSlash() {
+  void testPodAnnotationWithSlash() {
     String managedServerPodName = domainUid + "-" + finalPrimaryServerName;
     V1Pod managedServerPod = null;
 

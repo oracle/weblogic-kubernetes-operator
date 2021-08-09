@@ -41,10 +41,10 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -101,7 +101,7 @@ class ItPodTemplates {
    */
   @Test
   @DisplayName("Test pod templates using all the variables for domain in image.")
-  public void testPodTemplateUsingVariablesDomainInImage() throws Exception {
+  void testPodTemplateUsingVariablesDomainInImage() throws Exception {
     try {
       logger.info("Add annotations to serverPod as $(DOMAIN_HOME) and $(LOG_HOME)");
       logger.info("Add labels to serverPod as $(DOMAIN_NAME), $(DOMAIN_UID), $(SERVER_NAME)");

@@ -75,6 +75,7 @@ public class FmwUtils {
                 .namespace(domNamespace))
             .includeServerOutInPodLog(true)
             .serverStartPolicy("IF_NEEDED")
+            .introspectVersion("1")
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")

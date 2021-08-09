@@ -68,7 +68,7 @@ import static org.junit.Assert.fail;
  * Base class for testing that the all artifacts in the yaml files that create-weblogic-operator.sh
  * generates
  */
-public abstract class CreateOperatorGeneratedFilesTestBase {
+abstract class CreateOperatorGeneratedFilesTestBase {
 
   private static OperatorValues inputs;
   private static GeneratedOperatorObjects generatedFiles;
@@ -87,7 +87,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
   }
 
   @Test
-  public void generatesCorrect_operatorConfigMap() {
+  void generatesCorrect_operatorConfigMap() {
     assertThat(
         getActualWeblogicOperatorConfigMap(), yamlEqualTo(getExpectedWeblogicOperatorConfigMap()));
   }
@@ -121,7 +121,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
   protected abstract String getExpectedExternalWeblogicOperatorCert();
 
   @Test
-  public void generatesCorrect_operatorSecrets() {
+  void generatesCorrect_operatorSecrets() {
     assertThat(
         getActualWeblogicOperatorSecrets(), yamlEqualTo(getExpectedWeblogicOperatorSecrets()));
   }
@@ -157,7 +157,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
   protected abstract String getExpectedExternalWeblogicOperatorKey();
 
   @Test
-  public void generatesCorrect_operatorDeployment() {
+  void generatesCorrect_operatorDeployment() {
     assertThat(
         getActualWeblogicOperatorDeployment(),
         yamlEqualTo(getExpectedWeblogicOperatorDeployment()));
@@ -265,7 +265,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
   }
 
   @Test
-  public void generatesCorrect_externalWeblogicOperatorService() {
+  void generatesCorrect_externalWeblogicOperatorService() {
     V1Service expected = getExpectedExternalWeblogicOperatorService();
     if (expected != null) {
       assertThat(getGeneratedFiles().getExternalOperatorService(), yamlEqualTo(expected));
@@ -312,7 +312,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
   }
 
   @Test
-  public void generatesCorrect_internalWeblogicOperatorService() {
+  void generatesCorrect_internalWeblogicOperatorService() {
     assertThat(
         getActualInternalWeblogicOperatorService(),
         yamlEqualTo(getExpectedInternalWeblogicOperatorService()));
@@ -337,7 +337,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
   }
 
   @Test
-  public void generatesCorrect_weblogicOperatorNamespace() {
+  protected void generatesCorrect_weblogicOperatorNamespace() {
     assertThat(
         getActualWeblogicOperatorNamespace(), yamlEqualTo(getExpectedWeblogicOperatorNamespace()));
   }
@@ -355,7 +355,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
   }
 
   @Test
-  public void generatesCorrect_weblogicOperatorServiceAccount() {
+  protected void generatesCorrect_weblogicOperatorServiceAccount() {
     assertThat(
         getActualWeblogicOperatorServiceAccount(),
         yamlEqualTo(getExpectedWeblogicOperatorServiceAccount()));
@@ -375,7 +375,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
   }
 
   @Test
-  public void generatesCorrect_weblogicOperatorClusterRole() {
+  void generatesCorrect_weblogicOperatorClusterRole() {
     assertThat(
         getActualWeblogicOperatorClusterRole(),
         yamlEqualTo(getExpectedWeblogicOperatorClusterRole()));
@@ -427,7 +427,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
   }
 
   @Test
-  public void generatesCorrect_weblogicOperatorClusterRoleNonResource() {
+  void generatesCorrect_weblogicOperatorClusterRoleNonResource() {
     assertThat(
         getGeneratedFiles().getWeblogicOperatorClusterRoleNonResource(),
         yamlEqualTo(getExpectedWeblogicOperatorClusterRoleNonResource()));
@@ -443,7 +443,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
   }
 
   @Test
-  public void generatesCorrect_operatorRoleBinding() {
+  void generatesCorrect_operatorRoleBinding() {
     assertThat(
         getGeneratedFiles().getOperatorRoleBinding(),
         yamlEqualTo(
@@ -467,7 +467,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
   }
 
   @Test
-  public void generatesCorrect_operatorRoleBindingNonResource() {
+  void generatesCorrect_operatorRoleBindingNonResource() {
     assertThat(
         getActualOperatorRoleBindingNonResource(),
         yamlEqualTo(getExpectedOperatorRoleBindingNonResource()));
@@ -498,7 +498,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
   }
 
   @Test
-  public void generatesCorrect_operatorRoleBindingDiscovery() {
+  void generatesCorrect_operatorRoleBindingDiscovery() {
     assertThat(
         getGeneratedFiles().getOperatorRoleBindingDiscovery(),
         yamlEqualTo(getExpectedOperatorRoleBindingDiscovery()));
@@ -524,7 +524,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
   }
 
   @Test
-  public void generatesCorrect_operatorRoleBindingAuthDelegator() {
+  void generatesCorrect_operatorRoleBindingAuthDelegator() {
     assertThat(
         getGeneratedFiles().getOperatorRoleBindingAuthDelegator(),
         yamlEqualTo(getExpectedOperatorRoleBindingAuthDelegator()));
@@ -551,7 +551,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
   }
 
   @Test
-  public void generatesCorrect_weblogicOperatorNamespaceRole() {
+  void generatesCorrect_weblogicOperatorNamespaceRole() {
     assertThat(
         getGeneratedFiles().getWeblogicOperatorNamespaceRole(),
         yamlEqualTo(getExpectedWeblogicOperatorNamespaceRole()));
@@ -614,7 +614,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
   }
 
   @Test
-  public void generatesCorrect_domainNamespaces_weblogicOperatorRoleBindings() {
+  void generatesCorrect_domainNamespaces_weblogicOperatorRoleBindings() {
     for (String domainNamespace : getInputs().getDomainNamespaces().split(",")) {
       String namespace = domainNamespace.trim();
       assertThat(
@@ -662,7 +662,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
   }
 
   @Test
-  public void generatesCorrect_weblogicOperatorRole() {
+  void generatesCorrect_weblogicOperatorRole() {
     assertThat(
         getGeneratedFiles().getWeblogicOperatorRole(),
         yamlEqualTo(getExpectedWeblogicOperatorRole()));
@@ -692,7 +692,7 @@ public abstract class CreateOperatorGeneratedFilesTestBase {
   }
 
   @Test
-  public void generatesCorrect_weblogicOperatorRoleBinding() {
+  void generatesCorrect_weblogicOperatorRoleBinding() {
     assertThat(
         getGeneratedFiles().getWeblogicOperatorRoleBinding(),
         yamlEqualTo(getExpectedWeblogicOperatorRoleBinding()));

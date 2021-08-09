@@ -47,13 +47,13 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodInitializ
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.upgradeAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -177,7 +177,7 @@ class ItInitContainers {
   @Test
   @DisplayName("Add initContainers at domain spec level and verify the server pods execute initContainer command "
       + " and starts the server pod")
-  public void testDomainInitContainer() {
+  void testDomainInitContainer() {
     logger.info("Installing and verifying domain");
     assertTrue(createVerifyDomain(domain1Namespace, domain1Uid, "spec"),
         "can't start or verify domain in namespace " + domain1Namespace);
@@ -244,7 +244,7 @@ class ItInitContainers {
    */
   @Test
   @DisplayName("Add initContainers to adminServer and verify the admin server pod executes initContainer command ")
-  public void testAdminServerInitContainer() {
+  void testAdminServerInitContainer() {
     assertTrue(createVerifyDomain(domain2Namespace, domain2Uid, "adminServer"),
         "can't start or verify domain in namespace " + domain2Namespace);
 
@@ -262,7 +262,7 @@ class ItInitContainers {
    */
   @Test
   @DisplayName("Add initContainers to cluster1 and verify all managed server pods go through Init state ")
-  public void testClusterInitContainer() {
+  void testClusterInitContainer() {
     assertTrue(createVerifyDomain(domain3Namespace, domain3Uid, "clusters"),
         "can't start or verify domain in namespace " + domain3Namespace);
 
@@ -283,7 +283,7 @@ class ItInitContainers {
    */
   @Test
   @DisplayName("Add initContainers to managed-server1 and verify the pod goes through Init state ")
-  public void testMsInitContainer() {
+  void testMsInitContainer() {
     assertTrue(createVerifyDomain(domain4Namespace, domain4Uid, "managedServers"),
         "can't start or verify domain in namespace " + domain4Namespace);
 

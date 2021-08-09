@@ -19,7 +19,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
-public class LegalNamesTest {
+class LegalNamesTest {
 
   private final List<Memento> mementos = new ArrayList<>();
 
@@ -36,21 +36,21 @@ public class LegalNamesTest {
 
 
   @Test
-  public void createValidServerServiceNames() {
+  void createValidServerServiceNames() {
     assertThat(toServerServiceName("abc", "cls1"), equalTo("abc-cls1"));
     assertThat(toServerServiceName("Abc", "cLs1"), equalTo("abc-cls1"));
     assertThat(toServerServiceName("Abc", "cls_1"), equalTo("abc-cls-1"));
   }
 
   @Test
-  public void createValidClusterServiceNames() {
+  void createValidClusterServiceNames() {
     assertThat(toClusterServiceName("abc", "cls1"), equalTo("abc-cluster-cls1"));
     assertThat(toClusterServiceName("Abc", "cLs1"), equalTo("abc-cluster-cls1"));
     assertThat(toClusterServiceName("Abc", "cls_1"), equalTo("abc-cluster-cls-1"));
   }
 
   @Test
-  public void verify_requiresDns1123Names_returnsTrue_for_names_in_defaultList() {
+  void verify_requiresDns1123Names_returnsTrue_for_names_in_defaultList() {
     assertThat(LegalNames.isDns1123Required("ClaimName"), is(true));
     assertThat(LegalNames.isDns1123Required("ClusterName"), is(true));
     assertThat(LegalNames.isDns1123Required("ContainerName"), is(true));
@@ -73,7 +73,7 @@ public class LegalNamesTest {
   }
 
   @Test
-  public void verify_requiresDns1123Names_returnFalse_for_names_not_in_list() {
+  void verify_requiresDns1123Names_returnFalse_for_names_not_in_list() {
     assertThat(LegalNames.isDns1123Required("DatasetName"), is(false));
     assertThat(LegalNames.isDns1123Required("DiskName"), is(false));
     assertThat(LegalNames.isDns1123Required("InitiatorName"), is(false));
@@ -84,13 +84,13 @@ public class LegalNamesTest {
   }
 
   @Test
-  public void verify_requiresDns1123Names_returnFalse_for_invalidValues() {
+  void verify_requiresDns1123Names_returnFalse_for_invalidValues() {
     assertThat(LegalNames.isDns1123Required(null), is(false));
     assertThat(LegalNames.isDns1123Required(""), is(false));
   }
 
   @Test
-  public void verify_requiresDns1123Names_with_customList() {
+  void verify_requiresDns1123Names_with_customList() {
     String customList = "diskName, claimName";
     TuningParameters.getInstance().put(DNS_1123_FIELDS_PARAM, customList);
 
@@ -102,7 +102,7 @@ public class LegalNamesTest {
   }
 
   @Test
-  public void verify_requiresDns1123Names_return_true_with_emptyStringCustomList() {
+  void verify_requiresDns1123Names_return_true_with_emptyStringCustomList() {
     String customList = "";
     TuningParameters.getInstance().put(DNS_1123_FIELDS_PARAM, customList);
 
@@ -111,7 +111,7 @@ public class LegalNamesTest {
   }
 
   @Test
-  public void verify_requiresDns1123Names_return_true_with_singleSpaceCustomList() {
+  void verify_requiresDns1123Names_return_true_with_singleSpaceCustomList() {
     String customList = " ";
     TuningParameters.getInstance().put(DNS_1123_FIELDS_PARAM, customList);
 

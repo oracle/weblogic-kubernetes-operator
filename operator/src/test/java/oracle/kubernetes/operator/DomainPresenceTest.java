@@ -52,7 +52,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings("SameParameterValue")
-public class DomainPresenceTest extends ThreadFactoryTestBase {
+class DomainPresenceTest extends ThreadFactoryTestBase {
 
   private static final String NS = "default";
   private static final String UID1 = "UID1";
@@ -84,7 +84,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  public void whenNoPreexistingDomains_createEmptyDomainPresenceInfoMap() {
+  void whenNoPreexistingDomains_createEmptyDomainPresenceInfoMap() {
     testSupport.addComponent("DP", DomainProcessor.class, dp);
     testSupport.runSteps(domainNamespaces.readExistingResources(NS, dp));
 
@@ -92,7 +92,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  public void whenPreexistingDomainExistsWithoutPodsOrServices_addToPresenceMap() {
+  void whenPreexistingDomainExistsWithoutPodsOrServices_addToPresenceMap() {
     Domain domain = createDomain(UID1, NS);
     testSupport.defineResources(domain);
 
@@ -103,7 +103,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  public void whenDomainsDeletedButAlreadyInPresence_deleteFromPresenceMap() {
+  void whenDomainsDeletedButAlreadyInPresence_deleteFromPresenceMap() {
     Domain domain1 = createDomain(UID1, NS);
     Domain domain2 = createDomain(UID2, NS);
     Domain domain3 = createDomain(UID3, NS);
@@ -179,7 +179,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  public void whenK8sHasOneDomain_recordAdminServerService() {
+  void whenK8sHasOneDomain_recordAdminServerService() {
     addDomainResource(UID1, NS);
     V1Service service = createServerService(UID1, NS, "admin");
     testSupport.defineResources(service);
@@ -191,7 +191,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  public void whenK8sHasOneDomainWithPod_recordPodPresence() {
+  void whenK8sHasOneDomainWithPod_recordPodPresence() {
     addDomainResource(UID1, NS);
     V1Pod pod = createPodResource(UID1, NS, "admin");
     testSupport.defineResources(pod);
@@ -211,7 +211,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  public void whenK8sHasOneDomainWithOtherEvent_ignoreIt() {
+  void whenK8sHasOneDomainWithOtherEvent_ignoreIt() {
     addDomainResource(UID1, NS);
     addPodResource(UID1, NS, "admin");
     addEventResource(UID1, "admin", "ignore this event");
@@ -234,7 +234,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  public void whenStrandedResourcesExist_removeThem() {
+  void whenStrandedResourcesExist_removeThem() {
     V1Service service1 = createServerService(UID1, NS, "admin");
     V1Service service2 = createServerService(UID1, NS, "ms1");
     V1PersistentVolume volume = new V1PersistentVolume().metadata(createMetadata(UID1, "volume1"));
@@ -248,7 +248,7 @@ public class DomainPresenceTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  public void dontRemoveNonStrandedResources() {
+  void dontRemoveNonStrandedResources() {
     createDomains(LAST_DOMAIN_NUM);
     V1Service service1 = createServerService("UID1", NS, "admin");
     V1Service service2 = createServerService("UID" + LAST_DOMAIN_NUM, NS, "admin");

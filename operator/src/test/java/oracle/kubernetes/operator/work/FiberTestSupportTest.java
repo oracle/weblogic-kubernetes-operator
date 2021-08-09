@@ -14,28 +14,28 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class FiberTestSupportTest {
+class FiberTestSupportTest {
   private final FiberTestSupport testSupport = new FiberTestSupport();
   private final List<String> itemsRun = new ArrayList<>();
   private final Runnable reportItemRun = () -> itemsRun.add("item");
 
 
   @Test
-  public void whenItemScheduledImmediately_runIt() {
+  void whenItemScheduledImmediately_runIt() {
     testSupport.schedule(reportItemRun);
 
     assertThat(itemsRun, contains("item"));
   }
 
   @Test
-  public void whenItemScheduledForFuture_dontExecuteItImmediately() {
+  void whenItemScheduledForFuture_dontExecuteItImmediately() {
     testSupport.schedule(reportItemRun, 1, SECONDS);
 
     assertThat(itemsRun, empty());
   }
 
   @Test
-  public void afterItemScheduledForFuture_executeEachTimeAdvanced() {
+  void afterItemScheduledForFuture_executeEachTimeAdvanced() {
     testSupport.scheduleWithFixedDelay(reportItemRun, 1, 1, SECONDS);
     testSupport.setTime(1, SECONDS);
     testSupport.setTime(2, SECONDS);
@@ -45,7 +45,7 @@ public class FiberTestSupportTest {
   }
 
   @Test
-  public void afterItemScheduledWithFixedDelay_executeMultipleTimesAfterTimeAdvanced() {
+  void afterItemScheduledWithFixedDelay_executeMultipleTimesAfterTimeAdvanced() {
     testSupport.scheduleWithFixedDelay(reportItemRun, 200, 500, MILLISECONDS);
     testSupport.setTime(1, SECONDS);
 

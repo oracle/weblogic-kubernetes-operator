@@ -123,24 +123,20 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodLogContai
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainJob;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressForDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createJobAndWaitUntilComplete;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVPVCAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createfixPVCOwnerContainer;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.FileUtils.doesFileExistInPod;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_CHANGED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_COMPLETED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_STARTING;
@@ -148,6 +144,9 @@ import static oracle.weblogic.kubernetes.utils.K8sEvents.POD_STARTED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.POD_TERMINATED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEvent;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkPodEventLoggedOnce;
+import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createIngressForDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
@@ -310,7 +309,7 @@ class ItParameterizedDomain {
    */
   @Test
   @DisplayName("verify the operator log has expected error msg when encryption secret not created for a mii domain")
-  public void testOperatorLogSevereMsg() {
+  void testOperatorLogSevereMsg() {
     createMiiDomainNegative("miidomainnegative", miiDomainNegativeNamespace);
     String operatorPodName =
         assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
@@ -328,7 +327,7 @@ class ItParameterizedDomain {
   @ParameterizedTest
   @DisplayName("scale cluster by patching domain resource with three different type of domains")
   @MethodSource("domainProvider")
-  public void testScaleClustersByPatchingDomainResource(Domain domain) {
+  void testScaleClustersByPatchingDomainResource(Domain domain) {
     assertDomainNotNull(domain);
 
     // get the domain properties
@@ -373,7 +372,7 @@ class ItParameterizedDomain {
   @ParameterizedTest
   @DisplayName("scale cluster using REST API for three different type of domains")
   @MethodSource("domainProvider")
-  public void testScaleClustersWithRestApi(Domain domain) {
+  void testScaleClustersWithRestApi(Domain domain) {
     assertDomainNotNull(domain);
 
     // get domain properties
@@ -409,7 +408,7 @@ class ItParameterizedDomain {
   @ParameterizedTest
   @DisplayName("scale cluster using WLDF policy for three different type of domains")
   @MethodSource("domainProvider")
-  public void testScaleClustersWithWLDF(Domain domain) {
+  void testScaleClustersWithWLDF(Domain domain) {
     assertDomainNotNull(domain);
 
     // get domain properties
@@ -452,7 +451,7 @@ class ItParameterizedDomain {
   @ParameterizedTest
   @DisplayName("Test admin console login using admin node port")
   @MethodSource("domainProvider")
-  public void testAdminConsoleLoginUsingAdminNodePort(Domain domain) {
+  void testAdminConsoleLoginUsingAdminNodePort(Domain domain) {
 
     assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");
 
@@ -480,7 +479,7 @@ class ItParameterizedDomain {
   @ParameterizedTest
   @DisplayName("Test admin console login using ingress controller")
   @MethodSource("domainProvider")
-  public void testAdminConsoleLoginUsingIngressController(Domain domain) {
+  void testAdminConsoleLoginUsingIngressController(Domain domain) {
 
     assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");
 
@@ -503,7 +502,7 @@ class ItParameterizedDomain {
    */
   @Test
   @DisplayName("Test liveness probe of pod")
-  public void testLivenessProbe() {
+  void testLivenessProbe() {
     Domain domain = miiDomain;
     assertDomainNotNull(domain);
     String domainUid = domain.getSpec().getDomainUid();
@@ -598,7 +597,7 @@ class ItParameterizedDomain {
    */
   @Test
   @DisplayName("Test dataHome override in a domain with domain in image type")
-  public void testDataHomeOverrideDomainInImage() {
+  void testDataHomeOverrideDomainInImage() {
 
     assertDomainNotNull(domainInImage);
     String domainUid = domainInImage.getSpec().getDomainUid();
@@ -641,7 +640,7 @@ class ItParameterizedDomain {
    */
   @Test
   @DisplayName("Test dataHome override in a domain with model in image type")
-  public void testDataHomeOverrideMiiDomain() {
+  void testDataHomeOverrideMiiDomain() {
 
     assertDomainNotNull(miiDomain);
     String domainUid = miiDomain.getSpec().getDomainUid();
@@ -687,7 +686,7 @@ class ItParameterizedDomain {
    */
   @Test
   @DisplayName("Test dataHome override in a domain with domain on PV type")
-  public void testDataHomeOverrideDomainOnPV() {
+  void testDataHomeOverrideDomainOnPV() {
 
     assertDomainNotNull(domainOnPV);
     String domainUid = domainOnPV.getSpec().getDomainUid();
@@ -730,7 +729,7 @@ class ItParameterizedDomain {
    */
   @Test
   @DisplayName("Verify server pods are restarted only once by changing the imagePullPolicy in multi-cluster domain")
-  public void testMultiClustersRollingRestart() {
+  void testMultiClustersRollingRestart() {
     OffsetDateTime timestamp = now();
 
     // get the original domain resource before update

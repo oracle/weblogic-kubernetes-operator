@@ -13,12 +13,12 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class FileGroupReaderTest {
+class FileGroupReaderTest {
 
   private static final InMemoryFileSystem fileSystem = InMemoryFileSystem.createInstance();
 
   @Test
-  public void loadFilesFromMemory() throws IOException {
+  void loadFilesFromMemory() throws IOException {
     fileSystem.defineFile("group/a.b", "1234");
     fileSystem.defineFile("group/x/c.d", "5678");
 

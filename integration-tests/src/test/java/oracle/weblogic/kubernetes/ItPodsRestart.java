@@ -56,16 +56,16 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_COMPLETED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_STARTING;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.POD_CYCLE_STARTING;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkEvent;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.getEvent;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -143,7 +143,7 @@ class ItPodsRestart {
    */
   @Test
   @DisplayName("Verify server pods are restarted by changing the resources")
-  public void testServerPodsRestartByChangingResource() {
+  void testServerPodsRestartByChangingResource() {
 
     // get the original domain resource before update
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
@@ -275,7 +275,7 @@ class ItPodsRestart {
    */
   @Test
   @DisplayName("Verify server pods are restarted by changing IncludeServerOutInPodLog")
-  public void testServerPodsRestartByChangingIncludeServerOutInPodLog() {
+  void testServerPodsRestartByChangingIncludeServerOutInPodLog() {
     // get the original domain resource before update
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
@@ -354,7 +354,7 @@ class ItPodsRestart {
    */
   @Test
   @DisplayName("Verify server pods are restarted by changing serverPod env property")
-  public void testServerPodsRestartByChangingEnvProperty() {
+  void testServerPodsRestartByChangingEnvProperty() {
     // get the original domain resource before update
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
@@ -445,7 +445,7 @@ class ItPodsRestart {
    */
   @Test
   @DisplayName("Verify server pods are restarted by adding serverPod podSecurityContext")
-  public void testServerPodsRestartByChaningPodSecurityContext() {
+  void testServerPodsRestartByChaningPodSecurityContext() {
     // get the original domain resource before update
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
@@ -539,7 +539,7 @@ class ItPodsRestart {
    */
   @Test
   @DisplayName("Verify server pods are restarted by changing imagePullPolicy")
-  public void testServerPodsRestartByChangingImagePullPolicy() {
+  void testServerPodsRestartByChangingImagePullPolicy() {
     // get the original domain resource before update
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
@@ -620,7 +620,7 @@ class ItPodsRestart {
    */
   @Test
   @DisplayName("Restart pods using restartVersion flag")
-  public void testRestartVersion() {
+  void testRestartVersion() {
     // get the original domain resource before update
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
@@ -685,7 +685,7 @@ class ItPodsRestart {
    */
   @Test
   @DisplayName("Check restart of pods after image change")
-  public void testRestartWithImageChange() {
+  void testRestartWithImageChange() {
 
     String tag = TestUtils.getDateAndTimeStamp();
     String newImage = MII_BASIC_IMAGE_NAME + ":" + tag;
@@ -770,9 +770,6 @@ class ItPodsRestart {
 
     // get the pre-built image created by IntegrationTestWatcher
     miiImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
-
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(miiImage);
 
     // create docker registry secret to pull the image from registry
     // this secret is used only for non-kind cluster

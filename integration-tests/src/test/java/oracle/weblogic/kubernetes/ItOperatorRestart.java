@@ -44,10 +44,10 @@ import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.checkPodRest
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodRestarted;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
+import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createRouteForOKD;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -61,7 +61,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test to patch the model-in-image image to change WebLogic admin credentials secret")
 @IntegrationTest
 @Tag("okdenv")
-public class ItOperatorRestart {
+class ItOperatorRestart {
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private static String domainUid = "domain1";
@@ -119,7 +119,7 @@ public class ItOperatorRestart {
    */
   @Test
   @DisplayName("Stop operator, delete all the server pods and restart operator, verify servers are started")
-  public void testRestartOperatorAndVerifyDomainUp() {
+  void testRestartOperatorAndVerifyDomainUp() {
 
     // get operator pod name
     String operatorPodName = assertDoesNotThrow(
@@ -179,7 +179,7 @@ public class ItOperatorRestart {
    */
   @Test
   @DisplayName("Stop operator, increase replica count for the domain, restart operator and verify cluster is scaled up")
-  public void testRestartOperatorAndVerifyScaling() {
+  void testRestartOperatorAndVerifyScaling() {
 
     // get operator pod name
     String operatorPodName = assertDoesNotThrow(
@@ -230,7 +230,7 @@ public class ItOperatorRestart {
    */
   @Test
   @DisplayName("Restart operator when the domain is rolling after the admin credentials are changed")
-  public void testOperatorRestartWhenPodRoll() {
+  void testOperatorRestartWhenPodRoll() {
     final boolean VALID = true;
     final boolean INVALID = false;
 

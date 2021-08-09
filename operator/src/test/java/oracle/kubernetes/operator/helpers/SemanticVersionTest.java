@@ -10,10 +10,10 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.lessThan;
 
-public class SemanticVersionTest {
+class SemanticVersionTest {
 
   @Test
-  public void whenVersionsSame_compareReportsZero() {
+  void whenVersionsSame_compareReportsZero() {
     SemanticVersion first = new SemanticVersion("5.6.7");
     SemanticVersion second = new SemanticVersion("5.6.7");
 
@@ -21,7 +21,7 @@ public class SemanticVersionTest {
   }
 
   @Test
-  public void whenVersionsSameWithDefaultRevisionZero_compareReportsZero() {
+  void whenVersionsSameWithDefaultRevisionZero_compareReportsZero() {
     SemanticVersion first = new SemanticVersion("5.6");
     SemanticVersion second = new SemanticVersion("5.6.0");
 
@@ -29,7 +29,7 @@ public class SemanticVersionTest {
   }
 
   @Test
-  public void whenMajorVersionIsLower_compareReportsLower() {
+  void whenMajorVersionIsLower_compareReportsLower() {
     SemanticVersion first = new SemanticVersion("5.6.7");
     SemanticVersion second = new SemanticVersion("10.3.4");
 
@@ -37,7 +37,7 @@ public class SemanticVersionTest {
   }
 
   @Test
-  public void whenMajorVersionIsGreater_compareReportsGreater() {
+  void whenMajorVersionIsGreater_compareReportsGreater() {
     SemanticVersion first = new SemanticVersion("5.6.7");
     SemanticVersion second = new SemanticVersion("2.8.9");
 
@@ -45,7 +45,7 @@ public class SemanticVersionTest {
   }
 
   @Test
-  public void whenMinorVersionIsLower_compareReportsLower() {
+  void whenMinorVersionIsLower_compareReportsLower() {
     SemanticVersion first = new SemanticVersion("5.6.7");
     SemanticVersion second = new SemanticVersion("5.7.2");
 
@@ -53,7 +53,7 @@ public class SemanticVersionTest {
   }
 
   @Test
-  public void whenMinorVersionIsGreater_compareReportsGreater() {
+  void whenMinorVersionIsGreater_compareReportsGreater() {
     SemanticVersion first = new SemanticVersion("5.6.7");
     SemanticVersion second = new SemanticVersion("5.5.9");
 
@@ -61,7 +61,7 @@ public class SemanticVersionTest {
   }
 
   @Test
-  public void whenRevisionVersionIsLower_compareReportsLower() {
+  void whenRevisionVersionIsLower_compareReportsLower() {
     SemanticVersion first = new SemanticVersion("5.6.7");
     SemanticVersion second = new SemanticVersion("5.6.8");
 
@@ -69,7 +69,7 @@ public class SemanticVersionTest {
   }
 
   @Test
-  public void whenRevisionVersionIsGreater_compareReportsGreater() {
+  void whenRevisionVersionIsGreater_compareReportsGreater() {
     SemanticVersion first = new SemanticVersion("5.6.7");
     SemanticVersion second = new SemanticVersion("5.6.6");
 

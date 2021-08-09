@@ -12,7 +12,7 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public class LoggingFacadeTest {
+class LoggingFacadeTest {
 
   MockLogger mockLogger;
   LoggingFacade loggingFacade;
@@ -24,14 +24,14 @@ public class LoggingFacadeTest {
   }
 
   @Test
-  public void verifyInfoMessageLoggedIfLoggingFilterIsNull() {
+  void verifyInfoMessageLoggedIfLoggingFilterIsNull() {
     loggingFacade.info((LoggingFilter) null, "msg");
 
     assertThat(mockLogger.isLogpCalled(), is(true));
   }
 
   @Test
-  public void verifyInfoMessageLoggedIfLoggingFilterAllows() {
+  void verifyInfoMessageLoggedIfLoggingFilterAllows() {
     final String message = "info message";
     loggingFacade.info(MockLoggingFilter.createWithReturnValue(true), message);
 
@@ -41,21 +41,21 @@ public class LoggingFacadeTest {
   }
 
   @Test
-  public void verifyInfoMessageNotLoggedIfLoggingFilterDenies() {
+  void verifyInfoMessageNotLoggedIfLoggingFilterDenies() {
     loggingFacade.info(MockLoggingFilter.createWithReturnValue(false), "msg");
 
     assertThat(mockLogger.isLogpCalled(), is(false));
   }
 
   @Test
-  public void verifyWarningMessageLoggedIfLoggingFilterIsNull() {
+  void verifyWarningMessageLoggedIfLoggingFilterIsNull() {
     loggingFacade.warning((LoggingFilter) null, "msg");
 
     assertThat(mockLogger.isLogpCalled(), is(true));
   }
 
   @Test
-  public void verifyWarningMessageLoggedIfLoggingFilterAllows() {
+  void verifyWarningMessageLoggedIfLoggingFilterAllows() {
     final String message = "warning message";
     loggingFacade.warning(MockLoggingFilter.createWithReturnValue(true), message);
 
@@ -65,21 +65,21 @@ public class LoggingFacadeTest {
   }
 
   @Test
-  public void verifyWarningMessageNotLoggedIfLoggingFilterDenies() {
+  void verifyWarningMessageNotLoggedIfLoggingFilterDenies() {
     loggingFacade.warning(MockLoggingFilter.createWithReturnValue(false), "msg");
 
     assertThat(mockLogger.isLogpCalled(), is(false));
   }
 
   @Test
-  public void verifySevereMessageLoggedIfLoggingFilterIsNull() {
+  void verifySevereMessageLoggedIfLoggingFilterIsNull() {
     loggingFacade.severe((LoggingFilter) null, "msg");
 
     assertThat(mockLogger.isLogpCalled(), is(true));
   }
 
   @Test
-  public void verifySevereMessageLoggedIfLoggingFilterAllows() {
+  void verifySevereMessageLoggedIfLoggingFilterAllows() {
     final String message = "severe message";
     loggingFacade.severe(MockLoggingFilter.createWithReturnValue(true), message);
 
@@ -89,21 +89,21 @@ public class LoggingFacadeTest {
   }
 
   @Test
-  public void verifySevereMessageNotLoggedIfLoggingFilterDenies() {
+  void verifySevereMessageNotLoggedIfLoggingFilterDenies() {
     loggingFacade.severe(MockLoggingFilter.createWithReturnValue(false), "msg");
 
     assertThat(mockLogger.isLogpCalled(), is(false));
   }
 
   @Test
-  public void verifySevereMessageWithThrowableLoggedIfLoggingFilterIsNull() {
+  void verifySevereMessageWithThrowableLoggedIfLoggingFilterIsNull() {
     loggingFacade.severe(null, "msg", new Throwable());
 
     assertThat(mockLogger.isLogpCalled(), is(true));
   }
 
   @Test
-  public void verifySevereMessageWithThrowableLoggedIfLoggingFilterAllows() {
+  void verifySevereMessageWithThrowableLoggedIfLoggingFilterAllows() {
     final String message = "severe message";
     final Throwable throwable = new Throwable("throwable");
     loggingFacade.severe(MockLoggingFilter.createWithReturnValue(true), message, throwable);
@@ -115,20 +115,20 @@ public class LoggingFacadeTest {
   }
 
   @Test
-  public void verifySevereMessageWithThrowableNotLoggedIfLoggingFilterDenies() {
+  void verifySevereMessageWithThrowableNotLoggedIfLoggingFilterDenies() {
     loggingFacade.severe(MockLoggingFilter.createWithReturnValue(false), "msg", new Throwable());
 
     assertThat(mockLogger.isLogpCalled(), is(false));
   }
 
   @Test
-  public void verifyGetFormattedMessage_withArgs_returnsFormattedMessage() {
+  void verifyGetFormattedMessage_withArgs_returnsFormattedMessage() {
     assertThat(loggingFacade.formatMessage(MessageKeys.CYCLING_SERVERS, "domain1", "list1"),
         is("Cycling of servers for Domain with UID domain1 in the list list1 now"));
   }
 
   @Test
-  public void verifyGetFormattedMessage_withNoArgs_returnsFormattedMessage() {
+  void verifyGetFormattedMessage_withNoArgs_returnsFormattedMessage() {
     assertThat(loggingFacade.formatMessage(MessageKeys.RESOURCE_BUNDLE_NOT_FOUND),
         is("Could not find the resource bundle"));
   }

@@ -28,7 +28,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class BeforeAdminServiceStepTest {
+class BeforeAdminServiceStepTest {
 
   private static final String DOMAIN_NAME = "domain";
   private static final String ADMIN_NAME = "admin";
@@ -86,7 +86,7 @@ public class BeforeAdminServiceStepTest {
   }
 
   @Test
-  public void afterProcessing_packetContainsAdminServerNameAndPort() {
+  void afterProcessing_packetContainsAdminServerNameAndPort() {
     Packet packet = invokeStep();
 
     assertThat(packet, hasEntry(SERVER_NAME, ADMIN_NAME));

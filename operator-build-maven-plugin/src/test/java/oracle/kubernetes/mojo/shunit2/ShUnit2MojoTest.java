@@ -47,7 +47,7 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.fail;
 
-public class ShUnit2MojoTest extends MojoTestBase {
+class ShUnit2MojoTest extends MojoTestBase {
 
   private static final String TEST_SCRIPT = "shunit2";
   private static final String OS_NAME_PROPERTY = "os.name";
@@ -102,17 +102,17 @@ public class ShUnit2MojoTest extends MojoTestBase {
   }
 
   @Test
-  public void mojoAnnotatedWithName() {
+  void mojoAnnotatedWithName() {
     assertThat(getClassAnnotation(Mojo.class).getField("name"), equalTo("shunit2"));
   }
 
   @Test
-  public void mojoAnnotatedWithDefaultPhase() {
+  void mojoAnnotatedWithDefaultPhase() {
     assertThat(getClassAnnotation(Mojo.class).getField("defaultPhase"), equalTo(TEST));
   }
 
   @Test
-  public void hasOutputDirectoryField_withAnnotation() throws NoSuchFieldException {
+  void hasOutputDirectoryField_withAnnotation() throws NoSuchFieldException {
     Field classPathField = ShUnit2Mojo.class.getDeclaredField("outputDirectory");
     assertThat(classPathField.getType(), equalTo(File.class));
     assertThat(
@@ -121,7 +121,7 @@ public class ShUnit2MojoTest extends MojoTestBase {
   }
 
   @Test
-  public void hasTestSourceDirectoryField_withAnnotation() throws NoSuchFieldException {
+  void hasTestSourceDirectoryField_withAnnotation() throws NoSuchFieldException {
     Field classPathField = ShUnit2Mojo.class.getDeclaredField("testSourceDirectory");
     assertThat(classPathField.getType(), equalTo(File.class));
     assertThat(
@@ -130,7 +130,7 @@ public class ShUnit2MojoTest extends MojoTestBase {
   }
 
   @Test
-  public void hasSourceDirectoryField_withAnnotation() throws NoSuchFieldException {
+  void hasSourceDirectoryField_withAnnotation() throws NoSuchFieldException {
     Field classPathField = ShUnit2Mojo.class.getDeclaredField("sourceDirectory");
     assertThat(classPathField.getType(), equalTo(File.class));
     assertThat(
@@ -139,14 +139,14 @@ public class ShUnit2MojoTest extends MojoTestBase {
   }
 
   @Test
-  public void useCopiedShUnit2Directory() throws MojoExecutionException {
+  void useCopiedShUnit2Directory() throws MojoExecutionException {
     fileSystem.defineFileContents(new File(LATEST_SHUNIT2_DIRECTORY, TEST_SCRIPT), "");
 
     assertThat(mojo.getEffectiveShUnit2Directory(), equalTo(LATEST_SHUNIT2_DIRECTORY));
   }
 
   @Test
-  public void whenMultipleShUnit2VersionsInstalled_selectLatest() throws MojoExecutionException {
+  void whenMultipleShUnit2VersionsInstalled_selectLatest() throws MojoExecutionException {
     fileSystem.defineFileContents(new File(EARLIER_SHUNIT2_DIRECTORY, TEST_SCRIPT), "");
     fileSystem.defineFileContents(new File(LATEST_SHUNIT2_DIRECTORY, TEST_SCRIPT), "");
 
@@ -154,7 +154,7 @@ public class ShUnit2MojoTest extends MojoTestBase {
   }
 
   @Test
-  public void whenLatestShUnit2VersionsMissing_selectPrior() throws MojoExecutionException {
+  void whenLatestShUnit2VersionsMissing_selectPrior() throws MojoExecutionException {
     fileSystem.clear();
     fileSystem.defineFileContents(new File(EARLIER_SHUNIT2_DIRECTORY, TEST_SCRIPT), "");
     fileSystem.defineFileContents(LATEST_SHUNIT2_DIRECTORY, "");
@@ -163,7 +163,7 @@ public class ShUnit2MojoTest extends MojoTestBase {
   }
 
   @Test
-  public void whenShUnit2NotInstalled_reportFailure() {
+  void whenShUnit2NotInstalled_reportFailure() {
     fileSystem.clear();
     fileSystem.defineFileContents(TEST_CLASSES_DIRECTORY, "");
 
@@ -171,7 +171,7 @@ public class ShUnit2MojoTest extends MojoTestBase {
   }
 
   @Test
-  public void ifSkipUnitTestSet_skipTesting() throws MojoFailureException, MojoExecutionException {
+  void ifSkipUnitTestSet_skipTesting() throws MojoFailureException, MojoExecutionException {
     System.setProperty(SKIP_UNIT_TESTS_PROPERTY, "true");
 
     executeMojo();
@@ -180,7 +180,7 @@ public class ShUnit2MojoTest extends MojoTestBase {
   }
 
   @Test
-  public void onMacOS_warnIfBashIsOld() throws MojoFailureException, MojoExecutionException {
+  void onMacOS_warnIfBashIsOld() throws MojoFailureException, MojoExecutionException {
     System.setProperty(OS_NAME_PROPERTY, "Mac OS X");
     defineExecution().withOutputs(INSTALLED_OSX_BASH_VERSION);
 
@@ -192,7 +192,7 @@ public class ShUnit2MojoTest extends MojoTestBase {
   }
 
   @Test
-  public void onMacOS_dontRunTestsIfBashIsOld() throws MojoFailureException, MojoExecutionException {
+  void onMacOS_dontRunTestsIfBashIsOld() throws MojoFailureException, MojoExecutionException {
     System.setProperty(OS_NAME_PROPERTY, "Mac OS X");
     defineExecution().withOutputs(INSTALLED_OSX_BASH_VERSION);
     defineExecution().withOutputs("This is an example", "and here is another", "Ran 2 tests.");
@@ -203,7 +203,7 @@ public class ShUnit2MojoTest extends MojoTestBase {
   }
 
   @Test
-  public void onMacOS_dontWarnIfBashVersionIsSupported() throws MojoFailureException, MojoExecutionException {
+  void onMacOS_dontWarnIfBashVersionIsSupported() throws MojoFailureException, MojoExecutionException {
     System.setProperty(OS_NAME_PROPERTY, "Mac OS X");
     defineExecution().withOutputs(HOMEBREW_BASH_VERSION);
 
@@ -213,7 +213,7 @@ public class ShUnit2MojoTest extends MojoTestBase {
   }
 
   @Test
-  public void onMacOS_runTestsIfBashVersionIsSupported() throws MojoFailureException, MojoExecutionException {
+  void onMacOS_runTestsIfBashVersionIsSupported() throws MojoFailureException, MojoExecutionException {
     System.setProperty(OS_NAME_PROPERTY, "Mac OS X");
     defineExecution().withOutputs(HOMEBREW_BASH_VERSION);
     defineExecution().withOutputs("This is an example", "and here is another", "Ran 2 tests.");
@@ -225,21 +225,21 @@ public class ShUnit2MojoTest extends MojoTestBase {
   }
 
   @Test
-  public void onExecution_specifyTheSelectedShUnit2ScriptPath() throws MojoFailureException, MojoExecutionException {
+  void onExecution_specifyTheSelectedShUnit2ScriptPath() throws MojoFailureException, MojoExecutionException {
     executeMojo();
 
     assertThat(delegate.getShUnit2ScriptPath(), equalTo(LATEST_SHUNIT2_DIRECTORY + "/shunit2"));
   }
 
   @Test
-  public void onExecution_specifyPathToSourceScripts() throws MojoFailureException, MojoExecutionException {
+  void onExecution_specifyPathToSourceScripts() throws MojoFailureException, MojoExecutionException {
     executeMojo();
 
     assertThat(delegate.getSourceScriptDir(), equalTo(SOURCE_DIRECTORY.getAbsolutePath()));
   }
 
   @Test
-  public void onExecution_specifyTestScripts() throws MojoFailureException, MojoExecutionException {
+  void onExecution_specifyTestScripts() throws MojoFailureException, MojoExecutionException {
     fileSystem.defineFileContents(new File(TEST_SOURCE_DIRECTORY, "test1.sh"), "");
     fileSystem.defineFileContents(new File(TEST_SOURCE_DIRECTORY, "test3.sh"), "");
     fileSystem.defineFileContents(new File(TEST_SOURCE_DIRECTORY, "nothing.sh"), "");
@@ -253,7 +253,7 @@ public class ShUnit2MojoTest extends MojoTestBase {
   }
 
   @Test
-  public void onExecution_logOutputs() throws MojoFailureException, MojoExecutionException {
+  void onExecution_logOutputs() throws MojoFailureException, MojoExecutionException {
     defineExecution().withOutputs("This is an example", "and here is another", "Ran 2 tests.");
 
     executeMojo();
@@ -274,7 +274,7 @@ public class ShUnit2MojoTest extends MojoTestBase {
   }
 
   @Test
-  public void whenErrorDetected_reportInSummary() throws MojoExecutionException {
+  void whenErrorDetected_reportInSummary() throws MojoExecutionException {
     defineExecution().withErrors("This is an example", "and here is another").withOutputs("Ran 3 tests.");
 
     try {
@@ -297,7 +297,7 @@ public class ShUnit2MojoTest extends MojoTestBase {
   }
 
   @Test
-  public void onExecution_logErrors() throws MojoExecutionException {
+  void onExecution_logErrors() throws MojoExecutionException {
     defineExecution().withErrors("This is an example", "and here is another");
 
     try {
@@ -309,7 +309,7 @@ public class ShUnit2MojoTest extends MojoTestBase {
   }
 
   @Test
-  public void onExecution_ignoreNonZeroReturnCodeErrors() throws MojoExecutionException {
+  void onExecution_ignoreNonZeroReturnCodeErrors() throws MojoExecutionException {
     defineExecution().withErrors("This is an example",
           "\u001B[1;31mERROR:\u001B[0m testPartyLikeItIs1999() returned non-zero return code.");
 
@@ -322,7 +322,7 @@ public class ShUnit2MojoTest extends MojoTestBase {
   }
 
   @Test
-  public void onExecution_ignoreFailureMessage() throws MojoFailureException, MojoExecutionException {
+  void onExecution_ignoreFailureMessage() throws MojoFailureException, MojoExecutionException {
     defineExecution().withOutputs("This is an example", "FAILED (failures=2)");
 
     executeMojo();
@@ -331,7 +331,7 @@ public class ShUnit2MojoTest extends MojoTestBase {
   }
 
   @Test
-  public void onExecution_recordReportedNumberOfTests() throws MojoFailureException, MojoExecutionException {
+  void onExecution_recordReportedNumberOfTests() throws MojoFailureException, MojoExecutionException {
     fileSystem.defineFileContents(new File(TEST_SOURCE_DIRECTORY, "test1.sh"), "");
     fileSystem.defineFileContents(new File(TEST_SOURCE_DIRECTORY, "test2.sh"), "");
     final AnsiUtils.AnsiFormatter shUnit2RunCountFormat = AnsiUtils.createFormatter(BOLD, BLUE_FG);
@@ -344,7 +344,7 @@ public class ShUnit2MojoTest extends MojoTestBase {
   }
 
   @Test
-  public void onExecution_recordReportedNumberOfFailures() throws MojoExecutionException {
+  void onExecution_recordReportedNumberOfFailures() throws MojoExecutionException {
     fileSystem.defineFileContents(new File(TEST_SOURCE_DIRECTORY, "test1.sh"), "");
     fileSystem.defineFileContents(new File(TEST_SOURCE_DIRECTORY, "test2.sh"), "");
     defineExecution()
@@ -371,7 +371,7 @@ public class ShUnit2MojoTest extends MojoTestBase {
   }
 
   @Test
-  public void whenAnyTestsFail_mojoThrowsException() {
+  void whenAnyTestsFail_mojoThrowsException() {
     fileSystem.defineFileContents(new File(TEST_SOURCE_DIRECTORY, "test1.sh"), "");
     fileSystem.defineFileContents(new File(TEST_SOURCE_DIRECTORY, "test2.sh"), "");
     defineExecution()

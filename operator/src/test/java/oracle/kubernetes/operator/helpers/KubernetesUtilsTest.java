@@ -13,14 +13,14 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class KubernetesUtilsTest {
+class KubernetesUtilsTest {
 
   private static final OffsetDateTime startTime = SystemClock.now();
   private static final OffsetDateTime time1 = startTime.plusSeconds(1);
   private static final OffsetDateTime time2 = startTime.plusSeconds(2);
 
   @Test
-  public void whenCreationTimesDiffer_metadataWithLaterTimeIsNewer() {
+  void whenCreationTimesDiffer_metadataWithLaterTimeIsNewer() {
     V1ObjectMeta meta1 = new V1ObjectMeta().creationTimestamp(time2).resourceVersion("2");
     V1ObjectMeta meta2 = new V1ObjectMeta().creationTimestamp(time1).resourceVersion("1");
 
@@ -29,7 +29,7 @@ public class KubernetesUtilsTest {
   }
 
   @Test
-  public void whenCreationTimesMatch_metadataWithHigherResourceVersionIsNewer() {
+  void whenCreationTimesMatch_metadataWithHigherResourceVersionIsNewer() {
     V1ObjectMeta meta1 = new V1ObjectMeta().creationTimestamp(time1).resourceVersion("2");
     V1ObjectMeta meta2 = new V1ObjectMeta().creationTimestamp(time1).resourceVersion("1");
 
@@ -38,7 +38,7 @@ public class KubernetesUtilsTest {
   }
 
   @Test
-  public void whenCreationTimesAndResourceVersionsMatch_neitherIsNewer() {
+  void whenCreationTimesAndResourceVersionsMatch_neitherIsNewer() {
     V1ObjectMeta meta1 = new V1ObjectMeta().creationTimestamp(time1).resourceVersion("2");
     V1ObjectMeta meta2 = new V1ObjectMeta().creationTimestamp(time1).resourceVersion("2");
 
@@ -47,7 +47,7 @@ public class KubernetesUtilsTest {
   }
 
   @Test
-  public void whenHaveLargeResourceVersionsAndSameTime_succeedIsFirstNewer() {
+  void whenHaveLargeResourceVersionsAndSameTime_succeedIsFirstNewer() {
     OffsetDateTime now = SystemClock.now();
 
     // This needs to be a value bigger than 2147483647
@@ -61,7 +61,7 @@ public class KubernetesUtilsTest {
   }
 
   @Test
-  public void whenHaveNonParsableResourceVersionsAndSameTime_succeedIsFirstNewer() {
+  void whenHaveNonParsableResourceVersionsAndSameTime_succeedIsFirstNewer() {
     OffsetDateTime now = SystemClock.now();
 
     String resVersion = "ThisIsNotANumber";
@@ -74,7 +74,7 @@ public class KubernetesUtilsTest {
   }
 
   @Test
-  public void whenHaveSmallResourceVersion_parseCorrectly() {
+  void whenHaveSmallResourceVersion_parseCorrectly() {
     String resVersion = "1";
 
     BigInteger bigInteger = KubernetesUtils.getResourceVersion(resVersion);
@@ -82,13 +82,13 @@ public class KubernetesUtilsTest {
   }
 
   @Test
-  public void whenHaveNullResourceVersion_parseCorrectly() {
+  void whenHaveNullResourceVersion_parseCorrectly() {
     BigInteger bigInteger = KubernetesUtils.getResourceVersion((String) null);
     assertThat(bigInteger, is(BigInteger.ZERO));
   }
 
   @Test
-  public void whenHaveOpaqueResourceVersion_parseCorrectly() {
+  void whenHaveOpaqueResourceVersion_parseCorrectly() {
     String resVersion = "123NotANumber456";
 
     BigInteger bigInteger = KubernetesUtils.getResourceVersion(resVersion);

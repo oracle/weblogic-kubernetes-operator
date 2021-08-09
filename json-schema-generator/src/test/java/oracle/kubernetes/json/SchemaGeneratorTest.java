@@ -22,7 +22,7 @@ import static org.hamcrest.Matchers.not;
 import static org.junit.Assert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class SchemaGeneratorTest {
+class SchemaGeneratorTest {
 
   private static final String K8S_SCHEMA_URL =
       "https://github.com/garethr/kubernetes-json-schema/blob/master/v1.9.0/_definitions.json";
@@ -93,7 +93,7 @@ public class SchemaGeneratorTest {
   }
 
   @Test
-  public void generateSchemaForBoolean() throws NoSuchFieldException {
+  void generateSchemaForBoolean() throws NoSuchFieldException {
     Object schema = generateForField(getClass().getDeclaredField("unAnnotatedBoolean"));
 
     assertThat(schema, hasJsonPath("$.unAnnotatedBoolean.type", equalTo("boolean")));
@@ -106,28 +106,28 @@ public class SchemaGeneratorTest {
   }
 
   @Test
-  public void generateSchemaForInteger() throws NoSuchFieldException {
+  void generateSchemaForInteger() throws NoSuchFieldException {
     Object schema = generateForField(getClass().getDeclaredField("unAnnotatedInteger"));
 
     assertThat(schema, hasJsonPath("$.unAnnotatedInteger.type", equalTo("number")));
   }
 
   @Test
-  public void generateSchemaForLong() throws NoSuchFieldException {
+  void generateSchemaForLong() throws NoSuchFieldException {
     Object schema = generateForField(getClass().getDeclaredField("unAnnotatedLong"));
 
     assertThat(schema, hasJsonPath("$.unAnnotatedLong.type", equalTo("number")));
   }
 
   @Test
-  public void generateSchemaForString() throws NoSuchFieldException {
+  void generateSchemaForString() throws NoSuchFieldException {
     Object schema = generateForField(getClass().getDeclaredField("unAnnotatedString"));
 
     assertThat(schema, hasJsonPath("$.unAnnotatedString.type", equalTo("string")));
   }
 
   @Test
-  public void generateSchemaForIntArray() throws NoSuchFieldException {
+  void generateSchemaForIntArray() throws NoSuchFieldException {
     Object schema = generateForField(getClass().getDeclaredField("intArray"));
 
     assertThat(schema, hasJsonPath("$.intArray.type", equalTo("array")));
@@ -135,14 +135,14 @@ public class SchemaGeneratorTest {
   }
 
   @Test
-  public void doNotGenerateSchemaForVolatileFields() throws NoSuchFieldException {
+  void doNotGenerateSchemaForVolatileFields() throws NoSuchFieldException {
     Object schema = generateForField(getClass().getDeclaredField("ignoreMe"));
 
     assertThat(schema, hasNoJsonPath("$.ignoreMe"));
   }
 
   @Test
-  public void generateSchemaForEnum() throws NoSuchFieldException {
+  void generateSchemaForEnum() throws NoSuchFieldException {
     Object schema = generateForField(getClass().getDeclaredField("colors"));
 
     assertThat(schema, hasJsonPath("$.colors.type", equalTo("string")));
@@ -151,7 +151,7 @@ public class SchemaGeneratorTest {
   }
 
   @Test
-  public void generateSchemaForEnumAnnotatedString() throws NoSuchFieldException {
+  void generateSchemaForEnumAnnotatedString() throws NoSuchFieldException {
     Object schema = generateForField(getClass().getDeclaredField("colorString"));
 
     assertThat(schema, hasJsonPath("$.colorString.type", equalTo("string")));
@@ -161,7 +161,7 @@ public class SchemaGeneratorTest {
   }
 
   @Test
-  public void generateSchemaForEnumAnnotatedStringWithQualifier() throws NoSuchFieldException {
+  void generateSchemaForEnumAnnotatedStringWithQualifier() throws NoSuchFieldException {
     Object schema = generateForField(getClass().getDeclaredField("twoColorString"));
 
     assertThat(schema, hasJsonPath("$.twoColorString.type", equalTo("string")));
@@ -170,7 +170,7 @@ public class SchemaGeneratorTest {
   }
 
   @Test
-  public void whenIntegerAnnotatedWithMinimumOnly_addToSchema() throws NoSuchFieldException {
+  void whenIntegerAnnotatedWithMinimumOnly_addToSchema() throws NoSuchFieldException {
     Object schema = generateForField(getClass().getDeclaredField("valueWithMinimum"));
 
     assertThat(schema, hasJsonPath("$.valueWithMinimum.minimum", equalTo(7)));
@@ -178,7 +178,7 @@ public class SchemaGeneratorTest {
   }
 
   @Test
-  public void whenIntegerAnnotatedWithMaximumOnly_addToSchema() throws NoSuchFieldException {
+  void whenIntegerAnnotatedWithMaximumOnly_addToSchema() throws NoSuchFieldException {
     Object schema = generateForField(getClass().getDeclaredField("valueWithMaximum"));
 
     assertThat(schema, hasNoJsonPath("$.valueWithMaximum.minimum"));
@@ -186,7 +186,7 @@ public class SchemaGeneratorTest {
   }
 
   @Test
-  public void whenIntegerAnnotatedWithRange_addToSchema() throws NoSuchFieldException {
+  void whenIntegerAnnotatedWithRange_addToSchema() throws NoSuchFieldException {
     Object schema = generateForField(getClass().getDeclaredField("valueWithRange"));
 
     assertThat(schema, hasJsonPath("$.valueWithRange.minimum", equalTo(12)));
@@ -194,14 +194,14 @@ public class SchemaGeneratorTest {
   }
 
   @Test
-  public void whenStringAnnotatedWithPatterne_addToSchema() throws NoSuchFieldException {
+  void whenStringAnnotatedWithPatterne_addToSchema() throws NoSuchFieldException {
     Object schema = generateForField(getClass().getDeclaredField("codeName"));
 
     assertThat(schema, hasJsonPath("$.codeName.pattern", equalTo("[A-Z][a-zA-Z_]*")));
   }
 
   @Test
-  public void generateSchemaForAnnotatedDouble() throws NoSuchFieldException {
+  void generateSchemaForAnnotatedDouble() throws NoSuchFieldException {
     Object schema = generateForField(getClass().getDeclaredField("annotatedDouble"));
 
     assertThat(schema, hasJsonPath("$.annotatedDouble.type", equalTo("number")));
@@ -209,7 +209,7 @@ public class SchemaGeneratorTest {
   }
 
   @Test
-  public void doNotGenerateSchemaForStatics() {
+  void doNotGenerateSchemaForStatics() {
     Object schema = generator.generate(SimpleObject.class);
 
     assertThat(schema, hasNoJsonPath("$.properties.staticInt"));
@@ -217,7 +217,7 @@ public class SchemaGeneratorTest {
   }
 
   @Test
-  public void generateSchemaForEnabledFeature() throws NoSuchFieldException {
+  void generateSchemaForEnabledFeature() throws NoSuchFieldException {
     generator.defineEnabledFeatures(List.of("Binding"));
     Object schema = generator.generate(SimpleObject.class);
 
@@ -225,7 +225,7 @@ public class SchemaGeneratorTest {
   }
 
   @Test
-  public void doNotGenerateSchemaForDisabledFeature() {
+  void doNotGenerateSchemaForDisabledFeature() {
     Object schema = generator.generate(SimpleObject.class);
 
     assertThat(schema, hasNoJsonPath("$.properties.fieldAssociatedWithMountFeature"));
@@ -234,7 +234,7 @@ public class SchemaGeneratorTest {
 
   @SuppressWarnings("unused")
   @Test
-  public void generateSchemaForSimpleObject() {
+  void generateSchemaForSimpleObject() {
     Object schema = generator.generate(SimpleObject.class);
 
     assertThat(
@@ -248,14 +248,14 @@ public class SchemaGeneratorTest {
   }
 
   @Test
-  public void generateReferenceForSimpleObjectField() throws NoSuchFieldException {
+  void generateReferenceForSimpleObjectField() throws NoSuchFieldException {
     Object schema = generateForField(getClass().getDeclaredField("simpleObject"));
 
     assertThat(schema, hasJsonPath("$.simpleObject.$ref", equalTo("#/definitions/SimpleObject")));
   }
 
   @Test
-  public void whenAdditionalPropertiesDisabled_doNotGenerateTheProperty() {
+  void whenAdditionalPropertiesDisabled_doNotGenerateTheProperty() {
     generator.setForbidAdditionalProperties(false);
 
     Object schema = generator.generate(SimpleObject.class);
@@ -264,7 +264,7 @@ public class SchemaGeneratorTest {
   }
 
   @Test
-  public void generateSchemaForDerivedObject() {
+  void generateSchemaForDerivedObject() {
     Object schema = generator.generate(DerivedObject.class);
 
     assertThat(schema, hasJsonPath("$.description", equalTo("A simple object used for testing")));
@@ -283,7 +283,7 @@ public class SchemaGeneratorTest {
   }
 
   @Test
-  public void generateDefinitionsForReferencedClasses() {
+  void generateDefinitionsForReferencedClasses() {
     Object schema = generator.generate(ReferencingObject.class);
 
     assertThat(
@@ -305,7 +305,7 @@ public class SchemaGeneratorTest {
   }
 
   @Test
-  public void whenSupportObjectReferencesDisabled_includeNestedClasses() {
+  void whenSupportObjectReferencesDisabled_includeNestedClasses() {
     generator.setSupportObjectReferences(false);
     Object schema = generator.generate(ReferencingObject.class);
 
@@ -357,7 +357,7 @@ public class SchemaGeneratorTest {
   }
 
   @Test
-  public void generateDefinitionsForTransitiveReferences() {
+  void generateDefinitionsForTransitiveReferences() {
     Object schema = generator.generate(TransitiveObject.class);
 
     assertThat(
@@ -371,7 +371,7 @@ public class SchemaGeneratorTest {
   }
 
   @Test
-  public void treatContainerValuesProperties_asArrays() {
+  void treatContainerValuesProperties_asArrays() {
     Object schema = generator.generate(TransitiveObject.class);
 
     assertThat(schema, hasJsonPath("$.properties.simpleObjects.type", equalTo("array")));
@@ -382,14 +382,14 @@ public class SchemaGeneratorTest {
   }
 
   @Test
-  public void whenFieldIsDeprecated_includeIt() {
+  void whenFieldIsDeprecated_includeIt() {
     Object schema = generator.generate(ReferencingObject.class);
 
     assertThat(schema, hasJsonPath("$.properties.deprecatedField.type", equalTo("number")));
   }
 
   @Test
-  public void whenObjectDefinedInExternalSchema_useFullReference() throws IOException {
+  void whenObjectDefinedInExternalSchema_useFullReference() throws IOException {
     URL schemaUrl = getClass().getResource("k8smini.json");
     generator.addExternalSchema(schemaUrl, cacheUrl);
     Object schema = generator.generate(ExternalReferenceObject.class);
@@ -405,7 +405,7 @@ public class SchemaGeneratorTest {
   }
 
   @Test
-  public void whenObjectDefinedInCachedKubernetesSchema_useFullReference() throws IOException {
+  void whenObjectDefinedInCachedKubernetesSchema_useFullReference() throws IOException {
     generator.addExternalSchema(schemaUrl, cacheUrl);
     Object schema = generator.generate(ExternalReferenceObject.class);
 
@@ -420,7 +420,7 @@ public class SchemaGeneratorTest {
   }
 
   @Test
-  public void whenObjectDefinedInCachedKubernetesSchema_doNotAddToDefinitions() throws IOException {
+  void whenObjectDefinedInCachedKubernetesSchema_doNotAddToDefinitions() throws IOException {
     generator.addExternalSchema(schemaUrl, cacheUrl);
     Object schema = generator.generate(ExternalReferenceObject.class);
 
@@ -428,7 +428,7 @@ public class SchemaGeneratorTest {
   }
 
   @Test
-  public void whenK8sVersionSpecified_useFullReferenceForK8sObject() throws IOException {
+  void whenK8sVersionSpecified_useFullReferenceForK8sObject() throws IOException {
     generator.useKubernetesVersion("1.9.0");
     Object schema = generator.generate(ExternalReferenceObject.class);
 
@@ -440,7 +440,7 @@ public class SchemaGeneratorTest {
   }
 
   @Test
-  public void whenNonCachedK8sVersionSpecified_throwException() {
+  void whenNonCachedK8sVersionSpecified_throwException() {
     assertThrows(IOException.class, () -> generator.useKubernetesVersion("1.12.0"));
   }
 

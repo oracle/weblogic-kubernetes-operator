@@ -47,7 +47,7 @@ import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class ServerDownIteratorStepTest {
+class ServerDownIteratorStepTest {
 
   protected static final String DOMAIN_NAME = "domain1";
   private static final String NS = "namespace";
@@ -150,7 +150,7 @@ public class ServerDownIteratorStepTest {
   }
 
   @Test
-  public void withConcurrencyOf1_bothClusteredServersShutdownSequentially() {
+  void withConcurrencyOf1_bothClusteredServersShutdownSequentially() {
     configureCluster(CLUSTER).withMaxConcurrentShutdown(1).withReplicas(1);
     addWlsCluster(CLUSTER, 8001, MS1, MS2);
     domainPresenceInfo = createDomainPresenceInfoWithServers(MS1, MS2);
@@ -166,7 +166,7 @@ public class ServerDownIteratorStepTest {
   }
 
   @Test
-  public void withConcurrencyOf2_bothClusteredServersShutdownConcurrently() {
+  void withConcurrencyOf2_bothClusteredServersShutdownConcurrently() {
     configureCluster(CLUSTER).withMaxConcurrentShutdown(2).withReplicas(1);
     addWlsCluster(CLUSTER, PORT, MS1, MS2);
     domainPresenceInfo = createDomainPresenceInfoWithServers(MS1, MS2);
@@ -180,7 +180,7 @@ public class ServerDownIteratorStepTest {
   }
 
   @Test
-  public void withConcurrencyOf0_clusteredServersShutdownConcurrently() {
+  void withConcurrencyOf0_clusteredServersShutdownConcurrently() {
     configureCluster(CLUSTER).withMaxConcurrentShutdown(0);
     addWlsCluster(CLUSTER, PORT, MS1, MS2);
     domainPresenceInfo = createDomainPresenceInfoWithServers(MS1, MS2);
@@ -194,7 +194,7 @@ public class ServerDownIteratorStepTest {
   }
 
   @Test
-  public void whenClusterShutdown_concurrencySettingIsIgnored() {
+  void whenClusterShutdown_concurrencySettingIsIgnored() {
     configureCluster(CLUSTER).withMaxConcurrentShutdown(1).withReplicas(0);
     addWlsCluster(CLUSTER, PORT, MS1, MS2);
     domainPresenceInfo = createDomainPresenceInfoWithServers(MS1, MS2);
@@ -208,7 +208,7 @@ public class ServerDownIteratorStepTest {
   }
 
   @Test
-  public void whenMaxConcurrentShutdownSet_limitNumberOfServersShuttingDownAtOnce() {
+  void whenMaxConcurrentShutdownSet_limitNumberOfServersShuttingDownAtOnce() {
     configureCluster(CLUSTER).withMaxConcurrentShutdown(2).withReplicas(1);
     addWlsCluster(CLUSTER, PORT, MS1, MS2, MS3, MS4);
     domainPresenceInfo = createDomainPresenceInfoWithServers(MS1, MS2, MS3, MS4);
@@ -224,7 +224,7 @@ public class ServerDownIteratorStepTest {
   }
 
   @Test
-  public void withMultipleClusters_concurrencySettingIsIgnoredForShuttingDownClusterAndHonoredForShrinkingCluster() {
+  void withMultipleClusters_concurrencySettingIsIgnoredForShuttingDownClusterAndHonoredForShrinkingCluster() {
     configureCluster(CLUSTER).withMaxConcurrentShutdown(1).withReplicas(0);
     configureCluster(CLUSTER2).withMaxConcurrentShutdown(1).withReplicas(1);
     addWlsCluster(CLUSTER, PORT, MS1, MS2, MS3);
@@ -241,7 +241,7 @@ public class ServerDownIteratorStepTest {
   }
 
   @Test
-  public void withMultipleClusters_differentClusterScheduleAndShutdownDifferently() {
+  void withMultipleClusters_differentClusterScheduleAndShutdownDifferently() {
     configureCluster(CLUSTER).withMaxConcurrentShutdown(0).withReplicas(1);
     configureCluster(CLUSTER2).withMaxConcurrentShutdown(1).withReplicas(1);
     addWlsCluster(CLUSTER, PORT, MS1, MS2);
@@ -258,7 +258,7 @@ public class ServerDownIteratorStepTest {
   }
 
   @Test
-  public void maxClusterConcurrentShutdown_doesNotApplyToNonClusteredServers() {
+  void maxClusterConcurrentShutdown_doesNotApplyToNonClusteredServers() {
     domain.getSpec().setMaxClusterConcurrentShutdown(1);
     addWlsServers(MS3, MS4);
     domainPresenceInfo = createDomainPresenceInfoWithServers(MS3,MS4);
