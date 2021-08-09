@@ -208,7 +208,7 @@ public class ItWlsSamples {
 
   /**
    * Test domain in pv samples using domains created by wlst and wdt.
-   * In domain on pv using wdt usecase, we also run the update domain script from the samples,
+   * In domain on pv using wdt and wlst usecases, we also run the update domain script from the samples,
    * to add a cluster to the domain.
    *
    * @param model domain name and script type to create domain. Acceptable values of format String:wlst|wdt
