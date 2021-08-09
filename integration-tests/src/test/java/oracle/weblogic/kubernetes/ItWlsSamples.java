@@ -70,7 +70,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify the domain on pv, domain in image samples using wlst and wdt and domain lifecycle scripts")
 @IntegrationTest
-class ItWlsSamples {
+public class ItWlsSamples {
 
   public static final String SERVER_LIFECYCLE = "Server";
   public static final String CLUSTER_LIFECYCLE = "Cluster";
@@ -155,7 +155,7 @@ class ItWlsSamples {
   @ParameterizedTest
   @MethodSource("paramProvider")
   @DisplayName("Test samples using domain in image")
-  void testSampleDomainInImage(String model) {
+  public void testSampleDomainInImage(String model) {
     String domainName = model.split(":")[1];
     String script = model.split(":")[0];
     String imageName = (KIND_REPO != null
@@ -217,7 +217,7 @@ class ItWlsSamples {
   @ParameterizedTest
   @MethodSource("paramProvider")
   @DisplayName("Test samples using domain in pv")
-  void testSampleDomainInPv(String model) {
+  public void testSampleDomainInPv(String model) {
 
     String domainName = model.split(":")[1];
     String script = model.split(":")[0];
@@ -255,10 +255,9 @@ class ItWlsSamples {
     // run create-domain.sh to create domain.yaml file, run kubectl to create the domain and verify
     createDomainAndVerify(domainName, sampleBase);
 
-    if (script.equals("wdt")) {
-      copyModelFileForUpdateDomain(sampleBase);
-      updateDomainAndVerify(domainName, sampleBase, domainNamespace);
-    }
+    // update the domain to add a new cluster
+    copyModelFileForUpdateDomain(sampleBase);
+    updateDomainAndVerify(domainName, sampleBase, domainNamespace, script);
   }
 
 
@@ -268,7 +267,7 @@ class ItWlsSamples {
   @Order(3)
   @Test
   @DisplayName("Test server lifecycle samples scripts")
-  void testServerLifecycleScripts() {
+  public void testServerLifecycleScripts() {
 
     // Verify that stopServer script execution shuts down server pod and replica count is decremented
     String serverName = managedServerNameBase + "1";
@@ -292,7 +291,7 @@ class ItWlsSamples {
   @Order(4)
   @Test
   @DisplayName("Test server lifecycle samples scripts with constant replica count")
-  void testServerLifecycleScriptsWithConstantReplicaCount() {
+  public void testServerLifecycleScriptsWithConstantReplicaCount() {
     String serverName = managedServerNameBase + "1";
     String keepReplicaCountConstantParameter = "-k";
     // Verify that replica count is not changed when using "-k" parameter and a replacement server is started
@@ -318,7 +317,7 @@ class ItWlsSamples {
   @Order(5)
   @Test
   @DisplayName("Test cluster lifecycle scripts")
-  void testClusterLifecycleScripts() {
+  public void testClusterLifecycleScripts() {
 
     // Verify all clustered server pods are shut down after stopCluster script execution
     executeLifecycleScript(STOP_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, clusterName);
@@ -339,7 +338,7 @@ class ItWlsSamples {
   @Order(6)
   @Test
   @DisplayName("Test domain lifecycle scripts")
-  void testDomainLifecycleScripts() {
+  public void testDomainLifecycleScripts() {
     // Verify all WebLogic server instance pods are shut down after stopDomain script execution
     executeLifecycleScript(STOP_DOMAIN_SCRIPT, DOMAIN, null);
     for (int i = 1; i <= replicaCount; i++) {
@@ -363,7 +362,7 @@ class ItWlsSamples {
   @Order(7)
   @Test
   @DisplayName("Manage Traefik Ingress Controller with setupLoadBalancer")
-  void testTraefikIngressController() {
+  public void testTraefikIngressController() {
     setupSample();
     Path scriptBase = Paths.get(tempSamplePath.toString(), "charts/util");
     setupLoadBalancer(scriptBase, "traefik", " -c -n " + traefikNamespace);
@@ -376,7 +375,7 @@ class ItWlsSamples {
   @Order(8)
   @Test
   @DisplayName("Manage Voyager Ingress Controller with setupLoadBalancer")
-  void testVoyagerIngressController() {
+  public void testVoyagerIngressController() {
     setupSample();
     Path scriptBase = Paths.get(tempSamplePath.toString(), "charts/util");
     setupLoadBalancer(scriptBase, "voyager", " -c -n " + voyagerNamespace);
@@ -389,7 +388,7 @@ class ItWlsSamples {
   @Order(9)
   @Test
   @DisplayName("Manage Nginx Ingress Controller with setupLoadBalancer")
-  void testNginxIngressController() {
+  public void testNginxIngressController() {
     setupSample();
     Path scriptBase = Paths.get(tempSamplePath.toString(), "charts/util");
     setupLoadBalancer(scriptBase, "nginx", " -c -n " + nginxNamespace);
@@ -621,7 +620,10 @@ class ItWlsSamples {
     }
   }
 
-  private void updateDomainAndVerify(String domainName, Path sampleBase, String domainNamespace) {
+  private void updateDomainAndVerify(String domainName,
+                                     Path sampleBase,
+                                     String domainNamespace,
+                                     String script) {
     //First copy the update model file to wdt dir and rename it wdt-model_dynamic.yaml
     assertDoesNotThrow(() -> {
       copyFile(Paths.get(sampleBase.toString(), UPDATE_MODEL_FILE).toFile(),
@@ -639,6 +641,20 @@ class ItWlsSamples {
     logger.info("Run update-domain.sh to create domain.yaml file");
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain.yaml");
+
+    // For the domain created by WLST, we have to apply domain.yaml created by update-domain.sh
+    // before initiating introspection of the domain to start the second cluster that was just added
+    // otherwise the newly added Cluster 'cluster-2' is not added to the domain1.
+    if (script.equals("wlst")) {
+      // run kubectl to update the domain
+      logger.info("Run kubectl to create the domain");
+      params = new CommandParams().defaults();
+      params.command("kubectl apply -f "
+          + Paths.get(sampleBase.toString(), "weblogic-domains/" + domainName + "/domain.yaml").toString());
+
+      result = Command.withParams(params).execute();
+      assertTrue(result, "Failed to create domain custom resource");
+    }
 
     // Have to initiate introspection of the domain to start the second cluster that was just added
     // Call introspectDomain.sh
