@@ -38,24 +38,24 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getCurrentIntrospec
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyUpdateWebLogicCredential;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDeleted;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOpsswalletpasswordSecret;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createRcuAccessSecret;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getIntrospectJobName;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.patchServerStartPolicy;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.updateRcuAccessSecret;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuAccessSecret;
 import static oracle.weblogic.kubernetes.utils.DbUtils.setupDBandRCUschema;
+import static oracle.weblogic.kubernetes.utils.DbUtils.updateRcuAccessSecret;
 import static oracle.weblogic.kubernetes.utils.DbUtils.updateRcuPassword;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyDomainReady;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.restartOperator;
-import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResourceServerStartPolicy;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
+import static oracle.weblogic.kubernetes.utils.SecretUtils.createOpsswalletpasswordSecret;
+import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -351,7 +351,7 @@ class ItFmwMiiDomain {
    * Shutdown the domain by setting serverStartPolicy as "NEVER".
    */
   private void shutdownDomain() {
-    patchServerStartPolicy("/spec/serverStartPolicy", "NEVER", fmwDomainNamespace, domainUid);
+    patchDomainResourceServerStartPolicy("/spec/serverStartPolicy", "NEVER", fmwDomainNamespace, domainUid);
     logger.info("Domain is patched to stop entire WebLogic domain");
 
     // make sure all the server pods are removed after patch
@@ -368,7 +368,7 @@ class ItFmwMiiDomain {
    * Startup the domain by setting serverStartPolicy as "IF_NEEDED".
    */
   private void startupDomain() {
-    patchServerStartPolicy("/spec/serverStartPolicy", "IF_NEEDED", fmwDomainNamespace, domainUid);
+    patchDomainResourceServerStartPolicy("/spec/serverStartPolicy", "IF_NEEDED", fmwDomainNamespace, domainUid);
     logger.info("Domain is patched to start all servers in the domain");
   }
 
