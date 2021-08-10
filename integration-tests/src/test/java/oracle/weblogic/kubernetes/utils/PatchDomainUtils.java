@@ -21,7 +21,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 /**
  * The common utility class for domain patching tests.
  */
-public class CommonPatchTestUtils {
+public class PatchDomainUtils {
   private static org.awaitility.core.ConditionFactory withStandardRetryPolicy =
       with().pollDelay(2, SECONDS)
           .and().with().pollInterval(10, SECONDS)
@@ -223,6 +223,37 @@ public class CommonPatchTestUtils {
   }
 
   /**
+   * Patch the domain with server start policy.
+   *
+   * @param patchPath JSON path of the patch
+   * @param policy server start policy
+   * @param domainNamespace namespace where domain exists
+   * @param domainUid unique id of domain
+   */
+  public static void patchDomainResourceServerStartPolicy(String patchPath, String policy, String domainNamespace,
+                                            String domainUid) {
+    final LoggingFacade logger = getLogger();
+    StringBuffer patchStr = null;
+    patchStr = new StringBuffer("[{");
+    patchStr.append("\"op\": \"replace\",")
+        .append(" \"path\": \"")
+        .append(patchPath)
+        .append("\",")
+        .append(" \"value\":  \"")
+        .append(policy)
+        .append("\"")
+        .append(" }]");
+
+    logger.info("The domain resource patch string: {0}", patchStr);
+    V1Patch patch = new V1Patch(new String(patchStr));
+    boolean crdPatched = assertDoesNotThrow(() ->
+            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
+        "patchDomainCustomResource(managedShutdown) failed");
+    assertTrue(crdPatched, "patchDomainCustomResource failed");
+  }
+
+
+  /**
    * Patch replicas at spec level.
    *
    * @param domainUid unique domain identifier
@@ -243,4 +274,5 @@ public class CommonPatchTestUtils {
 
     return patchDomainResource(domainUid, domainNamespace, patchStr);
   }
+
 }

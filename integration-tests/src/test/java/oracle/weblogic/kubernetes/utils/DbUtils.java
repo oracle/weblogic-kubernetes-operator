@@ -32,6 +32,7 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1RollingUpdateDeployment;
+import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
@@ -48,6 +49,7 @@ import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.listServices;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
@@ -631,4 +633,78 @@ public class DbUtils {
     assertTrue(execResult.exitValue() == 0, "Could not update the RCU schema password");
 
   }
+
+  /**
+   * Create a RCU secret with username, password and sys_username, sys_password in the specified namespace.
+   *
+   * @param secretName secret name to create
+   * @param namespace namespace in which the secret will be created
+   * @param username RCU schema username
+   * @param password RCU schema passowrd
+   * @param sysUsername DB sys username
+   * @param sysPassword DB sys password
+   */
+  public static void createRcuSecretWithUsernamePassword(String secretName, String namespace,
+                                                         String username, String password,
+                                                         String sysUsername, String sysPassword) {
+    Map<String, String> secretMap = new HashMap<>();
+    secretMap.put("username", username);
+    secretMap.put("password", password);
+    secretMap.put("sys_username", sysUsername);
+    secretMap.put("sys_password", sysPassword);
+
+    boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
+        .metadata(new V1ObjectMeta()
+            .name(secretName)
+            .namespace(namespace))
+        .stringData(secretMap)), "Create secret failed with ApiException");
+    assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
+  }
+
+  /**
+   * Create a RcuAccess secret with RCU schema prefix, RCU schema password and RCU database connection string in the
+   * specified namespace.
+   *
+   * @param secretName secret name to create
+   * @param namespace namespace in which the secret will be created
+   * @param rcuPrefix  RCU schema prefix
+   * @param password RCU schema passoword
+   * @param rcuDbConnString RCU database connection string
+   */
+  public static void createRcuAccessSecret(String secretName, String namespace,
+                                           String rcuPrefix, String password, String rcuDbConnString) {
+    Map<String, String> secretMap = new HashMap<>();
+    secretMap.put("rcu_db_conn_string", rcuDbConnString);
+    secretMap.put("rcu_prefix", rcuPrefix);
+    secretMap.put("rcu_schema_password", password);
+
+    getLogger().info("Create RcuAccessSecret: {0} in namespace: {1}, with rcuPrefix {2}, password {3}, "
+        + "rcuDbConnString {4} ", secretName, namespace, rcuPrefix, password, rcuDbConnString);
+    boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
+        .metadata(new V1ObjectMeta()
+            .name(secretName)
+            .namespace(namespace))
+        .stringData(secretMap)), "Create secret failed with ApiException");
+    assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
+  }
+
+  /**
+   * Update a RcuAccess secret with RCU schema prefix, RCU schema password and RCU database connection string in the
+   * specified namespace.
+   *
+   * @param secretName secret name to update
+   * @param namespace namespace in which the secret will be created
+   * @param rcuPrefix  RCU schema prefix
+   * @param password RCU schema passoword that is being changed to
+   * @param rcuDbConnString RCU database connection string
+   */
+  public static void updateRcuAccessSecret(String secretName, String namespace,
+                                           String rcuPrefix, String password, String rcuDbConnString) {
+
+    assertTrue(Kubernetes.deleteSecret(secretName, namespace),
+        String.format("create secret failed for %s", secretName));
+    createRcuAccessSecret(secretName, namespace, rcuPrefix, password, rcuDbConnString);
+
+  }
+
 }
