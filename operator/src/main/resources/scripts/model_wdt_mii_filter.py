@@ -309,6 +309,7 @@ def customizeServer(server, name):
   customizeNetworkAccessPoints(server,listen_address)
   customizeServerIstioNetworkAccessPoint(server, listen_address)
 
+
 def customizeCoherenceMemberConfig(server, listen_address):
   if 'CoherenceMemberConfig ' not in server:
     server['CoherenceMemberConfig'] = {}
@@ -385,6 +386,7 @@ def _writeIstioNAP(name, server, listen_address, listen_port, protocol, http_ena
   nap['TunnelingEnabled'] = 'false'
   nap['OutboundEnabled'] = 'true'
   nap['Enabled'] = 'true'
+
 
 def customizeServerIstioNetworkAccessPoint(server, listen_address):
   istio_enabled = env.getEnvOrDef("ISTIO_ENABLED", "false")
@@ -600,6 +602,7 @@ def getClusterOrNone(topology, name):
     return clusters[name]
 
   return None
+
 
 def getCoherenceClusterSystemResourceOrNone(serverOrTemplate):
   if 'CoherenceClusterSystemResource' not in serverOrTemplate:
