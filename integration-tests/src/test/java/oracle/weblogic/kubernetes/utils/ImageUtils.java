@@ -55,6 +55,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -532,7 +533,7 @@ public class ImageUtils {
                                                 String namespace, String secretName,
                                                 String extraDockerArgs) throws ApiException {
     // create unique image name with date
-    final String imageTag = TestUtils.getDateAndTimeStamp();
+    final String imageTag = getDateAndTimeStamp();
     // Add repository name in image name for Jenkins runs
     final String imageName = DOMAIN_IMAGES_REPO + baseImageName;
 
