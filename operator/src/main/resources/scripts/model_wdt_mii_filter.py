@@ -309,6 +309,13 @@ def customizeServer(server, name):
   customizeNetworkAccessPoints(server,listen_address)
   customizeServerIstioNetworkAccessPoint(server, listen_address)
 
+def customizeCoherenceMemberConfig(server, listen_address):
+  if 'CoherenceMemberConfig ' not in server:
+    server['CoherenceMemberConfig'] = {}
+
+  cmc = server['CoherenceMemberConfig']
+  cmc['UnicastListenAddress'] = listen_address
+
 
 def getAdministrationPort(server, topology):
   port = 0
@@ -378,15 +385,6 @@ def _writeIstioNAP(name, server, listen_address, listen_port, protocol, http_ena
   nap['TunnelingEnabled'] = 'false'
   nap['OutboundEnabled'] = 'true'
   nap['Enabled'] = 'true'
-
-def customizeCoherenceMemberConfig(server, listen_address):
-  if 'CoherenceMemberConfig ' not in server:
-    server['CoherenceMemberConfig'] = {}
-
-  cmc = server['CoherenceMemberConfig']
-  cmc['UnicastListenAddress'] = listen_address
-
-
 
 def customizeServerIstioNetworkAccessPoint(server, listen_address):
   istio_enabled = env.getEnvOrDef("ISTIO_ENABLED", "false")
