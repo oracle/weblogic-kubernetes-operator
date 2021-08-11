@@ -59,19 +59,19 @@ import static oracle.weblogic.kubernetes.actions.TestActions.uninstallTraefik;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallVoyager;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createRouteForOKD;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyTraefik;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyVoyager;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installVoyagerIngressAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.isVoyagerPodReady;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyTraefik;
+import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyVoyager;
+import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installVoyagerIngressAndVerify;
+import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.isVoyagerPodReady;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
+import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
@@ -215,7 +215,7 @@ class ItStickySession {
   @Test
   @DisplayName("Create a Voyager ingress resource and verify that two HTTP connections are sticky to the same server")
   @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
-  public void testSameSessionStickinessUsingVoyager() {
+  void testSameSessionStickinessUsingVoyager() {
     final String ingressName = domainUid + "-ingress-host-routing";
     final String ingressServiceName = VOYAGER_CHART_NAME + "-" + ingressName;
     final String channelName = "tcp-80";
@@ -272,7 +272,7 @@ class ItStickySession {
   @Test
   @DisplayName("Create a Traefik ingress resource and verify that two HTTP connections are sticky to the same server")
   @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
-  public void testSameSessionStickinessUsingTraefik() {
+  void testSameSessionStickinessUsingTraefik() {
     final String ingressServiceName = traefikHelmParams.getReleaseName();
     final String channelName = "web";
 
@@ -304,7 +304,7 @@ class ItStickySession {
   @Test
   @DisplayName("Create a Traefik ingress resource and verify that two HTTP connections are sticky to the same server")
   @EnabledIfEnvironmentVariable(named = "OKD", matches = "true")
-  public void testSameSessionStickinessinOKD() {
+  void testSameSessionStickinessinOKD() {
     final String serviceName = domainUid + "-cluster-" + clusterName;
     //final String channelName = "web";
 
@@ -340,7 +340,7 @@ class ItStickySession {
   @Test
   @DisplayName("Verify that two HTTP connections are sticky to the same server using cluster service")
   @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
-  public void testSameSessionStickinessUsingClusterService() {
+  void testSameSessionStickinessUsingClusterService() {
     //build cluster hostname
     String hostName = new StringBuffer()
         .append(domainUid)

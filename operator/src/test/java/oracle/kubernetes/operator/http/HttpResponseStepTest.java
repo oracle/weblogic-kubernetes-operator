@@ -21,42 +21,42 @@ import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.Matchers.typeCompatibleWith;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class HttpResponseStepTest {
+class HttpResponseStepTest {
 
   private final TerminalStep terminalStep = new TerminalStep();
   private final HttpResponseStepImpl responseStep = new HttpResponseStepImpl(terminalStep);
 
   @Test
-  public void classImplementsStep() {
+  void classImplementsStep() {
     assertThat(HttpResponseStep.class, typeCompatibleWith(Step.class));
   }
 
   @Test
-  public void classIsAbstract() {
+  void classIsAbstract() {
     assertThat(Modifier.isAbstract(HttpResponseStep.class.getModifiers()), is(true));
   }
 
   @Test
-  public void constructorSetsNextStep() {
+  void constructorSetsNextStep() {
     assertThat(responseStep.getNext(), sameInstance(terminalStep));
   }
 
   @Test
-  public void classHasOnSuccessMethod() throws NoSuchMethodException {
+  void classHasOnSuccessMethod() throws NoSuchMethodException {
     assertThat(
         HttpResponseStep.class.getDeclaredMethod("onSuccess", Packet.class, HttpResponse.class),
         notNullValue());
   }
 
   @Test
-  public void classHasOnFailureMethod() throws NoSuchMethodException {
+  void classHasOnFailureMethod() throws NoSuchMethodException {
     assertThat(
         HttpResponseStep.class.getDeclaredMethod("onFailure", Packet.class, HttpResponse.class),
         notNullValue());
   }
 
   @Test
-  public void whenResponseIsSuccess_invokeOnSuccess() {
+  void whenResponseIsSuccess_invokeOnSuccess() {
     Packet packet = new Packet();
     HttpResponseStep.addToPacket(packet, createStub(HttpResponseStub.class, HttpURLConnection.HTTP_OK));
 
@@ -67,7 +67,7 @@ public class HttpResponseStepTest {
   }
 
   @Test
-  public void whenResponseIsFailure_invokeOnFailure() {
+  void whenResponseIsFailure_invokeOnFailure() {
     Packet packet = new Packet();
     HttpResponseStep.addToPacket(packet, createStub(HttpResponseStub.class, HttpURLConnection.HTTP_FORBIDDEN));
 
@@ -78,7 +78,7 @@ public class HttpResponseStepTest {
   }
 
   @Test
-  public void whenNoResponseProvided_skipProcessing() {
+  void whenNoResponseProvided_skipProcessing() {
     NextAction nextAction = responseStep.apply(new Packet());
 
     assertThat(responseStep.getSuccessResponse(), nullValue());

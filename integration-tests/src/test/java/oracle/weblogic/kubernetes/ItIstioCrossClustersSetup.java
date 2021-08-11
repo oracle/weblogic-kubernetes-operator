@@ -56,20 +56,20 @@ import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespac
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkAppUsingHostHeader;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
+import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.generateFileFromTemplate;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
+import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGatewayAndVirtualservice;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.getIstioHttpIngressPort;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
+import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
+import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
+import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -80,7 +80,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Setup operator, domain, applications for cross cluster domain transaction.")
 @IntegrationTest
 @DisabledIfEnvironmentVariable(named = "TWO_CLUSTERS", matches = "false")
-public class ItIstioCrossClustersSetup {
+class ItIstioCrossClustersSetup {
 
   private static final String WDT_MODEL_FILE_DOMAIN1 = "model-crossdomaintransaction-domain1.yaml";
   private static final String WDT_MODEL_DOMAIN1_PROPS = "model-crossdomaintransaction-domain1.properties";
@@ -133,7 +133,7 @@ public class ItIstioCrossClustersSetup {
 
   @Test
   @DisplayName("Build applications and create operator and domain in cluster1")
-  public void testInitCluster1() {
+  void testInitCluster1() {
     logger.info("Creating namespace for Operator in cluster1");
     assertDoesNotThrow(() -> Kubernetes.createNamespace(op1Namespace),
         "Failed to create namespace for operator in cluster1");

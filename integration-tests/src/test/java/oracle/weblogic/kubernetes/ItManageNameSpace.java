@@ -57,16 +57,16 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.deleteDomainResource;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.upgradeAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
+import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
+import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -189,7 +189,7 @@ class ItManageNameSpace {
   @Order(1)
   @DisplayName("install operator helm chart and domain, "
       + " using expression namespace management")
-  public void testNameSpaceManageByRegularExpression() {
+  void testNameSpaceManageByRegularExpression() {
     //create domain namespace
     String manageByExp1NS = "test-" +  domainNamespaces[0];
     String manageByExp2NS = "test-" +  domainNamespaces[1];
@@ -267,7 +267,7 @@ class ItManageNameSpace {
   @Order(2)
   @DisplayName("install operator helm chart and domain, "
       + " using label namespace management")
-  public void testNameSpaceManagedByLabelSelector() {
+  void testNameSpaceManagedByLabelSelector() {
     Map<String, String> managedByLabelDomains = new HashMap<>();
     managedByLabelDomains.put(domainNamespaces[0], domainsUid[0]);
     Map<String, String> unmanagedByLabelDomains = new HashMap<>();
@@ -337,7 +337,7 @@ class ItManageNameSpace {
   @Order(3)
   @DisplayName("install operator helm chart and domain, "
       + " with enableClusterRoleBinding")
-  public void testNameSpaceWithOperatorRbacFalse() {
+  void testNameSpaceWithOperatorRbacFalse() {
     String manageByLabelDomainNS = domainNamespaces[0] + "test4";
     String manageByLabelDomainUid = domainsUid[0] + "test4";
     assertDoesNotThrow(() -> createNamespace(manageByLabelDomainNS));

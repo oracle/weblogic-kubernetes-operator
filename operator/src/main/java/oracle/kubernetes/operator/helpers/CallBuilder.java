@@ -167,6 +167,11 @@ public class CallBuilder {
           wrap(
               createConfigMapAsync(
                   usage, requestParams.namespace, (V1ConfigMap) requestParams.body, callback));
+  private final CallFactory<V1Secret> createSecret =
+          (requestParams, usage, cont, callback) ->
+                  wrap(
+                          createSecretAsync(
+                                  usage, requestParams.namespace, (V1Secret) requestParams.body, callback));
   private final CallFactory<V1ConfigMap> replaceConfigmap =
       (requestParams, usage, cont, callback) ->
           wrap(
@@ -185,6 +190,15 @@ public class CallBuilder {
                   requestParams.namespace,
                   (V1Patch) requestParams.body,
                   callback));
+  private final CallFactory<V1Secret> replaceSecret =
+          (requestParams, usage, cont, callback) ->
+                  wrap(
+                          replaceSecretAsync(
+                                  usage,
+                                  requestParams.name,
+                                  requestParams.namespace,
+                                  (V1Secret) requestParams.body,
+                                  callback));
   private final CallFactory<V1Pod> createPod =
       (requestParams, usage, cont, callback) ->
           wrap(
@@ -990,6 +1004,28 @@ public class CallBuilder {
         createConfigmap);
   }
 
+  private Call createSecretAsync(
+          ApiClient client, String namespace, V1Secret body, ApiCallback<V1Secret> callback)
+          throws ApiException {
+    return new CoreV1Api(client)
+            .createNamespacedSecretAsync(namespace, body, pretty, null, null, callback);
+  }
+
+  /**
+   * Asynchronous step for creating secret.
+   *
+   * @param namespace Namespace
+   * @param body Body
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step createSecretAsync(
+          String namespace, V1Secret body, ResponseStep<V1Secret> responseStep) {
+    return createRequestAsync(
+            responseStep, new RequestParams("createSecret", namespace, null, body, callParams),
+            createSecret);
+  }
+
   private Call deleteConfigMapAsync(
       ApiClient client,
       String name,
@@ -1084,6 +1120,34 @@ public class CallBuilder {
         responseStep,
         new RequestParams("patchConfigMap", namespace, name, patchBody, domainUid),
         patchConfigMap);
+  }
+
+  /**
+   * Asynchronous step for replacing secret.
+   *
+   * @param name Name
+   * @param namespace Namespace
+   * @param body Body
+   * @param responseStep Response step for when call completes
+   * @return Asynchronous step
+   */
+  public Step replaceSecretAsync(
+          String name, String namespace, V1Secret body, ResponseStep<V1Secret> responseStep) {
+    return createRequestAsync(
+            responseStep,
+            new RequestParams("replaceSecretAsync", namespace, name, body, ""),
+            replaceSecret);
+  }
+
+  private Call replaceSecretAsync(
+          ApiClient client,
+          String name,
+          String namespace,
+          V1Secret body,
+          ApiCallback<V1Secret> callback)
+          throws ApiException {
+    return new CoreV1Api(client)
+            .replaceNamespacedSecretAsync(name, namespace, body, pretty, dryRun, null, callback);
   }
 
   private Call listPodAsync(

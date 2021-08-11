@@ -26,7 +26,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class ExternalServiceHelperTest extends ServiceHelperTest {
+class ExternalServiceHelperTest extends ServiceHelperTest {
 
   private static final int NODE_PORT = 2300;
   private static final int LISTEN_PORT = 2100;

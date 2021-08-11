@@ -33,20 +33,18 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkAppUsingHostHeader;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
+import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createImageAndPushToRepo;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDockerExtraArgs;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployToClusterUsingRest;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndPushToRepo;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.createIstioDomainResource;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGatewayAndVirtualservice;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployIstioDestinationRule;
@@ -56,7 +54,9 @@ import static oracle.weblogic.kubernetes.utils.MonitoringUtils.checkMetricsViaPr
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.cloneMonitoringExporter;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.downloadMonitoringExporterApp;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.editPrometheusCM;
-import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
+import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -139,7 +139,7 @@ class ItIstioMonitoringExporter {
   @Test
   @DisplayName("Create istio provided prometheus and verify "
       + "it can monitor Weblogic domain via weblogic exporter webapp")
-  public void testIstioPrometheusViaExporterWebApp() {
+  void testIstioPrometheusViaExporterWebApp() {
     assertDoesNotThrow(() -> downloadMonitoringExporterApp(RESOURCE_DIR
         + "/exporter/exporter-config.yaml", RESULTS_ROOT), "Failed to download monitoring exporter application");
     String miiImage = createAndVerifyMiiImageWithMonitoringExporter(RESULTS_ROOT + "/wls-exporter.war",
@@ -164,7 +164,7 @@ class ItIstioMonitoringExporter {
   @Test
   @DisplayName("Create istio provided prometheus and verify "
       + "it can monitor Weblogic domain via weblogic exporter sidecar")
-  public void testIstioPrometheusWithSideCar() {
+  void testIstioPrometheusWithSideCar() {
     // create image with model files
     logger.info("Create image with model file and verify");
 

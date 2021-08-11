@@ -43,18 +43,18 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createIngress;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
 import static oracle.weblogic.kubernetes.actions.impl.Service.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isVoyagerReady;
+import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
+import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReturnedCode;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createIngressAndRetryIfFail;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyTraefik;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyVoyager;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyWlsRemoteConsole;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.shutdownWlsRemoteConsole;
-import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
-import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReturnedCode;
+import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createIngressAndRetryIfFail;
+import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
+import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyTraefik;
+import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyVoyager;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static oracle.weblogic.kubernetes.utils.WebLogicRemoteConsoleUtils.installAndVerifyWlsRemoteConsole;
+import static oracle.weblogic.kubernetes.utils.WebLogicRemoteConsoleUtils.shutdownWlsRemoteConsole;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -165,7 +165,7 @@ class ItRemoteConsole {
    */
   @Test
   @DisplayName("Verify Connecting to Mii domain WLS Remote Console through Traefik is successful")
-  public void testWlsRemoteConsoleConnectionThroughTraefik() {
+  void testWlsRemoteConsoleConnectionThroughTraefik() {
 
     int traefikNodePort = getServiceNodePort(traefikNamespace, traefikHelmParams.getReleaseName(), "web");
     assertTrue(traefikNodePort != -1,
@@ -186,7 +186,7 @@ class ItRemoteConsole {
    */
   @Test
   @DisplayName("Verify Connecting to Mii domain WLS Remote Console through Voyager is successful")
-  public void testWlsRemoteConsoleConnectionThroughVoyager() {
+  void testWlsRemoteConsoleConnectionThroughVoyager() {
 
     assertTrue(voyagerNodePort != -1, "Could not get the default external service node port");
     logger.info("Found the Voyager service nodePort {0}", voyagerNodePort);
@@ -206,7 +206,7 @@ class ItRemoteConsole {
    */
   @Test
   @DisplayName("Verify Connecting to Mii domain WLS Remote Console through NGINX is successful")
-  public void testWlsRemoteConsoleConnectionThroughNginx() {
+  void testWlsRemoteConsoleConnectionThroughNginx() {
 
     assertTrue(nginxNodePort != -1, "Could not get the default external service node port");
     logger.info("Found the NGINX service nodePort {0}", nginxNodePort);

@@ -31,7 +31,6 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.FileUtils;
 import org.awaitility.core.ConditionFactory;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -43,20 +42,19 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodIP;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewRestartVersion;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
+import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
+import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
+import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -86,7 +84,7 @@ class ItCoherenceTests {
   private static final String COHERENCE_MODEL_PROP = "coherence-wdt-config.properties";
   private static final String COHERENCE_IMAGE_NAME = "coherence-image";
 
-  private static String domainUid = "coh-domain1";
+  private static String domainUid = "coherence-domain";
   private static String clusterName = "cluster-1";
   private static String adminServerPodName = domainUid + "-admin-server";
   private static String managedServerPrefix = domainUid + "-managed-server";
@@ -127,17 +125,6 @@ class ItCoherenceTests {
     installAndVerifyOperator(opNamespace, domainNamespace);
   }
 
-  // This method is needed in this test class, since the cleanup util
-  // won't cleanup the images.
-  @AfterAll
-  void tearDown() {
-    // Delete domain custom resource
-    logger.info("Delete domain custom resource in namespace {0}", domainNamespace);
-    assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid, domainNamespace),
-        "deleteDomainCustomResource failed with ApiException");
-    logger.info("Deleted Domain Custom Resource " + domainUid + " from " + domainNamespace);
-  }
-
   /**
    * Create a WebLogic domain with a Coherence cluster and deploying it using WDT
    * Test rolling restart of Coherence managed servers and verify
@@ -145,7 +132,7 @@ class ItCoherenceTests {
    */
   @Test
   @DisplayName("Create domain with a Coherence cluster using WDT and test rolling restart")
-  public void testCoherenceServerRollingRestart() {
+  void testCoherenceServerRollingRestart() {
     final String successMarker = "CACHE-SUCCESS";
 
     // create a DomainHomeInImage image using WebLogic Image Tool

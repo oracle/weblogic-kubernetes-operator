@@ -75,7 +75,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings("ConstantConditions")
-public class ManagedPodHelperTest extends PodHelperTestBase {
+class ManagedPodHelperTest extends PodHelperTestBase {
 
   private static final String SERVER_NAME = "ess_server1";
   private static final int LISTEN_PORT = 8001;
@@ -147,14 +147,14 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenManagedPodCreated_containerHasStartServerCommand() {
+  void whenManagedPodCreated_containerHasStartServerCommand() {
     assertThat(
         getCreatedPodSpecContainer().getCommand(),
         contains("/weblogic-operator/scripts/startServer.sh"));
   }
 
   @Test
-  public void whenPacketHasEnvironmentItems_createManagedPodStartupWithThem() {
+  void whenPacketHasEnvironmentItems_createManagedPodStartupWithThem() {
     testSupport.addToPacket(
         ProcessingConstants.ENVVARS,
         Arrays.asList(toEnvVar(ITEM1, VALUE1), toEnvVar(ITEM2, VALUE2)));
@@ -169,7 +169,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenPacketHasEnvironmentItemsWithVariables_createManagedPodStartupWithSubstitutedValues() {
+  void whenPacketHasEnvironmentItemsWithVariables_createManagedPodStartupWithSubstitutedValues() {
     testSupport.addToPacket(
         ProcessingConstants.ENVVARS,
         Arrays.asList(toEnvVar(ITEM1, RAW_VALUE_1), toEnvVar(ITEM2, RAW_VALUE_2), toEnvVar(ITEM3, RAW_VALUE_3)));
@@ -180,7 +180,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenPacketHasValueFromEnvironmentItems_createManagedPodStartupWithThem() {
+  void whenPacketHasValueFromEnvironmentItems_createManagedPodStartupWithThem() {
     V1EnvVar configMapKeyRefEnvVar = createConfigMapKeyRefEnvVar("VARIABLE1", "my-env", "VAR1");
     V1EnvVar secretKeyRefEnvVar = createSecretKeyRefEnvVar("VARIABLE2", "my-secret", "VAR2");
     V1EnvVar fieldRefEnvVar = createFieldRefEnvVar("MY_NODE_IP", "status.hostIP");
@@ -196,7 +196,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenPacketHasValueFromEnvironmentItemsWithVariables_createManagedPodStartupWithSubstitutions() {
+  void whenPacketHasValueFromEnvironmentItemsWithVariables_createManagedPodStartupWithSubstitutions() {
     V1EnvVar configMapKeyRefEnvVar = createConfigMapKeyRefEnvVar(ITEM1, "my-env", RAW_VALUE_1);
     V1EnvVar secretKeyRefEnvVar = createSecretKeyRefEnvVar(ITEM2, "my-secret", RAW_VALUE_2);
     V1EnvVar fieldRefEnvVar = createFieldRefEnvVar(ITEM3, RAW_VALUE_3);
@@ -216,7 +216,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenClusterHasAdditionalVolumesWithReservedVariables_createManagedPodWithSubstitutions() {
+  void whenClusterHasAdditionalVolumesWithReservedVariables_createManagedPodWithSubstitutions() {
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
     getConfigurator()
         .configureCluster(CLUSTER_NAME)
@@ -231,7 +231,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainHasAdditionalVolumesWithReservedVariables_createManagedPodWithSubstitutions() {
+  void whenDomainHasAdditionalVolumesWithReservedVariables_createManagedPodWithSubstitutions() {
     getConfigurator()
         .withAdditionalVolume("volume1", "/source-$(SERVER_NAME)")
         .withAdditionalVolume("volume2", "/source-$(DOMAIN_NAME)");
@@ -244,7 +244,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainHasAdditionalVolumesWithCustomVariables_createManagedPodWithSubstitutions() {
+  void whenDomainHasAdditionalVolumesWithCustomVariables_createManagedPodWithSubstitutions() {
     resourceLookup.defineResource(SECRET_NAME, KubernetesResourceType.Secret, NS);
     resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
     resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
@@ -266,7 +266,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainHasAdditionalVolumesWithCustomVariablesContainInvalidValue_reportValidationError() {
+  void whenDomainHasAdditionalVolumesWithCustomVariablesContainInvalidValue_reportValidationError() {
     resourceLookup.defineResource(SECRET_NAME, KubernetesResourceType.Secret, NS);
     resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
     resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
@@ -287,7 +287,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenClusterHasLabelsWithVariables_createManagedPodWithSubstitutions() {
+  void whenClusterHasLabelsWithVariables_createManagedPodWithSubstitutions() {
     V1EnvVar envVar = toEnvVar("TEST_ENV", "test-value");
     testSupport.addToPacket(ProcessingConstants.ENVVARS, Collections.singletonList(envVar));
 
@@ -319,7 +319,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void createManagedPodStartupWithNullAdminUsernamePasswordEnvVarsValues() {
+  void createManagedPodStartupWithNullAdminUsernamePasswordEnvVarsValues() {
     testSupport.addToPacket(ProcessingConstants.ENVVARS, Collections.emptyList());
 
     assertThat(
@@ -328,7 +328,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenPacketHasEnvironmentItemsWithVariable_createManagedPodShouldNotChangeItsValue() {
+  void whenPacketHasEnvironmentItemsWithVariable_createManagedPodShouldNotChangeItsValue() {
     V1EnvVar envVar = toEnvVar(ITEM1, RAW_VALUE_1);
     testSupport.addToPacket(ProcessingConstants.ENVVARS, Collections.singletonList(envVar));
 
@@ -338,7 +338,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenPacketHasClusterConfig_managedPodHasClusterLabel() {
+  void whenPacketHasClusterConfig_managedPodHasClusterLabel() {
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
 
     assertThat(
@@ -347,7 +347,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainHasAdditionalVolumesWithVariables_createManagedPodWithThem() {
+  void whenDomainHasAdditionalVolumesWithVariables_createManagedPodWithThem() {
     getConfigurator()
         .withAdditionalVolume("volume1", "/$(SERVER_NAME)/source-path1/")
         .withAdditionalVolume("volume2", "/$(SERVER_NAME)/source-path2/")
@@ -362,7 +362,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainHasAdditionalPvClaimVolumesWitVariables_createManagedPodWithThem() {
+  void whenDomainHasAdditionalPvClaimVolumesWitVariables_createManagedPodWithThem() {
     getConfigurator()
         .withAdditionalPvClaimVolume(RAW_VALUE_4, RAW_VALUE_3);
 
@@ -372,7 +372,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainHasAdditionalVolumeMounts_createManagedPodWithThem() {
+  void whenDomainHasAdditionalVolumeMounts_createManagedPodWithThem() {
     getConfigurator()
         .withAdditionalVolumeMount("volume1", "/destination-path1")
         .withAdditionalVolumeMount("volume2", "/destination-path2");
@@ -384,7 +384,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenClusterHasAdditionalVolumes_createManagedPodWithThem() {
+  void whenClusterHasAdditionalVolumes_createManagedPodWithThem() {
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
     getConfigurator()
         .configureCluster(CLUSTER_NAME)
@@ -397,7 +397,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenClusterHasAdditionalVolumeMounts_createManagedPodWithThem() {
+  void whenClusterHasAdditionalVolumeMounts_createManagedPodWithThem() {
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
     getConfigurator()
         .configureCluster(CLUSTER_NAME)
@@ -412,7 +412,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenServerHasAdditionalVolumes_createManagedPodWithThem() {
+  void whenServerHasAdditionalVolumes_createManagedPodWithThem() {
     configureServer(getConfigurator(), SERVER_NAME)
         .withAdditionalVolume("volume1", "/source-path1")
         .withAdditionalVolume("volume2", "/source-path2");
@@ -423,7 +423,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenServerHasAdditionalVolumeMounts_createManagedPodWithThem() {
+  void whenServerHasAdditionalVolumeMounts_createManagedPodWithThem() {
     configureServer(getConfigurator(), SERVER_NAME)
         .withAdditionalVolumeMount("volume1", "/destination-path1")
         .withAdditionalVolumeMount("volume2", "/destination-path2");
@@ -436,7 +436,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenPodHasDuplicateVolumes_createManagedPodWithCombination() {
+  void whenPodHasDuplicateVolumes_createManagedPodWithCombination() {
     getConfigurator()
         .withAdditionalVolume("volume1", "/domain-path1")
         .withAdditionalVolume("volume2", "/domain-path2")
@@ -458,7 +458,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenPodHasDuplicateVolumeMounts_createManagedPodWithCombination() {
+  void whenPodHasDuplicateVolumeMounts_createManagedPodWithCombination() {
     getConfigurator()
         .withAdditionalVolumeMount("volume1", "/domain-path1")
         .withAdditionalVolumeMount("volume2", "/domain-path2")
@@ -480,21 +480,21 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDesiredStateIsAdmin_createPodWithStartupModeEnvironment() {
+  void whenDesiredStateIsAdmin_createPodWithStartupModeEnvironment() {
     getConfigurator().withServerStartState(ADMIN_STATE);
 
     assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("STARTUP_MODE", ADMIN_STATE));
   }
 
   @Test
-  public void whenServerDesiredStateIsAdmin_createPodWithStartupModeEnvironment() {
+  void whenServerDesiredStateIsAdmin_createPodWithStartupModeEnvironment() {
     getConfigurator().configureServer(SERVER_NAME).withServerStartState(ADMIN_STATE);
 
     assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("STARTUP_MODE", ADMIN_STATE));
   }
 
   @Test
-  public void whenDesiredStateIsRunningServerIsAdmin_createPodWithStartupModeEnvironment() {
+  void whenDesiredStateIsRunningServerIsAdmin_createPodWithStartupModeEnvironment() {
     getConfigurator()
         .withServerStartState(RUNNING_STATE)
         .configureServer(SERVER_NAME)
@@ -504,7 +504,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDesiredStateIsAdminServerIsRunning_createPodWithStartupModeEnvironment() {
+  void whenDesiredStateIsAdminServerIsRunning_createPodWithStartupModeEnvironment() {
     getConfigurator()
         .withServerStartState(ADMIN_STATE)
         .configureServer(SERVER_NAME)
@@ -514,7 +514,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenClusterDesiredStateIsAdmin_createPodWithStartupModeEnvironment() {
+  void whenClusterDesiredStateIsAdmin_createPodWithStartupModeEnvironment() {
     getConfigurator().configureServer(SERVER_NAME);
 
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
@@ -524,7 +524,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenClusterDesiredStateIsRunningServerIsAdmin_createPodWithStartupModeEnvironment() {
+  void whenClusterDesiredStateIsRunningServerIsAdmin_createPodWithStartupModeEnvironment() {
     getConfigurator().configureServer(SERVER_NAME).withServerStartState(ADMIN_STATE);
 
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
@@ -534,7 +534,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenClusterDesiredStateIsAdminServerIsRunning_createPodWithStartupModeEnvironment() {
+  void whenClusterDesiredStateIsAdminServerIsRunning_createPodWithStartupModeEnvironment() {
     getConfigurator().configureServer(SERVER_NAME).withServerStartState(RUNNING_STATE);
 
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
@@ -545,7 +545,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainHasInitContainers_createPodWithThem() {
+  void whenDomainHasInitContainers_createPodWithThem() {
     getConfigurator()
         .withInitContainer(
             createContainer(
@@ -560,7 +560,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenServerHasInitContainers_createPodWithThem() {
+  void whenServerHasInitContainers_createPodWithThem() {
     getConfigurator()
         .configureServer(SERVER_NAME)
         .withInitContainer(
@@ -576,7 +576,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenInitContainersHaveEnvVar_verifyInitContainersAfterPopulatingEnvStillHaveOriginalEnvVar() {
+  void whenInitContainersHaveEnvVar_verifyInitContainersAfterPopulatingEnvStillHaveOriginalEnvVar() {
     V1EnvVar envVar = toEnvVar(ITEM1, END_VALUE_1);
     List<V1EnvVar> envVars = new ArrayList<>();
     envVars.add(envVar);
@@ -598,7 +598,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenInitContainersHaveEnvVar_verifyInitContainersEnvVarTakesPrecedenceOverPreConfiguredEnvVar() {
+  void whenInitContainersHaveEnvVar_verifyInitContainersEnvVarTakesPrecedenceOverPreConfiguredEnvVar() {
     V1EnvVar envVar = toEnvVar("DOMAIN_NAME", "LOCAL_DOMAIN_NAME");
     List<V1EnvVar> envVars = new ArrayList<>();
     envVars.add(envVar);
@@ -620,7 +620,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenServerWithEnvVarHasInitContainers_verifyInitContainersHaveEnvVar() {
+  void whenServerWithEnvVarHasInitContainers_verifyInitContainersHaveEnvVar() {
     V1EnvVar envVar = toEnvVar(ITEM1, END_VALUE_1);
     testSupport.addToPacket(ProcessingConstants.ENVVARS, Collections.singletonList(envVar));
 
@@ -643,7 +643,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenServerHasDuplicateInitContainers_createPodWithCombination() {
+  void whenServerHasDuplicateInitContainers_createPodWithCombination() {
     getConfigurator()
         .withInitContainer(
             createContainer(
@@ -660,7 +660,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenClusterHasInitContainers_createPodWithThem() {
+  void whenClusterHasInitContainers_createPodWithThem() {
     getConfigurator()
         .configureCluster(CLUSTER_NAME)
         .withInitContainer(
@@ -677,7 +677,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenServerAndClusterHasDuplicateInitContainers_createPodWithCombination() {
+  void whenServerAndClusterHasDuplicateInitContainers_createPodWithCombination() {
     getConfigurator()
         .withInitContainer(
             createContainer(
@@ -701,7 +701,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainHasContainers_createPodWithThem() {
+  void whenDomainHasContainers_createPodWithThem() {
     getConfigurator()
         .withContainer(
             createContainer(
@@ -716,7 +716,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenServerHasContainers_createPodWithThem() {
+  void whenServerHasContainers_createPodWithThem() {
     getConfigurator()
         .configureServer(SERVER_NAME)
         .withContainer(
@@ -732,7 +732,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenServerHasDuplicateContainers_createPodWithCombination() {
+  void whenServerHasDuplicateContainers_createPodWithCombination() {
     getConfigurator()
         .withContainer(
             createContainer(
@@ -749,7 +749,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenClusterHasContainers_createPodWithThem() {
+  void whenClusterHasContainers_createPodWithThem() {
     getConfigurator()
         .configureCluster(CLUSTER_NAME)
         .withContainer(
@@ -766,7 +766,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenServerAndClusterHasDuplicateContainers_createPodWithCombination() {
+  void whenServerAndClusterHasDuplicateContainers_createPodWithCombination() {
     getConfigurator()
         .withContainer(
             createContainer(
@@ -790,7 +790,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainHasLabels_createManagedPodWithThem() {
+  void whenDomainHasLabels_createManagedPodWithThem() {
     getConfigurator()
         .withPodLabel("label1", "domain-label-value1")
         .withPodLabel("label2", "domain-label-value2");
@@ -801,7 +801,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainHasAnnotations_createManagedPodWithThem() {
+  void whenDomainHasAnnotations_createManagedPodWithThem() {
     getConfigurator()
         .withPodAnnotation("annotation1", "domain-annotation-value1")
         .withPodAnnotation("annotation2", "domain-annotation-value2");
@@ -811,7 +811,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenClusterHasLabels_createManagedPodWithThem() {
+  void whenClusterHasLabels_createManagedPodWithThem() {
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
     getConfigurator()
         .configureCluster(CLUSTER_NAME)
@@ -824,7 +824,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenClusterHasRestartVersion_createManagedPodWithRestartVersionLabel() {
+  void whenClusterHasRestartVersion_createManagedPodWithRestartVersionLabel() {
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
     getConfigurator().configureCluster(CLUSTER_NAME).withRestartVersion("clusterRestartV1");
 
@@ -835,7 +835,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainHasRestartVersion_createManagedPodWithRestartVersionLabel() {
+  void whenDomainHasRestartVersion_createManagedPodWithRestartVersionLabel() {
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
     getConfigurator().withRestartVersion("domainRestartV1");
 
@@ -846,7 +846,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenClusterHasAnnotations_createManagedPodWithThem() {
+  void whenClusterHasAnnotations_createManagedPodWithThem() {
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
     getConfigurator()
         .configureCluster(CLUSTER_NAME)
@@ -859,7 +859,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenServerHasLabels_createManagedPodWithThem() {
+  void whenServerHasLabels_createManagedPodWithThem() {
     configureServer(getConfigurator(), SERVER_NAME)
         .withPodLabel("label1", "server-label-value1")
         .withPodLabel("label2", "server-label-value2");
@@ -870,7 +870,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenServerHasAnnotations_createManagedPodWithThem() {
+  void whenServerHasAnnotations_createManagedPodWithThem() {
     configureServer(getConfigurator(), SERVER_NAME)
         .withPodAnnotation("annotation1", "server-annotation-value1")
         .withPodAnnotation("annotation2", "server-annotation-value2");
@@ -881,7 +881,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenPodHasDuplicateLabels_createManagedPodWithCombination() {
+  void whenPodHasDuplicateLabels_createManagedPodWithCombination() {
     getConfigurator()
         .withPodLabel("label1", "domain-label-value1")
         .withPodLabel("label2", "domain-label-value2")
@@ -902,7 +902,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenPodHasDuplicateAnnotations_createManagedPodWithCombination() {
+  void whenPodHasDuplicateAnnotations_createManagedPodWithCombination() {
     getConfigurator()
         .withPodAnnotation("annotation1", "domain-annotation-value1")
         .withPodAnnotation("annotation2", "domain-annotation-value2")
@@ -923,7 +923,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenPodHasCustomLabelConflictWithInternal_createManagedPodWithInternal() {
+  void whenPodHasCustomLabelConflictWithInternal_createManagedPodWithInternal() {
     getConfigurator()
         .configureServer((SERVER_NAME))
         .withPodLabel(LabelConstants.CREATEDBYOPERATOR_LABEL, "server-label-value1");
@@ -933,7 +933,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenClusterHasAffinity_createPodWithIt() {
+  void whenClusterHasAffinity_createPodWithIt() {
     getConfigurator().configureCluster(CLUSTER_NAME).withAffinity(affinity);
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
 
@@ -941,7 +941,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenClusterHasNodeSelector_createPodWithIt() {
+  void whenClusterHasNodeSelector_createPodWithIt() {
     getConfigurator()
         .configureCluster(CLUSTER_NAME)
         .withNodeSelector("os_arch", "x86_64");
@@ -953,7 +953,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenClusterHasNodeName_createPodWithIt() {
+  void whenClusterHasNodeName_createPodWithIt() {
     getConfigurator()
         .configureCluster(CLUSTER_NAME)
         .withNodeName("kube-01");
@@ -965,7 +965,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenClusterHasSchedulerName_createPodWithIt() {
+  void whenClusterHasSchedulerName_createPodWithIt() {
     getConfigurator()
         .configureCluster(CLUSTER_NAME)
         .withSchedulerName("my-scheduler");
@@ -977,7 +977,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenClusterHasRuntimeClassName_createPodWithIt() {
+  void whenClusterHasRuntimeClassName_createPodWithIt() {
     getConfigurator()
         .configureCluster(CLUSTER_NAME)
         .withRuntimeClassName("RuntimeClassName");
@@ -989,7 +989,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenClusterHasPriorityClassName_createPodWithIt() {
+  void whenClusterHasPriorityClassName_createPodWithIt() {
     getConfigurator()
         .configureCluster(CLUSTER_NAME)
         .withPriorityClassName("PriorityClassName");
@@ -1001,7 +1001,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenClusterHasRestartPolicy_createPodWithIt() {
+  void whenClusterHasRestartPolicy_createPodWithIt() {
     getConfigurator()
         .configureCluster(CLUSTER_NAME)
         .withRestartPolicy("Always");
@@ -1013,7 +1013,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenClusterHasPodSecurityContext_createPodWithIt() {
+  void whenClusterHasPodSecurityContext_createPodWithIt() {
     getConfigurator()
         .configureCluster(CLUSTER_NAME)
         .withPodSecurityContext(podSecurityContext);
@@ -1025,7 +1025,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenClusterHasContainerSecurityContext_createContainersWithIt() {
+  void whenClusterHasContainerSecurityContext_createContainersWithIt() {
     getConfigurator()
         .configureCluster(CLUSTER_NAME)
         .withContainerSecurityContext(containerSecurityContext);
@@ -1038,7 +1038,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenClusterHasResources_createContainersWithThem() {
+  void whenClusterHasResources_createContainersWithThem() {
     getConfigurator()
         .configureCluster(CLUSTER_NAME)
         .withLimitRequirement("cpu", "1Gi")
@@ -1052,7 +1052,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainAndClusterHaveAuxImages_createManagedPodsWithInitContainersInCorrectOrderAndVolumeMounts() {
+  void whenDomainAndClusterHaveAuxImages_createManagedPodsWithInitContainersInCorrectOrderAndVolumeMounts() {
     getConfigurator()
             .withAuxiliaryImageVolumes(getAuxiliaryImageVolume())
             .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")));
@@ -1077,7 +1077,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenClusterHasAuxiliaryImageAndVolumeHasMountPath_volumeMountsCreatedWithSpecifiedMountPath() {
+  void whenClusterHasAuxiliaryImageAndVolumeHasMountPath_volumeMountsCreatedWithSpecifiedMountPath() {
     getConfigurator()
             .withAuxiliaryImageVolumes(getAuxiliaryImageVolume(CUSTOM_MOUNT_PATH2))
             .configureCluster(CLUSTER_NAME)
@@ -1089,7 +1089,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenClusterHasAffinityWithVariables_createManagedPodWithSubstitutions() {
+  void whenClusterHasAffinityWithVariables_createManagedPodWithSubstitutions() {
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
     getConfigurator()
         .configureCluster(CLUSTER_NAME)
@@ -1123,7 +1123,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainAndClusterBothHaveAffinityWithVariables_createManagedPodWithSubstitutions() {
+  void whenDomainAndClusterBothHaveAffinityWithVariables_createManagedPodWithSubstitutions() {
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
     getConfigurator()
         .withAffinity(
@@ -1248,7 +1248,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenPodCreated_containerHasTwoPortsForSip() {
+  void whenPodCreated_containerHasTwoPortsForSip() {
     addSipPorts();
 
     V1Container v1Container = getCreatedPodSpecContainer();
@@ -1269,7 +1269,7 @@ public class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenPodCreated_containerHasTwoPortsForSips() {
+  void whenPodCreated_containerHasTwoPortsForSips() {
     addSipPorts();
     V1Container v1Container = getCreatedPodSpecContainer();
 

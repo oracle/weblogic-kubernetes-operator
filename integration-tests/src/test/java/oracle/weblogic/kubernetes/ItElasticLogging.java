@@ -55,21 +55,21 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyElasticsearch;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyKibana;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyWlsLoggingExporter;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.uninstallAndVerifyElasticsearch;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.uninstallAndVerifyKibana;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyLoggingExporterReady;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.installAndVerifyElasticsearch;
+import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.installAndVerifyKibana;
+import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.installAndVerifyWlsLoggingExporter;
+import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.uninstallAndVerifyElasticsearch;
+import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.uninstallAndVerifyKibana;
+import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.verifyLoggingExporterReady;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
+import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
+import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -229,7 +229,7 @@ class ItElasticLogging {
    */
   @Test
   @DisplayName("Use Elasticsearch Count API to query logs of level=INFO and verify")
-  public void testLogLevelSearch() {
+  void testLogLevelSearch() {
     // Verify that number of logs is not zero and failed count is zero
     String regex = ".*count\":(\\d+),.*failed\":(\\d+)";
     String queryCriteria = "/_count?q=level:INFO";
@@ -245,7 +245,7 @@ class ItElasticLogging {
    */
   @Test
   @DisplayName("Use Elasticsearch Search APIs to query Operator log info and verify")
-  public void testOperatorLogSearch() {
+  void testOperatorLogSearch() {
     // Verify that log occurrence for Operator are not empty
     String regex = ".*took\":(\\d+),.*hits\":\\{(.+)\\}";
     String queryCriteria = "/_search?q=type:weblogic-operator";
@@ -262,7 +262,7 @@ class ItElasticLogging {
   @Disabled("Disabled the test due to JIRA OWLS-83899")
   @Test
   @DisplayName("Use Elasticsearch Search APIs to query Operator log info and verify")
-  public void testWebLogicLogSearch() {
+  void testWebLogicLogSearch() {
     // Verify that the admin status of "RUNNING" is found in query return from Elasticsearch repository
     verifyServerRunningInSearchResults(adminServerPodName);
 
@@ -278,7 +278,7 @@ class ItElasticLogging {
    */
   @Test
   @DisplayName("Use Elasticsearch Search APIs to query WebLogic log info in WLS server pod and verify")
-  public void testWlsLoggingExporter() throws Exception {
+  void testWlsLoggingExporter() throws Exception {
     Map<String, String> wlsMap = verifyLoggingExporterReady(opNamespace, null, WEBLOGIC_INDEX_KEY);
     // merge testVarMap and wlsMap
     testVarMap.putAll(wlsMap);

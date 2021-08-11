@@ -91,7 +91,7 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
  * servers should be running.
  */
 @SuppressWarnings({"ConstantConditions", "SameParameterValue"})
-public class ManagedServersUpStepTest {
+class ManagedServersUpStepTest {
 
   private static final String DOMAIN = "domain";
   private static final String NS = "namespace";
@@ -160,7 +160,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenEnabled_logCurrentServers() {
+  void whenEnabled_logCurrentServers() {
     List<LogRecord> messages = new ArrayList<>();
     consoleHandlerMemento.withLogLevel(Level.FINE).collectLogMessages(messages, SERVERS_UP_MSG);
     addRunningServer("admin");
@@ -190,7 +190,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenStartPolicyUndefined_startServers() {
+  void whenStartPolicyUndefined_startServers() {
     invokeStepWithConfiguredServer();
 
     assertServersToBeStarted();
@@ -203,7 +203,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenStartPolicyIfNeeded_startServers() {
+  void whenStartPolicyIfNeeded_startServers() {
     setDefaultServerStartPolicy(ConfigurationConstants.START_IF_NEEDED);
 
     invokeStepWithConfiguredServer();
@@ -212,7 +212,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenStartPolicyAlways_startServers() {
+  void whenStartPolicyAlways_startServers() {
     startAllServers();
 
     invokeStepWithConfiguredServer();
@@ -233,7 +233,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenStartPolicyAdminOnly_dontStartServers() {
+  void whenStartPolicyAdminOnly_dontStartServers() {
     startAdminServerOnly();
 
     invokeStepWithConfiguredServer();
@@ -249,7 +249,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenNoServerStartRequested_dontStartServers() {
+  void whenNoServerStartRequested_dontStartServers() {
     startNoServers();
 
     invokeStepWithConfiguredServer();
@@ -262,7 +262,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenWlsServerInDomainSpec_addToServerList() {
+  void whenWlsServerInDomainSpec_addToServerList() {
     configureServerToStart("wls1");
     addWlsServer("wls1");
 
@@ -272,7 +272,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenServerInDomainSpecButNotDefinedInWls_dontAddToServerList() {
+  void whenServerInDomainSpecButNotDefinedInWls_dontAddToServerList() {
     configureServerToStart("wls1");
 
     invokeStep();
@@ -281,7 +281,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenMultipleWlsServersInDomainSpec_addToServerList() {
+  void whenMultipleWlsServersInDomainSpec_addToServerList() {
     configureServers("wls1", "wls2", "wls3");
     addWlsServers("wls1", "wls2", "wls3");
 
@@ -291,7 +291,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenMultipleWlsServersInDomainSpec_skipAdminServer() {
+  void whenMultipleWlsServersInDomainSpec_skipAdminServer() {
     defineAdminServer();
     configureServers("wls1", ADMIN, "wls3");
     addWlsServers("wls1", ADMIN, "wls3");
@@ -302,7 +302,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenWlsServersDuplicatedInDomainSpec_skipDuplicates() {
+  void whenWlsServersDuplicatedInDomainSpec_skipDuplicates() {
     defineAdminServer();
     configureServers("wls1", "wls1", "wls2");
     addWlsServers("wls1", "wls2");
@@ -313,7 +313,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenWlsServersInDomainSpec_addStartupInfo() {
+  void whenWlsServersInDomainSpec_addStartupInfo() {
     configureServerToStart("wls1");
     configureServerToStart("wls2");
     addWlsServers("wls1", "wls2");
@@ -325,7 +325,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void serverStartupInfo_containsEnvironmentVariable() {
+  void serverStartupInfo_containsEnvironmentVariable() {
     configureServerToStart("wls1")
         .withEnvironmentVariable("item1", "value1")
         .withEnvironmentVariable("item2", "value2");
@@ -339,7 +339,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenWlsServerNotInCluster_serverStartupInfoHasNoClusterConfig() {
+  void whenWlsServerNotInCluster_serverStartupInfoHasNoClusterConfig() {
     configureServerToStart("wls1");
     addWlsServer("wls1");
 
@@ -349,7 +349,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenWlsServerInCluster_serverStartupInfoHasMatchingClusterConfig() {
+  void whenWlsServerInCluster_serverStartupInfoHasMatchingClusterConfig() {
     configureServerToStart("ms1");
 
     addWlsCluster("cluster1", "ms1");
@@ -361,7 +361,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenClusterStartupDefinedForServerNotRunning_addToServers() {
+  void whenClusterStartupDefinedForServerNotRunning_addToServers() {
     configureServerToStart("ms1");
     configureCluster("cluster1");
     addWlsCluster("cluster1", "ms1");
@@ -372,7 +372,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenClusterStartupDefinedWithZeroReplicas_addNothingToServers() {
+  void whenClusterStartupDefinedWithZeroReplicas_addNothingToServers() {
     configureCluster("cluster1").withReplicas(0);
     addWlsCluster("cluster1", "ms1", "ms2");
 
@@ -382,7 +382,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenServerStartupNotDefined_useEnvForCluster() {
+  void whenServerStartupNotDefined_useEnvForCluster() {
     configureCluster("cluster1").withEnvironmentVariable("item1", "value1");
     addWlsCluster("cluster1", "ms1");
 
@@ -394,7 +394,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void withStartSpecifiedWhenWlsClusterNotInDomainSpec_dontAddServersToList() {
+  void withStartSpecifiedWhenWlsClusterNotInDomainSpec_dontAddServersToList() {
     startConfiguredServers();
     setDefaultReplicas(0);
     setCluster1Replicas(3);
@@ -406,7 +406,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void withStartNoneWhenWlsClusterNotInDomainSpec_dontAddServersToList() {
+  void withStartNoneWhenWlsClusterNotInDomainSpec_dontAddServersToList() {
     startNoServers();
     setCluster1Replicas(3);
     addWlsCluster("cluster1", "ms1", "ms2", "ms3", "ms4", "ms5");
@@ -417,7 +417,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void withStartAdminWhenWlsClusterNotInDomainSpec_dontAddServersToList() {
+  void withStartAdminWhenWlsClusterNotInDomainSpec_dontAddServersToList() {
     startAdminServerOnly();
     setCluster1Replicas(3);
     addWlsCluster("cluster1", "ms1", "ms2", "ms3", "ms4", "ms5");
@@ -428,7 +428,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void withStartAutoWhenWlsClusterNotInDomainSpec_addServersToListUpToReplicaLimit() {
+  void withStartAutoWhenWlsClusterNotInDomainSpec_addServersToListUpToReplicaLimit() {
     setDefaultServerStartPolicy(ConfigurationConstants.START_IF_NEEDED);
     setCluster1Replicas(3);
     addWlsCluster("cluster1", "ms1", "ms2", "ms3", "ms4", "ms5");
@@ -439,7 +439,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void withStartAllWhenWlsClusterNotInDomainSpec_addClusteredServersToListUpWithoutLimit() {
+  void withStartAllWhenWlsClusterNotInDomainSpec_addClusteredServersToListUpWithoutLimit() {
     startAllServers();
     setCluster1Replicas(3);
     addWlsCluster("cluster1", "ms1", "ms2", "ms3", "ms4", "ms5");
@@ -452,7 +452,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenWlsClusterNotInDomainSpec_recordServerAndClusterConfigs() {
+  void whenWlsClusterNotInDomainSpec_recordServerAndClusterConfigs() {
     setCluster1Replicas(3);
     addWlsServers("ms1", "ms2", "ms3", "ms4", "ms5");
     addWlsCluster("cluster1", "ms1", "ms2", "ms3", "ms4", "ms5");
@@ -465,7 +465,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenWlsClusterNotInDomainSpec_startUpToLimit() {
+  void whenWlsClusterNotInDomainSpec_startUpToLimit() {
     setCluster1Replicas(3);
     addWlsServers("ms1", "ms2", "ms3", "ms4", "ms5");
     addWlsCluster("cluster1", "ms1", "ms2", "ms3", "ms4", "ms5");
@@ -476,7 +476,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void withStartPolicyAlways_addNonManagedServers() {
+  void withStartPolicyAlways_addNonManagedServers() {
     startAllServers();
     addWlsServer("ms1");
 
@@ -487,28 +487,28 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenShuttingDown_insertCreateAvailableStep() {
+  void whenShuttingDown_insertCreateAvailableStep() {
     configurator.setShuttingDown(true);
 
     assertThat(createNextStep().getClass().getSimpleName(), equalTo("AvailableStep"));
   }
 
   @Test
-  public void whenNotShuttingDown_dontInsertCreateAvailableStep() {
+  void whenNotShuttingDown_dontInsertCreateAvailableStep() {
     configurator.setShuttingDown(false);
 
     assertThat(createNextStep(), instanceOf(ClusterServicesStep.class));
   }
 
   @Test
-  public void whenShuttingDownAtLeastOneServer_prependServerDownIteratorStep() {
+  void whenShuttingDownAtLeastOneServer_prependServerDownIteratorStep() {
     addServer(domainPresenceInfo, "server1");
 
     assertThat(skipProgressingStep(createNextStep()), instanceOf(ServerDownIteratorStep.class));
   }
 
   @Test
-  public void whenExclusionsSpecified_doNotAddToListOfServers() {
+  void whenExclusionsSpecified_doNotAddToListOfServers() {
     addServer(domainPresenceInfo, "server1");
     addServer(domainPresenceInfo, "server2");
     addServer(domainPresenceInfo, "server3");
@@ -519,7 +519,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenShuttingDown_allowAdminServerNameInListOfServers() {
+  void whenShuttingDown_allowAdminServerNameInListOfServers() {
     configurator.setShuttingDown(true);
 
     addServer(domainPresenceInfo, "server1");
@@ -532,7 +532,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenClusterStartupDefinedWithPreCreateServerService_addAllToServers() {
+  void whenClusterStartupDefinedWithPreCreateServerService_addAllToServers() {
     configureCluster("cluster1").withPrecreateServerService(true);
     addWlsCluster("cluster1", "ms1", "ms2");
 
@@ -542,7 +542,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenClusterStartupDefinedWithPreCreateServerService_adminServerDown_addAllToServers() {
+  void whenClusterStartupDefinedWithPreCreateServerService_adminServerDown_addAllToServers() {
     configureCluster("cluster1").withPrecreateServerService(true);
     addWlsCluster("cluster1", "ms1", "ms2");
     configureAdminServer().withServerStartPolicy(START_NEVER);
@@ -553,7 +553,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenClusterStartupDefinedWithPreCreateServerService_managedServerDown_addAllToServers() {
+  void whenClusterStartupDefinedWithPreCreateServerService_managedServerDown_addAllToServers() {
     configureCluster("cluster1").withPrecreateServerService(true).withServerStartPolicy(START_NEVER);
     addWlsCluster("cluster1", "ms1", "ms2");
 
@@ -563,7 +563,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenClusterStartupDefinedWithPreCreateServerService_allServersDown_addNothingToServers() {
+  void whenClusterStartupDefinedWithPreCreateServerService_allServersDown_addNothingToServers() {
     configureCluster("cluster1").withPrecreateServerService(true).withServerStartPolicy(START_NEVER);
     addWlsCluster("cluster1", "ms1", "ms2");
     configureAdminServer().withServerStartPolicy(START_NEVER);
@@ -574,7 +574,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenReplicasLessThanMinDynClusterSize_setReplicaCountToMinClusterSize() {
+  void whenReplicasLessThanMinDynClusterSize_setReplicaCountToMinClusterSize() {
     startNoServers();
     setCluster1Replicas(0);
     setCluster1AllowReplicasBelowMinDynClusterSize(false);
@@ -587,7 +587,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenReplicasLessThanMinDynClusterSize_allowBelowMin_doNotChangeReplicaCount() {
+  void whenReplicasLessThanMinDynClusterSize_allowBelowMin_doNotChangeReplicaCount() {
     startNoServers();
     setCluster1Replicas(0);
 
@@ -599,7 +599,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenReplicasMoreThanMinDynClusterSize_doNotChangeReplicaCount() {
+  void whenReplicasMoreThanMinDynClusterSize_doNotChangeReplicaCount() {
     startNoServers();
     setCluster1Replicas(3);
     setCluster1AllowReplicasBelowMinDynClusterSize(false);
@@ -612,7 +612,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenReplicasLessThanMinDynClusterSize_logMessage() {
+  void whenReplicasLessThanMinDynClusterSize_logMessage() {
     List<LogRecord> messages = new ArrayList<>();
     consoleHandlerMemento.withLogLevel(Level.WARNING)
         .collectLogMessages(messages, REPLICAS_LESS_THAN_TOTAL_CLUSTER_SERVER_COUNT);
@@ -629,7 +629,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenReplicasLessThanDynClusterSize_createsEvent() {
+  void whenReplicasLessThanDynClusterSize_createsEvent() {
     startNoServers();
     setCluster1Replicas(0);
     addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
@@ -641,7 +641,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenReplicasLessThanDynClusterSize_addValidationWarning() {
+  void whenReplicasLessThanDynClusterSize_addValidationWarning() {
     startNoServers();
     setCluster1Replicas(0);
     addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
@@ -654,7 +654,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenReplicasExceedsMaxDynClusterSize_logMessage() {
+  void whenReplicasExceedsMaxDynClusterSize_logMessage() {
     List<LogRecord> messages = new ArrayList<>();
     consoleHandlerMemento.withLogLevel(Level.WARNING)
         .collectLogMessages(messages, REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT);
@@ -670,7 +670,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenReplicasExceedsMaxDynClusterSize_createsEvent() {
+  void whenReplicasExceedsMaxDynClusterSize_createsEvent() {
     startNoServers();
     setCluster1Replicas(10);
     addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
@@ -681,7 +681,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenReplicasExceedsMaxDynClusterSize_addValidationWarning() {
+  void whenReplicasExceedsMaxDynClusterSize_addValidationWarning() {
     startNoServers();
     setCluster1Replicas(10);
     addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
@@ -693,7 +693,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenReplicasExceedsMaxDynClusterSize_andStartNoServers_createsEvent() {
+  void whenReplicasExceedsMaxDynClusterSize_andStartNoServers_createsEvent() {
     startNoServers();
     setCluster1Replicas(10);
     addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
@@ -704,7 +704,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void withInvalidReplicasDuringExplicitRecheck_addValidationWarning() {
+  void withInvalidReplicasDuringExplicitRecheck_addValidationWarning() {
     setExplicitRecheck();
     setCluster1Replicas(10);
     addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
@@ -716,7 +716,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void withInvalidReplicasDuringExplicitRecheck_createsNoEvent() {
+  void withInvalidReplicasDuringExplicitRecheck_createsNoEvent() {
     setExplicitRecheck();
     setCluster1Replicas(10);
     addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
@@ -727,7 +727,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void withValidReplicas_noEventsCreated() {
+  void withValidReplicas_noEventsCreated() {
     setCluster1Replicas(2);
     addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
 
@@ -737,7 +737,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void withValidReplicas_noValidationWarnings() {
+  void withValidReplicas_noValidationWarnings() {
     setCluster1Replicas(2);
     addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
 
@@ -747,7 +747,7 @@ public class ManagedServersUpStepTest {
   }
 
   @Test
-  public void whenDomainTopologyIsMissing_noExceptionAndDontStartServers() {
+  void whenDomainTopologyIsMissing_noExceptionAndDontStartServers() {
     invokeStepWithoutDomainTopology();
 
     assertServersWillNotBeStarted();

@@ -60,6 +60,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResource
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
+import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppIsRunning;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.checkApplicationRuntime;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.checkWorkManagerRuntime;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDatabaseSecret;
@@ -72,27 +73,26 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.replaceConfigM
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyIntrospectorRuns;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodIntrospectVersionUpdated;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
-import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchDomainResourceWithNewReplicaCountAtSpecLevel;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkAppIsRunning;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDeleted;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfig;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfiguration;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceRuntime;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPV;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVC;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getIntrospectJobName;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runClientInsidePod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runJavacInsidePod;
+import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResourceWithNewReplicaCountAtSpecLevel;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
+import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
+import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -295,7 +295,7 @@ class ItMiiDynamicUpdate {
   @Test
   @Order(1)
   @DisplayName("Add a work manager to a model-in-image domain using dynamic update")
-  public void testMiiAddWorkManager() {
+  void testMiiAddWorkManager() {
 
     // This test uses the WebLogic domain created in BeforeAll method
     // BeforeEach method ensures that the server pods are running
@@ -343,7 +343,7 @@ class ItMiiDynamicUpdate {
   @Test
   @Order(2)
   @DisplayName("Update work manager min/max threads constraints config to a model-in-image domain using dynamic update")
-  public void testMiiUpdateWorkManager() {
+  void testMiiUpdateWorkManager() {
 
     // This test uses the WebLogic domain created in BeforeAll method
     // BeforeEach method ensures that the server pods are running
@@ -389,7 +389,7 @@ class ItMiiDynamicUpdate {
   @Test
   @Order(3)
   @DisplayName("Change target for the application deployment using mii dynamic update")
-  public void testMiiChangeTarget() {
+  void testMiiChangeTarget() {
 
     // This test uses the WebLogic domain created in BeforeAll method
     // BeforeEach method ensures that the server pods are running
@@ -449,7 +449,7 @@ class ItMiiDynamicUpdate {
   @Test
   @Order(4)
   @DisplayName("Add cluster in MII domain using mii dynamic update")
-  public void testMiiAddCluster() {
+  void testMiiAddCluster() {
     // This test uses the WebLogic domain created in BeforeAll method
     // BeforeEach method ensures that the server pods are running
 
@@ -502,7 +502,7 @@ class ItMiiDynamicUpdate {
   @Test
   @Order(5)
   @DisplayName("Add datasource in MII domain using mii dynamic update")
-  public void testMiiAddDataSource() {
+  void testMiiAddDataSource() {
     // This test uses the WebLogic domain created in BeforeAll method
     // BeforeEach method ensures that the server pods are running
     addDataSourceAndVerify(true);
@@ -519,7 +519,7 @@ class ItMiiDynamicUpdate {
   @Test
   @Order(6)
   @DisplayName("Changing datasource parameters with CommitUpdateAndRoll using mii dynamic update")
-  public void testMiiChangeDataSourceParameterWithCommitUpdateAndRoll() {
+  void testMiiChangeDataSourceParameterWithCommitUpdateAndRoll() {
 
     // This test uses the WebLogic domain created in BeforeAll method
     // BeforeEach method ensures that the server pods are running
@@ -593,7 +593,7 @@ class ItMiiDynamicUpdate {
   @Order(7)
   @DisplayName("Changing Weblogic datasource URL and deleting application with CommitUpdateAndRoll "
       + "using mii dynamic update")
-  public void testMiiDeleteAppChangeDBUrlWithCommitUpdateAndRoll() {
+  void testMiiDeleteAppChangeDBUrlWithCommitUpdateAndRoll() {
 
     // This test uses the WebLogic domain created in BeforeAll method
     // BeforeEach method ensures that the server pods are running
@@ -670,7 +670,7 @@ class ItMiiDynamicUpdate {
   @Test
   @Order(8)
   @DisplayName("Deleting Datasource")
-  public void testMiiDeleteDatasource() {
+  void testMiiDeleteDatasource() {
 
     // This test uses the WebLogic domain created in BeforeAll method
     // BeforeEach method ensures that the server pods are running
@@ -723,7 +723,7 @@ class ItMiiDynamicUpdate {
   @Test
   @Order(9)
   @DisplayName("Negative test changing domain name using mii dynamic update")
-  public void testMiiChangeDomainName() {
+  void testMiiChangeDomainName() {
     // write sparse yaml to file
     Path pathToChangeDomainNameYaml = Paths.get(WORK_DIR + "/changedomainname.yaml");
     String yamlToChangeDomainName = "topology:\n"
@@ -769,7 +769,7 @@ class ItMiiDynamicUpdate {
   @Test
   @Order(10)
   @DisplayName("Negative test changing listen port of a server using mii dynamic update")
-  public void testMiiChangeListenPort() {
+  void testMiiChangeListenPort() {
 
     // This test uses the WebLogic domain created in BeforeAll method
     // BeforeEach method ensures that the server pods are running
@@ -818,7 +818,7 @@ class ItMiiDynamicUpdate {
   @Test
   @Order(11)
   @DisplayName("Negative test changing listen address of a server using mii dynamic update")
-  public void testMiiChangeListenAddress() {
+  void testMiiChangeListenAddress() {
     // write sparse yaml to file
     Path pathToChangeListenAddressYaml = Paths.get(WORK_DIR + "/changelistenAddress.yaml");
     String yamlToChangeListenAddress = "topology:\n"
@@ -863,7 +863,7 @@ class ItMiiDynamicUpdate {
   @Test
   @Order(12)
   @DisplayName("Negative test changing SSL setting of a server using mii dynamic update")
-  public void testMiiChangeSSL() {
+  void testMiiChangeSSL() {
 
     // This test uses the WebLogic domain created in BeforeAll method
     // BeforeEach method ensures that the server pods are running
@@ -916,7 +916,7 @@ class ItMiiDynamicUpdate {
   @Test
   @Order(14)
   @DisplayName("Test non-dynamic changes with onNonDynamicChanges default value CommitUpdateOnly")
-  public void testOnNonDynamicChangesCommitUpdateOnly() {
+  void testOnNonDynamicChangesCommitUpdateOnly() {
 
     String expectedMsgForCommitUpdateOnly =
         "Online WebLogic configuration updates complete but there are pending non-dynamic changes "
@@ -1010,7 +1010,7 @@ class ItMiiDynamicUpdate {
   @Test
   @Order(15)
   @DisplayName("verify the operator logs introspector job messages")
-  public void testOperatorLogIntrospectorMsg() {
+  void testOperatorLogIntrospectorMsg() {
     String operatorPodName =
         assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
     logger.info("operator pod name: {0}", operatorPodName);
@@ -1031,7 +1031,7 @@ class ItMiiDynamicUpdate {
   @Test
   @Order(16)
   @DisplayName("Test modification to Dynamic cluster size parameters")
-  public void testMiiUpdateDynamicClusterSize() {
+  void testMiiUpdateDynamicClusterSize() {
 
     // Scale the cluster by updating the replica count to 5
     logger.info("[Before Patching] updating the replica count to 5");
@@ -1158,7 +1158,7 @@ class ItMiiDynamicUpdate {
   @Test
   @Order(17)
   @DisplayName("Remove all targets for the application deployment in MII domain using mii dynamic update")
-  public void testMiiRemoveTarget() {
+  void testMiiRemoveTarget() {
 
     // This test uses the WebLogic domain created in BeforeAll method
     // BeforeEach method ensures that the server pods are running

@@ -8,23 +8,23 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public class LoggingFilterTest {
+class LoggingFilterTest {
 
   @Test
-  public void verifyCanLogWithoutLoggingFilterReturnsTrue() {
+  void verifyCanLogWithoutLoggingFilterReturnsTrue() {
 
     LoggingFilter loggingFilter = null;
     assertThat(LoggingFilter.canLog(loggingFilter, "message"), is(true));
   }
 
   @Test
-  public void verifyCanLogReturnsTrueValueFromLoggingFilter() {
+  void verifyCanLogReturnsTrueValueFromLoggingFilter() {
     LoggingFilter returnTrueLoggingFilter = MockLoggingFilter.createWithReturnValue(true);
     assertThat(LoggingFilter.canLog(returnTrueLoggingFilter, "message"), is(true));
   }
 
   @Test
-  public void verifyCanLogReturnsFalseValueFromLoggingFilter() {
+  void verifyCanLogReturnsFalseValueFromLoggingFilter() {
     LoggingFilter returnFalseLoggingFilter = MockLoggingFilter.createWithReturnValue(false);
     assertThat(LoggingFilter.canLog(returnFalseLoggingFilter, "message"), is(false));
   }

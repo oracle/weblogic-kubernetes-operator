@@ -36,7 +36,6 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.CleanupUtil;
-import oracle.weblogic.kubernetes.utils.CommonTestUtils;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
@@ -62,20 +61,25 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorContaine
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Docker.getImageEnvVar;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
+import static oracle.weblogic.kubernetes.utils.ApplicationUtils.collectAppAvailability;
+import static oracle.weblogic.kubernetes.utils.ApplicationUtils.deployAndAccessApplication;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.collectAppAvailability;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.deployAndAccessApplication;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.upgradeAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
+import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.DbUtils.deleteDb;
 import static oracle.weblogic.kubernetes.utils.DbUtils.setupDBandRCUschema;
-import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
+import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
+import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -91,7 +95,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Tests to upgrade Operator with FMW domain in PV using WLST")
 @IntegrationTest
-public class ItOpUpgradeFmwDomainInPV {
+class ItOpUpgradeFmwDomainInPV {
 
   private static ConditionFactory withStandardRetryPolicy;
   private static ConditionFactory withQuickRetryPolicy;
@@ -216,7 +220,7 @@ public class ItOpUpgradeFmwDomainInPV {
    */
   @Test
   @DisplayName("Upgrade Operator from 2.6.0 to main")
-  public void testOperatorFmwUpgradeFrom260ToMain() {
+  void testOperatorFmwUpgradeFrom260ToMain() {
     installAndUpgradeOperator("2.6.0", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX,  false);
   }
 
@@ -225,7 +229,7 @@ public class ItOpUpgradeFmwDomainInPV {
    */
   @Test
   @DisplayName("Upgrade Operator from 3.0.3 to main")
-  public void testOperatorFmwUpgradeFrom303ToMain() {
+  void testOperatorFmwUpgradeFrom303ToMain() {
     this.namespaces = namespaces;
     installAndUpgradeOperator("3.0.3", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
@@ -235,7 +239,7 @@ public class ItOpUpgradeFmwDomainInPV {
    */
   @Test
   @DisplayName("Upgrade Operator from 3.0.4 to main")
-  public void testOperatorFmwUpgradeFrom304ToMain() {
+  void testOperatorFmwUpgradeFrom304ToMain() {
     this.namespaces = namespaces;
     installAndUpgradeOperator("3.0.4", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
@@ -245,7 +249,7 @@ public class ItOpUpgradeFmwDomainInPV {
    */
   @Test
   @DisplayName("Upgrade Operator from 3.1.3 to main")
-  public void testOperatorFmwUpgradeFrom313ToMain() {
+  void testOperatorFmwUpgradeFrom313ToMain() {
     installAndUpgradeOperator("3.1.3", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
@@ -254,7 +258,7 @@ public class ItOpUpgradeFmwDomainInPV {
    */
   @Test
   @DisplayName("Upgrade Operator from 3.1.4 to main")
-  public void testOperatorFmwUpgradeFrom314ToMain() {
+  void testOperatorFmwUpgradeFrom314ToMain() {
     installAndUpgradeOperator("3.1.4", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
@@ -263,7 +267,7 @@ public class ItOpUpgradeFmwDomainInPV {
    */
   @Test
   @DisplayName("Upgrade Operator from 3.2.0 to main")
-  public void testOperatorFmwUpgradeFrom320ToMain() {
+  void testOperatorFmwUpgradeFrom320ToMain() {
     installAndUpgradeOperator("3.2.0", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
@@ -272,7 +276,7 @@ public class ItOpUpgradeFmwDomainInPV {
    */
   @Test
   @DisplayName("Upgrade Operator from 3.2.4 to main")
-  public void testOperatorFmwUpgradeFrom324ToMain() {
+  void testOperatorFmwUpgradeFrom324ToMain() {
     installAndUpgradeOperator("3.2.4", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
@@ -281,7 +285,7 @@ public class ItOpUpgradeFmwDomainInPV {
    */
   @Test
   @DisplayName("Upgrade Operator from 3.2.5 to main")
-  public void testOperatorFmwUpgradeFrom325ToMain() {
+  void testOperatorFmwUpgradeFrom325ToMain() {
     installAndUpgradeOperator("3.2.5", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
@@ -433,12 +437,12 @@ public class ItOpUpgradeFmwDomainInPV {
         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create RCU credential secret
-    CommonTestUtils.createRcuSecretWithUsernamePassword(rcuSecretName, domainNamespace,
+    createRcuSecretWithUsernamePassword(rcuSecretName, domainNamespace,
         RCUSCHEMAUSERNAME, RCUSCHEMAPASSWORD, RCUSYSUSERNAME, RCUSYSPASSWORD);
 
     // create persistent volume and persistent volume claim for domain
-    CommonTestUtils.createPV(pvName, domainUid, this.getClass().getSimpleName());
-    CommonTestUtils.createPVC(pvName, pvcName, domainUid, domainNamespace);
+    createPV(pvName, domainUid, this.getClass().getSimpleName());
+    createPVC(pvName, pvcName, domainUid, domainNamespace);
 
     File domainPropertiesFile = createWlstPropertyFile(t3ChannelPort);
 
@@ -546,7 +550,7 @@ public class ItOpUpgradeFmwDomainInPV {
     logger.info("Creating a config map to hold domain creation scripts");
     String domainScriptConfigMapName = "create-domain-scripts-cm";
     assertDoesNotThrow(
-        () -> CommonTestUtils.createConfigMapForDomainCreation(domainScriptConfigMapName, domainScriptFiles,
+        () -> createConfigMapForDomainCreation(domainScriptConfigMapName, domainScriptFiles,
             domainNamespace, this.getClass().getSimpleName()),
         "Create configmap for domain creation failed");
 
@@ -560,7 +564,7 @@ public class ItOpUpgradeFmwDomainInPV {
         .addArgsItem("/u01/weblogic/" + domainPropertiesFile.getFileName()); //domain property file
 
     logger.info("Running a Kubernetes job to create the domain");
-    CommonTestUtils.createDomainJob(FMWINFRA_IMAGE_TO_USE_IN_SPEC, pvName, pvcName, domainScriptConfigMapName,
+    createDomainJob(FMWINFRA_IMAGE_TO_USE_IN_SPEC, pvName, pvcName, domainScriptConfigMapName,
         domainNamespace, jobCreationContainer);
   }
 

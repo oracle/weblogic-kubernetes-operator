@@ -14,7 +14,6 @@ import java.util.stream.Collectors;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.util.Yaml;
-import oracle.weblogic.kubernetes.ItKubernetesEvents;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
@@ -24,8 +23,10 @@ import org.awaitility.core.ConditionFactory;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * Helper class for Kubernetes Events checking.
@@ -56,6 +57,30 @@ public class K8sEvents {
             domainNamespace,
             condition.getElapsedTimeInMS(),
             condition.getRemainingTimeInMS()))
+        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid, reason, type, timestamp));
+  }
+
+  /**
+   * Wait until a given event is logged by the operator.
+   *
+   * @param opNamespace namespace in which the operator is running
+   * @param domainNamespace namespace in which the domain exists
+   * @param domainUid UID of the domain
+   * @param reason event to check for Created, Changed, deleted, processing etc
+   * @param type type of event, Normal of Warning
+   * @param timestamp the timestamp after which to see events
+   */
+  public static void checkEvent(
+      String opNamespace, String domainNamespace, String domainUid,
+      String reason, String type, OffsetDateTime timestamp) {
+    withStandardRetryPolicy
+        .conditionEvaluationListener(condition ->
+            getLogger().info("Waiting for domain event {0} to be logged in namespace {1} "
+                    + "(elapsed time {2}ms, remaining time {3}ms)",
+                reason,
+                domainNamespace,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
         .until(checkDomainEvent(opNamespace, domainNamespace, domainUid, reason, type, timestamp));
   }
 
@@ -188,7 +213,7 @@ public class K8sEvents {
         }
       }
     } catch (ApiException ex) {
-      Logger.getLogger(ItKubernetesEvents.class.getName()).log(Level.SEVERE, null, ex);
+      Logger.getLogger(K8sEvents.class.getName()).log(Level.SEVERE, null, ex);
     }
     return null;
   }
@@ -223,7 +248,7 @@ public class K8sEvents {
           }
         }
       } catch (ApiException ex) {
-        Logger.getLogger(ItKubernetesEvents.class.getName()).log(Level.SEVERE, null, ex);
+        Logger.getLogger(K8sEvents.class.getName()).log(Level.SEVERE, null, ex);
       }
       return false;
     };
@@ -252,7 +277,7 @@ public class K8sEvents {
         }
       }
     } catch (ApiException ex) {
-      Logger.getLogger(ItKubernetesEvents.class.getName()).log(Level.SEVERE, null, ex);
+      Logger.getLogger(K8sEvents.class.getName()).log(Level.SEVERE, null, ex);
     }
     return 0;
   }
@@ -279,7 +304,7 @@ public class K8sEvents {
         }
       }
     } catch (ApiException ex) {
-      Logger.getLogger(ItKubernetesEvents.class.getName()).log(Level.SEVERE, null, ex);
+      Logger.getLogger(K8sEvents.class.getName()).log(Level.SEVERE, null, ex);
       return -1;
     }
     return count;
@@ -304,10 +329,39 @@ public class K8sEvents {
                 .filter(e -> e.getReason().contains(reason))
                 .filter(e -> isEqualOrAfter(timestamp, e)).collect(Collectors.toList()).size());
       } catch (ApiException ex) {
-        Logger.getLogger(ItKubernetesEvents.class.getName()).log(Level.SEVERE, null, ex);
+        Logger.getLogger(K8sEvents.class.getName()).log(Level.SEVERE, null, ex);
       }
       return false;
     };
+  }
+
+  /**
+   * Check the domain event contains the expected error msg.
+   *
+   * @param opNamespace namespace in which the operator is running
+   * @param domainNamespace namespace in which the domain exists
+   * @param domainUid UID of the domain
+   * @param reason event to check for Created, Changed, deleted, processing etc
+   * @param type type of event, Normal of Warning
+   * @param timestamp the timestamp after which to see events
+   * @param expectedMsg the expected message in the domain event message
+   */
+  public static void checkDomainEventContainsExpectedMsg(String opNamespace,
+                                                         String domainNamespace,
+                                                         String domainUid,
+                                                         String reason,
+                                                         String type,
+                                                         OffsetDateTime timestamp,
+                                                         String expectedMsg) {
+    checkEvent(opNamespace, domainNamespace, domainUid, reason, type, timestamp);
+    CoreV1Event event =
+        getEvent(opNamespace, domainNamespace, domainUid, reason, type, timestamp);
+    if (event != null && event.getMessage() != null) {
+      assertTrue(event.getMessage().contains(expectedMsg),
+          String.format("The event message does not contain the expected msg %s", expectedMsg));
+    } else {
+      fail("event is null or event message is null");
+    }
   }
 
   private static boolean isEqualOrAfter(OffsetDateTime timestamp, CoreV1Event event) {
@@ -320,7 +374,7 @@ public class K8sEvents {
   }
 
   private static Boolean logErrorAndFail(String serverName, int count) {
-    Logger.getLogger(ItKubernetesEvents.class.getName()).log(Level.SEVERE,
+    Logger.getLogger(K8sEvents.class.getName()).log(Level.SEVERE,
             "Pod " + serverName + " restarted " + count + " times");
     return false;
   }

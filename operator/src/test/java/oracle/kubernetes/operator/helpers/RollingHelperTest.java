@@ -61,7 +61,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.collection.IsEmptyCollection.empty;
 
-public class RollingHelperTest {
+class RollingHelperTest {
 
   private static final String ADMIN_SERVER = "ADMIN_SERVER";
   private static final Integer ADMIN_PORT = 7001;
@@ -196,7 +196,7 @@ public class RollingHelperTest {
   }
 
   @Test
-  public void verifyThatManagedServerPodsAreReplacedInOrder() {
+  void verifyThatManagedServerPodsAreReplacedInOrder() {
     initializeExistingPods();
     testSupport.addToPacket(SERVERS_TO_ROLL, rolling);
     SERVER_NAMES.forEach(s -> rolling.put(s, createRollingStepAndPacket(s)));
@@ -212,7 +212,7 @@ public class RollingHelperTest {
   }
 
   @Test
-  public void verifyThatWhenRollingIsEmpty_NoManagedServerPodsAreReplaced() {
+  void verifyThatWhenRollingIsEmpty_NoManagedServerPodsAreReplaced() {
     initializeExistingPods();
     testSupport.addToPacket(SERVERS_TO_ROLL, rolling);
 
@@ -222,7 +222,7 @@ public class RollingHelperTest {
   }
 
   @Test
-  public void afterRoll_domainRollCompletedEventCreated() {
+  void afterRoll_domainRollCompletedEventCreated() {
     initializeExistingPods();
     testSupport.addToPacket(SERVERS_TO_ROLL, rolling);
     testSupport.addToPacket(DOMAIN_ROLL_START_EVENT_GENERATED, "true");
@@ -236,7 +236,7 @@ public class RollingHelperTest {
   }
 
   @Test
-  public void afterRoll_expectedLogMessageFound() {
+  void afterRoll_expectedLogMessageFound() {
     initializeExistingPods();
     testSupport.addToPacket(SERVERS_TO_ROLL, rolling);
     testSupport.addToPacket(DOMAIN_ROLL_START_EVENT_GENERATED, "true");
@@ -255,7 +255,7 @@ public class RollingHelperTest {
   }
 
   @Test
-  public void whenRolling_podCycleEventCreatedWithCorrectMessage() {
+  void whenRolling_podCycleEventCreatedWithCorrectMessage() {
     initializeExistingPods();
     testSupport.addToPacket(SERVERS_TO_ROLL, rolling);
     testSupport.addToPacket(DOMAIN_ROLL_START_EVENT_GENERATED, "true");
@@ -272,7 +272,7 @@ public class RollingHelperTest {
   }
 
   @Test
-  public void whenDomainHomeAndRestartVersionChanged_podCycleEventCreatedWithCorrectMessage() {
+  void whenDomainHomeAndRestartVersionChanged_podCycleEventCreatedWithCorrectMessage() {
     initializeExistingPods();
     testSupport.addToPacket(SERVERS_TO_ROLL, rolling);
     testSupport.addToPacket(DOMAIN_ROLL_START_EVENT_GENERATED, "true");

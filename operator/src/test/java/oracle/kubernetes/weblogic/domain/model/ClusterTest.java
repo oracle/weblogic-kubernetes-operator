@@ -9,7 +9,7 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class ClusterTest extends BaseConfigurationTestBase {
+class ClusterTest extends BaseConfigurationTestBase {
   private final Cluster cluster1;
   private final Cluster cluster2;
 
@@ -23,7 +23,7 @@ public class ClusterTest extends BaseConfigurationTestBase {
   }
 
   @Test
-  public void whenNamesAreTheSame_objectsAreEqual() {
+  void whenNamesAreTheSame_objectsAreEqual() {
     cluster1.setClusterName("one");
     cluster2.setClusterName("one");
 
@@ -31,7 +31,7 @@ public class ClusterTest extends BaseConfigurationTestBase {
   }
 
   @Test
-  public void whenNamesDiffer_objectsAreNotEqual() {
+  void whenNamesDiffer_objectsAreNotEqual() {
     cluster1.setClusterName("one");
     cluster2.setClusterName("two");
 
@@ -39,7 +39,7 @@ public class ClusterTest extends BaseConfigurationTestBase {
   }
 
   @Test
-  public void whenReplicasAreTheSame_objectsAreEqual() {
+  void whenReplicasAreTheSame_objectsAreEqual() {
     cluster1.setReplicas(3);
     cluster2.setReplicas(3);
 
@@ -47,7 +47,7 @@ public class ClusterTest extends BaseConfigurationTestBase {
   }
 
   @Test
-  public void whenReplicasDiffer_objectsAreNotEqual() {
+  void whenReplicasDiffer_objectsAreNotEqual() {
     cluster1.setReplicas(3);
 
     assertThat(cluster1, not(equalTo(cluster2)));

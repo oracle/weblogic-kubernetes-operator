@@ -84,16 +84,16 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.appNotAccessi
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainResourceImagePatched;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podImagePatched;
+import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
-import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
+import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
+import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -166,7 +166,7 @@ class ItMiiDomain {
   @Test
   @Order(1)
   @DisplayName("Create model in image domain and verify external admin services")
-  public void testCreateMiiDomain() {
+  void testCreateMiiDomain() {
     // admin/managed server name here should match with model yaml in MII_BASIC_WDT_MODEL_FILE
     final String adminServerPodName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";
@@ -270,7 +270,7 @@ class ItMiiDomain {
   @Test
   @Order(2)
   @DisplayName("Create a second domain with the image from the the first test")
-  public void testCreateMiiSecondDomainDiffNSSameImage() {
+  void testCreateMiiSecondDomainDiffNSSameImage() {
     // admin/managed server name here should match with model yaml in MII_BASIC_WDT_MODEL_FILE
     final String adminServerPodName = domainUid1 + "-admin-server";
     final String managedServerPrefix = domainUid1 + "-managed-server";
@@ -323,7 +323,7 @@ class ItMiiDomain {
   @Test
   @Order(3)
   @DisplayName("Update the sample-app application to version 2")
-  public void testPatchAppV2() {
+  void testPatchAppV2() {
     
     // application in the new image contains what is in the original application directory sample-app, 
     // plus the replacements or/and additions in the second application directory sample-app-2.
@@ -426,7 +426,7 @@ class ItMiiDomain {
   @Test
   @Order(4)
   @DisplayName("Update the domain with another application")
-  public void testAddSecondApp() {
+  void testAddSecondApp() {
     
     // the existing application is the combination of what are in appDir1 and appDir2 as in test case number 4,
     // the second application is in appDir3.
@@ -503,7 +503,7 @@ class ItMiiDomain {
   @Test
   @Order(5)
   @DisplayName("Check admin service annotations and labels")
-  public void testAdminServiceAnnotationsLabels() {
+  void testAdminServiceAnnotationsLabels() {
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));

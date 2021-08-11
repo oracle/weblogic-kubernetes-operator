@@ -15,10 +15,10 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class PatchUtilsTest {
+class PatchUtilsTest {
 
   @Test
-  public void convertJsonPatch_toKubernetesPatch() {
+  void convertJsonPatch_toKubernetesPatch() {
     JsonPatch build =
         Json.createPatchBuilder()
             .add("/metadata/labels/age", 27)

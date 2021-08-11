@@ -19,7 +19,7 @@ import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progre
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class DomainConditionTest {
+class DomainConditionTest {
 
   private final List<Memento> mementos = new ArrayList<>();
 
@@ -34,19 +34,19 @@ public class DomainConditionTest {
   }
 
   @Test
-  public void whenCreated_conditionHasLastTransitionTime() {
+  void whenCreated_conditionHasLastTransitionTime() {
     assertThat(new DomainCondition(Available).getLastTransitionTime(), SystemClockTestSupport.isDuringTest());
   }
 
   @Test
-  public void predicateDetectsType() {
+  void predicateDetectsType() {
     assertThat(new DomainCondition(Failed).hasType(Failed), is(true));
     assertThat(new DomainCondition(Progressing).hasType(Available), is(false));
     assertThat(new DomainCondition(ConfigChangesPendingRestart).hasType(ConfigChangesPendingRestart), is(true));
   }
 
   @Test
-  public void equalsIgnoresLastTransitionTime() {
+  void equalsIgnoresLastTransitionTime() {
     DomainCondition oldCondition = new DomainCondition(Available).withStatus("True");
     SystemClockTestSupport.increment();
 
@@ -54,7 +54,7 @@ public class DomainConditionTest {
   }
 
   @Test
-  public void mayNotPatchObjects() {
+  void mayNotPatchObjects() {
     DomainCondition oldCondition = new DomainCondition(Available).withStatus("False");
     DomainCondition newCondition = new DomainCondition(Available).withStatus("True");
 

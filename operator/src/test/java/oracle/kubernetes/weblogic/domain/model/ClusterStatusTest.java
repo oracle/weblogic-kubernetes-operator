@@ -10,7 +10,7 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class ClusterStatusTest {
+class ClusterStatusTest {
 
   static final ClusterStatus cluster1 = new ClusterStatus().withClusterName("cluster1");
   static final ClusterStatus cluster2 = new ClusterStatus().withClusterName("cluster2");
@@ -18,7 +18,7 @@ public class ClusterStatusTest {
   static final ClusterStatus nullCluster = new ClusterStatus();
 
   @Test
-  public void verify_Equal_compareTo() {
+  void verify_Equal_compareTo() {
     assertThat("compareTo should return 0 if both Cluster have null cluster name",
         nullCluster.compareTo(new ClusterStatus()), equalTo(0));
     assertThat("compareTo should return 0 if both ClusterStatus have same cluster name",
@@ -26,7 +26,7 @@ public class ClusterStatusTest {
   }
 
   @Test
-  public void verifyThat_cluster1_before_cluster2() {
+  void verifyThat_cluster1_before_cluster2() {
     assertThat("ClusterStatus for cluster1 should be ordered before ClusterStatus for cluster2",
         cluster1.compareTo(cluster2), lessThan(0));
     assertThat("ClusterStatus for cluster2 should be ordered after ClusterStatus for cluster1",
@@ -34,7 +34,7 @@ public class ClusterStatusTest {
   }
 
   @Test
-  public void verifyThat_cluster1_before_cluster10() {
+  void verifyThat_cluster1_before_cluster10() {
     assertThat("ClusterStatus for cluster1 should be ordered before ClusterStatus for cluster10",
         cluster1.compareTo(cluster10), lessThan(0));
     assertThat("ClusterStatus for cluster10 should be ordered after ClusterStatus for cluster1",
@@ -42,7 +42,7 @@ public class ClusterStatusTest {
   }
 
   @Test
-  public void verifyThat_cluster2_before_cluster10() {
+  void verifyThat_cluster2_before_cluster10() {
     assertThat("ClusterStatus for cluster2 should be ordered before ClusterStatus for cluster10",
         cluster2.compareTo(cluster10), lessThan(0));
     assertThat("ClusterStatus for cluster10 should be ordered after ClusterStatus for cluster2",
@@ -50,7 +50,7 @@ public class ClusterStatusTest {
   }
 
   @Test
-  public void verifyThat_nullCluster_before_cluster1() {
+  void verifyThat_nullCluster_before_cluster1() {
     assertThat("ClusterStatus without cluster name should be ordered before ClusterStatus for cluster1",
         nullCluster.compareTo(cluster1), lessThan(0));
     assertThat("ClusterStatus for cluster1 should be ordered after ClusterStatus without cluster name",

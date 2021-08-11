@@ -68,21 +68,21 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmRelease
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorRestServiceRunning;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createExternalRestIdentitySecret;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.upgradeAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
+import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
+import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
+import static oracle.weblogic.kubernetes.utils.SecretUtils.createExternalRestIdentitySecret;
+import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
@@ -204,7 +204,7 @@ class ItUsabilityOperatorHelmChart {
   @Test
   @DisplayName("install operator helm chart and domain, "
       + " then uninstall operator helm chart and verify the domain is still running")
-  public void testDeleteOperatorButNotDomain() {
+  void testDeleteOperatorButNotDomain() {
     // install and verify operator
     logger.info("Installing and verifying operator");
     HelmParams opHelmParams = installAndVerifyOperator(opNamespace, domain1Namespace).getHelmParams();
@@ -293,7 +293,7 @@ class ItUsabilityOperatorHelmChart {
   @Test
   @DisplayName("Install operator helm chart and domain, then uninstall operator helm chart, "
       + " install operator helm chart again and verify it can still manage domain")
-  public void testCreateDeleteCreateOperatorButNotDomain() {
+  void testCreateDeleteCreateOperatorButNotDomain() {
     String opReleaseName = OPERATOR_RELEASE_NAME;
     HelmParams op1HelmParams = new HelmParams().releaseName(opReleaseName)
         .namespace(opNamespace)
@@ -356,7 +356,7 @@ class ItUsabilityOperatorHelmChart {
   @Test
   @DisplayName("Create domain1, managed by operator and domain2, upgrade operator to add domain2,"
       + "delete domain1 , verify operator management for domain2 and no access to domain1")
-  public void testAddRemoveDomainNameSpacesOnOperator() {
+  void testAddRemoveDomainNameSpacesOnOperator() {
 
     String opReleaseName = OPERATOR_RELEASE_NAME;
     HelmParams op1HelmParams = new HelmParams().releaseName(opReleaseName)
@@ -466,7 +466,7 @@ class ItUsabilityOperatorHelmChart {
    */
   @Test
   @DisplayName("Negative test to install two operators sharing the same namespace")
-  public void testCreateSecondOperatorUsingSameOperatorNsNegativeInstall() {
+  void testCreateSecondOperatorUsingSameOperatorNsNegativeInstall() {
     HelmParams opHelmParams = installAndVerifyOperator(opNamespace, domain1Namespace).getHelmParams();
     if (!isDomain1Running) {
       logger.info("Installing and verifying domain");
@@ -508,7 +508,7 @@ class ItUsabilityOperatorHelmChart {
    */
   @Test
   @DisplayName("Negative test to install two operators sharing the same domain namespace")
-  public void testSecondOpSharingSameDomainNamespacesNegativeInstall() {
+  void testSecondOpSharingSameDomainNamespacesNegativeInstall() {
     // install and verify operator1
     logger.info("Installing and verifying operator1");
     HelmParams opHelmParams = installAndVerifyOperator(opNamespace, domain2Namespace).getHelmParams();
@@ -549,7 +549,7 @@ class ItUsabilityOperatorHelmChart {
    */
   @Test
   @DisplayName("Negative test to try to create the operator with not preexisted namespace")
-  public void testSecondOpSharingSameExternalRestPortNegativeInstall() {
+  void testSecondOpSharingSameExternalRestPortNegativeInstall() {
     String opServiceAccount = opNamespace + "-sa";
     String op2ServiceAccount = op2Namespace + "-sa2";
     String opReleaseName = OPERATOR_RELEASE_NAME + "1";
@@ -594,7 +594,7 @@ class ItUsabilityOperatorHelmChart {
    */
   @Test
   @DisplayName("Negative test to try to create the operator with not preexisted namespace")
-  public void testNotPreCreatedOpNsCreateOperatorNegativeInstall() {
+  void testNotPreCreatedOpNsCreateOperatorNegativeInstall() {
     String opReleaseName = OPERATOR_RELEASE_NAME + "2";
     HelmParams op2HelmParams = new HelmParams().releaseName(opReleaseName)
         .namespace("ns-somens")
@@ -622,7 +622,7 @@ class ItUsabilityOperatorHelmChart {
    */
   @Test
   @DisplayName("Test to create the operator with empty string for domains namespace")
-  public void testCreateWithEmptyDomainNamespaceInstall() {
+  void testCreateWithEmptyDomainNamespaceInstall() {
     String opReleaseName = OPERATOR_RELEASE_NAME;
     String opServiceAccount = op2Namespace + "-sa";
     HelmParams op2HelmParams = new HelmParams().releaseName(opReleaseName)
@@ -687,7 +687,7 @@ class ItUsabilityOperatorHelmChart {
   @Test
   @DisplayName("Install operator with non existing operator service account and verify helm chart is failed, "
       + "create service account and verify the operator is running")
-  public void testNotPreexistedOpServiceAccountCreateOperatorNegativeInstall() {
+  void testNotPreexistedOpServiceAccountCreateOperatorNegativeInstall() {
     String opServiceAccount = op2Namespace + "-sa";
     String opReleaseName = OPERATOR_RELEASE_NAME + "1";
     String errorMsg = null;
@@ -760,7 +760,7 @@ class ItUsabilityOperatorHelmChart {
   @Test
   @DisplayName("Create domain4, domain5 in the same namespace managed by operator ,"
       + " verify scaling via scalingAction.sh script and restAPI")
-  public void testTwoDomainsInSameNameSpaceOnOperator() {
+  void testTwoDomainsInSameNameSpaceOnOperator() {
 
     String opReleaseName = OPERATOR_RELEASE_NAME;
     HelmParams op1HelmParams = new HelmParams().releaseName(opReleaseName)

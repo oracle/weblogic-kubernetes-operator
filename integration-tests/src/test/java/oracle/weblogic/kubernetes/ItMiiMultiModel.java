@@ -52,18 +52,18 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createRouteForOKD;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
+import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
+import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
+import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
+import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -208,7 +208,7 @@ class ItMiiMultiModel {
    */
   @Test
   @DisplayName("Create model-in-image domain with a ConfigMap that contains multiple model files")
-  public void testMiiWithMultiModelCM() {
+  void testMiiWithMultiModelCM() {
     final String adminServerPodName = String.format("%s-%s", domainUid1, ADMIN_SERVER_NAME_BASE);
     final String managedServerPrefix = String.format("%s-%s", domainUid1, MANAGED_SERVER_NAME_BASE);
     final String expectedMaxCapacity = "40";
@@ -270,7 +270,7 @@ class ItMiiMultiModel {
    */
   @Test
   @DisplayName("Create a model-in-image domain with two WDT model files in the image")
-  public void testMiiWithMultiModelImage() {
+  void testMiiWithMultiModelImage() {
     final String adminServerPodName = String.format("%s-%s", domainUid2, ADMIN_SERVER_NAME_BASE);
     final String managedServerPrefix = String.format("%s-%s", domainUid2, MANAGED_SERVER_NAME_BASE);
     final String expectedMaxCapacity = "20";
@@ -331,7 +331,7 @@ class ItMiiMultiModel {
    */
   @Test
   @DisplayName("Create a model-in-image domain with two model files in both the image and the ConfigMap")
-  public void testMiiWithMultiModelImageAndCM() {
+  void testMiiWithMultiModelImageAndCM() {
     final String adminServerPodName = String.format("%s-%s", domainUid3, ADMIN_SERVER_NAME_BASE);
     final String managedServerPrefix = String.format("%s-%s", domainUid3, MANAGED_SERVER_NAME_BASE);
     final String configMapName = "ds-multi-model-image-cm";

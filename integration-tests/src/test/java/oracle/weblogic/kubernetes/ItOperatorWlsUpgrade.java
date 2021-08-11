@@ -52,22 +52,22 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageNam
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
+import static oracle.weblogic.kubernetes.utils.ApplicationUtils.collectAppAvailability;
+import static oracle.weblogic.kubernetes.utils.ApplicationUtils.deployAndAccessApplication;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
-import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchServerStartPolicy;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDeleted;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.collectAppAvailability;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.deployAndAccessApplication;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.upgradeAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchServerStartPolicy;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
+import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
+import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
+import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -87,7 +87,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Operator upgrade tests")
 @IntegrationTest
-public class ItOperatorWlsUpgrade {
+class ItOperatorWlsUpgrade {
 
   private static ConditionFactory withStandardRetryPolicy;
   private static ConditionFactory withQuickRetryPolicy;
@@ -138,7 +138,7 @@ public class ItOperatorWlsUpgrade {
    */
   @Test
   @DisplayName("Upgrade Operator from 2.6.0 to main")
-  public void testOperatorWlsUpgradeFrom260ToMain() {
+  void testOperatorWlsUpgradeFrom260ToMain() {
     upgradeOperator("domain-in-image", "2.6.0", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX,  false);
   }
 
@@ -148,7 +148,7 @@ public class ItOperatorWlsUpgrade {
   @ParameterizedTest
   @DisplayName("Upgrade Operator from 3.0.3 to main")
   @ValueSource(strings = { "domain-in-image", "model-in-image" })
-  public void testOperatorWlsUpgradeFrom303ToMain(String domainType) {
+  void testOperatorWlsUpgradeFrom303ToMain(String domainType) {
     logger.info("Starting test testOperatorWlsUpgradeFrom303ToMain with domain type {0}", domainType);
     upgradeOperator(domainType, "3.0.3", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
@@ -159,7 +159,7 @@ public class ItOperatorWlsUpgrade {
   @ParameterizedTest
   @DisplayName("Upgrade Operator from 3.0.4 to main")
   @ValueSource(strings = { "domain-in-image", "model-in-image" })
-  public void testOperatorWlsUpgradeFrom304ToMain(String domainType) {
+  void testOperatorWlsUpgradeFrom304ToMain(String domainType) {
     logger.info("Starting test testOperatorWlsUpgradeFrom304ToMain with domain type {0}", domainType);
     upgradeOperator(domainType, "3.0.4", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
@@ -170,7 +170,7 @@ public class ItOperatorWlsUpgrade {
   @ParameterizedTest
   @DisplayName("Upgrade Operator from 3.1.3 to main")
   @ValueSource(strings = { "domain-in-image", "model-in-image" })
-  public void testOperatorWlsUpgradeFrom313ToMain(String domainType) {
+  void testOperatorWlsUpgradeFrom313ToMain(String domainType) {
     logger.info("Starting test testOperatorWlsUpgradeFrom313ToMain with domain type {0}", domainType);
     upgradeOperator(domainType, "3.1.3", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
@@ -181,7 +181,7 @@ public class ItOperatorWlsUpgrade {
   @ParameterizedTest
   @DisplayName("Upgrade Operator from 3.1.4 to main")
   @ValueSource(strings = { "domain-in-image", "model-in-image" })
-  public void testOperatorWlsUpgradeFrom314ToMain(String domainType) {
+  void testOperatorWlsUpgradeFrom314ToMain(String domainType) {
     logger.info("Starting test testOperatorWlsUpgradeFrom314ToMain with domain type {0}", domainType);
     upgradeOperator(domainType, "3.1.4", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
@@ -192,7 +192,7 @@ public class ItOperatorWlsUpgrade {
   @ParameterizedTest
   @DisplayName("Upgrade Operator from 3.2.0 to main")
   @ValueSource(strings = { "domain-in-image", "model-in-image" })
-  public void testOperatorWlsUpgradeFrom320ToMain(String domainType) {
+  void testOperatorWlsUpgradeFrom320ToMain(String domainType) {
     logger.info("Starting test testOperatorWlsUpgradeFrom320ToMain with domain type {0}", domainType);
     upgradeOperator(domainType, "3.2.0", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
@@ -203,7 +203,7 @@ public class ItOperatorWlsUpgrade {
   @ParameterizedTest
   @DisplayName("Upgrade Operator from 3.2.4 to main")
   @ValueSource(strings = { "domain-in-image", "model-in-image" })
-  public void testOperatorWlsUpgradeFrom324ToMain(String domainType) {
+  void testOperatorWlsUpgradeFrom324ToMain(String domainType) {
     logger.info("Starting test testOperatorWlsUpgradeFrom321ToMain with domain type {0}", domainType);
     upgradeOperator(domainType, "3.2.4", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
@@ -214,7 +214,7 @@ public class ItOperatorWlsUpgrade {
   @ParameterizedTest
   @DisplayName("Upgrade Operator from 3.2.5 to main")
   @ValueSource(strings = { "domain-in-image", "model-in-image" })
-  public void testOperatorWlsUpgradeFrom325ToMain(String domainType) {
+  void testOperatorWlsUpgradeFrom325ToMain(String domainType) {
     logger.info("Starting test testOperatorWlsUpgradeFrom322ToMain with domain type {0}", domainType);
     upgradeOperator(domainType, "3.2.5", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }

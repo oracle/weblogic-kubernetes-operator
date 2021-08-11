@@ -50,20 +50,20 @@ import static oracle.weblogic.kubernetes.actions.TestActions.buildAppArchive;
 import static oracle.weblogic.kubernetes.actions.TestActions.defaultAppParams;
 import static oracle.weblogic.kubernetes.actions.impl.Service.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
+import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppIsRunning;
 import static oracle.weblogic.kubernetes.utils.BuildApplication.setupWebLogicPod;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkAppIsRunning;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createRouteForOKD;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyTraefik;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copy;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFolder;
 import static oracle.weblogic.kubernetes.utils.FileUtils.createZipFile;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyTraefik;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.awaitility.Awaitility.with;
@@ -86,7 +86,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 @DisplayName("Test to validate on-prem to k8s use case")
 @IntegrationTest
 @Tag("okdenv")
-public class ItLiftAndShiftFromOnPremDomain {
+class ItLiftAndShiftFromOnPremDomain {
   private static String opNamespace = null;
   private static String traefikNamespace = null;
   private static String domainNamespace = null;
@@ -164,7 +164,7 @@ public class ItLiftAndShiftFromOnPremDomain {
    */
   @Test
   @DisplayName("Create model in image domain and verify external admin services")
-  public void testCreateMiiDomainWithClusterFromOnPremDomain() {
+  void testCreateMiiDomainWithClusterFromOnPremDomain() {
     // admin/managed server name here should match with model yaml in MII_BASIC_WDT_MODEL_FILE
     final String adminServerPodName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";

@@ -43,7 +43,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class OperatorEventProcessingTest {
+class OperatorEventProcessingTest {
   private static final String OPERATOR_POD_NAME = "my-weblogic-operator-1234";
   private static final String OP_NS = "operator-namespace";
   private static final String OPERATOR_UID = "1234-5678-101112";
@@ -92,21 +92,21 @@ public class OperatorEventProcessingTest {
   }
 
   @Test
-  public void onNewDomainCreatedEventWithNoInvolvedObject_doNothing() {
+  void onNewDomainCreatedEventWithNoInvolvedObject_doNothing() {
     CoreV1Event event = createDomainEvent(".acbd1", DOMAIN_CREATED, "", null);
     dispatchAddedEventWatch(event);
     assertThat("Found NO DOMAIN_CREATED event in the map", getMatchingEvent(event), nullValue());
   }
 
   @Test
-  public void onNewDomainCreatedEvent_updateKubernetesEventObjectsMap() {
+  void onNewDomainCreatedEvent_updateKubernetesEventObjectsMap() {
     CoreV1Event event = createDomainEvent(".acbd2", DOMAIN_CREATED, "", domainReference);
     dispatchAddedEventWatch(event);
     assertThat("Found DOMAIN_CREATED event in the map", getMatchingEvent(event), notNullValue());
   }
 
   @Test
-  public void afterOnAddDomainCreatedEvent_onDeleteDomainCreatedEventWithNoInvolvedObject_doNothing() {
+  void afterOnAddDomainCreatedEvent_onDeleteDomainCreatedEventWithNoInvolvedObject_doNothing() {
     CoreV1Event event1 = createDomainEvent(".acbd3", DOMAIN_CREATED, "", domainReference);
     dispatchAddedEventWatch(event1);
     CoreV1Event event2 = createDomainEvent(".acbd3", DOMAIN_CREATED, "", null);
@@ -115,7 +115,7 @@ public class OperatorEventProcessingTest {
   }
 
   @Test
-  public void afterOnAddDomainCreatedEvent_onDeleteDomainCreatedEvent_updateKubernetesEventObjectsMap() {
+  void afterOnAddDomainCreatedEvent_onDeleteDomainCreatedEvent_updateKubernetesEventObjectsMap() {
     CoreV1Event event = createDomainEvent(".acbd4", DOMAIN_CREATED, "", domainReference);
     dispatchAddedEventWatch(event);
     dispatchDeletedEventWatch(event);
@@ -123,7 +123,7 @@ public class OperatorEventProcessingTest {
   }
 
   @Test
-  public void afterOnAddDomainCreatedEvent_onModifyDomainCreatedEventWithNoInvolvedObject_doNothing() {
+  void afterOnAddDomainCreatedEvent_onModifyDomainCreatedEventWithNoInvolvedObject_doNothing() {
     CoreV1Event event1 = createDomainEvent(".acbd5", DOMAIN_CREATED, "", domainReference);
     dispatchAddedEventWatch(event1);
     CoreV1Event event2 = createDomainEvent(".acbd5", DOMAIN_CREATED, "", null);
@@ -132,7 +132,7 @@ public class OperatorEventProcessingTest {
   }
 
   @Test
-  public void afterOnAddDomainCreatedEvent_onModifyDomainDeletedEvent_updateKubernetesEventObjectsMap() {
+  void afterOnAddDomainCreatedEvent_onModifyDomainDeletedEvent_updateKubernetesEventObjectsMap() {
     CoreV1Event event = createDomainEvent(".acbd6", DOMAIN_CREATED, "", domainReference);
     dispatchAddedEventWatch(event);
     event = createDomainEvent(".acbd6", DOMAIN_CREATED, "", domainReference, 2);
@@ -141,21 +141,21 @@ public class OperatorEventProcessingTest {
   }
 
   @Test
-  public void onNewDomainProcessingFailedEventWithNoInvolvedObject_doNothing() {
+  void onNewDomainProcessingFailedEventWithNoInvolvedObject_doNothing() {
     CoreV1Event event = createDomainEvent(".acbd7", DOMAIN_PROCESSING_FAILED, "failure", null);
     dispatchAddedEventWatch(event);
     assertThat(getMatchingEvent(event), nullValue());
   }
 
   @Test
-  public void onNewProcessingFailedEvent_updateKubernetesEventObjectsMap() {
+  void onNewProcessingFailedEvent_updateKubernetesEventObjectsMap() {
     CoreV1Event event = createDomainEvent(".acbd8", DOMAIN_PROCESSING_FAILED, "failure2", domainReference);
     dispatchAddedEventWatch(event);
     assertThat(getMatchingEvent(event), notNullValue());
   }
 
   @Test
-  public void afterAddProcessingFailedEvent_onDeleteDomainProcessingFailedEventWithNoInvolvedObject_doNothing() {
+  void afterAddProcessingFailedEvent_onDeleteDomainProcessingFailedEventWithNoInvolvedObject_doNothing() {
     CoreV1Event event1 = createDomainEvent(".acbd9", DOMAIN_PROCESSING_FAILED, "failureOnDelete1", domainReference);
     dispatchAddedEventWatch(event1);
     CoreV1Event event2 = createDomainEvent(".acbd9", DOMAIN_PROCESSING_FAILED, "failureOnDelete1", null);
@@ -164,7 +164,7 @@ public class OperatorEventProcessingTest {
   }
 
   @Test
-  public void afterAddProcessingFailedEvent_onDeleteDomainProcessingFailedEvent_updateKubernetesEventObjectsMap() {
+  void afterAddProcessingFailedEvent_onDeleteDomainProcessingFailedEvent_updateKubernetesEventObjectsMap() {
     CoreV1Event event = createDomainEvent(".acbd10", DOMAIN_PROCESSING_FAILED, "failureOnDelete2", domainReference);
     dispatchAddedEventWatch(event);
     dispatchDeletedEventWatch(event);
@@ -172,7 +172,7 @@ public class OperatorEventProcessingTest {
   }
 
   @Test
-  public void afterAddProcessingFailedEvent_onModifyDomainProcessingFailedEventWithNoInvolvedObject_doNothing() {
+  void afterAddProcessingFailedEvent_onModifyDomainProcessingFailedEventWithNoInvolvedObject_doNothing() {
     CoreV1Event event1 = createDomainEvent(".acbd11", DOMAIN_PROCESSING_FAILED, "failureOnModify1", domainReference);
     dispatchAddedEventWatch(event1);
     CoreV1Event event2 = createDomainEvent(".acbd11", DOMAIN_PROCESSING_FAILED, "failureOnModify1", null);
@@ -181,7 +181,7 @@ public class OperatorEventProcessingTest {
   }
 
   @Test
-  public void afterAddProcessingFailedEvent_onModifyDomainProcessingFailedEvent_updateKubernetesEventObjectsMap() {
+  void afterAddProcessingFailedEvent_onModifyDomainProcessingFailedEvent_updateKubernetesEventObjectsMap() {
     CoreV1Event event1 = createDomainEvent(".acbd12", DOMAIN_PROCESSING_FAILED, "failureOnModify2", domainReference);
     dispatchAddedEventWatch(event1);
     CoreV1Event event2 = createDomainEvent(".acbd12", DOMAIN_PROCESSING_FAILED, "failureOnModify2", domainReference, 2);
@@ -190,21 +190,21 @@ public class OperatorEventProcessingTest {
   }
 
   @Test
-  public void afterAddDProcessingFailedEvent_onNewNamespaceWatchingStoppedEventWithNoInvolvedObject_doNothing() {
+  void afterAddDProcessingFailedEvent_onNewNamespaceWatchingStoppedEventWithNoInvolvedObject_doNothing() {
     CoreV1Event event = createDomainEvent(".1234a", NAMESPACE_WATCHING_STOPPED, "", null);
     dispatchAddedEventWatch(event);
     assertThat(getMatchingEvent(event), nullValue());
   }
 
   @Test
-  public void onNewNamespaceWatchingStoppedEvent_updateKubernetesEventObjectsMap() {
+  void onNewNamespaceWatchingStoppedEvent_updateKubernetesEventObjectsMap() {
     CoreV1Event event = createNamespaceEvent(".1234b", NAMESPACE_WATCHING_STOPPED, nsReference);
     dispatchAddedEventWatch(event);
     assertThat(getMatchingEvent(event), notNullValue());
   }
 
   @Test
-  public void afterAddNSWatchingStoppedEvent_onDeleteNamespaceWatchingStoppedEventWithNoInvolvedObject_doNothing() {
+  void afterAddNSWatchingStoppedEvent_onDeleteNamespaceWatchingStoppedEventWithNoInvolvedObject_doNothing() {
     CoreV1Event event1 = createNamespaceEvent(".1234c", NAMESPACE_WATCHING_STOPPED, nsReference);
     dispatchAddedEventWatch(event1);
     CoreV1Event event2 = createNamespaceEvent(".1234c", NAMESPACE_WATCHING_STOPPED,null);
@@ -213,7 +213,7 @@ public class OperatorEventProcessingTest {
   }
 
   @Test
-  public void afterAddNSWatchingStoppedEvent_onDeleteNamespaceWatchingStoppedEvent_updateKubernetesEventObjectsMap() {
+  void afterAddNSWatchingStoppedEvent_onDeleteNamespaceWatchingStoppedEvent_updateKubernetesEventObjectsMap() {
     CoreV1Event event1 = createNamespaceEvent(".1234d", NAMESPACE_WATCHING_STOPPED, nsReference);
     dispatchAddedEventWatch(event1);
     CoreV1Event event2 = createNamespaceEvent(".1234d", NAMESPACE_WATCHING_STOPPED, nsReference);
@@ -222,7 +222,7 @@ public class OperatorEventProcessingTest {
   }
 
   @Test
-  public void afterAddNSWatchingStoppedEvent_onModifyNamespaceWatchingStoppedEventWithNoInvolvedObject_doNothing() {
+  void afterAddNSWatchingStoppedEvent_onModifyNamespaceWatchingStoppedEventWithNoInvolvedObject_doNothing() {
     CoreV1Event event1 = createNamespaceEvent(".1234e", NAMESPACE_WATCHING_STOPPED, nsReference);
     dispatchAddedEventWatch(event1);
     CoreV1Event event2 = createNamespaceEvent(".1234e", NAMESPACE_WATCHING_STOPPED,null);
@@ -231,7 +231,7 @@ public class OperatorEventProcessingTest {
   }
 
   @Test
-  public void afterAddNSWatchingStoppedEvent_onModifyNamespaceWatchingStoppedEvent_updateKubernetesEventObjectsMap() {
+  void afterAddNSWatchingStoppedEvent_onModifyNamespaceWatchingStoppedEvent_updateKubernetesEventObjectsMap() {
     CoreV1Event event1 = createNamespaceEvent(".1234f", NAMESPACE_WATCHING_STOPPED, nsReference);
     dispatchAddedEventWatch(event1);
     CoreV1Event event2 = createNamespaceEvent(".1234f", NAMESPACE_WATCHING_STOPPED, nsReference, 2);
@@ -240,14 +240,14 @@ public class OperatorEventProcessingTest {
   }
 
   @Test
-  public void onCreateStartManagingNSEvent_updateKubernetesEventObjectsMap() {
+  void onCreateStartManagingNSEvent_updateKubernetesEventObjectsMap() {
     CoreV1Event event = createNamespaceEvent(".aaaa1", START_MANAGING_NAMESPACE, opReference);
     dispatchAddedEventWatch(event);
     assertThat(getMatchingEventCount(event), equalTo(1));
   }
 
   @Test
-  public void afterAddStopManagingNSEvent_onModifyStopManagingNamespace_updateKubernetesEventObjectsMap() {
+  void afterAddStopManagingNSEvent_onModifyStopManagingNamespace_updateKubernetesEventObjectsMap() {
     CoreV1Event event1 = createNamespaceEvent(".aaaa2", STOP_MANAGING_NAMESPACE, opReference);
     dispatchAddedEventWatch(event1);
     CoreV1Event event2 = createNamespaceEvent(".aaaa2", STOP_MANAGING_NAMESPACE, opReference, 2);
@@ -256,7 +256,7 @@ public class OperatorEventProcessingTest {
   }
 
   @Test
-  public void afterAddStartManagingNSEvent_onDeleteTheEventWithNoInvolvedObject_doNothing() {
+  void afterAddStartManagingNSEvent_onDeleteTheEventWithNoInvolvedObject_doNothing() {
     CoreV1Event event1 = createNamespaceEvent(".aaaa3", START_MANAGING_NAMESPACE, opReference);
     dispatchAddedEventWatch(event1);
     CoreV1Event event2 = createNamespaceEvent(".aaaa3", START_MANAGING_NAMESPACE, null);
@@ -265,7 +265,7 @@ public class OperatorEventProcessingTest {
   }
 
   @Test
-  public void afterAddStopManaingNSEvent_onDeleteEvent_updateKubernetesEventObjectsMap() {
+  void afterAddStopManaingNSEvent_onDeleteEvent_updateKubernetesEventObjectsMap() {
     CoreV1Event event1 = createNamespaceEvent(".1234d", STOP_MANAGING_NAMESPACE, opReference);
     dispatchAddedEventWatch(event1);
     CoreV1Event event2 = createNamespaceEvent(".1234d", STOP_MANAGING_NAMESPACE, opReference);

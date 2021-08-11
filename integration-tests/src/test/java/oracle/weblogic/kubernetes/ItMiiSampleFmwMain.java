@@ -23,7 +23,7 @@ import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 @DisplayName("Test model in image sample with JRF domain")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @IntegrationTest
-public class ItMiiSampleFmwMain {
+class ItMiiSampleFmwMain {
 
   /**
    * Install Operator.
@@ -48,7 +48,7 @@ public class ItMiiSampleFmwMain {
   @Order(1)
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF initial use case")
-  public void testFmwInitialUseCase() {
+  void testFmwInitialUseCase() {
     ItMiiSampleHelper.callInitialUseCase();
   }
 
@@ -61,7 +61,7 @@ public class ItMiiSampleFmwMain {
   @Order(2)
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update1 use case")
-  public void testFmwUpdate1UseCase() {
+  void testFmwUpdate1UseCase() {
     ItMiiSampleHelper.callUpdateUseCase("-update1", "Update1 use case failed");
   }
 
@@ -73,7 +73,7 @@ public class ItMiiSampleFmwMain {
   @Order(3)
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update2 use case")
-  public void testFmwUpdate2UseCase() {
+  void testFmwUpdate2UseCase() {
     ItMiiSampleHelper.callUpdateUseCase("-update2", "Update2 use case failed");
   }
 
@@ -85,7 +85,7 @@ public class ItMiiSampleFmwMain {
   @Order(4)
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update3 use case")
-  public void testFmwUpdate3UseCase() {
+  void testFmwUpdate3UseCase() {
     ItMiiSampleHelper.callUpdateUseCase("-update3-image,-check-image-and-push,-update3-main",
         "Update3 use case failed");
   }
@@ -101,7 +101,7 @@ public class ItMiiSampleFmwMain {
   @Order(5)
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update4 use case")
-  public void testFmwUpdate4UseCase() {
+  void testFmwUpdate4UseCase() {
     ItMiiSampleHelper.callUpdateUseCase("-update4", "Update4 use case failed");
   }
 

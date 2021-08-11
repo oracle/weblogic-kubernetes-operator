@@ -41,7 +41,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class StuckPodTest {
+class StuckPodTest {
 
   private static final long DELETION_GRACE_PERIOD_SECONDS = 5L;
   private static final String SERVER_POD_1 = "name1";
@@ -77,7 +77,7 @@ public class StuckPodTest {
   }
 
   @Test
-  public void whenServerPodNotDeleted_ignoreIt() {
+  void whenServerPodNotDeleted_ignoreIt() {
     SystemClockTestSupport.increment(DELETION_GRACE_PERIOD_SECONDS);
 
     processing.checkStuckPods(NS);
@@ -86,7 +86,7 @@ public class StuckPodTest {
   }
 
   @Test
-  public void whenServerPodNotStuck_ignoreIt() {
+  void whenServerPodNotStuck_ignoreIt() {
     markAsDelete(getSelectedPod(SERVER_POD_1));
     SystemClockTestSupport.increment(DELETION_GRACE_PERIOD_SECONDS - 1);
 
@@ -96,7 +96,7 @@ public class StuckPodTest {
   }
 
   @Test
-  public void whenServerPodStuck_deleteIt() {
+  void whenServerPodStuck_deleteIt() {
     markAsDelete(getSelectedPod(SERVER_POD_1));
     SystemClockTestSupport.increment(DELETION_GRACE_PERIOD_SECONDS + 1);
 
@@ -106,7 +106,7 @@ public class StuckPodTest {
   }
 
   @Test
-  public void whenStuckServerPodDeleted_logMessage() {
+  void whenStuckServerPodDeleted_logMessage() {
     final List<LogRecord> logMessages = new ArrayList<>();
     consoleMemento.collectLogMessages(logMessages, POD_FORCE_DELETED).withLogLevel(Level.INFO);
     markAsDelete(getSelectedPod(SERVER_POD_1));
@@ -118,7 +118,7 @@ public class StuckPodTest {
   }
 
   @Test
-  public void whenServerPodDeleted_specifyZeroGracePeriod() {
+  void whenServerPodDeleted_specifyZeroGracePeriod() {
     markAsDelete(getSelectedPod(SERVER_POD_1));
     SystemClockTestSupport.increment(DELETION_GRACE_PERIOD_SECONDS + 1);
     testSupport.doOnDelete(POD, this::recordGracePeriodSeconds);
@@ -133,7 +133,7 @@ public class StuckPodTest {
   }
 
   @Test
-  public void whenServerPodStuck_initiateMakeRightProcessing() {
+  void whenServerPodStuck_initiateMakeRightProcessing() {
     markAsDelete(getSelectedPod(SERVER_POD_2));
     SystemClockTestSupport.increment(DELETION_GRACE_PERIOD_SECONDS + 1);
 
@@ -143,7 +143,7 @@ public class StuckPodTest {
   }
 
   @Test
-  public void whenForeignPodStuck_ignoreIt() {
+  void whenForeignPodStuck_ignoreIt() {
     markAsDelete(getSelectedPod(FOREIGN_POD));
     SystemClockTestSupport.increment(DELETION_GRACE_PERIOD_SECONDS + 1);
 

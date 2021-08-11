@@ -98,7 +98,7 @@ import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public class EventHelperTest {
+class EventHelperTest {
   private static final String OPERATOR_POD_NAME = "my-weblogic-operator-1234";
   private static final String OP_NS = "operator-namespace";
 
@@ -142,7 +142,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenDomainMakeRightCalled_domainProcessingStartingEventCreated() {
+  void whenDomainMakeRightCalled_domainProcessingStartingEventCreated() {
     makeRightOperation.execute();
 
     assertThat("Found DOMAIN_PROCESSING_STARTING event",
@@ -150,7 +150,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenDomainMakeRightCalled_domainProcessingStartingEventCreatedWithExpectedLabels() {
+  void whenDomainMakeRightCalled_domainProcessingStartingEventCreatedWithExpectedLabels() {
     makeRightOperation.execute();
 
     Map<String, String> expectedLabels = new HashMap<>();
@@ -162,7 +162,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenDomainMakeRightCalled_domainProcessingStartingEventCreatedWithExpectedNamespace() {
+  void whenDomainMakeRightCalled_domainProcessingStartingEventCreatedWithExpectedNamespace() {
     makeRightOperation.execute();
 
     assertThat("Found DOMAIN_PROCESSING_STARTING event with expected namespace",
@@ -171,7 +171,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenDomainMakeRightCalled_domainProcessingStartingEventCreatedWithExpectedMessage() {
+  void whenDomainMakeRightCalled_domainProcessingStartingEventCreatedWithExpectedMessage() {
     makeRightOperation.execute();
 
     assertThat("Found DOMAIN_PROCESSING_STARTING event with expected message",
@@ -181,7 +181,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenDomainMakeRightCalled_domainProcessingStartingEventCreatedWithInvolvedObject() {
+  void whenDomainMakeRightCalled_domainProcessingStartingEventCreatedWithInvolvedObject() {
     V1ObjectMeta metadata = domain.getMetadata();
     String k8sUID = metadata.getUid();
 
@@ -194,7 +194,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenDomainMakeRightCalled_domainProcessingStartingEventCreatedWithReportingComponent() {
+  void whenDomainMakeRightCalled_domainProcessingStartingEventCreatedWithReportingComponent() {
     makeRightOperation.execute();
 
     assertThat("Found DOMAIN_PROCESSING_STARTING event with expected reporting component",
@@ -202,7 +202,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenCreateEventStepCalledForStarting_domainProcessingStartingEventCreatedWithReportingInstance() {
+  void whenCreateEventStepCalledForStarting_domainProcessingStartingEventCreatedWithReportingInstance() {
     String namespaceFromHelm = NamespaceHelper.getOperatorNamespace();
 
     testSupport.runSteps(createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)));
@@ -216,7 +216,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenCreateEventStepCalledForStartingAndCompleted_domainProcessingCompletedEventCreated() {
+  void whenCreateEventStepCalledForStartingAndCompleted_domainProcessingCompletedEventCreated() {
     testSupport.runSteps(Step.chain(
         createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
         createEventStep(new EventData(DOMAIN_PROCESSING_COMPLETED))));
@@ -226,7 +226,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenCreateEventStepCalled4StartingCompleted_domainProcessingCompletedEventCreatedWithExpectedMessage() {
+  void whenCreateEventStepCalled4StartingCompleted_domainProcessingCompletedEventCreatedWithExpectedMessage() {
     testSupport.runSteps(Step.chain(
         createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
         createEventStep(new EventData(DOMAIN_PROCESSING_COMPLETED)))
@@ -239,7 +239,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenCreateEventStepCalled_domainProcessingStartingEventCreatedWithExpectedCount() {
+  void whenCreateEventStepCalled_domainProcessingStartingEventCreatedWithExpectedCount() {
     testSupport.runSteps(Step.chain(createEventStep(new EventData(DOMAIN_PROCESSING_STARTING))));
 
     assertThat("Found DOMAIN_PROCESSING_STARTING event with expected count",
@@ -247,7 +247,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenCreateEventCalledTwice_domainProcessingStartingEventCreatedOnceWithExpectedCount() {
+  void whenCreateEventCalledTwice_domainProcessingStartingEventCreatedOnceWithExpectedCount() {
     testSupport.runSteps(Step.chain(
         createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
         createEventStep(new EventData(DOMAIN_PROCESSING_COMPLETED))));
@@ -262,7 +262,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenCreateEventTwice_fail404OnReplaceEvent_domainProcessingStartingEventCreatedTwice() {
+  void whenCreateEventTwice_fail404OnReplaceEvent_domainProcessingStartingEventCreatedTwice() {
     testSupport.runSteps(Step.chain(
         createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
         createEventStep(new EventData(DOMAIN_PROCESSING_COMPLETED))));
@@ -278,7 +278,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenCreateEventTwice_fail409OnReplaceEvent_domainProcessingStartingEventCreatedTwice() {
+  void whenCreateEventTwice_fail409OnReplaceEvent_domainProcessingStartingEventCreatedTwice() {
     testSupport.runSteps(Step.chain(
             createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
             createEventStep(new EventData(DOMAIN_PROCESSING_COMPLETED))));
@@ -294,7 +294,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenCreateEventTwice_fail410OnReplaceEvent_domainProcessingStartingEventCreatedTwice() {
+  void whenCreateEventTwice_fail410OnReplaceEvent_domainProcessingStartingEventCreatedTwice() {
     testSupport.runSteps(Step.chain(
         createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
         createEventStep(new EventData(DOMAIN_PROCESSING_COMPLETED))));
@@ -310,7 +310,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenCreateEventTwice_fail403OnReplaceEvent_domainProcessingStartingEventCreatedOnce() {
+  void whenCreateEventTwice_fail403OnReplaceEvent_domainProcessingStartingEventCreatedOnce() {
     testSupport.runSteps(Step.chain(
         createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
         createEventStep(new EventData(DOMAIN_PROCESSING_COMPLETED))));
@@ -326,7 +326,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenCreateEventStepCalledWithOutStartingEvent_domainProcessingCompletedEventNotCreated() {
+  void whenCreateEventStepCalledWithOutStartingEvent_domainProcessingCompletedEventNotCreated() {
     testSupport.runSteps(createEventStep(new EventData(DOMAIN_PROCESSING_COMPLETED)));
 
     assertThat("Found DOMAIN_PROCESSING_COMPLETED event",
@@ -334,7 +334,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenCreateEventStepCalledWithRetryingAndEvent_domainProcessingCompletedEventCreated() {
+  void whenCreateEventStepCalledWithRetryingAndEvent_domainProcessingCompletedEventCreated() {
     testSupport.runSteps(Step.chain(
         createEventStep(new EventData(DOMAIN_PROCESSING_RETRYING)),
         createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
@@ -346,7 +346,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenCreateEventCalledTwice_domainProcessingCompletedEventCreatedOnceWithExpectedCount() {
+  void whenCreateEventCalledTwice_domainProcessingCompletedEventCreatedOnceWithExpectedCount() {
     testSupport.runSteps(Step.chain(
         createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
         createEventStep(new EventData(DOMAIN_PROCESSING_COMPLETED))));
@@ -362,7 +362,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenCreateEventCalledTwice_thenDeleteEvent_domainProcessingStartingEventCreatedTwice() {
+  void whenCreateEventCalledTwice_thenDeleteEvent_domainProcessingStartingEventCreatedTwice() {
     testSupport.runSteps(Step.chain(
         createEventStep(new EventData(DOMAIN_CREATED))));
 
@@ -378,7 +378,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenCreateEventCalledTwice_thenDeleteCompletedEvent_domainProcessingCompletedEventCreatedTwice() {
+  void whenCreateEventCalledTwice_thenDeleteCompletedEvent_domainProcessingCompletedEventCreatedTwice() {
     testSupport.runSteps(Step.chain(
         createEventStep(new EventData(DOMAIN_PROCESSING_STARTING)),
         createEventStep(new EventData(DOMAIN_PROCESSING_COMPLETED))));
@@ -396,7 +396,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenCreateEventStepCalledWithFailedEvent_domainProcessingFailedEventCreated() {
+  void whenCreateEventStepCalledWithFailedEvent_domainProcessingFailedEventCreated() {
     testSupport.runSteps(createFailureRelatedSteps("FAILED", "Test failure", new TerminalStep()));
 
     assertThat("Found DOMAIN_PROCESSING_FAILED event",
@@ -404,7 +404,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenCreateEventStepCalledWithFailedEvent_domainProcessingFailedEventCreatedWithExpectedMessage() {
+  void whenCreateEventStepCalledWithFailedEvent_domainProcessingFailedEventCreatedWithExpectedMessage() {
     testSupport.runSteps(createFailureRelatedSteps("FAILED", "Test this failure", new TerminalStep()));
 
     assertThat("Found DOMAIN_PROCESSING_FAILED event with expected message",
@@ -414,7 +414,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenCreateEventStepCalledWithFailedEventTwice_domainProcessingFailedEventCreatedOnceWithExpectedCount() {
+  void whenCreateEventStepCalledWithFailedEventTwice_domainProcessingFailedEventCreatedOnceWithExpectedCount() {
     testSupport.runSteps(createFailureRelatedSteps("FAILED", "Test failure", new TerminalStep()));
     dispatchAddedEventWatches();
     testSupport.runSteps(createFailureRelatedSteps("FAILED", "Test failure", new TerminalStep()));
@@ -424,7 +424,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenMakeRightCalled_withRetryingEventData_domainProcessingRetryingEventCreated() {
+  void whenMakeRightCalled_withRetryingEventData_domainProcessingRetryingEventCreated() {
     makeRightOperation.withEventData(DOMAIN_PROCESSING_RETRYING, null).execute();
 
     assertThat("Found DOMAIN_PROCESSING_RETRYING event",
@@ -432,7 +432,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenMakeRightCalled_withRetryingEventData_domainProcessingRetryingEventCreatedWithExpectedMessage() {
+  void whenMakeRightCalled_withRetryingEventData_domainProcessingRetryingEventCreatedWithExpectedMessage() {
     makeRightOperation.withEventData(DOMAIN_PROCESSING_RETRYING, null).execute();
 
     assertThat("Found DOMAIN_PROCESSING_RETRYING event with expected message",
@@ -442,7 +442,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenMakeRightCalled_withCreatedEventData_domainCreatedEventCreated() {
+  void whenMakeRightCalled_withCreatedEventData_domainCreatedEventCreated() {
     makeRightOperation.withEventData(DOMAIN_CREATED, null).execute();
 
     assertThat("Found DOMAIN_CREATED event",
@@ -450,7 +450,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenMakeRightCalled_withCreatedEventData_domainCreatedEventCreatedWithExpectedMessage() {
+  void whenMakeRightCalled_withCreatedEventData_domainCreatedEventCreatedWithExpectedMessage() {
     makeRightOperation.withEventData(DOMAIN_CREATED, null).execute();
 
     assertThat("Found DOMAIN_CREATED event with expected message",
@@ -460,7 +460,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenMakeRightCalled_withChangedEventData_domainChangedEventCreated() {
+  void whenMakeRightCalled_withChangedEventData_domainChangedEventCreated() {
     makeRightOperation.withEventData(DOMAIN_CHANGED, null).execute();
 
     assertThat("Found DOMAIN_CHANGED event",
@@ -468,7 +468,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenMakeRightCalled_withChangedEventData_domainChangedEventCreatedWithExpectedMessage() {
+  void whenMakeRightCalled_withChangedEventData_domainChangedEventCreatedWithExpectedMessage() {
     makeRightOperation.withEventData(DOMAIN_CHANGED, null).execute();
 
     assertThat("Found DOMAIN_CHANGED event with expected message",
@@ -478,7 +478,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenDomainChangedEventCreateCalledTwice_domainChangedEventCreatedOnceWithExpectedCount() {
+  void whenDomainChangedEventCreateCalledTwice_domainChangedEventCreatedOnceWithExpectedCount() {
     presenceInfoMap.put(NS, Map.of(UID, info));
     testSupport.runSteps(Step.chain(createEventStep(new EventData(DOMAIN_CHANGED))));
     dispatchAddedEventWatches();
@@ -491,7 +491,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenMakeRightCalled_withDeletedEventData_domainDeletedEventCreated() {
+  void whenMakeRightCalled_withDeletedEventData_domainDeletedEventCreated() {
     makeRightOperation.withEventData(DOMAIN_DELETED, null).execute();
 
     assertThat("Found DOMAIN_DELETED event",
@@ -499,7 +499,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenMakeRightCalled_withDeletedEventData_domainDeletedEventCreatedWithExpectedMessage() {
+  void whenMakeRightCalled_withDeletedEventData_domainDeletedEventCreatedWithExpectedMessage() {
     makeRightOperation.withEventData(DOMAIN_DELETED, null).execute();
 
     assertThat("Found DOMAIN_DELETED event with expected message",
@@ -509,7 +509,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenCreateEventStepCalledWithAbortedEvent_domainProcessingAbortedEventCreated() {
+  void whenCreateEventStepCalledWithAbortedEvent_domainProcessingAbortedEventCreated() {
     testSupport.runSteps(Step.chain(
         createEventStep(new EventData(DOMAIN_PROCESSING_FAILED)),
         createEventStep(new EventData(DOMAIN_PROCESSING_ABORTED).message("Test this failure")))
@@ -520,7 +520,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenCreateEventStepCalledWithAbortedEvent_domainProcessingAbortedEventCreatedWithExpectedMessage() {
+  void whenCreateEventStepCalledWithAbortedEvent_domainProcessingAbortedEventCreatedWithExpectedMessage() {
     testSupport.runSteps(Step.chain(
         createEventStep(new EventData(DOMAIN_PROCESSING_FAILED)),
         createEventStep(new EventData(DOMAIN_PROCESSING_ABORTED).message("Test this failure")))
@@ -533,7 +533,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenCreateEventStepCalledForStartManagingNamespace_eventCreatedWithExpectedMessage() {
+  void whenCreateEventStepCalledForStartManagingNamespace_eventCreatedWithExpectedMessage() {
     testSupport.runSteps(createEventStep(new EventData(START_MANAGING_NAMESPACE).namespace(OP_NS).resourceName(NS)));
     assertThat("Found NAMESPACE_WATCHING_STARTED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
@@ -542,7 +542,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenCreateEventStepCalledWithNSWatchStartedEvent_eventCreatedWithExpectedNamespace() {
+  void whenCreateEventStepCalledWithNSWatchStartedEvent_eventCreatedWithExpectedNamespace() {
     testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STARTED).namespace(NS).resourceName(NS)));
     assertThat("Found NAMESPACE_WATCHING_STARTED event with expected namespace",
         containsEventWithNamespace(getEvents(testSupport),
@@ -550,7 +550,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenCreateEventStepCalledWithNSWatchStartedEvent_eventCreatedWithExpectedLabels() {
+  void whenCreateEventStepCalledWithNSWatchStartedEvent_eventCreatedWithExpectedLabels() {
     testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STARTED).namespace(NS).resourceName(NS)));
 
     Map<String, String> expectedLabels = new HashMap<>();
@@ -561,7 +561,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenNSWatchStartedEventCreatedTwice_eventCreatedOnceWithExpectedCount() {
+  void whenNSWatchStartedEventCreatedTwice_eventCreatedOnceWithExpectedCount() {
     testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STARTED).namespace(NS).resourceName(NS)));
     dispatchAddedEventWatches();
     testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STARTED).namespace(NS).resourceName(NS)));
@@ -572,7 +572,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenNSWatchStartedEventCreated_thenDelete_eventCreatedTwice() {
+  void whenNSWatchStartedEventCreated_thenDelete_eventCreatedTwice() {
     testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STARTED).namespace(NS).resourceName(NS)));
     dispatchAddedEventWatches();
     dispatchDeletedEventWatches();
@@ -584,7 +584,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenNSWatchStartedEventCreated_fail403OnCreate_foundExpectedLogMessage() {
+  void whenNSWatchStartedEventCreated_fail403OnCreate_foundExpectedLogMessage() {
     loggerControl.collectLogMessages(logRecords, CREATING_EVENT_FORBIDDEN);
     testSupport.failOnCreate(EVENT, null, NS, HTTP_FORBIDDEN);
 
@@ -595,7 +595,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenNSWatchStartedEventCreated_fail403OnCreate_startManagingNSFailedEventGenerated() {
+  void whenNSWatchStartedEventCreated_fail403OnCreate_startManagingNSFailedEventGenerated() {
     testSupport.failOnCreate(EVENT, null, NS, HTTP_FORBIDDEN);
 
     testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STARTED).namespace(NS).resourceName(NS)));
@@ -606,7 +606,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenNSWatchStartedEventCreated_fail403OnCreate_startManagingNSFailedEventGeneratedWithExpectedMessage() {
+  void whenNSWatchStartedEventCreated_fail403OnCreate_startManagingNSFailedEventGeneratedWithExpectedMessage() {
     testSupport.failOnCreate(EVENT, null, NS, HTTP_FORBIDDEN);
 
     testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STARTED).namespace(NS).resourceName(NS)));
@@ -618,7 +618,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenNSWatchStartedEventCreated_fail403OnCreate_startManagingNSFailedEventGeneratedWithExpectedLabel() {
+  void whenNSWatchStartedEventCreated_fail403OnCreate_startManagingNSFailedEventGeneratedWithExpectedLabel() {
     testSupport.failOnCreate(EVENT, null, NS, HTTP_FORBIDDEN);
 
     testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STARTED).namespace(NS).resourceName(NS)));
@@ -631,7 +631,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenNSWatchStartedEventCreated_fail403OnCreate_startManagingNSFailedEventGeneratedWithExpectedNS() {
+  void whenNSWatchStartedEventCreated_fail403OnCreate_startManagingNSFailedEventGeneratedWithExpectedNS() {
     testSupport.failOnCreate(EVENT, null, NS, HTTP_FORBIDDEN);
 
     testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STARTED).namespace(NS).resourceName(NS)));
@@ -644,7 +644,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenCreateEventStepCalledWithNSWatchStoppedEvent_eventCreatedWithExpectedLabels() {
+  void whenCreateEventStepCalledWithNSWatchStoppedEvent_eventCreatedWithExpectedLabels() {
     testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED).namespace(NS).resourceName(NS)));
 
     Map<String, String> expectedLabels = new HashMap<>();
@@ -655,7 +655,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenNSWatchStoppedEventCreated_eventCreatedWithExpectedInvolvedObject() {
+  void whenNSWatchStoppedEventCreated_eventCreatedWithExpectedInvolvedObject() {
     testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED).namespace(NS).resourceName(NS)));
 
     assertThat("Found NAMESPACE_WATCHING_STOPPED event with expected involvedObject",
@@ -665,7 +665,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenNSWatchStoppedEventCreated_fail404OnReplace_eventCreatedTwice() {
+  void whenNSWatchStoppedEventCreated_fail404OnReplace_eventCreatedTwice() {
     testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED).namespace(NS).resourceName(NS)));
     dispatchAddedEventWatches();
 
@@ -680,7 +680,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenNSWatchStoppedEventCreated_fail403OnCreate_foundExpectedLogMessage() {
+  void whenNSWatchStoppedEventCreated_fail403OnCreate_foundExpectedLogMessage() {
     loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, CREATING_EVENT_FORBIDDEN);
     testSupport.failOnCreate(EVENT, null, NS, HTTP_FORBIDDEN);
 
@@ -690,7 +690,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenNSWatchStoppedEventCreatedTwice_fail403OnReplace_eventCreatedOnce() {
+  void whenNSWatchStoppedEventCreatedTwice_fail403OnReplace_eventCreatedOnce() {
     testSupport.runSteps(Step.chain(createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED))));
 
     CoreV1Event event = EventTestUtils.getEventWithReason(getEvents(testSupport), NAMESPACE_WATCHING_STOPPED_EVENT);
@@ -704,7 +704,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenNSWatchStoppedEventCreatedTwice_fail403OnReplace_foundExpectedLogMessage() {
+  void whenNSWatchStoppedEventCreatedTwice_fail403OnReplace_foundExpectedLogMessage() {
     loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, CREATING_EVENT_FORBIDDEN);
     testSupport.runSteps(Step.chain(createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED))));
 
@@ -718,7 +718,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenCreateEventStepCalledForNSWatchStartedEvent_eventCreatedWithExpectedMessage() {
+  void whenCreateEventStepCalledForNSWatchStartedEvent_eventCreatedWithExpectedMessage() {
     testSupport.runSteps(createEventStep(new EventData(NAMESPACE_WATCHING_STARTED).namespace(NS).resourceName(NS)));
     assertThat("Found START_MANAGING_NAMESPACE event with expected message",
         containsEventWithMessage(getEvents(testSupport),
@@ -727,7 +727,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenCreateEventStepCalledForStartManagingNS_eventCreatedWithExpectedNamespace() {
+  void whenCreateEventStepCalledForStartManagingNS_eventCreatedWithExpectedNamespace() {
     testSupport.runSteps(createEventStep(new EventData(START_MANAGING_NAMESPACE).namespace(OP_NS).resourceName(NS)));
     assertThat("Found START_MANAGING_NAMESPACE event with expected namespace",
         containsEventWithNamespace(getEvents(testSupport),
@@ -735,7 +735,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenCreateEventStepCalledForStartManagingNS_eventCreatedWithExpectedLabels() {
+  void whenCreateEventStepCalledForStartManagingNS_eventCreatedWithExpectedLabels() {
     testSupport.runSteps(createEventStep(new EventData(START_MANAGING_NAMESPACE).namespace(OP_NS).resourceName(NS)));
 
     Map<String, String> expectedLabels = new HashMap<>();
@@ -746,7 +746,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenStartManagingNSEventCreatedTwice_eventCreatedOnceWithExpectedCount() {
+  void whenStartManagingNSEventCreatedTwice_eventCreatedOnceWithExpectedCount() {
     Step step = createEventStep(new EventData(START_MANAGING_NAMESPACE).namespace(OP_NS).resourceName(NS));
     testSupport.runSteps(step);
     dispatchAddedEventWatches();
@@ -758,7 +758,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenStartManagingNSEventCreated_thenDelete_eventCreatedTwice() {
+  void whenStartManagingNSEventCreated_thenDelete_eventCreatedTwice() {
     Step step = createEventStep(new EventData(START_MANAGING_NAMESPACE).namespace(OP_NS).resourceName(NS));
     testSupport.runSteps(step);
     dispatchAddedEventWatches();
@@ -771,7 +771,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenCreateEventStepCalledForStopManagingNS_eventCreatedWithExpectedLabels() {
+  void whenCreateEventStepCalledForStopManagingNS_eventCreatedWithExpectedLabels() {
     testSupport.runSteps(createEventStep(new EventData(STOP_MANAGING_NAMESPACE).namespace(OP_NS).resourceName(NS)));
 
     Map<String, String> expectedLabels = new HashMap<>();
@@ -782,7 +782,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenCreateEventStepCalledForStopManagingNS_eventCreatedWithExpectedInvolvedObject() {
+  void whenCreateEventStepCalledForStopManagingNS_eventCreatedWithExpectedInvolvedObject() {
     testSupport.runSteps(createEventStep(new EventData(STOP_MANAGING_NAMESPACE).namespace(OP_NS).resourceName(NS)));
 
     assertThat("Found STOP_MANAGING_NAMESPACE event with expected involvedObject",
@@ -792,7 +792,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenStopManagingNSEventCreated_fail404OnReplace_eventCreatedWithExpectedCount() {
+  void whenStopManagingNSEventCreated_fail404OnReplace_eventCreatedWithExpectedCount() {
     Step step = createEventStep(new EventData(STOP_MANAGING_NAMESPACE).namespace(OP_NS).resourceName(NS));
     testSupport.runSteps(step);
     dispatchAddedEventWatches();
@@ -807,7 +807,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenStopManagingNSEventCreatedTwice_fail403OnReplace_eventCreatedOnce() {
+  void whenStopManagingNSEventCreatedTwice_fail403OnReplace_eventCreatedOnce() {
     Step eventStep = createEventStep(new EventData(STOP_MANAGING_NAMESPACE).namespace(OP_NS).resourceName(NS));
 
     testSupport.runSteps(eventStep);
@@ -823,7 +823,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenNSWatchStoppedEventCreatedTwice_fail409OnReplace_eventCreatedOnceWithExpectedCount() {
+  void whenNSWatchStoppedEventCreatedTwice_fail409OnReplace_eventCreatedOnceWithExpectedCount() {
     testSupport.addRetryStrategy(retryStrategy);
     Step eventStep = createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED).namespace(NS).resourceName(NS));
 
@@ -841,7 +841,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenNSWatchStoppedEventCreatedTwice_fail503OnReplace_eventCreatedOnceWithExpectedCount() {
+  void whenNSWatchStoppedEventCreatedTwice_fail503OnReplace_eventCreatedOnceWithExpectedCount() {
     testSupport.addRetryStrategy(retryStrategy);
     Step eventStep = createEventStep(new EventData(NAMESPACE_WATCHING_STOPPED).namespace(NS).resourceName(NS));
 
@@ -859,7 +859,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenDomainRollStartingEventCreateCalled_domainRollStartingEventCreatedWithExpectedCount() {
+  void whenDomainRollStartingEventCreateCalled_domainRollStartingEventCreatedWithExpectedCount() {
     testSupport.runSteps(createEventStep(new EventData(DOMAIN_ROLL_STARTING)));
 
     assertThat("Found DOMAIN_ROLL_STARTING event with expected count",
@@ -867,7 +867,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenDomainRollStartingEventCreateCalled_domainRollStartingEventCreatedWithExpectedMessage() {
+  void whenDomainRollStartingEventCreateCalled_domainRollStartingEventCreatedWithExpectedMessage() {
     testSupport.runSteps(createEventStep(new EventData(DOMAIN_ROLL_STARTING).message("abcde")));
 
     assertThat("Found DOMAIN_ROLL_STARTING event with expected message",
@@ -877,7 +877,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenDomainRollCompletedEventCreateCalled_domainRollCompletedEventCreatedWithExpectedCount() {
+  void whenDomainRollCompletedEventCreateCalled_domainRollCompletedEventCreatedWithExpectedCount() {
     testSupport.runSteps(createEventStep(new EventData(DOMAIN_ROLL_COMPLETED)));
 
     assertThat("Found DOMAIN_ROLL_COMPLETED event with expected count",
@@ -885,7 +885,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenDomainRollCompletedEventCreateCalled_domainRollCompletedEventCreatedWithExpectedMessage() {
+  void whenDomainRollCompletedEventCreateCalled_domainRollCompletedEventCreatedWithExpectedMessage() {
     testSupport.runSteps(createEventStep(new EventData(DOMAIN_ROLL_COMPLETED)));
 
     assertThat("Found DOMAIN_ROLL_COMPLETED event with expected message",
@@ -895,7 +895,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenPodCycleStartingEventCreateCalled_podCycleStartingEventCreatedWithExpectedCount() {
+  void whenPodCycleStartingEventCreateCalled_podCycleStartingEventCreatedWithExpectedCount() {
     testSupport.runSteps(createEventStep(new EventData(POD_CYCLE_STARTING)));
 
     assertThat("Found POD_CYCLE_STARTING event with expected count",
@@ -903,7 +903,7 @@ public class EventHelperTest {
   }
 
   @Test
-  public void whenPodCycleStartingEventCreateCalled_podCycleStartingEventCreatedWithExpectedMessage() {
+  void whenPodCycleStartingEventCreateCalled_podCycleStartingEventCreatedWithExpectedMessage() {
     testSupport.runSteps(createEventStep(new EventData(POD_CYCLE_STARTING).podName("12345").message("abcde")));
 
     assertThat("Found POD_CYCLE_STARTING event with expected message",
