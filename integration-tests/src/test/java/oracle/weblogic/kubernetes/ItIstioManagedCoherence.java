@@ -6,16 +6,13 @@ package oracle.weblogic.kubernetes;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.Cluster;
@@ -36,25 +33,19 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createAndPushMiiImage;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainWithIstioMultiClusters;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
-import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
@@ -163,7 +154,8 @@ class ItIstioManagedCoherence {
    * and can also be retrieved from cache.
    */
   @Test
-  @DisplayName("Two cluster domain with a Coherence cluster with ISTIO and test interaction with cache data")
+  @DisplayName("Two cluster domain-in-image domain with a Coherence cluster with ISTIO and "
+      + "test interaction with cache data")
   void testIstioMultiClusterCoherenceDomainInImageDomain() {
 
     // create a DomainHomeInImage image using WebLogic Image Tool
@@ -217,10 +209,10 @@ class ItIstioManagedCoherence {
   void testIstioMultiClusterCoherenceMiiDomain() {
 
     // create a model-in-image domain image using WebLogic Image Tool
-    miiImage = createAndPushMiiImage();
+    miiImage = createAndPushMiiImage(miiImageName, MII_COHERENCE_MODEL_FILE, COHERENCE_APP_NAME, COHERENCE_MODEL_PROP);
 
     // create and verify a two-clusters WebLogic domain with a Coherence cluster
-    createMiiDomainWithMultiClusters(miiDomainUid, miiDomainNamespace);
+    createMiiDomainWithIstioMultiClusters(miiDomainUid, miiDomainNamespace, miiImage, NUMBER_OF_CLUSTERS, replicaCount);
 
     Map<String, String> templateMap  = new HashMap();
     templateMap.put("NAMESPACE", miiDomainNamespace);
@@ -499,138 +491,4 @@ class ItIstioManagedCoherence {
     return result;
   }
 
-
-  /**
-   * Create mii image and push it to the registry.
-   *
-   * @return mii image created
-   */
-  private String createAndPushMiiImage() {
-    // create image with model files
-    logger.info("Creating image with model file {0} and verify", MII_COHERENCE_MODEL_FILE);
-    List<String> appSrcDirList = Collections.singletonList(COHERENCE_APP_NAME);
-    List<String> wdtModelList = Collections.singletonList(MODEL_DIR + "/" + MII_COHERENCE_MODEL_FILE);
-    List<String> modelPropList = Collections.singletonList(MODEL_DIR + "/" + COHERENCE_MODEL_PROP);
-
-    miiImage =
-        createImageAndVerify(miiImageName, wdtModelList, appSrcDirList, modelPropList, WEBLOGIC_IMAGE_NAME,
-            WEBLOGIC_IMAGE_TAG, WLS_DOMAIN_TYPE, true, miiDomainUid, false);
-
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(miiImage);
-
-    return miiImage;
-  }
-
-  /**
-   * Create model in image domain with multiple clusters.
-   *
-   * @param domainUid the uid of the domain
-   * @param domainNamespace namespace in which the domain will be created
-   * @return oracle.weblogic.domain.Domain objects
-   */
-  private static Domain createMiiDomainWithMultiClusters(String domainUid, String domainNamespace) {
-
-    // admin/managed server name here should match with WDT model yaml file
-    String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
-
-    // create docker registry secret to pull the image from registry
-    // this secret is used only for non-kind cluster
-    logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
-    createOcirRepoSecret(domainNamespace);
-
-    // create secret for admin credentials
-    logger.info("Creating secret for admin credentials");
-    String adminSecretName = "weblogic-credentials";
-    createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-
-    // create encryption secret
-    logger.info("Creating encryption secret");
-    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc", "weblogicenc");
-
-    // construct the cluster list used for domain custom resource
-    List<Cluster> clusterList = new ArrayList<>();
-    for (int i = NUMBER_OF_CLUSTERS; i >= 1; i--) {
-      clusterList.add(new Cluster()
-          .clusterName(CLUSTER_NAME_PREFIX + i)
-          .replicas(replicaCount)
-          .serverStartState("RUNNING"));
-    }
-
-    // set resource request and limit
-    Map<String, Quantity> resourceRequest = new HashMap<>();
-    Map<String, Quantity> resourceLimit = new HashMap<>();
-    resourceRequest.put("cpu", new Quantity("250m"));
-    resourceRequest.put("memory", new Quantity("768Mi"));
-    resourceLimit.put("cpu", new Quantity("2"));
-    resourceLimit.put("memory", new Quantity("2Gi"));
-
-    // create the domain CR
-    Domain domain = new Domain()
-        .apiVersion(DOMAIN_API_VERSION)
-        .kind("Domain")
-        .metadata(new V1ObjectMeta()
-            .name(domainUid)
-            .namespace(domainNamespace))
-        .spec(new DomainSpec()
-            .domainUid(domainUid)
-            .domainHome("/u01/domains/" + domainUid)
-            .domainHomeSourceType("FromModel")
-            .image(miiImage)
-            .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(OCIR_SECRET_NAME))
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(adminSecretName)
-                .namespace(domainNamespace))
-            .includeServerOutInPodLog(true)
-            .serverStartPolicy("IF_NEEDED")
-            .serverPod(new ServerPod()
-                .addEnvItem(new V1EnvVar()
-                    .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false"))
-                .addEnvItem(new V1EnvVar()
-                    .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom "))
-                .resources(new V1ResourceRequirements()
-                    .requests(resourceRequest)
-                    .limits(resourceLimit)))
-            .adminServer(new AdminServer()
-                .serverStartState("RUNNING"))
-            .clusters(clusterList)
-            .configuration(new Configuration()
-                .istio(new Istio()
-                    .enabled(Boolean.TRUE)
-                    .readinessPort(8888))
-                .model(new Model()
-                    .domainType(WLS_DOMAIN_TYPE)
-                    .runtimeEncryptionSecret(encryptionSecretName))
-                .introspectorJobActiveDeadlineSeconds(300L)));
-
-    setPodAntiAffinity(domain);
-
-    // create model in image domain
-    logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
-        domainUid, domainNamespace, miiImage);
-    createDomainAndVerify(domain, domainNamespace);
-
-    // check that admin server pod is ready and service exists in domain namespace
-    logger.info("Checking that admin server pod {0} is ready and service exists in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
-
-    // check the readiness for the managed servers in each cluster
-    for (int i = 1; i <= NUMBER_OF_CLUSTERS; i++) {
-      for (int j = 1; j <= replicaCount; j++) {
-        String managedServerPodName =
-            domainUid + "-" + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
-
-        // check managed server pod is ready and service exists in the namespace
-        logger.info("Checking that managed server pod {0} is ready and service exists in namespace {1}",
-            managedServerPodName, domainNamespace);
-        checkPodReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
-      }
-    }
-
-    return domain;
-  }
 }
