@@ -1068,6 +1068,8 @@ class SitConfigGenerator(Generator):
     self.writeListenAddress(server.getListenAddress(),listen_address)
     self.customizeNetworkAccessPoints(server,listen_address)
     self.customizeServerIstioNetworkAccessPoint(listen_address, server)
+    if (self.getCoherenceClusterSystemResourceOrNone(server) is not None):
+      self.customizeCoherenceMemberConfig(server.getCoherenceMemberConfig(),listen_address)
     self.undent()
     self.writeln("</d:server>")
 
@@ -1090,7 +1092,7 @@ class SitConfigGenerator(Generator):
     self.customizeNetworkAccessPoints(template,listen_address)
     self.customizeManagedIstioNetworkAccessPoint(listen_address, template)
     if (self.getCoherenceClusterSystemResourceOrNone(template) is not None):
-      self.customizeCoherenceMemberConfig(listen_address)
+      self.customizeCoherenceMemberConfig(template.getCoherenceMemberConfig(), listen_address)
     self.undent()
     self.writeln("</d:server-template>")
 
@@ -1173,12 +1175,24 @@ class SitConfigGenerator(Generator):
       ret = None
     return ret
 
-  def customizeCoherenceMemberConfig(self, listen_address):
-   self.writeln('<d:coherence-member-config f:combine-mode="add">')
-   self.indent()
-   self.writeln('<d:unicast-listen-address f:combine-mode="add">%s</d:unicast-listen-address>' % listen_address)
-   self.undent()
-   self.writeln('</d:coherence-member-config>')
+  def customizeCoherenceMemberConfig(self, originalValue, listen_address):
+    if (originalValue is None):
+      self.writeln('<d:coherence-member-config f:combine-mode="add">')
+      self.indent()
+      self.writeln('<d:unicast-listen-address f:combine-mode="add">%s</d:unicast-listen-address>' % listen_address)
+      self.undent()
+      self.writeln('</d:coherence-member-config>')
+    else:
+      unicastAddress=originalValue.getUnicastListenAddress()
+      repVerb='"replace"'
+      if unicastAddress is None or len(unicastAddress)==0:
+        repVerb='"add"'
+
+      self.writeln('<d:coherence-member-config>')
+      self.indent()
+      self.writeln('<d:unicast-listen-address f:combine-mode=' + repVerb + '>%s</d:unicast-listen-address>' % listen_address)
+      self.undent()
+      self.writeln('</d:coherence-member-config>')
 
   def customizeServerIstioNetworkAccessPoint(self, listen_address, server):
     istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")

@@ -308,6 +308,8 @@ def customizeServer(server, name):
   setServerListenAddress(server, listen_address)
   customizeNetworkAccessPoints(server,listen_address)
   customizeServerIstioNetworkAccessPoint(server, listen_address)
+  if (getCoherenceClusterSystemResourceOrNone(server) is not None):
+    customizeCoherenceMemberConfig(server, listen_address)
 
 
 def customizeCoherenceMemberConfig(server, listen_address):
