@@ -45,12 +45,12 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainRe
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.patchDomainClusterWithAuxImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.readFilesInPod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfiguration;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.unzipWDTInstallationFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
+import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;

@@ -11,7 +11,6 @@ import java.util.List;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.CommonPatchTestUtils;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -40,14 +39,15 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.isOperatorPod
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.checkPodRestartVersionUpdated;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodRestarted;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
-import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createRouteForOKD;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.checkPodRestartVersionUpdated;
+import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainWithNewSecretAndVerify;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodRestarted;
+import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -293,7 +293,7 @@ class ItOperatorRestart {
     logger.info("Patch domain {0} in namespace {1} with the secret {2}, and verify the result",
         domainUid, domainNamespace, adminSecretName);
 
-    String restartVersion = CommonPatchTestUtils.patchDomainWithNewSecretAndVerify(
+    String restartVersion = patchDomainWithNewSecretAndVerify(
         domainUid,
         domainNamespace,
         adminSecretName);
