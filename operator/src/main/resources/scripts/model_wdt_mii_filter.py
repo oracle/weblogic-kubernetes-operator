@@ -617,8 +617,11 @@ def getCoherenceClusterSystemResourceOrNone(topology, serverOrTemplate):
     else:
       if 'CoherenceClusterSystemResource' not in serverOrTemplate:
         return None
+  else:
+    if 'CoherenceClusterSystemResource' not in serverOrTemplate:
+      return None
+    return serverOrTemplate['CoherenceClusterSystemResource']
 
-  return serverOrTemplate['CoherenceClusterSystemResource']
 
 def getDynamicServerOrNone(cluster):
   if 'DynamicServers' not in cluster:
