@@ -144,7 +144,6 @@ class ItWlsSamples {
 
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, domainNamespace);
-
   }
 
   /**
@@ -208,7 +207,7 @@ class ItWlsSamples {
 
   /**
    * Test domain in pv samples using domains created by wlst and wdt.
-   * In domain on pv using wdt usecase, we also run the update domain script from the samples,
+   * In domain on pv using wdt and wlst usecases, we also run the update domain script from the samples,
    * to add a cluster to the domain.
    *
    * @param model domain name and script type to create domain. Acceptable values of format String:wlst|wdt
@@ -255,12 +254,10 @@ class ItWlsSamples {
     // run create-domain.sh to create domain.yaml file, run kubectl to create the domain and verify
     createDomainAndVerify(domainName, sampleBase);
 
-    if (script.equals("wdt")) {
-      copyModelFileForUpdateDomain(sampleBase);
-      updateDomainAndVerify(domainName, sampleBase, domainNamespace);
-    }
+    // update the domain to add a new cluster
+    copyModelFileForUpdateDomain(sampleBase);
+    updateDomainAndVerify(domainName, sampleBase, domainNamespace, script);
   }
-
 
   /**
    * Test scripts for stopping and starting a managed server.
@@ -621,7 +618,10 @@ class ItWlsSamples {
     }
   }
 
-  private void updateDomainAndVerify(String domainName, Path sampleBase, String domainNamespace) {
+  private void updateDomainAndVerify(String domainName,
+                                     Path sampleBase,
+                                     String domainNamespace,
+                                     String script) {
     //First copy the update model file to wdt dir and rename it wdt-model_dynamic.yaml
     assertDoesNotThrow(() -> {
       copyFile(Paths.get(sampleBase.toString(), UPDATE_MODEL_FILE).toFile(),
@@ -639,6 +639,22 @@ class ItWlsSamples {
     logger.info("Run update-domain.sh to create domain.yaml file");
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain.yaml");
+
+    // For the domain created by WLST, we have to apply domain.yaml created by update-domain.sh
+    // before initiating introspection of the domain to start the second cluster that was just added
+    // otherwise the newly added Cluster 'cluster-2' is not added to the domain1.
+    if (script.equals("wlst")) {
+      // run kubectl to update the domain
+      logger.info("Run kubectl to create the domain");
+      params = new CommandParams().defaults();
+      params.command("kubectl apply -f "
+          + Paths.get(sampleBase.toString(), "weblogic-domains/"
+          + domainName
+          + "/domain.yaml").toString());
+
+      result = Command.withParams(params).execute();
+      assertTrue(result, "Failed to create domain custom resource");
+    }
 
     // Have to initiate introspection of the domain to start the second cluster that was just added
     // Call introspectDomain.sh
