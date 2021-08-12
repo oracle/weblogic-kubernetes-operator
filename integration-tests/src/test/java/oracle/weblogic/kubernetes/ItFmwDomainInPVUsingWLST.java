@@ -80,7 +80,7 @@ class ItFmwDomainInPVUsingWLST {
 
   private static final String RCUSCHEMAPREFIX = "jrfdomainpv";
   private static final String ORACLEDBURLPREFIX = "oracledb.";
-  private static final String ORACLEDBSUFFIX = ".svc.cluster.local:1521/devpdb.k8s";
+  private static String ORACLEDBSUFFIX = null;
   private static final String RCUSYSUSERNAME = "sys";
   private static final String RCUSYSPASSWORD = "Oradoc_db1";
   private static final String RCUSCHEMAUSERNAME = "myrcuuser";
@@ -114,6 +114,8 @@ class ItFmwDomainInPVUsingWLST {
     logger.info("Assign a unique namespace for DB and RCU");
     assertNotNull(namespaces.get(0), "Namespace is null");
     dbNamespace = namespaces.get(0);
+    final int dbListenerPort = getNextFreePort();
+    ORACLEDBSUFFIX = ".svc.cluster.local:" + dbListenerPort + "/devpdb.k8s";
     dbUrl = ORACLEDBURLPREFIX + dbNamespace + ORACLEDBSUFFIX;
 
     logger.info("Assign a unique namespace for operator");
@@ -124,13 +126,13 @@ class ItFmwDomainInPVUsingWLST {
     assertNotNull(namespaces.get(2), "Namespace is null");
     jrfDomainNamespace = namespaces.get(2);
 
-    logger.info("Start DB and create RCU schema for namespace: {0}, RCU prefix: {1}, "
-        + "dbUrl: {2}, dbImage: {3},  fmwImage: {4} ", dbNamespace, RCUSCHEMAPREFIX, dbUrl,
+    logger.info("Start DB and create RCU schema for namespace: {0}, dbListenerPort: {1}, RCU prefix: {2}, "
+         + "dbUrl: {3}, dbImage: {4},  fmwImage: {5} ", dbNamespace, dbListenerPort, RCUSCHEMAPREFIX, dbUrl,
         DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC);
     assertDoesNotThrow(() -> setupDBandRCUschema(DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC,
-        RCUSCHEMAPREFIX, dbNamespace, getNextFreePort(), dbUrl),
+        RCUSCHEMAPREFIX, dbNamespace, getNextFreePort(), dbUrl, dbListenerPort),
         String.format("Failed to create RCU schema for prefix %s in the namespace %s with "
-        + "dbUrl %s", RCUSCHEMAPREFIX, dbNamespace, dbUrl));
+        + "dbUrl %s, dbListenerPost $s", RCUSCHEMAPREFIX, dbNamespace, dbUrl, dbListenerPort));
 
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, jrfDomainNamespace);
