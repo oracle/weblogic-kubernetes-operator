@@ -301,10 +301,20 @@ public class ItMiiSampleHelper {
    */
   public static void callCheckMiiSampleSource(String args,
                                               String errString) {
+    /*
     final String baseImageNameKey = "BASE_IMAGE_NAME";
     envMap.remove(baseImageNameKey);
     execTestScriptAndAssertSuccess(domainType, args, errString);
-    envMap.put(baseImageNameKey, WEBLOGIC_IMAGE_NAME);
+    envMap.put(baseImageNameKey, WEBLOGIC_IMAGE_NAME);*/
+
+    final String baseImageNameKey = "BASE_IMAGE_NAME";
+    final String origImageName = envMap.get(baseImageNameKey);
+    try {
+      envMap.remove(baseImageNameKey);
+      execTestScriptAndAssertSuccess(domainType, args, errString);
+    } finally {
+      envMap.put(baseImageNameKey,origImageName);
+    }
   }
 
   /**
