@@ -1169,24 +1169,28 @@ class SitConfigGenerator(Generator):
 
   def getCoherenceClusterSystemResourceOrNone(self, serverOrTemplate):
     try:
-      ret = serverOrTemplate.getCoherenceClusterSystemResource()
+      cluster=serverOrTemplate.getCluster()
+      if (cluster is not None):
+        ret=cluster.getCoherenceClusterSystemResource()
+      else:
+        ret=serverOrTemplate.getCoherenceClusterSystemResource()
     except:
       trace("Ignoring getCoherenceClusterSystemResource () exception, this is expected.")
       ret = None
     return ret
 
-  def customizeCoherenceMemberConfig(self, originalValue, listen_address):
-    if (originalValue is None):
-      self.writeln('<d:coherence-member-config f:combine-mode="add">')
+  def customizeCoherenceMemberConfig(self, coherence_member_config, listen_address):
+    repVerb='"add"'
+    if (coherence_member_config is None):
+      self.writeln('<d:coherence-member-config f:combine-mode=' + repVerb + '>')
       self.indent()
-      self.writeln('<d:unicast-listen-address f:combine-mode="add">%s</d:unicast-listen-address>' % listen_address)
+      self.writeln('<d:unicast-listen-address f:combine-mode=' + repVerb + '>%s</d:unicast-listen-address>' % listen_address)
       self.undent()
       self.writeln('</d:coherence-member-config>')
     else:
-      unicastAddress=originalValue.getUnicastListenAddress()
-      repVerb='"replace"'
-      if unicastAddress is None or len(unicastAddress)==0:
-        repVerb='"add"'
+      unicastAddress=coherence_member_config.getUnicastListenAddress()
+      if unicastAddress is not None:
+        repVerb='"replace"'
 
       self.writeln('<d:coherence-member-config>')
       self.indent()

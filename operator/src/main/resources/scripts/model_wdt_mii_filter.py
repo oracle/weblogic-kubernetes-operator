@@ -217,7 +217,7 @@ def customizeServerTemplate(topology, template):
   setServerListenAddress(template, listen_address)
   customizeNetworkAccessPoints(template, listen_address)
   customizeManagedIstioNetworkAccessPoint(template, listen_address)
-  if (getCoherenceClusterSystemResourceOrNone(template) is not None):
+  if (getCoherenceClusterSystemResourceOrNone(topology, template) is not None):
     customizeCoherenceMemberConfig(template, listen_address)
 
 
@@ -297,10 +297,10 @@ def customizeServers(model):
   names = servers.keys()
   for name in names:
     server = servers[name]
-    customizeServer(server, name)
+    customizeServer(model, server, name)
 
 
-def customizeServer(server, name):
+def customizeServer(model, server, name):
   listen_address=env.toDNS1123Legal(env.getDomainUID() + "-" + name)
   customizeLog(name, server)
   customizeAccessLog(name, server)
@@ -308,7 +308,7 @@ def customizeServer(server, name):
   setServerListenAddress(server, listen_address)
   customizeNetworkAccessPoints(server,listen_address)
   customizeServerIstioNetworkAccessPoint(server, listen_address)
-  if (getCoherenceClusterSystemResourceOrNone(server) is not None):
+  if (getCoherenceClusterSystemResourceOrNone(model['topology'], server) is not None):
     customizeCoherenceMemberConfig(server, listen_address)
 
 
@@ -605,10 +605,18 @@ def getClusterOrNone(topology, name):
 
   return None
 
+def getCoherenceClusterSystemResourceOrNone(topology, serverOrTemplate):
 
-def getCoherenceClusterSystemResourceOrNone(serverOrTemplate):
-  if 'CoherenceClusterSystemResource' not in serverOrTemplate:
-    return None
+  cluster_name = getClusterNameOrNone(serverOrTemplate)
+  if cluster_name is not None:
+    cluster = getClusterOrNone(topology, cluster_name)
+    if cluster is not None:
+      if 'CoherenceClusterSystemResource' not in cluster:
+        return None
+      return cluster['CoherenceClusterSystemResource']
+    else:
+      if 'CoherenceClusterSystemResource' not in serverOrTemplate:
+        return None
 
   return serverOrTemplate['CoherenceClusterSystemResource']
 
