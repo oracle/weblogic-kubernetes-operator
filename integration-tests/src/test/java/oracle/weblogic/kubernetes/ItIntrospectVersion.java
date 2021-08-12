@@ -961,7 +961,6 @@ class ItIntrospectVersion {
    * To: "image:container-registry.oracle.com/middleware/weblogic:2021-07-08-162571383699"
    * Verify all the pods are restarted and back to ready state
    * Verify the admin server is accessible and cluster members are healthy
-   * This test will be skipped if the image tag is the latest WebLogic image tag
    */
   @Order(5)
   @Test
