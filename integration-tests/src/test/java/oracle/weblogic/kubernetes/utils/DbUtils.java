@@ -95,16 +95,15 @@ public class DbUtils {
    */
 
   public static synchronized void setupDBandRCUschema(String dbImage, String fmwImage, String rcuSchemaPrefix,
-       String dbNamespace,
-      int dbPort, String dbUrl) throws ApiException {
+       String dbNamespace, int dbPort, String dbUrl, int dbListenerPort) throws ApiException {
     LoggingFacade logger = getLogger();
     // create pull secrets when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
     createSecretForBaseImages(dbNamespace);
 
-    logger.info("Start Oracle DB with dbImage: {0}, dbPort: {1}, dbNamespace: {2}",
-        dbImage, dbPort, dbNamespace);
-    startOracleDB(dbImage, dbPort, dbNamespace);
+    logger.info("Start Oracle DB with dbImage: {0}, dbPort: {1}, dbNamespace: {2}, dbListenerPort:{3}",
+        dbImage, dbPort, dbNamespace, dbListenerPort);
+    startOracleDB(dbImage, dbPort, dbNamespace, dbListenerPort);
     logger.info("Create RCU schema with fmwImage: {0}, rcuSchemaPrefix: {1}, dbUrl: {2}, "
         + " dbNamespace: {3}:", fmwImage, rcuSchemaPrefix, dbUrl, dbNamespace);
     createRcuSchema(fmwImage, rcuSchemaPrefix, dbUrl, dbNamespace);
@@ -117,9 +116,10 @@ public class DbUtils {
    * @param dbBaseImageName full image name for DB deployment
    * @param dbPort NodePort of DB
    * @param dbNamespace namespace where DB instance is going to start
+   * @param dbListenerPort TCP listener port of DB
    */
-  public static synchronized void startOracleDB(String dbBaseImageName, int dbPort, String dbNamespace)
-      throws ApiException {
+  public static synchronized void startOracleDB(String dbBaseImageName, int dbPort, String dbNamespace,
+      int dbListenerPort) throws ApiException {
     LoggingFacade logger = getLogger();
     Map labels = new HashMap<String, String>();
     labels.put("app", "database");
@@ -144,7 +144,7 @@ public class DbUtils {
             .ports(Arrays.asList(
                 new V1ServicePort()
                     .name("tns")
-                    .port(1521)
+                    .port(dbListenerPort)
                     .protocol("TCP")
                     .targetPort(new IntOrString(1521))
                     .nodePort(dbPort)))
@@ -152,15 +152,17 @@ public class DbUtils {
             .sessionAffinity("None")
             .type("LoadBalancer"));
 
-    logger.info("Create service for Oracle DB service in namespace {0}", dbNamespace);
+    logger.info("Create service for Oracle DB service in namespace {0}, dbListenerPort: {1}", dbNamespace,
+        dbListenerPort);
     boolean serviceCreated = assertDoesNotThrow(() -> Kubernetes.createService(oracleDBService),
         String.format("Create service failed with ApiException for oracleDBService in namespace %s",
             dbNamespace));
     assertTrue(serviceCreated, String.format(
-        "Create service failed for OracleDbService in namespace %s ", dbNamespace));
+        "Create service failed for OracleDbService in namespace %s dbListenerPort %s ", dbNamespace, dbListenerPort));
 
     //create V1Deployment for Oracle DB
-    logger.info("Configure V1Deployment in namespace {0} using image {1}", dbNamespace,  dbBaseImageName);
+    logger.info("Configure V1Deployment in namespace {0} using image {1} dbListenerPort {2}", dbNamespace,
+        dbBaseImageName, dbListenerPort);
     oracleDbDepl = new V1Deployment()
         .apiVersion("apps/v1")
         .kind("Deployment")
@@ -192,10 +194,10 @@ public class DbUtils {
                             .name("oracledb")
                             .ports(Arrays.asList(
                                 new V1ContainerPort()
-                                .containerPort(1521)
+                                .containerPort(dbListenerPort)
                                 .name("tns")
                                 .protocol("TCP")
-                                .hostPort(1521)))
+                                .hostPort(dbListenerPort)))
                             .resources(new V1ResourceRequirements()
                                 .limits(limits)
                                 .requests(requests))
@@ -209,14 +211,14 @@ public class DbUtils {
                         new V1LocalObjectReference()
                             .name(BASE_IMAGES_REPO_SECRET))))));
 
-    logger.info("Create deployment for Oracle DB in namespace {0}",
-        dbNamespace);
+    logger.info("Create deployment for Oracle DB in namespace {0} dbListenerPost {1}",
+        dbNamespace, dbListenerPort);
     boolean deploymentCreated = assertDoesNotThrow(() -> Kubernetes.createDeployment(oracleDbDepl),
         String.format("Create deployment failed with ApiException for Oracle DB in namespace %s",
             dbNamespace));
     assertTrue(deploymentCreated, String.format(
-        "Create deployment failed for oracleDbDepl in namespace %s ",
-        dbNamespace));
+        "Create deployment failed for oracleDbDepl in namespace %s  dbListenerPort %s",
+        dbNamespace, dbListenerPort));
 
     // sleep for a while to make sure the DB pod is created
     try {
@@ -261,11 +263,14 @@ public class DbUtils {
   public static synchronized void createRcuSchema(String fmwBaseImageName, String rcuPrefix, String dbUrl,
       String dbNamespace) throws ApiException {
     LoggingFacade logger = getLogger();
-    logger.info("Create RCU pod for RCU prefix {0}", rcuPrefix);
+    logger.info("Create RCU pod for for namespace: {0}, RCU prefix: {1}, "
+         + "dbUrl: {2},  fmwImage: {3} ", dbNamespace, rcuPrefix, dbUrl, fmwBaseImageName);
     assertDoesNotThrow(() -> createRcuPod(fmwBaseImageName, dbUrl, dbNamespace),
         String.format("Creating RCU pod failed with ApiException for image: %s, rcuPrefix: %s, dbUrl: %s, "
                 + "in namespace: %s", fmwBaseImageName, rcuPrefix, dbUrl, dbNamespace));
 
+    logger.info("createRcuRepository for dbNamespace: {0}, dbUrl: {1}, RCU prefix: {2} ",
+            dbNamespace, dbUrl, rcuPrefix);
     assertTrue(assertDoesNotThrow(
         () -> createRcuRepository(dbNamespace, dbUrl, rcuPrefix),
         String.format("createRcuRepository failed for dbNamespace: %s, dbUrl: %s, rcuPrefix: %s",
