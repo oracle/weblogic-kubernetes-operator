@@ -136,8 +136,11 @@ class ItMiiServiceMigration {
     createOcirRepoSecret(domainNamespace);
 
     //Start oracleDB
+    final int dbListenerPort = getNextFreePort();
+    logger.info("Start Oracle DB with namespace: {0}, dbListenerPort:{1}",
+        domainNamespace, dbListenerPort);
     assertDoesNotThrow(() -> {
-      startOracleDB(DB_IMAGE_TO_USE_IN_SPEC, getNextFreePort(), domainNamespace);
+      startOracleDB(DB_IMAGE_TO_USE_IN_SPEC, getNextFreePort(), domainNamespace, dbListenerPort);
       String.format("Failed to start Oracle Database Service");
     });
     dbNodePort = getDBNodePort(domainNamespace, "oracledb");
