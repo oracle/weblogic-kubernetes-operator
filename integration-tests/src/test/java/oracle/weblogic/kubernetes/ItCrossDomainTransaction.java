@@ -113,7 +113,7 @@ class ItCrossDomainTransaction {
   private static String domain2AdminServerPodName = domainUid2 + "-admin-server";
   private final String domain2ManagedServerPrefix = domainUid2 + "-managed-server";
   private static final String ORACLEDBURLPREFIX = "oracledb.";
-  private static final String ORACLEDBSUFFIX = ".svc.cluster.local:1521/devpdb.k8s";
+  private static String ORACLEDBSUFFIX = null;
   private static LoggingFacade logger = null;
   static String dbUrl;
   static int dbNodePort;
@@ -144,12 +144,16 @@ class ItCrossDomainTransaction {
     assertNotNull(namespaces.get(2), "Namespace list is null");
     domain2Namespace = namespaces.get(2);
 
+    final int dbListenerPort = getNextFreePort();
+    ORACLEDBSUFFIX = ".svc.cluster.local:" + dbListenerPort + "/devpdb.k8s";
     dbUrl = ORACLEDBURLPREFIX + domain2Namespace + ORACLEDBSUFFIX;
     createSecretForBaseImages(domain2Namespace);
 
     //Start oracleDB
+    logger.info("Start Oracle DB with namespace: {0}, dbListenerPort:{1}",
+        domain2Namespace, dbListenerPort);
     assertDoesNotThrow(() -> {
-      startOracleDB(DB_IMAGE_TO_USE_IN_SPEC, getNextFreePort(), domain2Namespace);
+      startOracleDB(DB_IMAGE_TO_USE_IN_SPEC, getNextFreePort(), domain2Namespace, dbListenerPort);
       String.format("Failed to start Oracle DB");
     });
     dbNodePort = getDBNodePort(domain2Namespace, "oracledb");
@@ -322,7 +326,7 @@ class ItCrossDomainTransaction {
     assertNotEquals(-1, domain1AdminServiceNodePort, "admin server default node port is not valid");
 
     admin2ServiceNodePort = assertDoesNotThrow(
-       () -> getServiceNodePort(domain2Namespace, getExternalServicePodName(domain2AdminServerPodName), "default"),
+      () -> getServiceNodePort(domain2Namespace, getExternalServicePodName(domain2AdminServerPodName), "default"),
         "Getting admin server node port failed");
     assertNotEquals(-1, admin2ServiceNodePort, "admin server default node port is not valid");
   }
@@ -365,7 +369,7 @@ class ItCrossDomainTransaction {
     }
   }
 
-  /*
+  /**
    * This test verifies a cross-domain transaction with re-connection.
    * It makes sure the disitibuted transaction is completed successfully
    * when a coordinator server is re-started after writing to transcation log
@@ -399,7 +403,7 @@ class ItCrossDomainTransaction {
     }
   }
 
-  /*
+  /**
    * This test verifies cross-domain MessageDrivenBean communication
    * A transacted MDB on Domain D1 listen on a replicated Distributed Topic
    * on Domain D2.
