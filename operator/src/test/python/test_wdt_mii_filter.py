@@ -101,7 +101,7 @@ class WdtUpdateFilterCase(unittest.TestCase):
 
     server_name = 'admin-server'
     server = model['topology']['Server'][server_name]
-    model_wdt_mii_filter.customizeServer(server, server_name)
+    model_wdt_mii_filter.customizeServer(model, server, server_name)
     listen_address = server['ListenAddress']
     self.assertEqual('sample-domain1-admin-server', listen_address, "Expected listen address to be \'sample-domain1-admin-server\'")
 
