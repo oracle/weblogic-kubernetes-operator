@@ -1068,6 +1068,8 @@ class SitConfigGenerator(Generator):
     self.writeListenAddress(server.getListenAddress(),listen_address)
     self.customizeNetworkAccessPoints(server,listen_address)
     self.customizeServerIstioNetworkAccessPoint(listen_address, server)
+    if (self.getCoherenceClusterSystemResourceOrNone(server) is not None):
+      self.customizeCoherenceMemberConfig(server.getCoherenceMemberConfig(),listen_address)
     self.undent()
     self.writeln("</d:server>")
 
@@ -1089,6 +1091,8 @@ class SitConfigGenerator(Generator):
     self.writeListenAddress(template.getListenAddress(),listen_address)
     self.customizeNetworkAccessPoints(template,listen_address)
     self.customizeManagedIstioNetworkAccessPoint(listen_address, template)
+    if (self.getCoherenceClusterSystemResourceOrNone(template) is not None):
+      self.customizeCoherenceMemberConfig(template.getCoherenceMemberConfig(), listen_address)
     self.undent()
     self.writeln("</d:server-template>")
 
@@ -1162,6 +1166,37 @@ class SitConfigGenerator(Generator):
     self.writeln('<d:enabled %s>true</d:enabled>' % action)
     self.undent()
     self.writeln('</d:network-access-point>')
+
+  def getCoherenceClusterSystemResourceOrNone(self, serverOrTemplate):
+    try:
+      cluster=serverOrTemplate.getCluster()
+      if (cluster is not None):
+        ret=cluster.getCoherenceClusterSystemResource()
+      else:
+        ret=serverOrTemplate.getCoherenceClusterSystemResource()
+    except:
+      trace("Ignoring getCoherenceClusterSystemResource () exception, this is expected.")
+      ret = None
+    return ret
+
+  def customizeCoherenceMemberConfig(self, coherence_member_config, listen_address):
+    repVerb='"add"'
+    if (coherence_member_config is None):
+      self.writeln('<d:coherence-member-config f:combine-mode=' + repVerb + '>')
+      self.indent()
+      self.writeln('<d:unicast-listen-address f:combine-mode=' + repVerb + '>%s</d:unicast-listen-address>' % listen_address)
+      self.undent()
+      self.writeln('</d:coherence-member-config>')
+    else:
+      unicastAddress=coherence_member_config.getUnicastListenAddress()
+      if unicastAddress is not None:
+        repVerb='"replace"'
+
+      self.writeln('<d:coherence-member-config>')
+      self.indent()
+      self.writeln('<d:unicast-listen-address f:combine-mode=' + repVerb + '>%s</d:unicast-listen-address>' % listen_address)
+      self.undent()
+      self.writeln('</d:coherence-member-config>')
 
   def customizeServerIstioNetworkAccessPoint(self, listen_address, server):
     istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
