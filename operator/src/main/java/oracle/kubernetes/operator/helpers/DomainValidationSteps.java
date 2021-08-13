@@ -79,12 +79,7 @@ public class DomainValidationSteps {
     }
 
     static List<V1Secret> getSecrets(Packet packet) {
-      return Optional.ofNullable(getSecretsFromPacket(packet)).orElse(new ArrayList<>());
-    }
-
-    @SuppressWarnings("unchecked")
-    private static List<V1Secret> getSecretsFromPacket(Packet packet) {
-      return packet.get(SECRETS) != null ? (List<V1Secret>) packet.get(SECRETS) : null;
+      return (List<V1Secret>) Optional.ofNullable(packet.get(SECRETS)).orElse(new ArrayList<>());
     }
   }
 
@@ -104,12 +99,7 @@ public class DomainValidationSteps {
     }
 
     static List<V1ConfigMap> getConfigMaps(Packet packet) {
-      return Optional.ofNullable(getConfigMapsFromPacket(packet)).orElse(new ArrayList<>());
-    }
-
-    @SuppressWarnings("unchecked")
-    private static List<V1ConfigMap> getConfigMapsFromPacket(Packet packet) {
-      return packet.get(CONFIGMAPS) != null ? (List<V1ConfigMap>) packet.get(CONFIGMAPS) : null;
+      return (List<V1ConfigMap>) Optional.ofNullable(packet.get(CONFIGMAPS)).orElse(new ArrayList<>());
     }
   }
 
