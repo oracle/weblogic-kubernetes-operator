@@ -29,6 +29,10 @@
         <cpe>cpe:/a:kubernetes:kubernetes</cpe>
     </suppress>
     <suppress>
+        <packageUrl regex="true">^pkg:maven/oracle\.kubernetes/installation\-tests@.*$</packageUrl>
+        <cpe>cpe:/a:kubernetes:kubernetes</cpe>
+    </suppress>
+    <suppress>
         <packageUrl regex="true">^pkg:maven/oracle\.kubernetes/json\-schema@.*$</packageUrl>
         <cpe>cpe:/a:kubernetes:kubernetes</cpe>
     </suppress>
