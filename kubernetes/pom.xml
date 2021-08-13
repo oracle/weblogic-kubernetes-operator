@@ -119,9 +119,7 @@
                                 <include>**/*IT.java</include>
                                 <include>**/*AT.java</include>
                             </includes>
-                            <argLine>
-                                --add-opens java.base/java.time=ALL-UNNAMED
-                            </argLine>
+                            <argLine>@{argLine} --add-opens java.base/java.time=ALL-UNNAMED</argLine>
                         </configuration>
                         <executions>
                             <execution>
@@ -136,5 +134,9 @@
             </build>
         </profile>
     </profiles>
+
+    <properties>
+        <sonar.coverage.jacoco.xmlReportPaths>${basedir}/../${aggregate.report.dir}</sonar.coverage.jacoco.xmlReportPaths>
+    </properties>
 
 </project>
