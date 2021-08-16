@@ -92,7 +92,7 @@
           <includes>
             <exclude>**/*Test.java</exclude>
           </includes>
-          <argLine>--add-opens java.base/java.time=ALL-UNNAMED</argLine>
+          <argLine>@{argLine} --add-opens java.base/java.time=ALL-UNNAMED</argLine>
         </configuration>
       </plugin>
 
