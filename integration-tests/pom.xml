@@ -71,9 +71,7 @@
                 <artifactId>maven-failsafe-plugin</artifactId>
                 <configuration>
                     <encoding>UTF-8</encoding>
-                    <argLine>
-                        --add-opens java.base/java.time=ALL-UNNAMED
-                    </argLine>
+                    <argLine>@{argLine} --add-opens java.base/java.time=ALL-UNNAMED</argLine>
                     <argLine>${failsafeArgLine}</argLine>
                     <failIfNoTests>false</failIfNoTests>
                     <includes>
