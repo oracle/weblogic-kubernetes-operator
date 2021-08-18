@@ -310,7 +310,7 @@ def customizeServer(model, server, name):
   customizeNetworkAccessPoints(server,listen_address)
   customizeServerIstioNetworkAccessPoint(server, listen_address)
   if (name == adminServer):
-    addAdminServerPortForwardNetworkAccessPoints(server, listen_address)
+    addAdminServerPortForwardNetworkAccessPoints(server)
   if (getCoherenceClusterSystemResourceOrNone(model['topology'], server) is not None):
     customizeCoherenceMemberConfig(server, listen_address)
 
@@ -524,8 +524,10 @@ def customizeManagedIstioNetworkAccessPoint(template, listen_address):
                    listen_port=ssl_listen_port, protocol='iiops')
 
 
-def addAdminServerPortForwardNetworkAccessPoints(server, listen_address):
-  if env.getEnvOrDef("PORT_FORWARDING_ENABLED", "true") == 'false':
+def addAdminServerPortForwardNetworkAccessPoints(server):
+  istio_enabled = env.getEnvOrDef("ISTIO_ENABLED", "false")
+  port_forwarding_enabled = env.getEnvOrDef("PORT_FORWARDING_ENABLED", "true")
+  if (port_forwarding_enabled == 'false') or (istio_enabled == 'true'):
     return
 
   admin_server_port = server['ListenPort']
@@ -534,29 +536,28 @@ def addAdminServerPortForwardNetworkAccessPoints(server, listen_address):
   if admin_server_port is None:
     admin_server_port = 7001
 
-  _writePortForwardNAP(name='t3-localhost', server=server, listen_address=listen_address,
-                 listen_port=admin_server_port, protocol='t3')
-
-  ssl = getSSLOrNone(server)
-  ssl_listen_port = None
   model = env.getModel()
-  if ssl is not None and 'Enabled' in ssl and ssl['Enabled'] == 'true':
-    ssl_listen_port = ssl['ListenPort']
-    if ssl_listen_port is None:
-      ssl_listen_port = "7002"
-  elif ssl is None and isSecureModeEnabledForDomain(model['topology']):
-    ssl_listen_port = "7002"
-
-
-  if ssl_listen_port is not None:
-    _writePortForwardNAP(name='t3s-localhost', server=server, listen_address=listen_address,
-                   listen_port=ssl_listen_port, protocol='t3s', http_enabled="true")
 
   if isAdministrationPortEnabledForServer(server, model['topology']):
-    _writePortForwardNAP(name='admin-localhost', server=server, listen_address=listen_address,
-                   listen_port=getAdministrationPort(server, model['topology']), protocol='admin', http_enabled="true")
+    _writePortForwardNAP(name='internal-admin', server=server,
+                         listen_port=getAdministrationPort(server, model['topology']), protocol='admin')
+  else:
+    _writePortForwardNAP(name='internal-t3', server=server, listen_port=admin_server_port, protocol='t3')
 
-def _writePortForwardNAP(name, server, listen_address, listen_port, protocol, http_enabled="true"):
+    ssl = getSSLOrNone(server)
+    ssl_listen_port = None
+    if ssl is not None and 'Enabled' in ssl and ssl['Enabled'] == 'true':
+      ssl_listen_port = ssl['ListenPort']
+      if ssl_listen_port is None:
+        ssl_listen_port = "7002"
+    elif ssl is None and isSecureModeEnabledForDomain(model['topology']):
+      ssl_listen_port = "7002"
+
+    if ssl_listen_port is not None:
+      _writePortForwardNAP(name='internal-t3s', server=server, listen_port=ssl_listen_port, protocol='t3s')
+
+
+def _writePortForwardNAP(name, server, listen_port, protocol):
 
   if 'NetworkAccessPoint' not in server:
     server['NetworkAccessPoint'] = {}
@@ -569,7 +570,7 @@ def _writePortForwardNAP(name, server, listen_address, listen_port, protocol, ht
   nap['Protocol'] = protocol
   nap['ListenAddress'] = '127.0.0.1'
   nap['ListenPort'] = listen_port
-  nap['HttpEnabledForThisProtocol'] = http_enabled
+  nap['HttpEnabledForThisProtocol'] = 'true'
   nap['TunnelingEnabled'] = 'false'
   nap['Enabled'] = 'true'
 

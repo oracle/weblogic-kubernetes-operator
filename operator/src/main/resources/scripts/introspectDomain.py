@@ -1059,6 +1059,7 @@ class SitConfigGenerator(Generator):
   def customizeServer(self, server):
     name=server.getName()
     listen_address=self.env.toDNS1123Legal(self.env.getDomainUID() + "-" + name)
+    admin_server_name = self.env.getDomain().getAdminServerName()
     self.writeln("<d:server>")
     self.indent()
     self.writeln("<d:name>" + name + "</d:name>")
@@ -1068,7 +1069,8 @@ class SitConfigGenerator(Generator):
     self.writeListenAddress(server.getListenAddress(),listen_address)
     self.customizeNetworkAccessPoints(server,listen_address)
     self.customizeServerIstioNetworkAccessPoint(listen_address, server)
-    self.addAdminServerPortForwardNetworkAccessPoints(listen_address, server)
+    if (server.getName() == admin_server_name):
+      self.addAdminServerPortForwardNetworkAccessPoints(server)
     if (self.getCoherenceClusterSystemResourceOrNone(server) is not None):
       self.customizeCoherenceMemberConfig(server.getCoherenceMemberConfig(),listen_address)
     self.undent()
@@ -1169,7 +1171,6 @@ class SitConfigGenerator(Generator):
     self.writeln('</d:network-access-point>')
 
   def _getPortForwardNapConfigOverrideAction(self, svr, testname):
-    replace_action = 'f:combine-mode="replace"'
     add_action = 'f:combine-mode="add"'
     found = False
     for nap in svr.getNetworkAccessPoints():
@@ -1183,8 +1184,8 @@ class SitConfigGenerator(Generator):
     else:
       return add_action, "add"
 
-  def _writePortForwardNAP(self, name, server, listen_address, listen_port, protocol, http_enabled="true"):
-    action, type = self._getPortForwardNapConfigOverrideAction(server, "t3-localhost")
+  def _writePortForwardNAP(self, name, server, listen_port, protocol):
+    action, type = self._getPortForwardNapConfigOverrideAction(server, name)
 
     # For add, we must put the combine mode as add
     # For replace, we must omit it
@@ -1342,26 +1343,25 @@ class SitConfigGenerator(Generator):
                           listen_port=ssl_listen_port, protocol='iiops')
 
 
-  def addAdminServerPortForwardNetworkAccessPoints(self, listen_address, server):
-    if self.env.getEnvOrDef("PORT_FORWARDING_ENABLED", "true") == 'false':
+  def addAdminServerPortForwardNetworkAccessPoints(self, server):
+    istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
+    port_forward_enabled = self.env.getEnvOrDef("PORT_FORWARDING_ENABLED", "true")
+    if (port_forward_enabled == 'false') or (istio_enabled == 'true') :
       return
-
-    if server.getName() != self.env.getDomain().getAdminServerName():
-      return
-
-    admin_server_port = getRealListenPort(server)
-    self._writePortForwardNAP(name='t3-localhost', server=server, listen_address=listen_address,
-                        listen_port=admin_server_port, protocol='t3')
-
-    ssl_listen_port = getSSLPortIfEnabled(server, self.env.getDomain(), is_server_template=False)
-
-    if ssl_listen_port is not None:
-      self._writePortForwardNAP(name='t3s-localhost', server=server, listen_address=listen_address,
-                          listen_port=ssl_listen_port, protocol='t3s')
 
     if isAdministrationPortEnabledForServer(server, self.env.getDomain()):
-      self._writePortForwardNAP(name='admin-localhost', server=server, listen_address=listen_address,
-                          listen_port=getAdministrationPort(server, self.env.getDomain()), protocol='admin', http_enabled="true")
+      self._writePortForwardNAP(name='internal-admin', server=server,
+                                listen_port=getAdministrationPort(server, self.env.getDomain()), protocol='admin')
+    else:
+      admin_server_port = getRealListenPort(server)
+      self._writePortForwardNAP(name='internal-t3', server=server,
+                        listen_port=admin_server_port, protocol='t3')
+
+      ssl_listen_port = getSSLPortIfEnabled(server, self.env.getDomain(), is_server_template=False)
+
+      if ssl_listen_port is not None:
+        self._writePortForwardNAP(name='internal-t3s', server=server,
+                          listen_port=ssl_listen_port, protocol='t3s')
 
   def getLogOrNone(self,server):
     try:
