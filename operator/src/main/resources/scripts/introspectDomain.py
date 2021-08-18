@@ -1068,7 +1068,7 @@ class SitConfigGenerator(Generator):
     self.writeListenAddress(server.getListenAddress(),listen_address)
     self.customizeNetworkAccessPoints(server,listen_address)
     self.customizeServerIstioNetworkAccessPoint(listen_address, server)
-    self.customizeServerPortForwardNetworkAccessPoint(listen_address, server)
+    self.addAdminServerPortForwardNetworkAccessPoints(listen_address, server)
     if (self.getCoherenceClusterSystemResourceOrNone(server) is not None):
       self.customizeCoherenceMemberConfig(server.getCoherenceMemberConfig(),listen_address)
     self.undent()
@@ -1342,15 +1342,13 @@ class SitConfigGenerator(Generator):
                           listen_port=ssl_listen_port, protocol='iiops')
 
 
-  def customizeServerPortForwardNetworkAccessPoint(self, listen_address, server):
-    port_forwarding_enabled = self.env.getEnvOrDef("PORT_FORWARDING_ENABLED", "true")
-    print("port_forwarding_enabled -> ")
-    print(port_forwarding_enabled)
-    print("-------------------------> ")
-    if port_forwarding_enabled == 'false':
+  def addAdminServerPortForwardNetworkAccessPoints(self, listen_address, server):
+    if self.env.getEnvOrDef("PORT_FORWARDING_ENABLED", "true") == 'false':
       return
 
-    print("port_forwarding_enabled not false.. continuing -> ")
+    if server.getName() != self.env.getDomain().getAdminServerName():
+      return
+
     admin_server_port = getRealListenPort(server)
     self._writePortForwardNAP(name='t3-localhost', server=server, listen_address=listen_address,
                         listen_port=admin_server_port, protocol='t3')

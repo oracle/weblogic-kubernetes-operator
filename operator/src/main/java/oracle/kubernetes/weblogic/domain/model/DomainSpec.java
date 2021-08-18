@@ -121,7 +121,7 @@ public class DomainSpec extends BaseConfiguration {
   @Description(
           "Specifies whether the port forwarding is enabled. "
                   + "Defaults to true.")
-  private Boolean portForwardingEnabled=true;
+  private Boolean portForwardingEnabled = true;
 
 
   /**
@@ -866,7 +866,7 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
-   * Test if the port forwarding is enabled for the domain
+   * Test if the port forwarding is enabled for the domain.
    *
    * @return portFowardingEnabled
    */

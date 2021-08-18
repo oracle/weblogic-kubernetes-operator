@@ -302,13 +302,15 @@ def customizeServers(model):
 
 def customizeServer(model, server, name):
   listen_address=env.toDNS1123Legal(env.getDomainUID() + "-" + name)
+  adminServer = model['topology']['AdminServerName']
   customizeLog(name, server)
   customizeAccessLog(name, server)
   customizeDefaultFileStore(server)
   setServerListenAddress(server, listen_address)
   customizeNetworkAccessPoints(server,listen_address)
   customizeServerIstioNetworkAccessPoint(server, listen_address)
-  customizeServerPortForwardNetworkAccessPoint(server, listen_address)
+  if (name == adminServer):
+    addAdminServerPortForwardNetworkAccessPoints(server, listen_address)
   if (getCoherenceClusterSystemResourceOrNone(model['topology'], server) is not None):
     customizeCoherenceMemberConfig(server, listen_address)
 
@@ -522,9 +524,8 @@ def customizeManagedIstioNetworkAccessPoint(template, listen_address):
                    listen_port=ssl_listen_port, protocol='iiops')
 
 
-def customizeServerPortForwardNetworkAccessPoint(server, listen_address):
-  port_forwarding_enabled = env.getEnvOrDef("PORT_FORWARDING_ENABLED", "true")
-  if port_forwarding_enabled == 'false':
+def addAdminServerPortForwardNetworkAccessPoints(server, listen_address):
+  if env.getEnvOrDef("PORT_FORWARDING_ENABLED", "true") == 'false':
     return
 
   admin_server_port = server['ListenPort']
