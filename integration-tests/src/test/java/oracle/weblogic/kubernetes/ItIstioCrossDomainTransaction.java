@@ -63,21 +63,21 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkAppIsActive;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.generateFileFromTemplate;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.DbUtils.getDBNodePort;
 import static oracle.weblogic.kubernetes.utils.DbUtils.startOracleDB;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFolder;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGatewayAndVirtualservice;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.getIstioHttpIngressPort;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
@@ -89,7 +89,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify cross domain transaction with istio enabled is successful")
 @IntegrationTest
-public class ItIstioCrossDomainTransaction {
+class ItIstioCrossDomainTransaction {
 
   private static final String WDT_MODEL_FILE_DOMAIN1 = "model-crossdomaintransaction-domain1.yaml";
   private static final String WDT_MODEL_FILE_DOMAIN2 = "model-crossdomaintransaction-domain2.yaml";
@@ -380,7 +380,7 @@ public class ItIstioCrossDomainTransaction {
   @Order(1)
   @Test
   @DisplayName("Check cross domain transaction with istio works")
-  public void testIstioCrossDomainTransaction() {
+  void testIstioCrossDomainTransaction() {
 
     String curlRequest = String.format("curl -v --show-error --noproxy '*' "
             + "-H 'host:domain1-" + domain1Namespace + ".org' "
@@ -418,7 +418,7 @@ public class ItIstioCrossDomainTransaction {
   @Order(2)
   @Test
   @DisplayName("Check cross domain transaction with istio and with TMAfterTLogBeforeCommitExit property commits")
-  public void testIstioCrossDomainTransactionWithFailInjection() {
+  void testIstioCrossDomainTransactionWithFailInjection() {
 
     String curlRequest = String.format("curl -v --show-error --noproxy '*' "
             + "-H 'host:domain1-" + domain1Namespace + ".org' "
@@ -456,7 +456,7 @@ public class ItIstioCrossDomainTransaction {
   @Order(3)
   @Test
   @DisplayName("Check cross domain transcated MDB communication with istio")
-  public void testIstioCrossDomainTranscatedMDB() {
+  void testIstioCrossDomainTranscatedMDB() {
     assertTrue(checkAppIsActive(K8S_NODEPORT_HOST,istioIngressPort,
                  "-H 'host: " + "domain1-" + domain1Namespace + ".org '",
                 "mdbtopic","cluster-1",

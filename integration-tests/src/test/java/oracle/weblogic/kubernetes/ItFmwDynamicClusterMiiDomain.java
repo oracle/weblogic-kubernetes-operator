@@ -44,15 +44,15 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOpsswalletpasswordSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createRcuAccessSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.DbUtils.setupDBandRCUschema;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -66,7 +66,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Test to Create a FMW Dynamic Domain with Dynamic Cluster using model in image")
 @IntegrationTest
-public class ItFmwDynamicClusterMiiDomain {
+class ItFmwDynamicClusterMiiDomain {
 
   private static String dbNamespace = null;
   private static String opNamespace = null;
@@ -144,7 +144,7 @@ public class ItFmwDynamicClusterMiiDomain {
    */
   @Test
   @DisplayName("Create FMW Dynamic Domain with Dynamic Cluster using model in image")
-  public void testFmwDynamicClusterDomainInModelInImage() {
+  void testFmwDynamicClusterDomainInModelInImage() {
     // create FMW dynamic domain and verify
     createFmwDomainAndVerify();
     verifyDomainReady();

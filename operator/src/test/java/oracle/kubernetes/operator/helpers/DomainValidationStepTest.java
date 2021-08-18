@@ -67,7 +67,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class DomainValidationStepTest {
+class DomainValidationStepTest {
   /** More than one chunk's worth of secrets or configmaps. */
   private static final int MULTI_CHUNKS_FIRST_NUM_IN_SECOND_CHUNK = DEFAULT_CALL_LIMIT + 1;
   private static final int MULTI_CHUNKS_MIDDLE_NUM_IN_FIRST_CHUNK = DEFAULT_CALL_LIMIT / 2;
@@ -132,19 +132,19 @@ public class DomainValidationStepTest {
   }
 
   @Test
-  public void stepImplementsStepClass() {
+  void stepImplementsStepClass() {
     assertThat(domainValidationSteps, instanceOf(Step.class));
   }
 
   @Test
-  public void whenDomainIsValid_runNextStep() {
+  void whenDomainIsValid_runNextStep() {
     testSupport.runSteps(domainValidationSteps);
 
     assertThat(terminalStep.wasRun(), is(true));
   }
 
   @Test
-  public void whenDomainIsNotValid_dontRunNextStep() {
+  void whenDomainIsNotValid_dontRunNextStep() {
     consoleControl.ignoreMessage(DOMAIN_VALIDATION_FAILED);
     defineDuplicateServerNames();
 
@@ -154,7 +154,7 @@ public class DomainValidationStepTest {
   }
 
   @Test
-  public void whenDomainIsNotValid_updateStatus() {
+  void whenDomainIsNotValid_updateStatus() {
     consoleControl.ignoreMessage(DOMAIN_VALIDATION_FAILED);
     defineDuplicateServerNames();
 
@@ -166,7 +166,7 @@ public class DomainValidationStepTest {
   }
 
   @Test
-  public void whenDomainIsNotValid_logSevereMessage() {
+  void whenDomainIsNotValid_logSevereMessage() {
     defineDuplicateServerNames();
 
     testSupport.runSteps(domainValidationSteps);
@@ -188,7 +188,7 @@ public class DomainValidationStepTest {
   }
 
   @Test
-  public void whenDomainRefersToUnknownSecret_updateStatus() {
+  void whenDomainRefersToUnknownSecret_updateStatus() {
     consoleControl.ignoreMessage(DOMAIN_VALIDATION_FAILED);
     domain.getSpec().withWebLogicCredentialsSecret(new V1SecretReference().name("name").namespace("ns"));
 
@@ -200,7 +200,7 @@ public class DomainValidationStepTest {
   }
 
   @Test
-  public void whenDomainRefersToUnknownSecret_dontRunNextStep() {
+  void whenDomainRefersToUnknownSecret_dontRunNextStep() {
     consoleControl.ignoreMessage(DOMAIN_VALIDATION_FAILED);
     domain.getSpec().withWebLogicCredentialsSecret(new V1SecretReference().name("name").namespace("ns"));
 
@@ -210,7 +210,7 @@ public class DomainValidationStepTest {
   }
 
   @Test
-  public void whenDomainRefersToDefinedSecret_runNextStep() {
+  void whenDomainRefersToDefinedSecret_runNextStep() {
     domain.getSpec().withWebLogicCredentialsSecret(new V1SecretReference().name("name"));
     testSupport.defineResources(new V1Secret().metadata(new V1ObjectMeta().name("name").namespace(NS)));
 
@@ -220,7 +220,7 @@ public class DomainValidationStepTest {
   }
 
   @Test
-  public void whenDomainValidationStepsCalled_withSecretInMultiChunks_packetContainsAllSecrets() {
+  void whenDomainValidationStepsCalled_withSecretInMultiChunks_packetContainsAllSecrets() {
     createSecrets(MULTI_CHUNKS_LAST_NUM);
     testSupport.runSteps(domainValidationSteps);
 
@@ -239,7 +239,7 @@ public class DomainValidationStepTest {
   }
 
   @Test
-  public void whenDomainRefersToDefinedSecretInMiddleChunk_runNextStep() {
+  void whenDomainRefersToDefinedSecretInMiddleChunk_runNextStep() {
     domain.getSpec().withWebLogicCredentialsSecret(
             new V1SecretReference().name(TEST_SECRET_PREFIX + MULTI_CHUNKS_FIRST_NUM_IN_SECOND_CHUNK).namespace(NS));
     createSecrets(MULTI_CHUNKS_LAST_NUM);
@@ -249,7 +249,7 @@ public class DomainValidationStepTest {
   }
 
   @Test
-  public void whenDomainRefersToDefinedSecretInFirstChunk_runNextStep() {
+  void whenDomainRefersToDefinedSecretInFirstChunk_runNextStep() {
     domain.getSpec().withWebLogicCredentialsSecret(
         new V1SecretReference().name(TEST_SECRET_PREFIX + MULTI_CHUNKS_MIDDLE_NUM_IN_FIRST_CHUNK).namespace(NS));
     createSecrets(MULTI_CHUNKS_LAST_NUM);
@@ -259,7 +259,7 @@ public class DomainValidationStepTest {
   }
 
   @Test
-  public void whenDomainRefersToDefinedSecretInLastChunk_runNextStep() {
+  void whenDomainRefersToDefinedSecretInLastChunk_runNextStep() {
     domain.getSpec().withWebLogicCredentialsSecret(
         new V1SecretReference().name(TEST_SECRET_PREFIX + MULTI_CHUNKS_LAST_NUM).namespace(NS));
     createSecrets(MULTI_CHUNKS_LAST_NUM);
@@ -281,7 +281,7 @@ public class DomainValidationStepTest {
   }
 
   @Test
-  public void whenDomainValidationStepsCalled_withConfigMapInMultiChunks_packetContainsAllConfigMaps() {
+  void whenDomainValidationStepsCalled_withConfigMapInMultiChunks_packetContainsAllConfigMaps() {
     createConfigMaps(MULTI_CHUNKS_LAST_NUM);
     testSupport.runSteps(domainValidationSteps);
 
@@ -300,7 +300,7 @@ public class DomainValidationStepTest {
   }
 
   @Test
-  public void whenDomainRefersToDefinedConfigMapInMiddleChunk_runNextStep() {
+  void whenDomainRefersToDefinedConfigMapInMiddleChunk_runNextStep() {
     domain.getSpec()
         .withWebLogicCredentialsSecret(new V1SecretReference().name("name"))
         .setConfiguration(new Configuration().withModel(
@@ -316,7 +316,7 @@ public class DomainValidationStepTest {
   }
 
   @Test
-  public void whenDomainRefersToDefinedConfigMapInFirstChunk_runNextStep() {
+  void whenDomainRefersToDefinedConfigMapInFirstChunk_runNextStep() {
     domain.getSpec()
         .withWebLogicCredentialsSecret(new V1SecretReference().name("name"))
         .setConfiguration(new Configuration().withModel(
@@ -332,7 +332,7 @@ public class DomainValidationStepTest {
   }
 
   @Test
-  public void whenDomainRefersToDefinedConfigMapInLastChunk_runNextStep() {
+  void whenDomainRefersToDefinedConfigMapInLastChunk_runNextStep() {
     domain.getSpec()
         .withWebLogicCredentialsSecret(new V1SecretReference().name("name"))
         .setConfiguration(new Configuration().withModel(
@@ -360,7 +360,7 @@ public class DomainValidationStepTest {
   }
 
   @Test
-  public void whenClusterDoesNotExistInDomain_logWarning() {
+  void whenClusterDoesNotExistInDomain_logWarning() {
     domain.getSpec().withCluster(createCluster("no-such-cluster"));
     testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
 
@@ -372,7 +372,7 @@ public class DomainValidationStepTest {
   }
 
   @Test
-  public void whenServerDoesNotExistInDomain_logWarning() {
+  void whenServerDoesNotExistInDomain_logWarning() {
     domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("no-such-server"));
     testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
 
@@ -388,7 +388,7 @@ public class DomainValidationStepTest {
   }
 
   @Test
-  public void whenMonitoringExporterPortConflictsWithAdminServerPort_logWarningAndGenerateEvent() {
+  void whenMonitoringExporterPortConflictsWithAdminServerPort_logWarningAndGenerateEvent() {
     configureDomain(domain).withMonitoringExporterConfiguration("queries:\n").withMonitoringExporterPort(7001);
     testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
 
@@ -404,7 +404,7 @@ public class DomainValidationStepTest {
   }
 
   @Test
-  public void whenMonitoringExporterPortConflictsWithManagedServerPort_logWarningAndGenerateEvent() {
+  void whenMonitoringExporterPortConflictsWithManagedServerPort_logWarningAndGenerateEvent() {
     configureDomain(domain).withMonitoringExporterConfiguration("queries:\n").withMonitoringExporterPort(8001);
     testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
 
@@ -420,7 +420,7 @@ public class DomainValidationStepTest {
   }
 
   @Test
-  public void whenMonitoringExporterPortConflictsWithClusterServerTemplatePort_logWarningAndGenerateEvent() {
+  void whenMonitoringExporterPortConflictsWithClusterServerTemplatePort_logWarningAndGenerateEvent() {
     configureDomain(domain).withMonitoringExporterConfiguration("queries:\n").withMonitoringExporterPort(9001);
     testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
 
@@ -437,7 +437,7 @@ public class DomainValidationStepTest {
   }
 
   @Test
-  public void whenServerDoesNotExistInDomain_createEvent() {
+  void whenServerDoesNotExistInDomain_createEvent() {
     consoleControl.ignoreMessage(NO_MANAGED_SERVER_IN_DOMAIN);
     domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("no-such-server"));
     testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
@@ -448,7 +448,7 @@ public class DomainValidationStepTest {
   }
 
   @Test
-  public void whenClusterDoesNotExistInDomain_createEvent() {
+  void whenClusterDoesNotExistInDomain_createEvent() {
     consoleControl.ignoreMessage(NO_CLUSTER_IN_DOMAIN);
     domain.getSpec().withCluster(createCluster("no-such-cluster"));
     testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
@@ -459,7 +459,7 @@ public class DomainValidationStepTest {
   }
 
   @Test
-  public void whenBothServerAndClusterDoNotExistInDomain_createEventWithBothWarnings() {
+  void whenBothServerAndClusterDoNotExistInDomain_createEventWithBothWarnings() {
     consoleControl.ignoreMessage(NO_MANAGED_SERVER_IN_DOMAIN);
     consoleControl.ignoreMessage(NO_CLUSTER_IN_DOMAIN);
     domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("no-such-server"));
@@ -473,7 +473,7 @@ public class DomainValidationStepTest {
   }
 
   @Test
-  public void whenIsExplicitRecheck_doNotCreateEvent() {
+  void whenIsExplicitRecheck_doNotCreateEvent() {
     consoleControl.ignoreMessage(NO_CLUSTER_IN_DOMAIN);
     setExplicitRecheck();
     domain.getSpec().withCluster(createCluster("no-such-cluster"));

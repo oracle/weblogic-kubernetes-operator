@@ -32,7 +32,7 @@ public abstract class BaseConfigurationTestBase {
   }
 
   @Test
-  public void whenEnvironmentsAreTheSame_objectsAreEqual() {
+  void whenEnvironmentsAreTheSame_objectsAreEqual() {
     instance1.setEnv(Arrays.asList(env("a", "b"), env("c", "d")));
     instance2.addEnvironmentVariable("a", "b");
     instance2.addEnvironmentVariable("c", "d");
@@ -41,7 +41,7 @@ public abstract class BaseConfigurationTestBase {
   }
 
   @Test
-  public void whenEnvironmentsDiffer_objectsAreNotEqual() {
+  void whenEnvironmentsDiffer_objectsAreNotEqual() {
     instance1.setEnv(Arrays.asList(env("a", "b"), env("c", "d")));
     instance2.addEnvironmentVariable("a", "b");
 
@@ -49,7 +49,7 @@ public abstract class BaseConfigurationTestBase {
   }
 
   @Test
-  public void whenServerStartStatesAreSame_objectsAreEqual() {
+  void whenServerStartStatesAreSame_objectsAreEqual() {
     instance1.setServerStartState("ADMIN");
     instance2.setServerStartState("ADMIN");
 
@@ -57,14 +57,14 @@ public abstract class BaseConfigurationTestBase {
   }
 
   @Test
-  public void whenServerStartStatesDiffer_objectsAreNotEqual() {
+  void whenServerStartStatesDiffer_objectsAreNotEqual() {
     instance1.setServerStartState("ADMIN");
 
     assertThat(instance1, not(equalTo(instance2)));
   }
 
   @Test
-  public void whenServerStartPolicyAreSame_objectsAreEqual() {
+  void whenServerStartPolicyAreSame_objectsAreEqual() {
     instance1.setServerStartPolicy("IF_NEEDED");
     instance2.setServerStartPolicy("IF_NEEDED");
 
@@ -72,7 +72,7 @@ public abstract class BaseConfigurationTestBase {
   }
 
   @Test
-  public void whenServerStartPoliciesDiffer_objectsAreNotEqual() {
+  void whenServerStartPoliciesDiffer_objectsAreNotEqual() {
     instance1.setServerStartPolicy("NEVER");
 
     assertThat(instance1, not(equalTo(instance2)));
@@ -83,26 +83,26 @@ public abstract class BaseConfigurationTestBase {
   }
 
   @Test
-  public void whenServiceLabelsDiffer_objectsAreNotEqual() {
+  void whenServiceLabelsDiffer_objectsAreNotEqual() {
     instance1.addServiceLabel("key", "value");
     assertThat(instance1, not(equalTo(instance2)));
   }
 
   @Test
-  public void whenServiceLabelsDoNotDiffer_objectsAreEqual() {
+  void whenServiceLabelsDoNotDiffer_objectsAreEqual() {
     instance1.addServiceLabel("key", "value");
     instance2.addServiceLabel("key", "value");
     assertThat(instance1, equalTo(instance2));
   }
 
   @Test
-  public void whenServiceAnnotationsDiffer_hashCodesAreNotEqual() {
+  void whenServiceAnnotationsDiffer_hashCodesAreNotEqual() {
     instance1.addServiceAnnotation("key", "value");
     assertThat(instance1.hashCode(), not(equalTo(instance2.hashCode())));
   }
 
   @Test
-  public void whenServiceAnnotationsDoNotDiffer_hashCodesAreEqual() {
+  void whenServiceAnnotationsDoNotDiffer_hashCodesAreEqual() {
     instance1.addServiceAnnotation("key", "value");
     instance2.addServiceAnnotation("key", "value");
     assertThat(instance1.hashCode(), equalTo(instance2.hashCode()));

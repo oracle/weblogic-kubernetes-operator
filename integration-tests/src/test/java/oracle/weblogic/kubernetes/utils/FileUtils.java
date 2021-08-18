@@ -31,8 +31,9 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_FILENAME_DEFAULT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_URL;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.defaultInstallWdtParams;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.installWdtParams;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.cleanDirectory;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -322,11 +323,21 @@ public class FileUtils {
    * @param unzipLocation location to unzip the files
    */
   public static void unzipWDTInstallationFile(String unzipLocation) {
-    Path wlDeployZipFile = Paths.get(DOWNLOAD_DIR, WDT_DOWNLOAD_FILENAME_DEFAULT);
+    unzipWDTInstallationFile(unzipLocation, WDT_DOWNLOAD_URL, DOWNLOAD_DIR);
+  }
+
+  /**
+   * Download and unzip the WDT installation files.
+   * @param unzipLocation location to unzip the files
+   * @param downloadDir location to download wdt zip file
+   */
+  public static void unzipWDTInstallationFile(String unzipLocation, String locationURL, String downloadDir) {
+    Path wlDeployZipFile = Paths.get(downloadDir, WDT_DOWNLOAD_FILENAME_DEFAULT);
+
     if (!Files.exists(wlDeployZipFile)) {
       assertTrue(Installer.withParams(
-          defaultInstallWdtParams())
-          .download(), "WDT download failed");
+          installWdtParams(locationURL))
+          .download(downloadDir), "WDT download failed");
     }
     String cmdToExecute = String.format("unzip %s -d %s", wlDeployZipFile, unzipLocation);
     assertTrue(new Command()

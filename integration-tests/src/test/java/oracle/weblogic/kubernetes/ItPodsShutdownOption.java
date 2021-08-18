@@ -42,10 +42,10 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -171,7 +171,7 @@ class ItPodsShutdownOption {
    */
   @Test
   @DisplayName("Verify shutdown rules when shutdown properties are defined at different levels ")
-  public void testShutdownPropsAllLevels() {
+  void testShutdownPropsAllLevels() {
 
 
     // create Shutdown objects for each server and cluster
@@ -227,7 +227,7 @@ class ItPodsShutdownOption {
    */
   @Test
   @DisplayName("Verify shutdown rules when shutdown properties are defined at different levels ")
-  public void testShutdownPropsEnvOverride() {
+  void testShutdownPropsEnvOverride() {
 
 
     // create Shutdown objects for each server and cluster

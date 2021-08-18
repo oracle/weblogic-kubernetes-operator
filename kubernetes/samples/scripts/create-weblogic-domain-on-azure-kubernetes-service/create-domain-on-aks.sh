@@ -445,7 +445,7 @@ function waitForJobComplete {
     kubectl get pods
     kubectl get svc
   else
-    echo It takes a little long to create domain, please refer to http://oracle.github.io/weblogic-kubernetes-operator/samples/simple/azure-kubernetes-service/#troubleshooting
+    echo It takes a little long to create domain, please refer to http://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/#troubleshooting
   fi
 }
 

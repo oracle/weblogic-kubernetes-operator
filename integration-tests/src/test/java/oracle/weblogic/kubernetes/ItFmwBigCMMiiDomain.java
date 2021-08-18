@@ -35,18 +35,18 @@ import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOpsswalletpasswordSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createRcuAccessSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.DbUtils.getDBNodePort;
 import static oracle.weblogic.kubernetes.utils.DbUtils.setupDBandRCUschema;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.createDomainResource;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyDomainReady;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
@@ -62,7 +62,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test to a create FMW model in image domain "
     + "with introspect Config Map bigger then 1 Mb and start the domain")
 @IntegrationTest
-public class ItFmwBigCMMiiDomain {
+class ItFmwBigCMMiiDomain {
 
   private static String dbNamespace = null;
   private static String opNamespace = null;
@@ -150,7 +150,7 @@ public class ItFmwBigCMMiiDomain {
    */
   @Test
   @DisplayName("Create FMW Domain model in image with big introspector CM")
-  public void testFmwBigCMModelInImage() {
+  void testFmwBigCMModelInImage() {
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster

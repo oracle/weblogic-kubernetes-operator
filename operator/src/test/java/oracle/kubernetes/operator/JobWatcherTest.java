@@ -37,7 +37,7 @@ import static org.hamcrest.core.IsNull.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 /** This test class verifies the behavior of the JobWatcher. */
-public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
+class JobWatcherTest extends WatcherTestBase implements WatchListener<V1Job> {
 
   private static final BigInteger INITIAL_RESOURCE_VERSION = new BigInteger("234");
   private OffsetDateTime clock = SystemClock.now();
@@ -75,7 +75,7 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
   }
 
   @Test
-  public void initialRequest_specifiesStartingResourceVersionAndStandardLabelSelector() {
+  void initialRequest_specifiesStartingResourceVersionAndStandardLabelSelector() {
     sendInitialRequest(INITIAL_RESOURCE_VERSION);
 
     assertThat(
@@ -104,26 +104,26 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
   }
 
   @Test
-  public void whenJobHasNoStatus_reportNotComplete() {
+  void whenJobHasNoStatus_reportNotComplete() {
     assertThat(JobWatcher.isComplete(cachedJob), is(false));
   }
 
   @Test
-  public void whenJobHasNoCondition_reportNotComplete() {
+  void whenJobHasNoCondition_reportNotComplete() {
     cachedJob.status(new V1JobStatus());
 
     assertThat(JobWatcher.isComplete(cachedJob), is(false));
   }
 
   @Test
-  public void whenJobConditionTypeFailed_reportNotComplete() {
+  void whenJobConditionTypeFailed_reportNotComplete() {
     cachedJob.status(new V1JobStatus().addConditionsItem(new V1JobCondition().type("Failed")));
 
     assertThat(JobWatcher.isComplete(cachedJob), is(false));
   }
 
   @Test
-  public void whenJobConditionStatusFalse_reportNotComplete() {
+  void whenJobConditionStatusFalse_reportNotComplete() {
     cachedJob.status(
         new V1JobStatus().addConditionsItem(new V1JobCondition().type("Complete").status("False")));
 
@@ -131,21 +131,21 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
   }
 
   @Test
-  public void whenJobConditionTypeFailedWithTrueStatus_reportFailed() {
+  void whenJobConditionTypeFailedWithTrueStatus_reportFailed() {
     markJobConditionFailed(cachedJob);
 
     assertThat(JobWatcher.isFailed(cachedJob), is(true));
   }
 
   @Test
-  public void whenJobConditionTypeFailedWithNoStatus_reportNotFailed() {
+  void whenJobConditionTypeFailedWithNoStatus_reportNotFailed() {
     cachedJob.status(new V1JobStatus().addConditionsItem(new V1JobCondition().type("Failed").status("")));
 
     assertThat(JobWatcher.isFailed(cachedJob), is(false));
   }
 
   @Test
-  public void whenJobHasStatusWithNoConditionsAndNotFailed_reportNotFailed() {
+  void whenJobHasStatusWithNoConditionsAndNotFailed_reportNotFailed() {
     cachedJob.status(new V1JobStatus().conditions(Collections.emptyList()));
 
     assertThat(JobWatcher.isFailed(cachedJob), is(false));
@@ -153,7 +153,7 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
 
 
   @Test
-  public void whenJobRunningAndReadyConditionIsTrue_reportComplete() {
+  void whenJobRunningAndReadyConditionIsTrue_reportComplete() {
     markJobCompleted(cachedJob);
 
     assertThat(JobWatcher.isComplete(cachedJob), is(true));
@@ -198,68 +198,68 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
   }
 
   @Test
-  public void whenJobHasNoStatus_reportNotFailed() {
+  void whenJobHasNoStatus_reportNotFailed() {
     assertThat(JobWatcher.isFailed(cachedJob), is(false));
   }
 
   @Test
-  public void whenJobHasFailedCount_reportFailed() {
+  void whenJobHasFailedCount_reportFailed() {
     cachedJob.status(new V1JobStatus().failed(1));
 
     assertThat(JobWatcher.isFailed(cachedJob), is(true));
   }
 
   @Test
-  public void whenJobHasFailedReason_getFailedReasonReturnsIt() {
+  void whenJobHasFailedReason_getFailedReasonReturnsIt() {
     setFailedWithReason(cachedJob, "AReason");
 
     assertThat(JobWatcher.getFailedReason(cachedJob), is("AReason"));
   }
 
   @Test
-  public void whenJobHasNoFailedReason_getFailedReasonReturnsNull() {
+  void whenJobHasNoFailedReason_getFailedReasonReturnsNull() {
     setFailedWithReason(cachedJob, null);
 
     assertThat(JobWatcher.getFailedReason(cachedJob), nullValue());
   }
 
   @Test
-  public void whenJobHasNoFailedCondition_getFailedReasonReturnsNull() {
+  void whenJobHasNoFailedCondition_getFailedReasonReturnsNull() {
     cachedJob.status(new V1JobStatus().addConditionsItem(createCondition("Complete")));
 
     assertThat(JobWatcher.getFailedReason(cachedJob), nullValue());
   }
 
   @Test
-  public void whenJobHasNoJobCondition_getFailedReasonReturnsNull() {
+  void whenJobHasNoJobCondition_getFailedReasonReturnsNull() {
     cachedJob.status(new V1JobStatus().conditions(Collections.emptyList()));
 
     assertThat(JobWatcher.getFailedReason(cachedJob), nullValue());
   }
 
   @Test
-  public void waitForReady_returnsAStep() {
+  void waitForReady_returnsAStep() {
     JobWatcher watcher = createWatcher(new AtomicBoolean(true));
 
     assertThat(watcher.waitForReady(cachedJob, null), instanceOf(Step.class));
   }
 
   @Test
-  public void whenWaitForReadyAppliedToReadyJob_performNextStep() {
+  void whenWaitForReadyAppliedToReadyJob_performNextStep() {
     startWaitForReady(this::markJobCompleted);
 
     assertThat(terminalStep.wasRun(), is(true));
   }
 
   @Test
-  public void whenWaitForReadyAppliedToIncompleteJob_dontPerformNextStep() {
+  void whenWaitForReadyAppliedToIncompleteJob_dontPerformNextStep() {
     startWaitForReady(this::dontChangeJob);
 
     assertThat(terminalStep.wasRun(), is(false));
   }
 
   @Test
-  public void whenWaitForReadyAppliedToTimedOutJobWithDeadlineExceeded_terminateWithException() {
+  void whenWaitForReadyAppliedToTimedOutJobWithDeadlineExceeded_terminateWithException() {
     startWaitForReady(job -> markJobTimedOut(job, "DeadlineExceeded"));
 
     assertThat(terminalStep.wasRun(), is(false));
@@ -267,14 +267,14 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
   }
 
   @Test
-  public void whenWaitForReadyAppliedToFailedJob_performNextStep() {
+  void whenWaitForReadyAppliedToFailedJob_performNextStep() {
     startWaitForReady(this::markJobFailed);
 
     assertThat(terminalStep.wasRun(), is(true));
   }
 
   @Test
-  public void whenWaitForReadyAppliedToJobWithFailedCondition_performNextStep() {
+  void whenWaitForReadyAppliedToJobWithFailedCondition_performNextStep() {
     startWaitForReady(this::markJobConditionFailed);
 
     assertThat(terminalStep.wasRun(), is(true));
@@ -295,21 +295,21 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
   }
 
   @Test
-  public void whenJobCompletedOnFirstRead_performNextStep() {
+  void whenJobCompletedOnFirstRead_performNextStep() {
     startWaitForReadyThenReadJob(this::markJobCompleted);
 
     assertThat(terminalStep.wasRun(), is(true));
   }
 
   @Test
-  public void whenJobInProcessOnFirstRead_dontPerformNextStep() {
+  void whenJobInProcessOnFirstRead_dontPerformNextStep() {
     startWaitForReadyThenReadJob(this::dontChangeJob);
 
     assertThat(terminalStep.wasRun(), is(false));
   }
 
   @Test
-  public void whenJobTimedOutOnFirstRead_terminateWithException() {
+  void whenJobTimedOutOnFirstRead_terminateWithException() {
     startWaitForReadyThenReadJob(this::markJobTimedOut);
 
     assertThat(terminalStep.wasRun(), is(false));
@@ -317,7 +317,7 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
   }
 
   @Test
-  public void whenJobFailedOnFirstRead_performNextStep() {
+  void whenJobFailedOnFirstRead_performNextStep() {
     startWaitForReadyThenReadJob(this::markJobFailed);
 
     assertThat(terminalStep.wasRun(), is(true));
@@ -339,7 +339,7 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
   }
 
   @Test
-  public void whenReceivedDeadlineExceededResponse_terminateWithException() {
+  void whenReceivedDeadlineExceededResponse_terminateWithException() {
     sendJobModifiedWatchAfterWaitForReady(this::markJobTimedOut);
 
     assertThat(terminalStep.wasRun(), is(false));
@@ -347,28 +347,28 @@ public class JobWatcherTest extends WatcherTestBase implements WatchListener<V1J
   }
 
   @Test
-  public void whenReceivedFailedWithNoReasonResponse_performNextStep() {
+  void whenReceivedFailedWithNoReasonResponse_performNextStep() {
     sendJobModifiedWatchAfterWaitForReady(this::markJobFailed);
 
     assertThat(terminalStep.wasRun(), is(true));
   }
 
   @Test
-  public void whenReceivedCompleteResponse_performNextStep() {
+  void whenReceivedCompleteResponse_performNextStep() {
     sendJobModifiedWatchAfterWaitForReady(this::markJobCompleted);
 
     assertThat(terminalStep.wasRun(), is(true));
   }
 
   @Test
-  public void whenReceivedCallbackForDifferentCompletedJob_ignoreIt() {
+  void whenReceivedCallbackForDifferentCompletedJob_ignoreIt() {
     sendJobModifiedWatchAfterWaitForReady(this::createCompletedJobWithDifferentTimestamp);
 
     assertThat(terminalStep.wasRun(), is(false));
   }
 
   @Test
-  public void whenReceivedCallbackForIncompleteJob_ignoreIt() {
+  void whenReceivedCallbackForIncompleteJob_ignoreIt() {
     sendJobModifiedWatchAfterWaitForReady(this::dontChangeJob);
 
     assertThat(terminalStep.wasRun(), is(false));

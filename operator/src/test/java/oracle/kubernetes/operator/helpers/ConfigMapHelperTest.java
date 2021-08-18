@@ -36,7 +36,7 @@ import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class ConfigMapHelperTest {
+class ConfigMapHelperTest {
   private static final String DOMAIN_NS = "namespace";
 
   private static final SemanticVersion PRODUCT_VERSION = new SemanticVersion(3, 0, 0);
@@ -85,7 +85,7 @@ public class ConfigMapHelperTest {
   }
 
   @Test
-  public void whenUnableToReadConfigMap_reportFailure() {
+  void whenUnableToReadConfigMap_reportFailure() {
     testSupport.failOnResource(CONFIG_MAP, SCRIPT_CONFIG_MAP_NAME, DOMAIN_NS, 401);
 
     Step scriptConfigMapStep = ConfigMapHelper.createScriptConfigMapStep(DOMAIN_NS, null);
@@ -95,7 +95,7 @@ public class ConfigMapHelperTest {
   }
 
   @Test
-  public void whenNoConfigMap_createIt() {
+  void whenNoConfigMap_createIt() {
     testSupport.runSteps(ConfigMapHelper.createScriptConfigMapStep(DOMAIN_NS, null));
 
     assertThat(testSupport.getResources(CONFIG_MAP), notNullValue());
@@ -103,7 +103,7 @@ public class ConfigMapHelperTest {
   }
 
   @Test
-  public void whenNoConfigMap_retryOnFailure() {
+  void whenNoConfigMap_retryOnFailure() {
     testSupport.addRetryStrategy(retryStrategy);
     testSupport.failOnCreate(CONFIG_MAP, SCRIPT_CONFIG_MAP_NAME, DOMAIN_NS, 401);
 
@@ -115,7 +115,7 @@ public class ConfigMapHelperTest {
   }
 
   @Test
-  public void whenMatchingConfigMapExists_addToPacket() {
+  void whenMatchingConfigMapExists_addToPacket() {
     testSupport.defineResources(defaultConfigMap);
 
     Packet packet = testSupport.runSteps(ConfigMapHelper.createScriptConfigMapStep(DOMAIN_NS, PRODUCT_VERSION));
@@ -125,7 +125,7 @@ public class ConfigMapHelperTest {
   }
 
   @Test
-  public void whenExistingConfigMapHasOldVersion_replaceIt() {
+  void whenExistingConfigMapHasOldVersion_replaceIt() {
     testSupport.defineResources(defineConfigMap(PRODUCT_VERSION_OLD));
 
     testSupport.runSteps(ConfigMapHelper.createScriptConfigMapStep(DOMAIN_NS, PRODUCT_VERSION));
@@ -134,7 +134,7 @@ public class ConfigMapHelperTest {
   }
 
   @Test
-  public void whenExistingConfigMapHasFutureVersion_dontReplaceIt() {
+  void whenExistingConfigMapHasFutureVersion_dontReplaceIt() {
     testSupport.defineResources(defineConfigMap(PRODUCT_VERSION_FUTURE));
 
     testSupport.runSteps(ConfigMapHelper.createScriptConfigMapStep(DOMAIN_NS, PRODUCT_VERSION));

@@ -94,7 +94,7 @@ public class SitconfigServlet extends HttpServlet {
     }
   }
 
-  public void testSystemResourcesJmsAttributeChange(PrintWriter out) {
+  void testSystemResourcesJmsAttributeChange(PrintWriter out) {
     String jmsModuleName = "ClusterJmsSystemResource";
     String topicName = "UniformReplicatedTestTopic";
 
@@ -135,7 +135,7 @@ public class SitconfigServlet extends HttpServlet {
    * diagnostics-WLDF-MODULE-0.xml. The added elements wldf-instrumentation-monitor harvested-type are expected to show
    * up in the domain configuration.
    */
-  public void testSystemResourcesWldfAttributeChange(PrintWriter out) {
+  void testSystemResourcesWldfAttributeChange(PrintWriter out) {
     final String wldfModName0 = "WLDF-MODULE-0";
 
     // verify the changed properties

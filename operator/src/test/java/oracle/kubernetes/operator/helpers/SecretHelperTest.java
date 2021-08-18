@@ -31,7 +31,7 @@ import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class SecretHelperTest {
+class SecretHelperTest {
 
   private static final String USERNAME = "itsMe";
   private static final String PASSWORD = "shhh";

@@ -31,7 +31,7 @@ import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class DomainStatusTest {
+class DomainStatusTest {
 
   private DomainStatus domainStatus;
   private final List<Memento> mementos = new ArrayList<>();
@@ -49,12 +49,12 @@ public class DomainStatusTest {
   }
 
   @Test
-  public void whenCreated_statusHasCreationTime() {
+  void whenCreated_statusHasCreationTime() {
     assertThat(domainStatus.getStartTime(), SystemClockTestSupport.isDuringTest());
   }
 
   @Test
-  public void whenAddedConditionEqualsPresentCondition_ignoreIt() {
+  void whenAddedConditionEqualsPresentCondition_ignoreIt() {
     DomainCondition originalCondition = new DomainCondition(Failed).withStatus("True");
     domainStatus.addCondition(originalCondition);
 
@@ -65,7 +65,7 @@ public class DomainStatusTest {
   }
 
   @Test
-  public void whenAddedConditionIsFailed_retainOldFailedCondition() {
+  void whenAddedConditionIsFailed_retainOldFailedCondition() {
     domainStatus.addCondition(new DomainCondition(Failed).withStatus("True").withMessage("problem 1"));
     domainStatus.addCondition(new DomainCondition(Failed).withStatus("True").withMessage("problem 2"));
 
@@ -74,7 +74,7 @@ public class DomainStatusTest {
   }
 
   @Test
-  public void whenAddedConditionIsFailed_removeProgressingCondition() {
+  void whenAddedConditionIsFailed_removeProgressingCondition() {
     domainStatus.addCondition(new DomainCondition(Progressing).withStatus("False"));
 
     domainStatus.addCondition(new DomainCondition(Failed).withStatus("True"));
@@ -84,7 +84,7 @@ public class DomainStatusTest {
   }
 
   @Test
-  public void whenAddedConditionIsFailed_removeExistingAvailableCondition() {
+  void whenAddedConditionIsFailed_removeExistingAvailableCondition() {
     domainStatus.addCondition(new DomainCondition(Available).withStatus("False"));
 
     domainStatus.addCondition(new DomainCondition(Failed).withStatus("True"));
@@ -94,7 +94,7 @@ public class DomainStatusTest {
   }
 
   @Test
-  public void whenAddedConditionIsAvailable_replaceOldAvailableCondition() {
+  void whenAddedConditionIsAvailable_replaceOldAvailableCondition() {
     domainStatus.addCondition(new DomainCondition(Available).withStatus("False"));
 
     domainStatus.addCondition(new DomainCondition(Available).withStatus("True"));
@@ -104,7 +104,7 @@ public class DomainStatusTest {
   }
 
   @Test
-  public void whenAddedConditionIsAvailable_removeExistedProgressingCondition() {
+  void whenAddedConditionIsAvailable_removeExistedProgressingCondition() {
     domainStatus.addCondition(new DomainCondition(Progressing).withStatus("False"));
 
     domainStatus.addCondition(new DomainCondition(Available).withStatus("True"));
@@ -114,7 +114,7 @@ public class DomainStatusTest {
   }
 
   @Test
-  public void whenAddedConditionIsAvailable_removeExistedFailedCondition() {
+  void whenAddedConditionIsAvailable_removeExistedFailedCondition() {
     domainStatus.addCondition(new DomainCondition(Failed).withStatus("False"));
 
     domainStatus.addCondition(new DomainCondition(Available).withStatus("True"));
@@ -124,7 +124,7 @@ public class DomainStatusTest {
   }
 
   @Test
-  public void whenAddedConditionIsProgressing_replaceOldProgressingCondition() {
+  void whenAddedConditionIsProgressing_replaceOldProgressingCondition() {
     domainStatus.addCondition(new DomainCondition(Progressing).withStatus("False"));
 
     domainStatus.addCondition(new DomainCondition(Progressing).withStatus("True"));
@@ -134,7 +134,7 @@ public class DomainStatusTest {
   }
 
   @Test
-  public void whenAddedConditionIsProgressing_leaveExistingAvailableCondition() {
+  void whenAddedConditionIsProgressing_leaveExistingAvailableCondition() {
     domainStatus.addCondition(new DomainCondition(Available).withStatus("False"));
 
     domainStatus.addCondition(new DomainCondition(Progressing).withStatus("True"));
@@ -144,7 +144,7 @@ public class DomainStatusTest {
   }
 
   @Test
-  public void whenAddedConditionIsProgress_doNotRmoveExistedFailedCondition() {
+  void whenAddedConditionIsProgress_doNotRmoveExistedFailedCondition() {
     domainStatus.addCondition(new DomainCondition(Failed).withStatus("False"));
 
     domainStatus.addCondition(new DomainCondition(Progressing).withStatus("True"));
@@ -154,7 +154,7 @@ public class DomainStatusTest {
   }
 
   @Test
-  public void whenAddedConditionIsConfigChangesPending_doNotRemoveExistingFailedCondition() {
+  void whenAddedConditionIsConfigChangesPending_doNotRemoveExistingFailedCondition() {
     domainStatus.addCondition(new DomainCondition(Failed).withStatus("True"));
 
     domainStatus.addCondition(new DomainCondition(ConfigChangesPendingRestart).withStatus("True"));
@@ -164,7 +164,7 @@ public class DomainStatusTest {
   }
 
   @Test
-  public void whenAddedConditionIsConfigChangesPending_doNotRemoveExistingAvailableCondition() {
+  void whenAddedConditionIsConfigChangesPending_doNotRemoveExistingAvailableCondition() {
     domainStatus.addCondition(new DomainCondition(Available));
 
     domainStatus.addCondition(new DomainCondition(ConfigChangesPendingRestart).withStatus("True"));
@@ -174,19 +174,19 @@ public class DomainStatusTest {
   }
 
   @Test
-  public void beforeConditionAdded_statusFailsPredicate() {
+  void beforeConditionAdded_statusFailsPredicate() {
     assertThat(domainStatus.hasConditionWith(c -> c.hasType(Available)), is(false));
   }
 
   @Test
-  public void afterConditionAdded_statusPassesPredicate() {
+  void afterConditionAdded_statusPassesPredicate() {
     domainStatus.addCondition(new DomainCondition(Available));
 
     assertThat(domainStatus.hasConditionWith(c -> c.hasType(Available)), is(true));
   }
 
   @Test
-  public void afterFailedConditionAdded_copyMessageAndReasonToStatus() {
+  void afterFailedConditionAdded_copyMessageAndReasonToStatus() {
     domainStatus.addCondition(new DomainCondition(Failed).withMessage("message").withReason("reason"));
 
     assertThat(domainStatus.getMessage(), equalTo("message"));
@@ -194,7 +194,7 @@ public class DomainStatusTest {
   }
 
   @Test
-  public void afterNonFailedConditionAdded_clearStatusMessageAndReason() {
+  void afterNonFailedConditionAdded_clearStatusMessageAndReason() {
     domainStatus.setMessage("old message");
     domainStatus.setReason("old reason");
 
@@ -205,14 +205,14 @@ public class DomainStatusTest {
   }
 
   @Test
-  public void whenClusterStatusAdded_statusHasClusterStatus() {
+  void whenClusterStatusAdded_statusHasClusterStatus() {
     domainStatus.addCluster(new ClusterStatus().withClusterName("cluster1").withReplicas(3));
 
     assertThat(domainStatus.getClusters(), hasItem(clusterStatus("cluster1").withReplicas(3)));
   }
 
   @Test
-  public void whenClusterStatusAdded_remainingClusterStatusesUnaffected() {
+  void whenClusterStatusAdded_remainingClusterStatusesUnaffected() {
     domainStatus.addCluster(new ClusterStatus().withClusterName("cluster1").withReplicas(3));
 
     domainStatus.addCluster(new ClusterStatus().withClusterName("cluster2").withMaximumReplicas(10));
@@ -221,7 +221,7 @@ public class DomainStatusTest {
   }
 
   @Test
-  public void whenClusterStatusAdded_matchingClusterStatusesReplaced() {
+  void whenClusterStatusAdded_matchingClusterStatusesReplaced() {
     domainStatus.addCluster(new ClusterStatus().withClusterName("cluster1").withReplicas(3).withReplicasGoal(5));
 
     domainStatus.addCluster(new ClusterStatus().withClusterName("cluster1").withMaximumReplicas(10)
@@ -235,7 +235,7 @@ public class DomainStatusTest {
   }
 
   @Test
-  public void whenHasCondition_cloneIsEqual() {
+  void whenHasCondition_cloneIsEqual() {
     domainStatus.addCondition(new DomainCondition(Progressing).withStatus("False"));
 
     DomainStatus clone = new DomainStatus(this.domainStatus);
@@ -244,7 +244,7 @@ public class DomainStatusTest {
   }
 
   @Test
-  public void whenHasServerStatusWithHealth_cloneIsEqual() {
+  void whenHasServerStatusWithHealth_cloneIsEqual() {
     domainStatus.addServer(new ServerStatus().withHealth(new ServerHealth().withOverallHealth("peachy")));
 
     DomainStatus clone = new DomainStatus(this.domainStatus);
@@ -253,7 +253,7 @@ public class DomainStatusTest {
   }
 
   @Test
-  public void whenHasServerStatusWithoutHealth_cloneIsEqual() {
+  void whenHasServerStatusWithoutHealth_cloneIsEqual() {
     domainStatus.addServer(new ServerStatus().withServerName("myserver"));
 
     DomainStatus clone = new DomainStatus(this.domainStatus);
@@ -262,7 +262,7 @@ public class DomainStatusTest {
   }
 
   @Test
-  public void verifyThat_addServers_serverSortedInExpectedOrdering() {
+  void verifyThat_addServers_serverSortedInExpectedOrdering() {
     ServerStatus cluster1Server1 = new ServerStatus().withClusterName("cluster-1").withServerName("cluster1-server1");
     ServerStatus cluster1Server2 = new ServerStatus().withClusterName("cluster-1").withServerName("cluster1-server2");
     ServerStatus cluster2Server1 = new ServerStatus().withClusterName("cluster-2").withServerName("cluster2-server1");
@@ -277,7 +277,7 @@ public class DomainStatusTest {
   }
 
   @Test
-  public void verifyThat_setServers_serverSortedInExpectedOrdering() {
+  void verifyThat_setServers_serverSortedInExpectedOrdering() {
     ServerStatus cluster1Server1 = createStatus().withClusterName("cluster-1").withServerName("cluster1-server1");
     ServerStatus cluster1Server2 = createStatus().withClusterName("cluster-1").withServerName("cluster1-server2");
     ServerStatus cluster2Server1 = createStatus().withClusterName("cluster-2").withServerName("cluster2-server1");
@@ -296,7 +296,7 @@ public class DomainStatusTest {
   }
 
   @Test
-  public void whenMatchingServersExist_setServersUpdatesState() {
+  void whenMatchingServersExist_setServersUpdatesState() {
     domainStatus.addServer(new ServerStatus().withClusterName("1").withServerName("1").withState("state1"));
     domainStatus.addServer(new ServerStatus().withClusterName("1").withServerName("2").withState("state1"));
     domainStatus.addServer(new ServerStatus().withClusterName("1").withServerName("3").withState("state1"));
@@ -313,7 +313,7 @@ public class DomainStatusTest {
   }
 
   @Test
-  public void whenSetServerIncludesServerWithoutStateAndNoExistingState_defaultToSHUTDOWN() {
+  void whenSetServerIncludesServerWithoutStateAndNoExistingState_defaultToSHUTDOWN() {
     domainStatus.addServer(new ServerStatus().withClusterName("1").withServerName("1").withState("state1"));
     domainStatus.addServer(new ServerStatus().withClusterName("1").withServerName("2").withState("state1"));
     domainStatus.addServer(new ServerStatus().withClusterName("1").withServerName("3").withState("state1"));
@@ -329,7 +329,7 @@ public class DomainStatusTest {
   }
 
   @Test
-  public void whenSetServerIncludesServerWithoutStateAndHasExistingState_preserveIt() {
+  void whenSetServerIncludesServerWithoutStateAndHasExistingState_preserveIt() {
     domainStatus.addServer(new ServerStatus().withClusterName("1").withServerName("1").withState("state1")
         .withHealth(new ServerHealth().withOverallHealth("ok")));
     domainStatus.addServer(new ServerStatus().withClusterName("1").withServerName("2").withState("state1")
@@ -356,7 +356,7 @@ public class DomainStatusTest {
   }
 
   @Test
-  public void verifyThat_getServers_serverInExpectedOrdering() {
+  void verifyThat_getServers_serverInExpectedOrdering() {
     ServerStatus cluster1Server1 = new ServerStatus().withClusterName("cluster-1").withServerName("cluster1-server1");
     ServerStatus cluster1Server2 = new ServerStatus().withClusterName("cluster-1").withServerName("cluster1-server2");
     ServerStatus cluster2Server1 = new ServerStatus().withClusterName("cluster-2").withServerName("cluster2-server1");
@@ -373,7 +373,7 @@ public class DomainStatusTest {
   }
 
   @Test
-  public void verifyThat_addClusters_clustersSortedInExpectedOrdering() {
+  void verifyThat_addClusters_clustersSortedInExpectedOrdering() {
     ClusterStatus cluster1 = new ClusterStatus().withClusterName("cluster-1");
     ClusterStatus cluster2 = new ClusterStatus().withClusterName("cluster-2");
     ClusterStatus cluster10 = new ClusterStatus().withClusterName("cluster-10");
@@ -384,7 +384,7 @@ public class DomainStatusTest {
   }
 
   @Test
-  public void verifyThat_setClusters_clustersSortedInExpectedOrdering() {
+  void verifyThat_setClusters_clustersSortedInExpectedOrdering() {
     ClusterStatus cluster1 = new ClusterStatus().withClusterName("cluster-1");
     ClusterStatus cluster2 = new ClusterStatus().withClusterName("cluster-2");
     ClusterStatus cluster10 = new ClusterStatus().withClusterName("cluster-10");
@@ -395,7 +395,7 @@ public class DomainStatusTest {
   }
 
   @Test
-  public void verifyThat_getClusters_clustersInExpectedOrdering() {
+  void verifyThat_getClusters_clustersInExpectedOrdering() {
     ClusterStatus cluster1 = new ClusterStatus().withClusterName("cluster-1");
     ClusterStatus cluster2 = new ClusterStatus().withClusterName("cluster-2");
     ClusterStatus cluster10 = new ClusterStatus().withClusterName("cluster-10");
@@ -408,7 +408,7 @@ public class DomainStatusTest {
   }
 
   @Test
-  public void verifyThat_getServers_returnCopyOfServersList() {
+  void verifyThat_getServers_returnCopyOfServersList() {
     ServerStatus server1 = new ServerStatus().withServerName("server1");
     ServerStatus server2 = new ServerStatus().withServerName("server2");
 
@@ -422,7 +422,7 @@ public class DomainStatusTest {
   }
 
   @Test
-  public void verifyThat_getClusters_returnCopyOfClustersList() {
+  void verifyThat_getClusters_returnCopyOfClustersList() {
     ClusterStatus cluster1 = new ClusterStatus().withClusterName("cluster1");
     ClusterStatus cluster2 = new ClusterStatus().withClusterName("cluster2");
 

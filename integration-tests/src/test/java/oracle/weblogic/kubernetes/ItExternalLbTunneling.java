@@ -67,17 +67,17 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapFromFiles;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.generateFileFromTemplate;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyNginx;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyTraefik;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyVoyager;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileFromPod;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
+import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyTraefik;
+import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyVoyager;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
@@ -265,7 +265,7 @@ class ItExternalLbTunneling {
   @Order(1)
   @Test
   @DisplayName("Verify RMI access to WLS through Voyager LoadBalancer")
-  public void testExternalRmiAccessThruVoyager() {
+  void testExternalRmiAccessThruVoyager() {
 
     assumeFalse(WEBLOGIC_SLIM, "Skipping RMI Tunnelling Test for slim image");
     // Build the standalone JMS Client to send and receive messages
@@ -315,7 +315,7 @@ class ItExternalLbTunneling {
   @Order(2)
   @Test
   @DisplayName("Verify RMI access to WLS through Traefik LoadBalancer")
-  public void testExternalRmiAccessThruTraefik() {
+  void testExternalRmiAccessThruTraefik() {
 
     assumeFalse(WEBLOGIC_SLIM, "Skipping RMI Tunnelling Test for slim image");
     // Build the standalone JMS Client to send and receive messages
@@ -371,7 +371,7 @@ class ItExternalLbTunneling {
   @Order(3)
   @Test
   @DisplayName("Verify RMI access WLS through NGINX LoadBalancer")
-  public void testExternalRmiAccessThruNginx() {
+  void testExternalRmiAccessThruNginx() {
 
     assumeFalse(WEBLOGIC_SLIM, "Skipping RMI Tunnelling Test for slim image");
     logger.info("Installing Nginx controller using helm");
@@ -435,7 +435,7 @@ class ItExternalLbTunneling {
   @Order(4)
   @Test
   @DisplayName("Verify tls RMI access WLS through Voyager loadBalancer")
-  public void testExternalRmiAccessThruVoyagerHttpsTunneling() {
+  void testExternalRmiAccessThruVoyagerHttpsTunneling() {
     assumeFalse(WEBLOGIC_SLIM, "Skipping RMI Tunnelling Test for slim image");
     // Build the standalone JMS Client to send and receive messages
     buildClient();
@@ -479,7 +479,7 @@ class ItExternalLbTunneling {
   @Order(5)
   @Test
   @DisplayName("Verify tls RMI access WLS through Traefik loadBalancer")
-  public void testExternalRmiAccessThruTraefikHttpsTunneling() {
+  void testExternalRmiAccessThruTraefikHttpsTunneling() {
 
     assumeFalse(WEBLOGIC_SLIM, "Skipping RMI Tunnelling Test for slim image");
 
@@ -530,7 +530,7 @@ class ItExternalLbTunneling {
   @Order(6)
   @Test
   @DisplayName("Verify tls RMI access WLS through NGNIX loadBalancer")
-  public void testExternalRmiAccessThruNginxHttpsTunneling() {
+  void testExternalRmiAccessThruNginxHttpsTunneling() {
 
     assumeFalse(WEBLOGIC_SLIM, "Skipping RMI Tunnelling Test for slim image");
     logger.info("Installing Nginx controller using helm");

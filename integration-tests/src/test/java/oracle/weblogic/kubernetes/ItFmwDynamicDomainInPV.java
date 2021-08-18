@@ -50,12 +50,12 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Docker.getImageEnvVar;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.DbUtils.setupDBandRCUschema;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.TestUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -69,7 +69,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Test to creat a FMW dynamic domain in persistent volume using WLST")
 @IntegrationTest
-public class ItFmwDynamicDomainInPV {
+class ItFmwDynamicDomainInPV {
 
   private static ConditionFactory withStandardRetryPolicy;
 
@@ -149,7 +149,7 @@ public class ItFmwDynamicDomainInPV {
    */
   @Test
   @DisplayName("Create FMW Dynamic Domain in PV")
-  public void testFmwDynamicDomainInPV() {
+  void testFmwDynamicDomainInPV() {
     // create FMW dynamic domain and verify
     createFmwDomainAndVerify();
     verifyDomainReady();

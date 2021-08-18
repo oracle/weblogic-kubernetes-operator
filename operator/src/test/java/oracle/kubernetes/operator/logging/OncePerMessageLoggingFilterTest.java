@@ -8,10 +8,10 @@ import org.junit.jupiter.api.Test;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.is;
 
-public class OncePerMessageLoggingFilterTest {
+class OncePerMessageLoggingFilterTest {
 
   @Test
-  public void verifyCanLogReturnsFalseForRepeatedMessage() {
+  void verifyCanLogReturnsFalseForRepeatedMessage() {
     final String message = "some log message";
     OncePerMessageLoggingFilter loggingFilter = new OncePerMessageLoggingFilter();
     loggingFilter.setFiltering(true);
@@ -21,7 +21,7 @@ public class OncePerMessageLoggingFilterTest {
   }
 
   @Test
-  public void verifyCanLogReturnsFalseForRepeatedNullMessage() {
+  void verifyCanLogReturnsFalseForRepeatedNullMessage() {
     final String message = null;
     OncePerMessageLoggingFilter loggingFilter = new OncePerMessageLoggingFilter();
     loggingFilter.setFiltering(true);
@@ -31,7 +31,7 @@ public class OncePerMessageLoggingFilterTest {
   }
 
   @Test
-  public void verifyCanLogReturnsTrueForRepeatedMessageWithoutFiltering() {
+  void verifyCanLogReturnsTrueForRepeatedMessageWithoutFiltering() {
     final String message = "some log message";
     OncePerMessageLoggingFilter loggingFilter = new OncePerMessageLoggingFilter();
 
@@ -40,7 +40,7 @@ public class OncePerMessageLoggingFilterTest {
   }
 
   @Test
-  public void verifyCanLogReturnsTrueForDifferentMessage() {
+  void verifyCanLogReturnsTrueForDifferentMessage() {
     final String message = "some log message";
     final String message2 = "another log message";
     OncePerMessageLoggingFilter loggingFilter = new OncePerMessageLoggingFilter();
@@ -51,7 +51,7 @@ public class OncePerMessageLoggingFilterTest {
   }
 
   @Test
-  public void verifyMessageHistoryKeptBeforeFilteringIsOn() {
+  void verifyMessageHistoryKeptBeforeFilteringIsOn() {
     final String message = "some log message";
     OncePerMessageLoggingFilter loggingFilter = new OncePerMessageLoggingFilter();
 
@@ -63,7 +63,7 @@ public class OncePerMessageLoggingFilterTest {
   }
 
   @Test
-  public void verifyResetHistoryClearsLogHistory() {
+  void verifyResetHistoryClearsLogHistory() {
     final String message = "some log message";
     OncePerMessageLoggingFilter loggingFilter = new OncePerMessageLoggingFilter();
 
@@ -75,7 +75,7 @@ public class OncePerMessageLoggingFilterTest {
   }
 
   @Test
-  public void verifyCanLogReturnsTrueOnceAfterReenablingFilteringAfterOffAndReset() {
+  void verifyCanLogReturnsTrueOnceAfterReenablingFilteringAfterOffAndReset() {
     final String message = "some log message";
 
     OncePerMessageLoggingFilter loggingFilter = new OncePerMessageLoggingFilter();
@@ -91,7 +91,7 @@ public class OncePerMessageLoggingFilterTest {
   }
 
   @Test
-  public void verifyCanLogReturnsFalseAfterReenablingFilteringAfterOffWithoutReset() {
+  void verifyCanLogReturnsFalseAfterReenablingFilteringAfterOffWithoutReset() {
     final String message = "some log message";
 
     OncePerMessageLoggingFilter loggingFilter = new OncePerMessageLoggingFilter();

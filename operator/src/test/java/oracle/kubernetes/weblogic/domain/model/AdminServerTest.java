@@ -15,7 +15,7 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class AdminServerTest extends BaseConfigurationTestBase {
+class AdminServerTest extends BaseConfigurationTestBase {
   private static final String CHANNEL1 = "default";
   private static final int PORT1 = 12345;
   private static final String CHANNEL2 = "nap1";
@@ -42,7 +42,7 @@ public class AdminServerTest extends BaseConfigurationTestBase {
   }
 
   @Test
-  public void whenChannelsLabelsAnnotationsAreTheSame_objectsAreEqual() {
+  void whenChannelsLabelsAnnotationsAreTheSame_objectsAreEqual() {
     server1.withChannel("nap1", 0);
     server1.addPodLabel("label1", VALUE1);
     server1.addPodAnnotation("annotation1", VALUE2);
@@ -56,7 +56,7 @@ public class AdminServerTest extends BaseConfigurationTestBase {
   }
 
   @Test
-  public void whenChannelsDifferByName_objectsAreNotEqual() {
+  void whenChannelsDifferByName_objectsAreNotEqual() {
     server1.withChannel("nap1", 0);
     server2.withChannel("nap2", 0);
 
@@ -64,7 +64,7 @@ public class AdminServerTest extends BaseConfigurationTestBase {
   }
 
   @Test
-  public void whenDifferByPodLabel_objectsAreNotEqual() {
+  void whenDifferByPodLabel_objectsAreNotEqual() {
     server1.addPodLabel("a", "b");
     server2.addPodLabel("a", "c");
 
@@ -72,7 +72,7 @@ public class AdminServerTest extends BaseConfigurationTestBase {
   }
 
   @Test
-  public void whenDifferByPodAnnotation_objectsAreNotEqual() {
+  void whenDifferByPodAnnotation_objectsAreNotEqual() {
     server1.addPodAnnotation("a", "b");
     server2.addPodAnnotation("a", "c");
 
@@ -80,7 +80,7 @@ public class AdminServerTest extends BaseConfigurationTestBase {
   }
 
   @Test
-  public void whenDifferByServiceLabel_objectsAreNotEqual() {
+  void whenDifferByServiceLabel_objectsAreNotEqual() {
     server1.addServiceLabel("a", "b");
     server2.addServiceLabel("a", "c");
 
@@ -88,7 +88,7 @@ public class AdminServerTest extends BaseConfigurationTestBase {
   }
 
   @Test
-  public void whenDifferByServiceAnnotation_objectsAreNotEqual() {
+  void whenDifferByServiceAnnotation_objectsAreNotEqual() {
     server1.addServiceAnnotation("a", "b");
     server2.addServiceAnnotation("a", "c");
 
@@ -96,7 +96,7 @@ public class AdminServerTest extends BaseConfigurationTestBase {
   }
 
   @Test
-  public void whenConstructedWithAdminService_mayCreateChannels() {
+  void whenConstructedWithAdminService_mayCreateChannels() {
     configureAdminServer()
         .configureAdminService()
         .withChannel(CHANNEL1, PORT1)
@@ -108,7 +108,7 @@ public class AdminServerTest extends BaseConfigurationTestBase {
   }
 
   @Test
-  public void whenHaveSameAdminServiceChannels_objectsAreEqual() {
+  void whenHaveSameAdminServiceChannels_objectsAreEqual() {
     server1.createAdminService().withChannel(CHANNEL1, PORT1).withChannel(CHANNEL2, PORT2);
     server2.createAdminService().withChannel(CHANNEL2, PORT2).withChannel(CHANNEL1, PORT1);
 
@@ -116,7 +116,7 @@ public class AdminServerTest extends BaseConfigurationTestBase {
   }
 
   @Test
-  public void whenHaveDifferentAdminServiceChannels_objectsAreNotEqual() {
+  void whenHaveDifferentAdminServiceChannels_objectsAreNotEqual() {
     server1.createAdminService().withChannel(CHANNEL1, PORT1).withChannel(CHANNEL2, PORT2);
     server2.createAdminService().withChannel(CHANNEL1, PORT2).withChannel(CHANNEL2, PORT1);
 
@@ -124,7 +124,7 @@ public class AdminServerTest extends BaseConfigurationTestBase {
   }
 
   @Test
-  public void whenConstructedWithAdminService_mayAddLabels() {
+  void whenConstructedWithAdminService_mayAddLabels() {
     configureAdminServer()
         .configureAdminService()
         .withServiceLabel(NAME1, VALUE1)
@@ -136,7 +136,7 @@ public class AdminServerTest extends BaseConfigurationTestBase {
   }
 
   @Test
-  public void whenHaveSameAdminServiceLabels_objectsAreEqual() {
+  void whenHaveSameAdminServiceLabels_objectsAreEqual() {
     server1.createAdminService().withServiceLabel(NAME1, VALUE1).withServiceLabel(NAME2, VALUE2);
     server2.createAdminService().withServiceLabel(NAME2, VALUE2).withServiceLabel(NAME1, VALUE1);
 
@@ -144,7 +144,7 @@ public class AdminServerTest extends BaseConfigurationTestBase {
   }
 
   @Test
-  public void whenHaveDifferentAdminServiceLabels_objectsAreNotEqual() {
+  void whenHaveDifferentAdminServiceLabels_objectsAreNotEqual() {
     server1.createAdminService().withServiceLabel(NAME1, VALUE1).withServiceLabel(NAME2, VALUE2);
     server2.createAdminService().withServiceLabel(NAME1, VALUE2).withServiceLabel(NAME2, VALUE1);
 
@@ -152,7 +152,7 @@ public class AdminServerTest extends BaseConfigurationTestBase {
   }
 
   @Test
-  public void whenConstructedWithAdminService_mayAddAnnotations() {
+  void whenConstructedWithAdminService_mayAddAnnotations() {
     configureAdminServer()
         .configureAdminService()
         .withServiceAnnotation(NAME1, VALUE1)
@@ -164,7 +164,7 @@ public class AdminServerTest extends BaseConfigurationTestBase {
   }
 
   @Test
-  public void whenHaveSameAdminServiceAnnotations_objectsAreEqual() {
+  void whenHaveSameAdminServiceAnnotations_objectsAreEqual() {
     server1
         .createAdminService()
         .withServiceAnnotation(NAME1, VALUE1)
@@ -178,7 +178,7 @@ public class AdminServerTest extends BaseConfigurationTestBase {
   }
 
   @Test
-  public void whenHaveDifferentAdminServiceAnnotations_objectsAreNotEqual() {
+  void whenHaveDifferentAdminServiceAnnotations_objectsAreNotEqual() {
     server1
         .createAdminService()
         .withServiceAnnotation(NAME1, VALUE1)
@@ -192,7 +192,7 @@ public class AdminServerTest extends BaseConfigurationTestBase {
   }
 
   @Test
-  public void callingGetAdminService_doesNotChangeTheObject() {
+  void callingGetAdminService_doesNotChangeTheObject() {
     server1.getAdminService();
 
     assertThat(server1, equalTo(server2));

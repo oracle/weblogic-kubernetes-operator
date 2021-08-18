@@ -14,7 +14,6 @@ import java.util.stream.Collectors;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.util.Yaml;
-import oracle.weblogic.kubernetes.ItKubernetesEvents;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
@@ -188,7 +187,7 @@ public class K8sEvents {
         }
       }
     } catch (ApiException ex) {
-      Logger.getLogger(ItKubernetesEvents.class.getName()).log(Level.SEVERE, null, ex);
+      Logger.getLogger(K8sEvents.class.getName()).log(Level.SEVERE, null, ex);
     }
     return null;
   }
@@ -223,7 +222,7 @@ public class K8sEvents {
           }
         }
       } catch (ApiException ex) {
-        Logger.getLogger(ItKubernetesEvents.class.getName()).log(Level.SEVERE, null, ex);
+        Logger.getLogger(K8sEvents.class.getName()).log(Level.SEVERE, null, ex);
       }
       return false;
     };
@@ -252,7 +251,7 @@ public class K8sEvents {
         }
       }
     } catch (ApiException ex) {
-      Logger.getLogger(ItKubernetesEvents.class.getName()).log(Level.SEVERE, null, ex);
+      Logger.getLogger(K8sEvents.class.getName()).log(Level.SEVERE, null, ex);
     }
     return 0;
   }
@@ -279,7 +278,7 @@ public class K8sEvents {
         }
       }
     } catch (ApiException ex) {
-      Logger.getLogger(ItKubernetesEvents.class.getName()).log(Level.SEVERE, null, ex);
+      Logger.getLogger(K8sEvents.class.getName()).log(Level.SEVERE, null, ex);
       return -1;
     }
     return count;
@@ -304,7 +303,7 @@ public class K8sEvents {
                 .filter(e -> e.getReason().contains(reason))
                 .filter(e -> isEqualOrAfter(timestamp, e)).collect(Collectors.toList()).size());
       } catch (ApiException ex) {
-        Logger.getLogger(ItKubernetesEvents.class.getName()).log(Level.SEVERE, null, ex);
+        Logger.getLogger(K8sEvents.class.getName()).log(Level.SEVERE, null, ex);
       }
       return false;
     };
@@ -320,7 +319,7 @@ public class K8sEvents {
   }
 
   private static Boolean logErrorAndFail(String serverName, int count) {
-    Logger.getLogger(ItKubernetesEvents.class.getName()).log(Level.SEVERE,
+    Logger.getLogger(K8sEvents.class.getName()).log(Level.SEVERE,
             "Pod " + serverName + " restarted " + count + " times");
     return false;
   }

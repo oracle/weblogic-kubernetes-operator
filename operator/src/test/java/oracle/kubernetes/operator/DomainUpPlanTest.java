@@ -44,7 +44,7 @@ import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
-public class DomainUpPlanTest {
+class DomainUpPlanTest {
 
   private final TerminalStep adminStep = new TerminalStep();
   private final TerminalStep managedServersStep = new TerminalStep();
@@ -81,7 +81,7 @@ public class DomainUpPlanTest {
   }
 
   @Test
-  public void whenStartPolicyNull_runAdminStepOnly() {
+  void whenStartPolicyNull_runAdminStepOnly() {
     testSupport.runSteps(getDomainPresenceStep());
 
     assertThat(adminStep.wasRun(), is(true));
@@ -89,7 +89,7 @@ public class DomainUpPlanTest {
   }
 
   @Test
-  public void whenNotShuttingDown_runAdminStepOnly() {
+  void whenNotShuttingDown_runAdminStepOnly() {
     configurator.setShuttingDown(false);
 
     testSupport.runSteps(getDomainPresenceStep());
@@ -99,7 +99,7 @@ public class DomainUpPlanTest {
   }
 
   @Test
-  public void whenShuttingDown_runManagedServersStepOnly() {
+  void whenShuttingDown_runManagedServersStepOnly() {
     configurator.setShuttingDown(true);
 
     testSupport.runSteps(getDomainPresenceStep());
@@ -109,7 +109,7 @@ public class DomainUpPlanTest {
   }
 
   @Test
-  public void whenNotShuttingDown_selectAdminServerStep() {
+  void whenNotShuttingDown_selectAdminServerStep() {
     configurator.setShuttingDown(false);
 
     Step plan = processor.createDomainUpPlan(new DomainPresenceInfo(domain));
@@ -118,7 +118,7 @@ public class DomainUpPlanTest {
   }
 
   @Test
-  public void whenShuttingDown_selectManagedServerStepOnly() {
+  void whenShuttingDown_selectManagedServerStepOnly() {
     configurator.setShuttingDown(true);
 
     Step plan = processor.createDomainUpPlan(new DomainPresenceInfo(domain));
@@ -130,7 +130,7 @@ public class DomainUpPlanTest {
   }
 
   @Test
-  public void useSequenceBeforeAdminServerStep() {
+  void useSequenceBeforeAdminServerStep() {
     Step plan = processor.createDomainUpPlan(new DomainPresenceInfo(domain));
 
     assertThat(
@@ -147,7 +147,7 @@ public class DomainUpPlanTest {
   }
 
   @Test
-  public void whenAdminPodCreated_hasListenPort() throws NoSuchFieldException {
+  void whenAdminPodCreated_hasListenPort() throws NoSuchFieldException {
     mementos.add(UnitTestHash.install());
 
     WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport("domain");

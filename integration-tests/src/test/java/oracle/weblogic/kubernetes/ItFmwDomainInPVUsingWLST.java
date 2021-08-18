@@ -50,11 +50,11 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Docker.getImageE
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.DbUtils.setupDBandRCUschema;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
@@ -66,7 +66,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  */
 @DisplayName("Verify the WebLogic server pods can run with domain created in persistent volume")
 @IntegrationTest
-public class ItFmwDomainInPVUsingWLST {
+class ItFmwDomainInPVUsingWLST {
 
   private static String dbNamespace = null;
   private static String opNamespace = null;
@@ -143,7 +143,7 @@ public class ItFmwDomainInPVUsingWLST {
    */
   @Test
   @DisplayName("Create JRF domain in PV using WLST script")
-  public void testFmwDomainInPvUsingWlst() {
+  void testFmwDomainInPvUsingWlst() {
     final String clusterName = "cluster-jrfdomain-inpv";
     final String adminServerName = "wlst-admin-server";
     final String adminServerPodName = domainUid + "-" + adminServerName;

@@ -31,7 +31,6 @@ import oracle.weblogic.kubernetes.utils.BuildApplication;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.awaitility.core.ConditionFactory;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
@@ -48,20 +47,18 @@ import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
-import static oracle.weblogic.kubernetes.actions.TestActions.uninstallVoyager;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyVoyager;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installVoyagerIngressAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createRouteForOKD;
+import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyVoyager;
+import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installVoyagerIngressAndVerify;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -84,7 +81,7 @@ class ItManagedCoherence {
   private static final String COHERENCE_IMAGE_NAME = "coherence-managed-image";
 
   // constants for WebLogic domain
-  private static final String domainUid = "coherence-managed-domain1";
+  private static final String domainUid = "coherence-managed-domain";
   private static final int NUMBER_OF_CLUSTERS = 2;
   private static final String CLUSTER_NAME_PREFIX = "cluster-";
   private static final int MANAGED_SERVER_PORT = 8001;
@@ -156,17 +153,6 @@ class ItManagedCoherence {
     logger.info("Path of CoherenceApp GAR " + coherenceAppGarPath.toString());
   }
 
-  @AfterAll
-  void tearDown() {
-    // uninstall Voyager
-    if (voyagerHelmParams != null) {
-      assertThat(uninstallVoyager(voyagerHelmParams))
-          .as("Test uninstallVoyager returns true")
-          .withFailMessage("uninstallVoyager() did not return true")
-          .isTrue();
-    }
-  }
-
   /**
    * Create domain with two clusters, cluster-1 and cluster-2 and associate them with a Coherence cluster
    * Deploy the EAR file to cluster-1 that has no storage enabled
@@ -174,8 +160,8 @@ class ItManagedCoherence {
    * Verify that data can be added and stored in the cache and can also be retrieved from cache.
    */
   @Test
-  @DisplayName("Create a two-cluster domain with a Coherence cluster using WDT and test interaction with cache data")
-  public void testCreateCoherenceDomainInImageUsingWdt() {
+  @DisplayName("Two cluster domain with a Coherence cluster and test interaction with cache data")
+  void testMultiClusterCoherenceDomain() {
     String ingressName = domainUid + "-ingress-host-routing";
     String ingressServiceName = VOYAGER_CHART_NAME + "-" + ingressName;
     String channelName = "tcp-80";

@@ -20,7 +20,7 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 /** This test class verifies the behavior of the ServiceWatcher. */
-public class ServiceWatcherTest extends WatcherTestBase implements WatchListener<V1Service> {
+class ServiceWatcherTest extends WatcherTestBase implements WatchListener<V1Service> {
 
   private static final BigInteger INITIAL_RESOURCE_VERSION = new BigInteger("987");
 
@@ -30,7 +30,7 @@ public class ServiceWatcherTest extends WatcherTestBase implements WatchListener
   }
 
   @Test
-  public void initialRequest_specifiesStartingResourceVersionAndLabelSelector() {
+  void initialRequest_specifiesStartingResourceVersionAndLabelSelector() {
     sendInitialRequest(INITIAL_RESOURCE_VERSION);
 
     assertThat(

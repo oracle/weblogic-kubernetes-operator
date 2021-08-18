@@ -10,7 +10,7 @@ import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.lessThan;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class ServerStatusTest {
+class ServerStatusTest {
 
   static final ServerStatus cluster1Server1
       = new ServerStatus().withClusterName("cluster-1").withServerName("server1");
@@ -33,7 +33,7 @@ public class ServerStatusTest {
   static final ServerStatus nullClusterNullServer = new ServerStatus();
 
   @Test
-  public void verify_Equal_compareTo() {
+  void verify_Equal_compareTo() {
     assertThat("compareTo should return 0 if both ServerStatus have null cluster and server names",
         nullClusterNullServer.compareTo(new ServerStatus()), equalTo(0));
     assertThat("compareTo should return 0 if both ServerStatus have same cluster and server names",
@@ -47,7 +47,7 @@ public class ServerStatusTest {
   }
 
   @Test
-  public void verifyThat_adminServer_before_notAdminServerWithSameServerName() {
+  void verifyThat_adminServer_before_notAdminServerWithSameServerName() {
     assertThat("ServerStatus for admin server should be ordered before ServerStatus for non admin server",
         adminServer.compareTo(new ServerStatus().withServerName("admin-server")), equalTo(-1));
     assertThat("ServerStatus for non admin server should be ordered after ServerStatus for admin server",
@@ -55,7 +55,7 @@ public class ServerStatusTest {
   }
 
   @Test
-  public void verifyThat_statusWithoutCluster_before_statusWithCluster() {
+  void verifyThat_statusWithoutCluster_before_statusWithCluster() {
     assertThat("ServerStatus without cluster name should be ordered before ServerStatus with cluster name",
         standAloneServer1.compareTo(cluster1Server1), lessThan(0));
     assertThat("ServerStatus with cluster name should be ordered after ServerStatus without cluster name",
@@ -63,7 +63,7 @@ public class ServerStatusTest {
   }
 
   @Test
-  public void verifyThat_cluster1_before_cluster2() {
+  void verifyThat_cluster1_before_cluster2() {
     assertThat("ServerStatus for cluster-1 should be ordered before ServerStatus for cluster-2",
         cluster1Server1.compareTo(cluster2Server1), lessThan(0));
     assertThat("ServerStatus for cluster-2 should be ordered after ServerStatus for cluster-1",
@@ -71,7 +71,7 @@ public class ServerStatusTest {
   }
 
   @Test
-  public void verifyThat_cluster1_before_cluster10() {
+  void verifyThat_cluster1_before_cluster10() {
     assertThat("ServerStatus for cluster-1 should be ordered before ServerStatus for cluster-10",
         cluster1Server1.compareTo(cluster10Server1), lessThan(0));
     assertThat("ServerStatus for cluster-10 should be ordered after ServerStatus for cluster-1",
@@ -79,7 +79,7 @@ public class ServerStatusTest {
   }
 
   @Test
-  public void verifyThat_cluster2_before_cluster10() {
+  void verifyThat_cluster2_before_cluster10() {
     assertThat("ServerStatus for cluster-2 should be ordered before ServerStatus for cluster-10",
         cluster2Server1.compareTo(cluster10Server1), lessThan(0));
     assertThat("ServerStatus for cluster-10 should be ordered after ServerStatus for cluster-2",
@@ -87,7 +87,7 @@ public class ServerStatusTest {
   }
 
   @Test
-  public void verifyThat_server1_before_server2() {
+  void verifyThat_server1_before_server2() {
     assertThat("ServerStatus for server1 should be ordered before ServerStatus for server2",
         standAloneServer1.compareTo(standAloneServer2), lessThan(0));
     assertThat("ServerStatus for server2 should be ordered after ServerStatus for server1",
@@ -100,7 +100,7 @@ public class ServerStatusTest {
   }
 
   @Test
-  public void verifyThat_server1_before_server10() {
+  void verifyThat_server1_before_server10() {
     assertThat("ServerStatus for server1 should be ordered before ServerStatus for server10",
         standAloneServer1.compareTo(standAloneServer10), lessThan(0));
     assertThat("ServerStatus for server10 should be ordered after ServerStatus for server1",
@@ -113,7 +113,7 @@ public class ServerStatusTest {
   }
 
   @Test
-  public void verifyThat_server2_before_server10() {
+  void verifyThat_server2_before_server10() {
     assertThat("ServerStatus for server2 should be ordered before ServerStatus for server10",
         standAloneServer2.compareTo(standAloneServer10), lessThan(0));
     assertThat("ServerStatus for server10 should be ordered after ServerStatus for server2",
@@ -126,7 +126,7 @@ public class ServerStatusTest {
   }
 
   @Test
-  public void verifyThat_adminServer_before_serverA() {
+  void verifyThat_adminServer_before_serverA() {
     assertThat("ServerStatus for admin server should be ordered before ServerStatus for non admin server",
         adminServer.compareTo(standAloneServerA), lessThan(0));
     assertThat("ServerStatus for non admin server should be ordered after ServerStatus for admin server",
@@ -141,7 +141,7 @@ public class ServerStatusTest {
   // We use the volatile adminServer flag to control sorting, but it is not part of the JSON schema of the status,
   // therefore it cannot figure in the equals() test, which is used to decide whether we need to update the status.
   @Test
-  public void equalsMethodsIgnoresIsAdminServer() {
+  void equalsMethodsIgnoresIsAdminServer() {
     assertThat(
           new ServerStatus().withClusterName("1").withServerName("1"),
           equalTo(new ServerStatus().withClusterName("1").withServerName("1").withIsAdminServer(true)));

@@ -39,13 +39,13 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createRcuSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.DbUtils.setupDBandRCUschema;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.createDomainResourceOnPv;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyDomainReady;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
@@ -57,7 +57,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  */
 @DisplayName("Test to creat a FMW domain in persistent volume using WDT")
 @IntegrationTest
-public class ItFmwDomainInPVUsingWDT {
+class ItFmwDomainInPVUsingWDT {
 
   private static ConditionFactory withStandardRetryPolicy;
 
@@ -150,7 +150,7 @@ public class ItFmwDomainInPVUsingWDT {
    */
   @Test
   @DisplayName("Create a FMW domainon on PV using WDT")
-  public void testFmwDomainOnPVUsingWdt() {
+  void testFmwDomainOnPVUsingWdt() {
     final String pvName = domainUid + "-" + domainNamespace + "-pv";
     final String pvcName = domainUid + "-" + domainNamespace + "-pvc";
     final int t3ChannelPort = getNextFreePort();

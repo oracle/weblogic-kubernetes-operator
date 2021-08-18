@@ -51,12 +51,12 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessible
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appNotAccessibleInPod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createMiiImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.dockerLoginAndPushImageToRegistry;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -72,7 +72,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Verify liveness probe customization")
 @IntegrationTest
 @Tag("okdenv")
-public class ItLivenessProbeCustomization {
+class ItLivenessProbeCustomization {
 
   private static String domainNamespace = null;
 
@@ -136,7 +136,7 @@ public class ItLivenessProbeCustomization {
   @Test
   @Order(1)
   @DisplayName("Test customization of the liveness probe")
-  public void testCustomLivenessProbe() {
+  void testCustomLivenessProbe() {
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
@@ -208,7 +208,7 @@ public class ItLivenessProbeCustomization {
   @Test
   @Order(2)
   @DisplayName("Test custom liveness probe is not trigged")
-  public void testCustomLivenessProbeNotTrigged() {
+  void testCustomLivenessProbeNotTrigged() {
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));

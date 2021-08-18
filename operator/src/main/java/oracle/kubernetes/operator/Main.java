@@ -46,6 +46,7 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.rest.RestConfigImpl;
 import oracle.kubernetes.operator.rest.RestServer;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
+import oracle.kubernetes.operator.steps.InitializeInternalIdentityStep;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Container;
 import oracle.kubernetes.operator.work.ContainerResolver;
@@ -84,6 +85,8 @@ public class Main {
   private NamespaceWatcher namespaceWatcher;
   protected OperatorEventWatcher operatorNamespaceEventWatcher;
   private boolean warnedOfCrdAbsence;
+  private static NextStepFactory NEXT_STEP_FACTORY =
+          (next) -> createInitializeInternalIdentityStep(next);
 
   private static String getConfiguredServiceAccount() {
     return TuningParameters.getInstance().get("serviceaccount");
@@ -310,7 +313,12 @@ public class Main {
   }
 
   private Step createStartupSteps() {
-    return Namespaces.getSelection(new StartupStepsVisitor());
+
+    return NEXT_STEP_FACTORY.createInternalInitializationStep(Namespaces.getSelection(new StartupStepsVisitor()));
+  }
+
+  private static Step createInitializeInternalIdentityStep(Step next) {
+    return new InitializeInternalIdentityStep(next);
   }
 
   private Step createOperatorNamespaceEventListStep() {
@@ -592,6 +600,11 @@ public class Main {
         LOGGER.severe(MessageKeys.EXCEPTION, throwable);
       }
     }
+  }
+
+  // an interface to provide a hook for unit testing.
+  interface NextStepFactory {
+    Step createInternalInitializationStep(Step next);
   }
 
 }

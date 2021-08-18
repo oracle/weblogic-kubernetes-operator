@@ -95,17 +95,17 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVe
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVC;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createRouteForOKD;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.MySQLDBUtils.createMySQLDB;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScript;
@@ -124,7 +124,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Verify the overrideDistributionStrategy applies the overrides accordingly to the value set")
 @IntegrationTest
 @Tag("okdenv")
-public class ItConfigDistributionStrategy {
+class ItConfigDistributionStrategy {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
@@ -296,7 +296,7 @@ public class ItConfigDistributionStrategy {
   @Order(1)
   @Test
   @DisplayName("Test overrideDistributionStrategy set to DEFAULT")
-  public void testDefaultOverride() {
+  void testDefaultOverride() {
 
     //store the pod creation timestamps
     storePodCreationTimestamps();
@@ -352,7 +352,7 @@ public class ItConfigDistributionStrategy {
   @Order(2)
   @Test
   @DisplayName("Test new overrides are applied as per the files in recreated configmap")
-  public void testModifiedOverrideContent() {
+  void testModifiedOverrideContent() {
 
     //store the pod creation timestamps
     storePodCreationTimestamps();
@@ -461,7 +461,7 @@ public class ItConfigDistributionStrategy {
   @Order(3)
   @Test
   @DisplayName("Test overrideDistributionStrategy value DYNAMIC")
-  public void testDynamicOverride() {
+  void testDynamicOverride() {
 
     //patching the domain with /spec/configuration/overrideDistributionStrategy: DYNAMIC
     String patchStr = "["
@@ -539,7 +539,7 @@ public class ItConfigDistributionStrategy {
   @Order(4)
   @Test
   @DisplayName("Test overrideDistributionStrategy value ON_RESTART")
-  public void testOnRestartOverride() {
+  void testOnRestartOverride() {
 
     //patching the domain with /spec/configuration/overrideDistributionStrategy: ON_RESTART
     String patchStr = "["
@@ -643,7 +643,7 @@ public class ItConfigDistributionStrategy {
   @Order(5)
   @Test
   @DisplayName("Test invalid overrideDistributionStrategy value RESTART")
-  public void testOverrideNegative() {
+  void testOverrideNegative() {
 
     //patching the domain with /spec/configuration/overrideDistributionStrategy: RESTART
     String patchStr = "["
@@ -869,7 +869,8 @@ public class ItConfigDistributionStrategy {
             .namespace(domainNamespace))
         .spec(new DomainSpec()
             .configuration(new Configuration()
-                .overrideDistributionStrategy("DYNAMIC"))
+                .overrideDistributionStrategy("DYNAMIC")
+                .introspectorJobActiveDeadlineSeconds(300L))
             .domainUid(domainUid)
             .domainHome("/shared/domains/" + domainUid) // point to domain home in pv
             .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv

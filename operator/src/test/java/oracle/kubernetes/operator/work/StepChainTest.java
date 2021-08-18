@@ -16,7 +16,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.contains;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-public class StepChainTest {
+class StepChainTest {
   private final FiberTestSupport testSupport = new FiberTestSupport();
 
   private final List<Memento> mementos = new ArrayList<>();
@@ -34,7 +34,7 @@ public class StepChainTest {
   }
 
   @Test
-  public void afterChainingGroupsOfSteps_fiberRunsThemInOrder() {
+  void afterChainingGroupsOfSteps_fiberRunsThemInOrder() {
     Step group1 = new NamedStep("one", new NamedStep("two"));
     Step group2 = new NamedStep("three", new NamedStep("four", new NamedStep("five")));
     Step group3 = new NamedStep("six");
@@ -47,7 +47,7 @@ public class StepChainTest {
   }
 
   @Test
-  public void ignoreNullFirstSteps() {
+  void ignoreNullFirstSteps() {
     Step group2 = new NamedStep("three", new NamedStep("four", new NamedStep("five")));
     Step group3 = new NamedStep("six");
 
@@ -59,7 +59,7 @@ public class StepChainTest {
   }
 
   @Test
-  public void ignoreNullMiddleSteps() {
+  void ignoreNullMiddleSteps() {
     Step group1 = new NamedStep("one", new NamedStep("two"));
     Step group3 = new NamedStep("six");
 
@@ -71,12 +71,12 @@ public class StepChainTest {
   }
 
   @Test
-  public void whenNoNonNullSteps_throwException() {
+  void whenNoNonNullSteps_throwException() {
     assertThrows(IllegalArgumentException.class, Step::chain);
   }
 
   @Test
-  public void doNotChainGroupThatContainsDuplicateStep() {
+  void doNotChainGroupThatContainsDuplicateStep() {
     Step duplicateStep = new NamedStep("duplicate", new NamedStep("two"));
     Step group1 = new NamedStep("one", duplicateStep);
     Step group2 = new NamedStep("three", duplicateStep);
@@ -87,7 +87,7 @@ public class StepChainTest {
   }
 
   @Test
-  public void addGroupThatContainsStepsWithSameName() {
+  void addGroupThatContainsStepsWithSameName() {
     Step group1 = new NamedStep("one", new NamedStep("two"));
     Step group2 = new NamedStep("two", new NamedStep("three"));
 

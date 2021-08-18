@@ -48,7 +48,7 @@ import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
-public class ServerStatusReaderTest extends HttpUserAgentTest {
+class ServerStatusReaderTest extends HttpUserAgentTest {
   private static final String NS = "namespace";
   private static final String UID = "uid";
   private final TerminalStep endStep = new TerminalStep();
@@ -89,7 +89,7 @@ public class ServerStatusReaderTest extends HttpUserAgentTest {
   }
 
   @Test
-  public void whenNoServersPresent_packetContainsEmptyStateAndHealthMaps() {
+  void whenNoServersPresent_packetContainsEmptyStateAndHealthMaps() {
     Packet packet =
         testSupport.runSteps(ServerStatusReader.createDomainStatusReaderStep(info, 0, endStep));
 
@@ -98,7 +98,7 @@ public class ServerStatusReaderTest extends HttpUserAgentTest {
   }
 
   @Test
-  public void whenServersLackPods_packetContainsEmptyStateAndHealthMaps() {
+  void whenServersLackPods_packetContainsEmptyStateAndHealthMaps() {
     Packet packet =
         testSupport.runSteps(ServerStatusReader.createDomainStatusReaderStep(info, 0, endStep));
 
@@ -107,7 +107,7 @@ public class ServerStatusReaderTest extends HttpUserAgentTest {
   }
 
   @Test
-  public void whenServerPodsReturnNodeManagerStatus_recordInStateMap() {
+  void whenServerPodsReturnNodeManagerStatus_recordInStateMap() {
     info.setServerPod("server1", createPod("server1"));
     info.setServerPod("server2", createPod("server2"));
     execFactory.defineResponse("server1", "server1 status");
@@ -122,7 +122,7 @@ public class ServerStatusReaderTest extends HttpUserAgentTest {
   }
 
   @Test
-  public void createDomainStatusReaderStep_initializesRemainingServersHealthRead_withNumServers() {
+  void createDomainStatusReaderStep_initializesRemainingServersHealthRead_withNumServers() {
     info.setServerPod("server1", createPod("server1"));
     info.setServerPod("server2", createPod("server2"));
 
@@ -140,7 +140,7 @@ public class ServerStatusReaderTest extends HttpUserAgentTest {
   }
 
   @Test
-  public void whenPodNotReadyAndHasLastKnownState_recordInStateMap() {
+  void whenPodNotReadyAndHasLastKnownState_recordInStateMap() {
     info.setServerPod("server1", createPod("server1"));
     info.updateLastKnownServerStatus("server1", "not ready yet");
 
@@ -161,7 +161,7 @@ public class ServerStatusReaderTest extends HttpUserAgentTest {
   }
 
   @Test
-  public void whenPodIsReady_startHealthStepForIt() {
+  void whenPodIsReady_startHealthStepForIt() {
     info.setServerPod("server1", createPod("server1"));
     setReadyStatus(info.getServerPod("server1"));
 

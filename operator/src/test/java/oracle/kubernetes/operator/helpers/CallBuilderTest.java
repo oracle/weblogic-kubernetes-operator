@@ -36,9 +36,8 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
-
 @SuppressWarnings("SameParameterValue")
-public class CallBuilderTest {
+class CallBuilderTest {
   private static final String NAMESPACE = "testspace";
   private static final String UID = "uid";
   private static final String DOMAIN_RESOURCE =
@@ -72,7 +71,7 @@ public class CallBuilderTest {
   }
 
   @Test
-  public void getVersionCode_returnsAVersionInfo() throws ApiException {
+  void getVersionCode_returnsAVersionInfo() throws ApiException {
     VersionInfo versionInfo = new VersionInfo().major("1").minor("2");
     defineHttpGetResponse("/version/", versionInfo);
 
@@ -80,7 +79,7 @@ public class CallBuilderTest {
   }
 
   @Test
-  public void getVersionCode_firstAttemptFailsAndThenReturnsAVersionInfo() throws Exception {
+  void getVersionCode_firstAttemptFailsAndThenReturnsAVersionInfo() throws Exception {
     VersionInfo versionInfo = new VersionInfo().major("1").minor("2");
     defineHttpGetResponse("/version/", new FailOnceGetServlet(versionInfo, HTTP_BAD_REQUEST));
 
@@ -108,7 +107,7 @@ public class CallBuilderTest {
   }
 
   @Test
-  public void listDomains_returnsListAsJson() throws ApiException {
+  void listDomains_returnsListAsJson() throws ApiException {
     DomainList list = new DomainList().withItems(Arrays.asList(new Domain(), new Domain()));
     defineHttpGetResponse(DOMAIN_RESOURCE, list).expectingParameter("fieldSelector", "xxx");
 
@@ -116,7 +115,7 @@ public class CallBuilderTest {
   }
 
   @Test
-  public void replaceDomain_sendsNewDomain() throws ApiException {
+  void replaceDomain_sendsNewDomain() throws ApiException {
     Domain domain = new Domain().withMetadata(createMetadata());
     defineHttpPutResponse(
         DOMAIN_RESOURCE, UID, domain, (json) -> requestBody = fromJson(json, Domain.class));
@@ -127,7 +126,7 @@ public class CallBuilderTest {
   }
 
   @Test
-  public void replaceDomain_errorResponseCode_throws() {
+  void replaceDomain_errorResponseCode_throws() {
     Domain domain = new Domain().withMetadata(createMetadata());
     defineHttpPutResponse(DOMAIN_RESOURCE, UID, domain, new ErrorCodePutServlet(HTTP_BAD_REQUEST));
 
@@ -135,7 +134,7 @@ public class CallBuilderTest {
   }
 
   @Test
-  public void replaceDomain_conflictResponseCode_throws() {
+  void replaceDomain_conflictResponseCode_throws() {
     Domain domain = new Domain().withMetadata(createMetadata());
     defineHttpPutResponse(DOMAIN_RESOURCE, UID, domain, new ErrorCodePutServlet(HTTP_CONFLICT));
 

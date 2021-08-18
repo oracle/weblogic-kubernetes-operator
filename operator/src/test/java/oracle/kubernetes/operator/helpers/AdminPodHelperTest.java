@@ -64,7 +64,7 @@ import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings("SameParameterValue")
-public class AdminPodHelperTest extends PodHelperTestBase {
+class AdminPodHelperTest extends PodHelperTestBase {
   private static final String INTERNAL_OPERATOR_CERT_ENV_NAME = "INTERNAL_OPERATOR_CERT";
 
   private static final String RAW_VALUE_1 = "value-$(SERVER_NAME)";
@@ -145,7 +145,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test // REG I don't understand why this is only true for the admin server
-  public void whenConfigurationAddsEnvironmentVariable_replacePod() {
+  void whenConfigurationAddsEnvironmentVariable_replacePod() {
     initializeExistingPod();
 
     configureServer().withEnvironmentVariable("test", "???");
@@ -177,7 +177,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDeleteReportsNotFound_replaceAdminPod() {
+  void whenDeleteReportsNotFound_replaceAdminPod() {
     initializeExistingPod(getIncompatiblePod());
     testSupport.failOnDelete(KubernetesTestSupport.POD, getPodName(), NS, CallBuilder.NOT_FOUND);
 
@@ -193,7 +193,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenAdminPodDeletionFails_unrecoverableFailureOnUnauthorized() {
+  void whenAdminPodDeletionFails_unrecoverableFailureOnUnauthorized() {
     testSupport.addRetryStrategy(retryStrategy);
     initializeExistingPod(getIncompatiblePod());
     testSupport.failOnDelete(KubernetesTestSupport.POD, getPodName(), NS, 401);
@@ -206,7 +206,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenAdminPodReplacementFails() {
+  void whenAdminPodReplacementFails() {
     testSupport.addRetryStrategy(retryStrategy);
     initializeExistingPod(getIncompatiblePod());
     testSupport.failOnCreate(KubernetesTestSupport.POD, getPodName(), NS, 500);
@@ -220,7 +220,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenAdminPodCreated_specHasPodNameAsHostName() {
+  void whenAdminPodCreated_specHasPodNameAsHostName() {
     assertThat(getCreatedPodSpec().getHostname(), equalTo(getPodName()));
   }
 
@@ -229,50 +229,50 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenAdminPodCreated_containerHasStartServerCommand() {
+  void whenAdminPodCreated_containerHasStartServerCommand() {
     assertThat(
         getCreatedPodSpecContainer().getCommand(),
         contains("/weblogic-operator/scripts/startServer.sh"));
   }
 
   @Test
-  public void whenAdminPodCreated_hasOperatorCertEnvVariable() {
+  void whenAdminPodCreated_hasOperatorCertEnvVariable() {
     assertThat(
         getCreatedPodSpecContainer().getEnv(),
         hasEnvVar(INTERNAL_OPERATOR_CERT_ENV_NAME, InMemoryCertificates.INTERNAL_CERT_DATA));
   }
 
   @Test
-  public void whenAdminPodCreatedWithAdminPortEnabled_adminServerPortSecureEnvVarIsTrue() {
+  void whenAdminPodCreatedWithAdminPortEnabled_adminServerPortSecureEnvVarIsTrue() {
     getServerTopology().setAdminPort((Integer) 9002);
     assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("ADMIN_SERVER_PORT_SECURE", "true"));
   }
 
   @Test
-  public void whenAdminPodCreatedWithNullAdminPort_adminServerPortSecureEnvVarIsNotSet() {
+  void whenAdminPodCreatedWithNullAdminPort_adminServerPortSecureEnvVarIsNotSet() {
     getServerTopology().setAdminPort(null);
     assertThat(getCreatedPodSpecContainer().getEnv(), not(hasEnvVar("ADMIN_SERVER_PORT_SECURE", "true")));
   }
 
   @Test
-  public void whenAdminPodCreatedWithAdminServerHasSslPortEnabled_adminServerPortSecureEnvVarIsTrue() {
+  void whenAdminPodCreatedWithAdminServerHasSslPortEnabled_adminServerPortSecureEnvVarIsTrue() {
     getServerTopology().setSslListenPort(9999);
     assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("ADMIN_SERVER_PORT_SECURE", "true"));
   }
 
   @Test
-  public void whenAdminPodCreatedWithAdminServerHasNullSslPort_adminServerPortSecureEnvVarIsNotSet() {
+  void whenAdminPodCreatedWithAdminServerHasNullSslPort_adminServerPortSecureEnvVarIsNotSet() {
     getServerTopology().setSslListenPort(null);
     assertThat(getCreatedPodSpecContainer().getEnv(), not(hasEnvVar("ADMIN_SERVER_PORT_SECURE", "true")));
   }
 
   @Test
-  public void whenDomainPresenceHasNoEnvironmentItems_createAdminPodStartupWithDefaultItems() {
+  void whenDomainPresenceHasNoEnvironmentItems_createAdminPodStartupWithDefaultItems() {
     assertThat(getCreatedPodSpecContainer().getEnv(), not(empty()));
   }
 
   @Test
-  public void whenDomainHasEnvironmentItems_createAdminPodStartupWithThem() {
+  void whenDomainHasEnvironmentItems_createAdminPodStartupWithThem() {
     configureAdminServer()
         .withEnvironmentVariable("item1", "value1")
         .withEnvironmentVariable("item2", "value2");
@@ -287,7 +287,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainHasEnvironmentItemsWithVariables_createAdminPodStartupWithThem() {
+  void whenDomainHasEnvironmentItemsWithVariables_createAdminPodStartupWithThem() {
     configureAdminServer()
         .withEnvironmentVariable("item1", "find uid1 at $(DOMAIN_HOME)")
         .withEnvironmentVariable("item2", "$(SERVER_NAME) is $(ADMIN_NAME):$(ADMIN_PORT)");
@@ -300,7 +300,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainHasEnvironmentItemsWithVariable_createPodShouldNotChangeItsValue()
+  void whenDomainHasEnvironmentItemsWithVariable_createPodShouldNotChangeItsValue()
       throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
     final String itemRawValue = "find uid1 at $(DOMAIN_HOME)";
     configureAdminServer().withEnvironmentVariable("item1", itemRawValue);
@@ -314,7 +314,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainHasValueFromEnvironmentItems_createAdminPodStartupWithThem() {
+  void whenDomainHasValueFromEnvironmentItems_createAdminPodStartupWithThem() {
     V1EnvVar configMapKeyRefEnvVar = createConfigMapKeyRefEnvVar("VARIABLE1", "my-env", "VAR1");
     V1EnvVar secretKeyRefEnvVar = createSecretKeyRefEnvVar("VARIABLE2", "my-secret", "VAR2");
     V1EnvVar fieldRefEnvVar = createFieldRefEnvVar("MY_NODE_IP", "status.hostIP");
@@ -330,7 +330,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainHasValueFromEnvironmentItemsWithVariables_createAdminPodStartupWithSubstitutions() {
+  void whenDomainHasValueFromEnvironmentItemsWithVariables_createAdminPodStartupWithSubstitutions() {
     V1EnvVar configMapKeyRefEnvVar = createConfigMapKeyRefEnvVar("VARIABLE1", "my-env", RAW_VALUE_1);
     V1EnvVar secretKeyRefEnvVar = createSecretKeyRefEnvVar("VARIABLE2", "my-secret", RAW_VALUE_1);
     V1EnvVar fieldRefEnvVar = createFieldRefEnvVar("MY_NODE_IP", RAW_VALUE_1);
@@ -351,7 +351,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainHasValueFromEnvironmentItemsWithVariables_createPodShouldNotChangeTheirValues()
+  void whenDomainHasValueFromEnvironmentItemsWithVariables_createPodShouldNotChangeTheirValues()
       throws Exception {
     V1EnvVar configMapKeyRefEnvVar = createConfigMapKeyRefEnvVar("VARIABLE1", "my-env", RAW_VALUE_1);
     V1EnvVar secretKeyRefEnvVar = createSecretKeyRefEnvVar("VARIABLE2", "my-secret", RAW_VALUE_1);
@@ -373,7 +373,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenAdminServerHasAdditionalVolumesWithReservedVariables_createAdminPodStartupWithSubstitutions() {
+  void whenAdminServerHasAdditionalVolumesWithReservedVariables_createAdminPodStartupWithSubstitutions() {
     configureAdminServer()
         .withAdditionalVolume("volume1", "/source-$(SERVER_NAME)")
         .withAdditionalVolume("volume2", "/source-$(DOMAIN_NAME)");
@@ -386,7 +386,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenAdminServerHasAdditionalVolumeMountsWithReservedVariables_createAdminPodStartupWithSubstitutions() {
+  void whenAdminServerHasAdditionalVolumeMountsWithReservedVariables_createAdminPodStartupWithSubstitutions() {
     configureAdminServer()
         .withAdditionalVolumeMount("volume1", RAW_MOUNT_PATH_1);
 
@@ -394,7 +394,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainHasAdditionalVolumesWithCustomVariables_createAdminPodStartupWithSubstitutions() {
+  void whenDomainHasAdditionalVolumesWithCustomVariables_createAdminPodStartupWithSubstitutions() {
     resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
     resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
 
@@ -412,7 +412,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainHasAdditionalVolumesWithCustomVariablesContainInvalidValue_reportValidationError() {
+  void whenDomainHasAdditionalVolumesWithCustomVariablesContainInvalidValue_reportValidationError() {
     resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
     resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
 
@@ -430,7 +430,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void createAdminPodStartupWithNullAdminUsernamePasswordEnvVarsValues() {
+  void createAdminPodStartupWithNullAdminUsernamePasswordEnvVarsValues() {
     configureAdminServer();
 
     assertThat(
@@ -439,7 +439,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainHasAdditionalPvClaimVolumesWitVariables_createManagedPodWithThem() {
+  void whenDomainHasAdditionalPvClaimVolumesWitVariables_createManagedPodWithThem() {
     getConfigurator()
         .withAdditionalPvClaimVolume("volume-$(SERVER_NAME)", "$(SERVER_NAME)-claim");
 
@@ -449,7 +449,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenServerHasAdditionalVolumes_createAdminPodWithThem() {
+  void whenServerHasAdditionalVolumes_createAdminPodWithThem() {
     configureAdminServer()
         .withAdditionalVolume("volume1", "/source-path1")
         .withAdditionalVolume("volume2", "/source-path2");
@@ -460,7 +460,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenServerHasAdditionalVolumeMounts_createAdminPodWithThem() {
+  void whenServerHasAdditionalVolumeMounts_createAdminPodWithThem() {
     configureAdminServer()
         .withAdditionalVolumeMount("volume1", "/destination-path1")
         .withAdditionalVolumeMount("volume2", "/destination-path2");
@@ -473,7 +473,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenPodHasDuplicateVolumes_createAdminPodWithCombination() {
+  void whenPodHasDuplicateVolumes_createAdminPodWithCombination() {
     getConfigurator()
         .withAdditionalVolume("volume1", "/domain-path1")
         .withAdditionalVolume("volume2", "/domain-path2")
@@ -486,7 +486,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenPodHasDuplicateVolumeMounts_createAdminPodWithCombination() {
+  void whenPodHasDuplicateVolumeMounts_createAdminPodWithCombination() {
     getConfigurator()
         .withAdditionalVolumeMount("volume1", "/domain-path1")
         .withAdditionalVolumeMount("volume2", "/domain-path2")
@@ -500,7 +500,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDesiredStateIsAdmin_createPodWithStartupModeEnvironment() {
+  void whenDesiredStateIsAdmin_createPodWithStartupModeEnvironment() {
     getConfigurator().withServerStartState(ADMIN_STATE);
 
     assertThat(
@@ -508,7 +508,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenServerDesiredStateIsAdmin_createPodWithStartupModeEnvironment() {
+  void whenServerDesiredStateIsAdmin_createPodWithStartupModeEnvironment() {
     getConfigurator().configureAdminServer().withServerStartState(ADMIN_STATE);
 
     assertThat(
@@ -516,7 +516,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDesiredStateIsRunningServerIsAdmin_createPodWithStartupModeEnvironment() {
+  void whenDesiredStateIsRunningServerIsAdmin_createPodWithStartupModeEnvironment() {
     getConfigurator()
         .withServerStartState(RUNNING_STATE)
         .configureAdminServer()
@@ -527,7 +527,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDesiredStateIsAdminServerIsRunning_createPodWithStartupModeEnvironment() {
+  void whenDesiredStateIsAdminServerIsRunning_createPodWithStartupModeEnvironment() {
     getConfigurator()
         .withServerStartState(ADMIN_STATE)
         .configureAdminServer()
@@ -538,7 +538,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainHasInitContainers_createAdminPodWithThem() {
+  void whenDomainHasInitContainers_createAdminPodWithThem() {
     getConfigurator()
         .withInitContainer(
             createContainer("container1", "busybox", "sh", "-c", "echo admin server && sleep 120"))
@@ -552,7 +552,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainWithEnvVarHasInitContainers_verifyAdminPodInitContainersHaveEnvVar() {
+  void whenDomainWithEnvVarHasInitContainers_verifyAdminPodInitContainersHaveEnvVar() {
     getConfigurator().withEnvironmentVariable("item1", "value1")
             .withInitContainer(
                     createContainer("container1", "busybox", "sh",
@@ -571,7 +571,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenServerHasInitContainers_createAdminPodWithThem() {
+  void whenServerHasInitContainers_createAdminPodWithThem() {
     getConfigurator()
         .configureAdminServer()
         .withInitContainer(
@@ -586,7 +586,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainAndServerHaveAuxiliaryImages_createAdminPodWithInitContainersInCorrectOrderAndVolumeMounts() {
+  void whenDomainAndServerHaveAuxiliaryImages_createAdminPodWithInitContainersInCorrectOrderAndVolumeMounts() {
     getConfigurator()
             .withAuxiliaryImageVolumes(getAuxiliaryImageVolume())
             .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")));
@@ -611,7 +611,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenServerHasAuxiliaryImageVolumeWithMountPath_createPodWithVolumeMountHavingCorrectMountPath() {
+  void whenServerHasAuxiliaryImageVolumeWithMountPath_createPodWithVolumeMountHavingCorrectMountPath() {
     getConfigurator()
             .withAuxiliaryImageVolumes(getAuxiliaryImageVolume(CUSTOM_MOUNT_PATH))
             .configureAdminServer()
@@ -622,7 +622,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenServerWithEnvVarHasInitContainers_verifyAdminPodInitContainersHaveEnvVar() {
+  void whenServerWithEnvVarHasInitContainers_verifyAdminPodInitContainersHaveEnvVar() {
     getConfigurator().withEnvironmentVariable("item1", "value1")
             .configureAdminServer()
             .withInitContainer(
@@ -642,7 +642,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenServerHasDuplicateInitContainers_createAdminPodWithCombination() {
+  void whenServerHasDuplicateInitContainers_createAdminPodWithCombination() {
     getConfigurator()
         .withInitContainer(
             createContainer("container1", "busybox", "sh", "-c", "echo admin server && sleep 120"))
@@ -658,7 +658,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainHasContainers_createAdminPodWithThem() {
+  void whenDomainHasContainers_createAdminPodWithThem() {
     getConfigurator()
         .withContainer(
             createContainer("container1", "busybox", "sh", "-c", "echo admin server && sleep 120"))
@@ -672,7 +672,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenServerHasContainers_createAdminPodWithThem() {
+  void whenServerHasContainers_createAdminPodWithThem() {
     getConfigurator()
         .configureAdminServer()
         .withContainer(
@@ -687,7 +687,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenServerHasDuplicateContainers_createAdminPodWithCombination() {
+  void whenServerHasDuplicateContainers_createAdminPodWithCombination() {
     getConfigurator()
         .withContainer(
             createContainer("container1", "busybox", "sh", "-c", "echo admin server && sleep 120"))
@@ -703,7 +703,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainHasLabels_createAdminPodWithThem() {
+  void whenDomainHasLabels_createAdminPodWithThem() {
     getConfigurator()
         .withPodLabel("label1", "domain-label-value1")
         .withPodLabel("label2", "domain-label-value2");
@@ -717,7 +717,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainHasAnnotations_createAdminPodWithThem() {
+  void whenDomainHasAnnotations_createAdminPodWithThem() {
     getConfigurator()
         .withPodAnnotation("annotation1", "domain-annotation-value1")
         .withPodAnnotation("annotation2", "domain-annotation-value2");
@@ -728,7 +728,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenServerHasLabels_createAdminPodWithThem() {
+  void whenServerHasLabels_createAdminPodWithThem() {
     configureAdminServer()
         .withPodLabel("label1", "server-label-value1")
         .withPodLabel("label2", "server-label-value2");
@@ -739,7 +739,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenServerHasAnnotations_createAdminPodWithThem() {
+  void whenServerHasAnnotations_createAdminPodWithThem() {
     configureAdminServer()
         .withPodAnnotation("annotation1", "server-annotation-value1")
         .withPodAnnotation("annotation2", "server-annotation-value2");
@@ -750,7 +750,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenPodHasDuplicateLabels_createAdminPodWithCombination() {
+  void whenPodHasDuplicateLabels_createAdminPodWithCombination() {
     getConfigurator()
         .withPodLabel("label1", "domain-label-value1")
         .withPodLabel("label2", "domain-label-value2")
@@ -763,7 +763,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenPodHasDuplicateAnnotations_createAdminPodWithCombination() {
+  void whenPodHasDuplicateAnnotations_createAdminPodWithCombination() {
     getConfigurator()
         .withPodAnnotation("annotation1", "domain-annotation-value1")
         .withPodAnnotation("annotation2", "domain-annotation-value2")
@@ -776,7 +776,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenPodHasCustomLabelConflictWithInternal_createAdminPodWithInternal() {
+  void whenPodHasCustomLabelConflictWithInternal_createAdminPodWithInternal() {
     getConfigurator()
         .configureAdminServer()
         .withPodLabel(LabelConstants.CREATEDBYOPERATOR_LABEL, "server-label-value1")
@@ -788,7 +788,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainAndAdminHasRestartVersion_createAdminPodWithRestartVersionLabel() {
+  void whenDomainAndAdminHasRestartVersion_createAdminPodWithRestartVersionLabel() {
     getConfigurator()
         .withRestartVersion("domainRestartV1")
         .configureAdminServer()
@@ -802,7 +802,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
 
 
   @Test
-  public void whenDomainHomeChanged_podCycleEventCreatedWithCorrectMessage()
+  void whenDomainHomeChanged_podCycleEventCreatedWithCorrectMessage()
       throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
     initializeExistingPod();
     getConfiguredDomainSpec().setDomainHome("adfgg");
@@ -817,7 +817,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainHomeChanged_podCycleEventCreatedWithCorrectNS()
+  void whenDomainHomeChanged_podCycleEventCreatedWithCorrectNS()
       throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
     initializeExistingPod();
     getConfiguredDomainSpec().setDomainHome("adfgg");
@@ -829,7 +829,7 @@ public class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  public void whenDomainHomeChanged_generateExpectedLogMessage()
+  void whenDomainHomeChanged_generateExpectedLogMessage()
       throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
     consoleHandlerMemento.collectLogMessages(logRecords, getCyclePodKey());
     initializeExistingPod();

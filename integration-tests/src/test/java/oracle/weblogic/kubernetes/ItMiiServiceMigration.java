@@ -45,12 +45,9 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createJobToCha
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVC;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runClientInsidePod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runJavacInsidePod;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createLeasingTable;
@@ -58,6 +55,9 @@ import static oracle.weblogic.kubernetes.utils.DbUtils.getDBNodePort;
 import static oracle.weblogic.kubernetes.utils.DbUtils.startOracleDB;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
@@ -224,7 +224,7 @@ class ItMiiServiceMigration {
   @Test
   @Order(1)
   @DisplayName("Verify JMS Service migration with FileStore")
-  public void testMiiJmsServiceMigrationWithFileStore() {
+  void testMiiJmsServiceMigrationWithFileStore() {
 
     // build the standalone JMS Client on Admin pod after rolling restart
     String destLocation = "/u01/JmsSendReceiveClient.java";
@@ -260,7 +260,7 @@ class ItMiiServiceMigration {
   @Test
   @Order(2)
   @DisplayName("Verify JMS Service migration with JDBCStore")
-  public void testMiiJmsServiceMigrationWithJdbcStore() {
+  void testMiiJmsServiceMigrationWithJdbcStore() {
 
     // Restart the managed server(2) if shutdown by previous test method
     // Make sure that JMS server runtime JMSService@managed-server2 is
@@ -307,7 +307,7 @@ class ItMiiServiceMigration {
   @Test
   @Order(3)
   @DisplayName("Verify JTA Recovery Service migration to an active server")
-  public void testMiiJtaServiceMigration() {
+  void testMiiJtaServiceMigration() {
 
     // Restart the managed server(2) if shutdown by previous test method
     // Make sure that JTA Recovery service is active on managed-server2
