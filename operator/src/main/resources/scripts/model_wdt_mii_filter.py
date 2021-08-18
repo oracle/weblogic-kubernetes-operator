@@ -568,7 +568,7 @@ def _writePortForwardNAP(name, server, listen_port, protocol):
 
   nap = naps[name]
   nap['Protocol'] = protocol
-  nap['ListenAddress'] = '127.0.0.1'
+  nap['ListenAddress'] = 'localhost'
   nap['ListenPort'] = listen_port
   nap['HttpEnabledForThisProtocol'] = 'true'
   nap['TunnelingEnabled'] = 'false'
