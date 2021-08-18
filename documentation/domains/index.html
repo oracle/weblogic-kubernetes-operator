@@ -1327,6 +1327,10 @@ window.onload = function() {
           "description": "Specifies whether the server .out file will be included in the Pod\u0027s log. Defaults to true.",
           "type": "boolean"
         },
+        "portFowardingEnabled": {
+          "description": "Specifies whether the port forwarding is enabled. Defaults to true.",
+          "type": "boolean"
+        },
         "clusters": {
           "description": "Lifecycle options for all of the Managed Server members of a WebLogic cluster, including Java options, environment variables, additional Pod content, and the ability to explicitly start, stop, or restart cluster members. The `clusterName` field of each entry must match a cluster that already exists in the WebLogic domain configuration.",
           "type": "array",

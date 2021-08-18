@@ -308,6 +308,7 @@ def customizeServer(model, server, name):
   setServerListenAddress(server, listen_address)
   customizeNetworkAccessPoints(server,listen_address)
   customizeServerIstioNetworkAccessPoint(server, listen_address)
+  customizeServerPortForwardNetworkAccessPoint(server, listen_address)
   if (getCoherenceClusterSystemResourceOrNone(model['topology'], server) is not None):
     customizeCoherenceMemberConfig(server, listen_address)
 
@@ -326,6 +327,8 @@ def getAdministrationPort(server, topology):
     port = int(server['AdministrationPort'])
   if port == 0 and 'AdministrationPort' in topology:
     port = int(topology['AdministrationPort'])
+  if port == 0:
+    port =9002
   return port
 
 
@@ -517,6 +520,57 @@ def customizeManagedIstioNetworkAccessPoint(template, listen_address):
 
     _writeIstioNAP(name='tls-iiops', server=template, listen_address=listen_address,
                    listen_port=ssl_listen_port, protocol='iiops')
+
+
+def customizeServerPortForwardNetworkAccessPoint(server, listen_address):
+  port_forwarding_enabled = env.getEnvOrDef("PORT_FORWARDING_ENABLED", "true")
+  if port_forwarding_enabled == 'false':
+    return
+
+  admin_server_port = server['ListenPort']
+  # Set the default if it is not provided to avoid nap default to 0 which fails validation.
+
+  if admin_server_port is None:
+    admin_server_port = 7001
+
+  _writePortForwardNAP(name='t3-localhost', server=server, listen_address=listen_address,
+                 listen_port=admin_server_port, protocol='t3')
+
+  ssl = getSSLOrNone(server)
+  ssl_listen_port = None
+  model = env.getModel()
+  if ssl is not None and 'Enabled' in ssl and ssl['Enabled'] == 'true':
+    ssl_listen_port = ssl['ListenPort']
+    if ssl_listen_port is None:
+      ssl_listen_port = "7002"
+  elif ssl is None and isSecureModeEnabledForDomain(model['topology']):
+    ssl_listen_port = "7002"
+
+
+  if ssl_listen_port is not None:
+    _writePortForwardNAP(name='t3s-localhost', server=server, listen_address=listen_address,
+                   listen_port=ssl_listen_port, protocol='t3s', http_enabled="true")
+
+  if isAdministrationPortEnabledForServer(server, model['topology']):
+    _writePortForwardNAP(name='admin-localhost', server=server, listen_address=listen_address,
+                   listen_port=getAdministrationPort(server, model['topology']), protocol='admin', http_enabled="true")
+
+def _writePortForwardNAP(name, server, listen_address, listen_port, protocol, http_enabled="true"):
+
+  if 'NetworkAccessPoint' not in server:
+    server['NetworkAccessPoint'] = {}
+
+  naps = server['NetworkAccessPoint']
+  if name not in naps:
+    naps[name] = {}
+
+  nap = naps[name]
+  nap['Protocol'] = protocol
+  nap['ListenAddress'] = '127.0.0.1'
+  nap['ListenPort'] = listen_port
+  nap['HttpEnabledForThisProtocol'] = http_enabled
+  nap['TunnelingEnabled'] = 'false'
+  nap['Enabled'] = 'true'
 
 
 def customizeNetworkAccessPoints(server, listen_address):

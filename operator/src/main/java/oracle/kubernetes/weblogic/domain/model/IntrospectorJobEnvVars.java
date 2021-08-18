@@ -116,6 +116,11 @@ public class IntrospectorJobEnvVars {
   public static final String ISTIO_ENABLED = "ISTIO_ENABLED";
 
   /**
+   * Port forwarding enabled.
+   */
+  public static final String PORT_FORWARDING_ENABLED = "PORT_FORWARDING_ENABLED";
+
+  /**
    * Istio readiness port.
    */
   public static final String ISTIO_READINESS_PORT = "ISTIO_READINESS_PORT";

@@ -631,6 +631,10 @@ public class Domain implements KubernetesObject {
     return spec.isIstioEnabled();
   }
 
+  public boolean isPortForwardingEnabled() {
+    return spec.isPortForwardingEnabled();
+  }
+
 
   public int getIstioReadinessPort() {
     return spec.getIstioReadinessPort();

@@ -116,6 +116,15 @@ public class DomainSpec extends BaseConfiguration {
   private Boolean logHomeEnabled; // Boolean object, null if unspecified
 
   /**
+   * Whether the port forwarding is enabled.
+   */
+  @Description(
+          "Specifies whether the port forwarding is enabled. "
+                  + "Defaults to true.")
+  private Boolean portForwardingEnabled=true;
+
+
+  /**
    * An optional, in-pod location for data storage of default and custom file stores. If dataHome is
    * not specified or its value is either not set or empty (e.g. dataHome: "") then the data storage
    * directories are determined from the WebLogic domain home configuration.
@@ -854,6 +863,15 @@ public class DomainSpec extends BaseConfiguration {
         .map(Configuration::getIstio)
         .map(Istio::getReadinessPort)
         .orElse(8888);
+  }
+
+  /**
+   * Test if the port forwarding is enabled for the domain
+   *
+   * @return portFowardingEnabled
+   */
+  boolean isPortForwardingEnabled() {
+    return portForwardingEnabled;
   }
 
   String getWdtDomainType() {

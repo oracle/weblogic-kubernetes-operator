@@ -191,6 +191,10 @@ public abstract class JobStepContext extends BasePodStepContext {
     return getDomain().isIstioEnabled();
   }
 
+  public boolean isPortForwardingEnabled() {
+    return getDomain().isPortForwardingEnabled();
+  }
+
   int getIstioReadinessPort() {
     return getDomain().getIstioReadinessPort();
   }
