@@ -23,7 +23,6 @@ import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import oracle.kubernetes.operator.DomainProcessorImpl;
-import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -160,26 +159,21 @@ class RollingHelperTest {
     };
   }
 
-  private Step.StepAndPacket createRollingStepAndPacket(String serverName) {
+  private Step.StepAndPacket createRollingStepAndPacket(V1Pod serverPod, String serverName) {
     Packet packet = testSupport.getPacket().copy();
     packet.put(SERVER_SCAN, domainTopology.getServerConfig(serverName));
-    return new Step.StepAndPacket(DomainStatusUpdater.createProgressingStep(
-        DomainStatusUpdater.MANAGED_SERVERS_STARTING_PROGRESS_REASON,
-        false,
-        new ManagedPodStepContext(terminalStep, packet).createCyclePodStep(
-            testSupport.getResourceWithName(
-                KubernetesTestSupport.POD,
-                LegalNames.toPodName(UID, serverName)), null)), packet);
+    return new Step.StepAndPacket(new ManagedPodStepContext(terminalStep, packet).createCyclePodStep(
+            serverPod, null), packet);
   }
 
-  private Step.StepAndPacket createRollingStepAndPacket(V1Pod pod, String serverName) {
-    Packet packet = testSupport.getPacket().copy();
-    packet.put(SERVER_SCAN, domainTopology.getServerConfig(serverName));
-    return new Step.StepAndPacket(DomainStatusUpdater.createProgressingStep(
-        DomainStatusUpdater.MANAGED_SERVERS_STARTING_PROGRESS_REASON,
-        false,
-        new ManagedPodStepContext(terminalStep, packet).createCyclePodStep(
-            pod, null)), packet);
+  private Step.StepAndPacket createRollingStepAndPacket(String serverName) {
+    return createRollingStepAndPacket(getServerPod(serverName), serverName);
+  }
+
+  private V1Pod getServerPod(String serverName) {
+    return testSupport.getResourceWithName(
+          KubernetesTestSupport.POD,
+          LegalNames.toPodName(UID, serverName));
   }
 
   private void initializeExistingPods() {
@@ -288,17 +282,6 @@ class RollingHelperTest {
         getExpectedEventMessage(POD_CYCLE_STARTING, getPodName(s), NS),
         stringContainsInOrder("Replacing ", getPodName(s),
             "domain restart version changed", "V5", "DOMAIN_HOME", "changed", "xxxx")));
-  }
-
-  private void printLogRecords() {
-    String str = "";
-    for (LogRecord r : logRecords) {
-      str += r.getLevel() + " " + r.getMessage();
-      for (Object o : r.getParameters()) {
-        str += o.toString();
-      }
-    }
-    System.out.println(str);
   }
 
   private String getPodName(String s) {

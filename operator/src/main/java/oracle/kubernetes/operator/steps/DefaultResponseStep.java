@@ -4,11 +4,12 @@
 package oracle.kubernetes.operator.steps;
 
 import oracle.kubernetes.operator.calls.CallResponse;
-import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 
 /**
  * A response step which treats a NOT_FOUND status as success with a null result. By default, does
@@ -28,7 +29,7 @@ public class DefaultResponseStep<T> extends ResponseStep<T> {
 
   @Override
   public NextAction onFailure(Packet packet, CallResponse<T> callResponse) {
-    return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
+    return callResponse.getStatusCode() == HTTP_NOT_FOUND
         ? onSuccess(packet, callResponse)
         : super.onFailure(packet, callResponse);
   }

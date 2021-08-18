@@ -16,6 +16,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static oracle.kubernetes.operator.DomainFailureReason.Introspection;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
 import static oracle.kubernetes.operator.helpers.JobHelper.INTROSPECTOR_LOG_PREFIX;
@@ -95,7 +96,7 @@ class IntrospectionLoggingTest {
     logRecords.clear();
 
     Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
-    assertThat(updatedDomain.getStatus().getReason(), equalTo("ErrIntrospector"));
+    assertThat(updatedDomain.getStatus().getReason(), equalTo(Introspection.toString()));
     assertThat(updatedDomain.getStatus().getMessage(), equalTo(SEVERE_PROBLEM_1));
   }
 
@@ -108,7 +109,7 @@ class IntrospectionLoggingTest {
     logRecords.clear();
 
     Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
-    assertThat(updatedDomain.getStatus().getReason(), equalTo("ErrIntrospector"));
+    assertThat(updatedDomain.getStatus().getReason(), equalTo(Introspection.toString()));
     assertThat(
         updatedDomain.getStatus().getMessage(),
         equalTo(onSeparateLines(SEVERE_PROBLEM_1, SEVERE_PROBLEM_2)));

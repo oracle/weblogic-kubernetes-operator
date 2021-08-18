@@ -49,7 +49,7 @@ public class UnrecoverableErrorBuilder {
    * @param callResponse the failed call response
    * @return status source object
    */
-  public static FailureStatusSource fromFailedCall(CallResponse callResponse) {
+  public static FailureStatusSource fromFailedCall(CallResponse<?> callResponse) {
     return UnrecoverableErrorBuilderImpl.fromFailedCall(callResponse);
   }
 
@@ -58,8 +58,7 @@ public class UnrecoverableErrorBuilder {
    * @param callResponse the failed call response
    * @return exception bearing status source object
    */
-  public static FailureStatusSourceException createExceptionFromFailedCall(CallResponse callResponse) {
-    ApiException apiException = callResponse.getE();
-    return new FailureStatusSourceException(fromFailedCall(callResponse), apiException);
+  public static Exception createExceptionFromFailedCall(CallResponse<?> callResponse) {
+    return new UnrecoverableCallException(fromFailedCall(callResponse), callResponse.getE());
   }
 }

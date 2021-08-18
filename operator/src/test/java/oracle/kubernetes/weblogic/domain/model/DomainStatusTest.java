@@ -3,12 +3,14 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
 import com.meterware.simplestub.Memento;
+import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.SystemClockTestSupport;
 import org.hamcrest.Description;
 import org.junit.jupiter.api.AfterEach;
@@ -18,13 +20,14 @@ import org.junit.jupiter.api.Test;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Completed;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.ConfigChangesPendingRestart;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progressing;
 import static oracle.kubernetes.weblogic.domain.model.DomainStatusTest.ClusterStatusMatcher.clusterStatus;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.nullValue;
@@ -37,14 +40,14 @@ class DomainStatusTest {
   private final List<Memento> mementos = new ArrayList<>();
 
   @BeforeEach
-  public void setUp() throws Exception {
+  void setUp() throws Exception {
     mementos.add(SystemClockTestSupport.installClock());
 
     domainStatus = new DomainStatus();
   }
 
   @AfterEach
-  public void tearDown() {
+  void tearDown() {
     mementos.forEach(Memento::revert);
   }
 
@@ -74,26 +77,6 @@ class DomainStatusTest {
   }
 
   @Test
-  void whenAddedConditionIsFailed_removeProgressingCondition() {
-    domainStatus.addCondition(new DomainCondition(Progressing).withStatus("False"));
-
-    domainStatus.addCondition(new DomainCondition(Failed).withStatus("True"));
-
-    assertThat(domainStatus, not(hasCondition(Progressing)));
-    assertThat(domainStatus, hasCondition(Failed).withStatus("True"));
-  }
-
-  @Test
-  void whenAddedConditionIsFailed_removeExistingAvailableCondition() {
-    domainStatus.addCondition(new DomainCondition(Available).withStatus("False"));
-
-    domainStatus.addCondition(new DomainCondition(Failed).withStatus("True"));
-
-    assertThat(domainStatus, not(hasCondition(Available)));
-    assertThat(domainStatus, hasCondition(Failed).withStatus("True"));
-  }
-
-  @Test
   void whenAddedConditionIsAvailable_replaceOldAvailableCondition() {
     domainStatus.addCondition(new DomainCondition(Available).withStatus("False"));
 
@@ -101,56 +84,6 @@ class DomainStatusTest {
 
     assertThat(domainStatus, hasCondition(Available).withStatus("True"));
     assertThat(domainStatus, not(hasCondition(Available).withStatus("False")));
-  }
-
-  @Test
-  void whenAddedConditionIsAvailable_removeExistedProgressingCondition() {
-    domainStatus.addCondition(new DomainCondition(Progressing).withStatus("False"));
-
-    domainStatus.addCondition(new DomainCondition(Available).withStatus("True"));
-
-    assertThat(domainStatus, not(hasCondition(Progressing)));
-    assertThat(domainStatus, hasCondition(Available).withStatus("True"));
-  }
-
-  @Test
-  void whenAddedConditionIsAvailable_removeExistedFailedCondition() {
-    domainStatus.addCondition(new DomainCondition(Failed).withStatus("False"));
-
-    domainStatus.addCondition(new DomainCondition(Available).withStatus("True"));
-
-    assertThat(domainStatus, not(hasCondition(Failed)));
-    assertThat(domainStatus, hasCondition(Available).withStatus("True"));
-  }
-
-  @Test
-  void whenAddedConditionIsProgressing_replaceOldProgressingCondition() {
-    domainStatus.addCondition(new DomainCondition(Progressing).withStatus("False"));
-
-    domainStatus.addCondition(new DomainCondition(Progressing).withStatus("True"));
-
-    assertThat(domainStatus, hasCondition(Progressing).withStatus("True"));
-    assertThat(domainStatus, not(hasCondition(Progressing).withStatus("False")));
-  }
-
-  @Test
-  void whenAddedConditionIsProgressing_leaveExistingAvailableCondition() {
-    domainStatus.addCondition(new DomainCondition(Available).withStatus("False"));
-
-    domainStatus.addCondition(new DomainCondition(Progressing).withStatus("True"));
-
-    assertThat(domainStatus, hasCondition(Progressing).withStatus("True"));
-    assertThat(domainStatus, hasCondition(Available).withStatus("False"));
-  }
-
-  @Test
-  void whenAddedConditionIsProgress_doNotRmoveExistedFailedCondition() {
-    domainStatus.addCondition(new DomainCondition(Failed).withStatus("False"));
-
-    domainStatus.addCondition(new DomainCondition(Progressing).withStatus("True"));
-
-    assertThat(domainStatus, hasCondition(Failed));
-    assertThat(domainStatus, hasCondition(Progressing).withStatus("True"));
   }
 
   @Test
@@ -175,33 +108,102 @@ class DomainStatusTest {
 
   @Test
   void beforeConditionAdded_statusFailsPredicate() {
-    assertThat(domainStatus.hasConditionWith(c -> c.hasType(Available)), is(false));
+    assertThat(domainStatus.hasConditionWithType(Available), is(false));
   }
 
   @Test
   void afterConditionAdded_statusPassesPredicate() {
     domainStatus.addCondition(new DomainCondition(Available));
 
-    assertThat(domainStatus.hasConditionWith(c -> c.hasType(Available)), is(true));
+    assertThat(domainStatus.hasConditionWithType(Available), is(true));
   }
 
   @Test
   void afterFailedConditionAdded_copyMessageAndReasonToStatus() {
-    domainStatus.addCondition(new DomainCondition(Failed).withMessage("message").withReason("reason"));
+    domainStatus.addCondition(new DomainCondition(Failed).withStatus("True").withMessage("msg").withReason("reason"));
 
-    assertThat(domainStatus.getMessage(), equalTo("message"));
+    assertThat(domainStatus.getMessage(), equalTo("msg"));
     assertThat(domainStatus.getReason(), equalTo("reason"));
   }
 
   @Test
-  void afterNonFailedConditionAdded_clearStatusMessageAndReason() {
-    domainStatus.setMessage("old message");
-    domainStatus.setReason("old reason");
+  void mayHaveMultipleFailedConditions_withDifferentReasonsOrMessages() {
+    domainStatus.addCondition(new DomainCondition(Failed).withMessage("message1").withReason("reason1"));
+    domainStatus.addCondition(new DomainCondition(Failed).withMessage("message2").withReason("reason2"));
 
-    domainStatus.addCondition(new DomainCondition(Progressing).withMessage("message").withReason("reason"));
+    assertThat(domainStatus.getConditions(), hasSize(2));
+  }
 
+  @Test
+  void duplicateFailuresAreIgnored() {
+    final OffsetDateTime initialTime = SystemClock.now();
+    domainStatus.addCondition(new DomainCondition(Failed).withMessage("message").withReason("reason"));
+
+    SystemClockTestSupport.increment();
+    domainStatus.addCondition(new DomainCondition(Failed).withMessage("message").withReason("reason"));
+
+    assertThat(domainStatus.getConditions(), hasSize(1));
+    assertThat(domainStatus.getConditions().get(0).getLastTransitionTime(), equalTo(initialTime));
+  }
+
+  @Test
+  void failedConditionsAreListedBeforeAvailable() {
+    domainStatus.addCondition(new DomainCondition(Failed).withMessage("message1").withReason("reason1"));
+    domainStatus.addCondition(new DomainCondition(Available).withMessage("message2").withReason("reason2"));
+    domainStatus.addCondition(new DomainCondition(Failed).withMessage("message3").withReason("reason3"));
+
+    assertThat(domainStatus.getConditions().get(0).getType(), equalTo(Failed));
+    assertThat(domainStatus.getConditions().get(1).getType(), equalTo(Failed));
+    assertThat(domainStatus.getConditions().get(2).getType(), equalTo(Available));
+  }
+
+  @Test
+  void conditionsAddedLater_areListedBeforeEarlierConditions() {
+    domainStatus.addCondition(new DomainCondition(Failed).withMessage("message1").withReason("reason1"));
+    SystemClockTestSupport.increment();
+    domainStatus.addCondition(new DomainCondition(Failed).withMessage("message2").withReason("reason2"));
+
+    assertThat(domainStatus.getConditions().get(0).getReason(), equalTo("reason2"));
+  }
+
+  @Test
+  void whenMultipleConditionsHaveReason_domainStatusReasonIsTakeFromTheMostRecent() {
+    domainStatus.addCondition(new DomainCondition(Failed).withStatus("True").withMessage("m1").withReason("r1"));
+    SystemClockTestSupport.increment();
+    domainStatus.addCondition(new DomainCondition(Failed).withStatus("True").withMessage("m2").withReason("r2"));
+
+    assertThat(domainStatus.getReason(), equalTo("r2"));
+    assertThat(domainStatus.getMessage(), equalTo("m2"));
+  }
+
+  @Test
+  void whenEarlierConditionsLackReason_domainStatusReasonIsTakenFromFirstNonNullReason() {
+    domainStatus.addCondition(new DomainCondition(Completed).withStatus("True").withReason("Got 'em all"));
+    domainStatus.addCondition(new DomainCondition(Available).withStatus("True"));
+
+    assertThat(domainStatus.getReason(), equalTo("Got 'em all"));
     assertThat(domainStatus.getMessage(), nullValue());
+  }
+
+  @Test
+  void whenEarlierConditionsLackStatusTrue_domainStatusReasonIsTakenFromFirstWithStatusTrue() {
+    domainStatus.addCondition(new DomainCondition(Completed).withStatus("False").withReason("Got 'em all"));
+    domainStatus.addCondition(new DomainCondition(Available).withStatus("True"));
+
     assertThat(domainStatus.getReason(), nullValue());
+    assertThat(domainStatus.getMessage(), nullValue());
+  }
+
+  @Test
+  void whenConditionRemoved_setDomainStatusReasonFromFirstValidRemaining() {
+    domainStatus.addCondition(new DomainCondition(Failed).withStatus("True").withMessage("m1").withReason("r1"));
+    domainStatus.addCondition(new DomainCondition(Completed).withStatus("True").withReason("Got 'em all"));
+    domainStatus.addCondition(new DomainCondition(Available).withStatus("True"));
+
+    domainStatus.removeConditionWithType(Failed);
+
+    assertThat(domainStatus.getReason(), equalTo("Got 'em all"));
+    assertThat(domainStatus.getMessage(), nullValue());
   }
 
   @Test
@@ -236,7 +238,7 @@ class DomainStatusTest {
 
   @Test
   void whenHasCondition_cloneIsEqual() {
-    domainStatus.addCondition(new DomainCondition(Progressing).withStatus("False"));
+    domainStatus.addCondition(new DomainCondition(Available).withStatus("False"));
 
     DomainStatus clone = new DomainStatus(this.domainStatus);
 
@@ -435,6 +437,7 @@ class DomainStatusTest {
     assertThat(clusterStatuses.size(), is(equalTo(1)));
   }
 
+  @SuppressWarnings("unused")
   static class ClusterStatusMatcher extends org.hamcrest.TypeSafeDiagnosingMatcher<ClusterStatus> {
     private final String name;
     private Integer replicas;
@@ -451,16 +454,19 @@ class DomainStatusTest {
       return new ClusterStatusMatcher(name);
     }
 
+    @SuppressWarnings("SameParameterValue")
     ClusterStatusMatcher withReplicas(int replicas) {
       this.replicas = replicas;
       return this;
     }
 
+    @SuppressWarnings("SameParameterValue")
     ClusterStatusMatcher withMaximumReplicas(int maximumReplicas) {
       this.maximumReplicas = maximumReplicas;
       return this;
     }
 
+    @SuppressWarnings("SameParameterValue")
     ClusterStatusMatcher withMinimumReplicas(int minimumReplicas) {
       this.minimumReplicas = minimumReplicas;
       return this;
@@ -513,6 +519,7 @@ class DomainStatusTest {
       this.description = description;
     }
 
+    @SuppressWarnings("SameParameterValue")
     void check(String fieldName, String expected, String actual) {
       if (expected == null || expected.equals(actual)) {
         return;

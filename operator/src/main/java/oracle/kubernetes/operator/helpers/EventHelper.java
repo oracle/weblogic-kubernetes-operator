@@ -40,10 +40,6 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_COMPLE
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_COMPLETED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_FAILED_PATTERN;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_RETRYING_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_RETRYING_PATTERN;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_STARTING_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_STARTING_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_ROLL_STARTING_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_PATTERN;
@@ -55,8 +51,6 @@ import static oracle.kubernetes.operator.EventConstants.POD_CYCLE_STARTING_EVENT
 import static oracle.kubernetes.operator.EventConstants.POD_CYCLE_STARTING_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_COMPLETED;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_STARTING;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STARTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STOPPED;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
@@ -127,15 +121,6 @@ public class EventHelper {
 
     @Override
     public NextAction apply(Packet packet) {
-      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-      if (hasProcessingNotStarted(info) && (eventData.eventItem == DOMAIN_PROCESSING_COMPLETED)) {
-        return doNext(packet);
-      }
-
-      if (isDuplicatedStartedEvent(info)) {
-        return doNext(packet);
-      }
-
       return doNext(createEventAPICall(createEventModel(packet, eventData)), packet);
     }
 
@@ -169,15 +154,6 @@ public class EventHelper {
     private CoreV1Event getExistingEvent(CoreV1Event event) {
       return Optional.ofNullable(getEventK8SObjects(event))
           .map(o -> o.getExistingEvent(event)).orElse(null);
-    }
-
-    private boolean isDuplicatedStartedEvent(DomainPresenceInfo info) {
-      return eventData.eventItem == EventItem.DOMAIN_PROCESSING_STARTING
-          && Optional.ofNullable(info).map(dpi -> dpi.getLastEventItem() == DOMAIN_PROCESSING_STARTING).orElse(false);
-    }
-
-    private boolean hasProcessingNotStarted(DomainPresenceInfo info) {
-      return Optional.ofNullable(info).map(dpi -> dpi.getLastEventItem() != DOMAIN_PROCESSING_STARTING).orElse(false);
     }
 
     private class CreateEventResponseStep extends ResponseStep<CoreV1Event> {
@@ -383,22 +359,6 @@ public class EventHelper {
       }
 
     },
-    DOMAIN_PROCESSING_STARTING {
-      @Override
-      public String getReason() {
-        return DOMAIN_PROCESSING_STARTING_EVENT;
-      }
-
-      @Override
-      public String getPattern() {
-        return DOMAIN_PROCESSING_STARTING_PATTERN;
-      }
-
-      @Override
-      public boolean shouldSetLastEventItem() {
-        return true;
-      }
-    },
     DOMAIN_PROCESSING_COMPLETED {
       @Override
       public String getReason() {
@@ -441,22 +401,6 @@ public class EventHelper {
         return true;
       }
 
-    },
-    DOMAIN_PROCESSING_RETRYING {
-      @Override
-      public String getReason() {
-        return DOMAIN_PROCESSING_RETRYING_EVENT;
-      }
-
-      @Override
-      public String getPattern() {
-        return DOMAIN_PROCESSING_RETRYING_PATTERN;
-      }
-
-      @Override
-      public boolean shouldSetLastEventItem() {
-        return true;
-      }
     },
     DOMAIN_PROCESSING_ABORTED {
       @Override

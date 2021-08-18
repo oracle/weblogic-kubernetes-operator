@@ -7,8 +7,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Random;
+import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
@@ -16,10 +16,12 @@ import io.kubernetes.client.openapi.models.V1ContainerState;
 import io.kubernetes.client.openapi.models.V1ContainerStateBuilder;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
-import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodConditionBuilder;
 import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1PodStatusBuilder;
+import io.kubernetes.client.util.Watch;
+import oracle.kubernetes.operator.DomainProcessor;
 import oracle.kubernetes.operator.DomainProcessorDelegateStub;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
@@ -27,16 +29,21 @@ import oracle.kubernetes.operator.builders.WatchEvent;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
+import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.LabelConstants.JOBNAME_LABEL;
+import static oracle.kubernetes.operator.helpers.IntrospectionStatusTest.IntrospectorJobPodBuilder.createPodAddedEvent;
+import static oracle.kubernetes.operator.helpers.IntrospectionStatusTest.IntrospectorJobPodBuilder.createPodModifiedEvent;
 import static oracle.kubernetes.operator.helpers.LegalNames.toJobIntrospectorName;
-import static org.hamcrest.Matchers.emptyOrNullString;
-import static org.hamcrest.Matchers.equalTo;
+import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_POD_FAILED;
+import static oracle.kubernetes.utils.LogMatcher.containsInfo;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 /** Tests updates to a domain status from progress of the introspection job. */
@@ -45,232 +52,340 @@ class IntrospectionStatusTest {
   private static final Random random = new Random();
 
   private static final String IMAGE_NAME = "abc";
-  private static final String MESSAGE = "asdf";
   private static final String IMAGE_PULL_FAILURE = "ErrImagePull";
   private static final String UNSCHEDULABLE = "Unschedulable";
   private static final String IMAGE_PULL_BACKOFF = "ImagePullBackoff";
   private static final String DEADLINE_EXCEEDED = "DeadlineExceeded";
+  private static final int MESSAGE_LENGTH = 10;
+  private static final String JOB_NAME = toJobIntrospectorName(UID);
   private final List<Memento> mementos = new ArrayList<>();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final Map<String, Map<String, DomainPresenceInfo>> presenceInfoMap = new HashMap<>();
-  private final Domain domain = DomainProcessorTestSetup.createTestDomain();
-  private final DomainProcessorImpl processor =
+  private final DomainProcessor processor =
       new DomainProcessorImpl(DomainProcessorDelegateStub.createDelegate(testSupport));
+  private final List<LogRecord> logRecords = new java.util.ArrayList<>();
+  private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
+
+  private static String getMessage() {
+    return randomAlphabetic(MESSAGE_LENGTH);
+  }
 
   @BeforeEach
-  public void setUp() throws Exception {
-    mementos.add(TestUtils.silenceOperatorLogger());
+  void setUp() throws Exception {
+    consoleHandlerMemento = TestUtils.silenceOperatorLogger();
+    mementos.add(consoleHandlerMemento);
     mementos.add(testSupport.install());
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "DOMAINS", presenceInfoMap));
     mementos.add(TuningParametersStub.install());
     mementos.add(UnitTestHash.install());
 
+    final Domain domain = DomainProcessorTestSetup.createTestDomain();
     domain.setStatus(new DomainStatus().withMessage("").withReason(""));
     presenceInfoMap.put(NS, Map.of(UID, new DomainPresenceInfo(domain)));
     testSupport.defineResources(domain);
   }
 
   @AfterEach
-  public void tearDown() {
+  void tearDown() {
     mementos.forEach(Memento::revert);
   }
 
   @Test
-  void whenNewIntrospectorJobPodStatusContainerStatusesNull_ignoreIt() {
-    V1Pod introspectorJobPod = createIntrospectorJobPod(createWaitingState(IMAGE_PULL_FAILURE, MESSAGE));
-    Objects.requireNonNull(introspectorJobPod.getStatus()).containerStatuses(null);
+  void whenNewIntrospectorJobPodStatusContainerStatusesNull_dontUpdateDomainStatus() {
+    IntrospectorJobPodBuilder.createPodAddedEvent().dispatch(processor);
 
-    processor.dispatchPodWatch(WatchEvent.createAddedEvent(introspectorJobPod).toWatchResponse());
+    assertThat(getDomain(), hasStatus().withEmptyReasonAndMessage());
+  }
 
-    Domain updatedDomain = testSupport.getResourceWithName(KubernetesTestSupport.DOMAIN, UID);
-    assertThat(updatedDomain.getStatus().getReason(), emptyOrNullString());
-    assertThat(updatedDomain.getStatus().getMessage(), emptyOrNullString());
+  private Domain getDomain() {
+    return testSupport.getResourceWithName(KubernetesTestSupport.DOMAIN, UID);
   }
 
   @Test
-  void whenNewIntrospectorJobPodStatusNull_ignoreIt() {
-    V1Pod introspectorJobPod = createIntrospectorJobPod(UID);
+  void whenNewIntrospectorJobPodStatusNull_dontUpdateDomainStatus() {
+    IntrospectorJobPodBuilder.createPodAddedEvent().withNullStatus().dispatch(processor);
 
-    processor.dispatchPodWatch(WatchEvent.createAddedEvent(introspectorJobPod).toWatchResponse());
-
-    Domain updatedDomain = testSupport.getResourceWithName(KubernetesTestSupport.DOMAIN, UID);
-    assertThat(updatedDomain.getStatus().getReason(), emptyOrNullString());
-    assertThat(updatedDomain.getStatus().getMessage(), emptyOrNullString());
+    assertThat(getDomain(), hasStatus().withEmptyReasonAndMessage());
   }
 
   @Test
-  void whenNewIntrospectorJobPodCreatedWithErrImagePullStatus_patchDomain() {
-    processor.dispatchPodWatch(
-        WatchEvent.createAddedEvent(
-            createIntrospectorJobPod(createWaitingState(IMAGE_PULL_FAILURE, MESSAGE)))
-            .toWatchResponse());
+  void whenPodReady_dontLogFailureMessage() {
+    consoleHandlerMemento.collectLogMessages(logRecords, INTROSPECTOR_POD_FAILED);
 
-    Domain updatedDomain = testSupport.getResourceWithName(KubernetesTestSupport.DOMAIN, UID);
-    assertThat(updatedDomain.getStatus().getReason(), equalTo(IMAGE_PULL_FAILURE));
-    assertThat(updatedDomain.getStatus().getMessage(), equalTo(MESSAGE));
+    createPodModifiedEvent().withReady().dispatch(processor);
+
+    assertThat(logRecords, not(containsInfo(INTROSPECTOR_POD_FAILED)));
   }
 
   @Test
-  void whenNewIntrospectorJobPodCreatedWithNullMessage_ignoreIt() {
-    processor.dispatchPodWatch(
-        WatchEvent.createAddedEvent(
-            createIntrospectorJobPod(createWaitingState(IMAGE_PULL_BACKOFF, null)))
-            .toWatchResponse());
+  void whenPodReady_dontUpdateDomainStatus() {
+    createPodModifiedEvent().withReady().dispatch(processor);
 
-    Domain updatedDomain = testSupport.getResourceWithName(KubernetesTestSupport.DOMAIN, UID);
-    assertThat(updatedDomain.getStatus().getReason(), emptyOrNullString());
-    assertThat(updatedDomain.getStatus().getMessage(), emptyOrNullString());
+    assertThat(getDomain(), hasStatus().withEmptyReasonAndMessage());
   }
 
   @Test
-  void whenNewIntrospectorJobPodCreatedWithImagePullBackupStatus_patchDomain() {
-    processor.dispatchPodWatch(
-        WatchEvent.createAddedEvent(
-            createIntrospectorJobPod(createWaitingState(IMAGE_PULL_BACKOFF, MESSAGE)))
-            .toWatchResponse());
+  void whenPodReadyAfterFailure_clearFailureStatus() {
+    createPodAddedEvent().withWaitingState(IMAGE_PULL_FAILURE, getMessage()).dispatch(processor);
 
-    Domain updatedDomain = testSupport.getResourceWithName(KubernetesTestSupport.DOMAIN, UID);
-    assertThat(updatedDomain.getStatus().getReason(), equalTo(IMAGE_PULL_BACKOFF));
-    assertThat(updatedDomain.getStatus().getMessage(), equalTo(MESSAGE));
+    createPodModifiedEvent().withReady().dispatch(processor);
+
+    assertThat(getDomain(), hasStatus().withEmptyReasonAndMessage());
   }
 
   @Test
-  void whenIntrospectorJobPodPendingWithUnschedulableStatus_patchDomain() {
-    processor.dispatchPodWatch(
-        WatchEvent.createModifiedEvent(
-            createIntrospectorJobPodWithConditions(createPodConditions(UNSCHEDULABLE, MESSAGE)))
-            .toWatchResponse());
+  void whenPodWaitingWithNullReasonAndMessage_dontLogFailureMessage() {
+    consoleHandlerMemento.collectLogMessages(logRecords, INTROSPECTOR_POD_FAILED);
 
-    Domain updatedDomain = testSupport.getResourceWithName(KubernetesTestSupport.DOMAIN, UID);
-    assertThat(updatedDomain.getStatus().getReason(), equalTo(UNSCHEDULABLE));
-    assertThat(updatedDomain.getStatus().getMessage(), equalTo(MESSAGE));
+    createPodModifiedEvent().withWaitingState(null, null).dispatch(processor);
+
+    assertThat(logRecords, not(containsInfo(INTROSPECTOR_POD_FAILED)));
   }
 
   @Test
-  void whenIntrospectorJobPodPhaseFailed_patchDomain() {
-    processor.dispatchPodWatch(
-        WatchEvent.createModifiedEvent(
-            createIntrospectorJobPodWithPhase("Failed", DEADLINE_EXCEEDED))
-            .toWatchResponse());
+  void whenPodWaitingWithNullReasonAndMessage_dontSetStatus() {
+    createPodModifiedEvent().withWaitingState(null, null).dispatch(processor);
 
-    Domain updatedDomain = testSupport.getResourceWithName(KubernetesTestSupport.DOMAIN, UID);
-    assertThat(updatedDomain.getStatus().getReason(), equalTo(DEADLINE_EXCEEDED));
-    assertThat(updatedDomain.getStatus().getMessage(), equalTo(MESSAGE));
+    assertThat(getDomain(), hasStatus().withEmptyReasonAndMessage());
   }
 
   @Test
-  void whenNewJobPodFailedBecauseDeletionAfterDeadlineExceeded_dontPatchDomain() {
-    processor.dispatchPodWatch(
-        WatchEvent.createModifiedEvent(
-            createIntrospectorJobPodWithPhase("Failed", DEADLINE_EXCEEDED))
-            .toWatchResponse());
-    processor.dispatchPodWatch(
-        WatchEvent.createModifiedEvent(
-            createIntrospectorJobPodWithPhaseReasonMessage(
-                "Failed", null, null, createTerminatedState("Error", null)))
-            .toWatchResponse());
+  void whenPodWaitingWithNullReasonAndMessageAfterFailure_clearFailureStatus() {
+    createPodAddedEvent().withWaitingState(IMAGE_PULL_FAILURE, getMessage()).dispatch(processor);
 
-    Domain updatedDomain = testSupport.getResourceWithName(KubernetesTestSupport.DOMAIN, UID);
-    assertThat(updatedDomain.getStatus().getReason(), equalTo(DEADLINE_EXCEEDED));
-    assertThat(updatedDomain.getStatus().getMessage(), equalTo(MESSAGE));
+    createPodModifiedEvent().withWaitingState(null, null).dispatch(processor);
+
+    assertThat(getDomain(), hasStatus().withEmptyReasonAndMessage());
   }
 
   @Test
-  void whenNewJobPodFailedWithoutTerminatedAfterDeadlineExceeded_patchDomain() {
-    processor.dispatchPodWatch(
-        WatchEvent.createModifiedEvent(
-            createIntrospectorJobPodWithPhase("Failed", DEADLINE_EXCEEDED))
-            .toWatchResponse());
-    processor.dispatchPodWatch(
-        WatchEvent.createModifiedEvent(
-            createIntrospectorJobPodWithPhase("Failed", "Unknown"))
-            .toWatchResponse());
+  void whenPodPendingWithUnschedulableStatus_updateDomainStatus() {
+    final String message = getMessage();
+    createPodModifiedEvent().withCondition(UNSCHEDULABLE, message).dispatch(processor);
 
-    Domain updatedDomain = testSupport.getResourceWithName(KubernetesTestSupport.DOMAIN, UID);
-    assertThat(updatedDomain.getStatus().getReason(), equalTo("Unknown"));
-    assertThat(updatedDomain.getStatus().getMessage(), equalTo(MESSAGE));
+    assertThat(getDomain(), hasStatus().withReason("ServerPod").withMessageContaining(JOB_NAME, NS, message));
   }
-
 
   @Test
-  void whenNewIntrospectorJobPodStatusReasonNullAfterImagePullFailure_patchDomain() {
-    processor.dispatchPodWatch(
-        WatchEvent.createAddedEvent(
-            createIntrospectorJobPod(createWaitingState(IMAGE_PULL_FAILURE, MESSAGE)))
-            .toWatchResponse());
+  void whenPodPendingWithUnschedulableStatus_logIntrospectionFailure() {
+    consoleHandlerMemento.collectLogMessages(logRecords, INTROSPECTOR_POD_FAILED);
 
-    processor.dispatchPodWatch(
-        WatchEvent.createModifiedEvent(createIntrospectorJobPod(createWaitingState(null, null)))
-            .toWatchResponse());
+    createPodModifiedEvent().withCondition(UNSCHEDULABLE, getMessage()).dispatch(processor);
 
-    Domain updatedDomain = testSupport.getResourceWithName(KubernetesTestSupport.DOMAIN, UID);
-    assertThat(updatedDomain.getStatus().getReason(), emptyOrNullString());
-    assertThat(updatedDomain.getStatus().getMessage(), emptyOrNullString());
+    assertThat(logRecords, containsInfo(INTROSPECTOR_POD_FAILED));
   }
 
-  private V1Pod createIntrospectorJobPod(V1ContainerState waitingState) {
-    return createIntrospectorJobPod(UID)
-        .status(
-            new V1PodStatusBuilder()
-                .addNewContainerStatus()
-                .withImage(IMAGE_NAME)
-                .withName(toJobIntrospectorName(UID))
-                .withReady(false)
-                .withState(waitingState)
-                .endContainerStatus()
-                .build());
+  @Test
+  void whenPodHasNonNullWaitingMessage_updateDomainStatus() {
+    final String message = getMessage();
+    createPodAddedEvent().withWaitingState(IMAGE_PULL_FAILURE, message).dispatch(processor);
+
+    assertThat(getDomain(), hasStatus().withReason("ServerPod").withMessageContaining(JOB_NAME, NS, message));
+  }
+
+  @Test
+  void whenNewIntrospectorJobPodCreatedWithNullWaitingMessage_dontUpdateDomainStatus() {
+    createPodAddedEvent().withWaitingState(IMAGE_PULL_BACKOFF, null).dispatch(processor);
+
+    assertThat(getDomain(), hasStatus().withEmptyReasonAndMessage());
+  }
+
+  @Test
+  void whenIntrospectorJobPodPhaseFailed_updateDomainStatus() {
+    final String message = getMessage();
+    createPodModifiedEvent().withFailedPhase().withReason(DEADLINE_EXCEEDED).withMessage(message).dispatch(processor);
+
+    assertThat(getDomain(), hasStatus().withReason("ServerPod").withMessageContaining(JOB_NAME, NS, message));
+  }
+
+  @Test
+  void whenIntrospectorJobPodPhaseFailed_logErrorMessage() {
+    consoleHandlerMemento.collectLogMessages(logRecords, INTROSPECTOR_POD_FAILED);
+
+    createPodModifiedEvent().withFailedPhase().withReason("abc").withMessage(getMessage()).dispatch(processor);
+
+    assertThat(logRecords, containsInfo(INTROSPECTOR_POD_FAILED));
+  }
+
+  @Test
+  void whenIntrospectorPodHasTerminatedState_updateDomainStatus() {
+    final String message = getMessage();
+    createPodModifiedEvent().withTerminatedState(message).dispatch(processor);
+
+    assertThat(getDomain(), hasStatus().withReason("ServerPod").withMessageContaining(JOB_NAME, NS, message));
+  }
+
+  @Test
+  void whenIntrospectorPodHasTerminatedState_logPodStatus() {
+    consoleHandlerMemento.collectLogMessages(logRecords, INTROSPECTOR_POD_FAILED);
+
+    createPodModifiedEvent().withTerminatedState(getMessage()).dispatch(processor);
+
+    assertThat(logRecords, containsInfo(INTROSPECTOR_POD_FAILED));
+  }
+
+  @Test
+  void whenIntrospectPodHasWaitingState_dontLogErrorMessage() {
+    consoleHandlerMemento.collectLogMessages(logRecords, INTROSPECTOR_POD_FAILED);
+    createPodModifiedEvent().withWaitingState("aReason", "aMessage").dispatch(processor);
+
+    assertThat(logRecords, not(containsInfo(INTROSPECTOR_POD_FAILED)));
+  }
+
+  @Test
+  void whenIntrospectPodHasWaitingState_updateDomainStatus() {
+    final String message = getMessage();
+    createPodModifiedEvent().withWaitingState("aReason", message).dispatch(processor);
+
+    assertThat(getDomain(), hasStatus().withReason("ServerPod").withMessageContaining(JOB_NAME, NS, message));
+  }
+
+  @Test
+  void whenPodTerminatedByOperatorAfterDeadlineExceeded_retainInitialUpdatedStatus() {
+    final String initialMessage = getMessage();
+    getDomain().setStatus(new DomainStatus().withReason("ServerPod").withMessage(JOB_NAME + NS + initialMessage));
+
+    final String newMessage = getMessage();
+    createPodModifiedEvent().withFailedPhase()
+          .withTerminatedByOperatorState(newMessage).dispatch(processor);
+
+    assertThat(getDomain(), hasStatus().withReason("ServerPod").withMessageContaining(JOB_NAME, NS, initialMessage));
+  }
+
+  @Test
+  void whenPodFailsAfterDeadlineExceeded_updateDomainStatus() {
+    final String initialMessage = getMessage();
+    getDomain().setStatus(new DomainStatus().withReason("ServerPod").withMessage(JOB_NAME + NS + initialMessage));
+    
+    final String newMessage = getMessage();
+    createPodModifiedEvent().withFailedPhase()
+          .withReason("Unknown").withMessage(newMessage).dispatch(processor);
+
+    assertThat(getDomain(), hasStatus().withReason("ServerPod").withMessageContaining(JOB_NAME, NS, newMessage));
+  }
+
+  static class IntrospectorJobPodBuilder {
+
+    enum EventType {
+      ADDED {
+        @Override
+        Watch.Response<V1Pod> toWatchResponse(V1Pod pod) {
+          return WatchEvent.createAddedEvent(pod).toWatchResponse();
+        }
+      },
+      MODIFIED {
+        @Override
+        Watch.Response<V1Pod> toWatchResponse(V1Pod pod) {
+          return WatchEvent.createModifiedEvent(pod).toWatchResponse();
+        }
+      };
+
+      abstract Watch.Response<V1Pod> toWatchResponse(V1Pod pod);
+    }
+
+    private V1PodStatusBuilder builder;
+    private final EventType eventType;
+
+    private IntrospectorJobPodBuilder(EventType eventType) {
+      this.eventType = eventType;
+      builder = new V1PodStatusBuilder();
+    }
+
+    static IntrospectorJobPodBuilder createPodAddedEvent() {
+      return new IntrospectorJobPodBuilder(EventType.ADDED);
+    }
+
+    static IntrospectorJobPodBuilder createPodModifiedEvent() {
+      return new IntrospectorJobPodBuilder(EventType.MODIFIED);
+    }
+
+    IntrospectorJobPodBuilder withNullStatus() {
+      builder = null;
+      return this;
+    }
+
+    IntrospectorJobPodBuilder withFailedPhase() {
+      builder.withPhase("Failed");
+      return this;
+    }
+
+    IntrospectorJobPodBuilder withReason(String reason) {
+      builder.withReason(reason);
+      return this;
+    }
+
+    IntrospectorJobPodBuilder withMessage(String message) {
+      builder.withMessage(message);
+      return this;
+    }
+
+    IntrospectorJobPodBuilder withReady() {
+      return withContainerState(true, null);
+    }
+
+    IntrospectorJobPodBuilder withWaitingState(String reason, String message) {
+      return withContainerState(false, createWaitingState(reason, message));
+    }
+
+    IntrospectorJobPodBuilder withTerminatedState(String message) {
+      return withContainerState(false, createTerminatedState("Error", message));
+    }
+
+    IntrospectorJobPodBuilder withTerminatedByOperatorState(String message) {
+      return withReason(null).withMessage(null)
+            .withContainerState(false, createTerminatedState("Error", message));
+    }
+
+    private IntrospectorJobPodBuilder withContainerState(boolean ready, V1ContainerState containerState) {
+      builder.addNewContainerStatus()
+            .withImage(IMAGE_NAME)
+            .withName(JOB_NAME)
+            .withReady(ready)
+            .withState(containerState)
+            .endContainerStatus();
+      return this;
+    }
+
+    @SuppressWarnings("SameParameterValue")
+    IntrospectorJobPodBuilder withCondition(String reason, String message) {
+      builder.withConditions(
+            new V1PodConditionBuilder().withReason(reason).withMessage(message).build());
+      return this;
+    }
+
+    void dispatch(DomainProcessor processor) {
+      processor.dispatchPodWatch(eventType.toWatchResponse(build()));
+    }
+
+    private V1Pod build() {
+      return createIntrospectorJobPod().status(createStatus());
+    }
+
+    private static V1Pod createIntrospectorJobPod() {
+      return AnnotationHelper.withSha256Hash(
+          new V1Pod()
+              .metadata(
+                  withIntrospectorJobLabels(
+                      new V1ObjectMeta()
+                          .name(toJobIntrospectorName(UID) + getPodSuffix())
+                          .namespace(NS)
+                  ))
+              .spec(new V1PodSpec()));
+    }
+
+    private static V1ObjectMeta withIntrospectorJobLabels(V1ObjectMeta meta) {
+      return KubernetesUtils.withOperatorLabels(UID, meta)
+          .putLabelsItem(JOBNAME_LABEL, toJobIntrospectorName(UID));
+    }
+
+    @Nullable
+    private V1PodStatus createStatus() {
+      return builder == null ? null : builder.build();
+    }
   }
 
   @SuppressWarnings("SameParameterValue")
-  private V1Pod createIntrospectorJobPod(String domainUid) {
-    return AnnotationHelper.withSha256Hash(
-        new V1Pod()
-            .metadata(
-                withIntrospectorJobLabels(
-                    new V1ObjectMeta()
-                        .name(toJobIntrospectorName(domainUid) + getPodSuffix())
-                        .namespace(NS),
-                    domainUid))
-            .spec(new V1PodSpec()));
-  }
-
-  private V1Pod createIntrospectorJobPodWithConditions(V1PodCondition condition) {
-    return createIntrospectorJobPod(UID)
-        .status(
-            new V1PodStatusBuilder()
-                .withConditions(condition)
-                .build());
-  }
-
-  @SuppressWarnings("SameParameterValue")
-  private V1Pod createIntrospectorJobPodWithPhase(String phase, String reason) {
-    return createIntrospectorJobPod(UID)
-        .status(
-            new V1PodStatusBuilder()
-                .withPhase(phase)
-                .withReason(reason)
-                .withMessage(MESSAGE)
-                .build());
-  }
-
-  private V1Pod createIntrospectorJobPodWithPhaseReasonMessage(
-      String phase, String reason, String message, V1ContainerState conState) {
-    return createIntrospectorJobPod(UID)
-        .status(
-            new V1PodStatusBuilder()
-                .withPhase(phase)
-                .withReason(reason)
-                .withMessage(message)
-                .addNewContainerStatus()
-                .withImage(IMAGE_NAME)
-                .withName(toJobIntrospectorName(UID))
-                .withReady(false)
-                .withState(conState)
-                .endContainerStatus()
-                .build());
-  }
-
-  private V1ContainerState createTerminatedState(String reason, String message) {
+  private static V1ContainerState createTerminatedState(String reason, String message) {
     return new V1ContainerStateBuilder()
         .withNewTerminated().withReason(reason)
         .withMessage(message)
@@ -278,7 +393,7 @@ class IntrospectionStatusTest {
         .build();
   }
 
-  private V1ContainerState createWaitingState(String reason, String message) {
+  private static V1ContainerState createWaitingState(String reason, String message) {
     return new V1ContainerStateBuilder()
         .withNewWaiting()
         .withReason(reason)
@@ -287,19 +402,11 @@ class IntrospectionStatusTest {
         .build();
   }
 
-  @SuppressWarnings("SameParameterValue")
-  private V1PodCondition createPodConditions(String reason, String message) {
-    return new V1PodConditionBuilder()
-        .withReason(reason)
-        .withMessage(message)
-        .build();
-  }
-
-
-  private String getPodSuffix() {
+  private static String getPodSuffix() {
     return "-" + randomAlphabetic(5);
   }
 
+  @SuppressWarnings("SameParameterValue")
   private static String randomAlphabetic(int length) {
     if (length < 1) {
       throw new IllegalArgumentException();
@@ -313,10 +420,5 @@ class IntrospectionStatusTest {
     }
 
     return sb.toString();
-  }
-
-  private V1ObjectMeta withIntrospectorJobLabels(V1ObjectMeta meta, String domainUid) {
-    return KubernetesUtils.withOperatorLabels(domainUid, meta)
-        .putLabelsItem(JOBNAME_LABEL, toJobIntrospectorName(domainUid));
   }
 }

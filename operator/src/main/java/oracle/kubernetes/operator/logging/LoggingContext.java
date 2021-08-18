@@ -6,6 +6,7 @@ package oracle.kubernetes.operator.logging;
 import java.util.Optional;
 
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.work.Packet;
 
 /** Necessary additional context information for Operator log messages. */
 public class LoggingContext implements AutoCloseable {
@@ -25,6 +26,10 @@ public class LoggingContext implements AutoCloseable {
     LoggingContext loggingContext = new LoggingContext();
     currentContext.set(loggingContext);
     return loggingContext;
+  }
+
+  public static Optional<LoggingContext> fromPacket(Packet packet) {
+    return Optional.ofNullable(packet.getSpi(LoggingContext.class));
   }
   
   /**

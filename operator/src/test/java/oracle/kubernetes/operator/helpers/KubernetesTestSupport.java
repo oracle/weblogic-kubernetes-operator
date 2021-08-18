@@ -80,6 +80,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
+import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.jetbrains.annotations.NotNull;
 
 import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
@@ -298,6 +299,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
    * @param resources resources.
    * @param <T> type
    */
+  @SafeVarargs
   public final <T> void deleteResources(T... resources) {
     for (T resource : resources) {
       getDataRepository(resource).deleteResourceInNamespace(resource);
@@ -341,12 +343,23 @@ public class KubernetesTestSupport extends FiberTestSupport {
    * namespaced resources and replaces any existing failure checks.
    *
    * @param resourceType the type of resource
-   * @param name the name of the resource
    * @param namespace the namespace containing the resource
    * @param httpStatus the status to associate with the failure
    */
-  public void failOnCreate(String resourceType, String name, String namespace, int httpStatus) {
-    failure = new Failure(Operation.create, resourceType, name, namespace, httpStatus);
+  public void failOnCreate(String resourceType, String namespace, int httpStatus) {
+    failure = new Failure(Operation.create, resourceType, null, namespace, httpStatus);
+  }
+
+  /**
+   * Specifies that a create operation should fail if it matches the specified conditions. Applies to
+   * namespaced resources and replaces any existing failure checks.
+   *
+   * @param resourceType the type of resource
+   * @param namespace the namespace containing the resource
+   * @param apiException the Kubernetes exception to associate with the failure
+   */
+  public void failOnCreate(String resourceType, String namespace, ApiException apiException) {
+    failure = new Failure(Operation.create, resourceType, null, namespace, apiException);
   }
 
   /**
@@ -413,18 +426,6 @@ public class KubernetesTestSupport extends FiberTestSupport {
    */
   public void failOnResource(@Nonnull String resourceType, String name, String namespace, ApiException apiException) {
     failure = new Failure(resourceType, name, namespace, apiException);
-  }
-
-  /**
-   * Specifies that any operation should fail if it matches the specified conditions. Applies to
-   * non-namespaced resources and replaces any existing failure checks.
-   *
-   * @param resourceType the type of resource
-   * @param name the name of the resource
-   * @param httpStatus the status to associate with the failure
-   */
-  public void failOnResource(@Nonnull String resourceType, String name, int httpStatus) {
-    failOnResource(resourceType, name, null, httpStatus);
   }
 
   /**
@@ -536,12 +537,22 @@ public class KubernetesTestSupport extends FiberTestSupport {
     boolean matches(String resourceType, RequestParams requestParams, Operation operation) {
       return this.resourceType.equals(resourceType)
           && (this.operation == null || this.operation == operation)
-          && (name == null || Objects.equals(name, operation.getName(requestParams)))
+          && (name == null || Objects.equals(name, requestParams.name))
           && (namespace == null || Objects.equals(namespace, requestParams.namespace));
     }
 
     HttpErrorException getException() {
       return new HttpErrorException(apiException);
+    }
+
+    @Override
+    public String toString() {
+      return new ToStringBuilder(this)
+            .append("resourceType", resourceType)
+            .append("name", name)
+            .append("namespace", namespace)
+            .append("operation", operation)
+            .toString();
     }
   }
 
@@ -1071,7 +1082,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
       this.labelSelector = labelSelector == null ? null : labelSelector.split(",");
       this.gracePeriodSeconds = gracePeriodSeconds;
 
-      parseCallName(requestParams.call);
+      parseCallName(requestParams);
     }
 
     public void setContinue(String cont) {
@@ -1087,10 +1098,9 @@ public class KubernetesTestSupport extends FiberTestSupport {
           .map(RequestParams::getCallParams).map(CallParams::getLimit).orElse(null);
     }
 
-    private void parseCallName(String callName) {
-      int i = indexOfFirstCapital(callName);
-      resourceType = callName.substring(i);
-      operation = getOperation(callName, i);
+    private void parseCallName(RequestParams requestParams) {
+      resourceType = requestParams.getResourceType();
+      operation = getOperation(requestParams);
 
       if (isDeleteCollection()) {
         selectDeleteCollectionOperation();
@@ -1098,14 +1108,11 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
 
     @NotNull
-    private Operation getOperation(String callName, int numChars) {
-      String operationName = callName.substring(0, numChars);
-      if (callName.endsWith("Status")) {
-        operationName = operationName + "Status";
-      } else if (callName.equals("getVersion")) {
-        return Operation.getVersion;
-      }
-      return Operation.valueOf(operationName);
+    private Operation getOperation(RequestParams requestParams) {
+      return requestParams.call.equals("getVersion")
+            ? Operation.getVersion
+            : Operation.valueOf(requestParams.getOperationName());
+
     }
 
     private boolean isDeleteCollection() {
@@ -1115,16 +1122,6 @@ public class KubernetesTestSupport extends FiberTestSupport {
     private void selectDeleteCollectionOperation() {
       resourceType = resourceType.substring(0, resourceType.indexOf("Collection"));
       operation = Operation.deleteCollection;
-    }
-
-    private int indexOfFirstCapital(String callName) {
-      for (int i = 0; i < callName.length(); i++) {
-        if (Character.isUpperCase(callName.charAt(i))) {
-          return i;
-        }
-      }
-
-      throw new RuntimeException(callName + " is not a valid call name");
     }
 
     private Object execute() {
@@ -1209,16 +1206,20 @@ public class KubernetesTestSupport extends FiberTestSupport {
         // clear out earlier results.  Replicating the behavior as in AsyncRequestStep.apply()
         packet.remove(CONTINUE);
       } catch (NotFoundException e) {
-        packet.getComponents().put(RESPONSE_COMPONENT_NAME, Component.createFor(createResponse(e)));
+        packet.getComponents().put(RESPONSE_COMPONENT_NAME, Component.createFor(createResponse(e, getRequestParams())));
       } catch (HttpErrorException e) {
-        packet.getComponents().put(RESPONSE_COMPONENT_NAME, Component.createFor(createResponse(e)));
+        packet.getComponents().put(RESPONSE_COMPONENT_NAME, Component.createFor(createResponse(e, getRequestParams())));
       } catch (JsonException e) {
-        packet.getComponents().put(RESPONSE_COMPONENT_NAME, Component.createFor(createResponse(e)));
+        packet.getComponents().put(RESPONSE_COMPONENT_NAME, Component.createFor(createResponse(e, getRequestParams())));
       } catch (Exception e) {
-        packet.getComponents().put(RESPONSE_COMPONENT_NAME, Component.createFor(createResponse(e)));
+        packet.getComponents().put(RESPONSE_COMPONENT_NAME, Component.createFor(createResponse(e, getRequestParams())));
       }
 
       return doNext(packet);
+    }
+
+    private RequestParams getRequestParams() {
+      return this.callContext.requestParams;
     }
 
     /**
@@ -1250,20 +1251,20 @@ public class KubernetesTestSupport extends FiberTestSupport {
       return CallResponse.createSuccess(REQUEST_PARAMS, callResult, HTTP_OK);
     }
 
-    private CallResponse<?> createResponse(NotFoundException e) {
-      return CallResponse.createFailure(REQUEST_PARAMS, new ApiException(e), HTTP_NOT_FOUND);
+    private CallResponse<?> createResponse(NotFoundException e, RequestParams requestParams) {
+      return CallResponse.createFailure(requestParams, new ApiException(e), HTTP_NOT_FOUND);
     }
 
-    private CallResponse<?> createResponse(HttpErrorException e) {
-      return CallResponse.createFailure(REQUEST_PARAMS, e.getApiException(), e.getApiException().getCode());
+    private CallResponse<?> createResponse(HttpErrorException e, RequestParams requestParams) {
+      return CallResponse.createFailure(requestParams, e.getApiException(), e.getApiException().getCode());
     }
 
-    private CallResponse<?> createResponse(JsonException e) {
-      return CallResponse.createFailure(REQUEST_PARAMS, new ApiException(e), HTTP_INTERNAL_ERROR);
+    private CallResponse<?> createResponse(JsonException e, RequestParams requestParams) {
+      return CallResponse.createFailure(requestParams, new ApiException(e), HTTP_INTERNAL_ERROR);
     }
 
-    private CallResponse<?> createResponse(Throwable t) {
-      return CallResponse.createFailure(REQUEST_PARAMS, new ApiException(t), HTTP_UNAVAILABLE);
+    private CallResponse<?> createResponse(Throwable t, RequestParams requestParams) {
+      return CallResponse.createFailure(requestParams, new ApiException(t), HTTP_UNAVAILABLE);
     }
   }
 

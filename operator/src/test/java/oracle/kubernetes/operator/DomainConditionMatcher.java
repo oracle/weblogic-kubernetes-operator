@@ -16,7 +16,7 @@ import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 
 @SuppressWarnings("unused")
-class DomainConditionMatcher extends TypeSafeDiagnosingMatcher<Domain> {
+public class DomainConditionMatcher extends TypeSafeDiagnosingMatcher<Domain> {
   private final DomainConditionType expectedType;
   private String expectedStatus;
   private String expectedReason;
@@ -26,7 +26,7 @@ class DomainConditionMatcher extends TypeSafeDiagnosingMatcher<Domain> {
     this.expectedType = expectedType;
   }
 
-  static DomainConditionMatcher hasCondition(DomainConditionType type) {
+  public static DomainConditionMatcher hasCondition(DomainConditionType type) {
     return new DomainConditionMatcher(type);
   }
 
@@ -35,12 +35,17 @@ class DomainConditionMatcher extends TypeSafeDiagnosingMatcher<Domain> {
     return this;
   }
 
-  DomainConditionMatcher withReason(String reason) {
+  public DomainConditionMatcher withReason(String reason) {
     expectedReason = reason;
     return this;
   }
 
-  DomainConditionMatcher withMessage(String message) {
+  public DomainConditionMatcher withReason(DomainFailureReason reason) {
+    expectedReason = reason.toString();
+    return this;
+  }
+
+  public DomainConditionMatcher withMessage(String message) {
     expectedMessage = message;
     return this;
   }
@@ -53,8 +58,12 @@ class DomainConditionMatcher extends TypeSafeDiagnosingMatcher<Domain> {
       }
     }
 
-    mismatchDescription.appendValueList(
-        "found domain with conditions ", ", ", ".", getStatus(item).getConditions());
+    if (getStatus(item).getConditions().isEmpty()) {
+      mismatchDescription.appendText("found domain with no conditions");
+    } else {
+      mismatchDescription.appendValueList(
+          "found domain with conditions ", ", ", ".", getStatus(item).getConditions());
+    }
     return false;
   }
 

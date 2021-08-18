@@ -9,10 +9,8 @@ public interface EventConstants {
   String DOMAIN_CHANGED_EVENT = "DomainChanged";
   String DOMAIN_CREATED_EVENT = "DomainCreated";
   String DOMAIN_DELETED_EVENT = "DomainDeleted";
-  String DOMAIN_PROCESSING_STARTING_EVENT = "DomainProcessingStarting";
   String DOMAIN_PROCESSING_COMPLETED_EVENT = "DomainProcessingCompleted";
   String DOMAIN_PROCESSING_FAILED_EVENT = "DomainProcessingFailed";
-  String DOMAIN_PROCESSING_RETRYING_EVENT = "DomainProcessingRetrying";
   String DOMAIN_PROCESSING_ABORTED_EVENT = "DomainProcessingAborted";
   String DOMAIN_ROLL_COMPLETED_EVENT = "DomainRollCompleted";
   String DOMAIN_ROLL_STARTING_EVENT = "DomainRollStarting";
@@ -25,8 +23,6 @@ public interface EventConstants {
   String DOMAIN_CREATED_PATTERN = "Domain resource %s was created";
   String DOMAIN_CHANGED_PATTERN = "Domain resource %s was changed";
   String DOMAIN_DELETED_PATTERN = "Domain resource %s was deleted";
-  String DOMAIN_PROCESSING_STARTING_PATTERN =
-      "Creating or updating Kubernetes presence for WebLogic Domain with UID %s";
   String DOMAIN_PROCESSING_COMPLETED_PATTERN =
       "Successfully completed processing domain resource %s";
   String DOMAIN_PROCESSING_FAILED_PATTERN

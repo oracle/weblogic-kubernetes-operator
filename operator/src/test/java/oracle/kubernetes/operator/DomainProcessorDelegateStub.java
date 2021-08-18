@@ -13,6 +13,7 @@ import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.work.FiberGate;
 import oracle.kubernetes.operator.work.FiberTestSupport;
+import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
@@ -71,6 +72,11 @@ public abstract class DomainProcessorDelegateStub implements DomainProcessorDele
   @Override
   public void runSteps(Step firstStep) {
     testSupport.runSteps(firstStep);
+  }
+
+  @Override
+  public void runSteps(Packet packet, Step firstStep) {
+    testSupport.runSteps(packet, firstStep);
   }
 
   private static class PassthroughPodAwaiterStepFactory implements PodAwaiterStepFactory {

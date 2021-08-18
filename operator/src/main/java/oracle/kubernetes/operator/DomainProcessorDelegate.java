@@ -8,6 +8,7 @@ import java.util.concurrent.TimeUnit;
 
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.work.FiberGate;
+import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
 /** A set of underlying services required during domain processing. */
@@ -57,6 +58,14 @@ public interface DomainProcessorDelegate {
    * @param firstStep the first step to run
    */
   void runSteps(Step firstStep);
+
+  /**
+   * Runs a chain of steps.
+   *
+   * @param packet the packet against which to run
+   * @param firstStep the first step to run
+   */
+  void runSteps(Packet packet, Step firstStep);
 
   /**
    * Schedules the specified command to run periodically.

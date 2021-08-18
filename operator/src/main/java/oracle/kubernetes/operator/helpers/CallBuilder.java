@@ -81,9 +81,6 @@ import static oracle.kubernetes.utils.OperatorUtils.isNullOrEmpty;
 public class CallBuilder {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  /** HTTP status code for "Not Found". */
-  public static final int NOT_FOUND = 404;
-
   private static final String RESOURCE_VERSION_MATCH_UNSET = null;
   private String container;
 

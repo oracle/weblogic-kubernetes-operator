@@ -7,16 +7,16 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 
-public class FailureStatusSourceException extends Exception {
+public class UnrecoverableCallException extends Exception {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private final FailureStatusSource failureStatusSource;
 
-  public FailureStatusSourceException(FailureStatusSource failureStatusSource) {
+  public UnrecoverableCallException(FailureStatusSource failureStatusSource) {
     this(failureStatusSource, null);
   }
 
-  public FailureStatusSourceException(FailureStatusSource failureStatusSource, Throwable cause) {
+  public UnrecoverableCallException(FailureStatusSource failureStatusSource, Throwable cause) {
     super(cause);
     this.failureStatusSource = failureStatusSource;
   }

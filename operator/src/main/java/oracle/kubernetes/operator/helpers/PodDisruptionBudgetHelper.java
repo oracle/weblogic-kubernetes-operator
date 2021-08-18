@@ -30,6 +30,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
@@ -101,7 +102,7 @@ public class PodDisruptionBudgetHelper {
       }
 
       private NextAction updateDomainStatus(Packet packet, CallResponse<V1beta1PodDisruptionBudget> callResponse) {
-        return doNext(DomainStatusUpdater.createFailureRelatedSteps(callResponse, null), packet);
+        return doNext(DomainStatusUpdater.createFailureRelatedSteps(callResponse), packet);
       }
 
       @Override
@@ -119,7 +120,7 @@ public class PodDisruptionBudgetHelper {
 
       @Override
       public NextAction onFailure(Packet packet, CallResponse<V1beta1PodDisruptionBudget> callResponse) {
-        return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
+        return callResponse.getStatusCode() == HTTP_NOT_FOUND
                 ? onSuccess(packet, callResponse)
                 : onFailure(getConflictStep(), packet, callResponse);
       }
@@ -143,7 +144,7 @@ public class PodDisruptionBudgetHelper {
 
       @Override
       public NextAction onFailure(Packet packet, CallResponse<V1beta1PodDisruptionBudget> callResponse) {
-        return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
+        return callResponse.getStatusCode() == HTTP_NOT_FOUND
                 ? onSuccess(packet, callResponse)
                 : onFailure(getConflictStep(), packet, callResponse);
       }
