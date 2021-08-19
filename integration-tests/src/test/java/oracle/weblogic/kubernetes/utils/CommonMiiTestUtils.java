@@ -814,15 +814,8 @@ public class CommonMiiTestUtils {
 
     curlString.append(K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
         .append(resourcePath)
-        .append(" --silent --show-error ");
-
-    // for debug purposes check curl command output
-    new Command()
-        .withParams(new CommandParams()
-            .command(curlString.toString() + ");"))
-        .execute();
-
-    curlString.append(" -o /dev/null ")
+        .append(" --silent --show-error ")
+        .append(" -o /dev/null ")
         .append(" -w %{http_code});")
         .append("echo ${status}");
 
