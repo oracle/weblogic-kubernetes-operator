@@ -22,6 +22,16 @@ public class AdminServer extends Server {
   private AdminService adminService;
 
   /**
+   * Whether the admin channel port forwarding is enabled.
+   */
+  @Description(
+          "When this flag is enabled, the operator enhances the domain configuration with a NetworkAccessPoint "
+                  + "for the admin protocol that listens on the localhost. This allows access to the "
+                  + "Administration Console when using the kubectl port-forward pattern, which is often more secure "
+                  + "than exposing the console to the public Internet. Defaults to true.")
+  private Boolean adminChannelPortForwardingEnabled = true;
+
+  /**
    * Add channel.
    *
    * @param channelName Channel name
@@ -57,6 +67,7 @@ public class AdminServer extends Server {
     return new ToStringBuilder(this)
         .appendSuper(super.toString())
         .append("adminService", adminService)
+        .append("adminChannelPortForwardingEnabled", adminChannelPortForwardingEnabled)
         .toString();
   }
 
@@ -75,6 +86,7 @@ public class AdminServer extends Server {
     return new EqualsBuilder()
         .appendSuper(super.equals(o))
         .append(adminService, that.adminService)
+        .append(adminChannelPortForwardingEnabled, that.adminChannelPortForwardingEnabled)
         .isEquals();
   }
 
@@ -83,6 +95,7 @@ public class AdminServer extends Server {
     return new HashCodeBuilder(17, 37)
         .appendSuper(super.hashCode())
         .append(adminService)
+        .append(adminChannelPortForwardingEnabled)
         .toHashCode();
   }
 
@@ -100,4 +113,23 @@ public class AdminServer extends Server {
   public AdminService getAdminService() {
     return adminService;
   }
+
+  /**
+   * Test if the admin channel port forwarding is enabled for the admin server.
+   *
+   * @return adminChannelPortForwardingEnabled
+   */
+  public boolean isAdminChannelPortForwardingEnabled() {
+    return adminChannelPortForwardingEnabled;
+  }
+
+  /**
+   * Admin channel port forwarding enabled.
+   *
+   * @param adminChannelPortForwardingEnabled admin channel port forwarding enabled
+   */
+  public void setAdminChannelPortForwardingEnabled(Boolean adminChannelPortForwardingEnabled) {
+    this.adminChannelPortForwardingEnabled = adminChannelPortForwardingEnabled;
+  }
+
 }

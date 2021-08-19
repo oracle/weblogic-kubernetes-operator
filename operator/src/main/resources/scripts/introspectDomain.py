@@ -1070,7 +1070,7 @@ class SitConfigGenerator(Generator):
     self.customizeNetworkAccessPoints(server,listen_address)
     self.customizeServerIstioNetworkAccessPoint(listen_address, server)
     if (server.getName() == admin_server_name):
-      self.addAdminServerPortForwardNetworkAccessPoints(server)
+      self.addAdminChannelPortForwardNetworkAccessPoints(server)
     if (self.getCoherenceClusterSystemResourceOrNone(server) is not None):
       self.customizeCoherenceMemberConfig(server.getCoherenceMemberConfig(),listen_address)
     self.undent()
@@ -1184,7 +1184,7 @@ class SitConfigGenerator(Generator):
     else:
       return add_action, "add"
 
-  def _writePortForwardNAP(self, name, server, listen_port, protocol):
+  def _writeAdminChannelPortForwardNAP(self, name, server, listen_port, protocol):
     action, type = self._getPortForwardNapConfigOverrideAction(server, name)
 
     # For add, we must put the combine mode as add
@@ -1343,30 +1343,31 @@ class SitConfigGenerator(Generator):
                           listen_port=ssl_listen_port, protocol='iiops')
 
 
-  def addAdminServerPortForwardNetworkAccessPoints(self, server):
+  def addAdminChannelPortForwardNetworkAccessPoints(self, server):
     istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
-    port_forward_enabled = self.env.getEnvOrDef("PORT_FORWARDING_ENABLED", "true")
-    if (port_forward_enabled == 'false') or (istio_enabled == 'true') :
+    admin_channel_port_forward_enabled = self.env.getEnvOrDef("ADMIN_CHANNEL_PORT_FORWARDING_ENABLED", "true")
+    if (admin_channel_port_forward_enabled == 'false') or (istio_enabled == 'true') :
       return
 
     customAdminChannelPort = getCustomAdminChannelPort(server)
 
     if isAdministrationPortEnabledForServer(server, self.env.getDomain()):
-      self._writePortForwardNAP(name='internal-admin', server=server,
-                                listen_port=getAdministrationPort(server, self.env.getDomain()), protocol='admin')
+      self._writeAdminChannelPortForwardNAP(name='internal-admin', server=server,
+                                            listen_port=getAdministrationPort(server, self.env.getDomain()),
+                                            protocol='admin')
     elif (customAdminChannelPort != 0):
-        self._writePortForwardNAP(name='internal-admin', server=server,
-                                  listen_port=customAdminChannelPort, protocol='admin')
+        self._writeAdminChannelPortForwardNAP(name='internal-admin', server=server,
+                                              listen_port=customAdminChannelPort, protocol='admin')
     else:
       admin_server_port = getRealListenPort(server)
-      self._writePortForwardNAP(name='internal-t3', server=server,
-                        listen_port=admin_server_port, protocol='t3')
+      self._writeAdminChannelPortForwardNAP(name='internal-t3', server=server,
+                                            listen_port=admin_server_port, protocol='t3')
 
       ssl_listen_port = getSSLPortIfEnabled(server, self.env.getDomain(), is_server_template=False)
 
       if ssl_listen_port is not None:
-        self._writePortForwardNAP(name='internal-t3s', server=server,
-                          listen_port=ssl_listen_port, protocol='t3s')
+        self._writeAdminChannelPortForwardNAP(name='internal-t3s', server=server,
+                                              listen_port=ssl_listen_port, protocol='t3s')
 
   def getLogOrNone(self,server):
     try:

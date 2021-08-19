@@ -21,6 +21,10 @@
           "description": "Customization affecting the generation of Pods for WebLogic Server instances.",
           "$ref": "#/definitions/ServerPod"
         },
+        "adminChannelPortForwardingEnabled": {
+          "description": "When this flag is enabled, the operator enhances the domain configuration with a NetworkAccessPoint for the admin protocol that listens on the localhost. This allows access to the Administration Console when using the kubectl port-forward pattern, which is often more secure than exposing the console to the public Internet. Defaults to true.",
+          "type": "boolean"
+        },
         "serverStartPolicy": {
           "description": "The strategy for deciding whether to start a WebLogic Server instance. Legal values are ALWAYS, NEVER, or IF_NEEDED. Defaults to IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.",
           "type": "string",
@@ -368,10 +372,6 @@
           "pattern": "^[a-z0-9-.]{1,45}$",
           "description": "Domain unique identifier. It is recommended that this value be unique to assist in future work to identify related domains in active-passive scenarios across data centers; however, it is only required that this value be unique within the namespace, similarly to the names of Kubernetes resources. This value is distinct and need not match the domain name from the WebLogic domain configuration. Defaults to the value of `metadata.name`.",
           "type": "string"
-        },
-        "portForwardingEnabled": {
-          "description": "When this flag is enabled, the operator enhances the domain configuration with a NetworkAccessPoint for the admin protocol that listens on the localhost. This allows access to the Administration Console using the kubectl port-forward pattern, which is often more secure than exposing the console to the public Internet. Defaults to true.",
-          "type": "boolean"
         },
         "serverService": {
           "description": "Customization affecting the generation of ClusterIP Services for WebLogic Server instances.",

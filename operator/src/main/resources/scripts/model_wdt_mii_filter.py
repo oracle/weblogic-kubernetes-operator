@@ -310,7 +310,7 @@ def customizeServer(model, server, name):
   customizeNetworkAccessPoints(server,listen_address)
   customizeServerIstioNetworkAccessPoint(server, listen_address)
   if (name == adminServer):
-    addAdminServerPortForwardNetworkAccessPoints(server)
+    addAdminChannelPortForwardNetworkAccessPoints(server)
   if (getCoherenceClusterSystemResourceOrNone(model['topology'], server) is not None):
     customizeCoherenceMemberConfig(server, listen_address)
 
@@ -538,10 +538,10 @@ def getCustomAdminChannelPort(server):
   return customAdminChannelPort
 
 
-def addAdminServerPortForwardNetworkAccessPoints(server):
+def addAdminChannelPortForwardNetworkAccessPoints(server):
   istio_enabled = env.getEnvOrDef("ISTIO_ENABLED", "false")
-  port_forwarding_enabled = env.getEnvOrDef("PORT_FORWARDING_ENABLED", "true")
-  if (port_forwarding_enabled == 'false') or (istio_enabled == 'true'):
+  admin_channel_port_forwarding_enabled = env.getEnvOrDef("ADMIN_CHANNEL_PORT_FORWARDING_ENABLED", "true")
+  if (admin_channel_port_forwarding_enabled == 'false') or (istio_enabled == 'true'):
     return
 
   admin_server_port = server['ListenPort']
@@ -554,13 +554,13 @@ def addAdminServerPortForwardNetworkAccessPoints(server):
   customAdminChannelPort=getCustomAdminChannelPort(server)
 
   if isAdministrationPortEnabledForServer(server, model['topology']):
-    _writePortForwardNAP(name='internal-admin', server=server,
-                         listen_port=getAdministrationPort(server, model['topology']), protocol='admin')
+    _writeAdminChannelPortForwardNAP(name='internal-admin', server=server,
+                                     listen_port=getAdministrationPort(server, model['topology']), protocol='admin')
   elif (customAdminChannelPort != 0 ):
-      _writePortForwardNAP(name='internal-admin', server=server,
-                           listen_port=customAdminChannelPort, protocol='admin')
+      _writeAdminChannelPortForwardNAP(name='internal-admin', server=server,
+                                       listen_port=customAdminChannelPort, protocol='admin')
   else:
-    _writePortForwardNAP(name='internal-t3', server=server, listen_port=admin_server_port, protocol='t3')
+    _writeAdminChannelPortForwardNAP(name='internal-t3', server=server, listen_port=admin_server_port, protocol='t3')
 
     ssl = getSSLOrNone(server)
     ssl_listen_port = None
@@ -572,10 +572,10 @@ def addAdminServerPortForwardNetworkAccessPoints(server):
       ssl_listen_port = "7002"
 
     if ssl_listen_port is not None:
-      _writePortForwardNAP(name='internal-t3s', server=server, listen_port=ssl_listen_port, protocol='t3s')
+      _writeAdminChannelPortForwardNAP(name='internal-t3s', server=server, listen_port=ssl_listen_port, protocol='t3s')
 
 
-def _writePortForwardNAP(name, server, listen_port, protocol):
+def _writeAdminChannelPortForwardNAP(name, server, listen_port, protocol):
 
   if 'NetworkAccessPoint' not in server:
     server['NetworkAccessPoint'] = {}

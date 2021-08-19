@@ -222,7 +222,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
 
   @Test
   void whenPortForwardingDisabled_dontReportError() {
-    configureDomain(domain).withPortForwardingEnabled(false);
+    configureDomain(domain).withAdminChannelPortForwardingEnabled(false);
 
     assertThat(domain.getValidationFailures(resourceLookup), empty());
   }

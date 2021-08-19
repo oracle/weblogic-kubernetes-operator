@@ -116,17 +116,6 @@ public class DomainSpec extends BaseConfiguration {
   private Boolean logHomeEnabled; // Boolean object, null if unspecified
 
   /**
-   * Whether the port forwarding is enabled.
-   */
-  @Description(
-          "When this flag is enabled, the operator enhances the domain configuration with a NetworkAccessPoint "
-                  + "for the admin protocol that listens on the localhost. This allows access to the "
-                  + "Administration Console using the kubectl port-forward pattern, which is often more secure than "
-                  + "exposing the console to the public Internet. Defaults to true.")
-  private Boolean portForwardingEnabled = true;
-
-
-  /**
    * An optional, in-pod location for data storage of default and custom file stores. If dataHome is
    * not specified or its value is either not set or empty (e.g. dataHome: "") then the data storage
    * directories are determined from the WebLogic domain home configuration.
@@ -867,24 +856,6 @@ public class DomainSpec extends BaseConfiguration {
         .orElse(8888);
   }
 
-  /**
-   * Test if the port forwarding is enabled for the domain.
-   *
-   * @return portFowardingEnabled
-   */
-  boolean isPortForwardingEnabled() {
-    return portForwardingEnabled;
-  }
-
-  /**
-   * Log home enabled.
-   *
-   * @param portForwardingEnabled log home enabled
-   */
-  public void setPortForwardingEnabled(Boolean portForwardingEnabled) {
-    this.portForwardingEnabled = portForwardingEnabled;
-  }
-
   String getWdtDomainType() {
     return Optional.ofNullable(configuration)
         .map(Configuration::getModel)
@@ -970,7 +941,6 @@ public class DomainSpec extends BaseConfiguration {
             .append("introspectVersion", introspectVersion)
             .append("logHome", logHome)
             .append("logHomeEnabled", logHomeEnabled)
-            .append("portForwardingEnabled", portForwardingEnabled)
             .append("managedServers", managedServers)
             .append("maxClusterConcurrentShutdown",maxClusterConcurrentShutdown)
             .append("maxClusterConcurrentStartup",maxClusterConcurrentStartup)
@@ -1004,7 +974,6 @@ public class DomainSpec extends BaseConfiguration {
             .append(introspectVersion)
             .append(logHome)
             .append(logHomeEnabled)
-            .append(portForwardingEnabled)
             .append(managedServers)
             .append(maxClusterConcurrentShutdown)
             .append(maxClusterConcurrentStartup)
@@ -1046,7 +1015,6 @@ public class DomainSpec extends BaseConfiguration {
             .append(replicas, rhs.replicas)
             .append(logHome, rhs.logHome)
             .append(logHomeEnabled, rhs.logHomeEnabled)
-            .append(portForwardingEnabled, rhs.portForwardingEnabled)
             .append(monitoringExporter, rhs.monitoringExporter)
             .append(includeServerOutInPodLog, rhs.includeServerOutInPodLog)
             .append(configOverrides, rhs.configOverrides)

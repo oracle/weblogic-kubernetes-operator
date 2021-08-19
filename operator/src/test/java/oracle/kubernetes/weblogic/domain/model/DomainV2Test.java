@@ -63,7 +63,9 @@ class DomainV2Test extends DomainTestBase {
 
   @Override
   protected DomainConfigurator configureDomain(Domain domain) {
-    return new DomainCommonConfigurator(domain);
+    DomainCommonConfigurator commonConfigurator = new DomainCommonConfigurator(domain);
+    commonConfigurator.configureAdminServer();
+    return commonConfigurator;
   }
 
   @Test
@@ -1492,9 +1494,9 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenPortForwardingEnabledSet_useValue() {
-    configureDomain(domain).withPortForwardingEnabled(false);
+    configureDomain(domain).withAdminChannelPortForwardingEnabled(false);
 
-    assertThat(domain.getSpec().isPortForwardingEnabled(), is(false));
+    assertThat(domain.getSpec().getAdminServer().isAdminChannelPortForwardingEnabled(), is(false));
   }
 
   @Test
