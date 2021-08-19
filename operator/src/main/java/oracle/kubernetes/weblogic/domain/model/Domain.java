@@ -639,9 +639,8 @@ public class Domain implements KubernetesObject {
    */
   public static boolean isAdminChannelPortForwardingEnabled(DomainSpec domainSpec) {
     return Optional.ofNullable(domainSpec.getAdminServer())
-            .map(admin -> admin.isAdminChannelPortForwardingEnabled()).orElse(false);
+            .map(admin -> admin.isAdminChannelPortForwardingEnabled()).orElse(true);
   }
-
 
   public int getIstioReadinessPort() {
     return spec.getIstioReadinessPort();
