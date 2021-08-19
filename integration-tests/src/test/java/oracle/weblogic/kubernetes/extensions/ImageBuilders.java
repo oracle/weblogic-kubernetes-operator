@@ -196,7 +196,6 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
 
         if (System.getenv("SKIP_BASIC_IMAGE_BUILD") == null) {
           // build MII basic image
-          logger.info("!!BASIC_IMAGE_BUILD!!");
           miiBasicImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
           withStandardRetryPolicy
               .conditionEvaluationListener(
