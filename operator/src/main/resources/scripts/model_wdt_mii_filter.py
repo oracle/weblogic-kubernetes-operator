@@ -523,6 +523,20 @@ def customizeManagedIstioNetworkAccessPoint(template, listen_address):
     _writeIstioNAP(name='tls-iiops', server=template, listen_address=listen_address,
                    listen_port=ssl_listen_port, protocol='iiops')
 
+def getCustomAdminChannelPort(server):
+  customAdminChannelPort=0
+  if 'NetworkAccessPoint' not in server:
+    server['NetworkAccessPoint'] = {}
+
+  naps = server['NetworkAccessPoint']
+  nap_names = naps.keys()
+  for nap_name in nap_names:
+    nap = naps[nap_name]
+    if nap['Protocol'] == 'admin':
+      customAdminChannelPort = nap['ListenPort']
+      break
+  return customAdminChannelPort
+
 
 def addAdminServerPortForwardNetworkAccessPoints(server):
   istio_enabled = env.getEnvOrDef("ISTIO_ENABLED", "false")
@@ -537,10 +551,14 @@ def addAdminServerPortForwardNetworkAccessPoints(server):
     admin_server_port = 7001
 
   model = env.getModel()
+  customAdminChannelPort=getCustomAdminChannelPort(server)
 
   if isAdministrationPortEnabledForServer(server, model['topology']):
     _writePortForwardNAP(name='internal-admin', server=server,
                          listen_port=getAdministrationPort(server, model['topology']), protocol='admin')
+  elif (customAdminChannelPort != 0 ):
+      _writePortForwardNAP(name='internal-admin', server=server,
+                           listen_port=customAdminChannelPort, protocol='admin')
   else:
     _writePortForwardNAP(name='internal-t3', server=server, listen_port=admin_server_port, protocol='t3')
 

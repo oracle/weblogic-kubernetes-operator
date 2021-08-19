@@ -1349,9 +1349,14 @@ class SitConfigGenerator(Generator):
     if (port_forward_enabled == 'false') or (istio_enabled == 'true') :
       return
 
+    customAdminChannelPort = getCustomAdminChannelPort(server)
+
     if isAdministrationPortEnabledForServer(server, self.env.getDomain()):
       self._writePortForwardNAP(name='internal-admin', server=server,
                                 listen_port=getAdministrationPort(server, self.env.getDomain()), protocol='admin')
+    elif (customAdminChannelPort != 0):
+        self._writePortForwardNAP(name='internal-admin', server=server,
+                                  listen_port=customAdminChannelPort, protocol='admin')
     else:
       admin_server_port = getRealListenPort(server)
       self._writePortForwardNAP(name='internal-t3', server=server,
@@ -1812,6 +1817,14 @@ def isAdministrationPortEnabledForDomain(domain):
     # Starting with 14.1.2.0, the domain's AdministrationPortEnabled default is derived from the domain's SecureMode
     administrationPortEnabled = isSecureModeEnabledForDomain(domain)
   return administrationPortEnabled
+
+def getCustomAdminChannelPort(server):
+  port = 0
+  for nap in server.getNetworkAccessPoints():
+    if nap.getProtocol() == "admin":
+      port=nap.getListenPort()
+      break
+  return port
 
 def isAdministrationPortEnabledForServer(server, domain, isServerTemplate=False):
   administrationPortEnabled = false
