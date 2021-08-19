@@ -282,6 +282,8 @@ EOF
 echo 'Set up test running ENVVARs...'
 export KIND_REPO="localhost:${reg_port}/"
 export K8S_NODEPORT_HOST=`kubectl get node kind-worker -o jsonpath='{.status.addresses[?(@.type == "InternalIP")].address}'`
+export no_proxy="${no_proxy},${K8S_NODEPORT_HOST}"
+echo 'no_proxy ${no_proxy}'
 if [[ "$OSTYPE" == "darwin"* ]]; then
   export JAVA_HOME=$(/usr/libexec/java_home)
 else
