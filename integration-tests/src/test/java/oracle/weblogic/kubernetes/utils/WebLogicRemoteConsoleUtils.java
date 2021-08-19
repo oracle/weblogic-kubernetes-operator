@@ -12,12 +12,14 @@ public class WebLogicRemoteConsoleUtils {
 
   /**
    * Install WebLogic Remote Console.
+   * @param domainNamespace namespace in which the domain will be created
+   * @param adminServerPodName the name of the admin server pod
    *
    * @return true if WebLogic Remote Console is successfully installed, false otherwise.
    */
-  public static boolean installAndVerifyWlsRemoteConsole() {
+  public static boolean installAndVerifyWlsRemoteConsole(String domainNamespace, String adminServerPodName) {
 
-    assertThat(TestActions.installWlsRemoteConsole())
+    assertThat(TestActions.installWlsRemoteConsole(domainNamespace, adminServerPodName))
         .as("WebLogic Remote Console installation succeeds")
         .withFailMessage("WebLogic Remote Console installation failed")
         .isTrue();
