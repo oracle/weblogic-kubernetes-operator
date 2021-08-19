@@ -1491,6 +1491,13 @@ class DomainV2Test extends DomainTestBase {
   }
 
   @Test
+  void whenPortForwardingEnabledSet_useValue() {
+    configureDomain(domain).withPortForwardingEnabled(false);
+
+    assertThat(domain.getSpec().isPortForwardingEnabled(), is(false));
+  }
+
+  @Test
   void whenLivenessProbeCustomScriptSet_useValue() {
     configureDomain(domain).withLivenessProbeCustomScript(LIVENESS_PROBE_CUSTOM_SCRIPT);
 

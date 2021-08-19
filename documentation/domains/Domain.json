@@ -370,7 +370,7 @@
           "type": "string"
         },
         "portForwardingEnabled": {
-          "description": "Specifies whether the port forwarding is enabled. Defaults to true.",
+          "description": "When this flag is enabled, the operator enhances the domain configuration with a NetworkAccessPoint for the admin protocol that listens on the localhost. This allows access to the Administration Console using the kubectl port-forward pattern, which is often more secure than exposing the console to the public Internet. Defaults to true.",
           "type": "boolean"
         },
         "serverService": {

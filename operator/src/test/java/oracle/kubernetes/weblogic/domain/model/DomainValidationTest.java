@@ -221,6 +221,13 @@ class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
+  void whenPortForwardingDisabled_dontReportError() {
+    configureDomain(domain).withPortForwardingEnabled(false);
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
   void whenVolumeMountHasNonValidPath_reportError() {
     configureDomain(domain).withAdditionalVolumeMount("sharedlogs", "shared/logs");
 

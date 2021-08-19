@@ -158,6 +158,17 @@ public abstract class DomainConfigurator {
   }
 
   /**
+   * Sets the port forwarding enabled flag.
+   *
+   * @param portForwardingEnabled true if port forwarding is enabled, false otherwise
+   * @return this object
+   */
+  public DomainConfigurator withPortForwardingEnabled(boolean portForwardingEnabled) {
+    getDomainSpec().setPortForwardingEnabled(portForwardingEnabled);
+    return this;
+  }
+
+  /**
    * Sets the data home value.
    *
    * @param dataHome the data home value

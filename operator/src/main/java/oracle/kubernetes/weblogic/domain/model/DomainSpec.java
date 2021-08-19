@@ -119,8 +119,10 @@ public class DomainSpec extends BaseConfiguration {
    * Whether the port forwarding is enabled.
    */
   @Description(
-          "Specifies whether the port forwarding is enabled. "
-                  + "Defaults to true.")
+          "When this flag is enabled, the operator enhances the domain configuration with a NetworkAccessPoint "
+                  + "for the admin protocol that listens on the localhost. This allows access to the "
+                  + "Administration Console using the kubectl port-forward pattern, which is often more secure than "
+                  + "exposing the console to the public Internet. Defaults to true.")
   private Boolean portForwardingEnabled = true;
 
 
@@ -874,6 +876,15 @@ public class DomainSpec extends BaseConfiguration {
     return portForwardingEnabled;
   }
 
+  /**
+   * Log home enabled.
+   *
+   * @param portForwardingEnabled log home enabled
+   */
+  public void setPortForwardingEnabled(Boolean portForwardingEnabled) {
+    this.portForwardingEnabled = portForwardingEnabled;
+  }
+
   String getWdtDomainType() {
     return Optional.ofNullable(configuration)
         .map(Configuration::getModel)
@@ -959,6 +970,7 @@ public class DomainSpec extends BaseConfiguration {
             .append("introspectVersion", introspectVersion)
             .append("logHome", logHome)
             .append("logHomeEnabled", logHomeEnabled)
+            .append("portForwardingEnabled", portForwardingEnabled)
             .append("managedServers", managedServers)
             .append("maxClusterConcurrentShutdown",maxClusterConcurrentShutdown)
             .append("maxClusterConcurrentStartup",maxClusterConcurrentStartup)
@@ -992,6 +1004,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(introspectVersion)
             .append(logHome)
             .append(logHomeEnabled)
+            .append(portForwardingEnabled)
             .append(managedServers)
             .append(maxClusterConcurrentShutdown)
             .append(maxClusterConcurrentStartup)
@@ -1033,6 +1046,7 @@ public class DomainSpec extends BaseConfiguration {
             .append(replicas, rhs.replicas)
             .append(logHome, rhs.logHome)
             .append(logHomeEnabled, rhs.logHomeEnabled)
+            .append(portForwardingEnabled, rhs.portForwardingEnabled)
             .append(monitoringExporter, rhs.monitoringExporter)
             .append(includeServerOutInPodLog, rhs.includeServerOutInPodLog)
             .append(configOverrides, rhs.configOverrides)
