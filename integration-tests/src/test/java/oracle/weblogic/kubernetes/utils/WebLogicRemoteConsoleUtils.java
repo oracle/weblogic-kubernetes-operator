@@ -6,7 +6,6 @@ package oracle.weblogic.kubernetes.utils;
 
 import oracle.weblogic.kubernetes.actions.TestActions;
 
-
 import static oracle.weblogic.kubernetes.actions.TestActions.installWlsRemoteConsole;
 import static org.assertj.core.api.Assertions.assertThat;
 
