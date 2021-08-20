@@ -6,6 +6,8 @@ package oracle.weblogic.kubernetes.utils;
 
 import oracle.weblogic.kubernetes.actions.TestActions;
 
+
+import static oracle.weblogic.kubernetes.actions.TestActions.installWlsRemoteConsole;
 import static org.assertj.core.api.Assertions.assertThat;
 
 public class WebLogicRemoteConsoleUtils {
@@ -19,7 +21,7 @@ public class WebLogicRemoteConsoleUtils {
    */
   public static boolean installAndVerifyWlsRemoteConsole(String domainNamespace, String adminServerPodName) {
 
-    assertThat(TestActions.installWlsRemoteConsole(domainNamespace, adminServerPodName))
+    assertThat(installWlsRemoteConsole(domainNamespace, adminServerPodName))
         .as("WebLogic Remote Console installation succeeds")
         .withFailMessage("WebLogic Remote Console installation failed")
         .isTrue();
