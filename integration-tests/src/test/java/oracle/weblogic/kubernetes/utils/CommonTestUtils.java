@@ -443,6 +443,36 @@ public class CommonTestUtils {
   }
 
   /**
+   * verify the system resource configuration using REST API.
+   * @param nodePort admin node port
+   * @param resourcesType type of the resource
+   * @param resourcesName name of the resource
+   * @param expectedStatusCode expected status code
+   */
+  public static void verifySystemResourceConfiguration(int nodePort, String resourcesType,
+                                                       String resourcesName, String expectedStatusCode) {
+    final LoggingFacade logger = getLogger();
+    StringBuffer curlString = new StringBuffer("status=$(curl --user ");
+    curlString.append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
+        .append(" http://" + K8S_NODEPORT_HOST + ":" + nodePort)
+        .append("/management/weblogic/latest/domainConfig")
+        .append("/")
+        .append(resourcesType)
+        .append("/")
+        .append(resourcesName)
+        .append("/")
+        .append(" --silent --show-error ")
+        .append(" -o /dev/null ")
+        .append(" -w %{http_code});")
+        .append("echo ${status}");
+    logger.info("checkSystemResource: curl command {0}", new String(curlString));
+
+    verifyCommandResultContainsMsg(new String(curlString), expectedStatusCode);
+  }
+
+
+
+  /**
    * Check the system resource configuration using REST API.
    * @param nodePort admin node port
    * @param resourcesPath path of the resource
@@ -735,5 +765,39 @@ public class CommonTestUtils {
         }
       }
     }
+  }
+
+  /**
+   * Verify the command result contains expected message.
+   *
+   * @param command the command to execute
+   * @param expectedMsg the expected message in the command output
+   */
+  public static void verifyCommandResultContainsMsg(String command, String expectedMsg) {
+    withStandardRetryPolicy.conditionEvaluationListener(
+        condition -> getLogger().info("Waiting until command result contains expected message \"{0}\" "
+                + "(elapsed time {1} ms, remaining time {2} ms)",
+            expectedMsg,
+            condition.getElapsedTimeInMS(),
+            condition.getRemainingTimeInMS()))
+        .until(() -> {
+
+          ExecResult result;
+          try {
+            result = exec(command, true);
+            getLogger().info("The command returned exit value: " + result.exitValue()
+                + " command output: " + result.stderr() + "\n" + result.stdout());
+
+            if (result == null || result.exitValue() != 0 || result.stdout() == null) {
+              return false;
+            }
+
+            return result.stdout().contains(expectedMsg);
+
+          } catch (Exception e) {
+            getLogger().info("Got exception, command failed with errors " + e.getMessage());
+            return false;
+          }
+        });
   }
 }
