@@ -16,9 +16,10 @@ function usage() {
   This script sets up the 'kubectl port-forward' for a WebLogic domain to allow access to the
   WebLogic Administration Console. The 'kubectl port-forward' pattern is often more secure than
   exposing the console to the public Internet. The script creates a pod in the domain namespace
-  that forwards the request to the WebLogic Admistration Server pod. The script derives the address
-  and the adminstration port of the WebLogic Admistration Server using the domain topology. The
-  port can also be provided on command line using '-r' parameter.
+  using the image containing 'socat' binary and it forwards the request to the WebLogic
+  Admistration Server pod. The script derives the address and the adminstration port of the
+  WebLogic Admistration Server using the domain topology. The port can also be provided on the
+  command line using '-r' option.
 
   Usage:
 
