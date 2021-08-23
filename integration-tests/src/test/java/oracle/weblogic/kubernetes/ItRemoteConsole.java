@@ -17,7 +17,6 @@ import io.kubernetes.client.openapi.models.NetworkingV1beta1HTTPIngressPath;
 import io.kubernetes.client.openapi.models.NetworkingV1beta1HTTPIngressRuleValue;
 import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressBackend;
 import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressRule;
-import oracle.weblogic.kubernetes.actions.impl.Service;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -399,7 +398,7 @@ class ItRemoteConsole {
   }
 
   private static void verifyWlsRemoteConsoleConnection() {
-    int nodePort = Service.getServiceNodePort(
+    int nodePort = getServiceNodePort(
         domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     assertTrue(nodePort != -1,
         "Could not get the default external service node port");
