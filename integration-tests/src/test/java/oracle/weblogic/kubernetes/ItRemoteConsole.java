@@ -399,7 +399,6 @@ class ItRemoteConsole {
   }
 
   private static void verifyWlsRemoteConsoleConnection() {
-    //LoggingFacade logger = getLogger();
     int nodePort = Service.getServiceNodePort(
         domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     assertTrue(nodePort != -1,
@@ -415,5 +414,5 @@ class ItRemoteConsole {
     assertTrue(callWebAppAndWaitTillReturnedCode(curlCmd, "201", 10), "Calling web app failed");
     logger.info("WebLogic domain is accessible through remote console");
   }
-  
+
 }
