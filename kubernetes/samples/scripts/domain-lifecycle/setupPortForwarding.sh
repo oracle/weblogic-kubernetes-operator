@@ -149,9 +149,9 @@ fi
 
 printInfo "Creating a pod with name '$portForwardPodName' in the namespace '$domainNamespace' using image '$imageName.'"
 ${kubernetesCli} run -n $domainNamespace --image-pull-policy $imagePullPolicy --restart=Never --image=$imageName $portForwardPodName -- -d -d tcp-listen:$remotePort,fork,reuseaddr tcp-connect:$adminHost:$remotePort
-printInfo "Waiting for the pod '$portForwardPodName' in the namespace '$domainNamespace' to be ready for '$waitTimeout' seconds."
 
 set +e
+printInfo "Waiting for the pod '$portForwardPodName' in the namespace '$domainNamespace' to be ready for '$waitTimeout' seconds."
 waitTimeout=$waitTimeout"s"
 ${kubernetesCli} -n $domainNamespace wait --for=condition=Ready pod/$portForwardPodName --timeout $waitTimeout
 if [ $? != 0 ]; then

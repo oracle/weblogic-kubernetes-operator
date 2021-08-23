@@ -923,19 +923,18 @@ function getAdminServerHostAdminPort {
   local __remotePort=0
 
   getTopology "${domainUid}" "${domainNamespace}" jsonTopology
-  adminServer=$(echo $jsonTopology | jq -r .domain.adminServerName)
-  adminServerCmd="(.domain.servers[] | select(.name == \"${adminServer}\"))"
-  server=$(echo $jsonTopology | jq "${adminServerCmd}")
-  customAdminChannel=$(echo $server | jq '.networkAccessPoints[] | select(.protocol=="admin")')
-  listenPort=$(echo $server | jq -r .listenPort)
-  sslListenPort=$(echo $server | jq -r .sslListenPort)
-  adminPort=$(echo $server | jq -r .adminPort)
-  customAdminChannelPort=$(echo $customAdminChannel | jq -r .listenPort)
-  __remoteHost=$(echo $server | jq -r .listenAddress)
+  adminServerName=$(echo $jsonTopology | jq -r .domain.adminServerName)
+  adminServerCmd="(.domain.servers[] | select(.name == \"${adminServerName}\"))"
+  adminServer=$(echo $jsonTopology | jq "${adminServerCmd}")
+  listenPort=$(echo $adminServer | jq -r .listenPort)
+  sslListenPort=$(echo $adminServer | jq -r .sslListenPort)
+  adminPort=$(echo $adminServer | jq -r .adminPort)
+  customAdminChannel=$(echo $adminServer | jq '.networkAccessPoints[] | select(.protocol=="admin")')
+  __remoteHost=$(echo $adminServer | jq -r .listenAddress)
   if [ $adminPort != null ]; then
     __remotePort=$adminPort
-  elif [[ ! -z $customAdminChannelPort && $customAdminChannelPort != null ]]; then
-    __remotePort=$customAdminChannelPort
+  elif [[ ! -z $customAdminChannel && $customAdminChannel != null ]]; then
+    __remotePort=$(echo $customAdminChannel | jq -r .listenPort)
   elif [ $sslListenPort != null ]; then
     __remotePort=$sslListenPort
   else
@@ -1096,6 +1095,8 @@ function toDNS1123Legal {
 
 #
 # Function to cleanup a port-forward server pod
+# $1 - Domain namespace
+# $2 - Name of the port-forward server pod
 #
 function portForwardCleanup {
   local domainNamespace=$1
