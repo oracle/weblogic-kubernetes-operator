@@ -899,6 +899,53 @@ function validateClusterName {
   fi
 }
 
+#
+# Function to get the host and admin port of the admin server for "kubectl port-forward".
+# 1) If the domain wide admin port is enabled, it returns the administration port.
+# 2) Otherwise if a custom admin channel is configured, it returns the
+#    listen port of the custom admin channel.
+# 3) Othewise if the default secure channel is configured, it returns the listen port
+#    of the default secure channel.
+# 4) If none of the above condition is true, it returns the listen port of the
+#    default channel.
+#
+# $1 - Domain unique id.
+# $2 - Domain namespace.
+# $3 - Return value containing host name of the admin server listen address.
+# $4 - Return value containing domain administration port.
+#
+function getAdminServerHostAdminPort {
+  local domainUid=$1
+  local domainNamespace=$2
+  local __host=$3
+  local __port=$4
+  local __remoteHost=""
+  local __remotePort=0
+
+  getTopology "${domainUid}" "${domainNamespace}" jsonTopology
+  adminServer=$(echo $jsonTopology | jq -r .domain.adminServerName)
+  adminServerCmd="(.domain.servers[] | select(.name == \"${adminServer}\"))"
+  server=$(echo $jsonTopology | jq "${adminServerCmd}")
+  customAdminChannel=$(echo $server | jq '.networkAccessPoints[] | select(.protocol=="admin")')
+  listenPort=$(echo $server | jq -r .listenPort)
+  sslListenPort=$(echo $server | jq -r .sslListenPort)
+  adminPort=$(echo $server | jq -r .adminPort)
+  customAdminChannelPort=$(echo $customAdminChannel | jq -r .listenPort)
+  __remoteHost=$(echo $server | jq -r .listenAddress)
+  if [ $adminPort != null ]; then
+    __remotePort=$adminPort
+  elif [[ ! -z $customAdminChannelPort && $customAdminChannelPort != null ]]; then
+    __remotePort=$customAdminChannelPort
+  elif [ $sslListenPort != null ]; then
+    __remotePort=$sslListenPort
+  else
+    __remotePort=$listenPort
+  fi
+  eval $__host="'${__remoteHost}'"
+  eval $__port="'${__remotePort}'"
+
+}
+
 function getTopology {
   local domainUid=$1
   local domainNamespace=$2
@@ -1047,3 +1094,13 @@ function toDNS1123Legal {
   eval $__result="'$val'"
 }
 
+#
+# Function to cleanup a port-forward server pod
+#
+function portForwardCleanup {
+  local domainNamespace=$1
+  local portForwardPodName=$2
+
+  echo ""
+  ${kubernetesCli} -n $domainNamespace delete pod/$portForwardPodName --grace-period 1 --wait=false
+}
