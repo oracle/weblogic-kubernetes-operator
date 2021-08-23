@@ -17,7 +17,7 @@ import io.kubernetes.client.openapi.models.NetworkingV1beta1HTTPIngressPath;
 import io.kubernetes.client.openapi.models.NetworkingV1beta1HTTPIngressRuleValue;
 import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressBackend;
 import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressRule;
-import oracle.weblogic.domain.Domain;
+import oracle.weblogic.kubernetes.actions.impl.Service;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -32,14 +32,11 @@ import org.junit.jupiter.api.Test;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -49,19 +46,13 @@ import static oracle.weblogic.kubernetes.actions.impl.Service.getServiceNodePort
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isVoyagerReady;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReturnedCode;
-import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.create2channelsDomainResourceWithConfigMap;
-import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createModelConfigMapSSLenable;
-import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyWlsRemoteConsoleConnection;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
-import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createSSLenabledMiiDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createIngressAndRetryIfFail;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyTraefik;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyVoyager;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
-import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static oracle.weblogic.kubernetes.utils.WebLogicRemoteConsoleUtils.installAndVerifyWlsRemoteConsole;
 import static oracle.weblogic.kubernetes.utils.WebLogicRemoteConsoleUtils.shutdownWlsRemoteConsole;
@@ -167,7 +158,7 @@ class ItRemoteConsole {
         "Remote Console installation failed");
 
     // Verify k8s WebLogic domain is accessible through remote console using admin server nodeport
-    verifyWlsRemoteConsoleConnection(domainNamespace, adminServerPodName);
+    verifyWlsRemoteConsoleConnection();
   }
 
   /**
@@ -407,73 +398,22 @@ class ItRemoteConsole {
     assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
   }
 
-  /**
-   * Create a WebLogic domain with SSL enabled in WebLogic configuration by
-   * configuring an additional configmap to the domain resource.
-   * Add two channels to the domain resource with name `default-secure` and `default`.
-   *
-   * @param domainNamespace Kubernetes namespace that the pod is running in
-   * @param domainUid identifier of the domain
-   * @param miiImageName name of the miiImage including its tag
-   * @param adminServerPodName name of the admin server pod
-   * @param managedServerPrefix prefix of the managed server pods
-   * @param replicaCount number of managed servers to start
-   */
-  private static void createSSLenabledMiiDomainAndVerify(
-      String domainNamespace,
-      String domainUid,
-      String miiImageName,
-      String adminServerPodName,
-      String managedServerPrefix,
-      int replicaCount
-  ) {
+  private static void verifyWlsRemoteConsoleConnection() {
+    //LoggingFacade logger = getLogger();
+    int nodePort = Service.getServiceNodePort(
+        domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    assertTrue(nodePort != -1,
+        "Could not get the default external service node port");
+    logger.info("Found the default service nodePort {0}", nodePort);
+    logger.info("The K8S_NODEPORT_HOST is {0}", K8S_NODEPORT_HOST);
 
-    // Create the repo secret to pull the image
-    // this secret is used only for non-kind cluster
-    createOcirRepoSecret(domainNamespace);
-
-    // create secret for admin credentials
-    logger.info("Create secret for admin credentials");
-    String adminSecretName = "weblogic-credentials";
-    createSecretWithUsernamePassword(adminSecretName, domainNamespace,
-            ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-
-    // create encryption secret
-    logger.info("Create encryption secret");
-    String encryptionSecretName = "encryptionsecret";
-    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace,
-            "weblogicenc", "weblogicenc");
-
-    String configMapName = "default-secure-configmap";
-    String yamlString = "topology:\n"
-        + "  Server:\n"
-        + "    'admin-server':\n"
-        + "       SSL: \n"
-        + "         Enabled: true \n"
-        + "         ListenPort: '7008' \n";
-    createModelConfigMapSSLenable(configMapName, yamlString, domainUid, domainNamespace);
-
-    // create the domain object
-    Domain domain = create2channelsDomainResourceWithConfigMap(domainUid,
-               domainNamespace, adminSecretName,
-        OCIR_SECRET_NAME, encryptionSecretName,
-               replicaCount,
-               miiImageName, configMapName);
-
-    // create model in image domain
-    logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
-        domainUid, domainNamespace, MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
-    createDomainAndVerify(domain, domainNamespace);
-
-    // check admin server pod is ready
-    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
-    // check managed server pods are ready
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
-    }
+    String curlCmd = "curl -v --show-error --noproxy '*' --user weblogic:welcome1 -H Content-Type:application/json -d "
+        + "\"{ \\" + "\"domainUrl\\" + "\"" + ": " + "\\" + "\"" + "http://"
+        + K8S_NODEPORT_HOST + ":" + nodePort + "\\" + "\" }" + "\""
+        + " http://localhost:8012/api/connection  --write-out %{http_code} -o /dev/null";
+    logger.info("Executing default nodeport curl command {0}", curlCmd);
+    assertTrue(callWebAppAndWaitTillReturnedCode(curlCmd, "201", 10), "Calling web app failed");
+    logger.info("WebLogic domain is accessible through remote console");
   }
+  
 }
