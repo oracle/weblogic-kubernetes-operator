@@ -239,8 +239,8 @@ Useful Helm operations Show the available operator configuration values and thei
       <pubDate>Sat, 23 Feb 2019 16:40:54 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/prerequisites/introduction/</guid>
-      <description>For the current production release 3.3.0:
- Kubernetes 1.16.15+, 1.17.13+, 1.18.10+, 1.19.7+, and 1.20.6+ (check with kubectl version). Flannel networking v0.9.1-amd64 or later (check with docker images | grep flannel), Calico networking v3.16.1 or later, or OpenShift SDN on OpenShift 4.3 systems. Docker 18.9.1 or 19.03.1+ (check with docker version) or CRI-O 1.20.6+ (check with crictl version | grep RuntimeVersion). Helm 3.3.4+ (check with helm version --client --short). For domain home source type Model in Image, WebLogic Deploy Tooling 1.</description>
+      <description>For the current production release 3.3.1:
+ Kubernetes 1.16.15+, 1.17.13+, 1.18.10+, 1.19.7+, and 1.20.6+ (check with kubectl version). Flannel networking v0.9.1-amd64 or later (check with docker images | grep flannel), Calico networking v3.16.1 or later, or OpenShift SDN on OpenShift 4.3 systems. Docker 18.9.1 or 19.03.1+ (check with docker version) or CRI-O 1.20.2+ (check with crictl version | grep RuntimeVersion). Helm 3.3.4+ (check with helm version --client --short). For domain home source type Model in Image, WebLogic Deploy Tooling 1.</description>
     </item>
     
     <item>
@@ -391,7 +391,7 @@ In accordance with these policies, the operator and WebLogic Server are supporte
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/quickstart/get-images/</guid>
       <description>Get these images and put them into your local registry.   Pull the operator image:
-$ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:3.3.0   Pull the Traefik ingress controller image:
+$ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:3.3.1   Pull the Traefik ingress controller image:
 $ docker pull traefik:2.2.1   Obtain the WebLogic Server image from the Oracle Container Registry.
 a. First time users, follow these directions.
 b. Find and then pull the WebLogic 12.2.1.4 install image:
@@ -803,6 +803,18 @@ Unicast and Well Known Address When the first Coherence process starts, it will 
     </item>
     
     <item>
+      <title>Handling security validations</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/faq/security-validation/</link>
+      <pubDate>Tue, 30 Jun 2020 08:55:00 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/faq/security-validation/</guid>
+      <description>After applying the July2021 PSU, I&amp;rsquo;m now seeing security warnings, such as:
+Description: Production Mode is enabled but user lockout settings are not secure in realm: myrealm, i.e. LockoutThreshold should not be greater than 5, LockoutDuration should not be less than 30.
+SOLUTION: Update the user lockout settings (LockoutThreshold, LockoutDuration) to be secure.
+ WebLogic Server has a new, important feature to ensure and help you secure your WLS domains when running in production.</description>
+    </item>
+    
+    <item>
       <title>Usage</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/usage/</link>
       <pubDate>Wed, 11 Mar 2020 16:45:16 -0500</pubDate>
@@ -857,7 +869,7 @@ If you are performing an online update to a running domain&amp;rsquo;s WebLogic 
       <pubDate>Fri, 15 Mar 2019 11:25:28 -0400</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/release-notes/</guid>
-      <description>Releases    Date Version Introduces backward incompatibilities? Change     July 20, 2021 v3.3.0 no Auxiliary image support.   June 21, 2021 v3.2.5 no Updated Oracle Linux libraries and resolved an issue related to repeated introspection.   June 18, 2021 v3.2.4 no Resolved several issues related to Istio, diagnostics, and recovery.   May 21, 2021 v3.2.3 no Resolved several issues, including an issue related to preserving the operator-generated internal certificate, corrected the monitoring exporter integration to include the Administration Server, enhanced the model-in-image support to not require the use of configuration overrides, and updated the domain-home-in-image samples to support the WebLogic Image Tool.</description>
+      <description>Releases    Date Version Introduces backward incompatibilities? Change     August 23, 2021 v3.3.1 no Resolved an issue related to managed Coherence cluster formation when using Istio and another issue related to Secret and ConfigMap validation.   July 20, 2021 v3.3.0 no Auxiliary image support.   June 21, 2021 v3.2.5 no Updated Oracle Linux libraries and resolved an issue related to repeated introspection.   June 18, 2021 v3.</description>
     </item>
     
   </channel>

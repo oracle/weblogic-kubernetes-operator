@@ -148,5 +148,17 @@ Unicast and Well Known Address When the first Coherence process starts, it will 
       <description>Contents  Introduction Setting resource requests and limits in a Domain YAML file Determining Pod Quality Of Service Java heap size and memory resource considerations  Importance of setting heap size and memory resources Default heap sizes Configuring heap size   CPU resource considerations Operator sample heap and resource configuration Configuring CPU affinity Measuring JVM heap, Pod CPU, and Pod memory References  Introduction The operator creates a container in its own Pod for each WebLogic Server instance.</description>
     </item>
     
+    <item>
+      <title>Handling security validations</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/faq/security-validation/</link>
+      <pubDate>Tue, 30 Jun 2020 08:55:00 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/faq/security-validation/</guid>
+      <description>After applying the July2021 PSU, I&amp;rsquo;m now seeing security warnings, such as:
+Description: Production Mode is enabled but user lockout settings are not secure in realm: myrealm, i.e. LockoutThreshold should not be greater than 5, LockoutDuration should not be less than 30.
+SOLUTION: Update the user lockout settings (LockoutThreshold, LockoutDuration) to be secure.
+ WebLogic Server has a new, important feature to ensure and help you secure your WLS domains when running in production.</description>
+    </item>
+    
   </channel>
 </rss>
