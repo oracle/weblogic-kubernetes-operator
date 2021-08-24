@@ -43,14 +43,10 @@ topology:
             ListenPort: 8001
             Cluster: 'cluster-1'
             CoherenceClusterSystemResource: CoherenceCluster
-            CoherenceMemberConfig:
-              UnicastListenAddress:  'miidomain-cluster-1-managed-server${id}'
         'cluster-2-template':
             ListenPort: 8001
             Cluster: 'cluster-2'
             CoherenceClusterSystemResource: CoherenceCluster
-            CoherenceMemberConfig:
-              UnicastListenAddress:  'miidomain-cluster-2-managed-server${id}'
 resources:
     CoherenceClusterSystemResource:
         CoherenceCluster:
