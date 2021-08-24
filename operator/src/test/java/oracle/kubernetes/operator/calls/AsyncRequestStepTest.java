@@ -52,7 +52,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.sameInstance;
-import static org.junit.Assert.assertTrue;
 
 /**
  * This class tests the AsyncRequestStep, used to dispatch requests to Kubernetes and respond asynchronously. The per-
@@ -120,12 +119,12 @@ class AsyncRequestStepTest {
 
   @Test
   void afterFiberStarted_requestSent() {
-    assertTrue(callFactory.invokedWith(requestParams));
+    assertThat(callFactory.invokedWith(requestParams), is(true));
   }
 
   @Test
   void afterFiberStarted_timeoutStepScheduled() {
-    assertTrue(testSupport.hasItemScheduledAt(TIMEOUT_SECONDS, TimeUnit.SECONDS));
+    assertThat(testSupport.hasItemScheduledAt(TIMEOUT_SECONDS, TimeUnit.SECONDS), is(true));
   }
 
   @Test
@@ -134,7 +133,7 @@ class AsyncRequestStepTest {
 
     testSupport.setTime(TIMEOUT_SECONDS + 1, TimeUnit.SECONDS);
 
-    assertTrue(callFactory.invokedWith(requestParams));
+    assertThat(callFactory.invokedWith(requestParams), is(true));
   }
 
   @Test
@@ -197,7 +196,7 @@ class AsyncRequestStepTest {
 
     testSupport.setTime(TIMEOUT_SECONDS - 1, TimeUnit.SECONDS);
 
-    assertTrue(callFactory.invokedWith(requestParams));
+    assertThat(callFactory.invokedWith(requestParams), is(true));
   }
 
   @Test
@@ -205,6 +204,25 @@ class AsyncRequestStepTest {
     sendMultipleFailedCallbackWithSetTime(0, 2);
     testSupport.schedule(() -> callFactory.sendSuccessfulCallback(smallList));
     assertThat(nextStep.result, equalTo(smallList));
+  }
+
+  @Test
+  void whenDomainStatusIsNull_ignoreSuccess() {
+    info.getDomain().setStatus(null);
+    testSupport.addDomainPresenceInfo(info);
+
+    testSupport.schedule(() -> callFactory.sendSuccessfulCallback(smallList));
+  }
+
+  @Test
+  void whenDomainStatusIsNull_recordFailure() {
+    info.getDomain().setStatus(null);
+    testSupport.addDomainPresenceInfo(info);
+
+    sendFailedCallback(0, "explanation1");
+
+    assertThat(domain.getStatus().getConditions(), hasSize(1));
+    assertThat(domain.getStatus().getConditions().get(0).getType(), equalTo(Failed));
   }
 
   @Test

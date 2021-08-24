@@ -206,7 +206,8 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
     private void removeExistingFailureCondition() {
       DomainPresenceInfo.fromPacket(packet)
             .map(DomainPresenceInfo::getDomain)
-            .ifPresent(domain -> domain.getStatus().removeCondition(recordedFailure));
+            .map(Domain::getStatus)
+            .ifPresent(status -> status.removeCondition(recordedFailure));
     }
 
     // We received a failure from Kubernetes. Recycle the client,
@@ -251,7 +252,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
 
     private void addFailureStatus(@Nonnull Domain domain, DomainCondition condition) {
       recordedFailure = condition;
-      domain.getStatus().addCondition(recordedFailure);
+      domain.getOrCreateStatus().addCondition(recordedFailure);
     }
 
     private String createMessage(ApiException apiException) {

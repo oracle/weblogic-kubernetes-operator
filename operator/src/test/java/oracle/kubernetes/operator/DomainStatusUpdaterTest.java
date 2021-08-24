@@ -590,6 +590,15 @@ class DomainStatusUpdaterTest {
   }
 
   @Test
+  void whenDomainStatusIsNull_removeFailuresStepDoesNothing() {
+    domain.setStatus(null);
+
+    testSupport.runSteps(DomainStatusUpdater.createRemoveFailuresStep());
+
+    assertThat(getRecordedDomain(), not(hasCondition(Failed)));
+  }
+
+  @Test
   void whenDomainHasFailedCondition_removeFailureStepRemovesIt() {
     domain.getStatus().addCondition(new DomainCondition(Failed));
 
