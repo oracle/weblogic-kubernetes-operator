@@ -321,7 +321,7 @@ public class CommonMiiTestUtils {
    *                   and WDT installation files
    * @return domain object of the domain resource
    */
-  public static Domain createDomainResource(
+  public static Domain createDomainResourceWithAualiaryImage(
       String domainResourceName,
       String domNamespace,
       String baseImageName,
@@ -334,8 +334,8 @@ public class CommonMiiTestUtils {
       String auxiliaryImageVolumeName,
       String... auxiliaryImageName) {
 
-    Domain domainCR = CommonMiiTestUtils.createDomainResource(domainResourceName, domNamespace,
-        baseImageName, adminSecretName, repoSecretName, encryptionSecretName, replicaCount,
+    Domain domainCR = CommonMiiTestUtils.createDomainResourceWithAualiaryImage(domainResourceName,
+        domNamespace, baseImageName, adminSecretName, repoSecretName, encryptionSecretName, replicaCount,
         List.of(clusterName), auxiliaryImagePath, auxiliaryImageVolumeName, auxiliaryImageName);
 
     return domainCR;
@@ -359,7 +359,7 @@ public class CommonMiiTestUtils {
    *                   and WDT installation files
    * @return domain object of the domain resource
    */
-  public static Domain createDomainResource(
+  public static Domain createDomainResourceWithAualiaryImage(
       String domainResourceName,
       String domNamespace,
       String baseImageName,
@@ -490,21 +490,21 @@ public class CommonMiiTestUtils {
    * Create a domain object for a Kubernetes domain custom resource using the basic WLS image
    * and MII auxiliary images containing the doamin or/and cluster configuration.
    * @param domainResourceName name of the domain resource
-   @param domNamespace Kubernetes namespace that the domain is hosted
-   @param baseImageName name of the base image to use
-   @param adminSecretName name of the new WebLogic admin credentials secret
-   @param repoSecretName name of the secret for pulling the WebLogic image
-   @param encryptionSecretName name of the secret used to encrypt the models
-   @param replicaCount number of managed servers to start
-   @param clusterNames a list of the cluster name to add auxiliary image in domain
-   @param auxiliaryImagePathVolume a map of auxiliary image path, parent location for Model in Image model
-   and WDT installation files as the key and a list of auxiliary image volume names
-   as the values for the key
-   @param auxiliaryImageDomainScopeNames a list of image names including tags, image contains the domain model,
-   application archive if any and WDT installation files
-   @param auxiliaryImageClusterScopeNames a list of images containing the files to
-   config cluster scope auxiliary image
-   @return domain object of the domain resource
+   * @param domNamespace Kubernetes namespace that the domain is hosted
+   * @param baseImageName name of the base image to use
+   * @param adminSecretName name of the new WebLogic admin credentials secret
+   * @param repoSecretName name of the secret for pulling the WebLogic image
+   * @param encryptionSecretName name of the secret used to encrypt the models
+   * @param replicaCount number of managed servers to start
+   * @param clusterNames a list of the cluster name to add auxiliary image in domain
+   * @param auxiliaryImagePathVolume a map of auxiliary image path, parent location for Model in Image model
+   *                                 and WDT installation files as the key and a list of
+   *                                 auxiliary image volume names as the values for the key
+   * @param auxiliaryImageDomainScopeNames a list of image names including tags, image contains the domain model,
+                                           application archive if any and WDT installation files
+   * @param auxiliaryImageClusterScopeNames a list of images containing the files to
+   *                                        config cluster scope auxiliary image
+   * @return domain object of the domain resource
    */
   public static Domain createDomainResourceWithAuxiliaryImageClusterScope(
       String domainResourceName,

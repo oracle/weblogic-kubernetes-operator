@@ -67,7 +67,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
-import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResource;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResourceWithAualiaryImage;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceDoesNotExist;
@@ -275,7 +275,7 @@ class ItMiiAuxiliaryImage {
     // create domain custom resource using 2 auxiliary images
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
         domainUid, miiAuxiliaryImage1, miiAuxiliaryImage2);
-    Domain domainCR = createDomainResource(domainUid, domainNamespace,
+    Domain domainCR = createDomainResourceWithAualiaryImage(domainUid, domainNamespace,
         WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
         auxiliaryImageVolumeName, miiAuxiliaryImage1, miiAuxiliaryImage2);
@@ -468,7 +468,7 @@ class ItMiiAuxiliaryImage {
     // create domain custom resource using auxiliary images
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
         domainUid, errorPathAuxiliaryImage1);
-    Domain domainCR = createDomainResource(domainUid, errorpathDomainNamespace,
+    Domain domainCR = createDomainResourceWithAualiaryImage(domainUid, errorpathDomainNamespace,
         WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
         auxiliaryImageVolumeName, errorPathAuxiliaryImage1);
@@ -548,7 +548,7 @@ class ItMiiAuxiliaryImage {
     // create domain custom resource using auxiliary images
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
         domainUid, errorPathAuxiliaryImage2);
-    Domain domainCR = createDomainResource(domainUid, errorpathDomainNamespace,
+    Domain domainCR = createDomainResourceWithAualiaryImage(domainUid, errorpathDomainNamespace,
         WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
         auxiliaryImageVolumeName, errorPathAuxiliaryImage2);
@@ -635,7 +635,7 @@ class ItMiiAuxiliaryImage {
     // create domain custom resource using auxiliary images
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
         domainUid, errorPathAuxiliaryImage3);
-    Domain domainCR = createDomainResource(domainUid, errorpathDomainNamespace,
+    Domain domainCR = createDomainResourceWithAualiaryImage(domainUid, errorpathDomainNamespace,
         WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
         auxiliaryImageVolumeName, errorPathAuxiliaryImage3);
@@ -830,7 +830,7 @@ class ItMiiAuxiliaryImage {
     // create domain custom resource using auxiliary images
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
         domainUid, errorPathAuxiliaryImage4);
-    Domain domainCR = createDomainResource(domainUid, errorpathDomainNamespace,
+    Domain domainCR = createDomainResourceWithAualiaryImage(domainUid, errorpathDomainNamespace,
         WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
         auxiliaryImageVolumeName, errorPathAuxiliaryImage4);
@@ -992,7 +992,7 @@ class ItMiiAuxiliaryImage {
     // create domain custom resource using 2 auxiliary images ( image1, image2)
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
         domainUid, miiAuxiliaryImage4, miiAuxiliaryImage5);
-    Domain domainCR = createDomainResource(domainUid, wdtDomainNamespace,
+    Domain domainCR = createDomainResourceWithAualiaryImage(domainUid, wdtDomainNamespace,
         WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
         auxiliaryImageVolumeName, miiAuxiliaryImage4, miiAuxiliaryImage5);
