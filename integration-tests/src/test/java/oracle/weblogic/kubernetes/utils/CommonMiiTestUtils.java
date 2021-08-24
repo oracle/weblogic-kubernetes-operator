@@ -818,7 +818,6 @@ public class CommonMiiTestUtils {
         .append(" -o /dev/null ")
         .append(" -w %{http_code});")
         .append("echo ${status}");
-
     logger.info("checkSystemResource: curl command {0}", new String(curlString));
     return new Command()
         .withParams(new CommandParams()
