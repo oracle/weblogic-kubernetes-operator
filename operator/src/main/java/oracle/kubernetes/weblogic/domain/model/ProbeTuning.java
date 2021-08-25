@@ -21,14 +21,14 @@ public class ProbeTuning {
   @SerializedName("timeoutSeconds")
   private Integer timeoutSeconds = null;
 
-  @Description("Number of times the check will be performed before giving up. Giving up in "
-          + "case of liveness probe means restarting the container. In case of readiness probe the Pod will be "
-          + "marked Unready. Defaults to 1. Minimum value is 1")
+  @Description("Number of times the check is performed before giving up. Giving up in "
+          + "case of liveness probe means restarting the container. In case of readiness probe, the Pod will be "
+          + "marked Unready. Defaults to 1.")
   @SerializedName("failureThreshold")
   Integer failureThreshold = null;
 
   @Description("Minimum number of times the check needs to pass for the probe to be considered successful"
-          + " after having failed. Defaults to 1. Must be 1 for liveness and startup Probes. Minimum value is 1.")
+          + " after having failed. Defaults to 1. Must be 1 for liveness and startup Probes.")
   @SerializedName("successThreshold")
   private Integer successThreshold = null;
 

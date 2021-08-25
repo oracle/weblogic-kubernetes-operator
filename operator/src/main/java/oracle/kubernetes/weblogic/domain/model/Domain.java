@@ -48,7 +48,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import static java.util.stream.Collectors.toSet;
 import static oracle.kubernetes.operator.KubernetesConstants.CONTAINER_NAME;
 import static oracle.kubernetes.operator.helpers.LegalNames.toDns1123LegalName;
-import static oracle.kubernetes.operator.helpers.StepContextConstants.SUCCESS_THRESHOLD;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.DEFAULT_SUCCESS_THRESHOLD;
 import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
 
 /**
@@ -799,7 +799,7 @@ public class Domain implements KubernetesObject {
   }
 
   class Validator {
-    public static final String ADMIN_SERVER_POD_PREFIX = "spec.adminServer.serverPod.containers";
+    public static final String ADMIN_SERVER_POD_SPEC_PREFIX = "spec.adminServer.serverPod";
     public static final String CLUSTER_SPEC_PREFIX = "spec.clusters";
     public static final String MS_SPEC_PREFIX = "spec.managedServers";
     private final List<String> failures = new ArrayList<>();
@@ -1070,7 +1070,7 @@ public class Domain implements KubernetesObject {
 
     private void verifyLivenessProbeSuccessThreshold() {
       Optional.ofNullable(getAdminServerSpec().getLivenessProbe())
-              .ifPresent(probe -> verifySuccessThresholdValue(probe, ADMIN_SERVER_POD_PREFIX
+              .ifPresent(probe -> verifySuccessThresholdValue(probe, ADMIN_SERVER_POD_SPEC_PREFIX
                       + ".livenessProbe.successThreshold"));
       getSpec().getClusters().forEach(cluster ->
               Optional.ofNullable(cluster.getLivenessProbe())
@@ -1083,7 +1083,7 @@ public class Domain implements KubernetesObject {
     }
 
     private void verifySuccessThresholdValue(ProbeTuning probe, String prefix) {
-      if (probe.getSuccessThreshold() != null && probe.getSuccessThreshold() != SUCCESS_THRESHOLD) {
+      if (probe.getSuccessThreshold() != null && probe.getSuccessThreshold() != DEFAULT_SUCCESS_THRESHOLD) {
         failures.add(DomainValidationMessages.invalidLivenessProbeSuccessThresholdValue(
                 probe.getSuccessThreshold(), prefix));
       }
@@ -1091,7 +1091,7 @@ public class Domain implements KubernetesObject {
 
     private void verifyContainerNameValidInPodSpec() {
       getAdminServerSpec().getContainers().forEach(container ->
-              isContainerNameReserved(container, ADMIN_SERVER_POD_PREFIX  + ".containers"));
+              isContainerNameReserved(container, ADMIN_SERVER_POD_SPEC_PREFIX + ".containers"));
       getSpec().getClusters().forEach(cluster ->
               cluster.getContainers().forEach(container ->
                       isContainerNameReserved(container, CLUSTER_SPEC_PREFIX + "[" + cluster.getClusterName()

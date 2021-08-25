@@ -976,7 +976,8 @@ public abstract class PodStepContext extends BasePodStepContext {
         .periodSeconds(getReadinessProbePeriodSeconds(tuning))
         .failureThreshold(getReadinessProbeFailureThreshold(tuning));
 
-    if (getReadinessProbeSuccessThreshold(tuning) != SUCCESS_THRESHOLD) {
+    // Add the success threshold only if the value is non-default to avoid pod roll.
+    if (getReadinessProbeSuccessThreshold(tuning) != DEFAULT_SUCCESS_THRESHOLD) {
       readinessProbe.successThreshold(getReadinessProbeSuccessThreshold(tuning));
     }
 
@@ -1042,7 +1043,8 @@ public abstract class PodStepContext extends BasePodStepContext {
         .periodSeconds(getLivenessProbePeriodSeconds(tuning))
         .failureThreshold(getLivenessProbeFailureThreshold(tuning));
 
-    if (getLivenessProbeSuccessThreshold(tuning) != SUCCESS_THRESHOLD) {
+    // Add the success threshold only if the value is non-default to avoid pod roll.
+    if (getLivenessProbeSuccessThreshold(tuning) != DEFAULT_SUCCESS_THRESHOLD) {
       livenessProbe.successThreshold(getLivenessProbeSuccessThreshold(tuning));
     }
     return livenessProbe.exec(execAction(LIVENESS_PROBE));

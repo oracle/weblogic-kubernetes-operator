@@ -191,9 +191,9 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   private static final int CONFIGURED_DELAY = 21;
   private static final int CONFIGURED_TIMEOUT = 27;
   private static final int CONFIGURED_PERIOD = 35;
-  private static final int CONFIGURED_SUCCESS_THRESHOLD = 2;
+  public static final int CONFIGURED_FAILURE_THRESHOLD = 1;
+  public static final int CONFIGURED_SUCCESS_THRESHOLD = 2;
   private static final Integer DEFAULT_SUCCESS_THRESHOLD = null;
-  private static final int CONFIGURED_FAILURE_THRESHOLD = 1;
   private static final String LOG_HOME = "/shared/logs";
   private static final String NODEMGR_HOME = "/u01/nodemanager";
   private static final String CONFIGMAP_VOLUME_NAME = "weblogic-scripts-cm-volume";

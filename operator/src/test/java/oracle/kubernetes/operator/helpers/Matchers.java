@@ -294,7 +294,7 @@ public class Matchers {
             .appendValue(item.getTimeoutSeconds())
             .appendText(", period ")
             .appendValue(item.getPeriodSeconds())
-            .appendText(" and successThreshold ")
+            .appendText(", successThreshold ")
             .appendValue(item.getSuccessThreshold())
             .appendText(" and failureThreshold ")
             .appendValue(item.getFailureThreshold());
@@ -312,7 +312,7 @@ public class Matchers {
           .appendValue(expectedTimeout)
           .appendText(", period ")
           .appendValue(expectedPeriod)
-          .appendText(" and successThreshold ")
+          .appendText(", successThreshold ")
           .appendValue(EXPECTED_SUCCESS_THRESHOLD)
           .appendText(" and failureThreshold ")
           .appendValue(EXPECTED_FAILURE_THRESHOLD);
