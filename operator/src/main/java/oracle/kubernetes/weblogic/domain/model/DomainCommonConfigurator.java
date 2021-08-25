@@ -53,8 +53,8 @@ public class DomainCommonConfigurator extends DomainConfigurator {
 
   @Override
   public void withDefaultReadinessProbeSettings(
-      Integer initialDelay, Integer timeout, Integer period) {
-    getDomainSpec().setReadinessProbe(initialDelay, timeout, period);
+      Integer initialDelay, Integer timeout, Integer period, Integer successThreshold, Integer failureThreshold) {
+    getDomainSpec().setReadinessProbe(initialDelay, timeout, period, successThreshold, failureThreshold);
   }
 
   @Override
@@ -69,8 +69,8 @@ public class DomainCommonConfigurator extends DomainConfigurator {
 
   @Override
   public void withDefaultLivenessProbeSettings(
-      Integer initialDelay, Integer timeout, Integer period) {
-    getDomainSpec().setLivenessProbe(initialDelay, timeout, period);
+      Integer initialDelay, Integer timeout, Integer period, Integer successThreshold, Integer failureThreshold) {
+    getDomainSpec().setLivenessProbe(initialDelay, timeout, period, successThreshold, failureThreshold);
   }
 
   @Override
@@ -479,15 +479,15 @@ public class DomainCommonConfigurator extends DomainConfigurator {
 
     @Override
     public ServerConfigurator withLivenessProbeSettings(
-        Integer initialDelay, Integer timeout, Integer period) {
-      server.setLivenessProbe(initialDelay, timeout, period);
+        Integer initialDelay, Integer timeout, Integer period, Integer successThreshold, Integer failureThreshold) {
+      server.setLivenessProbe(initialDelay, timeout, period, successThreshold, failureThreshold);
       return this;
     }
 
     @Override
     public ServerConfigurator withReadinessProbeSettings(
-        Integer initialDelay, Integer timeout, Integer period) {
-      server.setReadinessProbe(initialDelay, timeout, period);
+        Integer initialDelay, Integer timeout, Integer period, Integer successThreshold, Integer failureThreshold) {
+      server.setReadinessProbe(initialDelay, timeout, period, successThreshold, failureThreshold);
       return this;
     }
 
@@ -664,15 +664,15 @@ public class DomainCommonConfigurator extends DomainConfigurator {
 
     @Override
     public ClusterConfigurator withReadinessProbeSettings(
-        Integer initialDelay, Integer timeout, Integer period) {
-      cluster.setReadinessProbe(initialDelay, timeout, period);
+        Integer initialDelay, Integer timeout, Integer period, Integer successThreshold, Integer failureThreshold) {
+      cluster.setReadinessProbe(initialDelay, timeout, period, successThreshold, failureThreshold);
       return this;
     }
 
     @Override
     public ClusterConfigurator withLivenessProbeSettings(
-        Integer initialDelay, Integer timeout, Integer period) {
-      cluster.setLivenessProbe(initialDelay, timeout, period);
+        Integer initialDelay, Integer timeout, Integer period, Integer successThreshold, Integer failureThreshold) {
+      cluster.setLivenessProbe(initialDelay, timeout, period, successThreshold, failureThreshold);
       return this;
     }
 

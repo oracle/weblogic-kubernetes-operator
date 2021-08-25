@@ -21,6 +21,17 @@ public class ProbeTuning {
   @SerializedName("timeoutSeconds")
   private Integer timeoutSeconds = null;
 
+  @Description("Number of times the check will be performed before giving up. Giving up in "
+          + "case of liveness probe means restarting the container. In case of readiness probe the Pod will be "
+          + "marked Unready. Defaults to 1. Minimum value is 1")
+  @SerializedName("failureThreshold")
+  Integer failureThreshold = null;
+
+  @Description("Minimum number of times the check needs to pass for the probe to be considered successful"
+          + " after having failed. Defaults to 1. Must be 1 for liveness and startup Probes. Minimum value is 1.")
+  @SerializedName("successThreshold")
+  private Integer successThreshold = null;
+
   public ProbeTuning() {
   }
 
@@ -33,6 +44,12 @@ public class ProbeTuning {
     }
     if (periodSeconds == null) {
       periodSeconds(fromProbe.periodSeconds);
+    }
+    if (successThreshold == null) {
+      successThreshold(fromProbe.successThreshold);
+    }
+    if (failureThreshold == null) {
+      failureThreshold(fromProbe.failureThreshold);
     }
   }
 
@@ -63,12 +80,32 @@ public class ProbeTuning {
     return this;
   }
 
+  public Integer getSuccessThreshold() {
+    return successThreshold;
+  }
+
+  public ProbeTuning successThreshold(Integer successThreshold) {
+    this.successThreshold = successThreshold;
+    return this;
+  }
+
+  public Integer getFailureThreshold() {
+    return failureThreshold;
+  }
+
+  public ProbeTuning failureThreshold(Integer failureThreshold) {
+    this.failureThreshold = failureThreshold;
+    return this;
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
         .append("initialDelaySeconds", initialDelaySeconds)
         .append("periodSeconds", periodSeconds)
         .append("timeoutSeconds", timeoutSeconds)
+        .append("successThreshold", successThreshold)
+        .append("failureThreshold", failureThreshold)
         .toString();
   }
 
@@ -88,6 +125,8 @@ public class ProbeTuning {
         .append(initialDelaySeconds, that.initialDelaySeconds)
         .append(periodSeconds, that.periodSeconds)
         .append(timeoutSeconds, that.timeoutSeconds)
+        .append(successThreshold, that.successThreshold)
+        .append(failureThreshold, that.failureThreshold)
         .isEquals();
   }
 
@@ -97,6 +136,8 @@ public class ProbeTuning {
         .append(initialDelaySeconds)
         .append(periodSeconds)
         .append(timeoutSeconds)
+        .append(successThreshold)
+        .append(failureThreshold)
         .toHashCode();
   }
 }

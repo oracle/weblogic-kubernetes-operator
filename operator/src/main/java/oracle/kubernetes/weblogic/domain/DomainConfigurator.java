@@ -222,9 +222,11 @@ public abstract class DomainConfigurator {
    * @param initialDelay the default initial delay, in seconds.
    * @param timeout the default timeout, in seconds.
    * @param period the default probe period, in seconds.
+   * @param successThreshold the default success threshold.
+   * @param failureThreshold the default failure threshold.
    */
   public abstract void withDefaultReadinessProbeSettings(
-      Integer initialDelay, Integer timeout, Integer period);
+      Integer initialDelay, Integer timeout, Integer period, Integer successThreshold, Integer failureThreshold);
 
   /**
    * Add auxiliary images for the domain resource.
@@ -245,9 +247,12 @@ public abstract class DomainConfigurator {
    * @param initialDelay the default initial delay, in seconds.
    * @param timeout the default timeout, in seconds.
    * @param period the default probe period, in seconds.
+   * @param successThreshold the default success threshold.
+   * @param failureThreshold the default failure threshold.
+   *
    */
   public abstract void withDefaultLivenessProbeSettings(
-      Integer initialDelay, Integer timeout, Integer period);
+      Integer initialDelay, Integer timeout, Integer period, Integer successThreshold, Integer failureThreshold);
 
   /**
    * Sets the default server start policy ("ALWAYS", "NEVER" or "IF_NEEDED") for the domain.

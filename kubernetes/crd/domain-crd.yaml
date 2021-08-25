@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 82e9e9e60da33f393aec1dc45c2854e06a569fea839d3339e3dd7f86ce8d837c
+    weblogic.sha256: 759cabbd33c9eb33365929a017ccbb6ce12f7ad024f0ad35790c9b3b6ec200e2
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -367,12 +367,25 @@ spec:
                         description: Settings for the liveness probe associated with
                           a WebLogic Server instance.
                         properties:
+                          failureThreshold:
+                            description: Number of times the check will be performed
+                              before giving up. Giving up in case of liveness probe
+                              means restarting the container. In case of readiness
+                              probe the Pod will be marked Unready. Defaults to 1.
+                              Minimum value is 1
+                            type: number
                           periodSeconds:
                             description: The number of seconds between checks.
                             type: number
                           timeoutSeconds:
                             description: The number of seconds with no response that
                               indicates a failure.
+                            type: number
+                          successThreshold:
+                            description: Minimum number of times the check needs to
+                              pass for the probe to be considered successful after
+                              having failed. Defaults to 1. Must be 1 for liveness
+                              and startup Probes. Minimum value is 1.
                             type: number
                           initialDelaySeconds:
                             description: The number of seconds before the first check
@@ -1414,12 +1427,25 @@ spec:
                         description: Settings for the readiness probe associated with
                           a WebLogic Server instance.
                         properties:
+                          failureThreshold:
+                            description: Number of times the check will be performed
+                              before giving up. Giving up in case of liveness probe
+                              means restarting the container. In case of readiness
+                              probe the Pod will be marked Unready. Defaults to 1.
+                              Minimum value is 1
+                            type: number
                           periodSeconds:
                             description: The number of seconds between checks.
                             type: number
                           timeoutSeconds:
                             description: The number of seconds with no response that
                               indicates a failure.
+                            type: number
+                          successThreshold:
+                            description: Minimum number of times the check needs to
+                              pass for the probe to be considered successful after
+                              having failed. Defaults to 1. Must be 1 for liveness
+                              and startup Probes. Minimum value is 1.
                             type: number
                           initialDelaySeconds:
                             description: The number of seconds before the first check
@@ -3111,12 +3137,25 @@ spec:
                             with a WebLogic Server instance.
                           type: object
                           properties:
+                            failureThreshold:
+                              description: Number of times the check will be performed
+                                before giving up. Giving up in case of liveness probe
+                                means restarting the container. In case of readiness
+                                probe the Pod will be marked Unready. Defaults to
+                                1. Minimum value is 1
+                              type: number
                             periodSeconds:
                               description: The number of seconds between checks.
                               type: number
                             timeoutSeconds:
                               description: The number of seconds with no response
                                 that indicates a failure.
+                              type: number
+                            successThreshold:
+                              description: Minimum number of times the check needs
+                                to pass for the probe to be considered successful
+                                after having failed. Defaults to 1. Must be 1 for
+                                liveness and startup Probes. Minimum value is 1.
                               type: number
                             initialDelaySeconds:
                               description: The number of seconds before the first
@@ -4162,12 +4201,25 @@ spec:
                             with a WebLogic Server instance.
                           type: object
                           properties:
+                            failureThreshold:
+                              description: Number of times the check will be performed
+                                before giving up. Giving up in case of liveness probe
+                                means restarting the container. In case of readiness
+                                probe the Pod will be marked Unready. Defaults to
+                                1. Minimum value is 1
+                              type: number
                             periodSeconds:
                               description: The number of seconds between checks.
                               type: number
                             timeoutSeconds:
                               description: The number of seconds with no response
                                 that indicates a failure.
+                              type: number
+                            successThreshold:
+                              description: Minimum number of times the check needs
+                                to pass for the probe to be considered successful
+                                after having failed. Defaults to 1. Must be 1 for
+                                liveness and startup Probes. Minimum value is 1.
                               type: number
                             initialDelaySeconds:
                               description: The number of seconds before the first
@@ -5880,12 +5932,24 @@ spec:
                     description: Settings for the liveness probe associated with a
                       WebLogic Server instance.
                     properties:
+                      failureThreshold:
+                        description: Number of times the check will be performed before
+                          giving up. Giving up in case of liveness probe means restarting
+                          the container. In case of readiness probe the Pod will be
+                          marked Unready. Defaults to 1. Minimum value is 1
+                        type: number
                       periodSeconds:
                         description: The number of seconds between checks.
                         type: number
                       timeoutSeconds:
                         description: The number of seconds with no response that indicates
                           a failure.
+                        type: number
+                      successThreshold:
+                        description: Minimum number of times the check needs to pass
+                          for the probe to be considered successful after having failed.
+                          Defaults to 1. Must be 1 for liveness and startup Probes.
+                          Minimum value is 1.
                         type: number
                       initialDelaySeconds:
                         description: The number of seconds before the first check
@@ -6921,12 +6985,24 @@ spec:
                     description: Settings for the readiness probe associated with
                       a WebLogic Server instance.
                     properties:
+                      failureThreshold:
+                        description: Number of times the check will be performed before
+                          giving up. Giving up in case of liveness probe means restarting
+                          the container. In case of readiness probe the Pod will be
+                          marked Unready. Defaults to 1. Minimum value is 1
+                        type: number
                       periodSeconds:
                         description: The number of seconds between checks.
                         type: number
                       timeoutSeconds:
                         description: The number of seconds with no response that indicates
                           a failure.
+                        type: number
+                      successThreshold:
+                        description: Minimum number of times the check needs to pass
+                          for the probe to be considered successful after having failed.
+                          Defaults to 1. Must be 1 for liveness and startup Probes.
+                          Minimum value is 1.
                         type: number
                       initialDelaySeconds:
                         description: The number of seconds before the first check
@@ -8532,12 +8608,25 @@ spec:
                             with a WebLogic Server instance.
                           type: object
                           properties:
+                            failureThreshold:
+                              description: Number of times the check will be performed
+                                before giving up. Giving up in case of liveness probe
+                                means restarting the container. In case of readiness
+                                probe the Pod will be marked Unready. Defaults to
+                                1. Minimum value is 1
+                              type: number
                             periodSeconds:
                               description: The number of seconds between checks.
                               type: number
                             timeoutSeconds:
                               description: The number of seconds with no response
                                 that indicates a failure.
+                              type: number
+                            successThreshold:
+                              description: Minimum number of times the check needs
+                                to pass for the probe to be considered successful
+                                after having failed. Defaults to 1. Must be 1 for
+                                liveness and startup Probes. Minimum value is 1.
                               type: number
                             initialDelaySeconds:
                               description: The number of seconds before the first
@@ -9583,12 +9672,25 @@ spec:
                             with a WebLogic Server instance.
                           type: object
                           properties:
+                            failureThreshold:
+                              description: Number of times the check will be performed
+                                before giving up. Giving up in case of liveness probe
+                                means restarting the container. In case of readiness
+                                probe the Pod will be marked Unready. Defaults to
+                                1. Minimum value is 1
+                              type: number
                             periodSeconds:
                               description: The number of seconds between checks.
                               type: number
                             timeoutSeconds:
                               description: The number of seconds with no response
                                 that indicates a failure.
+                              type: number
+                            successThreshold:
+                              description: Minimum number of times the check needs
+                                to pass for the probe to be considered successful
+                                after having failed. Defaults to 1. Must be 1 for
+                                liveness and startup Probes. Minimum value is 1.
                               type: number
                             initialDelaySeconds:
                               description: The number of seconds before the first

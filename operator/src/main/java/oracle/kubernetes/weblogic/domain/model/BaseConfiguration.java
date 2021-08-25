@@ -141,16 +141,18 @@ public abstract class BaseConfiguration {
    */
   public abstract void setServerStartPolicy(String serverStartPolicy);
 
-  void setLivenessProbe(Integer initialDelay, Integer timeout, Integer period) {
-    serverPod.setLivenessProbe(initialDelay, timeout, period);
+  void setLivenessProbe(Integer initialDelay, Integer timeout, Integer period, Integer successThreshold,
+                        Integer failureThreshold) {
+    serverPod.setLivenessProbe(initialDelay, timeout, period, successThreshold, failureThreshold);
   }
 
   ProbeTuning getLivenessProbe() {
     return serverPod.getLivenessProbeTuning();
   }
 
-  void setReadinessProbe(Integer initialDelay, Integer timeout, Integer period) {
-    serverPod.setReadinessProbeTuning(initialDelay, timeout, period);
+  void setReadinessProbe(Integer initialDelay, Integer timeout, Integer period, Integer successThreshold,
+                         Integer failureThreshold) {
+    serverPod.setReadinessProbeTuning(initialDelay, timeout, period, successThreshold, failureThreshold);
   }
 
   ProbeTuning getReadinessProbe() {

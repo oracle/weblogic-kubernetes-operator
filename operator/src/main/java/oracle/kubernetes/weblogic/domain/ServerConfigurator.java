@@ -26,10 +26,10 @@ public interface ServerConfigurator extends ServiceConfigurator {
   ServerConfigurator withServerStartPolicy(String startNever);
 
   ServerConfigurator withLivenessProbeSettings(
-      Integer initialDelay, Integer timeout, Integer period);
+      Integer initialDelay, Integer timeout, Integer period, Integer successThreshold, Integer failureThreshold);
 
   ServerConfigurator withReadinessProbeSettings(
-      Integer initialDelay, Integer timeout, Integer period);
+      Integer initialDelay, Integer timeout, Integer period, Integer successThreshold, Integer failureThreshold);
 
   /**
    * Add a node label to the Servers's node selector.

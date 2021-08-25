@@ -715,12 +715,20 @@
     "ProbeTuning": {
       "type": "object",
       "properties": {
+        "failureThreshold": {
+          "description": "Number of times the check will be performed before giving up. Giving up in case of liveness probe means restarting the container. In case of readiness probe the Pod will be marked Unready. Defaults to 1. Minimum value is 1",
+          "type": "number"
+        },
         "periodSeconds": {
           "description": "The number of seconds between checks.",
           "type": "number"
         },
         "timeoutSeconds": {
           "description": "The number of seconds with no response that indicates a failure.",
+          "type": "number"
+        },
+        "successThreshold": {
+          "description": "Minimum number of times the check needs to pass for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness and startup Probes. Minimum value is 1.",
           "type": "number"
         },
         "initialDelaySeconds": {

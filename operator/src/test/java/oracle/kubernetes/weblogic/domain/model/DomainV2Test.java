@@ -50,6 +50,8 @@ class DomainV2Test extends DomainTestBase {
   private static final int INITIAL_DELAY = 17;
   private static final int TIMEOUT = 23;
   private static final int PERIOD = 5;
+  private static final int SUCCESS_THRESHOLD = 1;
+  private static final int FAILURE_THRESHOLD = 1;
   private static final V1Sysctl DOMAIN_SYSCTL =
       new V1Sysctl().name("net.ipv4.route.min_pmtu").value("552");
   private static final V1Sysctl CLUSTER_SYSCTL =
@@ -313,48 +315,60 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void livenessProbeSettings_returnsConfiguredValues() {
-    configureServer(SERVER1).withLivenessProbeSettings(INITIAL_DELAY, TIMEOUT, PERIOD);
+    configureServer(SERVER1).withLivenessProbeSettings(INITIAL_DELAY, TIMEOUT, PERIOD,
+            SUCCESS_THRESHOLD, FAILURE_THRESHOLD);
     ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getLivenessProbe().getInitialDelaySeconds(), equalTo(INITIAL_DELAY));
     assertThat(spec.getLivenessProbe().getTimeoutSeconds(), equalTo(TIMEOUT));
     assertThat(spec.getLivenessProbe().getPeriodSeconds(), equalTo(PERIOD));
+    assertThat(spec.getLivenessProbe().getSuccessThreshold(), equalTo(SUCCESS_THRESHOLD));
+    assertThat(spec.getLivenessProbe().getFailureThreshold(), equalTo(FAILURE_THRESHOLD));
   }
 
   @Test
   void whenLivenessProbeConfiguredOnMultipleLevels_useCombination() {
-    configureDomain(domain).withDefaultLivenessProbeSettings(INITIAL_DELAY, -2, -3);
-    configureCluster(CLUSTER_NAME).withLivenessProbeSettings(null, TIMEOUT, -4);
-    configureServer(SERVER1).withLivenessProbeSettings(null, null, PERIOD);
+    configureDomain(domain).withDefaultLivenessProbeSettings(INITIAL_DELAY, -2, -3, 1, 1);
+    configureCluster(CLUSTER_NAME).withLivenessProbeSettings(null, TIMEOUT, -4, 1, 1);
+    configureServer(SERVER1).withLivenessProbeSettings(null, null, PERIOD,
+            SUCCESS_THRESHOLD, FAILURE_THRESHOLD);
 
     ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getLivenessProbe().getInitialDelaySeconds(), equalTo(INITIAL_DELAY));
     assertThat(spec.getLivenessProbe().getTimeoutSeconds(), equalTo(TIMEOUT));
     assertThat(spec.getLivenessProbe().getPeriodSeconds(), equalTo(PERIOD));
+    assertThat(spec.getLivenessProbe().getSuccessThreshold(), equalTo(SUCCESS_THRESHOLD));
+    assertThat(spec.getLivenessProbe().getFailureThreshold(), equalTo(FAILURE_THRESHOLD));
   }
 
   @Test
   void readinessProbeSettings_returnsConfiguredValues() {
-    configureServer(SERVER1).withReadinessProbeSettings(INITIAL_DELAY, TIMEOUT, PERIOD);
+    configureServer(SERVER1).withReadinessProbeSettings(INITIAL_DELAY, TIMEOUT, PERIOD,
+            SUCCESS_THRESHOLD, FAILURE_THRESHOLD);
     ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getReadinessProbe().getInitialDelaySeconds(), equalTo(INITIAL_DELAY));
     assertThat(spec.getReadinessProbe().getTimeoutSeconds(), equalTo(TIMEOUT));
     assertThat(spec.getReadinessProbe().getPeriodSeconds(), equalTo(PERIOD));
+    assertThat(spec.getReadinessProbe().getSuccessThreshold(), equalTo(SUCCESS_THRESHOLD));
+    assertThat(spec.getReadinessProbe().getFailureThreshold(), equalTo(FAILURE_THRESHOLD));
   }
 
   @Test
   void whenReadinessProbeConfiguredOnMultipleLevels_useCombination() {
-    configureDomain(domain).withDefaultReadinessProbeSettings(INITIAL_DELAY, -2, -3);
-    configureCluster(CLUSTER_NAME).withReadinessProbeSettings(null, TIMEOUT, -4);
-    configureServer(SERVER1).withReadinessProbeSettings(null, null, PERIOD);
+    configureDomain(domain).withDefaultReadinessProbeSettings(INITIAL_DELAY, -2, -3, 1, 1);
+    configureCluster(CLUSTER_NAME).withReadinessProbeSettings(null, TIMEOUT, -4, 1, 1);
+    configureServer(SERVER1).withReadinessProbeSettings(null, null, PERIOD, SUCCESS_THRESHOLD,
+            FAILURE_THRESHOLD);
 
     ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getReadinessProbe().getInitialDelaySeconds(), equalTo(INITIAL_DELAY));
     assertThat(spec.getReadinessProbe().getTimeoutSeconds(), equalTo(TIMEOUT));
     assertThat(spec.getReadinessProbe().getPeriodSeconds(), equalTo(PERIOD));
+    assertThat(spec.getReadinessProbe().getSuccessThreshold(), equalTo(SUCCESS_THRESHOLD));
+    assertThat(spec.getReadinessProbe().getFailureThreshold(), equalTo(FAILURE_THRESHOLD));
   }
 
   @Test

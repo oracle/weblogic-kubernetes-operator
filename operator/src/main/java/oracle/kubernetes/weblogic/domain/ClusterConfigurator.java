@@ -27,10 +27,10 @@ public interface ClusterConfigurator extends ServiceConfigurator {
   ClusterConfigurator withServerStartPolicy(String policy);
 
   ClusterConfigurator withReadinessProbeSettings(
-      Integer initialDelay, Integer timeout, Integer period);
+      Integer initialDelay, Integer timeout, Integer period, Integer successThreshold, Integer failureThreshold);
 
   ClusterConfigurator withLivenessProbeSettings(
-      Integer initialDelay, Integer timeout, Integer period);
+      Integer initialDelay, Integer timeout, Integer period, Integer successThreshold, Integer failureThreshold);
 
   /**
    * Add a node label to the Cluster's node selector.

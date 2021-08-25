@@ -191,6 +191,9 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   private static final int CONFIGURED_DELAY = 21;
   private static final int CONFIGURED_TIMEOUT = 27;
   private static final int CONFIGURED_PERIOD = 35;
+  private static final int CONFIGURED_SUCCESS_THRESHOLD = 2;
+  private static final Integer DEFAULT_SUCCESS_THRESHOLD = null;
+  private static final int CONFIGURED_FAILURE_THRESHOLD = 1;
   private static final String LOG_HOME = "/shared/logs";
   private static final String NODEMGR_HOME = "/u01/nodemanager";
   private static final String CONFIGMAP_VOLUME_NAME = "weblogic-scripts-cm-volume";
@@ -848,7 +851,8 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   void whenPodCreated_livenessProbeHasDefinedTuning() {
     assertThat(
         getCreatedPodSpecContainer().getLivenessProbe(),
-        hasExpectedTuning(LIVENESS_INITIAL_DELAY, LIVENESS_TIMEOUT, LIVENESS_PERIOD));
+        hasExpectedTuning(LIVENESS_INITIAL_DELAY, LIVENESS_TIMEOUT, LIVENESS_PERIOD, DEFAULT_SUCCESS_THRESHOLD,
+                CONFIGURED_FAILURE_THRESHOLD));
   }
 
   @Test
@@ -862,7 +866,8 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   void whenPodCreated_readinessProbeHasDefinedTuning() {
     assertThat(
         getCreatedPodSpecContainer().getReadinessProbe(),
-        hasExpectedTuning(READINESS_INITIAL_DELAY, READINESS_TIMEOUT, READINESS_PERIOD));
+        hasExpectedTuning(READINESS_INITIAL_DELAY, READINESS_TIMEOUT, READINESS_PERIOD, DEFAULT_SUCCESS_THRESHOLD,
+                CONFIGURED_FAILURE_THRESHOLD));
   }
 
   @Test
@@ -908,19 +913,23 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   @Test
   void whenPodCreatedWithDomainV2Settings_livenessProbeHasConfiguredTuning() {
     configureServer()
-        .withLivenessProbeSettings(CONFIGURED_DELAY, CONFIGURED_TIMEOUT, CONFIGURED_PERIOD);
+        .withLivenessProbeSettings(CONFIGURED_DELAY, CONFIGURED_TIMEOUT, CONFIGURED_PERIOD,
+                CONFIGURED_SUCCESS_THRESHOLD, CONFIGURED_FAILURE_THRESHOLD);
     assertThat(
         getCreatedPodSpecContainer().getLivenessProbe(),
-        hasExpectedTuning(CONFIGURED_DELAY, CONFIGURED_TIMEOUT, CONFIGURED_PERIOD));
+        hasExpectedTuning(CONFIGURED_DELAY, CONFIGURED_TIMEOUT, CONFIGURED_PERIOD, CONFIGURED_SUCCESS_THRESHOLD,
+                CONFIGURED_FAILURE_THRESHOLD));
   }
 
   @Test
   void whenPodCreated_readinessProbeHasConfiguredTuning() {
     configureServer()
-        .withReadinessProbeSettings(CONFIGURED_DELAY, CONFIGURED_TIMEOUT, CONFIGURED_PERIOD);
+        .withReadinessProbeSettings(CONFIGURED_DELAY, CONFIGURED_TIMEOUT,
+                CONFIGURED_PERIOD, CONFIGURED_SUCCESS_THRESHOLD, CONFIGURED_FAILURE_THRESHOLD);
     assertThat(
         getCreatedPodSpecContainer().getReadinessProbe(),
-        hasExpectedTuning(CONFIGURED_DELAY, CONFIGURED_TIMEOUT, CONFIGURED_PERIOD));
+        hasExpectedTuning(CONFIGURED_DELAY, CONFIGURED_TIMEOUT, CONFIGURED_PERIOD,
+                CONFIGURED_SUCCESS_THRESHOLD, CONFIGURED_FAILURE_THRESHOLD));
   }
 
   @Test 
@@ -1299,7 +1308,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   void whenPodLivenessProbeSettingsChanged_replacePod() {
     initializeExistingPod();
 
-    configurator.withDefaultLivenessProbeSettings(8, 7, 6);
+    configurator.withDefaultLivenessProbeSettings(8, 7, 6, 1, 1);
 
     verifyPodReplaced();
   }
@@ -1308,7 +1317,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   void whenPodReadinessProbeSettingsChanged_replacePod() {
     initializeExistingPod();
 
-    configurator.withDefaultReadinessProbeSettings(5, 4, 3);
+    configurator.withDefaultReadinessProbeSettings(5, 4, 3, 1, 1);
 
     verifyPodReplaced();
   }
@@ -2108,7 +2117,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   void whenDefaultReadinessProbeChanged_domainRollStartEventCreatedWithCorrectMessage() {
     initializeExistingPod();
     getConfigurator()
-        .withDefaultReadinessProbeSettings(12, 23, 45);
+        .withDefaultReadinessProbeSettings(12, 23, 45, 1, 1);
 
     testSupport.runSteps(getStepFactory(), terminalStep);
     logRecords.clear();
@@ -2124,7 +2133,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   void whenDefaultLivenessProbeChanged_domainRollStartEventCreatedWithCorrectMessage() {
     initializeExistingPod();
     getConfigurator()
-        .withDefaultLivenessProbeSettings(12, 23, 45);
+        .withDefaultLivenessProbeSettings(12, 23, 45, 1, 1);
 
     testSupport.runSteps(getStepFactory(), terminalStep);
     logRecords.clear();
