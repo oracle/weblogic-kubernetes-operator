@@ -5,10 +5,6 @@ package oracle.weblogic.kubernetes;
 
 import java.io.File;
 import java.io.FileOutputStream;
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -47,9 +43,9 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.BuildApplication;
+import oracle.weblogic.kubernetes.utils.CommonTestUtils;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
-import oracle.weblogic.kubernetes.utils.TestUtils;
 import org.awaitility.core.ConditionEvaluationListener;
 import org.awaitility.core.ConditionFactory;
 import org.awaitility.core.EvaluatedCondition;
@@ -61,10 +57,6 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.junit.jupiter.api.extension.ConditionEvaluationResult;
-import org.junit.jupiter.api.extension.ExecutionCondition;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.junit.jupiter.api.extension.ExtensionContext;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -78,10 +70,7 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
-import static oracle.weblogic.kubernetes.TestConstants.WLS_LATEST_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.WLS_UPDATE_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -103,33 +92,33 @@ import static oracle.weblogic.kubernetes.actions.impl.Pod.getPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
-import static oracle.weblogic.kubernetes.utils.CommonPatchTestUtils.patchDomainResource;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapForDomainCreation;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainJob;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPV;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVC;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getIntrospectJobName;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodsWithTimeStamps;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyServerCommunication;
+import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingRest;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
+import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createIngressForDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
-import static oracle.weblogic.kubernetes.utils.TestUtils.verifyServerCommunication;
+import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
+import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
+import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
+import static oracle.weblogic.kubernetes.utils.PodUtils.getPodsWithTimeStamps;
+import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
+import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScript;
 import static org.apache.commons.io.FileUtils.copyDirectory;
@@ -972,10 +961,8 @@ class ItIntrospectVersion {
    * To: "image:container-registry.oracle.com/middleware/weblogic:2021-07-08-162571383699"
    * Verify all the pods are restarted and back to ready state
    * Verify the admin server is accessible and cluster members are healthy
-   * This test will be skipped if the image tag is the latest WebLogic image tag
    */
   @Order(5)
-  @AssumeWebLogicImage
   @Test
   @DisplayName("Verify server pods are restarted by updating image name")
   void testUpdateImageName() {
@@ -1009,7 +996,7 @@ class ItIntrospectVersion {
     logger.info("Currently the image name used for the domain is: {0}", imageName);
 
     //change image name to imageUpdate
-    String imageTag = TestUtils.getDateAndTimeStamp();
+    String imageTag = CommonTestUtils.getDateAndTimeStamp();
     String imageUpdate = KIND_REPO != null ? KIND_REPO
         + (WEBLOGIC_IMAGE_NAME + ":" + imageTag).substring(TestConstants.BASE_IMAGES_REPO.length() + 1)
         : WEBLOGIC_IMAGE_NAME + ":" + imageTag;
@@ -1378,42 +1365,6 @@ class ItIntrospectVersion {
           .withFailMessage("uninstallNginx() did not return true")
           .isTrue();
     }
-  }
-
-  /**
-  *  JUnit5 extension class to implement ExecutionCondition for the custom
-  *  annotation @AssumeWebLogicImage.
-  */
-  private static class WebLogicImageCondition implements ExecutionCondition {
-
-    /**
-     * Determine if the the test "testUpdateImageName" will be skipped based on WebLogic image tag.
-     * Skip the test if the image tag is the latest one.
-     *
-     * @param context the current extension context
-     * @return ConditionEvaluationResult disabled if the image tag is the latest one, enabled if the
-     *         image tag is not the latest one
-    */
-    @Override
-    public ConditionEvaluationResult evaluateExecutionCondition(ExtensionContext context) {
-      if (WEBLOGIC_IMAGE_TAG.equals(WLS_LATEST_IMAGE_TAG)) {
-        getLogger().info("WebLogic image tag is {0}. No latest image available to continue test. Skipping test",
-            WLS_LATEST_IMAGE_TAG);
-        return ConditionEvaluationResult
-            .disabled(String.format("No latest image available to continue test. Skipping test!"));
-      } else {
-        getLogger().info("Updating image to {0}. Continuing test!", WLS_UPDATE_IMAGE_TAG);
-        return ConditionEvaluationResult
-            .enabled(String.format("Updating image to {0}. Continuing test!", WLS_UPDATE_IMAGE_TAG));
-      }
-    }
-  }
-
-  @Target({ElementType.TYPE, ElementType.METHOD})
-  @Retention(RetentionPolicy.RUNTIME)
-  @Tag("assume-weblogic-image")
-  @ExtendWith(WebLogicImageCondition.class)
-  @interface AssumeWebLogicImage {
   }
 
   // copy samples directory to a temporary location

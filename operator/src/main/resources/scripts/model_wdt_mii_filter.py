@@ -206,6 +206,7 @@ def customizeServerTemplates(model):
         customizeServerTemplate(topology, template)
 
 
+
 def customizeServerTemplate(topology, template):
   server_name_prefix = getServerNamePrefix(topology, template)
   domain_uid = env.getDomainUID()
@@ -216,6 +217,8 @@ def customizeServerTemplate(topology, template):
   setServerListenAddress(template, listen_address)
   customizeNetworkAccessPoints(template, listen_address)
   customizeManagedIstioNetworkAccessPoint(template, listen_address)
+  if (getCoherenceClusterSystemResourceOrNone(topology, template) is not None):
+    customizeCoherenceMemberConfig(template, listen_address)
 
 
 def getServerNamePrefix(topology, template):
@@ -294,10 +297,10 @@ def customizeServers(model):
   names = servers.keys()
   for name in names:
     server = servers[name]
-    customizeServer(server, name)
+    customizeServer(model, server, name)
 
 
-def customizeServer(server, name):
+def customizeServer(model, server, name):
   listen_address=env.toDNS1123Legal(env.getDomainUID() + "-" + name)
   customizeLog(name, server)
   customizeAccessLog(name, server)
@@ -305,6 +308,16 @@ def customizeServer(server, name):
   setServerListenAddress(server, listen_address)
   customizeNetworkAccessPoints(server,listen_address)
   customizeServerIstioNetworkAccessPoint(server, listen_address)
+  if (getCoherenceClusterSystemResourceOrNone(model['topology'], server) is not None):
+    customizeCoherenceMemberConfig(server, listen_address)
+
+
+def customizeCoherenceMemberConfig(server, listen_address):
+  if 'CoherenceMemberConfig ' not in server:
+    server['CoherenceMemberConfig'] = {}
+
+  cmc = server['CoherenceMemberConfig']
+  cmc['UnicastListenAddress'] = listen_address
 
 
 def getAdministrationPort(server, topology):
@@ -591,6 +604,23 @@ def getClusterOrNone(topology, name):
     return clusters[name]
 
   return None
+
+def getCoherenceClusterSystemResourceOrNone(topology, serverOrTemplate):
+
+  cluster_name = getClusterNameOrNone(serverOrTemplate)
+  if cluster_name is not None:
+    cluster = getClusterOrNone(topology, cluster_name)
+    if cluster is not None:
+      if 'CoherenceClusterSystemResource' not in cluster:
+        return None
+      return cluster['CoherenceClusterSystemResource']
+    else:
+      if 'CoherenceClusterSystemResource' not in serverOrTemplate:
+        return None
+  else:
+    if 'CoherenceClusterSystemResource' not in serverOrTemplate:
+      return None
+    return serverOrTemplate['CoherenceClusterSystemResource']
 
 
 def getDynamicServerOrNone(cluster):

@@ -38,24 +38,24 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getCurrentIntrospec
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyUpdateWebLogicCredential;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDeleted;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createOpsswalletpasswordSecret;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createRcuAccessSecret;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getIntrospectJobName;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.patchServerStartPolicy;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.updateRcuAccessSecret;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuAccessSecret;
 import static oracle.weblogic.kubernetes.utils.DbUtils.setupDBandRCUschema;
+import static oracle.weblogic.kubernetes.utils.DbUtils.updateRcuAccessSecret;
 import static oracle.weblogic.kubernetes.utils.DbUtils.updateRcuPassword;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyDomainReady;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.restartOperator;
-import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResourceServerStartPolicy;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
+import static oracle.weblogic.kubernetes.utils.SecretUtils.createOpsswalletpasswordSecret;
+import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -75,7 +75,7 @@ class ItFmwMiiDomain {
 
   private static final String RCUSCHEMAPREFIX = "FMWDOMAINMII";
   private static final String ORACLEDBURLPREFIX = "oracledb.";
-  private static final String ORACLEDBSUFFIX = ".svc.cluster.local:1521/devpdb.k8s";
+  private static String ORACLEDBSUFFIX = null;
   private static final String RCUSYSUSERNAME = "sys";
   private static final String RCUSYSPASSWORD = "Oradoc_db1";
   private static final String RCUSCHEMAUSERNAME = "myrcuuser";
@@ -118,6 +118,8 @@ class ItFmwMiiDomain {
     logger.info("Assign a unique namespace for DB and RCU");
     assertNotNull(namespaces.get(0), "Namespace is null");
     dbNamespace = namespaces.get(0);
+    final int dbListenerPort = getNextFreePort();
+    ORACLEDBSUFFIX = ".svc.cluster.local:" + dbListenerPort + "/devpdb.k8s";
     dbUrl = ORACLEDBURLPREFIX + dbNamespace + ORACLEDBSUFFIX;
 
     logger.info("Assign a unique namespace for operator");
@@ -128,13 +130,13 @@ class ItFmwMiiDomain {
     assertNotNull(namespaces.get(2), "Namespace is null");
     fmwDomainNamespace = namespaces.get(2);
 
-    logger.info("Start DB and create RCU schema for namespace: {0}, RCU prefix: {1}, "
-         + "dbUrl: {2}, dbImage: {3},  fmwImage: {4} ", dbNamespace, RCUSCHEMAPREFIX, dbUrl,
+    logger.info("Start DB and create RCU schema for namespace: {0}, dbListenerPort: {1}, RCU prefix: {2}, "
+         + "dbUrl: {3}, dbImage: {4},  fmwImage: {5} ", dbNamespace, dbListenerPort, RCUSCHEMAPREFIX, dbUrl,
         DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC);
     assertDoesNotThrow(() -> setupDBandRCUschema(DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC,
-        RCUSCHEMAPREFIX, dbNamespace, getNextFreePort(), dbUrl),
+        RCUSCHEMAPREFIX, dbNamespace, getNextFreePort(), dbUrl, dbListenerPort),
         String.format("Failed to create RCU schema for prefix %s in the namespace %s with "
-        + "dbUrl %s", RCUSCHEMAPREFIX, dbNamespace, dbUrl));
+        + "dbUrl %s, dbListenerPost $s", RCUSCHEMAPREFIX, dbNamespace, dbUrl, dbListenerPort));
 
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, fmwDomainNamespace);
@@ -351,7 +353,7 @@ class ItFmwMiiDomain {
    * Shutdown the domain by setting serverStartPolicy as "NEVER".
    */
   private void shutdownDomain() {
-    patchServerStartPolicy("/spec/serverStartPolicy", "NEVER", fmwDomainNamespace, domainUid);
+    patchDomainResourceServerStartPolicy("/spec/serverStartPolicy", "NEVER", fmwDomainNamespace, domainUid);
     logger.info("Domain is patched to stop entire WebLogic domain");
 
     // make sure all the server pods are removed after patch
@@ -368,7 +370,7 @@ class ItFmwMiiDomain {
    * Startup the domain by setting serverStartPolicy as "IF_NEEDED".
    */
   private void startupDomain() {
-    patchServerStartPolicy("/spec/serverStartPolicy", "IF_NEEDED", fmwDomainNamespace, domainUid);
+    patchDomainResourceServerStartPolicy("/spec/serverStartPolicy", "IF_NEEDED", fmwDomainNamespace, domainUid);
     logger.info("Domain is patched to start all servers in the domain");
   }
 

@@ -6,9 +6,9 @@ package oracle.weblogic.kubernetes;
 import java.net.InetAddress;
 import java.util.Optional;
 
-import oracle.weblogic.kubernetes.utils.TestUtils;
-
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+
 
 public interface TestConstants {
 
@@ -99,8 +99,6 @@ public interface TestConstants {
       .orElse(BASE_IMAGES_REPO.equals(OCR_REGISTRY) ? OCR_WEBLOGIC_IMAGE_NAME : OCIR_WEBLOGIC_IMAGE_NAME);
   public static final String WEBLOGIC_IMAGE_TAG = Optional.ofNullable(System.getenv("WEBLOGIC_IMAGE_TAG"))
       .orElse(BASE_IMAGES_REPO.equals(OCR_REGISTRY) ? OCR_WEBLOGIC_IMAGE_TAG : OCIR_WEBLOGIC_IMAGE_TAG);
-  public static final String WLS_UPDATE_IMAGE_TAG = "14.1.1.0-11";
-  public static final String WLS_LATEST_IMAGE_TAG = "14.1.1.0-11";
 
   // Get FMWINFRA_IMAGE_NAME/FMWINFRA_IMAGE_TAG from env var, if its not provided and
   // if base images repo is OCR use OCR default image values
@@ -218,7 +216,7 @@ public interface TestConstants {
   public static final String MII_BASIC_WDT_MODEL_FILE = "model-singleclusterdomain-sampleapp-wls.yaml";
   public static final String MII_BASIC_IMAGE_NAME = DOMAIN_IMAGES_REPO + "mii-basic-image";
   public static final String MII_AUXILIARY_IMAGE_NAME = DOMAIN_IMAGES_REPO + "mii-ai-image";
-  public static final String MII_BASIC_IMAGE_TAG = TestUtils.getDateAndTimeStamp();
+  public static final String MII_BASIC_IMAGE_TAG = getDateAndTimeStamp();
   public static final String MII_BASIC_IMAGE_DOMAINTYPE = "mii";
   public static final String MII_BASIC_APP_NAME = "sample-app";
   public static final String MII_BASIC_APP_DEPLOYMENT_NAME = "myear";
@@ -235,7 +233,7 @@ public interface TestConstants {
   public static final String WDT_BASIC_MODEL_FILE = "wdt-singlecluster-sampleapp-usingprop-wls.yaml";
   public static final String WDT_BASIC_MODEL_PROPERTIES_FILE = "wdt-singleclusterdomain-sampleapp-wls.properties";
   public static final String WDT_BASIC_IMAGE_NAME = DOMAIN_IMAGES_REPO + "wdt-basic-image";
-  public static final String WDT_BASIC_IMAGE_TAG = TestUtils.getDateAndTimeStamp();
+  public static final String WDT_BASIC_IMAGE_TAG = getDateAndTimeStamp();
   public static final String WDT_BASIC_IMAGE_DOMAINHOME = "/u01/oracle/user_projects/domains/domain1";
   public static final String WDT_IMAGE_DOMAINHOME_BASE_DIR = "/u01/oracle/user_projects/domains";
   public static final String WDT_BASIC_IMAGE_DOMAINTYPE = "wdt";

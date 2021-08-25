@@ -85,28 +85,29 @@ import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomRe
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listConfigMaps;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodDoesNotExist;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapForDomainCreation;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createConfigMapFromFiles;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createDomainJob;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPV;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createPVC;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getExternalServicePodName;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getIntrospectJobName;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getPodCreationTime;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.setPodAntiAffinity;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
+import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFromFiles;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
-import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createRouteForOKD;
+import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
+import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.MySQLDBUtils.createMySQLDB;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.TestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
+import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
+import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
+import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
+import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScript;
 import static org.awaitility.Awaitility.with;
@@ -206,9 +207,9 @@ class ItConfigDistributionStrategy {
       mysql2SvcEndpoint = getMySQLSvcEndpoint(domainNamespace, "mysqldb-2");
     }
 
-    String mysql1HostAndPort = (OKD) ? mysql1SvcEndpoint : K8S_NODEPORT_HOST + ":" + mysqlDBPort1;
+    String mysql1HostAndPort = getHostAndPort(mysql1SvcEndpoint, mysqlDBPort1);
     logger.info("mysql1HostAndPort = {0} ", mysql1HostAndPort);
-    String mysql2HostAndPort = (OKD) ? mysql2SvcEndpoint : K8S_NODEPORT_HOST + ":" + mysqlDBPort2;
+    String mysql2HostAndPort = getHostAndPort(mysql2SvcEndpoint, mysqlDBPort2);
     logger.info("mysql2HostAndPort = {0} ", mysql2HostAndPort);
 
     dsUrl1 = "jdbc:mysql://" + mysql1HostAndPort;
@@ -225,9 +226,8 @@ class ItConfigDistributionStrategy {
     createDomain();
 
     // Expose the admin service external node port as  a route for OKD
-    if (OKD) {
-      adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
-    }
+    adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
+    
     //create a jdbc resource targeted to cluster
     createJdbcDataSource(dsName0, "root", "root123", mysqlDBPort1, mysql1HostAndPort);
     createJdbcDataSource(dsName1, "root", "root123", mysqlDBPort1, mysql1HostAndPort);
@@ -266,7 +266,7 @@ class ItConfigDistributionStrategy {
         -> getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
         "Getting admin server node port failed");
 
-    String hostAndPort = OKD ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + serviceNodePort;
+    String hostAndPort = getHostAndPort(adminSvcExtHost, serviceNodePort);
 
     logger.info("Checking if the clusterview app in admin server is accessible after restart");
     String baseUri = "http://" + hostAndPort + "/clusterview/";
@@ -666,7 +666,7 @@ class ItConfigDistributionStrategy {
             "default"),
         "Getting admin server node port failed");
 
-    String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + serviceNodePort;
+    String hostAndPort = getHostAndPort(adminSvcExtHost, serviceNodePort);
     logger.info("hostAndPort = {0} ", hostAndPort);
 
     //verify server attribute MaxMessageSize
@@ -688,7 +688,7 @@ class ItConfigDistributionStrategy {
 
     int port = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
 
-    String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + port;
+    String hostAndPort = getHostAndPort(adminSvcExtHost, port);
     logger.info("hostAndPort = {0} ", hostAndPort);
 
     String baseUri = "http://" + hostAndPort + "/clusterview/";
@@ -716,7 +716,7 @@ class ItConfigDistributionStrategy {
     // get admin server node port and construct a base url for clusterview app
     int port = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
 
-    String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + port;
+    String hostAndPort = getHostAndPort(adminSvcExtHost, port);
     logger.info("hostAndPort = {0} ", hostAndPort);
 
     String baseUri = "http://" + hostAndPort + "/clusterview/ConfigServlet?";
@@ -752,7 +752,7 @@ class ItConfigDistributionStrategy {
     // get admin server node port and construct a base url for clusterview app
     int port = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
 
-    String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + port;
+    String hostAndPort = getHostAndPort(adminSvcExtHost, port);
     logger.info("hostAndPort = {0} ", hostAndPort);
 
     String baseUri = "http://" + hostAndPort + "/clusterview/ConfigServlet?";
@@ -1006,7 +1006,7 @@ class ItConfigDistributionStrategy {
       assertNotEquals(-1, defaultChannelPort, "admin server defaultChannelPort is not valid");
 
 
-      String hostAndPort = (OKD) ? sqlSvcEndpoint : K8S_NODEPORT_HOST + ":" + mySQLNodePort;
+      String hostAndPort = getHostAndPort(sqlSvcEndpoint, mySQLNodePort);
       logger.info("hostAndPort = {0} ", hostAndPort);
       String jdbcDsUrl = "jdbc:mysql://" + hostAndPort;
 

@@ -86,6 +86,7 @@ import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_OK;
 import static java.net.HttpURLConnection.HTTP_UNAVAILABLE;
+import static oracle.kubernetes.operator.calls.AsyncRequestStep.CONTINUE;
 import static oracle.kubernetes.operator.calls.AsyncRequestStep.RESPONSE_COMPONENT_NAME;
 
 @SuppressWarnings("WeakerAccess")
@@ -1205,6 +1206,8 @@ public class KubernetesTestSupport extends FiberTestSupport {
         Object callResult = callContext.execute();
         CallResponse<Object> callResponse = createResponse(callResult);
         packet.getComponents().put(RESPONSE_COMPONENT_NAME, Component.createFor(callResponse));
+        // clear out earlier results.  Replicating the behavior as in AsyncRequestStep.apply()
+        packet.remove(CONTINUE);
       } catch (NotFoundException e) {
         packet.getComponents().put(RESPONSE_COMPONENT_NAME, Component.createFor(createResponse(e)));
       } catch (HttpErrorException e) {
