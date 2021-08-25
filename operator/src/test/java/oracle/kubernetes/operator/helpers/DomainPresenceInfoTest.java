@@ -16,6 +16,7 @@ import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -38,6 +39,16 @@ class DomainPresenceInfoTest {
   @Test
   void whenNoneDefined_getServerServiceReturnsNull() {
     assertThat(info.getServerService("admin"), nullValue());
+  }
+
+  @Test
+  void whenNoServersDefined_getServerStartupInfoReturnsEmptyCollection() {
+    assertThat(info.getSelectedServers(), empty());
+  }
+
+  @Test
+  void whenNoServersDefined_getSelectedServersReturnsEmptyCollection() {
+    assertThat(info.getServerStartupInfo(), empty());
   }
 
   @Test

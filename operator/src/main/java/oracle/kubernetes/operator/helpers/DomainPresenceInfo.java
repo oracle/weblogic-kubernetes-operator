@@ -627,7 +627,7 @@ public class DomainPresenceInfo implements PacketComponent {
    * @return Server startup info
    */
   public Collection<ServerStartupInfo> getServerStartupInfo() {
-    return serverStartupInfo.get();
+    return Optional.ofNullable(serverStartupInfo.get()).orElse(Collections.emptyList());
   }
 
   /**
