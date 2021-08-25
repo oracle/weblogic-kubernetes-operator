@@ -334,7 +334,7 @@ public class CommonMiiTestUtils {
       String auxiliaryImageVolumeName,
       String... auxiliaryImageName) {
 
-    Domain domainCR = CommonMiiTestUtils.createDomainResourceWithAualiaryImage(domainResourceName,
+    Domain domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domainResourceName,
         domNamespace, baseImageName, adminSecretName, repoSecretName, encryptionSecretName, replicaCount,
         List.of(clusterName), auxiliaryImagePath, auxiliaryImageVolumeName, auxiliaryImageName);
 
@@ -359,7 +359,7 @@ public class CommonMiiTestUtils {
    *                   and WDT installation files
    * @return domain object of the domain resource
    */
-  public static Domain createDomainResourceWithAualiaryImage(
+  public static Domain createDomainResourceWithAuxiliaryImage(
       String domainResourceName,
       String domNamespace,
       String baseImageName,
