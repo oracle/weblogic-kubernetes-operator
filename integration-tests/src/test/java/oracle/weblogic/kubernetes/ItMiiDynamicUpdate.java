@@ -1552,10 +1552,10 @@ class ItMiiDynamicUpdate {
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
     withStandardRetryPolicy.conditionEvaluationListener(
         condition
-        -> logger.info("Waiting for JDBCSystemResource configuration to be updated. "
+          -> logger.info("Waiting for JDBCSystemResource configuration to be updated. "
             + "Elapsed time {0}ms, remaining time {1}ms",
             condition.getElapsedTimeInMS(), condition.getRemainingTimeInMS())).until(
-            () -> checkSystemResourceConfiguration(adminServiceNodePort, "JDBCSystemResources",
+              () -> checkSystemResourceConfiguration(adminServiceNodePort, "JDBCSystemResources",
                 "TestDataSource2", "200"));
     logger.info("JDBCSystemResource configuration found");
     return pods;
