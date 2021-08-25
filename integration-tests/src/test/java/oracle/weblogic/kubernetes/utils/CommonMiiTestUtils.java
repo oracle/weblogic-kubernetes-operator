@@ -321,7 +321,7 @@ public class CommonMiiTestUtils {
    *                   and WDT installation files
    * @return domain object of the domain resource
    */
-  public static Domain createDomainResourceWithAualiaryImage(
+  public static Domain createDomainResource(
       String domainResourceName,
       String domNamespace,
       String baseImageName,
@@ -559,7 +559,7 @@ public class CommonMiiTestUtils {
         }
       }
     });
-    
+
     return domainCR;
   }
 
