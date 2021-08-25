@@ -96,7 +96,6 @@ import static oracle.weblogic.kubernetes.utils.JobUtils.createJobAndWaitUntilCom
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainWithNewSecretAndVerify;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
-import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
@@ -996,21 +995,18 @@ public class CommonMiiTestUtils {
     LoggingFacade logger = getLogger();
     logger.info("Verifying introspector pod is created, runs and deleted");
     String introspectJobName = getIntrospectJobName(domainUid);
-    checkPodExists(introspectJobName, domainUid, domainNamespace);
+    checkPodReady(introspectJobName, domainUid, domainNamespace);
 
     String labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
     V1Pod introspectorPod = assertDoesNotThrow(() -> getPod(domainNamespace, labelSelector, introspectJobName),
         "Could not get introspector pod");
     assertTrue(introspectorPod != null && introspectorPod.getMetadata() != null,
         "introspector pod or metadata is null");
-    try {
-      String introspectorLog = getPodLog(introspectorPod.getMetadata().getName(), domainNamespace);
-      logger.info("Introspector pod log START");
-      logger.info(introspectorLog);
-      logger.info("Introspector pod log END");
-    } catch (Exception ex) {
-      logger.info("Failed to get introspector pod log", ex);
-    }
+    String introspectorLog = assertDoesNotThrow(() -> getPodLog(introspectorPod.getMetadata().getName(),
+        domainNamespace), "Could not get introspector pod log");
+    logger.info("Introspector pod log START");
+    logger.info(introspectorLog);
+    logger.info("Introspector pod log END");
     checkPodDoesNotExist(introspectJobName, domainUid, domainNamespace);
   }
 
@@ -1099,9 +1095,9 @@ public class CommonMiiTestUtils {
     }
 
     getLogger().info("Check that before patching current credentials are valid and new credentials are not");
-    verifyCredentials(null, adminServerPodName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, 
+    verifyCredentials(null, adminServerPodName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
         VALID, args);
-    verifyCredentials(null, adminServerPodName, domainNamespace, ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH, 
+    verifyCredentials(null, adminServerPodName, domainNamespace, ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH,
         INVALID, args);
 
     // create a new secret for admin credentials
@@ -1132,7 +1128,7 @@ public class CommonMiiTestUtils {
     getLogger().info("Check that after patching current credentials are not valid and new credentials are");
     verifyCredentials(null, adminServerPodName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
         INVALID, args);
-    verifyCredentials(null, adminServerPodName, domainNamespace, ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH, 
+    verifyCredentials(null, adminServerPodName, domainNamespace, ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH,
         VALID, args);
 
     getLogger().info("Domain {0} in namespace {1} is fully started after changing WebLogic credentials secret",

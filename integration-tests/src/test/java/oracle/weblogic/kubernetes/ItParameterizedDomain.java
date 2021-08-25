@@ -944,6 +944,7 @@ class ItParameterizedDomain {
                         .nodePort(0))))
             .clusters(clusterList)
             .configuration(new Configuration()
+                .introspectorJobActiveDeadlineSeconds(300L)
                 .model(new Model()
                     .domainType(WLS_DOMAIN_TYPE)
                     .runtimeEncryptionSecret(encryptionSecretName))));
@@ -1111,7 +1112,9 @@ class ItParameterizedDomain {
             .addClustersItem(new Cluster() //cluster
                 .clusterName(clusterName)
                 .replicas(replicaCount)
-                .serverStartState("RUNNING")));
+                .serverStartState("RUNNING"))
+            .configuration(new Configuration()
+                .introspectorJobActiveDeadlineSeconds(300L)));
     setPodAntiAffinity(domain);
     // verify the domain custom resource is created
     createDomainAndVerify(domain, domainNamespace);

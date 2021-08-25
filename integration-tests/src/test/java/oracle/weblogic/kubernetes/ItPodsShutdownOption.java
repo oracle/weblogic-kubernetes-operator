@@ -303,6 +303,7 @@ class ItPodsShutdownOption {
                 .serverStartState("RUNNING")
                 )
             .configuration(new Configuration()
+                .introspectorJobActiveDeadlineSeconds(300L)
                 .model(new Model()
                     .configMap(cmName)
                     .domainType(WLS_DOMAIN_TYPE)
