@@ -15,6 +15,7 @@ import java.util.Set;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Job;
@@ -45,6 +46,7 @@ import oracle.weblogic.domain.Istio;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.OnlineUpdate;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.domain.ServerService;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
@@ -69,6 +71,7 @@ import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteConfigMap;
@@ -1403,4 +1406,178 @@ public class CommonMiiTestUtils {
 
     return domain;
   }
+
+  /**
+   * create a ConfigMap with a model that enable SSL on the Administration server.
+   * @param configMapName the name of configMap
+   * @param model the model configMap will be created with
+   * @param domainUid the uid of the domain
+   * @param domainNamespace namespace in which the domain will be created
+   */
+  public static void createModelConfigMapSSLenable(String configMapName, String model, String domainUid,
+      String domainNamespace) {
+    Map<String, String> labels = new HashMap<>();
+    labels.put("weblogic.domainUid", domainUid);
+    Map<String, String> data = new HashMap<>();
+    data.put("model.ssl.yaml", model);
+
+    V1ConfigMap configMap = new V1ConfigMap()
+        .data(data)
+        .metadata(new V1ObjectMeta()
+            .labels(labels)
+            .name(configMapName)
+            .namespace(domainNamespace));
+
+    boolean cmCreated = assertDoesNotThrow(() -> createConfigMap(configMap),
+        String.format("Can't create ConfigMap %s", configMapName));
+    assertTrue(cmCreated, String.format("createConfigMap failed with name: %s, domainNamespace: %s ",
+        configMapName, domainNamespace));
+  }
+
+  /**
+   * Create a WebLogic domain with SSL enabled in WebLogic configuration by
+   * configuring an additional configmap to the domain resource.
+   * Add two channels to the domain resource with name `default-secure` and `default`.
+   * @param domainUid the uid of the domain
+   * @param domNamespace Kubernetes namespace that the domain is hosted
+   * @param adminSecretName the name of the secret for admin credentials
+   * @param repoSecretName name of the secret for pulling the WebLogic image
+   * @param encryptionSecretName name of the secret used to encrypt the models
+   * @param replicaCount number of managed servers to start
+   * @param miiImage the name if mii image
+   * @param configmapName the name of configMap
+   *
+   * @return domain object of the domain resource
+   */
+  public static  Domain create2channelsDomainResourceWithConfigMap(String domainUid,
+          String domNamespace, String adminSecretName,
+          String repoSecretName, String encryptionSecretName,
+          int replicaCount, String miiImage, String configmapName) {
+
+    Map keyValueMap = new HashMap<String, String>();
+    keyValueMap.put("testkey", "testvalue");
+
+    // create the domain CR
+    Domain domain = new Domain()
+        .apiVersion(DOMAIN_API_VERSION)
+        .kind("Domain")
+        .metadata(new V1ObjectMeta()
+            .name(domainUid)
+            .namespace(domNamespace))
+        .spec(new DomainSpec()
+            .domainUid(domainUid)
+            .domainHomeSourceType("FromModel")
+            .image(miiImage)
+            .addImagePullSecretsItem(new V1LocalObjectReference()
+                .name(repoSecretName))
+            .webLogicCredentialsSecret(new V1SecretReference()
+                .name(adminSecretName)
+                .namespace(domNamespace))
+            .includeServerOutInPodLog(true)
+            .serverStartPolicy("IF_NEEDED")
+            .serverPod(new ServerPod()
+                .addEnvItem(new V1EnvVar()
+                    .name("JAVA_OPTIONS")
+                    .value("-Dweblogic.security.SSL.ignoreHostnameVerification=true"))
+                .addEnvItem(new V1EnvVar()
+                    .name("USER_MEM_ARGS")
+                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+            .adminServer(new AdminServer()
+                .serverStartState("RUNNING")
+                .serverService(new ServerService()
+                    .annotations(keyValueMap)
+                    .labels(keyValueMap))
+                .adminService(new AdminService()
+                    .addChannelsItem(new Channel()
+                        .channelName("default-secure")
+                        .nodePort(0))
+                    .addChannelsItem(new Channel()
+                        .channelName("default")
+                        .nodePort(0))))
+            .addClustersItem(new Cluster()
+                .clusterName("cluster-1")
+                .replicas(replicaCount)
+                .serverStartState("RUNNING"))
+            .configuration(new Configuration()
+                .model(new Model()
+                    .domainType("WLS")
+                    .configMap(configmapName)
+                    .runtimeEncryptionSecret(encryptionSecretName))
+                .introspectorJobActiveDeadlineSeconds(300L)));
+    setPodAntiAffinity(domain);
+    return domain;
+  }
+
+  /**
+   * Create a WebLogic domain with SSL enabled in WebLogic configuration by
+   * configuring an additional configmap to the domain resource.
+   * Add two channels to the domain resource with name `default-secure` and `default`.
+   *
+   * @param domainNamespace Kubernetes namespace that the pod is running in
+   * @param domainUid identifier of the domain
+   * @param miiImageName name of the miiImage including its tag
+   * @param adminServerPodName name of the admin server pod
+   * @param managedServerPrefix prefix of the managed server pods
+   * @param replicaCount number of managed servers to start
+   */
+  public static void createSSLenabledMiiDomainAndVerify(
+      String domainNamespace,
+      String domainUid,
+      String miiImageName,
+      String adminServerPodName,
+      String managedServerPrefix,
+      int replicaCount
+  ) {
+
+    LoggingFacade logger = getLogger();
+
+    // Create the repo secret to pull the image
+    // this secret is used only for non-kind cluster
+    createOcirRepoSecret(domainNamespace);
+
+    // create secret for admin credentials
+    logger.info("Create secret for admin credentials");
+    String adminSecretName = "weblogic-credentials";
+    createSecretWithUsernamePassword(adminSecretName, domainNamespace,
+            ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+
+    // create encryption secret
+    logger.info("Create encryption secret");
+    String encryptionSecretName = "encryptionsecret";
+    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace,
+            "weblogicenc", "weblogicenc");
+
+    String configMapName = "default-secure-configmap";
+    String yamlString = "topology:\n"
+        + "  Server:\n"
+        + "    'admin-server':\n"
+        + "       SSL: \n"
+        + "         Enabled: true \n"
+        + "         ListenPort: '7008' \n";
+    createModelConfigMapSSLenable(configMapName, yamlString, domainUid, domainNamespace);
+
+    // create the domain object
+    Domain domain = create2channelsDomainResourceWithConfigMap(domainUid,
+               domainNamespace, adminSecretName,
+        OCIR_SECRET_NAME, encryptionSecretName,
+               replicaCount,
+               miiImageName, configMapName);
+
+    // create model in image domain
+    logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
+        domainUid, domainNamespace, miiImageName);
+    createDomainAndVerify(domain, domainNamespace);
+
+    // check admin server pod is ready
+    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+    // check managed server pods are ready
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
+    }
+  }
+
 }
