@@ -254,8 +254,12 @@ public class PodUtils {
         .stream()
         .forEach(
             cluster -> {
+              ServerPod serverPod = cluster.getServerPod();
+              if (serverPod == null) {
+                serverPod = new ServerPod();
+              }
               cluster
-                  .serverPod(new ServerPod()
+                  .serverPod(serverPod
                       .affinity(new V1Affinity().podAntiAffinity(
                           new V1PodAntiAffinity()
                               .addPreferredDuringSchedulingIgnoredDuringExecutionItem(
