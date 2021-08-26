@@ -56,7 +56,7 @@ public class CommonTestUtils {
   public static ConditionFactory withStandardRetryPolicy =
       with().pollDelay(2, SECONDS)
           .and().with().pollInterval(10, SECONDS)
-          .atMost(5, MINUTES).await();
+          .atMost(10, MINUTES).await();
 
   public static ConditionFactory withQuickRetryPolicy = with().pollDelay(0, SECONDS)
       .and().with().pollInterval(3, SECONDS)

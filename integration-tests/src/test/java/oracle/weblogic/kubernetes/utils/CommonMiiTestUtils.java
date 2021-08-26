@@ -260,7 +260,7 @@ public class CommonMiiTestUtils {
                 .model(new oracle.weblogic.domain.Model()
                     .domainType("WLS")
                     .runtimeEncryptionSecret(encryptionSecretName))
-                .introspectorJobActiveDeadlineSeconds(300L)));
+                .introspectorJobActiveDeadlineSeconds(600L)));
 
     setPodAntiAffinity(domain);
     return domain;

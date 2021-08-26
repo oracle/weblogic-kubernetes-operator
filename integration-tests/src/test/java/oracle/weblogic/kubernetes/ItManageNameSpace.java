@@ -57,6 +57,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
+import static oracle.weblogic.kubernetes.utils.CleanupUtil.deleteNamespacedArtifacts;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
@@ -87,6 +88,14 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ItManageNameSpace {
 
   private static String[] opNamespaces = new String[4];
+
+  String manageByExp1NS = "test-" + domainNamespaces[0];
+  String manageByExp2NS = "test-" + domainNamespaces[1];
+  String manageByExpDomain1Uid = "test-" + domainsUid[0];
+  String manageByExpDomain2Uid = "test-" + domainsUid[1];
+  String manageByExp3NS = "atest-" + domainNamespaces[0];
+  String manageByExpDomainUid = "weblogic2" + domainNamespaces[1];
+  String manageByExpDomainNS = "weblogic2" + domainNamespaces[1];
 
   // domain constants
   private static final String[] domainsUid = {"managensdomain1","managensdomain2","managensdomain3","managensdomain4"};
@@ -153,22 +162,27 @@ class ItManageNameSpace {
       logger.info("Delete domain1test custom resource in namespace {0}", "test-" + domainNamespaces[0]);
       deleteDomainCustomResource(domainsUid[0] + "test", "test-" + domainNamespaces[0]);
       logger.info("Deleted Domain Custom Resource " + domainsUid[0] + "test from test-" + domainNamespaces[0]);
-  
+
       logger.info("Delete domain2test custom resource in namespace {0}", "test-" + domainNamespaces[1]);
       deleteDomainCustomResource(domainsUid[1] + "test", "test-" + domainNamespaces[1]);
       logger.info("Deleted Domain Custom Resource " + domainsUid[1] + "test from test-" + domainNamespaces[1]);
-  
+
       logger.info("Delete weblogic custom resource in namespace {0}", "weblogic" + domainNamespaces[1]);
       deleteDomainCustomResource("weblogic", "weblogic" + domainNamespaces[1]);
       logger.info("Deleted Domain Custom Resource weblogic from weblogic" + domainNamespaces[1]);
     } finally {
       deleteSecrets("default");
       deleteSecrets("atest-" + domainNamespaces[0]);
-     
       deleteNamespace("atest-" + domainNamespaces[0]);
       //delete operator
       for (HelmParams helmParam : opHelmParams) {
         uninstallOperator(helmParam);
+      }
+      for (var namespace : new String[]{manageByExp1NS, manageByExp2NS,
+          manageByExpDomain1Uid, manageByExpDomain2Uid, manageByExp3NS,
+          manageByExpDomainUid, manageByExpDomainNS}) {
+        deleteNamespacedArtifacts(namespace);
+        deleteNamespace(namespace);
       }
     }
   }
@@ -191,11 +205,6 @@ class ItManageNameSpace {
       + " using expression namespace management")
   void testNameSpaceManageByRegularExpression() {
     //create domain namespace
-    String manageByExp1NS = "test-" +  domainNamespaces[0];
-    String manageByExp2NS = "test-" +  domainNamespaces[1];
-    String manageByExpDomain1Uid = "test-" + domainsUid[0];
-    String manageByExpDomain2Uid = "test-" + domainsUid[1];
-    String manageByExp3NS = "atest-" +  domainNamespaces[0];
 
     Map<String,String> managedByExpDomains = new HashMap<>();
     managedByExpDomains.put(manageByExp1NS,manageByExpDomain1Uid);
@@ -276,10 +285,6 @@ class ItManageNameSpace {
         "LabelSelector",OPERATOR_RELEASE_NAME,
         opNamespaces[0], domainNamespaces[3]);
     assertNotNull(opHelmParams[0], "Can't install or verify operator with SelectLabel namespace management");
-
-    String manageByExpDomainUid = "weblogic2" + domainNamespaces[1];
-    String manageByExpDomainNS = "weblogic2" + domainNamespaces[1];
-
 
     //switch namespace domainsNamespaces[1] to the label1,
     // managed by operator and verify domain is started and can be managed by operator.
