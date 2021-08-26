@@ -46,7 +46,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static java.util.stream.Collectors.toSet;
-import static oracle.kubernetes.operator.KubernetesConstants.CONTAINER_NAME;
+import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.helpers.LegalNames.toDns1123LegalName;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.DEFAULT_SUCCESS_THRESHOLD;
 import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
@@ -1103,7 +1103,7 @@ public class Domain implements KubernetesObject {
     }
 
     private void isContainerNameReserved(V1Container container, String prefix) {
-      if (container.getName().equals(CONTAINER_NAME)) {
+      if (container.getName().equals(WLS_CONTAINER_NAME)) {
         failures.add(DomainValidationMessages.reservedContainerName(container.getName(), prefix));
       }
     }

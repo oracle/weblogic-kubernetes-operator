@@ -876,7 +876,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   protected String getContainerName() {
-    return KubernetesConstants.CONTAINER_NAME;
+    return KubernetesConstants.WLS_CONTAINER_NAME;
   }
 
   protected List<String> getContainerCommand() {

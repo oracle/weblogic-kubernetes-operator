@@ -28,7 +28,7 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDomain;
 import static oracle.kubernetes.operator.DomainSourceType.FromModel;
 import static oracle.kubernetes.operator.DomainSourceType.Image;
-import static oracle.kubernetes.operator.KubernetesConstants.CONTAINER_NAME;
+import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.getAuxiliaryImage;
 import static org.hamcrest.Matchers.contains;
@@ -462,8 +462,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
 
   @Test
   void whenLivenessProbeSuccessThresholdValueInvalidForDomain_reportError() {
-    configureDomain(domain)
-            .withDefaultLivenessProbeSettings(5, 4, 3, 2, 3);
+    configureDomain(domain).withDefaultLivenessProbeThresholds(2, 3);
 
     assertThat(domain.getValidationFailures(resourceLookup),
             contains(stringContainsInOrder("Invalid value", "2", "liveness probe success threshold",
@@ -474,7 +473,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
   void whenLivenessProbeSuccessThresholdValueInvalidForCluster_reportError() {
     configureDomain(domain)
             .configureCluster("cluster-1")
-            .withLivenessProbeSettings(5, 4, 3, 2, 3);
+                .withLivenessProbeSettings(5, 4, 3).withLivenessProbeThresholds(2, 3);
 
     assertThat(domain.getValidationFailures(resourceLookup),
             contains(stringContainsInOrder("Invalid value", "2", "liveness probe success threshold",
@@ -485,7 +484,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
   void whenLivenessProbeSuccessThresholdValueInvalidForServer_reportError() {
     configureDomain(domain)
             .configureServer("managed-server1")
-            .withLivenessProbeSettings(5, 4, 3, 2, 3);
+                .withLivenessProbeSettings(5, 4, 3).withLivenessProbeThresholds(2, 3);
 
     assertThat(domain.getValidationFailures(resourceLookup),
             contains(stringContainsInOrder("Invalid value", "2", "liveness probe success threshold",
@@ -493,34 +492,34 @@ class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  void whenReserverdContainerNameUsedForDomain_reportError() {
+  void whenReservedContainerNameUsedForDomain_reportError() {
     configureDomain(domain)
-            .withContainer(new V1Container().name(CONTAINER_NAME));
+            .withContainer(new V1Container().name(WLS_CONTAINER_NAME));
 
     assertThat(domain.getValidationFailures(resourceLookup),
-            contains(stringContainsInOrder("container name", CONTAINER_NAME, "adminServer",
+            contains(stringContainsInOrder("container name", WLS_CONTAINER_NAME, "adminServer",
                     "is reserved", "operator")));
   }
 
   @Test
-  void whenReserverdContainerNameUsedForCluster_reportError() {
+  void whenReservedContainerNameUsedForCluster_reportError() {
     configureDomain(domain)
             .configureCluster("cluster-1")
-            .withContainer(new V1Container().name(CONTAINER_NAME));
+                .withContainer(new V1Container().name(WLS_CONTAINER_NAME));
 
     assertThat(domain.getValidationFailures(resourceLookup),
-            contains(stringContainsInOrder("container name", CONTAINER_NAME, "cluster-1",
+            contains(stringContainsInOrder("container name", WLS_CONTAINER_NAME, "cluster-1",
                     "is reserved", "operator")));
   }
 
   @Test
-  void whenReserverdContainerNameUsedForManagedServer_reportError() {
+  void whenReservedContainerNameUsedForManagedServer_reportError() {
     configureDomain(domain)
             .configureServer("managed-server1")
-            .withContainer(new V1Container().name(CONTAINER_NAME));
+                .withContainer(new V1Container().name(WLS_CONTAINER_NAME));
 
     assertThat(domain.getValidationFailures(resourceLookup),
-            contains(stringContainsInOrder("container name", CONTAINER_NAME, "managed-server1",
+            contains(stringContainsInOrder("container name", WLS_CONTAINER_NAME, "managed-server1",
                     "is reserved", "operator")));
   }
 

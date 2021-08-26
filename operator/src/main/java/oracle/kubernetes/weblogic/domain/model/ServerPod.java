@@ -402,12 +402,15 @@ class ServerPod extends KubernetesResource {
     return this.readinessProbe;
   }
 
-  void setReadinessProbeTuning(Integer initialDelay, Integer timeout, Integer period,
-                               Integer successThreshold, Integer failureThreshold) {
+  void setReadinessProbeTuning(Integer initialDelay, Integer timeout, Integer period) {
     this.readinessProbe
         .initialDelaySeconds(initialDelay)
         .timeoutSeconds(timeout)
-        .periodSeconds(period)
+        .periodSeconds(period);
+  }
+
+  void setReadinessProbeThresholds(Integer successThreshold, Integer failureThreshold) {
+    this.readinessProbe
         .successThreshold(successThreshold)
         .failureThreshold(failureThreshold);
   }
@@ -424,12 +427,15 @@ class ServerPod extends KubernetesResource {
     return this.livenessProbe;
   }
 
-  void setLivenessProbe(Integer initialDelay, Integer timeout, Integer period, Integer successThreshold,
-                        Integer failureThreshold) {
+  void setLivenessProbe(Integer initialDelay, Integer timeout, Integer period) {
     this.livenessProbe
         .initialDelaySeconds(initialDelay)
         .timeoutSeconds(timeout)
-        .periodSeconds(period)
+        .periodSeconds(period);
+  }
+
+  void setLivenessProbeThresholds(Integer successThreshold, Integer failureThreshold) {
+    this.livenessProbe
         .successThreshold(successThreshold)
         .failureThreshold(failureThreshold);
   }

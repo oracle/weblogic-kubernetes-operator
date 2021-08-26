@@ -315,8 +315,9 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void livenessProbeSettings_returnsConfiguredValues() {
-    configureServer(SERVER1).withLivenessProbeSettings(INITIAL_DELAY, TIMEOUT, PERIOD,
-            CONFIGURED_SUCCESS_THRESHOLD, CONFIGURED_FAILURE_THRESHOLD);
+    configureServer(SERVER1)
+            .withLivenessProbeSettings(INITIAL_DELAY, TIMEOUT, PERIOD)
+            .withLivenessProbeThresholds(CONFIGURED_SUCCESS_THRESHOLD, CONFIGURED_FAILURE_THRESHOLD);
     ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getLivenessProbe().getInitialDelaySeconds(), equalTo(INITIAL_DELAY));
@@ -328,10 +329,13 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenLivenessProbeConfiguredOnMultipleLevels_useCombination() {
-    configureDomain(domain).withDefaultLivenessProbeSettings(INITIAL_DELAY, -2, -3, 1, 1);
-    configureCluster(CLUSTER_NAME).withLivenessProbeSettings(null, TIMEOUT, -4, 1, 1);
-    configureServer(SERVER1).withLivenessProbeSettings(null, null, PERIOD,
-            CONFIGURED_SUCCESS_THRESHOLD, CONFIGURED_FAILURE_THRESHOLD);
+    configureDomain(domain).withDefaultLivenessProbeSettings(INITIAL_DELAY, -2, -3);
+    configureCluster(CLUSTER_NAME)
+            .withLivenessProbeSettings(null, TIMEOUT, -4)
+            .withLivenessProbeThresholds(1, 1);
+    configureServer(SERVER1)
+            .withLivenessProbeSettings(null, null, PERIOD)
+            .withLivenessProbeThresholds(CONFIGURED_SUCCESS_THRESHOLD, CONFIGURED_FAILURE_THRESHOLD);
 
     ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
@@ -344,8 +348,9 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void readinessProbeSettings_returnsConfiguredValues() {
-    configureServer(SERVER1).withReadinessProbeSettings(INITIAL_DELAY, TIMEOUT, PERIOD,
-            CONFIGURED_SUCCESS_THRESHOLD, CONFIGURED_FAILURE_THRESHOLD);
+    configureServer(SERVER1)
+            .withReadinessProbeSettings(INITIAL_DELAY, TIMEOUT, PERIOD)
+            .withReadinessProbeThresholds(CONFIGURED_SUCCESS_THRESHOLD, CONFIGURED_FAILURE_THRESHOLD);
     ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getReadinessProbe().getInitialDelaySeconds(), equalTo(INITIAL_DELAY));
@@ -357,10 +362,11 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void whenReadinessProbeConfiguredOnMultipleLevels_useCombination() {
-    configureDomain(domain).withDefaultReadinessProbeSettings(INITIAL_DELAY, -2, -3, 1, 1);
-    configureCluster(CLUSTER_NAME).withReadinessProbeSettings(null, TIMEOUT, -4, 1, 1);
-    configureServer(SERVER1).withReadinessProbeSettings(null, null, PERIOD,
-            CONFIGURED_SUCCESS_THRESHOLD, CONFIGURED_FAILURE_THRESHOLD);
+    configureDomain(domain).withDefaultReadinessProbeSettings(INITIAL_DELAY, -2, -3);
+    configureCluster(CLUSTER_NAME).withReadinessProbeSettings(null, TIMEOUT, -4);
+    configureServer(SERVER1)
+            .withReadinessProbeSettings(null, null, PERIOD)
+            .withReadinessProbeThresholds(CONFIGURED_SUCCESS_THRESHOLD, CONFIGURED_FAILURE_THRESHOLD);
 
     ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
