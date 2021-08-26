@@ -247,6 +247,38 @@
             </properties>
         </profile>
         <profile>
+            <id>fmw-pipeline</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                    **/ItExternalLbTunneling,
+                    **/ItMiiAuxiliaryImage,
+                    **/ItMiiAuxiliaryImageCluster,
+                    **/ItMiiCustomSslStore,
+                    **/ItRemoteConsole,
+                    **/ItConfigDistributionStrategy,
+                    **/ItCrossDomainTransaction,
+                    **/ItElasticLogging,
+                    **/ItExternalRmiTunneling,
+                    **/ItCrossDomainTransaction,
+                    **/ItIstioDomainInPV,
+                    **/ItIstioMiiDomain,
+                    **/ItManagedCoherence,
+                    **/ItMiiDomain,
+                    **/ItMiiSampleWlsMain,
+                    **/ItMiiUpdateDomainConfig,
+                    **/ItMonitoringExporter,
+                    **/ItParameterizedDomain,
+                    **/ItPodsShutdownOption,
+                    **/ItProductionSecureMode,
+                    **/ItWlsSamples,
+                    **/ItSessionMigration,
+                    **/ItStickySession,
+                    **/ItSystemResOverrides
+                </includes-failsafe>
+            </properties>
+        </profile>
+        <profile>
             <id>fmw-image-cert</id>
             <properties>
                 <skipITs>false</skipITs>
