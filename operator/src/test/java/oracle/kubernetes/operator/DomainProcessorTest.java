@@ -3,12 +3,15 @@
 
 package oracle.kubernetes.operator;
 
+import java.net.URI;
+import java.net.http.HttpRequest;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Consumer;
@@ -52,6 +55,8 @@ import oracle.kubernetes.operator.helpers.PodStepContext;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.helpers.UnitTestHash;
+import oracle.kubernetes.operator.http.HttpAsyncTestSupport;
+import oracle.kubernetes.operator.http.HttpResponseStub;
 import oracle.kubernetes.operator.rest.ScanCacheStub;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
@@ -73,6 +78,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainSourceType.FromModel;
@@ -129,6 +135,7 @@ class DomainProcessorTest {
   private final List<Memento> mementos = new ArrayList<>();
   private final List<LogRecord> logRecords = new ArrayList<>();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
+  private final HttpAsyncTestSupport httpSupport = new HttpAsyncTestSupport();
   private final Map<String, Map<String, DomainPresenceInfo>> presenceInfoMap = new HashMap<>();
   private final Map<String, Map<String, KubernetesEventObjects>> domainEventObjects = new ConcurrentHashMap<>();
   private final Map<String, KubernetesEventObjects> nsEventObjects = new ConcurrentHashMap<>();
@@ -168,6 +175,7 @@ class DomainProcessorTest {
     mementos.add(TestUtils.silenceOperatorLogger()
           .collectLogMessages(logRecords, NOT_STARTING_DOMAINUID_THREAD).withLogLevel(Level.FINE));
     mementos.add(testSupport.install());
+    mementos.add(httpSupport.install());
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "DOMAINS", presenceInfoMap));
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domainEventK8SObjects", domainEventObjects));
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "namespaceEventK8SObjects", nsEventObjects));
@@ -250,7 +258,7 @@ class DomainProcessorTest {
   @Test
   void whenDomainScaledDown_removeExcessPodsAndServices() {
     defineServerResources(ADMIN_NAME);
-    Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
+    Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineClusteredServerResources);
 
     domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
     processor.createMakeRightOperation(new DomainPresenceInfo(domain)).withExplicitRecheck().execute();
@@ -291,7 +299,7 @@ class DomainProcessorTest {
   @Test
   void whenDomainShutDown_removeAllPodsServicesAndPodDisruptionBudgets() {
     defineServerResources(ADMIN_NAME);
-    Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
+    Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineClusteredServerResources);
 
     DomainPresenceInfo info = new DomainPresenceInfo(domain);
     processor.createMakeRightOperation(info).interrupt().forDeletion().withExplicitRecheck().execute();
@@ -304,7 +312,7 @@ class DomainProcessorTest {
   @Test
   void whenDomainShutDown_ignoreNonOperatorServices() {
     defineServerResources(ADMIN_NAME);
-    Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
+    Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineClusteredServerResources);
     testSupport.defineResources(createNonOperatorService());
 
     DomainPresenceInfo info = new DomainPresenceInfo(domain);
@@ -356,7 +364,7 @@ class DomainProcessorTest {
   @Test
   void whenDomainShutDown_ignoreNonOperatorPodDisruptionBudgets() {
     defineServerResources(ADMIN_NAME);
-    Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
+    Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineClusteredServerResources);
     testSupport.defineResources(createNonOperatorPodDisruptionBudget());
 
     DomainPresenceInfo info = new DomainPresenceInfo(domain);
@@ -795,7 +803,7 @@ class DomainProcessorTest {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
     defineServerResources(ADMIN_NAME);
     for (Integer i : msNumbers) {
-      defineServerResources(getManagedServerName(i));
+      defineClusteredServerResources(getManagedServerName(i));
     }
     DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
     testSupport.defineResources(createIntrospectorConfigMap(OLD_INTROSPECTION_STATE));
@@ -1213,6 +1221,10 @@ class DomainProcessorTest {
     testSupport.defineResources(createServerPod(serverName), createServerService(serverName));
   }
 
+  private void defineClusteredServerResources(String serverName) {
+    testSupport.defineResources(createServerPod(serverName), createServerService(serverName, CLUSTER));
+  }
+
   /**/
   private V1Pod createServerPod(String serverName) {
     Packet packet = new Packet();
@@ -1245,16 +1257,25 @@ class DomainProcessorTest {
   }
   
   private V1Service createServerService(String serverName) {
-    return AnnotationHelper.withSha256Hash(
-        new V1Service()
-            .metadata(
-                withServerLabels(
-                    new V1ObjectMeta()
-                        .name(
-                            LegalNames.toServerServiceName(
-                                DomainProcessorTestSetup.UID, serverName))
-                        .namespace(NS),
-                    serverName)));
+    return createServerService(serverName, null);
+  }
+
+  private V1Service createServerService(String serverName, String clusterName) {
+    V1Service service = new V1Service()
+        .metadata(
+            withServerLabels(
+                new V1ObjectMeta()
+                    .name(
+                        LegalNames.toServerServiceName(
+                            DomainProcessorTestSetup.UID, serverName))
+                    .namespace(NS),
+                serverName));
+
+    if (clusterName != null && !clusterName.isEmpty()) {
+      service.getMetadata().putLabelsItem(CLUSTERNAME_LABEL, clusterName);
+    }
+
+    return AnnotationHelper.withSha256Hash(service);
   }
 
   private void assertServerPodAndServicePresent(DomainPresenceInfo info, String serverName) {
@@ -1325,4 +1346,22 @@ class DomainProcessorTest {
     domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("ms1"));
     domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("ms1"));
   }
+
+  private void defineResponse(int status, String body) {
+    defineResponse(status, body, null);
+  }
+
+  private void defineResponse(int status, String body, String url) {
+    httpSupport.defineResponse(
+        createExpectedRequest(Objects.requireNonNullElse(url, "http://127.0.0.1:7001")),
+        createStub(HttpResponseStub.class, status, body));
+  }
+
+  private HttpRequest createExpectedRequest(String url) {
+    return HttpRequest.newBuilder()
+        .uri(URI.create(url + "/management/weblogic/latest/serverRuntime/shutdown"))
+        .POST(HttpRequest.BodyPublishers.noBody())
+        .build();
+  }
+
 }

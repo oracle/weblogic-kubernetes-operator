@@ -43,6 +43,8 @@ public class ServerDownStep extends Step {
       next = pw.waitForDelete(oldPod, next);
     }
 
-    return doNext(oldPod != null ? PodHelper.deletePodStep(serverName, next) : next, packet);
+    //return doNext(oldPod != null ? PodHelper.deletePodStep(serverName, next) : next, packet);
+    return doNext(oldPod != null ? ShutdownManagedServerStep
+        .createShutdownManagedServerStep(PodHelper.deletePodStep(serverName, next), serverName) : next, packet);
   }
 }

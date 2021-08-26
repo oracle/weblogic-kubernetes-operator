@@ -38,6 +38,11 @@ function check_for_shutdown() {
     return 0
   fi
 
+  if [ "$state" = "SHUTTING_DOWN" ]; then
+    trace "Server is shutting shutdown" &>> ${STOP_OUT_FILE}
+    return 0
+  fi
+
   if [ "$state" = "SHUTDOWN" ]; then
     trace "Server is shutdown" &>> ${STOP_OUT_FILE}
     return 0
@@ -67,7 +72,7 @@ function check_for_shutdown() {
 
 # Check if the server is already shutdown
 check_for_shutdown
-[ $? -eq 0 ] && trace "Server already shutdown or failed" &>>  ${STOP_OUT_FILE} && exit 0
+[ $? -eq 0 ] && trace "Server is already shutting down, is shutdown or failed" &>>  ${STOP_OUT_FILE} && exit 0
 
 # Otherwise, connect to the node manager and stop the server instance
 [ ! -f "${SCRIPTPATH}/wlst.sh" ] && trace SEVERE "Missing file '${SCRIPTPATH}/wlst.sh'." && exit 1

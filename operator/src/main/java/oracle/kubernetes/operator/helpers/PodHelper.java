@@ -257,6 +257,7 @@ public class PodHelper {
    * @return Step for deleting server pod
    */
   public static Step deletePodStep(String serverName, Step next) {
+    LOGGER.info("PodHelper.DeletePodStep.deletePodStep creating DeletePodStep for server: " + serverName);
     return new DeletePodStep(serverName, next);
   }
 
@@ -554,7 +555,7 @@ public class PodHelper {
 
     @Override
     public NextAction apply(Packet packet) {
-
+      LOGGER.info("PodHelper.DeletePodStep.apply serverName: " + serverName);
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       V1Pod oldPod = info.getServerPod(serverName);
 
