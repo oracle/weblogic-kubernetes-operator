@@ -3,6 +3,8 @@
 
 package oracle.weblogic.kubernetes.actions.impl;
 
+import java.nio.file.Paths;
+
 import oracle.weblogic.kubernetes.actions.impl.primitive.Installer;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
@@ -12,6 +14,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.defaultInstallRemoteconsoleParams;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
+import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileFromPod;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
@@ -24,15 +27,16 @@ public class WebLogicRemoteConsole {
 
   /**
    * Install WebLogic Remote Console.
-   *
+   * @param domainNamespace namespace in which the domain will be created
+   * @param adminServerPodName the name of the admin server pod
    * @return true if WebLogic Remote Console is successfully installed, false otherwise.
    */
-  public static boolean installWlsRemoteConsole() {
+  public static boolean installWlsRemoteConsole(String domainNamespace, String adminServerPodName) {
     if (!downloadRemoteConsole()) {
       return false;
     }
 
-    if (!runRemoteconsole()) {
+    if (!runRemoteconsole(domainNamespace, adminServerPodName)) {
       return false;
     }
 
@@ -63,17 +67,26 @@ public class WebLogicRemoteConsole {
         .download();
   }
 
-  private static boolean runRemoteconsole() {
+  private static boolean runRemoteconsole(String domainNamespace, String adminServerPodName) {
 
     String jarLocation = REMOTECONSOLE_FILE;
-    StringBuffer javaCmd = new StringBuffer("java -jar ");
+
+    assertDoesNotThrow(() -> copyFileFromPod(domainNamespace,
+             adminServerPodName, "weblogic-server",
+             "/u01/oracle/wlserver/server/lib/DemoTrust.jks",
+             Paths.get(WORK_DIR, "DemoTrust.jks")));
+    StringBuffer javaCmd = new StringBuffer("java");
+    javaCmd.append(" -Dconsole.disableHostnameVerification=true");
+    javaCmd.append(" -Djavax.net.ssl.trustStore=" + "\"" + WORK_DIR + "/DemoTrust.jks" + "\"");
+    javaCmd.append(" -Djavax.net.ssl.trustStoreType=\"JKS\"");
+    javaCmd.append(" -jar ");
     javaCmd.append(jarLocation);
     javaCmd.append(" > ");
     javaCmd.append(WORK_DIR + "/console");
     javaCmd.append("/remoteconsole.out 2>&1 ");
     javaCmd.append(WORK_DIR + "/console");
     javaCmd.append(" &");
-    logger.info("java command to be run {0}", javaCmd.toString());
+    logger.info("java command to start remote console {0}", javaCmd.toString());
 
     ExecResult result = assertDoesNotThrow(() -> exec(new String(javaCmd), true));
     logger.info("java returned {0}", result.toString());
