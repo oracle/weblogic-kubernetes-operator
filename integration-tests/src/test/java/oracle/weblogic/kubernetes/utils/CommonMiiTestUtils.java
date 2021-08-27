@@ -67,6 +67,7 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_DEPLOYMENT_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
@@ -716,14 +717,17 @@ public class CommonMiiTestUtils {
 
   /**
    * Use REST APIs to return the JdbcRuntime mbean from the WebLogic server.
+   * @param adminSvcExtHost Used only in OKD env - this is the route host created for AS external service
    * @param domainNamespace Kubernetes namespace that the domain is hosted
    * @param adminServerPodName Name of the admin server pod to which the REST requests should be sent to
    * @param resourcesName Name of the JDBC system resource for which that mbean data to be queried
    * @return An ExecResult containing the output of the REST API exec request
    */
   public static ExecResult readJdbcRuntime(
+      String adminSvcExtHost,
       String domainNamespace, String adminServerPodName, String resourcesName) {
     return readRuntimeResource(
+        adminSvcExtHost,
         domainNamespace,
         adminServerPodName,
         "/management/wls/latest/datasources/id/" + resourcesName,
@@ -733,6 +737,7 @@ public class CommonMiiTestUtils {
   /**
    * Use REST APIs to return the MinThreadsConstraint runtime mbean associated with
    * the specified work manager from the WebLogic server.
+   * @param adminSvcExtHost Used only in OKD env - this is the route host created for AS external service
    * @param domainNamespace Kubernetes namespace that the domain is hosted
    * @param adminServerPodName Name of the admin server pod to which the REST requests should be sent to
    * @param serverName Name of the server from which to look for the runtime mbean
@@ -741,9 +746,10 @@ public class CommonMiiTestUtils {
    * @return An ExecResult containing the output of the REST API exec request
    */
   public static ExecResult readMinThreadsConstraintRuntimeForWorkManager(
-      String domainNamespace, String adminServerPodName,
+      String adminSvcExtHost, String domainNamespace, String adminServerPodName,
       String serverName, String workManagerName) {
     return readRuntimeResource(
+        adminSvcExtHost,
         domainNamespace,
         adminServerPodName,
         "/management/weblogic/latest/domainRuntime/serverRuntimes/"
@@ -757,6 +763,7 @@ public class CommonMiiTestUtils {
   /**
    * Use REST APIs to return the MaxThreadsConstraint runtime mbean associated with
    * the specified work manager from the WebLogic server.
+   * @param adminSvcExtHost Used only in OKD env - this is the route host created for AS external service
    * @param domainNamespace Kubernetes namespace that the domain is hosted
    * @param adminServerPodName Name of the admin server pod to which the REST requests should be sent to
    * @param serverName Name of the server from which to look for the runtime mbean
@@ -765,9 +772,10 @@ public class CommonMiiTestUtils {
    * @return An ExecResult containing the output of the REST API exec request
    */
   public static ExecResult readMaxThreadsConstraintRuntimeForWorkManager(
-      String domainNamespace, String adminServerPodName,
+      String adminSvcExtHost, String domainNamespace, String adminServerPodName,
       String serverName, String workManagerName) {
     return readRuntimeResource(
+        adminSvcExtHost,
         domainNamespace,
         adminServerPodName,
         "/management/weblogic/latest/domainRuntime/serverRuntimes/"
@@ -790,7 +798,25 @@ public class CommonMiiTestUtils {
   public static boolean checkWorkManagerRuntime(
       String domainNamespace, String adminServerPodName,
       String serverName, String workManagerName, String expectedStatusCode) {
+    return checkWorkManagerRuntime(null, domainNamespace, adminServerPodName, serverName,
+                                   workManagerName, expectedStatusCode);
+  }
+
+  /**
+   * Use REST APIs to check the WorkManager runtime mbean from the WebLogic server.
+   * @param adminSvcExtHost Used only in OKD env - this is the route host created for AS external service
+   * @param domainNamespace Kubernetes namespace that the domain is hosted
+   * @param adminServerPodName Name of the admin server pod to which the REST requests should be sent to
+   * @param serverName Name of the server from which to look for the runtime mbean
+   * @param workManagerName Name of the work manager for which its runtime mbean is to be verified
+   * @param expectedStatusCode the expected response to verify
+   * @return true if the REST API reply contains the expected response
+   */
+  public static boolean checkWorkManagerRuntime(
+      String adminSvcExtHost, String domainNamespace, String adminServerPodName,
+      String serverName, String workManagerName, String expectedStatusCode) {
     return checkWeblogicMBean(
+        adminSvcExtHost,
         domainNamespace,
         adminServerPodName,
         "/management/weblogic/latest/domainRuntime/serverRuntimes/"
@@ -802,6 +828,7 @@ public class CommonMiiTestUtils {
 
   /**
    * Use REST APIs to check the application runtime mbean from the WebLogic server.
+   * @param adminSvcExtHost Used only in OKD env - this is the route host created for AS external service
    * @param domainNamespace Kubernetes namespace that the domain is hosted
    * @param adminServerPodName Name of the admin server pod to which the REST requests should be sent to
    * @param serverName Name of the server from which to look for the runtime mbean
@@ -809,9 +836,10 @@ public class CommonMiiTestUtils {
    * @return true if the REST API reply contains the expected response
    */
   public static boolean checkApplicationRuntime(
-      String domainNamespace, String adminServerPodName,
+      String adminSvcExtHost, String domainNamespace, String adminServerPodName,
       String serverName, String expectedStatusCode) {
     return checkWeblogicMBean(
+        adminSvcExtHost,
         domainNamespace,
         adminServerPodName,
         "/management/weblogic/latest/domainRuntime/serverRuntimes/"
@@ -820,17 +848,21 @@ public class CommonMiiTestUtils {
         expectedStatusCode);
   }
 
-  private static ExecResult readRuntimeResource(String domainNamespace, String adminServerPodName,
-      String resourcePath, String callerName) {
+  private static ExecResult readRuntimeResource(String adminSvcExtHost, String domainNamespace, 
+      String adminServerPodName, String resourcePath, String callerName) {
     LoggingFacade logger = getLogger();
 
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+
+    String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + adminServiceNodePort;
+    logger.info("hostAndPort = {0} ", hostAndPort);
+
     ExecResult result = null;
 
     StringBuffer curlString = new StringBuffer("curl --user "
         + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT + " ");
-    curlString.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+    curlString.append("http://" + hostAndPort)
         .append(resourcePath)
         .append("/")
         .append(" --silent --show-error ");
@@ -856,7 +888,23 @@ public class CommonMiiTestUtils {
    */
   public static boolean checkWeblogicMBean(String domainNamespace,
          String adminServerPodName,  String resourcePath, String expectedStatusCode) {
-    return checkWeblogicMBean(domainNamespace, adminServerPodName, resourcePath, expectedStatusCode, false, "");
+    return checkWeblogicMBean(null, domainNamespace, adminServerPodName, resourcePath, expectedStatusCode, false, "");
+  }
+
+  /**
+   * Use REST APIs to check a runtime mbean from the WebLogic server.
+   *
+   * @param adminSvcExtHost Used only in OKD env - this is the route host created for AS external service
+   * @param domainNamespace Kubernetes namespace that the domain is hosted
+   * @param adminServerPodName Name of the admin server pod to which the REST requests should be sent to
+   * @param resourcePath Path of the system resource to be used in the REST API call
+   * @param expectedStatusCode the expected response to verify
+   * @return true if the REST API reply contains the expected response
+   */
+  public static boolean checkWeblogicMBean(String adminSvcExtHost, String domainNamespace,
+         String adminServerPodName,  String resourcePath, String expectedStatusCode) {
+    return checkWeblogicMBean(adminSvcExtHost, domainNamespace, adminServerPodName,
+                              resourcePath, expectedStatusCode, false, "");
   }
 
   /**
@@ -871,6 +919,29 @@ public class CommonMiiTestUtils {
    * @return true if the REST API reply contains the expected response
    */
   public static boolean checkWeblogicMBean(String domainNamespace,
+                                           String adminServerPodName,
+                                           String resourcePath,
+                                           String expectedStatusCode,
+                                           boolean isSecureMode,
+                                           String sslChannelName) {
+    return checkWeblogicMBean(null,  domainNamespace, adminServerPodName, resourcePath,
+                              expectedStatusCode, isSecureMode, sslChannelName);
+  }
+
+  /**
+   * Use REST APIs to check a runtime mbean from the WebLogic server.
+   *
+   * @param adminSvcExtHost Used only in OKD env - this is the route host created for AS external service
+   * @param domainNamespace Kubernetes namespace that the domain is hosted
+   * @param adminServerPodName Name of the admin server pod to which the REST requests should be sent to
+   * @param resourcePath Path of the system resource to be used in the REST API call
+   * @param expectedStatusCode the expected response to verify
+   * @param isSecureMode whether use SSL
+   * @param sslChannelName the channel name for SSL
+   * @return true if the REST API reply contains the expected response
+   */
+  public static boolean checkWeblogicMBean(String adminSvcExtHost,
+                                           String domainNamespace,
                                            String adminServerPodName,
                                            String resourcePath,
                                            String expectedStatusCode,
@@ -894,7 +965,10 @@ public class CommonMiiTestUtils {
       curlString = new StringBuffer("status=$(curl --user weblogic:welcome1 http://");
     }
 
-    curlString.append(K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+    String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + adminServiceNodePort;
+    logger.info("hostAndPort = {0} ", hostAndPort);
+
+    curlString.append(hostAndPort)
         .append(resourcePath)
         .append(" --silent --show-error ")
         .append(" -o /dev/null ")
@@ -920,7 +994,25 @@ public class CommonMiiTestUtils {
   public static boolean checkSystemResourceConfiguration(String domainNamespace,
       String adminServerPodName, String resourcesType,
       String resourcesName, String expectedStatusCode) {
-    return checkWeblogicMBean(domainNamespace, adminServerPodName,
+    return checkSystemResourceConfiguration(null, domainNamespace, adminServerPodName, resourcesType,
+                                     resourcesName, expectedStatusCode);
+  }
+
+  /**
+   * Use REST APIs to check the system resource runtime mbean from the WebLogic server.
+   *
+   * @param adminSvcExtHost Used only in OKD env - this is the route host created for AS external service
+   * @param domainNamespace Kubernetes namespace that the domain is hosted
+   * @param adminServerPodName Name of the admin server pod to which the REST requests should be sent to
+   * @param resourcesType Type of the system resource to be checked
+   * @param resourcesName Name of the system resource to be checked
+   * @param expectedStatusCode the expected response to verify
+   * @return true if the REST API reply contains the expected response
+   */
+  public static boolean checkSystemResourceConfiguration(String adminSvcExtHost, String domainNamespace,
+      String adminServerPodName, String resourcesType,
+      String resourcesName, String expectedStatusCode) {
+    return checkWeblogicMBean(adminSvcExtHost, domainNamespace, adminServerPodName,
         "/management/weblogic/latest/domainConfig/"
             + resourcesType + "/" + resourcesName + "/",
         expectedStatusCode);
@@ -936,60 +1028,62 @@ public class CommonMiiTestUtils {
   public static void createJobToChangePermissionsOnPvHostPath(String pvName, String pvcName, String namespace) {
     LoggingFacade logger = getLogger();
 
-    logger.info("Running Kubernetes job to create domain");
-    V1Job jobBody = new V1Job()
-        .metadata(
-            new V1ObjectMeta()
-                .name("change-permissions-onpv-job-" + pvName) // name of the job
-                .namespace(namespace))
-        .spec(new V1JobSpec()
-            .backoffLimit(0) // try only once
-            .template(new V1PodTemplateSpec()
-                .spec(new V1PodSpec()
-                    .restartPolicy("Never")
-                    .addContainersItem(new V1Container()
-                        .name("fix-pvc-owner") // change the ownership of the pv to opc:opc
-                        .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-                        .addCommandItem("/bin/sh")
-                        .addArgsItem("-c")
-                        .addArgsItem("chown -R 1000:1000 /shared")
-                        .addVolumeMountsItem(
-                            new V1VolumeMount()
-                                .name(pvName)
-                                .mountPath("/shared"))
-                        .securityContext(new V1SecurityContext()
-                            .runAsGroup(0L)
-                            .runAsUser(0L))) // mounted under /shared inside pod
-                    .volumes(Arrays.asList(
-                        new V1Volume()
-                            .name(pvName)
-                            .persistentVolumeClaim(
-                                new V1PersistentVolumeClaimVolumeSource()
-                                    .claimName(pvcName))))
-                    .imagePullSecrets(Arrays.asList(
-                        new V1LocalObjectReference()
-                            .name(BASE_IMAGES_REPO_SECRET)))))); // this secret is used only for non-kind cluster
+    if (!OKD) {
+      logger.info("Running Kubernetes job to create domain");
+      V1Job jobBody = new V1Job()
+          .metadata(
+              new V1ObjectMeta()
+                  .name("change-permissions-onpv-job-" + pvName) // name of the job
+                  .namespace(namespace))
+          .spec(new V1JobSpec()
+              .backoffLimit(0) // try only once
+              .template(new V1PodTemplateSpec()
+                  .spec(new V1PodSpec()
+                      .restartPolicy("Never")
+                      .addContainersItem(new V1Container()
+                          .name("fix-pvc-owner") // change the ownership of the pv to opc:opc
+                          .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
+                          .addCommandItem("/bin/sh")
+                          .addArgsItem("-c")
+                          .addArgsItem("chown -R 1000:1000 /shared")
+                          .addVolumeMountsItem(
+                              new V1VolumeMount()
+                                  .name(pvName)
+                                  .mountPath("/shared"))
+                          .securityContext(new V1SecurityContext()
+                              .runAsGroup(0L)
+                              .runAsUser(0L))) // mounted under /shared inside pod
+                      .volumes(Arrays.asList(
+                          new V1Volume()
+                              .name(pvName)
+                              .persistentVolumeClaim(
+                                  new V1PersistentVolumeClaimVolumeSource()
+                                      .claimName(pvcName))))
+                      .imagePullSecrets(Arrays.asList(
+                          new V1LocalObjectReference()
+                              .name(BASE_IMAGES_REPO_SECRET)))))); // this secret is used only for non-kind cluster
 
-    String jobName = createJobAndWaitUntilComplete(jobBody, namespace);
+      String jobName = createJobAndWaitUntilComplete(jobBody, namespace);
 
-    // check job status and fail test if the job failed
-    V1Job job = assertDoesNotThrow(() -> getJob(jobName, namespace),
-        "Getting the job failed");
-    if (job != null) {
-      V1JobCondition jobCondition = job.getStatus().getConditions().stream().filter(
-          v1JobCondition -> "Failed".equalsIgnoreCase(v1JobCondition.getType()))
-          .findAny()
-          .orElse(null);
-      if (jobCondition != null) {
-        logger.severe("Job {0} failed to change permissions on PV hostpath", jobName);
-        List<V1Pod> pods = assertDoesNotThrow(() -> listPods(
-            namespace, "job-name=" + jobName).getItems(),
-            "Listing pods failed");
-        if (!pods.isEmpty()) {
-          String podLog = assertDoesNotThrow(() -> getPodLog(pods.get(0).getMetadata().getName(), namespace),
-              "Failed to get pod log");
-          logger.severe(podLog);
-          fail("Change permissions on PV hostpath job failed");
+      // check job status and fail test if the job failed
+      V1Job job = assertDoesNotThrow(() -> getJob(jobName, namespace),
+          "Getting the job failed");
+      if (job != null) {
+        V1JobCondition jobCondition = job.getStatus().getConditions().stream().filter(
+            v1JobCondition -> "Failed".equalsIgnoreCase(v1JobCondition.getType()))
+            .findAny()
+            .orElse(null);
+        if (jobCondition != null) {
+          logger.severe("Job {0} failed to change permissions on PV hostpath", jobName);
+          List<V1Pod> pods = assertDoesNotThrow(() -> listPods(
+              namespace, "job-name=" + jobName).getItems(),
+              "Listing pods failed");
+          if (!pods.isEmpty()) {
+            String podLog = assertDoesNotThrow(() -> getPodLog(pods.get(0).getMetadata().getName(), namespace),
+                "Failed to get pod log");
+            logger.severe(podLog);
+            fail("Change permissions on PV hostpath job failed");
+          }
         }
       }
     }
@@ -1160,7 +1254,27 @@ public class CommonMiiTestUtils {
    */
   public static void verifyUpdateWebLogicCredential(String domainNamespace, String domainUid,
        String adminServerPodName, String managedServerPrefix, int replicaCount, String... args) {
+    verifyUpdateWebLogicCredential(null, domainNamespace, domainUid, adminServerPodName,
+                               managedServerPrefix, replicaCount, args);
+  }
 
+  /**
+   * Change the WebLogic Admin credential of the domain.
+   * Patch the domain CRD with a new credentials secret.
+   * Update domainRestartVersion to trigger a rolling restart of server pods.
+   * Make sure all the server pods are re-started in a rolling fashion.
+   * Check the validity of new credentials by accessing WebLogic RESTful Service.
+   * @param adminSvcExtHost Used only in OKD env - this is the route host created for AS external service
+   * @param domainNamespace namespace where the domain is
+   * @param domainUid domain uid for which WebLogic Admin credential is being changed
+   * @param adminServerPodName pod name of admin server
+   * @param managedServerPrefix prefix of the managed server
+   * @param replicaCount replica count of the domain
+   * @param args arguments to determine appending suffix to managed server pod name or not.
+   *             Append suffix if it's set. Otherwise do not append.
+   */
+  public static void verifyUpdateWebLogicCredential(String adminSvcExtHost, String domainNamespace, String domainUid,
+       String adminServerPodName, String managedServerPrefix, int replicaCount, String... args) {
     final boolean VALID = true;
     final boolean INVALID = false;
 
@@ -1181,9 +1295,9 @@ public class CommonMiiTestUtils {
     }
 
     getLogger().info("Check that before patching current credentials are valid and new credentials are not");
-    verifyCredentials(null, adminServerPodName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, 
-        VALID, args);
-    verifyCredentials(null, adminServerPodName, domainNamespace, ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH, 
+    verifyCredentials(adminSvcExtHost, adminServerPodName, domainNamespace,
+                      ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, VALID, args);
+    verifyCredentials(adminSvcExtHost, adminServerPodName, domainNamespace, ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH,
         INVALID, args);
 
     // create a new secret for admin credentials
@@ -1212,9 +1326,9 @@ public class CommonMiiTestUtils {
 
     // check if the new credentials are valid and the old credentials are not valid any more
     getLogger().info("Check that after patching current credentials are not valid and new credentials are");
-    verifyCredentials(null, adminServerPodName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
-        INVALID, args);
-    verifyCredentials(null, adminServerPodName, domainNamespace, ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH, 
+    verifyCredentials(adminSvcExtHost, adminServerPodName, domainNamespace,
+                      ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, INVALID, args);
+    verifyCredentials(adminSvcExtHost, adminServerPodName, domainNamespace, ADMIN_USERNAME_PATCH, ADMIN_PASSWORD_PATCH,
         VALID, args);
 
     getLogger().info("Domain {0} in namespace {1} is fully started after changing WebLogic credentials secret",
