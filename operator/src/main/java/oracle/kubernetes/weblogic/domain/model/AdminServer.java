@@ -25,10 +25,10 @@ public class AdminServer extends Server {
    * Whether the admin channel port forwarding is enabled.
    */
   @Description(
-          "When this flag is enabled, the operator enhances the domain configuration with a NetworkAccessPoint "
-                  + "for the admin protocol that listens on the localhost. This allows access to the "
-                  + "Administration Console when using the kubectl port-forward pattern, which is often more secure "
-                  + "than exposing the console to the public Internet. Defaults to true.")
+      "When this flag is enabled, the operator updates the domain's WebLogic configuration for its"
+          + " Administration Server to have an admin protocol NetworkAccessPoint with a 'localhost' address for"
+          + " each existing admin protocol capable port. This allows external Administration Console and WLST 'T3'"
+          + " access when using the 'kubectl port-forward' pattern. Defaults to true.")
   private Boolean adminChannelPortForwardingEnabled = true;
 
   /**
