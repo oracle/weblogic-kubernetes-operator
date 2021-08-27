@@ -94,6 +94,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRolling
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyServerCommunication;
@@ -370,10 +371,8 @@ class ItIntrospectVersion {
       checkPodReady(managedServerPodNamePrefix + i, domainUid, introDomainNamespace);
     }
 
-    if (OKD) {
-      adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), introDomainNamespace);
-      logger.info("admin svc host = {0}", adminSvcExtHost);
-    }
+    adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), introDomainNamespace);
+    logger.info("admin svc host = {0}", adminSvcExtHost);
 
     // deploy application and verify all servers functions normally
     logger.info("Getting port for default channel");
@@ -395,7 +394,7 @@ class ItIntrospectVersion {
     //ExecResult result = null;
     String targets = "{identity:[clusters,'mycluster']},{identity:[servers,'admin-server']}";
 
-    String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + serviceNodePort;
+    String hostAndPort = getHostAndPort(adminSvcExtHost, serviceNodePort);
     logger.info("hostAndPort = {0} ", hostAndPort);
 
     withStandardRetryPolicy.conditionEvaluationListener(
@@ -506,7 +505,7 @@ class ItIntrospectVersion {
           domainUid, introDomainNamespace, pods.get(i));
     }
 
-    //create ingress controller
+    //create ingress controller - OKD uses services exposed as routes
     if (!OKD) {
       Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
       clusterNameMsPortMap.put(clusterName, managedServerPort);
@@ -1280,7 +1279,7 @@ class ItIntrospectVersion {
         -> getServiceNodePort(introDomainNamespace, getExternalServicePodName(adminServerPodName), "default"),
         "Getting admin server node port failed");
 
-    String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + serviceNodePort;
+    String hostAndPort = getHostAndPort(adminSvcExtHost, serviceNodePort);
     logger.info("hostAndPort = {0} ", hostAndPort);
 
     logger.info("Checking the health of servers in cluster");

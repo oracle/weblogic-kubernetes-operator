@@ -39,7 +39,6 @@ import org.junit.jupiter.api.Test;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
@@ -48,6 +47,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
@@ -347,7 +347,7 @@ class ItManagedCoherence {
   private boolean coherenceCacheTest(String hostName, int ingressServiceNodePort) {
     logger.info("Starting to test the cache");
 
-    String hostAndPort = (OKD) ? hostName : K8S_NODEPORT_HOST + ":" + ingressServiceNodePort;
+    String hostAndPort = getHostAndPort(hostName, ingressServiceNodePort);
     logger.info("hostAndPort = {0} ", hostAndPort);
 
     // add the data to cache

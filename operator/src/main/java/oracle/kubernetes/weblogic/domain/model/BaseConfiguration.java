@@ -145,12 +145,20 @@ public abstract class BaseConfiguration {
     serverPod.setLivenessProbe(initialDelay, timeout, period);
   }
 
+  void setLivenessProbeThresholds(Integer successThreshold, Integer failureThreshold) {
+    serverPod.setLivenessProbeThresholds(successThreshold, failureThreshold);
+  }
+
   ProbeTuning getLivenessProbe() {
     return serverPod.getLivenessProbeTuning();
   }
 
   void setReadinessProbe(Integer initialDelay, Integer timeout, Integer period) {
     serverPod.setReadinessProbeTuning(initialDelay, timeout, period);
+  }
+
+  void setReadinessProbeThresholds(Integer successThreshold, Integer failureThreshold) {
+    serverPod.setReadinessProbeThresholds(successThreshold, failureThreshold);
   }
 
   ProbeTuning getReadinessProbe() {

@@ -33,7 +33,7 @@ public interface KubernetesConstants {
   int DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP = 0;
   int DEFAULT_MAX_CLUSTER_CONCURRENT_SHUTDOWN = 1;
 
-  String CONTAINER_NAME = "weblogic-server";
+  String WLS_CONTAINER_NAME = "weblogic-server";
 
   String SCRIPT_CONFIG_MAP_NAME = "weblogic-scripts-cm";
   String DOMAIN_DEBUG_CONFIG_MAP_SUFFIX = "-weblogic-domain-debug-cm";

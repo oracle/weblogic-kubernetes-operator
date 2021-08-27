@@ -310,7 +310,7 @@ public abstract class BasePodStepContext extends StepContextBase {
   }
 
   protected String getMainContainerName() {
-    return KubernetesConstants.CONTAINER_NAME;
+    return KubernetesConstants.WLS_CONTAINER_NAME;
   }
 
   protected String getAuxiliaryImagePaths(List<AuxiliaryImage> auxiliaryImages,
