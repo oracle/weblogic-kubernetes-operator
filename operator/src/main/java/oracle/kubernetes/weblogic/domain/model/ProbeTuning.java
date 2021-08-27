@@ -5,6 +5,7 @@ package oracle.kubernetes.weblogic.domain.model;
 
 import com.google.gson.annotations.SerializedName;
 import oracle.kubernetes.json.Description;
+import oracle.kubernetes.json.Range;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -21,6 +22,19 @@ public class ProbeTuning {
   @SerializedName("timeoutSeconds")
   private Integer timeoutSeconds = null;
 
+  @Description("Number of times the check is performed before giving up. Giving up in "
+          + "case of liveness probe means restarting the container. In case of readiness probe, the Pod will be "
+          + "marked Unready. Defaults to 1.")
+  @SerializedName("failureThreshold")
+  @Range(minimum = 1)
+  Integer failureThreshold = null;
+
+  @Description("Minimum number of times the check needs to pass for the probe to be considered successful"
+          + " after having failed. Defaults to 1. Must be 1 for liveness Probe.")
+  @SerializedName("successThreshold")
+  @Range(minimum = 1)
+  private Integer successThreshold = null;
+
   public ProbeTuning() {
   }
 
@@ -33,6 +47,12 @@ public class ProbeTuning {
     }
     if (periodSeconds == null) {
       periodSeconds(fromProbe.periodSeconds);
+    }
+    if (successThreshold == null) {
+      successThreshold(fromProbe.successThreshold);
+    }
+    if (failureThreshold == null) {
+      failureThreshold(fromProbe.failureThreshold);
     }
   }
 
@@ -63,12 +83,32 @@ public class ProbeTuning {
     return this;
   }
 
+  public Integer getSuccessThreshold() {
+    return successThreshold;
+  }
+
+  public ProbeTuning successThreshold(Integer successThreshold) {
+    this.successThreshold = successThreshold;
+    return this;
+  }
+
+  public Integer getFailureThreshold() {
+    return failureThreshold;
+  }
+
+  public ProbeTuning failureThreshold(Integer failureThreshold) {
+    this.failureThreshold = failureThreshold;
+    return this;
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
         .append("initialDelaySeconds", initialDelaySeconds)
         .append("periodSeconds", periodSeconds)
         .append("timeoutSeconds", timeoutSeconds)
+        .append("successThreshold", successThreshold)
+        .append("failureThreshold", failureThreshold)
         .toString();
   }
 
@@ -88,6 +128,8 @@ public class ProbeTuning {
         .append(initialDelaySeconds, that.initialDelaySeconds)
         .append(periodSeconds, that.periodSeconds)
         .append(timeoutSeconds, that.timeoutSeconds)
+        .append(successThreshold, that.successThreshold)
+        .append(failureThreshold, that.failureThreshold)
         .isEquals();
   }
 
@@ -97,6 +139,8 @@ public class ProbeTuning {
         .append(initialDelaySeconds)
         .append(periodSeconds)
         .append(timeoutSeconds)
+        .append(successThreshold)
+        .append(failureThreshold)
         .toHashCode();
   }
 }
