@@ -5,6 +5,7 @@ package oracle.kubernetes.weblogic.domain.model;
 
 import com.google.gson.annotations.SerializedName;
 import oracle.kubernetes.json.Description;
+import oracle.kubernetes.json.Range;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -25,11 +26,13 @@ public class ProbeTuning {
           + "case of liveness probe means restarting the container. In case of readiness probe, the Pod will be "
           + "marked Unready. Defaults to 1.")
   @SerializedName("failureThreshold")
+  @Range(minimum = 1)
   Integer failureThreshold = null;
 
   @Description("Minimum number of times the check needs to pass for the probe to be considered successful"
-          + " after having failed. Defaults to 1. Must be 1 for liveness and startup Probes.")
+          + " after having failed. Defaults to 1. Must be 1 for liveness Probe.")
   @SerializedName("successThreshold")
+  @Range(minimum = 1)
   private Integer successThreshold = null;
 
   public ProbeTuning() {

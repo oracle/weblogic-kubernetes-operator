@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: c13a280d63353702579948c6fc87c2affecf96aead9e38ca32b241aa02dfc0f2
+    weblogic.sha256: 1948b4415bf4ebfc7637e2b3f75150cc8557624303df5f759124ce2a0d238d3c
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -372,6 +372,7 @@ spec:
                               giving up. Giving up in case of liveness probe means
                               restarting the container. In case of readiness probe,
                               the Pod will be marked Unready. Defaults to 1.
+                            minimum: 1.0
                             type: number
                           periodSeconds:
                             description: The number of seconds between checks.
@@ -384,7 +385,8 @@ spec:
                             description: Minimum number of times the check needs to
                               pass for the probe to be considered successful after
                               having failed. Defaults to 1. Must be 1 for liveness
-                              and startup Probes.
+                              Probe.
+                            minimum: 1.0
                             type: number
                           initialDelaySeconds:
                             description: The number of seconds before the first check
@@ -1431,6 +1433,7 @@ spec:
                               giving up. Giving up in case of liveness probe means
                               restarting the container. In case of readiness probe,
                               the Pod will be marked Unready. Defaults to 1.
+                            minimum: 1.0
                             type: number
                           periodSeconds:
                             description: The number of seconds between checks.
@@ -1443,7 +1446,8 @@ spec:
                             description: Minimum number of times the check needs to
                               pass for the probe to be considered successful after
                               having failed. Defaults to 1. Must be 1 for liveness
-                              and startup Probes.
+                              Probe.
+                            minimum: 1.0
                             type: number
                           initialDelaySeconds:
                             description: The number of seconds before the first check
@@ -3142,6 +3146,7 @@ spec:
                                 probe, the Pod will be marked Unready. Defaults to
                                 1.
                               type: number
+                              minimum: 1.0
                             periodSeconds:
                               description: The number of seconds between checks.
                               type: number
@@ -3153,8 +3158,9 @@ spec:
                               description: Minimum number of times the check needs
                                 to pass for the probe to be considered successful
                                 after having failed. Defaults to 1. Must be 1 for
-                                liveness and startup Probes.
+                                liveness Probe.
                               type: number
+                              minimum: 1.0
                             initialDelaySeconds:
                               description: The number of seconds before the first
                                 check is performed.
@@ -4206,6 +4212,7 @@ spec:
                                 probe, the Pod will be marked Unready. Defaults to
                                 1.
                               type: number
+                              minimum: 1.0
                             periodSeconds:
                               description: The number of seconds between checks.
                               type: number
@@ -4217,8 +4224,9 @@ spec:
                               description: Minimum number of times the check needs
                                 to pass for the probe to be considered successful
                                 after having failed. Defaults to 1. Must be 1 for
-                                liveness and startup Probes.
+                                liveness Probe.
                               type: number
+                              minimum: 1.0
                             initialDelaySeconds:
                               description: The number of seconds before the first
                                 check is performed.
@@ -5935,6 +5943,7 @@ spec:
                           giving up. Giving up in case of liveness probe means restarting
                           the container. In case of readiness probe, the Pod will
                           be marked Unready. Defaults to 1.
+                        minimum: 1.0
                         type: number
                       periodSeconds:
                         description: The number of seconds between checks.
@@ -5946,7 +5955,8 @@ spec:
                       successThreshold:
                         description: Minimum number of times the check needs to pass
                           for the probe to be considered successful after having failed.
-                          Defaults to 1. Must be 1 for liveness and startup Probes.
+                          Defaults to 1. Must be 1 for liveness Probe.
+                        minimum: 1.0
                         type: number
                       initialDelaySeconds:
                         description: The number of seconds before the first check
@@ -6987,6 +6997,7 @@ spec:
                           giving up. Giving up in case of liveness probe means restarting
                           the container. In case of readiness probe, the Pod will
                           be marked Unready. Defaults to 1.
+                        minimum: 1.0
                         type: number
                       periodSeconds:
                         description: The number of seconds between checks.
@@ -6998,7 +7009,8 @@ spec:
                       successThreshold:
                         description: Minimum number of times the check needs to pass
                           for the probe to be considered successful after having failed.
-                          Defaults to 1. Must be 1 for liveness and startup Probes.
+                          Defaults to 1. Must be 1 for liveness Probe.
+                        minimum: 1.0
                         type: number
                       initialDelaySeconds:
                         description: The number of seconds before the first check
@@ -8611,6 +8623,7 @@ spec:
                                 probe, the Pod will be marked Unready. Defaults to
                                 1.
                               type: number
+                              minimum: 1.0
                             periodSeconds:
                               description: The number of seconds between checks.
                               type: number
@@ -8622,8 +8635,9 @@ spec:
                               description: Minimum number of times the check needs
                                 to pass for the probe to be considered successful
                                 after having failed. Defaults to 1. Must be 1 for
-                                liveness and startup Probes.
+                                liveness Probe.
                               type: number
+                              minimum: 1.0
                             initialDelaySeconds:
                               description: The number of seconds before the first
                                 check is performed.
@@ -9675,6 +9689,7 @@ spec:
                                 probe, the Pod will be marked Unready. Defaults to
                                 1.
                               type: number
+                              minimum: 1.0
                             periodSeconds:
                               description: The number of seconds between checks.
                               type: number
@@ -9686,8 +9701,9 @@ spec:
                               description: Minimum number of times the check needs
                                 to pass for the probe to be considered successful
                                 after having failed. Defaults to 1. Must be 1 for
-                                liveness and startup Probes.
+                                liveness Probe.
                               type: number
+                              minimum: 1.0
                             initialDelaySeconds:
                               description: The number of seconds before the first
                                 check is performed.
