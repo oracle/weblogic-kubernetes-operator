@@ -30,12 +30,9 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
@@ -84,12 +81,12 @@ import static oracle.weblogic.kubernetes.actions.TestActions.dockerPull;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.cleanupDirectory;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.installIstio;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.uninstallIstio;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.extension.ExtensionContext.Namespace.GLOBAL;
@@ -106,11 +103,6 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
 
   private static Collection<String> pushedImages = new ArrayList<>();
   private static boolean isInitializationSuccessful = false;
-
-  ConditionFactory withStandardRetryPolicy
-      = with().pollDelay(0, SECONDS)
-      .and().with().pollInterval(10, SECONDS)
-      .atMost(30, MINUTES).await();
 
   @Override
   public void beforeAll(ExtensionContext context) {
@@ -147,23 +139,17 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
         // docker login to OCR or OCIR if OCR_USERNAME and OCR_PASSWORD is provided in env var
         if (BASE_IMAGES_REPO.equals(OCR_REGISTRY)) {
           if (!OCR_USERNAME.equals(REPO_DUMMY_VALUE)) {
-            withStandardRetryPolicy
-                .conditionEvaluationListener(
-                    condition -> logger.info("Waiting for docker login to OCR to be successful"
-                            + "(elapsed time {0} ms, remaining time {1} ms)",
-                        condition.getElapsedTimeInMS(),
-                        condition.getRemainingTimeInMS()))
-                .until(() -> dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD));
+            testUntil(
+                () -> dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD),
+                logger,
+                "Waiting for docker login to OCR to be successful");
           }
         } else if (BASE_IMAGES_REPO.equals(OCIR_REGISTRY)) {
           if (!OCIR_USERNAME.equals(REPO_DUMMY_VALUE)) {
-            withStandardRetryPolicy
-                .conditionEvaluationListener(
-                    condition -> logger.info("Waiting for docker login to OCIR to be successful"
-                            + "(elapsed time {0} ms, remaining time {1} ms)",
-                        condition.getElapsedTimeInMS(),
-                        condition.getRemainingTimeInMS()))
-                .until(() -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD));
+            testUntil(
+                () -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD),
+                logger,
+                "Waiting for docker login to OCIR to be successful");
           }
         }
         // The following code is for pulling WLS images if running tests in Kind cluster
@@ -183,41 +169,29 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
           images.add(DB_IMAGE_NAME + ":" + DB_IMAGE_TAG);
 
           for (String image : images) {
-            withStandardRetryPolicy
-                .conditionEvaluationListener(
-                    condition -> logger.info("Waiting for pullImageFromOcrOrOcirAndPushToKind for image {0} to be "
-                            + "successful (elapsed time {1} ms, remaining time {2} ms)", image,
-                        condition.getElapsedTimeInMS(),
-                        condition.getRemainingTimeInMS()))
-                .until(pullImageFromOcrOrOcirAndPushToKind(image)
-                );
+            testUntil(
+                pullImageFromOcrOrOcirAndPushToKind(image),
+                logger,
+                "Waiting for pullImageFromOcrOrOcirAndPushToKind for image {0} to be successful");
           }
         }
 
         if (System.getenv("SKIP_BASIC_IMAGE_BUILD") == null) {
           // build MII basic image
           miiBasicImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
-          withStandardRetryPolicy
-              .conditionEvaluationListener(
-                  condition -> logger.info("Waiting for createBasicImage to be successful"
-                          + "(elapsed time {0} ms, remaining time {1} ms)",
-                      condition.getElapsedTimeInMS(),
-                      condition.getRemainingTimeInMS()))
-              .until(createBasicImage(MII_BASIC_IMAGE_NAME, MII_BASIC_IMAGE_TAG, MII_BASIC_WDT_MODEL_FILE,
-                  null, MII_BASIC_APP_NAME, MII_BASIC_IMAGE_DOMAINTYPE)
-              );
+          testUntil(
+              createBasicImage(MII_BASIC_IMAGE_NAME, MII_BASIC_IMAGE_TAG, MII_BASIC_WDT_MODEL_FILE,
+                null, MII_BASIC_APP_NAME, MII_BASIC_IMAGE_DOMAINTYPE),
+              logger,
+              "Waiting for createBasicImage to be successful");
 
           // build basic wdt-domain-in-image image
           wdtBasicImage = WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG;
-          withStandardRetryPolicy
-              .conditionEvaluationListener(
-                  condition -> logger.info("Waiting for createBasicImage to be successful"
-                          + "(elapsed time {0} ms, remaining time {1} ms)",
-                      condition.getElapsedTimeInMS(),
-                      condition.getRemainingTimeInMS()))
-              .until(createBasicImage(WDT_BASIC_IMAGE_NAME, WDT_BASIC_IMAGE_TAG, WDT_BASIC_MODEL_FILE,
-                  WDT_BASIC_MODEL_PROPERTIES_FILE, WDT_BASIC_APP_NAME, WDT_BASIC_IMAGE_DOMAINTYPE)
-              );
+          testUntil(
+              createBasicImage(WDT_BASIC_IMAGE_NAME, WDT_BASIC_IMAGE_TAG, WDT_BASIC_MODEL_FILE,
+                WDT_BASIC_MODEL_PROPERTIES_FILE, WDT_BASIC_APP_NAME, WDT_BASIC_IMAGE_DOMAINTYPE),
+              logger,
+              "Waiting for createBasicImage to be successful");
 
           /* Check image exists using docker images | grep image tag.
            * Tag name is unique as it contains date and timestamp.
@@ -235,13 +209,10 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
 
         if (!OCIR_USERNAME.equals(REPO_DUMMY_VALUE)) {
           logger.info("docker login");
-          withStandardRetryPolicy
-              .conditionEvaluationListener(
-                  condition -> logger.info("Waiting for docker login to OCIR to be successful"
-                          + "(elapsed time {0} ms, remaining time {1} ms)",
-                      condition.getElapsedTimeInMS(),
-                      condition.getRemainingTimeInMS()))
-              .until(() -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD));
+          testUntil(
+              () -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD),
+              logger,
+              "Waiting for docker login to OCIR to be successful");
         }
 
         // push the images to repo
@@ -261,14 +232,10 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
             } else {
               logger.info("docker push image {0} to {1}", image, DOMAIN_IMAGES_REPO);
             }
-            withStandardRetryPolicy
-                .conditionEvaluationListener(
-                    condition -> logger.info("Waiting for docker push to OCIR/kind for image {0} to be successful"
-                            + "(elapsed time {1} ms, remaining time {2} ms)",
-                        image,
-                        condition.getElapsedTimeInMS(),
-                        condition.getRemainingTimeInMS()))
-                .until(() -> dockerPush(image));
+            testUntil(
+                () -> dockerPush(image),
+                logger,
+                "Waiting for docker push to OCIR/kind for image {0} to be successful");
           }
 
           // list images for Kind cluster

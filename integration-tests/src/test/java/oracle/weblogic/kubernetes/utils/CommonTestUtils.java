@@ -9,11 +9,14 @@ import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.stream.Stream;
 
 import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.domain.Cluster;
@@ -21,7 +24,11 @@ import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import org.awaitility.core.ConditionEvaluationListener;
 import org.awaitility.core.ConditionFactory;
+import org.awaitility.core.ConditionTimeoutException;
+import org.awaitility.core.EvaluatedCondition;
+import org.awaitility.core.TimeoutEvent;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -47,16 +54,71 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * The common utility class for tests.
  */
 public class CommonTestUtils {
 
-  public static ConditionFactory withStandardRetryPolicy =
-      with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(5, MINUTES).await();
+  private static ConditionFactory createStandardRetryPolicyWithAtMost(long minutes) {
+    return with().pollDelay(2, SECONDS)
+        .and().with().pollInterval(10, SECONDS)
+        .atMost(minutes, MINUTES).await();
+  }
+
+  public static ConditionFactory withStandardRetryPolicy = createStandardRetryPolicyWithAtMost(5);
+  public static ConditionFactory withLongRetryPolicy = createStandardRetryPolicyWithAtMost(15);
+
+  /**
+   * Test assertion using standard retry policy over time until it passes or the timeout expires.
+   * @param conditionEvaluator Condition evaluator
+   * @param logger Logger
+   * @param msg Message for logging
+   * @param params Parameter to message for logging
+   */
+  public static void testUntil(Callable<Boolean> conditionEvaluator,
+                               LoggingFacade logger, String msg, Object... params) {
+    testUntil(withStandardRetryPolicy, conditionEvaluator, logger, msg, params);
+  }
+
+  /**
+   * Test assertion over time until it passes or the timeout expires.
+   * @param conditionFactory Configuration for Awaitility condition factory
+   * @param conditionEvaluator Condition evaluator
+   * @param logger Logger
+   * @param msg Message for logging
+   * @param params Parameter to message for logging
+   */
+  public static void testUntil(ConditionFactory conditionFactory, Callable<Boolean> conditionEvaluator,
+                               LoggingFacade logger, String msg, Object... params) {
+    try {
+      conditionFactory
+          .conditionEvaluationListener(createConditionEvaluationListener(logger, msg, params))
+          .until(conditionEvaluator);
+    } catch (ConditionTimeoutException timeout) {
+      fail("Timed out waiting for: " + msg);
+    }
+  }
+
+  private static <T> ConditionEvaluationListener<T> createConditionEvaluationListener(
+      LoggingFacade logger, String msg, Object... params) {
+    return new ConditionEvaluationListener<T>() {
+      @Override
+      public void conditionEvaluated(EvaluatedCondition condition) {
+        logger.info(msg + " (elapsed time {0} ms, remaining time {1} ms)",
+            Stream.concat(
+                Optional.ofNullable(params).map(Arrays::asList).orElse(Collections.emptyList()).stream(),
+                Stream.of(condition.getElapsedTimeInMS(), condition.getRemainingTimeInMS())).toArray());
+      }
+
+      @Override
+      public void onTimeout(TimeoutEvent timeoutEvent) {
+        logger.info("Timed out waiting for: " + msg + " (elapsed time {0} ms)",
+            timeoutEvent.getElapsedTimeInMS());
+      }
+    };
+  }
 
   public static ConditionFactory withQuickRetryPolicy = with().pollDelay(0, SECONDS)
       .and().with().pollInterval(3, SECONDS)
@@ -87,17 +149,14 @@ public class CommonTestUtils {
    */
   public static void checkServiceExists(String serviceName, String namespace) {
     LoggingFacade logger = getLogger();
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for service {0} to exist in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                serviceName,
-                namespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> serviceExists(serviceName, null, namespace),
-            String.format("serviceExists failed with ApiException for service %s in namespace %s",
-                serviceName, namespace)));
+    testUntil(
+        assertDoesNotThrow(() -> serviceExists(serviceName, null, namespace),
+          String.format("serviceExists failed with ApiException for service %s in namespace %s",
+            serviceName, namespace)),
+        logger,
+        "Waiting for service {0} to exist in namespace {1}",
+        serviceName,
+        namespace);
   }
 
   /**
@@ -120,17 +179,14 @@ public class CommonTestUtils {
    */
   public static void checkServiceDoesNotExist(String serviceName, String namespace) {
     LoggingFacade logger = getLogger();
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for service {0} to be deleted in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                serviceName,
-                namespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> serviceDoesNotExist(serviceName, null, namespace),
-            String.format("serviceDoesNotExist failed with ApiException for service %s in namespace %s",
-                serviceName, namespace)));
+    testUntil(
+        assertDoesNotThrow(() -> serviceDoesNotExist(serviceName, null, namespace),
+          String.format("serviceDoesNotExist failed with ApiException for service %s in namespace %s",
+            serviceName, namespace)),
+        logger,
+        "Waiting for service {0} to be deleted in namespace {1}",
+        serviceName,
+        namespace);
   }
 
   /**
@@ -391,24 +447,19 @@ public class CommonTestUtils {
     logger.info("Check if the given WebLogic admin credentials are {0}", msg);
     String finalHost = host != null ? host : K8S_NODEPORT_HOST;
     logger.info("finalHost = {0}", finalHost);
-    withQuickRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Checking that credentials {0}/{1} are {2}"
-                    + "(elapsed time {3}ms, remaining time {4}ms)",
-                username,
-                password,
-                msg,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(
-            expectValid
-                ?
-            () -> credentialsValid(finalHost, podName, namespace, username, password, args)
-                :
-            () -> credentialsNotValid(finalHost, podName, namespace, username, password, args),
-            String.format(
-                "Failed to validate credentials %s/%s on pod %s in namespace %s",
-                username, password, podName, namespace)));
+    testUntil(
+        withQuickRetryPolicy,
+        assertDoesNotThrow(
+          expectValid ? () -> credentialsValid(finalHost, podName, namespace, username, password, args)
+              : () -> credentialsNotValid(finalHost, podName, namespace, username, password, args),
+          String.format(
+            "Failed to validate credentials %s/%s on pod %s in namespace %s",
+            username, password, podName, namespace)),
+        logger,
+        "Checking that credentials {0}/{1} are {2}",
+        username,
+        password,
+        msg);
   }
 
   /**
@@ -638,21 +689,12 @@ public class CommonTestUtils {
   public static void verifyServerCommunication(String curlRequest, List<String> managedServerNames) {
     LoggingFacade logger = getLogger();
 
-    ConditionFactory withStandardRetryPolicy
-        = with().pollDelay(2, SECONDS)
-        .and().with().pollInterval(10, SECONDS)
-        .atMost(10, MINUTES).await();
-
     HashMap<String, Boolean> managedServers = new HashMap<>();
     managedServerNames.forEach(managedServerName -> managedServers.put(managedServerName, false));
 
     //verify each server in the cluster can connect to other
-    withStandardRetryPolicy.conditionEvaluationListener(
-        condition -> logger.info("Waiting until each managed server can see other cluster members"
-                + "(elapsed time {0} ms, remaining time {1} ms)",
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
-        .until((Callable<Boolean>) () -> {
+    testUntil(
+        () -> {
           for (int i = 0; i < managedServerNames.size(); i++) {
             logger.info(curlRequest);
             // check the response contains managed server name
@@ -687,7 +729,9 @@ public class CommonTestUtils {
             }
           });
           return !managedServers.containsValue(false);
-        });
+        },
+        logger,
+        "Waiting until each managed server can see other cluster members");
   }
 
   /**
@@ -774,14 +818,8 @@ public class CommonTestUtils {
    * @param expectedMsg the expected message in the command output
    */
   public static void verifyCommandResultContainsMsg(String command, String expectedMsg) {
-    withStandardRetryPolicy.conditionEvaluationListener(
-        condition -> getLogger().info("Waiting until command result contains expected message \"{0}\" "
-                + "(elapsed time {1} ms, remaining time {2} ms)",
-            expectedMsg,
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
-        .until(() -> {
-
+    testUntil(
+        () -> {
           ExecResult result;
           try {
             result = exec(command, true);
@@ -793,11 +831,13 @@ public class CommonTestUtils {
             }
 
             return result.stdout().contains(expectedMsg);
-
           } catch (Exception e) {
             getLogger().info("Got exception, command failed with errors " + e.getMessage());
             return false;
           }
-        });
+        },
+        getLogger(),
+        "Waiting until command result contains expected message \"{0}\"",
+        expectedMsg);
   }
 }

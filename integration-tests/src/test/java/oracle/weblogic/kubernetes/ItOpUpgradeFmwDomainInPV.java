@@ -36,15 +36,12 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.CleanupUtil;
-import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
@@ -65,6 +62,7 @@ import static oracle.weblogic.kubernetes.utils.ApplicationUtils.collectAppAvaila
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.deployAndAccessApplication;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.DbUtils.deleteDb;
@@ -81,7 +79,6 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -96,9 +93,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Tests to upgrade Operator with FMW domain in PV using WLST")
 @IntegrationTest
 class ItOpUpgradeFmwDomainInPV {
-
-  private static ConditionFactory withStandardRetryPolicy;
-  private static ConditionFactory withQuickRetryPolicy;
 
   private static String opNamespace1 = null;
   private static String opNamespace2 = null;
@@ -138,15 +132,6 @@ class ItOpUpgradeFmwDomainInPV {
   @BeforeAll
   public static void initAll() {
     logger = getLogger();
-    // create standard, reusable retry/backoff policy
-    withStandardRetryPolicy = with().pollDelay(10, SECONDS)
-        .and().with().pollInterval(10, SECONDS)
-        .atMost(5, MINUTES).await();
-
-    // create a reusable quick retry policy
-    withQuickRetryPolicy = with().pollDelay(0, SECONDS)
-        .and().with().pollInterval(4, SECONDS)
-        .atMost(10, SECONDS).await();
 
     latestOperatorImageName = getOperatorImageName();
   }
@@ -390,15 +375,12 @@ class ItOpUpgradeFmwDomainInPV {
 
         // check operator image name after upgrade
         logger.info("Checking image name in operator container ");
-        withStandardRetryPolicy
-            .conditionEvaluationListener(
-                condition -> logger.info("Checking operator image name in namespace {0} after upgrade "
-                        + "(elapsed time {1}ms, remaining time {2}ms)",
-                    opNamespace1,
-                    condition.getElapsedTimeInMS(),
-                    condition.getRemainingTimeInMS()))
-            .until(assertDoesNotThrow(() -> getOpContainerImageName(),
-                "Exception while getting the operator image name"));
+        testUntil(
+            assertDoesNotThrow(() -> getOpContainerImageName(),
+              "Exception while getting the operator image name"),
+            logger,
+            "Checking operator image name in namespace {0} after upgrade",
+            opNamespace1);
       } finally {
         if (accountingThread != null) {
           try {

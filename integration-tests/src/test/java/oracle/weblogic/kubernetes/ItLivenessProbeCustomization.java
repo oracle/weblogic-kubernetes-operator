@@ -26,7 +26,6 @@ import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -35,8 +34,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
@@ -50,6 +47,7 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.copyF
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appNotAccessibleInPod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
@@ -58,7 +56,6 @@ import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOpe
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -89,11 +86,6 @@ class ItLivenessProbeCustomization {
   private static final String appPath = "sample-war/index.jsp";
 
   private static LoggingFacade logger = null;
-
-  private static ConditionFactory withStandardRetryPolicy =
-      with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(5, MINUTES).await();
 
   /**
    * Get namespaces for operator and WebLogic domain.
@@ -357,22 +349,18 @@ class ItLivenessProbeCustomization {
   ) {
 
     // check that the application is NOT running inside of a server pod
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Checking if application {0} IS running on pod {1} in namespace {2} "
-            + "(elapsed time {3}ms, remaining time {4}ms)",
-            appPath,
-            podName,
-            namespace,
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
-        .until(() -> appAccessibleInPod(
-                namespace,
-                podName,
-                internalPort,
-                appPath,
-                expectedStr));
-
+    testUntil(
+        () -> appAccessibleInPod(
+          namespace,
+          podName,
+          internalPort,
+          appPath,
+          expectedStr),
+        logger,
+        "Checking if application {0} IS running on pod {1} in namespace {2}",
+        appPath,
+        podName,
+        namespace);
   }
 
   private static void checkAppNotRunning(
@@ -382,21 +370,18 @@ class ItLivenessProbeCustomization {
   ) {
 
     // check that the application is NOT running inside of a server pod
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Checking if application {0} is NOT running on pod {1} in namespace {2} "
-            + "(elapsed time {3}ms, remaining time {4}ms)",
-            appPath,
-            podName,
-            namespace,
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
-        .until(() -> appNotAccessibleInPod(
-                namespace,
-                podName,
-                internalPort,
-                appPath,
-                expectedStr));
+    testUntil(
+        () -> appNotAccessibleInPod(
+          namespace,
+          podName,
+          internalPort,
+          appPath,
+          expectedStr),
+        logger,
+        "Checking if application {0} is NOT running on pod {1} in namespace {2}",
+        appPath,
+        podName,
+        namespace);
   }
 
   private static String createAndVerifyDomainImage() {
