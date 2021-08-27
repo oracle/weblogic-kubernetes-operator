@@ -7,7 +7,7 @@
   <parent>
     <groupId>oracle.kubernetes</groupId>
     <artifactId>operator-parent</artifactId>
-    <version>3.3.0</version>
+    <version>3.3.1</version>
   </parent>
 
   <artifactId>weblogic-kubernetes-operator</artifactId>
@@ -92,7 +92,7 @@
           <includes>
             <exclude>**/*Test.java</exclude>
           </includes>
-          <argLine>--add-opens java.base/java.time=ALL-UNNAMED</argLine>
+          <argLine>@{argLine} --add-opens java.base/java.time=ALL-UNNAMED</argLine>
         </configuration>
       </plugin>
 

@@ -256,20 +256,26 @@ public class Matchers {
   public static class ProbeMatcher
       extends org.hamcrest.TypeSafeDiagnosingMatcher<io.kubernetes.client.openapi.models.V1Probe> {
     private static final Integer EXPECTED_FAILURE_THRESHOLD = 1;
+    private static final Integer EXPECTED_SUCCESS_THRESHOLD = null;
     private final Integer expectedInitialDelay;
     private final Integer expectedTimeout;
     private final Integer expectedPeriod;
+    private final Integer expectedSuccessThreshold;
+    private final Integer expectedFailureThreshold;
 
-    private ProbeMatcher(int expectedInitialDelay, int expectedTimeout, int expectedPeriod) {
+    private ProbeMatcher(int expectedInitialDelay, int expectedTimeout, int expectedPeriod,
+                         Integer expectedSuccessThreshold, int expectedFailureThreshold) {
       this.expectedInitialDelay = expectedInitialDelay;
       this.expectedTimeout = expectedTimeout;
       this.expectedPeriod = expectedPeriod;
+      this.expectedFailureThreshold = expectedFailureThreshold;
+      this.expectedSuccessThreshold = expectedSuccessThreshold;
     }
 
-    public static ProbeMatcher hasExpectedTuning(
-        int expectedInitialDelay, int expectedTimeout, int expectedPeriod) {
+    public static ProbeMatcher hasExpectedTuning(int expectedInitialDelay, int expectedTimeout, int expectedPeriod,
+                                                 Integer successThreshold, Integer failureThreshold) {
       return new ProbeMatcher(
-          expectedInitialDelay, expectedTimeout, expectedPeriod);
+          expectedInitialDelay, expectedTimeout, expectedPeriod, successThreshold, failureThreshold);
     }
 
     @Override
@@ -277,7 +283,8 @@ public class Matchers {
       if (Objects.equals(expectedInitialDelay, item.getInitialDelaySeconds())
           && Objects.equals(expectedTimeout, item.getTimeoutSeconds())
           && Objects.equals(expectedPeriod, item.getPeriodSeconds())
-          && Objects.equals(EXPECTED_FAILURE_THRESHOLD, item.getFailureThreshold())) {
+          && Objects.equals(expectedSuccessThreshold, item.getSuccessThreshold())
+          && Objects.equals(expectedFailureThreshold, item.getFailureThreshold())) {
         return true;
       } else {
         mismatchDescription
@@ -287,6 +294,8 @@ public class Matchers {
             .appendValue(item.getTimeoutSeconds())
             .appendText(", period ")
             .appendValue(item.getPeriodSeconds())
+            .appendText(", successThreshold ")
+            .appendValue(item.getSuccessThreshold())
             .appendText(" and failureThreshold ")
             .appendValue(item.getFailureThreshold());
 
@@ -303,6 +312,8 @@ public class Matchers {
           .appendValue(expectedTimeout)
           .appendText(", period ")
           .appendValue(expectedPeriod)
+          .appendText(", successThreshold ")
+          .appendValue(EXPECTED_SUCCESS_THRESHOLD)
           .appendText(" and failureThreshold ")
           .appendValue(EXPECTED_FAILURE_THRESHOLD);
     }

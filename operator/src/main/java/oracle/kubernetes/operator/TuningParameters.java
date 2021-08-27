@@ -246,9 +246,13 @@ public interface TuningParameters extends Map<String, String> {
     public final int readinessProbeInitialDelaySeconds;
     public final int readinessProbeTimeoutSeconds;
     public final int readinessProbePeriodSeconds;
+    public final int readinessProbeSuccessThreshold;
+    public final int readinessProbeFailureThreshold;
     public final int livenessProbeInitialDelaySeconds;
     public final int livenessProbeTimeoutSeconds;
     public final int livenessProbePeriodSeconds;
+    public final int livenessProbeSuccessThreshold;
+    public final int livenessProbeFailureThreshold;
     public final long introspectorJobActiveDeadlineSeconds;
 
     /**
@@ -256,25 +260,37 @@ public interface TuningParameters extends Map<String, String> {
      * @param readinessProbeInitialDelaySeconds readiness probe initial delay
      * @param readinessProbeTimeoutSeconds readiness probe timeout
      * @param readinessProbePeriodSeconds rediness probe period
+     * @param readinessProbeSuccessThreshold readiness probe success threshold
+     * @param readinessProbeFailureThreshold readiness probe failure threshold
      * @param livenessProbeInitialDelaySeconds liveness probe initial delay
      * @param livenessProbeTimeoutSeconds liveness probe timeout
      * @param livenessProbePeriodSeconds liveness probe period
+     * @param livenessProbeSuccessThreshold liveness probe success threshold
+     * @param livenessProbeFailureThreshold liveness probe failure threshold
      * @param introspectorJobActiveDeadlineSeconds introspector job active deadline
      */
     public PodTuning(
         int readinessProbeInitialDelaySeconds,
         int readinessProbeTimeoutSeconds,
         int readinessProbePeriodSeconds,
+        int readinessProbeSuccessThreshold,
+        int readinessProbeFailureThreshold,
         int livenessProbeInitialDelaySeconds,
         int livenessProbeTimeoutSeconds,
         int livenessProbePeriodSeconds,
+        int livenessProbeSuccessThreshold,
+        int livenessProbeFailureThreshold,
         long introspectorJobActiveDeadlineSeconds) {
       this.readinessProbeInitialDelaySeconds = readinessProbeInitialDelaySeconds;
       this.readinessProbeTimeoutSeconds = readinessProbeTimeoutSeconds;
       this.readinessProbePeriodSeconds = readinessProbePeriodSeconds;
+      this.readinessProbeSuccessThreshold = readinessProbeSuccessThreshold;
+      this.readinessProbeFailureThreshold = readinessProbeFailureThreshold;
       this.livenessProbeInitialDelaySeconds = livenessProbeInitialDelaySeconds;
       this.livenessProbeTimeoutSeconds = livenessProbeTimeoutSeconds;
       this.livenessProbePeriodSeconds = livenessProbePeriodSeconds;
+      this.livenessProbeSuccessThreshold = livenessProbeSuccessThreshold;
+      this.livenessProbeFailureThreshold = livenessProbeFailureThreshold;
       this.introspectorJobActiveDeadlineSeconds = introspectorJobActiveDeadlineSeconds;
     }
 
@@ -284,9 +300,13 @@ public interface TuningParameters extends Map<String, String> {
           .append("readinessProbeInitialDelaySeconds", readinessProbeInitialDelaySeconds)
           .append("readinessProbeTimeoutSeconds", readinessProbeTimeoutSeconds)
           .append("readinessProbePeriodSeconds", readinessProbePeriodSeconds)
+          .append("readinessProbeSuccessThreshold", readinessProbeSuccessThreshold)
+          .append("readinessProbeFailureThreshold", readinessProbeFailureThreshold)
           .append("livenessProbeInitialDelaySeconds", livenessProbeInitialDelaySeconds)
           .append("livenessProbeTimeoutSeconds", livenessProbeTimeoutSeconds)
           .append("livenessProbePeriodSeconds", livenessProbePeriodSeconds)
+          .append("livenessProbeSuccessThreshold", livenessProbeSuccessThreshold)
+          .append("livenessProbeFailureThreshold", livenessProbeFailureThreshold)
           .toString();
     }
 
@@ -296,9 +316,13 @@ public interface TuningParameters extends Map<String, String> {
           .append(readinessProbeInitialDelaySeconds)
           .append(readinessProbeTimeoutSeconds)
           .append(readinessProbePeriodSeconds)
+          .append(readinessProbeSuccessThreshold)
+          .append(readinessProbeFailureThreshold)
           .append(livenessProbeInitialDelaySeconds)
           .append(livenessProbeTimeoutSeconds)
           .append(livenessProbePeriodSeconds)
+          .append(livenessProbeSuccessThreshold)
+          .append(livenessProbeFailureThreshold)
           .toHashCode();
     }
 
@@ -315,9 +339,13 @@ public interface TuningParameters extends Map<String, String> {
           .append(readinessProbeInitialDelaySeconds, pt.readinessProbeInitialDelaySeconds)
           .append(readinessProbeTimeoutSeconds, pt.readinessProbeTimeoutSeconds)
           .append(readinessProbePeriodSeconds, pt.readinessProbePeriodSeconds)
+          .append(readinessProbeSuccessThreshold, pt.readinessProbeSuccessThreshold)
+          .append(readinessProbeFailureThreshold, pt.readinessProbeFailureThreshold)
           .append(livenessProbeInitialDelaySeconds, pt.livenessProbeInitialDelaySeconds)
           .append(livenessProbeTimeoutSeconds, pt.livenessProbeTimeoutSeconds)
           .append(livenessProbePeriodSeconds, pt.livenessProbePeriodSeconds)
+          .append(livenessProbeSuccessThreshold, pt.livenessProbeSuccessThreshold)
+          .append(livenessProbeFailureThreshold, pt.livenessProbeFailureThreshold)
           .isEquals();
     }
   }
