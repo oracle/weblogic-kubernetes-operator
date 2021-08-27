@@ -409,6 +409,12 @@ class ServerPod extends KubernetesResource {
         .periodSeconds(period);
   }
 
+  void setReadinessProbeThresholds(Integer successThreshold, Integer failureThreshold) {
+    this.readinessProbe
+        .successThreshold(successThreshold)
+        .failureThreshold(failureThreshold);
+  }
+
   List<AuxiliaryImage> getAuxiliaryImages() {
     return this.auxiliaryImages;
   }
@@ -426,6 +432,12 @@ class ServerPod extends KubernetesResource {
         .initialDelaySeconds(initialDelay)
         .timeoutSeconds(timeout)
         .periodSeconds(period);
+  }
+
+  void setLivenessProbeThresholds(Integer successThreshold, Integer failureThreshold) {
+    this.livenessProbe
+        .successThreshold(successThreshold)
+        .failureThreshold(failureThreshold);
   }
 
   void fillInFrom(ServerPod serverPod1) {
