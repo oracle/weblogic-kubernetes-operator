@@ -106,7 +106,8 @@ public class CommonTestUtils {
     return new ConditionEvaluationListener<T>() {
       @Override
       public void conditionEvaluated(EvaluatedCondition condition) {
-        logger.info(msg + " (elapsed time {0} ms, remaining time {1} ms)",
+        int paramsSize = params != null ? params.length : 0;
+        logger.info(msg + " (elapsed time {" + paramsSize + "} ms, remaining time {" + (paramsSize + 1) + "} ms)",
             Stream.concat(
                 Optional.ofNullable(params).map(Arrays::asList).orElse(Collections.emptyList()).stream(),
                 Stream.of(condition.getElapsedTimeInMS(), condition.getRemainingTimeInMS())).toArray());
