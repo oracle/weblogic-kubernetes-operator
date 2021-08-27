@@ -89,14 +89,6 @@ class ItManageNameSpace {
 
   private static String[] opNamespaces = new String[4];
 
-  String manageByExp1NS = "test-" + domainNamespaces[0];
-  String manageByExp2NS = "test-" + domainNamespaces[1];
-  String manageByExpDomain1Uid = "test-" + domainsUid[0];
-  String manageByExpDomain2Uid = "test-" + domainsUid[1];
-  String manageByExp3NS = "atest-" + domainNamespaces[0];
-  String manageByExpDomainUid = "weblogic2" + domainNamespaces[1];
-  String manageByExpDomainNS = "weblogic2" + domainNamespaces[1];
-
   // domain constants
   private static final String[] domainsUid = {"managensdomain1","managensdomain2","managensdomain3","managensdomain4"};
   private static String[] domainNamespaces = new String[4];
@@ -117,6 +109,14 @@ class ItManageNameSpace {
       with().pollDelay(2, SECONDS)
           .and().with().pollInterval(5, SECONDS)
           .atMost(2, MINUTES).await();
+  
+  String manageByExp1NS = "test-" + domainNamespaces[0];
+  String manageByExp2NS = "test-" + domainNamespaces[1];
+  String manageByExpDomain1Uid = "test-" + domainsUid[0];
+  String manageByExpDomain2Uid = "test-" + domainsUid[1];
+  String manageByExp3NS = "atest-" + domainNamespaces[0];
+  String manageByExpDomainUid = "weblogic2" + domainNamespaces[1];
+  String manageByExpDomainNS = "weblogic2" + domainNamespaces[1];
 
   /**
    * Get namespaces for operator, domain.
