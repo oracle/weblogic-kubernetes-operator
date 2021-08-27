@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 1ae768676f3756beb4c6051ef1ef68c90ce0b4ac80c01b5034f82e221c4bd0d9
+    weblogic.sha256: dc1632c29909ee61f20a52357a4ecf15e66d4ca44d3009a6b6a613424949ed16
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -261,14 +261,6 @@ spec:
                   Defaults to the value of `metadata.name`.
                 pattern: ^[a-z0-9-.]{1,45}$
                 type: string
-              portForwardingEnabled:
-                description: When this flag is enabled, the operator enhances the
-                  domain configuration with a NetworkAccessPoint for the admin protocol
-                  that listens on the localhost. This allows access to the Administration
-                  Console using the kubectl port-forward pattern, which is often more
-                  secure than exposing the console to the public Internet. Defaults
-                  to true.
-                type: boolean
               serverService:
                 description: Customization affecting the generation of ClusterIP Services
                   for WebLogic Server instances.
@@ -2945,6 +2937,14 @@ spec:
                             type: object
                         type: object
                     type: object
+                  adminChannelPortForwardingEnabled:
+                    description: When this flag is enabled (default true), the operator
+                      updates the domain's WebLogic configuration for its admin server
+                      to have an admin protocol NetworkAccessPoint with a 'localhost'
+                      address for each existing admin protocol capable port. This
+                      allows external Administration Console and WLST 'T3' access
+                      when using the 'kubectl port-forward' pattern.
+                    type: boolean
                   serverStartPolicy:
                     description: 'The strategy for deciding whether to start a WebLogic
                       Server instance. Legal values are ALWAYS, NEVER, or IF_NEEDED.
