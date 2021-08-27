@@ -22,7 +22,7 @@ public interface StepContextConstants {
   String OPSS_WALLETFILE_MOUNT_PATH = "/weblogic-operator/opss-walletfile-secret";
   String DEBUG_CM_MOUNTS_PATH = "/weblogic-operator/debug";
   String NODEMGR_HOME = "/u01/nodemanager";
-  int FAILURE_THRESHOLD = 1;
+  int DEFAULT_SUCCESS_THRESHOLD = 1;
 
   @SuppressWarnings("OctalInteger")
   int ALL_READ_AND_EXECUTE = 0555;

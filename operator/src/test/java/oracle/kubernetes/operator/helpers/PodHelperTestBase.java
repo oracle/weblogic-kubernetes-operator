@@ -103,13 +103,13 @@ import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.INTROSPE
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.NUM_CONFIG_MAPS;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.SECRETS_MD_5;
 import static oracle.kubernetes.operator.KubernetesConstants.ALWAYS_IMAGEPULLPOLICY;
-import static oracle.kubernetes.operator.KubernetesConstants.CONTAINER_NAME;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_EXPORTER_SIDECAR_PORT;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_DEBUG_CONFIG_MAP_SUFFIX;
 import static oracle.kubernetes.operator.KubernetesConstants.EXPORTER_CONTAINER_NAME;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
+import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.OPERATOR_VERSION;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_ROLL_START_EVENT_GENERATED;
@@ -191,6 +191,9 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   private static final int CONFIGURED_DELAY = 21;
   private static final int CONFIGURED_TIMEOUT = 27;
   private static final int CONFIGURED_PERIOD = 35;
+  public static final int CONFIGURED_FAILURE_THRESHOLD = 1;
+  public static final int CONFIGURED_SUCCESS_THRESHOLD = 2;
+  private static final Integer DEFAULT_SUCCESS_THRESHOLD = null;
   private static final String LOG_HOME = "/shared/logs";
   private static final String NODEMGR_HOME = "/u01/nodemanager";
   private static final String CONFIGMAP_VOLUME_NAME = "weblogic-scripts-cm-volume";
@@ -620,7 +623,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
 
     V1Container v1Container = getCreatedPodSpecContainer();
 
-    assertThat(v1Container.getName(), equalTo(CONTAINER_NAME));
+    assertThat(v1Container.getName(), equalTo(WLS_CONTAINER_NAME));
     assertThat(v1Container.getImage(), equalTo(LATEST_IMAGE));
     assertThat(v1Container.getImagePullPolicy(), equalTo(ALWAYS_IMAGEPULLPOLICY));
   }
@@ -848,7 +851,8 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   void whenPodCreated_livenessProbeHasDefinedTuning() {
     assertThat(
         getCreatedPodSpecContainer().getLivenessProbe(),
-        hasExpectedTuning(LIVENESS_INITIAL_DELAY, LIVENESS_TIMEOUT, LIVENESS_PERIOD));
+        hasExpectedTuning(LIVENESS_INITIAL_DELAY, LIVENESS_TIMEOUT, LIVENESS_PERIOD, DEFAULT_SUCCESS_THRESHOLD,
+                CONFIGURED_FAILURE_THRESHOLD));
   }
 
   @Test
@@ -862,7 +866,8 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   void whenPodCreated_readinessProbeHasDefinedTuning() {
     assertThat(
         getCreatedPodSpecContainer().getReadinessProbe(),
-        hasExpectedTuning(READINESS_INITIAL_DELAY, READINESS_TIMEOUT, READINESS_PERIOD));
+        hasExpectedTuning(READINESS_INITIAL_DELAY, READINESS_TIMEOUT, READINESS_PERIOD, DEFAULT_SUCCESS_THRESHOLD,
+                CONFIGURED_FAILURE_THRESHOLD));
   }
 
   @Test
@@ -908,19 +913,23 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   @Test
   void whenPodCreatedWithDomainV2Settings_livenessProbeHasConfiguredTuning() {
     configureServer()
-        .withLivenessProbeSettings(CONFIGURED_DELAY, CONFIGURED_TIMEOUT, CONFIGURED_PERIOD);
+        .withLivenessProbeSettings(CONFIGURED_DELAY, CONFIGURED_TIMEOUT, CONFIGURED_PERIOD)
+        .withLivenessProbeThresholds(CONFIGURED_SUCCESS_THRESHOLD, CONFIGURED_FAILURE_THRESHOLD);
     assertThat(
         getCreatedPodSpecContainer().getLivenessProbe(),
-        hasExpectedTuning(CONFIGURED_DELAY, CONFIGURED_TIMEOUT, CONFIGURED_PERIOD));
+        hasExpectedTuning(CONFIGURED_DELAY, CONFIGURED_TIMEOUT, CONFIGURED_PERIOD, CONFIGURED_SUCCESS_THRESHOLD,
+                CONFIGURED_FAILURE_THRESHOLD));
   }
 
   @Test
   void whenPodCreated_readinessProbeHasConfiguredTuning() {
     configureServer()
-        .withReadinessProbeSettings(CONFIGURED_DELAY, CONFIGURED_TIMEOUT, CONFIGURED_PERIOD);
+        .withReadinessProbeSettings(CONFIGURED_DELAY, CONFIGURED_TIMEOUT, CONFIGURED_PERIOD)
+        .withReadinessProbeThresholds(CONFIGURED_SUCCESS_THRESHOLD, CONFIGURED_FAILURE_THRESHOLD);
     assertThat(
         getCreatedPodSpecContainer().getReadinessProbe(),
-        hasExpectedTuning(CONFIGURED_DELAY, CONFIGURED_TIMEOUT, CONFIGURED_PERIOD));
+        hasExpectedTuning(CONFIGURED_DELAY, CONFIGURED_TIMEOUT, CONFIGURED_PERIOD,
+                CONFIGURED_SUCCESS_THRESHOLD, CONFIGURED_FAILURE_THRESHOLD));
   }
 
   @Test 
@@ -1642,7 +1651,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
 
   V1Container createPodSpecContainer() {
     return new V1Container()
-        .name(CONTAINER_NAME)
+        .name(WLS_CONTAINER_NAME)
         .image(LATEST_IMAGE)
         .imagePullPolicy(ALWAYS_IMAGEPULLPOLICY)
         .securityContext(new V1SecurityContext())
