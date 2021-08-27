@@ -109,14 +109,14 @@ class ItManageNameSpace {
       with().pollDelay(2, SECONDS)
           .and().with().pollInterval(5, SECONDS)
           .atMost(2, MINUTES).await();
-  
-  String manageByExp1NS = "test-" + domainNamespaces[0];
-  String manageByExp2NS = "test-" + domainNamespaces[1];
-  String manageByExpDomain1Uid = "test-" + domainsUid[0];
-  String manageByExpDomain2Uid = "test-" + domainsUid[1];
-  String manageByExp3NS = "atest-" + domainNamespaces[0];
-  String manageByExpDomainUid = "weblogic2" + domainNamespaces[1];
-  String manageByExpDomainNS = "weblogic2" + domainNamespaces[1];
+
+  static String manageByExp1NS;
+  static String manageByExp2NS;
+  static String manageByExpDomain1Uid;
+  static String manageByExpDomain2Uid;
+  static String manageByExp3NS;
+  static String manageByExpDomainUid;
+  static String manageByExpDomainNS;
 
   /**
    * Get namespaces for operator, domain.
@@ -139,6 +139,14 @@ class ItManageNameSpace {
       assertNotNull(namespaces.get(i), "Namespace list is null");
       opNamespaces[(i - 4)] = namespaces.get(i);
     }
+
+    manageByExp1NS = "test-" + domainNamespaces[0];
+    manageByExp2NS = "test-" + domainNamespaces[1];
+    manageByExpDomain1Uid = "test-" + domainsUid[0];
+    manageByExpDomain2Uid = "test-" + domainsUid[1];
+    manageByExp3NS = "atest-" + domainNamespaces[0];
+    manageByExpDomainUid = "weblogic2" + domainNamespaces[1];
+    manageByExpDomainNS = "weblogic2" + domainNamespaces[1];
 
     createSecrets(domainNamespaces[2]);
     createSecrets("default");
