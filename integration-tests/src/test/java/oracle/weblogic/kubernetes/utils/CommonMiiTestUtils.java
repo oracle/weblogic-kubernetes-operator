@@ -1367,7 +1367,7 @@ public class CommonMiiTestUtils {
   }
 
   /**
-   * Create model in image domain with multiple clusters.
+   * Create model in image istio enabled domain with multiple clusters.
    *
    * @param domainUid the uid of the domain
    * @param domainNamespace namespace in which the domain will be created
@@ -1386,7 +1386,7 @@ public class CommonMiiTestUtils {
   }
 
   /**
-   * Create model in image domain with multiple clusters.
+   * Create model in image istio enabled domain with multiple clusters.
    *
    * @param domainUid the uid of the domain
    * @param domainNamespace namespace in which the domain will be created
