@@ -12,6 +12,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.custom.V1Patch;
@@ -226,6 +227,39 @@ public class CommonMiiTestUtils {
       String clusterName) {
 
     // create the domain CR
+    Domain domain = CommonMiiTestUtils.createDomainResource(domainResourceName, domNamespace,
+        imageName, adminSecretName, repoSecretName,
+        encryptionSecretName, replicaCount, List.of(clusterName));
+    setPodAntiAffinity(domain);
+
+    return domain;
+  }
+
+  /**
+   * Create a domain object for a Kubernetes domain custom resource using the basic model-in-image
+   * image.
+   *
+   * @param domainResourceName name of the domain resource
+   * @param domNamespace Kubernetes namespace that the domain is hosted
+   * @param imageName name of the image including its tag
+   * @param adminSecretName name of the new WebLogic admin credentials secret
+   * @param repoSecretName name of the secret for pulling the WebLogic image
+   * @param encryptionSecretName name of the secret used to encrypt the models
+   * @param replicaCount number of managed servers to start
+   * @param clusterNames a list of the cluster name to add in domain
+   * @return domain object of the domain resource
+   */
+  public static Domain createDomainResource(
+      String domainResourceName,
+      String domNamespace,
+      String imageName,
+      String adminSecretName,
+      String repoSecretName,
+      String encryptionSecretName,
+      int replicaCount,
+      List<String> clusterNames) {
+
+    // create the domain CR
     Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
         .kind("Domain")
@@ -256,15 +290,18 @@ public class CommonMiiTestUtils {
                     .addChannelsItem(new oracle.weblogic.domain.Channel()
                         .channelName("default")
                         .nodePort(0))))
-            .addClustersItem(new oracle.weblogic.domain.Cluster()
-                .clusterName(clusterName)
-                .replicas(replicaCount)
-                .serverStartState("RUNNING"))
             .configuration(new oracle.weblogic.domain.Configuration()
                 .model(new oracle.weblogic.domain.Model()
                     .domainType("WLS")
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(300L)));
+    for (String clusterName : clusterNames) {
+      domain.spec()
+          .addClustersItem(new oracle.weblogic.domain.Cluster()
+              .clusterName(clusterName)
+              .replicas(replicaCount)
+              .serverStartState("RUNNING"));
+    }
 
     setPodAntiAffinity(domain);
     return domain;
@@ -301,9 +338,47 @@ public class CommonMiiTestUtils {
       String auxiliaryImageVolumeName,
       String... auxiliaryImageName) {
 
+    Domain domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domainResourceName,
+        domNamespace, baseImageName, adminSecretName, repoSecretName, encryptionSecretName, replicaCount,
+        List.of(clusterName), auxiliaryImagePath, auxiliaryImageVolumeName, auxiliaryImageName);
+
+    return domainCR;
+  }
+
+  /**
+   * Create a domain object for a Kubernetes domain custom resource using the basic WLS image and MII auxiliary image
+   * image.
+   *
+   * @param domainResourceName name of the domain resource
+   * @param domNamespace Kubernetes namespace that the domain is hosted
+   * @param baseImageName name of the base image to use
+   * @param adminSecretName name of the new WebLogic admin credentials secret
+   * @param repoSecretName name of the secret for pulling the WebLogic image
+   * @param encryptionSecretName name of the secret used to encrypt the models
+   * @param replicaCount number of managed servers to start
+   * @param clusterNames a list of the cluster name to add in domain
+   * @param auxiliaryImagePath auxiliary image path, parent location for Model in Image model and WDT installation files
+   * @param auxiliaryImageVolumeName auxiliary image volume name
+   * @param auxiliaryImageName image names including tags, image contains the domain model, application archive if any
+   *                   and WDT installation files
+   * @return domain object of the domain resource
+   */
+  public static Domain createDomainResourceWithAuxiliaryImage(
+      String domainResourceName,
+      String domNamespace,
+      String baseImageName,
+      String adminSecretName,
+      String repoSecretName,
+      String encryptionSecretName,
+      int replicaCount,
+      List<String> clusterNames,
+      String auxiliaryImagePath,
+      String auxiliaryImageVolumeName,
+      String... auxiliaryImageName) {
+
     Domain domainCR = CommonMiiTestUtils.createDomainResource(domainResourceName, domNamespace,
         baseImageName, adminSecretName, repoSecretName,
-        encryptionSecretName, replicaCount, clusterName);
+        encryptionSecretName, replicaCount, clusterNames);
     domainCR.spec().addAuxiliaryImageVolumesItem(new AuxiliaryImageVolume()
         .mountPath(auxiliaryImagePath)
         .name(auxiliaryImageVolumeName));
@@ -399,9 +474,58 @@ public class CommonMiiTestUtils {
       List<String> auxiliaryImageDomainScopeNames,
       List<String> auxiliaryImageClusterScopeNames) {
 
+    Domain domainCR =
+        createDomainResourceWithAuxiliaryImageClusterScope(domainResourceName,
+            domNamespace,
+            baseImageName,
+            adminSecretName,
+            repoSecretName,
+            encryptionSecretName,
+            replicaCount,
+            List.of(clusterName),
+            auxiliaryImagePathVolume,
+            auxiliaryImageDomainScopeNames,
+            auxiliaryImageClusterScopeNames);
+
+    return domainCR;
+  }
+
+  /**
+   * Create a domain object for a Kubernetes domain custom resource using the basic WLS image
+   * and MII auxiliary images containing the doamin or/and cluster configuration.
+   * @param domainResourceName name of the domain resource
+   * @param domNamespace Kubernetes namespace that the domain is hosted
+   * @param baseImageName name of the base image to use
+   * @param adminSecretName name of the new WebLogic admin credentials secret
+   * @param repoSecretName name of the secret for pulling the WebLogic image
+   * @param encryptionSecretName name of the secret used to encrypt the models
+   * @param replicaCount number of managed servers to start
+   * @param clusterNames a list of the cluster name to add auxiliary image in domain
+   * @param auxiliaryImagePathVolume a map of auxiliary image path, parent location for Model in Image model
+   *                                 and WDT installation files as the key and a list of
+   *                                 auxiliary image volume names as the values for the key
+   * @param auxiliaryImageDomainScopeNames a list of image names including tags, image contains the domain model,
+   *                                       application archive if any and WDT installation files
+   * @param auxiliaryImageClusterScopeNames a list of images containing the files to
+   *                                        config cluster scope auxiliary image
+   * @return domain object of the domain resource
+   */
+  public static Domain createDomainResourceWithAuxiliaryImageClusterScope(
+      String domainResourceName,
+      String domNamespace,
+      String baseImageName,
+      String adminSecretName,
+      String repoSecretName,
+      String encryptionSecretName,
+      int replicaCount,
+      List<String> clusterNames,
+      Map<String, List<String>> auxiliaryImagePathVolume,
+      List<String> auxiliaryImageDomainScopeNames,
+      List<String> auxiliaryImageClusterScopeNames) {
+
     Domain domainCR = CommonMiiTestUtils.createDomainResource(domainResourceName,
         domNamespace, baseImageName, adminSecretName, repoSecretName,
-        encryptionSecretName, replicaCount, clusterName);
+        encryptionSecretName, replicaCount, clusterNames);
 
     auxiliaryImagePathVolume.forEach((auxiliaryImagePath, auxiliaryImageVolumes) -> {
       System.out.println(auxiliaryImagePath + " - " + auxiliaryImageVolumes.toString());
@@ -413,71 +537,26 @@ public class CommonMiiTestUtils {
             .withModelHome(auxiliaryImagePath + "/models")
             .withWdtInstallHome(auxiliaryImagePath + "/weblogic-deploy");
 
-        appendDomainResourceDomainScopeAuxiliaryImage(domainCR, auxiliaryImageVolumeName,
-            auxiliaryImageDomainScopeNames);
-        appendDomainResourceClusterScopeAuxiliaryImage(domainCR, clusterName,
-            auxiliaryImageVolumeName, auxiliaryImageClusterScopeNames);
+        for (String auxiliaryImageName: auxiliaryImageDomainScopeNames) {
+          domainCR.spec().serverPod()
+              .addAuxiliaryImagesItem(new AuxiliaryImage()
+                  .image(auxiliaryImageName)
+                  .volume(auxiliaryImageVolumeName)
+                  .imagePullPolicy("IfNotPresent"));
+        }
+
+        for (String auxiliaryImageName: auxiliaryImageClusterScopeNames) {
+          List<Cluster> clusterList = domainCR.spec().getClusters().stream()
+              .filter(cluster ->
+                clusterNames.contains(cluster.clusterName())).collect(Collectors.toList());
+          clusterList.forEach(cluster ->
+              cluster.serverPod().addAuxiliaryImagesItem(new AuxiliaryImage()
+                  .image(auxiliaryImageName)
+                  .volume(auxiliaryImageVolumeName)
+                  .imagePullPolicy("IfNotPresent")));
+        }
       }
     });
-
-    return domainCR;
-  }
-
-  /**
-   * Append domain scope config in a MII auxiliary image to domain object.
-   *
-   * @param domainCR domain object of the domain resource to add cluster scope auxiliary image configurations to
-   * @param auxiliaryImageVolumeName auxiliary image volume name
-   * @param auxiliaryImageDomainScopeNames a list of image names including tags, image contains the domain model,
-   *                                       application archive if any and WDT installation files
-   * @return domain object of the domain resource
-   */
-  public static Domain appendDomainResourceDomainScopeAuxiliaryImage(
-      Domain domainCR,
-      String auxiliaryImageVolumeName,
-      List<String> auxiliaryImageDomainScopeNames) {
-
-    for (String auxiliaryImageName: auxiliaryImageDomainScopeNames) {
-      domainCR.spec().serverPod()
-          .addAuxiliaryImagesItem(new AuxiliaryImage()
-              .image(auxiliaryImageName)
-              .volume(auxiliaryImageVolumeName)
-              .imagePullPolicy("IfNotPresent"));
-    }
-
-    return domainCR;
-  }
-
-  /**
-   * Append cluster scope config in a MII auxiliary image to domain object.
-   *
-   * @param domainCR domain object of the domain resource to add cluster scope auxiliary image configurations to
-   * @param clusterName name of the cluster to add in domain
-   * @param auxiliaryImageVolumeName auxiliary image volume name
-   * @param auxiliaryImageClusterScopeNames a list of image containing the files to
-   *                                        config cluster scope auxiliary images
-   * @return domain object of the domain resource
-   */
-  public static Domain appendDomainResourceClusterScopeAuxiliaryImage(
-      Domain domainCR,
-      String clusterName,
-      String auxiliaryImageVolumeName,
-      List<String> auxiliaryImageClusterScopeNames) {
-
-    for (String auxiliaryImageName: auxiliaryImageClusterScopeNames) {
-      domainCR.spec().getClusters()
-          .stream()
-          .forEach(
-              cluster -> {
-                if (cluster.getClusterName().equals(clusterName)) {
-                    cluster.serverPod().addAuxiliaryImagesItem(new AuxiliaryImage()
-                        .image(auxiliaryImageName)
-                        .volume(auxiliaryImageVolumeName)
-                        .imagePullPolicy("IfNotPresent"));
-                    }
-                }
-      );
-    }
 
     return domainCR;
   }
