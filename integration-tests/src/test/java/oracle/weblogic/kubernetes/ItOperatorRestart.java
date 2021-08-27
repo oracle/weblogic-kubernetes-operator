@@ -27,7 +27,6 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePod;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
@@ -269,9 +268,7 @@ class ItOperatorRestart {
         },
         String.format("Failed to get creationTimestamp for managed server pods"));
 
-    if (OKD) {
-      ingressHost = createRouteForOKD(adminServerPodName + "-ext", domainNamespace);
-    }
+    ingressHost = createRouteForOKD(adminServerPodName + "-ext", domainNamespace);
 
     logger.info("Check that before patching current credentials are valid and new credentials are not");
     verifyCredentials(ingressHost, adminServerPodName, domainNamespace, ADMIN_USERNAME_DEFAULT,
