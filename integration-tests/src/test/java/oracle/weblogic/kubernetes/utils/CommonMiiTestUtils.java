@@ -12,6 +12,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.stream.Collectors;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.custom.V1Patch;
@@ -542,20 +543,14 @@ public class CommonMiiTestUtils {
         }
 
         for (String auxiliaryImageName: auxiliaryImageClusterScopeNames) {
-          for (String clusterName : clusterNames) {
-            domainCR.spec().getClusters()
-                .stream()
-                .forEach(
-                    cluster -> {
-                      if (cluster.getClusterName().equals(clusterName)) {
-                        cluster.serverPod().addAuxiliaryImagesItem(new AuxiliaryImage()
-                            .image(auxiliaryImageName)
-                            .volume(auxiliaryImageVolumeName)
-                            .imagePullPolicy("IfNotPresent"));
-                      }
-                    }
-            );
-          }
+          List<Cluster> clusterList = domainCR.spec().getClusters().stream()
+              .filter(cluster ->
+                clusterNames.contains(cluster.clusterName())).collect(Collectors.toList());
+          clusterList.forEach(cluster ->
+              cluster.serverPod().addAuxiliaryImagesItem(new AuxiliaryImage()
+                  .image(auxiliaryImageName)
+                  .volume(auxiliaryImageVolumeName)
+                  .imagePullPolicy("IfNotPresent")));
         }
       }
     });
