@@ -72,6 +72,41 @@ public class OKDUtils {
   }
 
   /**
+   * Sets TLS termination in the route to passthrough.
+   *
+   * @param routeName name of the route
+   * @param namespace namespace where the route is created
+   */
+  public static void setTlsTerminationForRoute(String routeName, String namespace) {
+    if (OKD) {
+      String command = "oc -n " + namespace + " patch route " + routeName
+                          +  " --patch '{\"spec\": {\"tls\": {\"termination\": \"passthrough\"}}}'";
+
+      ExecResult result = Command.withParams(
+          new CommandParams()
+              .command(command))
+          .executeAndReturnResult();
+
+      boolean success =
+          result != null
+              && result.exitValue() == 0
+              && result.stdout() != null
+              && result.stdout().contains("patched");
+
+      String outStr = "Setting tls termination in route failed \n";
+      outStr += ", command=\n{\n" + command + "\n}\n";
+      outStr += ", stderr=\n{\n" + (result != null ? result.stderr() : "") + "\n}\n";
+      outStr += ", stdout=\n{\n" + (result != null ? result.stdout() : "") + "\n}\n";
+
+      assertTrue(success, outStr);
+
+      getLogger().info("exitValue = {0}", result.exitValue());
+      getLogger().info("stdout = {0}", result.stdout());
+      getLogger().info("stderr = {0}", result.stderr());
+    }
+  }
+
+  /**
    * In OKD environment, the nodePort cannot be accessed directly. We need to create an ingress
    *
    * @param podName name of the pod - to create the ingress for its external service

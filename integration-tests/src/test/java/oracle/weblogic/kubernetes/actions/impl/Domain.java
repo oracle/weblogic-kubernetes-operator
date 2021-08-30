@@ -35,7 +35,6 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.PROJECT_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RBAC_API_GROUP;
@@ -54,6 +53,9 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.creat
 import static oracle.weblogic.kubernetes.assertions.impl.ClusterRole.clusterRoleExists;
 import static oracle.weblogic.kubernetes.assertions.impl.ClusterRoleBinding.clusterRoleBindingExists;
 import static oracle.weblogic.kubernetes.assertions.impl.RoleBinding.roleBindingExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -406,6 +408,11 @@ public class Domain {
                                                 String opServiceAccount) {
     LoggingFacade logger = getLogger();
 
+    // In OKD cluster, we need to expose the external service as route and set tls termination to  passthrough 
+    String opExternalSvc = createRouteForOKD("external-weblogic-operator-svc", opNamespace);
+    // Patch the route just created to set tls termination to passthrough
+    setTlsTerminationForRoute("external-weblogic-operator-svc", opNamespace);
+    
     logger.info("Getting the secret of service account {0} in namespace {1}", opServiceAccount, opNamespace);
     String secretName = Secret.getSecretOfServiceAccount(opNamespace, opServiceAccount);
     if (secretName.isEmpty()) {
@@ -444,9 +451,7 @@ public class Domain {
         .append(numOfServers)
         .append("}' ")
         .append("-X POST https://")
-        .append(K8S_NODEPORT_HOST)
-        .append(":")
-        .append(externalRestHttpsPort)
+        .append(getHostAndPort(opExternalSvc, externalRestHttpsPort))
         .append("/operator/latest/domains/")
         .append(domainUid)
         .append("/clusters/")
