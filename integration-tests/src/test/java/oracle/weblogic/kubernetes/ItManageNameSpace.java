@@ -117,6 +117,9 @@ class ItManageNameSpace {
   static String manageByExp3NS;
   static String manageByExpDomainUid;
   static String manageByExpDomainNS;
+  static String manageByLabelDomainNS;
+  static String manageByLabelDomainUid;
+  static String manageByLabelNS;
 
   /**
    * Get namespaces for operator, domain.
@@ -147,6 +150,9 @@ class ItManageNameSpace {
     manageByExp3NS = "atest-" + domainNamespaces[0];
     manageByExpDomainUid = "weblogic2" + domainNamespaces[1];
     manageByExpDomainNS = "weblogic2" + domainNamespaces[1];
+    manageByLabelDomainNS = domainNamespaces[0] + "test4";
+    manageByLabelDomainUid = domainsUid[0] + "test4";
+    manageByLabelNS = "weblogic1" + domainNamespaces[0];
 
     createSecrets(domainNamespaces[2]);
     createSecrets("default");
@@ -219,7 +225,6 @@ class ItManageNameSpace {
     managedByExpDomains.put(manageByExp2NS,manageByExpDomain2Uid);
     Map<String,String> unmanagedByExpDomains = new HashMap<>();
     unmanagedByExpDomains.put(manageByExp3NS,manageByExp3NS);
-    String manageByLabelNS = "weblogic1" + domainNamespaces[0];
     String manageByLabelDomainUid = "weblogic1" + domainsUid[0];
 
     assertDoesNotThrow(() -> Kubernetes.createNamespace(manageByExp1NS));
@@ -351,8 +356,6 @@ class ItManageNameSpace {
   @DisplayName("install operator helm chart and domain, "
       + " with enableClusterRoleBinding")
   void testNameSpaceWithOperatorRbacFalse() {
-    String manageByLabelDomainNS = domainNamespaces[0] + "test4";
-    String manageByLabelDomainUid = domainsUid[0] + "test4";
     assertDoesNotThrow(() -> createNamespace(manageByLabelDomainNS));
     opHelmParams[2] = installAndVerifyOperator(OPERATOR_RELEASE_NAME,
         opNamespaces[3], "LabelSelector",
