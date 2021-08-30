@@ -544,7 +544,8 @@ class ItManageNameSpace {
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType(WLS_DOMAIN_TYPE)
-                    .runtimeEncryptionSecret(encryptionSecretName))));
+                    .runtimeEncryptionSecret(encryptionSecretName))
+                .introspectorJobActiveDeadlineSeconds(600L)));
     setPodAntiAffinity(domain);
     return domain;
   }
