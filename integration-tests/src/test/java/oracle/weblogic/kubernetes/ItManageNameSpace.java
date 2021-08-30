@@ -110,16 +110,7 @@ class ItManageNameSpace {
           .and().with().pollInterval(5, SECONDS)
           .atMost(2, MINUTES).await();
 
-  static String manageByExp1NS;
-  static String manageByExp2NS;
-  static String manageByExpDomain1Uid;
-  static String manageByExpDomain2Uid;
-  static String manageByExp3NS;
-  static String manageByExpDomainUid;
-  static String manageByExpDomainNS;
-  static String manageByLabelDomainNS;
-  static String manageByLabelDomainUid;
-  static String manageByLabelNS;
+  List<String> namespacesToClean = new ArrayList<>();
 
   /**
    * Get namespaces for operator, domain.
@@ -142,17 +133,6 @@ class ItManageNameSpace {
       assertNotNull(namespaces.get(i), "Namespace list is null");
       opNamespaces[(i - 4)] = namespaces.get(i);
     }
-
-    manageByExp1NS = "test-" + domainNamespaces[0];
-    manageByExp2NS = "test-" + domainNamespaces[1];
-    manageByExpDomain1Uid = "test-" + domainsUid[0];
-    manageByExpDomain2Uid = "test-" + domainsUid[1];
-    manageByExp3NS = "atest-" + domainNamespaces[0];
-    manageByExpDomainUid = "weblogic2" + domainNamespaces[1];
-    manageByExpDomainNS = "weblogic2" + domainNamespaces[1];
-    manageByLabelDomainNS = domainNamespaces[0] + "test4";
-    manageByLabelDomainUid = domainsUid[0] + "test4";
-    manageByLabelNS = "weblogic1" + domainNamespaces[0];
 
     createSecrets(domainNamespaces[2]);
     createSecrets("default");
@@ -192,9 +172,7 @@ class ItManageNameSpace {
       for (HelmParams helmParam : opHelmParams) {
         uninstallOperator(helmParam);
       }
-      for (var namespace : new String[]{manageByExp1NS, manageByExp2NS,
-          manageByExpDomain1Uid, manageByExpDomain2Uid, manageByExp3NS,
-          manageByExpDomainUid, manageByExpDomainNS}) {
+      for(var namespace: namespacesToClean){
         deleteNamespacedArtifacts(namespace);
         deleteNamespace(namespace);
       }
@@ -219,17 +197,27 @@ class ItManageNameSpace {
       + " using expression namespace management")
   void testNameSpaceManageByRegularExpression() {
     //create domain namespace
+    String manageByExp1NS = "test-" +  domainNamespaces[0];
+    String manageByExp2NS = "test-" +  domainNamespaces[1];
+    String manageByExpDomain1Uid = "test-" + domainsUid[0];
+    String manageByExpDomain2Uid = "test-" + domainsUid[1];
+    String manageByExp3NS = "atest-" +  domainNamespaces[0];
 
     Map<String,String> managedByExpDomains = new HashMap<>();
     managedByExpDomains.put(manageByExp1NS,manageByExpDomain1Uid);
     managedByExpDomains.put(manageByExp2NS,manageByExpDomain2Uid);
     Map<String,String> unmanagedByExpDomains = new HashMap<>();
     unmanagedByExpDomains.put(manageByExp3NS,manageByExp3NS);
+    String manageByLabelNS = "weblogic1" + domainNamespaces[0];
     String manageByLabelDomainUid = "weblogic1" + domainsUid[0];
 
     assertDoesNotThrow(() -> Kubernetes.createNamespace(manageByExp1NS));
     assertDoesNotThrow(() -> Kubernetes.createNamespace(manageByExp2NS));
     assertDoesNotThrow(() -> Kubernetes.createNamespace(manageByExp3NS));
+
+    namespacesToClean.add(manageByExp1NS);
+    namespacesToClean.add(manageByExp2NS);
+    namespacesToClean.add(manageByExp3NS);
 
     opHelmParams[1] = installAndVerifyOperatorCanManageDomainBySelector(managedByExpDomains,unmanagedByExpDomains,
         "RegExp","^test",
@@ -245,6 +233,7 @@ class ItManageNameSpace {
     //upgrade operator to manage domains with Labeled namespaces
     int externalRestHttpsPort = getServiceNodePort(opNamespaces[1], "external-weblogic-operator-svc");
     assertDoesNotThrow(() -> createNamespace(manageByLabelNS));
+    namespacesToClean.add(manageByLabelNS);
     Map<String, String> labels = new HashMap<>();
     labels.put("mytest", "weblogic2");
     setLabelToNamespace(manageByLabelNS, labels);
@@ -299,6 +288,10 @@ class ItManageNameSpace {
         opNamespaces[0], domainNamespaces[3]);
     assertNotNull(opHelmParams[0], "Can't install or verify operator with SelectLabel namespace management");
 
+    String manageByExpDomainUid = "weblogic2" + domainNamespaces[1];
+    String manageByExpDomainNS = "weblogic2" + domainNamespaces[1];
+
+
     //switch namespace domainsNamespaces[1] to the label1,
     // managed by operator and verify domain is started and can be managed by operator.
     setLabelToNamespace(domainNamespaces[1], labels1);
@@ -317,6 +310,7 @@ class ItManageNameSpace {
 
     //upgrade operator1 to replace managing domains using RegExp namespaces
     assertDoesNotThrow(() -> createNamespace(manageByExpDomainNS));
+    namespacesToClean.add(manageByExpDomainNS);
     int externalRestHttpsPort = getServiceNodePort(opNamespaces[0], "external-weblogic-operator-svc");
     //set helm params to use domainNamespaceSelectionStrategy=RegExp for namespaces names started with weblogic
     OperatorParams opParams = new OperatorParams()
@@ -356,7 +350,10 @@ class ItManageNameSpace {
   @DisplayName("install operator helm chart and domain, "
       + " with enableClusterRoleBinding")
   void testNameSpaceWithOperatorRbacFalse() {
+    String manageByLabelDomainNS = domainNamespaces[0] + "test4";
+    String manageByLabelDomainUid = domainsUid[0] + "test4";
     assertDoesNotThrow(() -> createNamespace(manageByLabelDomainNS));
+    namespacesToClean.add(manageByLabelDomainNS);
     opHelmParams[2] = installAndVerifyOperator(OPERATOR_RELEASE_NAME,
         opNamespaces[3], "LabelSelector",
         "mytest4", false).getHelmParams();
