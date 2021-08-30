@@ -115,8 +115,11 @@ public class CommonTestUtils {
 
       @Override
       public void onTimeout(TimeoutEvent timeoutEvent) {
-        logger.info("Timed out waiting for: " + msg + " (elapsed time {0} ms)",
-            timeoutEvent.getElapsedTimeInMS());
+        int paramsSize = params != null ? params.length : 0;
+        logger.info("Timed out waiting for: " + msg + " (elapsed time {" + paramsSize + "} ms)",
+            Stream.concat(
+                Optional.ofNullable(params).map(Arrays::asList).orElse(Collections.emptyList()).stream(),
+                Stream.of(timeoutEvent.getElapsedTimeInMS())).toArray());
       }
     };
   }
