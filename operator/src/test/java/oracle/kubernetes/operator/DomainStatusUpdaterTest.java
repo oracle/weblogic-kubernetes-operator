@@ -42,7 +42,6 @@ import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.DomainConditionMatcher.hasCondition;
@@ -372,22 +371,19 @@ class DomainStatusUpdaterTest {
   }
 
   @Test
-  @Disabled("What do we want here?")
   void whenUnexpectedServersRunningAndNoMatchingCompletedConditionFound_dontGenerateCompletedEvent() {
     domain.getStatus()
           .addCondition(new DomainCondition(Completed).withStatus("False"));
     defineScenario()
           .withCluster("clusterA", "server1")
           .withCluster("clusterB", "server2")
-          .withServersReachingState("RUNNING","server3")
+          .withServersReachingState("Unknown","server3")
           .build();
 
     updateDomainStatus();
 
     assertThat(getEvents().stream().anyMatch(this::isDomainProcessingCompletedEvent), is(false));
   }
-
-  // todo don't set completed or trigger event if unexpected servers are running
 
   @Test
   void whenAllDesiredServersRunningAndFailedConditionFound_removeIt() {

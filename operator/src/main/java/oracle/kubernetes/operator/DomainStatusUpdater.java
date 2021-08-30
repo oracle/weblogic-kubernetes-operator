@@ -542,7 +542,9 @@ public class DomainStatusUpdater {
       }
 
       private boolean allIntendedServersRunning() {
-        return atLeastOneServerStarted() && expectedRunningServers.stream().noneMatch(this::isNotRunning);
+        return atLeastOneServerStarted()
+              && expectedRunningServers.stream().noneMatch(this::isNotRunning)
+              && expectedRunningServers.containsAll(serverState.keySet());
       }
 
       private boolean atLeastOneServerStarted() {

@@ -82,7 +82,6 @@ import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_DELETED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_ABORTED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_COMPLETED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_FAILED;
-import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_RETRYING;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_STARTING;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_COMPLETED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_STARTING;
@@ -324,8 +323,8 @@ class ItKubernetesEvents {
       logger.info("verify domain changed event is logged");
       checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_CHANGED, "Normal", timestamp);
 
-      logger.info("verify domain processing retrying event");
-      checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_PROCESSING_RETRYING, "Normal", timestamp);
+      //      logger.info("verify domain processing retrying event");
+      //      checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_PROCESSING_RETRYING, "Normal", timestamp);
 
       logger.info("verify domain processing aborted event");
       checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_PROCESSING_ABORTED, "Warning", timestamp);
