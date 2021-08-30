@@ -161,6 +161,8 @@ class ItWlsSamples {
             ? KIND_REPO + diiImageNameBase + "_" + script + ":" + diiImageTag
             : diiImageNameBase + "_" + script + ":" + diiImageTag);
 
+    dockerLoginAndPushImageToRegistry(imageName);
+
     //copy the samples directory to a temporary location
     setupSample();
     createSecretWithUsernamePassword(domainName + "-weblogic-credentials", domainNamespace,
@@ -698,11 +700,11 @@ class ItWlsSamples {
   }
 
   private void setupLoadBalancer(Path sampleBase, String ingressType, String additionalOptions) {
-    // run setupLoadBalancer.sh to install/uninstall ingress controller 
+    // run setupLoadBalancer.sh to install/uninstall ingress controller
     CommandParams params = new CommandParams().defaults();
     params.command("sh "
            + Paths.get(sampleBase.toString(), "setupLoadBalancer.sh").toString()
-           + " -t " + ingressType 
+           + " -t " + ingressType
            + additionalOptions);
     logger.info("Run setupLoadBalancer.sh to manage {0} ingress controller", ingressType);
     boolean result = Command.withParams(params).execute();
