@@ -271,7 +271,8 @@ class ItConfigDistributionStrategy {
           HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + serverListUri, true));
           return response.statusCode() == 200;
         },
-        logger, "Waiting for clusterview app in admin server is accessible after restart");
+        logger,
+        "Waiting for clusterview app in admin server is accessible after restart");
   }
 
   /**
@@ -320,7 +321,8 @@ class ItConfigDistributionStrategy {
     testUntil(
         withLongRetryPolicy,
         configUpdated("100000000"),
-        logger, "Waiting for server configuration to be updated");
+        logger,
+        "Waiting for server configuration to be updated");
 
     verifyConfigXMLOverride(true);
     verifyResourceJDBC0Override(true);
@@ -374,7 +376,8 @@ class ItConfigDistributionStrategy {
     testUntil(
         withLongRetryPolicy,
         configUpdated("100000000"),
-        logger, "Waiting for server configuration to be updated");
+        logger,
+        "Waiting for server configuration to be updated");
 
     verifyConfigXMLOverride(true);
     verifyResourceJDBC0Override(true);
@@ -386,7 +389,8 @@ class ItConfigDistributionStrategy {
         withLongRetryPolicy,
         () -> listConfigMaps(domainNamespace).getItems().stream().noneMatch((cm)
             -> (cm.getMetadata().getName().equals(overridecm))),
-        logger, "Waiting for configmap {0} to be deleted.");
+        logger,
+        "Waiting for configmap {0} to be deleted.");
 
     Path srcOverrideFile = Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/config1.xml");
     Path dstOverrideFile = Paths.get(WORK_DIR, "config.xml");
@@ -421,10 +425,10 @@ class ItConfigDistributionStrategy {
     testUntil(
         withLongRetryPolicy,
         configUpdated("99999999"),
-        logger, "Waiting for server configuration to be updated");
+        logger,
+        "Waiting for server configuration to be updated");
 
     verifyResourceJDBC0Override(true);
-
   }
 
   /**

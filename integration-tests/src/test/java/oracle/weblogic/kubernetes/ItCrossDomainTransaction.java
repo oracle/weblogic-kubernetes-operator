@@ -483,7 +483,9 @@ class ItCrossDomainTransaction {
     testUntil(
         domainExists(domainUid, DOMAIN_VERSION, domainNamespace),
         logger,
-        "Waiting for domain {0} to be created in namespace {1}"
+        "Waiting for domain {0} to be created in namespace {1}",
+        domainUid,
+        domainNamespace
     );
 
     // check admin server pod exists
