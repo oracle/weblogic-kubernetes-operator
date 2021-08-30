@@ -172,7 +172,8 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
             testUntil(
                 pullImageFromOcrOrOcirAndPushToKind(image),
                 logger,
-                "Waiting for pullImageFromOcrOrOcirAndPushToKind for image {0} to be successful");
+                "Waiting for pullImageFromOcrOrOcirAndPushToKind for image {0} to be successful",
+                image);
           }
         }
 
@@ -235,7 +236,8 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
             testUntil(
                 () -> dockerPush(image),
                 logger,
-                "Waiting for docker push to OCIR/kind for image {0} to be successful");
+                "Waiting for docker push to OCIR/kind for image {0} to be successful",
+                image);
           }
 
           // list images for Kind cluster

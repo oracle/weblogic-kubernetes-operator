@@ -586,7 +586,8 @@ public class Domain {
     testUntil(
         () -> executeCommandOnPod(adminPod, null, true, "/bin/sh", "-c", command),
         logger,
-        "executing command {0} in admin server pod, waiting for success");
+        "executing command {0} in admin server pod, waiting for success",
+        command);
 
     // sleep for a while to make sure the diagnostic modules are created
     try {
