@@ -45,7 +45,7 @@ import static oracle.weblogic.kubernetes.actions.impl.Service.getServiceNodePort
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isVoyagerReady;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReturnedCode;
-import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createSSLenabledMiiDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createIngressAndRetryIfFail;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyTraefik;
@@ -139,8 +139,7 @@ class ItRemoteConsole {
     // install and verify Nginx
     nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
 
-    // create a basic model in image domain
-    createMiiDomainAndVerify(
+    createSSLenabledMiiDomainAndVerify(
         domainNamespace,
         domainUid,
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
@@ -154,7 +153,8 @@ class ItRemoteConsole {
     createNginxIngressPathRoutingRules();
 
     // install WebLogic remote console
-    assertTrue(installAndVerifyWlsRemoteConsole(), "Remote Console installation failed");
+    assertTrue(installAndVerifyWlsRemoteConsole(domainNamespace, adminServerPodName),
+        "Remote Console installation failed");
 
     // Verify k8s WebLogic domain is accessible through remote console using admin server nodeport
     verifyWlsRemoteConsoleConnection();
@@ -219,6 +219,39 @@ class ItRemoteConsole {
     logger.info("Executing NGINX nodeport curl command {0}", curlCmd);
     assertTrue(callWebAppAndWaitTillReturnedCode(curlCmd, "201", 10), "Calling web app failed");
     logger.info("WebLogic domain is accessible through remote console using NGINX");
+  }
+
+  /**
+   * Verify k8s WebLogic domain is accessible through remote console using SSL.
+   */
+  @Test
+  @DisplayName("Verify Connecting to Mii domain by Remote Console using SSL is successful")
+  void testWlsRemoteConsoleConnectionUsingSSL() {
+    int sslNodePort = getServiceNodePort(
+         domainNamespace, getExternalServicePodName(adminServerPodName), "default-secure");
+    assertTrue(sslNodePort != -1,
+          "Could not get the default-secure external service node port");
+    logger.info("Found the administration service nodePort {0}", sslNodePort);
+    logger.info("The K8S_NODEPORT_HOST is {0}", K8S_NODEPORT_HOST);
+
+    //verify WebLogic console is accessible through default-secure nodeport
+    String curlCmd = "curl -sk --show-error --noproxy '*' "
+          + " https://" + K8S_NODEPORT_HOST + ":" + sslNodePort
+          + "/console/login/LoginForm.jsp --write-out %{http_code} -o /dev/null";
+    logger.info("Executing WebLogic console default-secure nodeport curl command {0}", curlCmd);
+    assertTrue(callWebAppAndWaitTillReady(curlCmd, 10));
+    logger.info("WebLogic console is accessible thru default-secure service");
+
+    //verify remote console is accessible through default-secure nodeport
+    curlCmd = "curl -sk -v --show-error --noproxy '*' --user weblogic:welcome1 -H "
+        + "Content-Type:application/json -d "
+        + "\"{ \\" + "\"domainUrl\\" + "\"" + ": " + "\\" + "\"" + "https://"
+        + K8S_NODEPORT_HOST + ":" + sslNodePort + "\\" + "\" }" + "\""
+        + " http://localhost:8012/api/connection  --write-out %{http_code} -o /dev/null";
+    logger.info("Executing remote console default-secure nodeport curl command {0}", curlCmd);
+    assertTrue(callWebAppAndWaitTillReturnedCode(curlCmd, "201", 10), "Calling web app failed");
+    logger.info("Remote console is accessible through default-secure service");
+
   }
 
   /**
@@ -365,14 +398,14 @@ class ItRemoteConsole {
   }
 
   private static void verifyWlsRemoteConsoleConnection() {
-
     int nodePort = getServiceNodePort(
         domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     assertTrue(nodePort != -1,
         "Could not get the default external service node port");
     logger.info("Found the default service nodePort {0}", nodePort);
     logger.info("The K8S_NODEPORT_HOST is {0}", K8S_NODEPORT_HOST);
-    String curlCmd = "curl -v --user weblogic:welcome1 -H Content-Type:application/json -d "
+
+    String curlCmd = "curl -v --show-error --noproxy '*' --user weblogic:welcome1 -H Content-Type:application/json -d "
         + "\"{ \\" + "\"domainUrl\\" + "\"" + ": " + "\\" + "\"" + "http://"
         + K8S_NODEPORT_HOST + ":" + nodePort + "\\" + "\" }" + "\""
         + " http://localhost:8012/api/connection  --write-out %{http_code} -o /dev/null";
@@ -380,4 +413,5 @@ class ItRemoteConsole {
     assertTrue(callWebAppAndWaitTillReturnedCode(curlCmd, "201", 10), "Calling web app failed");
     logger.info("WebLogic domain is accessible through remote console");
   }
+
 }

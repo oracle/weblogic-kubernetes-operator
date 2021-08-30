@@ -46,6 +46,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterEach;
@@ -54,6 +55,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -65,6 +67,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -83,15 +86,18 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listC
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFromFiles;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.MySQLDBUtils.createMySQLDB;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
@@ -118,6 +124,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify the overrideDistributionStrategy applies the overrides accordingly to the value set")
 @IntegrationTest
+@Tag("okdenv")
 class ItConfigDistributionStrategy {
 
   private static String opNamespace = null;
@@ -144,10 +151,13 @@ class ItConfigDistributionStrategy {
   static int mysqlDBPort2;
   static String dsUrl1;
   static String dsUrl2;
+  static String mysql1SvcEndpoint = null;
+  static String mysql2SvcEndpoint = null;
 
   String dsName0 = "JdbcTestDataSource-0";
   String dsName1 = "JdbcTestDataSource-1";
   String dsSecret = domainUid.concat("-mysql-secret");
+  String adminSvcExtHost = null;
 
   // create standard, reusable retry/backoff policy
   private static final ConditionFactory withStandardRetryPolicy
@@ -192,8 +202,19 @@ class ItConfigDistributionStrategy {
     createMySQLDB("mysqldb-2", "root", "root456", 0, domainNamespace, null);
     mysqlDBPort2 = getMySQLNodePort(domainNamespace, "mysqldb-2");
 
-    dsUrl1 = "jdbc:mysql://" + K8S_NODEPORT_HOST + ":" + mysqlDBPort1;
-    dsUrl2 = "jdbc:mysql://" + K8S_NODEPORT_HOST + ":" + mysqlDBPort2;
+    if (OKD) {
+      mysql1SvcEndpoint = getMySQLSvcEndpoint(domainNamespace, "mysqldb-1");
+      mysql2SvcEndpoint = getMySQLSvcEndpoint(domainNamespace, "mysqldb-2");
+    }
+
+    String mysql1HostAndPort = getHostAndPort(mysql1SvcEndpoint, mysqlDBPort1);
+    logger.info("mysql1HostAndPort = {0} ", mysql1HostAndPort);
+    String mysql2HostAndPort = getHostAndPort(mysql2SvcEndpoint, mysqlDBPort2);
+    logger.info("mysql2HostAndPort = {0} ", mysql2HostAndPort);
+
+    dsUrl1 = "jdbc:mysql://" + mysql1HostAndPort;
+    dsUrl2 = "jdbc:mysql://" + mysql2HostAndPort;
+
 
     // build the clusterview application
     Path distDir = buildApplication(Paths.get(APP_DIR, "clusterview"),
@@ -203,9 +224,13 @@ class ItConfigDistributionStrategy {
 
     //create and start WebLogic domain
     createDomain();
+
+    // Expose the admin service external node port as  a route for OKD
+    adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
+    
     //create a jdbc resource targeted to cluster
-    createJdbcDataSource(dsName0, "root", "root123", mysqlDBPort1);
-    createJdbcDataSource(dsName1, "root", "root123", mysqlDBPort1);
+    createJdbcDataSource(dsName0, "root", "root123", mysqlDBPort1, mysql1HostAndPort);
+    createJdbcDataSource(dsName1, "root", "root123", mysqlDBPort1, mysql1HostAndPort);
     //deploy application to view server configuration
     deployApplication(clusterName + "," + adminServerName);
 
@@ -241,8 +266,10 @@ class ItConfigDistributionStrategy {
         -> getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
         "Getting admin server node port failed");
 
+    String hostAndPort = getHostAndPort(adminSvcExtHost, serviceNodePort);
+
     logger.info("Checking if the clusterview app in admin server is accessible after restart");
-    String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + "/clusterview/";
+    String baseUri = "http://" + hostAndPort + "/clusterview/";
     String serverListUri = "ClusterViewServlet?user=" + ADMIN_USERNAME_DEFAULT + "&password=" + ADMIN_PASSWORD_DEFAULT;
 
     withStandardRetryPolicy
@@ -639,12 +666,15 @@ class ItConfigDistributionStrategy {
             "default"),
         "Getting admin server node port failed");
 
+    String hostAndPort = getHostAndPort(adminSvcExtHost, serviceNodePort);
+    logger.info("hostAndPort = {0} ", hostAndPort);
+
     //verify server attribute MaxMessageSize
     String appURI = "/clusterview/ConfigServlet?"
         + "attributeTest=true&"
         + "serverType=adminserver&"
         + "serverName=" + adminServerName;
-    String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + appURI;
+    String url = "http://" + hostAndPort + appURI;
 
     return (()
         -> {
@@ -657,7 +687,11 @@ class ItConfigDistributionStrategy {
   private void verifyConfigXMLOverride(boolean configUpdated) {
 
     int port = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + port + "/clusterview/";
+
+    String hostAndPort = getHostAndPort(adminSvcExtHost, port);
+    logger.info("hostAndPort = {0} ", hostAndPort);
+
+    String baseUri = "http://" + hostAndPort + "/clusterview/";
 
     //verify server attribute MaxMessageSize
     String configUri = "ConfigServlet?"
@@ -681,7 +715,11 @@ class ItConfigDistributionStrategy {
 
     // get admin server node port and construct a base url for clusterview app
     int port = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + port + "/clusterview/ConfigServlet?";
+
+    String hostAndPort = getHostAndPort(adminSvcExtHost, port);
+    logger.info("hostAndPort = {0} ", hostAndPort);
+
+    String baseUri = "http://" + hostAndPort + "/clusterview/ConfigServlet?";
 
     //verify datasource attributes of JdbcTestDataSource-0
     String appURI = "resTest=true&resName=" + dsName0;
@@ -713,7 +751,11 @@ class ItConfigDistributionStrategy {
 
     // get admin server node port and construct a base url for clusterview app
     int port = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    String baseUri = "http://" + K8S_NODEPORT_HOST + ":" + port + "/clusterview/ConfigServlet?";
+
+    String hostAndPort = getHostAndPort(adminSvcExtHost, port);
+    logger.info("hostAndPort = {0} ", hostAndPort);
+
+    String baseUri = "http://" + hostAndPort + "/clusterview/ConfigServlet?";
 
     //verify datasource attributes of JdbcTestDataSource-0
     String appURI = "resTest=true&resName=" + dsName1;
@@ -952,7 +994,8 @@ class ItConfigDistributionStrategy {
   }
 
   //create a JDBC datasource targeted to cluster.
-  private void createJdbcDataSource(String dsName, String user, String password, int mySQLNodePort) {
+  private void createJdbcDataSource(String dsName, String user, String password, 
+                                    int mySQLNodePort, String sqlSvcEndpoint) {
 
     try {
       logger.info("Getting port for default channel");
@@ -962,7 +1005,10 @@ class ItConfigDistributionStrategy {
       logger.info("default channel port: {0}", defaultChannelPort);
       assertNotEquals(-1, defaultChannelPort, "admin server defaultChannelPort is not valid");
 
-      String jdbcDsUrl = "jdbc:mysql://" + K8S_NODEPORT_HOST + ":" + mySQLNodePort;
+
+      String hostAndPort = getHostAndPort(sqlSvcEndpoint, mySQLNodePort);
+      logger.info("hostAndPort = {0} ", hostAndPort);
+      String jdbcDsUrl = "jdbc:mysql://" + hostAndPort;
 
       // create a temporary WebLogic domain property file
       File domainPropertiesFile = File.createTempFile("domain", "properties");
@@ -1038,6 +1084,34 @@ class ItConfigDistributionStrategy {
       }
     }
     return -1;
+  }
+
+  private static String getMySQLSvcName(String namespace, String dbName) {
+    logger.info(dump(Kubernetes.listServices(namespace)));
+    List<V1Service> services = listServices(namespace).getItems();
+    for (V1Service service : services) {
+      if (service.getMetadata().getName().startsWith(dbName)) {
+        return service.getMetadata().getName();
+      }
+    }
+    return null;
+  }
+
+  private static String getMySQLSvcEndpoint(String domainNamespace, String dbName) {
+    String svcName = getMySQLSvcName(domainNamespace, dbName);
+    String command = new String("oc -n " + domainNamespace + " get ep | grep " + svcName + " |  awk '{print $2}'");
+    ExecResult result = null;
+    try {
+      result = exec(new String(command), true);
+      getLogger().info("The command returned exit value: "
+          + result.exitValue() + " command output: "
+          + result.stderr() + "\n" + result.stdout());
+      assertTrue((result.exitValue() == 0),
+             "curl command returned non zero value");
+    } catch (Exception e) {
+      getLogger().info("Got exception, command failed with errors " + e.getMessage());
+    }
+    return  result.stdout();
   }
 
 }
