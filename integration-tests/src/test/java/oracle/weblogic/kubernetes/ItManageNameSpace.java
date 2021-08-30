@@ -172,7 +172,7 @@ class ItManageNameSpace {
       for (HelmParams helmParam : opHelmParams) {
         uninstallOperator(helmParam);
       }
-      for(var namespace: namespacesToClean){
+      for (var namespace : namespacesToClean) {
         deleteNamespacedArtifacts(namespace);
         deleteNamespace(namespace);
       }
