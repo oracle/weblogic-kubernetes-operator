@@ -54,6 +54,7 @@ import oracle.kubernetes.weblogic.domain.model.OnlineUpdate;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import org.apache.commons.lang3.StringUtils;
+import org.jetbrains.annotations.Nullable;
 
 import static oracle.kubernetes.operator.DomainFailureReason.Internal;
 import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
@@ -71,6 +72,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_COMPLETED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_FAILED;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Completed;
@@ -84,8 +86,6 @@ import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed
  */
 @SuppressWarnings("WeakerAccess")
 public class DomainStatusUpdater {
-
-  public static final String SERVERS_READY_REASON = "ServersReady";
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final String TRUE = "True";
@@ -163,7 +163,7 @@ public class DomainStatusUpdater {
       super(next);
     }
 
-    DomainStatusUpdaterContext createContext(Packet packet) {
+    DomainStatusUpdaterContext createContext(Packet packet, Step retryStep) {
       return new DomainStatusUpdaterContext(packet, this);
     }
 
@@ -171,69 +171,16 @@ public class DomainStatusUpdater {
 
     @Override
     public NextAction apply(Packet packet) {
-      DomainStatusUpdaterContext context = createContext(packet);
-      DomainStatus newStatus = context.getNewStatus();
+      DomainStatusUpdaterContext context = createContext(packet, this);
 
-      return context.isStatusUnchanged(newStatus)
+      return context.isStatusUnchanged(context.getNewStatus())
           ? doNext(packet)
-          : doNext(createAbortedEventStepIfNeeded(
-              newStatus, context.getStatus(), createDomainStatusReplaceStep(context, newStatus)),
+          : doNext(context.createUpdateSteps(),
           packet);
     }
 
-    private Step createAbortedEventStepIfNeeded(DomainStatus newStatus, DomainStatus oldStatus, Step next) {
-      if (hasJustExceededMaxRetryCount(newStatus, oldStatus)) {
-        return Step.chain(EventHelper.createEventStep(
-                new EventData(DOMAIN_PROCESSING_ABORTED)
-                    .message(EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG)), next);
-      }
-      if (hasJustGotFatalIntrospectorError(newStatus, oldStatus)) {
-        return Step.chain(EventHelper.createEventStep(
-                new EventData(DOMAIN_PROCESSING_ABORTED)
-                    .message(FATAL_INTROSPECTOR_ERROR_MSG + newStatus.getMessage())), next);
-      }
-      return next;
-    }
-
-    private boolean hasJustExceededMaxRetryCount(DomainStatus newStatus, DomainStatus oldStatus) {
-      return oldStatus != null
-          && newStatus.getIntrospectJobFailureCount() == (oldStatus.getIntrospectJobFailureCount() + 1)
-          && newStatus.getIntrospectJobFailureCount() >= DomainPresence.getDomainPresenceFailureRetryMaxCount();
-    }
-
-    private boolean hasJustGotFatalIntrospectorError(DomainStatus newStatus, DomainStatus oldStatus) {
-      return newStatus.getMessage() != null && newStatus.getMessage().contains(FATAL_INTROSPECTOR_ERROR)
-          && (oldStatus.getMessage() == null || !oldStatus.getMessage().contains(FATAL_INTROSPECTOR_ERROR));
-    }
-
-    private Step createDomainStatusReplaceStep(DomainStatusUpdaterContext context, DomainStatus newStatus) {
-      LOGGER.fine(MessageKeys.DOMAIN_STATUS, context.getDomainUid(), newStatus);
-      if (LOGGER.isFinerEnabled()) {
-        LOGGER.finer("status change: " + createPatchString(context, newStatus));
-      }
-      Domain oldDomain = context.getDomain();
-      Domain newDomain = new Domain()
-          .withKind(KubernetesConstants.DOMAIN)
-          .withApiVersion(KubernetesConstants.API_VERSION_WEBLOGIC_ORACLE)
-          .withMetadata(oldDomain.getMetadata())
-          .withSpec(null)
-          .withStatus(newStatus);
-
-      return new CallBuilder().replaceDomainStatusAsync(
-            context.getDomainName(),
-            context.getNamespace(),
-            newDomain,
-            createResponseStep(context, getNext()));
-    }
-
-    private String createPatchString(DomainStatusUpdaterContext context, DomainStatus newStatus) {
-      JsonPatchBuilder builder = Json.createPatchBuilder();
-      newStatus.createPatchFrom(builder, context.getStatus());
-      return builder.build().toString();
-    }
-
-    private ResponseStep<Domain> createResponseStep(DomainStatusUpdaterContext context, Step next) {
-      return new StatusReplaceResponseStep(this, context, next);
+    private ResponseStep<Domain> createResponseStep(DomainStatusUpdaterContext context) {
+      return new StatusReplaceResponseStep(this, context, getNext());
     }
   }
 
@@ -371,6 +318,65 @@ public class DomainStatusUpdater {
     DomainStatus cloneStatus() {
       return Optional.ofNullable(getStatus()).map(DomainStatus::new).orElse(new DomainStatus());
     }
+
+    private Step createDomainStatusReplaceStep() {
+      LOGGER.fine(MessageKeys.DOMAIN_STATUS, getDomainUid(), getNewStatus());
+      if (LOGGER.isFinerEnabled()) {
+        LOGGER.finer("status change: " + createPatchString());
+      }
+      Domain oldDomain = getDomain();
+      Domain newDomain = new Domain()
+          .withKind(KubernetesConstants.DOMAIN)
+          .withApiVersion(KubernetesConstants.API_VERSION_WEBLOGIC_ORACLE)
+          .withMetadata(oldDomain.getMetadata())
+          .withSpec(null)
+          .withStatus(getNewStatus());
+
+      return new CallBuilder().replaceDomainStatusAsync(
+            getDomainName(),
+            getNamespace(),
+            newDomain,
+            domainStatusUpdaterStep.createResponseStep(this));
+    }
+
+    private String createPatchString() {
+      JsonPatchBuilder builder = Json.createPatchBuilder();
+      getNewStatus().createPatchFrom(builder, getStatus());
+      return builder.build().toString();
+    }
+
+    private Step createUpdateSteps() {
+      final Step next = createDomainStatusReplaceStep();
+      EventData eventData = createDomainEvent();
+      return eventData == null ? next : Step.chain(EventHelper.createEventStep(eventData), next);
+    }
+
+    @Nullable
+    EventData createDomainEvent() {
+      if (hasJustExceededMaxRetryCount()) {
+        return new EventData(DOMAIN_PROCESSING_ABORTED).message(EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG);
+      } else if (hasJustGotFatalIntrospectorError()) {
+        return new EventData(DOMAIN_PROCESSING_ABORTED)
+              .message(FATAL_INTROSPECTOR_ERROR_MSG + getNewStatus().getMessage());
+      } else {
+        return null;
+      }
+    }
+
+    private boolean hasJustGotFatalIntrospectorError() {
+      return isFatalIntrospectorMessage(getNewStatus().getMessage())
+            && !isFatalIntrospectorMessage(getStatus().getMessage());
+    }
+
+    private boolean isFatalIntrospectorMessage(String statusMessage) {
+      return statusMessage != null && statusMessage.contains(FATAL_INTROSPECTOR_ERROR);
+    }
+
+    private boolean hasJustExceededMaxRetryCount() {
+      return getStatus() != null
+          && getNewStatus().getIntrospectJobFailureCount() == (getStatus().getIntrospectJobFailureCount() + 1)
+          && getNewStatus().getIntrospectJobFailureCount() >= DomainPresence.getDomainPresenceFailureRetryMaxCount();
+    }
   }
 
   /**
@@ -382,7 +388,7 @@ public class DomainStatusUpdater {
     }
 
     @Override
-    DomainStatusUpdaterContext createContext(Packet packet) {
+    DomainStatusUpdaterContext createContext(Packet packet, Step retryStep) {
       return new StatusUpdateContext(packet, this);
     }
 
@@ -392,7 +398,7 @@ public class DomainStatusUpdater {
 
     static class StatusUpdateContext extends DomainStatusUpdaterContext {
       private final WlsDomainConfig config;
-      private final Collection<String> expectedRunningServers;
+      private final Set<String> expectedRunningServers;
       private final Map<String, String> serverState;
       private final Map<String, ServerHealth> serverHealth;
       private final Packet packet;
@@ -405,7 +411,7 @@ public class DomainStatusUpdater {
         serverHealth = packet.getValue(SERVER_HEALTH_MAP);
         expectedRunningServers = DomainPresenceInfo.fromPacket(packet)
               .map(DomainPresenceInfo::getSelectedServers)
-              .orElse(Collections.emptyList());
+              .orElse(Collections.emptySet());
       }
 
       @Override
@@ -416,10 +422,24 @@ public class DomainStatusUpdater {
         }
       }
 
+      @Nullable
+      @Override
+      EventData createDomainEvent() {
+        return processingJustCompleted() ? new EventData(DOMAIN_PROCESSING_COMPLETED) : null;
+      }
+
+      private boolean processingJustCompleted() {
+        return allIntendedServersRunning() && !oldStatusWasCompleted();
+      }
+
+      private boolean oldStatusWasCompleted() {
+        return getStatus() != null && getStatus().hasConditionWith(this::isDomainCompleted);
+      }
+
       private void setStatusConditions(DomainStatus status) {
         if (allIntendedServersRunning()) {
           status.removeConditionWithType(Failed);
-          status.addCondition(new DomainCondition(Completed).withStatus(TRUE).withReason(SERVERS_READY_REASON));
+          status.addCondition(new DomainCondition(Completed).withStatus(TRUE));
           status.addCondition(new DomainCondition(Available).withStatus(TRUE));
         } else {
           status.addCondition(new DomainCondition(Completed).withStatus(FALSE));
@@ -442,6 +462,10 @@ public class DomainStatusUpdater {
         if (miiNondynamicRestartRequired() && isCommitUpdateOnly()) {
           setOnlineUpdateNeedRestartCondition(status);
         }
+      }
+
+      private boolean isDomainCompleted(DomainCondition condition) {
+        return condition.hasType(Completed) && condition.getStatus().equals("True");
       }
 
       private void setStatusDetails(DomainStatus status) {

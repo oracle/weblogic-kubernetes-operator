@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -694,8 +695,8 @@ public class DomainPresenceInfo implements PacketComponent {
   /**
    * Returns the names of the servers which are supposed to be running.
    */
-  public Collection<String> getSelectedServers() {
-    return getServerStartupInfo().stream().map(ServerStartupInfo::getServerName).collect(Collectors.toList());
+  public Set<String> getSelectedServers() {
+    return getServerStartupInfo().stream().map(ServerStartupInfo::getServerName).collect(Collectors.toSet());
   }
 
   /** Details about a specific managed server that will be started up. */

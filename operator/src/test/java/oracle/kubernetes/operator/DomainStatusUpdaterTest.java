@@ -17,6 +17,7 @@ import javax.annotation.Nonnull;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
@@ -28,6 +29,7 @@ import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
+import oracle.kubernetes.utils.SystemClockTestSupport;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
@@ -40,16 +42,20 @@ import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.operator.DomainFailureReason.Internal;
+import static oracle.kubernetes.operator.DomainFailureReason.Introspection;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
-import static oracle.kubernetes.operator.DomainStatusUpdater.SERVERS_READY_REASON;
 import static oracle.kubernetes.operator.DomainStatusUpdaterTest.ServerStatusMatcher.hasStatusForServer;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_ABORTED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_COMPLETED_EVENT;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
+import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
@@ -65,6 +71,7 @@ import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -87,6 +94,7 @@ class DomainStatusUpdaterTest {
     mementos.add(TestUtils.silenceOperatorLogger().ignoringLoggedExceptions(ApiException.class));
     mementos.add(testSupport.install());
     mementos.add(ClientFactoryStub.install());
+    mementos.add(SystemClockTestSupport.installClock());
 
     domain.setStatus(new DomainStatus());
 
@@ -300,7 +308,7 @@ class DomainStatusUpdaterTest {
 
     updateDomainStatus();
 
-    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus("True").withReason(SERVERS_READY_REASON));
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus("True"));
     assertThat(
         getRecordedDomain().getApiVersion(),
         equalTo(KubernetesConstants.API_VERSION_WEBLOGIC_ORACLE));
@@ -308,8 +316,7 @@ class DomainStatusUpdaterTest {
 
   @Test
   void whenAllDesiredServersRunningAndMatchingCompletedConditionFound_leaveIt() {
-    domain.getStatus()
-          .addCondition(new DomainCondition(Completed).withStatus("True").withReason(SERVERS_READY_REASON));
+    domain.getStatus().addCondition(new DomainCondition(Completed).withStatus("True"));
     defineScenario()
           .withCluster("clusterA", "server1")
           .withCluster("clusterB", "server2")
@@ -317,34 +324,70 @@ class DomainStatusUpdaterTest {
 
     updateDomainStatus();
 
-    assertThat(
-        getRecordedDomain(),
-        hasCondition(Completed).withStatus("True").withReason(SERVERS_READY_REASON));
-  }
-
-  @Test
-  void whenAllDesiredServersRunningAndMismatchedCompleteConditionReasonFound_changeIt() {
-    domain.getStatus().addCondition(new DomainCondition(Completed).withStatus("True"));
-
-    updateDomainStatus();
-
-    assertThat(
-        getRecordedDomain(),
-        hasCondition(Completed).withStatus("True").withReason(SERVERS_READY_REASON));
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus("True"));
   }
 
   @Test
   void whenAllDesiredServersRunningAndMismatchedCompletedConditionStatusFound_changeIt() {
-    domain
-        .getStatus()
-        .addCondition(new DomainCondition(Completed).withReason(SERVERS_READY_REASON));
+    domain.getStatus().addCondition(new DomainCondition(Completed).withStatus("False"));
 
     updateDomainStatus();
 
-    assertThat(
-        getRecordedDomain(),
-        hasCondition(Completed).withStatus("True").withReason(SERVERS_READY_REASON));
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus("True"));
   }
+
+  @Test
+  void whenAllDesiredServersRunningAndMatchingCompletedConditionFound_dontGenerateCompletedEvent() {
+    domain.getStatus().addCondition(new DomainCondition(Completed).withStatus("True"));
+    defineScenario()
+          .withCluster("clusterA", "server1")
+          .withCluster("clusterB", "server2")
+          .build();
+
+    updateDomainStatus();
+
+    assertThat(getEvents().stream().anyMatch(this::isDomainProcessingCompletedEvent), is(false));
+  }
+
+  private List<CoreV1Event> getEvents() {
+    return testSupport.getResources(KubernetesTestSupport.EVENT);
+  }
+
+  private boolean isDomainProcessingCompletedEvent(CoreV1Event e) {
+    return DOMAIN_PROCESSING_COMPLETED_EVENT.equals(e.getReason());
+  }
+
+  @Test
+  void whenAllDesiredServersRunningAndNoMatchingCompletedConditionFound_generateCompletedEvent() {
+    domain.getStatus()
+          .addCondition(new DomainCondition(Completed).withStatus("False"));
+    defineScenario()
+          .withCluster("clusterA", "server1")
+          .withCluster("clusterB", "server2")
+          .build();
+
+    updateDomainStatus();
+
+    assertThat(getEvents().stream().anyMatch(this::isDomainProcessingCompletedEvent), is(true));
+  }
+
+  @Test
+  @Disabled("What do we want here?")
+  void whenUnexpectedServersRunningAndNoMatchingCompletedConditionFound_dontGenerateCompletedEvent() {
+    domain.getStatus()
+          .addCondition(new DomainCondition(Completed).withStatus("False"));
+    defineScenario()
+          .withCluster("clusterA", "server1")
+          .withCluster("clusterB", "server2")
+          .withServersReachingState("RUNNING","server3")
+          .build();
+
+    updateDomainStatus();
+
+    assertThat(getEvents().stream().anyMatch(this::isDomainProcessingCompletedEvent), is(false));
+  }
+
+  // todo don't set completed or trigger event if unexpected servers are running
 
   @Test
   void whenAllDesiredServersRunningAndFailedConditionFound_removeIt() {
@@ -614,6 +657,17 @@ class DomainStatusUpdaterTest {
     assertThat(
           getRecordedDomain(),
         hasCondition(Failed).withStatus("True").withReason(Internal).withMessage(message));
+  }
+
+  @Test
+  void afterIntrospectionFailure_generateDomainProcessingAbortedEvent() {
+    testSupport.runSteps(DomainStatusUpdater.createFailureRelatedSteps(Introspection, FATAL_INTROSPECTOR_ERROR));
+
+    assertThat(getEvents().stream().anyMatch(this::isDomainProcessingAbortedEvent), is(true));
+  }
+
+  private boolean isDomainProcessingAbortedEvent(CoreV1Event e) {
+    return DOMAIN_PROCESSING_ABORTED_EVENT.equals(e.getReason());
   }
 
   @Test

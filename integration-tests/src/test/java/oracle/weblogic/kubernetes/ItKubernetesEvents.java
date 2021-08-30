@@ -217,7 +217,7 @@ class ItKubernetesEvents {
     logger.info("verify the DomainCreated event is generated");
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_CREATED, "Normal", timestamp);
     logger.info("verify the DomainProcessing Starting/Completed event is generated");
-    checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_PROCESSING_STARTING, "Normal", timestamp);
+    // checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_PROCESSING_STARTING, "Normal", timestamp);
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_PROCESSING_COMPLETED, "Normal", timestamp);
   }
 
