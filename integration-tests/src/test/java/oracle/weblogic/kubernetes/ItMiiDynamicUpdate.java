@@ -27,6 +27,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -85,6 +86,7 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResourceWithNewReplicaCountAtSpecLevel;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
@@ -114,6 +116,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test dynamic updates to a model in image domain")
 @IntegrationTest
+@Tag("okdenv")
 class ItMiiDynamicUpdate {
 
   private static String opNamespace = null;
@@ -131,6 +134,7 @@ class ItMiiDynamicUpdate {
   private static Path pathToAddClusterYaml = null;
   private static Path pathToChangReadsYaml = null;
   private static LoggingFacade logger = null;
+  private static String adminSvcExtHost = null;
 
   /**
    * Install Operator.
@@ -266,6 +270,10 @@ class ItMiiDynamicUpdate {
           domainNamespace);
       checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
+    if (adminSvcExtHost == null) {
+      adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
+      logger.info("admin svc host = {0}", adminSvcExtHost);
+    }
   }
 
   /**
@@ -302,7 +310,7 @@ class ItMiiDynamicUpdate {
     verifyIntrospectorRuns(domainUid, domainNamespace);
 
     testUntil(
-        () -> checkWorkManagerRuntime(domainNamespace, adminServerPodName,
+        () -> checkWorkManagerRuntime(adminSvcExtHost, domainNamespace, adminServerPodName,
           MANAGED_SERVER_NAME_BASE + "1",
           workManagerName, "200"),
         logger,
@@ -388,7 +396,7 @@ class ItMiiDynamicUpdate {
     }
 
     // make sure the application is not deployed on admin server
-    assertFalse(checkApplicationRuntime(domainNamespace, adminServerPodName,
+    assertFalse(checkApplicationRuntime(adminSvcExtHost, domainNamespace, adminServerPodName,
         adminServerName, "200"),
         "Application deployed on " + adminServerName + " before the dynamic update");
 
@@ -533,7 +541,7 @@ class ItMiiDynamicUpdate {
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-    assertTrue(checkSystemResourceConfig(adminServiceNodePort,
+    assertTrue(checkSystemResourceConfig(adminSvcExtHost, adminServiceNodePort,
         "JDBCSystemResources/TestDataSource2/JDBCResource/JDBCDataSourceParams",
         "jdbc\\/TestDataSource2-2"), "JDBCSystemResource JNDIName not found");
     logger.info("JDBCSystemResource configuration found");
@@ -586,7 +594,7 @@ class ItMiiDynamicUpdate {
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-    assertTrue(checkSystemResourceConfig(adminServiceNodePort,
+    assertTrue(checkSystemResourceConfig(adminSvcExtHost, adminServiceNodePort,
         "appDeployments",
         "myear"), "Application myear is not found");
     logger.info("Application myear is found");
@@ -624,13 +632,13 @@ class ItMiiDynamicUpdate {
     adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-    assertTrue(checkSystemResourceConfig(adminServiceNodePort,
+    assertTrue(checkSystemResourceConfig(adminSvcExtHost, adminServiceNodePort,
         "JDBCSystemResources/TestDataSource2/JDBCResource/JDBCDriverParams",
         "newdburl"), "JDBCSystemResource DB URL not found");
     logger.info("JDBCSystemResource DB URL found");
 
     // verify the application is undeployed
-    assertFalse(checkSystemResourceConfig(adminServiceNodePort,
+    assertFalse(checkSystemResourceConfig(adminSvcExtHost, adminServiceNodePort,
         "appDeployments",
         "myear"), "Application myear found, should be undeployed");
     logger.info("Application myear is undeployed");
@@ -687,7 +695,7 @@ class ItMiiDynamicUpdate {
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-    assertFalse(checkSystemResourceConfig(adminServiceNodePort, "JDBCSystemResources",
+    assertFalse(checkSystemResourceConfig(adminSvcExtHost, adminServiceNodePort, "JDBCSystemResources",
         "TestDataSource2"), "Found JDBCSystemResource datasource, should be deleted");
     logger.info("JDBCSystemResource Datasource is deleted");
 
@@ -941,13 +949,13 @@ class ItMiiDynamicUpdate {
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
 
     // check server config for ScatteredReadsEnabled is updated
-    assertTrue(checkSystemResourceConfig(adminServiceNodePort,
+    assertTrue(checkSystemResourceConfig(adminSvcExtHost, adminServiceNodePort,
         "servers/" + adminServerName,
         "\"scatteredReadsEnabled\": true"), "ScatteredReadsEnabled is not changed to true");
     logger.info("ScatteredReadsEnabled is changed to true");
 
     // check datasource configuration using REST api
-    assertTrue(checkSystemResourceConfig(adminServiceNodePort,
+    assertTrue(checkSystemResourceConfig(adminSvcExtHost, adminServiceNodePort,
         "JDBCSystemResources/TestDataSource2/JDBCResource/JDBCDriverParams/properties/properties",
         "\"name\": \"testattrib\""), "JDBCSystemResource new property not found");
     logger.info("JDBCSystemResource new property found");
@@ -971,7 +979,7 @@ class ItMiiDynamicUpdate {
     }
 
     // check datasource runtime after restart
-    assertTrue(checkSystemResourceRuntime(adminServiceNodePort,
+    assertTrue(checkSystemResourceRuntime(adminSvcExtHost, adminServiceNodePort,
         "serverRuntimes/" + MANAGED_SERVER_NAME_BASE + "1/JDBCServiceRuntime/"
             + "JDBCDataSourceRuntimeMBeans/TestDataSource2",
         "\"testattrib\": \"dummy\""), "JDBCSystemResource new property not found");
@@ -1185,7 +1193,7 @@ class ItMiiDynamicUpdate {
 
     // make sure the application is not deployed on admin
     testUntil(
-        () -> checkApplicationRuntime(domainNamespace, adminServerPodName,
+        () -> checkApplicationRuntime(adminSvcExtHost, domainNamespace, adminServerPodName,
           adminServerName, "404"),
         logger,
         "Waiting for application target to be updated.");
@@ -1340,7 +1348,7 @@ class ItMiiDynamicUpdate {
    *          with the provided count value.
    **/
   private boolean checkMinThreadsConstraintRuntime(int count) {
-    ExecResult result = readMinThreadsConstraintRuntimeForWorkManager(domainNamespace,
+    ExecResult result = readMinThreadsConstraintRuntimeForWorkManager(adminSvcExtHost, domainNamespace,
         adminServerPodName, MANAGED_SERVER_NAME_BASE + "1", workManagerName);
     if (result != null) {
       logger.info("readMinThreadsConstraintRuntime read " + result.toString());
@@ -1357,7 +1365,7 @@ class ItMiiDynamicUpdate {
    *          with the provided count value.
    **/
   private boolean checkMaxThreadsConstraintRuntime(int count) {
-    ExecResult result = readMaxThreadsConstraintRuntimeForWorkManager(domainNamespace,
+    ExecResult result = readMaxThreadsConstraintRuntimeForWorkManager(adminSvcExtHost, domainNamespace,
         adminServerPodName, MANAGED_SERVER_NAME_BASE + "1", workManagerName);
     if (result != null) {
       logger.info("readMaxThreadsConstraintRuntime read " + result.toString());
@@ -1377,7 +1385,7 @@ class ItMiiDynamicUpdate {
     for (int i = 1; i <= replicaCount; i++) {
       final int j = i;
       testUntil(
-          () -> checkApplicationRuntime(domainNamespace, adminServerPodName,
+          () -> checkApplicationRuntime(adminSvcExtHost, domainNamespace, adminServerPodName,
             MANAGED_SERVER_NAME_BASE + j, expectedStatusCode),
           logger,
           "Waiting for application target to be updated");
@@ -1498,7 +1506,7 @@ class ItMiiDynamicUpdate {
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-    assertTrue(checkSystemResourceConfiguration(adminServiceNodePort, "JDBCSystemResources",
+    assertTrue(checkSystemResourceConfiguration(adminSvcExtHost, adminServiceNodePort, "JDBCSystemResources",
         "TestDataSource2", "200"), "JDBCSystemResource not found");
     logger.info("JDBCSystemResource configuration found");
     return pods;

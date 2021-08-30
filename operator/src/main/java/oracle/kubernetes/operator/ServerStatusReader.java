@@ -40,7 +40,7 @@ import oracle.kubernetes.utils.OperatorUtils;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 
-import static oracle.kubernetes.operator.KubernetesConstants.CONTAINER_NAME;
+import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 
@@ -177,7 +177,7 @@ public class ServerStatusReader {
               try (LoggingContext stack =
                        LoggingContext.setThreadContext().namespace(getNamespace(pod)).domainUid(getDomainUid(pod))) {
 
-                KubernetesExec kubernetesExec = EXEC_FACTORY.create(client, pod, CONTAINER_NAME);
+                KubernetesExec kubernetesExec = EXEC_FACTORY.create(client, pod, WLS_CONTAINER_NAME);
                 kubernetesExec.setStdin(stdin);
                 kubernetesExec.setTty(tty);
                 proc = kubernetesExec.exec("/weblogic-operator/scripts/readState.sh");
