@@ -752,7 +752,7 @@ class ItParameterizedDomain {
     testUntil(
         checkDomainEvent(opNamespace, miiDomainNamespace, miiDomainUid, DOMAIN_CHANGED, "Normal", timestamp),
         logger,
-        "Waiting for domain event {0} to be logged",
+        "domain event {0} to be logged",
         DOMAIN_CHANGED);
 
     // verify the DomainProcessing Starting/Completed event is generated
@@ -760,7 +760,7 @@ class ItParameterizedDomain {
         checkDomainEvent(
             opNamespace, miiDomainNamespace, miiDomainUid, DOMAIN_PROCESSING_STARTING, "Normal", timestamp),
         logger,
-        "Waiting for domain event {0} to be logged",
+        "domain event {0} to be logged",
         DOMAIN_PROCESSING_STARTING);
 
     testUntil(
@@ -780,13 +780,13 @@ class ItParameterizedDomain {
         testUntil(
             checkPodEventLoggedOnce(miiDomainNamespace, managedServerPodName, POD_TERMINATED, timestamp),
             logger,
-            "Waiting for event {0} to be logged for pod {1}",
+            "event {0} to be logged for pod {1}",
             POD_TERMINATED,
             managedServerPodName);
         testUntil(
             checkPodEventLoggedOnce(miiDomainNamespace, managedServerPodName, POD_STARTED, timestamp),
             logger,
-            "Waiting for event {0} to be logged for pod {1}",
+            "event {0} to be logged for pod {1}",
             POD_STARTED,
             managedServerPodName);
       }

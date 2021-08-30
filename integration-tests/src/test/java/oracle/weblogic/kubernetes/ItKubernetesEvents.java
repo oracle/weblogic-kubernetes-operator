@@ -886,7 +886,7 @@ class ItKubernetesEvents {
     testUntil(
         checkDomainEvent(opNamespace, domainNamespace, domainUid, reason, type, timestamp),
         logger,
-        "Waiting for domain event {0} to be logged in namespace {1}",
+        "domain event {0} to be logged in namespace {1}",
         reason,
         domainNamespace);
   }
@@ -898,7 +898,7 @@ class ItKubernetesEvents {
         checkDomainEventWatchingStopped(
             opNamespace, domainNamespace, domainUid, type, timestamp, enableClusterRoleBinding),
         logger,
-        "Waiting for domain event NamespaceWatchingStopped to be logged in namespace {0}",
+        "domain event NamespaceWatchingStopped to be logged in namespace {0}",
         domainNamespace);
   }
 
@@ -909,7 +909,7 @@ class ItKubernetesEvents {
         checkDomainEventWithCount(
             opNamespace, domainNamespace, domainUid, reason, type, timestamp, countBefore),
         logger,
-        "Waiting for domain event {0} to be logged",
+        "domain event {0} to be logged",
         reason);
   }
 

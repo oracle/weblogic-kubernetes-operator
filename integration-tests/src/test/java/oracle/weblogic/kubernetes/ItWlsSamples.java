@@ -503,7 +503,7 @@ class ItWlsSamples {
         assertDoesNotThrow(() -> pvExists(pvName, null),
           String.format("pvExists failed with ApiException for pv %s", pvName)),
         logger,
-        "Waiting for pv {0} to be ready",
+        "pv {0} to be ready",
         pvName);
 
     params = new CommandParams().defaults();
@@ -516,7 +516,7 @@ class ItWlsSamples {
         assertDoesNotThrow(() -> pvcExists(pvcName, domainNamespace),
           String.format("pvcExists failed with ApiException for pvc %s", pvcName)),
         logger,
-        "Waiting for pv {0} to be ready in namespace {1}",
+        "pv {0} to be ready in namespace {1}",
         pvcName,
         domainNamespace);
   }
@@ -577,7 +577,7 @@ class ItWlsSamples {
     testUntil(
         domainExists(domainName, DOMAIN_VERSION, domainNamespace),
         logger,
-        "Waiting for domain {0} to be created in namespace {1}",
+        "domain {0} to be created in namespace {1}",
         domainName,
         domainNamespace);
 
@@ -668,7 +668,7 @@ class ItWlsSamples {
     testUntil(
         domainDoesNotExist(domainName, DOMAIN_VERSION, domainNamespace),
         logger,
-        "Waiting for domain {0} to be deleted in namespace {1}",
+        "domain {0} to be deleted in namespace {1}",
         domainName,
         domainNamespace);
   }

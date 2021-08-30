@@ -212,7 +212,7 @@ class ItMiiDynamicUpdate {
     testUntil(
         domainExists(domainUid, DOMAIN_VERSION, domainNamespace),
         logger,
-        "Waiting for domain {0} to be created in namespace {1}",
+        "domain {0} to be created in namespace {1}",
         domainUid,
         domainNamespace);
 
@@ -314,7 +314,7 @@ class ItMiiDynamicUpdate {
           MANAGED_SERVER_NAME_BASE + "1",
           workManagerName, "200"),
         logger,
-        "Waiting for work manager configuration to be updated.");
+        "work manager configuration to be updated.");
     logger.info("Found new work manager configuration");
 
     verifyPodsNotRolled(domainNamespace, pods);
@@ -1196,7 +1196,7 @@ class ItMiiDynamicUpdate {
         () -> checkApplicationRuntime(adminSvcExtHost, domainNamespace, adminServerPodName,
           adminServerName, "404"),
         logger,
-        "Waiting for application target to be updated.");
+        "application target to be updated.");
 
     verifyPodsNotRolled(domainNamespace, pods);
   }
@@ -1230,7 +1230,7 @@ class ItMiiDynamicUpdate {
               && miidomain.getStatus().getMessage().contains(expectedErrorMsg);
         },
         logger,
-        "Waiting for domain status message contains the expected error msg \"{0}\"",
+        "domain status message contains the expected error msg \"{0}\"",
         expectedErrorMsg);
 
     // check that the domain status condition type is "Failed" and message contains the expected error msg
@@ -1250,7 +1250,7 @@ class ItMiiDynamicUpdate {
           return false;
         },
         logger,
-        "Waiting for domain status condition message contains the expected error msg \"{0}\"",
+        "domain status condition message contains the expected error msg \"{0}\"",
         expectedErrorMsg);
   }
 
@@ -1331,14 +1331,14 @@ class ItMiiDynamicUpdate {
     testUntil(
         () -> checkMinThreadsConstraintRuntime(count),
         logger,
-        "Waiting for min threads constraint configuration to be updated");
+        "min threads constraint configuration to be updated");
   }
 
   private void verifyMaxThredsConstraintRuntime(int count) {
     testUntil(
         () -> checkMaxThreadsConstraintRuntime(count),
         logger,
-        "Waiting for max threads constraint configuration to be updated");
+        "max threads constraint configuration to be updated");
   }
 
   /*
@@ -1388,7 +1388,7 @@ class ItMiiDynamicUpdate {
           () -> checkApplicationRuntime(adminSvcExtHost, domainNamespace, adminServerPodName,
             MANAGED_SERVER_NAME_BASE + j, expectedStatusCode),
           logger,
-          "Waiting for application target to be updated");
+          "application target to be updated");
     }
   }
 
@@ -1436,7 +1436,7 @@ class ItMiiDynamicUpdate {
           return false;
         },
         logger,
-        "Waiting for domain status condition message contains the expected msg \"{0}\"",
+        "domain status condition message contains the expected msg \"{0}\"",
         conditionMsg);
     return false;
   }
@@ -1465,7 +1465,7 @@ class ItMiiDynamicUpdate {
           return false;
         },
         logger,
-        "Waiting for domain status condition message contains the expected msg \"{0}\"",
+        "domain status condition message contains the expected msg \"{0}\"",
         conditionReason);
     return false;
   }

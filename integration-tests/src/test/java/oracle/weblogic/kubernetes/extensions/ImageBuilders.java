@@ -142,14 +142,14 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
             testUntil(
                 () -> dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD),
                 logger,
-                "Waiting for docker login to OCR to be successful");
+                "docker login to OCR to be successful");
           }
         } else if (BASE_IMAGES_REPO.equals(OCIR_REGISTRY)) {
           if (!OCIR_USERNAME.equals(REPO_DUMMY_VALUE)) {
             testUntil(
                 () -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD),
                 logger,
-                "Waiting for docker login to OCIR to be successful");
+                "docker login to OCIR to be successful");
           }
         }
         // The following code is for pulling WLS images if running tests in Kind cluster
@@ -172,7 +172,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
             testUntil(
                 pullImageFromOcrOrOcirAndPushToKind(image),
                 logger,
-                "Waiting for pullImageFromOcrOrOcirAndPushToKind for image {0} to be successful",
+                "pullImageFromOcrOrOcirAndPushToKind for image {0} to be successful",
                 image);
           }
         }
@@ -184,7 +184,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
               createBasicImage(MII_BASIC_IMAGE_NAME, MII_BASIC_IMAGE_TAG, MII_BASIC_WDT_MODEL_FILE,
                 null, MII_BASIC_APP_NAME, MII_BASIC_IMAGE_DOMAINTYPE),
               logger,
-              "Waiting for createBasicImage to be successful");
+              "createBasicImage to be successful");
 
           // build basic wdt-domain-in-image image
           wdtBasicImage = WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG;
@@ -192,7 +192,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
               createBasicImage(WDT_BASIC_IMAGE_NAME, WDT_BASIC_IMAGE_TAG, WDT_BASIC_MODEL_FILE,
                 WDT_BASIC_MODEL_PROPERTIES_FILE, WDT_BASIC_APP_NAME, WDT_BASIC_IMAGE_DOMAINTYPE),
               logger,
-              "Waiting for createBasicImage to be successful");
+              "createBasicImage to be successful");
 
           /* Check image exists using docker images | grep image tag.
            * Tag name is unique as it contains date and timestamp.
@@ -213,7 +213,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
           testUntil(
               () -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD),
               logger,
-              "Waiting for docker login to OCIR to be successful");
+              "docker login to OCIR to be successful");
         }
 
         // push the images to repo
@@ -236,7 +236,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
             testUntil(
                 () -> dockerPush(image),
                 logger,
-                "Waiting for docker push to OCIR/kind for image {0} to be successful",
+                "docker push to OCIR/kind for image {0} to be successful",
                 image);
           }
 

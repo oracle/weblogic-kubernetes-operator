@@ -89,7 +89,7 @@ public class LoggingExporter {
     testUntil(
         Deployment.isReady(elasticsearchName, labels, namespace),
         logger,
-        "Waiting for Elasticsearch deployment {0} to be completed in {1} namespace",
+        "Elasticsearch deployment {0} to be completed in {1} namespace",
         elasticsearchName,
         namespace);
 
@@ -142,7 +142,7 @@ public class LoggingExporter {
     testUntil(
         Deployment.isReady(kibanaName, labels, namespace),
         logger,
-        "Waiting for Kibana deployment {0} to be completed in namespace {1}",
+        "Kibana deployment {0} to be completed in namespace {1}",
         kibanaName,
         namespace);
 

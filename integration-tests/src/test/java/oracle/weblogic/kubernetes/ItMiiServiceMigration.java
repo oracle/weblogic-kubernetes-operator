@@ -192,7 +192,7 @@ class ItMiiServiceMigration {
     testUntil(
         domainExists(domainUid, DOMAIN_VERSION, domainNamespace),
         logger,
-        "Waiting for domain {0} to be created in namespace {1}",
+        "domain {0} to be created in namespace {1}",
         domainUid,
         domainNamespace);
 
@@ -380,7 +380,7 @@ class ItMiiServiceMigration {
     testUntil(
         assertDoesNotThrow(() -> () -> exec(curlString.toString(), true).stdout().contains("200")),
         logger,
-        "Waiting for JMS Service to migrate");
+        "JMS Service to migrate");
     return true;
   }
 
@@ -411,7 +411,7 @@ class ItMiiServiceMigration {
         assertDoesNotThrow(() -> () -> exec(curlString.toString(), true)
             .stdout().contains("{\"active\": " + active + "}")),
         logger,
-        "Waiting for JTA Recovery Service to migrate");
+        "JTA Recovery Service to migrate");
     return true;
   }
 

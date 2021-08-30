@@ -45,7 +45,7 @@ public class Pod {
           retry,
           podRestarted(entry.getKey(), pods, maxUnavailable, namespace),
           getLogger(),
-          "Waiting for pod {0} to be restarted in namespace {1}",
+          "pod {0} to be restarted in namespace {1}",
           entry.getKey(),
           namespace);
 
@@ -54,7 +54,7 @@ public class Pod {
           retry,
           podReady(namespace, null, entry.getKey()),
           getLogger(),
-          "Waiting for pod {0} to be ready in namespace {1}",
+          "pod {0} to be ready in namespace {1}",
           entry.getKey(),
           namespace);
     }

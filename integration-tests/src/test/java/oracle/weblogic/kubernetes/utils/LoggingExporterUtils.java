@@ -91,7 +91,7 @@ public class LoggingExporterUtils {
         assertDoesNotThrow(() -> isElkStackPodReady(ELKSTACK_NAMESPACE, elasticsearchPodNamePrefix),
           "isElkStackPodReady failed with ApiException"),
         logger,
-        "Waiting for Elasticsearch to be ready in namespace {0}",
+        "Elasticsearch to be ready in namespace {0}",
         ELKSTACK_NAMESPACE);
 
     return elasticsearchParams;
@@ -125,7 +125,7 @@ public class LoggingExporterUtils {
         assertDoesNotThrow(() -> isElkStackPodReady(ELKSTACK_NAMESPACE, kibanaPodNamePrefix),
           "isElkStackPodReady failed with ApiException"),
         logger,
-        "Waiting for Kibana to be ready in namespace {0}",
+        "Kibana to be ready in namespace {0}",
         ELKSTACK_NAMESPACE);
 
     return kibanaParams;

@@ -366,7 +366,7 @@ public class LoggingUtil {
     testUntil(
         podReady(podName, null, namespace),
         logger,
-        "Waiting for {0} to be ready in namespace {1}",
+        "{0} to be ready in namespace {1}",
         podName,
         namespace);
 
@@ -389,7 +389,7 @@ public class LoggingUtil {
     testUntil(
         podDoesNotExist(podName, null, namespace),
         logger,
-        "Waiting for {0} to be deleted in namespace {1}",
+        "{0} to be deleted in namespace {1}",
         podName,
         namespace);
   }
@@ -466,7 +466,7 @@ public class LoggingUtil {
         assertDoesNotThrow(() -> podLogContainsString(namespace, podName, expectedString),
           "podLogContainsString failed with IOException, ApiException or InterruptedException"),
         getLogger(),
-        "Waiting for string {0} existing in pod {1} in namespace {2}",
+        "string {0} existing in pod {1} in namespace {2}",
         expectedString,
         podName,
         namespace);

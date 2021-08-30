@@ -240,7 +240,7 @@ class ItStickySession {
           String.format("podExists failed with ApiException for pod %s in namespace %s",
             ingressServiceName, domainNamespace)),
         logger,
-        "Waiting for pod {0} to be created in namespace {1}",
+        "pod {0} to be created in namespace {1}",
         ingressServiceName,
         domainNamespace);
 

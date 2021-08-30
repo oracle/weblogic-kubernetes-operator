@@ -52,7 +52,7 @@ public class DomainUtils {
     testUntil(
         domainExists(domainUid, domainVersion, domainNamespace),
         logger,
-        "Waiting for domain {0} to be created in namespace {1}",
+        "domain {0} to be created in namespace {1}",
         domainUid,
         domainNamespace);
   }
@@ -104,7 +104,7 @@ public class DomainUtils {
     testUntil(
         assertDoesNotThrow(() -> domainStatusReasonMatches(domain, statusReason)),
         logger,
-        "Waiting for the status reason of the domain {0} in namespace {1}",
+        "the status reason of the domain {0} in namespace {1}",
         domain,
         namespace,
         statusReason);
@@ -124,7 +124,7 @@ public class DomainUtils {
     testUntil(
         domainDoesNotExist(domainUid, DOMAIN_VERSION, domainNS),
         getLogger(),
-        "Waiting for domain {0} to be deleted in namespace {1}",
+        "domain {0} to be deleted in namespace {1}",
         domainUid,
         domainNS);
   }

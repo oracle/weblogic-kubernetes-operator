@@ -196,7 +196,7 @@ public class ItFmwDiiSample {
       testUntil(
           tagAndPushToKind(taggedImage, newImage),
           logger,
-          "Waiting for tagAndPushToKind for image {0} to be successful",
+          "tagAndPushToKind for image {0} to be successful",
           newImage);
       assertDoesNotThrow(() -> replaceStringInFile(
           Paths.get(sampleBase.toString(), "weblogic-domains/" + domainName + "/domain.yaml").toString(),
@@ -219,7 +219,7 @@ public class ItFmwDiiSample {
     testUntil(
         domainExists(domainName, DOMAIN_VERSION, domainNamespace),
         logger,
-        "Waiting for domain {0} to be created in namespace {1}",
+        "domain {0} to be created in namespace {1}",
         domainName,
         domainNamespace);
 

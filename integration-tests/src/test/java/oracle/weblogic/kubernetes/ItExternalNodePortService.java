@@ -167,7 +167,8 @@ class ItExternalNodePortService {
     logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
     testUntil(
         domainExists(domainUid, DOMAIN_VERSION, domainNamespace),
-        logger, "Waiting for domain {0} to be created in namespace {1}",
+        logger,
+        "domain {0} to be created in namespace {1}",
         domainUid,
         domainNamespace);
   }

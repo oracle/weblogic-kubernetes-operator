@@ -495,7 +495,7 @@ class ItIstioCrossDomainTransaction {
         assertDoesNotThrow(
             () -> () -> exec(curlString, true).stdout().contains("Messages are distributed")),
         logger,
-        "Waiting for local queue to be updated");
+        "local queue to be updated");
     return true;
   }
 
@@ -520,7 +520,7 @@ class ItIstioCrossDomainTransaction {
     testUntil(
         domainExists(domainUid, DOMAIN_VERSION, domainNamespace),
         logger,
-        "Waiting for domain {0} to be created in namespace {1}",
+        "domain {0} to be created in namespace {1}",
         domainUid,
         domainNamespace);
 

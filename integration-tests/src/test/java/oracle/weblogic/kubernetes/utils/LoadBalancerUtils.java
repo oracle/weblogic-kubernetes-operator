@@ -132,7 +132,7 @@ public class LoadBalancerUtils {
           loadBalancerName,
           labels, namespace), "isOCILoadBalancerReady failed with ApiException"),
         logger,
-        "Waiting for external IP to be generated in {0}",
+        "external IP to be generated in {0}",
         namespace);
   }
 
@@ -205,7 +205,7 @@ public class LoadBalancerUtils {
     testUntil(
         assertDoesNotThrow(() -> isNginxReady(nginxNamespace), "isNginxReady failed with ApiException"),
         logger,
-        "Waiting for NGINX to be ready in namespace {0}",
+        "NGINX to be ready in namespace {0}",
         nginxNamespace);
 
     return nginxHelmParams;
@@ -260,7 +260,7 @@ public class LoadBalancerUtils {
         assertDoesNotThrow(() -> isVoyagerReady(voyagerNamespace, voyagerPodNamePrefix),
           "isVoyagerReady failed with ApiException"),
         logger,
-        "Waiting for Voyager to be ready in namespace {0}",
+        "Voyager to be ready in namespace {0}",
         voyagerNamespace);
 
     return voyagerHelmParams;
@@ -456,7 +456,7 @@ public class LoadBalancerUtils {
     testUntil(
         assertDoesNotThrow(() -> isApacheReady(apacheNamespace), "isApacheReady failed with ApiException"),
         logger,
-        "Waiting for Apache to be ready in namespace {0}",
+        "Apache to be ready in namespace {0}",
         apacheNamespace);
 
     return apacheHelmParams;
@@ -507,7 +507,7 @@ public class LoadBalancerUtils {
     testUntil(
         assertDoesNotThrow(() -> isTraefikReady(traefikNamespace), "isTraefikReady failed with ApiException"),
         logger,
-        "Waiting for Traefik to be ready in namespace {0}",
+        "Traefik to be ready in namespace {0}",
         traefikNamespace);
 
     return traefikHelmParams;
@@ -769,7 +769,7 @@ public class LoadBalancerUtils {
         assertDoesNotThrow(() -> isVoyagerReady(domainNamespace, voyagerIngressName),
           "isVoyagerReady failed with ApiException"),
         logger,
-        "Waiting for Voyager ingress to be ready in namespace {0}",
+        "Voyager ingress to be ready in namespace {0}",
         domainUid);
 
     assertNotNull(ingressHostList,

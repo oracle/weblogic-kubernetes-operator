@@ -728,7 +728,7 @@ class ItUsabilityOperatorHelmChart {
           assertDoesNotThrow(() -> operatorIsReady(op2Namespace),
             "operatorIsReady failed with ApiException"),
           logger,
-          "Waiting for operator to be running in namespace {0}",
+          "operator to be running in namespace {0}",
           op2Namespace);
 
       // Helm reports error message status
@@ -1047,7 +1047,7 @@ class ItUsabilityOperatorHelmChart {
           assertDoesNotThrow(() -> operatorIsReady(operNamespace),
             "operatorIsReady failed with ApiException"),
           logger,
-          "Waiting for operator to be running in namespace {0}",
+          "operator to be running in namespace {0}",
           operNamespace);
 
       if (withRestAPI) {
@@ -1056,7 +1056,7 @@ class ItUsabilityOperatorHelmChart {
             assertDoesNotThrow(() -> operatorRestServiceRunning(operNamespace),
               "operator external service is not running"),
             logger,
-            "Waiting for operator external service in namespace {0}",
+            "operator external service in namespace {0}",
             operNamespace);
       }
       return opHelmParams;

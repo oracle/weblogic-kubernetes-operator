@@ -459,7 +459,7 @@ class ItIntrospectVersion {
           return (res.getStatus().getClusters().get(0).getMaximumReplicas() == 3);
         },
         logger,
-        "Waiting for Domain.status.clusters.{0}.maximumReplicas to be {1}",
+        "Domain.status.clusters.{0}.maximumReplicas to be {1}",
         clusterName,
         3);
 

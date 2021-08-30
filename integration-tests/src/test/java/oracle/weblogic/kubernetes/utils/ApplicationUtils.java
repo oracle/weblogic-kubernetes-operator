@@ -52,7 +52,7 @@ public class ApplicationUtils {
     testUntil(
         assertDoesNotThrow(() -> () -> exec(new String(curlString), true).stdout().contains("200")),
         logger,
-        "Waiting for application to be ready {0}",
+        "application to be ready {0}",
         url);
     return true;
   }
@@ -85,7 +85,7 @@ public class ApplicationUtils {
           appPath,
           expectedStr),
         getLogger(),
-        "Waiting for application {0} is running on pod {1} in namespace {2}",
+        "application {0} is running on pod {1} in namespace {2}",
         appPath,
         podName,
         namespace);
@@ -125,7 +125,7 @@ public class ApplicationUtils {
     testUntil(
         assertDoesNotThrow(() -> () -> exec(curlString, true).stdout().contains("STATE_ACTIVE")),
         logger,
-        "Waiting for Application {0} to be active",
+        "Application {0} to be active",
         application);
     return true;
   }

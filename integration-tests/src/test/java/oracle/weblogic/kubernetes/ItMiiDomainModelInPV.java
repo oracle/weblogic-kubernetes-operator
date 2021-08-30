@@ -384,7 +384,7 @@ public class ItMiiDomainModelInPV {
     testUntil(
         podReady(podName, null, namespace),
         logger,
-        "Waiting for {0} to be ready in namespace {1}",
+        "{0} to be ready in namespace {1}",
         podName,
         namespace);
 
@@ -429,7 +429,7 @@ public class ItMiiDomainModelInPV {
       testUntil(
           () -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD),
           logger,
-          "Waiting for docker login to be successful");
+          "docker login to be successful");
     }
 
     // push the image to repo
@@ -438,7 +438,7 @@ public class ItMiiDomainModelInPV {
       testUntil(
           () -> dockerPush(image),
           logger,
-          "Waiting for docker push for image {0} to be successful",
+          "docker push for image {0} to be successful",
           image);
     }
   }

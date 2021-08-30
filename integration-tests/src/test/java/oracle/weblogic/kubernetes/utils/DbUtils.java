@@ -229,7 +229,7 @@ public class DbUtils {
         assertDoesNotThrow(() -> podIsReady(dbNamespace, "app=database", dbPodName),
           "oracleDBService podReady failed with ApiException"),
         logger,
-        "Waiting for Oracle DB to be ready in namespace {0}",
+        "Oracle DB to be ready in namespace {0}",
         dbNamespace);
 
     // check if DB is ready to be used by searching pod log
@@ -306,7 +306,7 @@ public class DbUtils {
     testUntil(
         podReady(RCUPODNAME, null, dbNamespace),
         logger,
-        "Waiting for {0} to be ready in namespace {1}",
+        "{0} to be ready in namespace {1}",
         RCUPODNAME,
         dbNamespace);
 
@@ -463,7 +463,7 @@ public class DbUtils {
         assertDoesNotThrow(() -> podLogContains(matchStr, podName, dbNamespace),
           String.format("podLogContains failed with ApiException for pod %s in namespace %s", podName, dbNamespace)),
         logger,
-        "Waiting for pod {0} log contain message {1} in namespace {2}",
+        "pod {0} log contain message {1} in namespace {2}",
         podName,
         matchStr,
         dbNamespace);

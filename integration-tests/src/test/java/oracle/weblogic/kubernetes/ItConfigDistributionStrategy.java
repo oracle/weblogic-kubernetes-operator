@@ -272,7 +272,7 @@ class ItConfigDistributionStrategy {
           return response.statusCode() == 200;
         },
         logger,
-        "Waiting for clusterview app in admin server is accessible after restart");
+        "clusterview app in admin server is accessible after restart");
   }
 
   /**
@@ -322,7 +322,7 @@ class ItConfigDistributionStrategy {
         withLongRetryPolicy,
         configUpdated("100000000"),
         logger,
-        "Waiting for server configuration to be updated");
+        "server configuration to be updated");
 
     verifyConfigXMLOverride(true);
     verifyResourceJDBC0Override(true);
@@ -377,7 +377,7 @@ class ItConfigDistributionStrategy {
         withLongRetryPolicy,
         configUpdated("100000000"),
         logger,
-        "Waiting for server configuration to be updated");
+        "server configuration to be updated");
 
     verifyConfigXMLOverride(true);
     verifyResourceJDBC0Override(true);
@@ -390,7 +390,7 @@ class ItConfigDistributionStrategy {
         () -> listConfigMaps(domainNamespace).getItems().stream().noneMatch((cm)
             -> (cm.getMetadata().getName().equals(overridecm))),
         logger,
-        "Waiting for configmap {0} to be deleted.");
+        "configmap {0} to be deleted.");
 
     Path srcOverrideFile = Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/config1.xml");
     Path dstOverrideFile = Paths.get(WORK_DIR, "config.xml");
@@ -426,7 +426,7 @@ class ItConfigDistributionStrategy {
         withLongRetryPolicy,
         configUpdated("99999999"),
         logger,
-        "Waiting for server configuration to be updated");
+        "server configuration to be updated");
 
     verifyResourceJDBC0Override(true);
   }
@@ -488,7 +488,9 @@ class ItConfigDistributionStrategy {
     verifyPodsStateNotChanged();
 
     //wait until config is updated upto 5 minutes
-    testUntil(configUpdated("100000000"), logger, "Waiting for server configuration to be updated");
+    testUntil(configUpdated("100000000"),
+        logger,
+        "server configuration to be updated");
 
     verifyConfigXMLOverride(true);
     verifyResourceJDBC0Override(true);

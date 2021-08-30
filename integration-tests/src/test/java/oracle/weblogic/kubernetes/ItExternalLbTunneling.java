@@ -202,7 +202,7 @@ class ItExternalLbTunneling {
     testUntil(
         domainExists(domainUid, DOMAIN_VERSION, domainNamespace),
         logger,
-        "Waiting for domain {0} to be created in namespace {1}",
+        "domain {0} to be created in namespace {1}",
         domainUid,
         domainNamespace);
 

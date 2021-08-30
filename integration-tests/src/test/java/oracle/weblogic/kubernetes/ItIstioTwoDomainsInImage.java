@@ -163,7 +163,7 @@ class ItIstioTwoDomainsInImage {
     testUntil(
         domainExists(domainUid1, DOMAIN_VERSION, domainNamespace1),
         logger,
-        "Waiting for domain {0} to be created in namespace {1}",
+        "domain {0} to be created in namespace {1}",
         domainUid1,
         domainNamespace1);
 
@@ -171,7 +171,7 @@ class ItIstioTwoDomainsInImage {
     testUntil(
         domainExists(domainUid2, DOMAIN_VERSION, domainNamespace2),
         logger,
-        "Waiting for domain {0} to be created in namespace {1}",
+        "domain {0} to be created in namespace {1}",
         domainUid2,
         domainNamespace2);
 

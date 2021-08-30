@@ -53,7 +53,7 @@ public class K8sEvents {
         withStandardRetryPolicy,
         checkDomainEvent(opNamespace, domainNamespace, domainUid, reason, type, timestamp),
         logger,
-        "Waiting for domain event {0} to be logged in namespace {1}",
+        "domain event {0} to be logged in namespace {1}",
         reason,
         domainNamespace);
   }
@@ -74,7 +74,7 @@ public class K8sEvents {
     testUntil(
         checkDomainEvent(opNamespace, domainNamespace, domainUid, reason, type, timestamp),
         logger,
-        "Waiting for domain event {0} to be logged in namespace {1}",
+        "domain event {0} to be logged in namespace {1}",
         reason,
         domainNamespace);
   }

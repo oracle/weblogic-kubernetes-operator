@@ -191,6 +191,6 @@ public class SecretUtils {
           return false;
         },
         logger,
-        "Waiting for the default token to be available in default service account");
+        "the default token to be available in default service account");
   }
 }

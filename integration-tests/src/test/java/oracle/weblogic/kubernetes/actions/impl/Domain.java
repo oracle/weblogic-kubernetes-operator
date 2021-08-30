@@ -455,7 +455,7 @@ public class Domain {
     testUntil(
         () -> Command.withParams(params).execute(),
         logger,
-        "Calling curl command, waiting for success");
+        "Calling curl command");
     return true;
   }
 
@@ -512,7 +512,7 @@ public class Domain {
         () -> executeCommandOnPod(
             adminPod, null, true,"/bin/sh", "-c", "mkdir -p " + domainHomeLocation + "/bin/scripts"),
         logger,
-        "Creating directory {0}/bin/scripts on admin server pod, waiting for success",
+        "Creating directory {0}/bin/scripts on admin server pod",
         domainHomeLocation);
 
     logger.info("Copying scalingAction.sh to admin server pod");
@@ -521,14 +521,14 @@ public class Domain {
           Paths.get(PROJECT_ROOT + "/../operator/scripts/scaling/scalingAction.sh"),
           Paths.get(domainHomeLocation + "/bin/scripts/scalingAction.sh")),
         logger,
-        "Copying scalingAction.sh to admin server pod, waiting for success");
+        "Copying scalingAction.sh to admin server pod");
 
     logger.info("Adding execute mode for scalingAction.sh");
     testUntil(
         () -> executeCommandOnPod(adminPod, null, true,
         "/bin/sh", "-c", "chmod +x " + domainHomeLocation + "/bin/scripts/scalingAction.sh"),
         logger,
-        "Adding execute mode for scalingAction.sh, waiting for success");
+        "Adding execute mode for scalingAction.sh");
 
     // copy wldf.py and callpyscript.sh to Admin Server pod
     logger.info("Copying wldf.py and callpyscript.sh to admin server pod");
@@ -537,21 +537,21 @@ public class Domain {
           Paths.get(RESOURCE_DIR, "python-scripts", "wldf.py"),
           Paths.get("/u01/oracle/wldf.py")),
         logger,
-        "Copying wldf.py to admin server pod, waiting for success");
+        "Copying wldf.py to admin server pod");
 
     testUntil(
         () -> copyFileToPod(domainNamespace, adminServerPodName, null,
           Paths.get(RESOURCE_DIR, "bash-scripts", "callpyscript.sh"),
           Paths.get("/u01/oracle/callpyscript.sh")),
         logger,
-        "Copying callpyscript.sh to admin server pod, waiting for success");
+        "Copying callpyscript.sh to admin server pod");
 
     logger.info("Adding execute mode for callpyscript.sh");
     testUntil(
         () -> executeCommandOnPod(adminPod, null, true,
         "/bin/sh", "-c", "chmod +x /u01/oracle/callpyscript.sh"),
         logger,
-        "Adding execute mode for callpyscript.sh, waiting for success");
+        "Adding execute mode for callpyscript.sh");
 
     if (!scalingAction.equals("scaleUp") && !scalingAction.equals("scaleDown")) {
       logger.info("Set scaleAction to either scaleUp or scaleDown");
@@ -586,7 +586,7 @@ public class Domain {
     testUntil(
         () -> executeCommandOnPod(adminPod, null, true, "/bin/sh", "-c", command),
         logger,
-        "executing command {0} in admin server pod, waiting for success",
+        "executing command {0} in admin server pod",
         command);
 
     // sleep for a while to make sure the diagnostic modules are created
@@ -609,7 +609,7 @@ public class Domain {
           domainHomeLocation + "/bin/scripts/scalingAction.log",
           Paths.get(RESULTS_ROOT + "/" + domainUid + "-scalingAction.log")),
         logger,
-        "Copying scalingAction.log from admin server pod, waiting for success");
+        "Copying scalingAction.log from admin server pod");
 
     return Command.withParams(params).execute();
   }
@@ -677,7 +677,7 @@ public class Domain {
         () -> executeCommandOnPod(adminPod, null, true,
           "/bin/sh", "-c", "mkdir -p " + domainHomeLocation + "/bin/scripts"),
         logger,
-        "Creating directory {0}/bin/scripts on admin server pod, waiting for success",
+        "Creating directory {0}/bin/scripts on admin server pod",
         domainHomeLocation);
 
     logger.info("Copying scalingAction.sh to admin server pod");
@@ -686,14 +686,14 @@ public class Domain {
           Paths.get(PROJECT_ROOT + "/../operator/scripts/scaling/scalingAction.sh"),
           Paths.get(domainHomeLocation + "/bin/scripts/scalingAction.sh")),
         logger,
-        "Copying scalingAction.sh to admin server pod, waiting for success");
+        "Copying scalingAction.sh to admin server pod");
 
     logger.info("Adding execute mode for scalingAction.sh");
     testUntil(
         () -> executeCommandOnPod(adminPod, null, true,
           "/bin/sh", "-c", "chmod +x " + domainHomeLocation + "/bin/scripts/scalingAction.sh"),
         logger,
-        "Adding execute mode for scalingAction.sh, waiting for success");
+        "Adding execute mode for scalingAction.sh");
 
     if (!scalingAction.equals("scaleUp") && !scalingAction.equals("scaleDown")) {
       logger.info("Set scaleAction to either scaleUp or scaleDown");
@@ -936,7 +936,7 @@ public class Domain {
           domainHomeLocation + "/bin/scripts/scalingAction.log",
           Paths.get(RESULTS_ROOT + "/" + domainUid + "-scalingAction.log")),
         logger,
-        "Copying scalingAction.log from admin server pod, waiting for success");
+        "Copying scalingAction.log from admin server pod");
 
     // checking for exitValue 0 for success fails sometimes as k8s exec api returns non-zero exit value even on success,
     // so checking for exitValue non-zero and stderr not empty for failure, otherwise its success

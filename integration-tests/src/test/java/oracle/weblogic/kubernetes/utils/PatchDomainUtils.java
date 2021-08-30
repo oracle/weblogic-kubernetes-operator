@@ -136,7 +136,7 @@ public class PatchDomainUtils {
             "Domain %s in namespace %s is not patched with admin credentials secret %s",
             domainUid, namespace, newValue)),
         logger,
-        "Waiting for domain {0} to be patched in namespace {1}",
+        "domain {0} to be patched in namespace {1}",
         domainUid,
         namespace);
   }

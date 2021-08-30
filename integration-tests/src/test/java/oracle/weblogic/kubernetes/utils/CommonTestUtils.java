@@ -98,7 +98,7 @@ public class CommonTestUtils {
           .conditionEvaluationListener(createConditionEvaluationListener(logger, msg, params))
           .until(conditionEvaluator);
     } catch (ConditionTimeoutException timeout) {
-      fail("Timed out waiting for: " + msg);
+      fail(logger.getFormattedMessage("Timed out waiting for: " + msg, params));
     }
   }
 
@@ -108,7 +108,16 @@ public class CommonTestUtils {
       @Override
       public void conditionEvaluated(EvaluatedCondition condition) {
         int paramsSize = params != null ? params.length : 0;
-        logger.info(msg + " (elapsed time {" + paramsSize + "} ms, remaining time {" + (paramsSize + 1) + "} ms)",
+        String preamble;
+        String timeInfo;
+        if (condition.isSatisfied()) {
+          preamble = "Completed: ";
+          timeInfo = " (elapsed time {" + paramsSize + "} ms)";
+        } else {
+          preamble = "Waiting for: ";
+          timeInfo = " (elapsed time {" + paramsSize + "} ms, remaining time {" + (paramsSize + 1) + "} ms)";
+        }
+        logger.info(preamble + msg + timeInfo,
             Stream.concat(
                 Optional.ofNullable(params).map(Arrays::asList).orElse(Collections.emptyList()).stream(),
                 Stream.of(condition.getElapsedTimeInMS(), condition.getRemainingTimeInMS())).toArray());
@@ -159,7 +168,7 @@ public class CommonTestUtils {
           String.format("serviceExists failed with ApiException for service %s in namespace %s",
             serviceName, namespace)),
         logger,
-        "Waiting for service {0} to exist in namespace {1}",
+        "service {0} to exist in namespace {1}",
         serviceName,
         namespace);
   }
@@ -189,7 +198,7 @@ public class CommonTestUtils {
           String.format("serviceDoesNotExist failed with ApiException for service %s in namespace %s",
             serviceName, namespace)),
         logger,
-        "Waiting for service {0} to be deleted in namespace {1}",
+        "service {0} to be deleted in namespace {1}",
         serviceName,
         namespace);
   }

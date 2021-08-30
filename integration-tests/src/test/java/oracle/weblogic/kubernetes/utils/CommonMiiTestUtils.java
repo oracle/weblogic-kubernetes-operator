@@ -701,7 +701,7 @@ public class CommonMiiTestUtils {
         () -> listConfigMaps(domainNamespace).getItems().stream()
           .noneMatch((cm) -> (cm.getMetadata().getName().equals(configMapName))),
         logger,
-        "Waiting for configmap {0} to be deleted",
+        "configmap {0} to be deleted",
         configMapName);
 
     createConfigMapAndVerify(configMapName, domainResourceName, domainNamespace, modelFiles);

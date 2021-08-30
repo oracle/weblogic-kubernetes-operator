@@ -316,7 +316,7 @@ class ItRemoteConsole {
         assertDoesNotThrow(() -> isVoyagerReady(domainNamespace, voyagerIngressName),
           "isVoyagerReady failed with ApiException"),
         logger,
-        "Waiting for Voyager ingress to be ready in namespace {0}",
+        "Voyager ingress to be ready in namespace {0}",
         domainNamespace);
 
     // check the ingress was found in the domain namespace

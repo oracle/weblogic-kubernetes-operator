@@ -193,7 +193,7 @@ public class DeployUtil {
     testUntil(
         jobCompleted(jobName, null, namespace),
         logger,
-        "Waiting for job {0} to be completed in namespace {1}",
+        "job {0} to be completed in namespace {1}",
         jobName,
         namespace);
 

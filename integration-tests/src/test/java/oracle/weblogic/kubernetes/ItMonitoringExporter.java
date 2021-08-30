@@ -739,7 +739,7 @@ class ItMonitoringExporter {
                 "Some WLS cluster has only one running server for more than 1 minutes"),
           "webhook failed to fire alert"),
         logger,
-        "Waiting for webhook to fire alert");
+        "webhook to fire alert");
   }
 
   /**
@@ -996,7 +996,7 @@ class ItMonitoringExporter {
         assertDoesNotThrow(() -> podIsReady(namespace, labelSelector, baseImageName),
           baseImageName + " podIsReady failed with ApiException"),
         logger,
-        "Waiting for {0} to be running in namespace {1}",
+        "{0} to be running in namespace {1}",
         baseImageName,
         namespace);
     return true;
@@ -1054,7 +1054,7 @@ class ItMonitoringExporter {
     testUntil(
         Deployment.isReady("webhook", labels, namespace),
         logger,
-        "Waiting for deployment webhook to be completed in namespace {0}",
+        "deployment webhook to be completed in namespace {0}",
         namespace);
 
     webhookService = new V1Service()
@@ -1083,7 +1083,7 @@ class ItMonitoringExporter {
         assertDoesNotThrow(() -> podIsReady(namespace, "app=webhook", "webhook"),
           "webhook podIsReady failed with ApiException"),
         logger,
-        "Waiting for webhook to be running in namespace {0}",
+        "webhook to be running in namespace {0}",
         namespace);
   }
 
@@ -1176,7 +1176,7 @@ class ItMonitoringExporter {
       testUntil(
           Deployment.isReady("coordinator", labels, namespace),
           logger,
-          "Waiting for deployment coordinator to be completed in namespace {0}",
+          "deployment coordinator to be completed in namespace {0}",
           namespace);
 
       HashMap<String,String> annotations = new HashMap<>();

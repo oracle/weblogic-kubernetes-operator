@@ -888,7 +888,7 @@ class ItMiiDomain {
     testUntil(conditionFactory,
         () -> appAccessibleInPod(namespace, podName, internalPort, appPath, expectedStr),
         logger,
-        "Waiting for application {0} is running on pod {1} in namespace {2}",
+        "application {0} is running on pod {1} in namespace {2}",
         appPath,
         podName,
         namespace);
@@ -925,7 +925,7 @@ class ItMiiDomain {
             () -> domainResourceImagePatched(domainUid, namespace, image),
               String.format("Domain %s is not patched in namespace %s with image %s", domainUid, namespace, image)),
         logger,
-        "Waiting for domain {0} to be patched in namespace {1}",
+        "domain {0} to be patched in namespace {1}",
         domainUid,
         namespace);
   }
@@ -945,7 +945,7 @@ class ItMiiDomain {
             image,
             namespace)),
         logger,
-        "Waiting for pod {0} to be patched in namespace {1}",
+        "pod {0} to be patched in namespace {1}",
         podName,
         namespace);
   }
@@ -968,7 +968,7 @@ class ItMiiDomain {
             "App is not available on all managed servers in namespace %s.",
             namespace)),
         logger,
-        "Waiting for patched application running on all managed servers in namespace {0}",
+        "patched application running on all managed servers in namespace {0}",
         namespace);
   }
 

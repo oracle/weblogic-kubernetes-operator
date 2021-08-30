@@ -197,7 +197,7 @@ class ItSystemResOverrides {
     testUntil(
         configUpdated(),
         logger,
-        "Waiting for jms server configuration to be updated");
+        "jms server configuration to be updated");
 
     verifyJMSResourceOverride();
     verifyWLDFResourceOverride();

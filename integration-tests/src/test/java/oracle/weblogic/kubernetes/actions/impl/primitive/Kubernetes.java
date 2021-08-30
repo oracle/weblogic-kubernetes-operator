@@ -1040,7 +1040,7 @@ public class Kubernetes {
         assertDoesNotThrow(() -> namespaceDeleted(name),
           String.format("namespaceExists failed with ApiException for namespace %s", name)),
         getLogger(),
-        "Waiting for namespace {0} to be deleted",
+        "namespace {0} to be deleted",
         name);
 
     return true;

@@ -146,7 +146,7 @@ class ItOperatorRestart {
     testUntil(
         operatorIsReady(opNamespace),
         logger,
-        "Waiting for operator to be running in namespace {0}",
+        "operator to be running in namespace {0}",
         opNamespace);
 
     logger.info("Check admin service and pod {0} is created in namespace {1}",
@@ -343,7 +343,7 @@ class ItOperatorRestart {
         assertDoesNotThrow(() -> isOperatorPodRestarted(opNamespace, opPodCreationTime),
           "Failed to check if the operator is restarted with ApiException"),
         logger,
-        "Waiting for operator to be running in namespace {0}",
+        "operator to be running in namespace {0}",
         opNamespace);
 
     String opPodNameNew =

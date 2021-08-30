@@ -77,7 +77,7 @@ public class PodUtils {
           String.format("podExists failed with ApiException for pod %s in namespace %s",
             podName, domainNamespace)),
         logger,
-        "Waiting for pod {0} to be created in namespace {1}",
+        "pod {0} to be created in namespace {1}",
         podName,
         domainNamespace);
   }
@@ -96,7 +96,7 @@ public class PodUtils {
           String.format("podReady failed with ApiException for pod %s in namespace %s",
             podName, domainNamespace)),
         logger,
-        "Waiting for pod {0} to be ready in namespace {1}",
+        "pod {0} to be ready in namespace {1}",
         podName,
         domainNamespace);
   }
@@ -115,7 +115,7 @@ public class PodUtils {
           String.format("podReady failed with ApiException for pod %s in namespace %s",
             podName, domainNamespace)),
         logger,
-        "Waiting for pod {0} to be initializing in namespace {1}",
+        "pod {0} to be initializing in namespace {1}",
         podName,
         domainNamespace);
   }
@@ -140,7 +140,7 @@ public class PodUtils {
           String.format(
             "pod %s has not been restarted in namespace %s", podName, domNamespace)),
         logger,
-        "Waiting for pod {0} to be restarted in namespace {1}",
+        "pod {0} to be restarted in namespace {1}",
         podName,
         domNamespace);
   }
@@ -173,7 +173,7 @@ public class PodUtils {
           String.format("podDoesNotExist failed with ApiException for pod %s in namespace %s",
             podName, namespace)),
         logger,
-        "Waiting for pod {0} to be deleted in namespace {1}",
+        "pod {0} to be deleted in namespace {1}",
         podName,
         namespace);
   }
@@ -274,7 +274,7 @@ public class PodUtils {
           String.format("podDoesNotExist failed with ApiException for %s in namespace in %s",
             podName, domNamespace)),
         logger,
-        "Waiting for pod {0} to be deleted in namespace {1}",
+        "pod {0} to be deleted in namespace {1}",
         podName,
         domNamespace);
   }

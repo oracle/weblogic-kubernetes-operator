@@ -83,14 +83,14 @@ public class CleanupUtil {
         testUntil(
             nothingFoundInNamespace(namespace),
             logger,
-            "Waiting for artifacts to be deleted in namespace {0}",
+            "artifacts to be deleted in namespace {0}",
             namespace);
 
         logger.info("Check for namespace {0} existence", namespace);
         testUntil(
             namespaceNotFound(namespace),
             logger,
-            "Waiting for namespace to be deleted {0}",
+            "namespace to be deleted {0}",
             namespace);
       }
     } catch (Exception ex) {

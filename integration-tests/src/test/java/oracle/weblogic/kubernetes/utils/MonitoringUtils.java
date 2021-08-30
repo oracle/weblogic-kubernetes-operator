@@ -303,7 +303,7 @@ public class MonitoringUtils {
         assertDoesNotThrow(() -> isPrometheusReady(promNamespace),
           "prometheusIsReady failed with ApiException"),
         logger,
-        "Waiting for prometheus to be running in namespace {0}",
+        "prometheus to be running in namespace {0}",
         promNamespace);
 
     return promHelmParams;
@@ -395,7 +395,7 @@ public class MonitoringUtils {
         assertDoesNotThrow(() -> isGrafanaReady(grafanaNamespace),
           "grafanaIsReady failed with ApiException"),
         logger,
-        "Waiting for grafana to be running in namespace {0}",
+        "grafana to be running in namespace {0}",
         grafanaNamespace);
 
     //return grafanaHelmParams;

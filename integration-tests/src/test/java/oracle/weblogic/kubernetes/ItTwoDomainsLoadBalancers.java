@@ -279,12 +279,12 @@ class ItTwoDomainsLoadBalancers {
       testUntil(
           () -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD),
           logger,
-          "Waiting for docker login to be successful");
+          "docker login to be successful");
 
       testUntil(
           pullImageFromOcirAndPushToKind(APACHE_IMAGE),
           logger,
-          "Waiting for pullImageFromOcirAndPushToKind for image {0} to be successful",
+          "pullImageFromOcirAndPushToKind for image {0} to be successful",
           APACHE_IMAGE);
     }
   }
@@ -833,7 +833,7 @@ class ItTwoDomainsLoadBalancers {
         testUntil(
             domainDoesNotExist(domainUid, DOMAIN_VERSION, defaultNamespace),
             logger,
-            "Waiting for domain {0} to be created in namespace {1}",
+            "domain {0} to be created in namespace {1}",
             domainUid,
             defaultNamespace);
 
@@ -2152,7 +2152,7 @@ class ItTwoDomainsLoadBalancers {
         assertDoesNotThrow(() -> isVoyagerReady(defaultNamespace, ingressName),
           "isVoyagerReady failed with ApiException"),
         logger,
-        "Waiting for Voyager ingress to be ready in namespace {0}",
+        "Voyager ingress to be ready in namespace {0}",
         defaultNamespace);
   }
 
@@ -2231,7 +2231,7 @@ class ItTwoDomainsLoadBalancers {
         () -> assertDoesNotThrow(() ->
             getPodLog(podName, namespace, "weblogic-server", null, 120)) != null,
         logger,
-        "Getting admin server pod log {0} in namespace {1}, waiting for success",
+        "Getting admin server pod log {0} in namespace {1}",
         podName,
         namespace);
 

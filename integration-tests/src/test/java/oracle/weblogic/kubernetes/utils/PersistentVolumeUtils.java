@@ -79,7 +79,7 @@ public class PersistentVolumeUtils {
         assertDoesNotThrow(() -> pvExists(pvName, labelSelector),
           String.format("pvExists failed with ApiException when checking pv %s", pvName)),
         logger,
-        "Waiting for persistent volume {0} exists",
+        "persistent volume {0} exists",
         pvName);
 
     testUntil(
@@ -87,7 +87,7 @@ public class PersistentVolumeUtils {
           String.format("pvcExists failed with ApiException when checking pvc %s in namespace %s",
             pvcName, namespace)),
         logger,
-        "Waiting for persistent volume claim {0} exists in namespace {1}",
+        "persistent volume claim {0} exists in namespace {1}",
         pvcName,
         namespace);
   }

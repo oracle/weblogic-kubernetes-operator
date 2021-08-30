@@ -353,7 +353,7 @@ public class OperatorUtils {
         assertDoesNotThrow(() -> operatorIsReady(opNamespace),
           "operatorIsReady failed with ApiException"),
         logger,
-        "Waiting for operator to be running in namespace {0}",
+        "operator to be running in namespace {0}",
         opNamespace);
 
     if (withRestAPI) {
@@ -362,7 +362,7 @@ public class OperatorUtils {
           assertDoesNotThrow(() -> operatorRestServiceRunning(opNamespace),
             "operator external service is not running"),
           logger,
-          "Waiting for operator external service in namespace {0}",
+          "operator external service in namespace {0}",
           opNamespace);
     }
     return opParams;
@@ -478,7 +478,7 @@ public class OperatorUtils {
     testUntil(
         operatorIsReady(opNamespace),
         logger,
-        "Waiting for operator to be running in namespace {0}",
+        "operator to be running in namespace {0}",
         opNamespace);
 
     logger.info("Operator pod is restarted in namespace {0}", opNamespace);

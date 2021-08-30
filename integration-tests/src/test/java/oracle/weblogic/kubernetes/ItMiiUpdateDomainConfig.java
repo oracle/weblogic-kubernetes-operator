@@ -202,7 +202,7 @@ class ItMiiUpdateDomainConfig {
     testUntil(
         domainExists(domainUid, DOMAIN_VERSION, domainNamespace),
         logger,
-        "Waiting for domain {0} to be created in namespace {1}",
+        "domain {0} to be created in namespace {1}",
         domainUid,
         domainNamespace);
   }
@@ -1009,7 +1009,7 @@ class ItMiiUpdateDomainConfig {
           String.format("podDoesNotExist failed with ApiException for %s in namespace in %s",
             podName, domNamespace)),
         logger,
-        "Waiting for pod {0} to be not created in namespace {1}",
+        "pod {0} to be not created in namespace {1}",
         podName,
         domNamespace);
   }

@@ -164,7 +164,7 @@ class ItProductionSecureMode {
     testUntil(
         domainExists(domainUid, DOMAIN_VERSION, domainNamespace),
         logger,
-        "Waiting for domain {0} to be created in namespace {1}",
+        "domain {0} to be created in namespace {1}",
         domainUid,
         domainNamespace);
   }
@@ -290,7 +290,7 @@ class ItProductionSecureMode {
                 + "/workManagerRuntimes/newWM",
             "200", true, "default-admin"),
         logger,
-        "Waiting for work manager configuration to be updated.");
+        "work manager configuration to be updated.");
 
     logger.info("Found new work manager configuration");
 

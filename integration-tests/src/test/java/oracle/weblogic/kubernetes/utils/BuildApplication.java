@@ -239,7 +239,7 @@ public class BuildApplication {
     testUntil(
         podReady(podName, null, namespace),
         logger,
-        "Waiting for {0} to be ready in namespace {1}",
+        "{0} to be ready in namespace {1}",
         podName,
         namespace);
 
