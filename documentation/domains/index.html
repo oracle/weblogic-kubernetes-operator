@@ -1638,7 +1638,8 @@ window.onload = function() {
       "properties": {
         "failureThreshold": {
           "description": "Number of times the check is performed before giving up. Giving up in case of liveness probe means restarting the container. In case of readiness probe, the Pod will be marked Unready. Defaults to 1.",
-          "type": "number"
+          "type": "number",
+          "minimum": 1.0
         },
         "periodSeconds": {
           "description": "The number of seconds between checks.",
@@ -1649,8 +1650,9 @@ window.onload = function() {
           "type": "number"
         },
         "successThreshold": {
-          "description": "Minimum number of times the check needs to pass for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness and startup Probes.",
-          "type": "number"
+          "description": "Minimum number of times the check needs to pass for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness Probe.",
+          "type": "number",
+          "minimum": 1.0
         },
         "initialDelaySeconds": {
           "description": "The number of seconds before the first check is performed.",
