@@ -336,6 +336,19 @@ class DomainStatusUpdaterTest {
   }
 
   @Test
+  void whenAllDesiredServersRunningButSomeMarkedToBeRolled_establishCompletedConditionFalse() {
+    info.setServersToRoll(Map.of("server1", new Step.StepAndPacket(null, null)));
+    defineScenario()
+          .withCluster("clusterA", "server1")
+          .withCluster("clusterB", "server2")
+          .build();
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus("False"));
+  }
+
+  @Test
   void whenAllDesiredServersRunningAndMatchingCompletedConditionFound_dontGenerateCompletedEvent() {
     domain.getStatus().addCondition(new DomainCondition(Completed).withStatus("True"));
     defineScenario()

@@ -544,7 +544,8 @@ public class DomainStatusUpdater {
       private boolean allIntendedServersRunning() {
         return atLeastOneServerStarted()
               && expectedRunningServers.stream().noneMatch(this::isNotRunning)
-              && expectedRunningServers.containsAll(serverState.keySet());
+              && expectedRunningServers.containsAll(serverState.keySet())
+              && serversMarkedForRoll().isEmpty();
       }
 
       private boolean atLeastOneServerStarted() {
@@ -573,7 +574,7 @@ public class DomainStatusUpdater {
 
       private boolean sufficientServersInClusterRunning(String clusterName) {
         return clusterHasRunningServer(clusterName)
-             && numServersInClusterNotReady(clusterName) <= maxUnvailable(clusterName);
+             && numServersInClusterNotReady(clusterName) <= maxUnavailable(clusterName);
       }
 
       private boolean isClusterIntentionallyShutDown(String clusterName) {
@@ -594,10 +595,16 @@ public class DomainStatusUpdater {
               .collect(Collectors.toList());
       }
 
-      private int maxUnvailable(String clusterName) {
+      private int maxUnavailable(String clusterName) {
         return getDomain().getMaxUnavailable(clusterName);
       }
 
+      private Set<String> serversMarkedForRoll() {
+        return DomainPresenceInfo.fromPacket(packet)
+              .map(DomainPresenceInfo::getServersToRoll)
+              .map(Map::keySet)
+              .orElse(Collections.emptySet());
+      }
 
       private boolean isNonClusteredServer(String serverName) {
         return getClusterName(serverName) == null;

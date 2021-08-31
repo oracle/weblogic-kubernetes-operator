@@ -134,7 +134,6 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImag
 import static oracle.weblogic.kubernetes.utils.JobUtils.createJobAndWaitUntilComplete;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_CHANGED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_COMPLETED;
-import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_STARTING;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.POD_STARTED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.POD_TERMINATED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEvent;
@@ -772,17 +771,7 @@ class ItParameterizedDomain {
         .until(checkDomainEvent(opNamespace, miiDomainNamespace, miiDomainUid,
             DOMAIN_CHANGED, "Normal", timestamp));
 
-    // verify the DomainProcessing Starting/Completed event is generated
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for domain event {0} to be logged "
-                + "(elapsed time {1}ms, remaining time {2}ms)",
-                DOMAIN_PROCESSING_STARTING,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(checkDomainEvent(opNamespace, miiDomainNamespace, miiDomainUid,
-            DOMAIN_PROCESSING_STARTING, "Normal", timestamp));
-
+    // verify the DomainProcessing Completed event is generated
     withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Waiting for domain event {0} to be logged "

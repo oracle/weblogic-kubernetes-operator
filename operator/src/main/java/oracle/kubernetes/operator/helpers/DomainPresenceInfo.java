@@ -8,6 +8,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -36,6 +37,7 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.PacketComponent;
+import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
@@ -45,7 +47,6 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static java.lang.System.lineSeparator;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_COMPONENT_NAME;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import static oracle.kubernetes.operator.helpers.PodHelper.hasClusterNameOrNull;
 import static oracle.kubernetes.operator.helpers.PodHelper.isNotAdminServer;
 
@@ -71,7 +72,7 @@ public class DomainPresenceInfo implements PacketComponent {
   private OffsetDateTime webLogicCredentialsSecretLastSet;
 
   private final List<String> validationWarnings = Collections.synchronizedList(new ArrayList<>());
-  private EventItem lastEventItem;
+  private Map<String, Step.StepAndPacket> serversToRoll = Collections.emptyMap();
 
   /**
    * Create presence for a domain.
@@ -573,10 +574,6 @@ public class DomainPresenceInfo implements PacketComponent {
     resetFailureCount();
   }
 
-  void setLastEventItem(EventItem lastEventItem) {
-    this.lastEventItem = lastEventItem;
-  }
-
   /**
    * Gets the domain. Except the instance to change frequently based on status updates.
    *
@@ -697,6 +694,14 @@ public class DomainPresenceInfo implements PacketComponent {
    */
   public Set<String> getSelectedServers() {
     return getServerStartupInfo().stream().map(ServerStartupInfo::getServerName).collect(Collectors.toSet());
+  }
+
+  public Map<String, Step.StepAndPacket> getServersToRoll() {
+    return serversToRoll;
+  }
+
+  public void setServersToRoll(Map<String, Step.StepAndPacket> serversToRoll) {
+    this.serversToRoll = serversToRoll;
   }
 
   /** Details about a specific managed server that will be started up. */

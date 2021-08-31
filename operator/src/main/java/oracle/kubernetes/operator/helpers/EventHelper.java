@@ -167,9 +167,6 @@ public class EventHelper {
           LOGGER.info(BEGIN_MANAGING_NAMESPACE, eventData.getNamespace());
           domainNamespaces.shouldStartNamespace(eventData.getNamespace());
         }
-
-        Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
-            .ifPresent(dpi -> setLastEventItemIfNeeded(dpi, eventData.eventItem));
         return doNext(packet);
       }
 
@@ -204,12 +201,6 @@ public class EventHelper {
       }
     }
 
-    private void setLastEventItemIfNeeded(DomainPresenceInfo dpi, EventItem eventItem) {
-      if (eventItem.shouldSetLastEventItem()) {
-        dpi.setLastEventItem(eventItem);
-      }
-    }
-
     private class ReplaceEventResponseStep extends ResponseStep<CoreV1Event> {
       Step replaceEventStep;
       CoreV1Event existingEvent;
@@ -222,8 +213,6 @@ public class EventHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<CoreV1Event> callResponse) {
-        Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
-            .ifPresent(dpi -> setLastEventItemIfNeeded(dpi, eventData.eventItem));
         return doNext(packet);
       }
 

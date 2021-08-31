@@ -6,9 +6,11 @@ package oracle.kubernetes.operator.work;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import javax.annotation.Nonnull;
 
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
 
@@ -102,14 +104,23 @@ public abstract class Step {
    * @return The name of the step
    */
   public String getName() {
+    return getBaseName() + getNameSuffix();
+  }
+
+  @Nonnull
+  private String getBaseName() {
     String name = getClass().getName();
     int idx = name.lastIndexOf('.');
     if (idx >= 0) {
       name = name.substring(idx + 1);
     }
     name = name.endsWith("Step") ? name.substring(0, name.length() - 4) : name;
-    String detail = getDetail();
-    return detail != null ? name + "(" + detail + ")" : name;
+    return name;
+  }
+
+  @Nonnull
+  private String getNameSuffix() {
+    return Optional.ofNullable(getDetail()).map(detail -> " (" + detail + ")").orElse("");
   }
 
   protected String getDetail() {

@@ -60,11 +60,7 @@ public class ManagedServerUpIteratorStep extends Step {
 
   @Override
   protected String getDetail() {
-    List<String> serversToStart = new ArrayList<>();
-    for (ServerStartupInfo ssi : startupInfos) {
-      serversToStart.add(ssi.getName());
-    }
-    return String.join(",", serversToStart);
+    return startupInfos.stream().map(ServerStartupInfo::getName).collect(Collectors.joining(","));
   }
 
   @Override
@@ -78,7 +74,7 @@ public class ManagedServerUpIteratorStep extends Step {
           getDomainUid(packet), getServerNames(startupInfos)));
     }
 
-    packet.put(ProcessingConstants.SERVERS_TO_ROLL, new ConcurrentHashMap<String, StepAndPacket>());
+    initialServersToRoll(packet);
     Collection<StepAndPacket> startDetails =
         startupInfos.stream()
             .filter(ssi -> !isServerInCluster(ssi))
@@ -110,6 +106,13 @@ public class ManagedServerUpIteratorStep extends Step {
     }
 
     return doNext(DomainStatusUpdater.createStatusUpdateStep(new ManagedServerUpAfterStep(getNext())), packet);
+  }
+
+  // Adds an empty map to both the packet and the domain presence info to track servers that need to be rolled
+  private void initialServersToRoll(Packet packet) {
+    final Map<String, StepAndPacket> serversToRoll = new ConcurrentHashMap<>();
+    packet.put(ProcessingConstants.SERVERS_TO_ROLL, serversToRoll);
+    DomainPresenceInfo.fromPacket(packet).ifPresent(dpi -> dpi.setServersToRoll(serversToRoll));
   }
 
 
