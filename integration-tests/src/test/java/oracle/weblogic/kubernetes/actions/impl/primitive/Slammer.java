@@ -6,9 +6,7 @@ package oracle.weblogic.kubernetes.actions.impl.primitive;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Map;
 import java.util.Optional;
-
 
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
@@ -38,19 +36,22 @@ public class Slammer {
   private static String slammerInstallDir = Optional.ofNullable(System.getenv("SLAMMER_INSTALL_DIR"))
       .orElse(RESULTS_BASE + "/slammerinstall");
 
-  public static void installSlammer() {
-    installSlammer(slammerInstallDir);
-  }
-
   public static String getSlammerDir() {
     return slammerInstallDir + "/slammer";
   }
 
   /**
-   * install slammer src.
+   * install slammer src using specific location.
+   */
+  public static void installSlammer() {
+    installSlammer(slammerInstallDir);
+  }
+
+  /**
+   * install slammer src using specific location.
    * @param installDir location for installation
    */
-  private static void installSlammer(String installDir) {
+  public static void installSlammer(String installDir) {
     LoggingFacade logger = getLogger();
     logger.info("create a staging location for slammer project");
     Path slammerTemp = Paths.get(installDir);
@@ -113,10 +114,10 @@ public class Slammer {
     }
 
     // if we have remotehost and remotesudopass
-    if (remotepass != null && remoteuser !=null) {
+    if (remotepass != null && remoteuser != null) {
       runCmd = runCmd + " --remotehost " + remotehost
-      + " --remotepass " + remotepass
-          + " --remoteuser " + remoteuser;
+        + " --remotepass " + remotepass
+        + " --remoteuser " + remoteuser;
     }
 
     // if we have delay
@@ -206,7 +207,7 @@ public class Slammer {
     }
 
     // if we have remotehost and remotesudopass
-    if (remotepass != null && remoteuser !=null) {
+    if (remotepass != null && remoteuser != null) {
       runCmd = runCmd + " --remotehost " + remotehost
           + " --remotepass " + remotepass
           + " --remoteuser " + remoteuser;

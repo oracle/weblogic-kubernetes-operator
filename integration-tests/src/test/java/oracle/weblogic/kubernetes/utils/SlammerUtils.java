@@ -3,28 +3,12 @@
 
 package oracle.weblogic.kubernetes.utils;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.util.Optional;
-
-
-import static oracle.weblogic.kubernetes.TestConstants.RESULTS_BASE;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.MONITORING_EXPORTER_DOWNLOAD_URL;
-import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.apache.commons.io.FileUtils.deleteDirectory;
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertTrue;
-
-import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
-import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Slammer;
 import oracle.weblogic.kubernetes.actions.impl.primitive.SlammerParams;
-import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 public class SlammerUtils {
 
-/** CPU stress functions **/
+  /* CPU stress functions */
 
   /**
    * execute slammer command to stress cpu.
@@ -62,10 +46,10 @@ public class SlammerUtils {
     return Slammer.run(slammerParams);
   }
 
-  /** Network Latency Delay functions **/
+  /* Network Latency Delay functions */
 
   /**
-   * Add network delay to your target's network interface
+   * Add network delay to your target's network interface.
    * A network delay of delayTime im ms is added to the active interface
    * causing latency in response at the network layer,
    * this affects all applications running on the target host
@@ -82,13 +66,12 @@ public class SlammerUtils {
   }
 
   /**
-   * Change network delay to your target's network interface
+   * Change network delay to your target's network interface.
    * A network delay of delayTime im ms is added to the active interface
    * causing latency in response at the network layer,
    * this affects all applications running on the target host
-   *
    * @param delayTime
-   */
+   **/
   public static boolean changeNetworkLatencyDelay(String delayTime) {
     SlammerParams slammerParams = new SlammerParams()
         .service("network")
@@ -99,7 +82,7 @@ public class SlammerUtils {
   }
 
   /**
-   * Delete network delay to your target's network interface
+   * Delete network delay to your target's network interface.
    * A network delay of delayTime im ms is deleted from the active interface
    */
   public static boolean deleteNetworkLatencyDelay() {
@@ -109,10 +92,10 @@ public class SlammerUtils {
     return Slammer.run(slammerParams);
   }
 
-  /** Block traffic to target host **/
+  /* Block traffic to target host */
 
   /**
-   * Restrict traffic to specified port
+   * Restrict traffic to specified port.
    *
    * @param operation        - block or delete
    * @param portNumber       - port number to restrict the traffic
@@ -132,7 +115,7 @@ public class SlammerUtils {
   }
 
   /**
-   * Allow traffic coming to and from specified port
+   * Allow traffic coming to and from specified port.
    * of a target host of a custom iptable chain
    * Allows traffic on port on any chain of a target host,
    * this use case is common in OCI environments
@@ -151,7 +134,7 @@ public class SlammerUtils {
   }
 
   /**
-   * Delete traffic coming to and from specified port
+   * Delete traffic coming to and from specified port.
    * of a target host of a custom iptable chain
    * Delete traffic on port on any chain of a target host, this use case
    * is used in conjunction
@@ -170,7 +153,7 @@ public class SlammerUtils {
   }
 
   /**
-   * Backup a target host's iptables rules
+   * Backup a target host's iptables rules.
    */
   public static boolean backupHostIptablesRules() {
     SlammerParams slammerParams = new SlammerParams()
@@ -180,7 +163,7 @@ public class SlammerUtils {
   }
 
   /**
-   * Restore a target host's iptables rules
+   * Restore a target host's iptables rules.
    */
   public static boolean restoreHostIptablesRules() {
     SlammerParams slammerParams = new SlammerParams()
@@ -189,9 +172,10 @@ public class SlammerUtils {
     return Slammer.run(slammerParams);
   }
 
-  /** Memory Stress **/
+  /* Memory Stress */
+
   /**
-   * Memory Stress by Size and Threads
+   * Memory Stress by Size and Threads.
    * A memory stress of vmsize (for example 2g) multiplied by number threads (vm) , for example 2,
    * to induce a total of 2 x 2g = 4g of memory hog to the target machine for a timeout of 10 seconds
    *

@@ -146,17 +146,17 @@ public class SlammerParams {
 
   public String getChain() {
     return chain;
-  };
+  }
 
   public String getRemoteHost() {
     return remotehost;
-  };
+  }
 
   public String getRemoteSudoPass() {
     return remotesudopass;
-  };
+  }
 
   public String getPropertyFile() {
     return propertyFile;
-  };
+  }
 }

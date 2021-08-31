@@ -3,11 +3,7 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.time.OffsetDateTime;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
 import java.util.List;
-
 
 import oracle.weblogic.kubernetes.actions.impl.primitive.Slammer;
 import oracle.weblogic.kubernetes.actions.impl.primitive.SlammerParams;
@@ -18,44 +14,28 @@ import oracle.weblogic.kubernetes.utils.SlammerUtils;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePod;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
-import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.startOperator;
 import static oracle.weblogic.kubernetes.actions.TestActions.stopOperator;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.isOperatorPodRestarted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
-import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.checkPodRestartVersionUpdated;
-import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainWithNewSecretAndVerify;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
-import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodRestarted;
-import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -187,40 +167,39 @@ class ItResilience {
   @DisplayName("increase replica count for the domain, and verify cluster is scaled up")
   void testNetworkDelayVerifyScaling() {
 
-    //runScaleOperation(5);
-    //Slammer.installSlammer();
-    //check if slammer is up
-  try {
-    assertTrue(Slammer.list("network"), "Can't reach slammer");
-    // check new server is started and existing servers are running
-    logger.info("Check admin service and pod {0} is created in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+    try {
+      //check if slammer is up
+      assertTrue(Slammer.list("network"), "Can't reach slammer");
 
-    // check managed server services and pods are ready
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
+      // check new server is started and existing servers are running
+      logger.info("Check admin service and pod {0} is created in namespace {1}",
+          adminServerPodName, domainNamespace);
+      checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+
+      // check managed server services and pods are ready
+      for (int i = 1; i <= replicaCount; i++) {
+        logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
+            managedServerPrefix + i, domainNamespace);
+        checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
+      }
+
+      Thread t2 = new ScalingUpThread(5);
+      SlammerParams params = new SlammerParams().delay("9");
+      Thread t1 = new SlammerThread(params);
+      t1.start();
+      t2.start();
+
+      assertDoesNotThrow(() -> t2.join(100 * 1000), "failed to join thread");
+      assertDoesNotThrow(() -> t1.join(100 * 1000), "failed to join thread");
+      // check managed server services and pods are ready
+      for (int i = 1; i <= 5; i++) {
+        logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
+            managedServerPrefix + i, domainNamespace);
+        checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
+      }
+    } finally {
+      SlammerUtils.deleteNetworkLatencyDelay();
     }
-
-    Thread t2 = new ScalingUpThread(5);
-    SlammerParams params = new SlammerParams().delay("9");
-    Thread t1 = new SlammerThread(params);
-    t1.start();
-    t2.start();
-
-    assertDoesNotThrow(() -> t2.join(100 * 1000), "failed to join thread");
-    assertDoesNotThrow(() -> t1.join(100 * 1000), "failed to join thread");
-    // check managed server services and pods are ready
-    for (int i = 1; i <= 5; i++) {
-      logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
-    }
-  } finally {
-    SlammerUtils.deleteNetworkLatencyDelay();
-  }
   }
 
   private void runScaleOperation(int replicaCount) {
@@ -234,14 +213,15 @@ class ItResilience {
 
   class ScalingUpThread extends Thread {
     int replicaCount;
+
     ScalingUpThread(int replicaCount) {
       this.replicaCount = replicaCount;
     }
 
     public void run() {
-      logger.info("Started Scaling thread" );
+      logger.info("Started Scaling thread");
       runScaleOperation(replicaCount);
-      logger.info("Finished Scaling thread" );
+      logger.info("Finished Scaling thread");
     }
   }
 
@@ -254,12 +234,12 @@ class ItResilience {
     }
 
     public void run() {
-      logger.info("Started Slammer thread" );
+      logger.info("Started Slammer thread");
       logger.info("Adding Network delay for " +  params.getDelay());
       Slammer.list("network");
       assertTrue(SlammerUtils.addNetworkLatencyDelay(params.getDelay()), "addNetworkLatencyDelay failed");
       Slammer.list("network");
-      logger.info("Finished Slammer thread" );
+      logger.info("Finished Slammer thread");
     }
   }
 
