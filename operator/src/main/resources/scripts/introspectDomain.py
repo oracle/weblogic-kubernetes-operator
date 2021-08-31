@@ -1059,6 +1059,7 @@ class SitConfigGenerator(Generator):
   def customizeServer(self, server):
     name=server.getName()
     listen_address=self.env.toDNS1123Legal(self.env.getDomainUID() + "-" + name)
+    admin_server_name = self.env.getDomain().getAdminServerName()
     self.writeln("<d:server>")
     self.indent()
     self.writeln("<d:name>" + name + "</d:name>")
@@ -1068,6 +1069,8 @@ class SitConfigGenerator(Generator):
     self.writeListenAddress(server.getListenAddress(),listen_address)
     self.customizeNetworkAccessPoints(server,listen_address)
     self.customizeServerIstioNetworkAccessPoint(listen_address, server)
+    if (server.getName() == admin_server_name):
+      self.addAdminChannelPortForwardNetworkAccessPoints(server)
     if (self.getCoherenceClusterSystemResourceOrNone(server) is not None):
       self.customizeCoherenceMemberConfig(server.getCoherenceMemberConfig(),listen_address)
     self.undent()
@@ -1132,7 +1135,7 @@ class SitConfigGenerator(Generator):
         break
 
     if found:
-      trace("SEVERE","Found NetWorkAccessPoint with name %s in the WebLogic Domain, this is an internal name used by the WebLogic Kubernetes Operator, please remove it from your domain and try again." % testname)
+      trace("SEVERE","Found NetworkAccessPoint with name %s in the WebLogic Domain, this is an internal name used by the WebLogic Kubernetes Operator, please remove it from your domain and try again." % testname)
       sys.exit(1)
     else:
       return add_action, "add"
@@ -1163,6 +1166,48 @@ class SitConfigGenerator(Generator):
                  (action, http_enabled))
     # This needs to be enabled, since we are splitting from server default channel
     self.writeln('<d:outbound-enabled %s>true</d:outbound-enabled>' % action)
+    self.writeln('<d:enabled %s>true</d:enabled>' % action)
+    self.undent()
+    self.writeln('</d:network-access-point>')
+
+  def _getPortForwardNapConfigOverrideAction(self, svr, testname):
+    add_action = 'f:combine-mode="add"'
+    found = False
+    for nap in svr.getNetworkAccessPoints():
+      if nap.getName() == testname:
+        found = True
+        break
+
+    if found:
+      trace("SEVERE","Found NetworkAccessPoint with name %s in the WebLogic Domain, this is an internal name used by the WebLogic Kubernetes Operator, please remove it from your domain and try again." % testname)
+      sys.exit(1)
+    else:
+      return add_action, "add"
+
+  def _writeAdminChannelPortForwardNAP(self, name, server, listen_port, protocol):
+    action, type = self._getPortForwardNapConfigOverrideAction(server, name)
+
+    # For add, we must put the combine mode as add
+    # For replace, we must omit it
+    if type == "add":
+      self.writeln('<d:network-access-point %s>' % action)
+    else:
+      self.writeln('<d:network-access-point>')
+
+    self.indent()
+    if type == "add":
+      self.writeln('<d:name %s>%s</d:name>' % (action, name))
+    else:
+      self.writeln('<d:name>%s</d:name>' % name)
+
+    self.indent()
+    self.writeln('<d:name %s>%s</d:name>' % (action, name))
+
+    self.writeln('<d:protocol %s>%s</d:protocol>' % (action, protocol))
+    self.writeln('<d:listen-address %s>localhost</d:listen-address>' % action)
+    self.writeln('<d:listen-port %s>%s</d:listen-port>' % (action, listen_port))
+    self.writeln('<d:http-enabled-for-this-protocol %s>true</d:http-enabled-for-this-protocol>' %
+                 (action))
     self.writeln('<d:enabled %s>true</d:enabled>' % action)
     self.undent()
     self.writeln('</d:network-access-point>')
@@ -1296,6 +1341,33 @@ class SitConfigGenerator(Generator):
 
       self._writeIstioNAP(name='tls-iiops', server=template, listen_address=listen_address,
                           listen_port=ssl_listen_port, protocol='iiops')
+
+
+  def addAdminChannelPortForwardNetworkAccessPoints(self, server):
+    istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
+    admin_channel_port_forward_enabled = self.env.getEnvOrDef("ADMIN_CHANNEL_PORT_FORWARDING_ENABLED", "true")
+    if (admin_channel_port_forward_enabled == 'false') or (istio_enabled == 'true') :
+      return
+
+    customAdminChannelPort = getCustomAdminChannelPort(server)
+
+    if isAdministrationPortEnabledForServer(server, self.env.getDomain()):
+      self._writeAdminChannelPortForwardNAP(name='internal-admin', server=server,
+                                            listen_port=getAdministrationPort(server, self.env.getDomain()),
+                                            protocol='admin')
+    elif (customAdminChannelPort != 0):
+        self._writeAdminChannelPortForwardNAP(name='internal-admin', server=server,
+                                              listen_port=customAdminChannelPort, protocol='admin')
+    else:
+      admin_server_port = getRealListenPort(server)
+      self._writeAdminChannelPortForwardNAP(name='internal-t3', server=server,
+                                            listen_port=admin_server_port, protocol='t3')
+
+      ssl_listen_port = getSSLPortIfEnabled(server, self.env.getDomain(), is_server_template=False)
+
+      if ssl_listen_port is not None:
+        self._writeAdminChannelPortForwardNAP(name='internal-t3s', server=server,
+                                              listen_port=ssl_listen_port, protocol='t3s')
 
   def getLogOrNone(self,server):
     try:
@@ -1746,6 +1818,14 @@ def isAdministrationPortEnabledForDomain(domain):
     # Starting with 14.1.2.0, the domain's AdministrationPortEnabled default is derived from the domain's SecureMode
     administrationPortEnabled = isSecureModeEnabledForDomain(domain)
   return administrationPortEnabled
+
+def getCustomAdminChannelPort(server):
+  port = 0
+  for nap in server.getNetworkAccessPoints():
+    if nap.getProtocol() == "admin":
+      port=nap.getListenPort()
+      break
+  return port
 
 def isAdministrationPortEnabledForServer(server, domain, isServerTemplate=False):
   administrationPortEnabled = false
