@@ -60,8 +60,9 @@ public class Slammer {
 
     String slammerSrcLocation = Optional.ofNullable(System.getenv("SLAMMER_DOWNLOAD_URL"))
         .orElse("http://100.111.70.116/slammer.tar");
+    //--no-proxy
     CommandParams params = Command.defaultCommandParams()
-        .command("cd " + installDir + " && wget  --no-proxy  "
+        .command("cd " + installDir + " && wget  "
             + slammerSrcLocation
             + " && tar xf slammer.tar")
         .saveResults(true)
