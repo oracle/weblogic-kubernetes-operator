@@ -35,7 +35,6 @@ import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
@@ -88,7 +87,7 @@ class ItWlsSamples {
   private static String voyagerNamespace = null;
   private static String domainNamespace = null;
   private static final String domainName = "domain1";
-  private static final String diiImageNameBase = DOMAIN_IMAGES_REPO + "domain-home-in-image";
+  private static final String diiImageNameBase = "domain-home-in-image";
   private static final String diiImageTag = "12.2.1.4";
   private final int replicaCount = 2;
   private final String clusterName = "cluster-1";
@@ -158,9 +157,10 @@ class ItWlsSamples {
   void testSampleDomainInImage(String model) {
     String domainName = model.split(":")[1];
     String script = model.split(":")[0];
-    String imageName = (KIND_REPO != null
-            ? KIND_REPO + diiImageNameBase + "_" + script + ":" + diiImageTag
-            : diiImageNameBase + "_" + script + ":" + diiImageTag);
+    String imageName = DOMAIN_IMAGES_REPO + diiImageNameBase + "_" + script + ":" + diiImageTag;
+    //String imageName = (KIND_REPO != null
+    //        ? KIND_REPO + diiImageNameBase + "_" + script + ":" + diiImageTag
+    //        : DOMAIN_IMAGES_REPO + diiImageNameBase + "_" + script + ":" + diiImageTag);
 
     //copy the samples directory to a temporary location
     setupSample();
