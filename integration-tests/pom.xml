@@ -214,6 +214,7 @@
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>
+                   **/ItCoherenceTests,
                    **/ItConfigDistributionStrategy,
                    **/ItCrossDomainTransaction,
                    **/ItElasticLogging,
@@ -221,15 +222,19 @@
                    **/ItExternalRmiTunneling,
                    **/ItInitContainers,
                    **/ItIntrospectVersion,
+                   **/ItIstioCrossDomainTransaction,
                    **/ItIstioDomainInImage,
                    **/ItIstioDomainInPV,
                    **/ItIstioMiiDomain,
+                   **/ItIstioTwoDomainsInImage,
                    **/ItKubernetesEvents,
+                   **/ItManageNameSpace,
                    **/ItManagedCoherence,
                    **/ItMiiDomain,
                    **/ItMiiDomainModelInPV,
                    **/ItMiiDynamicUpdate,
                    **/ItMiiMultiModel,
+                   **/ItMiiSample,
                    **/ItMiiUpdateDomainConfig,
                    **/ItMonitoringExporter,
                    **/ItOperatorRestart,
@@ -238,11 +243,13 @@
                    **/ItPodsRestart,
                    **/ItPodsShutdownOption,
                    **/ItProductionSecureMode,
+                   **/ItWlsSamples,
                    **/ItServerStartPolicy,
                    **/ItSessionMigration,
                    **/ItStickySession,
                    **/ItSystemResOverrides,
                    **/ItTwoDomainsLoadBalancer,
+                   **/ItUsabilityOperatorHelmChart
                 </includes-failsafe>
             </properties>
         </profile>
