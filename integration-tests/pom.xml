@@ -254,6 +254,43 @@
             </properties>
         </profile>
         <profile>
+            <id>new-wls-image-cert</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                   **/ItExternalLbTunneling,
+                   **/ItMiiAuxiliaryImage,
+                   **/ItMiiAuxiliaryImageCluster,
+                   **/ItMiiSampleWlsAux,
+                   **/ItMiiCustomSslStore,
+                   **/ItMiiServiceMigration,
+                   **/ItRemoteConsole,
+                   **/ItConfigDistributionStrategy,
+                   **/ItCrossDomainTransaction,
+                   **/ItElasticLogging,
+                   **/ItElasticLoggingFluentd,
+                   **/ItExternalRmiTunneling,
+                   **/ItIntrospectVersion,
+                   **/ItCrossDomainTransaction,
+                   **/ItIstioDomainInPV,
+                   **/ItIstioMiiDomain,
+                   **/ItManagedCoherence,
+                   **/ItMiiDomain,
+                   **/ItMiiDynamicUpdate,
+                   **/ItMiiSampleWlsMain,
+                   **/ItMiiUpdateDomainConfig,
+                   **/ItMonitoringExporter,
+                   **/ItParameterizedDomain,
+                   **/ItPodsShutdownOption,
+                   **/ItProductionSecureMode,
+                   **/ItWlsSamples,
+                   **/ItSessionMigration,
+                   **/ItStickySession,
+                   **/ItSystemResOverrides
+                </includes-failsafe>
+            </properties>
+        </profile>
+        <profile>
             <id>fmw-image-cert</id>
             <properties>
                 <skipITs>false</skipITs>
