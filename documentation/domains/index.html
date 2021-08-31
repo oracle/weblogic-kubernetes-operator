@@ -943,7 +943,7 @@ window.onload = function() {
           "$ref": "#/definitions/ServerPod"
         },
         "adminChannelPortForwardingEnabled": {
-          "description": "When this flag is enabled (default true), the operator updates the domain\u0027s WebLogic configuration for its admin server to have an admin protocol NetworkAccessPoint with a \u0027localhost\u0027 address for each existing admin protocol capable port. This allows external Administration Console and WLST \u0027T3\u0027 access when using the \u0027kubectl port-forward\u0027 pattern.",
+          "description": "When this flag is enabled, the operator updates the domain\u0027s WebLogic configuration for its Administration Server to have an admin protocol NetworkAccessPoint with a \u0027localhost\u0027 address for each existing admin protocol capable port. This allows external Administration Console and WLST \u0027T3\u0027 access when using the \u0027kubectl port-forward\u0027 pattern. Defaults to true.",
           "type": "boolean"
         },
         "serverStartPolicy": {
@@ -1642,7 +1642,8 @@ window.onload = function() {
       "properties": {
         "failureThreshold": {
           "description": "Number of times the check is performed before giving up. Giving up in case of liveness probe means restarting the container. In case of readiness probe, the Pod will be marked Unready. Defaults to 1.",
-          "type": "number"
+          "type": "number",
+          "minimum": 1.0
         },
         "periodSeconds": {
           "description": "The number of seconds between checks.",
@@ -1653,8 +1654,9 @@ window.onload = function() {
           "type": "number"
         },
         "successThreshold": {
-          "description": "Minimum number of times the check needs to pass for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness and startup Probes.",
-          "type": "number"
+          "description": "Minimum number of times the check needs to pass for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness Probe.",
+          "type": "number",
+          "minimum": 1.0
         },
         "initialDelaySeconds": {
           "description": "The number of seconds before the first check is performed.",
