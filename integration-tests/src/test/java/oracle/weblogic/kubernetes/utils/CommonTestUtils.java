@@ -6,6 +6,7 @@ package oracle.weblogic.kubernetes.utils;
 import java.io.IOException;
 import java.net.Socket;
 import java.text.DateFormat;
+import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
@@ -98,7 +99,7 @@ public class CommonTestUtils {
           .conditionEvaluationListener(createConditionEvaluationListener(logger, msg, params))
           .until(conditionEvaluator);
     } catch (ConditionTimeoutException timeout) {
-      fail(logger.getFormattedMessage("Timed out waiting for: " + msg, params));
+      fail(MessageFormat.format("Timed out waiting for: " + msg, params));
     }
   }
 
