@@ -56,7 +56,7 @@ To ensure on-the-wire security, the SSL port or Admin port should be used instea
 wls:/base_domain/serverConfig/> exit()
 ```
 
-If the WebLogic administration port is enabled on the Administration Server, then you will need to forward the local port to the Administration port. In this case, the Administration Console access will require using `https` protocol and WLST access will require using `t3s` protocol. Similarly, when the SSL port is enabled, using the SSL port requires using the `https` and `t3s` protocol for Console and WLST access respectively.
+If the WebLogic administration port is enabled on the Administration Server, then you will need to forward the local port to the Administration port. In this case, the Administration Console access will require using the secure `https` protocol and WLST access will require using `t3s` protocol. Similarly, when the SSL port is enabled, using the SSL port requires using the `https` and `t3s` protocols for Console and WLST access respectively.
 
 {{% notice note %}}
 A port-forward session ends once the Pod instance fails or restarts. You can rerun the same command to establish a new port forwarding session and resume forwarding.
@@ -70,7 +70,7 @@ If the local (forwarded) port number is not the same as the Administration port 
 {{% /notice %}}
 
 #### Specify Local IP Address for Port Forwarding
-You can use the `--address` option of the `kubectl port-forward` command to listen on the localhost using the defined IP address. The `--address` option only accepts IP addresses or localhost (comma-separated) as a value. See `kubectl port-forward -h` for help and examples.
+You can use the `--address` option of the `kubectl port-forward` command to listen on the defined IP address. The `--address` option only accepts IP addresses or localhost (comma-separated) as a value. See `kubectl port-forward -h` for help and examples.
 
 Below is an example command that uses a defined IP address.
 
