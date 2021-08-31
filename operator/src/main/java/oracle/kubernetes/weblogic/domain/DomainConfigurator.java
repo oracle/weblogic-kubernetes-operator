@@ -5,6 +5,7 @@ package oracle.kubernetes.weblogic.domain;
 
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1Affinity;
@@ -154,6 +155,18 @@ public abstract class DomainConfigurator {
    */
   public DomainConfigurator withLogHomeEnabled(boolean logHomeEnabled) {
     getDomainSpec().setLogHomeEnabled(logHomeEnabled);
+    return this;
+  }
+
+  /**
+   * Sets the admin channel port forwarding enabled flag.
+   *
+   * @param adminChannelPortForwardingEnabled true if admin channel port forwarding is enabled, false otherwise
+   * @return this object
+   */
+  public DomainConfigurator withAdminChannelPortForwardingEnabled(boolean adminChannelPortForwardingEnabled) {
+    Optional.ofNullable(getDomainSpec().getAdminServer())
+            .ifPresent(admin -> admin.setAdminChannelPortForwardingEnabled(adminChannelPortForwardingEnabled));
     return this;
   }
 
