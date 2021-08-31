@@ -876,7 +876,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   protected String getContainerName() {
-    return KubernetesConstants.CONTAINER_NAME;
+    return KubernetesConstants.WLS_CONTAINER_NAME;
   }
 
   protected List<String> getContainerCommand() {
@@ -974,7 +974,13 @@ public abstract class PodStepContext extends BasePodStepContext {
         .initialDelaySeconds(getReadinessProbeInitialDelaySeconds(tuning))
         .timeoutSeconds(getReadinessProbeTimeoutSeconds(tuning))
         .periodSeconds(getReadinessProbePeriodSeconds(tuning))
-        .failureThreshold(FAILURE_THRESHOLD);
+        .failureThreshold(getReadinessProbeFailureThreshold(tuning));
+
+    // Add the success threshold only if the value is non-default to avoid pod roll.
+    if (getReadinessProbeSuccessThreshold(tuning) != DEFAULT_SUCCESS_THRESHOLD) {
+      readinessProbe.successThreshold(getReadinessProbeSuccessThreshold(tuning));
+    }
+
     try {
       boolean istioEnabled = getDomain().isIstioEnabled();
       if (istioEnabled) {
@@ -1020,13 +1026,28 @@ public abstract class PodStepContext extends BasePodStepContext {
         .orElse(tuning.readinessProbeInitialDelaySeconds);
   }
 
+  private int getReadinessProbeSuccessThreshold(TuningParameters.PodTuning tuning) {
+    return Optional.ofNullable(getServerSpec().getReadinessProbe().getSuccessThreshold())
+            .orElse(tuning.readinessProbeSuccessThreshold);
+  }
+
+  private int getReadinessProbeFailureThreshold(TuningParameters.PodTuning tuning) {
+    return Optional.ofNullable(getServerSpec().getReadinessProbe().getFailureThreshold())
+            .orElse(tuning.readinessProbeFailureThreshold);
+  }
+
   private V1Probe createLivenessProbe(TuningParameters.PodTuning tuning) {
-    return new V1Probe()
+    V1Probe livenessProbe = new V1Probe()
         .initialDelaySeconds(getLivenessProbeInitialDelaySeconds(tuning))
         .timeoutSeconds(getLivenessProbeTimeoutSeconds(tuning))
         .periodSeconds(getLivenessProbePeriodSeconds(tuning))
-        .failureThreshold(FAILURE_THRESHOLD)
-        .exec(execAction(LIVENESS_PROBE));
+        .failureThreshold(getLivenessProbeFailureThreshold(tuning));
+
+    // Add the success threshold only if the value is non-default to avoid pod roll.
+    if (getLivenessProbeSuccessThreshold(tuning) != DEFAULT_SUCCESS_THRESHOLD) {
+      livenessProbe.successThreshold(getLivenessProbeSuccessThreshold(tuning));
+    }
+    return livenessProbe.exec(execAction(LIVENESS_PROBE));
   }
 
   private int getLivenessProbeInitialDelaySeconds(TuningParameters.PodTuning tuning) {
@@ -1042,6 +1063,16 @@ public abstract class PodStepContext extends BasePodStepContext {
   private int getLivenessProbePeriodSeconds(TuningParameters.PodTuning tuning) {
     return Optional.ofNullable(getServerSpec().getLivenessProbe().getPeriodSeconds())
         .orElse(tuning.livenessProbePeriodSeconds);
+  }
+
+  private int getLivenessProbeSuccessThreshold(TuningParameters.PodTuning tuning) {
+    return Optional.ofNullable(getServerSpec().getLivenessProbe().getSuccessThreshold())
+            .orElse(tuning.livenessProbeSuccessThreshold);
+  }
+
+  private int getLivenessProbeFailureThreshold(TuningParameters.PodTuning tuning) {
+    return Optional.ofNullable(getServerSpec().getLivenessProbe().getFailureThreshold())
+            .orElse(tuning.livenessProbeFailureThreshold);
   }
 
   private boolean mockWls() {

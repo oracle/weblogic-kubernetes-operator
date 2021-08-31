@@ -24,9 +24,13 @@ public abstract class TuningParametersStub implements TuningParameters {
   static final int READINESS_INITIAL_DELAY = 1;
   static final int READINESS_TIMEOUT = 2;
   static final int READINESS_PERIOD = 3;
+  static final int READINESS_SUCCESS_THRESHOLD = 1;
+  static final int READINESS_FAILURE_THRESHOLD = 1;
   static final int LIVENESS_INITIAL_DELAY = 4;
   static final int LIVENESS_PERIOD = 6;
   static final int LIVENESS_TIMEOUT = 5;
+  static final int LIVENESS_SUCCESS_THRESHOLD = 1;
+  static final int LIVENESS_FAILURE_THRESHOLD = 1;
   static final long INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS = 180L;
 
   // Call builder tuning
@@ -52,9 +56,13 @@ public abstract class TuningParametersStub implements TuningParameters {
         READINESS_INITIAL_DELAY,
         READINESS_TIMEOUT,
         READINESS_PERIOD,
+        READINESS_SUCCESS_THRESHOLD,
+        READINESS_FAILURE_THRESHOLD,
         LIVENESS_INITIAL_DELAY,
         LIVENESS_TIMEOUT,
         LIVENESS_PERIOD,
+        LIVENESS_SUCCESS_THRESHOLD,
+        LIVENESS_FAILURE_THRESHOLD,
         INTROSPECTOR_JOB_ACTIVE_DEADLINE_SECONDS);
   }
 

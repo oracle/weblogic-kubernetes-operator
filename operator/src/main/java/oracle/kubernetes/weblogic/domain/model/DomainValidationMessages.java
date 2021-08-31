@@ -166,4 +166,12 @@ class DomainValidationMessages {
   public static String noAvailablePortToUse(String domainUid, String serverName) {
     return getMessage(MessageKeys.NO_AVAILABLE_PORT_TO_USE_FOR_REST, domainUid, serverName);
   }
+
+  public static String invalidLivenessProbeSuccessThresholdValue(int value, String prefix) {
+    return getMessage(MessageKeys.INVALID_LIVENESS_PROBE_SUCCESS_THRESHOLD_VALUE, value, prefix);
+  }
+
+  public static String reservedContainerName(String name, String prefix) {
+    return getMessage(MessageKeys.RESERVED_CONTAINER_NAME, name, prefix);
+  }
 }
