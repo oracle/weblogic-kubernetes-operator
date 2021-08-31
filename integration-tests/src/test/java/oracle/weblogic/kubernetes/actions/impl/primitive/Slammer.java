@@ -59,7 +59,7 @@ public class Slammer {
     assertDoesNotThrow(() -> Files.createDirectories(slammerTemp));
 
     String slammerSrcLocation = Optional.ofNullable(System.getenv("SLAMMER_DOWNLOAD_URL"))
-        .orElse("http://100.111.70.116/slammer.tar");
+        .orElse("http://100.111.70.116/slammer.tar.gz");
     //--no-proxy
     CommandParams params = Command.defaultCommandParams()
         .command("cd " + installDir + " && wget  "
