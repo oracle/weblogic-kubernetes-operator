@@ -169,7 +169,7 @@ public interface TestConstants {
   public static final String VOYAGER_RELEASE_NAME = "voyager-release" + BUILD_ID;
   public static final String APPSCODE_REPO_NAME = "appscode";
   public static final String VOYAGER_CHART_NAME = "voyager";
-  public static final String VOYAGER_CHART_VERSION = "v13.0.0-beta.1";
+  public static final String VOYAGER_CHART_VERSION = "2021.4.24-rc.0"; //v13.0.0-beta.1";
 
   // Apache constants
   public static final String OCIR_APACHE_IMAGE_NAME = "weblogick8s/oracle/apache";
