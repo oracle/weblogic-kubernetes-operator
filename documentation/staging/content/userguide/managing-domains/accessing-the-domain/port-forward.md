@@ -56,7 +56,7 @@ To ensure on-the-wire security, the SSL port or Admin port should be used instea
 wls:/base_domain/serverConfig/> exit()
 ```
 
-If the WebLogic administration port is enabled on the Administration Server, then you will need to forward the local port to the Administration port. In this case, the Administration Console access will require using the secure `https` protocol and WLST access will require using `t3s` protocol. Similarly, when the SSL port is enabled, using the SSL port requires using the `https` and `t3s` protocols for Console and WLST access respectively.
+If the WebLogic administration port is configured and enabled on the Administration Server, then you will need to forward the local port to the administration port. In this case, the Administration Console access requires using the secure `https` protocol and WLST access requires using `t3s` protocol. Similarly, when the SSL port is configured and enabled, using the SSL port requires using the `https` and `t3s` protocols for Console and WLST access respectively.
 
 {{% notice note %}}
 A port-forward session ends once the Pod instance fails or restarts. You can rerun the same command to establish a new port forwarding session and resume forwarding.
@@ -118,6 +118,14 @@ internal-admin | localhost | Custom administration port | admin
 
 **NOTE:** The additional network channels are created only for the Administration Server (and not for the managed servers).
 
-#### Istio Enabled Domains
-For the Istio enabled domains, the operator already adds a network channel with localhost listen address. Hence additional network channels are not created for `kubectl port-forward` when Istio support is enabled. See [How Istio-enabled domains differ from regular domains]({{< relref "/userguide/istio/istio#how-istio-enabled-domains-differ-from-regular-domains" >}}) for more details.
+**NOTE:** For the Istio enabled domains, the operator already adds a network channel with localhost listen address. Hence additional network channels are not created for `kubectl port-forward` when Istio support is enabled. See [How Istio-enabled domains differ from regular domains]({{< relref "/userguide/istio/istio#how-istio-enabled-domains-differ-from-regular-domains" >}}) for more details.
 
+#### Terminating the port-forward session
+A port-forward session is only active while the `kubectl port-forward` command is running. You can terminate the port-forward session by pressing CTRL+C in the terminal where the port-forward command is running. If you run the command in the background, then you can kill the process with `kill -9 <pid>` command.
+
+```
+$ ps -ef | grep port-forward
+oracle   27072 25312  1 21:45 pts/3    00:00:00 kubectl -n mynamespace port-forward pods/domain1-admin-server 32015:7001
+oracle   27944 11417  0 21:45 pts/1    00:00:00 grep --color=auto port-forward
+$ kill -9 27072
+```
