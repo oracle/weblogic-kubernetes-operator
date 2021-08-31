@@ -174,6 +174,8 @@ public class MessageKeys {
   public static final String AUXILIARY_IMAGE_VOLUME_NAME_NOT_DEFINED = "WLSDO-0026";
   public static final String MONITORING_EXPORTER_CONFLICT_SERVER = "WLSDO-0027";
   public static final String MONITORING_EXPORTER_CONFLICT_DYNAMIC_CLUSTER = "WLSDO-0028";
+  public static final String INVALID_LIVENESS_PROBE_SUCCESS_THRESHOLD_VALUE = "WLSDO-0029";
+  public static final String RESERVED_CONTAINER_NAME = "WLSDO-0030";
 
   private MessageKeys() {
   }
