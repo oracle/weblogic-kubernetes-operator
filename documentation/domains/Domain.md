@@ -255,8 +255,10 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 
 | Name | Type | Description |
 | --- | --- | --- |
+| `failureThreshold` | number | Number of times the check is performed before giving up. Giving up in case of liveness probe means restarting the container. In case of readiness probe, the Pod will be marked Unready. Defaults to 1. |
 | `initialDelaySeconds` | number | The number of seconds before the first check is performed. |
 | `periodSeconds` | number | The number of seconds between checks. |
+| `successThreshold` | number | Minimum number of times the check needs to pass for the probe to be considered successful after having failed. Defaults to 1. Must be 1 for liveness Probe. |
 | `timeoutSeconds` | number | The number of seconds with no response that indicates a failure. |
 
 ### Shutdown

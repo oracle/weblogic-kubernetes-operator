@@ -20,6 +20,7 @@ import javax.annotation.Nonnull;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.common.KubernetesObject;
+import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -45,7 +46,9 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static java.util.stream.Collectors.toSet;
+import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.helpers.LegalNames.toDns1123LegalName;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.DEFAULT_SUCCESS_THRESHOLD;
 import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
 
 /**
@@ -796,6 +799,9 @@ public class Domain implements KubernetesObject {
   }
 
   class Validator {
+    public static final String ADMIN_SERVER_POD_SPEC_PREFIX = "spec.adminServer.serverPod";
+    public static final String CLUSTER_SPEC_PREFIX = "spec.clusters";
+    public static final String MS_SPEC_PREFIX = "spec.managedServers";
     private final List<String> failures = new ArrayList<>();
     private final Set<String> clusterNames = new HashSet<>();
     private final Set<String> serverNames = new HashSet<>();
@@ -815,6 +821,8 @@ public class Domain implements KubernetesObject {
       verifyAuxiliaryImages();
       verifyAuxiliaryImageVolumes();
       addDuplicateAuxiliaryImageVolumeNames();
+      verifyLivenessProbeSuccessThreshold();
+      verifyContainerNameValidInPodSpec();
 
       return failures;
     }
@@ -1057,6 +1065,46 @@ public class Domain implements KubernetesObject {
         failures.add(DomainValidationMessages.duplicateAuxiliaryImageVolumeName(auxiliaryImageVolume.getName()));
       } else {
         auxiliaryImageVolumes.add(auxiliaryImageVolume);
+      }
+    }
+
+    private void verifyLivenessProbeSuccessThreshold() {
+      Optional.ofNullable(getAdminServerSpec().getLivenessProbe())
+              .ifPresent(probe -> verifySuccessThresholdValue(probe, ADMIN_SERVER_POD_SPEC_PREFIX
+                      + ".livenessProbe.successThreshold"));
+      getSpec().getClusters().forEach(cluster ->
+              Optional.ofNullable(cluster.getLivenessProbe())
+                      .ifPresent(probe -> verifySuccessThresholdValue(probe, CLUSTER_SPEC_PREFIX + "["
+                              + cluster.getClusterName() + "].serverPod.livenessProbe.successThreshold")));
+      getSpec().getManagedServers().forEach(managedServer ->
+              Optional.ofNullable(managedServer.getLivenessProbe())
+                      .ifPresent(probe -> verifySuccessThresholdValue(probe, MS_SPEC_PREFIX + "["
+                              + managedServer.getServerName() + "].serverPod.livenessProbe.successThreshold")));
+    }
+
+    private void verifySuccessThresholdValue(ProbeTuning probe, String prefix) {
+      if (probe.getSuccessThreshold() != null && probe.getSuccessThreshold() != DEFAULT_SUCCESS_THRESHOLD) {
+        failures.add(DomainValidationMessages.invalidLivenessProbeSuccessThresholdValue(
+                probe.getSuccessThreshold(), prefix));
+      }
+    }
+
+    private void verifyContainerNameValidInPodSpec() {
+      getAdminServerSpec().getContainers().forEach(container ->
+              isContainerNameReserved(container, ADMIN_SERVER_POD_SPEC_PREFIX + ".containers"));
+      getSpec().getClusters().forEach(cluster ->
+              cluster.getContainers().forEach(container ->
+                      isContainerNameReserved(container, CLUSTER_SPEC_PREFIX + "[" + cluster.getClusterName()
+                              + "].serverPod.containers")));
+      getSpec().getManagedServers().forEach(managedServer ->
+              managedServer.getContainers().forEach(container ->
+                      isContainerNameReserved(container, MS_SPEC_PREFIX + "[" + managedServer.getServerName()
+                              + "].serverPod.containers")));
+    }
+
+    private void isContainerNameReserved(V1Container container, String prefix) {
+      if (container.getName().equals(WLS_CONTAINER_NAME)) {
+        failures.add(DomainValidationMessages.reservedContainerName(container.getName(), prefix));
       }
     }
 

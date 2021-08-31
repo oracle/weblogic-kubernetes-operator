@@ -15,17 +15,20 @@ This document describes how to customize the liveness and readiness probes for W
 
 #### Liveness probe customization
 
-The liveness probe is configured to check that a server is alive by querying the Node Manager process.  By default, the liveness probe is configured to check liveness every 45 seconds and to timeout after 5 seconds.  If a pod fails the liveness probe, Kubernetes will restart that container.
+The liveness probe is configured to check that a server is alive by querying the Node Manager process.  By default, the liveness probe is configured to check liveness every 45 seconds, to timeout after 5 seconds, and to perform the first check after 30 seconds.  The default success and failure threshold values are 1.  If a pod fails the liveness probe, Kubernetes will restart that container.
 
-You can customize the liveness probe interval and timeout using the `livenessProbe` attribute under the `serverPod` element of the domain resource. 
+You can customize the liveness probe initial delay, interval, timeout and failure threshold using the `livenessProbe` attribute under the `serverPod` element of the domain resource.
 
-Following is an example configuration to change the liveness probe interval and timeout value.
+Following is an example configuration to change the liveness probe interval, timeout and failure threshold value.
 ```yaml
   serverPod:
     livenessProbe:
       periodSeconds: 30
       timeoutSeconds: 10
+      failureThreshold: 3
 ```
+
+**Note**: The liveness probe success threshold value must always be 1. See [Configure Probes](https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes) in the Kubernetes documentation for more details.
 
 After the liveness probe script (livenessProbe.sh) performs its normal checks, you can customize the liveness probe by specifying a custom script, which will be invoked by livenessProbe.sh. You can specify the custom script either by using the `livenessProbeCustomScript` attribute in the domain resource or by setting the `LIVENESS_PROBE_CUSTOM_SCRIPT` environment variable using the `env` attribute under the `serverPod` element (see the configuration examples below). If the custom script fails with a non-zero exit status, the liveness probe will fail and Kubernetes will restart the container.
 
@@ -82,12 +85,13 @@ The following operator-populated environment variables are available for use in 
 
 By default, the readiness probe is configured to use the WebLogic Server ReadyApp framework. The ReadyApp framework allows fine customization of the readiness probe by the application's participation in the framework. For more details, see [Using the ReadyApp Framework](https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/depgd/managing.html#GUID-C98443B1-D368-4CA4-A7A4-97B86FFD3C28). The readiness probe is used to determine if the server is ready to accept user requests. The readiness is used to determine when a server should be included in a load balancer's endpoints, in the case of a rolling restart, when a restarted server is fully started, and for various other purposes.
 
-By default, the readiness probe is configured to check readiness every 5 seconds and to timeout after 5 seconds. You can customize the readiness probe interval and timeout using the `readinessProbe` attribute under the `serverPod` element of the domain resource.
+By default, the readiness probe is configured to check readiness every 5 seconds, to timeout after 5 seconds, and to perform the first check after 30 seconds. The default success and failure thresholds values are 1. You can customize the readiness probe initial delay, interval, timeout, success and failure thresholds using the `readinessProbe` attribute under the `serverPod` element of the domain resource.
 
-Following is an example configuration to change readiness probe interval and timeout value.
+Following is an example configuration to change readiness probe interval, timeout and failure threshold value.
 ```yaml
   serverPod:
     readinessProbe:
       periodSeconds: 10
       timeoutSeconds: 10
+      failureThreshold: 3
 ```
