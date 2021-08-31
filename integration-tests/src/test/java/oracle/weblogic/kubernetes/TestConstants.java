@@ -147,7 +147,7 @@ public interface TestConstants {
       System.getProperty("java.io.tmpdir") + "/it-testsresults");
 
   public static final String LOGS_DIR = RESULTS_BASE + "/diagnostics";
-  public static final String PV_ROOT = System.getenv().getOrDefault("PV_ROOT", 
+  public static final String PV_ROOT = System.getenv().getOrDefault("PV_ROOT",
       RESULTS_BASE + "/pvroot");
   public static final String RESULTS_ROOT = RESULTS_BASE + "/workdir";
 
@@ -169,7 +169,7 @@ public interface TestConstants {
   public static final String VOYAGER_RELEASE_NAME = "voyager-release" + BUILD_ID;
   public static final String APPSCODE_REPO_NAME = "appscode";
   public static final String VOYAGER_CHART_NAME = "voyager";
-  public static final String VOYAGER_CHART_VERSION = "12.0.0";
+  public static final String VOYAGER_CHART_VERSION = "v13.0.0-beta.1";
 
   // Apache constants
   public static final String OCIR_APACHE_IMAGE_NAME = "weblogick8s/oracle/apache";
@@ -271,7 +271,7 @@ public interface TestConstants {
   public static final String DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME = "weblogic-operator-external-rest-identity";
 
   // Default ISTIO version is 1.7.3
-  public static final String ISTIO_VERSION = 
+  public static final String ISTIO_VERSION =
         Optional.ofNullable(System.getenv("ISTIO_VERSION")).orElse("1.7.3");
 
   //MySQL database constants
