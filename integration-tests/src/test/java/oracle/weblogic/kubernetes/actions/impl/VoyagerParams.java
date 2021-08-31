@@ -15,13 +15,20 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 public class VoyagerParams {
 
   // params used when installing Voyager
+  private static final String VOYAGER_TAG = "voyager.tag";
   private static final String CLOUD_PROVIDER = "cloudProvider";
   private static final String ENABLE_VALIDATING_WEBHOOK = "apiserver.enableValidatingWebhook";
 
   // Adding some of the most commonly used params for now
+  private String voyagerTag;
   private String cloudProvider;
   private boolean enableValidatingWebhook;
   private HelmParams helmParams;
+
+  public VoyagerParams voyagerTag(String voyagerTag) {
+    this.voyagerTag = voyagerTag;
+    return this;
+  }
 
   public VoyagerParams cloudProvider(String cloudProvider) {
     this.cloudProvider = cloudProvider;
@@ -55,6 +62,7 @@ public class VoyagerParams {
     }
 
     values.put(ENABLE_VALIDATING_WEBHOOK, enableValidatingWebhook);
+    values.put(VOYAGER_TAG, voyagerTag);
 
     values.values().removeIf(Objects::isNull);
     return values;

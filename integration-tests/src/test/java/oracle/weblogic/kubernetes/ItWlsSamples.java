@@ -158,9 +158,6 @@ class ItWlsSamples {
     String domainName = model.split(":")[1];
     String script = model.split(":")[0];
     String imageName = DOMAIN_IMAGES_REPO + diiImageNameBase + "_" + script + ":" + diiImageTag;
-    //String imageName = (KIND_REPO != null
-    //        ? KIND_REPO + diiImageNameBase + "_" + script + ":" + diiImageTag
-    //        : DOMAIN_IMAGES_REPO + diiImageNameBase + "_" + script + ":" + diiImageTag);
 
     //copy the samples directory to a temporary location
     setupSample();
