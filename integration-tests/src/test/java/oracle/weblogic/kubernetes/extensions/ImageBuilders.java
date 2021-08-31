@@ -30,9 +30,12 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.extension.BeforeAllCallback;
 import org.junit.jupiter.api.extension.ExtensionContext;
 
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
@@ -87,6 +90,7 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.cleanupDirectory;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.installIstio;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.uninstallIstio;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.extension.ExtensionContext.Namespace.GLOBAL;
@@ -103,6 +107,11 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
 
   private static Collection<String> pushedImages = new ArrayList<>();
   private static boolean isInitializationSuccessful = false;
+
+  ConditionFactory withVeryLongRetryPolicy
+      = with().pollDelay(0, SECONDS)
+      .and().with().pollInterval(10, SECONDS)
+      .atMost(30, MINUTES).await();
 
   @Override
   public void beforeAll(ExtensionContext context) {
@@ -140,6 +149,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
         if (BASE_IMAGES_REPO.equals(OCR_REGISTRY)) {
           if (!OCR_USERNAME.equals(REPO_DUMMY_VALUE)) {
             testUntil(
+                withVeryLongRetryPolicy,
                 () -> dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD),
                 logger,
                 "docker login to OCR to be successful");
@@ -147,6 +157,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
         } else if (BASE_IMAGES_REPO.equals(OCIR_REGISTRY)) {
           if (!OCIR_USERNAME.equals(REPO_DUMMY_VALUE)) {
             testUntil(
+                withVeryLongRetryPolicy,
                 () -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD),
                 logger,
                 "docker login to OCIR to be successful");
@@ -170,6 +181,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
 
           for (String image : images) {
             testUntil(
+                withVeryLongRetryPolicy,
                 pullImageFromOcrOrOcirAndPushToKind(image),
                 logger,
                 "pullImageFromOcrOrOcirAndPushToKind for image {0} to be successful",
@@ -181,6 +193,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
           // build MII basic image
           miiBasicImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
           testUntil(
+              withVeryLongRetryPolicy,
               createBasicImage(MII_BASIC_IMAGE_NAME, MII_BASIC_IMAGE_TAG, MII_BASIC_WDT_MODEL_FILE,
                 null, MII_BASIC_APP_NAME, MII_BASIC_IMAGE_DOMAINTYPE),
               logger,
@@ -189,6 +202,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
           // build basic wdt-domain-in-image image
           wdtBasicImage = WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG;
           testUntil(
+              withVeryLongRetryPolicy,
               createBasicImage(WDT_BASIC_IMAGE_NAME, WDT_BASIC_IMAGE_TAG, WDT_BASIC_MODEL_FILE,
                 WDT_BASIC_MODEL_PROPERTIES_FILE, WDT_BASIC_APP_NAME, WDT_BASIC_IMAGE_DOMAINTYPE),
               logger,
@@ -211,6 +225,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
         if (!OCIR_USERNAME.equals(REPO_DUMMY_VALUE)) {
           logger.info("docker login");
           testUntil(
+              withVeryLongRetryPolicy,
               () -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD),
               logger,
               "docker login to OCIR to be successful");
@@ -234,6 +249,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
               logger.info("docker push image {0} to {1}", image, DOMAIN_IMAGES_REPO);
             }
             testUntil(
+                withVeryLongRetryPolicy,
                 () -> dockerPush(image),
                 logger,
                 "docker push to OCIR/kind for image {0} to be successful",
