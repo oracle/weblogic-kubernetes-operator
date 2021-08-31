@@ -230,6 +230,12 @@ class ItStickySession {
     for (int i = 0; i < maxRetry; i++) {
       hostNames =
           installVoyagerIngressAndVerify(domainUid, domainNamespace, ingressName, clusterNameMsPortMap);
+      try {
+        // sometimes the ingress may not be ready even the condition check is ready, sleep a little bit
+        Thread.sleep(1000 * 60 * 60);
+      } catch (InterruptedException ignore) {
+        // ignore
+      }
 
       if (hostNames != null && !hostNames.isEmpty()) {
         break;
@@ -311,12 +317,12 @@ class ItStickySession {
     // create route for cluster service
     String ingressHost = createRouteForOKD(serviceName, domainNamespace);
 
-    // Since the app seems to take a bit longer to be available, 
+    // Since the app seems to take a bit longer to be available,
     // checking if the app is running by executing the curl command
     String curlString =
         buildCurlCommand(ingressHost, 0, SESSMIGR_APP_WAR_NAME + "/?getCounter", " -b ");
     logger.info("Command to set HTTP request or get HTTP response {0} ", curlString);
-    withStandardRetryPolicy 
+    withStandardRetryPolicy
         .conditionEvaluationListener(
             condition -> logger.info("Checking if app is available "
                 + "(elapsed time {0} ms, remaining time {1} ms)",
