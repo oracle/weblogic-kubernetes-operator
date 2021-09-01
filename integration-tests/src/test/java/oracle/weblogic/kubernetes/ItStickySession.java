@@ -232,7 +232,7 @@ class ItStickySession {
           installVoyagerIngressAndVerify(domainUid, domainNamespace, ingressName, clusterNameMsPortMap);
       try {
         // sometimes the ingress may not be ready even the condition check is ready, sleep a little bit
-        Thread.sleep(1000 * 60 * 60);
+        Thread.sleep(1000);
       } catch (InterruptedException ignore) {
         // ignore
       }
