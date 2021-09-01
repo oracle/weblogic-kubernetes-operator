@@ -8,7 +8,7 @@ import model_wdt_mii_filter
 
 class WdtUpdateFilterCase(unittest.TestCase):
 
-  ISTIO_NAP_NAMES = ['tcp-cbt', 'tcp-ldap', 'tcp-iiop', 'tcp-snmp', 'http-probe', 'http-default', 'tcp-default']
+  ISTIO_NAP_NAMES = ['tcp-cbt', 'tcp-ldap', 'tcp-iiop', 'tcp-snmp', 'http-probe', 'http-local-probe', 'http-default', 'tcp-default']
 
   def setUp(self):
     self.initialize_environment_variables()
