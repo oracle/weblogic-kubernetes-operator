@@ -230,17 +230,9 @@ class ItStickySession {
     for (int i = 0; i < maxRetry; i++) {
       hostNames =
           installVoyagerIngressAndVerify(domainUid, domainNamespace, ingressName, clusterNameMsPortMap);
-      try {
-        // sometimes the ingress may not be ready even the condition check is ready, sleep a little bit
-        Thread.sleep(1000);
-      } catch (InterruptedException ignore) {
-        // ignore
-      }
-
       if (hostNames != null && !hostNames.isEmpty()) {
         break;
       }
-
       try {
         // sometimes the ingress may not be ready even the condition check is ready, sleep a little bit
         Thread.sleep(1000);
