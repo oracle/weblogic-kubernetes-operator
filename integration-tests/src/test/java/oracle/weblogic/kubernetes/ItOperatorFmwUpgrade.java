@@ -96,7 +96,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Tests to upgrade Operator with FMW domain in PV using WLST")
 @IntegrationTest
-class ItOpUpgradeFmwDomainInPV {
+class ItOperatorFmwUpgrade {
 
   private static ConditionFactory withStandardRetryPolicy;
   private static ConditionFactory withQuickRetryPolicy;
