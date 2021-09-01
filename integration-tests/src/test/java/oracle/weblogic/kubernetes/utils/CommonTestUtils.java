@@ -56,7 +56,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * The common utility class for tests.
@@ -99,7 +98,7 @@ public class CommonTestUtils {
           .conditionEvaluationListener(createConditionEvaluationListener(logger, msg, params))
           .until(conditionEvaluator);
     } catch (ConditionTimeoutException timeout) {
-      fail(MessageFormat.format("Timed out waiting for: " + msg, params));
+      throw new TimeoutException(MessageFormat.format("Timed out waiting for: " + msg, params), timeout);
     }
   }
 

@@ -26,7 +26,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import org.awaitility.core.ConditionTimeoutException;
+import oracle.weblogic.kubernetes.utils.TimeoutException;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -71,8 +71,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
-
-
 
 /**
  * Simple JUnit test file used for testing operator namespace management,
@@ -419,8 +417,7 @@ class ItManageNameSpace {
           true, externalRestHttpsPort, opNamespace, opServiceAccount,
           false, "", "scaleDown", 1, "", "", null, null);
       return false;
-
-    } catch (ConditionTimeoutException ex) {
+    } catch (TimeoutException ex) {
       logger.info("Received expected error " + ex.getMessage());
       return true;
     }
