@@ -59,11 +59,11 @@ wls:/base_domain/serverConfig/> exit()
 If the WebLogic administration port is configured and enabled on the Administration Server, then you will need to forward the local port to the administration port. In this case, the Administration Console access requires using the secure `https` protocol and WLST access requires using `t3s` protocol. Similarly, when the SSL port is configured and enabled, using the SSL port requires using the `https` and `t3s` protocols for Console and WLST access respectively.
 
 {{% notice note %}}
-A port-forward session ends once the Pod instance fails or restarts. You can rerun the same command to establish a new port forwarding session and resume forwarding.
+A port-forward connection terminates once the Pod instance fails or restarts. You can rerun the same command to establish a new forwarding session and resume forwarding.
 {{% /notice %}}
 
 {{% notice note %}}
-If the local (forwarded) port number is not the same as the Administration port number, then the WLST access will not work by default and you will see below `BEA-000572` RJVM error in the administration server logs. You can add `-Dweblogic.rjvm.enableprotocolswitch=true` argument to the command line JAVA_OPTIONS for the Administration Server to enable this access. Refer to [MOS 'Doc 860340.1'](https://support.oracle.com/rs?type=doc&id=860340.1) for more information on this switch.
+If the local (forwarded) port number is not the same as the Administration port number, then the WLST access will not work by default and you will see below `BEA-000572` RJVM error in the administration server logs. You can add the `-Dweblogic.rjvm.enableprotocolswitch=true` argument to the command line JAVA_OPTIONS for the Administration Server to enable WLST access. Refer to [MOS 'Doc 860340.1'](https://support.oracle.com/rs?type=doc&id=860340.1) for more information on this switch.
 ```text
 <Aug 30, 2021 9:33:24,753 PM GMT> <Error> <RJVM> <BEA-000572> <The server rejected a connection attempt JVMMessage from: '-2661445766084484528C:xx.xx.xx.xxR:-5905806878036317188S:domain1-admin-server:domain1:admin-server' to: '0B:xx.xx.xx.xx:[-1,-1,32015,-1,-1,-1,-1]' cmd: 'CMD_IDENTIFY_REQUEST', QOS: '102', responseId: '-1', invokableId: '-1', flags: 'JVMIDs Sent, TX Context Not Sent, 0x1', abbrev offset: '114' probably due to an incorrect firewall configuration or administrative command.></pre>
 ```
@@ -120,8 +120,8 @@ internal-admin | localhost | Custom administration port | admin
 
 **NOTE:** For the Istio enabled domains, the operator already adds a network channel with localhost listen address. Hence additional network channels are not created for `kubectl port-forward` when Istio support is enabled. See [How Istio-enabled domains differ from regular domains]({{< relref "/userguide/istio/istio#how-istio-enabled-domains-differ-from-regular-domains" >}}) for more details.
 
-#### Terminating the port-forward session
-A port-forward session is only active while the `kubectl port-forward` command is running. You can terminate the port-forward session by pressing CTRL+C in the terminal where the port-forward command is running. If you run the command in the background, then you can kill the process with `kill -9 <pid>` command.
+#### Terminating the port-forward connection
+A port-forward connection is only active while the `kubectl port-forward` command is running. You can terminate the port-forward connection by pressing CTRL+C in the terminal where the port-forward command is running. If you run the command in the background, then you can kill the process with `kill -9 <pid>` command.
 
 ```
 $ ps -ef | grep port-forward

@@ -37,6 +37,8 @@ To set up access to WebLogic Server domains running in Kubernetes using the Remo
 
    * Deploy a load balancer with [ingress path routing rules](#configure-ingress-path-routing-rules).
 
+   * Use a [kubectl port-forward connection](#use-a-kubectl-port-forward-connection).
+
 
 #### Use an Administration Server `NodePort`
 
@@ -94,10 +96,24 @@ For more information, see [T3 channels]({{<relref "/security/domain-security/web
 
         `$ export LB_PORT=$(kubectl -n traefik get service traefik-operator -o jsonpath='{.spec.ports[?(@.name=="web")].nodePort}')`
 
+#### Use a kubectl port-forward connection
+1. Forward a local port to the administration port of the Administration Server Pod according to these [instructions.]({{< relref "/userguide/managing-domains/accessing-the-domain/port-forward.md#forward-a-local-port-to-an-administration-port-on-the-administration-server-pod" >}}).
+
+2. For the Remote Console to connect to the Kubernetes WebLogic Server Administration Server, supply a URL using the hostname or the defined local IP address and the local port in the previous step. For example:
+
+   ```
+   http://${HOSTNAME}:${LOCAL_PORT}/
+   ```
+   Where:
+
+     * `${HOSTNAME}` is the hostname or the defined IP address on the machine where the `kubectl port-forward` command is running.
+
+     * `${LOCAL_PORT}` is the local port where the `kubectl port-forward` command is running.
+
 ### Test
 
-To verify that your WebLogic Server Administration Server URL is correct, and to verify that that your load balancer
-or `NodePort` are working as expected, run the following curl commands at the same location as your browser:
+To verify that your WebLogic Server Administration Server URL is correct, and to verify that that your load balancer,
+`NodePort` or `kubectl port-forward` are working as expected, run the following curl commands at the same location as your browser:
 
 
 ```
