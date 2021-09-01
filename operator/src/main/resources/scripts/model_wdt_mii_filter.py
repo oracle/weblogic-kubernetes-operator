@@ -410,6 +410,9 @@ def customizeServerIstioNetworkAccessPoint(server, listen_address):
   _writeIstioNAP(name='http-probe', server=server, listen_address=listen_address,
                       listen_port=istio_readiness_port, protocol='http', http_enabled="true")
 
+  _writeIstioNAP(name='http-local-probe', server=server, listen_address=listen_address,
+                 listen_port=istio_readiness_port, protocol='http', http_enabled="true")
+
   # Generate NAP for each protocols
   _writeIstioNAP(name='tcp-ldap', server=server, listen_address=listen_address,
                       listen_port=admin_server_port, protocol='ldap')
@@ -474,6 +477,9 @@ def customizeManagedIstioNetworkAccessPoint(template, listen_address):
     listen_port = 7001
   # readiness probe
   _writeIstioNAP(name='http-probe', server=template, listen_address=listen_address,
+                 listen_port=istio_readiness_port, protocol='http', http_enabled="true")
+
+  _writeIstioNAP(name='http-local-probe', server=template, listen_address=listen_address,
                  listen_port=istio_readiness_port, protocol='http', http_enabled="true")
 
   # Generate NAP for each protocols

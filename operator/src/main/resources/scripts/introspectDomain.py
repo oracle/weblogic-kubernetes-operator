@@ -1217,6 +1217,9 @@ class SitConfigGenerator(Generator):
     self._writeIstioNAP(name='http-probe', server=server, listen_address=listen_address,
                         listen_port=istio_readiness_port, protocol='http', http_enabled="true")
 
+    self._writeIstioNAP(name='http-local-probe', server=server, listen_address=listen_address,
+                        listen_port=istio_readiness_port, protocol='http', http_enabled="true")
+
     # Generate NAP for each protocols
     self._writeIstioNAP(name='tcp-ldap', server=server, listen_address=listen_address,
                         listen_port=admin_server_port, protocol='ldap')
@@ -1269,6 +1272,9 @@ class SitConfigGenerator(Generator):
 
     listen_port = getRealListenPort(template)
     self._writeIstioNAP(name='http-probe', server=template, listen_address=listen_address,
+                        listen_port=istio_readiness_port, protocol='http')
+
+    self._writeIstioNAP(name='http-local-probe', server=template, listen_address=listen_address,
                         listen_port=istio_readiness_port, protocol='http')
 
     self._writeIstioNAP(name='tcp-default', server=template, listen_address=listen_address,
