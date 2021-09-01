@@ -1122,7 +1122,10 @@ class SitConfigGenerator(Generator):
         self.indent()
         self.writeln("<d:name>" + nap_name + "</d:name>")
         if istio_enabled == 'true':
-          self.writeListenAddress("force a replace", '127.0.0.1')
+          if nap_name == 'http-probe':
+            self.writeListenAddress("force a replace", listen_address)
+          else:
+            self.writeListenAddress("force a replace", '127.0.0.1')
         else:
           self.writeListenAddress("force a replace",listen_address)
 
@@ -1162,7 +1165,11 @@ class SitConfigGenerator(Generator):
       self.writeln('<d:name>%s</d:name>' % name)
 
     self.writeln('<d:protocol %s>%s</d:protocol>' % (action, protocol))
-    self.writeln('<d:listen-address %s>127.0.0.1</d:listen-address>' % action)
+    if name == 'http-probe':
+      self.writeln('<d:listen-address %s>%s.%s</d:listen-address>' % (action, listen_address,
+                                                          self.env.getEnvOrDef("ISTIO_POD_NAMESPACE", "default")))
+    else:
+      self.writeln('<d:listen-address %s>127.0.0.1</d:listen-address>' % action)
     self.writeln('<d:public-address %s>%s.%s</d:public-address>' % (action, listen_address,
                                                           self.env.getEnvOrDef("ISTIO_POD_NAMESPACE", "default")))
     self.writeln('<d:listen-port %s>%s</d:listen-port>' % (action, listen_port))

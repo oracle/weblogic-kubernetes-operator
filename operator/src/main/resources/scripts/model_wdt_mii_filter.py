@@ -386,7 +386,10 @@ def _writeIstioNAP(name, server, listen_address, listen_port, protocol, http_ena
 
   nap = naps[name]
   nap['Protocol'] = protocol
-  nap['ListenAddress'] = '127.0.0.1'
+  if name == 'http-probe':
+    nap['ListenAddress'] = '%s.%s' % (listen_address, env.getEnvOrDef("ISTIO_POD_NAMESPACE", "default"))
+  else:
+    nap['ListenAddress'] = '127.0.0.1'
   nap['PublicAddress'] = '%s.%s' % (listen_address, env.getEnvOrDef("ISTIO_POD_NAMESPACE", "default"))
   nap['ListenPort'] = listen_port
   nap['HttpEnabledForThisProtocol'] = http_enabled
@@ -595,17 +598,20 @@ def customizeNetworkAccessPoints(server, listen_address):
   nap_names = naps.keys()
   for nap_name in nap_names:
     nap = naps[nap_name]
-    customizeNetworkAccessPoint(nap, listen_address)
+    customizeNetworkAccessPoint(nap_name, nap, listen_address)
 
 
-def customizeNetworkAccessPoint(nap, listen_address):
+def customizeNetworkAccessPoint(nap_name, nap, listen_address):
   istio_enabled = env.getEnvOrDef("ISTIO_ENABLED", "false")
 
   if 'ListenAddress' in nap:
     original_listen_address = nap['ListenAddress']
     if len(original_listen_address) > 0:
       if istio_enabled == 'true':
-        nap['ListenAddress'] = '127.0.0.1'
+        if nap_name == 'http-probe':
+          nap['ListenAddress'] = listen_address
+        else:
+          nap['ListenAddress'] = '127.0.0.1'
       else:
         nap['ListenAddress'] = listen_address
 
