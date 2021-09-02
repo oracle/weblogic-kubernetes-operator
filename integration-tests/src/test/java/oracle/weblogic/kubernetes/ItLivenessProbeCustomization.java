@@ -7,10 +7,13 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
+import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -22,6 +25,7 @@ import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
+import oracle.weblogic.domain.ProbeTuning;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -42,19 +46,26 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getContainerRestartCount;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
+import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.copyFileToPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appNotAccessibleInPod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyDomainStatusCondition;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.LoggingUtil.checkPodLogContainsString;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodRestarted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -74,8 +85,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("okdenv")
 class ItLivenessProbeCustomization {
 
-  private static String domainNamespace = null;
-
   // domain constants
   private static final String domainUid = "liveprobecustom";
   private static final String MII_IMAGE_NAME = "liveprobecustom-mii";
@@ -88,6 +97,8 @@ class ItLivenessProbeCustomization {
   private static final String internalPort = "8001";
   private static final String appPath = "sample-war/index.jsp";
 
+  private static String domainNamespace = null;
+  private static String opNamespace = null;
   private static LoggingFacade logger = null;
 
   private static ConditionFactory withStandardRetryPolicy =
@@ -107,7 +118,7 @@ class ItLivenessProbeCustomization {
     // get a unique operator namespace
     logger.info("Getting a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
-    final String opNamespace = namespaces.get(0);
+    opNamespace = namespaces.get(0);
 
     // get a unique domain namespace
     logger.info("Getting a unique namespace for WebLogic domain");
@@ -239,6 +250,287 @@ class ItLivenessProbeCustomization {
     }
   }
 
+  /**
+   * Patch the domain with custom livenessProbe failureThreshold value in serverPod.
+   * Verify the domain is restarted and the failureThreshold is updated.
+   */
+  @Test
+  @DisplayName("Test custom livenessProbe failureThreshold")
+  void testCustomLivenessProbeFailureThreshold() {
+    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
+            domainUid, domainNamespace));
+    assertNotNull(domain1, "Got null domain resource");
+    assertNotNull(domain1.getSpec(), "domain1.getSpec is null");
+    assertNotNull(domain1.getSpec().getServerPod(), "domain1.getSpec().getServerPod() is null");
+    assertNotNull(domain1.getSpec().getServerPod().getLivenessProbe(),
+        "domain1.getSpec().getServerPod().getLivenessProbe()");
+
+    // get the default failureThreshold of livenessProbe
+    Integer failureThreshold = domain1.getSpec().getServerPod().getLivenessProbe().getFailureThreshold();
+    logger.info("Default livenessProbe failureThreshold is: {0}", failureThreshold);
+    assertTrue(failureThreshold.intValue() == 1, "The default livenessProbe failureThreshold is not 1");
+
+    // get the default successThreshold of livenessProbe
+    Integer successThreshold = domain1.getSpec().getServerPod().getLivenessProbe().getSuccessThreshold();
+    logger.info("Default livenessProbe successThreshold is: {0}", successThreshold);
+    assertTrue(successThreshold.intValue() == 1, "The default livenessProbe successThreshold is not 1");
+
+    // get the original admin server pod and managed server pods creation time
+    OffsetDateTime adminPodCreationTime =
+        assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", adminServerPodName),
+            String.format("Failed to get creationTimestamp for pod %s", adminServerPodName));
+    assertNotNull(adminPodCreationTime, "creationTimestamp of the admin server pod is null");
+
+    Map<String, OffsetDateTime> managedServerPodsCreationTime = new HashMap<>();
+    for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
+      for (int j = 1; j <= replicaCount; j++) {
+        String managedServerPodName =
+            domainUid + "-" + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
+        OffsetDateTime managedServerPodCreationTime =
+            assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", managedServerPodName),
+                String.format("Failed to get creationTimestamp for pod %s", managedServerPodName));
+        assertNotNull(managedServerPodCreationTime, "creationTimestamp of the managed server pod is null");
+        managedServerPodsCreationTime.put(managedServerPodName, managedServerPodCreationTime);
+      }
+    }
+
+    // patch the domain with custom failureThreshold
+    String patchStr
+        = "["
+        + "{\"op\": \"replace\", \"path\": \"/spec/serverPod/livenessProbe/failureThreshold\", \"value\": 3}"
+        + "]";
+    logger.info("Updating domain configuration using patch string: {0}", patchStr);
+    V1Patch patch = new V1Patch(patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        String.format("failed to patch domain %s in namespace %s", domainUid, domainNamespace));
+
+    // check the domain get restarted
+    checkPodRestarted(domainUid, domainNamespace, adminServerPodName, adminPodCreationTime);
+
+    for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
+      for (int j = 1; j <= replicaCount; j++) {
+        String managedServerPodName =
+            domainUid + "-" + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
+
+        checkPodRestarted(domainUid, domainNamespace, managedServerPodName,
+            managedServerPodsCreationTime.get(managedServerPodName));
+      }
+    }
+
+    // check the livenessProbe failureThreshold and successThreshold after the domain got patched
+    domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
+            domainUid, domainNamespace));
+    assertNotNull(domain1, "Got null domain resource");
+    assertNotNull(domain1.getSpec(), "domain1.getSpec is null");
+    assertNotNull(domain1.getSpec().getServerPod(), "domain1.getSpec().getServerPod() is null");
+    assertNotNull(domain1.getSpec().getServerPod().getLivenessProbe(),
+        "domain1.getSpec().getServerPod().getLivenessProbe()");
+
+    // get the default failureThreshold of livenessProbe
+    failureThreshold = domain1.getSpec().getServerPod().getLivenessProbe().getFailureThreshold();
+    logger.info("livenessProbe failureThreshold after patch is: {0}", failureThreshold);
+    assertTrue(failureThreshold.intValue() == 3, "The default livenessProbe failureThreshold is not 3");
+
+    // get the default successThreshold of livenessProbe
+    successThreshold = domain1.getSpec().getServerPod().getLivenessProbe().getSuccessThreshold();
+    logger.info("livenessProbe successThreshold after patch is: {0}", successThreshold);
+    assertTrue(successThreshold.intValue() == 1, "The default livenessProbe successThreshold is not 1");
+
+    // patch the domain back to the original state
+    // get the original admin server pod and managed server pods creation time
+    adminPodCreationTime =
+        assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", adminServerPodName),
+            String.format("Failed to get creationTimestamp for pod %s", adminServerPodName));
+    assertNotNull(adminPodCreationTime, "creationTimestamp of the admin server pod is null");
+
+    managedServerPodsCreationTime = new HashMap<>();
+    for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
+      for (int j = 1; j <= replicaCount; j++) {
+        String managedServerPodName =
+            domainUid + "-" + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
+        OffsetDateTime managedServerPodCreationTime =
+            assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", managedServerPodName),
+                String.format("Failed to get creationTimestamp for pod %s", managedServerPodName));
+        assertNotNull(managedServerPodCreationTime, "creationTimestamp of the managed server pod is null");
+        managedServerPodsCreationTime.put(managedServerPodName, managedServerPodCreationTime);
+      }
+    }
+
+    patchStr
+        = "["
+        + "{\"op\": \"replace\", \"path\": \"/spec/serverPod/livenessProbe/failureThreshold\", \"value\": 1}"
+        + "]";
+    logger.info("Updating domain configuration using patch string: {0}", patchStr);
+    patch = new V1Patch(patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        String.format("failed to patch domain %s in namespace %s", domainUid, domainNamespace));
+
+    // check the domain get restarted
+    checkPodRestarted(domainUid, domainNamespace, adminServerPodName, adminPodCreationTime);
+
+    for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
+      for (int j = 1; j <= replicaCount; j++) {
+        String managedServerPodName =
+            domainUid + "-" + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
+
+        checkPodRestarted(domainUid, domainNamespace, managedServerPodName,
+            managedServerPodsCreationTime.get(managedServerPodName));
+      }
+    }
+  }
+
+  /**
+   * Patch the domain with custom livenessProbe successThreshold value in serverPod.
+   * Verify the domain status failed and the successThreshold is updated.
+   */
+  @Test
+  @DisplayName("Test custom livenessProbe successThreshold")
+  void testCustomLivenessProbeSuccessThreshold() {
+    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
+            domainUid, domainNamespace));
+    assertNotNull(domain1, "Got null domain resource");
+    assertNotNull(domain1.getSpec(), "domain1.getSpec is null");
+    assertNotNull(domain1.getSpec().getServerPod(), "domain1.getSpec().getServerPod() is null");
+    assertNotNull(domain1.getSpec().getServerPod().getLivenessProbe(),
+        "domain1.getSpec().getServerPod().getLivenessProbe()");
+
+    // get the default successThreshold of livenessProbe
+    Integer successThreshold = domain1.getSpec().getServerPod().getLivenessProbe().getSuccessThreshold();
+    logger.info("Default livenessProbe successThreshold is: {0}", successThreshold);
+    assertTrue(successThreshold.intValue() == 1, "The default livenessProbe successThreshold is not 1");
+
+    // patch the domain with custom livenessProbe successThreshold
+    String patchStr =
+        "[{\"op\": \"replace\", \"path\": \"/spec/serverPod/livenessProbe/successThreshold\", \"value\": 2}]";
+    logger.info("Updating domain configuration using patch string: {0}", patchStr);
+    V1Patch patch = new V1Patch(patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        String.format("failed to patch domain %s in namespace %s", domainUid, domainNamespace));
+
+    // check the operator log contains expected error msg
+    String expectedErrorMsg = "Invalid value '2' for the liveness probe success threshold under "
+        + "'spec.adminServer.serverPod.livenessProbe.successThreshold'. "
+        + "The liveness probe successThreshold value must be 1.";
+    String operatorPodName =
+        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+    checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
+
+    // check the domain status conditions failed
+    verifyDomainStatusCondition(domainUid, domainNamespace, "Failed", expectedErrorMsg);
+
+    // set the domain back to original state
+    // patch the domain with the original livenessProbe successThreshold
+    patchStr = "[{\"op\": \"replace\", \"path\": \"/spec/serverPod/livenessProbe/successThreshold\", \"value\": 1}]";
+    logger.info("Updating domain configuration using patch string: {0}", patchStr);
+    patch = new V1Patch(patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        String.format("failed to patch domain %s in namespace %s", domainUid, domainNamespace));
+
+    domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
+            domainUid, domainNamespace));
+    assertNotNull(domain1, "Got null domain resource");
+    assertNotNull(domain1.getSpec(), "domain1.getSpec is null");
+    assertNotNull(domain1.getSpec().getServerPod(), "domain1.getSpec().getServerPod() is null");
+    assertNotNull(domain1.getSpec().getServerPod().getLivenessProbe(),
+        "domain1.getSpec().getServerPod().getLivenessProbe()");
+
+    // get the successThreshold of livenessProbe
+    successThreshold = domain1.getSpec().getServerPod().getLivenessProbe().getSuccessThreshold();
+    logger.info("Default livenessProbe successThreshold is: {0}", successThreshold);
+    assertTrue(successThreshold.intValue() == 1, "The livenessProbe successThreshold is not 1");
+  }
+
+  /**
+   * Patch the domain with custom readinessProbe failureThreshold and successThreshold value in serverPod.
+   * Verify the domain is restarted and the failureThreshold and sucessThreshold are updated.
+   */
+  @Test
+  @DisplayName("Test custom livenessProbe failureThreshold and successThreshold")
+  void testCustomReadinessProbeFailureThreshold() {
+    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
+            domainUid, domainNamespace));
+    assertNotNull(domain1, "Got null domain resource");
+    assertNotNull(domain1.getSpec(), "domain1.getSpec is null");
+    assertNotNull(domain1.getSpec().getServerPod(), "domain1.getSpec().getServerPod() is null");
+    assertNotNull(domain1.getSpec().getServerPod().getLivenessProbe(),
+        "domain1.getSpec().getServerPod().getLivenessProbe()");
+
+    // get the default failureThreshold of livenessProbe
+    Integer failureThreshold = domain1.getSpec().getServerPod().getLivenessProbe().getFailureThreshold();
+    logger.info("Default livenessProbe failureThreshold is: {0}", failureThreshold);
+    assertTrue(failureThreshold.intValue() == 1, "The default livenessProbe failureThreshold is not 1");
+
+    // get the default successThreshold of livenessProbe
+    Integer successThreshold = domain1.getSpec().getServerPod().getLivenessProbe().getSuccessThreshold();
+    logger.info("Default livenessProbe successThreshold is: {0}", successThreshold);
+    assertTrue(successThreshold.intValue() == 1, "The default livenessProbe successThreshold is not 1");
+
+    // get the original admin server pod and managed server pods creation time
+    OffsetDateTime adminPodCreationTime =
+        assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", adminServerPodName),
+            String.format("Failed to get creationTimestamp for pod %s", adminServerPodName));
+    assertNotNull(adminPodCreationTime, "creationTimestamp of the admin server pod is null");
+
+    Map<String, OffsetDateTime> managedServerPodsCreationTime = new HashMap<>();
+    for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
+      for (int j = 1; j <= replicaCount; j++) {
+        String managedServerPodName =
+            domainUid + "-" + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
+        OffsetDateTime managedServerPodCreationTime =
+            assertDoesNotThrow(() -> getPodCreationTimestamp(domainNamespace, "", managedServerPodName),
+                String.format("Failed to get creationTimestamp for pod %s", managedServerPodName));
+        assertNotNull(managedServerPodCreationTime, "creationTimestamp of the managed server pod is null");
+        managedServerPodsCreationTime.put(managedServerPodName, managedServerPodCreationTime);
+      }
+    }
+
+    // patch the domain with custom failureThreshold
+    String patchStr
+        = "[{\"op\": \"replace\", \"path\": \"/spec/serverPod/readinessProbe/failureThreshold\", \"value\": 3}, "
+        + "{\"op\": \"replace\", \"path\": \"/spec/serverPod/readinessProbe/successThreshold\", \"value\": 3}]";
+    logger.info("Updating domain configuration using patch string: {0}", patchStr);
+    V1Patch patch = new V1Patch(patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+        String.format("failed to patch domain %s in namespace %s", domainUid, domainNamespace));
+
+    // check the domain get restarted
+    checkPodRestarted(domainUid, domainNamespace, adminServerPodName, adminPodCreationTime);
+
+    for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
+      for (int j = 1; j <= replicaCount; j++) {
+        String managedServerPodName =
+            domainUid + "-" + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
+
+        checkPodRestarted(domainUid, domainNamespace, managedServerPodName,
+            managedServerPodsCreationTime.get(managedServerPodName));
+      }
+    }
+
+    // check the readinessProbe failureThreshold and successThreshold after the domain got patched
+    domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
+        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
+            domainUid, domainNamespace));
+    assertNotNull(domain1, "Got null domain resource");
+    assertNotNull(domain1.getSpec(), "domain1.getSpec is null");
+    assertNotNull(domain1.getSpec().getServerPod(), "domain1.getSpec().getServerPod() is null");
+    assertNotNull(domain1.getSpec().getServerPod().getReadinessProbe(),
+        "domain1.getSpec().getServerPod().getReadinessProbe() is null");
+
+    // get the failureThreshold of readinessProbe after patch
+    failureThreshold = domain1.getSpec().getServerPod().getReadinessProbe().getFailureThreshold();
+    logger.info("readinessProbe failureThreshold after patch is: {0}", failureThreshold);
+    assertTrue(failureThreshold.intValue() == 3, "The readinessProbe failureThreshold after patch is not 3");
+
+    // get the successThreshold of readinessProbe
+    successThreshold = domain1.getSpec().getServerPod().getReadinessProbe().getSuccessThreshold();
+    logger.info("readinessProbe successThreshold after patch is: {0}", successThreshold);
+    assertTrue(successThreshold.intValue() == 3, "The readinessProbe successThreshold after patch is not 3");
+  }
 
   /**
    * Create a model in image domain and verify the server pods are ready.
@@ -296,6 +588,12 @@ class ItLivenessProbeCustomization {
                 .addEnvItem(new V1EnvVar()
                     .name("LIVENESS_PROBE_CUSTOM_SCRIPT")
                     .value("/u01/customLivenessProbe.sh"))
+                .livenessProbe(new ProbeTuning()
+                    .failureThreshold(1)
+                    .successThreshold(1))
+                .readinessProbe(new ProbeTuning()
+                    .failureThreshold(1)
+                    .successThreshold(1))
                 .resources(new V1ResourceRequirements()
                     .limits(new HashMap<>())
                     .requests(new HashMap<>())))
@@ -307,6 +605,7 @@ class ItLivenessProbeCustomization {
                     .domainType(WLS_DOMAIN_TYPE)
                     .runtimeEncryptionSecret(encryptionSecretName))));
     setPodAntiAffinity(domain);
+
     // create model in image domain
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
         domainUid, domainNamespace, miiImage);
