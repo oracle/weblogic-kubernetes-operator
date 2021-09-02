@@ -84,6 +84,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listConfigMaps;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podIntrospectVersionUpdated;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
@@ -1468,7 +1469,7 @@ public class CommonMiiTestUtils {
   }
 
   /**
-   * Create model in image domain with multiple clusters.
+   * Create model in image istio enabled domain with multiple clusters.
    *
    * @param domainUid the uid of the domain
    * @param domainNamespace namespace in which the domain will be created
@@ -1482,6 +1483,27 @@ public class CommonMiiTestUtils {
                                                              String miiImage,
                                                              int numOfClusters,
                                                              int replicaCount) {
+    return createMiiDomainWithIstioMultiClusters(domainUid, domainNamespace, miiImage, numOfClusters,
+        replicaCount, null);
+  }
+
+  /**
+   * Create model in image istio enabled domain with multiple clusters.
+   *
+   * @param domainUid the uid of the domain
+   * @param domainNamespace namespace in which the domain will be created
+   * @param miiImage model in image domain docker image
+   * @param numOfClusters number of clusters in the domain
+   * @param replicaCount replica count of the cluster
+   * @param serverPodLabels the labels for the server pod
+   * @return oracle.weblogic.domain.Domain objects
+   */
+  public static Domain createMiiDomainWithIstioMultiClusters(String domainUid,
+                                                             String domainNamespace,
+                                                             String miiImage,
+                                                             int numOfClusters,
+                                                             int replicaCount,
+                                                             Map<String, String> serverPodLabels) {
 
     LoggingFacade logger = getLogger();
     // admin/managed server name here should match with WDT model yaml file
@@ -1490,25 +1512,39 @@ public class CommonMiiTestUtils {
     // create docker registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
     logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
-    createOcirRepoSecret(domainNamespace);
+    if (!secretExists(OCIR_SECRET_NAME, domainNamespace)) {
+      createOcirRepoSecret(domainNamespace);
+    }
 
     // create secret for admin credentials
     logger.info("Creating secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
-    createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+    if (!secretExists(adminSecretName, domainNamespace)) {
+      createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT,
+          ADMIN_PASSWORD_DEFAULT);
+    }
 
     // create encryption secret
     logger.info("Creating encryption secret");
     String encryptionsecret = "encryptionsecret";
-    createSecretWithUsernamePassword(encryptionsecret, domainNamespace, "weblogicenc", "weblogicenc");
+    if (!secretExists(encryptionsecret, domainNamespace)) {
+      createSecretWithUsernamePassword(encryptionsecret, domainNamespace, "weblogicenc", "weblogicenc");
+    }
 
     // construct the cluster list used for domain custom resource
     List<Cluster> clusterList = new ArrayList<>();
     for (int i = numOfClusters; i >= 1; i--) {
-      clusterList.add(new Cluster()
+      Cluster cluster = new Cluster()
           .clusterName("cluster-" + i)
           .replicas(replicaCount)
-          .serverStartState("RUNNING"));
+          .serverStartState("RUNNING");
+
+      if (serverPodLabels != null) {
+        cluster.serverPod(new ServerPod()
+            .labels(serverPodLabels));
+      }
+
+      clusterList.add(cluster);
     }
 
     // set resource request and limit
