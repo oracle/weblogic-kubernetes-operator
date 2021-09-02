@@ -18,7 +18,6 @@ import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -225,7 +224,6 @@ class ItMiiServiceMigration {
    * Here the JMS messages are stored in Filestore on PV
    */
   @Test
-  @Order(1)
   @DisplayName("Verify JMS Service migration with FileStore")
   void testMiiJmsServiceMigrationWithFileStore() {
 
@@ -261,7 +259,6 @@ class ItMiiServiceMigration {
    * Here the JMS messages are stored in the JDBC store.
    */
   @Test
-  @Order(2)
   @DisplayName("Verify JMS Service migration with JDBCStore")
   void testMiiJmsServiceMigrationWithJdbcStore() {
 
@@ -308,7 +305,6 @@ class ItMiiServiceMigration {
    * server ms2 when the server ms2 is re-started.
    */
   @Test
-  @Order(3)
   @DisplayName("Verify JTA Recovery Service migration to an active server")
   void testMiiJtaServiceMigration() {
 

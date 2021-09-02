@@ -37,7 +37,6 @@ import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -379,7 +378,6 @@ class ItIstioCrossDomainTransaction {
    * If the server listen-addresses are resolvable between the transaction
    * participants, then the transaction should complete successfully
    */
-  @Order(1)
   @Test
   @DisplayName("Check cross domain transaction with istio works")
   void testIstioCrossDomainTransaction() {
@@ -417,7 +415,6 @@ class ItIstioCrossDomainTransaction {
    * domain1 admin server should be able to re-establish the connection with
    * domain2 and the transaction should commit.
    */
-  @Order(2)
   @Test
   @DisplayName("Check cross domain transaction with istio and with TMAfterTLogBeforeCommitExit property commits")
   void testIstioCrossDomainTransactionWithFailInjection() {
@@ -455,7 +452,6 @@ class ItIstioCrossDomainTransaction {
    * targeted to a cluster of two servers, onMessage() will be triggered
    * for both instance of MDB for a message sent to Distributed Topic
    */
-  @Order(3)
   @Test
   @DisplayName("Check cross domain transcated MDB communication with istio")
   void testIstioCrossDomainTranscatedMDB() {

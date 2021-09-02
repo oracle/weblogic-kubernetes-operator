@@ -32,8 +32,9 @@ import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -88,6 +89,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  *     Alternativley add SecurityConfiguration/SecureMode to topology section 
  * (d) add a SSL Configuration to the server template
  */
+
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test Secure NodePort service through admin port and default-admin channel in a mii domain")
 @IntegrationTest
 class ItProductionSecureMode {
@@ -206,7 +209,6 @@ class ItProductionSecureMode {
    * Check the `default-secure` and `default-admin` port on cluster service.
    */
   @Test
-  @Order(1)
   @DisplayName("Verify the secure service through administration port")
   void testVerifyProductionSecureMode() {
     int defaultAdminPort = getServiceNodePort(
@@ -267,7 +269,6 @@ class ItProductionSecureMode {
    * Verify the introspect version is updated.
    */
   @Test
-  @Order(2)
   @DisplayName("Verify MII dynamic update with SSL enabled")
   void testMiiDynamicChangeWithSSLEnabled() {
 
