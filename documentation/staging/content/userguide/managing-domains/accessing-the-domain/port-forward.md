@@ -58,6 +58,10 @@ wls:/base_domain/serverConfig/> exit()
 
 If the WebLogic administration port is configured and enabled on the Administration Server, then you will need to forward the local port to the administration port. In this case, the Administration Console access requires using the secure `https` protocol and WLST access requires using `t3s` protocol. Similarly, when the SSL port is configured and enabled, using the SSL port requires using the `https` and `t3s` protocols for Console and WLST access respectively.
 
+{{% notice warning %}}
+A port-forward connection can expose a WebLogic T3 or Administrative channel outside the Kubernetes cluster. See [WebLogic T3 channels]({{< relref "/security/domain-security/weblogic-channels#weblogic-t3-channels" >}}) for domain security considerations when exposing WebLogic T3 channels outside the Kubernetes cluster.
+{{% /notice %}}
+
 {{% notice note %}}
 A port-forward connection terminates once the Pod instance fails or restarts. You can rerun the same command to establish a new forwarding session and resume forwarding.
 {{% /notice %}}

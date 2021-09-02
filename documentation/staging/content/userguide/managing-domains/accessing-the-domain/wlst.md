@@ -14,8 +14,28 @@ You can use the WebLogic Scripting Tool (WLST) to manage a domain running in Kub
 
 
 #### Configure the Administration Server to expose a T3 channel
+The Administration Server can be configured to expose a T3 channel by configuring a Network Access Point (custom channel) with 'T3' protocol on Administration Server and exposing the T3Channel via a NodePort service using `domain.spec.adminServer.adminService.channels` attribute.  
 
-You can use the `exposeAdminT3Channel` setting when creating the domain to configure the Administration Server to expose a T3 channel.  For example, if the `domainUID` is `domain1`, and the Administration Server name is `admin-server`, then the service would be called:
+Here is an example snippet of a WebLogic domain `config.xml` file for channel `T3Channel` defined for an Administration Server named `admin-server`:
+ 
+```xml
+<server>
+  <name>admin-server</name>
+  <listen-port>7001</listen-port>
+  <listen-address/>
+  <network-access-point>
+    <name>T3Channel</name>
+    <protocol>t3</protocol>
+    <public-address>kubernetes001</public-address>
+    <listen-port>30012</listen-port>
+    <public-port>30012</public-port>
+  </network-access-point>
+</server>
+```
+
+For more details on exposing the T3Channel via a NodePort service, run the `kubectl explain domain.spec.adminServer.adminService.channels` or see in the domain resource [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md) and [documentation]({{< relref "/userguide/managing-domains/domain-resource.md" >}}). Also, see [WebLogic T3 channels]({{< relref "/security/domain-security/weblogic-channels#weblogic-t3-channels" >}}) for domain security considerations when exposing WebLogic T3 channels outside the Kubernetes cluster.
+
+For example, if the `domainUID` is `domain1`, and the Administration Server name is `admin-server`, then the service would be called:
 
 ```
 domain1-admin-server-ext
