@@ -20,10 +20,10 @@ public class ProbeTuning {
   private Integer timeoutSeconds;
 
   @ApiModelProperty("Number of times the check is performed before giving up.")
-  private Integer failureThreshold;
+  private Integer failureThreshold = 1;
 
   @ApiModelProperty("Minimum number of times the check needs to pass for the probe to be considered successful")
-  private Integer successThreshold;
+  private Integer successThreshold = 1;
 
   public ProbeTuning initialDelaySeconds(Integer initialDelaySeconds) {
     this.initialDelaySeconds = initialDelaySeconds;
