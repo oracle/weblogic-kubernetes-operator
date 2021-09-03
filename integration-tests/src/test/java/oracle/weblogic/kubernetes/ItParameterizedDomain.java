@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+jps// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -554,7 +554,7 @@ class ItParameterizedDomain {
           execResult.exitValue(), execResult.stdout(), execResult.stderr());
 
       try {
-        Thread.sleep(2 * 1000);
+        Thread.sleep(600 * 1000);
       } catch (InterruptedException ie) {
         // ignore
       }
