@@ -38,7 +38,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -49,8 +48,6 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
@@ -71,6 +68,7 @@ import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomRe
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
@@ -110,7 +108,6 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScript;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -154,12 +151,6 @@ class ItKubernetesEvents {
   final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
   private static final String domainUid = "k8seventsdomain";
   private final String wlSecretName = "weblogic-credentials";
-
-  // create standard, reusable retry/backoff policy
-  private static final ConditionFactory withStandardRetryPolicy
-      = with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(10, MINUTES).await();
 
   private static LoggingFacade logger = null;
 
@@ -892,42 +883,34 @@ class ItKubernetesEvents {
   private static void checkEvent(
       String opNamespace, String domainNamespace, String domainUid,
       String reason, String type, OffsetDateTime timestamp) {
-    withStandardRetryPolicy
-        .conditionEvaluationListener(condition ->
-            logger.info("Waiting for domain event {0} to be logged in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                reason,
-                domainNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid, reason, type, timestamp));
+    testUntil(
+        checkDomainEvent(opNamespace, domainNamespace, domainUid, reason, type, timestamp),
+        logger,
+        "domain event {0} to be logged in namespace {1}",
+        reason,
+        domainNamespace);
   }
 
   private static void checkNamespaceWatchingStoppedEvent(
       String opNamespace, String domainNamespace, String domainUid,
       String type, OffsetDateTime timestamp, boolean enableClusterRoleBinding) {
-    withStandardRetryPolicy
-        .conditionEvaluationListener(condition ->
-            logger.info("Waiting for domain event NamespaceWatchingStopped to be logged in namespace {0} "
-                    + "(elapsed time {1}ms, remaining time {2}ms)",
-                domainNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(checkDomainEventWatchingStopped(opNamespace, domainNamespace, domainUid, type, timestamp,
-            enableClusterRoleBinding));
+    testUntil(
+        checkDomainEventWatchingStopped(
+            opNamespace, domainNamespace, domainUid, type, timestamp, enableClusterRoleBinding),
+        logger,
+        "domain event NamespaceWatchingStopped to be logged in namespace {0}",
+        domainNamespace);
   }
 
   private static void checkEventWithCount(
       String opNamespace, String domainNamespace, String domainUid,
       String reason, String type, OffsetDateTime timestamp, int countBefore) {
-    withStandardRetryPolicy
-        .conditionEvaluationListener(condition -> logger.info("Waiting for domain event {0} to be logged "
-                + "(elapsed time {1}ms, remaining time {2}ms)",
-            reason,
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
-        .until(checkDomainEventWithCount(opNamespace, domainNamespace, domainUid,
-            reason, type, timestamp, countBefore));
+    testUntil(
+        checkDomainEventWithCount(
+            opNamespace, domainNamespace, domainUid, reason, type, timestamp, countBefore),
+        logger,
+        "domain event {0} to be logged",
+        reason);
   }
 
   // Create and start a WebLogic domain in PV

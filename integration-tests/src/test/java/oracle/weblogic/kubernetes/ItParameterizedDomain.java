@@ -58,7 +58,6 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -71,8 +70,6 @@ import static java.nio.file.Files.copy;
 import static java.nio.file.Files.createDirectories;
 import static java.nio.file.Files.readString;
 import static java.nio.file.Paths.get;
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
@@ -123,6 +120,7 @@ import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWai
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.doesFileExistInPod;
@@ -152,7 +150,6 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -207,11 +204,6 @@ class ItParameterizedDomain {
   private static Map<String, Quantity> resourceLimit = new HashMap<>();
 
   private String curlCmd = null;
-
-  private ConditionFactory withStandardRetryPolicy =
-      with().pollDelay(1, SECONDS)
-          .and().with().pollInterval(5, SECONDS)
-          .atMost(1, MINUTES).await();
 
   /**
    * Install operator and NGINX.
@@ -756,42 +748,26 @@ class ItParameterizedDomain {
     assertNotNull(domain1, "Got null domain resource after patching");
     assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
 
-    ConditionFactory withStandardRetryPolicy
-            = with().pollDelay(2, SECONDS)
-            .and().with().pollInterval(10, SECONDS)
-            .atMost(10, MINUTES).await();
-
     //verify domain changed event is logged
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for domain event {0} to be logged "
-                + "(elapsed time {1}ms, remaining time {2}ms)",
-                DOMAIN_CHANGED,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(checkDomainEvent(opNamespace, miiDomainNamespace, miiDomainUid,
-            DOMAIN_CHANGED, "Normal", timestamp));
+    testUntil(
+        checkDomainEvent(opNamespace, miiDomainNamespace, miiDomainUid, DOMAIN_CHANGED, "Normal", timestamp),
+        logger,
+        "domain event {0} to be logged",
+        DOMAIN_CHANGED);
 
     // verify the DomainProcessing Starting/Completed event is generated
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for domain event {0} to be logged "
-                + "(elapsed time {1}ms, remaining time {2}ms)",
-                DOMAIN_PROCESSING_STARTING,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(checkDomainEvent(opNamespace, miiDomainNamespace, miiDomainUid,
-            DOMAIN_PROCESSING_STARTING, "Normal", timestamp));
+    testUntil(
+        checkDomainEvent(
+            opNamespace, miiDomainNamespace, miiDomainUid, DOMAIN_PROCESSING_STARTING, "Normal", timestamp),
+        logger,
+        "domain event {0} to be logged",
+        DOMAIN_PROCESSING_STARTING);
 
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for domain event {0} to be logged "
-                + "(elapsed time {1}ms, remaining time {2}ms)",
-                DOMAIN_PROCESSING_COMPLETED,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(checkDomainEvent(opNamespace, miiDomainNamespace, miiDomainUid,
-            DOMAIN_PROCESSING_COMPLETED, "Normal", timestamp));
+    testUntil(
+        checkDomainEvent(
+            opNamespace, miiDomainNamespace, miiDomainUid, DOMAIN_PROCESSING_COMPLETED, "Normal", timestamp),
+        logger,
+        DOMAIN_PROCESSING_COMPLETED);
 
     // Verify that pod termination and started events are logged only once for each managed server in each cluster
     for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
@@ -801,26 +777,18 @@ class ItParameterizedDomain {
 
         logger.info("Checking that managed server pod {0} is terminated and restarted once in namespace {1}",
             managedServerPodName, miiDomainNamespace);
-        withStandardRetryPolicy
-            .conditionEvaluationListener(
-                condition -> logger.info("Waiting for event {0} to be logged for pod {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                    POD_TERMINATED,
-                    managedServerPodName,
-                    condition.getElapsedTimeInMS(),
-                    condition.getRemainingTimeInMS()))
-            .until(checkPodEventLoggedOnce(miiDomainNamespace,
-                managedServerPodName, POD_TERMINATED, timestamp));
-        withStandardRetryPolicy
-            .conditionEvaluationListener(
-                condition -> logger.info("Waiting for event {0} to be logged for pod {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                    POD_STARTED,
-                    managedServerPodName,
-                    condition.getElapsedTimeInMS(),
-                    condition.getRemainingTimeInMS()))
-            .until(checkPodEventLoggedOnce(miiDomainNamespace,
-                managedServerPodName, POD_STARTED, timestamp));
+        testUntil(
+            checkPodEventLoggedOnce(miiDomainNamespace, managedServerPodName, POD_TERMINATED, timestamp),
+            logger,
+            "event {0} to be logged for pod {1}",
+            POD_TERMINATED,
+            managedServerPodName);
+        testUntil(
+            checkPodEventLoggedOnce(miiDomainNamespace, managedServerPodName, POD_STARTED, timestamp),
+            logger,
+            "event {0} to be logged for pod {1}",
+            POD_STARTED,
+            managedServerPodName);
       }
     }
   }
@@ -1545,17 +1513,13 @@ class ItParameterizedDomain {
   private void waitForFileExistsInPod(String namespace, String podName, String fileName) {
 
     logger.info("Wait for file {0} existing in pod {1} in namespace {2}", fileName, podName, namespace);
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for file {0} existing in pod {1} in namespace {2} "
-                    + "(elapsed time {3}ms, remaining time {4}ms)",
-                fileName,
-                podName,
-                namespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> fileExistsInPod(namespace, podName, fileName),
-            "fileExistsInPod failed with IOException, ApiException or InterruptedException"));
+    testUntil(
+        assertDoesNotThrow(() -> fileExistsInPod(namespace, podName, fileName)),
+        logger,
+        "fileExistsInPod failed with IOException, ApiException or InterruptedException",
+        fileName,
+        podName,
+        namespace);
   }
 
   /**
