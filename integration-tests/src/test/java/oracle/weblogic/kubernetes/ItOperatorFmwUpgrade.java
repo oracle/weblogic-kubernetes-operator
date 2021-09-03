@@ -39,6 +39,7 @@ import oracle.weblogic.kubernetes.utils.CleanupUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -92,7 +93,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Tests to upgrade Operator with FMW domain in PV using WLST")
 @IntegrationTest
-class ItOpUpgradeFmwDomainInPV {
+class ItOperatorFmwUpgrade {
 
   private static String opNamespace1 = null;
   private static String opNamespace2 = null;
@@ -206,6 +207,7 @@ class ItOpUpgradeFmwDomainInPV {
    * Verify Domain resource version is updated while domain is in running state.
    */
   @Test
+  @Disabled("Disable FMW upgrade usecase from version 2.6.0")
   @DisplayName("Upgrade Operator from 2.6.0 to main")
   void testOperatorFmwUpgradeFrom260ToMain() {
     installAndUpgradeOperator("2.6.0", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX,  false);
@@ -215,6 +217,7 @@ class ItOpUpgradeFmwDomainInPV {
    * Operator upgrade from 3.0.3 to latest with a FMW Domain.
    */
   @Test
+  @Disabled("Disable FMW upgrade usecase from version 3.0.3")
   @DisplayName("Upgrade Operator from 3.0.3 to main")
   void testOperatorFmwUpgradeFrom303ToMain() {
     this.namespaces = namespaces;
@@ -235,6 +238,7 @@ class ItOpUpgradeFmwDomainInPV {
    * Operator upgrade from 3.1.3 to latest with a FMW Domain.
    */
   @Test
+  @Disabled("Disable FMW upgrade usecase from version 3.1.3")
   @DisplayName("Upgrade Operator from 3.1.3 to main")
   void testOperatorFmwUpgradeFrom313ToMain() {
     installAndUpgradeOperator("3.1.3", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
@@ -253,6 +257,7 @@ class ItOpUpgradeFmwDomainInPV {
    * Operator upgrade from 3.2.0 to latest with a FMW Domain.
    */
   @Test
+  @Disabled("Disable FMW upgrade usecase from version 3.2.0")
   @DisplayName("Upgrade Operator from 3.2.0 to main")
   void testOperatorFmwUpgradeFrom320ToMain() {
     installAndUpgradeOperator("3.2.0", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
@@ -262,6 +267,7 @@ class ItOpUpgradeFmwDomainInPV {
    * Operator upgrade from 3.2.4 to latest with a FMW Domain.
    */
   @Test
+  @Disabled("Disable FMW upgrade usecase from version 3.2.4")
   @DisplayName("Upgrade Operator from 3.2.4 to main")
   void testOperatorFmwUpgradeFrom324ToMain() {
     installAndUpgradeOperator("3.2.4", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
@@ -274,6 +280,15 @@ class ItOpUpgradeFmwDomainInPV {
   @DisplayName("Upgrade Operator from 3.2.5 to main")
   void testOperatorFmwUpgradeFrom325ToMain() {
     installAndUpgradeOperator("3.2.5", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+  }
+
+  /**
+   * Operator upgrade from 3.3.1 to latest with a FMW Domain.
+   */
+  @Test
+  @DisplayName("Upgrade Operator from 3.3.1 to main")
+  void testOperatorFmwUpgradeFrom331ToMain() {
+    installAndUpgradeOperator("3.3.1", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   private void installAndUpgradeOperator(String operatorVersion,

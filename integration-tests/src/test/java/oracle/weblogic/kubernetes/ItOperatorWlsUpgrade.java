@@ -23,6 +23,7 @@ import oracle.weblogic.kubernetes.utils.CleanupUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
@@ -123,6 +124,7 @@ class ItOperatorWlsUpgrade {
    * Verify Domain resource version is updated while domain is in running state.
    */
   @Test
+  @Disabled("Disable WLS upgrade usecase from version 2.6.0")
   @DisplayName("Upgrade Operator from 2.6.0 to main")
   void testOperatorWlsUpgradeFrom260ToMain() {
     upgradeOperator("domain-in-image", "2.6.0", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX,  false);
@@ -132,6 +134,7 @@ class ItOperatorWlsUpgrade {
    * Operator upgrade from 3.0.3 to latest.
    */
   @ParameterizedTest
+  @Disabled("Disable WLS upgrade usecase from version 3.0.3")
   @DisplayName("Upgrade Operator from 3.0.3 to main")
   @ValueSource(strings = { "domain-in-image", "model-in-image" })
   void testOperatorWlsUpgradeFrom303ToMain(String domainType) {
@@ -154,6 +157,7 @@ class ItOperatorWlsUpgrade {
    * Operator upgrade from 3.1.3 to latest.
    */
   @ParameterizedTest
+  @Disabled("Disable WLS upgrade usecase from version 3.1.3")
   @DisplayName("Upgrade Operator from 3.1.3 to main")
   @ValueSource(strings = { "domain-in-image", "model-in-image" })
   void testOperatorWlsUpgradeFrom313ToMain(String domainType) {
@@ -176,6 +180,7 @@ class ItOperatorWlsUpgrade {
    * Operator upgrade from 3.2.0 to latest.
    */
   @ParameterizedTest
+  @Disabled("Disable WLS upgrade usecase from version 3.2.0")
   @DisplayName("Upgrade Operator from 3.2.0 to main")
   @ValueSource(strings = { "domain-in-image", "model-in-image" })
   void testOperatorWlsUpgradeFrom320ToMain(String domainType) {
@@ -187,6 +192,7 @@ class ItOperatorWlsUpgrade {
    * Operator upgrade from 3.2.4 to latest.
    */
   @ParameterizedTest
+  @Disabled("Disable WLS upgrade usecase from version 3.2.4")
   @DisplayName("Upgrade Operator from 3.2.4 to main")
   @ValueSource(strings = { "domain-in-image", "model-in-image" })
   void testOperatorWlsUpgradeFrom324ToMain(String domainType) {
@@ -203,6 +209,17 @@ class ItOperatorWlsUpgrade {
   void testOperatorWlsUpgradeFrom325ToMain(String domainType) {
     logger.info("Starting test testOperatorWlsUpgradeFrom322ToMain with domain type {0}", domainType);
     upgradeOperator(domainType, "3.2.5", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+  }
+
+  /**
+   * Operator upgrade from 3.3.1 to latest.
+   */
+  @ParameterizedTest
+  @DisplayName("Upgrade Operator from 3.3.1 to main")
+  @ValueSource(strings = { "domain-in-image", "model-in-image" })
+  void testOperatorWlsUpgradeFrom331ToMain(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom331ToMain with domain type {0}", domainType);
+    upgradeOperator(domainType, "3.3.1", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
