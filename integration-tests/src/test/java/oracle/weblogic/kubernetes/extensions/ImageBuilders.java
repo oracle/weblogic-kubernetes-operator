@@ -84,6 +84,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.dockerPull;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.cleanupDirectory;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.installIstio;
@@ -107,7 +108,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
   private static Collection<String> pushedImages = new ArrayList<>();
   private static boolean isInitializationSuccessful = false;
 
-  ConditionFactory withStandardRetryPolicy
+  ConditionFactory withVeryLongRetryPolicy
       = with().pollDelay(0, SECONDS)
       .and().with().pollInterval(10, SECONDS)
       .atMost(30, MINUTES).await();
@@ -147,23 +148,19 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
         // docker login to OCR or OCIR if OCR_USERNAME and OCR_PASSWORD is provided in env var
         if (BASE_IMAGES_REPO.equals(OCR_REGISTRY)) {
           if (!OCR_USERNAME.equals(REPO_DUMMY_VALUE)) {
-            withStandardRetryPolicy
-                .conditionEvaluationListener(
-                    condition -> logger.info("Waiting for docker login to OCR to be successful"
-                            + "(elapsed time {0} ms, remaining time {1} ms)",
-                        condition.getElapsedTimeInMS(),
-                        condition.getRemainingTimeInMS()))
-                .until(() -> dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD));
+            testUntil(
+                withVeryLongRetryPolicy,
+                () -> dockerLogin(OCR_REGISTRY, OCR_USERNAME, OCR_PASSWORD),
+                logger,
+                "docker login to OCR to be successful");
           }
         } else if (BASE_IMAGES_REPO.equals(OCIR_REGISTRY)) {
           if (!OCIR_USERNAME.equals(REPO_DUMMY_VALUE)) {
-            withStandardRetryPolicy
-                .conditionEvaluationListener(
-                    condition -> logger.info("Waiting for docker login to OCIR to be successful"
-                            + "(elapsed time {0} ms, remaining time {1} ms)",
-                        condition.getElapsedTimeInMS(),
-                        condition.getRemainingTimeInMS()))
-                .until(() -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD));
+            testUntil(
+                withVeryLongRetryPolicy,
+                () -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD),
+                logger,
+                "docker login to OCIR to be successful");
           }
         }
         // The following code is for pulling WLS images if running tests in Kind cluster
@@ -183,41 +180,33 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
           images.add(DB_IMAGE_NAME + ":" + DB_IMAGE_TAG);
 
           for (String image : images) {
-            withStandardRetryPolicy
-                .conditionEvaluationListener(
-                    condition -> logger.info("Waiting for pullImageFromOcrOrOcirAndPushToKind for image {0} to be "
-                            + "successful (elapsed time {1} ms, remaining time {2} ms)", image,
-                        condition.getElapsedTimeInMS(),
-                        condition.getRemainingTimeInMS()))
-                .until(pullImageFromOcrOrOcirAndPushToKind(image)
-                );
+            testUntil(
+                withVeryLongRetryPolicy,
+                pullImageFromOcrOrOcirAndPushToKind(image),
+                logger,
+                "pullImageFromOcrOrOcirAndPushToKind for image {0} to be successful",
+                image);
           }
         }
 
         if (System.getenv("SKIP_BASIC_IMAGE_BUILD") == null) {
           // build MII basic image
           miiBasicImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
-          withStandardRetryPolicy
-              .conditionEvaluationListener(
-                  condition -> logger.info("Waiting for createBasicImage to be successful"
-                          + "(elapsed time {0} ms, remaining time {1} ms)",
-                      condition.getElapsedTimeInMS(),
-                      condition.getRemainingTimeInMS()))
-              .until(createBasicImage(MII_BASIC_IMAGE_NAME, MII_BASIC_IMAGE_TAG, MII_BASIC_WDT_MODEL_FILE,
-                  null, MII_BASIC_APP_NAME, MII_BASIC_IMAGE_DOMAINTYPE)
-              );
+          testUntil(
+              withVeryLongRetryPolicy,
+              createBasicImage(MII_BASIC_IMAGE_NAME, MII_BASIC_IMAGE_TAG, MII_BASIC_WDT_MODEL_FILE,
+                null, MII_BASIC_APP_NAME, MII_BASIC_IMAGE_DOMAINTYPE),
+              logger,
+              "createBasicImage to be successful");
 
           // build basic wdt-domain-in-image image
           wdtBasicImage = WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG;
-          withStandardRetryPolicy
-              .conditionEvaluationListener(
-                  condition -> logger.info("Waiting for createBasicImage to be successful"
-                          + "(elapsed time {0} ms, remaining time {1} ms)",
-                      condition.getElapsedTimeInMS(),
-                      condition.getRemainingTimeInMS()))
-              .until(createBasicImage(WDT_BASIC_IMAGE_NAME, WDT_BASIC_IMAGE_TAG, WDT_BASIC_MODEL_FILE,
-                  WDT_BASIC_MODEL_PROPERTIES_FILE, WDT_BASIC_APP_NAME, WDT_BASIC_IMAGE_DOMAINTYPE)
-              );
+          testUntil(
+              withVeryLongRetryPolicy,
+              createBasicImage(WDT_BASIC_IMAGE_NAME, WDT_BASIC_IMAGE_TAG, WDT_BASIC_MODEL_FILE,
+                WDT_BASIC_MODEL_PROPERTIES_FILE, WDT_BASIC_APP_NAME, WDT_BASIC_IMAGE_DOMAINTYPE),
+              logger,
+              "createBasicImage to be successful");
 
           /* Check image exists using docker images | grep image tag.
            * Tag name is unique as it contains date and timestamp.
@@ -235,13 +224,11 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
 
         if (!OCIR_USERNAME.equals(REPO_DUMMY_VALUE)) {
           logger.info("docker login");
-          withStandardRetryPolicy
-              .conditionEvaluationListener(
-                  condition -> logger.info("Waiting for docker login to OCIR to be successful"
-                          + "(elapsed time {0} ms, remaining time {1} ms)",
-                      condition.getElapsedTimeInMS(),
-                      condition.getRemainingTimeInMS()))
-              .until(() -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD));
+          testUntil(
+              withVeryLongRetryPolicy,
+              () -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD),
+              logger,
+              "docker login to OCIR to be successful");
         }
 
         // push the images to repo
@@ -261,14 +248,12 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
             } else {
               logger.info("docker push image {0} to {1}", image, DOMAIN_IMAGES_REPO);
             }
-            withStandardRetryPolicy
-                .conditionEvaluationListener(
-                    condition -> logger.info("Waiting for docker push to OCIR/kind for image {0} to be successful"
-                            + "(elapsed time {1} ms, remaining time {2} ms)",
-                        image,
-                        condition.getElapsedTimeInMS(),
-                        condition.getRemainingTimeInMS()))
-                .until(() -> dockerPush(image));
+            testUntil(
+                withVeryLongRetryPolicy,
+                () -> dockerPush(image),
+                logger,
+                "docker push to OCIR/kind for image {0} to be successful",
+                image);
           }
 
           // list images for Kind cluster

@@ -31,7 +31,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getJob;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createfixPVCOwnerContainer;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -54,15 +54,12 @@ public class JobUtils {
     String jobName = assertDoesNotThrow(() -> createNamespacedJob(jobBody), "createNamespacedJob failed");
 
     logger.info("Checking if the job {0} completed in namespace {1}", jobName, namespace);
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for job {0} to be completed in namespace {1} "
-                    + "(elapsed time {2} ms, remaining time {3} ms)",
-                jobName,
-                namespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(jobCompleted(jobName, null, namespace));
+    testUntil(
+        jobCompleted(jobName, null, namespace),
+        logger,
+        "job {0} to be completed in namespace {1}",
+        jobName,
+        namespace);
 
     return jobName;
   }
@@ -156,15 +153,12 @@ public class JobUtils {
 
     logger.info("Checking if the domain creation job {0} completed in namespace {1}",
         jobName, namespace);
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for job {0} to be completed in namespace {1} "
-                    + "(elapsed time {2} ms, remaining time {3} ms)",
-                jobName,
-                namespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(jobCompleted(jobName, null, namespace));
+    testUntil(
+        jobCompleted(jobName, null, namespace),
+        logger,
+        "job {0} to be completed in namespace {1}",
+        jobName,
+        namespace);
 
     // check job status and fail test if the job failed to create domain
     V1Job job = assertDoesNotThrow(() -> getJob(jobName, namespace),

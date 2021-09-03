@@ -14,7 +14,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.Callable;
 import java.util.stream.Stream;
 
 import io.kubernetes.client.openapi.models.V1Container;
@@ -33,15 +32,12 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.CommonMiiTestUtils;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
-import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
@@ -72,6 +68,7 @@ import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
@@ -86,7 +83,6 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.execInPod;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -124,12 +120,6 @@ public class ItMiiDomainModelInPV {
   private static Path clusterViewAppPath;
   private static String modelFile = "modelinpv-with-war.yaml";
   private static String modelMountPath = "/u01/modelHome";
-
-  // create standard, reusable retry/backoff policy
-  private static final ConditionFactory withStandardRetryPolicy
-      = with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(15, MINUTES).await();
 
   private static LoggingFacade logger = null;
 
@@ -334,12 +324,8 @@ public class ItMiiDomainModelInPV {
     String url = "http://" + hostAndPort
         + "/clusterview/ClusterViewServlet?user=" + user + "&password=" + password;
 
-    withStandardRetryPolicy.conditionEvaluationListener(
-        condition -> logger.info("Verifying the health of all cluster members"
-            + "(elapsed time {0} ms, remaining time {1} ms)",
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
-        .until((Callable<Boolean>) () -> {
+    testUntil(
+        () -> {
           HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(url, true));
           assertEquals(200, response.statusCode(), "Status code not equals to 200");
           boolean health = true;
@@ -352,7 +338,9 @@ public class ItMiiDomainModelInPV {
             }
           }
           return health;
-        });
+        },
+        logger,
+        "Verifying the health of all cluster members");
   }
 
   private static V1Pod setupWebLogicPod(String namespace) {
@@ -393,15 +381,12 @@ public class ItMiiDomainModelInPV {
 
     V1Pod wlsPod = assertDoesNotThrow(() -> Kubernetes.createPod(namespace, podBody));
 
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for {0} to be ready in namespace {1}, "
-                + "(elapsed time {2} , remaining time {3}",
-                podName,
-                namespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(podReady(podName, null, namespace));
+    testUntil(
+        podReady(podName, null, namespace),
+        logger,
+        "{0} to be ready in namespace {1}",
+        podName,
+        namespace);
 
     return wlsPod;
   }
@@ -441,25 +426,20 @@ public class ItMiiDomainModelInPV {
     // login to docker
     if (!OCIR_USERNAME.equals(REPO_DUMMY_VALUE)) {
       logger.info("docker login");
-      withStandardRetryPolicy
-          .conditionEvaluationListener(
-              condition -> logger.info("Waiting for docker login to be successful"
-                  + "(elapsed time {0} ms, remaining time {1} ms)",
-                  condition.getElapsedTimeInMS(),
-                  condition.getRemainingTimeInMS()))
-          .until(() -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD));
+      testUntil(
+          () -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD),
+          logger,
+          "docker login to be successful");
     }
 
     // push the image to repo
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
       logger.info("docker push image {0} to {1}", image, DOMAIN_IMAGES_REPO);
-      withStandardRetryPolicy
-          .conditionEvaluationListener(condition -> logger.info("Waiting for docker push for image {0} to be successful"
-          + "(elapsed time {1} ms, remaining time {2} ms)",
-          image,
-          condition.getElapsedTimeInMS(),
-          condition.getRemainingTimeInMS()))
-          .until(() -> dockerPush(image));
+      testUntil(
+          () -> dockerPush(image),
+          logger,
+          "docker push for image {0} to be successful",
+          image);
     }
   }
 }

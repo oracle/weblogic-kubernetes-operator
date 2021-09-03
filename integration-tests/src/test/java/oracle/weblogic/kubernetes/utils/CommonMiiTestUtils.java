@@ -52,8 +52,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
@@ -88,6 +86,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
@@ -107,7 +106,6 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -697,19 +695,13 @@ public class CommonMiiTestUtils {
     LoggingFacade logger = getLogger();
 
     deleteConfigMap(configMapName, domainNamespace);
-    retryPolicy
-        .conditionEvaluationListener(
-            condition ->
-                logger.info(
-                    "Waiting for configmap {0} to be deleted. Elapsed time{1}, remaining time {2}",
-                    configMapName,
-                    condition.getElapsedTimeInMS(),
-                    condition.getRemainingTimeInMS()))
-        .until(
-            () -> {
-              return listConfigMaps(domainNamespace).getItems().stream()
-                  .noneMatch((cm) -> (cm.getMetadata().getName().equals(configMapName)));
-            });
+    testUntil(
+        retryPolicy,
+        () -> listConfigMaps(domainNamespace).getItems().stream()
+          .noneMatch((cm) -> (cm.getMetadata().getName().equals(configMapName))),
+        logger,
+        "configmap {0} to be deleted",
+        configMapName);
 
     createConfigMapAndVerify(configMapName, domainResourceName, domainNamespace, modelFiles);
   }
@@ -1210,20 +1202,12 @@ public class CommonMiiTestUtils {
   public static void verifyPodIntrospectVersionUpdated(Set<String> podNames,
                                                  String expectedIntrospectVersion,
                                                  String domainNamespace) {
-
     for (String podName : podNames) {
-      with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(5, MINUTES).await()
-          .conditionEvaluationListener(
-              condition ->
-                  getLogger().info(
-                      "Checking for updated introspectVersion for pod {0}. "
-                          + "Elapsed time {1}ms, remaining time {2}ms",
-                      podName, condition.getElapsedTimeInMS(), condition.getRemainingTimeInMS()))
-          .until(
-              () ->
-                  podIntrospectVersionUpdated(podName, domainNamespace, expectedIntrospectVersion));
+      testUntil(
+          () -> podIntrospectVersionUpdated(podName, domainNamespace, expectedIntrospectVersion),
+          getLogger(),
+          "Checking for updated introspectVersion for pod {0}",
+          podName);
     }
   }
 

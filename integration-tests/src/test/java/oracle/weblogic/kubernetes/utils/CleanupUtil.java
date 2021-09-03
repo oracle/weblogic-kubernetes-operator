@@ -27,12 +27,9 @@ import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import org.awaitility.core.ConditionFactory;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.awaitility.Awaitility.with;
 
 /**
  * CleanupUtil is used for cleaning up all the Kubernetes artifacts left behind by the integration tests.
@@ -81,31 +78,20 @@ public class CleanupUtil {
         //ignore
       }
 
-      // wait for the artifacts to be deleted, waiting for a maximum of 10 minutes
-      ConditionFactory withStandardRetryPolicy = with().pollDelay(0, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(10, MINUTES).await();
-
       for (var namespace : namespaces) {
         logger.info("Check for artifacts in namespace {0}", namespace);
-        withStandardRetryPolicy
-            .conditionEvaluationListener(
-                condition -> logger.info("Waiting for artifacts to be deleted in namespace {0}, "
-                        + "(elapsed time {1} , remaining time {2}",
-                    namespace,
-                    condition.getElapsedTimeInMS(),
-                    condition.getRemainingTimeInMS()))
-            .until(nothingFoundInNamespace(namespace));
+        testUntil(
+            nothingFoundInNamespace(namespace),
+            logger,
+            "artifacts to be deleted in namespace {0}",
+            namespace);
 
         logger.info("Check for namespace {0} existence", namespace);
-        withStandardRetryPolicy
-            .conditionEvaluationListener(
-                condition -> logger.info("Waiting for namespace to be deleted {0}, "
-                        + "(elapsed time {1} , remaining time {2}",
-                    namespace,
-                    condition.getElapsedTimeInMS(),
-                    condition.getRemainingTimeInMS()))
-            .until(namespaceNotFound(namespace));
+        testUntil(
+            namespaceNotFound(namespace),
+            logger,
+            "namespace to be deleted {0}",
+            namespace);
       }
     } catch (Exception ex) {
       logger.warning(ex.getMessage());

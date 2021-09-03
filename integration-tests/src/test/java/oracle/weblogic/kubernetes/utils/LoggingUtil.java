@@ -33,18 +33,14 @@ import io.kubernetes.client.util.exception.CopyNotSupportedException;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import org.awaitility.core.ConditionFactory;
-import org.awaitility.core.ConditionTimeoutException;
 
 import static io.kubernetes.client.util.Yaml.dump;
 import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 /**
@@ -339,9 +335,6 @@ public class LoggingUtil {
   private static V1Pod setupPVPod(String namespace, String pvcName, String pvName)
       throws ApiException {
     final LoggingFacade logger = getLogger();
-    ConditionFactory withStandardRetryPolicy = with().pollDelay(10, SECONDS)
-        .and().with().pollInterval(2, SECONDS)
-        .atMost(3, MINUTES).await();
 
     // Create the temporary pod with oraclelinux image
     // oraclelinux:7-slim is not useful, missing tar utility
@@ -370,19 +363,12 @@ public class LoggingUtil {
         .kind("Pod");
     V1Pod pvPod = Kubernetes.createPod(namespace, podBody);
 
-    try {
-      withStandardRetryPolicy
-          .conditionEvaluationListener(
-              condition -> logger.info("Waiting for {0} to be ready in namespace {1}, "
-                      + "(elapsed time {2} , remaining time {3}",
-                  podName,
-                  namespace,
-                  condition.getElapsedTimeInMS(),
-                  condition.getRemainingTimeInMS()))
-          .until(podReady(podName, null, namespace));
-    } catch (ConditionTimeoutException ex) {
-      logger.warning("Condition not met", ex);
-    }
+    testUntil(
+        podReady(podName, null, namespace),
+        logger,
+        "{0} to be ready in namespace {1}",
+        podName,
+        namespace);
 
     return pvPod;
   }
@@ -395,27 +381,17 @@ public class LoggingUtil {
   private static void cleanupPVPod(String namespace) throws ApiException {
     final String podName = "pv-pod-" + namespace;
     LoggingFacade logger = getLogger();
-    ConditionFactory withStandardRetryPolicy = with().pollDelay(5, SECONDS)
-        .and().with().pollInterval(5, SECONDS)
-        .atMost(3, MINUTES).await();
 
     // Delete the temporary pod
     Kubernetes.deletePod(podName, namespace);
 
     // Wait for the pod to be deleted
-    try {
-      withStandardRetryPolicy
-          .conditionEvaluationListener(
-              condition -> logger.info("Waiting for {0} to be deleted in namespace {1}, "
-                      + "(elapsed time {2} , remaining time {3}",
-                  podName,
-                  namespace,
-                  condition.getElapsedTimeInMS(),
-                  condition.getRemainingTimeInMS()))
-          .until(podDoesNotExist(podName, null, namespace));
-    } catch (ConditionTimeoutException ex) {
-      logger.warning("Condition not met", ex);
-    }
+    testUntil(
+        podDoesNotExist(podName, null, namespace),
+        logger,
+        "{0} to be deleted in namespace {1}",
+        podName,
+        namespace);
   }
 
   // The io.kubernetes.client.Copy.copyDirectoryFromPod(V1Pod pod, String srcPath, Path destination)
@@ -486,16 +462,13 @@ public class LoggingUtil {
   public static  void checkPodLogContainsString(String namespace, String podName, String expectedString) {
 
     getLogger().info("Wait for string {0} existing in pod {1} in namespace {2}", expectedString, podName, namespace);
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> getLogger().info("Waiting for string {0} existing in pod {1} in namespace {2} "
-                    + "(elapsed time {3}ms, remaining time {4}ms)",
-                expectedString,
-                podName,
-                namespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> podLogContainsString(namespace, podName, expectedString),
-            "podLogContainsString failed with IOException, ApiException or InterruptedException"));
+    testUntil(
+        assertDoesNotThrow(() -> podLogContainsString(namespace, podName, expectedString),
+          "podLogContainsString failed with IOException, ApiException or InterruptedException"),
+        getLogger(),
+        "string {0} existing in pod {1} in namespace {2}",
+        expectedString,
+        podName,
+        namespace);
   }
 }

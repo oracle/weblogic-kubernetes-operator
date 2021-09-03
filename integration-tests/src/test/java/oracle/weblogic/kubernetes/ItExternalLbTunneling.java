@@ -31,7 +31,6 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -42,8 +41,6 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
@@ -66,6 +63,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.uninstallVoyager;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFromFiles;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileFromPod;
@@ -80,7 +78,6 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -111,7 +108,6 @@ class ItExternalLbTunneling {
   private static String voyagerNamespace = null;
   private static String traefikNamespace = null;
   private static String nginxNamespace = null;
-  private static ConditionFactory withStandardRetryPolicy = null;
   private static HelmParams voyagerHelmParams = null;
   private static HelmParams traefikHelmParams = null;
   private static HelmParams nginxHelmParams = null;
@@ -138,10 +134,6 @@ class ItExternalLbTunneling {
   public static void initAll(@Namespaces(5) List<String> namespaces) {
     logger = getLogger();
     logger.info("K8S_NODEPORT_HOSTNAME {0} K8S_NODEPORT_HOST {1}", K8S_NODEPORT_HOSTNAME, K8S_NODEPORT_HOST);
-    // create standard, reusable retry/backoff policy
-    withStandardRetryPolicy = with().pollDelay(2, SECONDS)
-        .and().with().pollInterval(10, SECONDS)
-        .atMost(5, MINUTES).await();
 
     // get a new unique opNamespace
     logger.info("Assigning unique namespace for Operator");
@@ -207,15 +199,12 @@ class ItExternalLbTunneling {
 
     // wait for the domain to exist
     logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                domainUid,
-                domainNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(domainExists(domainUid, DOMAIN_VERSION, domainNamespace));
+    testUntil(
+        domainExists(domainUid, DOMAIN_VERSION, domainNamespace),
+        logger,
+        "domain {0} to be created in namespace {1}",
+        domainUid,
+        domainNamespace);
 
     logger.info("Installing Voyager controller using helm");
     String cloudProvider = "baremetal";
@@ -601,13 +590,10 @@ class ItExternalLbTunneling {
     logger.info("java command to be run {0}", javasCmd.toString());
 
     // Note it takes a couples of iterations before the client success
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Wait for Https JMS Client to access WLS "
-                    + "(elapsed time {0}ms, remaining time {1}ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(runJmsClient(new String(javasCmd)));
+    testUntil(
+        runJmsClient(new String(javasCmd)),
+        logger,
+        "Wait for Https JMS Client to access WLS");
   }
 
   // Run the RMI client inside K8s Cluster
@@ -636,13 +622,7 @@ class ItExternalLbTunneling {
     javapCmd.append(" \"");
     logger.info("java command to be run {0}", javapCmd.toString());
 
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Wait for t3 JMS Client to access WLS "
-                    + "(elapsed time {0}ms, remaining time {1}ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(runJmsClient(new String(javapCmd)));
+    testUntil(runJmsClient(new String(javapCmd)), logger, "Wait for t3 JMS Client to access WLS");
   }
 
   // Run the RMI client outside the K8s Cluster
@@ -663,13 +643,7 @@ class ItExternalLbTunneling {
     logger.info("java command to be run {0}", javaCmd.toString());
 
     // Note it takes a couples of iterations before the client success
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Wait for Http JMS Client to access WLS "
-                    + "(elapsed time {0}ms, remaining time {1}ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(runJmsClient(new String(javaCmd)));
+    testUntil(runJmsClient(new String(javaCmd)), logger, "Wait for Http JMS Client to access WLS");
   }
 
   // Download the wlthint3client.jar from Adminserver pod to local filesystem.
