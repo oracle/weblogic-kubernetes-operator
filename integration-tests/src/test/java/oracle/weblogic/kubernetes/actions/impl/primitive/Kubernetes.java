@@ -85,12 +85,9 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainList;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-import org.awaitility.core.ConditionFactory;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -130,8 +127,6 @@ public class Kubernetes {
   private static GenericKubernetesApi<V1Service, V1ServiceList> serviceClient = null;
   private static GenericKubernetesApi<V1ServiceAccount, V1ServiceAccountList> serviceAccountClient = null;
 
-  private static ConditionFactory withStandardRetryPolicy = null;
-
   static {
     try {
       Configuration.setDefaultApiClient(ClientBuilder.defaultClient());
@@ -144,10 +139,6 @@ public class Kubernetes {
       customObjectsApi = new CustomObjectsApi();
       rbacAuthApi = new RbacAuthorizationV1Api();
       initializeGenericKubernetesApiClients();
-      // create standard, reusable retry/backoff policy
-      withStandardRetryPolicy = with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(5, MINUTES).await();
     } catch (IOException ioex) {
       throw new ExceptionInInitializerError(ioex);
     }
@@ -1045,16 +1036,12 @@ public class Kubernetes {
       }
     }
 
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> getLogger().info("Waiting for namespace {0} to be deleted "
-                    + "(elapsed time {1}ms, remaining time {2}ms)",
-                name,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> namespaceDeleted(name),
-            String.format("namespaceExists failed with ApiException for namespace %s",
-                name)));
+    testUntil(
+        assertDoesNotThrow(() -> namespaceDeleted(name),
+          String.format("namespaceExists failed with ApiException for namespace %s", name)),
+        getLogger(),
+        "namespace {0} to be deleted",
+        name);
 
     return true;
   }

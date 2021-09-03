@@ -86,7 +86,10 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainResourc
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podImagePatched;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withQuickRetryPolicy;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
@@ -109,8 +112,6 @@ class ItMiiDomain {
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private static String domainNamespace1 = null;
-  private static ConditionFactory withStandardRetryPolicy = null;
-  private static ConditionFactory withQuickRetryPolicy = null;
 
   private String domainUid = "domain1";
   private String domainUid1 = "domain2";
@@ -128,15 +129,6 @@ class ItMiiDomain {
   @BeforeAll
   public static void initAll(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
-    // create standard, reusable retry/backoff policy
-    withStandardRetryPolicy = with().pollDelay(2, SECONDS)
-        .and().with().pollInterval(10, SECONDS)
-        .atMost(6, MINUTES).await();
-
-    // create a reusable quick retry policy
-    withQuickRetryPolicy = with().pollDelay(1, SECONDS)
-        .and().with().pollInterval(2, SECONDS)
-        .atMost(15, SECONDS).await();
 
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
@@ -893,22 +885,13 @@ class ItMiiDomain {
   ) {
    
     // check if the application is accessible inside of a server pod
-    conditionFactory
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for application {0} is running on pod {1} in namespace {2} "
-            + "(elapsed time {3}ms, remaining time {4}ms)",
-            appPath,
-            podName,
-            namespace,
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
-        .until(() -> appAccessibleInPod(
-                namespace,
-                podName, 
-                internalPort, 
-                appPath, 
-                expectedStr));
-
+    testUntil(conditionFactory,
+        () -> appAccessibleInPod(namespace, podName, internalPort, appPath, expectedStr),
+        logger,
+        "application {0} is running on pod {1} in namespace {2}",
+        appPath,
+        podName,
+        namespace);
   }
   
   private void quickCheckAppNotRunning(
@@ -920,21 +903,14 @@ class ItMiiDomain {
   ) {
    
     // check that the application is NOT running inside of a server pod
-    withQuickRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Checking if application {0} is not running on pod {1} in namespace {2} "
-            + "(elapsed time {3}ms, remaining time {4}ms)",
-            appPath,
-            podName,
-            namespace,
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
-        .until(() -> appNotAccessibleInPod(
-                namespace, 
-                podName,
-                internalPort, 
-                appPath, 
-                expectedStr));
+    testUntil(
+        withQuickRetryPolicy, () -> appNotAccessibleInPod(
+          namespace, podName, internalPort, appPath, expectedStr),
+        logger,
+        "Checking if application {0} is not running on pod {1} in namespace {2}",
+        appPath,
+        podName,
+        namespace);
   }
    
   private void checkDomainPatched(
@@ -944,18 +920,14 @@ class ItMiiDomain {
   ) {
    
     // check if the domain resource has been patched with the given image
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for domain {0} to be patched in namespace {1} "
-            + "(elapsed time {2}ms, remaining time {3}ms)",
-            domainUid,
-            namespace,
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> domainResourceImagePatched(domainUid, namespace, image),
-            String.format(
-               "Domain %s is not patched in namespace %s with image %s", domainUid, namespace, image)));
-
+    testUntil(
+        assertDoesNotThrow(
+            () -> domainResourceImagePatched(domainUid, namespace, image),
+              String.format("Domain %s is not patched in namespace %s with image %s", domainUid, namespace, image)),
+        logger,
+        "domain {0} to be patched in namespace {1}",
+        domainUid,
+        namespace);
   }
   
   private void checkPodImagePatched(
@@ -964,22 +936,18 @@ class ItMiiDomain {
       String podName,
       String image
   ) {
-   
     // check if the server pod has been patched with the given image
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for pod {0} to be patched in namespace {1} "
-            + "(elapsed time {2}ms, remaining time {3}ms)",
+    testUntil(
+        assertDoesNotThrow(() -> podImagePatched(domainUid, namespace, podName, "weblogic-server", image),
+          String.format(
+            "Pod %s is not patched with image %s in namespace %s.",
             podName,
-            namespace,
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> podImagePatched(domainUid, namespace, podName, "weblogic-server", image),
-            String.format(
-               "Pod %s is not patched with image %s in namespace %s.",
-               podName,
-               image,
-               namespace)));
+            image,
+            namespace)),
+        logger,
+        "pod {0} to be patched in namespace {1}",
+        podName,
+        namespace);
   }
   
   private static void collectAppAvailability(
@@ -990,22 +958,18 @@ class ItMiiDomain {
       String internalPort,
       String appPath
   ) {
-    with().pollDelay(2, SECONDS)
-        .and().with().pollInterval(200, MILLISECONDS)
-        .atMost(15, MINUTES)
-        .await()
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for patched application running on all managed servers in namespace {1} "
-                + "(elapsed time {2}ms, remaining time {3}ms)",
-            namespace,
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> checkContinuousAvailability(
+    testUntil(
+        with().pollDelay(2, SECONDS)
+            .and().with().pollInterval(200, MILLISECONDS)
+            .atMost(15, MINUTES).await(),
+        assertDoesNotThrow(() -> checkContinuousAvailability(
             namespace, appAvailability, managedServerPrefix, replicaCount, internalPort, appPath),
-            String.format(
-                "App is not available on all managed servers in namespace %s.",
-                namespace)));
-
+        String.format(
+            "App is not available on all managed servers in namespace %s.",
+            namespace)),
+        logger,
+        "patched application running on all managed servers in namespace {0}",
+        namespace);
   }
 
   private static Callable<Boolean> checkContinuousAvailability(
