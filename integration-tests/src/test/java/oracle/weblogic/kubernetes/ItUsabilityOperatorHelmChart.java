@@ -38,8 +38,6 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
@@ -70,6 +68,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorRestS
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
@@ -85,7 +84,6 @@ import static oracle.weblogic.kubernetes.utils.SecretUtils.createExternalRestIde
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -130,10 +128,6 @@ class ItUsabilityOperatorHelmChart {
   // ingress host list
   private List<String> ingressHostList;
   private static LoggingFacade logger = null;
-  private static org.awaitility.core.ConditionFactory withStandardRetryPolicy =
-      with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(5, MINUTES).await();
 
   /**
    * Get namespaces for operator, domain.
@@ -730,15 +724,12 @@ class ItUsabilityOperatorHelmChart {
 
       // wait for the operator to be ready
       logger.info("Wait for the operator pod is ready in namespace {0}", op2Namespace);
-      withStandardRetryPolicy
-          .conditionEvaluationListener(
-              condition -> logger.info("Waiting for operator to be running in namespace {0} "
-                      + "(elapsed time {1}ms, remaining time {2}ms)",
-                  op2Namespace,
-                  condition.getElapsedTimeInMS(),
-                  condition.getRemainingTimeInMS()))
-          .until(assertDoesNotThrow(() -> operatorIsReady(op2Namespace),
-              "operatorIsReady failed with ApiException"));
+      testUntil(
+          assertDoesNotThrow(() -> operatorIsReady(op2Namespace),
+            "operatorIsReady failed with ApiException"),
+          logger,
+          "operator to be running in namespace {0}",
+          op2Namespace);
 
       // Helm reports error message status
       assertNotNull(errorMsg, "Expected error message for missing ServiceAccount not found");
@@ -1052,27 +1043,21 @@ class ItUsabilityOperatorHelmChart {
     if (helmStatus.equalsIgnoreCase("deployed")) {
       // wait for the operator to be ready
       logger.info("Wait for the operator pod is ready in namespace {0}", operNamespace);
-      withStandardRetryPolicy
-          .conditionEvaluationListener(
-              condition -> logger.info("Waiting for operator to be running in namespace {0} "
-                      + "(elapsed time {1}ms, remaining time {2}ms)",
-                  operNamespace,
-                  condition.getElapsedTimeInMS(),
-                  condition.getRemainingTimeInMS()))
-          .until(assertDoesNotThrow(() -> operatorIsReady(operNamespace),
-              "operatorIsReady failed with ApiException"));
+      testUntil(
+          assertDoesNotThrow(() -> operatorIsReady(operNamespace),
+            "operatorIsReady failed with ApiException"),
+          logger,
+          "operator to be running in namespace {0}",
+          operNamespace);
 
       if (withRestAPI) {
         logger.info("Wait for the operator external service in namespace {0}", operNamespace);
-        withStandardRetryPolicy
-            .conditionEvaluationListener(
-                condition -> logger.info("Waiting for operator external service in namespace {0} "
-                        + "(elapsed time {1}ms, remaining time {2}ms)",
-                    operNamespace,
-                    condition.getElapsedTimeInMS(),
-                    condition.getRemainingTimeInMS()))
-            .until(assertDoesNotThrow(() -> operatorRestServiceRunning(operNamespace),
-                "operator external service is not running"));
+        testUntil(
+            assertDoesNotThrow(() -> operatorRestServiceRunning(operNamespace),
+              "operator external service is not running"),
+            logger,
+            "operator external service in namespace {0}",
+            operNamespace);
       }
       return opHelmParams;
     }

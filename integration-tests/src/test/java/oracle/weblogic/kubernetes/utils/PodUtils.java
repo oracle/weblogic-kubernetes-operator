@@ -30,7 +30,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExi
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podInitializing;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -72,17 +72,14 @@ public class PodUtils {
    */
   public static void checkPodExists(String podName, String domainUid, String domainNamespace) {
     LoggingFacade logger = getLogger();
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for pod {0} to be created in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                podName,
-                domainNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> podExists(podName, domainUid, domainNamespace),
-            String.format("podExists failed with ApiException for pod %s in namespace %s",
-                podName, domainNamespace)));
+    testUntil(
+        assertDoesNotThrow(() -> podExists(podName, domainUid, domainNamespace),
+          String.format("podExists failed with ApiException for pod %s in namespace %s",
+            podName, domainNamespace)),
+        logger,
+        "pod {0} to be created in namespace {1}",
+        podName,
+        domainNamespace);
   }
 
   /**
@@ -94,17 +91,14 @@ public class PodUtils {
    */
   public static void checkPodReady(String podName, String domainUid, String domainNamespace) {
     LoggingFacade logger = getLogger();
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for pod {0} to be ready in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                podName,
-                domainNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> podReady(podName, domainUid, domainNamespace),
-            String.format("podReady failed with ApiException for pod %s in namespace %s",
-                podName, domainNamespace)));
+    testUntil(
+        assertDoesNotThrow(() -> podReady(podName, domainUid, domainNamespace),
+          String.format("podReady failed with ApiException for pod %s in namespace %s",
+            podName, domainNamespace)),
+        logger,
+        "pod {0} to be ready in namespace {1}",
+        podName,
+        domainNamespace);
   }
 
   /**
@@ -116,17 +110,14 @@ public class PodUtils {
    */
   public static void checkPodInitializing(String podName, String domainUid, String domainNamespace) {
     LoggingFacade logger = getLogger();
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for pod {0} to be initializing in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                podName,
-                domainNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> podInitializing(podName, domainUid, domainNamespace),
-            String.format("podReady failed with ApiException for pod %s in namespace %s",
-                podName, domainNamespace)));
+    testUntil(
+        assertDoesNotThrow(() -> podInitializing(podName, domainUid, domainNamespace),
+          String.format("podReady failed with ApiException for pod %s in namespace %s",
+            podName, domainNamespace)),
+        logger,
+        "pod {0} to be initializing in namespace {1}",
+        podName,
+        domainNamespace);
   }
 
   /**
@@ -144,17 +135,14 @@ public class PodUtils {
       OffsetDateTime lastCreationTime
   ) {
     LoggingFacade logger = getLogger();
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for pod {0} to be restarted in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                podName,
-                domNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> isPodRestarted(podName, domNamespace, lastCreationTime),
-            String.format(
-                "pod %s has not been restarted in namespace %s", podName, domNamespace)));
+    testUntil(
+        assertDoesNotThrow(() -> isPodRestarted(podName, domNamespace, lastCreationTime),
+          String.format(
+            "pod %s has not been restarted in namespace %s", podName, domNamespace)),
+        logger,
+        "pod {0} to be restarted in namespace {1}",
+        podName,
+        domNamespace);
   }
 
   /**
@@ -180,17 +168,14 @@ public class PodUtils {
    */
   public static void checkPodDoesNotExist(String podName, String domainUid, String namespace) {
     LoggingFacade logger = getLogger();
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for pod {0} to be deleted in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                podName,
-                namespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> podDoesNotExist(podName, domainUid, namespace),
-            String.format("podDoesNotExist failed with ApiException for pod %s in namespace %s",
-                podName, namespace)));
+    testUntil(
+        assertDoesNotThrow(() -> podDoesNotExist(podName, domainUid, namespace),
+          String.format("podDoesNotExist failed with ApiException for pod %s in namespace %s",
+            podName, namespace)),
+        logger,
+        "pod {0} to be deleted in namespace {1}",
+        podName,
+        namespace);
   }
 
   /**
@@ -288,17 +273,14 @@ public class PodUtils {
    */
   public static void checkPodDeleted(String podName, String domainUid, String domNamespace) {
     final LoggingFacade logger = getLogger();
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for pod {0} to be deleted in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                podName,
-                domNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> podDoesNotExist(podName, domainUid, domNamespace),
-            String.format("podDoesNotExist failed with ApiException for %s in namespace in %s",
-                podName, domNamespace)));
+    testUntil(
+        assertDoesNotThrow(() -> podDoesNotExist(podName, domainUid, domNamespace),
+          String.format("podDoesNotExist failed with ApiException for %s in namespace in %s",
+            podName, domNamespace)),
+        logger,
+        "pod {0} to be deleted in namespace {1}",
+        podName,
+        domNamespace);
   }
 
   public static String getExternalServicePodName(String adminServerPodName) {

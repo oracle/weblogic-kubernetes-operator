@@ -70,7 +70,6 @@ import oracle.weblogic.kubernetes.utils.BuildApplication;
 import oracle.weblogic.kubernetes.utils.DeployUtil;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -82,8 +81,6 @@ import org.junit.jupiter.api.TestMethodOrder;
 import static java.nio.file.Files.copy;
 import static java.nio.file.Files.createDirectories;
 import static java.nio.file.Paths.get;
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
@@ -138,6 +135,7 @@ import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWai
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyServerCommunication;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFromFiles;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
@@ -161,7 +159,6 @@ import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsern
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -223,11 +220,6 @@ class ItTwoDomainsLoadBalancers {
   private List<OffsetDateTime> domain1ManagedServerPodOriginalTimestampList = new ArrayList<>();
   private List<OffsetDateTime> domain2ManagedServerPodOriginalTimestampList = new ArrayList<>();
 
-  private static ConditionFactory withStandardRetryPolicy =
-      with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(5, MINUTES).await();
-
   /**
    * Get namespaces, install operator and initiate domain UID list.
    * @param namespaces injected by JUnit
@@ -284,21 +276,16 @@ class ItTwoDomainsLoadBalancers {
       //   2. docker pull
       //   3. docker tag with the KIND_REPO value
       //   4. docker push to KIND_REPO
-      withStandardRetryPolicy
-          .conditionEvaluationListener(
-              condition -> logger.info("Waiting for docker login to be successful"
-                      + "(elapsed time {0} ms, remaining time {1} ms)",
-                  condition.getElapsedTimeInMS(),
-                  condition.getRemainingTimeInMS()))
-          .until(() -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD));
+      testUntil(
+          () -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD),
+          logger,
+          "docker login to be successful");
 
-      withStandardRetryPolicy
-          .conditionEvaluationListener(
-              condition -> logger.info("Waiting for pullImageFromOcirAndPushToKind for image {0} to be successful"
-                      + "(elapsed time {1} ms, remaining time {2} ms)", APACHE_IMAGE,
-                  condition.getElapsedTimeInMS(),
-                  condition.getRemainingTimeInMS()))
-          .until(pullImageFromOcirAndPushToKind(APACHE_IMAGE));
+      testUntil(
+          pullImageFromOcirAndPushToKind(APACHE_IMAGE),
+          logger,
+          "pullImageFromOcirAndPushToKind for image {0} to be successful",
+          APACHE_IMAGE);
     }
   }
 
@@ -843,15 +830,12 @@ class ItTwoDomainsLoadBalancers {
         assertTrue(deleteDomainCustomResource(domainUid, defaultNamespace));
 
         // wait until domain was deleted
-        withStandardRetryPolicy
-            .conditionEvaluationListener(
-                condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
-                        + "(elapsed time {2}ms, remaining time {3}ms)",
-                    domainUid,
-                    defaultNamespace,
-                    condition.getElapsedTimeInMS(),
-                    condition.getRemainingTimeInMS()))
-            .until(domainDoesNotExist(domainUid, DOMAIN_VERSION, defaultNamespace));
+        testUntil(
+            domainDoesNotExist(domainUid, DOMAIN_VERSION, defaultNamespace),
+            logger,
+            "domain {0} to be created in namespace {1}",
+            domainUid,
+            defaultNamespace);
 
         // delete configMap in default namespace
         logger.info("deleting configMap {0}", "create-domain" + i + "-scripts-cm");
@@ -2164,15 +2148,12 @@ class ItTwoDomainsLoadBalancers {
   }
 
   private void waitUntilVoyagerPodReady(String ingressName) {
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info(
-                "Waiting for Voyager ingress to be ready in namespace {0} (elapsed time {1}ms, remaining time {2}ms)",
-                defaultNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> isVoyagerReady(defaultNamespace, ingressName),
-            "isVoyagerReady failed with ApiException"));
+    testUntil(
+        assertDoesNotThrow(() -> isVoyagerReady(defaultNamespace, ingressName),
+          "isVoyagerReady failed with ApiException"),
+        logger,
+        "Voyager ingress to be ready in namespace {0}",
+        defaultNamespace);
   }
 
   private void checkIngressReady(boolean isHostRouting, String ingressHost, boolean isTLS,
@@ -2246,18 +2227,13 @@ class ItTwoDomainsLoadBalancers {
 
     logger.info("Getting admin server pod log from pod {0} in namespace {1}", podName, namespace);
 
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Getting admin server pod log {0} in namespace {1}, waiting for success "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                podName,
-                namespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(() -> {
-          return assertDoesNotThrow(() ->
-              getPodLog(podName, namespace, "weblogic-server", null, 120)) != null;
-        });
+    testUntil(
+        () -> assertDoesNotThrow(() ->
+            getPodLog(podName, namespace, "weblogic-server", null, 120)) != null,
+        logger,
+        "Getting admin server pod log {0} in namespace {1}",
+        podName,
+        namespace);
 
     String adminServerPodLog0 = assertDoesNotThrow(() ->
         getPodLog(podName, namespace, "weblogic-server", null, 120));

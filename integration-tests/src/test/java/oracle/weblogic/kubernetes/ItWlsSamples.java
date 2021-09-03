@@ -17,7 +17,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -27,8 +26,6 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
@@ -47,6 +44,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkClusterReplicaCountMatches;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
@@ -59,7 +57,6 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.copyDirectory;
 import static org.apache.commons.io.FileUtils.copyFile;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -101,12 +98,6 @@ class ItWlsSamples {
   private static String UPDATE_MODEL_PROPERTIES = "model-samples-update-domain.properties";
 
   private static final String[] params = {"wlst:domain1", "wdt:domain2"};
-
-  // create standard, reusable retry/backoff policy
-  private static final ConditionFactory withStandardRetryPolicy
-      = with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(10, MINUTES).await();
 
   private static LoggingFacade logger = null;
 
@@ -508,16 +499,12 @@ class ItWlsSamples {
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create pv");
 
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for pv {0} to be ready, "
-                + "(elapsed time {1}ms, remaining time {2}ms)",
-                pvName,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> pvExists(pvName, null),
-            String.format("pvExists failed with ApiException for pv %s",
-                pvName)));
+    testUntil(
+        assertDoesNotThrow(() -> pvExists(pvName, null),
+          String.format("pvExists failed with ApiException for pv %s", pvName)),
+        logger,
+        "pv {0} to be ready",
+        pvName);
 
     params = new CommandParams().defaults();
     params.command("kubectl create -f " + Paths.get(pvpvcBase.toString(),
@@ -525,18 +512,13 @@ class ItWlsSamples {
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create pvc");
 
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for pv {0} to be ready in namespace {1} "
-                + "(elapsed time {2}ms, remaining time {3}ms)",
-                pvcName,
-                domainNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> pvcExists(pvcName, domainNamespace),
-            String.format("pvcExists failed with ApiException for pvc %s",
-                pvcName)));
-
+    testUntil(
+        assertDoesNotThrow(() -> pvcExists(pvcName, domainNamespace),
+          String.format("pvcExists failed with ApiException for pvc %s", pvcName)),
+        logger,
+        "pv {0} to be ready in namespace {1}",
+        pvcName,
+        domainNamespace);
   }
 
   private void updateDomainInputsFile(String domainName, Path sampleBase) {
@@ -592,15 +574,12 @@ class ItWlsSamples {
 
     // wait for the domain to exist
     logger.info("Checking for domain custom resource in namespace {0}", domainNamespace);
-    withStandardRetryPolicy
-            .conditionEvaluationListener(
-                condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
-                            + "(elapsed time {2}ms, remaining time {3}ms)",
-                            domainName,
-                            domainNamespace,
-                            condition.getElapsedTimeInMS(),
-                            condition.getRemainingTimeInMS()))
-            .until(domainExists(domainName, DOMAIN_VERSION, domainNamespace));
+    testUntil(
+        domainExists(domainName, DOMAIN_VERSION, domainNamespace),
+        logger,
+        "domain {0} to be created in namespace {1}",
+        domainName,
+        domainNamespace);
 
     final String adminServerName = "admin-server";
     final String adminServerPodName = domainName + "-" + adminServerName;
@@ -686,15 +665,12 @@ class ItWlsSamples {
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to delete domain custom resource");
 
-    withStandardRetryPolicy
-            .conditionEvaluationListener(
-                condition -> logger.info("Waiting for domain {0} to be deleted in namespace {1} "
-                            + "(elapsed time {2}ms, remaining time {3}ms)",
-                            domainName,
-                            domainNamespace,
-                            condition.getElapsedTimeInMS(),
-                            condition.getRemainingTimeInMS()))
-            .until(domainDoesNotExist(domainName, DOMAIN_VERSION, domainNamespace));
+    testUntil(
+        domainDoesNotExist(domainName, DOMAIN_VERSION, domainNamespace),
+        logger,
+        "domain {0} to be deleted in namespace {1}",
+        domainName,
+        domainNamespace);
   }
 
   private void setupLoadBalancer(Path sampleBase, String ingressType, String additionalOptions) {
