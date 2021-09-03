@@ -40,11 +40,8 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import org.awaitility.core.ConditionFactory;
 
 import static io.kubernetes.client.util.Yaml.dump;
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -54,10 +51,10 @@ import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.listServices;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.getPod;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -78,10 +75,6 @@ public class DbUtils {
   private static int suffixCount = 0;
   private static Map<String, String> dbMap = new HashMap<>();
 
-  private static ConditionFactory withStandardRetryPolicy =
-      with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(15, MINUTES).await();
   /**
    * Start Oracle DB instance, create rcu pod and load database schema in the specified namespace.
    *
@@ -232,15 +225,12 @@ public class DbUtils {
         String.format("Get Oracle DB pod name failed with ApiException for oracleDBService in namespace %s",
             dbNamespace));
     logger.info("Wait for the oracle Db pod: {0} ready in namespace {1}", dbPodName, dbNamespace);
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for Oracle DB to be ready in namespace {0} "
-                    + "(elapsed time {1}ms, remaining time {2}ms)",
-                dbNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> podIsReady(dbNamespace, "app=database", dbPodName),
-            "oracleDBService podReady failed with ApiException"));
+    testUntil(
+        assertDoesNotThrow(() -> podIsReady(dbNamespace, "app=database", dbPodName),
+          "oracleDBService podReady failed with ApiException"),
+        logger,
+        "Oracle DB to be ready in namespace {0}",
+        dbNamespace);
 
     // check if DB is ready to be used by searching pod log
     logger.info("Check for DB pod {0} log contains ready message in namespace {1}",
@@ -288,9 +278,6 @@ public class DbUtils {
   public static V1Pod createRcuPod(String fmwBaseImageName, String dbUrl, String dbNamespace)
       throws ApiException {
     LoggingFacade logger = getLogger();
-    ConditionFactory withStandardRetryPolicy = with().pollDelay(10, SECONDS)
-        .and().with().pollInterval(2, SECONDS)
-        .atMost(10, MINUTES).await();
 
     Map labels = new HashMap<String, String>();
     labels.put("ruc", "rcu");
@@ -316,15 +303,12 @@ public class DbUtils {
 
     V1Pod pvPod = Kubernetes.createPod(dbNamespace, podBody);
 
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for {0} to be ready in namespace {1}, "
-                + "(elapsed time {2} , remaining time {3}",
-                RCUPODNAME,
-                dbNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(podReady(RCUPODNAME, null, dbNamespace));
+    testUntil(
+        podReady(RCUPODNAME, null, dbNamespace),
+        logger,
+        "{0} to be ready in namespace {1}",
+        RCUPODNAME,
+        dbNamespace);
 
     return pvPod;
   }
@@ -475,17 +459,14 @@ public class DbUtils {
    */
   public static void checkDbReady(String matchStr, String podName, String dbNamespace) {
     LoggingFacade logger = getLogger();
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for pod {0} log contain message {1} in namespace {2} "
-                    + "(elapsed time {3}ms, remaining time {4}ms)",
-                podName,
-                matchStr,
-                dbNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> podLogContains(matchStr, podName, dbNamespace),
-            String.format("podLogContains failed with ApiException for pod %s in namespace %s", podName, dbNamespace)));
+    testUntil(
+        assertDoesNotThrow(() -> podLogContains(matchStr, podName, dbNamespace),
+          String.format("podLogContains failed with ApiException for pod %s in namespace %s", podName, dbNamespace)),
+        logger,
+        "pod {0} log contain message {1} in namespace {2}",
+        podName,
+        matchStr,
+        dbNamespace);
   }
 
   /**

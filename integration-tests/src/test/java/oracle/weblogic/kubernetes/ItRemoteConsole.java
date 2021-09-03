@@ -23,14 +23,11 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
@@ -46,6 +43,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.isVoyagerRead
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReturnedCode;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createSSLenabledMiiDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createIngressAndRetryIfFail;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyTraefik;
@@ -56,7 +54,6 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static oracle.weblogic.kubernetes.utils.WebLogicRemoteConsoleUtils.installAndVerifyWlsRemoteConsole;
 import static oracle.weblogic.kubernetes.utils.WebLogicRemoteConsoleUtils.shutdownWlsRemoteConsole;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -84,11 +81,6 @@ class ItRemoteConsole {
   private static LoggingFacade logger = null;
   private static final int ADMIN_SERVER_PORT = 7001;
   private static final String voyagerIngressName = "voyager-path-routing";
-
-  private static ConditionFactory withStandardRetryPolicy =
-      with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(5, MINUTES).await();
 
   /**
    * Get namespaces for operator and WebLogic domain.
@@ -320,15 +312,12 @@ class ItRemoteConsole {
     assertDoesNotThrow(() -> createIngress(voyagerIngressName, domainNamespace, annotations, ingressRules, null));
 
     // wait until voyager ingress pod is ready
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info(
-                "Waiting for Voyager ingress to be ready in namespace {0} (elapsed time {1}ms, remaining time {2}ms)",
-                domainNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> isVoyagerReady(domainNamespace, voyagerIngressName),
-            "isVoyagerReady failed with ApiException"));
+    testUntil(
+        assertDoesNotThrow(() -> isVoyagerReady(domainNamespace, voyagerIngressName),
+          "isVoyagerReady failed with ApiException"),
+        logger,
+        "Voyager ingress to be ready in namespace {0}",
+        domainNamespace);
 
     // check the ingress was found in the domain namespace
     assertThat(assertDoesNotThrow(() -> listIngresses(domainNamespace)))

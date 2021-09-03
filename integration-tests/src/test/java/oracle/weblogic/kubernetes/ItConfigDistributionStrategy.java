@@ -48,7 +48,6 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
-import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,8 +59,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 import static io.kubernetes.client.util.Yaml.dump;
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
@@ -88,6 +85,8 @@ import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFromFiles;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
@@ -110,7 +109,6 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScript;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -159,11 +157,6 @@ class ItConfigDistributionStrategy {
   String dsSecret = domainUid.concat("-mysql-secret");
   String adminSvcExtHost = null;
 
-  // create standard, reusable retry/backoff policy
-  private static final ConditionFactory withStandardRetryPolicy
-      = with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(15, MINUTES).await();
   private static LoggingFacade logger = null;
 
   /**
@@ -272,16 +265,14 @@ class ItConfigDistributionStrategy {
     String baseUri = "http://" + hostAndPort + "/clusterview/";
     String serverListUri = "ClusterViewServlet?user=" + ADMIN_USERNAME_DEFAULT + "&password=" + ADMIN_PASSWORD_DEFAULT;
 
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for clusterview app in admin server is accessible after restart"
-                + "(elapsed time {0} ms, remaining time {1} ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until((Callable<Boolean>) () -> {
+    testUntil(
+        withLongRetryPolicy,
+        () -> {
           HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(baseUri + serverListUri, true));
           return response.statusCode() == 200;
-        });
+        },
+        logger,
+        "clusterview app in admin server is accessible after restart");
   }
 
   /**
@@ -326,14 +317,12 @@ class ItConfigDistributionStrategy {
     verifyIntrospectorRuns();
     verifyPodsStateNotChanged();
 
-    //wait until config is updated upto 5 minutes
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for server configuration to be updated"
-                + "(elapsed time {0} ms, remaining time {1} ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(configUpdated("100000000"));
+    //wait until config is updated upto 15 minutes
+    testUntil(
+        withLongRetryPolicy,
+        configUpdated("100000000"),
+        logger,
+        "server configuration to be updated");
 
     verifyConfigXMLOverride(true);
     verifyResourceJDBC0Override(true);
@@ -383,14 +372,12 @@ class ItConfigDistributionStrategy {
     verifyIntrospectorRuns();
     verifyPodsStateNotChanged();
 
-    //wait until config is updated upto 5 minutes
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for server configuration to be updated"
-                    + "(elapsed time {0} ms, remaining time {1} ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(configUpdated("100000000"));
+    //wait until config is updated upto 15 minutes
+    testUntil(
+        withLongRetryPolicy,
+        configUpdated("100000000"),
+        logger,
+        "server configuration to be updated");
 
     verifyConfigXMLOverride(true);
     verifyResourceJDBC0Override(true);
@@ -398,13 +385,12 @@ class ItConfigDistributionStrategy {
     logger.info("Deleting the old override configmap {0}", overridecm);
     deleteConfigMap(overridecm, domainNamespace);
 
-    withStandardRetryPolicy.conditionEvaluationListener(
-        condition -> logger.info("Waiting for configmap {0} to be deleted. Elapsed time{1}, remaining time {2}",
-            overridecm, condition.getElapsedTimeInMS(), condition.getRemainingTimeInMS())).until(() -> {
-              return listConfigMaps(domainNamespace).getItems().stream().noneMatch((cm)
-                  -> (cm.getMetadata().getName().equals(overridecm)));
-            });
-
+    testUntil(
+        withLongRetryPolicy,
+        () -> listConfigMaps(domainNamespace).getItems().stream().noneMatch((cm)
+            -> (cm.getMetadata().getName().equals(overridecm))),
+        logger,
+        "configmap {0} to be deleted.");
 
     Path srcOverrideFile = Paths.get(RESOURCE_DIR, "configfiles/configoverridesset1/config1.xml");
     Path dstOverrideFile = Paths.get(WORK_DIR, "config.xml");
@@ -435,17 +421,14 @@ class ItConfigDistributionStrategy {
     verifyIntrospectorRuns();
     verifyPodsStateNotChanged();
 
-    //wait until config is updated upto 5 minutes
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for server configuration to be updated"
-                    + "(elapsed time {0} ms, remaining time {1} ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(configUpdated("99999999"));
+    //wait until config is updated upto 15 minutes
+    testUntil(
+        withLongRetryPolicy,
+        configUpdated("99999999"),
+        logger,
+        "server configuration to be updated");
 
     verifyResourceJDBC0Override(true);
-
   }
 
   /**
@@ -505,13 +488,9 @@ class ItConfigDistributionStrategy {
     verifyPodsStateNotChanged();
 
     //wait until config is updated upto 5 minutes
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for server configuration to be updated"
-                + "(elapsed time {0} ms, remaining time {1} ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(configUpdated("100000000"));
+    testUntil(configUpdated("100000000"),
+        logger,
+        "server configuration to be updated");
 
     verifyConfigXMLOverride(true);
     verifyResourceJDBC0Override(true);

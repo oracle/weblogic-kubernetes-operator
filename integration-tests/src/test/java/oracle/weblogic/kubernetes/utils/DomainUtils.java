@@ -13,7 +13,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainDoesNot
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusReasonMatches;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -49,16 +49,12 @@ public class DomainUtils {
 
     // wait for the domain to exist
     logger.info("Checking for domain custom resource in namespace {0}", domainNamespace);
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                domainUid,
-                domainNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(domainExists(domainUid, domainVersion, domainNamespace));
-
+    testUntil(
+        domainExists(domainUid, domainVersion, domainNamespace),
+        logger,
+        "domain {0} to be created in namespace {1}",
+        domainUid,
+        domainNamespace);
   }
 
   /**
@@ -105,16 +101,13 @@ public class DomainUtils {
    */
   public static void checkDomainStatusReasonMatches(Domain domain, String namespace, String statusReason) {
     LoggingFacade logger = getLogger();
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for the status reason of the domain {0} in namespace {1} "
-                    + "is {2} (elapsed time {3}ms, remaining time {4}ms)",
-                domain,
-                namespace,
-                statusReason,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> domainStatusReasonMatches(domain, statusReason)));
+    testUntil(
+        assertDoesNotThrow(() -> domainStatusReasonMatches(domain, statusReason)),
+        logger,
+        "the status reason of the domain {0} in namespace {1}",
+        domain,
+        namespace,
+        statusReason);
   }
 
   /**
@@ -128,15 +121,11 @@ public class DomainUtils {
     assertTrue(deleteDomainCustomResource(domainUid, domainNS));
 
     // wait until domain was deleted
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> getLogger().info("Waiting for domain {0} to be deleted in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                domainUid,
-                domainNS,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(domainDoesNotExist(domainUid, DOMAIN_VERSION, domainNS));
+    testUntil(
+        domainDoesNotExist(domainUid, DOMAIN_VERSION, domainNS),
+        getLogger(),
+        "domain {0} to be deleted in namespace {1}",
+        domainUid,
+        domainNS);
   }
-
 }

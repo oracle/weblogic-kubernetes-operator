@@ -87,7 +87,6 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.apache.commons.io.FileUtils;
-import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -96,8 +95,6 @@ import org.yaml.snakeyaml.Yaml;
 
 import static java.nio.file.Files.createDirectories;
 import static java.nio.file.Paths.get;
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
@@ -132,6 +129,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndS
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDockerExtraArgs;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndPushToRepo;
@@ -158,7 +156,6 @@ import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsern
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -204,7 +201,6 @@ class ItMonitoringExporter {
 
   private static String monitoringNS = null;
   private static String webhookNS = null;
-  private static ConditionFactory withStandardRetryPolicy = null;
   HelmParams promHelmParams = null;
   GrafanaParams grafanaHelmParams = null;
   private static String monitoringExporterEndToEndDir = null;
@@ -247,10 +243,6 @@ class ItMonitoringExporter {
   public static void initAll(@Namespaces(12) List<String> namespaces) {
 
     logger = getLogger();
-    // create standard, reusable retry/backoff policy
-    withStandardRetryPolicy = with().pollDelay(2, SECONDS)
-        .and().with().pollInterval(10, SECONDS)
-        .atMost(5, MINUTES).await();
 
     logger.info("Get a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
@@ -742,16 +734,12 @@ class ItMonitoringExporter {
     assertNotNull(pod, "Can't find running webhook pod");
     logger.info("Wait for the webhook to fire alert and check webhook log file in {0} namespace ", webhookNS);
 
-    withStandardRetryPolicy
-            .conditionEvaluationListener(
-                condition -> logger.info("Waiting for webhook to fire alert  "
-                                + "(elapsed time {0}ms, remaining time {1}ms)",
-                        condition.getElapsedTimeInMS(),
-                        condition.getRemainingTimeInMS()))
-            .until(assertDoesNotThrow(() -> searchPodLogForKey(pod,
-                    "Some WLS cluster has only one running server for more than 1 minutes"),
-
-                    "webhook failed to fire alert"));
+    testUntil(
+        assertDoesNotThrow(() -> searchPodLogForKey(pod,
+                "Some WLS cluster has only one running server for more than 1 minutes"),
+          "webhook failed to fire alert"),
+        logger,
+        "webhook to fire alert");
   }
 
   /**
@@ -816,15 +804,11 @@ class ItMonitoringExporter {
       String curlCmd = String.format("curl -v  -H 'Content-Type: application/json' "
                       + " -X GET http://admin:12345678@%s:%s/api/dashboards",
               K8S_NODEPORT_HOST, nodeportgrafana);
-      withStandardRetryPolicy
-              .conditionEvaluationListener(
-                condition -> logger.info("Check access to grafana dashboard  "
-                                      + "(elapsed time {0}ms, remaining time {1}ms)",
-                              condition.getElapsedTimeInMS(),
-                              condition.getRemainingTimeInMS()))
-              .until(assertDoesNotThrow(() -> searchForKey(curlCmd, "grafana"),
-                      String.format("Check access to grafana dashboard"
-                              )));
+      testUntil(
+          assertDoesNotThrow(() -> searchForKey(curlCmd, "grafana"),
+            String.format("Check access to grafana dashboard")),
+          logger,
+          "Check access to grafana dashboard");
       logger.info("installing grafana dashboard");
       // url
       String curlCmd0 =
@@ -847,16 +831,11 @@ class ItMonitoringExporter {
       String curlCmd2 = String.format("curl -v  -H 'Content-Type: application/json' "
                       + " -X GET http://admin:12345678@%s:%s/api/dashboards/db/weblogic-server-dashboard",
               K8S_NODEPORT_HOST, nodeportgrafana);
-      withStandardRetryPolicy
-              .conditionEvaluationListener(
-                  condition -> logger.info("Check grafana dashboard metric against expected {0} "
-                                  + "(elapsed time {2}ms, remaining time {3}ms)",
-                          "wls_jvm_uptime",
-                          condition.getElapsedTimeInMS(),
-                          condition.getRemainingTimeInMS()))
-              .until(assertDoesNotThrow(() -> searchForKey(curlCmd2, "wls_jvm_uptime"),
-                      String.format("Check grafana dashboard wls against expected %s",
-                              "wls_jvm_uptime")));
+      testUntil(
+          assertDoesNotThrow(() -> searchForKey(curlCmd2, "wls_jvm_uptime"),
+            String.format("Check grafana dashboard wls against expected %s", "wls_jvm_uptime")),
+          logger,
+          "Check grafana dashboard metric against expected wls_jvm_uptime");
     }
     logger.info("Grafana is running");
   }
@@ -1013,16 +992,13 @@ class ItMonitoringExporter {
     }
     // wait for the pod to be ready
     logger.info("Wait for the {0} pod is ready in namespace {1}", baseImageName, namespace);
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for {0} to be running in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                baseImageName,
-                namespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> podIsReady(namespace, labelSelector, baseImageName),
-            baseImageName + " podIsReady failed with ApiException"));
+    testUntil(
+        assertDoesNotThrow(() -> podIsReady(namespace, labelSelector, baseImageName),
+          baseImageName + " podIsReady failed with ApiException"),
+        logger,
+        "{0} to be running in namespace {1}",
+        baseImageName,
+        namespace);
     return true;
   }
 
@@ -1075,15 +1051,11 @@ class ItMonitoringExporter {
             namespace));
     logger.info("Checking if the deployment is ready {0} completed in namespace {1}",
             "webhook", namespace);
-    withStandardRetryPolicy
-      .conditionEvaluationListener(
-          condition -> logger.info("Waiting for deployment {0} to be completed in namespace {1} "
-                          + "(elapsed time {2} ms, remaining time {3} ms)",
-                  "webhook",
-                  namespace,
-                  condition.getElapsedTimeInMS(),
-                  condition.getRemainingTimeInMS()))
-        .until(Deployment.isReady("webhook", labels, namespace));
+    testUntil(
+        Deployment.isReady("webhook", labels, namespace),
+        logger,
+        "deployment webhook to be completed in namespace {0}",
+        namespace);
 
     webhookService = new V1Service()
         .metadata(new V1ObjectMeta()
@@ -1107,15 +1079,12 @@ class ItMonitoringExporter {
         namespace));
     // wait for the webhook pod to be ready
     logger.info("Wait for the webhook pod is ready in namespace {0}", namespace);
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for webhook to be running in namespace {0} "
-                    + "(elapsed time {1}ms, remaining time {2}ms)",
-                namespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> podIsReady(namespace, "app=webhook", "webhook"),
-            "webhook podIsReady failed with ApiException"));
+    testUntil(
+        assertDoesNotThrow(() -> podIsReady(namespace, "app=webhook", "webhook"),
+          "webhook podIsReady failed with ApiException"),
+        logger,
+        "webhook to be running in namespace {0}",
+        namespace);
   }
 
   /**
@@ -1204,15 +1173,11 @@ class ItMonitoringExporter {
       assertTrue(deploymentCreated, String.format(
               "Create deployment failed with ApiException for coordinator in namespace %s ",
               namespace));
-      withStandardRetryPolicy
-              .conditionEvaluationListener(
-                condition -> logger.info("Waiting for deployment {0} to be completed in namespace {1} "
-                                      + "(elapsed time {2} ms, remaining time {3} ms)",
-                              "coordinator",
-                              namespace,
-                              condition.getElapsedTimeInMS(),
-                              condition.getRemainingTimeInMS()))
-              .until(Deployment.isReady("coordinator", labels, namespace));
+      testUntil(
+          Deployment.isReady("coordinator", labels, namespace),
+          logger,
+          "deployment coordinator to be completed in namespace {0}",
+          namespace);
 
       HashMap<String,String> annotations = new HashMap<>();
       annotations.put("kubectl.kubernetes.io/last-applied-configuration","");
