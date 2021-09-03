@@ -35,7 +35,6 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -44,8 +43,6 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.LOGS_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
@@ -59,6 +56,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.uninstallVoyager;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
@@ -74,7 +72,6 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -113,7 +110,6 @@ class ItStickySession {
   private static String domainNamespace = null;
   private static String voyagerNamespace = null;
   private static String traefikNamespace = null;
-  private static ConditionFactory withStandardRetryPolicy = null;
 
   // constants for Voyager and Traefik
   private static String cloudProvider = "baremetal";
@@ -132,10 +128,6 @@ class ItStickySession {
   @BeforeAll
   public static void init(@Namespaces(4) List<String> namespaces) {
     logger = getLogger();
-    // create standard, reusable retry/backoff policy
-    withStandardRetryPolicy = with().pollDelay(2, SECONDS)
-        .and().with().pollInterval(10, SECONDS)
-        .atMost(5, MINUTES).await();
 
     // get a unique Voyager namespace
     logger.info("Get a unique namespace for Voyager");
@@ -243,17 +235,14 @@ class ItStickySession {
       }
     }
 
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for pod {0} to be created in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                ingressServiceName,
-                domainNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> isVoyagerPodReady(domainNamespace, ingressServiceName),
-            String.format("podExists failed with ApiException for pod %s in namespace %s",
-                ingressServiceName, domainNamespace)));
+    testUntil(
+        assertDoesNotThrow(() -> isVoyagerPodReady(domainNamespace, ingressServiceName),
+          String.format("podExists failed with ApiException for pod %s in namespace %s",
+            ingressServiceName, domainNamespace)),
+        logger,
+        "pod {0} to be created in namespace {1}",
+        ingressServiceName,
+        domainNamespace);
 
     // get Voyager ingress service Nodeport
     int ingressServiceNodePort =
@@ -316,17 +305,11 @@ class ItStickySession {
     String curlString =
         buildCurlCommand(ingressHost, 0, SESSMIGR_APP_WAR_NAME + "/?getCounter", " -b ");
     logger.info("Command to set HTTP request or get HTTP response {0} ", curlString);
-    withStandardRetryPolicy 
-        .conditionEvaluationListener(
-            condition -> logger.info("Checking if app is available "
-                + "(elapsed time {0} ms, remaining time {1} ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> {
-          return () -> {
-            return exec(new String(curlString), true).stdout().contains("managed-server");
-          };
-        }));
+    testUntil(
+        assertDoesNotThrow(() ->
+            () -> exec(curlString, true).stdout().contains("managed-server")),
+        logger,
+        "Checking if app is available");
     // verify that two HTTP connections are sticky to the same server
     sendHttpRequestsToTestSessionStickinessAndVerify(ingressHost, 0);
   }

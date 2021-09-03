@@ -25,13 +25,10 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
@@ -48,6 +45,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomR
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployToClusterUsingRest;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
@@ -59,7 +57,6 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -72,8 +69,7 @@ class ItIstioTwoDomainsInImage {
   private static String opNamespace = null;
   private static String domainNamespace1 = null;
   private static String domainNamespace2 = null;
-  private static ConditionFactory withStandardRetryPolicy = null;
-  private final String clusterName = "cluster-1"; // do not modify 
+  private final String clusterName = "cluster-1"; // do not modify
   private final String adminServerName = "admin-server"; // do not modify
   private final String domainUid1 = "istio-dii-wdt-1";
   private final String domainUid2 = "istio-dii-wdt-2";
@@ -91,10 +87,6 @@ class ItIstioTwoDomainsInImage {
   @BeforeAll
   public static void initAll(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
-    // create standard, reusable retry/backoff policy
-    withStandardRetryPolicy = with().pollDelay(2, SECONDS)
-        .and().with().pollInterval(10, SECONDS)
-        .atMost(5, MINUTES).await();
 
     // get a new unique opNamespace
     logger.info("Assigning unique namespace for Operator");
@@ -168,26 +160,20 @@ class ItIstioTwoDomainsInImage {
         replicaCount);
 
     logger.info("Check for domain custom resource in namespace {0}", domainNamespace1);
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                domainUid1,
-                domainNamespace1,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(domainExists(domainUid1, DOMAIN_VERSION, domainNamespace1));
+    testUntil(
+        domainExists(domainUid1, DOMAIN_VERSION, domainNamespace1),
+        logger,
+        "domain {0} to be created in namespace {1}",
+        domainUid1,
+        domainNamespace1);
 
     logger.info("Check for domain custom resource in namespace {0}", domainNamespace2);
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                domainUid2,
-                domainNamespace2,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(domainExists(domainUid2, DOMAIN_VERSION, domainNamespace2));
+    testUntil(
+        domainExists(domainUid2, DOMAIN_VERSION, domainNamespace2),
+        logger,
+        "domain {0} to be created in namespace {1}",
+        domainUid2,
+        domainNamespace2);
 
     // check admin services are created 
     logger.info("Check admin service {0} is created in namespace {1}",

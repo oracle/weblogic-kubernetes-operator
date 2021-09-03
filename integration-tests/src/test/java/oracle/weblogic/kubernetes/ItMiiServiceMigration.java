@@ -14,7 +14,6 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -22,8 +21,6 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
@@ -46,6 +43,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndS
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runClientInsidePod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runJavacInsidePod;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createLeasingTable;
 import static oracle.weblogic.kubernetes.utils.DbUtils.getDBNodePort;
@@ -60,7 +58,6 @@ import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -94,7 +91,6 @@ class ItMiiServiceMigration {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
-  private static ConditionFactory withStandardRetryPolicy = null;
   private static int replicaCount = 2;
   private static final String domainUid = "mii-jms-recovery";
   private static String pvName = domainUid + "-pv";
@@ -117,10 +113,6 @@ class ItMiiServiceMigration {
   @BeforeAll
   public static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
-    // create standard, reusable retry/backoff policy
-    withStandardRetryPolicy = with().pollDelay(2, SECONDS)
-        .and().with().pollInterval(10, SECONDS)
-        .atMost(5, MINUTES).await();
 
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
@@ -197,15 +189,12 @@ class ItMiiServiceMigration {
 
     // wait for the domain to exist
     logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                domainUid,
-                domainNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(domainExists(domainUid, DOMAIN_VERSION, domainNamespace));
+    testUntil(
+        domainExists(domainUid, DOMAIN_VERSION, domainNamespace),
+        logger,
+        "domain {0} to be created in namespace {1}",
+        domainUid,
+        domainNamespace);
 
     logger.info("Check admin service and pod {0} is created in namespace {1}",
         adminServerPodName, domainNamespace);
@@ -358,14 +347,12 @@ class ItMiiServiceMigration {
   // Run standalone JMS Client to send/receive message from
   // Distributed Destination Member
   private void runJmsClientOnAdminPod(String action, String queue) {
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Wait for JMS Client to send/recv msg "
-                    + "(elapsed time {0}ms, remaining time {1}ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(runClientInsidePod(adminServerPodName, domainNamespace,
-            "/u01", "JmsSendReceiveClient", "t3://" + domainUid + "-cluster-cluster-1:8001", action, queue, "100"));
+    testUntil(
+        runClientInsidePod(adminServerPodName, domainNamespace,
+          "/u01", "JmsSendReceiveClient",
+            "t3://" + domainUid + "-cluster-cluster-1:8001", action, queue, "100"),
+        logger,
+        "Wait for JMS Client to send/recv msg");
   }
 
   /*
@@ -390,17 +377,10 @@ class ItMiiServiceMigration {
           .append(" -w %{http_code});")
           .append("echo ${status}");
     logger.info("checkJmsServerRuntime: curl command {0}", new String(curlString));
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for JMS Service to migrate "
-                + "(elapsed time {0} ms, remaining time {1} ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> {
-          return () -> {
-            return exec(new String(curlString), true).stdout().contains("200");
-          };
-        }));
+    testUntil(
+        assertDoesNotThrow(() -> () -> exec(curlString.toString(), true).stdout().contains("200")),
+        logger,
+        "JMS Service to migrate");
     return true;
   }
 
@@ -427,17 +407,11 @@ class ItMiiServiceMigration {
           .append("?fields=active&links=none\"")
           .append(" --show-error ");
     logger.info("checkJtaRecoveryServiceRuntime: curl command {0}", new String(curlString));
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for JTA Recovery Service to migrate "
-                + "(elapsed time {0} ms, remaining time {1} ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> {
-          return () -> {
-            return exec(new String(curlString), true).stdout().contains("{\"active\": " + active + "}");
-          };
-        }));
+    testUntil(
+        assertDoesNotThrow(() -> () -> exec(curlString.toString(), true)
+            .stdout().contains("{\"active\": " + active + "}")),
+        logger,
+        "JTA Recovery Service to migrate");
     return true;
   }
 
