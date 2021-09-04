@@ -1,8 +1,8 @@
 ---
-title: "Channels"
+title: "External network access security"
 date: 2019-03-08T19:07:36-05:00
 weight: 2
-description: "WebLogic channels"
+description: "Remote access security"
 ---
 
 #### WebLogic T3 channels
@@ -13,9 +13,62 @@ unless absolutely necessary. If exposing any of these channels, limit access usi
 controls like security lists or set up a Bastion to provide access.
 {{% /notice %}}
 
-When accessing T3 or RMI based channels, the preferred approach is to `kubectl exec` into
-the Kubernetes Pod and then run `wlst`, or set up Bastion access and then run
-`wlst` from the Bastion host to connect to the Kubernetes cluster.
+When accessing T3 or RMI based channels for administrative purposes
+such as running WLST, the preferred approach is to `kubectl exec` into
+the Kubernetes Pod and then run `wlst.sh`, or set up Bastion access and then run
+`java weblogic.WLST` or `$ORACLE_HOME/oracle_common/common/bin/wlst.sh`
+from the Bastion host to connect to the Kubernetes cluster
+(some cloud environments use the term Jump Host or Jump Server instead of Bastion).
 
 Also, consider a private VPN if you need use cross-domain T3 access
 between clouds, data centers, and such.
+
+#### WebLogic HTTP channels
+
+When providing remote access to HTTP using a load balancer or similar,
+Oracle recommends relaying the traffic to a dedicated
+WebLogic Server port that you have configured
+using a custom HTTP channel (network access point)
+instead of relaying the traffic to a default port.
+This helps ensure that external
+traffic is limited to the HTTP protocol. A custom HTTP channel
+is preferred over a default port because a default port supports
+multiple protocols.
+
+Do not enable tunneling on an HTTP channel unless you specifically
+intend to allow it to handle T3 traffic
+(tunneling allows T3 to tunnel through the channel using HTTP).
+
+#### Limit use of Kubernetes NodePorts
+
+Although Kubernetes `NodePorts` are good for use in demos and getting-started guides,
+they are usually not suited for production systems for multiple reasons, including:
+
+- With some cloud providers, a `NodePort` may implicitly expose a port to the public Internet.
+- They bypass almost all network security in Kubernetes.
+- They allow all protocols (load balancers can limit to the HTTP protocol).
+- They cannot expose standard, low-numbered ports like 80 and 443 (or even 8080 and 8443).
+- Some Kubernetes cloud environments cannot expose usable `NodePorts` because their Kubernetes clusters run on a private network that cannot be reached by external clients.
+
+#### General advice
+
+1. _Set up admin ports_: Configure an admin port on WebLogic, or an admin channel, to prevent
+   all other channels from accepting administration privileged traffic
+   (this includes preventing administration priviliged traffic from a WebLogic console over HTTP).
+
+1. _Be aware of anonymous defaults_:
+   If an externally available port supports a protocol suitable for WebLogic 
+   JNDI, EJB/RMI, or JMS clients, 
+   then note that:
+   - WebLogic enables anonymous users to access such a port by default,
+   - JNDI entries, EJB/RMI applications, and JMS are open to anonymous users by default.
+
+1. _Configure SSL_:
+   You can configure two-way SSL to help prevent external access by unwanted applications
+   (often SSL is setup between the caller and the load balancer, and plain-text
+   traffic flows internally from the load balancer to WebLogic).
+
+#### See also
+
+- [External WebLogic clients]({{< relref "/faq/external-clients.md" >}})
+- [Remote Console, Administration Console, WLST, and Port Forwarding access]({{< relref "/userguide/managing-domains/accessing-the-domain/_index.md" >}})

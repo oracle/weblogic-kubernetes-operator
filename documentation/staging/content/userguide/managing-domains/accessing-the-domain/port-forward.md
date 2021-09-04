@@ -6,128 +6,253 @@ weight: 4
 description: "You can use Port Forwarding to access the Administration console and WLST."
 ---
 
+### Contents
 
-Beginning with operator version 4.0.0, you can use the `kubectl port-forward` command to allow external access to the WebLogic Administration Console and WLST access to manage a domain running in Kubernetes. You can use this method to access the Administration console locally or connect using WLST for investigating the issues without exposing them to the public internet. See [port-forward](https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#port-forward) in the Kubernetes reference documentation for `kubectl port-forward` usage and examples.
+* [Overview](#overview)
+* [Set up Administration Server network channels for port forward access](#set-up-administration-server-network-channels-for-port-forward-access)
+* [Port forward to an Administration Server pod](#port-forward-to-an-administration-server-pod) 
+  * [Port forward example](#port-forward-example)
+  * [Port forward notes and warnings](#port-forward-notes-and-warnings)
+  * [Enabling WLST access when local and remote ports do not match](#enabling-wlst-access-when-local-and-remote-ports-do-not-match)
+  * [Terminating port forwarding](#terminating-port-forwarding)
 
-The operator automatically adds the required network channels with a 'localhost' address for each existing admin protocol capable port to enable this access. See [Additional network channels created for kubectl port-forward](#additional-network-channels-created-for-kubectl-port-forward) for network channels created by the operator.  You can disable this behavior by setting the `domain.spec.adminServer.adminChannelPortForwardingEnabled` attribute in the domain resource to `false`. Run the `kubectl explain domain.spec.adminServer.adminChannelPortForwardingEnabled` command or see in the domain resource [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md) for more details.
+### Overview
 
-#### Forward a local port to an administration port on the Administration Server Pod
-The `kubectl port-forward` command allows using the resource type/name to select a matching pod to port forward to. You also need to define the local and remote port numbers:
+Beginning with WebLogic Kubernetes Operator version 3.3.2,
+or earlier if you are using an
+[Istio enabled]({{< relref "/userguide/istio/istio#how-istio-enabled-domains-differ-from-regular-domains" >}}) domain,
+you can use the `kubectl port-forward` command to set up external access for 
+the WebLogic Administration Console, the Remote Console, and WLST.
+This approach is particularly useful for managing WebLogic
+from a private local network without exposing WebLogic's ports to a public network.
 
+Here are the steps:
+
+1. Set up [WebLogic Administration Server network channels for port forward access](#set-up-administration-server-network-channels-for-port-forward-access). 
+1. If you are setting up WLST access
+and your port forwarding local port is not going to be the same as the
+port number on the WebLogic Administration server pod,
+then see [enabling WLST access when local and remote ports do not match](#enabling-wlst-access-when-local-and-remote-ports-do-not-match) for an additional required setup step.
+1. Run a [port forwarding command](#port-forward-to-an-administration-server-pod), but be sure to review the [port forward notes and warnings](#port-forward-notes-and-warnings) before running the command.
+1. Use the WebLogic Administration Console, the Remote Console, and/or WLST with the port forwarding command's local address.
+1. Finally, [terminate port forwarding](#terminating-port-forwarding)
+
+### Set up Administration Server network channels for port forward access
+
+To enable a `kubectl port-forward` command to communicate
+with a WebLogic Administration Server pod, the operator
+must modify the WebLogic admin server configuration
+to add network channels (network access points)
+with a 'localhost' address for each existing admin protocol capable port.
+This behavior depends on your version and domain resource configuration:
+
+* If Istio is _not_ enabled on the domain, then, for
+  operator versions 3.3.2 and later, this behavior
+  is configurable on the domain resource using the
+  `domain.spec.adminServer.adminChannelPortForwardingEnabled`
+  domain resource attribute. This attribute
+  is enabled by default in operator versions 4.0 and later,
+  and is disabled by default in versions prior to 4.0.
+  For details about this attribute,
+  run the `kubectl explain domain.spec.adminServer.adminChannelPortForwardingEnabled` command
+  or see the domain resource [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md).
+  
+* For Istio enabled domains, the operator already adds a
+  network channel with a localhost listen address for each
+  existing port. This means that no additional configuration is required
+  to enable port-forwarding when Istio is enabled.
+  See [How Istio-enabled domains differ from regular domains]({{< relref "/userguide/istio/istio#how-istio-enabled-domains-differ-from-regular-domains" >}}) for more details.
+  
+{{% notice tip %}}
+If your domain is already running, and you have made configuration changes,
+then you will need to rerun its introspector job and ensure the admin pod
+restarts for the configuration changes to take effect.
+{{% /notice %}}
+
+When admin channel port forwarding is enabled,
+the operator automatically adds the following network channels
+(also known as Network Access Points) to the WebLogic Administration Server pod:
+
+Situation | Channel Name | Listen Address | Port | Protocol
+--- |  --- | --- | --- | ---
+When there's no admin port or admin channels configured, and a non-SSL default channel exists | internal-t3 | localhost | Server listening port | t3
+When there's no admin port or admin channels configured, and an SSL default channel exists | internal-t3s | localhost | Server SSL listening port | t3s 
+When an admin port is enabled | internal-admin | localhost | WebLogic administration port | admin
+When a custom admin channel is configured | internal-admin | localhost | Custom administration port | admin
+
+### Port forward to an Administration Server Pod
+
+If you have
+[set up WebLogic Administration Server network channels for port forward access](#set-up-administration-server-network-channels-for-port-forward-access),
+then you can run a `kubectl port-forward` command to access such a channel. The command:
+* Opens a port of your choosing on `localhost` by default
+  on the machine where you run the command.
+* Forwards traffic from this location to an 
+  address and port on the pod.
+For administrative access, you need to forward to a port on the Administration Server Pod
+that accepts admin traffic.
+
+Port forwarding occurs as long as the remote pod 
+and the command are running. If you exit the command,
+then the forwarding stops and the local port and address is freed.
+If the pod cycles or shuts down, then the forwarding
+also stops and the command must be rerun after the
+pod recovers in order for the forwarding to restart.
+
+The `kubectl port-forward` command has the following syntax:
+
+```shell
+kubectl port-forward K8S_RESOURCE_TYPE/K8S_RESOURCE_NAME [options] LOCAL_PORT:REMOTE_PORT_ON_RESOURCE
 ```
-kubectl port-forward TYPE/NAME [options] LOCAL_PORT:REMOTE_PORT
-```
 
-For the WebLogic Administration Console access, you need to forward a local port (on the machine where `port-forward` command is run) to the Administration Server Pod. For example, if you have a WebLogic domain with UID `domain1` running in namespace `mynamespace` and the Administration Server name is `admin-server` with non-SSL listen port 7001, then you can run the below command to forward a local port (port 32015 in this example) to the admin port (port 7001 in this example) of the Administration Server Pod. In this scenario, the Kubernetes API listens on local port 32015 and forwards data to port 7001 on the Administration Server Pod.
+For detailed usage, see [port-forward](https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#port-forward)in the Kubernetes reference documentation and run `kubectl port-forward -h`.
+
+For examples, notes, and warnings, see the [port forward example](#port-forward-example) and [port forward notes and warnings](#port-forward-notes-and-warnings) below.
+
+#### Port forward example
+
+For example, if you have a WebLogic domain with:
+
+* Domain UID `domain1`
+* namespace `mynamespace`
+* an Administration Server named `admin-server` listening on non-SSL listen port 7001
+* no admin port or admin channels configured on the Administration Server
+
+And you have [set up WebLogic Administration Server network channels for port forward access](#set-up-administration-server-network-channels-for-port-forward-access) for this domain, 
+then you can run either of the following commands to forward local port 32015 to
+the Administration Server Pod:
 
 ```shell
 kubectl port-forward pods/domain1-admin-server -n mynamespace 32015:7001
 ```
+
 or
 
 ```shell
 kubectl port-forward service/domain1-admin-server -n mynamespace 32015:7001
 ```
-The output is similar to this:
+
+And the command's output will be similar to the following:
+
 
 ```
 Forwarding from 127.0.0.1:32015 -> 7001
 ```
 
-You can access the Administration console at `http://localhost:32015/console` URL on the machine where the above 'kubectl port-forward' command is run and you can use WLST to connect to `t3://localhost:32015` as shown below:
+In this example:
 
-```shell
-$ ~/wls/oracle_common/common/bin/wlst.sh
-```
-```
-Initializing WebLogic Scripting Tool (WLST) ...
+* You can access the Administration console
+  at the `http://localhost:32015/console` URL by using a browser
+  on the machine where your run the 'kubectl port-forward' command.
 
-Welcome to WebLogic Server Administration Scripting Shell
+* You can use WLST 
+  on the machine where your run the 'kubectl port-forward' command
+  to connect to `t3://localhost:32015` as shown below:
 
-Type help() for help on available commands
+  ```shell
+  $ $ORACLE_HOME/oracle_common/common/bin/wlst.sh
+  ```
+  ```text
+  Initializing WebLogic Scripting Tool (WLST) ...
+  
+  Welcome to WebLogic Server Administration Scripting Shell
 
-wls:/offline> connect('weblogic','*password*','t3://localhost:32015')
-Connecting to t3://localhost:32015 with userid weblogic ...
-Successfully connected to Admin Server "admin-server" that belongs to domain "base_domain".
+  Type help() for help on available commands
 
-Warning: An insecure protocol was used to connect to the server.
-To ensure on-the-wire security, the SSL port or Admin port should be used instead.
+  wls:/offline> connect('myadminuser','myadminpassword','t3://localhost:32015')
+  Connecting to t3://localhost:32015 with userid myadminuser ...
+  Successfully connected to Admin Server "admin-server" that belongs to domain "base_domain".
 
-wls:/base_domain/serverConfig/> exit()
-```
+  Warning: An insecure protocol was used to connect to the server.
+  To ensure on-the-wire security, the SSL port or Admin port should be used instead.
 
-If the WebLogic administration port is configured and enabled on the Administration Server, then you will need to forward the local port to the administration port. In this case, the Administration Console access requires using the secure `https` protocol and WLST access requires using `t3s` protocol. Similarly, when the SSL port is configured and enabled, using the SSL port requires using the `https` and `t3s` protocols for Console and WLST access respectively.
+  wls:/base_domain/serverConfig/> exit()
+  ```
 
-{{% notice warning %}}
-A port-forward connection can expose a WebLogic T3 or Administrative channel outside the Kubernetes cluster. See [WebLogic T3 channels]({{< relref "/security/domain-security/weblogic-channels#weblogic-t3-channels" >}}) for domain security considerations when exposing WebLogic T3 channels outside the Kubernetes cluster.
+{{% notice tip %}}
+If you are setting up WLST access
+and your port forwarding local port is not going to be the same as the
+port number on the WebLogic Administration server pod,
+then see [Enabling WLST access when local and remote ports do not match](#enabling-wlst-access-when-local-and-remote-ports-do-not-match) for an additional required setup step.
 {{% /notice %}}
 
-{{% notice note %}}
-A port-forward connection terminates once the Pod instance fails or restarts. You can rerun the same command to establish a new forwarding session and resume forwarding.
-{{% /notice %}}
+#### Port forward notes and warnings
 
-{{% notice note %}}
-If the local (forwarded) port number is not the same as the Administration port number, then the WLST access will not work by default and you will see below `BEA-000572` RJVM error in the administration server logs. You can add the `-Dweblogic.rjvm.enableprotocolswitch=true` argument to the command line JAVA_OPTIONS for the Administration Server to enable WLST access. Refer to [MOS 'Doc 860340.1'](https://support.oracle.com/rs?type=doc&id=860340.1) for more information on this switch.
+- _Security warning_:
+  A port-forward connection can expose a WebLogic T3 or Administrative channel
+  outside the Kubernetes cluster.
+  See [External network access security]({{< relref "/security/domain-security/weblogic-channels.md" >}})
+  for domain security considerations.
+
+- _Working with admin or SSL ports_:
+  If a WebLogic administration port is configured and enabled on the Administration Server,
+  then you will need to forward to this port instead of its pod's other ports.
+  In this case, the Administration Console access requires using the secure
+  `https` protocol and WLST access requires using `t3s` protocol.
+  Similarly, if forwarding to an SSL port, then this requires using
+  the `https` and `t3s` protocols for Console and WLST access respectively.
+
+- _Recovering from pod failures and restarts_:
+  A port-forward connection terminates once the Pod instance fails or restarts.
+  You can rerun the same command to establish a new forwarding session and resume forwarding.
+
+- _Specifying a custom local IP address for port forwarding_:
+
+  You can use the `--address` option of the `kubectl port-forward` command
+  to listen on specific IP addresses instead of, or in addition to, `localhost`.
+  The `--address` option only accepts numeric IP addresses
+  or localhost (comma-separated) as a value.
+
+  For example, to enable Administration console access at 
+  `http://my-ip-address:32015/console`, the command:
+
+  ```shell
+  kubectl port-forward --address my-ip-address pods/domain1-admin-server -n mynamespace 32015:7001
+  ```
+
+  See `kubectl port-forward -h` for help and examples.
+
+- _Optionally let `kubectl port-forward` choose the local port_:
+
+  If don't specify a local port in your port forward command, for example:
+
+  ```shell
+  kubectl port-forward pods/domain1-admin-server -n mynamespace :7001
+  ```
+
+  Then the command finds a local port number that is not in use,
+  and its output is similar to:
+
+  ```text
+  Forwarding from 127.0.0.1:63753 -> 7001
+  ```
+
+  And the Administration console is accessible using `http://localhost:63753/console` URL.
+
+#### Enabling WLST access when local and remote ports do not match
+
+If a local (forwarded) port number is not the same as the Administration port number,
+then  WLST access will not work by default and you may see a `BEA-000572` RJVM error
+in the administration server logs: 
+
 ```text
-<Aug 30, 2021 9:33:24,753 PM GMT> <Error> <RJVM> <BEA-000572> <The server rejected a connection attempt JVMMessage from: '-2661445766084484528C:xx.xx.xx.xxR:-5905806878036317188S:domain1-admin-server:domain1:admin-server' to: '0B:xx.xx.xx.xx:[-1,-1,32015,-1,-1,-1,-1]' cmd: 'CMD_IDENTIFY_REQUEST', QOS: '102', responseId: '-1', invokableId: '-1', flags: 'JVMIDs Sent, TX Context Not Sent, 0x1', abbrev offset: '114' probably due to an incorrect firewall configuration or administrative command.></pre>
+<Aug 30, 2021 9:33:24,753 PM GMT> <Error> <RJVM> <BEA-000572> <The server rejected a connection attempt JVMMessage from: '-2661445766084484528C:xx.xx.xx.xxR:-5905806878036317188S:domain1-admin-server:domain1:admin-server' to: '0B:xx.xx.xx.xx:[-1,-1,32015,-1,-1,-1,-1]' cmd: 'CMD_IDENTIFY_REQUEST', QOS: '102', responseId: '-1', invokableId: '-1', flags: 'JVMIDs Sent, TX Context Not Sent, 0x1', abbrev offset: '114' probably due to an incorrect firewall configuration or administrative command.><
 ```
-{{% /notice %}}
 
-#### Specify Local IP Address for Port Forwarding
-You can use the `--address` option of the `kubectl port-forward` command to listen on the defined IP address. The `--address` option only accepts IP addresses or localhost (comma-separated) as a value. See `kubectl port-forward -h` for help and examples.
+To work-around the problem, configure the `JAVA_OPTIONS` environment variable
+for your admin server with the `-Dweblogic.rjvm.enableprotocolswitch=true` system property
+in your domain resource YAML.
+Refer to [MOS 'Doc 860340.1'](https://support.oracle.com/rs?type=doc&id=860340.1) for more information on this switch.
 
-Below is an example command that uses a defined IP address.
+#### Terminating port forwarding
 
-```shell
-kubectl port-forward --address my-ip-address pods/domain1-admin-server -n mynamespace 32015:7001
-```
-The Administration console can be accessed at `http://my-ip-address:32015/console` URL after running the above command. 
+A port-forward connection is only active while the `kubectl port-forward` command is running.
 
-#### Optionally let kubectl choose the local port
-If you don't need a specific local port, then you can let kubectl choose and allocate the local port, with the below syntax:
+You can terminate the port-forward connection by pressing CTRL+C in the terminal where the port-forward command is running. 
 
-```shell
-kubectl port-forward pods/domain1-admin-server -n mynamespace :7001
-```
-The kubectl tool finds a local port number that is not in use. The output is similar to:
+If you run the command in the background, then you can kill the process with `kill -9 <pid>` command. For example:
 
-```
-Forwarding from 127.0.0.1:63753 -> 7001
-```
-In this example, the Administration console is accessible using `http://localhost:63753/console` URL.
-
-#### Additional network channels created for `kubectl port-forward`
-When the Administrative channel port forwarding is enabled (default), the operator automatically adds the following network channels using configuration overrides during introspection for 'kubectl port-forward'. Set the `domain.spec.adminServer.adminChannelPortForwardingEnabled` attribute in the domain resource to `false` if you want to disable this behavior.
-
-For domains with default channel using non-SSL traffic:
-Name | Listen Address | Port | Protocol
---- | --- | --- | ---
-internal-t3 | localhost | Server listening port | t3
-
-For domains with default channel for non-SSL traffic and default secure channel for SSL traffic:
-Name | Listen Address | Port | Protocol
---- | --- | --- | ---
-internal-t3 | localhost | Server listening port | t3
-internal-t3s | localhost | Server SSL listening port | t3s
-
-If the WebLogic administration port is enabled on the Administration Server:
-Name | Listen Address | Port | Protocol
---- | --- | --- | ---
-internal-admin | localhost | WebLogic administration port | admin
-
-If a custom admin channel is configured on the Administration Server:
-Name | Listen Address | Port | Protocol
---- | --- | --- | ---
-internal-admin | localhost | Custom administration port | admin
-
-**NOTE:** The additional network channels are created only for the Administration Server (and not for the managed servers).
-
-**NOTE:** For the Istio enabled domains, the operator already adds a network channel with localhost listen address. Hence additional network channels are not created for `kubectl port-forward` when Istio support is enabled. See [How Istio-enabled domains differ from regular domains]({{< relref "/userguide/istio/istio#how-istio-enabled-domains-differ-from-regular-domains" >}}) for more details.
-
-#### Terminating the port-forward connection
-A port-forward connection is only active while the `kubectl port-forward` command is running. You can terminate the port-forward connection by pressing CTRL+C in the terminal where the port-forward command is running. If you run the command in the background, then you can kill the process with `kill -9 <pid>` command.
-
-```
+```text
 $ ps -ef | grep port-forward
 oracle   27072 25312  1 21:45 pts/3    00:00:00 kubectl -n mynamespace port-forward pods/domain1-admin-server 32015:7001
 oracle   27944 11417  0 21:45 pts/1    00:00:00 grep --color=auto port-forward
