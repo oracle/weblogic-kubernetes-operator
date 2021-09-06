@@ -120,6 +120,11 @@ public class EventHelper {
     }
 
     @Override
+    protected String getDetail() {
+      return eventData.eventItem.toString();
+    }
+
+    @Override
     public NextAction apply(Packet packet) {
       return doNext(createEventAPICall(createEventModel(packet, eventData)), packet);
     }
