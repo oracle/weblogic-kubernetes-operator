@@ -1064,7 +1064,7 @@ public class DomainProcessorImpl implements DomainProcessor {
   private void regDump(String type, Packet packet) {
     final String bc = Fiber.getCurrentIfSet().getBreadCrumbString();
     DomainPresenceInfo.fromPacket(packet)
-          .ifPresent(dpi -> System.out.println("REG-> " + type + " dpi@" + System.identityHashCode(dpi) + " " + bc));
+          .ifPresent(dpi -> LOGGER.info("REG-> " + type + " dpi@" + System.identityHashCode(dpi) + " " + bc));
   }
 
   @SuppressWarnings("unused")
