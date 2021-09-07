@@ -304,5 +304,46 @@
                 </includes-failsafe>
             </properties>
         </profile>
+        <profile>
+            <id>wko-olcne-cert</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                   **/ItCoherenceTests,
+                   **/ItConfigDistributionStrategy,
+                   **/ItCrossDomainTransaction,
+                   **/ItElasticLogging,
+                   **/ItElasticLoggingFluentd,
+                   **/ItExternalRmiTunneling,
+                   **/ItInitContainers,
+                   **/ItIntrospectVersion,
+                   **/ItIstioCrossDomainTransaction,
+                   **/ItIstioDomainInImage,
+                   **/ItIstioDomainInPV,
+                   **/ItIstioMiiDomain,
+                   **/ItIstioTwoDomainsInImage,
+                   **/ItKubernetesEvents,
+                   **/ItManageNameSpace,
+                   **/ItMiiDomain,
+                   **/ItMiiDomainModelInPV,
+                   **/ItMiiDynamicUpdate,
+                   **/ItMiiMultiModel,
+                   **/ItMiiSample,
+                   **/ItMiiUpdateDomainConfig,
+                   **/ItMonitoringExporter,
+                   **/ItOperatorRestart,
+                   **/ItParameterizedDomain,
+                   **/ItPodTemplates,
+                   **/ItPodsRestart,
+                   **/ItPodsShutdownOption,
+                   **/ItProductionSecureMode,
+                   **/ItWlsSamples,
+                   **/ItServerStartPolicy,
+                   **/ItSessionMigration,
+                   **/ItSystemResOverrides,
+                   **/ItUsabilityOperatorHelmChart
+                </includes-failsafe>
+            </properties>
+        </profile>        
     </profiles>
 </project>
