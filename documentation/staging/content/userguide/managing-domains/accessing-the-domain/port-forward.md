@@ -37,6 +37,13 @@ then see [enabling WLST access when local and remote ports do not match](#enabli
 1. Use the WebLogic Administration Console, the Remote Console, and/or WLST with the port forwarding command's local address.
 1. Finally, [terminate port forwarding](#terminating-port-forwarding)
 
+{{% notice warning %}}
+Externally exposing administrative, RMI, or T3 capable WebLogic channels
+using a Kubernetes `NodePort`, load balancer,
+port forwarding, or a similar method can create an insecure configuration.
+For more information, see [external network access security]({{<relref "/security/domain-security/weblogic-channels.md">}}).
+{{% /notice %}}
+
 ### Set up Administration Server network channels for port forward access
 
 To enable a `kubectl port-forward` command to communicate
@@ -199,7 +206,7 @@ In this example:
 
   {{% notice tip %}}
   Specifying a custom local IP address for port forwarding allows
-  you to run your browser on a different machine 
+  you to run WLST or your browser on a different machine 
   than the port forward command.
   {{% /notice %}}
 
