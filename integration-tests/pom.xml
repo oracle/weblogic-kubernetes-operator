@@ -299,7 +299,8 @@
                   **/ItOperatorFmwUpgrade,
                   **/ItOperatorWlsUpgrade,
                   **/ItFmwDynamicDomainInPV,
-                  **/ItFmwDomainInPVUsingWDT
+                  **/ItFmwDomainInPVUsingWDT,
+                  **/ItMiiSampleFmwMain
                 </includes-failsafe>
             </properties>
         </profile>
