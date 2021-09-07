@@ -29,9 +29,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
@@ -148,9 +148,7 @@ class ItWlsSamples {
   void testSampleDomainInImage(String model) {
     String domainName = model.split(":")[1];
     String script = model.split(":")[0];
-    String imageName = (KIND_REPO != null
-            ? KIND_REPO + diiImageNameBase + "_" + script + ":" + diiImageTag
-            : diiImageNameBase + "_" + script + ":" + diiImageTag);
+    String imageName = DOMAIN_IMAGES_REPO + diiImageNameBase + "_" + script + ":" + diiImageTag;
 
     //copy the samples directory to a temporary location
     setupSample();
@@ -674,11 +672,11 @@ class ItWlsSamples {
   }
 
   private void setupLoadBalancer(Path sampleBase, String ingressType, String additionalOptions) {
-    // run setupLoadBalancer.sh to install/uninstall ingress controller 
+    // run setupLoadBalancer.sh to install/uninstall ingress controller
     CommandParams params = new CommandParams().defaults();
     params.command("sh "
            + Paths.get(sampleBase.toString(), "setupLoadBalancer.sh").toString()
-           + " -t " + ingressType 
+           + " -t " + ingressType
            + additionalOptions);
     logger.info("Run setupLoadBalancer.sh to manage {0} ingress controller", ingressType);
     boolean result = Command.withParams(params).execute();
