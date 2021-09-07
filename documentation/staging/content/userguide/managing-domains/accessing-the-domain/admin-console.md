@@ -40,17 +40,22 @@ To set up access to WebLogic Server domains running in Kubernetes using the Remo
    **NOTE**: These instructions assume that you are installing and running the Remote Console Java program externally to your Kubernetes cluster.
 
 1. When you first connect your browser to the Remote Console, which is at `http://localhost:8012` by default, the console will prompt you with a login dialog for a WebLogic Server Administration Server URL. To give the Remote Console access to an Administration Server running in Kubernetes, you can:
-
    * Use an [Administration Server `NodePort`](#use-an-administration-server-nodeport).
 
    * Deploy a load balancer with [ingress path routing rules](#configure-ingress-path-routing-rules).
 
    * [Use a `kubectl port-forward` connection](#use-a-kubectl-port-forward-connection).
 
+   > Note: If you want to customize the Remote Console listen address, 
+     then see [Specify a Listen Address for the Remote Console Host](https://github.com/oracle/weblogic-remote-console)). This is useful if you want to run the Remote Console
+     on a different machine than your browser, or if you want the Remote Console to use SSL.
+
 
 #### Use an Administration Server `NodePort`
 
-For the Remote Console to connect to the Kubernetes WebLogic Server Administration Server’s `NodePort`, use the URL:
+For the Remote Console to connect to the Kubernetes WebLogic Server Administration Server’s `NodePort`, use the following URL after you have connected to the Remote Console
+with your browser and it
+prompts for the location of your WebLogic Server Administration Server:
 
 ```
 http://hostname:adminserver-NodePort/
@@ -86,7 +91,11 @@ see [Use a `NodePort` for WLST]({{< relref "/userguide/managing-domains/accessin
          port: 7001
    ```
 
-1. For the Remote Console to connect to the Kubernetes WebLogic Server Administration Server, supply a URL that resolves to the load balancer host and ingress that you supplied in the previous step. For example:
+    
+1. Once you have connected to the Remote Console with your browser,
+   it will prompt for the location of your WebLogic Server Administration
+   Server.
+   For the Remote Console to connect to the Kubernetes WebLogic Server Administration Server, supply a URL that resolves to the load balancer host and ingress that you supplied in the previous step. For example:
 
    ```
    http://${HOSTNAME}:${LB_PORT}/
@@ -101,24 +110,35 @@ see [Use a `NodePort` for WLST]({{< relref "/userguide/managing-domains/accessin
 
 #### Use a `kubectl port-forward` connection
 
-1. Forward a local port to the administration port of the Administration Server Pod according to these [instructions]({{< relref "/userguide/managing-domains/accessing-the-domain/port-forward.md" >}}).
+1. Forward a local port (that is external to
+   Kubernetes) to the administration port of the
+   Administration Server Pod according to these
+   [instructions]({{< relref "/userguide/managing-domains/accessing-the-domain/port-forward.md" >}}).
 
-2. For the Remote Console to connect to the Kubernetes WebLogic Server Administration Server, supply a URL using the hostname or the defined local IP address and the local port in the previous step. For example:
+   **NOTE:** If you plan to run the Remote Console java program
+   on a different machine than the port forwarding command,
+   then the port forwarding command needs to specify a `--address` parameter
+   with the IP address of the machine that is hosting the command.
+
+1. Once you have connected to the Remote Console with your browser,
+   it will prompt for the location of your WebLogic Server Administration
+   Server.
+   Supply a URL using the local hostname or IP address
+   from the `port-forward` command in the first step, plus the local port from
+   this same command. For example:
 
    ```
-   http://${HOSTNAME}:${LOCAL_PORT}/
+   http://${LOCAL_HOSTNAME}:${LOCAL_PORT}/
    ```
    Where:
 
-     * `${HOSTNAME}` is the hostname or the defined IP address on the machine where the `kubectl port-forward` command is running.
+     * `${LOCAL_HOSTNAME}` is the hostname or the defined IP address on the machine
+       where the `kubectl port-forward` command is running. This is 
+       customizable on the `port-forward` command and is `localhost`
+       or `127.0.0.1` by default.
 
      * `${LOCAL_PORT}` is the local port where the `kubectl port-forward` command is running.
-
-> Note: If the hostname is not `localhost` or `127.0.0.1`, for example
-to enable running the Remote Console java program
-on a different machine than the port forwarding command,
-then the port forwarding command n step 1 needs to specify a `--address` parameter
-with the IP address of the machine that is hosting the command.
+       This is specified on the `port-forward` command.
 
 ### Test
 

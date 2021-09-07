@@ -105,7 +105,7 @@ The `kubectl port-forward` command has the following syntax:
 kubectl port-forward K8S_RESOURCE_TYPE/K8S_RESOURCE_NAME [options] LOCAL_PORT:REMOTE_PORT_ON_RESOURCE
 ```
 
-For detailed usage, see [port-forward](https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#port-forward)in the Kubernetes reference documentation and run `kubectl port-forward -h`.
+For detailed usage, see [port-forward](https://kubernetes.io/docs/reference/generated/kubectl/kubectl-commands#port-forward) in the Kubernetes reference documentation and run `kubectl port-forward -h`.
 
 For examples, notes, and warnings, see the [port forward example](#port-forward-example) and [port forward notes and warnings](#port-forward-notes-and-warnings) below.
 
@@ -169,13 +169,6 @@ In this example:
   wls:/base_domain/serverConfig/> exit()
   ```
 
-{{% notice tip %}}
-If you are setting up WLST access
-and your port forwarding local port is not going to be the same as the
-port number on the WebLogic Administration server pod,
-then see [Enabling WLST access when local and remote ports do not match](#enabling-wlst-access-when-local-and-remote-ports-do-not-match) for an additional required setup step.
-{{% /notice %}}
-
 #### Port forward notes and warnings
 
 - _Security warning_:
@@ -196,10 +189,23 @@ then see [Enabling WLST access when local and remote ports do not match](#enabli
   A port-forward connection terminates once the Pod instance fails or restarts.
   You can rerun the same command to establish a new forwarding session and resume forwarding.
 
+- _Using WLST when the local port differs from the remote port_: 
+  If you are setting up WLST access
+  and your port forwarding local port is not going to be the same as the
+  port number on the WebLogic Administration server pod,
+  then see [Enabling WLST access when local and remote ports do not match](#enabling-wlst-access-when-local-and-remote-ports-do-not-match) for an additional required setup step.
+
 - _Specifying a custom local IP address for port forwarding_:
+
+  {{% notice tip %}}
+  Specifying a custom local IP address for port forwarding allows
+  you to run your browser on a different machine 
+  than the port forward command.
+  {{% /notice %}}
 
   You can use the `--address` option of the `kubectl port-forward` command
   to listen on specific IP addresses instead of, or in addition to, `localhost`.
+
   The `--address` option only accepts numeric IP addresses
   or localhost (comma-separated) as a value.
 
