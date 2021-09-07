@@ -99,7 +99,6 @@ import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainWithNewSecretAndVerify;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createfixPVCOwnerContainer;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
-import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
@@ -292,7 +291,7 @@ public class CommonMiiTestUtils {
                 .model(new oracle.weblogic.domain.Model()
                     .domainType("WLS")
                     .runtimeEncryptionSecret(encryptionSecretName))
-                .introspectorJobActiveDeadlineSeconds(300L)));
+                .introspectorJobActiveDeadlineSeconds(600L)));
     for (String clusterName : clusterNames) {
       domain.spec()
           .addClustersItem(new oracle.weblogic.domain.Cluster()
@@ -839,7 +838,7 @@ public class CommonMiiTestUtils {
         expectedStatusCode);
   }
 
-  private static ExecResult readRuntimeResource(String adminSvcExtHost, String domainNamespace, 
+  private static ExecResult readRuntimeResource(String adminSvcExtHost, String domainNamespace,
       String adminServerPodName, String resourcePath, String callerName) {
     LoggingFacade logger = getLogger();
 
@@ -1153,21 +1152,18 @@ public class CommonMiiTestUtils {
     LoggingFacade logger = getLogger();
     logger.info("Verifying introspector pod is created, runs and deleted");
     String introspectJobName = getIntrospectJobName(domainUid);
-    checkPodExists(introspectJobName, domainUid, domainNamespace);
+    checkPodReady(introspectJobName, domainUid, domainNamespace);
 
     String labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
     V1Pod introspectorPod = assertDoesNotThrow(() -> getPod(domainNamespace, labelSelector, introspectJobName),
         "Could not get introspector pod");
     assertTrue(introspectorPod != null && introspectorPod.getMetadata() != null,
         "introspector pod or metadata is null");
-    try {
-      String introspectorLog = getPodLog(introspectorPod.getMetadata().getName(), domainNamespace);
-      logger.info("Introspector pod log START");
-      logger.info(introspectorLog);
-      logger.info("Introspector pod log END");
-    } catch (Exception ex) {
-      logger.info("Failed to get introspector pod log", ex);
-    }
+    String introspectorLog = assertDoesNotThrow(() -> getPodLog(introspectorPod.getMetadata().getName(),
+        domainNamespace), "Could not get introspector pod log");
+    logger.info("Introspector pod log START");
+    logger.info(introspectorLog);
+    logger.info("Introspector pod log END");
     checkPodDoesNotExist(introspectJobName, domainUid, domainNamespace);
   }
 

@@ -547,6 +547,9 @@ class ItParameterizedDomain {
           true, "/bin/sh", "-c", destLocation + " " + serverName),
           String.format("Failed to execute script %s in pod %s namespace %s", destLocation,
               serverName, domainNamespace));
+      assertTrue(execResult.exitValue() == 0,
+          String.format("Failed to execute kill server inside pod, stderr %s stdout %s", destLocation,
+              execResult.stderr(), execResult.stdout()));
       logger.info("Command executed to kill server inside pod, exit value {0}, stdout {1}, stderr {2}",
           execResult.exitValue(), execResult.stdout(), execResult.stderr());
 
@@ -912,6 +915,7 @@ class ItParameterizedDomain {
                         .nodePort(0))))
             .clusters(clusterList)
             .configuration(new Configuration()
+                .introspectorJobActiveDeadlineSeconds(300L)
                 .model(new Model()
                     .domainType(WLS_DOMAIN_TYPE)
                     .runtimeEncryptionSecret(encryptionSecretName))));
@@ -1079,7 +1083,9 @@ class ItParameterizedDomain {
             .addClustersItem(new Cluster() //cluster
                 .clusterName(clusterName)
                 .replicas(replicaCount)
-                .serverStartState("RUNNING")));
+                .serverStartState("RUNNING"))
+            .configuration(new Configuration()
+                .introspectorJobActiveDeadlineSeconds(300L)));
     setPodAntiAffinity(domain);
     // verify the domain custom resource is created
     createDomainAndVerify(domain, domainNamespace);

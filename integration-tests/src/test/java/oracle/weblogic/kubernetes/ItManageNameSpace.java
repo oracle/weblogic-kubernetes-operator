@@ -55,6 +55,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
+import static oracle.weblogic.kubernetes.utils.CleanupUtil.deleteNamespacedArtifacts;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
@@ -100,6 +101,8 @@ class ItManageNameSpace {
   private static LoggingFacade logger = null;
   private static String miiImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
 
+  List<String> namespacesToClean = new ArrayList<>();
+
   /**
    * Get namespaces for operator, domain.
    *
@@ -144,22 +147,25 @@ class ItManageNameSpace {
       logger.info("Delete domain1test custom resource in namespace {0}", "test-" + domainNamespaces[0]);
       deleteDomainCustomResource(domainsUid[0] + "test", "test-" + domainNamespaces[0]);
       logger.info("Deleted Domain Custom Resource " + domainsUid[0] + "test from test-" + domainNamespaces[0]);
-  
+
       logger.info("Delete domain2test custom resource in namespace {0}", "test-" + domainNamespaces[1]);
       deleteDomainCustomResource(domainsUid[1] + "test", "test-" + domainNamespaces[1]);
       logger.info("Deleted Domain Custom Resource " + domainsUid[1] + "test from test-" + domainNamespaces[1]);
-  
+
       logger.info("Delete weblogic custom resource in namespace {0}", "weblogic" + domainNamespaces[1]);
       deleteDomainCustomResource("weblogic", "weblogic" + domainNamespaces[1]);
       logger.info("Deleted Domain Custom Resource weblogic from weblogic" + domainNamespaces[1]);
     } finally {
       deleteSecrets("default");
       deleteSecrets("atest-" + domainNamespaces[0]);
-     
       deleteNamespace("atest-" + domainNamespaces[0]);
       //delete operator
       for (HelmParams helmParam : opHelmParams) {
         uninstallOperator(helmParam);
+      }
+      for (var namespace : namespacesToClean) {
+        deleteNamespacedArtifacts(namespace);
+        deleteNamespace(namespace);
       }
     }
   }
@@ -200,6 +206,10 @@ class ItManageNameSpace {
     assertDoesNotThrow(() -> Kubernetes.createNamespace(manageByExp2NS));
     assertDoesNotThrow(() -> Kubernetes.createNamespace(manageByExp3NS));
 
+    namespacesToClean.add(manageByExp1NS);
+    namespacesToClean.add(manageByExp2NS);
+    namespacesToClean.add(manageByExp3NS);
+
     opHelmParams[1] = installAndVerifyOperatorCanManageDomainBySelector(managedByExpDomains,unmanagedByExpDomains,
         "RegExp","^test",
         opNamespaces[1], null);
@@ -214,6 +224,7 @@ class ItManageNameSpace {
     //upgrade operator to manage domains with Labeled namespaces
     int externalRestHttpsPort = getServiceNodePort(opNamespaces[1], "external-weblogic-operator-svc");
     assertDoesNotThrow(() -> createNamespace(manageByLabelNS));
+    namespacesToClean.add(manageByLabelNS);
     Map<String, String> labels = new HashMap<>();
     labels.put("mytest", "weblogic2");
     setLabelToNamespace(manageByLabelNS, labels);
@@ -290,6 +301,7 @@ class ItManageNameSpace {
 
     //upgrade operator1 to replace managing domains using RegExp namespaces
     assertDoesNotThrow(() -> createNamespace(manageByExpDomainNS));
+    namespacesToClean.add(manageByExpDomainNS);
     int externalRestHttpsPort = getServiceNodePort(opNamespaces[0], "external-weblogic-operator-svc");
     //set helm params to use domainNamespaceSelectionStrategy=RegExp for namespaces names started with weblogic
     OperatorParams opParams = new OperatorParams()
@@ -332,6 +344,7 @@ class ItManageNameSpace {
     String manageByLabelDomainNS = domainNamespaces[0] + "test4";
     String manageByLabelDomainUid = domainsUid[0] + "test4";
     assertDoesNotThrow(() -> createNamespace(manageByLabelDomainNS));
+    namespacesToClean.add(manageByLabelDomainNS);
     opHelmParams[2] = installAndVerifyOperator(OPERATOR_RELEASE_NAME,
         opNamespaces[3], "LabelSelector",
         "mytest4", false).getHelmParams();
@@ -521,7 +534,8 @@ class ItManageNameSpace {
             .configuration(new Configuration()
                 .model(new Model()
                     .domainType(WLS_DOMAIN_TYPE)
-                    .runtimeEncryptionSecret(encryptionSecretName))));
+                    .runtimeEncryptionSecret(encryptionSecretName))
+                .introspectorJobActiveDeadlineSeconds(600L)));
     setPodAntiAffinity(domain);
     return domain;
   }
