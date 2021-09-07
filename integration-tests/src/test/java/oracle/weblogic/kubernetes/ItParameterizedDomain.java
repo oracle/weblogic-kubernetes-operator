@@ -554,7 +554,7 @@ class ItParameterizedDomain {
           execResult.exitValue(), execResult.stdout(), execResult.stderr());
 
       try {
-        Thread.sleep(600 * 1000);
+        Thread.sleep(2 * 1000);
       } catch (InterruptedException ie) {
         // ignore
       }
