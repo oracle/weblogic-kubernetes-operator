@@ -25,6 +25,8 @@ import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 @IntegrationTest
 class ItMiiSampleWlsAux {
 
+  private static ItMiiSampleHelper myItMiiSampleHelper = null;
+
   /**
    * Install Operator.
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
@@ -32,7 +34,8 @@ class ItMiiSampleWlsAux {
    */
   @BeforeAll
   public static void init(@Namespaces(3) List<String> namespaces) {
-    ItMiiSampleHelper.initAll(namespaces, ItMiiSampleHelper.DomainType.WLS, ItMiiSampleHelper.ImageType.AUX);
+    myItMiiSampleHelper = new ItMiiSampleHelper();
+    myItMiiSampleHelper.initAll(namespaces, ItMiiSampleHelper.DomainType.WLS, ItMiiSampleHelper.ImageType.AUX);
   }
 
   /**
@@ -49,7 +52,7 @@ class ItMiiSampleWlsAux {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS initial use case using auxiliary image")
   void testAIWlsInitialUseCase() {
-    ItMiiSampleHelper.callInitialUseCase();
+    myItMiiSampleHelper.callInitialUseCase();
   }
 
   /**
@@ -67,7 +70,7 @@ class ItMiiSampleWlsAux {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update1 use case using auxiliary image")
   void testAIWlsUpdate1UseCase() {
-    ItMiiSampleHelper.callUpdateUseCase("-update1", "Update1 use case failed");
+    myItMiiSampleHelper.callUpdateUseCase("-update1", "Update1 use case failed");
   }
 
   /**
@@ -85,7 +88,7 @@ class ItMiiSampleWlsAux {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update2 use case using auxiliary image")
   void testAIWlsUpdate2UseCase() {
-    ItMiiSampleHelper.callUpdateUseCase("-update2", "Update2 use case failed");
+    myItMiiSampleHelper.callUpdateUseCase("-update2", "Update2 use case failed");
   }
 
   /**
@@ -103,7 +106,7 @@ class ItMiiSampleWlsAux {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update3 use case using auxiliary image")
   void testAIWlsUpdate3UseCase() {
-    ItMiiSampleHelper.callUpdateUseCase("-update3-image,-check-image-and-push,-update3-main",
+    myItMiiSampleHelper.callUpdateUseCase("-update3-image,-check-image-and-push,-update3-main",
         "Update3 use case failed");
   }
 
@@ -119,7 +122,7 @@ class ItMiiSampleWlsAux {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update4 use case using auxiliary image")
   void testAIWlsUpdate4UseCase() {
-    ItMiiSampleHelper.callUpdateUseCase("-update4", "Update4 use case failed");
+    myItMiiSampleHelper.callUpdateUseCase("-update4", "Update4 use case failed");
   }
 
   /**
@@ -128,6 +131,6 @@ class ItMiiSampleWlsAux {
   @AfterAll
   public void tearDown() {
     // uninstall traefik
-    ItMiiSampleHelper.tearDownAll();
+    myItMiiSampleHelper.tearDownAll();
   }
 }
