@@ -91,9 +91,17 @@ cp linux-amd64/helm ${WORKSPACE}/bin/helm
 helm version
 
 echo 'Info: Set up kubectl...'
-curl --ipv4 -LO --retry 3 https://storage.googleapis.com/kubernetes-release/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl
-mv kubectl bin/kubectl
-chmod +x bin/kubectl
+set +e
+for i in 1 2 3 ; do
+ curl --ipv4 -LO --retry 3 https://storage.googleapis.com/kubernetes-release/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl
+ mv kubectl bin/kubectl
+ chmod +x bin/kubectl
+ out=$(kubectl version --client=true)
+ res=$?
+ [ $res -eq 0 ] && break
+ sleep 10
+done
+set -e
 kubectl version --client=true
 
 echo 'Info: Set up kind...'
