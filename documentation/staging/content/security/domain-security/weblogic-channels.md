@@ -20,7 +20,7 @@ the Kubernetes Pod and then run `wlst.sh`, or set up Bastion access and then run
 from the Bastion host to connect to the Kubernetes cluster
 (some cloud environments use the term Jump Host or Jump Server instead of Bastion).
 
-Also, consider a private VPN if you need use cross-domain T3 access
+Also, consider a private VPN if you need to use cross-domain T3 access
 between clouds, data centers, and such.
 
 #### WebLogic HTTP channels
@@ -57,8 +57,8 @@ they are usually not suited for production systems for multiple reasons, includi
    (this includes preventing administration priviliged traffic from a WebLogic console over HTTP).
 
 1. _Be aware of anonymous defaults_:
-   If an externally available port supports a protocol suitable for WebLogic 
-   JNDI, EJB/RMI, or JMS clients, 
+   If an externally available port supports a protocol suitable for WebLogic
+   JNDI, EJB/RMI, or JMS clients,
    then note that:
    - WebLogic enables anonymous users to access such a port by default,
    - JNDI entries, EJB/RMI applications, and JMS are open to anonymous users by default.
