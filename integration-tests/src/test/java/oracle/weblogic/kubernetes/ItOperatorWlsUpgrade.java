@@ -20,10 +20,10 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.CleanupUtil;
-import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
@@ -32,8 +32,6 @@ import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX;
@@ -58,6 +56,7 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomai
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
@@ -69,7 +68,6 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodNam
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -89,8 +87,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 class ItOperatorWlsUpgrade {
 
-  private static ConditionFactory withStandardRetryPolicy;
-  private static ConditionFactory withQuickRetryPolicy;
   private static LoggingFacade logger = null;
   private String domainUid = "domain1";
   private String adminServerPodName = domainUid + "-admin-server";
@@ -120,15 +116,6 @@ class ItOperatorWlsUpgrade {
   @BeforeAll
   public static void init() {
     logger = getLogger();
-    // create standard, reusable retry/backoff policy
-    withStandardRetryPolicy = with().pollDelay(10, SECONDS)
-        .and().with().pollInterval(10, SECONDS)
-        .atMost(5, MINUTES).await();
-
-    // create a reusable quick retry policy
-    withQuickRetryPolicy = with().pollDelay(0, SECONDS)
-        .and().with().pollInterval(4, SECONDS)
-        .atMost(10, SECONDS).await();
   }
 
   /**
@@ -137,6 +124,7 @@ class ItOperatorWlsUpgrade {
    * Verify Domain resource version is updated while domain is in running state.
    */
   @Test
+  @Disabled("Disable WLS upgrade usecase from version 2.6.0")
   @DisplayName("Upgrade Operator from 2.6.0 to main")
   void testOperatorWlsUpgradeFrom260ToMain() {
     upgradeOperator("domain-in-image", "2.6.0", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX,  false);
@@ -146,6 +134,7 @@ class ItOperatorWlsUpgrade {
    * Operator upgrade from 3.0.3 to latest.
    */
   @ParameterizedTest
+  @Disabled("Disable WLS upgrade usecase from version 3.0.3")
   @DisplayName("Upgrade Operator from 3.0.3 to main")
   @ValueSource(strings = { "domain-in-image", "model-in-image" })
   void testOperatorWlsUpgradeFrom303ToMain(String domainType) {
@@ -168,6 +157,7 @@ class ItOperatorWlsUpgrade {
    * Operator upgrade from 3.1.3 to latest.
    */
   @ParameterizedTest
+  @Disabled("Disable WLS upgrade usecase from version 3.1.3")
   @DisplayName("Upgrade Operator from 3.1.3 to main")
   @ValueSource(strings = { "domain-in-image", "model-in-image" })
   void testOperatorWlsUpgradeFrom313ToMain(String domainType) {
@@ -190,6 +180,7 @@ class ItOperatorWlsUpgrade {
    * Operator upgrade from 3.2.0 to latest.
    */
   @ParameterizedTest
+  @Disabled("Disable WLS upgrade usecase from version 3.2.0")
   @DisplayName("Upgrade Operator from 3.2.0 to main")
   @ValueSource(strings = { "domain-in-image", "model-in-image" })
   void testOperatorWlsUpgradeFrom320ToMain(String domainType) {
@@ -201,6 +192,7 @@ class ItOperatorWlsUpgrade {
    * Operator upgrade from 3.2.4 to latest.
    */
   @ParameterizedTest
+  @Disabled("Disable WLS upgrade usecase from version 3.2.4")
   @DisplayName("Upgrade Operator from 3.2.4 to main")
   @ValueSource(strings = { "domain-in-image", "model-in-image" })
   void testOperatorWlsUpgradeFrom324ToMain(String domainType) {
@@ -217,6 +209,17 @@ class ItOperatorWlsUpgrade {
   void testOperatorWlsUpgradeFrom325ToMain(String domainType) {
     logger.info("Starting test testOperatorWlsUpgradeFrom322ToMain with domain type {0}", domainType);
     upgradeOperator(domainType, "3.2.5", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+  }
+
+  /**
+   * Operator upgrade from 3.3.1 to latest.
+   */
+  @ParameterizedTest
+  @DisplayName("Upgrade Operator from 3.3.1 to main")
+  @ValueSource(strings = { "domain-in-image", "model-in-image" })
+  void testOperatorWlsUpgradeFrom331ToMain(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom331ToMain with domain type {0}", domainType);
+    upgradeOperator(domainType, "3.3.1", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
@@ -338,15 +341,12 @@ class ItOperatorWlsUpgrade {
             String.format("Failed to upgrade operator in namespace %s", opNamespace));
         // check operator image name after upgrade
         logger.info("Checking image name in operator container ");
-        withStandardRetryPolicy
-            .conditionEvaluationListener(
-                condition -> logger.info("Checking operator image name in namespace {0} after upgrade "
-                        + "(elapsed time {1}ms, remaining time {2}ms)",
-                    opNamespace1,
-                    condition.getElapsedTimeInMS(),
-                    condition.getRemainingTimeInMS()))
-            .until(assertDoesNotThrow(() -> getOpContainerImageName(opNamespace1),
-                "Exception while getting the operator image name"));
+        testUntil(
+            assertDoesNotThrow(() -> getOpContainerImageName(opNamespace1),
+              "Exception while getting the operator image name"),
+            logger,
+            "Checking operator image name in namespace {0} after upgrade",
+            opNamespace1);
         verifyPodsNotRolled(domainNamespace, pods);
       } finally {
         if (accountingThread != null) {
@@ -374,14 +374,11 @@ class ItOperatorWlsUpgrade {
     }
 
     // check CRD version is updated
-    logger.info("Checking CRD version ");
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for the CRD version to be updated to v8 "
-                    + "(elapsed time {0}ms, remaining time {1}ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(checkCrdVersion());
+    logger.info("Checking CRD version");
+    testUntil(
+        checkCrdVersion(),
+        logger,
+        "the CRD version to be updated to v8");
 
     int externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
     assertTrue(externalRestHttpsPort != -1,

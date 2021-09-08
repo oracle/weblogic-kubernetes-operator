@@ -10,10 +10,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1SecretReference;
+import io.kubernetes.client.openapi.models.V1Service;
+import io.kubernetes.client.openapi.models.V1ServicePort;
+import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
@@ -42,6 +46,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.createService;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createAndPushMiiImage;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainWithIstioMultiClusters;
@@ -75,6 +80,7 @@ class ItIstioManagedCoherence {
   // constants for creating domain image using model in image
   private static final String COHERENCE_MODEL_FILE = "coherence-managed-wdt-config.yaml";
   private static final String MII_COHERENCE_MODEL_FILE = "coherence-managed-wdt-config-mii.yaml";
+  private static final String MII_COHERENCE_MODEL2_FILE = "coherence-managed-wdt-config-mii2.yaml";
   private static final String COHERENCE_MODEL_PROP = "coherence-managed-wdt-config.properties";
   private static final String COHERENCE_IMAGE_NAME = "coherence-managed-image";
 
@@ -86,10 +92,12 @@ class ItIstioManagedCoherence {
   private static String adminServerPodName = domainUid + "-admin-server";
   private static final String miiImageName = "mii-image";
   private static final String miiDomainUid = "miidomain";
+  private static final String multiDomainsPrefix = "multidomain";
 
   private static String opNamespace = null;
   private static String domainInImageNamespace = null;
   private static String miiDomainNamespace = null;
+  private static String multiDomainsNamespace = null;
   private static String miiImage = null;
   private static String encryptionSecretName = "encryptionsecret";
 
@@ -106,7 +114,7 @@ class ItIstioManagedCoherence {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void init(@Namespaces(3) List<String> namespaces) {
+  public static void init(@Namespaces(4) List<String> namespaces) {
     logger = getLogger();
 
     // get a new unique opNamespace
@@ -115,24 +123,30 @@ class ItIstioManagedCoherence {
     opNamespace = namespaces.get(0);
 
     // get a new unique namespace for domain-in-image domain
-    logger.info("Assigning a unique namespace for domain-in-image Domain");
+    logger.info("Assigning a unique namespace for domain-in-image domain");
     assertNotNull(namespaces.get(1), "Namespace list is null");
     domainInImageNamespace = namespaces.get(1);
 
     // get a new unique namespace for model-in-image domain
-    logger.info("Assigning a unique namespace for model-in-image Domain");
+    logger.info("Assigning a unique namespace for model-in-image domain");
     assertNotNull(namespaces.get(2), "Namespace list is null");
     miiDomainNamespace = namespaces.get(2);
+
+    // get a new unique namespace for multiple model-in-image domains
+    logger.info("Assigning a unique namespace for multiple model-in-image domains");
+    assertNotNull(namespaces.get(3), "Namespace list is null");
+    multiDomainsNamespace = namespaces.get(3);
 
     // Label the domain/operator namespace with istio-injection=enabled
     Map<String, String> labelMap = new HashMap();
     labelMap.put("istio-injection", "enabled");
     assertDoesNotThrow(() -> addLabelsToNamespace(domainInImageNamespace, labelMap));
     assertDoesNotThrow(() -> addLabelsToNamespace(miiDomainNamespace, labelMap));
+    assertDoesNotThrow(() -> addLabelsToNamespace(multiDomainsNamespace, labelMap));
     assertDoesNotThrow(() -> addLabelsToNamespace(opNamespace, labelMap));
 
     // install and verify operator
-    installAndVerifyOperator(opNamespace, domainInImageNamespace, miiDomainNamespace);
+    installAndVerifyOperator(opNamespace, domainInImageNamespace, miiDomainNamespace, multiDomainsNamespace);
 
     // build Coherence applications
     Path distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, COHERENCE_APP_NAME),
@@ -219,6 +233,110 @@ class ItIstioManagedCoherence {
     templateMap.put("DUID", miiDomainUid);
     templateMap.put("ADMIN_SERVICE", miiDomainUid + "-" + ADMIN_SERVER_NAME_BASE);
     templateMap.put("CLUSTER_SERVICE", miiDomainUid + "-cluster-cluster-1");
+
+    Path srcHttpFile = Paths.get(RESOURCE_DIR, "istio", "istio-coh-http-template.yaml");
+    Path targetHttpFile = assertDoesNotThrow(
+        () -> generateFileFromTemplate(srcHttpFile.toString(), "istio-http.yaml", templateMap));
+    logger.info("Generated Http VS/Gateway file path is {0}", targetHttpFile);
+
+    boolean deployRes = assertDoesNotThrow(
+        () -> deployHttpIstioGatewayAndVirtualservice(targetHttpFile));
+    assertTrue(deployRes, "Failed to deploy Http Istio Gateway/VirtualService");
+
+    int istioIngressPort = getIstioHttpIngressPort();
+    logger.info("Istio Ingress Port is {0}", istioIngressPort);
+
+    // Make sure ready app is accessible thru Istio Ingress Port
+    String curlCmd = "curl --silent --show-error --noproxy '*' http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort
+        + "/weblogic/ready --write-out %{http_code} -o /dev/null";
+    logger.info("Executing curl command {0}", curlCmd);
+    assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
+
+    // test adding data to the cache and retrieving them from the cache
+    boolean testCompletedSuccessfully = assertDoesNotThrow(()
+        -> coherenceCacheTest(istioIngressPort), "Test Coherence cache failed");
+    assertTrue(testCompletedSuccessfully, "Test Coherence cache failed");
+  }
+
+  /**
+   * Create two model-in-image domains with two clusters each, cluster-1 and cluster-2.
+   * Associate them with a Coherence cluster
+   * Deploy the EAR file to cluster-1 that has no storage enabled
+   * Deploy the GAR file to cluster-2 that has storage enabled
+   * Verify that data can be added and stored in the cache and can also be retrieved from cache.
+   */
+  @Test
+  @DisplayName("A Coherence cluster associate with two mii domains with two-clusters "
+      + "and test interaction with cache data")
+  void testIstioMultiClusterCoherenceMultiMiiDomain() {
+
+    // create WKA service for the coherence cluster
+    Map<String, String> selectors = new HashMap<>();
+    selectors.put("multi.domain.wka.pods", "true");
+
+    List<V1ServicePort> ports = new ArrayList<>();
+    ports.add(new V1ServicePort()
+        .name("tcp-coherence")
+        .port(7777)
+        .targetPort(new IntOrString(7777))
+        .protocol("TCP"));
+
+    V1Service service = new V1Service()
+        .metadata(new V1ObjectMeta()
+            .name("multi-domain-svc")
+            .namespace(multiDomainsNamespace))
+        .spec(new V1ServiceSpec()
+            .clusterIP("None")
+            .ports(ports)
+            .publishNotReadyAddresses(true)
+            .selector(selectors)
+            .type("ClusterIP"));
+
+    assertNotNull(service, "Can't create multi-domain-svc service, returns null");
+    assertDoesNotThrow(() -> createService(service), "Can't create multi-domain-svc service");
+    checkServiceExists("multi-domain-svc", multiDomainsNamespace);
+
+    // create a model-in-image domain image using WebLogic Image Tool
+    miiImage = createAndPushMiiImage(miiImageName, MII_COHERENCE_MODEL2_FILE, COHERENCE_APP_NAME, COHERENCE_MODEL_PROP);
+
+    // create and verify a two-clusters WebLogic domain with a Coherence cluster
+    Map<String, String> serverPodLabels = new HashMap<>();
+    serverPodLabels.put("multi.domain.wka.pods", "true");
+    createMiiDomainWithIstioMultiClusters(multiDomainsPrefix + "1", multiDomainsNamespace, miiImage,
+        NUMBER_OF_CLUSTERS, replicaCount, serverPodLabels);
+    createMiiDomainWithIstioMultiClusters(multiDomainsPrefix + "2", multiDomainsNamespace, miiImage,
+        NUMBER_OF_CLUSTERS, replicaCount, serverPodLabels);
+
+    // create a service to target to cluster-1 pods for both domains which hosts coherenceApp
+    selectors.clear();
+    selectors.put("weblogic.clusterName", "cluster-1");
+
+    ports = new ArrayList<>();
+    ports.add(new V1ServicePort()
+        .name("tcp-coherenceapp")
+        .port(8001)
+        .targetPort(new IntOrString(8001))
+        .protocol("TCP"));
+
+    V1Service coherenceappService = new V1Service()
+        .metadata(new V1ObjectMeta()
+            .name("multi-domain-coherenceapp-svc")
+            .namespace(multiDomainsNamespace))
+        .spec(new V1ServiceSpec()
+            .ports(ports)
+            .selector(selectors)
+            .type("ClusterIP"));
+
+    assertNotNull(service, "Can't create multi-domain-coherenceapp-svc service, returns null");
+    assertDoesNotThrow(() -> createService(coherenceappService),
+        "Can't create multi-domain-coherenceapp-svc service");
+    checkServiceExists("multi-domain-coherenceapp-svc", multiDomainsNamespace);
+
+    Map<String, String> templateMap  = new HashMap();
+    templateMap.put("NAMESPACE", multiDomainsNamespace);
+    templateMap.put("DUID", multiDomainsPrefix + "1");
+    templateMap.put("ADMIN_SERVICE", multiDomainsPrefix + "1-" + ADMIN_SERVER_NAME_BASE);
+    templateMap.put("CLUSTER_SERVICE", "multi-domain-coherenceapp-svc");
 
     Path srcHttpFile = Paths.get(RESOURCE_DIR, "istio", "istio-coh-http-template.yaml");
     Path targetHttpFile = assertDoesNotThrow(
