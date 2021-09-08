@@ -18,10 +18,10 @@ To give WLST access to a domain running in Kubernetes, you can:
 
 You can use the `kubectl exec` command to start an interactive WLST session
 within a pod or to remotely run a WLST script on a pod.
-This is usually the preferred method.
+Typically, this is the preferred method.
 
 For example, if a `domainUID` is `sample-domain1`,
-its Administration Server is named `admin-server` and is configured with default port 7001,
+its Administration Server is named `admin-server` and is configured with default port `7001`,
 and its pods are running in namespace `sample-domain1-ns`,
 then you can start an interactive WLST session this way:
 
@@ -57,29 +57,28 @@ $
 
 {{% notice tip %}}
 If you are setting up WLST access through a `NodePort` and your external port
-is not going to be the same as the port number on the WebLogic Administration server pod, then see
+is not going to be the same as the port number on the WebLogic Administration Server Pod, then see
 [Enabling WLST access when local and remote ports do not match]({{< relref "/userguide/managing-domains/accessing-the-domain/port-forward#enabling-wlst-access-when-local-and-remote-ports-do-not-match" >}})
 for an additional required setup step.
 {{% /notice %}}
 
 {{% notice warning %}}
-A `NodePort` can expose a WebLogic T3 or Administrative channel
+A `NodePort` can expose a WebLogic T3 or administrative channel
 outside the Kubernetes cluster.
-See [External network access security]({{< relref "/security/domain-security/weblogic-channels.md" >}})
-for domain security considerations.
+For domain security considerations, see [External network access security]({{< relref "/security/domain-security/weblogic-channels.md" >}}).
 {{% /notice %}}
 
 You can configure an Administration Server to expose an
 externally accessible `NodePort` using these two steps:
 
-- Configure a Network Access Point (custom channel) with
-  the 'T3' protocol on the Administration Server.
-- Expose this channel on a NodePort service using
+1. Configure a Network Access Point (custom channel) with
+  the T3 protocol on the Administration Server.
+1. Expose this channel on a NodePort service using
   the `domain.spec.adminServer.adminService.channels` attribute.  
 
 Here is an example snippet of a WebLogic domain `config.xml` file
 for T3 channel `T3Channel` defined for an Administration Server named `admin-server`:
- 
+
 ```xml
 <server>
   <name>admin-server</name>
@@ -95,7 +94,7 @@ for T3 channel `T3Channel` defined for an Administration Server named `admin-ser
 </server>
 ```
 
-And here is an example snippet of a domain resource that
+Here is an example snippet of a domain resource that
 sets up a NodePort for the channel:
 
 ```yaml
@@ -107,17 +106,17 @@ spec:
          nodePort: 30012
 ```
 
-If you set the `nodePort:` value to `0` then Kubernetes will choose
+If you set the `nodePort:` value to `0`, then Kubernetes will choose
 an open port for you.
 
-For more details on exposing the T3Channel via a NodePort service,
+For more details on exposing the T3 channel using a NodePort service,
 run the `kubectl explain domain.spec.adminServer.adminService.channels` command
-or see in the domain resource [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md) and [documentation]({{< relref "/userguide/managing-domains/domain-resource.md" >}}). 
+or see the domain resource [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md) and [documentation]({{< relref "/userguide/managing-domains/domain-resource.md" >}}).
 
 For example, if a `domainUID` is `domain1`,
 the Administration Server name is `admin-server`,
-and you have set up a NodePort service 
-on external port 30012 using
+and you have set up a NodePort service
+on external port `30012` using
 the `domain.spec.adminServer.adminService.channels` attribute,
 then the service would be called:
 
@@ -165,11 +164,10 @@ Exiting WebLogic Scripting Tool.
 One way to provide external access to WLST
 is to forward network traffic from a local port on your local machine
 to the administration port of an Administration Server Pod.
-See these [instructions.]({{< relref "/userguide/managing-domains/accessing-the-domain/port-forward.md#forward-a-local-port-to-an-administration-port-on-the-administration-server-pod" >}}).
+See these [instructions]({{< relref "/userguide/managing-domains/accessing-the-domain/port-forward.md#forward-a-local-port-to-an-administration-port-on-the-administration-server-pod" >}}).
 
 {{% notice warning %}}
-Port forwarding can expose a WebLogic T3 or Administrative channel
+Port forwarding can expose a WebLogic T3 or administrative channel
 outside the Kubernetes cluster.
-See [External network access security]({{< relref "/security/domain-security/weblogic-channels.md" >}})
-for domain security considerations.
+For domain security considerations, see [External network access security]({{< relref "/security/domain-security/weblogic-channels.md" >}}).
 {{% /notice %}}
