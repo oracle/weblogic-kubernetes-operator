@@ -5,13 +5,24 @@ weight: 2
 description: "Remote access security"
 ---
 
-#### WebLogic T3 channels
+#### WebLogic T3 and admin channels
 
 {{% notice warning %}}
 Oracle recommends _not_ exposing any administrative, RMI, or T3 channels outside the Kubernetes cluster
-unless absolutely necessary. If exposing any of these channels, limit access using
-controls like security lists or set up a Bastion to provide access.
+unless absolutely necessary. 
 {{% /notice %}}
+
+If exposing an administrative, RMI, EJB, JMS, or T3 capable
+channel using a load balancer,
+port forwarding, `NodePorts`, or similar,
+then limit access by using a custom
+dedicated WebLogic Server port that you have configured
+with the T3 or admin protocol (a network access point)
+instead of relaying the traffic to a default port,
+leverage two-way SSL, use controls like security lists,
+and/or set up a Bastion to provide access. A custom channel
+is preferred over a default channel because a default port supports
+multiple protocols.
 
 When accessing T3 or RMI based channels for administrative purposes
 such as running WLST, the preferred approach is to `kubectl exec` into
@@ -25,7 +36,8 @@ between clouds, data centers, and such.
 
 #### WebLogic HTTP channels
 
-When providing remote access to HTTP using a load balancer or similar,
+When providing remote access to HTTP using a load balancer,
+port forwarding, `NodePorts`, or similar,
 Oracle recommends relaying the traffic to a dedicated
 WebLogic Server port that you have configured
 using a custom HTTP channel (network access point)
@@ -35,9 +47,13 @@ traffic is limited to the HTTP protocol. A custom HTTP channel
 is preferred over a default port because a default port supports
 multiple protocols.
 
-Do not enable tunneling on an HTTP channel unless you specifically
+Do not enable tunneling on an HTTP channel 
+that is exposed for remote access unless you specifically
 intend to allow it to handle T3 traffic
-(tunneling allows T3 to tunnel through the channel using HTTP).
+(tunneling allows T3 to tunnel through the channel using HTTP)
+and you perform the additional steps that may be necessary
+to further secure access as described
+in [WebLogic T3 channels](weblogic-t3-and-admin-channels).
 
 #### Limit use of Kubernetes NodePorts
 
