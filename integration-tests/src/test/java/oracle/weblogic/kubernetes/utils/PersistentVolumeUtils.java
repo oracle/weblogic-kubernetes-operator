@@ -35,7 +35,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVol
 import static oracle.weblogic.kubernetes.actions.TestActions.createPersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -75,27 +75,21 @@ public class PersistentVolumeUtils {
         "PersistentVolumeClaim creation failed");
 
     // check the persistent volume and persistent volume claim exist
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for persistent volume {0} exists "
-                    + "(elapsed time {1}ms, remaining time {2}ms)",
-                pvName,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> pvExists(pvName, labelSelector),
-            String.format("pvExists failed with ApiException when checking pv %s", pvName)));
+    testUntil(
+        assertDoesNotThrow(() -> pvExists(pvName, labelSelector),
+          String.format("pvExists failed with ApiException when checking pv %s", pvName)),
+        logger,
+        "persistent volume {0} exists",
+        pvName);
 
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for persistent volume claim {0} exists in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                pvcName,
-                namespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> pvcExists(pvcName, namespace),
-            String.format("pvcExists failed with ApiException when checking pvc %s in namespace %s",
-                pvcName, namespace)));
+    testUntil(
+        assertDoesNotThrow(() -> pvcExists(pvcName, namespace),
+          String.format("pvcExists failed with ApiException when checking pvc %s in namespace %s",
+            pvcName, namespace)),
+        logger,
+        "persistent volume claim {0} exists in namespace {1}",
+        pvcName,
+        namespace);
   }
 
   /**

@@ -17,8 +17,8 @@ import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.checkHelmReleaseRevision;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withQuickRetryPolicy;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -49,18 +49,11 @@ public class ApplicationUtils {
         .append(" -w %{http_code});")
         .append("echo ${status}");
     logger.info("checkAppUsingHostInfo: curl command {0}", new String(curlString));
-    withQuickRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for appliation to be ready {0} "
-                    + "(elapsed time {1} ms, remaining time {2} ms)",
-                url,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> {
-          return () -> {
-            return exec(new String(curlString), true).stdout().contains("200");
-          };
-        }));
+    testUntil(
+        assertDoesNotThrow(() -> () -> exec(new String(curlString), true).stdout().contains("200")),
+        logger,
+        "application to be ready {0}",
+        url);
     return true;
   }
 
@@ -83,22 +76,19 @@ public class ApplicationUtils {
   ) {
 
     // check if the application is accessible inside of a server pod
-    conditionFactory
-        .conditionEvaluationListener(
-            condition -> getLogger().info("Waiting for application {0} is running on pod {1} in namespace {2} "
-                    + "(elapsed time {3}ms, remaining time {4}ms)",
-                appPath,
-                podName,
-                namespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(() -> appAccessibleInPod(
-            namespace,
-            podName,
-            internalPort,
-            appPath,
-            expectedStr));
-
+    testUntil(
+        conditionFactory,
+        () -> appAccessibleInPod(
+          namespace,
+          podName,
+          internalPort,
+          appPath,
+          expectedStr),
+        getLogger(),
+        "application {0} is running on pod {1} in namespace {2}",
+        appPath,
+        podName,
+        namespace);
   }
 
   /**
@@ -132,18 +122,11 @@ public class ApplicationUtils {
         + application + "/getState", host, port);
 
     logger.info("curl command {0}", curlString);
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for Application {0} to be active "
-                    + "(elapsed time {1} ms, remaining time {2} ms)",
-                application,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> {
-          return () -> {
-            return exec(new String(curlString), true).stdout().contains("STATE_ACTIVE");
-          };
-        }));
+    testUntil(
+        assertDoesNotThrow(() -> () -> exec(curlString, true).stdout().contains("STATE_ACTIVE")),
+        logger,
+        "Application {0} to be active",
+        application);
     return true;
   }
 
