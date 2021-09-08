@@ -32,10 +32,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
@@ -76,7 +73,6 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test istio enabled WebLogic Domain in mii model")
 @IntegrationTest
 class ItIstioMiiDomain {
@@ -126,15 +122,23 @@ class ItIstioMiiDomain {
    * Add istio configuration with default readinessPort.
    * Do not add any AdminService under AdminServer configuration.
    * Deploy istio gateways and virtual service.
+   *
    * Verify server pods are in ready state and services are created.
    * Verify login to WebLogic console is successful thru istio ingress port.
    * Deploy a web application thru istio http ingress port using REST api.  
    * Access web application thru istio http ingress port using curl.
+   * 
+   * Create a configmap with a sparse model file to add a new workmanager 
+   * with custom min threads constraint and a max threads constraint
+   * Patch the domain resource with the configmap.
+   * Update the introspect version of the domain resource.
+   * Verify rolling restart of the domain by comparing PodCreationTimestamp
+   * before and after rolling restart.
+   * Verify new work manager is configured.
    */
   @Test
-  @Order(1)
   @DisplayName("Create WebLogic Domain with mii model with istio")
-  void testIstioModelInImage() {
+  void testIstioMiiDomainWithDynamicUpdate() {
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
@@ -253,21 +257,8 @@ class ItIstioMiiDomain {
     logger.info("Application Access URL {0}", url);
     boolean checkApp = checkAppUsingHostHeader(url, domainNamespace + ".org");
     assertTrue(checkApp, "Failed to access WebLogic application");
-  }
 
-  /**
-   * Create a configmap containing model yaml to add a new work manager, 
-   * a min threads constraint, and a max threads constraint
-   * Patch the domain resource with the configmap.
-   * Update the introspect version of the domain resource.
-   * Verify rolling restart of the domain by comparing PodCreationTimestamp
-   * before and after rolling restart.
-   * Verify new work manager is configured.
-   */
-  @Test
-  @Order(2)
-  @DisplayName("Add a work manager to a model-in-image domain using dynamic update")
-  void testMiiIstioDynamicUpdate() {
+    //Verify the dynamic configuration update
     LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
     // get the creation time of the admin server pod before patching
     OffsetDateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
@@ -287,9 +278,6 @@ class ItIstioMiiDomain {
 
     verifyIntrospectorRuns(domainUid, domainNamespace);
 
-    int istioIngressPort = getIstioHttpIngressPort();
-    logger.info("Istio Ingress Port is {0}", istioIngressPort);
-
     String wmRuntimeUrl  = "http://" + K8S_NODEPORT_HOST + ":"  
            + istioIngressPort + "/management/weblogic/latest/domainRuntime"
            + "/serverRuntimes/managed-server1/applicationRuntimes"
@@ -299,7 +287,7 @@ class ItIstioMiiDomain {
     boolean checkWm =
           checkAppUsingHostHeader(wmRuntimeUrl, domainNamespace + ".org");
     assertTrue(checkWm, "Failed to access WorkManagerRuntime");
-    logger.info("Found new work manager rintime");
+    logger.info("Found new work manager runtime");
 
     verifyPodsNotRolled(domainNamespace, pods);
     verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, domainNamespace);

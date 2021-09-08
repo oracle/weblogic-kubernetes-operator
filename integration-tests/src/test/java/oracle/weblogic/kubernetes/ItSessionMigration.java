@@ -32,10 +32,8 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
@@ -66,11 +64,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Verify that when the primary server is down, another server takes on its clients
- * to become the new primary server and HTTP session state is migrated to the new primary server.
- * Also verify that an annotation containing a slash in the name propagates to the server pod
+ * Verify that when the primary server is down, another server takes on its 
+ * clients to become the new primary server and HTTP session state is migrated 
+ * to the new primary server. 
+ *
+ * Also verify that an annotation containing a slash in the name propagates 
+ * to the server pod
  */
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test the HTTP session replication features of WebLogic")
 @IntegrationTest
 @Tag("okdenv")

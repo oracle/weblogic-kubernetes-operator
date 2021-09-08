@@ -31,9 +31,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
@@ -88,7 +86,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * (d) add a SSL Configuration to the server template
  */
 
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test Secure NodePort service through admin port and default-admin channel in a mii domain")
 @IntegrationTest
 class ItProductionSecureMode {

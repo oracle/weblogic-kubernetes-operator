@@ -16,9 +16,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
@@ -83,7 +81,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * migration policy by verifying the JTA Recovery Service runtime MBean
  */
 
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test JMS/JTA service migration on cluster scale down")
 @IntegrationTest
 class ItMiiServiceMigration {
