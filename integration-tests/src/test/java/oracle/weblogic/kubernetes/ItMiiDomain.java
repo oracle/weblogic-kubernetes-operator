@@ -39,6 +39,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -49,7 +50,6 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
-import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V1;
 import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V2;
 import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V3;
@@ -78,6 +78,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appNotAccessibleInPod;
@@ -86,10 +87,14 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainResourc
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podImagePatched;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.setTargetPortForRoute;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
@@ -104,6 +109,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test to a create model in image domain and start the domain")
 @IntegrationTest
+@Tag("okdenv")
 class ItMiiDomain {
 
   private static String opNamespace = null;
@@ -219,6 +225,13 @@ class ItMiiDomain {
           managedServerPrefix + i, domainNamespace);
       checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
+    // Need to expose the admin server external service to access the console in OKD cluster only
+    // We will create one route for sslport and another for default port
+    String adminSvcSslPortExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), 
+                    domainNamespace, "domain1-admin-server-sslport-ext");
+    setTlsTerminationForRoute("domain1-admin-server-sslport-ext", domainNamespace);
+    String adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
+
     // check and wait for the application to be accessible in all server pods
     for (int i = 1; i <= replicaCount; i++) {
       checkAppRunning(
@@ -233,12 +246,18 @@ class ItMiiDomain {
 
     int sslNodePort = getServiceNodePort(
          domainNamespace, getExternalServicePodName(adminServerPodName), "default-secure");
+    // In OKD cluster, we need to set the target port of the route to be the ssl port
+    // By default, when a service is exposed as a route, the endpoint is set to the default port.
+    int sslPort = getServicePort(
+         domainNamespace, getExternalServicePodName(adminServerPodName), "default-secure");
+    setTargetPortForRoute("domain1-admin-server-sslport-ext", domainNamespace, sslPort);
     assertTrue(sslNodePort != -1,
           "Could not get the default-secure external service node port");
     logger.info("Found the administration service nodePort {0}", sslNodePort);
+    String hostAndPort = getHostAndPort(adminSvcSslPortExtHost, sslNodePort);
     if (!WEBLOGIC_SLIM) {
       String curlCmd = "curl -sk --show-error --noproxy '*' "
-          + " https://" + K8S_NODEPORT_HOST + ":" + sslNodePort
+          + " https://" + hostAndPort
           + "/console/login/LoginForm.jsp --write-out %{http_code} -o /dev/null";
       logger.info("Executing default-admin nodeport curl command {0}", curlCmd);
       assertTrue(callWebAppAndWaitTillReady(curlCmd, 10));
@@ -252,10 +271,11 @@ class ItMiiDomain {
     assertTrue(nodePort != -1,
           "Could not get the default external service node port");
     logger.info("Found the default service nodePort {0}", nodePort);
+    hostAndPort = getHostAndPort(adminSvcExtHost, nodePort);
 
     if (!WEBLOGIC_SLIM) {
       String curlCmd2 = "curl -s --show-error --noproxy '*' "
-          + " http://" + K8S_NODEPORT_HOST + ":" + nodePort
+          + " http://" + hostAndPort
           + "/console/login/LoginForm.jsp --write-out %{http_code} -o /dev/null";
       logger.info("Executing default nodeport curl command {0}", curlCmd2);
       assertTrue(callWebAppAndWaitTillReady(curlCmd2, 5));
