@@ -85,7 +85,7 @@ Situation | Channel Name | Listen Address | Port | Protocol
 When there's no admin port or admin channels configured, and a non-SSL default channel exists | internal-t3 | localhost | Server listening port | t3
 When there's no admin port or admin channels configured, and an SSL default channel exists | internal-t3s | localhost | Server SSL listening port | t3s 
 When an admin port is enabled | internal-admin | localhost | WebLogic administration port | admin
-When a custom admin channel is configured | internal-admin | localhost | Custom administration port | admin
+When one or more custom admin channels are configured | internal-admin${index} (where ${index} is a number that starts with 1 and increases by 1 for each custom admin channel) | localhost | Custom administration port | admin
 
 ### Port forward to an Administration Server Pod
 
