@@ -62,7 +62,7 @@ public class Slammer {
         .orElse("http://100.111.70.116/slammer.tar.gz");
     //--no-proxy
     CommandParams params = Command.defaultCommandParams()
-        .command("cd " + installDir + " && wget  "
+        .command("cd " + installDir + " && wget  --no-proxy "
             + slammerSrcLocation
             + " && tar xf slammer.tar")
         .saveResults(true)
