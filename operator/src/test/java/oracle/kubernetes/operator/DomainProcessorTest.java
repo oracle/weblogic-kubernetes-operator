@@ -10,6 +10,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Level;
@@ -23,6 +24,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.custom.IntOrString;
+import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
@@ -69,13 +71,17 @@ import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
+import static oracle.kubernetes.operator.DomainConditionMatcher.hasCondition;
+import static oracle.kubernetes.operator.DomainFailureReason.Internal;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainSourceType.FromModel;
 import static oracle.kubernetes.operator.DomainSourceType.Image;
 import static oracle.kubernetes.operator.DomainSourceType.PersistentVolume;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_ABORTED_EVENT;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
@@ -93,6 +99,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.NOT_STARTING_DOMAIN
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_ALWAYS;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
@@ -116,6 +123,7 @@ class DomainProcessorTest {
   private static final String[] MANAGED_SERVER_NAMES =
       IntStream.rangeClosed(1, MAX_SERVERS).mapToObj(DomainProcessorTest::getManagedServerName).toArray(String[]::new);
   static final String DOMAIN_NAME = "base_domain";
+  private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
 
   @Nonnull
   private static String getManagedServerName(int n) {
@@ -128,6 +136,8 @@ class DomainProcessorTest {
   private final Map<String, Map<String, DomainPresenceInfo>> presenceInfoMap = new HashMap<>();
   private final Map<String, Map<String, KubernetesEventObjects>> domainEventObjects = new ConcurrentHashMap<>();
   private final Map<String, KubernetesEventObjects> nsEventObjects = new ConcurrentHashMap<>();
+  private final Map<String, KubernetesEventObjects> makeRightFiberGates = new ConcurrentHashMap<>();
+  private final Map<String, KubernetesEventObjects> statusFiberGates = new ConcurrentHashMap<>();
   private final DomainProcessorDelegateStub processorDelegate = DomainProcessorDelegateStub.createDelegate(testSupport);
   private final DomainProcessorImpl processor = new DomainProcessorImpl(processorDelegate);
   private final Domain domain = DomainProcessorTestSetup.createTestDomain();
@@ -161,12 +171,15 @@ class DomainProcessorTest {
 
   @BeforeEach
   void setUp() throws Exception {
-    mementos.add(TestUtils.silenceOperatorLogger()
-          .collectLogMessages(logRecords, NOT_STARTING_DOMAINUID_THREAD).withLogLevel(Level.FINE));
+    consoleHandlerMemento = TestUtils.silenceOperatorLogger()
+          .collectLogMessages(logRecords, NOT_STARTING_DOMAINUID_THREAD).withLogLevel(Level.FINE);
+    mementos.add(consoleHandlerMemento);
     mementos.add(testSupport.install());
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "DOMAINS", presenceInfoMap));
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domainEventK8SObjects", domainEventObjects));
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "namespaceEventK8SObjects", nsEventObjects));
+    mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "makeRightFiberGates", makeRightFiberGates));
+    mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "statusFiberGates", statusFiberGates));
     mementos.add(StaticStubSupport.install(PodStepContext.class, "productVersion", "unit-test"));
     mementos.add(TuningParametersStub.install());
     mementos.add(InMemoryCertificates.install());
@@ -1244,5 +1257,45 @@ class DomainProcessorTest {
   private void defineDuplicateServerNames() {
     domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("ms1"));
     domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("ms1"));
+  }
+
+  @Test
+  @Disabled
+  void whenExceptionDuringProcessing_reportInDomainStatus() {
+    DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
+    forceExceptionDuringProcessing();
+
+    processor.createMakeRightOperation(new DomainPresenceInfo(domain)).withExplicitRecheck().execute();
+    testSupport.setTime(DomainPresence.getDomainPresenceFailureRetrySeconds(), TimeUnit.SECONDS);
+
+    assertThat(domain, hasCondition(Failed).withReason(Internal));
+  }
+
+  private void forceExceptionDuringProcessing() {
+    consoleHandlerMemento.ignoringLoggedExceptions(NullPointerException.class);
+    domain.getSpec().withWebLogicCredentialsSecret(null);
+  }
+
+  @Test
+  void whenExceptionDuringProcessing_sendAbortedEvent() {
+    DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
+    forceExceptionDuringProcessing();
+    int time = 0;
+
+    for (int numRetries = 0; numRetries < DomainPresence.getDomainPresenceFailureRetryMaxCount(); numRetries++) {
+      processor.createMakeRightOperation(new DomainPresenceInfo(domain)).withExplicitRecheck().execute();
+      time += DomainPresence.getDomainPresenceFailureRetrySeconds();
+      testSupport.setTime(time, TimeUnit.SECONDS);
+    }
+
+    assertThat(getEvents().stream().anyMatch(this::isDomainProcessingAbortedEvent), is(true));
+  }
+
+  private List<CoreV1Event> getEvents() {
+    return testSupport.getResources(KubernetesTestSupport.EVENT);
+  }
+
+  private boolean isDomainProcessingAbortedEvent(CoreV1Event e) {
+    return DOMAIN_PROCESSING_ABORTED_EVENT.equals(e.getReason());
   }
 }

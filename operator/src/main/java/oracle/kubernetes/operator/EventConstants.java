@@ -10,6 +10,8 @@ public interface EventConstants {
   String DOMAIN_CREATED_EVENT = "DomainCreated";
   String DOMAIN_DELETED_EVENT = "DomainDeleted";
   String DOMAIN_PROCESSING_COMPLETED_EVENT = "DomainProcessingCompleted";
+  String DOMAIN_AVAILABLE_EVENT = "DomainAvailable";
+  String DOMAIN_COMPLETED_EVENT = "DomainCompleted";
   String DOMAIN_PROCESSING_FAILED_EVENT = "DomainProcessingFailed";
   String DOMAIN_PROCESSING_ABORTED_EVENT = "DomainProcessingAborted";
   String DOMAIN_ROLL_COMPLETED_EVENT = "DomainRollCompleted";
@@ -20,15 +22,15 @@ public interface EventConstants {
   String EVENT_WARNING = "Warning";
   String WEBLOGIC_OPERATOR_COMPONENT = "weblogic.operator";
 
+  String DOMAIN_AVAILABLE_PATTERN = "Domain %s became available";
   String DOMAIN_CREATED_PATTERN = "Domain resource %s was created";
   String DOMAIN_CHANGED_PATTERN = "Domain resource %s was changed";
+  String DOMAIN_COMPLETED_PATTERN = "Domain %s is completely ready";
   String DOMAIN_DELETED_PATTERN = "Domain resource %s was deleted";
   String DOMAIN_PROCESSING_COMPLETED_PATTERN =
       "Successfully completed processing domain resource %s";
   String DOMAIN_PROCESSING_FAILED_PATTERN
       = "Failed to complete processing domain resource %s due to: %s, the processing will be retried if needed";
-  String DOMAIN_PROCESSING_RETRYING_PATTERN
-      = "Retrying the processing of domain resource %s after one or more failed attempts";
   String DOMAIN_PROCESSING_ABORTED_PATTERN
       = "Aborting the processing of domain resource %s permanently due to: %s";
   String DOMAIN_VALIDATION_ERROR_PATTERN

@@ -329,6 +329,10 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber, Bre
           LOGGER.finer("{0} completed", getName());
         }
 
+        if (LOGGER.isFinestEnabled()) {
+          LOGGER.finest("{0} bread crumb: {1}", getName(), getBreadCrumbString());
+        }
+
         try {
           if (s == NOT_COMPLETE && completionCallback != null) {
             if (na.throwable != null) {

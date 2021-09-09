@@ -28,8 +28,12 @@ import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
 import static oracle.kubernetes.operator.DomainProcessorImpl.getEventK8SObjects;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_AVAILABLE_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_AVAILABLE_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CHANGED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CHANGED_PATTERN;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_COMPLETED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_COMPLETED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CREATED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CREATED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_DELETED_EVENT;
@@ -318,6 +322,17 @@ public class EventHelper {
   }
 
   public enum EventItem {
+    DOMAIN_AVAILABLE {
+      @Override
+      public String getReason() {
+        return DOMAIN_AVAILABLE_EVENT;
+      }
+
+      @Override
+      public String getPattern() {
+        return DOMAIN_AVAILABLE_PATTERN;
+      }
+    },
     DOMAIN_CREATED {
       @Override
       public String getReason() {
@@ -341,6 +356,17 @@ public class EventHelper {
       }
 
     },
+    DOMAIN_COMPLETE {
+      @Override
+      public String getReason() {
+        return DOMAIN_COMPLETED_EVENT;
+      }
+
+      @Override
+      public String getPattern() {
+        return DOMAIN_COMPLETED_PATTERN;
+      }
+    },
     DOMAIN_DELETED {
       @Override
       public String getReason() {
@@ -351,7 +377,6 @@ public class EventHelper {
       public String getPattern() {
         return DOMAIN_DELETED_PATTERN;
       }
-
     },
     DOMAIN_PROCESSING_COMPLETED {
       @Override

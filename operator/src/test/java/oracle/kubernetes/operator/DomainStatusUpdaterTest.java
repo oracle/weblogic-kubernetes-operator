@@ -50,8 +50,8 @@ import static oracle.kubernetes.operator.DomainFailureReason.Introspection;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainStatusUpdaterTest.ServerStatusMatcher.hasStatusForServer;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_COMPLETED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_ABORTED_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_COMPLETED_EVENT;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
@@ -358,15 +358,15 @@ class DomainStatusUpdaterTest {
 
     updateDomainStatus();
 
-    assertThat(getEvents().stream().anyMatch(this::isDomainProcessingCompletedEvent), is(false));
+    assertThat(getEvents().stream().anyMatch(this::isDomainCompletedEvent), is(false));
   }
 
   private List<CoreV1Event> getEvents() {
     return testSupport.getResources(KubernetesTestSupport.EVENT);
   }
 
-  private boolean isDomainProcessingCompletedEvent(CoreV1Event e) {
-    return DOMAIN_PROCESSING_COMPLETED_EVENT.equals(e.getReason());
+  private boolean isDomainCompletedEvent(CoreV1Event e) {
+    return DOMAIN_COMPLETED_EVENT.equals(e.getReason());
   }
 
   @Test
@@ -380,7 +380,7 @@ class DomainStatusUpdaterTest {
 
     updateDomainStatus();
 
-    assertThat(getEvents().stream().anyMatch(this::isDomainProcessingCompletedEvent), is(true));
+    assertThat(getEvents().stream().anyMatch(this::isDomainCompletedEvent), is(true));
   }
 
   @Test
@@ -395,7 +395,7 @@ class DomainStatusUpdaterTest {
 
     updateDomainStatus();
 
-    assertThat(getEvents().stream().anyMatch(this::isDomainProcessingCompletedEvent), is(false));
+    assertThat(getEvents().stream().anyMatch(this::isDomainCompletedEvent), is(false));
   }
 
   @Test

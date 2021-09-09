@@ -1061,12 +1061,6 @@ public class DomainProcessorImpl implements DomainProcessor {
         && KubernetesUtils.isFirstNewer(cachedInfo.getDomain().getMetadata(), liveInfo.getDomain().getMetadata());
   }
 
-  private void regDump(String type, Packet packet) {
-    final String bc = Fiber.getCurrentIfSet().getBreadCrumbString();
-    DomainPresenceInfo.fromPacket(packet)
-          .ifPresent(dpi -> LOGGER.info("REG-> " + type + " dpi@" + System.identityHashCode(dpi) + " " + bc));
-  }
-
   @SuppressWarnings("unused")
   private void runDomainPlan(
       Domain dom,
@@ -1080,13 +1074,11 @@ public class DomainProcessorImpl implements DomainProcessor {
         new CompletionCallback() {
           @Override
           public void onCompletion(Packet packet) {
-            regDump("completed", packet);
             // no-op
           }
 
           @Override
           public void onThrowable(Packet packet, Throwable throwable) {
-            regDump("threw " + throwable.getClass().getSimpleName(), packet);
             logThrowable(throwable);
 
             gate.startFiberIfLastFiberMatches(
@@ -1161,6 +1153,7 @@ public class DomainProcessorImpl implements DomainProcessor {
   Step createDomainUpPlan(DomainPresenceInfo info) {
     Step managedServerStrategy = Step.chain(
         bringManagedServersUp(null),
+        EventHelper.createEventStep(EventItem.DOMAIN_PROCESSING_COMPLETED),
         MonitoringExporterSteps.updateExporterSidecars(),
         new TailStep());
 
