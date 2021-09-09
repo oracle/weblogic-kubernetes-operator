@@ -523,21 +523,6 @@ def customizeManagedIstioNetworkAccessPoint(template, listen_address):
     _writeIstioNAP(name='tls-iiops', server=template, listen_address=listen_address,
                    listen_port=ssl_listen_port, protocol='iiops')
 
-def getCustomAdminChannelPort(server):
-  customAdminChannelPort=0
-  if 'NetworkAccessPoint' not in server:
-    server['NetworkAccessPoint'] = {}
-
-  naps = server['NetworkAccessPoint']
-  nap_names = naps.keys()
-  for nap_name in nap_names:
-    nap = naps[nap_name]
-    if nap['Protocol'] == 'admin':
-      customAdminChannelPort = nap['ListenPort']
-      break
-  return customAdminChannelPort
-
-
 def addAdminChannelPortForwardNetworkAccessPoints(server):
   istio_enabled = env.getEnvOrDef("ISTIO_ENABLED", "false")
   admin_channel_port_forwarding_enabled = env.getEnvOrDef("ADMIN_CHANNEL_PORT_FORWARDING_ENABLED", "true")
@@ -551,15 +536,25 @@ def addAdminChannelPortForwardNetworkAccessPoints(server):
     admin_server_port = 7001
 
   model = env.getModel()
-  customAdminChannelPort=getCustomAdminChannelPort(server)
+
+  if 'NetworkAccessPoint' not in server:
+    server['NetworkAccessPoint'] = {}
+
+  naps = server['NetworkAccessPoint']
+  nap_names = list(naps)
+  index = 0
+  for nap_name in nap_names:
+    nap = naps[nap_name]
+    if nap['Protocol'] == 'admin':
+      index += 1
+      customAdminChannelPort = nap['ListenPort']
+      _writeAdminChannelPortForwardNAP(name='internal-admin' + str(index), server=server,
+                                       listen_port=customAdminChannelPort, protocol='admin')
 
   if isAdministrationPortEnabledForServer(server, model['topology']):
     _writeAdminChannelPortForwardNAP(name='internal-admin', server=server,
                                      listen_port=getAdministrationPort(server, model['topology']), protocol='admin')
-  elif (customAdminChannelPort != 0 ):
-      _writeAdminChannelPortForwardNAP(name='internal-admin', server=server,
-                                       listen_port=customAdminChannelPort, protocol='admin')
-  else:
+  elif index == 0:
     _writeAdminChannelPortForwardNAP(name='internal-t3', server=server, listen_port=admin_server_port, protocol='t3')
 
     ssl = getSSLOrNone(server)
@@ -573,7 +568,6 @@ def addAdminChannelPortForwardNetworkAccessPoints(server):
 
     if ssl_listen_port is not None:
       _writeAdminChannelPortForwardNAP(name='internal-t3s', server=server, listen_port=ssl_listen_port, protocol='t3s')
-
 
 def _writeAdminChannelPortForwardNAP(name, server, listen_port, protocol):
 
