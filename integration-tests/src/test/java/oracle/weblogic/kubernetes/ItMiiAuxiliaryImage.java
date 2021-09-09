@@ -1180,15 +1180,8 @@ class ItMiiAuxiliaryImage {
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-    //assertTrue(checkSystemResourceConfiguration(adminServiceNodePort, "JMSSystemResources",
-    //    "TestClusterJmsModule2", "200"), "JMSSystemResources not found");
-    checkSystemResourceConfiguration(adminServiceNodePort, "JMSSystemResources",
-        "TestClusterJmsModule2", "200");
-    try {
-      Thread.sleep(60 * 60 * 1000);
-    } catch (InterruptedException ex) {
-      // no op
-    }
+    assertTrue(checkSystemResourceConfiguration(adminServiceNodePort, "JMSSystemResources",
+        "TestClusterJmsModule2", "200"), "JMSSystemResources not found");
     logger.info("Found the JMSSystemResource configuration");
   }
 
