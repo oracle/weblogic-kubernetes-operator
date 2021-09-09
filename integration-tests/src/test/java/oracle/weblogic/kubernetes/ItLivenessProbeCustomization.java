@@ -98,6 +98,7 @@ class ItLivenessProbeCustomization {
   private static String domainNamespace = null;
   private static String opNamespace = null;
   private static LoggingFacade logger = null;
+  private static File tempFile = null;
 
   /**
    * Get namespaces for operator and WebLogic domain.
@@ -126,6 +127,11 @@ class ItLivenessProbeCustomization {
 
     // create a basic model in image domain
     createAndVerifyMiiDomain(imageName);
+
+    // create temp file
+    String fileName = "tempFile";
+    tempFile = assertDoesNotThrow(() -> createTempfile(fileName), "Failed to create temp file");
+    logger.info("File created  {0}", tempFile);
   }
 
   /**
@@ -145,12 +151,6 @@ class ItLivenessProbeCustomization {
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
     assertNotNull(domain1, "Got null domain resource");
-
-    // create temp file
-    String fileName = "tempFile";
-    File tempFile = assertDoesNotThrow(() -> createTempfile(fileName),
-        "Failed to create temp file");
-    logger.info("File created  {0}", tempFile);
 
     for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
       for (int j = 1; j <= replicaCount; j++) {
@@ -244,12 +244,12 @@ class ItLivenessProbeCustomization {
   }
 
   /**
-   * Patch the domain with custom livenessProbe failureThreshold value in serverPod.
-   * Verify the domain is restarted and the failureThreshold is updated.
+   * Patch the domain with custom livenessProbe failureThreshold and successThreshold value in serverPod.
+   * Verify the domain is restarted and the failureThreshold and successThreshold is updated.
    */
   @Test
-  @DisplayName("Test custom livenessProbe failureThreshold in serverPod")
-  void testCustomLivenessProbeFailureThreshold() {
+  @DisplayName("Test custom livenessProbe failureThreshold and successThreshold in serverPod")
+  void testCustomLivenessProbeFailureThresholdSuccessThreshold() {
     Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
@@ -327,6 +327,78 @@ class ItLivenessProbeCustomization {
     logger.info("livenessProbe successThreshold after patch is: {0}", successThreshold);
     assertTrue(successThreshold.intValue() == 1, "The livenessProbe successThreshold after patch is not 1");
 
+    // verify the failureThreshold behavior of livenessProbe
+    // copy temp file to pod and verify the restartCount only happens after 1m 30 second
+    for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
+      for (int j = 1; j <= replicaCount; j++) {
+        String managedServerPodName =
+            domainUid + "-" + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
+
+        // get the restart count of the container in pod before liveness probe restarts
+        int beforeRestartCount =
+            assertDoesNotThrow(() -> getContainerRestartCount(domainNamespace, null,
+                managedServerPodName, null),
+                String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+                    managedServerPodName, domainNamespace));
+        logger.info("For server {0} restart count before liveness probe is: {1}",
+            managedServerPodName, beforeRestartCount);
+
+        String destLocation = "/u01/tempFile.txt";
+        assertDoesNotThrow(() -> copyFileToPod(domainNamespace, managedServerPodName, "weblogic-server",
+            tempFile.toPath(), Paths.get(destLocation)),
+            String.format("Failed to copy file %s to pod %s in namespace %s",
+                tempFile, managedServerPodName, domainNamespace));
+        logger.info("File copied to Pod {0} in namespace {1}", managedServerPodName, domainNamespace);
+
+        // check the pod should be restarted after 1m 30s since the livenessProbe periodSeconds defaults to 45s.
+        // sleep for 1m
+        try {
+          Thread.sleep(60000);
+        } catch (InterruptedException ie) {
+          // ignore
+        }
+        int after1mRestartCount =
+            assertDoesNotThrow(() -> getContainerRestartCount(domainNamespace, null,
+                managedServerPodName, null),
+                String.format("Failed to get the restart count of the container from pod {0} in namespace {1} after 1m",
+                    managedServerPodName, domainNamespace));
+        logger.info("checking after 1m the restartCount is not changed.");
+        assertTrue(beforeRestartCount == after1mRestartCount, "The pod was restarted after 1m, "
+            + "it should restart after that");
+
+        String expectedStr = "Hello World, you have reached server "
+            + CLUSTER_NAME_PREFIX + i + "-" + MANAGED_SERVER_NAME_BASE + j;
+        checkAppNotRunning(domainNamespace, managedServerPodName, expectedStr);
+        checkAppIsRunning(domainNamespace, managedServerPodName, expectedStr);
+
+        // get the restart count of the container in pod after liveness probe restarts
+        int afterRestartCount = assertDoesNotThrow(() ->
+                getContainerRestartCount(domainNamespace, null, managedServerPodName, null),
+            String.format("Failed to get the restart count of the container from pod {0} in namespace {1}",
+                managedServerPodName, domainNamespace));
+        logger.info("Restart count after liveness probe {0}", afterRestartCount);
+        assertTrue(afterRestartCount - beforeRestartCount == 1,
+            String.format("Liveness probe did not start the container in pod %s in namespace %s",
+                managedServerPodName, domainNamespace));
+      }
+    }
+
+    // patch the domain with custom livenessProbe successThreshold
+    patchStr = "[{\"op\": \"replace\", \"path\": \"/spec/serverPod/livenessProbe/successThreshold\", \"value\": 2}]";
+    logger.info("Updating domain configuration using patch string: {0}", patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, new V1Patch(patchStr), PATCH_FORMAT_JSON_PATCH),
+        String.format("failed to patch domain %s in namespace %s", domainUid, domainNamespace));
+
+    // check the operator log contains expected error msg
+    String expectedErrorMsg = "Invalid value '2' for the liveness probe success threshold under "
+        + "'spec.adminServer.serverPod.livenessProbe.successThreshold'. "
+        + "The liveness probe successThreshold value must be 1.";
+    String operatorPodName = assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+    checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
+
+    // check the domain status conditions failed and condition message contains the expected error msg
+    verifyDomainStatusCondition(domainUid, domainNamespace, "Failed", expectedErrorMsg);
+
     // patch the domain back to the original state
     // get the original admin server pod and managed server pods creation time
     adminPodCreationTime =
@@ -347,7 +419,9 @@ class ItLivenessProbeCustomization {
       }
     }
 
-    patchStr = "[{\"op\": \"replace\", \"path\": \"/spec/serverPod/livenessProbe/failureThreshold\", \"value\": 1}]";
+    patchStr
+        = "[{\"op\": \"replace\", \"path\": \"/spec/serverPod/livenessProbe/failureThreshold\", \"value\": 1}, "
+        + "{\"op\": \"replace\", \"path\": \"/spec/serverPod/livenessProbe/successThreshold\", \"value\": 1}]";
     logger.info("Updating domain configuration using patch string: {0}", patchStr);
     assertTrue(patchDomainCustomResource(domainUid, domainNamespace, new V1Patch(patchStr), PATCH_FORMAT_JSON_PATCH),
         String.format("failed to patch domain %s in namespace %s", domainUid, domainNamespace));
@@ -363,66 +437,6 @@ class ItLivenessProbeCustomization {
             managedServerPodsCreationTime.get(managedServerPodName));
       }
     }
-  }
-
-  /**
-   * Patch the domain with custom livenessProbe successThreshold value in serverPod.
-   * Verify the domain status failed and the domain status condition message contains expected error msg.
-   */
-  @Test
-  @DisplayName("Test custom livenessProbe successThreshold in serverPod")
-  void testCustomLivenessProbeSuccessThreshold() {
-    Domain domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
-        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
-            domainUid, domainNamespace));
-    assertNotNull(domain1, "Got null domain resource");
-    assertNotNull(domain1.getSpec(), "domain1.getSpec() is null");
-    assertNotNull(domain1.getSpec().getServerPod(), "domain1.getSpec().getServerPod() is null");
-    assertNotNull(domain1.getSpec().getServerPod().getLivenessProbe(),
-        "domain1.getSpec().getServerPod().getLivenessProbe() is null");
-
-    // get the original successThreshold of livenessProbe
-    Integer successThreshold = domain1.getSpec().getServerPod().getLivenessProbe().getSuccessThreshold();
-    logger.info("Original livenessProbe successThreshold is: {0}", successThreshold);
-    assertTrue(successThreshold.intValue() == 1, "The original livenessProbe successThreshold is not 1");
-
-    // patch the domain with custom livenessProbe successThreshold
-    String patchStr =
-        "[{\"op\": \"replace\", \"path\": \"/spec/serverPod/livenessProbe/successThreshold\", \"value\": 2}]";
-    logger.info("Updating domain configuration using patch string: {0}", patchStr);
-    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, new V1Patch(patchStr), PATCH_FORMAT_JSON_PATCH),
-        String.format("failed to patch domain %s in namespace %s", domainUid, domainNamespace));
-
-    // check the operator log contains expected error msg
-    String expectedErrorMsg = "Invalid value '2' for the liveness probe success threshold under "
-        + "'spec.adminServer.serverPod.livenessProbe.successThreshold'. "
-        + "The liveness probe successThreshold value must be 1.";
-    String operatorPodName = assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
-    checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
-
-    // check the domain status conditions failed and condition message contains the expected error msg
-    verifyDomainStatusCondition(domainUid, domainNamespace, "Failed", expectedErrorMsg);
-
-    // set the domain back to original state
-    // patch the domain with the original livenessProbe successThreshold
-    patchStr = "[{\"op\": \"replace\", \"path\": \"/spec/serverPod/livenessProbe/successThreshold\", \"value\": 1}]";
-    logger.info("Updating domain configuration using patch string: {0}", patchStr);
-    assertTrue(patchDomainCustomResource(domainUid, domainNamespace, new V1Patch(patchStr), PATCH_FORMAT_JSON_PATCH),
-        String.format("failed to patch domain %s in namespace %s", domainUid, domainNamespace));
-
-    domain1 = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace),
-        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
-            domainUid, domainNamespace));
-    assertNotNull(domain1, "Got null domain resource");
-    assertNotNull(domain1.getSpec(), "domain1.getSpec() is null");
-    assertNotNull(domain1.getSpec().getServerPod(), "domain1.getSpec().getServerPod() is null");
-    assertNotNull(domain1.getSpec().getServerPod().getLivenessProbe(),
-        "domain1.getSpec().getServerPod().getLivenessProbe() is null");
-
-    // get the successThreshold of livenessProbe
-    successThreshold = domain1.getSpec().getServerPod().getLivenessProbe().getSuccessThreshold();
-    logger.info("The livenessProbe successThreshold is: {0}", successThreshold);
-    assertTrue(successThreshold.intValue() == 1, "The livenessProbe successThreshold is not 1");
   }
 
   /**
@@ -739,7 +753,7 @@ class ItLivenessProbeCustomization {
     return miiImage;
   }
 
-  private File createTempfile(String filename) throws IOException {
+  private static File createTempfile(String filename) throws IOException {
     File tempFile = File.createTempFile(filename, ".txt");
     //deletes the file when VM terminates
     tempFile.deleteOnExit();
