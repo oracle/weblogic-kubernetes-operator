@@ -36,10 +36,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
@@ -98,7 +95,6 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
  * Model In Image. Add a cluster targeted JMS distributed destination.
  */
 
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test external RMI access through loadbalncer tunneling")
 @IntegrationTest
 class ItExternalLbTunneling {
@@ -251,7 +247,6 @@ class ItExternalLbTunneling {
    * available to download to build the external rmi JMS Client. 
    */
 
-  @Order(1)
   @Test
   @DisplayName("Verify RMI access to WLS through Voyager LoadBalancer")
   void testExternalRmiAccessThruVoyager() {
@@ -301,7 +296,6 @@ class ItExternalLbTunneling {
   /**
    * Verify RMI access to WLS through Traefik LoadBalancer.
    */
-  @Order(2)
   @Test
   @DisplayName("Verify RMI access to WLS through Traefik LoadBalancer")
   void testExternalRmiAccessThruTraefik() {
@@ -357,7 +351,6 @@ class ItExternalLbTunneling {
    * Verify RMI access to WLS through NGINX LoadBalancer.
    */
   @Disabled("NGNIX tls ingress yaml file not ready")
-  @Order(3)
   @Test
   @DisplayName("Verify RMI access WLS through NGINX LoadBalancer")
   void testExternalRmiAccessThruNginx() {
@@ -421,7 +414,6 @@ class ItExternalLbTunneling {
    * The test is skipped for slim images, beacuse wlthint3client.jar is not 
    * available to download to build the external rmi JMS Client. 
    */
-  @Order(4)
   @Test
   @DisplayName("Verify tls RMI access WLS through Voyager loadBalancer")
   void testExternalRmiAccessThruVoyagerHttpsTunneling() {
@@ -465,7 +457,6 @@ class ItExternalLbTunneling {
   /**
    * Verify tls RMI access to WLS through Traefik LoadBalancer.
    */
-  @Order(5)
   @Test
   @DisplayName("Verify tls RMI access WLS through Traefik loadBalancer")
   void testExternalRmiAccessThruTraefikHttpsTunneling() {
@@ -516,7 +507,6 @@ class ItExternalLbTunneling {
    * Verify tls RMI access to WLS through NGNIX LoadBalancer.
    */
   @Disabled("NGNIX tls ingress yaml file not ready")
-  @Order(6)
   @Test
   @DisplayName("Verify tls RMI access WLS through NGNIX loadBalancer")
   void testExternalRmiAccessThruNginxHttpsTunneling() {
