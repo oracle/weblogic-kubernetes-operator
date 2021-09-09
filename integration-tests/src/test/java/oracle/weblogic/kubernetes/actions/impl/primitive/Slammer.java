@@ -29,9 +29,9 @@ public class Slammer {
       .orElse(K8S_NODEPORT_HOST);
 
   private static String remotepass = Optional.ofNullable(System.getenv("SLAMMER_REMOTEHOST_PASS"))
-      .orElse("21PinkCat49");
+      .orElse(null);
   private static String remoteuser = Optional.ofNullable(System.getenv("SLAMMER_REMOTEHOST_USER"))
-      .orElse("mkogan");
+      .orElse(null);
 
   private static String slammerInstallDir = Optional.ofNullable(System.getenv("SLAMMER_INSTALL_DIR"))
       .orElse(RESULTS_BASE + "/slammerinstall");
@@ -59,8 +59,8 @@ public class Slammer {
     assertDoesNotThrow(() -> Files.createDirectories(slammerTemp));
 
     String slammerSrcLocation = Optional.ofNullable(System.getenv("SLAMMER_DOWNLOAD_URL"))
-        .orElse("http://100.111.70.116/slammer.tar");
-    //--no-proxy
+        .orElse(null);
+    
     CommandParams params = Command.defaultCommandParams()
         .command("cd " + installDir + " && wget  --no-proxy "
             + slammerSrcLocation
