@@ -541,7 +541,7 @@ def addAdminChannelPortForwardNetworkAccessPoints(server):
     server['NetworkAccessPoint'] = {}
 
   naps = server['NetworkAccessPoint']
-  nap_names = naps.keys()
+  nap_names = list(naps)
   index = 0
   for nap_name in nap_names:
     nap = naps[nap_name]
