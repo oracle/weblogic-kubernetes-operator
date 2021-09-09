@@ -1185,7 +1185,7 @@ class ItMiiAuxiliaryImage {
     checkSystemResourceConfiguration(adminServiceNodePort, "JMSSystemResources",
         "TestClusterJmsModule2", "200");
     try {
-      Thread.sleep(60 * 60* 1000);
+      Thread.sleep(60 * 60 * 1000);
     } catch (InterruptedException ex) {
       // no op
     }
