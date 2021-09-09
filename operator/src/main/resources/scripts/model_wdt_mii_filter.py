@@ -347,7 +347,7 @@ def isAdministrationPortEnabledForDomain(topology):
   administrationPortEnabled = False
 
   if 'AdministrationPortEnabled' in topology:
-    administrationPortEnabled = topology['AdministrationPortEnabled'] == 'True'
+    administrationPortEnabled = topology['AdministrationPortEnabled'] == 'true'
   else:
     # AdministrationPortEnabled is not explicitly set so going with the default
     # Starting with 14.1.2.0, the domain's AdministrationPortEnabled default is derived from the domain's SecureMode
