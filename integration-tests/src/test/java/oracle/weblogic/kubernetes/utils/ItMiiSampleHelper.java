@@ -180,16 +180,16 @@ public class ItMiiSampleHelper {
     String imageVer = "notset";
     String decoration = (envMap.get("DO_AI") != null && envMap.get("DO_AI").equalsIgnoreCase("true"))  ? "AI-" : "";
 
-    if (imageName.equals(getModelImageName("-wlsv1"))) {
+    if (imageName.contains("-wlsv1")) {
       imageVer = "WLS-" + decoration + "v1";
     }
-    if (imageName.equals(getModelImageName("-wlsv2"))) {
+    if (imageName.contains("-wlsv2")) {
       imageVer = "WLS-" + decoration + "v2";
     }
-    if (imageName.equals(getModelImageName("-jrfv1"))) {
+    if (imageName.contains("-jrfv1")) {
       imageVer = "JRF-" + decoration + "v1";
     }
-    if (imageName.equals(getModelImageName("-jrfv2"))) {
+    if (imageName.contains("-jrfv2")) {
       imageVer = "JRF-" + decoration + "v2";
     }
 
