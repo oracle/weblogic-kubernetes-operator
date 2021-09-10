@@ -76,6 +76,7 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 class DomainStatusUpdaterTest {
   private static final String NAME = UID;
+  private static final String ADMIN = "admin";
   private final TerminalStep endStep = new TerminalStep();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
@@ -773,6 +774,7 @@ class DomainStatusUpdaterTest {
 
     private ScenarioBuilder() {
       configSupport = new WlsDomainConfigSupport("testDomain");
+      configSupport.setAdminServerName(ADMIN);
     }
 
     // Adds a cluster to the topology, along with its servers
@@ -830,6 +832,7 @@ class DomainStatusUpdaterTest {
 
     private Map<String,String> createStateMap() {
       Map<String,String> result = new HashMap<>();
+      result.put(ADMIN, RUNNING_STATE);
       getLiveServers().forEach(server -> result.put(server, RUNNING_STATE));
       for (String state : serverStates.keySet()) {
         for (String server: serverStates.get(state)) {

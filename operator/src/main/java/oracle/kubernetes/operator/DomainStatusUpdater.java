@@ -407,11 +407,18 @@ public class DomainStatusUpdater {
         super(packet, statusUpdateStep);
         this.packet = packet;
         config = packet.getValue(DOMAIN_TOPOLOGY);
-        serverState = packet.getValue(SERVER_STATE_MAP);
+        serverState = withoutAdminServer(config, packet.getValue(SERVER_STATE_MAP));
         serverHealth = packet.getValue(SERVER_HEALTH_MAP);
         expectedRunningServers = DomainPresenceInfo.fromPacket(packet)
               .map(DomainPresenceInfo::getSelectedServers)
               .orElse(Collections.emptySet());
+      }
+
+      private Map<String, String> withoutAdminServer(WlsDomainConfig config, Map<String, String> serverStateMap) {
+        return Optional.ofNullable(serverStateMap).orElse(Collections.emptyMap())
+              .entrySet().stream()
+              .filter(entry -> !entry.getKey().equals(config.getAdminServerName()))
+              .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
       }
 
       @Override
