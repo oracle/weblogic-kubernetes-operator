@@ -18,6 +18,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import io.kubernetes.client.custom.Quantity;
@@ -547,6 +548,11 @@ class ItParameterizedDomain {
           true, "/bin/sh", "-c", destLocation + " " + serverName),
           String.format("Failed to execute script %s in pod %s namespace %s", destLocation,
               serverName, domainNamespace));
+      try {
+        TimeUnit.HOURS.sleep(3);
+      } catch (InterruptedException ex) {
+        // no op
+      }
       assertTrue(execResult.exitValue() == 0,
           String.format("Failed to execute kill server inside pod, stderr %s stdout %s", destLocation,
               execResult.stderr(), execResult.stdout()));

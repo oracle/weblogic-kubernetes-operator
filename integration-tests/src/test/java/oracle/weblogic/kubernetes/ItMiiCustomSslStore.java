@@ -6,7 +6,6 @@ package oracle.weblogic.kubernetes;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -164,12 +163,6 @@ class ItMiiCustomSslStore {
         adminServerPodName, "",
         Paths.get(RESULTS_ROOT, "TrustKeyStore.jks"),
         Paths.get("/shared/TrustKeyStore.jks")));
-
-    try {
-      TimeUnit.MINUTES.sleep(60);
-    } catch (InterruptedException ex) {
-      // no op
-    }
 
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Wait for managed server services and pods are created in namespace {0}",
