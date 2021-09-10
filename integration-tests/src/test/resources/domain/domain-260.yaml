@@ -1,0 +1,99 @@
+# Copyright (c) 2017, 2019, Oracle and/or its affiliates. All rights reserved.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+#
+# This is an example of how to define a Domain resource.
+#
+apiVersion: "weblogic.oracle/v7"
+kind: Domain
+metadata:
+  name: domain1
+  namespace: weblogic-domain260
+  labels:
+    weblogic.resourceVersion: domain-v2
+    weblogic.domainUID: domain1
+spec:
+  # The WebLogic Domain Home
+  domainHome: /u01/oracle/user_projects/domains/domain1
+
+  # If the domain home is in the image
+  domainHomeInImage: true
+
+  # The WebLogic Server image that the Operator uses to start the domain
+  image: "domain-home-in-image:12.2.1.4"
+
+  # imagePullPolicy defaults to "Always" if image version is :latest
+  imagePullPolicy: "IfNotPresent"
+
+  # Identify which Secret contains the credentials for pulling an image
+  imagePullSecrets:
+  - name: ocir-secret 
+
+  # Identify which Secret contains the WebLogic Admin credentials (note that there is an example of
+  # how to create that Secret at the end of this file)
+  webLogicCredentialsSecret: 
+    name: weblogic-credentials
+
+  # Whether to include the server out file into the pod's stdout, default is true
+  includeServerOutInPodLog: true
+
+  # Whether to enable log home
+  logHomeEnabled: false
+
+  # The in-pod location for domain log, server logs, server out, and Node Manager log files
+  logHome: /shared/logs/domain1
+  # An (optional) in-pod location for data storage of default and custom file stores.
+  # If not specified or the value is either not set or empty (e.g. dataHome: "") then the
+  # data storage directories are determined from the WebLogic domain home configuration.
+  dataHome: ""
+
+  # serverStartPolicy legal values are "NEVER", "IF_NEEDED", or "ADMIN_ONLY"
+  # This determines which WebLogic Servers the Operator will start up when it discovers this Domain
+  # - "NEVER" will not start any server in the domain
+  # - "ADMIN_ONLY" will start up only the administration server (no managed servers will be started)
+  # - "IF_NEEDED" will start all non-clustered servers, including the administration server and clustered servers up to the replica count
+  serverStartPolicy: "IF_NEEDED"
+
+  serverPod:
+    # an (optional) list of environment variable to be set on the servers
+    env:
+    - name: JAVA_OPTIONS
+      value: "-Dweblogic.StdoutDebugEnabled=false"
+    - name: USER_MEM_ARGS
+      value: "-Djava.security.egd=file:/dev/./urandom "
+
+  # adminServer is used to configure the desired behavior for starting the administration server.
+  adminServer:
+    # serverStartState legal values are "RUNNING" or "ADMIN"
+    # "RUNNING" means the listed server will be started up to "RUNNING" mode
+    # "ADMIN" means the listed server will be start up to "ADMIN" mode
+    serverStartState: "RUNNING"
+    adminService:
+      channels:
+    # The Admin Server's NodePort
+       - channelName: default
+         nodePort: 0
+    # Uncomment to export the T3Channel as a service
+       - channelName: T3Channel
+
+  # clusters is used to configure the desired behavior for starting member servers of a cluster.  
+  # If you use this entry, then the rules will be applied to ALL servers that are members of the named clusters.
+  clusters:
+  - clusterName: cluster-1
+    serverStartState: "RUNNING"
+    serverPod:
+      # Instructs Kubernetes scheduler to prefer nodes for new cluster members where there are not
+      # already members of the same cluster.
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: "weblogic.clusterName"
+                      operator: In
+                      values:
+                        - $(CLUSTER_NAME)
+                topologyKey: "kubernetes.io/hostname"
+    replicas: 2
+
