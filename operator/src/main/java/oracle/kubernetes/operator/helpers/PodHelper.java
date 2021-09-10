@@ -19,7 +19,6 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
-import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
@@ -164,16 +163,27 @@ public class PodHelper {
   }
 
   /**
-   * Check if pod is deleting.
-   * @param pod pod
-   * @return true, if pod is deleting
+   * Returns the Kubernetes name of the specified pod.
+   * @param pod the pod
    */
-  public static boolean isDeleting(V1Pod pod) {
-    V1ObjectMeta meta = pod.getMetadata();
-    if (meta != null) {
-      return meta.getDeletionTimestamp() != null;
-    }
-    return false;
+  public static String getPodName(@Nonnull V1Pod pod) {
+    return Optional.of(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getName).orElse("");
+  }
+
+  /**
+   * Returns the Kubernetes namespace of the specified pod.
+   * @param pod the pod
+   */
+  public static String getPodNamespace(@Nonnull V1Pod pod) {
+    return Optional.of(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getNamespace).orElse("");
+  }
+
+  /**
+   * Returns true if the specified pod is scheduled for deletion, as indicated by the presence of a deletion timestamp.
+   * @param pod the pod
+   */
+  public static boolean isDeleting(@Nonnull V1Pod pod) {
+    return Optional.of(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getDeletionTimestamp).isPresent();
   }
 
   /**
@@ -193,13 +203,11 @@ public class PodHelper {
   }
 
   /**
-   * get pod domain UID.
-   * @param pod pod
-   * @return domain UID
+   * Returns the domain UID associated with the specified pod.
+   * @param pod the pod
    */
   public static String getPodDomainUid(V1Pod pod) {
-    return KubernetesUtils.getDomainUidLabel(
-        Optional.ofNullable(pod).map(V1Pod::getMetadata).orElse(null));
+    return KubernetesUtils.getDomainUidLabel(Optional.ofNullable(pod).map(V1Pod::getMetadata).orElse(null));
   }
 
   /**
@@ -306,22 +314,16 @@ public class PodHelper {
     }
 
     @Override
-    Step createProgressingStep(Step actionStep) {
-      return DomainStatusUpdater.createProgressingStartedEventStep(
-          DomainStatusUpdater.ADMIN_SERVER_STARTING_PROGRESS_REASON, false, actionStep);
-    }
-
-    @Override
     Step createNewPod(Step next) {
-      return createProgressingStep(createPod(next));
+      return createPod(next);
     }
 
     @Override
     Step replaceCurrentPod(V1Pod pod, Step next) {
       if (MakeRightDomainOperation.isInspectionRequired(packet)) {
-        return createProgressingStep(MakeRightDomainOperation.createStepsToRerunWithIntrospection(packet));
+        return MakeRightDomainOperation.createStepsToRerunWithIntrospection(packet);
       } else {
-        return createProgressingStep(createDomainRollStartEventIfNeeded(pod, createCyclePodStep(pod, next)));
+        return createDomainRollStartEventIfNeeded(pod, createCyclePodStep(pod, next));
       }
     }
 
@@ -461,7 +463,7 @@ public class PodHelper {
     }
 
     private Step.StepAndPacket createRollRequest(Step deferredStep) {
-      return new Step.StepAndPacket(createProgressingStep(deferredStep), packet.copy());
+      return new Step.StepAndPacket(deferredStep, packet.copy());
     }
 
     @SuppressWarnings("unchecked")
@@ -470,14 +472,8 @@ public class PodHelper {
     }
 
     @Override
-    Step createProgressingStep(Step actionStep) {
-      return DomainStatusUpdater.createProgressingStartedEventStep(
-          DomainStatusUpdater.MANAGED_SERVERS_STARTING_PROGRESS_REASON, false, actionStep);
-    }
-
-    @Override
     Step createNewPod(Step next) {
-      return createProgressingStep(createPod(next));
+      return createPod(next);
     }
 
     @Override

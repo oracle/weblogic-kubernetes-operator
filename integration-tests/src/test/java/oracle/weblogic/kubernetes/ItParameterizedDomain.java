@@ -132,7 +132,6 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImag
 import static oracle.weblogic.kubernetes.utils.JobUtils.createJobAndWaitUntilComplete;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_CHANGED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_COMPLETED;
-import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_STARTING;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.POD_STARTED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.POD_TERMINATED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEvent;
@@ -757,14 +756,6 @@ class ItParameterizedDomain {
         logger,
         "domain event {0} to be logged",
         DOMAIN_CHANGED);
-
-    // verify the DomainProcessing Starting/Completed event is generated
-    testUntil(
-        checkDomainEvent(
-            opNamespace, miiDomainNamespace, miiDomainUid, DOMAIN_PROCESSING_STARTING, "Normal", timestamp),
-        logger,
-        "domain event {0} to be logged",
-        DOMAIN_PROCESSING_STARTING);
 
     testUntil(
         checkDomainEvent(

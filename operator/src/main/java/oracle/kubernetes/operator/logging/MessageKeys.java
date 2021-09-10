@@ -176,6 +176,8 @@ public class MessageKeys {
   public static final String MONITORING_EXPORTER_CONFLICT_DYNAMIC_CLUSTER = "WLSDO-0028";
   public static final String INVALID_LIVENESS_PROBE_SUCCESS_THRESHOLD_VALUE = "WLSDO-0029";
   public static final String RESERVED_CONTAINER_NAME = "WLSDO-0030";
+  public static final String K8S_REQUEST_FAILURE = "WLSDO-0031";
+  public static final String SERVER_POD_FAILURE = "WLSDO-0032";
 
   private MessageKeys() {
   }

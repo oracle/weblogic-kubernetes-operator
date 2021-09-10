@@ -662,9 +662,9 @@ public class Kubernetes {
     boolean status = false;
     V1Deployment deployment = getDeployment(deploymentName, label, namespace);
     if (deployment != null) {
-      // get the deploymentCondition with the 'Available' type field
+      // get the deploymentCondition with the 'Completed' type field
       V1DeploymentCondition v1DeploymentRunningCondition = deployment.getStatus().getConditions().stream()
-          .filter(v1DeploymentCondition -> "Available".equals(v1DeploymentCondition.getType()))
+          .filter(v1DeploymentCondition -> "Completed".equals(v1DeploymentCondition.getType()))
           .findAny()
           .orElse(null);
 

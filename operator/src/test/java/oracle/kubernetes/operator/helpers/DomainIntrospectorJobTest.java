@@ -53,13 +53,15 @@ import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createNiceStub;
 import static com.meterware.simplestub.Stub.createStrictStub;
+import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
+import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.JOBWATCHER_COMPONENT_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
-import static oracle.kubernetes.operator.helpers.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.JOB;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
@@ -256,14 +258,14 @@ class DomainIntrospectorJobTest {
   }
 
   @Test
-  void whenNoJob_onFiveHundred() {
+  void whenNoJob_onInternalError() {
     testSupport.addRetryStrategy(retryStrategy);
-    testSupport.failOnResource(KubernetesTestSupport.JOB, getJobName(), NS, 500);
+    testSupport.failOnCreate(KubernetesTestSupport.JOB, NS, HTTP_INTERNAL_ERROR);
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
-    assertThat(getDomain(), hasStatus("ServerError",
-            "testcall in namespace junit, for testName: failure reported in test"));
+    assertThat(getDomain(), hasStatus().withReason(Kubernetes)
+          .withMessageContaining("create", "job", NS, "failure reported in test"));
   }
 
   @Test
@@ -296,12 +298,10 @@ class DomainIntrospectorJobTest {
     assertThat(getPodTemplateContainers(jobs.get(0)), hasSize(1));
   }
 
-  @SuppressWarnings("ConstantConditions")
   private List<V1Container> getPodTemplateContainers(V1Job v1Job) {
     return getJobPodSpec(v1Job).getContainers();
   }
 
-  @SuppressWarnings("ConstantConditions")
   private List<V1Container> getPodTemplateInitContainers(V1Job v1Job) {
     return getJobPodSpec(v1Job).getInitContainers();
   }
@@ -467,15 +467,15 @@ class DomainIntrospectorJobTest {
 
   @Test
   void whenPodCreationFailsDueToUnprocessableEntityFailure_reportInDomainStatus() {
-    testSupport.failOnResource(JOB, getJobName(), NS, new UnrecoverableErrorBuilderImpl()
+    testSupport.failOnCreate(JOB, NS, new UnrecoverableErrorBuilderImpl()
         .withReason("FieldValueNotFound")
         .withMessage("Test this failure")
         .build());
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
-    assertThat(getDomain(), hasStatus("FieldValueNotFound",
-        "testcall in namespace junit, for testName: Test this failure"));
+    assertThat(getDomain(), hasStatus().withReason(Kubernetes)
+          .withMessageContaining("create", "job", NS, "Test this failure"));
   }
 
   Domain getDomain() {
@@ -484,7 +484,7 @@ class DomainIntrospectorJobTest {
 
   @Test
   void whenPodCreationFailsDueToUnprocessableEntityFailure_abortFiber() {
-    testSupport.failOnResource(JOB, getJobName(), NS, new UnrecoverableErrorBuilderImpl()
+    testSupport.failOnCreate(JOB, NS, new UnrecoverableErrorBuilderImpl()
         .withReason("FieldValueNotFound")
         .withMessage("Test this failure")
         .build());

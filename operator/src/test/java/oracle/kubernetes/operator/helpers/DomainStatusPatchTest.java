@@ -151,7 +151,7 @@ class DomainStatusPatchTest {
     DomainStatus status2 = new DomainStatus()
           .addCondition(new DomainCondition(DomainConditionType.Available)
                 .withReason("because").withMessage("hello").withStatus("true"))
-          .addCondition(new DomainCondition(DomainConditionType.Progressing)
+          .addCondition(new DomainCondition(DomainConditionType.Completed)
                 .withReason("ok now").withStatus("true"));
 
     computePatch(status1, status2);
@@ -160,7 +160,7 @@ class DomainStatusPatchTest {
           hasItemsInOrder(
                 "ADD /status/conditions []",
                 "ADD /status/conditions/- {'message':'hello','reason':'because','status':'true','type':'Available'}",
-                "ADD /status/conditions/- {'reason':'ok now','status':'true','type':'Progressing'}"
+                "ADD /status/conditions/- {'reason':'ok now','status':'true','type':'Completed'}"
                 ));
   }
 
@@ -169,7 +169,7 @@ class DomainStatusPatchTest {
     DomainStatus status1 = new DomainStatus()
           .addCondition(new DomainCondition(DomainConditionType.Available)
                 .withReason("because").withMessage("hello").withStatus("true"))
-          .addCondition(new DomainCondition(DomainConditionType.Progressing)
+          .addCondition(new DomainCondition(DomainConditionType.Completed)
                 .withReason("drat").withStatus("true"));
     DomainStatus status2 = new DomainStatus();
 
@@ -179,39 +179,31 @@ class DomainStatusPatchTest {
   }
 
   @Test
-  void whenBothStatusesHaveConditions_replaceMismatches() {  // time to rethink this
+  void whenBothStatusesHaveConditions_replaceMismatches() {
     DomainStatus status1 = new DomainStatus()
-          .addCondition(new DomainCondition(DomainConditionType.Available)
-                .withReason("ok now").withMessage("hello").withStatus("true"))
-          .addCondition(new DomainCondition(DomainConditionType.Progressing)
-                .withReason("because").withStatus("true"));
+          .addCondition(new DomainCondition(DomainConditionType.Completed).withReason("because"));
     DomainStatus status2 = new DomainStatus()
-          .addCondition(new DomainCondition(DomainConditionType.Available)
-                .withReason("ok now").withMessage("hello").withStatus("true"))
-          .addCondition(new DomainCondition(DomainConditionType.Progressing)
-                .withReason("trying").withMessage("Almost"));
-
-    computePatch(status1, status2);
-
-    assertThat(builder.getPatches(),
-          hasItemsInOrder("REMOVE /status/conditions/1",
-                          "ADD /status/conditions/- {'message':'Almost','reason':'trying','type':'Progressing'}"));
-  }
-
-  @Test
-  void whenBothStatusesHaveSameConditionTypeWithMismatch_replaceIt() {  // time to rethink this
-    DomainStatus status1 = new DomainStatus()
-          .addCondition(new DomainCondition(DomainConditionType.Progressing)
-                .withReason("because").withMessage("Not There"));
-    DomainStatus status2 = new DomainStatus()
-          .addCondition(new DomainCondition(DomainConditionType.Progressing)
-                .withReason("trying").withMessage("Almost"));
+          .addCondition(new DomainCondition(DomainConditionType.Completed).withReason("trying"));
 
     computePatch(status1, status2);
 
     assertThat(builder.getPatches(),
           hasItemsInOrder("REMOVE /status/conditions/0",
-                          "ADD /status/conditions/- {'message':'Almost','reason':'trying','type':'Progressing'}"));
+                          "ADD /status/conditions/- {'reason':'trying','status':'True','type':'Completed'}"));
+  }
+
+  @Test
+  void whenBothStatusesHaveSameConditionTypeWithMismatch_replaceIt() {  // time to rethink this
+    DomainStatus status1 = new DomainStatus()
+          .addCondition(new DomainCondition(DomainConditionType.Completed).withReason("because").withMessage("Nope"));
+    DomainStatus status2 = new DomainStatus()
+          .addCondition(new DomainCondition(DomainConditionType.Completed).withReason("trying"));
+
+    computePatch(status1, status2);
+
+    assertThat(builder.getPatches(),
+          hasItemsInOrder("REMOVE /status/conditions/0",
+                          "ADD /status/conditions/- {'reason':'trying','status':'True','type':'Completed'}"));
   }
 
   @Test

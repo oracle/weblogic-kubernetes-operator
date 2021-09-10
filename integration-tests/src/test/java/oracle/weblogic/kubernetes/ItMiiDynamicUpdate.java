@@ -505,7 +505,7 @@ class ItMiiDynamicUpdate {
    * Verify domain will rolling restart.
    * Verify introspectVersion is updated.
    * Verify the datasource parameter is updated by checking the MBean using REST api.
-   * Verify domain status should have a condition type as "Available" and condition reason as "ServersReady".
+   * Verify domain status should have a condition type as "Complete".
    */
   @Test
   @Order(6)
@@ -548,7 +548,7 @@ class ItMiiDynamicUpdate {
 
     // check that the domain status condition contains the correct type and expected reason
     logger.info("verifying the domain status condition contains the correct type and expected reason");
-    verifyDomainStatusConditionNoErrorMsg("Available", "ServersReady");
+    verifyDomainStatusConditionNoErrorMsg("Completed", "");
 
     // change the datasource jndi name back to original in order to create a clean environment for the next test
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
@@ -578,7 +578,7 @@ class ItMiiDynamicUpdate {
    * Verify introspectVersion is updated.
    * Verify the datasource URL is updated by checking the MBean using REST api.
    * Verify the application is undeployed.
-   * Verify domain status should have a condition type as "Available" and condition reason as "ServersReady".
+   * Verify domain status should have a condition type as "Completed".
    */
   @Test
   @Order(7)
@@ -645,7 +645,7 @@ class ItMiiDynamicUpdate {
 
     // check that the domain status condition contains the correct type and expected reason
     logger.info("verifying the domain status condition contains the correct type and expected reason");
-    verifyDomainStatusConditionNoErrorMsg("Available", "ServersReady");
+    verifyDomainStatusConditionNoErrorMsg("Completed", "");
   }
 
   /**
@@ -701,7 +701,7 @@ class ItMiiDynamicUpdate {
 
     // check that the domain status condition contains the correct type and expected reason
     logger.info("verifying the domain status condition contains the correct type and expected reason");
-    verifyDomainStatusConditionNoErrorMsg("Available", "ServersReady");
+    verifyDomainStatusConditionNoErrorMsg("Completed", "");
   }
 
   /**

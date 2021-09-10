@@ -3,10 +3,14 @@
 
 package oracle.kubernetes.operator.calls;
 
+import javax.annotation.Nonnull;
+
+import io.kubernetes.client.openapi.ApiException;
 import oracle.kubernetes.operator.builders.CallParams;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import org.apache.commons.lang3.StringUtils;
 
 public final class RequestParams {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
@@ -59,6 +63,20 @@ public final class RequestParams {
     this.callParams = callParams;
   }
 
+  /**
+   * Creates a message to describe a Kubernetes-reported failure.
+   * @param apiException the exception from Kubernetes
+   */
+  String createFailureMessage(ApiException apiException) {
+    return LOGGER.formatMessage(
+          MessageKeys.K8S_REQUEST_FAILURE,
+          getOperationName(),
+          getResourceType().toLowerCase(),
+          StringUtils.trimToEmpty(this.name),
+          StringUtils.trimToEmpty(this.namespace),
+          StringUtils.trimToEmpty(apiException.getMessage()));
+  }
+
   public CallParams getCallParams() {
     return callParams;
   }
@@ -88,5 +106,24 @@ public final class RequestParams {
       sb.append(LOGGER.formatMessage(MessageKeys.REQUEST_PARAMS_WITH, LoggingFactory.getJson().serialize(body)));
     }
     return sb.toString();
+  }
+
+  public String getResourceType() {
+    return call.substring(indexOfFirstCapitalInCallName());
+  }
+
+  private int indexOfFirstCapitalInCallName() {
+    for (int i = 0; i < call.length(); i++) {
+      if (Character.isUpperCase(call.charAt(i))) {
+        return i;
+      }
+    }
+
+    throw new RuntimeException(call + " is not a valid call name");
+  }
+
+  @Nonnull
+  public String getOperationName() {
+    return call.substring(0, indexOfFirstCapitalInCallName()) + (call.endsWith("Status") ? "Status" : "");
   }
 }
