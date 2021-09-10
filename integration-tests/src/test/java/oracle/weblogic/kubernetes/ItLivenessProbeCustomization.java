@@ -396,9 +396,6 @@ class ItLivenessProbeCustomization {
     String operatorPodName = assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
     checkPodLogContainsString(opNamespace, operatorPodName, expectedErrorMsg);
 
-    // check the domain status conditions failed and condition message contains the expected error msg
-    verifyDomainStatusCondition(domainUid, domainNamespace, "Failed", expectedErrorMsg);
-
     // patch the domain back to the original state
     // get the original admin server pod and managed server pods creation time
     adminPodCreationTime =
