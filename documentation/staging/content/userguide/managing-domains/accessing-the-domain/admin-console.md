@@ -7,6 +7,7 @@ description: "Use the WebLogic Remote Console to manage a domain running in Kube
 ---
 
 The WebLogic Remote Console is a lightweight, open source console that does not need to be collocated with a WebLogic Server domain.
+It is an _alternative_ to the WebLogic Server Administration Console.
 You can install and run the Remote Console anywhere. For an introduction, read the blog, ["The NEW WebLogic Remote Console"](https://blogs.oracle.com/weblogicserver/new-weblogic-server-remote-console).
 For detailed documentation, see the [WebLogic Remote Console](https://github.com/oracle/weblogic-remote-console) GitHub project.
 
@@ -16,12 +17,19 @@ or [OSDC](https://edelivery.oracle.com/osdc/faces/Home.jspx;jsessionid=LchBX6sgz
 Slim installers reduce the size of WebLogic Server downloads, installations, container images, and Kubernetes pods.
 For example, a WebLogic Server 12.2.1.4 slim installer download is approximately 180 MB smaller.
 
-
 The Remote Console is deployed as a standalone Java program, which can connect to multiple WebLogic Server Administration Servers using REST APIs.
 You connect to the Remote Console and, when prompted, supply the WebLogic Server login credentials
 along with the URL of the WebLogic Server Administration Server's administration port to which you want to connect.
 
 **Note**:  An Administration Server administration port typically is the same as its default port unless either an SSL port or an administration port is configured and enabled.
+
+{{% notice warning %}}
+Externally exposing administrative, RMI, or T3 capable WebLogic channels
+using a Kubernetes `NodePort`, load balancer,
+port forwarding, or a similar method can create an insecure configuration.
+For more information, see [External network access security]({{<relref "/security/domain-security/weblogic-channels.md">}}).
+{{% /notice %}}
+
 
 ### Setup
 
@@ -32,15 +40,22 @@ To set up access to WebLogic Server domains running in Kubernetes using the Remo
    **NOTE**: These instructions assume that you are installing and running the Remote Console Java program externally to your Kubernetes cluster.
 
 1. When you first connect your browser to the Remote Console, which is at `http://localhost:8012` by default, the console will prompt you with a login dialog for a WebLogic Server Administration Server URL. To give the Remote Console access to an Administration Server running in Kubernetes, you can:
-
    * Use an [Administration Server `NodePort`](#use-an-administration-server-nodeport).
 
    * Deploy a load balancer with [ingress path routing rules](#configure-ingress-path-routing-rules).
 
+   * [Use a `kubectl port-forward` connection](#use-a-kubectl-port-forward-connection).
+
+   **Note**: If you want to customize the Remote Console listen address,
+     then see [Specify a Listen Address for the Remote Console Host](https://github.com/oracle/weblogic-remote-console/blob/master/site/install_config.md#remote). This is useful if you want to run the Remote Console
+     on a different machine than your browser, or if you want the Remote Console to use SSL.
+
 
 #### Use an Administration Server `NodePort`
 
-For the Remote Console to connect to the Kubernetes WebLogic Server Administration Server’s `NodePort`, use the URL:
+For the Remote Console to connect to the Kubernetes WebLogic Server Administration Server’s `NodePort`, use the following URL after you have connected to the Remote Console
+with your browser and it
+prompts for the location of your WebLogic Server Administration Server:
 
 ```
 http://hostname:adminserver-NodePort/
@@ -48,13 +63,8 @@ http://hostname:adminserver-NodePort/
 
 The `adminserver-NodePort` is the port number of the Administration Server outside the Kubernetes cluster.
 For information about the `NodePort` Service on an Administration Server, see the [Domain resource](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md) document.
-
-{{% notice warning %}}
-Exposing administrative, RMI, or T3 capable channels using a Kubernetes `NodePort`
-can create an insecure configuration. In general, only HTTP protocols should be made available externally and this exposure
-is usually accomplished by setting up an external load balancer that can access internal (non-`NodePort`) services.
-For more information, see [T3 channels]({{<relref "/security/domain-security/weblogic-channels#weblogic-t3-channels">}}).
-{{% /notice %}}
+For an example of setting up the `NodePort` on an Administration Server,
+see [Use a `NodePort` for WLST]({{< relref "/userguide/managing-domains/accessing-the-domain/wlst#use-a-nodeport" >}}).
 
 #### Configure ingress path routing rules
 
@@ -81,7 +91,11 @@ For more information, see [T3 channels]({{<relref "/security/domain-security/web
          port: 7001
    ```
 
-1. For the Remote Console to connect to the Kubernetes WebLogic Server Administration Server, supply a URL that resolves to the load balancer host and ingress that you supplied in the previous step. For example:
+
+1. After you have connected to the Remote Console with your browser,
+   it will prompt for the location of your WebLogic Server Administration
+   Server.
+   For the Remote Console to connect to the Kubernetes WebLogic Server Administration Server, supply a URL that resolves to the load balancer host and ingress that you supplied in the previous step. For example:
 
    ```
    http://${HOSTNAME}:${LB_PORT}/
@@ -94,10 +108,42 @@ For more information, see [T3 channels]({{<relref "/security/domain-security/web
 
         `$ export LB_PORT=$(kubectl -n traefik get service traefik-operator -o jsonpath='{.spec.ports[?(@.name=="web")].nodePort}')`
 
+#### Use a `kubectl port-forward` connection
+
+1. Forward a local port (that is external to
+   Kubernetes) to the administration port of the
+   Administration Server Pod according to these
+   [instructions]({{< relref "/userguide/managing-domains/accessing-the-domain/port-forward.md" >}}).
+
+   **NOTE:** If you plan to run the Remote Console Java program
+   on a different machine than the port forwarding command,
+   then the port forwarding command needs to specify a `--address` parameter
+   with the IP address of the machine that is hosting the command.
+
+1. After you have connected to the Remote Console with your browser,
+   it will prompt you for the location of your WebLogic Server Administration
+   Server.
+   Supply a URL using the local hostname or IP address
+   from the `port-forward` command in the first step, plus the local port from
+   this same command. For example:
+
+   ```
+   http://${LOCAL_HOSTNAME}:${LOCAL_PORT}/
+   ```
+   Where:
+
+     * `${LOCAL_HOSTNAME}` is the hostname or the defined IP address of the machine
+       where the `kubectl port-forward` command is running. This is
+       customizable on the `port-forward` command and is `localhost`
+       or `127.0.0.1`, by default.
+
+     * `${LOCAL_PORT}` is the local port where the `kubectl port-forward` command is running.
+       This is specified on the `port-forward` command.
+
 ### Test
 
-To verify that your WebLogic Server Administration Server URL is correct, and to verify that that your load balancer
-or `NodePort` are working as expected, run the following curl commands at the same location as your browser:
+To verify that your WebLogic Server Administration Server URL is correct, and to verify that that your load balancer,
+`NodePort`, or `kubectl port-forward` are working as expected, run the following curl commands at the same location as your browser:
 
 
 ```
