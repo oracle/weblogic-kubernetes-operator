@@ -927,7 +927,7 @@ public class CommonTestUtils {
                                               String domainNamespace,
                                               String conditionType,
                                               String conditionMsg) {
-    withStandardRetryPolicy
+    withLongRetryPolicy
         .conditionEvaluationListener(
             condition -> getLogger().info("Waiting for domain status condition message contains the expected msg "
                     + "\"{0}\", (elapsed time {1}ms, remaining time {2}ms)",
