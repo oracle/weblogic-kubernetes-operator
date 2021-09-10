@@ -1498,7 +1498,7 @@ class ItParameterizedDomain {
       fw.write("#!/bin/bash\n");
       fw.write("jps\n");
       fw.write("jps | grep Server\n");
-      fw.write("jps | grep Server | awk '{print $1}\n");
+      fw.write("jps | grep Server | awk '{print $1}'\n");
       fw.write("kill -9 `jps | grep Server | awk '{print $1}'`");
     }
     killServerScript.setExecutable(true, false);
