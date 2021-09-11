@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
 import io.kubernetes.client.custom.Quantity;
@@ -550,11 +549,6 @@ class ItParameterizedDomain {
               serverName, domainNamespace));
       logger.info("Command executed to kill server inside pod, exit value {0}, stdout {1}, stderr {2}",
           execResult.exitValue(), execResult.stdout(), execResult.stderr());
-      try {
-        TimeUnit.HOURS.sleep(3);
-      } catch (InterruptedException ex) {
-        // no op
-      }
       assertTrue(execResult.exitValue() == 0,
           String.format("Failed to execute kill server inside pod, stderr %s stdout %s", destLocation,
               execResult.stderr(), execResult.stdout()));
