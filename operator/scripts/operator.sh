@@ -59,6 +59,10 @@ if [ "${MOCK_WLS}" == 'true' ]; then
   MOCKING_WLS="-DmockWLS=true"
 fi
 
+if [ ! -z "${CLOUD_PLATFORM}" ]; then
+  PLATFORM="-DcloudPlatform=$CLOUD_PLATFORM"
+fi
+
 LOGGING="-Djava.util.logging.config.file=${LOGGING_CONFIG}"
 mkdir -m 777 -p /logs
 cp /operator/logstash.conf /logs/logstash.conf
@@ -69,6 +73,6 @@ cp /operator/logstash.conf /logs/logstash.conf
 HEAP="-XshowSettings:vm"
 
 # Start operator
-java $HEAP $MOCKING_WLS $DEBUG $LOGGING -jar /operator/weblogic-kubernetes-operator.jar &
+java $HEAP $MOCKING_WLS $DEBUG $LOGGING $PLATFORM -jar /operator/weblogic-kubernetes-operator.jar &
 PID=$!
 wait $PID

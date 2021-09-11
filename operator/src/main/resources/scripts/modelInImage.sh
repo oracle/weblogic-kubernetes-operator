@@ -564,7 +564,7 @@ function createModelDomain() {
 function restoreDomainConfig() {
   restoreEncodedTar "domainzip.secure" || return 1
 
-  chmod +x ${DOMAIN_HOME}/bin/*.sh ${DOMAIN_HOME}/*.sh  || return 1
+  chmod u+x ${DOMAIN_HOME}/bin/*.sh ${DOMAIN_HOME}/*.sh  || return 1
 }
 
 # Expands into the root directory the MII primordial domain, stored in one or more config maps

@@ -64,6 +64,8 @@ spec:
           value: "false"
         - name: "JAVA_LOGGING_LEVEL"
           value: {{ .javaLoggingLevel | quote }}
+        - name: "CLOUD_PLATFORM"
+          value: {{ .cloudPlatform | quote }}
         - name: "JAVA_LOGGING_MAXSIZE"
           value: {{ .javaLoggingFileSizeLimit | default 20000000 | quote }}
         - name: "JAVA_LOGGING_COUNT"
