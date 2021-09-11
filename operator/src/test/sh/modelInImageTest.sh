@@ -88,7 +88,7 @@ testOnRestoreDomainConfig_unTarDomain() {
 testOnRestoreDomainConfig_makeScriptsExecutable() {
   restoreDomainConfig
 
-  assertEquals "CD command arguments" "+x ${DOMAIN_HOME}/bin/*.sh ${DOMAIN_HOME}/*.sh" "$CHMOD_ARGS"
+  assertEquals "CD command arguments" "u+x ${DOMAIN_HOME}/bin/*.sh ${DOMAIN_HOME}/*.sh" "$CHMOD_ARGS"
 }
 
 testOnRestorePrimordialDomain_useRootDirectory() {
