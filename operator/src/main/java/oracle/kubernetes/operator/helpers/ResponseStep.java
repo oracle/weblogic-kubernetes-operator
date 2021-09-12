@@ -139,12 +139,16 @@ public abstract class ResponseStep<T> extends Step {
   private NextAction doPotentialRetry(Step conflictStep, Packet packet, CallResponse<T> callResponse) {
     return Optional.ofNullable(packet.getSpi(RetryStrategy.class))
         .map(rs -> rs.doPotentialRetry(conflictStep, packet, callResponse.getStatusCode()))
-        .orElseGet(() -> {
-          LOGGER.fine(MessageKeys.ASYNC_NO_RETRY,
-                  callResponse.getRequestParams().call,
-                  callResponse.getExceptionString(), callResponse.getStatusCode(), callResponse.getHeadersString());
-          return null;
-        });
+        .orElseGet(() -> logNoRetry(callResponse));
+  }
+
+  private NextAction logNoRetry(CallResponse<T> callResponse) {
+    if (LOGGER.isFineEnabled()) {
+      LOGGER.fine(MessageKeys.ASYNC_NO_RETRY,
+            Optional.ofNullable(callResponse.getRequestParams()).map(r -> r.call).orElse("--no call--"),
+            callResponse.getExceptionString(), callResponse.getStatusCode(), callResponse.getHeadersString());
+    }
+    return null;
   }
 
   /**

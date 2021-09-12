@@ -7,6 +7,7 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -70,6 +71,7 @@ public class DomainPresenceInfo implements PacketComponent {
   private final ReadWriteLock webLogicCredentialsSecretLock = new ReentrantReadWriteLock();
   private V1Secret webLogicCredentialsSecret;
   private OffsetDateTime webLogicCredentialsSecretLastSet;
+  private String adminServerName;
 
   private final List<String> validationWarnings = Collections.synchronizedList(new ArrayList<>());
   private Map<String, Step.StepAndPacket> serversToRoll = Collections.emptyMap();
@@ -204,6 +206,14 @@ public class DomainPresenceInfo implements PacketComponent {
 
   public void addToPacket(Packet packet) {
     packet.getComponents().put(DOMAIN_COMPONENT_NAME, Component.createFor(this));
+  }
+
+  String getAdminServerName() {
+    return adminServerName;
+  }
+
+  public void setAdminServerName(String adminServerName) {
+    this.adminServerName = adminServerName;
   }
 
   /**
@@ -692,7 +702,14 @@ public class DomainPresenceInfo implements PacketComponent {
   /**
    * Returns the names of the servers which are supposed to be running.
    */
-  public Set<String> getSelectedServers() {
+  public Set<String> getExpectedRunningServers() {
+    final Set<String> result = new HashSet<>(getExpectedRunningManagedServers());
+    Optional.ofNullable(adminServerName).ifPresent(result::add);
+    return result;
+  }
+
+  @Nonnull
+  private Set<String> getExpectedRunningManagedServers() {
     return getServerStartupInfo().stream().map(ServerStartupInfo::getServerName).collect(Collectors.toSet());
   }
 

@@ -23,8 +23,8 @@ import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.DomainFailureReason.DomainInvalid;
@@ -48,6 +48,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_PATCHED;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_REPLACED;
+import static oracle.kubernetes.operator.logging.MessageKeys.CYCLING_POD;
 import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_VALIDATION_FAILED;
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
@@ -76,8 +77,6 @@ class AdminPodHelperTest extends PodHelperTestBase {
   private static final String RAW_MOUNT_PATH_1 = "$(DOMAIN_HOME)/servers/$(SERVER_NAME)";
   private static final String END_MOUNT_PATH_1 = "/u01/oracle/user_projects/domains/servers/ADMIN_SERVER";
   public static final String CUSTOM_MOUNT_PATH2 = "/common1";
-
-  private final TestUtils.ConsoleHandlerMemento consoleHandlerMemento = TestUtils.silenceOperatorLogger();
 
   public AdminPodHelperTest() {
     super(ADMIN_SERVER, ADMIN_PORT);
@@ -154,6 +153,19 @@ class AdminPodHelperTest extends PodHelperTestBase {
     configureServer().withEnvironmentVariable("test", "???");
 
     verifyPodReplaced();
+  }
+
+  @Test
+  void whenPodCreated_isMarkedInPresenceInfo() {
+    getConsoleHandlerMemento().ignoreMessage(ADMIN_POD_CREATED);
+    final Packet packet = testSupport.runSteps(getStepFactory(), terminalStep);
+
+    assertThat(getDpiAdminServerName(packet), equalTo(ADMIN_SERVER));
+  }
+
+  @Nullable
+  private String getDpiAdminServerName(Packet packet) {
+    return DomainPresenceInfo.fromPacket(packet).map(DomainPresenceInfo::getAdminServerName).orElse(null);
   }
 
   @Override
@@ -834,14 +846,14 @@ class AdminPodHelperTest extends PodHelperTestBase {
   @Test
   void whenDomainHomeChanged_generateExpectedLogMessage()
       throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-    consoleHandlerMemento.collectLogMessages(logRecords, getCyclePodKey());
+    getConsoleHandlerMemento().trackMessage(CYCLING_POD);
     initializeExistingPod();
     getConfiguredDomainSpec().setDomainHome("adfgg");
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
     assertThat(logRecords, containsInfo(getReplacedMessageKey()));
-    assertThat(logRecords, containsInfo(getCyclePodKey()));
+    assertThat(logRecords, containsInfo(CYCLING_POD));
   }
 
   private V1Pod createTestPodModel() {

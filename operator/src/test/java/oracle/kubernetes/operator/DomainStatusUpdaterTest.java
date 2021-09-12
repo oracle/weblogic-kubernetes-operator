@@ -97,6 +97,7 @@ class DomainStatusUpdaterTest {
     mementos.add(SystemClockTestSupport.installClock());
 
     domain.setStatus(new DomainStatus());
+    info.setAdminServerName(ADMIN);
 
     testSupport.addDomainPresenceInfo(info);
     testSupport.defineResources(domain);
@@ -163,6 +164,15 @@ class DomainStatusUpdaterTest {
 
   private V1Pod getPod(String serverName) {
     return info.getServerPod(serverName);
+  }
+
+  @Test
+  void whenPacketLacksConfig_dontAbort() throws Exception {
+    testSupport.getPacket().remove(DOMAIN_TOPOLOGY);
+
+    updateDomainStatus();
+
+    testSupport.throwOnCompletionFailure();
   }
 
   @Test

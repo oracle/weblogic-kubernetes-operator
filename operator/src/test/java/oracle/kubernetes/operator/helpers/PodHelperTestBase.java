@@ -147,7 +147,6 @@ import static oracle.kubernetes.operator.helpers.TuningParametersStub.LIVENESS_T
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_INITIAL_DELAY;
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_PERIOD;
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_TIMEOUT;
-import static oracle.kubernetes.operator.logging.MessageKeys.CYCLING_POD;
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND;
@@ -220,12 +219,15 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   protected final V1Affinity affinity = createAffinity();
   private Memento hashMemento;
   private final Map<String, Map<String, KubernetesEventObjects>> domainEventObjects = new ConcurrentHashMap<>();
-
-  private TestUtils.ConsoleHandlerMemento consoleHandlerMemento = TestUtils.silenceOperatorLogger();
+  private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
 
   PodHelperTestBase(String serverName, int listenPort) {
     this.serverName = serverName;
     this.listenPort = listenPort;
+  }
+
+  TestUtils.ConsoleHandlerMemento getConsoleHandlerMemento() {
+    return consoleHandlerMemento;
   }
 
   Domain getDomain() {
@@ -300,7 +302,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     mementos.add(InMemoryCertificates.install());
     mementos.add(setProductVersion(TEST_PRODUCT_VERSION));
     mementos.add(
-        TestUtils.silenceOperatorLogger()
+          consoleHandlerMemento = TestUtils.silenceOperatorLogger()
             .collectLogMessages(logRecords, getMessageKeys())
             .withLogLevel(Level.FINE)
             .ignoringLoggedExceptions(ApiException.class));
@@ -2265,10 +2267,6 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
         getExpectedEventMessage(DOMAIN_ROLL_STARTING),
         stringContainsInOrder("Rolling restart", UID, "domain resource changed",
             "WebLogic domain configuration changed"));
-  }
-
-  protected static String getCyclePodKey() {
-    return CYCLING_POD;
   }
 
   protected static String getDomainRollStartingKey() {

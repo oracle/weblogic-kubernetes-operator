@@ -315,6 +315,7 @@ public class PodHelper {
 
     @Override
     Step createNewPod(Step next) {
+      info.setAdminServerName(getAsName());
       return createPod(next);
     }
 

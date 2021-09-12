@@ -407,25 +407,20 @@ public class DomainStatusUpdater {
         super(packet, statusUpdateStep);
         this.packet = packet;
         config = packet.getValue(DOMAIN_TOPOLOGY);
-        serverState = withoutAdminServer(config, packet.getValue(SERVER_STATE_MAP));
+        serverState = packet.getValue(SERVER_STATE_MAP);
         serverHealth = packet.getValue(SERVER_HEALTH_MAP);
         expectedRunningServers = DomainPresenceInfo.fromPacket(packet)
-              .map(DomainPresenceInfo::getSelectedServers)
+              .map(DomainPresenceInfo::getExpectedRunningServers)
               .orElse(Collections.emptySet());
-      }
-
-      private Map<String, String> withoutAdminServer(WlsDomainConfig config, Map<String, String> serverStateMap) {
-        return Optional.ofNullable(serverStateMap).orElse(Collections.emptyMap())
-              .entrySet().stream()
-              .filter(entry -> !entry.getKey().equals(config.getAdminServerName()))
-              .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue));
       }
 
       @Override
       void modifyStatus(DomainStatus status) {
-        if (getDomain() != null && getDomainConfig().isPresent()) {
-          setStatusDetails(status);
+        if (getDomain() != null) {
           setStatusConditions(status);
+          if (getDomainConfig().isPresent()) {
+            setStatusDetails(status);
+          }
         }
       }
 
@@ -549,18 +544,18 @@ public class DomainStatusUpdater {
       }
 
       private boolean allIntendedServersRunning() {
-        return atLeastOneServerStarted()
+        return atLeastOneApplicationServerStarted()
               && expectedRunningServers.stream().noneMatch(this::isNotRunning)
               && expectedRunningServers.containsAll(serverState.keySet())
               && serversMarkedForRoll().isEmpty();
       }
 
-      private boolean atLeastOneServerStarted() {
-        return expectedRunningServers.size() > 0;
+      private boolean atLeastOneApplicationServerStarted() {
+        return getInfo().getServerStartupInfo().size() > 0;
       }
 
       private boolean sufficientServersRunning() {
-        return atLeastOneServerStarted() && allNonClusteredServersRunning() && allClustersAvailable();
+        return atLeastOneApplicationServerStarted() && allNonClusteredServersRunning() && allClustersAvailable();
       }
 
       private @Nonnull List<String> getNonClusteredServers() {

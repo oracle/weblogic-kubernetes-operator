@@ -473,7 +473,7 @@ class ManagedServersUpStepTest {
     invokeStep();
 
     assertThat(getServers(), containsInAnyOrder("ms1", "ms2", "ms3"));
-    assertThat(domainPresenceInfo.getSelectedServers(), containsInAnyOrder("ms1", "ms2", "ms3"));
+    assertThat(domainPresenceInfo.getExpectedRunningServers(), containsInAnyOrder("ms1", "ms2", "ms3"));
   }
 
   @Test
