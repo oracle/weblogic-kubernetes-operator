@@ -208,7 +208,7 @@ public class DomainPresenceInfo implements PacketComponent {
     packet.getComponents().put(DOMAIN_COMPONENT_NAME, Component.createFor(this));
   }
 
-  String getAdminServerName() {
+  public String getAdminServerName() {
     return adminServerName;
   }
 

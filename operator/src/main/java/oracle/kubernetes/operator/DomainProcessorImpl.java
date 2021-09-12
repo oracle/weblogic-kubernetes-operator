@@ -1161,8 +1161,8 @@ public class DomainProcessorImpl implements DomainProcessor {
         Step.chain(
             domainIntrospectionSteps(info),
             DomainValidationSteps.createAfterIntrospectValidationSteps(),
-            bringAdminServerUp(info, delegate.getPodAwaiterStepFactory(info.getNamespace())),
             new DomainStatusStep(info, null),
+            bringAdminServerUp(info, delegate.getPodAwaiterStepFactory(info.getNamespace())),
             managedServerStrategy);
 
     return Step.chain(

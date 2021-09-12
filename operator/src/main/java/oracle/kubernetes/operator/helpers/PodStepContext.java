@@ -346,9 +346,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     info.setServerPod(getServerName(), pod);
   }
 
-  void updatePresenceInfo() {
-  }
-
   /**
    * Reads the specified pod and decides whether it must be created or replaced.
    *
@@ -1148,7 +1145,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     @Override
     public NextAction apply(Packet packet) {
       V1Pod currentPod = info.getServerPod(getServerName());
-      updatePresenceInfo();
       // reset introspect failure job count - if any
       Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
           .map(DomainPresenceInfo::getDomain)

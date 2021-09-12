@@ -24,7 +24,6 @@ import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
-import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.DomainFailureReason.DomainInvalid;
@@ -153,19 +152,6 @@ class AdminPodHelperTest extends PodHelperTestBase {
     configureServer().withEnvironmentVariable("test", "???");
 
     verifyPodReplaced();
-  }
-
-  @Test
-  void whenPodCreated_isMarkedInPresenceInfo() {
-    getConsoleHandlerMemento().ignoreMessage(ADMIN_POD_CREATED);
-    final Packet packet = testSupport.runSteps(getStepFactory(), terminalStep);
-
-    assertThat(getDpiAdminServerName(packet), equalTo(ADMIN_SERVER));
-  }
-
-  @Nullable
-  private String getDpiAdminServerName(Packet packet) {
-    return DomainPresenceInfo.fromPacket(packet).map(DomainPresenceInfo::getAdminServerName).orElse(null);
   }
 
   @Override

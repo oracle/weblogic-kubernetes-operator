@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator.steps;
 
 import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -21,6 +22,7 @@ public class BeforeAdminServiceStep extends Step {
     String adminServerName = domainTopology.getAdminServerName();
     packet.put(ProcessingConstants.SERVER_NAME, adminServerName);
     packet.put(ProcessingConstants.SERVER_SCAN, domainTopology.getServerConfig(adminServerName));
+    DomainPresenceInfo.fromPacket(packet).ifPresent(d -> d.setAdminServerName(adminServerName));
 
     return doNext(packet);
   }
