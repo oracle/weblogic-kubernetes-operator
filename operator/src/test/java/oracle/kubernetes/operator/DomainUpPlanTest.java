@@ -142,6 +142,7 @@ class DomainUpPlanTest {
             "AdminPodStep",
             "ForServerStep",
             "WatchPodReadyAdminStep",
+            "DomainStatusStep",
             "ManagedServersUpStep"));
   }
 

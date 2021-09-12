@@ -325,6 +325,18 @@ class DomainStatusUpdaterTest {
   }
 
   @Test
+  void whenTopologyNotPresent_updateStatusConditions() {
+    testSupport.getPacket().remove(DOMAIN_TOPOLOGY);
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus("True"));
+    assertThat(
+        getRecordedDomain().getApiVersion(),
+        equalTo(KubernetesConstants.API_VERSION_WEBLOGIC_ORACLE));
+  }
+
+  @Test
   void whenAllDesiredServersRunningAndMatchingCompletedConditionFound_leaveIt() {
     domain.getStatus().addCondition(new DomainCondition(Completed).withStatus("True"));
     defineScenario()

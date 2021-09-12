@@ -314,8 +314,12 @@ public class PodHelper {
     }
 
     @Override
-    Step createNewPod(Step next) {
+    void updatePresenceInfo() {
       info.setAdminServerName(getAsName());
+    }
+
+    @Override
+    Step createNewPod(Step next) {
       return createPod(next);
     }
 
