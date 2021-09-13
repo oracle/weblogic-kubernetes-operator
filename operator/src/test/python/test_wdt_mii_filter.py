@@ -170,31 +170,41 @@ class WdtUpdateFilterCase(unittest.TestCase):
       del os.environ['ISTIO_READINESS_PORT']
 
   def test_customize_port_forward_network_access_point_admin_port_enabled(self):
-    model = self.getModel()
-    server = model['topology']['Server']['admin-server']
+    try:
+      os.environ['ADMIN_CHANNEL_PORT_FORWARDING_ENABLED'] = 'true'
+      model = self.getModel()
 
-    model_wdt_mii_filter.addAdminChannelPortForwardNetworkAccessPoints(server)
+      server = model['topology']['Server']['admin-server']
 
-    internal_admin_nap_listen_address = server['NetworkAccessPoint']['internal-admin']['ListenAddress']
-    self.assertEqual('localhost', internal_admin_nap_listen_address, "Expected nap listen address to be \'localhost\'")
-    internal_admin_nap_listen_port = server['NetworkAccessPoint']['internal-admin']['ListenPort']
-    self.assertEqual(9002, internal_admin_nap_listen_port, "Expected nap listen port to be \'9002\'")
+      model_wdt_mii_filter.addAdminChannelPortForwardNetworkAccessPoints(server)
+
+      internal_admin_nap_listen_address = server['NetworkAccessPoint']['internal-admin']['ListenAddress']
+      self.assertEqual('localhost', internal_admin_nap_listen_address, "Expected nap listen address to be \'localhost\'")
+      internal_admin_nap_listen_port = server['NetworkAccessPoint']['internal-admin']['ListenPort']
+      self.assertEqual(9002, internal_admin_nap_listen_port, "Expected nap listen port to be \'9002\'")
+    finally:
+      del os.environ['ADMIN_CHANNEL_PORT_FORWARDING_ENABLED']
 
   def test_customize_port_forward_network_access_point_multiple_custom_admin_channels(self):
-    model = self.getModel()
-    server = model['topology']['Server']['admin-server']
+    try:
+      os.environ['ADMIN_CHANNEL_PORT_FORWARDING_ENABLED'] = 'true'
+      model = self.getModel()
 
-    model_wdt_mii_filter.addAdminChannelPortForwardNetworkAccessPoints(server)
+      server = model['topology']['Server']['admin-server']
 
-    internal_custom1_nap_listen_address = server['NetworkAccessPoint']['internal-admin1']['ListenAddress']
-    self.assertEqual('localhost', internal_custom1_nap_listen_address, "Expected nap listen address to be \'localhost\'")
-    internal_custom1_nap_listen_port = server['NetworkAccessPoint']['internal-admin1']['ListenPort']
-    self.assertEqual(7896, internal_custom1_nap_listen_port, "Expected nap listen address to be \'7896\'")
+      model_wdt_mii_filter.addAdminChannelPortForwardNetworkAccessPoints(server)
 
-    internal_custom2_nap_listen_address = server['NetworkAccessPoint']['internal-admin2']['ListenAddress']
-    self.assertEqual('localhost', internal_custom2_nap_listen_address, "Expected nap listen address to be \'localhost\'")
-    internal_custom1_nap_listen_port = server['NetworkAccessPoint']['internal-admin2']['ListenPort']
-    self.assertEqual(7897, internal_custom1_nap_listen_port, "Expected nap listen address to be \'7897\'")
+      internal_custom1_nap_listen_address = server['NetworkAccessPoint']['internal-admin1']['ListenAddress']
+      self.assertEqual('localhost', internal_custom1_nap_listen_address, "Expected nap listen address to be \'localhost\'")
+      internal_custom1_nap_listen_port = server['NetworkAccessPoint']['internal-admin1']['ListenPort']
+      self.assertEqual(7896, internal_custom1_nap_listen_port, "Expected nap listen address to be \'7896\'")
+
+      internal_custom2_nap_listen_address = server['NetworkAccessPoint']['internal-admin2']['ListenAddress']
+      self.assertEqual('localhost', internal_custom2_nap_listen_address, "Expected nap listen address to be \'localhost\'")
+      internal_custom1_nap_listen_port = server['NetworkAccessPoint']['internal-admin2']['ListenPort']
+      self.assertEqual(7897, internal_custom1_nap_listen_port, "Expected nap listen address to be \'7897\'")
+    finally:
+      del os.environ['ADMIN_CHANNEL_PORT_FORWARDING_ENABLED']
 
   def test_customizeServerTemplates(self):
     model = self.getModel()
