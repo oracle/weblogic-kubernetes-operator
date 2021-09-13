@@ -50,12 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class ItMiiSampleHelper {
 
   private final String miiSampleScript = "../operator/integration-tests/model-in-image/run-test.sh";
-
   private final String currentDateTime = getDateAndTimeStamp();
-  private final String miiSampleWlsImageNameV1 = DOMAIN_IMAGES_REPO + "mii-" + currentDateTime + "-wlsv1";
-  private final String miiSampleWlsImageNameV2 = DOMAIN_IMAGES_REPO + "mii-" + currentDateTime + "-wlsv2";
-  private final String miiSampleJrfImageNameV1 = DOMAIN_IMAGES_REPO + "mii-" + currentDateTime + "-jrfv1";
-  private final String miiSampleJrfImageNameV2 = DOMAIN_IMAGES_REPO + "mii-" + currentDateTime + "-jrfv2";
   private final String successSearchString = "Finished without errors";
 
   private String opNamespace = null;
@@ -76,6 +71,15 @@ public class ItMiiSampleHelper {
   public enum ImageType {
     MAIN,
     AUX
+  }
+
+  private String getModelImageName(String suffix) {
+    return new StringBuffer(DOMAIN_IMAGES_REPO)
+        .append("mii-")
+        .append(currentDateTime)
+        .append("-")
+        .append(domainNamespace)
+        .append(suffix).toString();
   }
 
   /**
@@ -173,16 +177,16 @@ public class ItMiiSampleHelper {
     String imageVer = "notset";
     String decoration = (envMap.get("DO_AI") != null && envMap.get("DO_AI").equalsIgnoreCase("true"))  ? "AI-" : "";
 
-    if (imageName.equals(miiSampleWlsImageNameV1)) {
+    if (imageName.contains("-wlsv1")) {
       imageVer = "WLS-" + decoration + "v1";
     }
-    if (imageName.equals(miiSampleWlsImageNameV2)) {
+    if (imageName.contains("-wlsv2")) {
       imageVer = "WLS-" + decoration + "v2";
     }
-    if (imageName.equals(miiSampleJrfImageNameV1)) {
+    if (imageName.contains("-jrfv1")) {
       imageVer = "JRF-" + decoration + "v1";
     }
-    if (imageName.equals(miiSampleJrfImageNameV2)) {
+    if (imageName.contains("-jrfv2")) {
       imageVer = "JRF-" + decoration + "v2";
     }
 
@@ -249,7 +253,7 @@ public class ItMiiSampleHelper {
    */
   public void callInitialUseCase() {
     String imageName = (domainType.equals(DomainType.WLS))
-        ? miiSampleWlsImageNameV1 : miiSampleJrfImageNameV1;
+        ? getModelImageName("-wlsv1") : getModelImageName("-jrfv1");
     previousTestSuccessful = true;
     envMap.put("MODEL_IMAGE_NAME", imageName);
 
@@ -289,7 +293,7 @@ public class ItMiiSampleHelper {
                                        String errString) {
     if (args.contains("update3")) {
       String imageName = (domainType.equals(DomainType.WLS))
-          ? miiSampleWlsImageNameV2 : miiSampleJrfImageNameV2;
+          ? getModelImageName("-wlsv2") : getModelImageName("-jrfv2");
       envMap.put("MODEL_IMAGE_NAME", imageName);
     }
 
