@@ -23,7 +23,7 @@ import org.awaitility.core.ConditionFactory;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
@@ -49,15 +49,13 @@ public class K8sEvents {
   public static void checkEvent(
       String opNamespace, String domainNamespace, String domainUid,
       String reason, String type, OffsetDateTime timestamp, ConditionFactory withStandardRetryPolicy) {
-    withStandardRetryPolicy
-        .conditionEvaluationListener(condition
-            -> logger.info("Waiting for domain event {0} to be logged in namespace {1} "
-            + "(elapsed time {2}ms, remaining time {3}ms)",
-            reason,
-            domainNamespace,
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
-        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid, reason, type, timestamp));
+    testUntil(
+        withStandardRetryPolicy,
+        checkDomainEvent(opNamespace, domainNamespace, domainUid, reason, type, timestamp),
+        logger,
+        "domain event {0} to be logged in namespace {1}",
+        reason,
+        domainNamespace);
   }
 
   /**
@@ -73,15 +71,12 @@ public class K8sEvents {
   public static void checkEvent(
       String opNamespace, String domainNamespace, String domainUid,
       String reason, String type, OffsetDateTime timestamp) {
-    withStandardRetryPolicy
-        .conditionEvaluationListener(condition ->
-            getLogger().info("Waiting for domain event {0} to be logged in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                reason,
-                domainNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid, reason, type, timestamp));
+    testUntil(
+        checkDomainEvent(opNamespace, domainNamespace, domainUid, reason, type, timestamp),
+        logger,
+        "domain event {0} to be logged in namespace {1}",
+        reason,
+        domainNamespace);
   }
 
   /**

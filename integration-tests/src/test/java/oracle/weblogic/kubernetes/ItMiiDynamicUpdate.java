@@ -22,7 +22,6 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -32,8 +31,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
@@ -81,6 +78,9 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResour
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceRuntime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runClientInsidePod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runJavacInsidePod;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withQuickRetryPolicy;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
@@ -96,7 +96,6 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -122,8 +121,6 @@ class ItMiiDynamicUpdate {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
-  private static ConditionFactory withStandardRetryPolicy = null;
-  private static ConditionFactory withQuickRetryPolicy;
   private static int replicaCount = 2;
   private static final String domainUid = "mii-dynamic-update";
   private static String pvName = domainUid + "-pv"; // name of the persistent volume
@@ -149,15 +146,6 @@ class ItMiiDynamicUpdate {
   @BeforeAll
   public static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
-    // create standard, reusable retry/backoff policy
-    withStandardRetryPolicy = with().pollDelay(2, SECONDS)
-        .and().with().pollInterval(10, SECONDS)
-        .atMost(5, MINUTES).await();
-
-    // create a reusable quick retry policy
-    withQuickRetryPolicy = with().pollDelay(0, SECONDS)
-        .and().with().pollInterval(4, SECONDS)
-        .atMost(10, SECONDS).await();
 
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
@@ -221,15 +209,12 @@ class ItMiiDynamicUpdate {
 
     // wait for the domain to exist
     logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                domainUid,
-                domainNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(domainExists(domainUid, DOMAIN_VERSION, domainNamespace));
+    testUntil(
+        domainExists(domainUid, DOMAIN_VERSION, domainNamespace),
+        logger,
+        "domain {0} to be created in namespace {1}",
+        domainUid,
+        domainNamespace);
 
     // write sparse yaml to change target to file
     pathToChangeTargetYaml = Paths.get(WORK_DIR + "/changetarget.yaml");
@@ -324,14 +309,12 @@ class ItMiiDynamicUpdate {
 
     verifyIntrospectorRuns(domainUid, domainNamespace);
 
-    withStandardRetryPolicy.conditionEvaluationListener(
-        condition ->
-            logger.info("Waiting for work manager configuration to be updated. "
-                    + "Elapsed time {0}ms, remaining time {1}ms",
-                condition.getElapsedTimeInMS(), condition.getRemainingTimeInMS())).until(
-                  () -> checkWorkManagerRuntime(adminSvcExtHost, domainNamespace, adminServerPodName,
-            MANAGED_SERVER_NAME_BASE + "1",
-            workManagerName, "200"));
+    testUntil(
+        () -> checkWorkManagerRuntime(adminSvcExtHost, domainNamespace, adminServerPodName,
+          MANAGED_SERVER_NAME_BASE + "1",
+          workManagerName, "200"),
+        logger,
+        "work manager configuration to be updated.");
     logger.info("Found new work manager configuration");
 
     verifyPodsNotRolled(domainNamespace, pods);
@@ -1127,14 +1110,11 @@ class ItMiiDynamicUpdate {
     // The client sends 300 messsage to a Uniform Distributed Queue.
     // Make sure the messages are distributed across the members evenly
     // and JMS connection is load balanced across all servers
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Wait for t3 JMS Client to access WLS "
-                    + "(elapsed time {0}ms, remaining time {1}ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(runClientInsidePod(adminServerPodName, domainNamespace,
-            "/u01", "JmsTestClient", "t3://" + domainUid + "-cluster-cluster-1:8001", "4", "true"));
+    testUntil(
+        runClientInsidePod(adminServerPodName, domainNamespace,
+          "/u01", "JmsTestClient", "t3://" + domainUid + "-cluster-cluster-1:8001", "4", "true"),
+        logger,
+        "Wait for t3 JMS Client to access WLS");
 
     // Since the MinDynamicClusterSize is set to 2 in the config map and allowReplicasBelowMinDynClusterSize is set
     // false, the replica count cannot go below 2. So during the following scale down operation
@@ -1212,13 +1192,11 @@ class ItMiiDynamicUpdate {
     verifyApplicationRuntimeOnCluster("404");
 
     // make sure the application is not deployed on admin
-    withStandardRetryPolicy.conditionEvaluationListener(
-        condition ->
-            logger.info("Waiting for application target to be updated. "
-                    + "Elapsed time {0}ms, remaining time {1}ms",
-                condition.getElapsedTimeInMS(), condition.getRemainingTimeInMS())).until(
-                  () -> checkApplicationRuntime(adminSvcExtHost, domainNamespace, adminServerPodName,
-            adminServerName, "404"));
+    testUntil(
+        () -> checkApplicationRuntime(adminSvcExtHost, domainNamespace, adminServerPodName,
+          adminServerName, "404"),
+        logger,
+        "application target to be updated.");
 
     verifyPodsNotRolled(domainNamespace, pods);
   }
@@ -1230,55 +1208,35 @@ class ItMiiDynamicUpdate {
 
     // check whether the introspector log contains the expected error message
     logger.info("verifying that the introspector log contains the expected error message");
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition ->
-                logger.info(
-                    "Checking for the log of introspector pod contains the expected error msg {0}. "
-                        + "Elapsed time {1}ms, remaining time {2}ms",
-                    expectedErrorMsg,
-                    condition.getElapsedTimeInMS(),
-                    condition.getRemainingTimeInMS()))
-        .until(() ->
-            podLogContainsExpectedErrorMsg(introspectJobName, domainNamespace, expectedErrorMsg));
+    testUntil(
+        () -> podLogContainsExpectedErrorMsg(introspectJobName, domainNamespace, expectedErrorMsg),
+        logger,
+        "Checking for the log of introspector pod contains the expected error msg {0}",
+        expectedErrorMsg);
 
     // check the status phase of the introspector pod is failed
     logger.info("verifying the status phase of the introspector pod is failed");
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition ->
-                logger.info(
-                    "Checking for status phase of introspector pod is failed. "
-                        + "Elapsed time {0}ms, remaining time {1}ms",
-                    condition.getElapsedTimeInMS(), condition.getRemainingTimeInMS()))
-        .until(() ->
-            podStatusPhaseContainsString(domainNamespace, introspectJobName, "Failed"));
+    testUntil(
+        () -> podStatusPhaseContainsString(domainNamespace, introspectJobName, "Failed"),
+        logger,
+        "Checking for status phase of introspector pod is failed");
 
     // check that the domain status message contains the expected error msg
     logger.info("verifying the domain status message contains the expected error msg");
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for domain status message contains the expected error msg \"{0}\" "
-                    + "(elapsed time {1}ms, remaining time {2}ms)",
-                expectedErrorMsg,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(() -> {
+    testUntil(
+        () -> {
           Domain miidomain = getDomainCustomResource(domainUid, domainNamespace);
           return (miidomain != null) && (miidomain.getStatus() != null) && (miidomain.getStatus().getMessage() != null)
               && miidomain.getStatus().getMessage().contains(expectedErrorMsg);
-        });
+        },
+        logger,
+        "domain status message contains the expected error msg \"{0}\"",
+        expectedErrorMsg);
 
     // check that the domain status condition type is "Failed" and message contains the expected error msg
     logger.info("verifying the domain status condition message contains the expected error msg");
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for domain status condition message contains the expected error msg "
-                    + "\"{0}\", (elapsed time {1}ms, remaining time {2}ms)",
-                expectedErrorMsg,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(() -> {
+    testUntil(
+        () -> {
           Domain miidomain = getDomainCustomResource(domainUid, domainNamespace);
           if ((miidomain != null) && (miidomain.getStatus() != null)) {
             for (DomainCondition domainCondition : miidomain.getStatus().getConditions()) {
@@ -1290,7 +1248,10 @@ class ItMiiDynamicUpdate {
             }
           }
           return false;
-        });
+        },
+        logger,
+        "domain status condition message contains the expected error msg \"{0}\"",
+        expectedErrorMsg);
   }
 
   private boolean podLogContainsExpectedErrorMsg(String introspectJobName, String namespace, String errormsg) {
@@ -1367,21 +1328,17 @@ class ItMiiDynamicUpdate {
   }
 
   private void verifyMinThreadsConstraintRuntime(int count) {
-    withStandardRetryPolicy.conditionEvaluationListener(
-        condition ->
-            logger.info("Waiting for min threads constraint configuration to be updated. "
-                    + "Elapsed time {0}ms, remaining time {1}ms",
-                condition.getElapsedTimeInMS(), condition.getRemainingTimeInMS())).until(
-                  () -> checkMinThreadsConstraintRuntime(count));
+    testUntil(
+        () -> checkMinThreadsConstraintRuntime(count),
+        logger,
+        "min threads constraint configuration to be updated");
   }
 
   private void verifyMaxThredsConstraintRuntime(int count) {
-    withStandardRetryPolicy.conditionEvaluationListener(
-        condition ->
-            logger.info("Waiting for max threads constraint configuration to be updated. "
-                    + "Elapsed time {0}ms, remaining time {1}ms",
-                condition.getElapsedTimeInMS(), condition.getRemainingTimeInMS())).until(
-                  () -> checkMaxThreadsConstraintRuntime(count));
+    testUntil(
+        () -> checkMaxThreadsConstraintRuntime(count),
+        logger,
+        "max threads constraint configuration to be updated");
   }
 
   /*
@@ -1427,14 +1384,11 @@ class ItMiiDynamicUpdate {
     // make sure the application is deployed on cluster
     for (int i = 1; i <= replicaCount; i++) {
       final int j = i;
-      withStandardRetryPolicy.conditionEvaluationListener(
-          condition ->
-              logger.info("Waiting for application target to be updated. "
-                      + "Elapsed time {0}ms, remaining time {1}ms",
-                  condition.getElapsedTimeInMS(), condition.getRemainingTimeInMS())).until(
-                    () -> checkApplicationRuntime(adminSvcExtHost, domainNamespace, adminServerPodName,
-              MANAGED_SERVER_NAME_BASE + j, expectedStatusCode));
-
+      testUntil(
+          () -> checkApplicationRuntime(adminSvcExtHost, domainNamespace, adminServerPodName,
+            MANAGED_SERVER_NAME_BASE + j, expectedStatusCode),
+          logger,
+          "application target to be updated");
     }
   }
 
@@ -1462,14 +1416,8 @@ class ItMiiDynamicUpdate {
    * @return true if the condition matches
    */
   private boolean verifyDomainStatusCondition(String conditionType, String conditionMsg) {
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for domain status condition message contains the expected msg "
-                    + "\"{0}\", (elapsed time {1}ms, remaining time {2}ms)",
-                conditionMsg,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(() -> {
+    testUntil(
+        () -> {
           Domain miidomain = getDomainCustomResource(domainUid, domainNamespace);
           if ((miidomain != null) && (miidomain.getStatus() != null)) {
             for (DomainCondition domainCondition : miidomain.getStatus().getConditions()) {
@@ -1486,7 +1434,10 @@ class ItMiiDynamicUpdate {
             }
           }
           return false;
-        });
+        },
+        logger,
+        "domain status condition message contains the expected msg \"{0}\"",
+        conditionMsg);
     return false;
   }
 
@@ -1498,14 +1449,8 @@ class ItMiiDynamicUpdate {
    * @return true if the condition matches
    */
   private boolean verifyDomainStatusConditionNoErrorMsg(String conditionType, String conditionReason) {
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for domain status condition message contains the expected msg "
-                    + "\"{0}\", (elapsed time {1}ms, remaining time {2}ms)",
-                conditionReason,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(() -> {
+    testUntil(
+        () -> {
           Domain miidomain = getDomainCustomResource(domainUid, domainNamespace);
           if ((miidomain != null) && (miidomain.getStatus() != null)) {
             for (DomainCondition domainCondition : miidomain.getStatus().getConditions()) {
@@ -1518,7 +1463,10 @@ class ItMiiDynamicUpdate {
             }
           }
           return false;
-        });
+        },
+        logger,
+        "domain status condition message contains the expected msg \"{0}\"",
+        conditionReason);
     return false;
   }
 

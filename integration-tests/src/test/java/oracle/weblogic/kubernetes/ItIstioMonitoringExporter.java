@@ -16,13 +16,10 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
@@ -58,7 +55,6 @@ import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOpe
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -81,8 +77,6 @@ class ItIstioMonitoringExporter {
   private static int prometheusPort;
 
   private boolean isPrometheusDeployed = false;
-  // create standard, reusable retry/backoff policy
-  private static ConditionFactory withStandardRetryPolicy = null;
   private static LoggingFacade logger = null;
   private static String oldRegex;
   private static String sessionAppPrometheusSearchKey =
@@ -95,10 +89,6 @@ class ItIstioMonitoringExporter {
   @BeforeAll
   public static void initAll(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
-    // create standard, reusable retry/backoff policy
-    withStandardRetryPolicy = with().pollDelay(2, SECONDS)
-        .and().with().pollInterval(10, SECONDS)
-        .atMost(6, MINUTES).await();
 
     // get a new unique opNamespace
     logger.info("Assign unique namespace for Operator");

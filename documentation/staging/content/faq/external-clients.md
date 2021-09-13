@@ -547,6 +547,8 @@ please see [Meet Kubernetes resource name restrictions]({{< relref "/userguide/m
 
 - You can configure a custom channel with a secure protocol and two-way SSL to help prevent external access by unwanted applications. See [When is a WebLogic custom channel needed?](#when-is-a-weblogic-custom-channel-needed).
 
+- For a detailed description of external network access security, see [External network access security]({{< relref "/security/domain-security/weblogic-channels.md" >}}).
+
 #### Optional reading
 
 - For a description of the WebLogic URL syntax for JMS, EJB, and JNDI applications

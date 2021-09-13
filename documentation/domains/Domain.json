@@ -21,6 +21,10 @@
           "description": "Customization affecting the generation of Pods for WebLogic Server instances.",
           "$ref": "#/definitions/ServerPod"
         },
+        "adminChannelPortForwardingEnabled": {
+          "description": "When this flag is enabled, the operator updates the domain\u0027s WebLogic configuration for its Administration Server to have an admin protocol NetworkAccessPoint with a \u0027localhost\u0027 address for each existing admin protocol capable port. This allows external Administration Console and WLST \u0027T3\u0027 access when using the \u0027kubectl port-forward\u0027 pattern. Defaults to true.",
+          "type": "boolean"
+        },
         "serverStartPolicy": {
           "description": "The strategy for deciding whether to start a WebLogic Server instance. Legal values are ALWAYS, NEVER, or IF_NEEDED. Defaults to IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers.",
           "type": "string",
