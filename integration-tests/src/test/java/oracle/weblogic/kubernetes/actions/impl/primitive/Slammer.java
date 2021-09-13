@@ -60,7 +60,7 @@ public class Slammer {
 
     String slammerSrcLocation = Optional.ofNullable(System.getenv("SLAMMER_DOWNLOAD_URL"))
         .orElse(null);
-    
+
     CommandParams params = Command.defaultCommandParams()
         .command("cd " + installDir + " && wget  --no-proxy "
             + slammerSrcLocation
