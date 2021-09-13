@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 1948b4415bf4ebfc7637e2b3f75150cc8557624303df5f759124ce2a0d238d3c
+    weblogic.sha256: fc558513a2650fa19f6bb20b9bb959cdcdea01fc45a37dc3841385467b7131e8
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -2965,6 +2965,14 @@ spec:
                             type: object
                         type: object
                     type: object
+                  adminChannelPortForwardingEnabled:
+                    description: When this flag is enabled, the operator updates the
+                      domain's WebLogic configuration for its Administration Server
+                      to have an admin protocol NetworkAccessPoint with a 'localhost'
+                      address for each existing admin protocol capable port. This
+                      allows external Administration Console and WLST 'T3' access
+                      when using the 'kubectl port-forward' pattern. Defaults to true.
+                    type: boolean
                   serverStartPolicy:
                     description: 'The strategy for deciding whether to start a WebLogic
                       Server instance. Legal values are ALWAYS, NEVER, or IF_NEEDED.

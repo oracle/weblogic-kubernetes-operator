@@ -17,7 +17,6 @@ import java.util.stream.Collectors;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
-import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
@@ -31,7 +30,6 @@ import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretReference;
-import io.kubernetes.client.openapi.models.V1SecurityContext;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
@@ -54,8 +52,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.awaitility.core.ConditionFactory;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
@@ -70,7 +66,6 @@ import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createConfigMap;
@@ -87,9 +82,11 @@ import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listConfigMaps;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podIntrospectVersionUpdated;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
@@ -100,15 +97,14 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImag
 import static oracle.weblogic.kubernetes.utils.JobUtils.createJobAndWaitUntilComplete;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainWithNewSecretAndVerify;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createfixPVCOwnerContainer;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
-import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -295,7 +291,7 @@ public class CommonMiiTestUtils {
                 .model(new oracle.weblogic.domain.Model()
                     .domainType("WLS")
                     .runtimeEncryptionSecret(encryptionSecretName))
-                .introspectorJobActiveDeadlineSeconds(300L)));
+                .introspectorJobActiveDeadlineSeconds(600L)));
     for (String clusterName : clusterNames) {
       domain.spec()
           .addClustersItem(new oracle.weblogic.domain.Cluster()
@@ -698,19 +694,13 @@ public class CommonMiiTestUtils {
     LoggingFacade logger = getLogger();
 
     deleteConfigMap(configMapName, domainNamespace);
-    retryPolicy
-        .conditionEvaluationListener(
-            condition ->
-                logger.info(
-                    "Waiting for configmap {0} to be deleted. Elapsed time{1}, remaining time {2}",
-                    configMapName,
-                    condition.getElapsedTimeInMS(),
-                    condition.getRemainingTimeInMS()))
-        .until(
-            () -> {
-              return listConfigMaps(domainNamespace).getItems().stream()
-                  .noneMatch((cm) -> (cm.getMetadata().getName().equals(configMapName)));
-            });
+    testUntil(
+        retryPolicy,
+        () -> listConfigMaps(domainNamespace).getItems().stream()
+          .noneMatch((cm) -> (cm.getMetadata().getName().equals(configMapName))),
+        logger,
+        "configmap {0} to be deleted",
+        configMapName);
 
     createConfigMapAndVerify(configMapName, domainResourceName, domainNamespace, modelFiles);
   }
@@ -848,7 +838,7 @@ public class CommonMiiTestUtils {
         expectedStatusCode);
   }
 
-  private static ExecResult readRuntimeResource(String adminSvcExtHost, String domainNamespace, 
+  private static ExecResult readRuntimeResource(String adminSvcExtHost, String domainNamespace,
       String adminServerPodName, String resourcePath, String callerName) {
     LoggingFacade logger = getLogger();
 
@@ -1040,19 +1030,9 @@ public class CommonMiiTestUtils {
               .template(new V1PodTemplateSpec()
                   .spec(new V1PodSpec()
                       .restartPolicy("Never")
-                      .addContainersItem(new V1Container()
-                          .name("fix-pvc-owner") // change the ownership of the pv to opc:opc
-                          .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
-                          .addCommandItem("/bin/sh")
-                          .addArgsItem("-c")
-                          .addArgsItem("chown -R 1000:1000 /shared")
-                          .addVolumeMountsItem(
-                              new V1VolumeMount()
-                                  .name(pvName)
-                                  .mountPath("/shared"))
-                          .securityContext(new V1SecurityContext()
-                              .runAsGroup(0L)
-                              .runAsUser(0L))) // mounted under /shared inside pod
+                      .addContainersItem(
+                          createfixPVCOwnerContainer(pvName,
+                              "/shared")) // mounted under /shared inside pod
                       .volumes(Arrays.asList(
                           new V1Volume()
                               .name(pvName)
@@ -1172,21 +1152,18 @@ public class CommonMiiTestUtils {
     LoggingFacade logger = getLogger();
     logger.info("Verifying introspector pod is created, runs and deleted");
     String introspectJobName = getIntrospectJobName(domainUid);
-    checkPodExists(introspectJobName, domainUid, domainNamespace);
+    checkPodReady(introspectJobName, domainUid, domainNamespace);
 
     String labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
     V1Pod introspectorPod = assertDoesNotThrow(() -> getPod(domainNamespace, labelSelector, introspectJobName),
         "Could not get introspector pod");
     assertTrue(introspectorPod != null && introspectorPod.getMetadata() != null,
         "introspector pod or metadata is null");
-    try {
-      String introspectorLog = getPodLog(introspectorPod.getMetadata().getName(), domainNamespace);
-      logger.info("Introspector pod log START");
-      logger.info(introspectorLog);
-      logger.info("Introspector pod log END");
-    } catch (Exception ex) {
-      logger.info("Failed to get introspector pod log", ex);
-    }
+    String introspectorLog = assertDoesNotThrow(() -> getPodLog(introspectorPod.getMetadata().getName(),
+        domainNamespace), "Could not get introspector pod log");
+    logger.info("Introspector pod log START");
+    logger.info(introspectorLog);
+    logger.info("Introspector pod log END");
     checkPodDoesNotExist(introspectJobName, domainUid, domainNamespace);
   }
 
@@ -1221,20 +1198,12 @@ public class CommonMiiTestUtils {
   public static void verifyPodIntrospectVersionUpdated(Set<String> podNames,
                                                  String expectedIntrospectVersion,
                                                  String domainNamespace) {
-
     for (String podName : podNames) {
-      with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(5, MINUTES).await()
-          .conditionEvaluationListener(
-              condition ->
-                  getLogger().info(
-                      "Checking for updated introspectVersion for pod {0}. "
-                          + "Elapsed time {1}ms, remaining time {2}ms",
-                      podName, condition.getElapsedTimeInMS(), condition.getRemainingTimeInMS()))
-          .until(
-              () ->
-                  podIntrospectVersionUpdated(podName, domainNamespace, expectedIntrospectVersion));
+      testUntil(
+          () -> podIntrospectVersionUpdated(podName, domainNamespace, expectedIntrospectVersion),
+          getLogger(),
+          "Checking for updated introspectVersion for pod {0}",
+          podName);
     }
   }
 
@@ -1480,7 +1449,7 @@ public class CommonMiiTestUtils {
   }
 
   /**
-   * Create model in image domain with multiple clusters.
+   * Create model in image istio enabled domain with multiple clusters.
    *
    * @param domainUid the uid of the domain
    * @param domainNamespace namespace in which the domain will be created
@@ -1494,6 +1463,27 @@ public class CommonMiiTestUtils {
                                                              String miiImage,
                                                              int numOfClusters,
                                                              int replicaCount) {
+    return createMiiDomainWithIstioMultiClusters(domainUid, domainNamespace, miiImage, numOfClusters,
+        replicaCount, null);
+  }
+
+  /**
+   * Create model in image istio enabled domain with multiple clusters.
+   *
+   * @param domainUid the uid of the domain
+   * @param domainNamespace namespace in which the domain will be created
+   * @param miiImage model in image domain docker image
+   * @param numOfClusters number of clusters in the domain
+   * @param replicaCount replica count of the cluster
+   * @param serverPodLabels the labels for the server pod
+   * @return oracle.weblogic.domain.Domain objects
+   */
+  public static Domain createMiiDomainWithIstioMultiClusters(String domainUid,
+                                                             String domainNamespace,
+                                                             String miiImage,
+                                                             int numOfClusters,
+                                                             int replicaCount,
+                                                             Map<String, String> serverPodLabels) {
 
     LoggingFacade logger = getLogger();
     // admin/managed server name here should match with WDT model yaml file
@@ -1502,25 +1492,39 @@ public class CommonMiiTestUtils {
     // create docker registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
     logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
-    createOcirRepoSecret(domainNamespace);
+    if (!secretExists(OCIR_SECRET_NAME, domainNamespace)) {
+      createOcirRepoSecret(domainNamespace);
+    }
 
     // create secret for admin credentials
     logger.info("Creating secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
-    createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+    if (!secretExists(adminSecretName, domainNamespace)) {
+      createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT,
+          ADMIN_PASSWORD_DEFAULT);
+    }
 
     // create encryption secret
     logger.info("Creating encryption secret");
     String encryptionsecret = "encryptionsecret";
-    createSecretWithUsernamePassword(encryptionsecret, domainNamespace, "weblogicenc", "weblogicenc");
+    if (!secretExists(encryptionsecret, domainNamespace)) {
+      createSecretWithUsernamePassword(encryptionsecret, domainNamespace, "weblogicenc", "weblogicenc");
+    }
 
     // construct the cluster list used for domain custom resource
     List<Cluster> clusterList = new ArrayList<>();
     for (int i = numOfClusters; i >= 1; i--) {
-      clusterList.add(new Cluster()
+      Cluster cluster = new Cluster()
           .clusterName("cluster-" + i)
           .replicas(replicaCount)
-          .serverStartState("RUNNING"));
+          .serverStartState("RUNNING");
+
+      if (serverPodLabels != null) {
+        cluster.serverPod(new ServerPod()
+            .labels(serverPodLabels));
+      }
+
+      clusterList.add(cluster);
     }
 
     // set resource request and limit

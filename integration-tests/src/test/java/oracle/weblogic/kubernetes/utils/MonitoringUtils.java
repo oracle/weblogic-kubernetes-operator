@@ -23,10 +23,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import org.awaitility.core.ConditionFactory;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
@@ -43,12 +40,12 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.isGrafanaRead
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPrometheusReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkFile;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -175,20 +172,12 @@ public class MonitoringUtils {
     logger.info("Executing Curl cmd {0}", curlCmd);
     logger.info("Checking searchKey: {0}", searchKey);
     logger.info(" expected Value {0} ", expectedVal);
-    ConditionFactory withStandardRetryPolicy = null;
-    // create standard, reusable retry/backoff policy
-    withStandardRetryPolicy = with().pollDelay(2, SECONDS)
-        .and().with().pollInterval(10, SECONDS)
-        .atMost(5, MINUTES).await();
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Check prometheus metric {0} against expected {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                searchKey,
-                expectedVal,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(searchForKey(curlCmd, expectedVal));
+    testUntil(
+        searchForKey(curlCmd, expectedVal),
+        logger,
+        "Check prometheus metric {0} against expected {1}",
+        searchKey,
+        expectedVal);
   }
 
   /**
@@ -310,15 +299,12 @@ public class MonitoringUtils {
 
     // wait for the promethues pods to be ready
     logger.info("Wait for the promethues pod is ready in namespace {0}", promNamespace);
-    CommonTestUtils.withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for prometheus to be running in namespace {0} "
-                    + "(elapsed time {1}ms, remaining time {2}ms)",
-                promNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> isPrometheusReady(promNamespace),
-            "prometheusIsReady failed with ApiException"));
+    testUntil(
+        assertDoesNotThrow(() -> isPrometheusReady(promNamespace),
+          "prometheusIsReady failed with ApiException"),
+        logger,
+        "prometheus to be running in namespace {0}",
+        promNamespace);
 
     return promHelmParams;
   }
@@ -405,15 +391,12 @@ public class MonitoringUtils {
 
     // wait for the grafana pod to be ready
     logger.info("Wait for the grafana pod is ready in namespace {0}", grafanaNamespace);
-    CommonTestUtils.withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for grafana to be running in namespace {0} "
-                    + "(elapsed time {1}ms, remaining time {2}ms)",
-                grafanaNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> isGrafanaReady(grafanaNamespace),
-            "grafanaIsReady failed with ApiException"));
+    testUntil(
+        assertDoesNotThrow(() -> isGrafanaReady(grafanaNamespace),
+          "grafanaIsReady failed with ApiException"),
+        logger,
+        "grafana to be running in namespace {0}",
+        grafanaNamespace);
 
     //return grafanaHelmParams;
     return grafanaParams;

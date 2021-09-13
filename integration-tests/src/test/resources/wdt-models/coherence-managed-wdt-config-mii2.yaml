@@ -1,0 +1,68 @@
+# Copyright (c) 2021, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+domainInfo:
+    AdminUserName: '@@PROP:AdminUserName@@'
+    AdminPassword: '@@PROP:AdminPassword@@'
+    ServerStartMode: 'prod'
+topology:
+    Name: 'miidomain'
+    AdminServerName: 'admin-server'
+    Cluster:
+        'cluster-1':
+            CoherenceClusterSystemResource: CoherenceCluster
+            CoherenceTier:
+                CoherenceWebFederatedStorageEnabled: false
+                CoherenceWebLocalStorageEnabled:     false
+                LocalStorageEnabled:                 false
+            DynamicServers:
+                ServerNamePrefix: 'cluster-1-managed-server'
+                MaxDynamicClusterSize: 5
+                CalculatedListenPorts: false
+                MaximumDynamicServerCount: 5
+                DynamicClusterSize: 5
+                ServerTemplate: 'cluster-1-template'
+        'cluster-2':
+            CoherenceClusterSystemResource: CoherenceCluster
+            CoherenceTier:
+                CoherenceWebFederatedStorageEnabled: false
+                CoherenceWebLocalStorageEnabled:     false
+                LocalStorageEnabled:                 true
+            DynamicServers:
+                ServerNamePrefix: 'cluster-2-managed-server'
+                MaxDynamicClusterSize: 5
+                CalculatedListenPorts: false
+                MaximumDynamicServerCount: 5
+                DynamicClusterSize: 5
+                ServerTemplate: 'cluster-2-template'
+    Server:
+        'admin-server':
+            ListenPort: 7001
+    ServerTemplate:
+        'cluster-1-template':
+            ListenPort: 8001
+            Cluster: 'cluster-1'
+            CoherenceClusterSystemResource: CoherenceCluster
+        'cluster-2-template':
+            ListenPort: 8001
+            Cluster: 'cluster-2'
+            CoherenceClusterSystemResource: CoherenceCluster
+resources:
+    CoherenceClusterSystemResource:
+        CoherenceCluster:
+            Target: 'cluster-1,cluster-2'
+            CoherenceResource:
+                CoherenceClusterParams:
+                    CoherenceClusterWellKnownAddress:
+                        WKA1:
+                            ListenAddress: 'multi-domain-svc'
+appDeployments:
+    Application:
+        'CoherenceApp':
+            SourcePath: 'wlsdeploy/applications/CoherenceApp.ear'
+            ModuleType: ear
+            Target: 'cluster-1'
+        'CoherenceAppGAR':
+            SourcePath: 'wlsdeploy/applications/CoherenceApp.gar'
+            ModuleType: gar
+            Target: 'cluster-2'
