@@ -50,9 +50,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class ItMiiSampleHelper {
 
   private final String miiSampleScript = "../operator/integration-tests/model-in-image/run-test.sh";
-
-  //private final String currentDateTime = getDateAndTimeStamp();
-  //private String miiSampleWlsImageName = DOMAIN_IMAGES_REPO + "mii-" + currentDateTime;
+  private final String currentDateTime = getDateAndTimeStamp();
   private final String successSearchString = "Finished without errors";
 
   private String opNamespace = null;
@@ -76,7 +74,6 @@ public class ItMiiSampleHelper {
   }
 
   private String getModelImageName(String suffix) {
-    String currentDateTime = getDateAndTimeStamp();
     return new StringBuffer(DOMAIN_IMAGES_REPO)
         .append("mii-")
         .append(currentDateTime)
