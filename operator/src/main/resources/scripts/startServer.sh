@@ -290,6 +290,10 @@ createFolder ${DOMAIN_HOME}/servers/${SERVER_NAME}/security
 copyIfChanged /weblogic-operator/introspector/boot.properties \
               ${DOMAIN_HOME}/servers/${SERVER_NAME}/security/boot.properties
 
+# remove write and execute permissions for group to prevent insecure file system warnings.
+chmod g-wx  ${DOMAIN_HOME}/servers/${SERVER_NAME}/security/boot.properties
+
+
 if [ ${DOMAIN_SOURCE_TYPE} != "FromModel" ]; then
   trace "Copying situational configuration files from operator cm to ${DOMAIN_HOME}/optconfig directory"
   copySitCfgWhileBooting /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig             'Sit-Cfg-CFG--'
@@ -297,7 +301,6 @@ if [ ${DOMAIN_SOURCE_TYPE} != "FromModel" ]; then
   copySitCfgWhileBooting /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jdbc        'Sit-Cfg-JDBC--'
   copySitCfgWhileBooting /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/diagnostics 'Sit-Cfg-WLDF--'
 else
-  chmod g-wx  ${DOMAIN_HOME}/servers/${SERVER_NAME}/security/boot.properties
   if [[ ! -z ${CLOUD_PLATFORM} && ${CLOUD_PLATFORM} == "Openshift" ]]; then
     # Openshift platform - change file permissions in the DOMAIN_HOME dir to give
     # group same permissions as user and disable insecure file system warnings.
