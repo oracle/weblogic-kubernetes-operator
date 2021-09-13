@@ -112,10 +112,8 @@ public class Slammer {
     // if we have property file
     if (slammerPropertyFile != null) {
       runCmd = runCmd + " --property " + slammerPropertyFile;
-    }
-
-    // if we have remotehost and remotesudopass
-    if (remotepass != null && remoteuser != null) {
+    } else {
+      // if we have remotehost and remotepass
       runCmd = runCmd + " --remotehost " + remotehost
         + " --remotepass " + remotepass
         + " --remoteuser " + remoteuser;
