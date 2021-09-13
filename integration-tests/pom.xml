@@ -214,50 +214,6 @@
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>
-                   **/ItCoherenceTests,
-                   **/ItConfigDistributionStrategy,
-                   **/ItCrossDomainTransaction,
-                   **/ItElasticLogging,
-                   **/ItElasticLoggingFluentd,
-                   **/ItExternalRmiTunneling,
-                   **/ItInitContainers,
-                   **/ItIntrospectVersion,
-                   **/ItIstioCrossDomainTransaction,
-                   **/ItIstioDomainInImage,
-                   **/ItIstioDomainInPV,
-                   **/ItIstioMiiDomain,
-                   **/ItIstioTwoDomainsInImage,
-                   **/ItKubernetesEvents,
-                   **/ItManageNameSpace,
-                   **/ItManagedCoherence,
-                   **/ItMiiDomain,
-                   **/ItMiiDomainModelInPV,
-                   **/ItMiiDynamicUpdate,
-                   **/ItMiiMultiModel,
-                   **/ItMiiSample,
-                   **/ItMiiUpdateDomainConfig,
-                   **/ItMonitoringExporter,
-                   **/ItOperatorRestart,
-                   **/ItParameterizedDomain,
-                   **/ItPodTemplates,
-                   **/ItPodsRestart,
-                   **/ItPodsShutdownOption,
-                   **/ItProductionSecureMode,
-                   **/ItWlsSamples,
-                   **/ItServerStartPolicy,
-                   **/ItSessionMigration,
-                   **/ItStickySession,
-                   **/ItSystemResOverrides,
-                   **/ItTwoDomainsLoadBalancer,
-                   **/ItUsabilityOperatorHelmChart
-                </includes-failsafe>
-            </properties>
-        </profile>
-        <profile>
-            <id>new-wls-image-cert</id>
-            <properties>
-                <skipITs>false</skipITs>
-                <includes-failsafe>
                    **/ItExternalLbTunneling,
                    **/ItMiiAuxiliaryImage,
                    **/ItMiiAuxiliaryImageCluster,
