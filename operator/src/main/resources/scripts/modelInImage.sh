@@ -541,7 +541,7 @@ function createModelDomain() {
       trace "Using newly created domain"
     elif [ -f ${PRIMORDIAL_DOMAIN_ZIPPED} ] ; then
       trace "Using existing primordial domain"
-      cd / && base64 -d ${PRIMORDIAL_DOMAIN_ZIPPED} > ${LOCAL_PRIM_DOMAIN_ZIP} && tar -xzf ${LOCAL_PRIM_DOMAIN_ZIP}
+      cd / && base64 -d ${PRIMORDIAL_DOMAIN_ZIPPED} > ${LOCAL_PRIM_DOMAIN_ZIP} && tar -pxzf ${LOCAL_PRIM_DOMAIN_ZIP}
       # create empty lib since we don't archive it in primordial zip and WDT will fail without it
       mkdir ${DOMAIN_HOME}/lib
       # Since the SerializedSystem ini is encrypted, restore it first
@@ -580,7 +580,7 @@ function restoreEncodedTar() {
   cat $(ls ${OPERATOR_ROOT}/introspector*/${1} | sort -t- -k3) > /tmp/domain.secure || return 1
   base64 -d "/tmp/domain.secure" > /tmp/domain.tar.gz || return 1
 
-  tar -xzf /tmp/domain.tar.gz || return 1
+  tar -pxzf /tmp/domain.tar.gz || return 1
 }
 
 # This is before WDT compareModel implementation
