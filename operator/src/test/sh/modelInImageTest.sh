@@ -82,7 +82,7 @@ testOnRestoreDomainConfig_base64DecodeZip() {
 testOnRestoreDomainConfig_unTarDomain() {
   restoreDomainConfig
 
-  assertEquals "TAR command arguments" "-xzf /tmp/domain.tar.gz" "$TAR_ARGS"
+  assertEquals "TAR command arguments" "-pxzf /tmp/domain.tar.gz" "$TAR_ARGS"
 }
 
 testOnRestoreDomainConfig_makeScriptsExecutable() {
@@ -119,7 +119,7 @@ testOnRestoreDomainConfig_whenNoIndexesDefinedCatSingleFile() {
 testOnRestorePrimordialDomain_unTarDomain() {
   restorePrimordialDomain
 
-  assertEquals "TAR command arguments" "-xzf /tmp/domain.tar.gz" "$TAR_ARGS"
+  assertEquals "TAR command arguments" "-pxzf /tmp/domain.tar.gz" "$TAR_ARGS"
 }
 
 ######################### Mocks for the tests ###############
