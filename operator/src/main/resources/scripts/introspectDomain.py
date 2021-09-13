@@ -1345,7 +1345,7 @@ class SitConfigGenerator(Generator):
 
   def addAdminChannelPortForwardNetworkAccessPoints(self, server):
     istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
-    admin_channel_port_forward_enabled = self.env.getEnvOrDef("ADMIN_CHANNEL_PORT_FORWARDING_ENABLED", "true")
+    admin_channel_port_forward_enabled = self.env.getEnvOrDef("ADMIN_CHANNEL_PORT_FORWARDING_ENABLED", "false")
     if (admin_channel_port_forward_enabled == 'false') or (istio_enabled == 'true') :
       return
 
