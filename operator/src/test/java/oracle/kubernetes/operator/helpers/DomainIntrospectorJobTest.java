@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.stream.IntStream;
@@ -34,6 +35,8 @@ import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.TerminalStep;
+import oracle.kubernetes.utils.SystemClock;
+import oracle.kubernetes.utils.SystemClockTestSupport;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
@@ -116,6 +119,7 @@ class DomainIntrospectorJobTest {
   private final DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
   private final RetryStrategyStub retryStrategy = createStrictStub(RetryStrategyStub.class);
   private final String jobPodName = LegalNames.toJobIntrospectorName(UID);
+  private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
 
   public DomainIntrospectorJobTest() {
   }
@@ -127,13 +131,14 @@ class DomainIntrospectorJobTest {
   @BeforeEach
   public void setUp() throws Exception {
     mementos.add(
-        TestUtils.silenceOperatorLogger()
+        consoleHandlerMemento = TestUtils.silenceOperatorLogger()
             .collectLogMessages(logRecords, getMessageKeys())
             .withLogLevel(Level.FINE)
             .ignoringLoggedExceptions(ApiException.class));
     mementos.add(TuningParametersStub.install());
     mementos.add(testSupport.install());
     mementos.add(ScanCacheStub.install());
+    mementos.add(SystemClockTestSupport.installClock());
     testSupport.addToPacket(JOB_POD_NAME, jobPodName);
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
     testSupport.defineResources(domain);
@@ -213,7 +218,7 @@ class DomainIntrospectorJobTest {
   }
 
   private V1PodSpec getJobPodSpec(V1Job job) {
-    return job.getSpec().getTemplate().getSpec();
+    return Objects.requireNonNull(job.getSpec()).getTemplate().getSpec();
   }
 
   private List<V1Job> runStepsAndGetJobs() {
@@ -306,6 +311,7 @@ class DomainIntrospectorJobTest {
     return getJobPodSpec(v1Job).getInitContainers();
   }
 
+  @SuppressWarnings("unchecked")
   @Test
   void whenJobCreated_hasPredefinedEnvVariables() {
     List<V1Job> jobs = runStepsAndGetJobs();
@@ -345,9 +351,9 @@ class DomainIntrospectorJobTest {
 
     assertThat(
             podTemplateInitContainers,
-            allOf(Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+            Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
                 "wdt-image:v1",
-                "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND)));
+                "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND));
     assertThat(getJobPodSpec(job).getVolumes(),
             hasItem(new V1Volume().name(AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME).emptyDir(
                     new V1EmptyDirVolumeSource())));
@@ -426,9 +432,8 @@ class DomainIntrospectorJobTest {
 
     V1Job job = runStepsAndGetJobs().get(0);
     assertThat(getPodTemplateInitContainers(job),
-            org.hamcrest.Matchers.allOf(
                 Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
-                    "wdt-image:v1", "ALWAYS", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND)));
+                    "wdt-image:v1", "ALWAYS", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND));
   }
 
   @Test
@@ -440,9 +445,8 @@ class DomainIntrospectorJobTest {
 
     V1Job job = runStepsAndGetJobs().get(0);
     assertThat(getPodTemplateInitContainers(job),
-            org.hamcrest.Matchers.allOf(
                 Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
-                    "wdt-image:v1", "IfNotPresent", CUSTOM_COMMAND_SCRIPT)));
+                    "wdt-image:v1", "IfNotPresent", CUSTOM_COMMAND_SCRIPT));
   }
 
   @Test
@@ -524,8 +528,7 @@ class DomainIntrospectorJobTest {
 
   @Test
   void whenJobLogContainsSevereError_logJobInfosOnDelete() {
-    testSupport.defineResources(
-        new V1Job().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS)).status(new V1JobStatus()));
+    testSupport.defineResources(createIntrospectorJob());
     IntrospectionTestUtils.defineResources(testSupport, SEVERE_MESSAGE_1);
     testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
 
@@ -536,10 +539,17 @@ class DomainIntrospectorJobTest {
     assertThat(logRecords, containsFine(getJobDeletedMessageKey()));
   }
 
+  private V1Job createIntrospectorJob() {
+    return new V1Job().metadata(createJobMetadata()).status(new V1JobStatus());
+  }
+
+  private V1ObjectMeta createJobMetadata() {
+    return new V1ObjectMeta().name(getJobName()).namespace(NS).creationTimestamp(SystemClock.now());
+  }
+
   @Test
   void whenJobLogContainsSevereError_logJobInfosOnReadPogLog() {
-    testSupport.defineResources(
-        new V1Job().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS)).status(new V1JobStatus()));
+    testSupport.defineResources(createIntrospectorJob());
     IntrospectionTestUtils.defineResources(testSupport, SEVERE_MESSAGE_1);
     testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
 
@@ -547,6 +557,37 @@ class DomainIntrospectorJobTest {
 
     assertThat(logRecords, containsInfo(getJobFailedMessageKey()));
     assertThat(logRecords, containsFine(getJobFailedDetailMessageKey()));
+  }
+
+  @Test
+  void whenJobLogContainsSevereErrorAndRecheckIntervalNotExceeded_dontExecuteTerminalStep() {
+    consoleHandlerMemento.ignoreMessage(getJobFailedMessageKey());
+    consoleHandlerMemento.ignoreMessage(getJobFailedDetailMessageKey());
+    testSupport.defineResources(createIntrospectorJob());
+    IntrospectionTestUtils.defineResources(testSupport, SEVERE_MESSAGE_1);
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
+
+    testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
+
+    assertThat(terminalStep.wasRun(), is(false));
+  }
+
+  @Test
+  void whenJobLogContainsSevereErrorAndRecheckIntervalExceeded_executeTerminalStep() {
+    consoleHandlerMemento.ignoreMessage(getJobFailedMessageKey());
+    consoleHandlerMemento.ignoreMessage(getJobFailedDetailMessageKey());
+    testSupport.defineResources(createIntrospectorJob());
+    IntrospectionTestUtils.defineResources(testSupport, SEVERE_MESSAGE_1);
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
+
+    SystemClockTestSupport.increment(getRecheckIntervalSeconds() + 1);
+    testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
+
+    assertThat(terminalStep.wasRun(), is(true));
+  }
+
+  private int getRecheckIntervalSeconds() {
+    return TuningParameters.getInstance().getMainTuning().domainPresenceRecheckIntervalSeconds;
   }
 
   private Cluster getCluster(String clusterName) {

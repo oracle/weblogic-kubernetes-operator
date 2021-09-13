@@ -19,7 +19,6 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.DomainProcessorImpl;
-import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.JobWatcher;
 import oracle.kubernetes.operator.LabelConstants;
@@ -37,6 +36,7 @@ import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImageEnvVars;
 import oracle.kubernetes.weblogic.domain.model.Cluster;
 import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
@@ -46,10 +46,12 @@ import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
+import org.jetbrains.annotations.Nullable;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static oracle.kubernetes.operator.DomainFailureReason.Introspection;
 import static oracle.kubernetes.operator.DomainSourceType.FromModel;
+import static oracle.kubernetes.operator.DomainStatusUpdater.createFailureRelatedSteps;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
@@ -526,43 +528,48 @@ public class JobHelper {
         MakeRightDomainOperation.recordInspection(packet);
       }
 
-      V1Job domainIntrospectorJob =
-              (V1Job) packet.get(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
+      V1Job domainIntrospectorJob = packet.getValue(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
 
-      if (isNotComplete(domainIntrospectorJob)) {
-        if (domainIntrospectorJob != null) {
-          logIntrospectorFailure(packet, domainIntrospectorJob);
-        }
-        //Introspector job is incomplete, update domain status and terminate processing
-        Step nextStep = null;
-        int retryIntervalSeconds = TuningParameters.getInstance().getMainTuning().domainPresenceRecheckIntervalSeconds;
+      if (JobWatcher.isComplete(domainIntrospectorJob)) {
+        return doNext(packet);
+      } else {
+        return handleFailure(packet, domainIntrospectorJob);
+      }
+    }
 
-        if (OffsetDateTime.now().isAfter(
-                getJobCreationTime(domainIntrospectorJob).plus(retryIntervalSeconds, SECONDS))) {
-          //Introspector job is incomplete and current time is greater than the lazy deletion time for the job,
-          //update the domain status and execute the next step
-          packet.put(DOMAIN_INTROSPECT_REQUESTED, INTROSPECTION_FAILED);
-          nextStep = getNext();
-        }
-
-        return doNext(
-                DomainStatusUpdater.createFailureRelatedSteps(
-                        Introspection,
-                        onSeparateLines(severeStatuses)
-                ),
-                packet);
+    private NextAction handleFailure(Packet packet, V1Job domainIntrospectorJob) {
+      if (domainIntrospectorJob != null) {
+        logIntrospectorFailure(packet, domainIntrospectorJob);
       }
 
-      return doNext(packet);
+      return doNext(
+              Step.chain(
+                    createFailureRelatedSteps(Introspection, onSeparateLines(severeStatuses)),
+                    getNextStep(packet, domainIntrospectorJob)),
+            packet);
     }
+
+    @Nullable
+    private Step getNextStep(Packet packet, V1Job domainIntrospectorJob) {
+      Step nextStep = null;
+
+      if (isRecheckIntervalExceeded(domainIntrospectorJob)) {
+        packet.put(DOMAIN_INTROSPECT_REQUESTED, INTROSPECTION_FAILED);
+        nextStep = getNext();
+      }
+      return nextStep;
+    }
+
+    private boolean isRecheckIntervalExceeded(V1Job domainIntrospectorJob) {
+      final int retryInterval = TuningParameters.getInstance().getMainTuning().domainPresenceRecheckIntervalSeconds;
+      return SystemClock.now().isAfter(
+              getJobCreationTime(domainIntrospectorJob).plus(retryInterval, SECONDS));
+    }
+
 
     private OffsetDateTime getJobCreationTime(V1Job domainIntrospectorJob) {
       return Optional.ofNullable(domainIntrospectorJob.getMetadata())
               .map(V1ObjectMeta::getCreationTimestamp).orElse(OffsetDateTime.now());
-    }
-
-    private boolean isNotComplete(V1Job domainIntrospectorJob) {
-      return !JobWatcher.isComplete(domainIntrospectorJob);
     }
 
     // Parse log messages out of a Job Log
