@@ -245,6 +245,7 @@ class ItLivenessProbeCustomization {
   /**
    * Patch the domain with custom livenessProbe failureThreshold and successThreshold value in serverPod.
    * Verify the domain is restarted and the failureThreshold and successThreshold is updated.
+   * Also verify the failureThreshold runtime behavior is corrected.
    */
   @Test
   @DisplayName("Test custom livenessProbe failureThreshold and successThreshold in serverPod")
@@ -288,8 +289,9 @@ class ItLivenessProbeCustomization {
     }
 
     // patch the domain with custom failureThreshold
-    String patchStr =
-        "[{\"op\": \"replace\", \"path\": \"/spec/serverPod/livenessProbe/failureThreshold\", \"value\": 3}]";
+    String patchStr
+        = "[{\"op\": \"replace\", \"path\": \"/spec/serverPod/livenessProbe/failureThreshold\", \"value\": 3},"
+        + "{\"op\": \"add\", \"path\": \"/spec/serverPod/livenessProbe/periodSeconds\", \"value\": 20}]";
     logger.info("Updating domain configuration using patch string: {0}", patchStr);
     assertTrue(patchDomainCustomResource(domainUid, domainNamespace, new V1Patch(patchStr), PATCH_FORMAT_JSON_PATCH),
         String.format("failed to patch domain %s in namespace %s", domainUid, domainNamespace));
@@ -349,10 +351,10 @@ class ItLivenessProbeCustomization {
                 tempFile, managedServerPodName, domainNamespace));
         logger.info("File copied to Pod {0} in namespace {1}", managedServerPodName, domainNamespace);
 
-        // check the pod should be restarted after 1m 30s since the livenessProbe periodSeconds defaults to 45s.
-        // sleep for 1m
+        // check the pod should be restarted after 40s since the livenessProbe periodSeconds is changed to 20s.
+        // sleep for 30s
         try {
-          Thread.sleep(60000);
+          Thread.sleep(30000);
         } catch (InterruptedException ie) {
           // ignore
         }
