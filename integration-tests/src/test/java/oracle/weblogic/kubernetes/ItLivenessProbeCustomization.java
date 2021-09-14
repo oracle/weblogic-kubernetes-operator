@@ -291,7 +291,7 @@ class ItLivenessProbeCustomization {
     // patch the domain with custom failureThreshold
     String patchStr
         = "[{\"op\": \"replace\", \"path\": \"/spec/serverPod/livenessProbe/failureThreshold\", \"value\": 3},"
-        + "{\"op\": \"add\", \"path\": \"/spec/serverPod/livenessProbe/periodSeconds\", \"value\": 20}]";
+        + "{\"op\": \"add\", \"path\": \"/spec/serverPod/livenessProbe/periodSeconds\", \"value\": 30}]";
     logger.info("Updating domain configuration using patch string: {0}", patchStr);
     assertTrue(patchDomainCustomResource(domainUid, domainNamespace, new V1Patch(patchStr), PATCH_FORMAT_JSON_PATCH),
         String.format("failed to patch domain %s in namespace %s", domainUid, domainNamespace));
@@ -351,10 +351,10 @@ class ItLivenessProbeCustomization {
                 tempFile, managedServerPodName, domainNamespace));
         logger.info("File copied to Pod {0} in namespace {1}", managedServerPodName, domainNamespace);
 
-        // check the pod should be restarted after 40s since the livenessProbe periodSeconds is changed to 20s.
-        // sleep for 30s
+        // check the pod should be restarted after 1m since the livenessProbe periodSeconds is changed to 30s.
+        // sleep for 45s
         try {
-          Thread.sleep(30000);
+          Thread.sleep(45000);
         } catch (InterruptedException ie) {
           // ignore
         }
@@ -363,8 +363,8 @@ class ItLivenessProbeCustomization {
                 managedServerPodName, null),
                 String.format("Failed to get the restart count of the container from pod {0} in namespace {1} after 1m",
                     managedServerPodName, domainNamespace));
-        logger.info("checking after 1m the restartCount is not changed.");
-        assertTrue(beforeRestartCount == after1mRestartCount, "The pod was restarted after 1m, "
+        logger.info("checking after 45s the restartCount is not changed.");
+        assertTrue(beforeRestartCount == after1mRestartCount, "The pod was restarted after 45s, "
             + "it should restart after that");
 
         String expectedStr = "Hello World, you have reached server "
@@ -419,7 +419,9 @@ class ItLivenessProbeCustomization {
 
     patchStr
         = "[{\"op\": \"replace\", \"path\": \"/spec/serverPod/livenessProbe/failureThreshold\", \"value\": 1}, "
-        + "{\"op\": \"replace\", \"path\": \"/spec/serverPod/livenessProbe/successThreshold\", \"value\": 1}]";
+        + "{\"op\": \"replace\", \"path\": \"/spec/serverPod/livenessProbe/successThreshold\", \"value\": 1}, "
+        + "{\"op\": \"replace\", \"path\": \"/spec/serverPod/livenessProbe/periodSeconds\", \"value\": 45}]";
+
     logger.info("Updating domain configuration using patch string: {0}", patchStr);
     assertTrue(patchDomainCustomResource(domainUid, domainNamespace, new V1Patch(patchStr), PATCH_FORMAT_JSON_PATCH),
         String.format("failed to patch domain %s in namespace %s", domainUid, domainNamespace));
