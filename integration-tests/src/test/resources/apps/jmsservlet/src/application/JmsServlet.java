@@ -133,12 +133,13 @@ public class JmsServlet extends HttpServlet {
       out.println("Recorded ("+s1count+") message from [managed-server1]");
       out.println("Recorded ("+s2count+") message from [managed-server2]");
 
-      // Intermittently, in a single attempts all 20 messages are not 
+      // Intermittently, in a single attempt all 20 messages are not 
       // received on accouting Queue. So the logic is modified to make sure
       // the accounting Queue get 20 messages all together with multiple 
       // attempts. Here the s1count, s2count variables have been made static 
       // to keep a record of the message received from managed-server1 and 
       // managed-server2 of domain2 respectively. 
+      // Finally it make sure that s1count and s2count are same
 
       int ccount = s1count + s2count; 
       if ( ccount == rcount ) {
@@ -154,17 +155,6 @@ public class JmsServlet extends HttpServlet {
         out.println("Waiting for more messages to appears on accounting queue");
        }
       }
-      /**
-      if ( count == rcount ) {
-        out.println("Drained ("+count+") message from ["+destination+"]");
-        if ( s1count == s2count ) 
-         out.println("Messages are distributed across MDB instances");
-        else 
-         out.println("Messages are NOT distributed across MDB instances");
-      } else {
-        out.println("Found ("+count+") message instead of ["+rcount+"]");
-      }
-      **/
      } catch (Exception e) {
         out.println("Send/Receive FAILED with Unknown Exception " + e);
         e.printStackTrace();
