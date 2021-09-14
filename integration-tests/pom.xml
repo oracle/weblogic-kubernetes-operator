@@ -309,22 +309,17 @@
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>
-                   <!--**/ItExternalLbTunneling,-->
-                   **/ItMiiAuxiliaryImage,
-                   **/ItMiiAuxiliaryImageCluster,
-                   **/ItMiiSampleWlsAux,
-                   <!--**/ItMiiCustomSslStore,-->
-                   **/ItMiiServiceMigration,
-                   <!--**/ItRemoteConsole,-->
                    **/ItConfigDistributionStrategy,
                    **/ItCrossDomainTransaction,
                    **/ItElasticLogging,
                    **/ItElasticLoggingFluentd,
                    **/ItIntrospectVersion,
-                   **/ItCrossDomainTransaction,
                    **/ItIstioDomainInPV,
                    **/ItIstioMiiDomain,
-                   <!--**/ItManagedCoherence,-->
+                   **/ItMiiAuxiliaryImage,
+                   **/ItMiiAuxiliaryImageCluster,
+                   **/ItMiiSampleWlsAux,
+                   **/ItMiiServiceMigration,
                    **/ItMiiDomain,
                    **/ItMiiDynamicUpdate,
                    **/ItMiiSampleWlsMain,
@@ -335,7 +330,6 @@
                    **/ItProductionSecureMode,
                    **/ItWlsSamples,
                    **/ItSessionMigration,
-                   <!--**/ItStickySession,-->
                    **/ItSystemResOverrides
                 </includes-failsafe>
             </properties>
