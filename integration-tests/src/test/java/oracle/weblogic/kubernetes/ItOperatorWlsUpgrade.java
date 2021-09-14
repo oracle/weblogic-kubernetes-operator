@@ -222,7 +222,7 @@ class ItOperatorWlsUpgrade {
 
     // create domain
     if (domainType.equalsIgnoreCase("domain-in-image")) {
-      createDiiDomainAndVerify(domainNamespace, operatorVersion, externalServiceNameSuffix);
+      createDomainHomeInImageAndVerify(domainNamespace, operatorVersion, externalServiceNameSuffix);
     } else {
       createMiiDomainAndVerify(domainNamespace, domainUid, MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
           adminServerPodName, managedServerPodNamePrefix, replicaCount);
@@ -433,8 +433,9 @@ class ItOperatorWlsUpgrade {
     checkDomainStarted(domainUid, domainNamespace);
   }
 
-  private void createDiiDomainAndVerify(String domainNamespace, 
+  private void createDomainHomeInImageAndVerify(String domainNamespace, 
       String operatorVersion, String externalServiceNameSuffix) {
+
     // Create the repo secret to pull the image
     //  this secret is used only for non-kind cluster
     createOcirRepoSecret(domainNamespace);
