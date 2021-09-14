@@ -3,6 +3,9 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -39,6 +42,7 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX;
@@ -49,8 +53,10 @@ import static oracle.weblogic.kubernetes.TestConstants.OLD_DEFAULT_EXTERNAL_SERV
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_GITHUB_CHART_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorContainerImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
@@ -64,6 +70,7 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotR
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOperator;
@@ -501,6 +508,75 @@ class ItOperatorWlsUpgrade {
       return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
     }, "Access to admin server node port failed");
     assertTrue(loginSuccessful, "Console login validation failed");
+  }
+  
+  private void createDomainHomeInImageFromDomainYaml(
+      String domainNamespace, String operatorVersion, String externalServiceNameSuffix) {
+
+    // Create the repo secret to pull the image
+    // this secret is used only for non-kind cluster
+    createOcirRepoSecret(domainNamespace);
+
+    // create secret for admin credentials
+    logger.info("Create secret for admin credentials");
+    String adminSecretName = "weblogic-credentials";
+    createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+
+    // use the checked in domain.yaml to create domain for old releases
+    // copy domain.yaml to results dir
+    Path srcDomainYaml = Paths.get(RESOURCE_DIR, "domain", "domain-260.yaml");
+    assertDoesNotThrow(() -> Files.createDirectories(
+        Paths.get(RESULTS_ROOT + "/" + this.getClass().getSimpleName())),
+        String.format("Could not create directory under %s", RESULTS_ROOT));
+    Path destDomainYaml =
+        Paths.get(RESULTS_ROOT + "/" + this.getClass().getSimpleName() + "/" + "domain.yaml");
+    assertDoesNotThrow(() -> Files.copy(srcDomainYaml, destDomainYaml, REPLACE_EXISTING),
+        "File copy failed for domain.yaml");
+
+    // replace apiVersion, namespace and image in domain.yaml
+    assertDoesNotThrow(() -> replaceStringInFile(
+        destDomainYaml.toString(), "v7", getApiVersion(operatorVersion)),
+        "Could not modify the apiVersion in the domain.yaml file");
+    assertDoesNotThrow(() -> replaceStringInFile(
+        destDomainYaml.toString(), "weblogic-domain260", domainNamespace),
+        "Could not modify the namespace in the domain.yaml file");
+    assertDoesNotThrow(() -> replaceStringInFile(
+        destDomainYaml.toString(), "domain-home-in-image:12.2.1.4",
+        WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG),
+        "Could not modify image name in the domain.yaml file");
+
+    assertTrue(new Command()
+        .withParams(new CommandParams()
+            .command("kubectl create -f " + destDomainYaml))
+        .execute(), "kubectl create failed");
+
+    checkDomainStarted(domainUid, domainNamespace);
+
+    logger.info("Getting node port for default channel");
+    int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
+        domainNamespace, getExternalServicePodName(adminServerPodName, externalServiceNameSuffix), "default"),
+        "Getting admin server node port failed");
+
+    logger.info("Validating WebLogic admin server access by login to console");
+    boolean loginSuccessful = assertDoesNotThrow(() -> {
+      return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+    }, "Access to admin server node port failed");
+    assertTrue(loginSuccessful, "Console login validation failed");
+  }
+
+  private String getApiVersion(String operatorVersion) {
+    String apiVersion = null;
+    switch (operatorVersion) {
+      case "2.5.0":
+        apiVersion = "v6";
+        break;
+      case "2.6.0":
+        apiVersion = "v7";
+        break;
+      default:
+        apiVersion = TestConstants.DOMAIN_VERSION;
+    }
+    return apiVersion;
   }
 
 }
