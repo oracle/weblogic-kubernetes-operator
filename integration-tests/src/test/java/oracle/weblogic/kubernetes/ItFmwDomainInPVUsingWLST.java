@@ -32,6 +32,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
@@ -65,6 +66,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * Tests to create JRF domain in persistent volume using WLST.
  */
 @DisplayName("Verify the WebLogic server pods can run with domain created in persistent volume")
+@Tag("okdenv")
 @IntegrationTest
 class ItFmwDomainInPVUsingWLST {
 
