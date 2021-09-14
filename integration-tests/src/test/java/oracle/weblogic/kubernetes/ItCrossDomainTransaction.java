@@ -35,10 +35,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
@@ -80,7 +77,6 @@ import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify cross domain transaction is successful")
 @IntegrationTest
 class ItCrossDomainTransaction {
@@ -339,7 +335,6 @@ class ItCrossDomainTransaction {
    * If the server listen-addresses are resolvable between the transaction
    * participants, then the transaction should complete successfully
    */
-  @Order(1)
   @Test
   @DisplayName("Check cross domain transaction works")
   void testCrossDomainTransaction() {
@@ -374,7 +369,6 @@ class ItCrossDomainTransaction {
    * domain2 and the transaction should commit.
    *
    */
-  @Order(2)
   @Test
   @DisplayName("Check cross domain transaction with TMAfterTLogBeforeCommitExit property commits")
   void testCrossDomainTransactionWithFailInjection() {
@@ -411,7 +405,6 @@ class ItCrossDomainTransaction {
    * targeted to a cluster of two servers, onMessage() will be triggered
    * for both instance of MDB for a message sent to Distributed Topic
    */
-  @Order(3)
   @Test
   @DisplayName("Check cross domain transcated MDB communication ")
   void testCrossDomainTranscatedMDB() {

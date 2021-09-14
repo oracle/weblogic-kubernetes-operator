@@ -13,6 +13,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 
 import io.kubernetes.client.custom.IntOrString;
+import io.kubernetes.client.openapi.models.V1Capabilities;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1Deployment;
@@ -368,6 +369,9 @@ public class LoggingExporter {
                     .containers(Arrays.asList(new V1Container()
                         .name(elasticsearchName)
                         .image(elasticsearchImage)
+                        .securityContext(new V1SecurityContext()
+                            .capabilities(new V1Capabilities()
+                                .add(Arrays.asList("SYS_CHROOT"))))
                         .addPortsItem(new V1ContainerPort()
                             .containerPort(new Integer(elasticsearchHttpPort)))
                         .addPortsItem(new V1ContainerPort()

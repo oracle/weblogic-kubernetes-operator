@@ -222,11 +222,9 @@ class ItStickySession {
     for (int i = 0; i < maxRetry; i++) {
       hostNames =
           installVoyagerIngressAndVerify(domainUid, domainNamespace, ingressName, clusterNameMsPortMap);
-
       if (hostNames != null && !hostNames.isEmpty()) {
         break;
       }
-
       try {
         // sometimes the ingress may not be ready even the condition check is ready, sleep a little bit
         Thread.sleep(1000);
@@ -300,14 +298,14 @@ class ItStickySession {
     // create route for cluster service
     String ingressHost = createRouteForOKD(serviceName, domainNamespace);
 
-    // Since the app seems to take a bit longer to be available, 
+    // Since the app seems to take a bit longer to be available,
     // checking if the app is running by executing the curl command
-    String curlString =
-        buildCurlCommand(ingressHost, 0, SESSMIGR_APP_WAR_NAME + "/?getCounter", " -b ");
+    String curlString
+        = buildCurlCommand(ingressHost, 0, SESSMIGR_APP_WAR_NAME + "/?getCounter", " -b ");
     logger.info("Command to set HTTP request or get HTTP response {0} ", curlString);
     testUntil(
-        assertDoesNotThrow(() ->
-            () -> exec(curlString, true).stdout().contains("managed-server")),
+        assertDoesNotThrow(()
+            -> () -> exec(curlString, true).stdout().contains("managed-server")),
         logger,
         "Checking if app is available");
     // verify that two HTTP connections are sticky to the same server

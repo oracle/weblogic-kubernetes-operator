@@ -13,7 +13,6 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -176,7 +175,6 @@ class ItMiiCustomSslStore {
    * The client uses t3s cluster URL with custom SSL TrustStore on the command line
    */
   @Test
-  @Order(1)
   @DisplayName("Verify JNDI Context can be accessed using t3s cluster URL")
   void testMiiGetCustomSSLContext() {
    
