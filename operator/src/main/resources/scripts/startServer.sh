@@ -301,14 +301,14 @@ if [ ${DOMAIN_SOURCE_TYPE} != "FromModel" ]; then
   copySitCfgWhileBooting /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jdbc        'Sit-Cfg-JDBC--'
   copySitCfgWhileBooting /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/diagnostics 'Sit-Cfg-WLDF--'
 else
-  if [[ ! -z ${CLOUD_PLATFORM} && ${CLOUD_PLATFORM} == "Openshift" ]]; then
+  if [[ ${KUBERNETES_PLATFORM^^} == "OPENSHIFT" ]]; then
     # Operator running on Openshift platform - change file permissions in the DOMAIN_HOME dir to give
     # group same permissions as user .
     chmod -R g=u ${DOMAIN_HOME} || return 1
   fi
 fi
 
-if [[ ! -z ${CLOUD_PLATFORM} && ${CLOUD_PLATFORM} == "Openshift" ]]; then
+if [[ ${KUBERNETES_PLATFORM^^} == "OPENSHIFT" ]]; then
     # When the Operator is running on Openshift platform, disable insecure file system warnings.
     export JAVA_OPTIONS="-Dweblogic.SecureMode.WarnOnInsecureFileSystem=false $JAVA_OPTIONS"
 fi

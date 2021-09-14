@@ -929,7 +929,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     Optional.ofNullable(getDataHome()).ifPresent(v -> addEnvVar(vars, ServerEnvVars.DATA_HOME, v));
     Optional.ofNullable(getServerSpec().getAuxiliaryImages()).ifPresent(cm -> addAuxiliaryImageEnv(cm, vars));
     addEnvVarIfTrue(mockWls(), vars, "MOCK_WLS");
-    Optional.ofNullable(getCloudPlatform()).ifPresent(v -> addEnvVar(vars, ServerEnvVars.CLOUD_PLATFORM, v));
+    Optional.ofNullable(getKubernetesPlatform()).ifPresent(v -> addEnvVar(vars, ServerEnvVars.KUBERNETES_PLATFORM, v));
   }
 
   protected void addAuxiliaryImageEnv(List<AuxiliaryImage> auxiliaryImageList, List<V1EnvVar> vars) {
@@ -1080,8 +1080,8 @@ public abstract class PodStepContext extends BasePodStepContext {
     return Boolean.getBoolean("mockWLS");
   }
 
-  private String getCloudPlatform() {
-    return System.getProperty("cloudPlatform");
+  private String getKubernetesPlatform() {
+    return System.getProperty("kubernetesPlatform");
   }
 
   private abstract class BaseStep extends Step {

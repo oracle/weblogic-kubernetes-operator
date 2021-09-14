@@ -59,8 +59,8 @@ if [ "${MOCK_WLS}" == 'true' ]; then
   MOCKING_WLS="-DmockWLS=true"
 fi
 
-if [ ! -z "${CLOUD_PLATFORM}" ]; then
-  PLATFORM="-DcloudPlatform=$CLOUD_PLATFORM"
+if [ ! -z "${KUBERNETES_PLATFORM}" ]; then
+  PLATFORM="-DkubernetesPlatform=$KUBERNETES_PLATFORM"
 fi
 
 LOGGING="-Djava.util.logging.config.file=${LOGGING_CONFIG}"
