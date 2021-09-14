@@ -64,10 +64,10 @@ class ItResilience {
         .and().with().pollInterval(10, SECONDS)
         .atMost(6, MINUTES).await();
 
-    //runScaleOperation(5);
+    //install slammer
     Slammer.installSlammer();
-    //check if slammer is up
 
+    //check if slammer is up
     assertTrue(Slammer.list("network"), "Can't reach slammer");
     // get namespaces
     assertNotNull(namespaces.get(0), String.format("Namespace namespaces.get(0) is null"));
