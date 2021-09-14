@@ -143,13 +143,14 @@ public class JmsServlet extends HttpServlet {
 
       int ccount = s1count + s2count; 
       if ( ccount == rcount ) {
+        if ( s1count == s2count ) {
+         out.println("Messages are distributed across MDB instances");
+        } else { 
+         out.println("Messages are NOT distributed across MDB instances");
+        }
         // reset the message counter once all messages are received
         s1count=0;
         s2count=0;
-        if ( s1count == s2count ) 
-         out.println("Messages are distributed across MDB instances");
-        else 
-         out.println("Messages are NOT distributed across MDB instances");
       } else {
         out.println("Total messages received so far is ["+ccount+"]");
         out.println("Waiting for more messages to appears on accounting queue");
