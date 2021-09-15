@@ -785,6 +785,12 @@ function createPrimordialDomain() {
     local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
     encrypt_decrypt_domain_secret "encrypt" ${DOMAIN_HOME} ${MII_PASSPHRASE}
 
+    if [[ "${KUBERNETES_PLATFORM^^}" == "OPENSHIFT" ]]; then
+      # Operator running on Openshift platform - change file permissions in the DOMAIN_HOME dir to give
+      # group same permissions as user .
+      chmod -R g=u ${DOMAIN_HOME} || return 1
+    fi
+
     tar -pczf ${LOCAL_PRIM_DOMAIN_ZIP} --exclude ${DOMAIN_HOME}/wlsdeploy --exclude ${DOMAIN_HOME}/sysman/log  \
     --exclude ${DOMAIN_HOME}/lib --exclude ${DOMAIN_HOME}/backup_config ${empath} ${DOMAIN_HOME}/*
 

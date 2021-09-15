@@ -300,17 +300,16 @@ if [ ${DOMAIN_SOURCE_TYPE} != "FromModel" ]; then
   copySitCfgWhileBooting /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jms         'Sit-Cfg-JMS--'
   copySitCfgWhileBooting /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/jdbc        'Sit-Cfg-JDBC--'
   copySitCfgWhileBooting /weblogic-operator/introspector ${DOMAIN_HOME}/optconfig/diagnostics 'Sit-Cfg-WLDF--'
-else
-  if [[ ${KUBERNETES_PLATFORM^^} == "OPENSHIFT" ]]; then
-    # Operator running on Openshift platform - change file permissions in the DOMAIN_HOME dir to give
-    # group same permissions as user .
-    chmod -R g=u ${DOMAIN_HOME} || return 1
-  fi
 fi
 
-if [[ ${KUBERNETES_PLATFORM^^} == "OPENSHIFT" ]]; then
+if [[ "${KUBERNETES_PLATFORM^^}" == "OPENSHIFT" ]]; then
     # When the Operator is running on Openshift platform, disable insecure file system warnings.
     export JAVA_OPTIONS="-Dweblogic.SecureMode.WarnOnInsecureFileSystem=false $JAVA_OPTIONS"
+    if [[ "${DOMAIN_SOURCE_TYPE}" == "Image" ]]; then
+      # Change the file permissions in the DOMAIN_HOME dir to give group same permissions as user .
+      chmod -R g=u ${DOMAIN_HOME} || return 1
+    fi
+
 fi
 
 #

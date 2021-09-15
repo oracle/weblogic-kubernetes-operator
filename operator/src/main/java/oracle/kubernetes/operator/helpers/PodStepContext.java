@@ -1081,7 +1081,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   private String getKubernetesPlatform() {
-    return System.getProperty("kubernetesPlatform");
+    return System.getProperty(KUBERNETES_PLATFORM_SYSTEM_PROPERTY);
   }
 
   private abstract class BaseStep extends Step {
