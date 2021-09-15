@@ -196,6 +196,14 @@ class WlsClusterConfigTest {
   }
 
   @Test
+  void verifyGetServerConfigsReturnEmptyServerListForDynamicServersWithClusterSizeOf0() {
+    WlsClusterConfig wlsClusterConfig =
+        new WlsClusterConfig("cluster1", createDynamicServersConfig(0, 0, 0, "ms-", "cluster1"));
+
+    assertTrue(wlsClusterConfig.getServerConfigs().isEmpty());
+  }
+
+  @Test
   void verifyGetServerConfigsReturnListOfAllServerConfigsWithDynamicServers() {
     WlsClusterConfig wlsClusterConfig =
         new WlsClusterConfig("cluster1", createDynamicServersConfig(3, 5, 1, "ms-", "cluster1"));

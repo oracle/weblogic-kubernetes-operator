@@ -226,7 +226,7 @@ public class WlsClusterConfig {
   public synchronized List<WlsServerConfig> getServerConfigs() {
     int dcsize = dynamicServersConfig == null ? 0 : dynamicServersConfig.getDynamicClusterSize();
     List<WlsServerConfig> result = new ArrayList<>(dcsize + servers.size());
-    if (dynamicServersConfig != null) {
+    if (dynamicServersConfig != null && dynamicServersConfig.getServerConfigs() != null) {
       result.addAll(dynamicServersConfig.getServerConfigs());
     }
     result.addAll(servers);
