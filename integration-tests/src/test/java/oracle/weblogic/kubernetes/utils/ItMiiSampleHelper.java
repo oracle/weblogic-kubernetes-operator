@@ -11,7 +11,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.Assumptions;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -29,8 +28,8 @@ import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
@@ -50,12 +49,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class ItMiiSampleHelper {
 
   private final String miiSampleScript = "../operator/integration-tests/model-in-image/run-test.sh";
-
   private final String currentDateTime = getDateAndTimeStamp();
-  private final String miiSampleWlsImageNameV1 = DOMAIN_IMAGES_REPO + "mii-" + currentDateTime + "-wlsv1";
-  private final String miiSampleWlsImageNameV2 = DOMAIN_IMAGES_REPO + "mii-" + currentDateTime + "-wlsv2";
-  private final String miiSampleJrfImageNameV1 = DOMAIN_IMAGES_REPO + "mii-" + currentDateTime + "-jrfv1";
-  private final String miiSampleJrfImageNameV2 = DOMAIN_IMAGES_REPO + "mii-" + currentDateTime + "-jrfv2";
   private final String successSearchString = "Finished without errors";
 
   private String opNamespace = null;
@@ -76,6 +70,15 @@ public class ItMiiSampleHelper {
   public enum ImageType {
     MAIN,
     AUX
+  }
+
+  private String getModelImageName(String suffix) {
+    return new StringBuffer(DOMAIN_IMAGES_REPO)
+        .append("mii-")
+        .append(currentDateTime)
+        .append("-")
+        .append(domainNamespace)
+        .append(suffix).toString();
   }
 
   /**
@@ -115,7 +118,8 @@ public class ItMiiSampleHelper {
     envMap.put("TRAEFIK_HTTP_NODEPORT", "0"); // 0-->dynamically choose the np
     envMap.put("TRAEFIK_HTTPS_NODEPORT", "0"); // 0-->dynamically choose the np
     envMap.put("WORKDIR", miiSampleWorkDir);
-    envMap.put("BASE_IMAGE_NAME", WEBLOGIC_IMAGE_NAME);
+    envMap.put("BASE_IMAGE_NAME", WEBLOGIC_IMAGE_TO_USE_IN_SPEC
+        .substring(0, WEBLOGIC_IMAGE_TO_USE_IN_SPEC.lastIndexOf(":")));
     envMap.put("BASE_IMAGE_TAG", WEBLOGIC_IMAGE_TAG);
     envMap.put("IMAGE_PULL_SECRET_NAME", OCIR_SECRET_NAME); //ocir secret
     envMap.put("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST);
@@ -173,16 +177,16 @@ public class ItMiiSampleHelper {
     String imageVer = "notset";
     String decoration = (envMap.get("DO_AI") != null && envMap.get("DO_AI").equalsIgnoreCase("true"))  ? "AI-" : "";
 
-    if (imageName.equals(miiSampleWlsImageNameV1)) {
+    if (imageName.contains("-wlsv1")) {
       imageVer = "WLS-" + decoration + "v1";
     }
-    if (imageName.equals(miiSampleWlsImageNameV2)) {
+    if (imageName.contains("-wlsv2")) {
       imageVer = "WLS-" + decoration + "v2";
     }
-    if (imageName.equals(miiSampleJrfImageNameV1)) {
+    if (imageName.contains("-jrfv1")) {
       imageVer = "JRF-" + decoration + "v1";
     }
-    if (imageName.equals(miiSampleJrfImageNameV2)) {
+    if (imageName.contains("-jrfv2")) {
       imageVer = "JRF-" + decoration + "v2";
     }
 
@@ -249,7 +253,7 @@ public class ItMiiSampleHelper {
    */
   public void callInitialUseCase() {
     String imageName = (domainType.equals(DomainType.WLS))
-        ? miiSampleWlsImageNameV1 : miiSampleJrfImageNameV1;
+        ? getModelImageName("-wlsv1") : getModelImageName("-jrfv1");
     previousTestSuccessful = true;
     envMap.put("MODEL_IMAGE_NAME", imageName);
 
@@ -289,7 +293,7 @@ public class ItMiiSampleHelper {
                                        String errString) {
     if (args.contains("update3")) {
       String imageName = (domainType.equals(DomainType.WLS))
-          ? miiSampleWlsImageNameV2 : miiSampleJrfImageNameV2;
+          ? getModelImageName("-wlsv2") : getModelImageName("-jrfv2");
       envMap.put("MODEL_IMAGE_NAME", imageName);
     }
 

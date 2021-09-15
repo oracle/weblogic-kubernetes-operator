@@ -547,6 +547,8 @@ class ItParameterizedDomain {
           true, "/bin/sh", "-c", destLocation + " " + serverName),
           String.format("Failed to execute script %s in pod %s namespace %s", destLocation,
               serverName, domainNamespace));
+      logger.info("Command executed to kill server inside pod, exit value {0}, stdout {1}, stderr {2}",
+          execResult.exitValue(), execResult.stdout(), execResult.stderr());
       assertTrue(execResult.exitValue() == 0,
           String.format("Failed to execute kill server inside pod, stderr %s stdout %s", destLocation,
               execResult.stderr(), execResult.stdout()));
@@ -1490,6 +1492,9 @@ class ItParameterizedDomain {
     killServerScript.deleteOnExit();
     try (FileWriter fw = new FileWriter(killServerScript)) {
       fw.write("#!/bin/bash\n");
+      fw.write("jps\n");
+      fw.write("jps | grep Server\n");
+      fw.write("jps | grep Server | awk '{print $1}'\n");
       fw.write("kill -9 `jps | grep Server | awk '{print $1}'`");
     }
     killServerScript.setExecutable(true, false);
