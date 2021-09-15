@@ -8,7 +8,7 @@ import model_wdt_mii_filter
 
 class WdtUpdateFilterCase(unittest.TestCase):
 
-  ISTIO_NAP_NAMES = ['tcp-cbt', 'tcp-ldap', 'tcp-iiop', 'tcp-snmp', 'http-probe', 'http-local-probe', 'http-default', 'tcp-default']
+  ISTIO_NAP_NAMES = ['tcp-cbt', 'tcp-ldap', 'tcp-iiop', 'tcp-snmp', 'http-probe', 'http-probe' + model_wdt_mii_filter.WLS_LOCALHOST_IDENTIFIER + '01', 'http-default', 'tcp-default']
 
   def setUp(self):
     self.initialize_environment_variables()
@@ -146,7 +146,17 @@ class WdtUpdateFilterCase(unittest.TestCase):
       server_template = self.getServerTemplate(model)
       model_wdt_mii_filter.customizeNetworkAccessPoints(server_template, 'sample-domain1-managed-server${id}')
       nap_listen_address = model['topology']['ServerTemplate']['cluster-1-template']['NetworkAccessPoint']['T3Channel']['ListenAddress']
-      self.assertEqual('127.0.0.1', nap_listen_address, "Expected nap listen address to be \'127.0.0.1\'")
+      self.assertEqual('sample-domain1-managed-server${id}', nap_listen_address, "Expected nap listen address to be \'sample-domain1-managed-server${id}\'")
+
+      # Assert LocalHost channel listen address is '127.0.0.1'
+      nap_local_host = model['topology']['ServerTemplate']['cluster-1-template']['NetworkAccessPoint']['T3Channel' + model_wdt_mii_filter.WLS_LOCALHOST_IDENTIFIER + '01']['ListenAddress']
+      self.assertEqual('127.0.0.1', nap_local_host, "Expected nap listen address to be \'127.0.0.1\'")
+
+      # Verify we don't duplicate channels more than once
+      model_wdt_mii_filter.customizeNetworkAccessPoints(server_template, 'sample-domain1-managed-server${id}')
+      naps = server_template['NetworkAccessPoint']
+      nap_names = naps.keys()
+      self.assertEqual(2, len(nap_names), "Expected only two NAPS")
     finally:
       del os.environ['ISTIO_ENABLED']
 
@@ -270,6 +280,51 @@ class WdtUpdateFilterCase(unittest.TestCase):
     model_wdt_mii_filter.env.readDomainNameFromTopologyYaml('../resources/topology.yaml')
     domain_name = model_wdt_mii_filter.env.getDomainName()
     self.assertEqual('wls-domain1', domain_name, "Expected domain name to be \'wls-domain1\'")
+
+  def test_createNameForLocalHostNetworkAccessPoint(self):
+    model = self.getModel()
+    nap_name_copy = model_wdt_mii_filter.createNameForLocalHostNetworkAccessPoint('http-probe', {})
+    self.assertEquals('http-probe' + model_wdt_mii_filter.WLS_LOCALHOST_IDENTIFIER + '01', nap_name_copy, "Expected name to be http-probe" + model_wdt_mii_filter.WLS_LOCALHOST_IDENTIFIER + '01')
+
+  def test_createNameForLocalHostNetworkAccessPoint_with_long_name(self):
+    nap_name_10_chars = 'abcdefghij'
+    nap_name_15_chars = nap_name_10_chars + 'klmno'
+    nap_name_20_chars = nap_name_15_chars + 'pqrst'
+
+    model = self.getModel()
+    nap_name_dict = {}
+    nap_name_copy = model_wdt_mii_filter.createNameForLocalHostNetworkAccessPoint(nap_name_10_chars, nap_name_dict)
+    self.assertEquals(nap_name_10_chars + model_wdt_mii_filter.WLS_LOCALHOST_IDENTIFIER + '01', nap_name_copy, "Expected name to be " + nap_name_10_chars + model_wdt_mii_filter.WLS_LOCALHOST_IDENTIFIER + '01')
+
+    nap_name_copy = model_wdt_mii_filter.createNameForLocalHostNetworkAccessPoint(nap_name_15_chars, nap_name_dict)
+    self.assertEquals(nap_name_10_chars + model_wdt_mii_filter.WLS_LOCALHOST_IDENTIFIER + '02', nap_name_copy, "Expected 15 character name to be " + nap_name_10_chars + model_wdt_mii_filter.WLS_LOCALHOST_IDENTIFIER + '02')
+
+    nap_name_copy = model_wdt_mii_filter.createNameForLocalHostNetworkAccessPoint(nap_name_20_chars, nap_name_dict)
+    self.assertEquals(nap_name_10_chars + model_wdt_mii_filter.WLS_LOCALHOST_IDENTIFIER + '03', nap_name_copy, "Expected name to be " + nap_name_10_chars + model_wdt_mii_filter.WLS_LOCALHOST_IDENTIFIER + '03')
+
+  def test_createNameForLocalHostNetworkAccessPoint_with_double_digit_idx(self):
+    nap_name_10_chars = 'abcdefghij'
+    nap_name_20_chars = nap_name_10_chars + 'klmnopqrst'
+    nap_name_dict = {}
+
+    # 01
+    nap_name_copy = model_wdt_mii_filter.createNameForLocalHostNetworkAccessPoint(nap_name_20_chars, nap_name_dict)
+    self.assertEquals(nap_name_10_chars + model_wdt_mii_filter.WLS_LOCALHOST_IDENTIFIER + '01', nap_name_copy, "Expected name to be " + nap_name_10_chars + model_wdt_mii_filter.WLS_LOCALHOST_IDENTIFIER + '01')
+
+    # 02
+    nap_name_copy = model_wdt_mii_filter.createNameForLocalHostNetworkAccessPoint(nap_name_20_chars, nap_name_dict)
+    self.assertEquals(nap_name_10_chars + model_wdt_mii_filter.WLS_LOCALHOST_IDENTIFIER + '02', nap_name_copy, "Expected name to be " + nap_name_10_chars + model_wdt_mii_filter.WLS_LOCALHOST_IDENTIFIER + '01')
+
+    model_wdt_mii_filter.createNameForLocalHostNetworkAccessPoint(nap_name_20_chars, nap_name_dict)
+    model_wdt_mii_filter.createNameForLocalHostNetworkAccessPoint(nap_name_20_chars, nap_name_dict)
+    model_wdt_mii_filter.createNameForLocalHostNetworkAccessPoint(nap_name_20_chars, nap_name_dict)
+    model_wdt_mii_filter.createNameForLocalHostNetworkAccessPoint(nap_name_20_chars, nap_name_dict)
+    model_wdt_mii_filter.createNameForLocalHostNetworkAccessPoint(nap_name_20_chars, nap_name_dict)
+    model_wdt_mii_filter.createNameForLocalHostNetworkAccessPoint(nap_name_20_chars, nap_name_dict)
+    model_wdt_mii_filter.createNameForLocalHostNetworkAccessPoint(nap_name_20_chars, nap_name_dict)
+    # 10
+    nap_name_copy = model_wdt_mii_filter.createNameForLocalHostNetworkAccessPoint(nap_name_20_chars, nap_name_dict)
+    self.assertEquals(nap_name_10_chars + model_wdt_mii_filter.WLS_LOCALHOST_IDENTIFIER + '10', nap_name_copy, "Expected name to be " + nap_name_10_chars + model_wdt_mii_filter.WLS_LOCALHOST_IDENTIFIER + '10')
 
 class MockOfflineWlstEnv(model_wdt_mii_filter.OfflineWlstEnv):
 
