@@ -20,6 +20,7 @@ public class SlammerParams {
   private String remotehost;
   private String remotesudopass;
   private String propertyFile;
+  private String ociimage;
 
   public SlammerParams service(String service) {
     this.service = service;
@@ -96,6 +97,11 @@ public class SlammerParams {
     return this;
   }
 
+  public SlammerParams ociimage(String ociimage) {
+    this.ociimage = ociimage;
+    return this;
+  }
+
   public SlammerParams defaults() {
     return this;
   }
@@ -158,5 +164,9 @@ public class SlammerParams {
 
   public String getPropertyFile() {
     return propertyFile;
+  }
+
+  public String getOciImage() {
+    return ociimage;
   }
 }

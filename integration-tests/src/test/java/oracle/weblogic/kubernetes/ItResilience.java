@@ -70,10 +70,10 @@ class ItResilience {
     //check if slammer is up
     assertTrue(Slammer.list("network"), "Can't reach slammer");
     // get namespaces
-    assertNotNull(namespaces.get(0), String.format("Namespace namespaces.get(0) is null"));
+    assertNotNull(namespaces.get(0), "Namespace namespaces.get(0) is null");
     opNamespace = namespaces.get(0);
 
-    assertNotNull(namespaces.get(1), String.format("Namespace namespaces.get(1) is null"));
+    assertNotNull(namespaces.get(1), "Namespace namespaces.get(1) is null");
     domainNamespace = namespaces.get(1);
 
     // install the operator

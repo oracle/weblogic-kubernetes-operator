@@ -54,7 +54,7 @@ public class SlammerUtils {
    * causing latency in response at the network layer,
    * this affects all applications running on the target host
    *
-   * @param delayTime time to delay in seconds
+   * @param delayTime time to delay in milliseconds
    */
   public static boolean addNetworkLatencyDelay(String delayTime) {
     SlammerParams slammerParams = new SlammerParams()

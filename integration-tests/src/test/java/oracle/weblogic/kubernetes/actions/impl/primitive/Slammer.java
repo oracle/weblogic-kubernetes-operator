@@ -173,6 +173,12 @@ public class Slammer {
       runCmd = runCmd + " --chain " + chain;
     }
 
+    // if we have ociimage
+    String ociimage = slammerParams.getOciImage();
+    if (ociimage != null) {
+      runCmd = runCmd  + "--ocitype kubectl " + " --ociimage " + ociimage;
+    }
+
     // run the command
     return exec(runCmd);
   }
@@ -183,35 +189,8 @@ public class Slammer {
    * @return true on success
    */
   public static boolean list(String service) {
-    // assertions for required parameters
-    String slammerDir = getSlammerDir();
-
-    // assertions for required parameters
-    assertThat(slammerDir)
-        .as("make sure slammerDir is not empty or null")
-        .isNotNull()
-        .isNotEmpty();
-
-    assertThat(service)
-        .as("make sure service is not empty or null")
-        .isNotNull()
-        .isNotEmpty();
-    // build Slammer run command
-    String runCmd = String.format("cd %1s && %2s/slammer.pl  --service %3s --operation list",
-        slammerDir, slammerDir, service);
-
-    // if we have property file
-    if (slammerPropertyFile != null) {
-      runCmd = runCmd + " --property " + slammerPropertyFile;
-    }
-
-    // if we have remotehost and remotesudopass
-    if (remotepass != null && remoteuser != null) {
-      runCmd = runCmd + " --remotehost " + remotehost
-          + " --remotepass " + remotepass
-          + " --remoteuser " + remoteuser;
-    }
-    return exec(runCmd);
+    SlammerParams slammerParams = new SlammerParams().service(service).operation("list");
+    return Slammer.run(slammerParams);
   }
 
 
