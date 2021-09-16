@@ -116,3 +116,11 @@ see [OpenShift]({{<relref  "/userguide/platforms/environments#openshift">}}).
 #### Using a dedicated namespace
 
 When the user that installs an individual instance of the operator does not have the required privileges to create resources at the Kubernetes cluster level, a dedicated namespace can be used for the operator instance and all the WebLogic domains that it manages. For more details about the `dedicated` setting, please refer to [Operator Helm configuration values]({{< relref "/userguide/managing-operators/using-helm#operator-helm-configuration-values" >}}).
+
+#### Set the Helm chart property `kubernetesPlatorm` to `Openshift`
+Beginning with operator version 4.0, you should specify the `kubernetesPlatorm` Helm chart property and set its value to `Openshift` when installing the operator in Openshift. With this setting, the operator:
+- Configures the correct file permissions for WebLogic Server to work in Openshift.
+- Sets `weblogic.SecureMode.WarnOnInsecureFileSystem` Java system property to `false` on each target WebLogic Server instance. This flag suppresses the insecure file system warnings in the WebLogic Server console in production mode. These warnings result from setting the correct file permissions to work with restricted security context constraints on Openshift. 
+
+For more information about the Helm chart, see the
+[Operator Helm configuration values]({{<relref "/userguide/managing-operators/using-helm#operator-helm-configuration-values">}}).

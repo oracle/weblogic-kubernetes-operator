@@ -96,6 +96,18 @@ Example:
 javaLoggingLevel:  "FINE"
 ```
 
+##### `kubernetesPlatform`
+Allows you to set the Kubernetes platform on which the operator is running. The value is case-insensitive.
+
+This flag is helpful when using the operator in OpenShift because of the security requirements to run the WebLogic Server in OpenShift. See [Security requirements to run WebLogic in OpenShift]({{<relref "/security/openshift#security-requirements-to-run-weblogic-in-openshift">}}) for more details. When you set the `kubernetesPlatform` value to `Openshift`, the operator:
+- Configures the correct file permissions for WebLogic Server to work in Openshift.
+- Sets `weblogic.SecureMode.WarnOnInsecureFileSystem` Java system property to `false` on each target WebLogic Server instance. This flag suppresses the insecure file system warnings in the WebLogic Server console in production mode. These warnings result from setting the correct file permissions to work with restricted security context constraints on Openshift.
+
+Example:
+```yaml
+kubernetesPlatform: Openshift
+```
+
 #### Creating the operator pod
 
 ##### `image`

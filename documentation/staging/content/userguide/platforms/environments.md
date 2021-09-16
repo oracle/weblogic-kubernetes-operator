@@ -65,6 +65,12 @@ Operator 2.5.0+ is certified for use on OpenShift Container Platform 4.3.0+ with
 When using the operator in OpenShift, a security context constraint is required to ensure that WebLogic containers run with a UNIX UID that has the correct permissions on the domain file system.
 This could be either the `anyuid` SCC or a custom one that you define for user/group `1000`. For more information, see [OpenShift]({{<relref "/security/openshift.md">}}) in the Security section.
 
+Beginning with operator version 4.0, you should specify the `kubernetesPlatorm` Helm chart property and set its value to `Openshift` when installing the operator in Openshift. With this setting, the operator:
+- Configures the correct file permissions for WebLogic Server to work in Openshift.
+- Sets `weblogic.SecureMode.WarnOnInsecureFileSystem` Java system property to `false` on each target WebLogic Server instance. This flag suppresses the insecure file system warnings in the WebLogic Server console in production mode. These warnings result from setting the correct file permissions to work with restricted security context constraints on Openshift.
+For more information about the Helm chart, see the
+[Operator Helm configuration values]({{<relref "/userguide/managing-operators/using-helm#operator-helm-configuration-values">}}).
+
 ### Important note about development-focused Kubernetes distributions
 
 There are a number of development-focused distributions of Kubernetes, like kind, Minikube, Minishift, and so on.
