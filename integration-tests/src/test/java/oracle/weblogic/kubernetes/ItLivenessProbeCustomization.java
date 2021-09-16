@@ -353,13 +353,13 @@ class ItLivenessProbeCustomization {
         } catch (InterruptedException ie) {
           // ignore
         }
-        int afterDeplayRestartCount =
+        int afterDelayRestartCount =
             assertDoesNotThrow(() -> getContainerRestartCount(domainNamespace, null,
                 managedServerPodName, null),
                 String.format("Failed to get the restart count of the container from pod {0} in namespace {1} after 1m",
                     managedServerPodName, domainNamespace));
         logger.info("checking after 45s the restartCount is not changed.");
-        assertTrue(beforeRestartCount == afterDeplayRestartCount, "The pod was restarted after 45s, "
+        assertTrue(beforeRestartCount == afterDelayRestartCount, "The pod was restarted after 45s, "
             + "it should restart after that");
 
         String expectedStr = "Hello World, you have reached server "
