@@ -929,7 +929,8 @@ public abstract class PodStepContext extends BasePodStepContext {
     Optional.ofNullable(getDataHome()).ifPresent(v -> addEnvVar(vars, ServerEnvVars.DATA_HOME, v));
     Optional.ofNullable(getServerSpec().getAuxiliaryImages()).ifPresent(cm -> addAuxiliaryImageEnv(cm, vars));
     addEnvVarIfTrue(mockWls(), vars, "MOCK_WLS");
-    Optional.ofNullable(getKubernetesPlatform(tuningParameters)).ifPresent(v -> addEnvVar(vars, ServerEnvVars.KUBERNETES_PLATFORM, v));
+    Optional.ofNullable(getKubernetesPlatform(tuningParameters)).ifPresent(v ->
+            addEnvVar(vars, ServerEnvVars.KUBERNETES_PLATFORM, v));
   }
 
   protected void addAuxiliaryImageEnv(List<AuxiliaryImage> auxiliaryImageList, List<V1EnvVar> vars) {
