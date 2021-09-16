@@ -127,7 +127,7 @@ class ItLivenessProbeCustomization {
     // create a basic model in image domain
     createAndVerifyMiiDomain(imageName);
 
-    // create temp file
+    // create temp file to be copied to managed server pod which will be used in customLivenessProbe.sh
     String fileName = "tempFile";
     tempFile = assertDoesNotThrow(() -> createTempfile(fileName), "Failed to create temp file");
     logger.info("File created  {0}", tempFile);
@@ -323,11 +323,6 @@ class ItLivenessProbeCustomization {
     logger.info("livenessProbe failureThreshold after patch is: {0}", failureThreshold);
     assertTrue(failureThreshold.intValue() == 3, "The livenessProbe failureThreshold after patch is not 3");
 
-    // get the successThreshold of livenessProbe after patch
-    successThreshold = domain1.getSpec().getServerPod().getLivenessProbe().getSuccessThreshold();
-    logger.info("livenessProbe successThreshold after patch is: {0}", successThreshold);
-    assertTrue(successThreshold.intValue() == 1, "The livenessProbe successThreshold after patch is not 1");
-
     // verify the failureThreshold behavior of livenessProbe
     // copy temp file to pod and verify the restartCount only happens after 1m 30 second
     for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
@@ -358,13 +353,13 @@ class ItLivenessProbeCustomization {
         } catch (InterruptedException ie) {
           // ignore
         }
-        int after1mRestartCount =
+        int afterDeplayRestartCount =
             assertDoesNotThrow(() -> getContainerRestartCount(domainNamespace, null,
                 managedServerPodName, null),
                 String.format("Failed to get the restart count of the container from pod {0} in namespace {1} after 1m",
                     managedServerPodName, domainNamespace));
         logger.info("checking after 45s the restartCount is not changed.");
-        assertTrue(beforeRestartCount == after1mRestartCount, "The pod was restarted after 45s, "
+        assertTrue(beforeRestartCount == afterDeplayRestartCount, "The pod was restarted after 45s, "
             + "it should restart after that");
 
         String expectedStr = "Hello World, you have reached server "
