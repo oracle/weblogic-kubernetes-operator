@@ -283,6 +283,15 @@
             </properties>
         </profile>
         <profile>
+            <id>resilience</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                  **/ItResilience
+               </includes-failsafe>
+            </properties>
+        </profile>
+        <profile>
             <id>kind-sequential</id>
             <properties>
                 <skipITs>false</skipITs>
