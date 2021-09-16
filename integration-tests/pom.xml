@@ -345,5 +345,42 @@
                 </includes-failsafe>
             </properties>
         </profile>        
+        <profile>
+            <id>wko-okd-wls-cert</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                  **/ItCoherenceTests,
+                  **/ItConfigDistributionStrategy,
+                  **/ItInitContainers,
+                  **/ItIntrospectVersion,
+                  **/ItLiftAndShiftFromOnPremDomain,
+                  **/ItLivenessProbeCustomization,
+                  **/ItManagedCoherence,
+                  **/ItMiiDomainModelInPV,
+                  **/ItMiiDynamicUpdate,
+                  **/ItMiiMultiModel,
+                  **/ItMiiUpdateDomainConfig,
+                  **/ItOperatorRestart,
+                  **/ItPodsShutdownOption,
+                  **/ItPodTemplates,
+                  **/ItServerStartPolicy,
+                  **/ItSessionMigration,
+                  **/ItStickySession
+                </includes-failsafe>
+            </properties>
+        </profile>
+        <profile>
+            <id>wko-okd-fmw-cert</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                  **/ItFmwDomainInPVUsingWLST,
+                  **/ItFmwDynamicClusterMiiDomain,
+                  **/ItFmwDynamicDomainInPV,
+                  **/ItFmwMiiDomain
+                </includes-failsafe>
+            </properties>
+        </profile>
     </profiles>
 </project>
