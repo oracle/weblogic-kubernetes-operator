@@ -325,7 +325,7 @@ public class JobHelper {
       addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_ENABLED, Boolean.toString(isIstioEnabled()));
       addEnvVar(vars, IntrospectorJobEnvVars.ADMIN_CHANNEL_PORT_FORWARDING_ENABLED,
               Boolean.toString(isAdminChannelPortForwardingEnabled(getDomain().getSpec())));
-      Optional.ofNullable(getKubernetesPlatform())
+      Optional.ofNullable(getKubernetesPlatform(tuningParameters))
               .ifPresent(v -> addEnvVar(vars, ServerEnvVars.KUBERNETES_PLATFORM, v));
 
       addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_READINESS_PORT, Integer.toString(getIstioReadinessPort()));
@@ -394,8 +394,8 @@ public class JobHelper {
       return vars;
     }
 
-    private String getKubernetesPlatform() {
-      return System.getProperty(KUBERNETES_PLATFORM_SYSTEM_PROPERTY);
+    private String getKubernetesPlatform(TuningParameters tuningParameters) {
+      return tuningParameters.getKubernetesPlatform();
     }
 
   }
