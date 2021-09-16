@@ -34,6 +34,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -55,6 +56,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppIsActive;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
@@ -162,12 +164,26 @@ class ItIstioCrossDomainTransaction {
     assertDoesNotThrow(() -> addLabelsToNamespace(domain1Namespace,labelMap));
     assertDoesNotThrow(() -> addLabelsToNamespace(domain2Namespace,labelMap));
     assertDoesNotThrow(() -> addLabelsToNamespace(opNamespace,labelMap));
-
     // install and verify operator
     installAndVerifyOperator(opNamespace, domain1Namespace, domain2Namespace);
-
     buildApplicationsAndDomains();
+  }
 
+  /**
+   * Verify all server pods are running.
+   * Verify k8s services for all servers are created.
+   */
+  @BeforeEach
+  public void beforeEach() {
+    int replicaCount = 2;
+    for (int i = 1; i <= replicaCount; i++) {
+      checkPodReadyAndServiceExists(domain2ManagedServerPrefix + i, 
+            domainUid2, domain2Namespace);
+    }
+    for (int i = 1; i <= replicaCount; i++) {
+      checkPodReadyAndServiceExists(domain1ManagedServerPrefix + i, 
+            domainUid1, domain1Namespace);
+    }
   }
 
   private static void updatePropertyFile() {
@@ -539,7 +555,6 @@ class ItIstioCrossDomainTransaction {
           managedServerPrefix + i, domainNamespace);
       checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
     }
-
   }
 
   private static void createDomainResource(String domainUid, String domNamespace, String adminSecretName,
