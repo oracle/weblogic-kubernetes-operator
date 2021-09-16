@@ -98,7 +98,7 @@ mv v${KUBECTL_VERSION}_kubectl bin/kubectl
 chmod +x bin/kubectl
 out=$(kubectl version --client=true)
 res=$?
-if [ $res -ne 0]; then
+if [ $res -ne 0 ]; then
   for i in 1 2 3 ; do
    curl --ipv4 -LO --retry 3 https://storage.googleapis.com/kubernetes-release/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl
    mv kubectl bin/kubectl
