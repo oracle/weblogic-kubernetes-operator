@@ -60,7 +60,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * Test to creat a FMW dynamic domain in model in image.
  */
 @DisplayName("Test to Create a FMW Dynamic Domain with Dynamic Cluster using model in image")
-@Tag("okdenv")
 @IntegrationTest
 class ItFmwDynamicClusterMiiDomain {
 

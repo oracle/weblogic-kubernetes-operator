@@ -65,7 +65,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test to a create FMW model in image domain and start the domain")
-@Tag("okdenv")
 @IntegrationTest
 class ItFmwMiiDomain {
 

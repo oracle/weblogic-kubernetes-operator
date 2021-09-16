@@ -72,7 +72,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
  * Test to creat a FMW dynamic domain in persistent volume using WLST.
  */
 @DisplayName("Test to creat a FMW dynamic domain in persistent volume using WLST")
-@Tag("okdenv")
 @IntegrationTest
 class ItFmwDynamicDomainInPV {
 
