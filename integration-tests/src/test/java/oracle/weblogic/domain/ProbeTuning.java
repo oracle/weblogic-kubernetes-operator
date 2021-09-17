@@ -19,6 +19,12 @@ public class ProbeTuning {
   @ApiModelProperty("The number of seconds with no response that indicates a failure.")
   private Integer timeoutSeconds;
 
+  @ApiModelProperty("Number of times the check is performed before giving up.")
+  private Integer failureThreshold = 1;
+
+  @ApiModelProperty("Minimum number of times the check needs to pass for the probe to be considered successful")
+  private Integer successThreshold = 1;
+
   public ProbeTuning initialDelaySeconds(Integer initialDelaySeconds) {
     this.initialDelaySeconds = initialDelaySeconds;
     return this;
@@ -70,12 +76,32 @@ public class ProbeTuning {
     this.timeoutSeconds = timeoutSeconds;
   }
 
+  public Integer getFailureThreshold() {
+    return failureThreshold;
+  }
+
+  public ProbeTuning failureThreshold(Integer failureThreshold) {
+    this.failureThreshold = failureThreshold;
+    return this;
+  }
+
+  public Integer getSuccessThreshold() {
+    return successThreshold;
+  }
+
+  public ProbeTuning successThreshold(Integer successThreshold) {
+    this.successThreshold = successThreshold;
+    return this;
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
         .append("initialDelaySeconds", initialDelaySeconds)
         .append("periodSeconds", periodSeconds)
         .append("timeoutSeconds", timeoutSeconds)
+        .append("failureThreshold", failureThreshold)
+        .append("successThreshold", successThreshold)
         .toString();
   }
 
@@ -93,6 +119,8 @@ public class ProbeTuning {
         .append(initialDelaySeconds, rhs.initialDelaySeconds)
         .append(periodSeconds, rhs.periodSeconds)
         .append(timeoutSeconds, rhs.timeoutSeconds)
+        .append(failureThreshold, rhs.failureThreshold)
+        .append(successThreshold, rhs.successThreshold)
         .isEquals();
   }
 
@@ -102,6 +130,8 @@ public class ProbeTuning {
         .append(initialDelaySeconds)
         .append(periodSeconds)
         .append(timeoutSeconds)
+        .append(failureThreshold)
+        .append(successThreshold)
         .toHashCode();
   }
 }
