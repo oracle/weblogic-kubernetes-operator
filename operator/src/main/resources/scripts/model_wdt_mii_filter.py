@@ -617,10 +617,18 @@ def customizeNetworkAccessPoints(server, listen_address):
   # Dictionary to track the count of naps that have names > 15 characters
   # key = 10 char name, value = index count
   nap_name_dict = {}
+  # Dictionary of LocalHost NAP's created
+  local_nap_dict = {}
   for nap_name in nap_names:
     nap = naps[nap_name]
     customizeNetworkAccessPoint(nap_name, nap, listen_address)
-    createLocalHostNetworkAccessPoint(nap_name, nap, server, nap_name_dict)
+    createLocalHostNetworkAccessPoint(nap_name, nap, nap_name_dict, local_nap_dict)
+
+  # Iterate through the Dictionary of cloned local NAP's and add to the NetworkAccesPoint
+  # list of the model
+  local_nap_names = local_nap_dict.keys()
+  for local_nap_name in local_nap_names:
+    server['NetworkAccessPoint'][local_nap_name] = local_nap_dict[local_nap_name]
 
 
 def customizeNetworkAccessPoint(nap_name, nap, listen_address):
@@ -636,7 +644,7 @@ def customizeNetworkAccessPoint(nap_name, nap, listen_address):
 
 # Create copy of custom NAP for binding to localhost for handling k8s 'port-forward'
 # feature and Istio versions < 1.10.x
-def createLocalHostNetworkAccessPoint(nap_name, nap, server, nap_name_dict):
+def createLocalHostNetworkAccessPoint(nap_name, nap, nap_name_dict, local_nap_dict):
   istio_enabled = env.getEnvOrDef("ISTIO_ENABLED", "false")
   if istio_enabled == 'true':
     if nap_name in ISTIO_NAP_NAMES or nameContainsLocalHostIdentifier(nap_name):
@@ -646,7 +654,7 @@ def createLocalHostNetworkAccessPoint(nap_name, nap, server, nap_name_dict):
     wls_local_nap = copy.deepcopy(nap)
     wls_local_nap['ListenAddress'] = '127.0.0.1'
     local_nap_name = createNameForLocalHostNetworkAccessPoint(nap_name, nap_name_dict)
-    server['NetworkAccessPoint'][local_nap_name] = wls_local_nap
+    local_nap_dict[local_nap_name] = wls_local_nap
 
 def createNameForLocalHostNetworkAccessPoint(nap_name, nap_name_dict):
   # NAP names can be a maximum of 15 characters in length
@@ -674,7 +682,21 @@ def createNameForLocalHostNetworkAccessPoint(nap_name, nap_name_dict):
   return key + WLS_LOCALHOST_IDENTIFIER + idx_str
 
 def nameContainsLocalHostIdentifier(name):
-  return name.find(WLS_LOCALHOST_IDENTIFIER) > -1
+  # look for '-lh'
+  identifierIdx = name.find(WLS_LOCALHOST_IDENTIFIER)
+  # check if there is a localhost identifier
+  if identifierIdx > -1:
+    endIdentifierIdx = identifierIdx + len(WLS_LOCALHOST_IDENTIFIER)
+    # get substring from localhost identifier to end
+    subStr = name[endIdentifierIdx:]
+    print subStr
+    # should be only 2 digits 'NN' from '-lhNN' format
+    if len(subStr) == 2:
+      # verify the last two chars are digits
+      if subStr.isdigit():
+        return True
+
+  return False
 
 def setServerListenAddress(serverOrTemplate, listen_address):
   serverOrTemplate['ListenAddress'] = listen_address
