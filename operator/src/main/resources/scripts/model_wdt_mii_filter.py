@@ -621,7 +621,6 @@ def nameContainsLocalHostIdentifier(name):
     endIdentifierIdx = identifierIdx + len(WLS_LOCALHOST_IDENTIFIER)
     # get substring from localhost identifier to end
     subStr = name[endIdentifierIdx:]
-    print subStr
     # should be only 2 digits 'NN' from '-lhNN' format
     if len(subStr) == 2:
       # verify the last two chars are digits
