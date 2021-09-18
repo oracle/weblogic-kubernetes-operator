@@ -339,8 +339,6 @@ class WdtUpdateFilterCase(unittest.TestCase):
       model_wdt_mii_filter.createLocalHostNetworkAccessPoint('T3Channel',
                         nap, nap_name_dict, local_nap_dict)
       self.assertEqual(1, len(local_nap_dict), "Expected only one dictionary entry")
-      self.assertTrue(local_nap_dict.has_key('T3Channel' +
-                        model_wdt_mii_filter.WLS_LOCALHOST_IDENTIFIER + '01'))
       nap = local_nap_dict['T3Channel' +
                            model_wdt_mii_filter.WLS_LOCALHOST_IDENTIFIER + '01']
       self.assertEqual('127.0.0.1', nap['ListenAddress'],
