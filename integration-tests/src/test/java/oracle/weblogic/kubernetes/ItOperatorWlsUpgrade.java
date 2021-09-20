@@ -12,6 +12,19 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.concurrent.Callable;
 
+import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1SecretReference;
+import oracle.weblogic.domain.AdminServer;
+import oracle.weblogic.domain.AdminService;
+import oracle.weblogic.domain.Channel;
+import oracle.weblogic.domain.Cluster;
+import oracle.weblogic.domain.Configuration;
+import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainSpec;
+import oracle.weblogic.domain.Model;
+import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.OperatorParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
@@ -23,10 +36,8 @@ import oracle.weblogic.kubernetes.utils.CleanupUtil;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
@@ -37,6 +48,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_GITHUB_CHART_REPO_URL;
@@ -45,6 +57,7 @@ import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorContainerImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -119,30 +132,6 @@ class ItOperatorWlsUpgrade {
   }
 
   /**
-   * Operator upgrade from 2.6.0 to latest.
-   * Delete Operator and install latest Operator 
-   * Verify Domain resource version is updated while domain is in running state.
-   */
-  @Test
-  @Disabled("Disable WLS upgrade usecase from version 2.6.0")
-  @DisplayName("Upgrade Operator from 2.6.0 to main")
-  void testOperatorWlsUpgradeFrom260ToMain() {
-    upgradeOperator("domain-in-image", "2.6.0", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX,  false);
-  }
-
-  /**
-   * Operator upgrade from 3.0.3 to latest.
-   */
-  @ParameterizedTest
-  @Disabled("Disable WLS upgrade usecase from version 3.0.3")
-  @DisplayName("Upgrade Operator from 3.0.3 to main")
-  @ValueSource(strings = { "domain-in-image", "model-in-image" })
-  void testOperatorWlsUpgradeFrom303ToMain(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom303ToMain with domain type {0}", domainType);
-    upgradeOperator(domainType, "3.0.3", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
-  }
-
-  /**
    * Operator upgrade from 3.0.4 to latest.
    */
   @ParameterizedTest
@@ -154,18 +143,6 @@ class ItOperatorWlsUpgrade {
   }
 
   /**
-   * Operator upgrade from 3.1.3 to latest.
-   */
-  @ParameterizedTest
-  @Disabled("Disable WLS upgrade usecase from version 3.1.3")
-  @DisplayName("Upgrade Operator from 3.1.3 to main")
-  @ValueSource(strings = { "domain-in-image", "model-in-image" })
-  void testOperatorWlsUpgradeFrom313ToMain(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom313ToMain with domain type {0}", domainType);
-    upgradeOperator(domainType, "3.1.3", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
-  }
-
-  /**
    * Operator upgrade from 3.1.4 to latest.
    */
   @ParameterizedTest
@@ -174,30 +151,6 @@ class ItOperatorWlsUpgrade {
   void testOperatorWlsUpgradeFrom314ToMain(String domainType) {
     logger.info("Starting test testOperatorWlsUpgradeFrom314ToMain with domain type {0}", domainType);
     upgradeOperator(domainType, "3.1.4", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
-  }
-
-  /**
-   * Operator upgrade from 3.2.0 to latest.
-   */
-  @ParameterizedTest
-  @Disabled("Disable WLS upgrade usecase from version 3.2.0")
-  @DisplayName("Upgrade Operator from 3.2.0 to main")
-  @ValueSource(strings = { "domain-in-image", "model-in-image" })
-  void testOperatorWlsUpgradeFrom320ToMain(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom320ToMain with domain type {0}", domainType);
-    upgradeOperator(domainType, "3.2.0", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
-  }
-
-  /**
-   * Operator upgrade from 3.2.4 to latest.
-   */
-  @ParameterizedTest
-  @Disabled("Disable WLS upgrade usecase from version 3.2.4")
-  @DisplayName("Upgrade Operator from 3.2.4 to main")
-  @ValueSource(strings = { "domain-in-image", "model-in-image" })
-  void testOperatorWlsUpgradeFrom324ToMain(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom321ToMain with domain type {0}", domainType);
-    upgradeOperator(domainType, "3.2.4", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
@@ -399,61 +352,6 @@ class ItOperatorWlsUpgrade {
     restartDomain(domainUid, domainNamespace);
   }
 
-  private void createDomainHomeInImageAndVerify(
-      String domainNamespace, String operatorVersion, String externalServiceNameSuffix) {
-
-    // Create the repo secret to pull the image
-    // this secret is used only for non-kind cluster
-    createOcirRepoSecret(domainNamespace);
-
-    // create secret for admin credentials
-    logger.info("Create secret for admin credentials");
-    String adminSecretName = "weblogic-credentials";
-    createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-
-    // use the checked in domain.yaml to create domain for old releases
-    // copy domain.yaml to results dir
-    Path srcDomainYaml = Paths.get(RESOURCE_DIR, "domain", "domain-260.yaml");
-    assertDoesNotThrow(() -> Files.createDirectories(
-        Paths.get(RESULTS_ROOT + "/" + this.getClass().getSimpleName())),
-        String.format("Could not create directory under %s", RESULTS_ROOT));
-    Path destDomainYaml =
-        Paths.get(RESULTS_ROOT + "/" + this.getClass().getSimpleName() + "/" + "domain.yaml");
-    assertDoesNotThrow(() -> Files.copy(srcDomainYaml, destDomainYaml, REPLACE_EXISTING),
-        "File copy failed for domain.yaml");
-
-    // replace apiVersion, namespace and image in domain.yaml
-    assertDoesNotThrow(() -> replaceStringInFile(
-        destDomainYaml.toString(), "v7", getApiVersion(operatorVersion)),
-        "Could not modify the apiVersion in the domain.yaml file");
-    assertDoesNotThrow(() -> replaceStringInFile(
-        destDomainYaml.toString(), "weblogic-domain260", domainNamespace),
-        "Could not modify the namespace in the domain.yaml file");
-    assertDoesNotThrow(() -> replaceStringInFile(
-        destDomainYaml.toString(), "domain-home-in-image:12.2.1.4",
-        WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG),
-        "Could not modify image name in the domain.yaml file");
-
-    assertTrue(new Command()
-        .withParams(new CommandParams()
-            .command("kubectl create -f " + destDomainYaml))
-        .execute(), "kubectl create failed");
-
-    checkDomainStarted(domainUid, domainNamespace);
-
-    logger.info("Getting node port for default channel");
-    int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
-        domainNamespace, getExternalServicePodName(adminServerPodName, externalServiceNameSuffix), "default"),
-        "Getting admin server node port failed");
-
-    logger.info("Validating WebLogic admin server access by login to console");
-    boolean loginSuccessful = assertDoesNotThrow(() -> {
-      return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-    }, "Access to admin server node port failed");
-    assertTrue(loginSuccessful, "Console login validation failed");
-
-  }
-
   private Callable<Boolean> checkCrdVersion() {
     return () -> {
       return new Command()
@@ -462,21 +360,6 @@ class ItOperatorWlsUpgrade {
                   + "jsonpath='{.spec.versions[?(@.storage==true)].name}'"))
           .executeAndVerify(TestConstants.DOMAIN_VERSION);
     };
-  }
-
-  private String getApiVersion(String operatorVersion) {
-    String apiVersion = null;
-    switch (operatorVersion) {
-      case "2.5.0":
-        apiVersion = "v6";
-        break;
-      case "2.6.0":
-        apiVersion = "v7";
-        break;
-      default:
-        apiVersion = TestConstants.DOMAIN_VERSION;
-    }
-    return apiVersion;
   }
 
   private void checkDomainStarted(String domainUid, String domainNamespace) {
@@ -555,6 +438,145 @@ class ItOperatorWlsUpgrade {
          "Failed to patch Domain's serverStartPolicy to IF_NEEDED");
     logger.info("Domain is patched to re start");
     checkDomainStarted(domainUid, domainNamespace);
+  }
+
+  private void createDomainHomeInImageAndVerify(String domainNamespace, 
+      String operatorVersion, String externalServiceNameSuffix) {
+
+    // Create the repo secret to pull the image
+    //  this secret is used only for non-kind cluster
+    createOcirRepoSecret(domainNamespace);
+
+    // create secret for admin credentials
+    logger.info("Create secret for admin credentials");
+    String adminSecretName = "weblogic-credentials";
+    createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+
+    Domain domain = new Domain()
+            .apiVersion(TestConstants.DOMAIN_API_VERSION)
+            .kind("Domain")
+            .metadata(new V1ObjectMeta()
+                    .name(domainUid)
+                    .namespace(domainNamespace))
+            .spec(new DomainSpec()
+                    .domainUid(domainUid)
+                    .domainHomeSourceType("Image")
+                    .image(WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG)
+                    .addImagePullSecretsItem(new V1LocalObjectReference()
+                            .name(OCIR_SECRET_NAME))
+                    .webLogicCredentialsSecret(new V1SecretReference()
+                            .name(adminSecretName)
+                            .namespace(domainNamespace))
+                    .includeServerOutInPodLog(true)
+                    .serverStartPolicy("IF_NEEDED")
+                    .serverPod(new ServerPod()
+                            .addEnvItem(new V1EnvVar()
+                                    .name("JAVA_OPTIONS")
+                                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                            .addEnvItem(new V1EnvVar()
+                                    .name("USER_MEM_ARGS")
+                                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+                    .adminServer(new AdminServer()
+                        .serverStartState("RUNNING")
+                        .adminService(new AdminService()
+                        .addChannelsItem(new Channel()
+                        .channelName("default")
+                        .nodePort(0))))
+                    .addClustersItem(new Cluster()
+                            .clusterName("cluster-1")
+                            .replicas(replicaCount)
+                            .serverStartState("RUNNING"))
+                    .configuration(new Configuration()
+                            .model(new Model()
+                                    .domainType("WLS"))
+                        .introspectorJobActiveDeadlineSeconds(300L)));
+    logger.info("Create domain resource for domainUid {0} in namespace {1}",
+            domainUid, domainNamespace);
+    boolean domCreated = assertDoesNotThrow(() -> createDomainCustomResource(domain),
+          String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
+          domainUid, domainNamespace));
+    assertTrue(domCreated, String.format("Create domain custom resource failed with ApiException "
+                    + "for %s in namespace %s", domainUid, domainNamespace));
+    checkDomainStarted(domainUid, domainNamespace);
+    logger.info("Getting node port for default channel");
+    int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
+        domainNamespace, getExternalServicePodName(adminServerPodName, externalServiceNameSuffix), "default"),
+        "Getting admin server node port failed");
+
+    logger.info("Validating WebLogic admin server access by login to console");
+    boolean loginSuccessful = assertDoesNotThrow(() -> {
+      return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+    }, "Access to admin server node port failed");
+    assertTrue(loginSuccessful, "Console login validation failed");
+  }
+  
+  private void createDomainHomeInImageFromDomainYaml(
+      String domainNamespace, String operatorVersion, String externalServiceNameSuffix) {
+
+    // Create the repo secret to pull the image
+    // this secret is used only for non-kind cluster
+    createOcirRepoSecret(domainNamespace);
+
+    // create secret for admin credentials
+    logger.info("Create secret for admin credentials");
+    String adminSecretName = "weblogic-credentials";
+    createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+
+    // use the checked in domain.yaml to create domain for old releases
+    // copy domain.yaml to results dir
+    Path srcDomainYaml = Paths.get(RESOURCE_DIR, "domain", "domain-260.yaml");
+    assertDoesNotThrow(() -> Files.createDirectories(
+        Paths.get(RESULTS_ROOT + "/" + this.getClass().getSimpleName())),
+        String.format("Could not create directory under %s", RESULTS_ROOT));
+    Path destDomainYaml =
+        Paths.get(RESULTS_ROOT + "/" + this.getClass().getSimpleName() + "/" + "domain.yaml");
+    assertDoesNotThrow(() -> Files.copy(srcDomainYaml, destDomainYaml, REPLACE_EXISTING),
+        "File copy failed for domain.yaml");
+
+    // replace apiVersion, namespace and image in domain.yaml
+    assertDoesNotThrow(() -> replaceStringInFile(
+        destDomainYaml.toString(), "v7", getApiVersion(operatorVersion)),
+        "Could not modify the apiVersion in the domain.yaml file");
+    assertDoesNotThrow(() -> replaceStringInFile(
+        destDomainYaml.toString(), "weblogic-domain260", domainNamespace),
+        "Could not modify the namespace in the domain.yaml file");
+    assertDoesNotThrow(() -> replaceStringInFile(
+        destDomainYaml.toString(), "domain-home-in-image:12.2.1.4",
+        WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG),
+        "Could not modify image name in the domain.yaml file");
+
+    assertTrue(new Command()
+        .withParams(new CommandParams()
+            .command("kubectl create -f " + destDomainYaml))
+        .execute(), "kubectl create failed");
+
+    checkDomainStarted(domainUid, domainNamespace);
+
+    logger.info("Getting node port for default channel");
+    int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
+        domainNamespace, getExternalServicePodName(adminServerPodName, externalServiceNameSuffix), "default"),
+        "Getting admin server node port failed");
+
+    logger.info("Validating WebLogic admin server access by login to console");
+    boolean loginSuccessful = assertDoesNotThrow(() -> {
+      return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+    }, "Access to admin server node port failed");
+    assertTrue(loginSuccessful, "Console login validation failed");
+  }
+
+  private String getApiVersion(String operatorVersion) {
+    String apiVersion = null;
+    switch (operatorVersion) {
+      case "2.5.0":
+        apiVersion = "v6";
+        break;
+      case "2.6.0":
+        apiVersion = "v7";
+        break;
+      default:
+        apiVersion = TestConstants.DOMAIN_VERSION;
+    }
+    return apiVersion;
   }
 
 }
