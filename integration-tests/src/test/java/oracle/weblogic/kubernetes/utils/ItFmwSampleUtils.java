@@ -210,6 +210,11 @@ public class ItFmwSampleUtils {
         replaceStringInFile(Paths.get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
             "#weblogicDomainStorageNFSServer: nfsServer", "weblogicDomainStorageNFSServer: "
                 + NFS_SERVER);
+        replaceStringInFile(Paths.get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
+            "#weblogicDomainStoragePath: /scratch/k8s_dir", "weblogicDomainStoragePath: " + PV_ROOT);
+        replaceStringInFile(Paths.get(pvpvcBase.toString(), "pv-template.yaml").toString(),
+            "%DOMAIN_UID%%SEPARATOR%%BASE_NAME%-storage-class",
+            "%DOMAIN_UID%%SEPARATOR%%BASE_NAME%-okd-nfsmnt");
 
       }
 
