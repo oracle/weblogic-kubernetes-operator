@@ -14,11 +14,16 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.NFS_SERVER;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
+//import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.addSccToDBSvcAccount;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.copyDirectory;
@@ -32,7 +37,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class ItFmwSampleUtils {
 
   private static final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
-  private static final Path tempSamplePath = Paths.get(WORK_DIR, "fmw-diisample-testing");
 
   private static final String RCUSYSUSERNAME = "sys";
   private static final String RCUSYSPASSWORD = "Oradoc_db1";
@@ -148,5 +152,118 @@ public class ItFmwSampleUtils {
             .redirect(true))
         .execute(), "Failed to execute command: " + command);
   }
+
+  /**
+   * add security context constraints to the service account of db namespace for sample.
+   * @param serviceAccount - service account to add to scc
+   * @param namespace - namespace to which the service account belongs
+   */
+  private static void addSccToDBSvcAccount(String serviceAccount, String namespace) {
+    LoggingFacade logger = getLogger();
+    logger.info("Adding security context constraints to serviceAccount: {1}, namespace: {2}",
+        serviceAccount, namespace);
+    assertTrue(new Command()
+        .withParams(new CommandParams()
+            .command("oc adm policy add-scc-to-user anyuid -z " + serviceAccount + " -n " + namespace))
+        .execute(), "oc expose service failed");
+  }
+
+  /** Create a persistent volume and persistent volume claim for the FMW sample.
+   * @param domainUid domain UID
+   * @param domainNamespace name of the namespace in which to create the persistent volume claim
+   * @Param tempSamplePath  path of the temporary sample location
+   */
+  public static void createPvPvc(String domainUid, String domainNamespace,
+       Path tempSamplePath, String className) {
+    LoggingFacade logger = getLogger();
+    String pvName = domainUid + "-weblogic-sample-pv";
+    String pvcName = domainUid + "-weblogic-sample-pvc";
+
+    Path pvpvcBase = Paths.get(tempSamplePath.toString(),
+        "scripts/create-weblogic-domain-pv-pvc");
+
+    // create pv and pvc
+    assertDoesNotThrow(() -> {
+      if (!OKD) {
+        // when tests are running in local box the PV directories need to exist
+        Path pvHostPathBase;
+        pvHostPathBase = Files.createDirectories(Paths.get(PV_ROOT, className));
+        Path pvHostPath;
+        pvHostPath = Files.createDirectories(Paths.get(PV_ROOT, className, pvName));
+
+        logger.info("Creating PV directory host path {0}", pvHostPath);
+        deleteDirectory(pvHostPath.toFile());
+        Files.createDirectories(pvHostPath);
+        String command1 = "chmod -R 777 " + pvHostPathBase;
+        logger.info("Command1 to be executed: " + command1);
+        assertTrue(new Command()
+            .withParams(new CommandParams()
+                .command(command1))
+            .execute(), "Failed to chmod " + PV_ROOT);
+
+        // set the pvHostPath in create-pv-pvc-inputs.yaml
+        replaceStringInFile(Paths.get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
+            "#weblogicDomainStoragePath: /scratch/k8s_dir", "weblogicDomainStoragePath: " + pvHostPath);
+      } else {
+        replaceStringInFile(Paths.get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
+            "weblogicDomainStorageType: HOST_PATH", "weblogicDomainStorageType: NFS");
+        replaceStringInFile(Paths.get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
+            "#weblogicDomainStorageNFSServer: nfsServer", "weblogicDomainStorageNFSServer: "
+                + NFS_SERVER);
+
+      }
+
+      //set namespace in create-pv-pvc-inputs.yaml
+      replaceStringInFile(Paths.get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
+            "namespace: default", "namespace: " + domainNamespace);
+      // set the pv storage policy to Recycle in create-pv-pvc-inputs.yaml
+      replaceStringInFile(Paths.get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
+          "weblogicDomainStorageReclaimPolicy: Retain", "weblogicDomainStorageReclaimPolicy: Recycle");
+      replaceStringInFile(Paths.get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString(),
+          "domainUID:", "domainUID: " + domainUid);
+    });
+
+    // generate the create-pv-pvc-inputs.yaml
+    CommandParams params = new CommandParams().defaults();
+    params.command("sh "
+        + Paths.get(pvpvcBase.toString(), "create-pv-pvc.sh").toString()
+        + " -i " + Paths.get(pvpvcBase.toString(), "create-pv-pvc-inputs.yaml").toString()
+        + " -o "
+        + Paths.get(pvpvcBase.toString()));
+
+    boolean result = Command.withParams(params).execute();
+    assertTrue(result, "Failed to create create-pv-pvc-inputs.yaml");
+
+    //create pv and pvc
+    params = new CommandParams().defaults();
+    params.command("kubectl create -f " + Paths.get(pvpvcBase.toString(),
+        "pv-pvcs/" + domainUid + "-weblogic-sample-pv.yaml").toString());
+    result = Command.withParams(params).execute();
+    assertTrue(result, "Failed to create pv");
+
+    testUntil(
+        assertDoesNotThrow(
+            () -> pvExists(pvName, null),
+            String.format("pvExists failed with ApiException for pv %s", pvName)),
+        logger,
+        "pv {0} to be ready",
+        pvName);
+
+    params = new CommandParams().defaults();
+    params.command("kubectl create -f " + Paths.get(pvpvcBase.toString(),
+        "pv-pvcs/" + domainUid + "-weblogic-sample-pvc.yaml").toString());
+    result = Command.withParams(params).execute();
+    assertTrue(result, "Failed to create pvc");
+
+    testUntil(
+        assertDoesNotThrow(
+            () -> pvcExists(pvcName, domainNamespace),
+            String.format("pvcExists failed with ApiException for pvc %s", pvcName)),
+        logger,
+        "pv {0} to be ready in namespace {1}",
+        pvcName,
+        domainNamespace);
+  }
+
 
 }

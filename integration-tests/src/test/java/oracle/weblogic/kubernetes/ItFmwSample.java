@@ -3,7 +3,7 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.nio.file.Files;
+//import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -29,14 +29,14 @@ import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
+//import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 //import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 //import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
+//import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvExists;
+//import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
 //import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
@@ -45,6 +45,7 @@ import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuSecretWithUserna
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyEMconsoleAccess;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.ItFmwSampleUtils.createPvPvc;
 import static oracle.weblogic.kubernetes.utils.ItFmwSampleUtils.createRcuSchema;
 import static oracle.weblogic.kubernetes.utils.ItFmwSampleUtils.setupDBBySample;
 import static oracle.weblogic.kubernetes.utils.ItFmwSampleUtils.setupSample;
@@ -55,7 +56,7 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodNam
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 //import static org.apache.commons.io.FileUtils.copyDirectory;
-import static org.apache.commons.io.FileUtils.deleteDirectory;
+//import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -161,7 +162,7 @@ public class ItFmwSample {
     setupSample(tempSamplePath);
 
     // create persistent volume and persistent volume claims used by the samples
-    createPvPvc(domainUid);
+    createPvPvc(domainUid, domainNamespace, tempSamplePath, this.getClass().getSimpleName());
 
     //create WebLogic secrets for the domain
     createSecretWithUsernamePassword(domainUid + "-weblogic-credentials", domainNamespace,
@@ -243,7 +244,7 @@ public class ItFmwSample {
     verifyEMconsoleAccess(domainNamespace, domainUid, adminSvcExtHost);
   }
 
-  private void createPvPvc(String domainUid) {
+  /*private void createPvPvc(String domainUid) {
 
     String pvName = domainUid + "-weblogic-sample-pv";
     String pvcName = domainUid + "-weblogic-sample-pvc";
@@ -322,7 +323,7 @@ public class ItFmwSample {
         "pv {0} to be ready in namespace {1}",
         pvcName,
         domainNamespace);
-  }
+  }*/
 
   // copy samples directory to a temporary location
   /*private static void setupSample() {
