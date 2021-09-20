@@ -92,15 +92,23 @@ helm version
 
 echo 'Info: Set up kubectl...'
 set +e
-for i in 1 2 3 ; do
- curl --ipv4 -LO --retry 3 https://storage.googleapis.com/kubernetes-release/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl
- mv kubectl bin/kubectl
- chmod +x bin/kubectl
- out=$(kubectl version --client=true)
- res=$?
- [ $res -eq 0 ] && break
- sleep 10
-done
+echo 'Info: download from object storage'
+curl --ipv4 -LO --retry 3 https://objectstorage.eu-frankfurt-1.oraclecloud.com/n/weblogicondocker/b/bucket-wko-jenkins/o/v${KUBECTL_VERSION}_kubectl
+mv v${KUBECTL_VERSION}_kubectl bin/kubectl
+chmod +x bin/kubectl
+out=$(kubectl version --client=true)
+res=$?
+if [ $res -ne 0 ]; then
+  for i in 1 2 3 ; do
+   curl --ipv4 -LO --retry 3 https://storage.googleapis.com/kubernetes-release/release/v${KUBECTL_VERSION}/bin/linux/amd64/kubectl
+   mv kubectl bin/kubectl
+   chmod +x bin/kubectl
+   out=$(kubectl version --client=true)
+   res=$?
+   [ $res -eq 0 ] && break
+   sleep 10
+  done
+fi
 set -e
 kubectl version --client=true
 
