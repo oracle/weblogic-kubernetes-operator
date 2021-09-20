@@ -1071,7 +1071,8 @@ class SitConfigGenerator(Generator):
       self.writeln("<d:listen-port f:combine-mode=\"add\">" + str(listen_port) + "</d:listen-port>")
 
   def writePublicAddress(self, public_address):
-    self.writeln("<d:public-address f:combine-mode=\"add\">" + public_address + "</d:public-address>")
+    if public_address is not None and len(public_address) > 0:
+      self.writeln("<d:public-address f:combine-mode=\"add\">" + public_address + "</d:public-address>")
 
   def writePublicPort(self, public_port):
     # offline WLST initializes int values to 0
