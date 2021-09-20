@@ -97,17 +97,16 @@ javaLoggingLevel:  "FINE"
 ```
 
 ##### `kubernetesPlatform`
-Allows you to set the Kubernetes platform on which the operator is running. The value is case-insensitive.
+Specify the Kubernetes platform on which the operator is running. This setting has no default, the only valid value is OpenShift, and the setting should be left unset for other platforms. When set to `OpenShift`, the operator:
+- Sets the domain home file permissions in each WebLogic Server pod to work correctly in OpenShift for [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}), and [Domain home in Image]({{< relref "/samples/domains/domain-home-in-image/_index.md" >}}) domains. Specifically, it sets file group permissions so that they match file user permissions.
+- Sets the `weblogic.SecureMode.WarnOnInsecureFileSystem` Java system property to `false` on the command line of each WebLogic Server. This flag suppresses insecure file system warnings reported in the WebLogic Server console when the WebLogic Server is in production mode. These warnings result from setting the file permissions necessary to work with restricted security context constraints on OpenShift.
 
-This flag is helpful when using the operator in OpenShift because of the security requirements to run the WebLogic Server in OpenShift. See [Security requirements to run WebLogic in OpenShift]({{<relref "/security/openshift#security-requirements-to-run-weblogic-in-openshift">}}) for more details. When you set the `kubernetesPlatform` value to `Openshift`, the operator:
-- Configures the correct file permissions for WebLogic Server to work in Openshift for [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}), and [Domain home in Image]({{< relref "/samples/domains/domain-home-in-image/_index.md" >}}) domains.
-- Sets `weblogic.SecureMode.WarnOnInsecureFileSystem` Java system property to `false` on each target WebLogic Server instance. This flag suppresses the insecure file system warnings in the WebLogic Server console in production mode. These warnings result from setting the correct file permissions to work with restricted security context constraints on Openshift.
+For more information about the security requirements for running WebLogic in OpenShift, see the [OpenShift chapter]({{<relref "/security/openshift.md">}}) in the Security section.
 
 Example:
 ```yaml
-kubernetesPlatform: Openshift
+kubernetesPlatform: OpenShift
 ```
-
 #### Creating the operator pod
 
 ##### `image`
