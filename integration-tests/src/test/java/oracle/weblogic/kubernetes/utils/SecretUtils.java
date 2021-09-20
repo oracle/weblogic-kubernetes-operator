@@ -20,15 +20,12 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import org.awaitility.core.ConditionFactory;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.GEN_EXTERNAL_REST_IDENTITY_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -182,17 +179,8 @@ public class SecretUtils {
   public static void verifyDefaultTokenExists() {
     final LoggingFacade logger = getLogger();
 
-    ConditionFactory withStandardRetryPolicy
-        = with().pollDelay(0, SECONDS)
-        .and().with().pollInterval(5, SECONDS)
-        .atMost(5, MINUTES).await();
-
-    withStandardRetryPolicy.conditionEvaluationListener(
-        condition -> logger.info("Waiting for the default token to be available in default service account, "
-                + "elapsed time {0}, remaining time {1}",
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
-        .until(() -> {
+    testUntil(
+        () -> {
           V1ServiceAccountList sas = Kubernetes.listServiceAccounts("default");
           for (V1ServiceAccount sa : sas.getItems()) {
             if (sa.getMetadata().getName().equals("default")) {
@@ -201,6 +189,8 @@ public class SecretUtils {
             }
           }
           return false;
-        });
+        },
+        logger,
+        "the default token to be available in default service account");
   }
 }
