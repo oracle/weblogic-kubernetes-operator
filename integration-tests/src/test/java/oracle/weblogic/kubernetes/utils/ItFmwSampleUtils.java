@@ -215,6 +215,9 @@ public class ItFmwSampleUtils {
         replaceStringInFile(Paths.get(pvpvcBase.toString(), "pv-template.yaml").toString(),
             "%DOMAIN_UID%%SEPARATOR%%BASE_NAME%-storage-class",
             "%DOMAIN_UID%%SEPARATOR%%BASE_NAME%-okd-nfsmnt");
+        replaceStringInFile(Paths.get(pvpvcBase.toString(), "pvc-template.yaml").toString(),
+            "%DOMAIN_UID%%SEPARATOR%%BASE_NAME%-storage-class",
+            "%DOMAIN_UID%%SEPARATOR%%BASE_NAME%-okd-nfsmnt");
 
       }
 
