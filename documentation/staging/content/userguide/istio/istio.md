@@ -143,13 +143,14 @@ Additionally, when Istio support is enabled for a domain, the operator
 ensures that the Istio sidecar is not injected into the introspector job's pods.
 
 #### Support for network changes in Istio v1.10 and later
-
-Prior to Istio release 1.10, the Istio Envoy proxy redirected all inbound traffic to the localhost
-network interface.  The network channels listed above, which the operator automatically added, 
-were bound to the localhost interface in order for WebLogic to receive the inbound traffic.  
+ 
 Starting with Istio 1.10, the networking behavior was changed in that the proxy no longer redirects 
 the traffic to the localhost interface, but instead forwards it to the network interface associated
-to the pod's IP.  In order to support Istio v1.10 and later, as well as pre-1.10 releases, the
+to the pod's IP.  
+
+To learn more about changes to Istio networking beginning with Istio 1.10, see [Upcoming networking changes in Istio 1.10](https://istio.io/latest/blog/2021/upcoming-networking-changes//).
+
+In order to support Istio v1.10 and later, as well as previous releases, the
 operator will:
     
 * Add an additional WebLogic HTTP protocol network channel for the readiness probe that is bound to the localhost network interface.
@@ -173,8 +174,6 @@ and protocol `t3`, the additional channel would be defined as follows:
 |Name|Port|Listening address|Protocol|Exposed as a container port|
 |----|----|----|--------|-----|
 |`T3Channel-lh01`| `5556` | `127.0.0.1` | `t3`| Yes |
-
-To learn more about changes to Istio networking beginning with Istio 1.10, see [Upcoming networking changes in Istio 1.10](https://istio.io/latest/blog/2021/upcoming-networking-changes//).
 
 ### Apply the Domain YAML file
 
