@@ -32,10 +32,7 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
@@ -66,11 +63,13 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
- * Verify that when the primary server is down, another server takes on its clients
- * to become the new primary server and HTTP session state is migrated to the new primary server.
- * Also verify that an annotation containing a slash in the name propagates to the server pod
+ * Verify that when the primary server is down, another server takes on its 
+ * clients to become the new primary server and HTTP session state is migrated 
+ * to the new primary server. 
+ *
+ * Also verify that an annotation containing a slash in the name propagates 
+ * to the server pod
  */
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test the HTTP session replication features of WebLogic")
 @IntegrationTest
 class ItSessionMigration {
@@ -159,7 +158,6 @@ class ItSessionMigration {
    * session create time. Verify that a new primary server is selected and HTTP session state is migrated.
    */
   @Test
-  @Order(1)
   @DisplayName("Stop the primary server, verify that a new primary server is picked and HTTP session state is migrated")
   void testSessionMigration() {
     final String primaryServerAttr = "primary";
@@ -221,10 +219,9 @@ class ItSessionMigration {
    * where the key contains slash propagated to the server pod.
    */
   @Test
-  @Order(2)
   @DisplayName("Test that an annotation containing a slash in the name propagates to the server pod")
   void testPodAnnotationWithSlash() {
-    String managedServerPodName = domainUid + "-" + finalPrimaryServerName;
+    String managedServerPodName = domainUid + "-" + "managed-server1";
     V1Pod managedServerPod = null;
 
     try {
