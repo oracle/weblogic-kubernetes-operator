@@ -52,8 +52,8 @@ import static oracle.weblogic.kubernetes.assertions.impl.ClusterRoleBinding.clus
 import static oracle.weblogic.kubernetes.assertions.impl.RoleBinding.roleBindingExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
-import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
-import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.getRouteHost;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -401,10 +401,11 @@ public class Domain {
     LoggingFacade logger = getLogger();
 
     // In OKD cluster, we need to expose the external service as route and set tls termination to  passthrough 
-    String opExternalSvc = createRouteForOKD("external-weblogic-operator-svc", opNamespace);
+    //String opExternalSvc = createRouteForOKD("external-weblogic-operator-svc", opNamespace);
     // Patch the route just created to set tls termination to passthrough
-    setTlsTerminationForRoute("external-weblogic-operator-svc", opNamespace);
+    //setTlsTerminationForRoute("external-weblogic-operator-svc", opNamespace);
     
+    String opExternalSvc = getRouteHost(opNamespace, "external-weblogic-operator-svc"); 
     logger.info("Getting the secret of service account {0} in namespace {1}", opServiceAccount, opNamespace);
     String secretName = Secret.getSecretOfServiceAccount(opNamespace, opServiceAccount);
     if (secretName.isEmpty()) {

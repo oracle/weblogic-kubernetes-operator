@@ -49,8 +49,21 @@ public class OKDUtils {
               .command(command))
             .execute(), "oc expose service failed");
       }
+      return getRouteHost(namespace, serviceName);
+    } else {
+      return null;
+    }
+  }
 
-      command = "oc -n " + namespace + " get routes " + serviceName + "  '-o=jsonpath={.spec.host}'";
+  /**
+   * Get the host name of the route.
+   *
+   * @param namespace - Namespace where the route is exposed
+   * @param serviceName - Name of the route
+   */
+  public static String getRouteHost(String namespace, String serviceName) {
+    if (OKD) {
+      String command = "oc -n " + namespace + " get routes " + serviceName + "  '-o=jsonpath={.spec.host}'";
 
       ExecResult result = Command.withParams(
           new CommandParams()
@@ -93,6 +106,41 @@ public class OKDUtils {
     if (OKD) {
       String command = "oc -n " + namespace + " patch route " + routeName
                           +  " --patch '{\"spec\": {\"tls\": {\"termination\": \"passthrough\"}}}'";
+
+      ExecResult result = Command.withParams(
+          new CommandParams()
+              .command(command))
+          .executeAndReturnResult();
+
+      boolean success =
+          result != null
+              && result.exitValue() == 0
+              && result.stdout() != null
+              && result.stdout().contains("patched");
+
+      String outStr = "Setting tls termination in route failed \n";
+      outStr += ", command=\n{\n" + command + "\n}\n";
+      outStr += ", stderr=\n{\n" + (result != null ? result.stderr() : "") + "\n}\n";
+      outStr += ", stdout=\n{\n" + (result != null ? result.stdout() : "") + "\n}\n";
+
+      assertTrue(success, outStr);
+
+      getLogger().info("exitValue = {0}", result.exitValue());
+      getLogger().info("stdout = {0}", result.stdout());
+      getLogger().info("stderr = {0}", result.stderr());
+    }
+  }
+
+  /**
+   * Sets TLS termination in the route to passthrough.
+   *
+   * @param routeName name of the route
+   * @param namespace namespace where the route is created
+   */
+  public static void setTlsEdgeTerminationForRoute(String routeName, String namespace, String keyFiles) {
+    if (OKD) {
+      String command = "oc -n " + namespace + " patch route " + routeName
+                          +  " --patch '{\"spec\": {\"tls\": {\"termination\": \"edge\"}}}'";
 
       ExecResult result = Command.withParams(
           new CommandParams()

@@ -62,7 +62,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test verifies usage of CustomIdentityCustomTrust on PV")
 @IntegrationTest
-@Tag("okdenv")
 class ItMiiCustomSslStore {
 
   private static String opNamespace = null;

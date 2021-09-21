@@ -29,7 +29,6 @@ import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -49,6 +48,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
@@ -68,7 +69,6 @@ import static org.junit.jupiter.api.Assertions.fail;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test Operator and WebLogic domain with Dedicated set to true")
 @IntegrationTest
-@Tag("okdenv")
 class ItDedicatedMode {
   // namespace constants
   private static String opNamespace = null;
@@ -132,6 +132,7 @@ class ItDedicatedMode {
     new Command()
         .withParams(new CommandParams().command(createCrdCommand))
         .execute();
+
   }
 
   @AfterAll
@@ -161,6 +162,12 @@ class ItDedicatedMode {
         true, 0, opHelmParams, domainNamespaceSelectionStrategy,
         false, domain2Namespace);
 
+    // This test uses the operator restAPI to scale the doamin. To do this in OKD cluster,
+    // we need to expose the external service as route and set tls termination to  passthrough 
+    String opExternalSvc = createRouteForOKD("external-weblogic-operator-svc", opNamespace);
+    // Patch the route just created to set tls termination to passthrough
+    setTlsTerminationForRoute("external-weblogic-operator-svc", opNamespace);
+    
     // create and verify the domain
     logger.info("Creating and verifying model in image domain");
     createDomain(domain2Namespace);

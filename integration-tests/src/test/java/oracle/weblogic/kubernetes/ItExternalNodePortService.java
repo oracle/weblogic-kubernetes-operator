@@ -61,6 +61,7 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileFromPod;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
@@ -234,6 +235,7 @@ class ItExternalNodePortService {
     String serviceName = domainUid + "-cluster-" + clusterName + "-ext";
     String portName = "clustert3channel";
     checkServiceExists(serviceName, domainNamespace);
+    String hostAndPort = createRouteForOKD(serviceName, domainNamespace);
     int httpTunnelingPort =
         getServiceNodePort(domainNamespace, serviceName, portName);
     assertTrue(httpTunnelingPort != -1,
@@ -242,7 +244,7 @@ class ItExternalNodePortService {
 
     // Make sure the JMS Connection LoadBalancing and message LoadBalancing
     // works from RMI client outside of k8s cluster 
-    runExtClient(httpTunnelingPort, 2, false);
+    runExtClient(hostAndPort, 2, false);
     logger.info("External RMI tunneling works for NodePortService");
   }
 
@@ -263,6 +265,26 @@ class ItExternalNodePortService {
     javaCmd.append(String.valueOf(checkConnection));
     logger.info("java command to be run {0}", javaCmd.toString());
 
+    // Note it takes a couples of iterations before the client success
+    testUntil(runJmsClient(new String(javaCmd)), logger, "Wait for Http JMS Client to access WLS");
+  }
+
+  // Run the RMI client outside the K8s Cluster
+  private void runExtClient(String hostAndPort, int serverCount, boolean checkConnection) {
+    // Generate java command to execute client with classpath
+    StringBuffer httpUrl = new StringBuffer("http://");
+    httpUrl.append(hostAndPort + ":80");
+    StringBuffer javaCmd = new StringBuffer("java -cp ");
+    javaCmd.append(Paths.get(RESULTS_ROOT, "wlthint3client.jar"));
+    javaCmd.append(":");
+    javaCmd.append(Paths.get(RESULTS_ROOT));
+    javaCmd.append(" JmsTestClient ");
+    javaCmd.append(httpUrl);
+    javaCmd.append(" ");
+    javaCmd.append(String.valueOf(serverCount));
+    javaCmd.append(" ");
+    javaCmd.append(String.valueOf(checkConnection));
+    logger.info("java command to be run {0}", javaCmd.toString());
     // Note it takes a couples of iterations before the client success
     testUntil(runJmsClient(new String(javaCmd)), logger, "Wait for Http JMS Client to access WLS");
   }
@@ -293,7 +315,7 @@ class ItExternalNodePortService {
 
   // Build JMS Client inside the Admin Server Pod
   private void buildClientOnPod() {
-    String destLocation = "/u01/oracle/JmsTestClient.java";
+    String destLocation = "/u01/JmsTestClient.java";
     assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
              adminServerPodName, "weblogic-server",
              Paths.get(RESOURCE_DIR, "tunneling", "JmsTestClient.java"),
@@ -305,7 +327,7 @@ class ItExternalNodePortService {
     javacCmd.append(" -it ");
     javacCmd.append(adminServerPodName);
     javacCmd.append(" -- /bin/bash -c \"");
-    javacCmd.append("javac -cp ");
+    javacCmd.append("cd /u01; javac -cp ");
     javacCmd.append(jarLocation);
     javacCmd.append(" JmsTestClient.java ");
     javacCmd.append(" \"");

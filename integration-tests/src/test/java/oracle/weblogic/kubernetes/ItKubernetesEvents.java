@@ -43,7 +43,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -95,6 +94,8 @@ import static oracle.weblogic.kubernetes.utils.K8sEvents.domainEventExists;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.getDomainEventCount;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.getEvent;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.getEventCount;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
@@ -127,7 +128,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify the Kubernetes events for domain lifecycle")
 @IntegrationTest
-@Tag("okdenv")
 class ItKubernetesEvents {
 
   private static String opNamespace = null;
@@ -187,6 +187,13 @@ class ItKubernetesEvents {
     // install and verify operator with REST API
     opParams = installAndVerifyOperator(opNamespace, opServiceAccount, true, 0, domainNamespace1);
     externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
+
+    // This test uses the operator restAPI to scale the domain. To do this in OKD cluster,
+    // we need to expose the external service as route and set tls termination to  passthrough 
+    logger.info("Create a route for the operator external service - only for OKD");
+    String opExternalSvc = createRouteForOKD("external-weblogic-operator-svc", opNamespace);
+    // Patch the route just created to set tls termination to passthrough
+    setTlsTerminationForRoute("external-weblogic-operator-svc", opNamespace);
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
