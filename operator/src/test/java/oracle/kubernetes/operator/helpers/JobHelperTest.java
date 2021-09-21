@@ -59,6 +59,7 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDomain;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.JOBWATCHER_COMPONENT_NAME;
+import static oracle.kubernetes.operator.helpers.BasePodStepContext.KUBERNETES_PLATFORM_HELM_VARIABLE;
 import static oracle.kubernetes.operator.helpers.Matchers.hasConfigMapVolume;
 import static oracle.kubernetes.operator.helpers.Matchers.hasContainer;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
@@ -982,6 +983,25 @@ class JobHelperTest extends DomainValidationBaseTest {
 
     assertThat(getMatchingContainerEnv(domainPresenceInfo, jobSpec),
         hasEnvVar(ServerEnvVars.ACCESS_LOG_IN_LOG_HOME, "true")
+    );
+  }
+
+  @Test
+  void whenOperatorHasKubernetesPlatformConfigured_introspectorPodSpecHasKubernetesPlatformEnvVariable() {
+    TuningParametersStub.setParameter(KUBERNETES_PLATFORM_HELM_VARIABLE, "Openshift");
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+            hasEnvVar(ServerEnvVars.KUBERNETES_PLATFORM, "Openshift")
+    );
+  }
+
+  @Test
+  void whenNotConfigured_KubernetesPlatform_introspectorPodSpecHasNoKubernetesPlatformEnvVariable() {
+    V1JobSpec jobSpec = createJobSpec();
+
+    assertThat(getMatchingContainerEnv(domainPresenceInfo, jobSpec),
+            not(hasEnvVar(ServerEnvVars.KUBERNETES_PLATFORM, "Openshift"))
     );
   }
 
