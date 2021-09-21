@@ -64,7 +64,7 @@ Operator 2.5.0+ is certified for use on OpenShift Container Platform 4.3.0+ with
 
 To accommodate OpenShift security requirements:
 - For security requirements to run WebLogic in OpenShift, see the [OpenShift chapter]({{<relref "/security/openshift.md">}}) in the Security section.
-- Beginning with operator version 4.0, specify the `kubernetesPlatorm` Helm chart property with value `OpenShift`. For more information, see [Operator Helm configuration values]({{<relref "/userguide/managing-operators/using-helm#operator-helm-configuration-values">}}).
+- Beginning with operator version 3.3.2, specify the `kubernetesPlatorm` Helm chart property with value `OpenShift`. For more information, see [Operator Helm configuration values]({{<relref "/userguide/managing-operators/using-helm#operator-helm-configuration-values">}}).
 
 ### Important note about development-focused Kubernetes distributions
 
