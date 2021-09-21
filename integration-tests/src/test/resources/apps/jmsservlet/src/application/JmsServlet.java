@@ -37,6 +37,9 @@ import weblogic.transaction.TransactionHelper;
      
 public class JmsServlet extends HttpServlet {
 
+ private static int s1count=0;
+ private static int s2count=0;
+
  protected void doGet(HttpServletRequest request,
                      HttpServletResponse response)
      throws ServletException, IOException {
@@ -113,8 +116,6 @@ public class JmsServlet extends HttpServlet {
        out.println("Receiving message from ["+destination+"]");
        Message msg=null;
        int count = 0;
-       int s1count=0;
-       int s2count=0;
        JMSConsumer consumer = (JMSConsumer) context.createConsumer(d);
        do { 
          // msg = consumer.receiveNoWait();
@@ -129,22 +130,32 @@ public class JmsServlet extends HttpServlet {
          }
        } while( msg != null);
 
-      out.println("Found ("+s1count+") message from [managed-server1]");
-      out.println("Found ("+s2count+") message from [managed-server2]");
+      out.println("Recorded ("+s1count+") message from [managed-server1]");
+      out.println("Recorded ("+s2count+") message from [managed-server2]");
 
-      if ( count == rcount ) {
-        out.println("Drained ("+count+") message from ["+destination+"]");
+      // Intermittently, in a single attempt all 20 messages are not 
+      // received on accouting Queue. So the logic is modified to make sure
+      // the accounting Queue get 20 messages all together with multiple 
+      // attempts. Here the s1count, s2count variables have been made static 
+      // to keep a record of the message received from managed-server1 and 
+      // managed-server2 of domain2 respectively. 
+      // Finally it make sure that s1count and s2count are same
 
-        if ( s1count == s2count ) 
+      int ccount = s1count + s2count; 
+      if ( ccount == rcount ) {
+        if ( s1count == s2count ) {
          out.println("Messages are distributed across MDB instances");
-        else 
+        } else { 
          out.println("Messages are NOT distributed across MDB instances");
-
+        }
+        // reset the message counter once all messages are received
+        s1count=0;
+        s2count=0;
       } else {
-        out.println("Found ("+count+") message on ["+destination+"] instead of ["+rcount+"]");
-     }
-    }
-
+        out.println("Total messages received so far is ["+ccount+"]");
+        out.println("Waiting for more messages to appears on accounting queue");
+       }
+      }
      } catch (Exception e) {
         out.println("Send/Receive FAILED with Unknown Exception " + e);
         e.printStackTrace();
