@@ -119,6 +119,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_SCAN;
 import static oracle.kubernetes.operator.helpers.AnnotationHelper.SHA256_ANNOTATION;
+import static oracle.kubernetes.operator.helpers.BasePodStepContext.KUBERNETES_PLATFORM_HELM_VARIABLE;
 import static oracle.kubernetes.operator.helpers.DomainIntrospectorJobTest.TEST_VOLUME_NAME;
 import static oracle.kubernetes.operator.helpers.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_STARTING;
@@ -1075,6 +1076,21 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     final String customScript = "/u01/customLiveness.sh";
     domainPresenceInfo.getDomain().getSpec().setLivenessProbeCustomScript(customScript);
     assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("LIVENESS_PROBE_CUSTOM_SCRIPT", customScript));
+  }
+
+  @Test
+  void whenOperatorHasKubernetesPlatformConfigured_createdPodSpecContainerHasKubernetesPlatformEnvVariable() {
+    TuningParametersStub.setParameter(KUBERNETES_PLATFORM_HELM_VARIABLE, "Openshift");
+    assertThat(getCreatedPodSpecContainer().getEnv(),
+            hasEnvVar(ServerEnvVars.KUBERNETES_PLATFORM, "Openshift")
+    );
+  }
+
+  @Test
+  void whenNotConfigured_KubernetesPlatform_createdPodSpecContainerHasNoKubernetesPlatformEnvVariable() {
+    assertThat(getCreatedPodSpecContainer().getEnv(),
+            not(hasEnvVar(ServerEnvVars.KUBERNETES_PLATFORM, "Openshift"))
+    );
   }
 
   private static final String OVERRIDE_DATA_DIR = "/u01/data";
