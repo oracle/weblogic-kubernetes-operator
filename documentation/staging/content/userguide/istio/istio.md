@@ -146,9 +146,9 @@ ensures that the Istio sidecar is not injected into the introspector job's pods.
  
 Starting with Istio 1.10, the networking behavior was changed in that the proxy no longer redirects 
 the traffic to the localhost interface, but instead forwards it to the network interface associated
-to the pod's IP.  
+with the pod's IP.  
 
-To learn more about changes to Istio networking beginning with Istio 1.10, see [Upcoming networking changes in Istio 1.10](https://istio.io/latest/blog/2021/upcoming-networking-changes//).
+To learn more about changes to Istio networking beginning with Istio 1.10, see [Upcoming networking changes in Istio 1.10](https://istio.io/latest/blog/2021/upcoming-networking-changes/).
 
 In order to support Istio v1.10 and later, as well as previous releases, the
 operator will:
