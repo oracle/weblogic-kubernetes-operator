@@ -13,11 +13,11 @@
 #   be a directory in the mount path:
 #     1) 'domain.spec.configuration.model.modelHome'
 #     2) 'domain.spec.configuration.model.wdtInstallHome'
-#   Default '/common'.
+#   Default '/auxiliary'.
 #
 
 FROM busybox
-ARG AUXILIARY_IMAGE_PATH=/common
+ARG AUXILIARY_IMAGE_PATH=/auxiliary
 ARG USER=oracle
 ARG USERID=1000
 ARG GROUP=root
