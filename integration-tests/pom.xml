@@ -368,6 +368,7 @@
                 <includes-failsafe>
                   **/ItFmwDomainInPVUsingWLST,
                   **/ItFmwDynamicClusterMiiDomain,
+                  **/ItFmwBigCMMiiDomain,
                   **/ItFmwDynamicDomainInPV,
                   **/ItFmwMiiDomain
                 </includes-failsafe>
