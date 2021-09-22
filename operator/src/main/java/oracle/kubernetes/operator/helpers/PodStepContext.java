@@ -325,7 +325,7 @@ public abstract class PodStepContext extends BasePodStepContext {
       if (index < 10) {
         indexStr = "0" + index;
       }
-      name = getPortNamePrefix(name) + "-" + indexStr;
+      name = portNamePrefix + "-" + indexStr;
     }
     return  name;
   }
