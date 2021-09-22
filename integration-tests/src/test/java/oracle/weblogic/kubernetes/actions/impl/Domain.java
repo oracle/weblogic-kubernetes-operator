@@ -399,11 +399,6 @@ public class Domain {
                                                 String opServiceAccount) {
     LoggingFacade logger = getLogger();
 
-    // In OKD cluster, we need to expose the external service as route and set tls termination to  passthrough 
-    //String opExternalSvc = createRouteForOKD("external-weblogic-operator-svc", opNamespace);
-    // Patch the route just created to set tls termination to passthrough
-    //setTlsTerminationForRoute("external-weblogic-operator-svc", opNamespace);
-    
     String opExternalSvc = getRouteHost(opNamespace, "external-weblogic-operator-svc"); 
     logger.info("Getting the secret of service account {0} in namespace {1}", opServiceAccount, opNamespace);
     String secretName = Secret.getSecretOfServiceAccount(opNamespace, opServiceAccount);
