@@ -905,6 +905,10 @@ class MII_DomainConfigGenerator(Generator):
       self.close()
 
   def addDomainConfig(self):
+    kubernetes_platform = self.env.getEnvOrDef("KUBERNETES_PLATFORM", "")
+    if (str(kubernetes_platform).upper() == 'OPENSHIFT'):
+      os.system("chmod -R g=u %s" % self.domain_home)
+
     # Note: only config type is needed fmwconfig, security is excluded because it's in the primordial and contain
     # all the many policies files
     packcmd = "tar -pczf /tmp/domain.tar.gz %s/config/config.xml %s/config/jdbc/ %s/config/jms %s/config/coherence " \

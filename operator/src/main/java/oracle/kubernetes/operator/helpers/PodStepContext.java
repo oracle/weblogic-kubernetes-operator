@@ -912,7 +912,7 @@ public abstract class PodStepContext extends BasePodStepContext {
    * Sets the environment variables used by operator/src/main/resources/scripts/startServer.sh
    * @param vars a list to which new variables are to be added
    */
-  void addStartupEnvVars(List<V1EnvVar> vars) {
+  void addStartupEnvVars(List<V1EnvVar> vars, TuningParameters tuningParameters) {
     addEnvVar(vars, ServerEnvVars.DOMAIN_NAME, getDomainName());
     addEnvVar(vars, ServerEnvVars.DOMAIN_HOME, getDomainHome());
     addEnvVar(vars, ServerEnvVars.ADMIN_NAME, getAsName());
@@ -929,6 +929,8 @@ public abstract class PodStepContext extends BasePodStepContext {
     Optional.ofNullable(getDataHome()).ifPresent(v -> addEnvVar(vars, ServerEnvVars.DATA_HOME, v));
     Optional.ofNullable(getServerSpec().getAuxiliaryImages()).ifPresent(cm -> addAuxiliaryImageEnv(cm, vars));
     addEnvVarIfTrue(mockWls(), vars, "MOCK_WLS");
+    Optional.ofNullable(getKubernetesPlatform(tuningParameters)).ifPresent(v ->
+            addEnvVar(vars, ServerEnvVars.KUBERNETES_PLATFORM, v));
   }
 
   protected void addAuxiliaryImageEnv(List<AuxiliaryImage> auxiliaryImageList, List<V1EnvVar> vars) {
@@ -1077,6 +1079,10 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private boolean mockWls() {
     return Boolean.getBoolean("mockWLS");
+  }
+
+  private String getKubernetesPlatform(TuningParameters tuningParameters) {
+    return tuningParameters.getKubernetesPlatform();
   }
 
   private abstract class BaseStep extends Step {
