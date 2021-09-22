@@ -161,6 +161,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
@@ -403,11 +404,8 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     getServerTopology().addNetworkAccessPoint(new NetworkAccessPoint(LONG_CHANNEL_NAME + "11", "admin", 8001, 8001));
     assertThat(
             getContainerPorts(),
-            hasItem(createContainerPort(TRUNCATED_PORT_NAME_PREFIX + "-01")));
-
-    assertThat(
-            getContainerPorts(),
-            hasItem(createContainerPort(TRUNCATED_PORT_NAME_PREFIX + "-02")));
+            hasItems(createContainerPort(TRUNCATED_PORT_NAME_PREFIX + "-01"),
+                     createContainerPort(TRUNCATED_PORT_NAME_PREFIX + "-02")));
   }
 
   @Test
@@ -416,11 +414,8 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     getServerTopology().addNetworkAccessPoint(new NetworkAccessPoint("My_Channel_Name", "admin", 8001, 8001));
     assertThat(
             getContainerPorts(),
-            hasItem(createContainerPort(TRUNCATED_PORT_NAME_PREFIX + "-01")));
-
-    assertThat(
-            getContainerPorts(),
-            hasItem(createContainerPort("my-channel-name")));
+            hasItems(createContainerPort(TRUNCATED_PORT_NAME_PREFIX + "-01"),
+                     createContainerPort("my-channel-name")));
   }
 
   protected DomainConfigurator defineExporterConfiguration() {

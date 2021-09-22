@@ -73,6 +73,7 @@ import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.operator.EventConstants.ROLL_REASON_DOMAIN_RESOURCE_CHANGED;
 import static oracle.kubernetes.operator.EventConstants.ROLL_REASON_WEBLOGIC_CONFIGURATION_CHANGED;
@@ -313,21 +314,26 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private String createContainerPortName(List<V1ContainerPort> ports, String name) {
     //Container port names can be a maximum of 15 characters in length
-    if (name.length() > LegalNames.LEGAL_CONTAINER_PORT_MAX_LENGTH) {
-      // Extract the first 12 characters to use since there is a 15 character
-      // limit to the container port name
-      String cpName = name.substring(0, 12);
+    if (name.length() > LegalNames.LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH) {
+      String portNamePrefix = getPortNamePrefix(name);
       // Find ports with the name having the same first 12 characters
       List<V1ContainerPort> containerPortsWithSamePrefix = ports.stream().filter(port ->
-              port.getName().substring(0, 12).equals(cpName)).collect(Collectors.toList());
+              portNamePrefix.equals(getPortNamePrefix(port.getName()))).collect(Collectors.toList());
       int index = containerPortsWithSamePrefix.size() + 1;
       String indexStr = String.valueOf(index);
+      // zero fill to the left for single digit index (e.g. 01)
       if (index < 10) {
         indexStr = "0" + index;
       }
-      name = cpName + "-" + indexStr;
+      name = getPortNamePrefix(name) + "-" + indexStr;
     }
     return  name;
+  }
+
+  @NotNull
+  private String getPortNamePrefix(String name) {
+    // Use first 12 characters of port name as prefix due to 15 character port name limit
+    return name.substring(0, 12);
   }
 
   Integer getListenPort() {

@@ -15,6 +15,8 @@ import oracle.kubernetes.operator.helpers.SecretType;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.utils.OperatorUtils;
 
+import static oracle.kubernetes.operator.helpers.LegalNames.LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH;
+
 class DomainValidationMessages {
 
   /**
@@ -175,8 +177,9 @@ class DomainValidationMessages {
     return getMessage(MessageKeys.RESERVED_CONTAINER_NAME, name, prefix);
   }
 
-  public static String exceedMaxContainerPortName(String domainUid, String containerName, String portName, int limit) {
-    return getMessage(MessageKeys.ILLEGAL_CONTAINER_PORT_NAME_LENGTH, domainUid, containerName, portName, limit);
+  public static String exceedMaxContainerPortName(String domainUid, String containerName, String portName) {
+    return getMessage(MessageKeys.ILLEGAL_CONTAINER_PORT_NAME_LENGTH, domainUid, containerName, portName,
+            LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH);
   }
 
 }

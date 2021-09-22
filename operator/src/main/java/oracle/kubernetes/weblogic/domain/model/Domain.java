@@ -1139,13 +1139,11 @@ public class Domain implements KubernetesObject {
     }
 
     private void checkPortNameLength(V1ContainerPort port, String name, String prefix) {
-      int limit = LegalNames.LEGAL_CONTAINER_PORT_MAX_LENGTH;
-      if (port.getName().length() > limit) {
+      if (port.getName().length() > LegalNames.LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH) {
         failures.add(DomainValidationMessages.exceedMaxContainerPortName(
                 getDomainUid(),
                 prefix + "." + name,
-                port.getName(),
-                limit));
+                port.getName()));
       }
     }
 
