@@ -295,7 +295,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   private void addContainerPort(List<V1ContainerPort> ports, NetworkAccessPoint nap) {
-    String name = LegalNames.toDns1123LegalName(nap.getName());
+    String name = createContainerPortName(ports, LegalNames.toDns1123LegalName(nap.getName()));
     addContainerPort(ports, name, nap.getListenPort(), "TCP");
 
     if (isSipProtocol(nap)) {
@@ -306,8 +306,28 @@ public abstract class PodStepContext extends BasePodStepContext {
   private void addContainerPort(List<V1ContainerPort> ports, String name,
                                 @Nullable Integer listenPort, String protocol) {
     if (listenPort != null) {
+      name = createContainerPortName(ports, name);
       ports.add(new V1ContainerPort().name(name).containerPort(listenPort).protocol(protocol));
     }
+  }
+
+  private String createContainerPortName(List<V1ContainerPort> ports, String name) {
+    //Container port names can be a maximum of 15 characters in length
+    if (name.length() > LegalNames.LEGAL_CONTAINER_PORT_MAX_LENGTH) {
+      // Extract the first 12 characters to use since there is a 15 character
+      // limit to the container port name
+      String cpName = name.substring(0, 12);
+      // Find ports with the name having the same first 12 characters
+      List<V1ContainerPort> containerPortsWithSamePrefix = ports.stream().filter(port ->
+              port.getName().substring(0, 12).equals(cpName)).collect(Collectors.toList());
+      int index = containerPortsWithSamePrefix.size() + 1;
+      String indexStr = String.valueOf(index);
+      if (index < 10) {
+        indexStr = "0" + index;
+      }
+      name = cpName + "-" + indexStr;
+    }
+    return  name;
   }
 
   Integer getListenPort() {

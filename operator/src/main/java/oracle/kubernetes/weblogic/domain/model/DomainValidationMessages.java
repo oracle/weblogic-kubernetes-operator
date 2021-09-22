@@ -174,4 +174,9 @@ class DomainValidationMessages {
   public static String reservedContainerName(String name, String prefix) {
     return getMessage(MessageKeys.RESERVED_CONTAINER_NAME, name, prefix);
   }
+
+  public static String exceedMaxContainerPortName(String domainUid, String containerName, String portName, int limit) {
+    return getMessage(MessageKeys.ILLEGAL_CONTAINER_PORT_NAME_LENGTH, domainUid, containerName, portName, limit);
+  }
+
 }
