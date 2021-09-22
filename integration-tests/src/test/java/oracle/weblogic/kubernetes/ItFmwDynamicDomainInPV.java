@@ -153,7 +153,7 @@ class ItFmwDynamicDomainInPV {
     // create FMW dynamic domain and verify
     createFmwDomainAndVerify();
     //verifyDomainReady();
-    verifyDomainReady(domainNamespace, domainUid, replicaCount);
+    verifyDomainReady(domainNamespace, domainUid, replicaCount, "nosuffix");
     // Expose the admin service external node port as  a route for OKD
     adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
     verifyEMconsoleAccess(domainNamespace, domainUid, adminSvcExtHost);
