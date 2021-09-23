@@ -367,6 +367,7 @@
                 <skipITs>false</skipITs>
                 <includes-failsafe>
                   **/ItFmwDomainInPVUsingWLST,
+                  **/ItFmwDomainInPVUsingWDT,
                   **/ItFmwDynamicClusterMiiDomain,
                   **/ItFmwBigCMMiiDomain,
                   **/ItFmwDynamicDomainInPV,
