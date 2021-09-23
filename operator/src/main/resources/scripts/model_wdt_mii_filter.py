@@ -65,10 +65,6 @@ class OfflineWlstEnv(object):
 
     self.model = model
 
-    # Dictionary to track the count of naps that have names > 15 characters
-    # key = 10 char name, value = index count
-    #self.nap_name_dict = {}
-
     # before doing anything, get each env var and verify it exists
 
     self.DOMAIN_UID               = self.getEnv('DOMAIN_UID')
