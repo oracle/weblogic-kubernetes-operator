@@ -304,6 +304,9 @@ public interface TestConstants {
   public static final boolean WEBLOGIC_SLIM =
       WEBLOGIC_IMAGE_TAG.contains("slim") ? true : false;
 
+  public static final boolean PSU_PATCH =
+      WEBLOGIC_IMAGE_TAG.contains("psu") ? true : false;
+
   public static final String WEBLOGIC_VERSION = "12.2.1.4.0";
   public static final String HTTPS_PROXY = Optional.ofNullable(System.getenv("https_proxy")).orElse("");
 }
