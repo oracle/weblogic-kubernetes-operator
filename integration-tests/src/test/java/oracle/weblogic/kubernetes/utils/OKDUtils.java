@@ -164,4 +164,16 @@ public class OKDUtils {
     getLogger().info("ingress {0} was created in namespace {1}", ingressName, namespace);
     return host;
   }
+
+  /**
+   * add security context constraints to the service account.
+   * @param serviceAccount - service account to add to scc
+   * @param namespace - namespace to which the service account belongs
+   */
+  public static void addSccToSvcAccount(String serviceAccount, String namespace) {
+    assertTrue(new Command()
+        .withParams(new CommandParams()
+            .command("oc adm policy add-scc-to-user anyuid -z " + serviceAccount + " -n " + namespace))
+        .execute(), "oc expose service failed");
+  }
 }

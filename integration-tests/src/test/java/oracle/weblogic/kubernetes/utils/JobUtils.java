@@ -32,6 +32,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.listPods;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.jobCompleted;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.addSccToSvcAccount;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createfixPVCOwnerContainer;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -99,6 +100,10 @@ public class JobUtils {
     logger.info("Running Kubernetes job to create domain for image: {0}"
             + " pvName: {1}, pvcName: {2}, domainScriptCM: {3}, namespace: {4}", image,
         pvName, pvcName, domainScriptCM, namespace);
+
+    if (OKD) {
+      addSccToSvcAccount("default", namespace);
+    }
 
     V1PodSpec podSpec = new V1PodSpec()
         .restartPolicy("Never")
