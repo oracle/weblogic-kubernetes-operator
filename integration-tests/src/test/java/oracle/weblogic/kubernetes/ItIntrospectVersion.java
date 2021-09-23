@@ -17,7 +17,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.Callable;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1Container;
@@ -46,9 +45,6 @@ import oracle.weblogic.kubernetes.utils.BuildApplication;
 import oracle.weblogic.kubernetes.utils.CommonTestUtils;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
-import org.awaitility.core.ConditionEvaluationListener;
-import org.awaitility.core.ConditionFactory;
-import org.awaitility.core.EvaluatedCondition;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -58,8 +54,6 @@ import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_PATCH;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
@@ -96,6 +90,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndS
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyServerCommunication;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
@@ -125,7 +120,6 @@ import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScript;
 import static org.apache.commons.io.FileUtils.copyDirectory;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -162,12 +156,6 @@ class ItIntrospectVersion {
   private static final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
   private static final Path tempSamplePath = Paths.get(WORK_DIR, "intros-sample-testing");
   private static final Path domainLifecycleSamplePath = Paths.get(samplePath + "/scripts/domain-lifecycle");
-
-  // create standard, reusable retry/backoff policy
-  private static final ConditionFactory withStandardRetryPolicy
-      = with().pollDelay(2, SECONDS)
-      .and().with().pollInterval(10, SECONDS)
-      .atMost(10, MINUTES).await();
 
   private static Path clusterViewAppPath;
   private static LoggingFacade logger = null;
@@ -397,17 +385,15 @@ class ItIntrospectVersion {
     String hostAndPort = getHostAndPort(adminSvcExtHost, serviceNodePort);
     logger.info("hostAndPort = {0} ", hostAndPort);
 
-    withStandardRetryPolicy.conditionEvaluationListener(
-        condition -> logger.info("Deploying the application using Rest"
-            + "(elapsed time {0} ms, remaining time {1} ms)",
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
-        .until((Callable<Boolean>) () -> {
-          ExecResult result = assertDoesNotThrow(() -> deployUsingRest(hostAndPort, 
-                       ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
-                       targets, clusterViewAppPath, null, "clusterview"));
+    testUntil(
+        () -> {
+          ExecResult result = assertDoesNotThrow(() -> deployUsingRest(hostAndPort,
+              ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
+              targets, clusterViewAppPath, null, "clusterview"));
           return result.stdout().equals("202");
-        });
+        },
+        logger,
+        "Deploying the application using Rest");
 
     List<String> managedServerNames = new ArrayList<String>();
     for (int i = 1; i <= replicaCount; i++) {
@@ -467,18 +453,15 @@ class ItIntrospectVersion {
     checkPodDoesNotExist(introspectPodNameBase, domainUid, introDomainNamespace);
 
     //verify the maximum cluster size is updated to expected value
-    withStandardRetryPolicy.conditionEvaluationListener(new ConditionEvaluationListener() {
-      @Override
-      public void conditionEvaluated(EvaluatedCondition condition) {
-        logger.info("Waiting for Domain.status.clusters.{0}.maximumReplicas to be {1}",
-            clusterName, 3);
-      }
-    })
-        .until((Callable<Boolean>) () -> {
-              Domain res = getDomainCustomResource(domainUid, introDomainNamespace);
-              return (res.getStatus().getClusters().get(0).getMaximumReplicas() == 3);
-            }
-        );
+    testUntil(
+        () -> {
+          Domain res = getDomainCustomResource(domainUid, introDomainNamespace);
+          return (res.getStatus().getClusters().get(0).getMaximumReplicas() == 3);
+        },
+        logger,
+        "Domain.status.clusters.{0}.maximumReplicas to be {1}",
+        clusterName,
+        3);
 
     // verify the 3rd server pod comes up
     checkServiceExists(managedServerPodNamePrefix + 3, introDomainNamespace);
@@ -1286,12 +1269,8 @@ class ItIntrospectVersion {
     String url = "http://" + hostAndPort
         + "/clusterview/ClusterViewServlet?user=" + user + "&password=" + password;
 
-    withStandardRetryPolicy.conditionEvaluationListener(
-        condition -> logger.info("Verifying the health of all cluster members"
-            + "(elapsed time {0} ms, remaining time {1} ms)",
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
-        .until((Callable<Boolean>) () -> {
+    testUntil(
+        () -> {
           HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(url, true));
           if (response.statusCode() != 200) {
             logger.info("Response code is not 200 retrying...");
@@ -1307,7 +1286,9 @@ class ItIntrospectVersion {
             }
           }
           return health;
-        });
+        },
+        logger,
+        "Verifying the health of all cluster members");
   }
 
   private void verifyIntrospectVersionLabelInPod(int replicaCount) {

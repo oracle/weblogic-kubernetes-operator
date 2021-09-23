@@ -49,6 +49,9 @@ data:
   {{- if .tokenReviewAuthentication }}
   tokenReviewAuthentication: {{ .tokenReviewAuthentication | quote }}
   {{- end }}
+  {{- if .kubernetesPlatform }}
+  kubernetesPlatform: {{ .kubernetesPlatform | quote }}
+  {{- end }}
 kind: "ConfigMap"
 metadata:
   labels:

@@ -33,6 +33,8 @@ public interface TuningParameters extends Map<String, String> {
 
   FeatureGates getFeatureGates();
 
+  String getKubernetesPlatform();
+
   class MainTuning {
     public final int initializationRetryDelaySeconds;
     public final int domainPresenceFailureRetrySeconds;

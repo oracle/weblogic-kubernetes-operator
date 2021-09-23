@@ -214,42 +214,35 @@
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>
-                   **/ItCoherenceTests,
+                   **/ItExternalLbTunneling,
+                   **/ItMiiAuxiliaryImage,
+                   **/ItMiiAuxiliaryImageCluster,
+                   **/ItMiiSampleWlsAux,
+                   **/ItMiiCustomSslStore,
+                   **/ItMiiServiceMigration,
+                   **/ItRemoteConsole,
                    **/ItConfigDistributionStrategy,
                    **/ItCrossDomainTransaction,
                    **/ItElasticLogging,
                    **/ItElasticLoggingFluentd,
                    **/ItExternalRmiTunneling,
-                   **/ItInitContainers,
                    **/ItIntrospectVersion,
-                   **/ItIstioCrossDomainTransaction,
-                   **/ItIstioDomainInImage,
+                   **/ItCrossDomainTransaction,
                    **/ItIstioDomainInPV,
                    **/ItIstioMiiDomain,
-                   **/ItIstioTwoDomainsInImage,
-                   **/ItKubernetesEvents,
-                   **/ItManageNameSpace,
                    **/ItManagedCoherence,
                    **/ItMiiDomain,
-                   **/ItMiiDomainModelInPV,
                    **/ItMiiDynamicUpdate,
-                   **/ItMiiMultiModel,
-                   **/ItMiiSample,
+                   **/ItMiiSampleWlsMain,
                    **/ItMiiUpdateDomainConfig,
                    **/ItMonitoringExporter,
-                   **/ItOperatorRestart,
                    **/ItParameterizedDomain,
-                   **/ItPodTemplates,
-                   **/ItPodsRestart,
                    **/ItPodsShutdownOption,
                    **/ItProductionSecureMode,
                    **/ItWlsSamples,
-                   **/ItServerStartPolicy,
                    **/ItSessionMigration,
                    **/ItStickySession,
-                   **/ItSystemResOverrides,
-                   **/ItTwoDomainsLoadBalancer,
-                   **/ItUsabilityOperatorHelmChart
+                   **/ItSystemResOverrides
                 </includes-failsafe>
             </properties>
         </profile>
@@ -290,18 +283,58 @@
             </properties>
         </profile>
         <profile>
+            <id>resilience</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                  **/ItResilience
+               </includes-failsafe>
+            </properties>
+        </profile>
+        <profile>
             <id>kind-sequential</id>
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>
                   **/ItT3Channel,
                   **/ItDedicatedMode,
-                  **/ItOpUpgradeFmwDomainInPV,
+                  **/ItOperatorFmwUpgrade,
                   **/ItOperatorWlsUpgrade,
                   **/ItFmwDynamicDomainInPV,
-                  **/ItFmwDomainInPVUsingWDT
+                  **/ItFmwDomainInPVUsingWDT,
+                  **/ItMiiSampleFmwMain
                 </includes-failsafe>
             </properties>
         </profile>
+        <profile>
+            <id>wko-olcne-cert</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                   **/ItConfigDistributionStrategy,
+                   **/ItCrossDomainTransaction,
+                   **/ItElasticLogging,
+                   **/ItElasticLoggingFluentd,
+                   **/ItIntrospectVersion,
+                   **/ItIstioDomainInPV,
+                   **/ItIstioMiiDomain,
+                   **/ItMiiAuxiliaryImage,
+                   **/ItMiiAuxiliaryImageCluster,
+                   **/ItMiiSampleWlsAux,
+                   **/ItMiiServiceMigration,
+                   **/ItMiiDomain,
+                   **/ItMiiDynamicUpdate,
+                   **/ItMiiSampleWlsMain,
+                   **/ItMiiUpdateDomainConfig,
+                   **/ItMonitoringExporter,
+                   **/ItParameterizedDomain,
+                   **/ItPodsShutdownOption,
+                   **/ItProductionSecureMode,
+                   **/ItWlsSamples,
+                   **/ItSessionMigration,
+                   **/ItSystemResOverrides
+                </includes-failsafe>
+            </properties>
+        </profile>        
     </profiles>
 </project>
