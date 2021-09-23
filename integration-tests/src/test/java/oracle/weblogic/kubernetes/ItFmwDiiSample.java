@@ -9,10 +9,10 @@ import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
-//import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeUnit;
 import java.util.stream.Stream;
 
-//import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -31,32 +31,26 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
-//import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
-//import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
-//import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
-//import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
+import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
-import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyEMconsoleAccess;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
-import static oracle.weblogic.kubernetes.utils.ItFmwSampleUtils.createRcuSchema;
-import static oracle.weblogic.kubernetes.utils.ItFmwSampleUtils.setupDBBySample;
-import static oracle.weblogic.kubernetes.utils.ItFmwSampleUtils.setupSample;
-import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
-//import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-//import static org.apache.commons.io.FileUtils.copyDirectory;
-//import static org.apache.commons.io.FileUtils.deleteDirectory;
+import static org.apache.commons.io.FileUtils.copyDirectory;
+import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -71,7 +65,7 @@ public class ItFmwDiiSample {
   private static String dbNamespace = null;
   private static String domainNamespace = null;
 
-  //private static final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
+  private static final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
   private static final Path tempSamplePath = Paths.get(WORK_DIR, "fmw-diisample-testing");
 
   private static final String RCUSYSUSERNAME = "sys";
@@ -88,8 +82,6 @@ public class ItFmwDiiSample {
   private static Stream<String> paramProvider() {
     return Arrays.stream(params);
   }
-
-  private String adminSvcExtHost = null;
 
   /**
    * Start DB service and create RCU schema.
@@ -120,7 +112,7 @@ public class ItFmwDiiSample {
     logger.info("Start DB and for namespace: {0}, "
             + "dbImage: {2},  fmwImage: {3}, dbPort: {4} ", dbNamespace,
         DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC, dbPort);
-    assertDoesNotThrow(() -> setupDBBySample(DB_IMAGE_TO_USE_IN_SPEC, dbNamespace, dbPort, tempSamplePath),
+    assertDoesNotThrow(() -> setupDBBySample(DB_IMAGE_TO_USE_IN_SPEC, dbNamespace, dbPort),
         String.format("Failed to create DB in the namespace %s with dbPort %d ",
             dbNamespace, dbPort));
 
@@ -132,8 +124,7 @@ public class ItFmwDiiSample {
 
       logger.info("Create RCU schema with fmwImage: {0}, rcuSchemaPrefix: {1}, dbUrl: {2}, "
           + " dbNamespace: {3}:", FMWINFRA_IMAGE_TO_USE_IN_SPEC, rcuSchemaPrefix, dbUrl, dbNamespace);
-      assertDoesNotThrow(() -> createRcuSchema(FMWINFRA_IMAGE_TO_USE_IN_SPEC, rcuSchemaPrefix, dbUrl,
-          dbNamespace, tempSamplePath),
+      assertDoesNotThrow(() -> createRcuSchema(FMWINFRA_IMAGE_TO_USE_IN_SPEC, rcuSchemaPrefix, dbUrl, dbNamespace),
           String.format("Failed to create RCU schema for prefix %s in the namespace %s with dbUrl %s",
               rcuSchemaPrefix, dbNamespace, dbUrl));
     }
@@ -161,7 +152,7 @@ public class ItFmwDiiSample {
     String script = model.split(":")[0]; // wlst | wdt way of creating domain
 
     //copy sample a temporary directory
-    setupSample(tempSamplePath);
+    setupSample();
 
     //create WebLogic secrets for the domain
     createSecretWithUsernamePassword(domainUid + "-weblogic-credentials", domainNamespace,
@@ -181,7 +172,7 @@ public class ItFmwDiiSample {
     createDomainAndVerify(domainUid, sampleBase);
   }
 
-  private void createDomainAndVerify(String domainUid, Path sampleBase) {
+  private void createDomainAndVerify(String domainName, Path sampleBase) {
     // run create-domain.sh to create domain.yaml file
     logger.info("Run create-domain.sh to create domain.yaml file");
     CommandParams params = new CommandParams().defaults();
@@ -201,24 +192,24 @@ public class ItFmwDiiSample {
     //If the tests are running in kind cluster, push the image to kind registry
     if (KIND_REPO != null) {
       String taggedImage = FMWINFRA_IMAGE_TO_USE_IN_SPEC.replaceAll("localhost", "domain-home-in-image");
-      String newImage = KIND_REPO + "domain-in-image:" + domainUid;
+      String newImage = KIND_REPO + "domain-in-image:" + domainName;
       testUntil(
           tagAndPushToKind(taggedImage, newImage),
           logger,
           "tagAndPushToKind for image {0} to be successful",
           newImage);
       assertDoesNotThrow(() -> replaceStringInFile(
-          Paths.get(sampleBase.toString(), "weblogic-domains/" + domainUid + "/domain.yaml").toString(),
+          Paths.get(sampleBase.toString(), "weblogic-domains/" + domainName + "/domain.yaml").toString(),
           taggedImage, newImage));
       assertDoesNotThrow(() -> logger.info(Files.readString(
-          Paths.get(sampleBase.toString(), "weblogic-domains/" + domainUid + "/domain.yaml"))));
+          Paths.get(sampleBase.toString(), "weblogic-domains/" + domainName + "/domain.yaml"))));
     }
 
     // run kubectl to create the domain
     logger.info("Run kubectl to create the domain");
     params = new CommandParams().defaults();
     params.command("kubectl apply -f "
-            + Paths.get(sampleBase.toString(), "weblogic-domains/" + domainUid + "/domain.yaml").toString());
+            + Paths.get(sampleBase.toString(), "weblogic-domains/" + domainName + "/domain.yaml").toString());
 
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create domain custom resource");
@@ -226,33 +217,31 @@ public class ItFmwDiiSample {
     // wait for the domain to exist
     logger.info("Checking for domain custom resource in namespace {0}", domainNamespace);
     testUntil(
-        domainExists(domainUid, DOMAIN_VERSION, domainNamespace),
+        domainExists(domainName, DOMAIN_VERSION, domainNamespace),
         logger,
         "domain {0} to be created in namespace {1}",
-        domainUid,
+        domainName,
         domainNamespace);
 
     final String adminServerName = "admin-server";
-    final String adminServerPodName = domainUid + "-" + adminServerName;
+    final String adminServerPodName = domainName + "-" + adminServerName;
 
     final String managedServerNameBase = "managed-server";
-    String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
+    String managedServerPodNamePrefix = domainName + "-" + managedServerNameBase;
     int replicaCount = 2;
 
     // verify the admin server service and pod is created
-    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, domainName, domainNamespace);
 
     // verify managed server services created and pods are ready
     for (int i = 1; i <= replicaCount; i++) {
-      checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainName, domainNamespace);
     }
-    // Expose the admin service external node port as  a route for OKD
-    adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
-    verifyEMconsoleAccess(domainNamespace, domainUid, adminSvcExtHost);
+    checkAccessToEMconsole(adminServerPodName);
   }
 
   // copy samples directory to a temporary location
-  /*private static void setupSample() {
+  private static void setupSample() {
     assertDoesNotThrow(() -> {
       logger.info("Deleting and recreating {0}", tempSamplePath);
       deleteDirectory(tempSamplePath.toFile());
@@ -268,7 +257,7 @@ public class ItFmwDiiSample {
         .withParams(new CommandParams()
             .command(command))
         .execute(), "Failed to chmod tempSamplePath");
-  }*/
+  }
 
   private void updateDomainInputsFile(String domainUid, Path sampleBase, String script) {
     final int t3ChannelPort = getNextFreePort();
@@ -304,7 +293,6 @@ public class ItFmwDiiSample {
     });
   }
 
-  /*
   /**
    * Start Oracle DB instance, create rcu pod and load database schema in the specified namespace.
    *
@@ -314,7 +302,7 @@ public class ItFmwDiiSample {
    * @throws ApiException if any error occurs when setting up RCU database
    */
 
-  /*private static void setupDBBySample(String dbImage, String dbNamespace, int dbPort) throws ApiException {
+  private static void setupDBBySample(String dbImage, String dbNamespace, int dbPort) throws ApiException {
 
     setupSample();
     // create pull secrets when running in non Kind Kubernetes cluster
@@ -324,9 +312,8 @@ public class ItFmwDiiSample {
     logger.info("Start Oracle DB with dbImage: {0}, dbPort: {1}, dbNamespace: {2}",
         dbImage, dbPort, dbNamespace);
     startOracleDB(dbImage, dbPort, dbNamespace);
-  }*/
+  }
 
-  /*
   /**
    * Start Oracle DB pod and service in the specified namespace.
    *
@@ -334,7 +321,7 @@ public class ItFmwDiiSample {
    * @param dbPort NodePort of DB
    * @param dbNamespace namespace where DB instance is going to start
    */
-  /*private static synchronized void startOracleDB(String dbBaseImageName, int dbPort, String dbNamespace) {
+  private static synchronized void startOracleDB(String dbBaseImageName, int dbPort, String dbNamespace) {
 
     Path dbSamplePathBase = Paths.get(tempSamplePath.toString(), "/scripts/create-oracle-db-service/");
     String script = Paths.get(dbSamplePathBase.toString(),  "start-db-service.sh").toString();
@@ -355,9 +342,8 @@ public class ItFmwDiiSample {
 
     // sleep for a while to make sure the DB pod is created
     assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(10));
-  }*/
+  }
 
-  /*
   /**
    * Create a RCU schema in the namespace.
    *
@@ -366,7 +352,7 @@ public class ItFmwDiiSample {
    * @param dbUrl URL of DB
    * @param dbNamespace namespace of DB where RCU is
    */
-  /*private static void createRcuSchema(String fmwBaseImageName, String rcuPrefix, String dbUrl,
+  private static void createRcuSchema(String fmwBaseImageName, String rcuPrefix, String dbUrl,
       String dbNamespace) {
 
     Path rcuSamplePathBase = Paths.get(tempSamplePath.toString(), "/scripts/create-rcu-schema");
@@ -387,9 +373,9 @@ public class ItFmwDiiSample {
             .saveResults(true)
             .redirect(true))
         .execute(), "Failed to execute command: " + command);
-  }*/
+  }
 
-  /*private void checkAccessToEMconsole(String adminServerPodName) {
+  private void checkAccessToEMconsole(String adminServerPodName) {
     //check access to the em console: http://hostname:port/em
     int nodePort = getServiceNodePort(
            domainNamespace, getExternalServicePodName(adminServerPodName), "default");
@@ -402,7 +388,7 @@ public class ItFmwDiiSample {
     logger.info("Executing default nodeport curl command {0}", curlCmd1);
     assertTrue(callWebAppAndWaitTillReady(curlCmd1, 5), "Calling web app failed");
     logger.info("EM console is accessible thru default service");
-  }*/
+  }
 
   private Callable<Boolean> tagAndPushToKind(String originalImage, String taggedImage) {
     return (() -> {
