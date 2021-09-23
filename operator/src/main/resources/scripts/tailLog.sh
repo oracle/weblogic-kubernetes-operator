@@ -10,6 +10,7 @@
 #
 
 echo $$ > $2
+chmod g-wx,o-rwx $2
 
 while true ; do
   if [ -f $1 ]; then
