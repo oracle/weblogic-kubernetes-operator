@@ -62,10 +62,13 @@ public class ServerEnvVars {
   /** If present, pod scripts will watch for changes to override configurations and move them into place. */
   public static final String DYNAMIC_CONFIG_OVERRIDE = "DYNAMIC_CONFIG_OVERRIDE";
 
+  public static final String KUBERNETES_PLATFORM = "KUBERNETES_PLATFORM";
+
   private static final List<String> RESERVED_NAMES = Arrays.asList(
         DOMAIN_UID, DOMAIN_NAME, DOMAIN_HOME, NODEMGR_HOME, SERVER_NAME, SERVICE_NAME,
         ADMIN_NAME, AS_SERVICE_NAME, ADMIN_PORT, ADMIN_PORT_SECURE, ADMIN_SERVER_PORT_SECURE,
-        LOG_HOME, SERVER_OUT_IN_POD_LOG, DATA_HOME, ACCESS_LOG_IN_LOG_HOME, DYNAMIC_CONFIG_OVERRIDE);
+        LOG_HOME, SERVER_OUT_IN_POD_LOG, DATA_HOME, ACCESS_LOG_IN_LOG_HOME, DYNAMIC_CONFIG_OVERRIDE,
+        KUBERNETES_PLATFORM);
 
   static boolean isReserved(String name) {
     return RESERVED_NAMES.contains(name);

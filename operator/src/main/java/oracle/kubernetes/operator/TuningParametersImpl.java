@@ -16,6 +16,8 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 
+import static oracle.kubernetes.operator.helpers.BasePodStepContext.KUBERNETES_PLATFORM_HELM_VARIABLE;
+
 public class TuningParametersImpl extends ConfigMapConsumer implements TuningParameters {
   public static final int DEFAULT_CALL_LIMIT = 50;
 
@@ -28,6 +30,7 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
   private WatchTuning watch = null;
   private PodTuning pod = null;
   private FeatureGates featureGates = null;
+  private String kubernetesPlatform = null;
 
   private TuningParametersImpl(ScheduledExecutorService executorService) {
     super(executorService);
@@ -95,6 +98,8 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
     FeatureGates featureGates =
         new FeatureGates(generateFeatureGates(get("featureGates")));
 
+    String kubernetesPlatform = get(KUBERNETES_PLATFORM_HELM_VARIABLE);
+
     lock.writeLock().lock();
     try {
       if (!main.equals(this.main)
@@ -109,6 +114,7 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
       this.watch = watch;
       this.pod = pod;
       this.featureGates = featureGates;
+      this.kubernetesPlatform = kubernetesPlatform;
     } finally {
       lock.writeLock().unlock();
     }
@@ -171,6 +177,16 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
     lock.readLock().lock();
     try {
       return featureGates;
+    } finally {
+      lock.readLock().unlock();
+    }
+  }
+
+  @Override
+  public String getKubernetesPlatform() {
+    lock.readLock().lock();
+    try {
+      return kubernetesPlatform;
     } finally {
       lock.readLock().unlock();
     }
