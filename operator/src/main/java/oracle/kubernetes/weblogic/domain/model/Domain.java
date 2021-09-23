@@ -21,6 +21,7 @@ import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -833,6 +834,7 @@ public class Domain implements KubernetesObject {
       addDuplicateAuxiliaryImageVolumeNames();
       verifyLivenessProbeSuccessThreshold();
       verifyContainerNameValidInPodSpec();
+      verifyContainerPortNameValidInPodSpec();
 
       return failures;
     }
@@ -1115,6 +1117,33 @@ public class Domain implements KubernetesObject {
     private void isContainerNameReserved(V1Container container, String prefix) {
       if (container.getName().equals(WLS_CONTAINER_NAME)) {
         failures.add(DomainValidationMessages.reservedContainerName(container.getName(), prefix));
+      }
+    }
+
+    private void verifyContainerPortNameValidInPodSpec() {
+      getAdminServerSpec().getContainers().forEach(container ->
+              areContainerPortNamesValid(container, ADMIN_SERVER_POD_SPEC_PREFIX + ".containers"));
+      getSpec().getClusters().forEach(cluster ->
+              cluster.getContainers().forEach(container ->
+                      areContainerPortNamesValid(container, CLUSTER_SPEC_PREFIX + "[" + cluster.getClusterName()
+                              + "].serverPod.containers")));
+      getSpec().getManagedServers().forEach(managedServer ->
+              managedServer.getContainers().forEach(container ->
+                      areContainerPortNamesValid(container, MS_SPEC_PREFIX + "[" + managedServer.getServerName()
+                              + "].serverPod.containers")));
+    }
+
+    private void areContainerPortNamesValid(V1Container container, String prefix) {
+      Optional.ofNullable(container.getPorts()).ifPresent(portList ->
+              portList.forEach(port -> checkPortNameLength(port, container.getName(), prefix)));
+    }
+
+    private void checkPortNameLength(V1ContainerPort port, String name, String prefix) {
+      if (port.getName().length() > LegalNames.LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH) {
+        failures.add(DomainValidationMessages.exceedMaxContainerPortName(
+                getDomainUid(),
+                prefix + "." + name,
+                port.getName()));
       }
     }
 
