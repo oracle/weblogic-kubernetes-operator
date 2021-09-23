@@ -54,6 +54,9 @@ public class LegalNames {
   // The maximum length of a legal DNS label name
   public static final int LEGAL_DNS_LABEL_NAME_MAX_LENGTH = 63;
 
+  // The maximum length of a container port name
+  public static final int LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH = 15;
+
   private static final String DNS_NAME_REGEXP = "[a-z0-9]([-a-z0-9]*[a-z0-9])?";
   private static final Pattern DNS_NAME_PATTERN = Pattern.compile(DNS_NAME_REGEXP);
 
