@@ -92,6 +92,7 @@ import static oracle.kubernetes.operator.helpers.CompatibilityCheck.Compatibilit
 import static oracle.kubernetes.operator.helpers.CompatibilityCheck.CompatibilityScope.UNKNOWN;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_STARTING;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.POD_CYCLE_STARTING;
+import static oracle.kubernetes.operator.helpers.LegalNames.LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH;
 
 public abstract class PodStepContext extends BasePodStepContext {
 
@@ -314,7 +315,7 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private String createContainerPortName(List<V1ContainerPort> ports, String name) {
     //Container port names can be a maximum of 15 characters in length
-    if (name.length() > LegalNames.LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH) {
+    if (name.length() > LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH) {
       String portNamePrefix = getPortNamePrefix(name);
       // Find ports with the name having the same first 12 characters
       List<V1ContainerPort> containerPortsWithSamePrefix = ports.stream().filter(port ->
@@ -324,6 +325,10 @@ public abstract class PodStepContext extends BasePodStepContext {
       // zero fill to the left for single digit index (e.g. 01)
       if (index < 10) {
         indexStr = "0" + index;
+      } else if (index >= 100) {
+        LOGGER.severe(MessageKeys.ILLEGAL_NETWORK_CHANNEL_NAME_LENGTH, getDomainUid(), getServerName(),
+                name, LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH);
+        return name;
       }
       name = portNamePrefix + "-" + indexStr;
     }
