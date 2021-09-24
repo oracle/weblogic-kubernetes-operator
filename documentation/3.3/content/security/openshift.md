@@ -116,3 +116,6 @@ see [OpenShift]({{<relref  "/userguide/platforms/environments#openshift">}}).
 #### Using a dedicated namespace
 
 When the user that installs an individual instance of the operator does not have the required privileges to create resources at the Kubernetes cluster level, a dedicated namespace can be used for the operator instance and all the WebLogic domains that it manages. For more details about the `dedicated` setting, please refer to [Operator Helm configuration values]({{< relref "/userguide/managing-operators/using-helm#operator-helm-configuration-values" >}}).
+
+#### Set the Helm chart property `kubernetesPlatorm` to `OpenShift`
+Beginning with operator version 3.3.2, set the operator `kubernetesPlatform` Helm chart property to `OpenShift`. This property accommodates OpenShift security requirements. For more information, see [Operator Helm configuration values]({{<relref "/userguide/managing-operators/using-helm#operator-helm-configuration-values">}}).
