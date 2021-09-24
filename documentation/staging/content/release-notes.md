@@ -6,7 +6,7 @@ draft: false
 
 ### Releases
 
-| Date | Version | Introduces backward incompatibilities? | Change |
+| Date | Version | Introduces backward incompatibilities? | Change - See also, [Change log](#change-log). |
 | --- | --- | --- | --- |
 | September 24, 2021 | v3.3.2 | no | Istio 1.10 support, enhanced liveness and readiness probe customization to support customizing failure thresholds, and additional validations. |
 | August 23, 2021 | v3.3.1 | no | Resolved an issue related to managed Coherence cluster formation when using Istio and another issue related to Secret and ConfigMap validation. |
