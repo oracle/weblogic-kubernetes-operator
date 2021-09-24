@@ -879,7 +879,7 @@ If you are performing an online update to a running domain&amp;rsquo;s WebLogic 
       <pubDate>Fri, 15 Mar 2019 11:25:28 -0400</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/release-notes/</guid>
-      <description>Releases    Date Version Introduces backward incompatibilities? Change     September 24, 2021 v3.3.2 no Istio 1.10 support, enhanced liveness and readiness probe customization to support customizing failure thresholds, and additional validations.   August 23, 2021 v3.3.1 no Resolved an issue related to managed Coherence cluster formation when using Istio and another issue related to Secret and ConfigMap validation.   July 20, 2021 v3.3.0 no Auxiliary image support.</description>
+      <description>Releases    Date Version Introduces backward incompatibilities? Change - See also, Change log.     September 24, 2021 v3.3.2 no Istio 1.10 support, enhanced liveness and readiness probe customization to support customizing failure thresholds, and additional validations.   August 23, 2021 v3.3.1 no Resolved an issue related to managed Coherence cluster formation when using Istio and another issue related to Secret and ConfigMap validation.   July 20, 2021 v3.</description>
     </item>
     
   </channel>
