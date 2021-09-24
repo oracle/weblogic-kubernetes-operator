@@ -12,20 +12,20 @@
     <title>Release Notes :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1632248091" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1632248091" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1632248091" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1632248091" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1632248091" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1632248091" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1632248091" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1632248091" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1632248091" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1632248091" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1632503381" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1632503381" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1632503381" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1632503381" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1632503381" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1632503381" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1632503381" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1632503381" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1632503381" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1632503381" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1632248091"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1632503381"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1632248091"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1632248091"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1632503381"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1632503381"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1632248091"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1632503381"></script>
 
     
   </div>
@@ -953,6 +953,27 @@
       <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/wlst/" title="Use WLST" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/wlst/">
         Use WLST
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/port-forward/" title="Use port forwarding" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/port-forward/">
+        Use port forwarding
         
         </a>
     </li>
@@ -2611,9 +2632,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/" title="Channels" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/" title="External network access security" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/">
-        Channels
+        External network access security
         
         </a>
     </li>
@@ -3198,6 +3219,12 @@
 </thead>
 <tbody>
 <tr>
+<td>September 24, 2021</td>
+<td>v3.3.2</td>
+<td>no</td>
+<td>Istio 1.10 support, enhanced liveness and readiness probe customization to support customizing failure thresholds, and additional validations.</td>
+</tr>
+<tr>
 <td>August 23, 2021</td>
 <td>v3.3.1</td>
 <td>no</td>
@@ -3398,6 +3425,14 @@
 </tbody>
 </table>
 <h3 id="change-log">Change log</h3>
+<h4 id="operator-332">Operator 3.3.2</h4>
+<ul>
+<li>Support for the networking changes included with Istio 1.10 (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/2538">#2538</a>).</li>
+<li>Support for accessing the WebLogic Server Administration Console through <code>kubectl port-forward</code> (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/2520">#2520</a>).</li>
+<li>Prevent insecure file system warnings related to the &ldquo;umask 027&rdquo; requirement (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/2533">#2533</a>).</li>
+<li>Enhanced <a href="https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/liveness-readiness-probe-customization/">liveness and readiness probe customization</a> to support customizing failure thresholds (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/2521">#2521</a>).</li>
+<li>Additional validation for container port names and WebLogic Network Access Point (NAP) names that will be used as container ports (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/2542">#2542</a>).</li>
+</ul>
 <h4 id="operator-331">Operator 3.3.1</h4>
 <ul>
 <li>Resolved an issue related to managed Coherence cluster formation when using Istio (<a href="https://github.com/oracle/weblogic-kubernetes-operator/pull/2499">#2499</a>).</li>
@@ -4155,6 +4190,22 @@
                     
                     
 
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
                     
                         
             
@@ -5633,19 +5684,19 @@
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1632248091"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1632248091"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1632248091"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1632248091"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1632248091"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1632248091"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1632503381"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1632503381"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1632503381"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1632503381"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1632503381"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1632503381"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1632248091"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1632248091"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1632248091"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1632503381"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1632503381"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1632503381"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1632248091"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1632503381"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

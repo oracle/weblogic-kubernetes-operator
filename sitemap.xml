@@ -170,6 +170,9 @@
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/userguide/cicd/mutate-the-domain-layer/</loc>
     <lastmod>2019-04-11T13:43:41-04:00</lastmod>
   </url><url>
+    <loc>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/port-forward/</loc>
+    <lastmod>2019-02-23T17:39:15-05:00</lastmod>
+  </url><url>
     <loc>https://oracle.github.io/weblogic-kubernetes-operator/security/service-accounts/</loc>
     <lastmod>2019-02-23T17:36:12-05:00</lastmod>
   </url><url>

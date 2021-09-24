@@ -12,20 +12,20 @@
     <title>Istio support :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1632248091" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1632248091" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1632248091" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1632248091" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1632248091" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1632248091" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1632248091" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1632248091" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1632248091" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1632248091" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1632503381" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1632503381" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1632503381" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1632503381" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1632503381" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1632503381" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1632503381" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1632503381" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1632503381" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1632503381" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1632248091"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1632503381"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1632248091"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1632248091"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1632503381"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1632503381"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1632248091"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1632503381"></script>
 
     
   </div>
@@ -953,6 +953,27 @@
       <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/wlst/" title="Use WLST" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/wlst/">
         Use WLST
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/port-forward/" title="Use port forwarding" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/port-forward/">
+        Use port forwarding
         
         </a>
     </li>
@@ -2611,9 +2632,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/" title="Channels" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/" title="External network access security" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/">
-        Channels
+        External network access security
         
         </a>
     </li>
@@ -3379,6 +3400,65 @@ channels using configuration overrides.</p>
 </table>
 <p>Additionally, when Istio support is enabled for a domain, the operator
 ensures that the Istio sidecar is not injected into the introspector job&rsquo;s pods.</p>
+<h4 id="support-for-network-changes-in-istio-v110-and-later">Support for network changes in Istio v1.10 and later</h4>
+<p>Starting with Istio 1.10, the networking behavior was changed in that the proxy no longer redirects
+the traffic to the localhost interface, but instead forwards it to the network interface associated
+with the pod&rsquo;s IP.</p>
+<p>To learn more about changes to Istio networking beginning with Istio 1.10, see <a href="https://istio.io/latest/blog/2021/upcoming-networking-changes/">Upcoming networking changes in Istio 1.10</a>.</p>
+<p>In order to support Istio v1.10 and later, as well as previous releases, the
+operator will:</p>
+<ul>
+<li>Add an additional WebLogic HTTP protocol network channel for the readiness probe that is bound to the localhost network interface.</li>
+<li>Add additional WebLogic network channels, bound to the localhost network interface, for each defined custom network channel.</li>
+<li>Continue to automatically add the network channels described above in <a href="#how-istio-enabled-domains-differ-from-regular-domains">How Istio-enabled domains differ from regular domains</a></li>
+</ul>
+<p>When adding additional WebLogic network channels for the readiness probe and any defined custom channels,
+the name of the additional channel will be appended with &lsquo;-lhNN&rsquo;, where NN represents
+a two digit value for uniqueness.</p>
+<p>For example, the additional WebLogic HTTP protocol network channel for the readiness probe would be
+defined as follows:</p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Port</th>
+<th>Listening address</th>
+<th>Protocol</th>
+<th>Exposed as a container port</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>http-probe-lh01</code></td>
+<td>From configuration Istio <code>readinessPort</code></td>
+<td><code>127.0.0.1</code></td>
+<td><code>http</code></td>
+<td>No</td>
+</tr>
+</tbody>
+</table>
+<p>As another example, for a custom WebLogic network channel defined as <code>T3Channel</code> with port <code>5556</code>
+and protocol <code>t3</code>, the additional channel would be defined as follows:</p>
+<table>
+<thead>
+<tr>
+<th>Name</th>
+<th>Port</th>
+<th>Listening address</th>
+<th>Protocol</th>
+<th>Exposed as a container port</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><code>T3Channel-lh01</code></td>
+<td><code>5556</code></td>
+<td><code>127.0.0.1</code></td>
+<td><code>t3</code></td>
+<td>Yes</td>
+</tr>
+</tbody>
+</table>
 <h3 id="apply-the-domain-yaml-file">Apply the Domain YAML file</h3>
 <p>After the Domain YAML file is modified, apply it by:</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl apply -f domain.yaml
@@ -4070,6 +4150,22 @@ as shown in the image above.</p>
                     
                     
 
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
                     
                         
             
@@ -5554,19 +5650,19 @@ as shown in the image above.</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1632248091"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1632248091"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1632248091"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1632248091"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1632248091"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1632248091"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1632503381"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1632503381"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1632503381"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1632503381"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1632503381"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1632503381"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1632248091"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1632248091"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1632248091"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1632503381"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1632503381"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1632503381"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1632248091"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1632503381"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

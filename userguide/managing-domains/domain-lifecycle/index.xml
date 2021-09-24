@@ -53,7 +53,7 @@ In order to manage the operation of WebLogic domains in Kubernetes, the Oracle W
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/liveness-readiness-probe-customization/</guid>
       <description>This document describes how to customize the liveness and readiness probes for WebLogic Server instance Pods.
-Contents  Liveness probe customization Readiness probe customization  Liveness probe customization The liveness probe is configured to check that a server is alive by querying the Node Manager process. By default, the liveness probe is configured to check liveness every 45 seconds and to timeout after 5 seconds. If a pod fails the liveness probe, Kubernetes will restart that container.</description>
+Contents  Liveness probe customization Readiness probe customization  Liveness probe customization The liveness probe is configured to check that a server is alive by querying the Node Manager process. By default, the liveness probe is configured to check liveness every 45 seconds, to timeout after 5 seconds, and to perform the first check after 30 seconds.</description>
     </item>
     
   </channel>

@@ -164,13 +164,13 @@ You might want to update the domain by:
     </item>
     
     <item>
-      <title>Channels</title>
+      <title>External network access security</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/</link>
       <pubDate>Fri, 08 Mar 2019 19:07:36 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/</guid>
-      <description>WebLogic T3 channels Oracle recommends not exposing any administrative, RMI, or T3 channels outside the Kubernetes cluster unless absolutely necessary. If exposing any of these channels, limit access using controls like security lists or set up a Bastion to provide access.
- When accessing T3 or RMI based channels, the preferred approach is to kubectl exec into the Kubernetes Pod and then run wlst, or set up Bastion access and then run wlst from the Bastion host to connect to the Kubernetes cluster.</description>
+      <description>WebLogic T3 and administrative channels Oracle recommends not exposing any administrative, RMI, or T3 channels outside the Kubernetes cluster unless absolutely necessary.
+ If exposing an administrative, RMI, EJB, JMS, or T3 capable channel using a load balancer, port forwarding, NodePorts, or similar, then limit access by using a custom dedicated WebLogic Server port that you have configured with the T3 or administration protocol (a network access point) instead of relaying the traffic to a default port, leverage two-way SSL, use controls like security lists, and/or set up a Bastion to provide access.</description>
     </item>
     
     <item>
@@ -200,7 +200,7 @@ Human operators are typically responsible for starting and stopping environments
       <pubDate>Sat, 23 Feb 2019 17:39:15 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/admin-console/</guid>
-      <description>The WebLogic Remote Console is a lightweight, open source console that does not need to be collocated with a WebLogic Server domain. You can install and run the Remote Console anywhere. For an introduction, read the blog, &amp;ldquo;The NEW WebLogic Remote Console&amp;rdquo;. For detailed documentation, see the WebLogic Remote Console GitHub project.
+      <description>The WebLogic Remote Console is a lightweight, open source console that does not need to be collocated with a WebLogic Server domain. It is an alternative to the WebLogic Server Administration Console. You can install and run the Remote Console anywhere. For an introduction, read the blog, &amp;ldquo;The NEW WebLogic Remote Console&amp;rdquo;. For detailed documentation, see the WebLogic Remote Console GitHub project.
 A major benefit of using the Remote Console is that it runs in your browser or a desktop application, and can be used to connect to different WebLogic Server instances.</description>
     </item>
     
@@ -239,7 +239,7 @@ Useful Helm operations Show the available operator configuration values and thei
       <pubDate>Sat, 23 Feb 2019 16:40:54 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/prerequisites/introduction/</guid>
-      <description>For the current production release 3.3.1:
+      <description>For the current production release 3.3.2:
  Kubernetes 1.16.15+, 1.17.13+, 1.18.10+, 1.19.7+, and 1.20.6+ (check with kubectl version). Flannel networking v0.9.1-amd64 or later (check with docker images | grep flannel), Calico networking v3.16.1 or later, or OpenShift SDN on OpenShift 4.3 systems. Docker 18.9.1 or 19.03.1+ (check with docker version) or CRI-O 1.20.2+ (check with crictl version | grep RuntimeVersion). Helm 3.3.4+ (check with helm version --client --short). For domain home source type Model in Image, WebLogic Deploy Tooling 1.</description>
     </item>
     
@@ -308,8 +308,9 @@ When your domain home source type is Domain in PV or Domain in Image, the operat
       <pubDate>Sat, 23 Feb 2019 17:39:19 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/wlst/</guid>
-      <description>You can use the WebLogic Scripting Tool (WLST) to manage a domain running in Kubernetes. If the Administration Server was configured to expose a T3 channel using the exposeAdminT3Channel setting when creating the domain, then the matching T3 service can be used to connect. For example, if the domainUID is domain1, and the Administration Server name is admin-server, then the service would be called:
-domain1-admin-server-ext This service will be in the same namespace as the domain.</description>
+      <description>You can use the WebLogic Scripting Tool (WLST) to manage a domain running in Kubernetes.
+To give WLST access to a domain running in Kubernetes, you can:
+ Use kubectl exec Use a NodePort Use port forwarding  Use kubectl exec You can use the kubectl exec command to start an interactive WLST session within a pod or to remotely run a WLST script on a pod. Typically, this is the preferred method.</description>
     </item>
     
     <item>
@@ -391,7 +392,7 @@ In accordance with these policies, the operator and WebLogic Server are supporte
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/quickstart/get-images/</guid>
       <description>Get these images and put them into your local registry.   Pull the operator image:
-$ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:3.3.1   Pull the Traefik ingress controller image:
+$ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:3.3.2   Pull the Traefik ingress controller image:
 $ docker pull traefik:2.2.1   Obtain the WebLogic Server image from the Oracle Container Registry.
 a. First time users, follow these directions.
 b. Find and then pull the WebLogic 12.2.1.4 install image:
@@ -417,6 +418,15 @@ Domain secret mismatch. The domain secret in DOMAIN_HOME/security/SerializedSyst
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/cicd/mutate-the-domain-layer/</guid>
       <description>If you need to mutate the domain layer, and keep the same domain encryption keys, then there are some choices about how to implement that, as alluded to previously. Let&amp;rsquo;s explore those in some more detail now.
 The first option is to implement each mutation as a delta to the previous state. This is conceptually similar to how immutable objects (like Java Strings) are implemented, a &amp;ldquo;copy on write&amp;rdquo; approach applied to the domain configuration as a unit.</description>
+    </item>
+    
+    <item>
+      <title>Use port forwarding</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/port-forward/</link>
+      <pubDate>Sat, 23 Feb 2019 17:39:15 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/port-forward/</guid>
+      <description>Contents  Overview Set up Administration Server network channels for port forward access Port forward to an Administration Server Pod   Port forward example Port forward notes and warnings Enabling WLST access when local and remote ports do not match Terminating port forwarding    Overview Beginning with WebLogic Kubernetes Operator version 3.3.2, or earlier if you are using an Istio-enabled domain, you can use the kubectl port-forward command to set up external access for the WebLogic Server Administration Console, the Remote Console, and WLST.</description>
     </item>
     
     <item>
@@ -577,7 +587,7 @@ When connecting to a database that does not have GRID, the only type of WebLogic
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/liveness-readiness-probe-customization/</guid>
       <description>This document describes how to customize the liveness and readiness probes for WebLogic Server instance Pods.
-Contents  Liveness probe customization Readiness probe customization  Liveness probe customization The liveness probe is configured to check that a server is alive by querying the Node Manager process. By default, the liveness probe is configured to check liveness every 45 seconds and to timeout after 5 seconds. If a pod fails the liveness probe, Kubernetes will restart that container.</description>
+Contents  Liveness probe customization Readiness probe customization  Liveness probe customization The liveness probe is configured to check that a server is alive by querying the Node Manager process. By default, the liveness probe is configured to check liveness every 45 seconds, to timeout after 5 seconds, and to perform the first check after 30 seconds.</description>
     </item>
     
     <item>
@@ -869,7 +879,7 @@ If you are performing an online update to a running domain&amp;rsquo;s WebLogic 
       <pubDate>Fri, 15 Mar 2019 11:25:28 -0400</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/release-notes/</guid>
-      <description>Releases    Date Version Introduces backward incompatibilities? Change     August 23, 2021 v3.3.1 no Resolved an issue related to managed Coherence cluster formation when using Istio and another issue related to Secret and ConfigMap validation.   July 20, 2021 v3.3.0 no Auxiliary image support.   June 21, 2021 v3.2.5 no Updated Oracle Linux libraries and resolved an issue related to repeated introspection.   June 18, 2021 v3.</description>
+      <description>Releases    Date Version Introduces backward incompatibilities? Change     September 24, 2021 v3.3.2 no Istio 1.10 support, enhanced liveness and readiness probe customization to support customizing failure thresholds, and additional validations.   August 23, 2021 v3.3.1 no Resolved an issue related to managed Coherence cluster formation when using Istio and another issue related to Secret and ConfigMap validation.   July 20, 2021 v3.3.0 no Auxiliary image support.</description>
     </item>
     
   </channel>

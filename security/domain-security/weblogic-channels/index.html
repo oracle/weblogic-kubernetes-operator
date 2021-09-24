@@ -4,28 +4,28 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="generator" content="Hugo 0.82.0" />
-    <meta name="description" content="WebLogic channels">
+    <meta name="description" content="Remote access security">
 
 
     <link rel="icon" href="/weblogic-kubernetes-operator/images/favicon.png" type="image/png">
 
-    <title>Channels :: WebLogic Kubernetes Operator</title>
+    <title>External network access security :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1632248091" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1632248091" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1632248091" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1632248091" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1632248091" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1632248091" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1632248091" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1632248091" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1632248091" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1632248091" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1632503381" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1632503381" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1632503381" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1632503381" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1632503381" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1632503381" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1632503381" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1632503381" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1632503381" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1632503381" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1632248091"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1632503381"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1632248091"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1632248091"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1632503381"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1632503381"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1632248091"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1632503381"></script>
 
     
   </div>
@@ -953,6 +953,27 @@
       <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/wlst/" title="Use WLST" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/wlst/">
         Use WLST
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/port-forward/" title="Use port forwarding" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/port-forward/">
+        Use port forwarding
         
         </a>
     </li>
@@ -2611,9 +2632,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/" title="Channels" class="dd-item active">
+      <li data-nav-id="/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/" title="External network access security" class="dd-item active">
         <a href="/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/">
-        Channels
+        External network access security
         
         </a>
     </li>
@@ -3150,7 +3171,7 @@
             
           
           
-            <a href='/weblogic-kubernetes-operator/'></a> > <a href='/weblogic-kubernetes-operator/security/'>Security</a> > <a href='/weblogic-kubernetes-operator/security/domain-security/'>Domain security</a> > Channels
+            <a href='/weblogic-kubernetes-operator/'></a> > <a href='/weblogic-kubernetes-operator/security/'>Security</a> > <a href='/weblogic-kubernetes-operator/security/domain-security/'>Domain security</a> > External network access security
           
         
           
@@ -3189,25 +3210,95 @@
           
             <h1>
               
-              Channels
+              External network access security
             </h1>
           
 
         
 
 
-<h4 id="weblogic-t3-channels">WebLogic T3 channels</h4>
+<h4 id="weblogic-t3-and-administrative-channels">WebLogic T3 and administrative channels</h4>
 
 <div class="notices warning" ><p>Oracle recommends <em>not</em> exposing any administrative, RMI, or T3 channels outside the Kubernetes cluster
-unless absolutely necessary. If exposing any of these channels, limit access using
-controls like security lists or set up a Bastion to provide access.</p>
+unless absolutely necessary.</p>
 </div>
 
-<p>When accessing T3 or RMI based channels, the preferred approach is to <code>kubectl exec</code> into
-the Kubernetes Pod and then run <code>wlst</code>, or set up Bastion access and then run
-<code>wlst</code> from the Bastion host to connect to the Kubernetes cluster.</p>
-<p>Also, consider a private VPN if you need use cross-domain T3 access
-between clouds, data centers, and such.</p>
+<p>If exposing an administrative, RMI, EJB, JMS, or T3 capable
+channel using a load balancer,
+port forwarding, <code>NodePorts</code>, or similar,
+then limit access by using a custom
+dedicated WebLogic Server port that you have configured
+with the T3 or administration protocol (a network access point)
+instead of relaying the traffic to a default port,
+leverage two-way SSL, use controls like security lists,
+and/or set up a Bastion to provide access. A custom channel
+is preferred over a default channel because a default port supports
+multiple protocols.</p>
+<p>When accessing T3 or RMI based channels for administrative purposes,
+such as running WLST, the preferred approach is to <code>kubectl exec</code> into
+the Kubernetes Pod and then run <code>wlst.sh</code>, or set up Bastion access and then run
+<code>java weblogic.WLST</code> or <code>$ORACLE_HOME/oracle_common/common/bin/wlst.sh</code>
+from the Bastion host to connect to the Kubernetes cluster
+(some cloud environments use the term Jump Host or Jump Server instead of Bastion).</p>
+<p>Also, if you need to use cross-domain T3 access
+between clouds, data centers, and such, consider a private VPN.</p>
+<h4 id="weblogic-http-channels">WebLogic HTTP channels</h4>
+<p>When providing remote access to HTTP using a load balancer,
+port forwarding, <code>NodePorts</code>, or similar,
+Oracle recommends relaying the traffic to a dedicated
+WebLogic Server port that you have configured
+using a custom HTTP channel (network access point)
+instead of relaying the traffic to a default port.
+This helps ensure that external
+traffic is limited to the HTTP protocol. A custom HTTP channel
+is preferred over a default port because a default port supports
+multiple protocols.</p>
+<p>Do not enable tunneling on an HTTP channel
+that is exposed for remote access unless you specifically
+intend to allow it to handle T3 traffic
+(tunneling allows T3 to tunnel through the channel using HTTP)
+and you perform the additional steps that may be necessary
+to further secure access, as described
+in <a href="#weblogic-t3-and-administrative-channels">WebLogic T3 and administrative channels</a>.</p>
+<h4 id="limit-use-of-kubernetes-nodeports">Limit use of Kubernetes NodePorts</h4>
+<p>Although Kubernetes <code>NodePorts</code> are good for use in demos and getting-started guides,
+they are typically not suited for production systems for multiple reasons, including:</p>
+<ul>
+<li>With some cloud providers, a <code>NodePort</code> may implicitly expose a port to the public Internet.</li>
+<li>They bypass almost all network security in Kubernetes.</li>
+<li>They allow all protocols (load balancers can limit to the HTTP protocol).</li>
+<li>They cannot expose standard, low-numbered ports like 80 and 443 (or even 8080 and 8443).</li>
+<li>Some Kubernetes cloud environments cannot expose usable <code>NodePorts</code> because their Kubernetes clusters run on a private network that cannot be reached by external clients.</li>
+</ul>
+<h4 id="general-advice">General advice</h4>
+<ol>
+<li>
+<p><em>Set up administration ports</em>: Configure an administration port on WebLogic, or an administrative channel, to prevent
+all other channels from accepting administration-privileged traffic
+(this includes preventing administration-privileged traffic from a WebLogic console over HTTP).</p>
+</li>
+<li>
+<p><em>Be aware of anonymous defaults</em>:
+If an externally available port supports a protocol suitable for WebLogic
+JNDI, EJB/RMI, or JMS clients,
+then note that <em>by default</em>:</p>
+<ul>
+<li>WebLogic enables anonymous users to access such a port.</li>
+<li>JNDI entries, EJB/RMI applications, and JMS are open to anonymous users.</li>
+</ul>
+</li>
+<li>
+<p><em>Configure SSL</em>:
+You can configure two-way SSL to help prevent external access by unwanted applications
+(often SSL is setup between the caller and the load balancer, and plain-text
+traffic flows internally from the load balancer to WebLogic).</p>
+</li>
+</ol>
+<h4 id="see-also">See also</h4>
+<ul>
+<li><a href="/weblogic-kubernetes-operator/faq/external-clients/">External WebLogic clients</a></li>
+<li><a href="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/">Remote Console, Administration Console, WLST, and Port Forwarding access</a></li>
+</ul>
 
 
 <footer class="footline">
@@ -3797,6 +3888,22 @@ between clouds, data centers, and such.</p>
                     
                     
 
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
                     
                         
             
@@ -5289,19 +5396,19 @@ between clouds, data centers, and such.</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1632248091"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1632248091"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1632248091"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1632248091"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1632248091"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1632248091"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1632503381"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1632503381"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1632503381"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1632503381"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1632503381"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1632503381"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1632248091"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1632248091"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1632248091"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1632503381"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1632503381"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1632503381"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1632248091"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1632503381"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

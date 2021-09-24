@@ -12,20 +12,20 @@
     <title>Liveness and readiness probes customization :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1632248092" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1632248092" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1632248092" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1632248092" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1632248092" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1632248092" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1632248092" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1632248092" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1632248092" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1632248092" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1632503382" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1632503382" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1632503382" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1632503382" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1632503382" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1632503382" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1632503382" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1632503382" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1632503382" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1632503382" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1632248092"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1632503382"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1632248092"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1632248092"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1632503382"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1632503382"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1632248092"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1632503382"></script>
 
     
   </div>
@@ -953,6 +953,27 @@
       <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/wlst/" title="Use WLST" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/wlst/">
         Use WLST
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/port-forward/" title="Use port forwarding" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/port-forward/">
+        Use port forwarding
         
         </a>
     </li>
@@ -2611,9 +2632,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/" title="Channels" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/" title="External network access security" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/">
-        Channels
+        External network access security
         
         </a>
     </li>
@@ -3209,14 +3230,16 @@
 <li><a href="#readiness-probe-customization">Readiness probe customization</a></li>
 </ul>
 <h4 id="liveness-probe-customization">Liveness probe customization</h4>
-<p>The liveness probe is configured to check that a server is alive by querying the Node Manager process.  By default, the liveness probe is configured to check liveness every 45 seconds and to timeout after 5 seconds.  If a pod fails the liveness probe, Kubernetes will restart that container.</p>
-<p>You can customize the liveness probe interval and timeout using the <code>livenessProbe</code> attribute under the <code>serverPod</code> element of the domain resource.</p>
-<p>Following is an example configuration to change the liveness probe interval and timeout value.</p>
+<p>The liveness probe is configured to check that a server is alive by querying the Node Manager process.  By default, the liveness probe is configured to check liveness every 45 seconds, to timeout after 5 seconds, and to perform the first check after 30 seconds.  The default success and failure threshold values are 1.  If a pod fails the liveness probe, Kubernetes will restart that container.</p>
+<p>You can customize the liveness probe initial delay, interval, timeout, and failure threshold using the <code>livenessProbe</code> attribute under the <code>serverPod</code> element of the domain resource.</p>
+<p>Following is an example configuration to change the liveness probe interval, timeout, and failure threshold value.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">  <span style="color:#f92672">serverPod</span>:
     <span style="color:#f92672">livenessProbe</span>:
       <span style="color:#f92672">periodSeconds</span>: <span style="color:#ae81ff">30</span>
       <span style="color:#f92672">timeoutSeconds</span>: <span style="color:#ae81ff">10</span>
-</code></pre></div><p>After the liveness probe script (livenessProbe.sh) performs its normal checks, you can customize the liveness probe by specifying a custom script, which will be invoked by livenessProbe.sh. You can specify the custom script either by using the <code>livenessProbeCustomScript</code> attribute in the domain resource or by setting the <code>LIVENESS_PROBE_CUSTOM_SCRIPT</code> environment variable using the <code>env</code> attribute under the <code>serverPod</code> element (see the configuration examples below). If the custom script fails with a non-zero exit status, the liveness probe will fail and Kubernetes will restart the container.</p>
+      <span style="color:#f92672">failureThreshold</span>: <span style="color:#ae81ff">3</span>
+</code></pre></div><p><strong>Note</strong>: The liveness probe success threshold value must always be 1. See <a href="https://kubernetes.io/docs/tasks/configure-pod-container/configure-liveness-readiness-startup-probes/#configure-probes">Configure Probes</a> in the Kubernetes documentation for more details.</p>
+<p>After the liveness probe script (livenessProbe.sh) performs its normal checks, you can customize the liveness probe by specifying a custom script, which will be invoked by livenessProbe.sh. You can specify the custom script either by using the <code>livenessProbeCustomScript</code> attribute in the domain resource or by setting the <code>LIVENESS_PROBE_CUSTOM_SCRIPT</code> environment variable using the <code>env</code> attribute under the <code>serverPod</code> element (see the configuration examples below). If the custom script fails with a non-zero exit status, the liveness probe will fail and Kubernetes will restart the container.</p>
 <ul>
 <li>The <code>spec.livenessProbeCustomScript</code> domain resource attribute affects all WebLogic Server instance Pods in the domain.</li>
 <li>The <code>LIVENESS_PROBE_CUSTOM_SCRIPT</code> environment variable takes precedence over the <code>spec.livenessProbeCustomScript</code> domain resource attribute when both are configured, and, like all domain resource environment variables, can be customized on a per domain, per cluster, or even a per server basis.</li>
@@ -3255,12 +3278,13 @@
 </ul>
 <h4 id="readiness-probe-customization">Readiness probe customization</h4>
 <p>By default, the readiness probe is configured to use the WebLogic Server ReadyApp framework. The ReadyApp framework allows fine customization of the readiness probe by the application&rsquo;s participation in the framework. For more details, see <a href="https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/depgd/managing.html#GUID-C98443B1-D368-4CA4-A7A4-97B86FFD3C28">Using the ReadyApp Framework</a>. The readiness probe is used to determine if the server is ready to accept user requests. The readiness is used to determine when a server should be included in a load balancer&rsquo;s endpoints, in the case of a rolling restart, when a restarted server is fully started, and for various other purposes.</p>
-<p>By default, the readiness probe is configured to check readiness every 5 seconds and to timeout after 5 seconds. You can customize the readiness probe interval and timeout using the <code>readinessProbe</code> attribute under the <code>serverPod</code> element of the domain resource.</p>
-<p>Following is an example configuration to change readiness probe interval and timeout value.</p>
+<p>By default, the readiness probe is configured to check readiness every 5 seconds, to timeout after 5 seconds, and to perform the first check after 30 seconds. The default success and failure thresholds values are 1. You can customize the readiness probe initial delay, interval, timeout, success and failure thresholds using the <code>readinessProbe</code> attribute under the <code>serverPod</code> element of the domain resource.</p>
+<p>Following is an example configuration to change readiness probe interval, timeout and failure threshold value.</p>
 <div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml">  <span style="color:#f92672">serverPod</span>:
     <span style="color:#f92672">readinessProbe</span>:
       <span style="color:#f92672">periodSeconds</span>: <span style="color:#ae81ff">10</span>
       <span style="color:#f92672">timeoutSeconds</span>: <span style="color:#ae81ff">10</span>
+      <span style="color:#f92672">failureThreshold</span>: <span style="color:#ae81ff">3</span>
 </code></pre></div>
 
 <footer class="footline">
@@ -3858,6 +3882,22 @@
                     
                     
 
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
                     
                         
             
@@ -5346,19 +5386,19 @@
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1632248092"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1632248092"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1632248092"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1632248092"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1632248092"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1632248092"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1632503382"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1632503382"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1632503382"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1632503382"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1632503382"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1632503382"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1632248092"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1632248092"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1632248092"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1632503382"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1632503382"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1632503382"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1632248092"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1632503382"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

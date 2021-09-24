@@ -18,13 +18,13 @@
     </item>
     
     <item>
-      <title>Channels</title>
+      <title>External network access security</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/</link>
       <pubDate>Fri, 08 Mar 2019 19:07:36 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/</guid>
-      <description>WebLogic T3 channels Oracle recommends not exposing any administrative, RMI, or T3 channels outside the Kubernetes cluster unless absolutely necessary. If exposing any of these channels, limit access using controls like security lists or set up a Bastion to provide access.
- When accessing T3 or RMI based channels, the preferred approach is to kubectl exec into the Kubernetes Pod and then run wlst, or set up Bastion access and then run wlst from the Bastion host to connect to the Kubernetes cluster.</description>
+      <description>WebLogic T3 and administrative channels Oracle recommends not exposing any administrative, RMI, or T3 channels outside the Kubernetes cluster unless absolutely necessary.
+ If exposing an administrative, RMI, EJB, JMS, or T3 capable channel using a load balancer, port forwarding, NodePorts, or similar, then limit access by using a custom dedicated WebLogic Server port that you have configured with the T3 or administration protocol (a network access point) instead of relaying the traffic to a default port, leverage two-way SSL, use controls like security lists, and/or set up a Bastion to provide access.</description>
     </item>
     
   </channel>

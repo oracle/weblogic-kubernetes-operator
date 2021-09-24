@@ -12,20 +12,20 @@
     <title>Use the Remote Console :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1632248092" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1632248092" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1632248092" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1632248092" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1632248092" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1632248092" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1632248092" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1632248092" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1632248092" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1632248092" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1632503382" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1632503382" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1632503382" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1632503382" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1632503382" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1632503382" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1632503382" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1632503382" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1632503382" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1632503382" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1632248092"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1632503382"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1632248092"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1632248092"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1632503382"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1632503382"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1632248092"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1632503382"></script>
 
     
   </div>
@@ -953,6 +953,27 @@
       <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/wlst/" title="Use WLST" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/wlst/">
         Use WLST
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/port-forward/" title="Use port forwarding" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/port-forward/">
+        Use port forwarding
         
         </a>
     </li>
@@ -2611,9 +2632,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/" title="Channels" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/" title="External network access security" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/">
-        Channels
+        External network access security
         
         </a>
     </li>
@@ -3204,6 +3225,7 @@
 
 
 <p>The WebLogic Remote Console is a lightweight, open source console that does not need to be collocated with a WebLogic Server domain.
+It is an <em>alternative</em> to the WebLogic Server Administration Console.
 You can install and run the Remote Console anywhere. For an introduction, read the blog, <a href="https://blogs.oracle.com/weblogicserver/new-weblogic-server-remote-console">&ldquo;The NEW WebLogic Remote Console&rdquo;</a>.
 For detailed documentation, see the <a href="https://github.com/oracle/weblogic-remote-console">WebLogic Remote Console</a> GitHub project.</p>
 <p>A major benefit of using the Remote Console is that it runs in your browser or a desktop application, and can be used to connect to different WebLogic Server instances.
@@ -3215,6 +3237,13 @@ For example, a WebLogic Server 12.2.1.4 slim installer download is approximately
 You connect to the Remote Console and, when prompted, supply the WebLogic Server login credentials
 along with the URL of the WebLogic Server Administration Server&rsquo;s administration port to which you want to connect.</p>
 <p><strong>Note</strong>:  An Administration Server administration port typically is the same as its default port unless either an SSL port or an administration port is configured and enabled.</p>
+
+<div class="notices warning" ><p>Externally exposing administrative, RMI, or T3 capable WebLogic channels
+using a Kubernetes <code>NodePort</code>, load balancer,
+port forwarding, or a similar method can create an insecure configuration.
+For more information, see <a href="/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/">External network access security</a>.</p>
+</div>
+
 <h3 id="setup">Setup</h3>
 <p>To set up access to WebLogic Server domains running in Kubernetes using the Remote Console:</p>
 <ol>
@@ -3231,21 +3260,24 @@ along with the URL of the WebLogic Server Administration Server&rsquo;s administ
 <li>
 <p>Deploy a load balancer with <a href="#configure-ingress-path-routing-rules">ingress path routing rules</a>.</p>
 </li>
+<li>
+<p><a href="#use-a-kubectl-port-forward-connection">Use a <code>kubectl port-forward</code> connection</a>.</p>
+</li>
 </ul>
+<p><strong>Note</strong>: If you want to customize the Remote Console listen address,
+then see <a href="https://github.com/oracle/weblogic-remote-console/blob/master/site/install_config.md#remote">Specify a Listen Address for the Remote Console Host</a>. This is useful if you want to run the Remote Console
+on a different machine than your browser, or if you want the Remote Console to use SSL.</p>
 </li>
 </ol>
 <h4 id="use-an-administration-server-nodeport">Use an Administration Server <code>NodePort</code></h4>
-<p>For the Remote Console to connect to the Kubernetes WebLogic Server Administration Server’s <code>NodePort</code>, use the URL:</p>
+<p>For the Remote Console to connect to the Kubernetes WebLogic Server Administration Server’s <code>NodePort</code>, use the following URL after you have connected to the Remote Console
+with your browser and it
+prompts for the location of your WebLogic Server Administration Server:</p>
 <pre><code>http://hostname:adminserver-NodePort/
 </code></pre><p>The <code>adminserver-NodePort</code> is the port number of the Administration Server outside the Kubernetes cluster.
-For information about the <code>NodePort</code> Service on an Administration Server, see the <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md">Domain resource</a> document.</p>
-
-<div class="notices warning" ><p>Exposing administrative, RMI, or T3 capable channels using a Kubernetes <code>NodePort</code>
-can create an insecure configuration. In general, only HTTP protocols should be made available externally and this exposure
-is usually accomplished by setting up an external load balancer that can access internal (non-<code>NodePort</code>) services.
-For more information, see <a href="/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/#weblogic-t3-channels">T3 channels</a>.</p>
-</div>
-
+For information about the <code>NodePort</code> Service on an Administration Server, see the <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md">Domain resource</a> document.
+For an example of setting up the <code>NodePort</code> on an Administration Server,
+see <a href="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/wlst/#use-a-nodeport">Use a <code>NodePort</code> for WLST</a>.</p>
 <h4 id="configure-ingress-path-routing-rules">Configure ingress path routing rules</h4>
 <ol>
 <li>
@@ -3269,7 +3301,10 @@ For more information, see <a href="/weblogic-kubernetes-operator/security/domain
       <span style="color:#f92672">port</span>: <span style="color:#ae81ff">7001</span>
 </code></pre></div></li>
 <li>
-<p>For the Remote Console to connect to the Kubernetes WebLogic Server Administration Server, supply a URL that resolves to the load balancer host and ingress that you supplied in the previous step. For example:</p>
+<p>After you have connected to the Remote Console with your browser,
+it will prompt for the location of your WebLogic Server Administration
+Server.
+For the Remote Console to connect to the Kubernetes WebLogic Server Administration Server, supply a URL that resolves to the load balancer host and ingress that you supplied in the previous step. For example:</p>
 <pre><code>http://${HOSTNAME}:${LB_PORT}/
 </code></pre><p>Where:</p>
 <ul>
@@ -3283,9 +3318,44 @@ For more information, see <a href="/weblogic-kubernetes-operator/security/domain
 </ul>
 </li>
 </ol>
+<h4 id="use-a-kubectl-port-forward-connection">Use a <code>kubectl port-forward</code> connection</h4>
+<ol>
+<li>
+<p>Forward a local port (that is external to
+Kubernetes) to the administration port of the
+Administration Server Pod according to these
+<a href="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/port-forward/">instructions</a>.</p>
+<p><strong>NOTE:</strong> If you plan to run the Remote Console Java program
+on a different machine than the port forwarding command,
+then the port forwarding command needs to specify a <code>--address</code> parameter
+with the IP address of the machine that is hosting the command.</p>
+</li>
+<li>
+<p>After you have connected to the Remote Console with your browser,
+it will prompt you for the location of your WebLogic Server Administration
+Server.
+Supply a URL using the local hostname or IP address
+from the <code>port-forward</code> command in the first step, plus the local port from
+this same command. For example:</p>
+<pre><code>http://${LOCAL_HOSTNAME}:${LOCAL_PORT}/
+</code></pre><p>Where:</p>
+<ul>
+<li>
+<p><code>${LOCAL_HOSTNAME}</code> is the hostname or the defined IP address of the machine
+where the <code>kubectl port-forward</code> command is running. This is
+customizable on the <code>port-forward</code> command and is <code>localhost</code>
+or <code>127.0.0.1</code>, by default.</p>
+</li>
+<li>
+<p><code>${LOCAL_PORT}</code> is the local port where the <code>kubectl port-forward</code> command is running.
+This is specified on the <code>port-forward</code> command.</p>
+</li>
+</ul>
+</li>
+</ol>
 <h3 id="test">Test</h3>
-<p>To verify that your WebLogic Server Administration Server URL is correct, and to verify that that your load balancer
-or <code>NodePort</code> are working as expected, run the following curl commands at the same location as your browser:</p>
+<p>To verify that your WebLogic Server Administration Server URL is correct, and to verify that that your load balancer,
+<code>NodePort</code>, or <code>kubectl port-forward</code> are working as expected, run the following curl commands at the same location as your browser:</p>
 <pre><code>$ curl --user username:password \
      http://${HOSTNAME}:${LB_PORT}/management/weblogic/latest/domainRuntime?fields=name\&amp;links=none ; echo
 
@@ -3918,6 +3988,22 @@ but remove <code>?fields=name\&amp;links=none</code>, which is appended at the e
                     
                         
                         
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
                     
                 
                 
@@ -5377,19 +5463,19 @@ but remove <code>?fields=name\&amp;links=none</code>, which is appended at the e
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1632248092"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1632248092"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1632248092"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1632248092"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1632248092"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1632248092"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1632503382"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1632503382"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1632503382"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1632503382"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1632503382"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1632503382"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1632248092"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1632248092"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1632248092"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1632503382"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1632503382"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1632503382"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1632248092"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1632503382"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

@@ -13,7 +13,7 @@
       <pubDate>Sat, 23 Feb 2019 17:39:15 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/admin-console/</guid>
-      <description>The WebLogic Remote Console is a lightweight, open source console that does not need to be collocated with a WebLogic Server domain. You can install and run the Remote Console anywhere. For an introduction, read the blog, &amp;ldquo;The NEW WebLogic Remote Console&amp;rdquo;. For detailed documentation, see the WebLogic Remote Console GitHub project.
+      <description>The WebLogic Remote Console is a lightweight, open source console that does not need to be collocated with a WebLogic Server domain. It is an alternative to the WebLogic Server Administration Console. You can install and run the Remote Console anywhere. For an introduction, read the blog, &amp;ldquo;The NEW WebLogic Remote Console&amp;rdquo;. For detailed documentation, see the WebLogic Remote Console GitHub project.
 A major benefit of using the Remote Console is that it runs in your browser or a desktop application, and can be used to connect to different WebLogic Server instances.</description>
     </item>
     
@@ -23,8 +23,18 @@ A major benefit of using the Remote Console is that it runs in your browser or a
       <pubDate>Sat, 23 Feb 2019 17:39:19 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/wlst/</guid>
-      <description>You can use the WebLogic Scripting Tool (WLST) to manage a domain running in Kubernetes. If the Administration Server was configured to expose a T3 channel using the exposeAdminT3Channel setting when creating the domain, then the matching T3 service can be used to connect. For example, if the domainUID is domain1, and the Administration Server name is admin-server, then the service would be called:
-domain1-admin-server-ext This service will be in the same namespace as the domain.</description>
+      <description>You can use the WebLogic Scripting Tool (WLST) to manage a domain running in Kubernetes.
+To give WLST access to a domain running in Kubernetes, you can:
+ Use kubectl exec Use a NodePort Use port forwarding  Use kubectl exec You can use the kubectl exec command to start an interactive WLST session within a pod or to remotely run a WLST script on a pod. Typically, this is the preferred method.</description>
+    </item>
+    
+    <item>
+      <title>Use port forwarding</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/port-forward/</link>
+      <pubDate>Sat, 23 Feb 2019 17:39:15 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/port-forward/</guid>
+      <description>Contents  Overview Set up Administration Server network channels for port forward access Port forward to an Administration Server Pod   Port forward example Port forward notes and warnings Enabling WLST access when local and remote ports do not match Terminating port forwarding    Overview Beginning with WebLogic Kubernetes Operator version 3.3.2, or earlier if you are using an Istio-enabled domain, you can use the kubectl port-forward command to set up external access for the WebLogic Server Administration Console, the Remote Console, and WLST.</description>
     </item>
     
   </channel>

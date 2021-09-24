@@ -12,20 +12,20 @@
     <title>Supported platforms :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1632248091" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1632248091" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1632248091" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1632248091" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1632248091" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1632248091" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1632248091" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1632248091" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1632248091" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1632248091" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1632503381" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1632503381" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1632503381" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1632503381" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1632503381" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1632503381" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1632503381" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1632503381" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1632503381" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1632503381" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1632248091"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1632503381"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1632248091"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1632248091"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1632503381"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1632503381"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1632248091"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1632503381"></script>
 
     
   </div>
@@ -953,6 +953,27 @@
       <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/wlst/" title="Use WLST" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/wlst/">
         Use WLST
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/port-forward/" title="Use port forwarding" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/port-forward/">
+        Use port forwarding
         
         </a>
     </li>
@@ -2611,9 +2632,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/" title="Channels" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/" title="External network access security" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/">
-        Channels
+        External network access security
         
         </a>
     </li>
@@ -3242,8 +3263,11 @@ Operator and Oracle WebLogic Sever are fully supported and certified on VMware T
 <h3 id="openshift">OpenShift</h3>
 <p>Operator 2.0.1+ is certified for use on OpenShift Container Platform 3.11.43+, with Kubernetes 1.11.5+.</p>
 <p>Operator 2.5.0+ is certified for use on OpenShift Container Platform 4.3.0+ with Kubernetes 1.16.2+.</p>
-<p>When using the operator in OpenShift, a security context constraint is required to ensure that WebLogic containers run with a UNIX UID that has the correct permissions on the domain file system.
-This could be either the <code>anyuid</code> SCC or a custom one that you define for user/group <code>1000</code>. For more information, see <a href="/weblogic-kubernetes-operator/security/openshift/">OpenShift</a> in the Security section.</p>
+<p>To accommodate OpenShift security requirements:</p>
+<ul>
+<li>For security requirements to run WebLogic in OpenShift, see the <a href="/weblogic-kubernetes-operator/security/openshift/">OpenShift chapter</a> in the Security section.</li>
+<li>Beginning with operator version 3.3.2, specify the <code>kubernetesPlatorm</code> Helm chart property with value <code>OpenShift</code>. For more information, see <a href="/weblogic-kubernetes-operator/userguide/managing-operators/using-helm/#operator-helm-configuration-values">Operator Helm configuration values</a>.</li>
+</ul>
 <h3 id="important-note-about-development-focused-kubernetes-distributions">Important note about development-focused Kubernetes distributions</h3>
 <p>There are a number of development-focused distributions of Kubernetes, like kind, Minikube, Minishift, and so on.
 Often these run Kubernetes in a virtual machine on your development machine.  We have found that these distributions
@@ -3855,6 +3879,22 @@ development/test option.</p>
                     
                     
 
+                    
+                        
+            
+            
+                
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
                     
                         
             
@@ -5335,19 +5375,19 @@ development/test option.</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1632248092"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1632248092"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1632248092"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1632248092"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1632248092"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1632248092"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1632503381"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1632503381"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1632503381"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1632503381"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1632503381"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1632503381"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1632248092"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1632248092"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1632248092"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1632503381"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1632503381"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1632503381"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1632248092"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1632503381"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

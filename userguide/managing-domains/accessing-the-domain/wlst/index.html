@@ -12,20 +12,20 @@
     <title>Use WLST :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1632248092" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1632248092" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1632248092" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1632248092" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1632248092" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1632248092" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1632248092" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1632248092" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1632248092" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1632248092" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1632503382" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1632503382" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1632503382" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1632503382" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1632503382" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1632503382" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1632503382" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1632503382" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1632503382" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1632503382" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1632248092"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1632503382"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1632248092"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1632248092"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1632503382"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1632503382"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1632248092"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1632503382"></script>
 
     
   </div>
@@ -953,6 +953,27 @@
       <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/wlst/" title="Use WLST" class="dd-item active">
         <a href="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/wlst/">
         Use WLST
+        
+        </a>
+    </li>
+     
+  
+ 
+
+            
+          
+            
+            
+
+
+
+
+ 
+  
+    
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/port-forward/" title="Use port forwarding" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/port-forward/">
+        Use port forwarding
         
         </a>
     </li>
@@ -2611,9 +2632,9 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/" title="Channels" class="dd-item ">
+      <li data-nav-id="/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/" title="External network access security" class="dd-item ">
         <a href="/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/">
-        Channels
+        External network access security
         
         </a>
     </li>
@@ -3171,7 +3192,16 @@
                 
                     <div class="progress">
     <div class="wrapper">
-<nav id="TableOfContents"></nav>
+<nav id="TableOfContents">
+  <ul>
+    <li>
+      <ul>
+        <li><a href="#use-kubectl-exec">Use <code>kubectl exec</code></a></li>
+        <li><a href="#use-a-nodeport">Use a <code>NodePort</code></a></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
     </div>
 </div>
 
@@ -3194,22 +3224,35 @@
         
 
 
-<p>You can use the WebLogic Scripting Tool (WLST) to manage a domain running in Kubernetes.  If the Administration Server was configured to expose a T3 channel using the <code>exposeAdminT3Channel</code> setting when creating the domain, then the matching T3 service can be used to connect.  For example, if the <code>domainUID</code> is <code>domain1</code>, and the Administration Server name is <code>admin-server</code>, then the service would be called:</p>
-<pre><code>domain1-admin-server-ext
-</code></pre><p>This service will be in the same namespace as the domain.  The external port number can be obtained by checking this service’s <code>nodePort</code>:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl get service domain1-admin-server-ext -n domain1 -o jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{.spec.ports[0].nodePort}&#39;</span>
-</code></pre></div><pre><code>30012
-</code></pre><p>In this example, the <code>nodePort</code> is <code>30012</code>.  If the Kubernetes server’s address was <code>kubernetes001</code>, then WLST can connect to <code>t3://kubernetes001:30012</code> as shown below:</p>
-<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ ~/wls/oracle_common/common/bin/wlst.sh
-</code></pre></div><pre><code>Initializing WebLogic Scripting Tool (WLST) ...
+<p>You can use the WebLogic Scripting Tool (WLST) to manage a domain running in Kubernetes.</p>
+<p>To give WLST access to a domain running in Kubernetes, you can:</p>
+<ul>
+<li><a href="#use-kubectl-exec">Use kubectl exec</a></li>
+<li><a href="#use-a-nodeport">Use a <code>NodePort</code></a></li>
+<li><a href="#use-port-forwarding">Use port forwarding</a></li>
+</ul>
+<h3 id="use-kubectl-exec">Use <code>kubectl exec</code></h3>
+<p>You can use the <code>kubectl exec</code> command to start an interactive WLST session
+within a pod or to remotely run a WLST script on a pod.
+Typically, this is the preferred method.</p>
+<p>For example, if a <code>domainUID</code> is <code>sample-domain1</code>,
+its Administration Server is named <code>admin-server</code> and is configured with default port <code>7001</code>,
+and its pods are running in namespace <code>sample-domain1-ns</code>,
+then you can start an interactive WLST session this way:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">
+$ kubectl -n sample-domain1-ns exec -it sample-domain1-admin-server /bin/bash
+
+[oracle@sample-domain1-admin-server oracle]$ wlst.sh
+
+Initializing WebLogic Scripting Tool (WLST) ...
 
 Welcome to WebLogic Server Administration Scripting Shell
 
 Type help() for help on available commands
 
-wls:/offline&gt; connect('weblogic','*password*','t3:// kubernetes001:30012')
-Connecting to t3:// kubernetes001:30012 with userid weblogic ...
-Successfully connected to Admin Server &quot;admin-server&quot; that belongs to domain &quot;base_domain&quot;.
+wls:/offline&gt; connect(&#39;myusername&#39;,&#39;mypassword&#39;,&#39;t3://sample-domain1-admin-server:7001&#39;)
+Connecting to t3://sample-domain1-admin-server:7001 with userid myusername ...
+Successfully connected to Admin Server &#34;admin-server&#34; that belongs to domain &#34;base_domain&#34;.
 
 Warning: An insecure protocol was used to connect to the server.
 To ensure on-the-wire security, the SSL port or Admin port should be used instead.
@@ -3218,7 +3261,100 @@ wls:/base_domain/serverConfig/&gt; exit()
 
 
 Exiting WebLogic Scripting Tool.
-</code></pre>
+[oracle@sample-domain1-admin-server oracle]$ exit
+
+$
+</code></pre></div><h3 id="use-a-nodeport">Use a <code>NodePort</code></h3>
+
+<div class="notices tip" ><p>If you are setting up WLST access through a <code>NodePort</code> and your external port
+is not going to be the same as the port number on the WebLogic Administration Server Pod, then see
+<a href="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/port-forward/#enabling-wlst-access-when-local-and-remote-ports-do-not-match">Enabling WLST access when local and remote ports do not match</a>
+for an additional required setup step.</p>
+</div>
+
+
+<div class="notices warning" ><p>A <code>NodePort</code> can expose a WebLogic T3 or administrative channel
+outside the Kubernetes cluster.
+For domain security considerations, see <a href="/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/">External network access security</a>.</p>
+</div>
+
+<p>You can configure an Administration Server to expose an
+externally accessible <code>NodePort</code> using these two steps:</p>
+<ol>
+<li>Configure a Network Access Point (custom channel) with
+the T3 protocol on the Administration Server.</li>
+<li>Expose this channel on a NodePort service using
+the <code>domain.spec.adminServer.adminService.channels</code> attribute.</li>
+</ol>
+<p>Here is an example snippet of a WebLogic domain <code>config.xml</code> file
+for T3 channel <code>T3Channel</code> defined for an Administration Server named <code>admin-server</code>:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-xml" data-lang="xml"><span style="color:#f92672">&lt;server&gt;</span>
+  <span style="color:#f92672">&lt;name&gt;</span>admin-server<span style="color:#f92672">&lt;/name&gt;</span>
+  <span style="color:#f92672">&lt;listen-port&gt;</span>7001<span style="color:#f92672">&lt;/listen-port&gt;</span>
+  <span style="color:#f92672">&lt;listen-address/&gt;</span>
+  <span style="color:#f92672">&lt;network-access-point&gt;</span>
+    <span style="color:#f92672">&lt;name&gt;</span>T3Channel<span style="color:#f92672">&lt;/name&gt;</span>
+    <span style="color:#f92672">&lt;protocol&gt;</span>t3<span style="color:#f92672">&lt;/protocol&gt;</span>
+    <span style="color:#f92672">&lt;public-address&gt;</span>kubernetes001<span style="color:#f92672">&lt;/public-address&gt;</span>
+    <span style="color:#f92672">&lt;listen-port&gt;</span>30012<span style="color:#f92672">&lt;/listen-port&gt;</span>
+    <span style="color:#f92672">&lt;public-port&gt;</span>30012<span style="color:#f92672">&lt;/public-port&gt;</span>
+  <span style="color:#f92672">&lt;/network-access-point&gt;</span>
+<span style="color:#f92672">&lt;/server&gt;</span>
+</code></pre></div><p>Here is an example snippet of a domain resource that
+sets up a NodePort for the channel:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-yaml" data-lang="yaml"><span style="color:#f92672">spec</span>:
+  <span style="color:#f92672">adminServer</span>:
+    <span style="color:#f92672">adminService</span>:
+      <span style="color:#f92672">channels</span>:
+       - <span style="color:#f92672">channelName</span>: <span style="color:#ae81ff">T3Channel</span>
+         <span style="color:#f92672">nodePort</span>: <span style="color:#ae81ff">30012</span>
+</code></pre></div><p>If you set the <code>nodePort:</code> value to <code>0</code>, then Kubernetes will choose
+an open port for you.</p>
+<p>For more details on exposing the T3 channel using a NodePort service,
+run the <code>kubectl explain domain.spec.adminServer.adminService.channels</code> command
+or see the domain resource <a href="https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md">schema</a> and <a href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/">documentation</a>.</p>
+<p>For example, if a <code>domainUID</code> is <code>domain1</code>,
+the Administration Server name is <code>admin-server</code>,
+and you have set up a NodePort service
+on external port <code>30012</code> using
+the <code>domain.spec.adminServer.adminService.channels</code> attribute,
+then the service would be called:</p>
+<pre><code>domain1-admin-server-ext
+</code></pre><p>This service will be in the same namespace as the domain, and its external port number can be obtained by checking its <code>nodePort</code> field:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ kubectl get service domain1-admin-server-ext -n mynamespace -o jsonpath<span style="color:#f92672">=</span><span style="color:#e6db74">&#39;{.spec.ports[0].nodePort}&#39;</span>
+</code></pre></div><pre><code>30012
+</code></pre><p>If the Kubernetes node machine address is <code>kubernetes001</code>, then WLST can connect to
+the WebLogic Server Administration Server pod through the <code>NodePort</code> as shown below:</p>
+<div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">$ $ORACLE_HOME/oracle_common/common/bin/wlst.sh
+</code></pre></div><div class="highlight"><pre style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-text" data-lang="text">Initializing WebLogic Scripting Tool (WLST) ...
+
+Welcome to WebLogic Server Administration Scripting Shell
+
+Type help() for help on available commands
+
+wls:/offline&gt; connect(&#39;myusername&#39;,&#39;mypassword&#39;,&#39;t3://kubernetes001:30012&#39;)
+Connecting to t3://kubernetes001:30012 with userid myusername ...
+Successfully connected to Admin Server &#34;admin-server&#34; that belongs to domain &#34;base_domain&#34;.
+
+Warning: An insecure protocol was used to connect to the server.
+To ensure on-the-wire security, the SSL port or Admin port should be used instead.
+
+wls:/base_domain/serverConfig/&gt; exit()
+
+
+Exiting WebLogic Scripting Tool.
+</code></pre></div><h4 id="use-port-forwarding">Use port forwarding</h4>
+<p>One way to provide external access to WLST
+is to forward network traffic from a local port on your local machine
+to the administration port of an Administration Server Pod.
+See these <a href="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/port-forward/">instructions</a>.</p>
+
+<div class="notices warning" ><p>Port forwarding can expose a WebLogic T3 or administrative channel
+outside the Kubernetes cluster.
+For domain security considerations, see <a href="/weblogic-kubernetes-operator/security/domain-security/weblogic-channels/">External network access security</a>.</p>
+</div>
+
+
 
 <footer class="footline">
 	
@@ -3853,9 +3989,6 @@ Exiting WebLogic Scripting Tool.
             
         
                     
-            
-        
-                    
                         
             
             
@@ -3863,6 +3996,25 @@ Exiting WebLogic Scripting Tool.
                     
                         
                         
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+            
+        
+                    
+                        
+            
+            
+                
                     
                 
                 
@@ -5293,7 +5445,7 @@ Exiting WebLogic Scripting Tool.
 			<a class="nav nav-prev" href="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/admin-console/" title="Use the Remote Console"> <i class="fa fa-chevron-left"></i></a>
 		
 		
-			<a class="nav nav-next" href="/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/" title="Domain life cycle" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
+			<a class="nav nav-next" href="/weblogic-kubernetes-operator/userguide/managing-domains/accessing-the-domain/port-forward/" title="Use port forwarding" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
 		
 	
     </div>
@@ -5303,19 +5455,19 @@ Exiting WebLogic Scripting Tool.
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1632248092"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1632248092"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1632248092"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1632248092"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1632248092"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1632248092"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1632503382"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1632503382"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1632503382"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1632503382"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1632503382"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1632503382"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1632248092"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1632248092"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1632248092"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1632503382"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1632503382"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1632503382"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1632248092"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1632503382"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
