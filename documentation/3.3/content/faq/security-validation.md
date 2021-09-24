@@ -21,3 +21,8 @@ Warnings may be at the level of the JDK, or that SSL is not enabled. Some warnin
 - For Domain in Image, create a new image with the recommended changes or use [configuration overrides]({{< relref "/userguide/managing-domains/configoverrides/_index.md" >}}).
 
 - For Model in Image, supply model files with the recommended changes in its image's `modelHome` directory or use [runtime updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}).
+
+{{% notice note %}}
+For information about handling file permission warnings on the OpenShift Kubernetes Platform, see the [OpenShift chapter]({{<relref "/security/openshift.md">}}) in the Security section.
+{{% /notice %}}
+
