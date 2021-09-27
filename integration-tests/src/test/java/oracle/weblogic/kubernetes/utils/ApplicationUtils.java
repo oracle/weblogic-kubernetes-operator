@@ -30,7 +30,7 @@ public class ApplicationUtils {
    * @param hostHeader host information to be passed as http header
    * @return true if curl command returns HTTP code 200 otherwise false
    */
-  public static boolean checkAppUsingHostHeader(String url, String hostHeader) {
+  public static boolean checkAppUsingHostHeader(String url, String hostHeader, String... checkNotAccessible) {
     LoggingFacade logger = getLogger();
     StringBuffer curlString = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
     StringBuffer headerString = null;
@@ -49,11 +49,20 @@ public class ApplicationUtils {
         .append(" -w %{http_code});")
         .append("echo ${status}");
     logger.info("checkAppUsingHostInfo: curl command {0}", new String(curlString));
-    testUntil(
-        assertDoesNotThrow(() -> () -> exec(new String(curlString), true).stdout().contains("200")),
-        logger,
-        "application to be ready {0}",
-        url);
+    if (checkNotAccessible.length == 0) {
+      testUntil(
+          assertDoesNotThrow(() -> () -> exec(new String(curlString), true).stdout().contains("200")),
+          logger,
+          "application to be ready {0}",
+          url);
+    } else {
+      try {
+        return exec(new String(curlString), true).stdout().contains("200");
+      } catch (Exception ex) {
+        logger.info("Failed to exec command {0}. Caught exception {1}", curlString.toString(), ex.getMessage());
+        return false;
+      }
+    }
     return true;
   }
 
