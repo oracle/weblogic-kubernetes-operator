@@ -29,7 +29,7 @@ The [current release of the operator](https://github.com/oracle/weblogic-kuberne
 This release was published on September 24, 2021.
 ***
 
-# Documentation
+## Documentation
 
 Documentation for the operator is [available here](https://oracle.github.io/weblogic-kubernetes-operator).
 
@@ -38,7 +38,7 @@ information and a [Quick Start](https://oracle.github.io/weblogic-kubernetes-ope
 
 Documentation for prior releases of the operator: [2.5.0](https://oracle.github.io/weblogic-kubernetes-operator/2.5/), [2.6.0](https://oracle.github.io/weblogic-kubernetes-operator/2.6/), [3.0.x](https://oracle.github.io/weblogic-kubernetes-operator/3.0/), [3.1.x](https://oracle.github.io/weblogic-kubernetes-operator/3.1/), and [3.2.x](https://oracle.github.io/weblogic-kubernetes-operator/3.2/).
 
-# Backward compatibility guidelines
+## Backward compatibility guidelines
 
 The 2.0 release introduced some breaking changes and did not maintain compatibility with previous releases.
 
@@ -48,26 +48,24 @@ by the operator Helm chart, Kubernetes resources created by the operator, and th
 maintain compatibility for three releases, except in the case of a clearly communicated deprecated feature, which will be
 maintained for one release after a replacement is available.
 
-# Need more help? Have a suggestion? Come and say, "Hello!"
+## Need more help? Have a suggestion? Come and say, "Hello!"
 
 We have a **public Slack channel** where you can get in touch with us to ask questions about using the operator or give us feedback
 or suggestions about what features and improvements you would like to see.  We would love to hear from you. To join our channel,
 please [visit this site to get an invitation](https://weblogic-slack-inviter.herokuapp.com/).  The invitation email will include
 details of how to access our Slack workspace.  After you are logged in, please come to `#operator` and say, "hello!"
 
-# Contributing to the operator
+## Contributing to the operator
 
 Oracle welcomes contributions to this project from anyone.  Contributions may be reporting an issue with the operator or submitting a pull request.  Before embarking on significant development that may result in a large pull request, it is recommended that you create an issue and discuss the proposed changes with the existing developers first.
 
 If you want to submit a pull request to fix a bug or enhance an existing feature, please first open an issue and link to that issue when you submit your pull request.
 
-If you have any questions about a possible submission, feel free to open an issue too.
+### Contributing to the WebLogic Kubernetes Operator repository
 
-## Contributing to the WebLogic Kubernetes Operator repository
+Before submitting a pull request, please [review our contribution guide](./CONTRIBUTING.md).
 
-Pull requests can be made under The Oracle Contributor Agreement (OCA), which is available at [https://www.oracle.com/technetwork/community/oca-486395.html](https://www.oracle.com/technetwork/community/oca-486395.html).
-
-For pull requests to be accepted, the bottom of the commit message must have the following line, using the contributor’s name and e-mail address as it appears in the OCA Signatories list.
+For pull requests to be accepted, the bottom of the commit message must have the following line, using the contributor’s name and e-mail address as it appears in the OCA Signatories List.
 
 ```
 Signed-off-by: Your Name <you@example.org>
@@ -81,7 +79,7 @@ git commit --signoff
 
 Only pull requests from committers that can be verified as having signed the OCA can be accepted.
 
-## Pull request process
+### Pull request process
 
 *	Fork the repository.
 *	Create a branch in your fork to implement the changes. We recommend using the issue number as part of your branch name, for example, `1234-fixes`.
@@ -89,6 +87,14 @@ Only pull requests from committers that can be verified as having signed the OCA
 *	Ensure that any samples are updated if the base image has been changed.
 *	Submit the pull request. Do not leave the pull request blank. Explain exactly what your changes are meant to do and provide simple steps on how to validate your changes. Ensure that you reference the issue you created as well. We will assign the pull request to 2-3 people for review before it is merged.
 
-## Introducing a new dependency
+### Introducing a new dependency
 
 Please be aware that pull requests that seek to introduce a new dependency will be subject to additional review.  In general, contributors should avoid dependencies with incompatible licenses, and should try to use recent versions of dependencies.  Standard security vulnerability checklists will be consulted before accepting a new dependency.  Dependencies on closed-source code, including WebLogic Server, will most likely be rejected.
+
+
+## License
+
+Copyright (c) 2017, 2021 Oracle and/or its affiliates.
+
+Released under the Universal Permissive License v1.0 as shown at
+<https://oss.oracle.com/licenses/upl/>.
