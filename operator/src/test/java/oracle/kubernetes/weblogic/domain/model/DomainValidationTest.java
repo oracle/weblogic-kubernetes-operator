@@ -4,11 +4,13 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
@@ -50,6 +52,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
   private static final String BAD_MOUNT_PATH_3 = "$()DOMAIN_HOME/servers/SERVER_NAME";
   public static final String TEST_VOLUME_NAME = "test";
   public static final String WRONG_VOLUME_NAME = "BadVolume";
+  public static final String LONG_CONTAINER_PORT_NAME = "long-container-port-name";
 
   private final Domain domain = createTestDomain();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
@@ -528,6 +531,41 @@ class DomainValidationTest extends DomainValidationBaseTest {
     assertThat(domain.getValidationFailures(resourceLookup),
             contains(stringContainsInOrder("container name", WLS_CONTAINER_NAME, "managed-server1",
                     "is reserved", "operator")));
+  }
+
+  @Test
+  void whenContainerPortNameExceedsMaxLength_ForAdminServerContainer_reportError() {
+    configureDomain(domain)
+            .withContainer(new V1Container().name("Test")
+                .ports(Arrays.asList(new V1ContainerPort().name(LONG_CONTAINER_PORT_NAME))));
+
+    assertThat(domain.getValidationFailures(resourceLookup),  contains(stringContainsInOrder(
+            "Container port name ", LONG_CONTAINER_PORT_NAME, "domainUID", UID, "adminServer", "Test",
+            "exceeds maximum allowed length '15'")));
+  }
+
+  @Test
+  void whenContainerPortNameExceedsMaxLength_ForClusteredServerContainer_reportError() {
+    configureDomain(domain)
+            .configureCluster("cluster-1")
+                .withContainer(new V1Container().name("Test")
+                    .ports(Arrays.asList(new V1ContainerPort().name(LONG_CONTAINER_PORT_NAME))));
+
+    assertThat(domain.getValidationFailures(resourceLookup),  contains(stringContainsInOrder(
+            "Container port name ", LONG_CONTAINER_PORT_NAME, "domainUID", UID, "cluster-1", "Test",
+            "exceeds maximum allowed length '15'")));
+  }
+
+  @Test
+  void whenContainerPortNameExceedsMaxLength_ForManagedServerContainer_reportError() {
+    configureDomain(domain)
+            .configureServer("managed-server1")
+                .withContainer(new V1Container().name("Test")
+                    .ports(Arrays.asList(new V1ContainerPort().name(LONG_CONTAINER_PORT_NAME))));
+
+    assertThat(domain.getValidationFailures(resourceLookup),  contains(stringContainsInOrder(
+            "Container port name ", LONG_CONTAINER_PORT_NAME, "domainUID", UID, "managed-server1", "Test",
+            "exceeds maximum allowed length '15'")));
   }
 
   @Test
