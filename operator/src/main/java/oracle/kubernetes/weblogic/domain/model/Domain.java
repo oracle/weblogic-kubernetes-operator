@@ -20,6 +20,8 @@ import javax.annotation.Nonnull;
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.common.KubernetesObject;
+import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -45,7 +47,9 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static java.util.stream.Collectors.toSet;
+import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.helpers.LegalNames.toDns1123LegalName;
+import static oracle.kubernetes.operator.helpers.StepContextConstants.DEFAULT_SUCCESS_THRESHOLD;
 import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
 
 /**
@@ -631,6 +635,16 @@ public class Domain implements KubernetesObject {
     return spec.isIstioEnabled();
   }
 
+  /**
+   * check if the admin channel port forwarding is enabled for the admin server.
+   *
+   * @param domainSpec Domain spec
+   * @return true if the admin channel port forwarding is enabled
+   */
+  public static boolean isAdminChannelPortForwardingEnabled(DomainSpec domainSpec) {
+    return Optional.ofNullable(domainSpec.getAdminServer())
+            .map(admin -> admin.isAdminChannelPortForwardingEnabled()).orElse(true);
+  }
 
   public int getIstioReadinessPort() {
     return spec.getIstioReadinessPort();
@@ -796,6 +810,9 @@ public class Domain implements KubernetesObject {
   }
 
   class Validator {
+    public static final String ADMIN_SERVER_POD_SPEC_PREFIX = "spec.adminServer.serverPod";
+    public static final String CLUSTER_SPEC_PREFIX = "spec.clusters";
+    public static final String MS_SPEC_PREFIX = "spec.managedServers";
     private final List<String> failures = new ArrayList<>();
     private final Set<String> clusterNames = new HashSet<>();
     private final Set<String> serverNames = new HashSet<>();
@@ -815,6 +832,9 @@ public class Domain implements KubernetesObject {
       verifyAuxiliaryImages();
       verifyAuxiliaryImageVolumes();
       addDuplicateAuxiliaryImageVolumeNames();
+      verifyLivenessProbeSuccessThreshold();
+      verifyContainerNameValidInPodSpec();
+      verifyContainerPortNameValidInPodSpec();
 
       return failures;
     }
@@ -1057,6 +1077,73 @@ public class Domain implements KubernetesObject {
         failures.add(DomainValidationMessages.duplicateAuxiliaryImageVolumeName(auxiliaryImageVolume.getName()));
       } else {
         auxiliaryImageVolumes.add(auxiliaryImageVolume);
+      }
+    }
+
+    private void verifyLivenessProbeSuccessThreshold() {
+      Optional.ofNullable(getAdminServerSpec().getLivenessProbe())
+              .ifPresent(probe -> verifySuccessThresholdValue(probe, ADMIN_SERVER_POD_SPEC_PREFIX
+                      + ".livenessProbe.successThreshold"));
+      getSpec().getClusters().forEach(cluster ->
+              Optional.ofNullable(cluster.getLivenessProbe())
+                      .ifPresent(probe -> verifySuccessThresholdValue(probe, CLUSTER_SPEC_PREFIX + "["
+                              + cluster.getClusterName() + "].serverPod.livenessProbe.successThreshold")));
+      getSpec().getManagedServers().forEach(managedServer ->
+              Optional.ofNullable(managedServer.getLivenessProbe())
+                      .ifPresent(probe -> verifySuccessThresholdValue(probe, MS_SPEC_PREFIX + "["
+                              + managedServer.getServerName() + "].serverPod.livenessProbe.successThreshold")));
+    }
+
+    private void verifySuccessThresholdValue(ProbeTuning probe, String prefix) {
+      if (probe.getSuccessThreshold() != null && probe.getSuccessThreshold() != DEFAULT_SUCCESS_THRESHOLD) {
+        failures.add(DomainValidationMessages.invalidLivenessProbeSuccessThresholdValue(
+                probe.getSuccessThreshold(), prefix));
+      }
+    }
+
+    private void verifyContainerNameValidInPodSpec() {
+      getAdminServerSpec().getContainers().forEach(container ->
+              isContainerNameReserved(container, ADMIN_SERVER_POD_SPEC_PREFIX + ".containers"));
+      getSpec().getClusters().forEach(cluster ->
+              cluster.getContainers().forEach(container ->
+                      isContainerNameReserved(container, CLUSTER_SPEC_PREFIX + "[" + cluster.getClusterName()
+                              + "].serverPod.containers")));
+      getSpec().getManagedServers().forEach(managedServer ->
+              managedServer.getContainers().forEach(container ->
+                      isContainerNameReserved(container, MS_SPEC_PREFIX + "[" + managedServer.getServerName()
+                              + "].serverPod.containers")));
+    }
+
+    private void isContainerNameReserved(V1Container container, String prefix) {
+      if (container.getName().equals(WLS_CONTAINER_NAME)) {
+        failures.add(DomainValidationMessages.reservedContainerName(container.getName(), prefix));
+      }
+    }
+
+    private void verifyContainerPortNameValidInPodSpec() {
+      getAdminServerSpec().getContainers().forEach(container ->
+              areContainerPortNamesValid(container, ADMIN_SERVER_POD_SPEC_PREFIX + ".containers"));
+      getSpec().getClusters().forEach(cluster ->
+              cluster.getContainers().forEach(container ->
+                      areContainerPortNamesValid(container, CLUSTER_SPEC_PREFIX + "[" + cluster.getClusterName()
+                              + "].serverPod.containers")));
+      getSpec().getManagedServers().forEach(managedServer ->
+              managedServer.getContainers().forEach(container ->
+                      areContainerPortNamesValid(container, MS_SPEC_PREFIX + "[" + managedServer.getServerName()
+                              + "].serverPod.containers")));
+    }
+
+    private void areContainerPortNamesValid(V1Container container, String prefix) {
+      Optional.ofNullable(container.getPorts()).ifPresent(portList ->
+              portList.forEach(port -> checkPortNameLength(port, container.getName(), prefix)));
+    }
+
+    private void checkPortNameLength(V1ContainerPort port, String name, String prefix) {
+      if (port.getName().length() > LegalNames.LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH) {
+        failures.add(DomainValidationMessages.exceedMaxContainerPortName(
+                getDomainUid(),
+                prefix + "." + name,
+                port.getName()));
       }
     }
 

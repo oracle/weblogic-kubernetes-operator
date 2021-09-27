@@ -29,6 +29,8 @@ import org.junit.jupiter.api.Test;
 import static oracle.kubernetes.operator.DomainSourceType.FromModel;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
+import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CONFIGURED_FAILURE_THRESHOLD;
+import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CONFIGURED_SUCCESS_THRESHOLD;
 import static oracle.kubernetes.weblogic.domain.ChannelMatcher.channelWith;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_ALWAYS;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
@@ -63,7 +65,9 @@ class DomainV2Test extends DomainTestBase {
 
   @Override
   protected DomainConfigurator configureDomain(Domain domain) {
-    return new DomainCommonConfigurator(domain);
+    DomainCommonConfigurator commonConfigurator = new DomainCommonConfigurator(domain);
+    commonConfigurator.configureAdminServer();
+    return commonConfigurator;
   }
 
   @Test
@@ -313,48 +317,66 @@ class DomainV2Test extends DomainTestBase {
 
   @Test
   void livenessProbeSettings_returnsConfiguredValues() {
-    configureServer(SERVER1).withLivenessProbeSettings(INITIAL_DELAY, TIMEOUT, PERIOD);
+    configureServer(SERVER1)
+            .withLivenessProbeSettings(INITIAL_DELAY, TIMEOUT, PERIOD)
+            .withLivenessProbeThresholds(CONFIGURED_SUCCESS_THRESHOLD, CONFIGURED_FAILURE_THRESHOLD);
     ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getLivenessProbe().getInitialDelaySeconds(), equalTo(INITIAL_DELAY));
     assertThat(spec.getLivenessProbe().getTimeoutSeconds(), equalTo(TIMEOUT));
     assertThat(spec.getLivenessProbe().getPeriodSeconds(), equalTo(PERIOD));
+    assertThat(spec.getLivenessProbe().getSuccessThreshold(), equalTo(CONFIGURED_SUCCESS_THRESHOLD));
+    assertThat(spec.getLivenessProbe().getFailureThreshold(), equalTo(CONFIGURED_FAILURE_THRESHOLD));
   }
 
   @Test
   void whenLivenessProbeConfiguredOnMultipleLevels_useCombination() {
     configureDomain(domain).withDefaultLivenessProbeSettings(INITIAL_DELAY, -2, -3);
-    configureCluster(CLUSTER_NAME).withLivenessProbeSettings(null, TIMEOUT, -4);
-    configureServer(SERVER1).withLivenessProbeSettings(null, null, PERIOD);
+    configureCluster(CLUSTER_NAME)
+            .withLivenessProbeSettings(null, TIMEOUT, -4)
+            .withLivenessProbeThresholds(1, 1);
+    configureServer(SERVER1)
+            .withLivenessProbeSettings(null, null, PERIOD)
+            .withLivenessProbeThresholds(CONFIGURED_SUCCESS_THRESHOLD, CONFIGURED_FAILURE_THRESHOLD);
 
     ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getLivenessProbe().getInitialDelaySeconds(), equalTo(INITIAL_DELAY));
     assertThat(spec.getLivenessProbe().getTimeoutSeconds(), equalTo(TIMEOUT));
     assertThat(spec.getLivenessProbe().getPeriodSeconds(), equalTo(PERIOD));
+    assertThat(spec.getLivenessProbe().getSuccessThreshold(), equalTo(CONFIGURED_SUCCESS_THRESHOLD));
+    assertThat(spec.getLivenessProbe().getFailureThreshold(), equalTo(CONFIGURED_FAILURE_THRESHOLD));
   }
 
   @Test
   void readinessProbeSettings_returnsConfiguredValues() {
-    configureServer(SERVER1).withReadinessProbeSettings(INITIAL_DELAY, TIMEOUT, PERIOD);
+    configureServer(SERVER1)
+            .withReadinessProbeSettings(INITIAL_DELAY, TIMEOUT, PERIOD)
+            .withReadinessProbeThresholds(CONFIGURED_SUCCESS_THRESHOLD, CONFIGURED_FAILURE_THRESHOLD);
     ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getReadinessProbe().getInitialDelaySeconds(), equalTo(INITIAL_DELAY));
     assertThat(spec.getReadinessProbe().getTimeoutSeconds(), equalTo(TIMEOUT));
     assertThat(spec.getReadinessProbe().getPeriodSeconds(), equalTo(PERIOD));
+    assertThat(spec.getReadinessProbe().getSuccessThreshold(), equalTo(CONFIGURED_SUCCESS_THRESHOLD));
+    assertThat(spec.getReadinessProbe().getFailureThreshold(), equalTo(CONFIGURED_FAILURE_THRESHOLD));
   }
 
   @Test
   void whenReadinessProbeConfiguredOnMultipleLevels_useCombination() {
     configureDomain(domain).withDefaultReadinessProbeSettings(INITIAL_DELAY, -2, -3);
     configureCluster(CLUSTER_NAME).withReadinessProbeSettings(null, TIMEOUT, -4);
-    configureServer(SERVER1).withReadinessProbeSettings(null, null, PERIOD);
+    configureServer(SERVER1)
+            .withReadinessProbeSettings(null, null, PERIOD)
+            .withReadinessProbeThresholds(CONFIGURED_SUCCESS_THRESHOLD, CONFIGURED_FAILURE_THRESHOLD);
 
     ServerSpec spec = domain.getServer(SERVER1, CLUSTER_NAME);
 
     assertThat(spec.getReadinessProbe().getInitialDelaySeconds(), equalTo(INITIAL_DELAY));
     assertThat(spec.getReadinessProbe().getTimeoutSeconds(), equalTo(TIMEOUT));
     assertThat(spec.getReadinessProbe().getPeriodSeconds(), equalTo(PERIOD));
+    assertThat(spec.getReadinessProbe().getSuccessThreshold(), equalTo(CONFIGURED_SUCCESS_THRESHOLD));
+    assertThat(spec.getReadinessProbe().getFailureThreshold(), equalTo(CONFIGURED_FAILURE_THRESHOLD));
   }
 
   @Test
@@ -1488,6 +1510,13 @@ class DomainV2Test extends DomainTestBase {
     configureDomain(domain).withLogHomeEnabled(true);
 
     assertThat(domain.getSpec().isLogHomeEnabled(), is(true));
+  }
+
+  @Test
+  void whenPortForwardingEnabledSet_useValue() {
+    configureDomain(domain).withAdminChannelPortForwardingEnabled(false);
+
+    assertThat(domain.getSpec().getAdminServer().isAdminChannelPortForwardingEnabled(), is(false));
   }
 
   @Test

@@ -6,28 +6,40 @@ package oracle.weblogic.kubernetes.utils;
 import java.io.IOException;
 import java.net.Socket;
 import java.text.DateFormat;
+import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.stream.Stream;
 
 import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.domain.Cluster;
+import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainCondition;
 import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import org.awaitility.core.ConditionEvaluationListener;
 import org.awaitility.core.ConditionFactory;
+import org.awaitility.core.ConditionTimeoutException;
+import org.awaitility.core.EvaluatedCondition;
+import org.awaitility.core.TimeoutEvent;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
@@ -53,10 +65,77 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class CommonTestUtils {
 
-  public static ConditionFactory withStandardRetryPolicy =
-      with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(5, MINUTES).await();
+  private static ConditionFactory createStandardRetryPolicyWithAtMost(long minutes) {
+    return with().pollDelay(2, SECONDS)
+        .and().with().pollInterval(10, SECONDS)
+        .atMost(minutes, MINUTES).await();
+  }
+
+  public static ConditionFactory withStandardRetryPolicy = createStandardRetryPolicyWithAtMost(5);
+  public static ConditionFactory withLongRetryPolicy = createStandardRetryPolicyWithAtMost(15);
+
+  /**
+   * Test assertion using standard retry policy over time until it passes or the timeout expires.
+   * @param conditionEvaluator Condition evaluator
+   * @param logger Logger
+   * @param msg Message for logging
+   * @param params Parameter to message for logging
+   */
+  public static void testUntil(Callable<Boolean> conditionEvaluator,
+                               LoggingFacade logger, String msg, Object... params) {
+    testUntil(withStandardRetryPolicy, conditionEvaluator, logger, msg, params);
+  }
+
+  /**
+   * Test assertion over time until it passes or the timeout expires.
+   * @param conditionFactory Configuration for Awaitility condition factory
+   * @param conditionEvaluator Condition evaluator
+   * @param logger Logger
+   * @param msg Message for logging
+   * @param params Parameter to message for logging
+   */
+  public static void testUntil(ConditionFactory conditionFactory, Callable<Boolean> conditionEvaluator,
+                               LoggingFacade logger, String msg, Object... params) {
+    try {
+      conditionFactory
+          .conditionEvaluationListener(createConditionEvaluationListener(logger, msg, params))
+          .until(conditionEvaluator);
+    } catch (ConditionTimeoutException timeout) {
+      throw new TimeoutException(MessageFormat.format("Timed out waiting for: " + msg, params), timeout);
+    }
+  }
+
+  private static <T> ConditionEvaluationListener<T> createConditionEvaluationListener(
+      LoggingFacade logger, String msg, Object... params) {
+    return new ConditionEvaluationListener<T>() {
+      @Override
+      public void conditionEvaluated(EvaluatedCondition condition) {
+        int paramsSize = params != null ? params.length : 0;
+        String preamble;
+        String timeInfo;
+        if (condition.isSatisfied()) {
+          preamble = "Completed: ";
+          timeInfo = " (elapsed time {" + paramsSize + "} ms)";
+        } else {
+          preamble = "Waiting for: ";
+          timeInfo = " (elapsed time {" + paramsSize + "} ms, remaining time {" + (paramsSize + 1) + "} ms)";
+        }
+        logger.info(preamble + msg + timeInfo,
+            Stream.concat(
+                Optional.ofNullable(params).map(Arrays::asList).orElse(Collections.emptyList()).stream(),
+                Stream.of(condition.getElapsedTimeInMS(), condition.getRemainingTimeInMS())).toArray());
+      }
+
+      @Override
+      public void onTimeout(TimeoutEvent timeoutEvent) {
+        int paramsSize = params != null ? params.length : 0;
+        logger.info("Timed out waiting for: " + msg + " (elapsed time {" + paramsSize + "} ms)",
+            Stream.concat(
+                Optional.ofNullable(params).map(Arrays::asList).orElse(Collections.emptyList()).stream(),
+                Stream.of(timeoutEvent.getElapsedTimeInMS())).toArray());
+      }
+    };
+  }
 
   public static ConditionFactory withQuickRetryPolicy = with().pollDelay(0, SECONDS)
       .and().with().pollInterval(3, SECONDS)
@@ -87,17 +166,14 @@ public class CommonTestUtils {
    */
   public static void checkServiceExists(String serviceName, String namespace) {
     LoggingFacade logger = getLogger();
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for service {0} to exist in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                serviceName,
-                namespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> serviceExists(serviceName, null, namespace),
-            String.format("serviceExists failed with ApiException for service %s in namespace %s",
-                serviceName, namespace)));
+    testUntil(
+        assertDoesNotThrow(() -> serviceExists(serviceName, null, namespace),
+          String.format("serviceExists failed with ApiException for service %s in namespace %s",
+            serviceName, namespace)),
+        logger,
+        "service {0} to exist in namespace {1}",
+        serviceName,
+        namespace);
   }
 
   /**
@@ -120,17 +196,14 @@ public class CommonTestUtils {
    */
   public static void checkServiceDoesNotExist(String serviceName, String namespace) {
     LoggingFacade logger = getLogger();
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for service {0} to be deleted in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                serviceName,
-                namespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> serviceDoesNotExist(serviceName, null, namespace),
-            String.format("serviceDoesNotExist failed with ApiException for service %s in namespace %s",
-                serviceName, namespace)));
+    testUntil(
+        assertDoesNotThrow(() -> serviceDoesNotExist(serviceName, null, namespace),
+          String.format("serviceDoesNotExist failed with ApiException for service %s in namespace %s",
+            serviceName, namespace)),
+        logger,
+        "service {0} to be deleted in namespace {1}",
+        serviceName,
+        namespace);
   }
 
   /**
@@ -391,24 +464,19 @@ public class CommonTestUtils {
     logger.info("Check if the given WebLogic admin credentials are {0}", msg);
     String finalHost = host != null ? host : K8S_NODEPORT_HOST;
     logger.info("finalHost = {0}", finalHost);
-    withQuickRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Checking that credentials {0}/{1} are {2}"
-                    + "(elapsed time {3}ms, remaining time {4}ms)",
-                username,
-                password,
-                msg,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(
-            expectValid
-                ?
-            () -> credentialsValid(finalHost, podName, namespace, username, password, args)
-                :
-            () -> credentialsNotValid(finalHost, podName, namespace, username, password, args),
-            String.format(
-                "Failed to validate credentials %s/%s on pod %s in namespace %s",
-                username, password, podName, namespace)));
+    testUntil(
+        withQuickRetryPolicy,
+        assertDoesNotThrow(
+          expectValid ? () -> credentialsValid(finalHost, podName, namespace, username, password, args)
+              : () -> credentialsNotValid(finalHost, podName, namespace, username, password, args),
+          String.format(
+            "Failed to validate credentials %s/%s on pod %s in namespace %s",
+            username, password, podName, namespace)),
+        logger,
+        "Checking that credentials {0}/{1} are {2}",
+        username,
+        password,
+        msg);
   }
 
   /**
@@ -421,10 +489,28 @@ public class CommonTestUtils {
    */
   public static boolean checkSystemResourceConfiguration(int nodePort, String resourcesType,
                                                    String resourcesName, String expectedStatusCode) {
+    return checkSystemResourceConfiguration(null, nodePort, resourcesType, resourcesName, expectedStatusCode);
+  }
+
+  /**
+   * Check the system resource configuration using REST API.
+   * @param adminSvcExtHost Used only in OKD env - this is the route host created for AS external service
+   * @param nodePort admin node port
+   * @param resourcesType type of the resource
+   * @param resourcesName name of the resource
+   * @param expectedStatusCode expected status code
+   * @return true if the REST API results matches expected status code
+   */
+  public static boolean checkSystemResourceConfiguration(String adminSvcExtHost, int nodePort, String resourcesType,
+                                                   String resourcesName, String expectedStatusCode) {
     final LoggingFacade logger = getLogger();
+
+    String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + nodePort;
+    logger.info("hostAndPort = {0} ", hostAndPort);
+
     StringBuffer curlString = new StringBuffer("status=$(curl --user ");
     curlString.append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
-        .append(" http://" + K8S_NODEPORT_HOST + ":" + nodePort)
+        .append(" http://" + hostAndPort)
         .append("/management/weblogic/latest/domainConfig")
         .append("/")
         .append(resourcesType)
@@ -443,6 +529,37 @@ public class CommonTestUtils {
   }
 
   /**
+   * verify the system resource configuration using REST API.
+   * @param adminRouteHost only required for OKD env. null otherwise
+   * @param nodePort admin node port
+   * @param resourcesType type of the resource
+   * @param resourcesName name of the resource
+   * @param expectedStatusCode expected status code
+   */
+  public static void verifySystemResourceConfiguration(String adminRouteHost, int nodePort, String resourcesType,
+                                                       String resourcesName, String expectedStatusCode) {
+    final LoggingFacade logger = getLogger();
+    StringBuffer curlString = new StringBuffer("status=$(curl --user ");
+    curlString.append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
+        .append(" http://" + getHostAndPort(adminRouteHost, nodePort))
+        .append("/management/weblogic/latest/domainConfig")
+        .append("/")
+        .append(resourcesType)
+        .append("/")
+        .append(resourcesName)
+        .append("/")
+        .append(" --silent --show-error ")
+        .append(" -o /dev/null ")
+        .append(" -w %{http_code});")
+        .append("echo ${status}");
+    logger.info("checkSystemResource: curl command {0}", new String(curlString));
+
+    verifyCommandResultContainsMsg(new String(curlString), expectedStatusCode);
+  }
+
+
+
+  /**
    * Check the system resource configuration using REST API.
    * @param nodePort admin node port
    * @param resourcesPath path of the resource
@@ -450,10 +567,27 @@ public class CommonTestUtils {
    * @return true if the REST API results matches expected status code
    */
   public static boolean checkSystemResourceConfig(int nodePort, String resourcesPath, String expectedValue) {
+    return checkSystemResourceConfig(null, nodePort, resourcesPath, expectedValue);
+  }
+
+  /**
+   * Check the system resource configuration using REST API.
+   * @param adminSvcExtHost Used only in OKD env - this is the route host created for AS external service
+   * @param nodePort admin node port
+   * @param resourcesPath path of the resource
+   * @param expectedValue expected value returned in the REST call
+   * @return true if the REST API results matches expected status code
+   */
+  public static boolean checkSystemResourceConfig(String adminSvcExtHost, int nodePort,
+                                       String resourcesPath, String expectedValue) {
     final LoggingFacade logger = getLogger();
+
+    String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + nodePort;
+    logger.info("hostAndPort = {0} ", hostAndPort);
+
     StringBuffer curlString = new StringBuffer("curl --user ");
     curlString.append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
-        .append(" http://" + K8S_NODEPORT_HOST + ":" + nodePort)
+        .append(" http://" + hostAndPort)
         .append("/management/weblogic/latest/domainConfig")
         .append("/")
         .append(resourcesPath)
@@ -468,16 +602,22 @@ public class CommonTestUtils {
 
   /**
    * Check the system resource runtime using REST API.
+   * @param adminSvcExtHost Used only in OKD env - this is the route host created for AS external service
    * @param nodePort admin node port
    * @param resourcesUrl url of the resource
    * @param expectedValue expected value returned in the REST call
    * @return true if the REST API results matches expected value
    */
-  public static boolean checkSystemResourceRuntime(int nodePort, String resourcesUrl, String expectedValue) {
+  public static boolean checkSystemResourceRuntime(String adminSvcExtHost, int nodePort, 
+                                            String resourcesUrl, String expectedValue) {
     final LoggingFacade logger = getLogger();
+
+    String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + nodePort;
+    logger.info("hostAndPort = {0} ", hostAndPort);
+
     StringBuffer curlString = new StringBuffer("curl --user ");
     curlString.append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
-        .append(" http://" + K8S_NODEPORT_HOST + ":" + nodePort)
+        .append(" http://" + hostAndPort)
         .append("/management/weblogic/latest/domainRuntime")
         .append("/")
         .append(resourcesUrl)
@@ -608,21 +748,12 @@ public class CommonTestUtils {
   public static void verifyServerCommunication(String curlRequest, List<String> managedServerNames) {
     LoggingFacade logger = getLogger();
 
-    ConditionFactory withStandardRetryPolicy
-        = with().pollDelay(2, SECONDS)
-        .and().with().pollInterval(10, SECONDS)
-        .atMost(10, MINUTES).await();
-
     HashMap<String, Boolean> managedServers = new HashMap<>();
     managedServerNames.forEach(managedServerName -> managedServers.put(managedServerName, false));
 
     //verify each server in the cluster can connect to other
-    withStandardRetryPolicy.conditionEvaluationListener(
-        condition -> logger.info("Waiting until each managed server can see other cluster members"
-                + "(elapsed time {0} ms, remaining time {1} ms)",
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
-        .until((Callable<Boolean>) () -> {
+    testUntil(
+        () -> {
           for (int i = 0; i < managedServerNames.size(); i++) {
             logger.info(curlRequest);
             // check the response contains managed server name
@@ -657,7 +788,9 @@ public class CommonTestUtils {
             }
           });
           return !managedServers.containsValue(false);
-        });
+        },
+        logger,
+        "Waiting until each managed server can see other cluster members");
   }
 
   /**
@@ -736,4 +869,86 @@ public class CommonTestUtils {
       }
     }
   }
+
+  /**
+   * Evaluates the route host name for OKD env, and host:serviceport for othe env's.
+   *
+   * @param hostName - in OKD it is host name when svc is exposed as a route, null otherwise
+   * @param servicePort - port of the service to access
+   * @return host and port for all env, route hostname for OKD
+   */
+  public static String getHostAndPort(String hostName, int servicePort) {
+    LoggingFacade logger = getLogger();
+    String hostAndPort = ((OKD) ? hostName : K8S_NODEPORT_HOST + ":" + servicePort);
+    logger.info("hostAndPort = {0} ", hostAndPort);
+    return hostAndPort;
+  }
+
+  /** 
+   * Verify the command result contains expected message.
+   *
+   * @param command the command to execute
+   * @param expectedMsg the expected message in the command output
+   */
+  public static void verifyCommandResultContainsMsg(String command, String expectedMsg) {
+    testUntil(
+        () -> {
+          ExecResult result;
+          try {
+            result = exec(command, true);
+            getLogger().info("The command returned exit value: " + result.exitValue()
+                + " command output: " + result.stderr() + "\n" + result.stdout());
+
+            if (result == null || result.exitValue() != 0 || result.stdout() == null) {
+              return false;
+            }
+
+            return result.stdout().contains(expectedMsg);
+          } catch (Exception e) {
+            getLogger().info("Got exception, command failed with errors " + e.getMessage());
+            return false;
+          }
+        },
+        getLogger(),
+        "Waiting until command result contains expected message \"{0}\"",
+        expectedMsg);
+  }
+
+  /**
+   * Verify domain status conditions contains the given condition type and message.
+   *
+   * @param domainUid uid of the domain
+   * @param domainNamespace namespace of the domain
+   * @param conditionType condition type
+   * @param conditionMsg  messsage in condition
+   * @return true if the condition matches
+   */
+  public static boolean verifyDomainStatusCondition(String domainUid,
+                                              String domainNamespace,
+                                              String conditionType,
+                                              String conditionMsg) {
+    withLongRetryPolicy
+        .conditionEvaluationListener(
+            condition -> getLogger().info("Waiting for domain status condition message contains the expected msg "
+                    + "\"{0}\", (elapsed time {1}ms, remaining time {2}ms)",
+                conditionMsg,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(() -> {
+          Domain domain = getDomainCustomResource(domainUid, domainNamespace);
+          if ((domain != null) && (domain.getStatus() != null)) {
+            for (DomainCondition domainCondition : domain.getStatus().getConditions()) {
+              getLogger().info("Condition Type =" + domainCondition.getType()
+                  + " Condition Msg =" + domainCondition.getMessage());
+              if ((domainCondition.getType() != null && domainCondition.getType().equalsIgnoreCase(conditionType))
+                  && (domainCondition.getMessage() != null && domainCondition.getMessage().contains(conditionMsg))) {
+                return true;
+              }
+            }
+          }
+          return false;
+        });
+    return false;
+  }
+
 }

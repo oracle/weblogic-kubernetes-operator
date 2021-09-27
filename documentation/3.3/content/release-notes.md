@@ -6,8 +6,10 @@ draft: false
 
 ### Releases
 
-| Date | Version | Introduces backward incompatibilities? | Change |
+| Date | Version | Introduces backward incompatibilities? | Change - See also, [Change log](#change-log). |
 | --- | --- | --- | --- |
+| September 24, 2021 | v3.3.2 | no | Istio 1.10 support, enhanced liveness and readiness probe customization to support customizing failure thresholds, and additional validations. |
+| August 23, 2021 | v3.3.1 | no | Resolved an issue related to managed Coherence cluster formation when using Istio and another issue related to Secret and ConfigMap validation. |
 | July 20, 2021 | v3.3.0 | no | Auxiliary image support. |
 | June 21, 2021 | v3.2.5 | no | Updated Oracle Linux libraries and resolved an issue related to repeated introspection. |
 | June 18, 2021 | v3.2.4 | no | Resolved several issues related to Istio, diagnostics, and recovery. |
@@ -42,6 +44,20 @@ draft: false
 | March 20, 2018 |  | yes | Several files and input parameters have been renamed.  This affects how operators and domains are created.  It also changes generated Kubernetes artifacts, therefore customers must recreate their operators and domains.
 
 ### Change log
+
+#### Operator 3.3.2
+
+* Support for the networking changes included with Istio 1.10 ([#2538](https://github.com/oracle/weblogic-kubernetes-operator/pull/2538)).
+* Support for accessing the WebLogic Server Administration Console through `kubectl port-forward` ([#2520](https://github.com/oracle/weblogic-kubernetes-operator/pull/2520)).
+* Prevent insecure file system warnings related to the "umask 027" requirement ([#2533](https://github.com/oracle/weblogic-kubernetes-operator/pull/2533)).
+* Enhanced [liveness and readiness probe customization](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/liveness-readiness-probe-customization/) to support customizing failure thresholds ([#2521](https://github.com/oracle/weblogic-kubernetes-operator/pull/2521)).
+* Additional validation for container port names and WebLogic Network Access Point (NAP) names that will be used as container ports ([#2542](https://github.com/oracle/weblogic-kubernetes-operator/pull/2542)).
+
+#### Operator 3.3.1
+
+* Resolved an issue related to managed Coherence cluster formation when using Istio ([#2499](https://github.com/oracle/weblogic-kubernetes-operator/pull/2499)).
+* Resolved an issue related to generating the internal certificate when using Istio ([#2486](https://github.com/oracle/weblogic-kubernetes-operator/pull/2486)).
+* Resolved an issue related to validating Secrets and ConfigMaps referenced by a Domain when the namespace has a larger number of such resources ([#2500](https://github.com/oracle/weblogic-kubernetes-operator/pull/2500)).
 
 #### Operator 3.3.0
 

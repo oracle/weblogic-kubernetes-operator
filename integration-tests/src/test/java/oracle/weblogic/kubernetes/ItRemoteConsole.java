@@ -23,14 +23,11 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
@@ -45,7 +42,8 @@ import static oracle.weblogic.kubernetes.actions.impl.Service.getServiceNodePort
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isVoyagerReady;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReturnedCode;
-import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createSSLenabledMiiDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createIngressAndRetryIfFail;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyTraefik;
@@ -56,7 +54,6 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static oracle.weblogic.kubernetes.utils.WebLogicRemoteConsoleUtils.installAndVerifyWlsRemoteConsole;
 import static oracle.weblogic.kubernetes.utils.WebLogicRemoteConsoleUtils.shutdownWlsRemoteConsole;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -84,11 +81,6 @@ class ItRemoteConsole {
   private static LoggingFacade logger = null;
   private static final int ADMIN_SERVER_PORT = 7001;
   private static final String voyagerIngressName = "voyager-path-routing";
-
-  private static ConditionFactory withStandardRetryPolicy =
-      with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(5, MINUTES).await();
 
   /**
    * Get namespaces for operator and WebLogic domain.
@@ -139,8 +131,7 @@ class ItRemoteConsole {
     // install and verify Nginx
     nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
 
-    // create a basic model in image domain
-    createMiiDomainAndVerify(
+    createSSLenabledMiiDomainAndVerify(
         domainNamespace,
         domainUid,
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
@@ -154,7 +145,8 @@ class ItRemoteConsole {
     createNginxIngressPathRoutingRules();
 
     // install WebLogic remote console
-    assertTrue(installAndVerifyWlsRemoteConsole(), "Remote Console installation failed");
+    assertTrue(installAndVerifyWlsRemoteConsole(domainNamespace, adminServerPodName),
+        "Remote Console installation failed");
 
     // Verify k8s WebLogic domain is accessible through remote console using admin server nodeport
     verifyWlsRemoteConsoleConnection();
@@ -219,6 +211,39 @@ class ItRemoteConsole {
     logger.info("Executing NGINX nodeport curl command {0}", curlCmd);
     assertTrue(callWebAppAndWaitTillReturnedCode(curlCmd, "201", 10), "Calling web app failed");
     logger.info("WebLogic domain is accessible through remote console using NGINX");
+  }
+
+  /**
+   * Verify k8s WebLogic domain is accessible through remote console using SSL.
+   */
+  @Test
+  @DisplayName("Verify Connecting to Mii domain by Remote Console using SSL is successful")
+  void testWlsRemoteConsoleConnectionUsingSSL() {
+    int sslNodePort = getServiceNodePort(
+         domainNamespace, getExternalServicePodName(adminServerPodName), "default-secure");
+    assertTrue(sslNodePort != -1,
+          "Could not get the default-secure external service node port");
+    logger.info("Found the administration service nodePort {0}", sslNodePort);
+    logger.info("The K8S_NODEPORT_HOST is {0}", K8S_NODEPORT_HOST);
+
+    //verify WebLogic console is accessible through default-secure nodeport
+    String curlCmd = "curl -sk --show-error --noproxy '*' "
+          + " https://" + K8S_NODEPORT_HOST + ":" + sslNodePort
+          + "/console/login/LoginForm.jsp --write-out %{http_code} -o /dev/null";
+    logger.info("Executing WebLogic console default-secure nodeport curl command {0}", curlCmd);
+    assertTrue(callWebAppAndWaitTillReady(curlCmd, 10));
+    logger.info("WebLogic console is accessible thru default-secure service");
+
+    //verify remote console is accessible through default-secure nodeport
+    curlCmd = "curl -sk -v --show-error --noproxy '*' --user weblogic:welcome1 -H "
+        + "Content-Type:application/json -d "
+        + "\"{ \\" + "\"domainUrl\\" + "\"" + ": " + "\\" + "\"" + "https://"
+        + K8S_NODEPORT_HOST + ":" + sslNodePort + "\\" + "\" }" + "\""
+        + " http://localhost:8012/api/connection  --write-out %{http_code} -o /dev/null";
+    logger.info("Executing remote console default-secure nodeport curl command {0}", curlCmd);
+    assertTrue(callWebAppAndWaitTillReturnedCode(curlCmd, "201", 10), "Calling web app failed");
+    logger.info("Remote console is accessible through default-secure service");
+
   }
 
   /**
@@ -287,15 +312,12 @@ class ItRemoteConsole {
     assertDoesNotThrow(() -> createIngress(voyagerIngressName, domainNamespace, annotations, ingressRules, null));
 
     // wait until voyager ingress pod is ready
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info(
-                "Waiting for Voyager ingress to be ready in namespace {0} (elapsed time {1}ms, remaining time {2}ms)",
-                domainNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> isVoyagerReady(domainNamespace, voyagerIngressName),
-            "isVoyagerReady failed with ApiException"));
+    testUntil(
+        assertDoesNotThrow(() -> isVoyagerReady(domainNamespace, voyagerIngressName),
+          "isVoyagerReady failed with ApiException"),
+        logger,
+        "Voyager ingress to be ready in namespace {0}",
+        domainNamespace);
 
     // check the ingress was found in the domain namespace
     assertThat(assertDoesNotThrow(() -> listIngresses(domainNamespace)))
@@ -365,14 +387,14 @@ class ItRemoteConsole {
   }
 
   private static void verifyWlsRemoteConsoleConnection() {
-
     int nodePort = getServiceNodePort(
         domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     assertTrue(nodePort != -1,
         "Could not get the default external service node port");
     logger.info("Found the default service nodePort {0}", nodePort);
     logger.info("The K8S_NODEPORT_HOST is {0}", K8S_NODEPORT_HOST);
-    String curlCmd = "curl -v --user weblogic:welcome1 -H Content-Type:application/json -d "
+
+    String curlCmd = "curl -v --show-error --noproxy '*' --user weblogic:welcome1 -H Content-Type:application/json -d "
         + "\"{ \\" + "\"domainUrl\\" + "\"" + ": " + "\\" + "\"" + "http://"
         + K8S_NODEPORT_HOST + ":" + nodePort + "\\" + "\" }" + "\""
         + " http://localhost:8012/api/connection  --write-out %{http_code} -o /dev/null";
@@ -380,4 +402,5 @@ class ItRemoteConsole {
     assertTrue(callWebAppAndWaitTillReturnedCode(curlCmd, "201", 10), "Calling web app failed");
     logger.info("WebLogic domain is accessible through remote console");
   }
+
 }

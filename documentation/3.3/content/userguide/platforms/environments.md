@@ -25,7 +25,7 @@ Container Services for use with Kubernetes* on OCI Compute, and on "Authorized C
 
 WebLogic Server and the WebLogic Kubernetes Operator are certified and supported on Oracle Linux Cloud Native Environment:
 - Operator v2.6.0 is certified on OLCNE 1.1 and v3.2.5 is certified on OLCNE 1.3.
-- Operator v3.2.5 provides certified support of OLCNE 1.3 with Kubernetes 1.20.6 and CRI-O 1.20.6.
+- Operator v3.2.5 provides certified support of OLCNE 1.3 with Kubernetes 1.20.6 and CRI-O 1.20.2.
 
 ### Microsoft Azure Kubernetes Service
 
@@ -62,8 +62,9 @@ Operator 2.0.1+ is certified for use on OpenShift Container Platform 3.11.43+, w
 
 Operator 2.5.0+ is certified for use on OpenShift Container Platform 4.3.0+ with Kubernetes 1.16.2+.
 
-When using the operator in OpenShift, a security context constraint is required to ensure that WebLogic containers run with a UNIX UID that has the correct permissions on the domain file system.
-This could be either the `anyuid` SCC or a custom one that you define for user/group `1000`. For more information, see [OpenShift]({{<relref "/security/openshift.md">}}) in the Security section.
+To accommodate OpenShift security requirements:
+- For security requirements to run WebLogic in OpenShift, see the [OpenShift chapter]({{<relref "/security/openshift.md">}}) in the Security section.
+- Beginning with operator version 3.3.2, specify the `kubernetesPlatorm` Helm chart property with value `OpenShift`. For more information, see [Operator Helm configuration values]({{<relref "/userguide/managing-operators/using-helm#operator-helm-configuration-values">}}).
 
 ### Important note about development-focused Kubernetes distributions
 

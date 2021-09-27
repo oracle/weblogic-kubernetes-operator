@@ -6,14 +6,12 @@ package oracle.weblogic.kubernetes.utils;
 import io.kubernetes.client.custom.V1Patch;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainResourceCredentialsSecretPatched;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podRestartVersionUpdated;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -22,10 +20,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * The common utility class for domain patching tests.
  */
 public class PatchDomainUtils {
-  private static org.awaitility.core.ConditionFactory withStandardRetryPolicy =
-      with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(5, MINUTES).await();
 
   /**
    * Patch the domain resource with a new WebLogic admin credentials secret.
@@ -136,19 +130,15 @@ public class PatchDomainUtils {
   ) {
     LoggingFacade logger = getLogger();
     // check if domain resource has been patched with the new secret
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for domain {0} to be patched in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                domainUid,
-                namespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> domainResourceCredentialsSecretPatched(domainUid, namespace, newValue),
-            String.format(
-                "Domain %s in namespace %s is not patched with admin credentials secret %s",
-                domainUid, namespace, newValue)));
-
+    testUntil(
+        assertDoesNotThrow(() -> domainResourceCredentialsSecretPatched(domainUid, namespace, newValue),
+          String.format(
+            "Domain %s in namespace %s is not patched with admin credentials secret %s",
+            domainUid, namespace, newValue)),
+        logger,
+        "domain {0} to be patched in namespace {1}",
+        domainUid,
+        namespace);
   }
 
   /**

@@ -44,7 +44,7 @@
 #   configuration.
 #
 
-
+import copy
 import inspect
 import os
 import sys
@@ -55,12 +55,16 @@ tmp_scriptdir=os.path.dirname(tmp_info[0])
 sys.path.append(tmp_scriptdir)
 
 env = None
+ISTIO_NAP_NAMES = ['tcp-cbt', 'tcp-ldap', 'tcp-iiop', 'tcp-snmp', 'http-default', 'tcp-default', 'https-secure', 'tls-ldaps', 'tls-default', 'tls-cbts', 'tls-iiops', 'https-admin']
+WLS_LOCALHOST_IDENTIFIER = '-lh'
+
 
 class OfflineWlstEnv(object):
 
   def open(self, model):
 
     self.model = model
+
     # before doing anything, get each env var and verify it exists
 
     self.DOMAIN_UID               = self.getEnv('DOMAIN_UID')
@@ -302,12 +306,15 @@ def customizeServers(model):
 
 def customizeServer(model, server, name):
   listen_address=env.toDNS1123Legal(env.getDomainUID() + "-" + name)
+  adminServer = model['topology']['AdminServerName']
   customizeLog(name, server)
   customizeAccessLog(name, server)
   customizeDefaultFileStore(server)
   setServerListenAddress(server, listen_address)
   customizeNetworkAccessPoints(server,listen_address)
   customizeServerIstioNetworkAccessPoint(server, listen_address)
+  if (name == adminServer):
+    addAdminChannelPortForwardNetworkAccessPoints(server)
   if (getCoherenceClusterSystemResourceOrNone(model['topology'], server) is not None):
     customizeCoherenceMemberConfig(server, listen_address)
 
@@ -326,6 +333,8 @@ def getAdministrationPort(server, topology):
     port = int(server['AdministrationPort'])
   if port == 0 and 'AdministrationPort' in topology:
     port = int(topology['AdministrationPort'])
+  if port == 0:
+    port =9002
   return port
 
 
@@ -370,7 +379,7 @@ def getSSLOrNone(server):
   return server['SSL']
 
 
-def _writeIstioNAP(name, server, listen_address, listen_port, protocol, http_enabled="true"):
+def _writeIstioNAP(name, server, listen_address, listen_port, protocol, http_enabled="true", bind_to_localhost="true"):
 
   if 'NetworkAccessPoint' not in server:
     server['NetworkAccessPoint'] = {}
@@ -381,7 +390,10 @@ def _writeIstioNAP(name, server, listen_address, listen_port, protocol, http_ena
 
   nap = naps[name]
   nap['Protocol'] = protocol
-  nap['ListenAddress'] = '127.0.0.1'
+  if bind_to_localhost == 'true':
+    nap['ListenAddress'] = '127.0.0.1'
+  else:
+    nap['ListenAddress'] = '%s.%s' % (listen_address, env.getEnvOrDef("ISTIO_POD_NAMESPACE", "default"))
   nap['PublicAddress'] = '%s.%s' % (listen_address, env.getEnvOrDef("ISTIO_POD_NAMESPACE", "default"))
   nap['ListenPort'] = listen_port
   nap['HttpEnabledForThisProtocol'] = http_enabled
@@ -405,7 +417,12 @@ def customizeServerIstioNetworkAccessPoint(server, listen_address):
 
   # readiness probe
   _writeIstioNAP(name='http-probe', server=server, listen_address=listen_address,
-                      listen_port=istio_readiness_port, protocol='http', http_enabled="true")
+                      listen_port=istio_readiness_port, protocol='http', http_enabled="true",
+                      bind_to_localhost="false")
+
+  # readiness probe NAP binding to localhost
+  _writeIstioNAP(name=createNameForLocalHostNetworkAccessPoint('http-probe', {}), server=server, listen_address=listen_address,
+                 listen_port=istio_readiness_port, protocol='http', http_enabled="true")
 
   # Generate NAP for each protocols
   _writeIstioNAP(name='tcp-ldap', server=server, listen_address=listen_address,
@@ -471,6 +488,11 @@ def customizeManagedIstioNetworkAccessPoint(template, listen_address):
     listen_port = 7001
   # readiness probe
   _writeIstioNAP(name='http-probe', server=template, listen_address=listen_address,
+                 listen_port=istio_readiness_port, protocol='http', http_enabled="true",
+                 bind_to_localhost="false")
+
+  # readiness probe NAP binding to localhost address for Istio versions < 1.10.x
+  _writeIstioNAP(name=createNameForLocalHostNetworkAccessPoint('http-probe', {}), server=template, listen_address=listen_address,
                  listen_port=istio_readiness_port, protocol='http', http_enabled="true")
 
   # Generate NAP for each protocols
@@ -518,6 +540,69 @@ def customizeManagedIstioNetworkAccessPoint(template, listen_address):
     _writeIstioNAP(name='tls-iiops', server=template, listen_address=listen_address,
                    listen_port=ssl_listen_port, protocol='iiops')
 
+def addAdminChannelPortForwardNetworkAccessPoints(server):
+  istio_enabled = env.getEnvOrDef("ISTIO_ENABLED", "false")
+  admin_channel_port_forwarding_enabled = env.getEnvOrDef("ADMIN_CHANNEL_PORT_FORWARDING_ENABLED", "true")
+  if (admin_channel_port_forwarding_enabled == 'false') or (istio_enabled == 'true'):
+    return
+
+  admin_server_port = server['ListenPort']
+  # Set the default if it is not provided to avoid nap default to 0 which fails validation.
+
+  if admin_server_port is None:
+    admin_server_port = 7001
+
+  model = env.getModel()
+
+  if 'NetworkAccessPoint' not in server:
+    server['NetworkAccessPoint'] = {}
+
+  naps = server['NetworkAccessPoint']
+  nap_names = list(naps)
+  index = 0
+  for nap_name in nap_names:
+    nap = naps[nap_name]
+    if nap['Protocol'] == 'admin':
+      index += 1
+      customAdminChannelPort = nap['ListenPort']
+      _writeAdminChannelPortForwardNAP(name='internal-admin' + str(index), server=server,
+                                       listen_port=customAdminChannelPort, protocol='admin')
+
+  if isAdministrationPortEnabledForServer(server, model['topology']):
+    _writeAdminChannelPortForwardNAP(name='internal-admin', server=server,
+                                     listen_port=getAdministrationPort(server, model['topology']), protocol='admin')
+  elif index == 0:
+    _writeAdminChannelPortForwardNAP(name='internal-t3', server=server, listen_port=admin_server_port, protocol='t3')
+
+    ssl = getSSLOrNone(server)
+    ssl_listen_port = None
+    if ssl is not None and 'Enabled' in ssl and ssl['Enabled'] == 'true':
+      ssl_listen_port = ssl['ListenPort']
+      if ssl_listen_port is None:
+        ssl_listen_port = "7002"
+    elif ssl is None and isSecureModeEnabledForDomain(model['topology']):
+      ssl_listen_port = "7002"
+
+    if ssl_listen_port is not None:
+      _writeAdminChannelPortForwardNAP(name='internal-t3s', server=server, listen_port=ssl_listen_port, protocol='t3s')
+
+def _writeAdminChannelPortForwardNAP(name, server, listen_port, protocol):
+
+  if 'NetworkAccessPoint' not in server:
+    server['NetworkAccessPoint'] = {}
+
+  naps = server['NetworkAccessPoint']
+  if name not in naps:
+    naps[name] = {}
+
+  nap = naps[name]
+  nap['Protocol'] = protocol
+  nap['ListenAddress'] = 'localhost'
+  nap['ListenPort'] = listen_port
+  nap['HttpEnabledForThisProtocol'] = 'true'
+  nap['TunnelingEnabled'] = 'false'
+  nap['Enabled'] = 'true'
+
 
 def customizeNetworkAccessPoints(server, listen_address):
   if 'NetworkAccessPoint' not in server:
@@ -525,22 +610,88 @@ def customizeNetworkAccessPoints(server, listen_address):
 
   naps = server['NetworkAccessPoint']
   nap_names = naps.keys()
+  # Dictionary to track the count of naps that have names > 15 characters
+  # key = 10 char name, value = index count
+  nap_name_dict = {}
+  # Dictionary of LocalHost NAP's created
+  local_nap_dict = {}
   for nap_name in nap_names:
     nap = naps[nap_name]
-    customizeNetworkAccessPoint(nap, listen_address)
+    customizeNetworkAccessPoint(nap_name, nap, listen_address)
+    createLocalHostNetworkAccessPoint(nap_name, nap, nap_name_dict, local_nap_dict)
+
+  # Iterate through the Dictionary of cloned local NAP's and add to the NetworkAccesPoint
+  # list of the model
+  local_nap_names = local_nap_dict.keys()
+  for local_nap_name in local_nap_names:
+    server['NetworkAccessPoint'][local_nap_name] = local_nap_dict[local_nap_name]
 
 
-def customizeNetworkAccessPoint(nap, listen_address):
-  istio_enabled = env.getEnvOrDef("ISTIO_ENABLED", "false")
+def customizeNetworkAccessPoint(nap_name, nap, listen_address):
+  if nap_name in ISTIO_NAP_NAMES or nameContainsLocalHostIdentifier(nap_name):
+    # skip creating ISTIO channels
+    return
 
+  # fix NAP listen address
   if 'ListenAddress' in nap:
     original_listen_address = nap['ListenAddress']
     if len(original_listen_address) > 0:
-      if istio_enabled == 'true':
-        nap['ListenAddress'] = '127.0.0.1'
-      else:
         nap['ListenAddress'] = listen_address
 
+# Create copy of custom NAP for binding to localhost for handling k8s 'port-forward'
+# feature and Istio versions < 1.10.x
+def createLocalHostNetworkAccessPoint(nap_name, nap, nap_name_dict, local_nap_dict):
+  istio_enabled = env.getEnvOrDef("ISTIO_ENABLED", "false")
+  if istio_enabled == 'true':
+    if nap_name in ISTIO_NAP_NAMES or nameContainsLocalHostIdentifier(nap_name):
+      # skip creating ISTIO channels
+      return
+
+    wls_local_nap = copy.deepcopy(nap)
+    wls_local_nap['ListenAddress'] = '127.0.0.1'
+    local_nap_name = createNameForLocalHostNetworkAccessPoint(nap_name, nap_name_dict)
+    local_nap_dict[local_nap_name] = wls_local_nap
+
+def createNameForLocalHostNetworkAccessPoint(nap_name, nap_name_dict):
+  # NAP names can be a maximum of 15 characters in length
+  key = nap_name
+  idx = 1
+  if len(nap_name) >= 10:
+    # Slice out the first 10 characters to use since there is a 15 character
+    # limit to NAP names
+    key = nap_name[:10]
+    if key not in nap_name_dict:
+      # Add the first nap name with index=1 into the Dictionary
+      nap_name_dict[key] = idx
+    else:
+      # Found a nap with the same first 10 characters so increment and
+      # save the index
+      idx = nap_name_dict[key] + 1
+      nap_name_dict[key] = idx
+
+  # zero fill to the left for single digit index (e.g. 01)
+  idx_str = str(idx)
+  if idx < 10:
+    idx_str = '0' + idx_str
+
+  # NAP name of for localhost binding will be of the form 'xxxxxxxxxx-lh01'
+  return key + WLS_LOCALHOST_IDENTIFIER + idx_str
+
+def nameContainsLocalHostIdentifier(name):
+  # look for '-lh'
+  identifierIdx = name.find(WLS_LOCALHOST_IDENTIFIER)
+  # check if there is a localhost identifier
+  if identifierIdx > -1:
+    endIdentifierIdx = identifierIdx + len(WLS_LOCALHOST_IDENTIFIER)
+    # get substring from localhost identifier to end
+    subStr = name[endIdentifierIdx:]
+    # should be only 2 digits 'NN' from '-lhNN' format
+    if len(subStr) == 2:
+      # verify the last two chars are digits
+      if subStr.isdigit():
+        return True
+
+  return False
 
 def setServerListenAddress(serverOrTemplate, listen_address):
   serverOrTemplate['ListenAddress'] = listen_address

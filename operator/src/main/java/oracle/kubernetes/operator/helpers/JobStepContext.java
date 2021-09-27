@@ -38,6 +38,7 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 
 import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
@@ -189,6 +190,10 @@ public abstract class JobStepContext extends BasePodStepContext {
 
   public boolean isIstioEnabled() {
     return getDomain().isIstioEnabled();
+  }
+
+  public boolean isAdminChannelPortForwardingEnabled(DomainSpec domainSpec) {
+    return getDomain().isAdminChannelPortForwardingEnabled(domainSpec);
   }
 
   int getIstioReadinessPort() {

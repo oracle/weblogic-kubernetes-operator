@@ -24,7 +24,6 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.apache.commons.io.FileUtils;
-import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -32,8 +31,6 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
@@ -47,7 +44,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_TEST_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -74,6 +71,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceDoesN
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfig;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfiguration;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileFromPod;
@@ -94,7 +92,6 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodsWithTimeStamps;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -129,11 +126,6 @@ class ItMiiAuxiliaryImage {
   private final int replicaCount = 2;
   private String adminSecretName = "weblogic-credentials";
   private String encryptionSecretName = "encryptionsecret";
-
-  ConditionFactory withStandardRetryPolicy
-      = with().pollDelay(0, SECONDS)
-      .and().with().pollInterval(10, SECONDS)
-      .atMost(30, MINUTES).await();
 
   /**
    * Install Operator.
@@ -276,7 +268,7 @@ class ItMiiAuxiliaryImage {
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
         domainUid, miiAuxiliaryImage1, miiAuxiliaryImage2);
     Domain domainCR = createDomainResource(domainUid, domainNamespace,
-        WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG, adminSecretName, OCIR_SECRET_NAME,
+        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
         auxiliaryImageVolumeName, miiAuxiliaryImage1, miiAuxiliaryImage2);
 
@@ -469,7 +461,7 @@ class ItMiiAuxiliaryImage {
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
         domainUid, errorPathAuxiliaryImage1);
     Domain domainCR = createDomainResource(domainUid, errorpathDomainNamespace,
-        WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG, adminSecretName, OCIR_SECRET_NAME,
+        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
         auxiliaryImageVolumeName, errorPathAuxiliaryImage1);
 
@@ -549,7 +541,7 @@ class ItMiiAuxiliaryImage {
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
         domainUid, errorPathAuxiliaryImage2);
     Domain domainCR = createDomainResource(domainUid, errorpathDomainNamespace,
-        WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG, adminSecretName, OCIR_SECRET_NAME,
+        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
         auxiliaryImageVolumeName, errorPathAuxiliaryImage2);
 
@@ -636,7 +628,7 @@ class ItMiiAuxiliaryImage {
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
         domainUid, errorPathAuxiliaryImage3);
     Domain domainCR = createDomainResource(domainUid, errorpathDomainNamespace,
-        WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG, adminSecretName, OCIR_SECRET_NAME,
+        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
         auxiliaryImageVolumeName, errorPathAuxiliaryImage3);
 
@@ -831,7 +823,7 @@ class ItMiiAuxiliaryImage {
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
         domainUid, errorPathAuxiliaryImage4);
     Domain domainCR = createDomainResource(domainUid, errorpathDomainNamespace,
-        WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG, adminSecretName, OCIR_SECRET_NAME,
+        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
         auxiliaryImageVolumeName, errorPathAuxiliaryImage4);
 
@@ -993,7 +985,7 @@ class ItMiiAuxiliaryImage {
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
         domainUid, miiAuxiliaryImage4, miiAuxiliaryImage5);
     Domain domainCR = createDomainResource(domainUid, wdtDomainNamespace,
-        WEBLOGIC_IMAGE_NAME + ":" + WEBLOGIC_IMAGE_TAG, adminSecretName, OCIR_SECRET_NAME,
+        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
         auxiliaryImageVolumeName, miiAuxiliaryImage4, miiAuxiliaryImage5);
 
@@ -1255,17 +1247,10 @@ class ItMiiAuxiliaryImage {
 
     // wait and check whether the introspector log contains the expected error message
     logger.info("verifying that the introspector log contains the expected error message");
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition ->
-                logger.info(
-                    "Checking for the log of introspector pod contains the expected error msg {0}. "
-                        + "Elapsed time {1}ms, remaining time {2}ms",
-                    expectedErrorMsg,
-                    condition.getElapsedTimeInMS(),
-                    condition.getRemainingTimeInMS()))
-        .until(() ->
-            introspectorPodLogContainsExpectedErrorMsg(domainUid, namespace, expectedErrorMsg));
+    testUntil(
+        () -> introspectorPodLogContainsExpectedErrorMsg(domainUid, namespace, expectedErrorMsg),
+        logger,
+        "Checking for the log of introspector pod contains the expected error msg {0}",
+        expectedErrorMsg);
   }
-
 }

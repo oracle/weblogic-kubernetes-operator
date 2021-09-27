@@ -14,6 +14,7 @@ import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressRule;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DEFAULT_CHANNEL_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.createIngress;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
@@ -32,38 +33,42 @@ public class OKDUtils {
    * @param namespace - Namespace where the route is exposed
    */
   public static String createRouteForOKD(String serviceName, String namespace) {
-    assertTrue(new Command()
-        .withParams(new CommandParams()
+    if (OKD) {
+      assertTrue(new Command()
+          .withParams(new CommandParams()
             .command("oc expose service " + serviceName + " -n " + namespace))
-        .execute(), "oc expose service failed");
-    String command = "oc -n " + namespace + " get routes " + serviceName + "  '-o=jsonpath={.spec.host}'";
+          .execute(), "oc expose service failed");
+      String command = "oc -n " + namespace + " get routes " + serviceName + "  '-o=jsonpath={.spec.host}'";
 
-    ExecResult result = Command.withParams(
-        new CommandParams()
-            .command(command))
-        .executeAndReturnResult();
+      ExecResult result = Command.withParams(
+          new CommandParams()
+              .command(command))
+          .executeAndReturnResult();
 
-    boolean success =
-        result != null
-            && result.exitValue() == 0
-            && result.stdout() != null
-            && result.stdout().contains(serviceName);
+      boolean success =
+          result != null
+              && result.exitValue() == 0
+              && result.stdout() != null
+              && result.stdout().contains(serviceName);
 
-    String outStr = "Did not get the route hostName \n";
-    outStr += ", command=\n{\n" + command + "\n}\n";
-    outStr += ", stderr=\n{\n" + (result != null ? result.stderr() : "") + "\n}\n";
-    outStr += ", stdout=\n{\n" + (result != null ? result.stdout() : "") + "\n}\n";
+      String outStr = "Did not get the route hostName \n";
+      outStr += ", command=\n{\n" + command + "\n}\n";
+      outStr += ", stderr=\n{\n" + (result != null ? result.stderr() : "") + "\n}\n";
+      outStr += ", stdout=\n{\n" + (result != null ? result.stdout() : "") + "\n}\n";
 
-    assertTrue(success, outStr);
+      assertTrue(success, outStr);
 
-    getLogger().info("exitValue = {0}", result.exitValue());
-    getLogger().info("stdout = {0}", result.stdout());
-    getLogger().info("stderr = {0}", result.stderr());
+      getLogger().info("exitValue = {0}", result.exitValue());
+      getLogger().info("stdout = {0}", result.stdout());
+      getLogger().info("stderr = {0}", result.stderr());
 
-    String hostName = result.stdout();
-    getLogger().info("route hostname = {0}", hostName);
-
-    return hostName;
+      String hostName = result.stdout();
+      getLogger().info("route hostname = {0}", hostName);
+  
+      return hostName;
+    } else {
+      return null;
+    }
   }
 
   /**
