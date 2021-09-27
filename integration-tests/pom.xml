@@ -251,7 +251,6 @@
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>
-                    **/ItExternalLbTunneling,
                     **/ItMiiAuxiliaryImage,
                     **/ItMiiAuxiliaryImageCluster,
                     **/ItMiiCustomSslStore,
@@ -262,12 +261,8 @@
                     **/ItExternalRmiTunneling,
                     **/ItCrossDomainTransaction,
                     **/ItIstioDomainInPV,
-                    **/ItIstioMiiDomain,
-                    **/ItManagedCoherence,
                     **/ItMiiDomain,
-                    **/ItMiiSampleWlsMain,
                     **/ItMiiUpdateDomainConfig,
-                    **/ItMonitoringExporter,
                     **/ItParameterizedDomain,
                     **/ItPodsShutdownOption,
                     **/ItProductionSecureMode,
