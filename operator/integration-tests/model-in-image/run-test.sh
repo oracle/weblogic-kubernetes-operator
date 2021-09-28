@@ -330,7 +330,7 @@ if [ "$DO_OPER" = "true" ]; then
   doCommand  "\$TESTDIR/deploy-operator.sh"
 fi
 
-if [ "$DO_TRAEFIK" = "true" ]; then
+if [ "$DO_TRAEFIK" = "true" ] && [ "$OKD" = "false" ]; then
   doCommand -c "echo ====== TRAEFIK DEPLOY ======"
   doCommand  "\$TESTDIR/deploy-traefik.sh"
 fi
@@ -384,14 +384,18 @@ if [ "$DO_INITIAL_MAIN" = "true" ]; then
 
   if [ "$OKD" = "true" ]; then
     # expose the cluster service as an route
-    doCommand -c "oc expose service \${DOMAIN_UID}-cluster-cluster-1 --hostname \${DOMAIN_UID}-cluster-cluster-1 -n \$DOMAIN_NAMESPACE"
+    doCommand -c "oc expose service \${DOMAIN_UID}-cluster-cluster-1 -n \$DOMAIN_NAMESPACE"
+    routeHost=$(getRouteHost "${DOMAIN_UID}-cluster-cluster-1")
+    echo $routeHost
+    doCommand -c export ROUTE_HOST=${routeHost}
+    sleep 10
   fi
 
   if [ ! "$DRY_RUN" = "true" ]; then
     diefast # (cheat to speedup a subsequent roll/shutdown)
     testapp internal cluster-1 "Hello World!"
     if [ "$OKD" = "true" ]; then
-      testapp OKD  cluster-1 "Hello World!"
+      testapp OKD  cluster-1 "Hello World!" 
     else
       testapp traefik  cluster-1 "Hello World!"
     fi
@@ -431,7 +435,14 @@ if [ "$DO_UPDATE1" = "true" ]; then
   if [ ! "$DRY_RUN" = "true" ]; then
     diefast # (cheat to speedup a subsequent roll/shutdown)
     testapp internal cluster-1 "mynewdatasource"
-    testapp traefik  cluster-1 "mynewdatasource"
+    if [ "$OKD" = "true" ]; then
+      routeHost=$(getRouteHost "${DOMAIN_UID}-cluster-cluster-1")
+      echo $routeHost
+      doCommand -c export ROUTE_HOST=${routeHost}
+      testapp OKD  cluster-1 "mynewdatasource" 
+    else
+      testapp traefik  cluster-1 "mynewdatasource"
+    fi
   fi
 
   dumpInfo
@@ -470,13 +481,30 @@ if [ "$DO_UPDATE2" = "true" ]; then
   doCommand -c "kubectl apply -f \$WORKDIR/\$DOMAIN_RESOURCE_FILENAME"
   doPodWait 3
 
+  if [ "$OKD" = "true" ]; then
+    # expose the cluster service as an route
+    doCommand -c "oc expose service \${DOMAIN_UID}-cluster-cluster-1 -n \$DOMAIN_NAMESPACE"
+    routeHost=$(getRouteHost "${DOMAIN_UID}-cluster-cluster-1")
+    echo $routeHost
+    doCommand -c export ROUTE_HOST=${routeHost}
+    sleep 10
+  fi
+
   if [ ! "$DRY_RUN" = "true" ]; then
     diefast # (cheat to speedup a subsequent roll/shutdown)
     testapp internal cluster-1 "name....domain2"
-    testapp traefik  cluster-1 "name....domain2"
+    if [ "$OKD" = "true" ]; then
+      testapp OKD cluster-1 "name....domain2" 
+    else
+      testapp traefik  cluster-1 "name....domain2"
+    fi
     doCommand -c export DOMAIN_UID=$DOMAIN_UID1
     testapp internal cluster-1 "name....domain1"
-    testapp traefik  cluster-1 "name....domain1"
+    if [ "$OKD" = "true" ]; then
+      testapp OKD  cluster-1 "name....domain2" 
+    else
+      testapp traefik  cluster-1 "name....domain1"
+    fi
   fi
 
   dumpInfo
@@ -526,7 +554,14 @@ if [ "$DO_UPDATE3_MAIN" = "true" ]; then
   if [ ! "$DRY_RUN" = "true" ]; then
     diefast # (cheat to speedup a subsequent roll/shutdown)
     testapp internal cluster-1 "v2"
-    testapp traefik  cluster-1 "v2"
+    if [ "$OKD" = "true" ]; then
+      routeHost=$(getRouteHost "${DOMAIN_UID}-cluster-cluster-1")
+      echo $routeHost
+      doCommand -c export ROUTE_HOST=${routeHost}
+      testapp OKD  cluster-1 "v2" 
+    else
+      testapp traefik  cluster-1 "v2"
+    fi
   fi
 
   dumpInfo

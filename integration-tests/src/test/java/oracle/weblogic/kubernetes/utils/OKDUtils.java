@@ -32,12 +32,37 @@ public class OKDUtils {
    * @param serviceName - Name of the route and service
    * @param namespace - Namespace where the route is exposed
    */
-  public static String createRouteForOKD(String serviceName, String namespace) {
+  public static String createRouteForOKD(String serviceName, String namespace, String... routeName) {
+    boolean routeExists = false;
+    String command = "oc -n " + namespace + " expose service " + serviceName;
     if (OKD) {
-      assertTrue(new Command()
-          .withParams(new CommandParams()
-            .command("oc expose service " + serviceName + " -n " + namespace))
-          .execute(), "oc expose service failed");
+      if (routeName.length == 0) {
+        routeExists = doesRouteExist(serviceName, namespace);
+      } else {
+        routeExists = doesRouteExist(routeName[0], namespace);
+        command = command + " --name " + routeName[0];
+        serviceName = routeName[0];
+      }
+      if (!routeExists) {
+        assertTrue(new Command()
+            .withParams(new CommandParams()
+              .command(command))
+            .execute(), "oc expose service failed");
+      }
+      return getRouteHost(namespace, serviceName);
+    } else {
+      return null;
+    }
+  }
+
+  /**
+   * Get the host name of the route.
+   *
+   * @param namespace - Namespace where the route is exposed
+   * @param serviceName - Name of the route
+   */
+  public static String getRouteHost(String namespace, String serviceName) {
+    if (OKD) {
       String command = "oc -n " + namespace + " get routes " + serviceName + "  '-o=jsonpath={.spec.host}'";
 
       ExecResult result = Command.withParams(
@@ -69,6 +94,135 @@ public class OKDUtils {
     } else {
       return null;
     }
+  }
+
+  /**
+   * Sets TLS termination in the route to passthrough.
+   *
+   * @param routeName name of the route
+   * @param namespace namespace where the route is created
+   */
+  public static void setTlsTerminationForRoute(String routeName, String namespace) {
+    if (OKD) {
+      String command = "oc -n " + namespace + " patch route " + routeName
+                          +  " --patch '{\"spec\": {\"tls\": {\"termination\": \"passthrough\"}}}'";
+
+      ExecResult result = Command.withParams(
+          new CommandParams()
+              .command(command))
+          .executeAndReturnResult();
+
+      boolean success =
+          result != null
+              && result.exitValue() == 0
+              && result.stdout() != null
+              && result.stdout().contains("patched");
+
+      String outStr = "Setting tls termination in route failed \n";
+      outStr += ", command=\n{\n" + command + "\n}\n";
+      outStr += ", stderr=\n{\n" + (result != null ? result.stderr() : "") + "\n}\n";
+      outStr += ", stdout=\n{\n" + (result != null ? result.stdout() : "") + "\n}\n";
+
+      assertTrue(success, outStr);
+
+      getLogger().info("exitValue = {0}", result.exitValue());
+      getLogger().info("stdout = {0}", result.stdout());
+      getLogger().info("stderr = {0}", result.stderr());
+    }
+  }
+
+  /**
+   * Sets TLS termination in the route to passthrough.
+   *
+   * @param routeName name of the route
+   * @param namespace namespace where the route is created
+   */
+  public static void setTlsEdgeTerminationForRoute(String routeName, String namespace, String keyFiles) {
+    if (OKD) {
+      String command = "oc -n " + namespace + " patch route " + routeName
+                          +  " --patch '{\"spec\": {\"tls\": {\"termination\": \"edge\"}}}'";
+
+      ExecResult result = Command.withParams(
+          new CommandParams()
+              .command(command))
+          .executeAndReturnResult();
+
+      boolean success =
+          result != null
+              && result.exitValue() == 0
+              && result.stdout() != null
+              && result.stdout().contains("patched");
+
+      String outStr = "Setting tls termination in route failed \n";
+      outStr += ", command=\n{\n" + command + "\n}\n";
+      outStr += ", stderr=\n{\n" + (result != null ? result.stderr() : "") + "\n}\n";
+      outStr += ", stdout=\n{\n" + (result != null ? result.stdout() : "") + "\n}\n";
+
+      assertTrue(success, outStr);
+
+      getLogger().info("exitValue = {0}", result.exitValue());
+      getLogger().info("stdout = {0}", result.stdout());
+      getLogger().info("stderr = {0}", result.stderr());
+    }
+  }
+
+  /** 
+   * Sets the target port of the route.
+   * 
+   * @param routeName  name of the route
+   * @param namespace namespace where the route is created
+   * @param port target port
+   */
+  public static void setTargetPortForRoute(String routeName, String namespace, int port) {
+    if (OKD) {
+      String command = "oc -n " + namespace + " patch route " + routeName
+                          +  " --patch '{\"spec\": {\"port\": {\"targetPort\": \"" + port + "\"}}}'";
+
+      ExecResult result = Command.withParams(
+          new CommandParams()
+              .command(command))
+          .executeAndReturnResult();
+
+      boolean success =
+          result != null
+              && result.exitValue() == 0
+              && result.stdout() != null
+              && result.stdout().contains("patched");
+
+      String outStr = "Setting target port in route failed \n";
+      outStr += ", command=\n{\n" + command + "\n}\n";
+      outStr += ", stderr=\n{\n" + (result != null ? result.stderr() : "") + "\n}\n";
+      outStr += ", stdout=\n{\n" + (result != null ? result.stdout() : "") + "\n}\n";
+
+      assertTrue(success, outStr);
+
+      getLogger().info("exitValue = {0}", result.exitValue());
+      getLogger().info("stdout = {0}", result.stdout());
+      getLogger().info("stderr = {0}", result.stderr());
+    }
+  }
+
+  private static boolean doesRouteExist(String routeName, String namespace) {
+    String command = "oc -n " + namespace + " get route " + routeName;
+
+    ExecResult result = Command.withParams(
+          new CommandParams()
+              .command(command))
+          .executeAndReturnResult();
+
+    if (result != null) {
+      getLogger().info("exitValue = {0}", result.exitValue());
+      getLogger().info("stdout = {0}", result.stdout());
+      getLogger().info("stderr = {0}", result.stderr());
+    }
+
+    boolean exists =
+        result != null 
+         && result.exitValue() == 0 
+         && result.stdout() != null 
+         && result.stdout().contains(routeName);
+
+    return exists;
   }
 
   /**
