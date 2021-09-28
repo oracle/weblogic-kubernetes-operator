@@ -233,17 +233,17 @@ class ItMiiServiceMigration {
 
     assertTrue(checkJmsServerRuntime("ClusterJmsServer@managed-server2", 
          "managed-server2"),
-        "ClusterJmsServer@managed-server2 is on managed-server2 before migration");
+        "ClusterJmsServer@managed-server2 is not on managed-server2 before migration");
 
     assertTrue(checkJmsServerRuntime("JdbcJmsServer@managed-server2", 
         "managed-server2"),
-        "JdbcJmsServer@managed-server2 is on managed-server2 before migration");
+        "JdbcJmsServer@managed-server2 is not on managed-server2 before migration");
 
     assertTrue(checkJtaRecoveryServiceRuntime("managed-server2", 
          "managed-server2", "true"), 
          "JTARecoveryService@managed-server2 is not on managed-server2 before migration");
 
-    // Send persistent messages to both FileStore abd JDBCStore based
+    // Send persistent messages to both FileStore and JDBCStore based
     // JMS Destination (Queue)
     runJmsClientOnAdminPod("send",
             "ClusterJmsServer@managed-server2@jms.testUniformQueue");
@@ -349,7 +349,7 @@ class ItMiiServiceMigration {
 
   /*
    * Verify the JMS Server Runtime through REST API.
-   * Get the sepecific JMSServer Runtime on specified managed server.
+   * Get the specific JMSServer Runtime on specified managed server.
    * @param jmsServer name of the JMSServerRuntime to look for
    * @param managedServer name of the managed server to look for JMSServerRuntime
    * @returns true if MBean is found otherwise false
@@ -379,7 +379,7 @@ class ItMiiServiceMigration {
 
   /*
    * Verify the Persistent Store Runtimes through REST API.
-   * Get the sepecific Persistent Store Runtime on specified managed server.
+   * Get the specific Persistent Store Runtime on specified managed server.
    * @param storeName name of the PersistentStore Runtime to look for
    * @param managedServer name of the managed server to look for StoreRuntime
    * @returns true if MBean is found otherwise false
