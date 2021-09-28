@@ -39,6 +39,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
@@ -912,6 +913,14 @@ public class CommonTestUtils {
         getLogger(),
         "Waiting until command result contains expected message \"{0}\"",
         expectedMsg);
+  }
+
+  /**
+   * Verify if the WebLogic image is patched with psu.
+   * @return true if the WEBLOGIC_IMAGE_TAG contains the string psu
+   */
+  public static boolean isWebLogicPsuPatchApplied() {
+    return  WEBLOGIC_IMAGE_TAG.contains("psu") ? true : false;
   }
 
   /**
