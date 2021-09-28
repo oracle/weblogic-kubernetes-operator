@@ -267,7 +267,6 @@ class ItIstioDomainInImage {
         () -> exec(curlCmd2, true));
 
       if (result.exitValue() == 0) {
-        // logger.info("\n HTTP response is \n " + result.stdout());
         logger.info("curl command returned {0}", result.toString());
         assertTrue(result.stdout().contains("SecurityValidationWarnings"), 
                 "Could not access the Security Warning Tool page");
