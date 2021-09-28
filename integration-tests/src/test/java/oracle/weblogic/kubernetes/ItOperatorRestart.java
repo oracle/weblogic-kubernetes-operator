@@ -13,7 +13,6 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
@@ -56,7 +55,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 // domain custom resource that uses model-in-image.
 @DisplayName("Test to patch the model-in-image image to change WebLogic admin credentials secret")
 @IntegrationTest
-@Tag("okdenv")
 class ItOperatorRestart {
   private static String opNamespace = null;
   private static String domainNamespace = null;
