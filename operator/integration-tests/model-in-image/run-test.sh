@@ -330,7 +330,7 @@ if [ "$DO_OPER" = "true" ]; then
   doCommand  "\$TESTDIR/deploy-operator.sh"
 fi
 
-if [ "$DO_TRAEFIK" = "true" ] && [ "$OKD" = "false"]; then
+if [ "$DO_TRAEFIK" = "true" ] && [ "$OKD" = "false" ]; then
   doCommand -c "echo ====== TRAEFIK DEPLOY ======"
   doCommand  "\$TESTDIR/deploy-traefik.sh"
 fi
