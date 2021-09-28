@@ -28,7 +28,6 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
@@ -57,7 +56,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Verify shutdown rules when shutdown properties are defined at different levels")
 @IntegrationTest
-@Tag("okdenv")
 class ItPodsShutdownOption {
 
   private static String domainNamespace = null;
