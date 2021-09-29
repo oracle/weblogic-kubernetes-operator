@@ -79,9 +79,6 @@ SCRIPTPATH="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"
 WDT_MODEL_FILE=${WDT_MODEL_FILE:-"$SCRIPTPATH/wdt_model.yaml"}
 WDT_VAR_FILE=${WDT_VAR_FILE:-"$SCRIPTPATH/create-domain-inputs.yaml"}
 
-CDIR=`pwd`
-echo "CDIR = $CDIR"
-echo "SCRIPTPATH = $SCRIPTPATH"
 WDT_DIR=${WDT_DIR:-/shared/wdt}
 if [ -z "${WDT_VERSION+x}" ] || [ ${WDT_VERSION} == "latest" ]; then
   curl_res=1
