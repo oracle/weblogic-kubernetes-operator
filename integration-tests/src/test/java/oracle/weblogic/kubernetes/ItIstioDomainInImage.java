@@ -26,8 +26,12 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
@@ -37,6 +41,7 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -45,8 +50,10 @@ import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomR
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.isWebLogicPsuPatchApplied;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployToClusterUsingRest;
+import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGatewayAndVirtualservice;
@@ -62,6 +69,8 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify istio enabled WebLogic domain in domainhome-in-image model")
 @IntegrationTest
 class ItIstioDomainInImage {
@@ -116,6 +125,7 @@ class ItIstioDomainInImage {
    * Deploy a web application thru istio http ingress port using REST api  
    * Access web application thru istio http ingress port using curl
    */
+  @Order(1)
   @Test
   @DisplayName("Create WebLogic domainhome-in-image with istio")
   void testIstioDomainHomeInImage() {
@@ -223,6 +233,52 @@ class ItIstioDomainInImage {
     logger.info("Application Access URL {0}", url);
     boolean checkApp = checkAppUsingHostHeader(url, domainNamespace + ".org");
     assertTrue(checkApp, "Failed to access WebLogic application");
+
+  }
+
+  /**
+   * Verify that Security Warning Tool does not detect any security warning
+   * messages on console.
+   * Ref https://jira.oraclecorp.com/jira/browse/OWLS-92319
+   * However due to WDT issue, Security warning (related to minimum umask) 
+   * are reported in Console.
+  */
+  
+  @Test
+  @Order(2)
+  @Disabled("Disable test based on issues found reported OWLS-92319")
+  @DisplayName("Verify the Security Warning in domain in image")
+  void testVerifySecurityWarnings() {
+
+    int istioIngressPort = getIstioHttpIngressPort();
+
+    logger.info("Istio Ingress Port is {0}", istioIngressPort);
+    if (isWebLogicPsuPatchApplied()) {
+      String curlCmd2 = "curl -j -sk --show-error --noproxy '*' "
+          + " -H 'Host: " + domainNamespace + ".org'"
+          + " --user " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
+          + " --url http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort
+          + "/management/weblogic/latest/domainRuntime/domainSecurityRuntime?" 
+          + "link=none";
+
+      ExecResult result = null;
+      logger.info("curl command {0}", curlCmd2);
+      result = assertDoesNotThrow(
+        () -> exec(curlCmd2, true));
+
+      if (result.exitValue() == 0) {
+        logger.info("curl command returned {0}", result.toString());
+        assertTrue(result.stdout().contains("SecurityValidationWarnings"), 
+                "Could not access the Security Warning Tool page");
+        assertTrue(!result.stdout().contains("minimum of umask 027"), "umask warning check failed");
+        logger.info("No minimum umask warning reported");
+      } else {
+        assertTrue(false, "Curl command failed to get DomainSecurityRuntime");
+      }
+    } else {
+      logger.info("Skipping Security warning check, since Security Warning tool "
+           + " is not available in the WLS Release {0}", WEBLOGIC_IMAGE_TAG);
+    } 
   }
 
   private void createDomainResource(String domainUid, String domNamespace, String adminSecretName,
