@@ -110,4 +110,9 @@ public abstract class TuningParametersStub implements TuningParameters {
   public FeatureGates getFeatureGates() {
     return new FeatureGates(Collections.singletonList(ENABLED_FEATURE));
   }
+
+  @Override
+  public String getKubernetesPlatform() {
+    return namedParameters.get("kubernetesPlatform");
+  }
 }

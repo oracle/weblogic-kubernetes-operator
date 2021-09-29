@@ -82,13 +82,13 @@ testOnRestoreDomainConfig_base64DecodeZip() {
 testOnRestoreDomainConfig_unTarDomain() {
   restoreDomainConfig
 
-  assertEquals "TAR command arguments" "-xzf /tmp/domain.tar.gz" "$TAR_ARGS"
+  assertEquals "TAR command arguments" "-pxzf /tmp/domain.tar.gz" "$TAR_ARGS"
 }
 
 testOnRestoreDomainConfig_makeScriptsExecutable() {
   restoreDomainConfig
 
-  assertEquals "CD command arguments" "+x ${DOMAIN_HOME}/bin/*.sh ${DOMAIN_HOME}/*.sh" "$CHMOD_ARGS"
+  assertEquals "CD command arguments" "u+x ${DOMAIN_HOME}/bin/*.sh ${DOMAIN_HOME}/*.sh" "$CHMOD_ARGS"
 }
 
 testOnRestorePrimordialDomain_useRootDirectory() {
@@ -119,7 +119,7 @@ testOnRestoreDomainConfig_whenNoIndexesDefinedCatSingleFile() {
 testOnRestorePrimordialDomain_unTarDomain() {
   restorePrimordialDomain
 
-  assertEquals "TAR command arguments" "-xzf /tmp/domain.tar.gz" "$TAR_ARGS"
+  assertEquals "TAR command arguments" "-pxzf /tmp/domain.tar.gz" "$TAR_ARGS"
 }
 
 ######################### Mocks for the tests ###############

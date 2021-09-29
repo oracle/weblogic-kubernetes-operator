@@ -34,7 +34,6 @@ import oracle.weblogic.kubernetes.utils.CommonMiiTestUtils;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -94,7 +93,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Verify MII domain can be created from model file in PV location and custom wdtModelHome")
 @IntegrationTest
-@Tag("okdenv")
 public class ItMiiDomainModelInPV {
 
   private static String domainNamespace = null;

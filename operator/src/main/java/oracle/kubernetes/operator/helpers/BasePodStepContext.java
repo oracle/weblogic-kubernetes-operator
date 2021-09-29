@@ -39,6 +39,8 @@ import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_I
 
 public abstract class BasePodStepContext extends StepContextBase {
 
+  public static final String KUBERNETES_PLATFORM_HELM_VARIABLE = "kubernetesPlatform";
+
   BasePodStepContext(DomainPresenceInfo info) {
     super(info);
   }
