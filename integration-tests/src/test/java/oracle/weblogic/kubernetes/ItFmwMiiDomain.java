@@ -42,15 +42,18 @@ import static oracle.weblogic.kubernetes.utils.DbUtils.updateRcuAccessSecret;
 import static oracle.weblogic.kubernetes.utils.DbUtils.updateRcuPassword;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyDomainReady;
+import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyEMconsoleAccess;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.restartOperator;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResourceServerStartPolicy;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
+import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createOpsswalletpasswordSecret;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -91,6 +94,7 @@ class ItFmwMiiDomain {
   private String rcuaccessSecretName = domainUid + "-rcu-access";
   private String opsswalletpassSecretName = domainUid + "-opss-wallet-password-secret";
   private String opsswalletfileSecretName = domainUid + "opss-wallet-file-secret";
+  private String adminSvcExtHost = null;
 
   /**
    * Start DB service and create RCU schema.
@@ -240,6 +244,9 @@ class ItFmwMiiDomain {
     assertEquals(introspectVersion1, introspectVersion2, "introspectVersion changes after operator restart");
 
     verifyDomainReady(fmwDomainNamespace, domainUid, replicaCount);
+    // Expose the admin service external node port as  a route for OKD
+    adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), fmwDomainNamespace);
+    verifyEMconsoleAccess(fmwDomainNamespace, domainUid, adminSvcExtHost);
   }
 
   /**
@@ -299,7 +306,7 @@ class ItFmwMiiDomain {
   @Test
   @DisplayName("Update WebLogic Credentials after updating RCU schema password")
   void testUpdateWebLogicCredentialAfterUpdateRcuSchemaPassword() {
-    verifyUpdateWebLogicCredential(fmwDomainNamespace, domainUid, adminServerPodName,
+    verifyUpdateWebLogicCredential(adminSvcExtHost, fmwDomainNamespace, domainUid, adminServerPodName,
         managedServerPrefix, replicaCount, "-c1");
   }
 

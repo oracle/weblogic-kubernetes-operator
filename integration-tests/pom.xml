@@ -372,6 +372,12 @@
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>
+                  **/ItFmwDomainInPVUsingWLST,
+                  **/ItFmwDomainInPVUsingWDT,
+                  **/ItFmwDynamicClusterMiiDomain,
+                  **/ItFmwBigCMMiiDomain,
+                  **/ItFmwDynamicDomainInPV,
+                  **/ItFmwMiiDomain
                 </includes-failsafe>
             </properties>
         </profile>

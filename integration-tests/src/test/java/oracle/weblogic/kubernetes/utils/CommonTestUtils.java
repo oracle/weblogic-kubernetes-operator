@@ -185,7 +185,7 @@ public class CommonTestUtils {
   public static void addSccToDBSvcAccount(String serviceAccount, String namespace) {
     assertTrue(new Command()
         .withParams(new CommandParams()
-            .command("oc adm policy add-scc-to-user anyuid -z " + serviceAccount + " -n " + namespace))
+            .command("oc adm policy add-scc-to-user privileged -z " + serviceAccount + " -n " + namespace))
         .execute(), "oc expose service failed");
   }
 
