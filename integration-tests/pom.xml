@@ -255,7 +255,6 @@
                     **/ItMiiAuxiliaryImageCluster,
                     **/ItMiiCustomSslStore,
                     **/ItConfigDistributionStrategy,
-                    **/ItElasticLogging,
                     **/ItExternalRmiTunneling,
                     **/ItIstioDomainInPV,
                     **/ItMiiDomain,
@@ -263,9 +262,7 @@
                     **/ItParameterizedDomain,
                     **/ItPodsShutdownOption,
                     **/ItProductionSecureMode,
-                    **/ItWlsSamples,
                     **/ItSessionMigration,
-                    **/ItStickySession,
                     **/ItSystemResOverrides
                 </includes-failsafe>
             </properties>
