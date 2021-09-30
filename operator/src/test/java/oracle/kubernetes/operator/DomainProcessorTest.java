@@ -99,6 +99,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.NOT_STARTING_DOMAIN
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_ALWAYS;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Completed;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
@@ -669,6 +670,15 @@ class DomainProcessorTest {
   private static final String OLD_INTROSPECTION_STATE = "123";
   private static final String NEW_INTROSPECTION_STATE = "124";
   private static final String INTROSPECTOR_MAP_NAME = UID + INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
+
+  @Test
+  void beforeIntrospectionForNewDomain_addDefaultCondition() {
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
+    testSupport.addDomainPresenceInfo(info);
+    testSupport.runSteps(new DomainProcessorImpl.StartPlanStep(info, null));
+
+    assertThat(info.getDomain(), hasCondition(Completed).withStatus("False"));
+  }
 
   @Test
   void whenDomainHasRunningServersAndExistingTopology_dontRunIntrospectionJob() throws JsonProcessingException {

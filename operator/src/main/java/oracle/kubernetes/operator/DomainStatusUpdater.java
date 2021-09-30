@@ -173,7 +173,7 @@ public class DomainStatusUpdater {
     public NextAction apply(Packet packet) {
       DomainStatusUpdaterContext context = createContext(packet, this);
 
-      return context.isStatusUnchanged(context.getNewStatus())
+      return context.isStatusUnchanged()
           ? doNext(packet)
           : doNext(context.createUpdateSteps(),
           packet);
@@ -283,8 +283,8 @@ public class DomainStatusUpdater {
       return getDomain().getDomainUid();
     }
 
-    boolean isStatusUnchanged(DomainStatus newStatus) {
-      return newStatus.equals(getStatus());
+    boolean isStatusUnchanged() {
+      return getDomain() == null || getNewStatus().equals(getStatus());
     }
 
     private String getNamespace() {

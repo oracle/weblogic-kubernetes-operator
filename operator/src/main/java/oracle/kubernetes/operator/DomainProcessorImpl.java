@@ -73,6 +73,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 
+import static oracle.kubernetes.operator.DomainStatusUpdater.createStatusUpdateStep;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
@@ -1216,7 +1217,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
   }
 
-  private static class StartPlanStep extends Step {
+  static class StartPlanStep extends Step {
     private final DomainPresenceInfo info;
 
     StartPlanStep(DomainPresenceInfo info, Step next) {
@@ -1233,7 +1234,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     private Step getNextSteps() {
       if (lookForPodsAndServices()) {
-        return Step.chain(getRecordExistingResourcesSteps(), getNext());
+        return Step.chain(createStatusUpdateStep(null), getRecordExistingResourcesSteps(), getNext());
       } else {
         return getNext();
       }
