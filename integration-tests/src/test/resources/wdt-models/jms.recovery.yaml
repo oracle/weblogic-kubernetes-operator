@@ -21,7 +21,7 @@ resources:
            Directory: '/shared/data/ClusterFileStore'
            Target: 'cluster-1'
     JDBCStore:
-        JdbcFileStore:
+        ClusterJdbcStore:
            DistributionPolicy: Distributed
            MigrationPolicy: Always
            DataSource: StoreDataSource
@@ -32,7 +32,7 @@ resources:
             PersistentStore: 'ClusterFileStore'
         JdbcJmsServer:
             Target: 'cluster-1'
-            PersistentStore: 'JdbcFileStore'
+            PersistentStore: 'ClusterJdbcStore'
 
     JMSSystemResource:
         ClusterJmsModule:
