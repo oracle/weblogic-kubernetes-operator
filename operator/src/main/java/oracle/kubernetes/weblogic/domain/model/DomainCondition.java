@@ -4,6 +4,7 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import java.time.OffsetDateTime;
+import java.util.Optional;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
@@ -144,20 +145,10 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
    * @param reason reason
    * @return this
    */
-  public DomainCondition withReason(String reason) {
-    lastTransitionTime = SystemClock.now();
-    this.reason = reason;
-    return this;
-  }
-
-  /**
-   * Unique, one-word, CamelCase reason for the condition's last transition.
-   *
-   * @param reason reason
-   * @return this
-   */
   public DomainCondition withReason(DomainFailureReason reason) {
-    return withReason(reason.toString());
+    lastTransitionTime = SystemClock.now();
+    this.reason = Optional.ofNullable(reason).map(Enum::toString).orElse(null);
+    return this;
   }
 
   /**

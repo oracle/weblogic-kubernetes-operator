@@ -518,7 +518,6 @@ public class DomainStatusUpdater {
 
         DomainCondition onlineUpdateCondition = new DomainCondition(ConfigChangesPendingRestart)
             .withMessage(message)
-            .withReason("Online update applied, introspectVersion updated to " + introspectVersion)
             .withStatus("True");
 
         status.removeConditionWithType(ConfigChangesPendingRestart);

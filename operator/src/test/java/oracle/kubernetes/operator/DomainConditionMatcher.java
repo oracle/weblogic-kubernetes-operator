@@ -19,7 +19,7 @@ import org.hamcrest.TypeSafeDiagnosingMatcher;
 public class DomainConditionMatcher extends TypeSafeDiagnosingMatcher<Domain> {
   private final DomainConditionType expectedType;
   private String expectedStatus;
-  private String expectedReason;
+  private DomainFailureReason expectedReason;
   private String expectedMessage;
 
   private DomainConditionMatcher(DomainConditionType expectedType) {
@@ -35,13 +35,8 @@ public class DomainConditionMatcher extends TypeSafeDiagnosingMatcher<Domain> {
     return this;
   }
 
-  public DomainConditionMatcher withReason(String reason) {
-    expectedReason = reason;
-    return this;
-  }
-
   public DomainConditionMatcher withReason(DomainFailureReason reason) {
-    expectedReason = reason.toString();
+    expectedReason = reason;
     return this;
   }
 
@@ -77,7 +72,7 @@ public class DomainConditionMatcher extends TypeSafeDiagnosingMatcher<Domain> {
     if (expectedMessage != null && !expectedMessage.equals(condition.getMessage())) {
       return false;
     }
-    return expectedReason == null || expectedReason.equals(condition.getReason());
+    return expectedReason == null || expectedReason.toString().equals(condition.getReason());
   }
 
   private DomainStatus getStatus(Domain domain) {
@@ -92,7 +87,7 @@ public class DomainConditionMatcher extends TypeSafeDiagnosingMatcher<Domain> {
       expectations.add(expectation("status", expectedStatus));
     }
     if (expectedReason != null) {
-      expectations.add(expectation("reason", expectedReason));
+      expectations.add(expectation("reason", expectedReason.toString()));
     }
     if (expectedMessage != null) {
       expectations.add(expectation("reason", expectedMessage));

@@ -130,14 +130,14 @@ public class DomainStatus {
 
   private void setReasonAndMessage() {
     DomainCondition selected = conditions.stream()
-          .filter(this::maySupplyStatusReason)
+          .filter(this::maySupplyStatusMessage)
           .findFirst().orElse(new DomainCondition(Failed));
     reason = selected.getReason();
     message = selected.getMessage();
   }
 
-  private boolean maySupplyStatusReason(DomainCondition c) {
-    return c.getReason() != null && "True".equals(c.getStatus());
+  private boolean maySupplyStatusMessage(DomainCondition c) {
+    return c.getMessage() != null && "True".equals(c.getStatus());
   }
 
   /**
