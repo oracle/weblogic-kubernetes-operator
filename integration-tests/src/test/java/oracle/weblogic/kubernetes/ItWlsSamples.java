@@ -81,7 +81,6 @@ class ItWlsSamples {
 
   private static String traefikNamespace = null;
   private static String nginxNamespace = null;
-  private static String voyagerNamespace = null;
   private static String domainNamespace = null;
   private static final String domainName = "domain1";
   private static final String diiImageNameBase = "domain-home-in-image";
