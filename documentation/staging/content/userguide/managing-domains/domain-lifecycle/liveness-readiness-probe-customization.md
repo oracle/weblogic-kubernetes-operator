@@ -17,9 +17,9 @@ This document describes how to customize the liveness and readiness probes for W
 
 The liveness probe is configured to check that a server is alive by querying the Node Manager process.  By default, the liveness probe is configured to check liveness every 45 seconds, to timeout after 5 seconds, and to perform the first check after 30 seconds.  The default success and failure threshold values are 1.  If a pod fails the liveness probe, Kubernetes will restart that container.
 
-You can customize the liveness probe initial delay, interval, timeout and failure threshold using the `livenessProbe` attribute under the `serverPod` element of the domain resource.
+You can customize the liveness probe initial delay, interval, timeout, and failure threshold using the `livenessProbe` attribute under the `serverPod` element of the domain resource.
 
-Following is an example configuration to change the liveness probe interval, timeout and failure threshold value.
+Following is an example configuration to change the liveness probe interval, timeout, and failure threshold value.
 ```yaml
   serverPod:
     livenessProbe:

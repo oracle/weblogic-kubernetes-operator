@@ -7,7 +7,7 @@
     <parent>
         <groupId>oracle.kubernetes</groupId>
         <artifactId>operator-parent</artifactId>
-        <version>3.3.1</version>
+        <version>3.3.2</version>
     </parent>
 
     <artifactId>integration-tests</artifactId>
@@ -214,42 +214,35 @@
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>
-                   **/ItCoherenceTests,
+                   **/ItExternalLbTunneling,
+                   **/ItMiiAuxiliaryImage,
+                   **/ItMiiAuxiliaryImageCluster,
+                   **/ItMiiSampleWlsAux,
+                   **/ItMiiCustomSslStore,
+                   **/ItMiiServiceMigration,
+                   **/ItRemoteConsole,
                    **/ItConfigDistributionStrategy,
                    **/ItCrossDomainTransaction,
                    **/ItElasticLogging,
                    **/ItElasticLoggingFluentd,
                    **/ItExternalRmiTunneling,
-                   **/ItInitContainers,
                    **/ItIntrospectVersion,
-                   **/ItIstioCrossDomainTransaction,
-                   **/ItIstioDomainInImage,
+                   **/ItCrossDomainTransaction,
                    **/ItIstioDomainInPV,
                    **/ItIstioMiiDomain,
-                   **/ItIstioTwoDomainsInImage,
-                   **/ItKubernetesEvents,
-                   **/ItManageNameSpace,
                    **/ItManagedCoherence,
                    **/ItMiiDomain,
-                   **/ItMiiDomainModelInPV,
                    **/ItMiiDynamicUpdate,
-                   **/ItMiiMultiModel,
-                   **/ItMiiSample,
+                   **/ItMiiSampleWlsMain,
                    **/ItMiiUpdateDomainConfig,
                    **/ItMonitoringExporter,
-                   **/ItOperatorRestart,
                    **/ItParameterizedDomain,
-                   **/ItPodTemplates,
-                   **/ItPodsRestart,
                    **/ItPodsShutdownOption,
                    **/ItProductionSecureMode,
                    **/ItWlsSamples,
-                   **/ItServerStartPolicy,
                    **/ItSessionMigration,
                    **/ItStickySession,
-                   **/ItSystemResOverrides,
-                   **/ItTwoDomainsLoadBalancer,
-                   **/ItUsabilityOperatorHelmChart
+                   **/ItSystemResOverrides
                 </includes-failsafe>
             </properties>
         </profile>
@@ -290,6 +283,15 @@
             </properties>
         </profile>
         <profile>
+            <id>resilience</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                  **/ItResilience
+               </includes-failsafe>
+            </properties>
+        </profile>
+        <profile>
             <id>kind-sequential</id>
             <properties>
                 <skipITs>false</skipITs>
@@ -309,41 +311,75 @@
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>
-                   **/ItCoherenceTests,
                    **/ItConfigDistributionStrategy,
                    **/ItCrossDomainTransaction,
                    **/ItElasticLogging,
                    **/ItElasticLoggingFluentd,
-                   **/ItExternalRmiTunneling,
-                   **/ItInitContainers,
                    **/ItIntrospectVersion,
-                   **/ItIstioCrossDomainTransaction,
-                   **/ItIstioDomainInImage,
                    **/ItIstioDomainInPV,
                    **/ItIstioMiiDomain,
-                   **/ItIstioTwoDomainsInImage,
-                   **/ItKubernetesEvents,
-                   **/ItManageNameSpace,
+                   **/ItMiiAuxiliaryImage,
+                   **/ItMiiAuxiliaryImageCluster,
+                   **/ItMiiSampleWlsAux,
+                   **/ItMiiServiceMigration,
                    **/ItMiiDomain,
-                   **/ItMiiDomainModelInPV,
                    **/ItMiiDynamicUpdate,
-                   **/ItMiiMultiModel,
-                   **/ItMiiSample,
+                   **/ItMiiSampleWlsMain,
                    **/ItMiiUpdateDomainConfig,
                    **/ItMonitoringExporter,
-                   **/ItOperatorRestart,
                    **/ItParameterizedDomain,
-                   **/ItPodTemplates,
-                   **/ItPodsRestart,
                    **/ItPodsShutdownOption,
                    **/ItProductionSecureMode,
                    **/ItWlsSamples,
-                   **/ItServerStartPolicy,
                    **/ItSessionMigration,
-                   **/ItSystemResOverrides,
-                   **/ItUsabilityOperatorHelmChart
+                   **/ItSystemResOverrides
                 </includes-failsafe>
             </properties>
         </profile>        
+        <profile>
+            <id>wko-okd-wls-cert</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                  **/ItCoherenceTests,
+                  **/ItConfigDistributionStrategy,
+                  **/ItDedicatedMode,
+                  **/ItExternalNodePortService,
+                  **/ItInitContainers,
+                  **/ItIntrospectVersion,
+                  **/ItKubernetesEvents,
+                  **/ItLiftAndShiftFromOnPremDomain,
+                  **/ItLivenessProbeCustomization,
+                  **/ItManagedCoherence,
+                  **/ItMiiCustomSslStore,
+                  **/ItMiiDomain,
+                  **/ItMiiDomainModelInPV,
+                  **/ItMiiDynamicUpdate,
+                  **/ItMiiMultiModel,
+                  **/ItMiiSampleWlsMain,
+                  **/ItMiiUpdateDomainConfig,
+                  **/ItOperatorRestart,
+                  **/ItPodsShutdownOption,
+                  **/ItPodTemplates,
+                  **/ItServerStartPolicy,
+                  **/ItSessionMigration,
+                  **/ItStickySession
+                </includes-failsafe>
+            </properties>
+        </profile>
+        <profile>
+            <id>wko-okd-fmw-cert</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                  **/ItFmwDomainInPVUsingWLST,
+                  **/ItFmwDomainInPVUsingWDT,
+                  **/ItFmwDynamicClusterMiiDomain,
+                  **/ItFmwBigCMMiiDomain,
+                  **/ItFmwDynamicDomainInPV,
+                  **/ItFmwMiiDomain
+                </includes-failsafe>
+            </properties>
+        </profile>
     </profiles>
 </project>

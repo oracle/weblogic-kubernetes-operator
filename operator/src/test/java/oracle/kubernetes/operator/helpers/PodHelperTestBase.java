@@ -122,6 +122,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_SCAN;
 import static oracle.kubernetes.operator.helpers.AnnotationHelper.SHA256_ANNOTATION;
+import static oracle.kubernetes.operator.helpers.BasePodStepContext.KUBERNETES_PLATFORM_HELM_VARIABLE;
 import static oracle.kubernetes.operator.helpers.DomainIntrospectorJobTest.TEST_VOLUME_NAME;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_STARTING;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
@@ -161,6 +162,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
@@ -201,6 +203,8 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   private static final int READ_AND_EXECUTE_MODE = 0555;
   private static final String TEST_PRODUCT_VERSION = "unit-test";
   private static final String NOOP_EXPORTER_CONFIG = "queries:\n";
+  public static final String LONG_CHANNEL_NAME = "Very_Long_Channel_Name";
+  public static final String TRUNCATED_PORT_NAME_PREFIX = "very-long-ch";
 
   final TerminalStep terminalStep = new TerminalStep();
   private final Domain domain = createDomain();
@@ -379,6 +383,43 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
             hasEntry("prometheus.io/port", "7001"),
             hasEntry("prometheus.io/path", "/wls-exporter/metrics"),
             hasEntry("prometheus.io/scrape", "true")));
+  }
+
+  @Test
+  void whenPodCreatedWithAdminNapNameExceedingMaxPortNameLength_podContainerCreatedWithTruncatedPortName() {
+    getServerTopology().addNetworkAccessPoint(new NetworkAccessPoint(LONG_CHANNEL_NAME, "admin", 8001, 8001));
+    assertThat(
+            getContainerPorts(),
+            hasItem(createContainerPort(TRUNCATED_PORT_NAME_PREFIX + "-01")));
+  }
+
+  private List<V1ContainerPort> getContainerPorts() {
+    return getCreatedPod().getSpec().getContainers().stream()
+            .filter(c -> c.getName().equals(WLS_CONTAINER_NAME)).findFirst().map(c -> c.getPorts()).orElse(null);
+  }
+
+  private V1ContainerPort createContainerPort(String portName) {
+    return new V1ContainerPort().name(portName).containerPort(8001).protocol("TCP");
+  }
+
+  @Test
+  void whenPodCreatedWithMultipleNapsWithNamesExceedingMaxPortNameLength_podContainerCreatedWithTruncatedPortNames() {
+    getServerTopology().addNetworkAccessPoint(new NetworkAccessPoint(LONG_CHANNEL_NAME + "1", "admin", 8001, 8001));
+    getServerTopology().addNetworkAccessPoint(new NetworkAccessPoint(LONG_CHANNEL_NAME + "11", "admin", 8001, 8001));
+    assertThat(
+            getContainerPorts(),
+            hasItems(createContainerPort(TRUNCATED_PORT_NAME_PREFIX + "-01"),
+                     createContainerPort(TRUNCATED_PORT_NAME_PREFIX + "-02")));
+  }
+
+  @Test
+  void whenPodCreatedWithMultipleNapsSomeWithNamesExceedingMaxPortNameLength_podContainerCreatedWithMixedPortNames() {
+    getServerTopology().addNetworkAccessPoint(new NetworkAccessPoint(LONG_CHANNEL_NAME, "admin", 8001, 8001));
+    getServerTopology().addNetworkAccessPoint(new NetworkAccessPoint("My_Channel_Name", "admin", 8001, 8001));
+    assertThat(
+            getContainerPorts(),
+            hasItems(createContainerPort(TRUNCATED_PORT_NAME_PREFIX + "-01"),
+                     createContainerPort("my-channel-name")));
   }
 
   protected DomainConfigurator defineExporterConfiguration() {
@@ -1079,6 +1120,21 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     final String customScript = "/u01/customLiveness.sh";
     domainPresenceInfo.getDomain().getSpec().setLivenessProbeCustomScript(customScript);
     assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("LIVENESS_PROBE_CUSTOM_SCRIPT", customScript));
+  }
+
+  @Test
+  void whenOperatorHasKubernetesPlatformConfigured_createdPodSpecContainerHasKubernetesPlatformEnvVariable() {
+    TuningParametersStub.setParameter(KUBERNETES_PLATFORM_HELM_VARIABLE, "Openshift");
+    assertThat(getCreatedPodSpecContainer().getEnv(),
+            hasEnvVar(ServerEnvVars.KUBERNETES_PLATFORM, "Openshift")
+    );
+  }
+
+  @Test
+  void whenNotConfigured_KubernetesPlatform_createdPodSpecContainerHasNoKubernetesPlatformEnvVariable() {
+    assertThat(getCreatedPodSpecContainer().getEnv(),
+            not(hasEnvVar(ServerEnvVars.KUBERNETES_PLATFORM, "Openshift"))
+    );
   }
 
   private static final String OVERRIDE_DATA_DIR = "/u01/data";

@@ -73,6 +73,7 @@ import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.jetbrains.annotations.NotNull;
 
 import static oracle.kubernetes.operator.EventConstants.ROLL_REASON_DOMAIN_RESOURCE_CHANGED;
 import static oracle.kubernetes.operator.EventConstants.ROLL_REASON_WEBLOGIC_CONFIGURATION_CHANGED;
@@ -92,6 +93,7 @@ import static oracle.kubernetes.operator.helpers.CompatibilityCheck.Compatibilit
 import static oracle.kubernetes.operator.helpers.CompatibilityCheck.CompatibilityScope.UNKNOWN;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_STARTING;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.POD_CYCLE_STARTING;
+import static oracle.kubernetes.operator.helpers.LegalNames.LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH;
 
 public abstract class PodStepContext extends BasePodStepContext {
 
@@ -296,7 +298,7 @@ public abstract class PodStepContext extends BasePodStepContext {
   }
 
   private void addContainerPort(List<V1ContainerPort> ports, NetworkAccessPoint nap) {
-    String name = LegalNames.toDns1123LegalName(nap.getName());
+    String name = createContainerPortName(ports, LegalNames.toDns1123LegalName(nap.getName()));
     addContainerPort(ports, name, nap.getListenPort(), "TCP");
 
     if (isSipProtocol(nap)) {
@@ -307,8 +309,37 @@ public abstract class PodStepContext extends BasePodStepContext {
   private void addContainerPort(List<V1ContainerPort> ports, String name,
                                 @Nullable Integer listenPort, String protocol) {
     if (listenPort != null) {
+      name = createContainerPortName(ports, name);
       ports.add(new V1ContainerPort().name(name).containerPort(listenPort).protocol(protocol));
     }
+  }
+
+  private String createContainerPortName(List<V1ContainerPort> ports, String name) {
+    //Container port names can be a maximum of 15 characters in length
+    if (name.length() > LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH) {
+      String portNamePrefix = getPortNamePrefix(name);
+      // Find ports with the name having the same first 12 characters
+      List<V1ContainerPort> containerPortsWithSamePrefix = ports.stream().filter(port ->
+              portNamePrefix.equals(getPortNamePrefix(port.getName()))).collect(Collectors.toList());
+      int index = containerPortsWithSamePrefix.size() + 1;
+      String indexStr = String.valueOf(index);
+      // zero fill to the left for single digit index (e.g. 01)
+      if (index < 10) {
+        indexStr = "0" + index;
+      } else if (index >= 100) {
+        LOGGER.severe(MessageKeys.ILLEGAL_NETWORK_CHANNEL_NAME_LENGTH, getDomainUid(), getServerName(),
+                name, LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH);
+        return name;
+      }
+      name = portNamePrefix + "-" + indexStr;
+    }
+    return  name;
+  }
+
+  @NotNull
+  private String getPortNamePrefix(String name) {
+    // Use first 12 characters of port name as prefix due to 15 character port name limit
+    return name.substring(0, 12);
   }
 
   Integer getListenPort() {
@@ -905,7 +936,7 @@ public abstract class PodStepContext extends BasePodStepContext {
    * Sets the environment variables used by operator/src/main/resources/scripts/startServer.sh
    * @param vars a list to which new variables are to be added
    */
-  void addStartupEnvVars(List<V1EnvVar> vars) {
+  void addStartupEnvVars(List<V1EnvVar> vars, TuningParameters tuningParameters) {
     addEnvVar(vars, ServerEnvVars.DOMAIN_NAME, getDomainName());
     addEnvVar(vars, ServerEnvVars.DOMAIN_HOME, getDomainHome());
     addEnvVar(vars, ServerEnvVars.ADMIN_NAME, getAsName());
@@ -922,6 +953,8 @@ public abstract class PodStepContext extends BasePodStepContext {
     Optional.ofNullable(getDataHome()).ifPresent(v -> addEnvVar(vars, ServerEnvVars.DATA_HOME, v));
     Optional.ofNullable(getServerSpec().getAuxiliaryImages()).ifPresent(cm -> addAuxiliaryImageEnv(cm, vars));
     addEnvVarIfTrue(mockWls(), vars, "MOCK_WLS");
+    Optional.ofNullable(getKubernetesPlatform(tuningParameters)).ifPresent(v ->
+            addEnvVar(vars, ServerEnvVars.KUBERNETES_PLATFORM, v));
   }
 
   protected void addAuxiliaryImageEnv(List<AuxiliaryImage> auxiliaryImageList, List<V1EnvVar> vars) {
@@ -1070,6 +1103,10 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private boolean mockWls() {
     return Boolean.getBoolean("mockWLS");
+  }
+
+  private String getKubernetesPlatform(TuningParameters tuningParameters) {
+    return tuningParameters.getKubernetesPlatform();
   }
 
   private abstract class BaseStep extends Step {
