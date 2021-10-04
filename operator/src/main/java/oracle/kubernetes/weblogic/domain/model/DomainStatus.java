@@ -120,7 +120,10 @@ public class DomainStatus {
       return this;
     }
 
-    conditions = conditions.stream().filter(c -> c.isCompatibleWith(newCondition)).collect(Collectors.toList());
+    conditions = conditions.stream()
+          .filter(c -> !c.getType().isObsolete())
+          .filter(c -> c.isCompatibleWith(newCondition))
+          .collect(Collectors.toList());
 
     conditions.add(newCondition);
     Collections.sort(conditions);

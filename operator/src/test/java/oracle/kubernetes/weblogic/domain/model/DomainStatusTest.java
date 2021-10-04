@@ -25,6 +25,7 @@ import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Availa
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Completed;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.ConfigChangesPendingRestart;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progressing;
 import static oracle.kubernetes.weblogic.domain.model.DomainStatusTest.ClusterStatusMatcher.clusterStatus;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
@@ -56,6 +57,15 @@ class DomainStatusTest {
   @Test
   void whenCreated_statusHasCreationTime() {
     assertThat(domainStatus.getStartTime(), SystemClockTestSupport.isDuringTest());
+  }
+
+  @Test
+  void whenConditionAdded_removeAnyObsoleteConditions() {
+    domainStatus.addCondition(new DomainCondition(Progressing));
+
+    domainStatus.addCondition(new DomainCondition(ConfigChangesPendingRestart));
+
+    assertThat(domainStatus, not(hasCondition(Progressing)));
   }
 
   @Test

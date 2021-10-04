@@ -17,13 +17,24 @@ public enum DomainConditionType {
   },
   Available,
   Completed,
-  ConfigChangesPendingRestart;
+  ConfigChangesPendingRestart,
+
+  Progressing {
+    @Override
+    boolean isObsolete() {
+      return true;
+    }
+  };
 
   boolean allowMultipleConditionsWithThisType() {
     return false;
   }
 
   boolean statusMustBeTrue() {
+    return false;
+  }
+
+  boolean isObsolete() {
     return false;
   }
 

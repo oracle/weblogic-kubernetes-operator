@@ -320,7 +320,8 @@
             "Failed",
             "Available",
             "Completed",
-            "ConfigChangesPendingRestart"
+            "ConfigChangesPendingRestart",
+            "Progressing"
           ]
         },
         "lastTransitionTime": {
