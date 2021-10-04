@@ -120,6 +120,11 @@ public class DbUtils {
   public static synchronized void startOracleDB(String dbBaseImageName, int dbPort, String dbNamespace,
       int dbListenerPort) throws ApiException {
     LoggingFacade logger = getLogger();
+
+    if (OKD) {
+      addSccToDBSvcAccount("default", dbNamespace);
+    }
+
     Map labels = new HashMap<String, String>();
     labels.put("app", "database");
 

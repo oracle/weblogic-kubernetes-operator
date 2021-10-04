@@ -535,21 +535,21 @@ public class Domain {
     testUntil(
         () -> copyFileToPod(domainNamespace, adminServerPodName, null,
           Paths.get(RESOURCE_DIR, "python-scripts", "wldf.py"),
-          Paths.get("/u01/oracle/wldf.py")),
+          Paths.get("/u01/wldf.py")),
         logger,
         "Copying wldf.py to admin server pod");
 
     testUntil(
         () -> copyFileToPod(domainNamespace, adminServerPodName, null,
           Paths.get(RESOURCE_DIR, "bash-scripts", "callpyscript.sh"),
-          Paths.get("/u01/oracle/callpyscript.sh")),
+          Paths.get("/u01/callpyscript.sh")),
         logger,
         "Copying callpyscript.sh to admin server pod");
 
     logger.info("Adding execute mode for callpyscript.sh");
     testUntil(
         () -> executeCommandOnPod(adminPod, null, true,
-        "/bin/sh", "-c", "chmod +x /u01/oracle/callpyscript.sh"),
+        "/bin/sh", "-c", "chmod +x /u01/callpyscript.sh"),
         logger,
         "Adding execute mode for callpyscript.sh");
 
@@ -559,7 +559,7 @@ public class Domain {
     }
 
     logger.info("Creating WLDF policy rule and action");
-    String command = new StringBuffer("/u01/oracle/callpyscript.sh /u01/oracle/wldf.py ")
+    String command = new StringBuffer("/u01/callpyscript.sh /u01/wldf.py ")
         .append(ADMIN_USERNAME_DEFAULT)
         .append(" ")
         .append(ADMIN_PASSWORD_DEFAULT)
