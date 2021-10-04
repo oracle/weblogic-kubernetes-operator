@@ -346,7 +346,7 @@ class ItWlsSamples {
   /**
    * Verify setupLoadBalancer scripts for managing Traefik LoadBalancer.
    */
-  @Order(7)
+  @Order(0)
   @Test
   @DisplayName("Manage Traefik Ingress Controller with setupLoadBalancer")
   void testTraefikIngressController() {

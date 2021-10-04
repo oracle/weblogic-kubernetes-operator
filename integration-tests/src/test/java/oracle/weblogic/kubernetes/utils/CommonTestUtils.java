@@ -602,6 +602,33 @@ public class CommonTestUtils {
   }
 
   /**
+   * Check the system resource configuration using REST API.
+   * @param adminSvcExtHost Used only in OKD env - this is the route host created for AS external service
+   * @param nodePort admin node port
+   * @param resourcesPath path of the resource
+   * @param expectedValue expected value returned in the REST call
+   */
+  public static void verifySystemResourceConfig(String adminSvcExtHost, int nodePort,
+                                                  String resourcesPath, String expectedValue) {
+    final LoggingFacade logger = getLogger();
+
+    String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + nodePort;
+    logger.info("hostAndPort = {0} ", hostAndPort);
+
+    StringBuffer curlString = new StringBuffer("curl --user ");
+    curlString.append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
+        .append(" http://" + hostAndPort)
+        .append("/management/weblogic/latest/domainConfig")
+        .append("/")
+        .append(resourcesPath)
+        .append("/");
+
+    logger.info("checkSystemResource: curl command {0}", new String(curlString));
+
+    verifyCommandResultContainsMsg(new String(curlString), expectedValue);
+  }
+
+  /**
    * Check the system resource runtime using REST API.
    * @param adminSvcExtHost Used only in OKD env - this is the route host created for AS external service
    * @param nodePort admin node port
