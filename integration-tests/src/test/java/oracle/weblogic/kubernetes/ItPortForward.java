@@ -35,6 +35,7 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
@@ -158,6 +159,7 @@ class ItPortForward {
   @Order(1)
   @Test
   @DisplayName("Forward a local port to default channel port and verify WLS admin console is accessible")
+  @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   void testPortForwardDefaultAdminChannel() {
     final int adminDefaultChannelPort = 7001;
 
@@ -177,6 +179,7 @@ class ItPortForward {
   @Order(2)
   @Test
   @DisplayName("Forward a local port to default secure channel port and verify WLS admin console is accessible")
+  @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   void testPortForwardDefaultAdminSecureChannel() {
     final int adminDefaultChannelPort = 7002;
 
@@ -201,6 +204,7 @@ class ItPortForward {
   @Order(3)
   @Test
   @DisplayName("Forward a local port to WLS administration port and verify WLS admin console is accessible")
+  @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   void testPortForwardAdministrationPort() {
     final int adminDefaultChannelPort = 9002;
 
