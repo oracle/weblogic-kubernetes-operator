@@ -58,6 +58,7 @@ import org.jetbrains.annotations.Nullable;
 
 import static oracle.kubernetes.operator.DomainFailureReason.Internal;
 import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
+import static oracle.kubernetes.operator.DomainFailureReason.ReplicasTooHigh;
 import static oracle.kubernetes.operator.DomainFailureReason.ServerPod;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.MIINonDynamicChangesMethod.CommitUpdateOnly;
@@ -74,6 +75,7 @@ import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_COMPLETE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_FAILED;
+import static oracle.kubernetes.operator.logging.MessageKeys.TOO_MANY_REPLICAS_FAILURE;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Completed;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.ConfigChangesPendingRestart;
@@ -450,6 +452,8 @@ public class DomainStatusUpdater {
           } else if (status.hasConditionWithType(Available)) {
             status.addCondition(new DomainCondition(Available).withStatus(FALSE));
           }
+
+          addTooManyReplicasFailures(status);
         }
 
         if (isHasFailedPod()) {
@@ -463,6 +467,41 @@ public class DomainStatusUpdater {
 
         if (miiNondynamicRestartRequired() && isCommitUpdateOnly()) {
           setOnlineUpdateNeedRestartCondition(status);
+        }
+      }
+
+      private void addTooManyReplicasFailures(DomainStatus status) {
+        getConfiguredClusters().stream()
+              .map(TooManyReplicasCheck::new)
+              .filter(TooManyReplicasCheck::isFailure)
+              .forEach(check -> status.addCondition(check.createFailureCondition()));
+      }
+
+      private List<WlsClusterConfig> getConfiguredClusters() {
+        return Optional.ofNullable(config).map(WlsDomainConfig::getConfiguredClusters).orElse(Collections.emptyList());
+      }
+
+      private class TooManyReplicasCheck {
+        private final String clusterName;
+        private final int maxReplicaCount;
+        private final int specifiedReplicaCount;
+
+        TooManyReplicasCheck(WlsClusterConfig cluster) {
+          clusterName = cluster.getClusterName();
+          maxReplicaCount = cluster.getMaxDynamicClusterSize();
+          specifiedReplicaCount = getDomain().getReplicaCount(clusterName);
+        }
+
+        private boolean isFailure() {
+          return maxReplicaCount > 0 && specifiedReplicaCount > maxReplicaCount;
+        }
+
+        private DomainCondition createFailureCondition() {
+          return new DomainCondition(Failed).withReason(ReplicasTooHigh).withMessage(createFailureMessage());
+        }
+
+        private String createFailureMessage() {
+          return LOGGER.formatMessage(TOO_MANY_REPLICAS_FAILURE, specifiedReplicaCount, clusterName, maxReplicaCount);
         }
       }
 

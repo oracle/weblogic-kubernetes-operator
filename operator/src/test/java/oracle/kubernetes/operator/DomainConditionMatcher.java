@@ -40,7 +40,7 @@ public class DomainConditionMatcher extends TypeSafeDiagnosingMatcher<Domain> {
     return this;
   }
 
-  public DomainConditionMatcher withMessage(String message) {
+  public DomainConditionMatcher withMessageContaining(String message) {
     expectedMessage = message;
     return this;
   }
@@ -69,10 +69,14 @@ public class DomainConditionMatcher extends TypeSafeDiagnosingMatcher<Domain> {
     if (expectedStatus != null && !expectedStatus.equals(condition.getStatus())) {
       return false;
     }
-    if (expectedMessage != null && !expectedMessage.equals(condition.getMessage())) {
+    if (expectedMessage != null && !messageContainsExpectedString(condition)) {
       return false;
     }
     return expectedReason == null || expectedReason.toString().equals(condition.getReason());
+  }
+
+  private boolean messageContainsExpectedString(DomainCondition condition) {
+    return condition.getMessage() != null && condition.getMessage().contains(expectedMessage);
   }
 
   private DomainStatus getStatus(Domain domain) {
@@ -90,7 +94,7 @@ public class DomainConditionMatcher extends TypeSafeDiagnosingMatcher<Domain> {
       expectations.add(expectation("reason", expectedReason.toString()));
     }
     if (expectedMessage != null) {
-      expectations.add(expectation("reason", expectedMessage));
+      expectations.add(expectation("message containing", expectedMessage));
     }
     description
         .appendText("domain containing condition: ")

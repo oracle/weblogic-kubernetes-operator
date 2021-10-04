@@ -13,6 +13,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 import javax.annotation.Nonnull;
 
 import com.meterware.simplestub.Memento;
@@ -26,6 +27,7 @@ import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.utils.RandomStringGenerator;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
+import oracle.kubernetes.operator.utils.WlsDomainConfigSupport.DynamicClusterConfigBuilder;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
@@ -47,6 +49,7 @@ import org.junit.jupiter.api.Test;
 import static oracle.kubernetes.operator.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.operator.DomainFailureReason.Internal;
 import static oracle.kubernetes.operator.DomainFailureReason.Introspection;
+import static oracle.kubernetes.operator.DomainFailureReason.ReplicasTooHigh;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainStatusUpdaterTest.ServerStatusMatcher.hasStatusForServer;
@@ -534,6 +537,35 @@ class DomainStatusUpdaterTest {
   }
 
   @Test
+  void whenNoDynamicClusters_doNotAddReplicasTooHighFailure() {
+    defineScenario().withCluster("cluster1", "ms1", "ms2").build();
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), not(hasCondition(Failed)));
+  }
+
+  @Test
+  void whenReplicaCountDoesNotExceedMaxReplicasForDynamicCluster_doNotAddReplicasTooHighFailure() {
+    domain.setReplicaCount("cluster1", 4);
+    defineScenario().addDynamicCluster("cluster1", 4).build();
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), not(hasCondition(Failed)));
+  }
+
+  @Test
+  void whenReplicaCountExceedsMaxReplicasForDynamicCluster_addFailedCondition() {
+    domain.setReplicaCount("cluster1", 5);
+    defineScenario().addDynamicCluster("cluster1", 4).build();
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(Failed).withReason(ReplicasTooHigh).withMessageContaining("cluster1"));
+  }
+
+  @Test
   void withServerStartPolicyNEVER_domainIsNotAvailable() {
     domain.getSpec().setServerStartPolicy("NEVER");
     defineScenario().withServers("server1").notStarting("server1").build();
@@ -661,7 +693,7 @@ class DomainStatusUpdaterTest {
 
     assertThat(
           getRecordedDomain(),
-        hasCondition(Failed).withStatus("True").withReason(Internal).withMessage(message));
+        hasCondition(Failed).withStatus("True").withReason(Internal).withMessageContaining(message));
   }
 
   @Test
@@ -688,7 +720,7 @@ class DomainStatusUpdaterTest {
 
     assertThat(
           getRecordedDomain(),
-        hasCondition(Failed).withStatus("True").withReason(Internal).withMessage(message));
+        hasCondition(Failed).withStatus("True").withReason(Internal).withMessageContaining(message));
   }
 
   @Test
@@ -817,6 +849,17 @@ class DomainStatusUpdaterTest {
       defineServerPod(serverName);
       configSupport.addWlsServer(serverName);
       servers.add(serverName);
+    }
+
+    ScenarioBuilder addDynamicCluster(String clusterName, int maxServers) {
+      configSupport.addWlsCluster(new DynamicClusterConfigBuilder(clusterName)
+            .withClusterLimits(1, maxServers)
+            .withServerNames(generateServerNames(maxServers)));
+      return this;
+    }
+
+    private String[] generateServerNames(int maxServers) {
+      return IntStream.range(1, maxServers).boxed().map(i -> "ms" + i).toArray(String[]::new);
     }
 
     // Adds non-clustered servers to the topology

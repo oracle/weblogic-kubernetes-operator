@@ -184,7 +184,7 @@ class IntrospectorConfigMapTest {
     testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(terminalStep));
 
     assertThat(getDomain(), hasCondition(Failed).withReason(DomainInvalid)
-          .withMessage(perLine("first problem", "second problem")));
+          .withMessageContaining(perLine("first problem", "second problem")));
   }
 
   @Nonnull

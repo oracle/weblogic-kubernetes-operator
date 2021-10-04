@@ -38,6 +38,7 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.steps.ManagedServersUpStep.ServersUpStepFactory;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
+import oracle.kubernetes.operator.utils.WlsDomainConfigSupport.DynamicClusterConfigBuilder;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Step;
@@ -184,9 +185,10 @@ class ManagedServersUpStepTest {
       int minDynamicClusterSize,
       int maxDynamicClusterSize,
       String... serverNames) {
-    configSupport.addDynamicWlsCluster(clusterName, serverNames);
-    configSupport.getWlsCluster(clusterName).getDynamicServersConfig().setMinDynamicClusterSize(minDynamicClusterSize);
-    configSupport.getWlsCluster(clusterName).getDynamicServersConfig().setMaxDynamicClusterSize(maxDynamicClusterSize);
+    configSupport.addWlsCluster(
+          new DynamicClusterConfigBuilder(clusterName)
+                .withClusterLimits(minDynamicClusterSize, maxDynamicClusterSize)
+                .withServerNames(serverNames));
   }
 
   @Test
