@@ -1,7 +1,7 @@
 oracle.kubernetes:operator-parent
 -------- Copyrights
-Copyright (c) 2017, 2021, Oracle and/or its affiliates.
-?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="en"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../../jacoco-resources/report.gif" type="image/gif"/><title>LegalNames.java</title><link rel="stylesheet" href="../../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../../index.html" class="el_report">Project Reports</a> &gt; <a href="../index.html" class="el_bundle">weblogic-kubernetes-operator</a> &gt; <a href="index.source.html" class="el_package">oracle.kubernetes.operator.helpers</a> &gt; <span class="el_source">LegalNames.java</span></div><h1>LegalNames.java</h1><pre class="source lang-java linenums">// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+Copyright (c) 2021 Oracle and/or its affiliates.
+Copyright (c) 2017, 2021 Oracle and/or its affiliates.
 Copyright (c) 2014 Grav
 Copyright (c) 2016 MATHIEU CORNIC
 Copyright (c) 2017 Valere JEANTET
@@ -9,12 +9,13 @@ Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 Copyright (c) 2021, Oracle and/or its affiliates.
 Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 Copyright (c) 2019, 2021, Oracle and/or its affiliates.
-Copyright (c) 2020, 2021, Oracle and/or its affiliates.\n"
-Copyright (C) 2007 Free Software Foundation, Inc."
-Copyright (C) 2019 Free Software Foundation, Inc.",
+Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+Copyright (C) 2007 Free Software Foundation, Inc.
+Copyright (C) 2019 Free Software Foundation, Inc.
 
 -------- License
-Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+Copyright (c) 2021 Oracle and/or its affiliates.
 
 The Universal Permissive License (UPL), Version 1.0
 
@@ -3622,66 +3623,6 @@ org.glassfish.hk2:hk2-utils
 
 ----------------------- Dependencies Grouped by License ------------
 -------- Dependency
-io.swagger:swagger-annotations
--------- Copyrights
-Copyright 2016 SmartBear Software
-
--------- Dependencies Summary
-io.swagger:swagger-annotations
-
--------- License used by Dependencies
-/**
- * Copyright 2016 SmartBear Software
- * <p>
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * <p>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
-package io.swagger.annotations;
-
-import java.lang.annotation.ElementType;
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-import java.lang.annotation.Target;
-
-/**
- * License metadata available within the info section of a Swagger definition, see
- * https://github.com/OAI/OpenAPI-Specification/blob/master/versions/2.0.md#licenseObject
- *
- * @since 1.5.0
- */
-
-@Target(ElementType.ANNOTATION_TYPE)
-@Retention(RetentionPolicy.RUNTIME)
-public @interface License {
-
-    /**
-     * The name of the license.
-     *
-     * @return the name of the license
-     */
-    String name();
-
-    /**
-     * An optional URL for the license.
-     *
-     * @return an optional URL for the license.
-     */
-    String url() default "";
-}
-
-
------------------------ Dependencies Grouped by License ------------
--------- Dependency
 javax.annotation:javax.annotation-api
 -------- Copyrights
 Copyright (C) 1989, 1991 Free Software Foundation, Inc. 59 Temple Place, Suite 330, Boston, MA 02111-1307 USA
@@ -4277,7 +4218,7 @@ COMMON DEVELOPMENT AND DISTRIBUTION LICENSE (CDDL) Version 1.1
 
     The Covered Software is a "commercial item," as that term is defined
     in 48 C.F.R. 2.101 (Oct. 1995), consisting of "commercial computer
-    software" (as that term is defined at 48 C.F.R. §
+    software" (as that term is defined at 48 C.F.R. ï¿½
     252.227-7014(a)(1)) and "commercial computer software documentation"
     as such terms are used in 48 C.F.R. 12.212 (Sept. 1995). Consistent
     with 48 C.F.R. 12.212 and 48 C.F.R. 227.7202-1 through 227.7202-4
@@ -5478,6 +5419,7 @@ Copyright (C) 2004 Bill Burke. All Rights Reserved.
 org.jetbrains.kotlin:kotlin-stdlib
 -------- Copyrights
 Copyright 2010-2018 JetBrains s.r.o. and Kotlin Programming Language contributors.
+Copyright 2010-2020 JetBrains s.r.o. and Kotlin Programming Language contributors.
 
 -------- Dependency
 org.jetbrains.kotlin:kotlin-stdlib-common
@@ -5511,6 +5453,11 @@ Copyright (c) 2008, http://www.snakeyaml.org
 Copyright 2003-2010 Christian d'Heureuse, Inventec Informatik AG, Zurich, Switzerland
 Copyright (c) 2008 Google Inc.
 
+-------- Dependency
+io.swagger:swagger-annotations
+-------- Copyrights
+Copyright 2016 SmartBear Software
+
 -------- Dependencies Summary
 com.fasterxml.jackson.core:jackson-annotations
 com.fasterxml.jackson.core:jackson-core
@@ -5533,6 +5480,7 @@ io.prometheus:simpleclient_httpserver
 io.prometheus:simpleclient_tracer_common
 io.prometheus:simpleclient_tracer_otel
 io.prometheus:simpleclient_tracer_otel_agent
+io.swagger:swagger-annotations
 jakarta.inject:jakarta.inject-api
 jakarta.validation:jakarta.validation-api
 javax.annotation:jsr250-api
@@ -5842,69 +5790,23 @@ org.bouncycastle:bcprov-ext-jdk15on
 org.bouncycastle:bcprov-jdk15on
 
 -------- License used by Dependencies
-package org.bouncycastle;
+The Bouncy Castle License
 
-import org.bouncycastle.util.Strings;
+Copyright (c) 2000-2021 The Legion Of The Bouncy Castle Inc. (https://www.bouncycastle.org)
 
-/**
- * The Bouncy Castle License
- *
- * Copyright (c) 2000-2021 The Legion Of The Bouncy Castle Inc. (https://www.bouncycastle.org)
- * <p>
- * Permission is hereby granted, free of charge, to any person obtaining a copy of this software 
- * and associated documentation files (the "Software"), to deal in the Software without restriction, 
- * including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, 
- * and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
- * subject to the following conditions:
- * <p>
- * The above copyright notice and this permission notice shall be included in all copies or substantial
- * portions of the Software.
- * <p>
- * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
- * INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
- * PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
- * LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
- * OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
- * DEALINGS IN THE SOFTWARE.
- */
-public class LICENSE
-{
-    public static final String licenseText =
-      "Copyright (c) 2000-2021 The Legion of the Bouncy Castle Inc. (https://www.bouncycastle.org) "
-      + Strings.lineSeparator()
-      + Strings.lineSeparator()
-      + "Permission is hereby granted, free of charge, to any person obtaining a copy of this software "
-      + Strings.lineSeparator()
-      + "and associated documentation files (the \"Software\"), to deal in the Software without restriction, "
-      + Strings.lineSeparator()
-      + "including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, "
-      + Strings.lineSeparator()
-      + "and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,"
-      + Strings.lineSeparator()
-      + "subject to the following conditions:"
-      + Strings.lineSeparator()
-      + Strings.lineSeparator()
-      + "The above copyright notice and this permission notice shall be included in all copies or substantial"
-      + Strings.lineSeparator()
-      + "portions of the Software."
-      + Strings.lineSeparator()
-      + Strings.lineSeparator()
-      + "THE SOFTWARE IS PROVIDED \"AS IS\", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,"
-      + Strings.lineSeparator()
-      + "INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR"
-      + Strings.lineSeparator()
-      + "PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE"
-      + Strings.lineSeparator()
-      + "LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR"
-      + Strings.lineSeparator()
-      + "OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER"
-      + Strings.lineSeparator()
-      + "DEALINGS IN THE SOFTWARE.";
+Permission is hereby granted, free of charge, to any person obtaining a copy of this software
+and associated documentation files (the "Software"), to deal in the Software without restriction,
+including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense,
+and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so,
+subject to the following conditions:
 
-    public static void main(
-        String[]    args)
-    {
-        System.out.println(licenseText);
-    }
-}
+The above copyright notice and this permission notice shall be included in all copies or substantial
+portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED,
+INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR
+PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE
+LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER
+DEALINGS IN THE SOFTWARE.
 
