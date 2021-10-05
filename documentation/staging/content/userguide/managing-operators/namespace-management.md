@@ -2,28 +2,30 @@
 title: "Managing domain namespaces"
 date: 2019-09-19T10:41:32-05:00
 draft: false
-weight: 2
+weight: 4
 description: "Considerations for managing namespaces while the operator is running."
 ---
 
-Each operator deployment manages a number of Kubernetes namespaces. For more information, see [Operator Helm configuration values]({{< relref "/userguide/managing-operators/using-helm#operator-helm-configuration-values" >}}). A number of Kubernetes resources
+An operator can manage all WebLogic domains in all namespaces in a Kubernetes cluster, or only manage domains in a specific subset of the namespaces, or manage only the domains that are located in the same namespace as the operator. _At most, a namespace can be managed by one operator._
+
+Each operator deployment manages a number of Kubernetes namespaces. A number of Kubernetes resources
 must be present in a namespace before any WebLogic Server instances can be successfully
-started.
-Those Kubernetes resources are created either as part of the installation
+started. Those Kubernetes resources are created either as part of the installation
 of a release of the operator's Helm chart, or created by the operator.
-
-This FAQ describes some considerations to be aware of when you manage the namespaces while the operator is running. For example:
-
-* [Check the namespaces that the operator manages](#check-the-namespaces-that-the-operator-manages)
-* [Add a namespace for the operator to manage](#add-a-kubernetes-namespace-to-the-operator)
-* [Delete a namespace from the operator's domain namespace list](#delete-a-kubernetes-namespace-from-the-operator)
-* [Delete and recreate a Kubernetes Namespace that the operator manages](#recreate-a-previously-deleted-kubernetes-namespace)
-
-For others, see [Common Mistakes and Solutions]({{< relref "/userguide/managing-operators/using-helm#common-mistakes-and-solutions" >}}).
 
 {{% notice note %}}
 There can be multiple operators in a Kubernetes cluster, and in that case, you must ensure that the namespaces managed by these operators do not overlap.
 {{% /notice %}}
+
+This document describes some considerations to be aware of when you manage the namespaces while the operator is running. For example:
+
+* [Check the namespaces that the operator manages](#check-the-namespaces-that-the-operator-manages)
+* [Add a namespace for the operator to manage](#add-a-kubernetes-namespace-to-the-operator)
+* [Delete a namespace from the operator's domain namespace list](#delete-a-kubernetes-namespace-from-the-operator)
+* [Delete and recreate a Kubernetes namespace that the operator manages](#recreate-a-previously-deleted-kubernetes-namespace)
+
+For others, see [Common Mistakes and Solutions]({{< relref "/userguide/managing-operators/common-mistakes.md" >}}).
+
 
 #### Check the namespaces that the operator manages
 Prior to version 3.1.0, the operator supported specifying the namespaces that it would manage only through a list.

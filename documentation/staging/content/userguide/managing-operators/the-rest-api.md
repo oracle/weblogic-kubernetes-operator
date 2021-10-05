@@ -1,20 +1,43 @@
 ---
-title: "Use the operator's REST services"
+title: "REST services"
 date: 2019-02-23T17:08:32-05:00
-weight: 3
-Description: "Use the operator's REST services."
+weight: 5
+description: "Use the operator's REST services."
 ---
 
+#### Contents
 
+- [Introduction](#introduction)
+- [Configure the operator's external REST HTTPS interface](#configure-the-operators-external-rest-https-interface)
+- [Use the operator's REST services](#use-the-operators-rest-services)
+   - [How to add your certificate to your operating system trust store](#how-to-add-your-certificate-to-your-operating-system-trust-store)
+   - [Sample SSL certificate and private key for the REST interface](#sample-ssl-certificate-and-private-key-for-the-rest-interface)
+- [Sample operator REST client script](#sample-operator-rest-client-script)
+
+
+#### Introduction
 
 The operator provides a REST server which you can use to get a list of WebLogic domains and clusters and to initiate scaling operations.  Swagger documentation for the REST API is available [here](https://oracle.github.io/weblogic-kubernetes-operator/swagger/index.html).
+
+#### Configure the operator's external REST HTTPS interface
+
+The operator can expose an external REST HTTPS interface which can be accessed from outside the Kubernetes cluster. As with the operator's internal REST interface, the external REST interface requires an SSL/TLS certificate and private key that the operator will use as the identity of the external REST interface (see below).
+
+To enable the external REST interface, configure these values in a custom configuration file, or on the Helm command line:
+
+* Set `externalRestEnabled` to `true`.
+* Set `externalRestIdentitySecret` to the name of the Kubernetes `tls secret` that contains the certificates and private key.
+* Optionally, set `externalRestHttpsPort` to the external port number for the operator REST interface (defaults to `31001`).
+
+
+#### Use the operator's REST services
 
 You can access most of the REST services using `GET`, for example:
 
 * To obtain a list of domains, send a `GET` request to the URL `/operator/latest/domains`
 * To obtain a list of clusters in a domain, send a `GET` request to the URL `/operator/latest/domains/<domainUID>/clusters`
 
-All of the REST services require authentication.  Callers must pass in a valid token header and a CA certificate file.  In previous operator versions, the operator performed authentication and authorization checks using the Kubernetes token review and subject access review APIs, and then updated the Domain resource using the operator's privileges.  Now, by default, the operator will use the caller's bearer token to perform the underlying update to the Domain resource using the caller's privileges and thus delegating authentication and authorization checks directly to the Kubernetes API Server (see [REST interface configuration]({{< relref "/userguide/managing-operators/using-helm.md#rest-interface-configuration" >}})).  
+All of the REST services require authentication.  Callers must pass in a valid token header and a CA certificate file.  In previous operator versions, the operator performed authentication and authorization checks using the Kubernetes token review and subject access review APIs, and then updated the Domain resource using the operator's privileges.  Now, by default, the operator will use the caller's bearer token to perform the underlying update to the Domain resource using the caller's privileges and thus delegating authentication and authorization checks directly to the Kubernetes API Server (see [REST interface configuration]({{< relref "/userguide/managing-operators/using-helm#rest-interface-configuration" >}})).  
 {{% notice note %}}
 When using the operator's REST services to scale up or down a WebLogic cluster, you may need to grant `patch` access to the user or service account associated with the caller's bearer token. This can be done with an RBAC ClusterRoleBinding between the user or service account and the ClusterRole that defines the permissions for the WebLogic `domains` resource.
 {{% /notice %}}
@@ -41,7 +64,7 @@ Before using the sample script below, you must:
   recommends `curl 7.63.0 (x86_64-apple-darwin17.7.0) libcurl/7.63.0 SecureTransport zlib/1.2.11`, which can be installed
   with `brew install curl`.
 
-#### How to add your certificate to your operating system trust store
+##### How to add your certificate to your operating system trust store
 
 For macOS, find the certificate in Finder, and double-click on it.  This will add it to your keystore and open Keychain
 Access.  Find the certificate in Keychain Access and double-click on it to open the details.  Open the "Trust" pull-down menu and set the value of "When using this certificate" to "Always Trust", then close the detail window. Enter your password when prompted.
@@ -64,6 +87,23 @@ $ sudo ln -s /etc/pki/ca-trust/source/anchors/operator.cert.pem /etc/pki/tls/cer
 In the final command, the file name `e242d2da.0` should be the output of the previous command plus the suffix `.0`.
 
 For other operating systems, consult your operating system's documentation (or Google).
+
+##### Sample SSL certificate and private key for the REST interface
+
+For testing purposes, the WebLogic Kubernetes Operator project provides a sample script
+that generates a self-signed certificate and private key for the operator external REST interface.
+The generated certificate and key are stored in a Kubernetes `tls secret` and the sample
+script outputs the corresponding configuration values in YAML format. These values can be added to your custom YAML configuration file, for use when the operator's Helm chart is installed.
+
+{{% notice warning %}}
+The sample script should ***not*** be used in a production environment because
+typically a self-signed certificate for external communication is not considered safe.
+A certificate signed by a commercial certificate authority is more widely accepted and
+should contain valid host names, expiration dates, and key constraints.
+{{% /notice %}}
+
+For more detailed information about the sample script and how to run it, see
+the [REST APIs]({{<relref "/samples/rest/_index.md#sample-to-create-certificate-and-key">}}).
 
 #### Sample operator REST client script
 
