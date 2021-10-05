@@ -32,8 +32,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-//import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
-import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
@@ -147,13 +145,9 @@ class ItPortForward {
    */
   @Test
   @DisplayName("Forward a local port to default channel port and verify WLS admin console is accessible")
-  //@DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
-  @EnabledIfEnvironmentVariable(named = "OKD", matches = "true")
   void testPortForwardDefaultAdminChannel() {
     final int adminDefaultChannelPort = 7001;
 
-    // Verify that using a local port admin forwarded to admin's default channel (7001),
-    // admin console is accessible via http://localhost:localPort/console/login/LoginForm.jsp
     String portForwardFileName = portForwardFileNameProfix + "-1.out";
     startPortForwardProcess(adminDefaultPortDomainNamespace,
         adminDefaultPortDomainUid, adminDefaultChannelPort, portForwardFileName);
@@ -168,8 +162,6 @@ class ItPortForward {
    */
   @Test
   @DisplayName("Forward a local port to default secure channel port and verify WLS admin console is accessible")
-  //@DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
-  @EnabledIfEnvironmentVariable(named = "OKD", matches = "true")
   void testPortForwardDefaultAdminSecureChannel() {
     final int adminDefaultChannelPort = 7001;
     final int adminDefaultChannelSecurePort = 7002;
@@ -194,8 +186,6 @@ class ItPortForward {
    */
   @Test
   @DisplayName("Forward a local port to WLS administration port and verify WLS admin console is accessible")
-  //@DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
-  @EnabledIfEnvironmentVariable(named = "OKD", matches = "true")
   void testPortForwardAdministrationPort() {
     final int adminDefaultChannelPort = 7001;
     final int adminDefaultChannelSecurePort = 7002;
@@ -326,6 +316,7 @@ class ItPortForward {
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING")
+                .adminChannelPortForwardingAttr(true)
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default-admin")
