@@ -377,7 +377,9 @@
                   **/ItFmwDynamicClusterMiiDomain,
                   **/ItFmwBigCMMiiDomain,
                   **/ItFmwDynamicDomainInPV,
-                  **/ItFmwMiiDomain
+                  **/ItFmwMiiDomain,
+                  **/ItMiiSampleFmwMain,
+                  **/ItMiiSampleFmwAux
                 </includes-failsafe>
             </properties>
         </profile>
