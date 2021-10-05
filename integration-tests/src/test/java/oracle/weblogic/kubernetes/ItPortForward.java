@@ -27,12 +27,9 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
@@ -72,7 +69,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test configurations for accessing the console via localhost:localport through 'kubectl port-forward'")
 @IntegrationTest
-@Tag("okdenv")
 class ItPortForward {
 
   // constants for creating domain image using model in image
@@ -144,19 +140,10 @@ class ItPortForward {
   }
 
   /**
-   * kill port-forward process.
-   */
-  @AfterAll
-  void tearDown() {
-    stopPortForwardProcess();
-  }
-
-  /**
    * The test that `kubectl port-foward` is able to forward a local port to default channel port
    * (7001 in this test).
    * Verify that the WLS admin console can be accessed using http://localhost:localPort/console/login/LoginForm.jsp
    */
-  @Order(1)
   @Test
   @DisplayName("Forward a local port to default channel port and verify WLS admin console is accessible")
   @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
@@ -169,6 +156,7 @@ class ItPortForward {
     startPortForwardProcess(adminDefaultPortDomainNamespace,
         adminDefaultPortDomainUid, adminDefaultChannelPort, portForwardFileName);
     verifyAdminConsoleAccessible(adminDefaultPortDomainNamespace, portForwardFileName, false);
+    stopPortForwardProcess();
   }
 
   /**
@@ -176,24 +164,24 @@ class ItPortForward {
    * (7002 in this test).
    * Verify that the WLS admin console can be accessed using http://localhost:localPort/console/login/LoginForm.jsp
    */
-  @Order(2)
   @Test
   @DisplayName("Forward a local port to default secure channel port and verify WLS admin console is accessible")
   @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   void testPortForwardDefaultAdminSecureChannel() {
-    final int adminDefaultChannelPort = 7002;
+    final int adminDefaultChannelPort = 7001;
+    final int adminDefaultChannelSecurePort = 7002;
 
-    // Verify that using a local port admin forwarded to admin's default secure channel (7002),
-    // admin console is accessible via https://localhost:localPort/console/login/LoginForm.jsp
-    String portForwardFileName = portForwardFileNameProfix + "-2.out";
+    String portForwardFileName = portForwardFileNameProfix + "-2.1.out";
     startPortForwardProcess(adminDefaultPortDomainNamespace,
-        adminDefaultPortDomainUid, adminDefaultChannelPort, portForwardFileName);
+        adminDefaultPortDomainUid, adminDefaultChannelSecurePort, portForwardFileName);
     verifyAdminConsoleAccessible(adminDefaultPortDomainNamespace, portForwardFileName, true);
 
-    // Verify that using a local port admin forwarded to admin's default channel (7001),
-    // admin console is still accessible via http://localhost:localPort/console/login/LoginForm.jsp
-    portForwardFileName = portForwardFileNameProfix + "-1.out";
+    portForwardFileName = portForwardFileNameProfix + "-2.2.out";
+    startPortForwardProcess(adminDefaultPortDomainNamespace,
+        adminDefaultPortDomainUid, adminDefaultChannelPort, portForwardFileName);
     verifyAdminConsoleAccessible(adminDefaultPortDomainNamespace, portForwardFileName, false);
+
+    stopPortForwardProcess();
   }
 
   /**
@@ -201,29 +189,36 @@ class ItPortForward {
    * (9002 in this test).
    * Verify that the WLS admin console can be accessed using http://localhost:localPort/console/login/LoginForm.jsp
    */
-  @Order(3)
   @Test
   @DisplayName("Forward a local port to WLS administration port and verify WLS admin console is accessible")
   @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   void testPortForwardAdministrationPort() {
-    final int adminDefaultChannelPort = 9002;
+    final int adminDefaultChannelPort = 7001;
+    final int adminDefaultChannelSecurePort = 7002;
+    final int adminChannelPort = 9002;
 
     // Verify that using a local port admin forwarded to administration port (9002),
     // admin console is accessible via https://localhost:localPort/console/login/LoginForm.jsp
-    String portForwardFileName = portForwardFileNameProfix + "-3.out";
+    String portForwardFileName = portForwardFileNameProfix + "-3.1.out";
     startPortForwardProcess(administrationPortDomainNamespace,
-        administrationPortDomainUid, adminDefaultChannelPort, portForwardFileName);
+        administrationPortDomainUid, adminChannelPort, portForwardFileName);
     verifyAdminConsoleAccessible(administrationPortDomainNamespace, portForwardFileName, true);
 
     // Verify that when a local port is forwarded to the administration port,
     // admin console is not accessible using a local port forwarded to admin's default channel (7001)
-    portForwardFileName = portForwardFileNameProfix + "-1.out";
+    portForwardFileName = portForwardFileNameProfix + "-3.2.out";
+    startPortForwardProcess(administrationPortDomainNamespace,
+        administrationPortDomainUid, adminDefaultChannelPort, portForwardFileName);
     verifyAdminConsoleAccessible(adminDefaultPortDomainNamespace, portForwardFileName, true, "false");
 
     // Verify that when a local port is forwarded to the administration port,
     // admin console is not accessible using a local port forwarded to admin's default secure channel (7002)
-    portForwardFileName = portForwardFileNameProfix + "-2.out";
+    portForwardFileName = portForwardFileNameProfix + "-3.3.out";
+    startPortForwardProcess(administrationPortDomainNamespace,
+        administrationPortDomainUid, adminDefaultChannelSecurePort, portForwardFileName);
     verifyAdminConsoleAccessible(adminDefaultPortDomainNamespace, portForwardFileName, false, "false");
+
+    stopPortForwardProcess();
   }
 
   private static String createAndVerifyDomainImage(String domainNamespace,
