@@ -2,25 +2,58 @@
 title: "Install the operator"
 date: 2019-02-23T16:47:21-05:00
 weight: 1
-
+description: "This document describes how to install, upgrade, and uninstall the operator."
 ---
 
-The operator uses Helm to create the necessary resources and
-then deploy the operator in a Kubernetes cluster. This document describes how to install, upgrade,
-and uninstall the operator.
 
 #### Contents
 
- - [Operator image](#operator-image)
- - [Install the operator Helm chart](#install-the-operator-helm-chart)
- - [Alternatively, install the operator Helm chart from the GitHub chart repository](#alternatively-install-the-operator-helm-chart-from-the-github-chart-repository)
- - [Upgrade the operator](#upgrade-the-operator)
- - [Uninstall the operator](#uninstall-the-operator)
+- [Introduction](#introduction)
+- [Prerequisites](#prerequisites)
+   - [Install Helm](#install-helm)
+   - [Operator's Helm chart configuration](#operators-helm-chart-configuration)
+   - [Operator image](#operator-image)
+- [Install the operator Helm chart](#install-the-operator-helm-chart)
+- [Alternatively, install the operator Helm chart from the GitHub chart repository](#alternatively-install-the-operator-helm-chart-from-the-github-chart-repository)
+- [Upgrade the operator](#upgrade-the-operator)
+- [Uninstall the operator](#uninstall-the-operator)
 
- #### Operator image
+#### Introduction
 
- You can find the operator image in
- [GitHub Container Registry](https://github.com/orgs/oracle/packages/container/package/weblogic-kubernetes-operator).
+The WebLogic Kubernetes operator consists of:
+- The operator runtime, which is a process that runs in a container deployed into a Kubernetes Pod and that monitors one or more Kubernetes namespaces. It performs the actual management tasks for domain resources deployed to these namespaces.
+- A [Helm chart]({{<relref "/userguide/managing-operators/installation.md#install-the-operator-helm-chart">}}) for installing the operator runtime and its related resources.
+- A Kubernetes custom resource definition (CRD) that, when installed, enables the Kubernetes API server and the operator to monitor and manage domain resource instances.
+- [Domain resources]({{<relref "/userguide/managing-domains/domain-resource.md">}}) that reference WebLogic domain configuration, a WebLogic installation, and anything else necessary to run the domain.
+
+The following sections describe how to install, upgrade, and uninstall the operator.
+
+#### Prerequisites
+
+The operator uses Helm to create the necessary resources and then deploy the operator in a Kubernetes cluster.
+
+##### Install Helm
+
+Helm manages releases (installations) of your charts. For detailed instructions on installing Helm, see https://github.com/helm/helm.
+
+##### Operator's Helm chart configuration
+
+The operator Helm chart is pre-configured with default values for the configuration of the operator. The operator’s Helm chart is located in the `kubernetes/charts/weblogic-operator` directory.
+
+You can find out the configuration values that the Helm chart supports, as well as the default values, using this command:
+```shell
+$ helm inspect values kubernetes/charts/weblogic-operator
+```
+
+The available configuration values are explained by category in
+[Operator Helm configuration values]({{<relref "/userguide/managing-operators/using-helm#operator-helm-configuration-values">}}).
+
+Helm commands are explained in more detail in
+[Useful Helm operations]({{<relref "/userguide/managing-operators/using-helm#useful-helm-operations">}}).
+
+##### Operator image
+
+You can find the operator image in [GitHub Container Registry](https://github.com/orgs/oracle/packages/container/package/weblogic-kubernetes-operator).
 
 #### Install the operator Helm chart
 
