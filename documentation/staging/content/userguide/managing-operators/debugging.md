@@ -1,5 +1,5 @@
 ---
-title: "Operator Debugging"
+title: "Operator debugging"
 date: 2019-02-23T16:47:21-05:00
 weight: 8
 description: "General advice for debugging and monitoring the operator."
@@ -21,18 +21,18 @@ description: "General advice for debugging and monitoring the operator."
 
 ### Debugging a particular domain resource
 
-Once you have an installed and running operator, it is rarely but sometimes necessary to debug the operator itself.
-If you are having problems with a particular domain resource, then first see [domain debugging]({{<relref "/userguide/managing-domains/model-in-image/debugging.md">}}). 
+After you have an installed and running operator, it is rarely but sometimes necessary to debug the operator itself.
+If you are having problems with a particular domain resource, then first see [Domain debugging]({{<relref "/userguide/managing-domains/model-in-image/debugging.md">}}).
 
 ### Check Helm status
 
-An operator runtime is installed into a Kubernetes cluster and maintained using a Helm release. 
-See [Useful Helm operations]({{<relref "/userguide/managing-operators/using-helm#useful-helm-operations">}}) for information about how to list your installed Helm releases and get each release's configuration.
+An operator runtime is installed into a Kubernetes cluster and maintained using a Helm release.
+For information about how to list your installed Helm releases and get each release's configuration, see [Useful Helm operations]({{<relref "/userguide/managing-operators/using-helm#useful-helm-operations">}}).
 
 ### Ensure the operator CRD is installed
 
 When you install and run an operator, the installation should have deployed a domain custom resource to the cluster.
-To check, verify that following command lists a CRD with name `domains.weblogic.oracle`:
+To check, verify that the following command lists a CRD with name `domains.weblogic.oracle`:
 
 ```text
 $ kubectl get crd
@@ -45,9 +45,9 @@ NAME                                   CREATED AT
 domains.weblogic.oracle                2021-09-27T18:46:38Z
 ```
 
-When the domain CRD is not installed, the operator runtimes will not be able to monitor domains and commands like `kubectl get domains` will fail.
+When the domain CRD is not installed, the operator runtimes will not be able to monitor domains, and commands like `kubectl get domains` will fail.
 
-If the domain CRD is not installed, then refer to the [operator installation guide]({{< relref "/userguide/managing-operators/installation.md" >}}).
+If the domain CRD is not installed, then refer to the operator [Installation]({{< relref "/userguide/managing-operators/installation.md" >}}) documentation.
 
 ### Check the operator deployment
 
@@ -66,7 +66,7 @@ $ kubectl -n OP_NAMESPACE get deployments/weblogic-operator -o yaml
 and/or:
 
 ```text
-$ kubectl -n OP_NAMESPACE describe deployments/weblogic-operator 
+$ kubectl -n OP_NAMESPACE describe deployments/weblogic-operator
 ```
 
 Each operator deployment will have a corresponding Kubernetes pod
@@ -97,7 +97,7 @@ $ kubectl -n OP_NAMESPACE get events --sort-by='.lastTimestamp'
 
 ### Check the operator log
 
-To check the operator deployment's log (especially look for SEVERE and ERROR level messages):
+To check the operator deployment's log (especially look for `SEVERE` and `ERROR` level messages):
 
 ```text
 $ kubectl logs -n YOUR_OPERATOR_NS -c weblogic-operator deployments/weblogic-operator
@@ -117,7 +117,7 @@ An operator's settings are automatically maintained by Helm in a Kubernetes Conf
 
 {{% notice note %}}
 An operator is designed to robustly handle thousands of domains even in the event of failures,
-so it should not normally be necessary to force an operator to restart, even after an upgrade. 
+so it should not normally be necessary to force an operator to restart, even after an upgrade.
 Accordingly, if you encounter a problem that you think requires an operator restart to resolve,
 then please make sure that the operator development team is aware of the issue
 (see [Get Help]({{< relref "/userguide/introduction/get-help.md" >}})).
@@ -125,11 +125,11 @@ then please make sure that the operator development team is aware of the issue
 
 When you restart an operator:
 
-* The operator is temporarily unavailable for managing its namespaces
+* The operator is temporarily unavailable for managing its namespaces.
   * For example,  a domain that is created while the operator
     is restarting will not be started until the
     operator pod is fully up again.
-* This will not shutdown your current domains or affect their resources.
+* This will not shut down your current domains or affect their resources.
 * The restarted operator will rediscover existing domains and manage them.
 
 Here are two approaches for restarting an operator:
@@ -170,19 +170,19 @@ Here are two approaches for restarting an operator:
 ### Operator logging level
 
 {{% notice warning %}}
-It should rarely be necessary to change the operator to use a finer grained logging level,
+It should rarely be necessary to change the operator to use a finer-grained logging level,
 but, in rare situations, the operator support team may direct you to do so.
-If you change the logging level, then be aware that finer grained logging levels
+If you change the logging level, then be aware that finer-grained logging levels
 can be extremely verbose and quickly use up gigabytes of disk space in the span of hours, or,
-at the finest levels during heavy activity, even minutes.
-Consequently, the logging level should only be increased for as long as is needed to help get debugging for a particular problem.
+at the finest levels, during heavy activity, in even minutes.
+Consequently, the logging level should _only_ be increased for as long as is needed to help get debugging data for a particular problem.
 {{% /notice %}}
 
-To change the java logging level, see the 
-operator [javaLoggingLevel setting]({{< relref "/userguide/managing-operators/using-helm#javalogginglevel" >}}).
+To change the Java logging level, see the
+operator [javaLoggingLevel]({{< relref "/userguide/managing-operators/using-helm#javalogginglevel" >}}) setting.
 
 ### See also
 
-If you have setup either of the following, then they may be helpful in debugging:
+If you have set up either of the following, then these sections may be helpful in debugging:
 - [Operator REST HTTPS interface]({{<relref "/userguide/managing-operators/the-rest-api#configure-the-operators-external-rest-https-interface">}})
 - [Elastic Stack (Elasticsearch, Logstash, and Kibana) integration]({{<relref "/samples/elastic-stack/operator/_index.md#elastic-stack-per-operator-configuration">}})

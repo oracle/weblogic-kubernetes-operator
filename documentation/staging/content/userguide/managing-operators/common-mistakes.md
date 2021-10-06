@@ -22,18 +22,18 @@ description: "Help for common installing and upgrading mistakes."
 #### Deleting and recreating a namespace that an operator manages without informing the operator
 
 If you create a new domain in a namespace that is deleted and recreated, the domain does not start up until you notify the operator.
-For more details about the problem and solutions, see [Managing domain namespaces]({{<relref "/userguide/managing-operators/namespace-management.md">}}).
+For more details about the problem and solutions, see [Namespaces]({{<relref "/userguide/managing-operators/namespace-management.md">}}).
 
 #### Forgetting to configure the operator to monitor a namespace
 
 If it appears that an operator is not managing a domain resource, for example:
-- a Domain YAML file is deployed and no introspector or WebLogic Server pods start
-- the operator log contains no mention of the domain
-- no events are generated for the domain in the domain's namespace
-- the domain resource's `domain.status` fields do not contain updated information about the status of the domain
+- A domain YAML file is deployed and no introspector or WebLogic Server pods start.
+- The operator log contains no mention of the domain.
+- No events are generated for the domain in the domain's namespace.
+- The domain resource's `domain.status` fields do not contain updated information about the status of the domain.
 Then check to make sure that the Domain's namespace has been set up to be monitored by an operator.
 
-See [Operator namespace management]({{<relref "/userguide/managing-operators/namespace-management.md">}}).
+For more information, see [Namespaces]({{<relref "/userguide/managing-operators/namespace-management.md">}}).
 
 #### Installing the operator a second time into the same namespace
 
@@ -52,7 +52,8 @@ Both the previous and new release own the resources created by the previous oper
 * You can't fix it by rolling back this release because it is not in the `DEPLOYED` state.
 * You can't fix it by deleting the previous release because it removes the operator's resources too.
 * All you can do is delete both operator releases and reinstall the original operator.
-See https://github.com/helm/helm/issues/2349
+
+See https://github.com/helm/helm/issues/2349.
 
 #### Installing an operator and having it manage a domain namespace that another operator is already managing
 
@@ -164,4 +165,3 @@ To recover:
 - `helm rollback`
 - Create the domain namespace.
 - `helm upgrade` again.
-
