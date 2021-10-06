@@ -2,7 +2,7 @@
 title: "Installation and upgrade"
 date: 2019-02-23T16:47:21-05:00
 weight: 2
-description: "This document describes how to install, upgrade, and uninstall the operator."
+description: "How to install, upgrade, and uninstall the operator."
 ---
 
 
@@ -22,7 +22,7 @@ description: "This document describes how to install, upgrade, and uninstall the
 
 #### TBD NOTE! This chapter appears to be missing critical necessary details, such as:
 
-- setting up a service account (probably belongs in prerequisites, see quick start)
+- setting up a service account (probably belongs in prerequisites, see quick start. Also see the security chapter.)
 - creating a ns for the operator (mentioned in 'from operator source' but not 'from repo' - probably belongs in prerequisites)
 - the full typical command line for helm installing the operator, including referencing its service account (see quick start)
 - the options/steps for setting up which namespaces the operator should manage (see helm usage, namespace mgt)
@@ -34,7 +34,7 @@ The operator uses Helm to create the necessary resources and then deploy the ope
 
 ##### Check environment
 
-Check [this link]({{<relref "/userguide/prerequisites/introduction.md">}}) to ensure that your Kubernetes cluster supports the operator.
+Review the [Operator prerequisites]({{<relref "/userguide/prerequisites/introduction.md">}}) to ensure that your Kubernetes cluster supports the operator.
 
 ##### Install Helm
 
@@ -52,7 +52,7 @@ $ git clone --branch v3.3.2 https://github.com/oracle/weblogic-kubernetes-operat
 
 This will download and unpack the operator source into `/tmp/weblogic-kubernetes-operator`.
 
-We use the `/tmp' as an example directory; you can use a different location.
+We use `/tmp` as an example directory; you can use a different location.
 
 ##### Operator's Helm chart configuration
 
@@ -72,7 +72,7 @@ Helm commands are explained in more detail in
 
 ##### Operator image
 
-You can find the operator image in [GitHub Container Registry](https://github.com/orgs/oracle/packages/container/package/weblogic-kubernetes-operator).
+Get the operator image from the [GitHub Container Registry](https://github.com/orgs/oracle/packages/container/package/weblogic-kubernetes-operator).
 
 #### Install the operator Helm chart from operator source
 
@@ -106,7 +106,7 @@ $ helm install weblogic-operator kubernetes/charts/weblogic-operator \
   --set "javaLoggingLevel=FINE" --wait
 ```
 
-**Note**: Please consult [Operator logging level]({{< relref "/userguide/managing-operators/debugging#operator-logging-level" >}}) before changing the `javaLoggingLevel` setting.
+**Note**: Before changing the `javaLoggingLevel` setting, consult the [Operator logging level]({{< relref "/userguide/managing-operators/debugging#operator-logging-level" >}}).
 
 This creates a Helm release, named `weblogic-operator` in the `weblogic-operator-namespace` namespace, and configures a deployment and supporting resources for the operator.
 
@@ -161,7 +161,7 @@ To delete the 2.6.0 operator:
 $ helm delete weblogic-operator -n weblogic-operator-namespace
 ```
 
-Then install the 3.x operator using the [installation](#install-the-operator-helm-chart) instructions above.
+Then install the 3.x operator using the [installation](#install-the-operator-helm-chart-from-operator-source) instructions.
 
 The following instructions will be applicable to upgrade operators within the 3.x release family
 as additional versions are released.
@@ -183,7 +183,7 @@ $ helm upgrade \
 
 #### Uninstall the operator
 
-The `helm uninstall` command is used to remove an operator release and its associated resources from the Kubernetes cluster. The release name used with the `helm uninstall` command is the same release name used with the `helm install` command (see [Install the Helm chart](#install-the-operator-helm-chart)). For example:
+The `helm uninstall` command is used to remove an operator release and its associated resources from the Kubernetes cluster. The release name used with the `helm uninstall` command is the same release name used with the `helm install` command (see [Install the Helm chart](#install-the-operator-helm-chart-from-operator-source)). For example:
 
 ```shell
 $ helm uninstall weblogic-operator -n weblogic-operator-namespace
@@ -201,4 +201,4 @@ Note that the Domain custom resource definition is shared. Do not delete the CRD
 
 #### Installation sample
 
-See [Quick Start]({{< relref "/quickstart/_index.md" >}}) for an example of installing the operator, setting the namespace that it monitors, deploying a domain resource to its monitored namespace, and uninstalling the operator.
+For an example of installing the operator, setting the namespace that it monitors, deploying a domain resource to its monitored namespace, and uninstalling the operator, see the [Quick Start]({{< relref "/quickstart/_index.md" >}}).

@@ -204,4 +204,4 @@ Events:
 
 If you still run into problems after you perform the `helm upgrade` to re-initialize a namespace
 that is deleted and recreated, then you can
-try [forcing the operator to restart]({{< relref "/userguide/managing-operators/common-mistakes.md#force-the-operator-to-restart" >}}).
+try [forcing the operator to restart]({{< relref "/userguide/managing-operators/debugging#force-the-operator-to-restart" >}}).
