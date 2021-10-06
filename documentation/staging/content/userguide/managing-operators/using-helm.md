@@ -104,7 +104,7 @@ $ helm upgrade \
   kubernetes/charts/weblogic-operator
 ```
 
-**Note**: Before changing the `javaLoggingLevel` setting, consult the [Operator logging level]({{< relref "/userguide/managing-operators/debugging#operator-logging-level" >}}).
+**Note**: Before changing the `javaLoggingLevel` setting, consult the [Operator logging level]({{< relref "/userguide/managing-operators/debugging#operator-logging-level" >}}) advice.
 
 ### Operator Helm configuration values
 
