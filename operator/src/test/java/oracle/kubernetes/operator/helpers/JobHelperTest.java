@@ -18,7 +18,9 @@ import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobSpec;
+import io.kubernetes.client.openapi.models.V1JobStatus;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
@@ -1043,6 +1045,29 @@ class JobHelperTest extends DomainValidationBaseTest {
     runCreateJob();
 
     assertThat(job, notNullValue());
+  }
+
+  @Test
+  void whenJobFails_incrementFailureCount() {
+    testSupport.failOnResource(KubernetesTestSupport.JOB, null, NS, 500);
+
+    testSupport.runSteps(JobHelper.createDomainIntrospectorJobStep(null));
+
+    assertThat(domain.getStatus().getIntrospectJobFailureCount(), equalTo(1));
+  }
+
+  @Test
+  void whenIntrospectorPodReadFails_incrementFailureCount() {
+    testSupport.failOnResource(KubernetesTestSupport.PODLOG, null, NS, 500);
+    testSupport.doOnCreate(KubernetesTestSupport.JOB, job -> markJobCompleted((V1Job) job));
+
+    testSupport.runSteps(JobHelper.createDomainIntrospectorJobStep(null));
+
+    assertThat(domain.getStatus().getIntrospectJobFailureCount(), equalTo(1));
+  }
+
+  private void markJobCompleted(V1Job job) {
+    job.setStatus(new V1JobStatus().addConditionsItem(new V1JobCondition().status("True").type("Complete")));
   }
 
   private V1Job job;

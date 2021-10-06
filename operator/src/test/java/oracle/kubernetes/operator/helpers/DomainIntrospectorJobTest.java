@@ -78,6 +78,7 @@ import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_I
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_VOLUME_NAME_PREFIX;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImageVolume.DEFAULT_AUXILIARY_IMAGE_PATH;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
@@ -547,6 +548,21 @@ class DomainIntrospectorJobTest {
 
     assertThat(logRecords, containsInfo(getJobFailedMessageKey()));
     assertThat(logRecords, containsFine(getJobFailedDetailMessageKey()));
+  }
+
+  @Test
+  void whenJobLogContainsSevereError_incrementFailureCount() {
+    testSupport.defineResources(
+        new V1Job().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS)).status(new V1JobStatus()));
+    IntrospectionTestUtils.defineResources(testSupport, SEVERE_MESSAGE_1);
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
+
+    testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
+
+    final Domain updatedDomain = testSupport.<Domain>getResources(DOMAIN).get(0);
+
+    assertThat(updatedDomain.getStatus().getIntrospectJobFailureCount(), equalTo(1));
+    logRecords.clear();
   }
 
   private Cluster getCluster(String clusterName) {

@@ -31,6 +31,7 @@ import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.calls.CallResponse;
+import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -567,6 +568,10 @@ public class JobHelper {
           nextStep = getNext();
         }
 
+        if (!severeStatuses.isEmpty()) {
+          nextStep = Step.chain(DomainStatusUpdater.createFailureCountStep(), nextStep);
+        }
+
         return doNext(
                 DomainStatusUpdater.createFailureRelatedSteps(
                         onSeparateLines(jobConditionsReason),
@@ -580,7 +585,7 @@ public class JobHelper {
 
     private OffsetDateTime getJobCreationTime(V1Job domainIntrospectorJob) {
       return Optional.ofNullable(domainIntrospectorJob.getMetadata())
-              .map(m -> m.getCreationTimestamp()).orElse(OffsetDateTime.now());
+              .map(V1ObjectMeta::getCreationTimestamp).orElse(OffsetDateTime.now());
     }
 
     private boolean isNotComplete(V1Job domainIntrospectorJob) {
@@ -656,6 +661,23 @@ public class JobHelper {
 
     private String onSeparateLines(List<String> lines) {
       return String.join(System.lineSeparator(), lines);
+    }
+
+    @Override
+    public NextAction onFailure(Packet packet, CallResponse<String> callResponse) {
+      if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
+        return updateDomainStatus(packet, callResponse);
+      } else {
+        return super.onFailure(packet, callResponse);
+      }
+    }
+
+    private NextAction updateDomainStatus(Packet packet, CallResponse<String> callResponse) {
+      return doNext(
+            Step.chain(
+                  DomainStatusUpdater.createFailureCountStep(),
+                  DomainStatusUpdater.createFailureRelatedSteps(callResponse, null)),
+            packet);
     }
   }
 
