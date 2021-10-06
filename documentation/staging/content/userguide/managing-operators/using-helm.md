@@ -1,65 +1,99 @@
 ---
-title: "Configure the operator"
+title: "Configuration"
 date: 2019-02-23T17:08:43-05:00
-weight: 2
-description: "Useful Helm operations and configuration values."
+weight: 3
+description: "An operator runtime is installed and configured using Helm. Here are useful Helm operations and operator configuration values."
 ---
 
-#### Contents
+### Contents
 
-* [Useful Helm operations](#useful-helm-operations)
-* [Operator Helm configuration values](#operator-helm-configuration-values)
-  * [Overall operator information](#overall-operator-information)
-  * [Creating the operator pod](#creating-the-operator-pod)
-  * [WebLogic domain management](#weblogic-domain-management)
-  * [Elastic Stack integration](#elastic-stack-integration)
-  * [REST interface configuration](#rest-interface-configuration)
-  * [Debugging options](#debugging-options)
-* [Advanced configuration options](#advanced-configuration-options)
+- [Useful Helm operations](#useful-helm-operations)
+- [Operator Helm configuration values](#operator-helm-configuration-values)
+  - [Overall operator information](#overall-operator-information)
+    - [`serviceAccount`](#serviceaccount)
+    - [`javaLoggingLevel`](#javalogginglevel)
+    - [`kubernetesPlatform`](#kubernetesplatform)
+  - [Creating the operator pod](#creating-the-operator-pod)
+    - [`image`](#image)
+    - [`imagePullPolicy`](#imagepullpolicy)
+    - [`imagePullSecrets`](#imagepullsecrets)
+    - [`annotations`](#annotations)
+    - [`labels`](#labels)
+    - [`nodeSelector`](#nodeselector)
+    - [`affinity`](#affinity)
+    - [`enableClusterRoleBinding`](#enableclusterrolebinding)
+  - [WebLogic domain management](#weblogic-domain-management)
+    - [`domainNamespaceSelectionStrategy`](#domainnamespaceselectionstrategy)
+    - [`domainNamespaces`](#domainnamespaces)
+    - [`domainNamespaceLabelSelector`](#domainnamespacelabelselector)
+    - [`domainNamespaceRegExp`](#domainnamespaceregexp)
+    - [`dedicated` ***(Deprecated)***](#dedicated-***deprecated***)
+    - [`domainPresenceFailureRetryMaxCount` and `domainPresenceFailureRetrySeconds`](#domainpresencefailureretrymaxcount-and-domainpresencefailureretryseconds)
+    - [`introspectorJobNameSuffix` and `externalServiceNameSuffix`](#introspectorjobnamesuffix-and-externalservicenamesuffix)
+    - [`clusterSizePaddingValidationEnabled`](#clustersizepaddingvalidationenabled)
+  - [Elastic Stack integration](#elastic-stack-integration)
+    - [`elkIntegrationEnabled`](#elkintegrationenabled)
+    - [`logStashImage`](#logstashimage)
+    - [`elasticSearchHost`](#elasticsearchhost)
+    - [`elasticSearchPort`](#elasticsearchport)
+  - [REST interface configuration](#rest-interface-configuration)
+    - [`externalRestEnabled`](#externalrestenabled)
+    - [`externalRestHttpsPort`](#externalresthttpsport)
+    - [`externalRestIdentitySecret`](#externalrestidentitysecret)
+    - [`externalOperatorCert` ***(Deprecated)***](#externaloperatorcert-***deprecated***)
+    - [`externalOperatorKey` ***(Deprecated)***](#externaloperatorkey-***deprecated***)
+    - [`tokenReviewAuthentication`](#tokenreviewauthentication)
+  - [Debugging options](#debugging-options)
+    - [`remoteDebugNodePortEnabled`](#remotedebugnodeportenabled)
+    - [`internalDebugHttpPort`](#internaldebughttpport)
+    - [`externalDebugHttpPort`](#externaldebughttpport)
+- [Advanced configuration options](#advanced-configuration-options)
 
-Note that the operator Helm chart is available from the GitHub chart repository. For more details, see [Alternatively, install the operator Helm chart from the GitHub chart repository]({{< relref "/userguide/managing-operators/installation.md#alternatively-install-the-operator-helm-chart-from-the-github-chart-repository" >}}).
+### Useful Helm operations
 
-#### Useful Helm operations
+Note that the operator is installed using a Helm chart where the Helm chart can be obtained from the GitHub chart repository or can be found in the operator source.
+For more details, see [Installation]({{< relref "/userguide/managing-operators/installation.md" >}}).
 
-Show the available operator configuration values and their defaults:
+From within the operator source's top directory, show the available operator configuration values and their defaults:
 ```shell
 $ helm inspect values kubernetes/charts/weblogic-operator
 ```
 
-Show the custom values you configured for the operator Helm release:
-```shell
-$ helm get values weblogic-operator
-```
-
-Show all of the values your operator Helm release is using:
-```shell
-$ helm get values --all weblogic-operator
-```
-
-List the Helm releases for a specified namespace or all namespaces:
+An installed operator is maintained by a Helm release. List the Helm releases for a specified namespace or all namespaces:
 ```shell
 $ helm list --namespace <namespace>
 ```
+
 ```shell
 $ helm list --all-namespaces
 ```
 
-Get the status of the operator Helm release:
+Get the status of the operator Helm release named `weblogic-operator`:
 ```shell
 $ helm status weblogic-operator --namespace <namespace>
 ```
 
-Show the history of the operator Helm release:
+Show the history of the operator Helm release named `weblogic-operator`:
 ```shell
 $ helm history weblogic-operator --namespace <namespace>
 ```
 
-Roll back to a previous version of this operator Helm release, in this case, the first version:
+Roll back to a previous version of the operator Helm release named `weblogic-operator`, in this case, the first version:
 ```shell
 $ helm rollback weblogic-operator 1 --namespace <namespace>
 ```
 
-Change one or more values in the operator Helm release. In this example, the `--reuse-values` flag indicates that previous overrides of other values should be retained:
+Show the custom values you configured for a operator Helm release named `weblogic-operator`:
+```shell
+$ helm get values weblogic-operator
+```
+
+Show all of the values your operator Helm release named `weblogic-operator` is using:
+```shell
+$ helm get values --all weblogic-operator
+```
+
+Change one or more values in the operator Helm release named `weblogic-operator`. In this example, the `--reuse-values` flag indicates that previous overrides of other values should be retained:
 ```shell
 $ helm upgrade \
   --reuse-values \
@@ -69,6 +103,8 @@ $ helm upgrade \
   weblogic-operator \
   kubernetes/charts/weblogic-operator
 ```
+
+**Note**: Please consult [Operator logging level]({{< relref "/userguide/managing-operators/debugging#operator-logging-level" >}}) before changing the `javaLoggingLevel` setting.
 
 ### Operator Helm configuration values
 
@@ -88,6 +124,7 @@ serviceAccount: "weblogic-operator"
 ```
 
 ##### `javaLoggingLevel`
+
 Specifies the level of Java logging that should be enabled in the operator. Valid values are:  `SEVERE`, `WARNING`, `INFO`, `CONFIG`, `FINE`, `FINER`, and `FINEST`.
 
 Defaults to `INFO`.
@@ -96,6 +133,8 @@ Example:
 ```yaml
 javaLoggingLevel:  "FINE"
 ```
+
+**Note**: Please consult [Operator logging level]({{< relref "/userguide/managing-operators/debugging#operator-logging-level" >}}) before changing this setting.
 
 ##### `kubernetesPlatform`
 Specify the Kubernetes platform on which the operator is running. This setting has no default, the only valid value is OpenShift, and the setting should be left unset for other platforms. When set to `OpenShift`, the operator:
@@ -564,7 +603,7 @@ externalDebugHttpPort:  30777
 ```
 ### Advanced configuration options
 
-The following are optional, advanced operator Helm chart configuration options.
+The following are optional:
 
 - [Configure the operator's external REST HTTPS interface]({{<relref "/userguide/managing-operators/the-rest-api#configure-the-operators-external-rest-https-interface">}})
 - [Elastic Stack (Elasticsearch, Logstash, and Kibana) integration]({{<relref "/samples/elastic-stack/operator/_index.md#elastic-stack-per-operator-configuration">}})

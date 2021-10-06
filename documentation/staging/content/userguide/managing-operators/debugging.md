@@ -1,0 +1,188 @@
+---
+title: "Operator Debugging"
+date: 2019-02-23T16:47:21-05:00
+weight: 8
+description: "General advice for debugging and monitoring the operator."
+---
+
+### Contents
+
+- [Debugging a particular domain resource](#debugging-a-particular-domain-resource)
+- [Check Helm status](#check-helm-status)
+- [Ensure the operator CRD is installed](#ensure-the-operator-crd-is-installed)
+- [Check the operator deployment](#check-the-operator-deployment)
+- [Check for events](#check-for-events)
+- [Check the operator log](#check-the-operator-log)
+- [Operator ConfigMap](#operator-configmap)
+- [Check common issues](#check-common-issues)
+- [Force the operator to restart](#force-the-operator-to-restart)
+- [Operator logging level](#operator-logging-level)
+- [See also](#see-also)
+
+### Debugging a particular domain resource
+
+Once you have an installed and running operator, it is rarely but sometimes necessary to debug the operator itself.
+If you are having problems with a particular domain resource, then first see [domain debugging]({{<relref "/userguide/managing-domains/model-in-image/debugging.md">}}). 
+
+### Check Helm status
+
+An operator runtime is installed into a Kubernetes cluster and maintained using a Helm release. 
+See [Useful Helm operations]({{<relref "/userguide/managing-operators/using-helm#useful-helm-operations">}}) for information about how to list your installed Helm releases and get each release's configuration.
+
+### Ensure the operator CRD is installed
+
+When you install and run an operator, the installation should have deployed a domain custom resource to the cluster.
+To check, verify that following command lists a CRD with name `domains.weblogic.oracle`:
+
+```text
+$ kubectl get crd
+```
+
+The command's output should look something like the following:
+
+```text
+NAME                                   CREATED AT
+domains.weblogic.oracle                2021-09-27T18:46:38Z
+```
+
+When the domain CRD is not installed, the operator runtimes will not be able to monitor domains and commands like `kubectl get domains` will fail.
+
+If the domain CRD is not installed, then refer to the [operator installation guide]({{< relref "/userguide/managing-operators/installation.md" >}}).
+
+### Check the operator deployment
+
+Verify that the operator's deployment is deployed and running by listing all deployments with the `weblogic.operatorName` label.
+
+```text
+$ kubectl get deployment --all-namespaces=true -l weblogic.operatorName
+```
+
+Check the operator deployment's detailed status:
+
+```text
+$ kubectl -n OP_NAMESPACE get deployments/weblogic-operator -o yaml
+```
+
+and/or:
+
+```text
+$ kubectl -n OP_NAMESPACE describe deployments/weblogic-operator 
+```
+
+Each operator deployment will have a corresponding Kubernetes pod
+with a name that has a prefix that matches the deployment name
+plus a unique suffix that changes every time the deployment restarts.
+
+To find operator pods and check their high level status:
+
+```text
+$ kubectl get pods --all-namespaces=true -l weblogic.operatorName
+```
+
+To check the details for a given pod:
+
+```text
+$ kubectl -n OP_NAMESPACE get pod weblogic-operator-UNIQUESUFFIX -o yaml
+$ kubectl -n OP_NAMESPACE describe pod weblogic-operator-UNIQUESUFFIX
+```
+A pod describe usefully includes any events that might be associated with the operator.
+
+### Check for events
+
+To check for Kubernetes events that may have been logged to the operator's namespace:
+
+```text
+$ kubectl -n OP_NAMESPACE get events --sort-by='.lastTimestamp'
+```
+
+### Check the operator log
+
+To check the operator deployment's log (especially look for SEVERE and ERROR level messages):
+
+```text
+$ kubectl logs -n YOUR_OPERATOR_NS -c weblogic-operator deployments/weblogic-operator
+```
+
+### Operator ConfigMap
+
+An operator's settings are automatically maintained by Helm in a Kubernetes ConfigMap named `weblogic-operator-cm` in the same namespace as the operator. To view the contents of this ConfigMap, call `kubectl -n sample-weblogic-operator-ns get cm weblogic-operator-cm -o yaml`.
+
+### Check common issues
+
+- See [Common Mistakes and Solutions]({{< relref "/userguide/managing-operators/common-mistakes.md" >}}).
+- Check the [FAQs]({{<relref "/faq/_index.md">}}).
+
+
+### Force the operator to restart
+
+{{% notice note %}}
+An operator is designed to robustly handle thousands of domains even in the event of failures,
+so it should not normally be necessary to force an operator to restart, even after an upgrade. 
+Accordingly, if you encounter a problem that you think requires an operator restart to resolve,
+then please make sure that the operator development team is aware of the issue
+(see [Get Help]({{< relref "/userguide/introduction/get-help.md" >}})).
+{{% /notice %}}
+
+When you restart an operator:
+
+* The operator is temporarily unavailable for managing its namespaces
+  * For example,  a domain that is created while the operator
+    is restarting will not be started until the
+    operator pod is fully up again.
+* This will not shutdown your current domains or affect their resources.
+* The restarted operator will rediscover existing domains and manage them.
+
+Here are two approaches for restarting an operator:
+
+* Delete the operator pod, and let Kubernetes restart it.
+
+  First, find the operator pod you wish to delete:
+
+  ```text
+  $ kubectl get pods --all-namespaces=true -l weblogic.operatorName
+  ```
+
+  Second, delete the pod. For example:
+
+  ```text
+  $ kubectl delete pod/weblogic-operator-65b95bc5b5-jw4hh -n OP_NAMESPACE
+  ```
+
+* Scale the operator deployment to `0` and then back to `1` by changing the value of the `replicas`.
+
+  First, find the namespace of the operator deployment you wish to restart:
+
+  ```text
+  $ kubectl get deployment --all-namespaces=true -l weblogic.operatorName
+  ```
+
+  Second, scale the deployment down to zero replicas:
+
+  ```text
+  $ kubectl scale deployment.apps/weblogic-operator -n OP_NAMESPACE --replicas=0
+  ```
+  Finally, scale the deployament back up to one replica:
+
+  ```text
+  $ kubectl scale deployment.apps/weblogic-operator -n OP_NAMESPACE --replicas=1
+  ```
+
+### Operator logging level
+
+{{% notice warning %}}
+It should rarely be necessary to change the operator to use a finer grained logging level,
+but, in rare situations, the operator support team may direct you to do so.
+If you change the logging level, then be aware that finer grained logging levels
+can be extremely verbose and quickly use up gigabytes of disk space in the span of hours, or,
+at the finest levels during heavy activity, even minutes.
+Consequently, the logging level should only be increased for as long as is needed to help get debugging for a particular problem.
+{{% /notice %}}
+
+To change the java logging level, see the 
+operator [javaLoggingLevel setting]({{< relref "/userguide/managing-operators/using-helm#javalogginglevel" >}}).
+
+### See also
+
+If you have setup either of the following, then they may be helpful in debugging:
+- [Operator REST HTTPS interface]({{<relref "/userguide/managing-operators/the-rest-api#configure-the-operators-external-rest-https-interface">}})
+- [Elastic Stack (Elasticsearch, Logstash, and Kibana) integration]({{<relref "/samples/elastic-stack/operator/_index.md#elastic-stack-per-operator-configuration">}})
