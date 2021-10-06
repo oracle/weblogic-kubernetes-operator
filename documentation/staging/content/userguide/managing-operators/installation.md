@@ -1,46 +1,65 @@
 ---
-title: "Install the operator"
+title: "Installation and upgrade"
 date: 2019-02-23T16:47:21-05:00
-weight: 1
+weight: 2
 description: "This document describes how to install, upgrade, and uninstall the operator."
 ---
 
 
 #### Contents
 
-- [Introduction](#introduction)
 - [Prerequisites](#prerequisites)
+   - [Check environment](#check-environment)
    - [Install Helm](#install-helm)
+   - [Download operator source](#download-operator-source)
    - [Operator's Helm chart configuration](#operators-helm-chart-configuration)
    - [Operator image](#operator-image)
-- [Install the operator Helm chart](#install-the-operator-helm-chart)
+- [Install the operator Helm chart from operator source](#install-the-operator-helm-chart-from-operator-source)
 - [Alternatively, install the operator Helm chart from the GitHub chart repository](#alternatively-install-the-operator-helm-chart-from-the-github-chart-repository)
 - [Upgrade the operator](#upgrade-the-operator)
 - [Uninstall the operator](#uninstall-the-operator)
+- [Installation sample](#installation-sample)
 
-#### Introduction
+#### TBD NOTE! This chapter appears to be missing critical necessary details, such as:
 
-The WebLogic Kubernetes operator consists of:
-- The operator runtime, which is a process that runs in a container deployed into a Kubernetes Pod and that monitors one or more Kubernetes namespaces. It performs the actual management tasks for domain resources deployed to these namespaces.
-- A [Helm chart]({{<relref "/userguide/managing-operators/installation.md#install-the-operator-helm-chart">}}) for installing the operator runtime and its related resources.
-- A Kubernetes custom resource definition (CRD) that, when installed, enables the Kubernetes API server and the operator to monitor and manage domain resource instances.
-- [Domain resources]({{<relref "/userguide/managing-domains/domain-resource.md">}}) that reference WebLogic domain configuration, a WebLogic installation, and anything else necessary to run the domain.
-
-The following sections describe how to install, upgrade, and uninstall the operator.
+- setting up a service account (probably belongs in prerequisites, see quick start)
+- creating a ns for the operator (mentioned in 'from operator source' but not 'from repo' - probably belongs in prerequisites)
+- the full typical command line for helm installing the operator, including referencing its service account (see quick start)
+- the options/steps for setting up which namespaces the operator should manage (see helm usage, namespace mgt)
+- references to operator specific security issues in the security chapter (if any) (see security chapter)
 
 #### Prerequisites
 
 The operator uses Helm to create the necessary resources and then deploy the operator in a Kubernetes cluster.
 
+##### Check environment
+
+Check [this link]({{<relref "/userguide/prerequisites/introduction.md">}}) to ensure that your Kubernetes cluster supports the operator.
+
 ##### Install Helm
 
 Helm manages releases (installations) of your charts. For detailed instructions on installing Helm, see https://github.com/helm/helm.
 
+##### Download operator source
+
+For example:
+```
+$ cd /tmp
+```
+```
+$ git clone --branch v3.3.2 https://github.com/oracle/weblogic-kubernetes-operator.git
+```
+
+This will download and unpack the operator source into `/tmp/weblogic-kubernetes-operator`.
+
+We use the `/tmp' as an example directory; you can use a different location.
+
 ##### Operator's Helm chart configuration
 
-The operator Helm chart is pre-configured with default values for the configuration of the operator. The operator’s Helm chart is located in the `kubernetes/charts/weblogic-operator` directory.
+The operator Helm chart is pre-configured with default values for the configuration of the operator.
+The operator’s Helm chart is located in the operator source `kubernetes/charts/weblogic-operator` directory.
 
-You can find out the configuration values that the Helm chart supports, as well as the default values, using this command:
+You can find out the configuration values that the Helm chart supports, as well as the default values, using this command at the root of your operator source directory:
 ```shell
 $ helm inspect values kubernetes/charts/weblogic-operator
 ```
@@ -55,9 +74,10 @@ Helm commands are explained in more detail in
 
 You can find the operator image in [GitHub Container Registry](https://github.com/orgs/oracle/packages/container/package/weblogic-kubernetes-operator).
 
-#### Install the operator Helm chart
+#### Install the operator Helm chart from operator source
 
-Use the `helm install` command to install the operator Helm chart. As part of this, you must specify a "release" name for the operator.
+Use the `helm install` command to install the operator Helm chart that is located in the operator source.
+As part of this, you must specify a "release" name for the operator.
 
 You can override default configuration values in the chart by doing one of the following:
 
@@ -85,6 +105,8 @@ $ helm install weblogic-operator kubernetes/charts/weblogic-operator \
   --namespace weblogic-operator-namespace \
   --set "javaLoggingLevel=FINE" --wait
 ```
+
+**Note**: Please consult [Operator logging level]({{< relref "/userguide/managing-operators/debugging#operator-logging-level" >}}) before changing the `javaLoggingLevel` setting.
 
 This creates a Helm release, named `weblogic-operator` in the `weblogic-operator-namespace` namespace, and configures a deployment and supporting resources for the operator.
 
@@ -176,3 +198,7 @@ After removing the operator deployment, you should also remove the Domain custom
 $ kubectl delete customresourcedefinition domains.weblogic.oracle
 ```
 Note that the Domain custom resource definition is shared. Do not delete the CRD if there are other operators in the same cluster.
+
+#### Installation sample
+
+See [Quick Start]({{< relref "/quickstart/_index.md" >}}) for an example of installing the operator, setting the namespace that it monitors, deploying a domain resource to its monitored namespace, and uninstalling the operator.

@@ -1,10 +1,39 @@
 ---
 title: "Common mistakes and solutions"
 date: 2019-02-23T17:08:43-05:00
-weight: 3
+weight: 6
 description: "Help for common installing and upgrading mistakes."
 ---
 
+#### Contents
+
+- [Deleting and recreating a namespace that an operator manages without informing the operator](#deleting-and-recreating-a-namespace-that-an-operator-manages-without-informing-the-operator)
+- [Forgetting to configure the operator to monitor a namespace](#forgetting-to-configure-the-operator-to-monitor-a-namespace)
+- [Installing the operator a second time into the same namespace](#installing-the-operator-a-second-time-into-the-same-namespace)
+- [Installing an operator and having it manage a domain namespace that another operator is already managing](#installing-an-operator-and-having-it-manage-a-domain-namespace-that-another-operator-is-already-managing)
+- [Upgrading an operator and having it manage a domain namespace that another operator is already managing](#upgrading-an-operator-and-having-it-manage-a-domain-namespace-that-another-operator-is-already-managing)
+- [Installing an operator and assigning it the same external REST port number as another operator](#installing-an-operator-and-assigning-it-the-same-external-rest-port-number-as-another-operator)
+- [Upgrading an operator and assigning it the same external REST port number as another operator](#upgrading-an-operator-and-assigning-it-the-same-external-rest-port-number-as-another-operator)
+- [Installing an operator and assigning it a service account that doesn't exist](#installing-an-operator-and-assigning-it-a-service-account-that-doesnt-exist)
+- [Upgrading an operator and assigning it a service account that doesn't exist](#upgrading-an-operator-and-assigning-it-a-service-account-that-doesnt-exist)
+- [Installing an operator and having it manage a domain namespace that doesn't exist](#installing-an-operator-and-having-it-manage-a-domain-namespace-that-doesnt-exist)
+- [Upgrading an operator and having it manage a domain namespace that doesn't exist](#upgrading-an-operator-and-having-it-manage-a-domain-namespace-that-doesnt-exist)
+
+#### Deleting and recreating a namespace that an operator manages without informing the operator
+
+If you create a new domain in a namespace that is deleted and recreated, the domain does not start up until you notify the operator.
+For more details about the problem and solutions, see [Managing domain namespaces]({{<relref "/userguide/managing-operators/namespace-management.md">}}).
+
+#### Forgetting to configure the operator to monitor a namespace
+
+If it appears that an operator is not managing a domain resource, for example:
+- a Domain YAML file is deployed and no introspector or WebLogic Server pods start
+- the operator log contains no mention of the domain
+- no events are generated for the domain in the domain's namespace
+- the domain resource's `domain.status` fields do not contain updated information about the status of the domain
+Then check to make sure that the Domain's namespace has been set up to be monitored by an operator.
+
+See [Operator namespace management]({{<relref "/userguide/managing-operators/namespace-management.md">}}).
 
 #### Installing the operator a second time into the same namespace
 
@@ -136,7 +165,3 @@ To recover:
 - Create the domain namespace.
 - `helm upgrade` again.
 
-#### Deleting and recreating a namespace that an operator manages without informing the operator
-
-If you create a new domain in a namespace that is deleted and recreated, the domain does not start up until you notify the operator.
-For more details about the problem and solutions, see [Managing domain namespaces]({{<relref "/userguide/managing-operators/namespace-management.md">}}).

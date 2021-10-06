@@ -1,12 +1,12 @@
 +++
-title = "Debugging"
+title = "Domain Debugging"
 date = 2020-03-11T16:45:16-05:00
 weight = 60
 pre = "<b> </b>"
-description = "Debugging a deployed Model in Image domain."
+description = "Debugging a deployed domain."
 +++
 
-Here are some suggestions for debugging problems with Model in Image after your Domain YAML file is deployed.
+Here are some suggestions for debugging problems with a domin after your Domain YAML file is deployed.
 
 ### Contents
 
