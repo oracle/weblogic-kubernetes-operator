@@ -1,5 +1,5 @@
 +++
-title = "Domain Debugging"
+title = "Domain debugging"
 date = 2020-03-11T16:45:16-05:00
 weight = 60
 pre = "<b> </b>"

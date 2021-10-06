@@ -27,7 +27,7 @@ description: "An operator runtime is installed and configured using Helm. Here a
     - [`domainNamespaces`](#domainnamespaces)
     - [`domainNamespaceLabelSelector`](#domainnamespacelabelselector)
     - [`domainNamespaceRegExp`](#domainnamespaceregexp)
-    - [`dedicated` ***(Deprecated)***](#dedicated-***deprecated***)
+    - [`dedicated` ***(Deprecated)***](#dedicated-deprecated)
     - [`domainPresenceFailureRetryMaxCount` and `domainPresenceFailureRetrySeconds`](#domainpresencefailureretrymaxcount-and-domainpresencefailureretryseconds)
     - [`introspectorJobNameSuffix` and `externalServiceNameSuffix`](#introspectorjobnamesuffix-and-externalservicenamesuffix)
     - [`clusterSizePaddingValidationEnabled`](#clustersizepaddingvalidationenabled)
@@ -40,8 +40,8 @@ description: "An operator runtime is installed and configured using Helm. Here a
     - [`externalRestEnabled`](#externalrestenabled)
     - [`externalRestHttpsPort`](#externalresthttpsport)
     - [`externalRestIdentitySecret`](#externalrestidentitysecret)
-    - [`externalOperatorCert` ***(Deprecated)***](#externaloperatorcert-***deprecated***)
-    - [`externalOperatorKey` ***(Deprecated)***](#externaloperatorkey-***deprecated***)
+    - [`externalOperatorCert` ***(Deprecated)***](#externaloperatorcert-deprecated)
+    - [`externalOperatorKey` ***(Deprecated)***](#externaloperatorkey-deprecated)
     - [`tokenReviewAuthentication`](#tokenreviewauthentication)
   - [Debugging options](#debugging-options)
     - [`remoteDebugNodePortEnabled`](#remotedebugnodeportenabled)
@@ -104,7 +104,7 @@ $ helm upgrade \
   kubernetes/charts/weblogic-operator
 ```
 
-**Note**: Please consult [Operator logging level]({{< relref "/userguide/managing-operators/debugging#operator-logging-level" >}}) before changing the `javaLoggingLevel` setting.
+**Note**: Before changing the `javaLoggingLevel` setting, consult the [Operator logging level]({{< relref "/userguide/managing-operators/debugging#operator-logging-level" >}}).
 
 ### Operator Helm configuration values
 
