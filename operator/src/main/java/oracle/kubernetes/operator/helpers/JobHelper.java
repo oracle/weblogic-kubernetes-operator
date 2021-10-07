@@ -471,11 +471,8 @@ public class JobHelper {
           packet.putIfAbsent(START_TIME, Optional.ofNullable(job.getMetadata())
                   .map(m -> m.getCreationTimestamp()).orElse(OffsetDateTime.now()));
           return doNext(Step.chain(
-                  createProgressingStartedEventStep(info, INSPECTING_DOMAIN_PROGRESS_REASON, true, null),
-                  readDomainIntrospectorPodLogStep(null),
+                  createWatchDomainIntrospectorJobReadyStep(null),
                   deleteDomainIntrospectorJobStep(null),
-                  ConfigMapHelper.createIntrospectorConfigMapStep(null),
-                  ConfigMapHelper.readExistingIntrospectorConfigMap(namespace, info.getDomainUid()),
                   new DomainProcessorImpl.IntrospectionRequestStep(info),
                   createDomainIntrospectorJobStep(getNext())), packet);
         } else {
