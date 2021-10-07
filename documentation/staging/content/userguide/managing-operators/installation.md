@@ -14,6 +14,7 @@ description: "How to install, upgrade, and uninstall the operator."
    - [Download operator source](#download-operator-source)
    - [Operator's Helm chart configuration](#operators-helm-chart-configuration)
    - [Operator image](#operator-image)
+- [Manually install the Domain resource custom resource definition (CRD), if need be](#manually-install-the-domain-resource-custom-resource-definition-crd-if-need-be)
 - [Install the operator Helm chart from operator source](#install-the-operator-helm-chart-from-operator-source)
 - [Alternatively, install the operator Helm chart from the GitHub chart repository](#alternatively-install-the-operator-helm-chart-from-the-github-chart-repository)
 - [Upgrade the operator](#upgrade-the-operator)
@@ -73,6 +74,20 @@ Helm commands are explained in more detail in
 ##### Operator image
 
 Get the operator image from the [GitHub Container Registry](https://github.com/orgs/oracle/packages/container/package/weblogic-kubernetes-operator).
+
+#### Manually install the Domain resource custom resource definition (CRD), if need be
+
+The Domain type is defined by a Kubernetes CustomResourceDefinition (CRD). Typically, the operator installs the CRD for the Domain type when the operator first starts. However, if the operator lacks sufficient permission to install it, you may choose to install the CRD in advance by using one of the provided YAML files. Installing the CRD in advance allows you to run the operator without giving it privilege (through Kubernetes roles and bindings) to access or update the CRD or other cluster-scoped resources. This may be necessary in environments where the operator cannot have cluster-scoped privileges, such as OpenShift Dedicated. The operator's role based access control (RBAC) requirements are documented [here]({{< relref "/security/rbac.md" >}}).
+
+```shell
+$ kubectl create -f kubernetes/crd/domain-crd.yaml
+```
+
+After the CustomResourceDefinition is installed, either by the operator or using one of the `create` commands above, you can verify that the CRD is installed correctly using:
+
+```shell
+$ kubectl get crd domains.weblogic.oracle
+```
 
 #### Install the operator Helm chart from operator source
 
