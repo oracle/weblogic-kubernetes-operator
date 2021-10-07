@@ -10,7 +10,6 @@ pre = "<b> </b>"
 - [Overview](#overview)
 - [Prerequisites](#prerequisites)
 - [Deploying domain resource YAML files](#deploying-domain-resource-yaml-files)
-- [Domain resource custom resource definition (CRD)](#domain-resource-custom-resource-definition-crd)
 - [Domain resource attribute references](#domain-resource-attribute-references)
 - [Using `kubectl explain`](#using-kubectl-explain)
 - [Domain spec elements](#domain-spec-elements)
@@ -65,22 +64,6 @@ Or this command:
 
 ```shell
 $ kubectl get domain [domain name] -n [namespace] -o yaml
-```
-
-#### Domain resource custom resource definition (CRD)
-
-The Domain type is defined by a Kubernetes CustomResourceDefinition (CRD) and, like all [Kubernetes objects](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/), is described by three sections: `metadata`, `spec`, and `status`.
-
-The operator installs the CRD for the Domain type when the operator first starts. Customers may also choose to install the CRD in advance by using one of the provided YAML files. Installing the CRD in advance allows you to run the operator without giving it privilege (through Kubernetes roles and bindings) to access or update the CRD or other cluster-scoped resources. This may be necessary in environments where the operator cannot have cluster-scoped privileges, such as OpenShift Dedicated. The operator's role based access control (RBAC) requirements are documented [here]({{< relref "/security/rbac.md" >}}).
-
-```shell
-$ kubectl create -f kubernetes/crd/domain-crd.yaml
-```
-
-After the CustomResourceDefinition is installed, either by the operator or using one of the `create` commands above, you can verify that the CRD is installed correctly using:
-
-```shell
-$ kubectl get crd domains.weblogic.oracle
 ```
 
 #### Domain resource attribute references
