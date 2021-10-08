@@ -18,7 +18,7 @@ import io.kubernetes.client.openapi.models.V1OwnerReference;
 import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
-import oracle.kubernetes.operator.calls.FailureStatusSourceException;
+import oracle.kubernetes.operator.calls.UnrecoverableCallException;
 import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderImpl;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -37,9 +37,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
+import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
+import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.CLUSTER_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
-import static oracle.kubernetes.operator.helpers.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.PODDISRUPTIONBUDGET;
 import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_PDB_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_PDB_EXISTS;
@@ -195,31 +197,31 @@ class PodDisruptionBudgetHelperTest {
   @Test
   void onFailedRun_reportFailure() {
     testSupport.addRetryStrategy(retryStrategy);
-    testSupport.failOnResource(PODDISRUPTIONBUDGET, getPdbName(), NS, 500);
+    testSupport.failOnCreate(PODDISRUPTIONBUDGET, NS, HTTP_INTERNAL_ERROR);
 
     runPodDisruptionBudgetHelper();
 
-    testSupport.verifyCompletionThrowable(FailureStatusSourceException.class);
+    testSupport.verifyCompletionThrowable(UnrecoverableCallException.class);
   }
 
   @Test
   void whenPodDisruptionBudgetCreationFailsDueToUnprocessableEntityFailure_reportInDomainStatus() {
     testSupport.defineResources(domainPresenceInfo.getDomain());
-    testSupport.failOnResource(PODDISRUPTIONBUDGET, getPdbName(), NS, new UnrecoverableErrorBuilderImpl()
+    testSupport.failOnCreate(PODDISRUPTIONBUDGET, NS, new UnrecoverableErrorBuilderImpl()
             .withReason("FieldValueNotFound")
             .withMessage("Test this failure")
             .build());
 
     runPodDisruptionBudgetHelper();
 
-    assertThat(getDomain(), hasStatus("FieldValueNotFound",
-            "testcall in namespace junit, for testName: Test this failure"));
+    assertThat(getDomain(), hasStatus().withReason(Kubernetes)
+            .withMessageContaining("create", PODDISRUPTIONBUDGET.toLowerCase(), NS, "Test this failure"));
   }
 
   @Test
   void whenPodDisruptionBudgetCreationFailsDueToUnprocessableEntityFailure_abortFiber() {
     testSupport.defineResources(domainPresenceInfo.getDomain());
-    testSupport.failOnResource(PODDISRUPTIONBUDGET, getPdbName(), NS, new UnrecoverableErrorBuilderImpl()
+    testSupport.failOnCreate(PODDISRUPTIONBUDGET, NS, new UnrecoverableErrorBuilderImpl()
             .withReason("FieldValueNotFound")
             .withMessage("Test this failure")
             .build());
