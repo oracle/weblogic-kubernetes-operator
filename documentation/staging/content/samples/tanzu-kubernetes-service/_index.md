@@ -32,7 +32,7 @@ This sample assumes the following prerequisite environment setup:
 * [kubectl](https://kubernetes-io-vnext-staging.netlify.com/docs/tasks/tools/install-kubectl/); use `kubectl version` to test if `kubectl` works.  This document was tested with version v1.18.6.
 * [Helm](https://helm.sh/docs/intro/install/) version 3.1 or later; use `helm version` to check the `helm` version.  This document was tested with version v3.2.1.
 
-For general operator support limitations for Tanzu,
+For operator support limitations that are specific to Tanzu,
 see [Supported platforms]({{< relref "userguide/platforms/environments" >}}).
 
 ##### Create a Tanzu Kubernetes cluster
