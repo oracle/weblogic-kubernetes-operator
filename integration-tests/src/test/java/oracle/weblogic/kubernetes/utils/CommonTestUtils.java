@@ -1011,7 +1011,7 @@ public class CommonTestUtils {
 
   /**
    * Stop port-forward process(es) started through startPortForwardProcess.
-   * @param domainNamespace name of the domain namespace
+   * @param domainNamespace namespace where port-forward procees were started 
    */
   public static void stopPortForwardProcess(String domainNamespace) {
     LoggingFacade logger = getLogger();
@@ -1021,10 +1021,8 @@ public class CommonTestUtils {
         .append(domainNamespace)
         .append(" | awk ")
         .append(" '{print $2}'");
-
     logger.info("Command to get pids for port-forward processes {0}", getPids.toString());
     ExecResult result = assertDoesNotThrow(() -> exec(getPids.toString(), true));
-
     if (result.exitValue() == 0) {
       String[] pids = result.stdout().split(System.lineSeparator());
 
@@ -1044,7 +1042,6 @@ public class CommonTestUtils {
             isFileExistAndNotEmpty(portForwardFileName),
             logger,
             "forwarded port number is written to the file " + portForwardFileName));
-
     String portFile = assertDoesNotThrow(() -> Files.readAllLines(Paths.get(portForwardFileName)).get(0));
     logger.info("Port forward info:\n {0}", portFile);
     String forwardedPortNo = null;
