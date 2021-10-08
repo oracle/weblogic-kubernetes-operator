@@ -7,7 +7,7 @@ pre = "<b> </b>"
 
 Ingresses are one approach provided by Kubernetes to configure load balancers.
 Depending on the version of Kubernetes you are using, and your cloud provider, you may need to use Ingresses.
-For more information about Ingresses, see [the Ingress documentation](https://kubernetes.io/docs/concepts/services-networking/ingress/).  
+For more information about Ingresses, see the [Kubernetes Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) documentation.  
 
 #### WebLogic clusters as backends of an Ingress
 
@@ -34,7 +34,7 @@ The service, `serviceName` and `servicePort`, of a WebLogic cluster will be used
 object and the load balancer will route traffic to the WebLogic Servers within the cluster based on the rules.
 
 {{% notice note %}}
-Most common ingress controllers, for example Traefik, Voyager, and NGINX,
+Most common ingress controllers, for example Traefik and NGINX,
 understand that there are zero or more actual pods behind the service, and they actually
 build their backend list and route requests to those backends directly, not through the service.  This means that
 requests are properly balanced across the pods, according to the load balancing algorithm
@@ -56,25 +56,21 @@ additional pods become ready, or pods enter a non-ready state.
 
       * Use the Helm chart [ingress-per-domain](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/charts/ingress-per-domain).  
 
-        Each ingress provider supports a number of annotations in Ingress resources. This Helm chart allows you to define the routing rules without dealing with the detailed provider-specific annotations. Currently we support two ingress providers: Traefik and Voyager.
+        Each ingress provider supports a number of annotations in Ingress resources. This Helm chart allows you to define the routing rules without dealing with the detailed provider-specific annotations.
 
      * Create the Ingress resource manually from a YAML file.  
 
         Manually create an Ingress YAML file and then apply it to the Kubernetes cluster.
 
-#### Guide and samples for Traefik, Voyager/HAProxy, and NGINX
+#### Guide and samples for Traefik and NGINX
 
 Information about how to install and configure these ingress controllers to load balance WebLogic clusters is provided here:
 
  - [Traefik guide](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/charts/traefik/README.md)
- - [Voyager guide](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/charts/voyager/README.md)
  - [NGINX guide](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/charts/nginx/README.md)
 
  {{% notice note %}}
- For production environments, we recommend NGINX, Voyager, Traefik (2.2.1 or later) ingress controllers, Apache, or the load balancer provided by your cloud provider.
+ For production environments, we recommend NGINX, Traefik (2.2.1 or later) ingress controllers, Apache, or the load balancer provided by your cloud provider.
  {{% /notice %}}
 
-Samples are also provided for these two ingress controllers, showing how to manage multiple WebLogic clusters as the backends, using different routing rules, host-routing and path-routing; and TLS termination:
-
-- [Traefik samples](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/charts/traefik/samples)
-- [Voyager samples](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/charts/voyager/samples)
+Samples are also provided for the Traefik ingress controller, showing how to manage multiple WebLogic clusters as the backends, using different routing rules, host-routing and path-routing; and TLS termination: [Traefik samples](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/charts/traefik/samples).
