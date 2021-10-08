@@ -26,6 +26,7 @@ import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.JobAwaiterStepFactory;
+import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderImpl;
 import oracle.kubernetes.operator.rest.ScanCacheStub;
@@ -33,6 +34,7 @@ import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.FiberTestSupport;
+import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
@@ -44,6 +46,7 @@ import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.Model;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
@@ -53,8 +56,10 @@ import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createNiceStub;
 import static com.meterware.simplestub.Stub.createStrictStub;
+import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
+import static oracle.kubernetes.operator.DomainUpPlanTest.StepChainMatcher.hasChainWithStepsInOrder;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.JOBWATCHER_COMPONENT_NAME;
@@ -78,10 +83,12 @@ import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_I
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_VOLUME_NAME_PREFIX;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImageVolume.DEFAULT_AUXILIARY_IMAGE_PATH;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.core.AllOf.allOf;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
@@ -104,6 +111,7 @@ class DomainIntrospectorJobTest {
   private static final String SEVERE_PROBLEM_1 = "really bad";
   private static final String SEVERE_MESSAGE_1 = "@[SEVERE] " + SEVERE_PROBLEM_1;
   public static final String TEST_VOLUME_NAME = "test";
+  public static final String LAST_JOB_PROCESSED_ID = "some-unique-id";
 
   private final TerminalStep terminalStep = new TerminalStep();
   private final Domain domain = createDomain();
@@ -112,7 +120,7 @@ class DomainIntrospectorJobTest {
   private final List<Memento> mementos = new ArrayList<>();
   private final List<LogRecord> logRecords = new ArrayList<>();
   private final DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
-  private final RetryStrategyStub retryStrategy = createStrictStub(RetryStrategyStub.class);
+  private final EventRetryStrategyStub retryStrategy = createStrictStub(EventRetryStrategyStub.class);
   private final String jobPodName = LegalNames.toJobIntrospectorName(UID);
 
   public DomainIntrospectorJobTest() {
@@ -547,6 +555,116 @@ class DomainIntrospectorJobTest {
 
     assertThat(logRecords, containsInfo(getJobFailedMessageKey()));
     assertThat(logRecords, containsFine(getJobFailedDetailMessageKey()));
+  }
+
+  @Test
+  void whenJobLogContainsSevereError_incrementFailureCount() {
+    testSupport.defineResources(
+        new V1Job().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS)).status(new V1JobStatus()));
+    IntrospectionTestUtils.defineResources(testSupport, SEVERE_MESSAGE_1);
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
+
+    testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
+
+    final Domain updatedDomain = testSupport.<Domain>getResources(DOMAIN).get(0);
+
+    assertThat(updatedDomain.getStatus().getIntrospectJobFailureCount(), equalTo(1));
+    logRecords.clear();
+  }
+
+  @Test
+  void whenReadJobLogCompletesWithSevereError_domainStatusContainsLastProcessedJobId() {
+    testSupport.defineResources(
+            new V1Job().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS).uid(LAST_JOB_PROCESSED_ID))
+                    .status(new V1JobStatus()));
+    IntrospectionTestUtils.defineResources(testSupport, SEVERE_MESSAGE_1);
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
+
+    testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
+
+    final Domain updatedDomain = testSupport.<Domain>getResources(DOMAIN).get(0);
+
+    assertThat(updatedDomain.getStatus().getLastIntrospectJobProcessedUid(), equalTo(LAST_JOB_PROCESSED_ID));
+    logRecords.clear();
+  }
+
+  @Test
+  void whenReadJobLogCompletesWithoutSevereError_domainStatusContainsLastProcessedJobId() {
+    testSupport.defineResources(
+            new V1Job().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS).uid(LAST_JOB_PROCESSED_ID))
+                    .status(new V1JobStatus()));
+    IntrospectionTestUtils.defineResources(testSupport, "passed");
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
+
+    testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
+
+    final Domain updatedDomain = testSupport.<Domain>getResources(DOMAIN).get(0);
+
+    assertThat(updatedDomain.getStatus().getLastIntrospectJobProcessedUid(), equalTo(LAST_JOB_PROCESSED_ID));
+    logRecords.clear();
+  }
+
+  @Test
+  void whenDomainStatusContainsNullLastIntrospectProcessedJobUid_correctStepsExecuted() {
+    List<Step> nextSteps = new ArrayList<>();
+    domainPresenceInfo.getDomain()
+            .setStatus(new DomainStatus().withLastIntrospectJobProcessedUid(null));
+    V1Job job = new V1Job().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS).uid(LAST_JOB_PROCESSED_ID))
+            .status(new V1JobStatus());
+    testSupport.defineResources(job);
+    IntrospectionTestUtils.defineResources(testSupport, "passed");
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
+
+    JobHelper.ReplaceOrCreateStep.createNextSteps(nextSteps, domainPresenceInfo, job, terminalStep);
+
+    assertThat(nextSteps.get(0), hasChainWithStepsInOrder("WatchDomainIntrospectorJobReadyStep",
+            "ReadDomainIntrospectorPodStep", "ReadDomainIntrospectorPodLogStep",
+            "DeleteDomainIntrospectorJobStep", "IntrospectionConfigMapStep"));
+  }
+
+  @Test
+  void whenDomainStatusContainsProcessedJobIdSameAsCurrentJob_correctStepsExecuted() {
+    List<Step> nextSteps = new ArrayList<>();
+    domainPresenceInfo.getDomain()
+            .setStatus(new DomainStatus().withLastIntrospectJobProcessedUid(LAST_JOB_PROCESSED_ID));
+    V1Job job = new V1Job().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS).uid(LAST_JOB_PROCESSED_ID))
+            .status(new V1JobStatus());
+    testSupport.defineResources(job);
+    IntrospectionTestUtils.defineResources(testSupport, "passed");
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
+
+    JobHelper.ReplaceOrCreateStep.createNextSteps(nextSteps, domainPresenceInfo, job, terminalStep);
+
+    assertThat(nextSteps.get(0), hasChainWithStepsInOrder("WatchDomainIntrospectorJobReadyStep",
+            "DeleteDomainIntrospectorJobStep", "IntrospectionRequestStep",
+            "DomainIntrospectorJobStep"));
+  }
+
+  @Test
+  void whenCurrentJobIsNull_correctStepsExecuted() {
+    List<Step> nextSteps = new ArrayList<>();
+    V1Job job = null;
+    IntrospectionTestUtils.defineResources(testSupport, "passed");
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
+
+    JobHelper.ReplaceOrCreateStep.createNextSteps(nextSteps, domainPresenceInfo, job, terminalStep);
+
+    assertThat(nextSteps.get(0), hasChainWithStepsInOrder("ReadIntrospectorConfigMapStep",
+            "DomainIntrospectorJobStep"));
+  }
+
+  @Test
+  void whenJobCreateFailsWith409Error_JobIsCreated() {
+    testSupport.addRetryStrategy(retryStrategy);
+    JobHelper.DomainIntrospectorJobStepContext domainIntrospectorJobStepContext =
+            new JobHelper.DomainIntrospectorJobStepContext(testSupport.getPacket());
+
+    testSupport.failOnCreate(KubernetesTestSupport.JOB, UID + "-introspector", NS, HTTP_CONFLICT);
+
+    testSupport.runSteps(domainIntrospectorJobStepContext.createJob(new TerminalStep()));
+
+    assertThat(testSupport.getPacket().get(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB), notNullValue());
+    logRecords.clear();
   }
 
   private Cluster getCluster(String clusterName) {
