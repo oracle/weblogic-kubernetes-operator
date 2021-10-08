@@ -5,21 +5,65 @@ description: "See the operator supported environments."
 weight: 3
 ---
 
-### Oracle Cloud Infrastructure
+### Contents
 
-The Oracle [Global Pricing and Licensing site](https://www.oracle.com/corporate/pricing/specialty-topics.html)
-provides details about licensing practices and policies.
+- [Supported Cloud Environments](#authorized-cloud-environments)
+- [Kubernetes, WebLogic, and Operating System Prerequisites](#kubernetes-weblogic-and-operating-system-prerequisites)
+- [Pricing and Licensing](#pricing-and-licensing)
+- [Important Notes About Specific Cloud Environments](#important-notes-about-specific-cloud-environments)
+  - [Oracle Cloud Infrastructure](#oracle-cloud-infrastructure)
+  - [Oracle Linux Cloud Native Environment (OLCNE)](#oracle-linux-cloud-native-environment-olcne)
+  - [Microsoft Azure Kubernetes Service](#microsoft-azure-kubernetes-service)
+  - [VMware Tanzu Kubernetes Service](#vmware-tanzu-kubernetes-service)
+  - [OpenShift](#openshift)
+  - [Development-focused Kubernetes distributions](#development-focused-kubernetes-distributions)
+
+### Supported Cloud Environments
+
 WebLogic Server and the operator are supported on "Authorized Cloud Environments" as defined in
 [this Oracle licensing policy](https://www.oracle.com/assets/cloud-licensing-070579.pdf) and
 [this list of eligible products](http://www.oracle.com/us/corporate/pricing/authorized-cloud-environments-3493562.pdf).
 
-The official document that defines the supported configurations is [here](https://www.oracle.com/middleware/technologies/ias/oracleas-supported-virtualization.html).
+The official document that defines the supported configurations
+is [here](https://www.oracle.com/middleware/technologies/ias/oracleas-supported-virtualization.html).
 
-In accordance with these policies, the operator and WebLogic Server are supported on Oracle Cloud
+Some supported environments are subject to limitations and restrictions: see
+[Important Notes About Specific Environments](#important-notes-about-specific-environments).
+
+### Kubernetes, WebLogic, and Operating System Prerequisites
+
+The operator is subject to Kubernetes, WebLogic, and operating system versioning prerequisites:
+see [Operator prerequisites]({{< relref "/userguide/prerequisites/introduction.md" >}}).
+
+### Pricing and Licensing
+
+The WebLogic Kubernetes Operator (the "operator") is open source and free,
+licensed under the Universal Permissive license (UPL), Version 1.0.
+
+WebLogic Server is not open source.
+Licensing is required for each running WebLogic Server instance in Kubernetes,
+just as with any deployment of WebLogic Server.
+Licensing is free for a single developer desktop development environment.
+
+The Oracle [Global Pricing and Licensing site](https://www.oracle.com/corporate/pricing/specialty-topics.html)
+provides details about licensing practices and policies.
+
+### Important Notes About Specific Cloud Environments
+
+Here are some important considerations for specific environments.
+
+**Note:** This section does not list all supported environments.
+See [Supported Cloud Environments](#authorized-cloud-environments).
+for a list of all supported environments.
+
+#### Oracle Cloud Infrastructure
+
+In accordance with [Oracle policies](#authorized-cloud-environments),
+the operator and WebLogic Server are supported on Oracle Cloud
 Infrastructure using *Oracle Container Engine for Kubernetes*, or in a cluster running *Oracle Linux
 Container Services for use with Kubernetes* on OCI Compute, and on "Authorized Cloud Environments".
 
-### Oracle Linux Cloud Native Environment (OLCNE)
+#### Oracle Linux Cloud Native Environment (OLCNE)
 
 [Oracle Linux Cloud Native Environment](https://docs.oracle.com/en/operating-systems/olcne/) is a fully integrated suite for the development and management of cloud-native applications. Based on Open Container Initiative (OCI) and Cloud Native Computing Foundation (CNCF) standards, Oracle Linux Cloud Native Environment delivers a simplified framework for installations, updates, upgrades, and configuration of key features for orchestrating microservices.
 
@@ -27,7 +71,7 @@ WebLogic Server and the WebLogic Kubernetes Operator are certified and supported
 - Operator v2.6.0 is certified on OLCNE 1.1 and v3.2.5 is certified on OLCNE 1.3.
 - Operator v3.2.5 provides certified support of OLCNE 1.3 with Kubernetes 1.20.6 and CRI-O 1.20.2.
 
-### Microsoft Azure Kubernetes Service
+#### Microsoft Azure Kubernetes Service
 
 [Azure Kubernetes Service (AKS)](https://docs.microsoft.com/en-us/azure/aks/) is a hosted Kubernetes environment.  The WebLogic Kubernetes
 Operator, Oracle WebLogic Sever 12c, and Oracle Fusion Middleware Infrastructure 12c are fully supported and certified on Azure Kubernetes Service (as per the documents
@@ -43,7 +87,7 @@ AKS support and limitations:
   Infrastructure MDS data stores only when accessed through an OCI FastConnect.
 * Windows Server containers are not currently supported, only Linux containers.
 
-### VMware Tanzu Kubernetes Service
+#### VMware Tanzu Kubernetes Service
 
 Tanzu Kubernetes Grid (TKG) is a managed Kubernetes Service that lets you quickly deploy and manage Kubernetes clusters. The WebLogic Kubernetes
 Operator and Oracle WebLogic Sever are fully supported and certified on VMware Tanzu Kubernetes Grid Multicloud 1.1.3 (with vSphere 6.7U3).
@@ -56,7 +100,7 @@ TKG support and limitations:
 * The ingress used for certification is NGINX, with MetalLB load balancer.
 
 
-### OpenShift
+#### OpenShift
 
 Operator 2.0.1+ is certified for use on OpenShift Container Platform 3.11.43+, with Kubernetes 1.11.5+.  
 
@@ -66,7 +110,7 @@ To accommodate OpenShift security requirements:
 - For security requirements to run WebLogic in OpenShift, see the [OpenShift chapter]({{<relref "/security/openshift.md">}}) in the Security section.
 - Beginning with operator version 3.3.2, specify the `kubernetesPlatorm` Helm chart property with value `OpenShift`. For more information, see [Operator Helm configuration values]({{<relref "/userguide/managing-operators/using-helm#operator-helm-configuration-values">}}).
 
-### Important note about development-focused Kubernetes distributions
+#### Development-focused Kubernetes distributions
 
 There are a number of development-focused distributions of Kubernetes, like kind, Minikube, Minishift, and so on.
 Often these run Kubernetes in a virtual machine on your development machine.  We have found that these distributions
