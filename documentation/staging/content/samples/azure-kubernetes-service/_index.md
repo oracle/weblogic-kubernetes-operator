@@ -26,6 +26,9 @@ Azure Kubernetes Service makes it simple to deploy a managed Kubernetes cluster 
 
 To learn more, see the [What is Azure Kubernetes Service?](https://docs.microsoft.com/en-us/azure/aks/intro-kubernetes).
 
+For operator support limitations that are specific to AKS,
+see [Supported platforms]({{< relref "userguide/platforms/environments.md" >}}).
+
 #### Domain home source types
 
 This sample demonstrates running the WebLogic cluster on AKS using two domain home types. The instructions for each are self-contained and independent. This section lists the domain home source types recommended for use with AKS, along with some benefits of each. For complete details on domain home source types, see [Choose a domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}).

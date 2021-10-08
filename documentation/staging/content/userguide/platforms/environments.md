@@ -7,18 +7,18 @@ weight: 3
 
 ### Contents
 
-- [Supported Cloud Environments](#authorized-cloud-environments)
-- [Kubernetes, WebLogic, and Operating System Prerequisites](#kubernetes-weblogic-and-operating-system-prerequisites)
-- [Pricing and Licensing](#pricing-and-licensing)
-- [Important Notes About Specific Cloud Environments](#important-notes-about-specific-cloud-environments)
-  - [Oracle Cloud Infrastructure](#oracle-cloud-infrastructure)
+- [Supported cloud environments](#supported-cloud-environments)
+- [Kubernetes, WebLogic, and operating system prerequisites](#kubernetes-weblogic-and-operating-system-prerequisites)
+- [Pricing and licensing](#pricing-and-licensing)
+- [Important notes about specific cloud environments](#important-notes-about-specific-cloud-environments)
+  - [Oracle Cloud Infrastructure](#oracle-cloud-infrastructure-oci)
   - [Oracle Linux Cloud Native Environment (OLCNE)](#oracle-linux-cloud-native-environment-olcne)
   - [Microsoft Azure Kubernetes Service](#microsoft-azure-kubernetes-service)
-  - [VMware Tanzu Kubernetes Service](#vmware-tanzu-kubernetes-service)
+  - [VMware Tanzu Kubernetes Grid (TKG)](#vmware-tanzu-kubernetes-grid-tkg)
   - [OpenShift](#openshift)
   - [Development-focused Kubernetes distributions](#development-focused-kubernetes-distributions)
 
-### Supported Cloud Environments
+### Supported cloud environments
 
 WebLogic Server and the operator are supported on "Authorized Cloud Environments" as defined in
 [this Oracle licensing policy](https://www.oracle.com/assets/cloud-licensing-070579.pdf) and
@@ -30,12 +30,12 @@ is [here](https://www.oracle.com/middleware/technologies/ias/oracleas-supported-
 Some supported environments are subject to limitations and restrictions: see
 [Important Notes About Specific Environments](#important-notes-about-specific-environments).
 
-### Kubernetes, WebLogic, and Operating System Prerequisites
+### Kubernetes, WebLogic, and operating system prerequisites
 
 The operator is subject to Kubernetes, WebLogic, and operating system versioning prerequisites:
 see [Operator prerequisites]({{< relref "/userguide/prerequisites/introduction.md" >}}).
 
-### Pricing and Licensing
+### Pricing and licensing
 
 The WebLogic Kubernetes Operator (the "operator") is open source and free,
 licensed under the Universal Permissive license (UPL), Version 1.0.
@@ -48,20 +48,21 @@ Licensing is free for a single developer desktop development environment.
 The Oracle [Global Pricing and Licensing site](https://www.oracle.com/corporate/pricing/specialty-topics.html)
 provides details about licensing practices and policies.
 
-### Important Notes About Specific Cloud Environments
+### Important notes about specific cloud environments
 
 Here are some important considerations for specific environments.
 
 **Note:** This section does not list all supported environments.
-See [Supported Cloud Environments](#authorized-cloud-environments).
+See [Supported cloud environments](#supported-cloud-environments).
 for a list of all supported environments.
 
-#### Oracle Cloud Infrastructure
+#### Oracle Cloud Infrastructure (OCI)
 
-In accordance with [Oracle policies](#authorized-cloud-environments),
-the operator and WebLogic Server are supported on Oracle Cloud
+The operator and WebLogic Server are supported on Oracle Cloud
 Infrastructure using *Oracle Container Engine for Kubernetes*, or in a cluster running *Oracle Linux
-Container Services for use with Kubernetes* on OCI Compute, and on "Authorized Cloud Environments".
+Container Services for use with Kubernetes* on OCI Compute, and on
+any other OCI "Authorized Cloud Environments"
+as described in [Supported cloud environments](#supported-cloud-environments).
 
 #### Oracle Linux Cloud Native Environment (OLCNE)
 
@@ -87,7 +88,9 @@ AKS support and limitations:
   Infrastructure MDS data stores only when accessed through an OCI FastConnect.
 * Windows Server containers are not currently supported, only Linux containers.
 
-#### VMware Tanzu Kubernetes Service
+See also the [Azure Kubernetes Service sample]({{<relref "/samples/azure-kubernetes-service/_index.md">}}).
+
+#### VMware Tanzu Kubernetes Grid (TKG)
 
 Tanzu Kubernetes Grid (TKG) is a managed Kubernetes Service that lets you quickly deploy and manage Kubernetes clusters. The WebLogic Kubernetes
 Operator and Oracle WebLogic Sever are fully supported and certified on VMware Tanzu Kubernetes Grid Multicloud 1.1.3 (with vSphere 6.7U3).
@@ -99,6 +102,7 @@ TKG support and limitations:
    * For applications requiring HA, use JMS and JTA stores in the database.
 * The ingress used for certification is NGINX, with MetalLB load balancer.
 
+See also the [Tanzu Kubernetes Grid sample]({{<relref "/samples/tanzu-kubernetes-service/_index.md">}}).
 
 #### OpenShift
 
