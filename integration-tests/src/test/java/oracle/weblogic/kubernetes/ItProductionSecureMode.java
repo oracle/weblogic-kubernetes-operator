@@ -232,12 +232,14 @@ class ItProductionSecureMode {
       assertTrue(callWebAppAndWaitTillReady(curlCmd, 10));
       logger.info("WebLogic console is accessible thru default-admin service");
  
+      String localhost = "localhost";
       String forwardPort = 
-           startPortForwardProcess(K8S_NODEPORT_HOST, domainNamespace, 
+           startPortForwardProcess(localhost, domainNamespace, 
            domainUid, 9002);
+      assertNotNull(forwardPort, "port-forward fails to assign local port");
       logger.info("Forwarded admin-port is {0}", forwardPort);
       curlCmd = "curl -sk --show-error --noproxy '*' "
-          + " https://" + K8S_NODEPORT_HOST + ":" + forwardPort
+          + " https://" + localhost + ":" + forwardPort
           + "/console/login/LoginForm.jsp --write-out %{http_code} " 
           + " -o /dev/null";
       logger.info("Executing default-admin port-fwd curl command {0}", curlCmd);
@@ -247,11 +249,12 @@ class ItProductionSecureMode {
       // When port-forwarding is happening on admin-port, port-forwarding will
       // not work for SSL port i.e. 7002
       forwardPort = 
-           startPortForwardProcess(K8S_NODEPORT_HOST, domainNamespace, 
+           startPortForwardProcess(localhost, domainNamespace, 
            domainUid, 7002);
+      assertNotNull(forwardPort, "port-forward fails to assign local port");
       logger.info("Forwarded ssl port is {0}", forwardPort);
       curlCmd = "curl -sk --show-error --noproxy '*' "
-          + " https://" + K8S_NODEPORT_HOST + ":" + forwardPort
+          + " https://" + localhost + ":" + forwardPort
           + "/console/login/LoginForm.jsp --write-out %{http_code} " 
           + " -o /dev/null";
       logger.info("Executing default-admin port-fwd curl command {0}", curlCmd);

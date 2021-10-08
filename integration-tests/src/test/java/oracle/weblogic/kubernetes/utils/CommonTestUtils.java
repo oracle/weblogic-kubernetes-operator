@@ -68,6 +68,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -1006,6 +1007,8 @@ public class CommonTestUtils {
         String.format("Failed to forward port by running command %s", cmd));
     assertEquals(0, result.exitValue(),
         String.format("Failed to forward a local port to admin port. Error is %s ", result.stderr()));
+    assertNotNull(getForwardedPort(pfFileName), 
+          "port-forward command fails to assign a local port");
     return getForwardedPort(pfFileName);
   }
 

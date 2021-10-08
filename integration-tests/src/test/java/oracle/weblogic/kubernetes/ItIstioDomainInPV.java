@@ -299,11 +299,13 @@ class ItIstioDomainInPV  {
           checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
       assertTrue(checkConsole, "Failed to access WebLogic console");
       logger.info("WebLogic console is accessible");
+      String localhost = "localhost";
       String forwardPort = 
-           startPortForwardProcess(K8S_NODEPORT_HOST, domainNamespace, 
+           startPortForwardProcess(localhost, domainNamespace, 
            domainUid, 7001);
-      logger.info("Forwarded port is {0}", forwardPort);
-      consoleUrl = "http://" + K8S_NODEPORT_HOST + ":" + forwardPort + "/console/login/LoginForm.jsp";
+      assertNotNull(forwardPort, "port-forward fails to assign local port");
+      logger.info("Forwarded local port is {0}", forwardPort);
+      consoleUrl = "http://" + localhost + ":" + forwardPort + "/console/login/LoginForm.jsp";
       checkConsole = 
           checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
       assertTrue(checkConsole, "Failed to access WebLogic console thru port-forwarded port");
