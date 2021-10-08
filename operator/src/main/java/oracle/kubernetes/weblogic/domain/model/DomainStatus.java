@@ -56,6 +56,10 @@ public class DomainStatus {
   @Range(minimum = 0)
   private Integer introspectJobFailureCount = 0;
 
+  @Description(
+          "Unique id of the last introspector job that was processed for this domain.")
+  private String lastIntrospectJobProcessedUid;
+
   @Description("Status of WebLogic Servers in this domain.")
   @Valid
   // sorted list of ServerStatus
@@ -97,6 +101,7 @@ public class DomainStatus {
     startTime = that.startTime;
     replicas = that.replicas;
     introspectJobFailureCount = that.introspectJobFailureCount;
+    lastIntrospectJobProcessedUid = that.lastIntrospectJobProcessedUid;
   }
 
   /**
@@ -315,6 +320,35 @@ public class DomainStatus {
   }
 
   /**
+   * Get Unique id of the last introspector job that was processed for this domain.
+   *
+   * @return lastIntrospectJobProcessedUid
+   */
+  public String getLastIntrospectJobProcessedUid() {
+    return lastIntrospectJobProcessedUid;
+  }
+
+  /**
+   * Set Unique id of the last introspector job that was processed for this domain.
+   *
+   * @param lastIntrospectJobProcessedUid lastIntrospectJobProcessedUid
+   */
+  public void setLastIntrospectJobProcessedUid(String lastIntrospectJobProcessedUid) {
+    this.lastIntrospectJobProcessedUid = lastIntrospectJobProcessedUid;
+  }
+
+  /**
+   * Unique id of the last introspector job that was processed for this domain.
+   *
+   * @param lastIntrospectJobProcessedUid lastIntrospectJobProcessedUid
+   * @return this
+   */
+  public DomainStatus withLastIntrospectJobProcessedUid(String lastIntrospectJobProcessedUid) {
+    this.lastIntrospectJobProcessedUid = lastIntrospectJobProcessedUid;
+    return this;
+  }
+
+  /**
    * Status of WebLogic Servers in this domain.
    *
    * @return a sorted list of ServerStatus containing status of WebLogic Servers in this domain
@@ -462,6 +496,7 @@ public class DomainStatus {
         .append("clusters", clusters)
         .append("startTime", startTime)
         .append("introspectJobFailureCount", introspectJobFailureCount)
+        .append("lastIntrospectJobProcessedUid", lastIntrospectJobProcessedUid)
         .toString();
   }
 
@@ -475,6 +510,7 @@ public class DomainStatus {
         .append(Domain.sortOrNull(conditions))
         .append(message)
         .append(introspectJobFailureCount)
+        .append(lastIntrospectJobProcessedUid)
         .toHashCode();
   }
 
@@ -495,6 +531,7 @@ public class DomainStatus {
         .append(Domain.sortOrNull(conditions), Domain.sortOrNull(rhs.conditions))
         .append(message, rhs.message)
         .append(introspectJobFailureCount, rhs.introspectJobFailureCount)
+        .append(lastIntrospectJobProcessedUid, rhs.lastIntrospectJobProcessedUid)
         .isEquals();
   }
 

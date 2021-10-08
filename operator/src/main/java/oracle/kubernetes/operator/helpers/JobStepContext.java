@@ -32,6 +32,7 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.UnrecoverableErrorBuilder;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.utils.ChecksumUtils;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -56,6 +57,10 @@ public abstract class JobStepContext extends BasePodStepContext {
 
   JobStepContext(Packet packet) {
     super(packet.getSpi(DomainPresenceInfo.class));
+  }
+
+  Step getConflictStep(Step next) {
+    return new ConflictStep(next);
   }
 
   private static V1VolumeMount readOnlyVolumeMount(String volumeName, String mountPath) {
@@ -529,12 +534,16 @@ public abstract class JobStepContext extends BasePodStepContext {
       if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
         return updateDomainStatus(packet, callResponse);
       } else {
-        return super.onFailure(packet, callResponse);
+        return super.onFailure(getConflictStep(getNext()), packet, callResponse);
       }
     }
 
     private NextAction updateDomainStatus(Packet packet, CallResponse<V1Job> callResponse) {
-      return doNext(DomainStatusUpdater.createFailureRelatedSteps(callResponse, null), packet);
+      return doNext(
+            Step.chain(
+                  DomainStatusUpdater.createFailureCountStep(),
+                  DomainStatusUpdater.createFailureRelatedSteps(callResponse, null)),
+            packet);
     }
 
     @Override
@@ -547,6 +556,40 @@ public abstract class JobStepContext extends BasePodStepContext {
       return doNext(packet);
     }
   }
+
+  class ConflictStep extends Step {
+    ConflictStep(Step next) {
+      super(next);
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      return doNext(
+              new CallBuilder().readJobAsync(getJobName(), info.getNamespace(), getDomainUid(),
+                      new ReadResponseStep(getNext())), packet);
+    }
+  }
+
+  private class ReadResponseStep extends DefaultResponseStep<V1Job> {
+    ReadResponseStep(Step next) {
+      super(next);
+    }
+
+    @Override
+    public NextAction onFailure(Packet packet, CallResponse<V1Job> callResponse) {
+      return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
+              ? doNext(createNewJob(getNext()), packet)
+              : onFailure(packet, callResponse);
+    }
+
+    @Override
+    public NextAction onSuccess(Packet packet, CallResponse<V1Job> callResponse) {
+      return doNext(getConflictStep(getNext()), packet);
+    }
+  }
+
+
+
 
   private V1ConfigMapVolumeSource getWdtConfigMapVolumeSource(String name) {
     return new V1ConfigMapVolumeSource().name(name).defaultMode(ALL_READ_AND_EXECUTE);

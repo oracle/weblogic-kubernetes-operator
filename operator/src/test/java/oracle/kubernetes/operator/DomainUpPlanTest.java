@@ -44,7 +44,7 @@ import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
-class DomainUpPlanTest {
+public class DomainUpPlanTest {
 
   private final TerminalStep adminStep = new TerminalStep();
   private final TerminalStep managedServersStep = new TerminalStep();
@@ -218,7 +218,7 @@ class DomainUpPlanTest {
   }
 
   @SuppressWarnings("unused")
-  static class StepChainMatcher
+  public static class StepChainMatcher
       extends org.hamcrest.TypeSafeDiagnosingMatcher<oracle.kubernetes.operator.work.Step> {
     private final String[] expectedSteps;
 
@@ -230,7 +230,7 @@ class DomainUpPlanTest {
       return hasChainWithStepsInOrder(expectedStep);
     }
 
-    static StepChainMatcher hasChainWithStepsInOrder(String... expectedSteps) {
+    public static StepChainMatcher hasChainWithStepsInOrder(String... expectedSteps) {
       return new StepChainMatcher(expectedSteps);
     }
 
