@@ -5,7 +5,6 @@ package oracle.kubernetes.operator;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -19,24 +18,21 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
-import io.kubernetes.client.openapi.models.V1ContainerState;
-import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.openapi.models.V1Pod;
-import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodList;
-import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
 import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudgetList;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.TuningParameters.MainTuning;
-import oracle.kubernetes.operator.calls.FailureStatusSourceException;
+import oracle.kubernetes.operator.calls.UnrecoverableCallException;
 import oracle.kubernetes.operator.helpers.ConfigMapHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainValidationSteps;
@@ -77,6 +73,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 
+import static oracle.kubernetes.operator.DomainStatusUpdater.createStatusUpdateStep;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
@@ -84,8 +81,9 @@ import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_O
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_RETRYING;
-import static oracle.kubernetes.operator.helpers.LegalNames.toJobIntrospectorName;
+import static oracle.kubernetes.operator.helpers.PodHelper.getPodDomainUid;
+import static oracle.kubernetes.operator.helpers.PodHelper.getPodName;
+import static oracle.kubernetes.operator.helpers.PodHelper.getPodNamespace;
 
 public class DomainProcessorImpl implements DomainProcessor {
 
@@ -399,7 +397,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
   private void processServerPodWatch(V1Pod pod, String watchType) {
     String domainUid = getPodLabel(pod, LabelConstants.DOMAINUID_LABEL);
-    DomainPresenceInfo info = getExistingDomainPresenceInfo(getNamespace(pod), domainUid);
+    DomainPresenceInfo info = getExistingDomainPresenceInfo(getPodNamespace(pod), domainUid);
     if (info == null) {
       return;
     }
@@ -415,7 +413,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       case "DELETED":
         boolean removed = info.deleteServerPodFromEvent(serverName, pod);
         if (removed && info.isNotDeleting() && !info.isServerPodBeingDeleted(serverName)) {
-          LOGGER.info(MessageKeys.POD_DELETED, domainUid, getNamespace(pod), serverName);
+          LOGGER.info(MessageKeys.POD_DELETED, domainUid, getPodNamespace(pod), serverName);
           createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
         }
         break;
@@ -423,13 +421,6 @@ public class DomainProcessorImpl implements DomainProcessor {
       case "ERROR":
       default:
     }
-  }
-
-  private String getNamespace(V1Pod pod) {
-    return Optional.ofNullable(pod)
-        .map(V1Pod::getMetadata)
-        .map(V1ObjectMeta::getNamespace)
-        .orElse(null);
   }
 
   private String getPodLabel(V1Pod pod, String labelName) {
@@ -440,9 +431,9 @@ public class DomainProcessorImpl implements DomainProcessor {
         .orElse(null);
   }
 
-  private void processIntrospectorJobPodWatch(V1Pod introspectorPod, String watchType) {
-    String domainUid = getPodLabel(introspectorPod, LabelConstants.DOMAINUID_LABEL);
-    DomainPresenceInfo info = getExistingDomainPresenceInfo(getNamespace(introspectorPod), domainUid);
+  private void processIntrospectorJobPodWatch(@Nonnull V1Pod pod, String watchType) {
+    String domainUid = getPodDomainUid(pod);
+    DomainPresenceInfo info = getExistingDomainPresenceInfo(getPodNamespace(pod), domainUid);
     if (info == null) {
       return;
     }
@@ -450,16 +441,20 @@ public class DomainProcessorImpl implements DomainProcessor {
     switch (watchType) {
       case "ADDED":
       case "MODIFIED":
-        PodWatcher.PodStatus podStatus = PodWatcher.getPodStatus(introspectorPod);
-        new DomainStatusUpdate(introspectorPod, domainUid, delegate, info, podStatus).invoke();
+        updateDomainStatus(pod, info, delegate);
         break;
       case "DELETED":
-        LOGGER.fine("Introspector Pod " + introspectorPod.getMetadata().getName()
-            + " for domain " + domainUid + " is deleted.");
+        LOGGER.fine("Introspector Pod " + getPodName(pod) + " for domain " + domainUid + " is deleted.");
         break;
       default:
     }
   }
+
+  private void updateDomainStatus(@Nonnull V1Pod pod, DomainPresenceInfo info, DomainProcessorDelegate delegate) {
+    Optional.ofNullable(IntrospectionStatus.createStatusUpdateSteps(pod))
+          .ifPresent(steps -> delegate.runSteps(new Packet().with(info), steps));
+  }
+
 
   /* Recently, we've seen a number of intermittent bugs where K8s reports
    * outdated watch events.  There seem to be two main cases: 1) a DELETED
@@ -688,8 +683,8 @@ public class DomainProcessorImpl implements DomainProcessor {
       for (Throwable t : ((Step.MultiThrowable) throwable).getThrowables()) {
         logThrowable(t);
       }
-    } else if (throwable instanceof FailureStatusSourceException) {
-      ((FailureStatusSourceException) throwable).log();
+    } else if (throwable instanceof UnrecoverableCallException) {
+      ((UnrecoverableCallException) throwable).log();
     } else {
       LOGGER.severe(MessageKeys.EXCEPTION, throwable);
     }
@@ -715,7 +710,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     private void populatePacketServerMapsFromDomain(Packet packet) {
       Map<String, ServerHealth> serverHealth = new ConcurrentHashMap<>();
       Map<String, String> serverState = new ConcurrentHashMap<>();
-      Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
+      DomainPresenceInfo.fromPacket(packet)
           .map(DomainPresenceInfo::getDomain)
           .map(Domain::getStatus)
           .map(DomainStatus::getServers)
@@ -899,7 +894,6 @@ public class DomainProcessorImpl implements DomainProcessor {
         }
         if (getCurrentIntrospectFailureRetryCount() > 0) {
           logRetryCount(cachedInfo);
-          ensureRetryingEventPresent();
         }
         LOGGER.fine("Continue the make-right domain presence, explicitRecheck -> " + explicitRecheck);
         return true;
@@ -910,12 +904,6 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     private boolean shouldReportAbortedEvent() {
       return Optional.ofNullable(eventData).map(EventData::getItem).orElse(null) == DOMAIN_PROCESSING_ABORTED;
-    }
-
-    private void ensureRetryingEventPresent() {
-      if (eventData == null) {
-        eventData = new EventData(DOMAIN_PROCESSING_RETRYING);
-      }
     }
 
     private void resetIntrospectorJobFailureCount() {
@@ -1097,7 +1085,7 @@ public class DomainProcessorImpl implements DomainProcessor {
             gate.startFiberIfLastFiberMatches(
                 domainUid,
                 Fiber.getCurrentIfSet(),
-                DomainStatusUpdater.createFailureRelatedSteps(throwable, null),
+                DomainStatusUpdater.createFailureRelatedSteps(throwable),
                 plan.packet,
                 new CompletionCallback() {
                   @Override
@@ -1130,7 +1118,6 @@ public class DomainProcessorImpl implements DomainProcessor {
                             createMakeRightOperation(existing)
                                 .withDeleting(isDeleting)
                                 .withExplicitRecheck()
-                                .withEventData(EventHelper.EventItem.DOMAIN_PROCESSING_RETRYING, null)
                                 .execute();
                           } else {
                             LOGGER.severe(
@@ -1167,7 +1154,6 @@ public class DomainProcessorImpl implements DomainProcessor {
   Step createDomainUpPlan(DomainPresenceInfo info) {
     Step managedServerStrategy = Step.chain(
         bringManagedServersUp(null),
-        DomainStatusUpdater.createEndProgressingStep(null),
         EventHelper.createEventStep(EventItem.DOMAIN_PROCESSING_COMPLETED),
         MonitoringExporterSteps.updateExporterSidecars(),
         new TailStep());
@@ -1200,8 +1186,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     return Step.chain(
         new DownHeadStep(info, ns),
         new DeleteDomainStep(info, ns, domainUid),
-        new UnregisterStep(info),
-        EventHelper.createEventStep(EventItem.DOMAIN_PROCESSING_COMPLETED));
+        new UnregisterStep(info));
   }
 
   private static class UnregisterStep extends Step {
@@ -1232,7 +1217,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
   }
 
-  private static class StartPlanStep extends Step {
+  static class StartPlanStep extends Step {
     private final DomainPresenceInfo info;
 
     StartPlanStep(DomainPresenceInfo info, Step next) {
@@ -1249,7 +1234,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     private Step getNextSteps() {
       if (lookForPodsAndServices()) {
-        return Step.chain(getRecordExistingResourcesSteps(), getNext());
+        return Step.chain(createStatusUpdateStep(null), getRecordExistingResourcesSteps(), getNext());
       } else {
         return getNext();
       }
@@ -1352,112 +1337,4 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
   }
 
-  private static class DomainStatusUpdate {
-    private final V1Pod introspectorPod;
-    private final String domainUid;
-    private final DomainProcessorDelegate delegate;
-    private final DomainPresenceInfo info;
-    private final PodWatcher.PodStatus podStatus;
-
-    DomainStatusUpdate(V1Pod introspectorPod, String domainUid, DomainProcessorDelegate delegate,
-                       DomainPresenceInfo info, PodWatcher.PodStatus podStatus) {
-      this.introspectorPod = introspectorPod;
-      this.domainUid = domainUid;
-      this.delegate = delegate;
-      this.info = info;
-      this.podStatus = podStatus;
-    }
-
-    private void invoke() {
-      switch (podStatus) {
-        case PHASE_FAILED:
-          if (isNotTerminatedByOperator()) {
-            delegate.runSteps(
-                DomainStatusUpdater.createFailureRelatedSteps(
-                    info, getPodStatusReason(), getPodStatusMessage(), null));
-          }
-          break;
-        case WAITING_NON_NULL_MESSAGE:
-          Optional.ofNullable(getMatchingContainerStatus())
-                  .map(V1ContainerStatus::getState)
-                  .map(V1ContainerState::getWaiting)
-                  .ifPresent(waiting ->
-                    delegate.runSteps(
-                            DomainStatusUpdater.createFailureRelatedSteps(
-                                    info, waiting.getReason(), waiting.getMessage(), null)));
-          break;
-        case TERMINATED_ERROR_REASON:
-          Optional.ofNullable(getMatchingContainerStatus())
-                  .map(V1ContainerStatus::getState)
-                  .map(V1ContainerState::getTerminated)
-                  .ifPresent(terminated -> delegate.runSteps(
-                          DomainStatusUpdater.createFailureRelatedSteps(
-                                  info, terminated.getReason(), terminated.getMessage(), null)));
-          break;
-        case UNSCHEDULABLE:
-          Optional.ofNullable(getMatchingPodCondition())
-                  .ifPresent(condition ->
-                          delegate.runSteps(
-                                  DomainStatusUpdater.createFailureRelatedSteps(
-                                          info, condition.getReason(), condition.getMessage(), null)));
-          break;
-        case SUCCESS:
-          Optional.ofNullable(getMatchingContainerStatus())
-                  .map(V1ContainerStatus::getState)
-                  .map(V1ContainerState::getWaiting)
-                  .ifPresent(waiting ->
-                          delegate.runSteps(
-                                  DomainStatusUpdater.createProgressingStep(
-                                          info, waiting.getReason(), false, null)));
-          break;
-        default:
-      }
-    }
-
-    private boolean isNotTerminatedByOperator() {
-      return notNullOrEmpty(getPodStatusReason()) || notNullOrEmpty(getPodStatusMessage()) || !isJobPodTerminated();
-    }
-
-    private boolean notNullOrEmpty(String value) {
-      return value != null && value.length() > 0;
-    }
-
-    private boolean isJobPodTerminated() {
-      return PodWatcher.getContainerStateTerminatedReason(getMatchingContainerStatus()).contains("Error");
-    }
-
-    private String getPodStatusReason() {
-      return Optional.ofNullable(introspectorPod).map(V1Pod::getStatus).map(V1PodStatus::getReason).orElse(null);
-    }
-
-    private String getPodStatusMessage() {
-      return Optional.ofNullable(introspectorPod).map(V1Pod::getStatus).map(V1PodStatus::getMessage).orElse(null);
-    }
-
-    private V1ContainerStatus getMatchingContainerStatus() {
-      return Optional.ofNullable(introspectorPod.getStatus())
-              .map(V1PodStatus::getContainerStatuses)
-              .flatMap(this::getMatchingContainerStatus)
-              .orElse(null);
-    }
-
-    private Optional<V1ContainerStatus> getMatchingContainerStatus(Collection<V1ContainerStatus> statuses) {
-      return statuses.stream().filter(this::hasIntrospectorJobName).findFirst();
-    }
-
-    private V1PodCondition getMatchingPodCondition() {
-      return Optional.ofNullable(introspectorPod.getStatus())
-              .map(V1PodStatus::getConditions)
-              .flatMap(this::getPodCondition)
-              .orElse(null);
-    }
-
-    private Optional<V1PodCondition> getPodCondition(Collection<V1PodCondition> conditions) {
-      return conditions.stream().findFirst();
-    }
-
-    private boolean hasIntrospectorJobName(V1ContainerStatus s) {
-      return toJobIntrospectorName(domainUid).equals(s.getName());
-    }
-  }
 }

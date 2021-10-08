@@ -10,13 +10,13 @@ import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Predicate;
+import javax.annotation.Nonnull;
 
 import io.kubernetes.client.common.KubernetesListObject;
 import io.kubernetes.client.openapi.ApiCallback;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ListMeta;
-import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.ResponseStep;
@@ -29,11 +29,21 @@ import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 
+import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_CONFLICT;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_GATEWAY_TIMEOUT;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_TOO_MANY_REQUESTS;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAVAILABLE;
 import static oracle.kubernetes.operator.calls.CallResponse.createFailure;
 import static oracle.kubernetes.operator.calls.CallResponse.createSuccess;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 import static oracle.kubernetes.operator.logging.MessageKeys.ASYNC_SUCCESS;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
 
 /**
  * A Step driven by an asynchronous call to the Kubernetes API, which results in a series of
@@ -42,6 +52,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.ASYNC_SUCCESS;
 public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
   public static final String RESPONSE_COMPONENT_NAME = "response";
   public static final String CONTINUE = "continue";
+  public static final int FIBER_TIMEOUT = 0;
 
   private static final Random R = new Random();
   private static final int HIGH = 200;
@@ -59,6 +70,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
   private final String labelSelector;
   private final String resourceVersion;
   private int timeoutSeconds;
+  private DomainCondition recordedFailure;
 
   /**
    * Construct async step.
@@ -178,6 +190,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
 
     // The Kubernetes request succeeded. Recycle the client, add the response to the packet, and proceed.
     void onSuccess(AsyncFiber fiber, T result, int statusCode, Map<String, List<String>> responseHeaders) {
+      removeExistingFailureCondition();
       if (firstTimeResumed()) {
         if (LOGGER.isFinerEnabled()) {
           logSuccess(result, statusCode, responseHeaders);
@@ -190,12 +203,22 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
       }
     }
 
+    private void removeExistingFailureCondition() {
+      DomainPresenceInfo.fromPacket(packet)
+            .map(DomainPresenceInfo::getDomain)
+            .map(Domain::getStatus)
+            .ifPresent(status -> status.removeCondition(recordedFailure));
+    }
+
     // We received a failure from Kubernetes. Recycle the client,
     // add the failure into the packet and prepare to try again.
     void onFailure(AsyncFiber fiber, ApiException ae, int statusCode, Map<String, List<String>> responseHeaders) {
       if (firstTimeResumed()) {
-        if (statusCode != CallBuilder.NOT_FOUND && LOGGER.isFineEnabled()) {
-          logFailure(ae, statusCode, responseHeaders);
+        if (statusCode != HTTP_NOT_FOUND) {
+          addDomainFailureStatus(ae);
+          if (LOGGER.isFineEnabled()) {
+            logFailure(ae, statusCode, responseHeaders);
+          }
         }
 
         if (ae.getCause() instanceof java.net.ProtocolException) {
@@ -209,6 +232,31 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
               createFailure(requestParams, ae, statusCode).withResponseHeaders(responseHeaders)));
         fiber.resume(packet);
       }
+    }
+
+    private void addDomainFailureStatus(ApiException apiException) {
+      DomainPresenceInfo.fromPacket(packet)
+            .map(DomainPresenceInfo::getDomain)
+            .ifPresent(domain -> updateFailureStatus(domain, apiException));
+    }
+
+    private void updateFailureStatus(@Nonnull Domain domain, ApiException apiException) {
+      final var condition = new DomainCondition(Failed).withReason(Kubernetes).withMessage(createMessage(apiException));
+      if (recordedFailure == null) {
+        addFailureStatus(domain, condition);
+      } else if (!recordedFailure.equals(condition)) {
+        domain.getStatus().removeCondition(recordedFailure);
+        addFailureStatus(domain, condition);
+      }
+    }
+
+    private void addFailureStatus(@Nonnull Domain domain, DomainCondition condition) {
+      recordedFailure = condition;
+      domain.getOrCreateStatus().addCondition(recordedFailure);
+    }
+
+    private String createMessage(ApiException apiException) {
+      return AsyncRequestStep.this.requestParams.createFailureMessage(apiException);
     }
 
     // If this is the first event after the fiber resumes, it indicates that we did not receive
@@ -244,13 +292,17 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
     }
   }
 
+  private String getOperation() {
+    return this.requestParams.call;
+  }
+
   @Override
   public NextAction apply(Packet packet) {
     // we don't have the domain presence information and logging context information yet,
     // add a logging context to pass the namespace information to the LoggingFormatter
     if (requestParams.namespace != null 
-        && packet.getSpi(DomainPresenceInfo.class) == null
-        && packet.getSpi(LoggingContext.class) == null
+        && DomainPresenceInfo.fromPacket(packet).isEmpty()
+        && LoggingContext.fromPacket(packet).isEmpty()
         && !requestParams.namespace.equals(getOperatorNamespace())) {
       packet.getComponents().put(
           LoggingContext.LOGGING_CONTEXT_KEY,
@@ -419,55 +471,57 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
 
     @Override
     public NextAction doPotentialRetry(Step conflictStep, Packet packet, int statusCode) {
-      // Check statusCode, many statuses should not be retried
-      // https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#http-status-codes
-      if (statusCode == 0 /* simple timeout */
-          || statusCode == 429 /* StatusTooManyRequests */
-          || statusCode == 500 /* StatusInternalServerError */
-          || statusCode == 503 /* StatusServiceUnavailable */
-          || statusCode == 504 /* StatusServerTimeout */) {
-
-        // exponential back-off
-        long waitTime = Math.min((2 << ++retryCount) * SCALE, MAX) + (R.nextInt(HIGH - LOW) + LOW);
-
-        if (statusCode == 0 || statusCode == 504 /* StatusServerTimeout */) {
-          listener.listenTimeoutDoubled();
-        }
-
-        NextAction na = new NextAction();
-        if (!retriesLeft()) {
-          return null;
-        } else {
-          LOGGER.finer(MessageKeys.ASYNC_RETRY, identityHash(), String.valueOf(waitTime),
-              requestParams.call, requestParams.namespace, requestParams.name);
-          na.delay(retryStep, packet, waitTime, TimeUnit.MILLISECONDS);
-        }
-        return na;
+      if (mayRetryOnStatusValue(statusCode)) {
+        optionallyAdjustListenTimeout(statusCode);
+        return retriesLeft() ? backOffAndRetry(packet, retryStep) : null;
       } else if (isRestartableConflict(conflictStep, statusCode)) {
-
-        // exponential back-off
-        long waitTime = Math.min((2 << ++retryCount) * SCALE, MAX) + (R.nextInt(HIGH - LOW) + LOW);
-
-        LOGGER.finer(MessageKeys.ASYNC_RETRY, identityHash(), String.valueOf(waitTime),
-            requestParams.call, requestParams.namespace, requestParams.name);
-        NextAction na = new NextAction();
-        na.delay(conflictStep, packet, waitTime, TimeUnit.MILLISECONDS);
-        return na;
+        return backOffAndRetry(packet, conflictStep);
+      } else {
+        return null;
       }
+    }
 
-      // otherwise, we will not retry
-      return null;
+    private void optionallyAdjustListenTimeout(int statusCode) {
+      if (statusCode == FIBER_TIMEOUT || statusCode == HTTP_GATEWAY_TIMEOUT) {
+        listener.listenTimeoutDoubled();
+      }
+    }
+
+    // Check statusCode, many statuses should not be retried
+    // https://github.com/kubernetes/community/blob/master/contributors/devel/sig-architecture/api-conventions.md#http-status-codes
+    private boolean mayRetryOnStatusValue(int statusCode) {
+      return statusCode == FIBER_TIMEOUT
+            || statusCode == HTTP_TOO_MANY_REQUESTS
+            || statusCode == HTTP_INTERNAL_ERROR
+            || statusCode == HTTP_UNAVAILABLE
+            || statusCode == HTTP_GATEWAY_TIMEOUT;
+    }
+
+    @Nonnull
+    private NextAction backOffAndRetry(Packet packet, Step nextStep) {
+      final long waitTime = getNextWaitTime();
+      LOGGER.finer(MessageKeys.ASYNC_RETRY, identityHash(), String.valueOf(waitTime),
+            requestParams.call, requestParams.namespace, requestParams.name);
+
+      final NextAction na = new NextAction();
+      na.delay(nextStep, packet, waitTime, TimeUnit.MILLISECONDS);
+      return na;
+    }
+
+    // Compute wait time, increasing exponentially
+    private int getNextWaitTime() {
+      return Math.min((2 << ++retryCount) * SCALE, MAX) + (R.nextInt(HIGH - LOW) + LOW);
     }
 
     // Conflict is an optimistic locking failure.  Therefore, we can't
     // simply retry the request.  Instead, application code needs to rebuild
     // the request based on latest contents.  If provided, a conflict step will do that.
     private boolean isRestartableConflict(Step conflictStep, int statusCode) {
-      return statusCode == 409 /* Conflict */ && conflictStep != null;
+      return statusCode == HTTP_CONFLICT && conflictStep != null;
     }
 
     private boolean retriesLeft() {
-      return retryCount <= maxRetryCount;
+      return (retryCount + 1) <= maxRetryCount;
     }
 
     @Override

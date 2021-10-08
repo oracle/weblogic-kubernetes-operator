@@ -3,7 +3,6 @@
 
 package oracle.kubernetes.operator.http;
 
-import java.net.HttpURLConnection;
 import java.net.http.HttpResponse;
 import java.util.Optional;
 
@@ -13,6 +12,10 @@ import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_FORBIDDEN;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_OK;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAUTHORIZED;
 
 public abstract class HttpResponseStep extends Step {
   private static final String RESPONSE = "httpResponse";
@@ -43,14 +46,14 @@ public abstract class HttpResponseStep extends Step {
   }
 
   private NextAction wrapOnFailure(Packet packet, HttpResponse<String> response) {
-    if (response != null && (response.statusCode() == 403 || response.statusCode() == 401)) {
+    if (response != null && (response.statusCode() == HTTP_FORBIDDEN || response.statusCode() == HTTP_UNAUTHORIZED)) {
       Optional.ofNullable(SecretHelper.getAuthorizationSource(packet)).ifPresent(AuthorizationSource::onFailure);
     }
     return onFailure(packet, response);
   }
 
   private boolean isSuccess(HttpResponse<String> response) {
-    return response.statusCode() == HttpURLConnection.HTTP_OK;
+    return response.statusCode() == HTTP_OK;
   }
 
   @SuppressWarnings("unchecked")

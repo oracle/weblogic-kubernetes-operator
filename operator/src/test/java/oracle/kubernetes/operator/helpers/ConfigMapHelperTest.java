@@ -13,7 +13,7 @@ import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.LabelConstants;
-import oracle.kubernetes.operator.calls.FailureStatusSourceException;
+import oracle.kubernetes.operator.calls.UnrecoverableCallException;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.TestUtils;
@@ -91,7 +91,7 @@ class ConfigMapHelperTest {
     Step scriptConfigMapStep = ConfigMapHelper.createScriptConfigMapStep(DOMAIN_NS, null);
     testSupport.runSteps(scriptConfigMapStep);
 
-    testSupport.verifyCompletionThrowable(FailureStatusSourceException.class);
+    testSupport.verifyCompletionThrowable(UnrecoverableCallException.class);
   }
 
   @Test
@@ -105,12 +105,12 @@ class ConfigMapHelperTest {
   @Test
   void whenNoConfigMap_retryOnFailure() {
     testSupport.addRetryStrategy(retryStrategy);
-    testSupport.failOnCreate(CONFIG_MAP, SCRIPT_CONFIG_MAP_NAME, DOMAIN_NS, 401);
+    testSupport.failOnCreate(CONFIG_MAP, DOMAIN_NS, 401);
 
     Step scriptConfigMapStep = ConfigMapHelper.createScriptConfigMapStep(DOMAIN_NS, null);
     testSupport.runSteps(scriptConfigMapStep);
 
-    testSupport.verifyCompletionThrowable(FailureStatusSourceException.class);
+    testSupport.verifyCompletionThrowable(UnrecoverableCallException.class);
     assertThat(retryStrategy.getConflictStep(), sameInstance(scriptConfigMapStep));
   }
 

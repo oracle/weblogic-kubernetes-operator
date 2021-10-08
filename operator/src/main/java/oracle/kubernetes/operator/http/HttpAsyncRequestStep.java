@@ -3,7 +3,6 @@
 
 package oracle.kubernetes.operator.http;
 
-import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.http.HttpClient;
 import java.net.http.HttpRequest;
@@ -22,6 +21,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_OK;
 import static oracle.kubernetes.operator.http.TrustAllX509ExtendedTrustManager.getTrustingSSLContext;
 import static oracle.kubernetes.operator.logging.LoggingContext.setThreadContext;
 
@@ -130,7 +130,7 @@ public class HttpAsyncRequestStep extends Step {
     }
 
     private void recordResponse(HttpResponse<String> response) {
-      if (response.statusCode() != HttpURLConnection.HTTP_OK) {
+      if (response.statusCode() != HTTP_OK) {
         LOGGER.fine(MessageKeys.HTTP_METHOD_FAILED, request.method(), request.uri(), response.statusCode());
       }
       HttpResponseStep.addToPacket(packet, response);
