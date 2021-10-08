@@ -26,6 +26,7 @@ import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.JobAwaiterStepFactory;
+import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderImpl;
 import oracle.kubernetes.operator.rest.ScanCacheStub;
@@ -54,6 +55,7 @@ import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createNiceStub;
 import static com.meterware.simplestub.Stub.createStrictStub;
+import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
@@ -84,6 +86,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.core.AllOf.allOf;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
@@ -115,7 +118,7 @@ class DomainIntrospectorJobTest {
   private final List<Memento> mementos = new ArrayList<>();
   private final List<LogRecord> logRecords = new ArrayList<>();
   private final DomainConfigurator configurator = DomainConfiguratorFactory.forDomain(domain);
-  private final RetryStrategyStub retryStrategy = createStrictStub(RetryStrategyStub.class);
+  private final EventRetryStrategyStub retryStrategy = createStrictStub(EventRetryStrategyStub.class);
   private final String jobPodName = LegalNames.toJobIntrospectorName(UID);
 
   public DomainIntrospectorJobTest() {
@@ -612,6 +615,20 @@ class DomainIntrospectorJobTest {
     final Domain updatedDomain = testSupport.<Domain>getResources(DOMAIN).get(0);
 
     assertThat(updatedDomain.getStatus().getLastIntrospectJobProcessedUid(), equalTo(LAST_JOB_PROCESSED_ID));
+    logRecords.clear();
+  }
+
+  @Test
+  void whenJobCreateFailsWith409Error_JobIsCreated() {
+    testSupport.addRetryStrategy(retryStrategy);
+    JobHelper.DomainIntrospectorJobStepContext domainIntrospectorJobStepContext =
+            new JobHelper.DomainIntrospectorJobStepContext(testSupport.getPacket());
+
+    testSupport.failOnCreate(KubernetesTestSupport.JOB, UID + "-introspector", NS, HTTP_CONFLICT);
+
+    testSupport.runSteps(domainIntrospectorJobStepContext.createJob(new TerminalStep()));
+
+    assertThat(testSupport.getPacket().get(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB), notNullValue());
     logRecords.clear();
   }
 
