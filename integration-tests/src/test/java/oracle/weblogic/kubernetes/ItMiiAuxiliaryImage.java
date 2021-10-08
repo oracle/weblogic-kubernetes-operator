@@ -34,12 +34,14 @@ import org.junit.jupiter.api.TestMethodOrder;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_TEST_VERSION;
@@ -71,7 +73,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceDoesN
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfig;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifySystemResourceConfig;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCommandResultContainsMsg;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifySystemResourceConfiguration;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
@@ -1206,9 +1208,14 @@ class ItMiiAuxiliaryImage {
       adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
     }
 
-    verifySystemResourceConfig(adminSvcExtHost, adminServiceNodePort,
-        "JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams",
-        "jdbc:oracle:thin:@\\/\\/localhost:7001\\/dbsvc");
+    String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + adminServiceNodePort;
+    logger.info("hostAndPort = {0} ", hostAndPort);
+    StringBuffer curlString = new StringBuffer("curl --user ");
+    curlString.append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
+        .append(" http://" + hostAndPort + "/management/weblogic/latest/domainConfig")
+        .append("/JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams/");
+
+    verifyCommandResultContainsMsg(new String(curlString), "jdbc:oracle:thin:@\\/\\/localhost:7001\\/dbsvc");
     logger.info("Found the DataResource configuration");
   }
 
