@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
@@ -405,54 +404,8 @@ public class DomainStatusUpdater {
         newStatus.setMessage(
             Optional.ofNullable(info).map(DomainPresenceInfo::getValidationWarningsAsString).orElse(null));
       }
-      if (shouldUpdateFailureCount(newStatus)) {
-        newStatus.incrementIntrospectJobFailureCount();
-      }
 
       return newStatus;
-    }
-
-    private String getExistingStatusMessage() {
-      return Optional.ofNullable(info)
-              .map(DomainPresenceInfo::getDomain)
-              .map(Domain::getStatus)
-              .map(DomainStatus::getMessage)
-              .orElse(null);
-    }
-
-    private DomainCondition getProgressingCondition() {
-      return Optional.ofNullable(info)
-          .map(DomainPresenceInfo::getDomain)
-          .map(Domain::getStatus)
-          .map(this::getProgressingCondition).orElse(null);
-    }
-
-    private DomainCondition getProgressingCondition(DomainStatus status) {
-      return Optional.ofNullable(status)
-          .map(s -> s.getConditionWithType(Progressing)).orElse(null);
-    }
-
-    private boolean shouldUpdateFailureCount(DomainStatus newStatus) {
-      return transitFromProgressing(newStatus)
-          && getExistingStatusMessage() == null
-          && isBackoffLimitExceeded(newStatus);
-    }
-
-    private boolean transitFromProgressing(DomainStatus newStatus) {
-      return getProgressingCondition() != null && getProgressingCondition(newStatus) == null;
-    }
-
-    private boolean isBackoffLimitExceeded(DomainStatus newStatus) {
-      List<DomainCondition> domainConditions = Optional.of(newStatus)
-          .map(DomainStatus::getConditions)
-          .orElse(Collections.emptyList());
-
-      for (DomainCondition cond : domainConditions) {
-        if ("BackoffLimitExceeded".equals(cond.getReason())) {
-          return true;
-        }
-      }
-      return false;
     }
 
     String getDomainUid() {
@@ -800,6 +753,40 @@ public class DomainStatusUpdater {
       private Integer getClusterSizeGoal(String clusterName) {
         return getDomain().getReplicaCount(clusterName);
       }
+    }
+  }
+
+  public static Step createFailureCountStep() {
+    return new FailureCountStep();
+  }
+
+  static class FailureCountStep extends DomainStatusUpdaterStep {
+
+    public FailureCountStep() {
+      super(null);
+    }
+
+    @Override
+    void modifyStatus(DomainStatus domainStatus) {
+      domainStatus.incrementIntrospectJobFailureCount();
+    }
+  }
+
+  public static Step recordLastIntrospectJobProcessedUid(String lastIntrospectJobProcessedId) {
+    return new RecordLastIntrospectJobProcessedUidStep(lastIntrospectJobProcessedId);
+  }
+
+  static class RecordLastIntrospectJobProcessedUidStep extends DomainStatusUpdaterStep {
+    private final String lastIntrospectJobProcessedId;
+
+    public RecordLastIntrospectJobProcessedUidStep(String lastIntrospectJobProcessedId) {
+      super(null);
+      this.lastIntrospectJobProcessedId = lastIntrospectJobProcessedId;
+    }
+
+    @Override
+    void modifyStatus(DomainStatus domainStatus) {
+      domainStatus.setLastIntrospectJobProcessedUid(lastIntrospectJobProcessedId);
     }
   }
 
