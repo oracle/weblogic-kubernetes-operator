@@ -56,6 +56,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import static oracle.kubernetes.operator.DomainSourceType.FromModel;
 import static oracle.kubernetes.operator.DomainStatusUpdater.INSPECTING_DOMAIN_PROGRESS_REASON;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createProgressingStartedEventStep;
+import static oracle.kubernetes.operator.DomainStatusUpdater.recordLastIntrospectJobProcessedUid;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
@@ -460,6 +461,7 @@ public class JobHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse callResponse) {
+        Step nextSteps;
         DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
         String namespace = info.getNamespace();
         V1Job job = (V1Job) callResponse.getResult();
@@ -468,19 +470,35 @@ public class JobHelper {
         }
 
         if (job != null) {
+          String lastIntrospectJobProcessedId = getLastIntrospectJobProcessedId(info);
+          if ((lastIntrospectJobProcessedId == null)
+                  || (!lastIntrospectJobProcessedId.equals(job.getMetadata().getUid()))) {
+            nextSteps = Step.chain(readDomainIntrospectorPodLogStep(null),
+                    deleteDomainIntrospectorJobStep(null),
+                    ConfigMapHelper.createIntrospectorConfigMapStep(getNext()));
+          } else {
+            nextSteps = Step.chain(createWatchDomainIntrospectorJobReadyStep(null),
+                    deleteDomainIntrospectorJobStep(null),
+                    new DomainProcessorImpl.IntrospectionRequestStep(info),
+                    createDomainIntrospectorJobStep(getNext()));
+          }
           packet.putIfAbsent(START_TIME, Optional.ofNullable(job.getMetadata())
                   .map(m -> m.getCreationTimestamp()).orElse(OffsetDateTime.now()));
-          return doNext(Step.chain(
-                  createWatchDomainIntrospectorJobReadyStep(null),
-                  deleteDomainIntrospectorJobStep(null),
-                  new DomainProcessorImpl.IntrospectionRequestStep(info),
-                  createDomainIntrospectorJobStep(getNext())), packet);
+          return doNext(nextSteps, packet);
         } else {
           packet.putIfAbsent(START_TIME, OffsetDateTime.now());
           return doNext(Step.chain(
                   ConfigMapHelper.readExistingIntrospectorConfigMap(namespace, info.getDomainUid()),
                   createDomainIntrospectorJobStep(getNext())), packet);
         }
+      }
+
+      private String getLastIntrospectJobProcessedId(DomainPresenceInfo info) {
+        return Optional.of(info)
+                .map(DomainPresenceInfo::getDomain)
+                .map(Domain::getStatus)
+                .map(DomainStatus::getLastIntrospectJobProcessedUid)
+                .orElse(null);
       }
     }
   }
@@ -565,6 +583,9 @@ public class JobHelper {
           nextStep = getNext();
         }
 
+        nextStep = Step.chain(recordLastIntrospectJobProcessedUid(
+                getLastIntrospectJobProcessedId(domainIntrospectorJob)), nextStep);
+
         if (!severeStatuses.isEmpty()) {
           nextStep = Step.chain(DomainStatusUpdater.createFailureCountStep(), nextStep);
         }
@@ -577,7 +598,15 @@ public class JobHelper {
                 packet);
       }
 
-      return doNext(packet);
+      Step nextSteps = Step.chain(recordLastIntrospectJobProcessedUid(
+              getLastIntrospectJobProcessedId(domainIntrospectorJob)), getNext());
+      return doNext(nextSteps, packet);
+
+    }
+
+    private String getLastIntrospectJobProcessedId(V1Job domainIntrospectorJob) {
+      return Optional.ofNullable(domainIntrospectorJob).map(job -> job.getMetadata())
+              .map(meta -> meta.getUid()).orElse(null);
     }
 
     private OffsetDateTime getJobCreationTime(V1Job domainIntrospectorJob) {

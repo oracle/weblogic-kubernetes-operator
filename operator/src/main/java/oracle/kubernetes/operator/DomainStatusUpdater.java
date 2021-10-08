@@ -772,6 +772,24 @@ public class DomainStatusUpdater {
     }
   }
 
+  public static Step recordLastIntrospectJobProcessedUid(String lastIntrospectJobProcessedId) {
+    return new RecordLastIntrospectJobProcessedUidStep(lastIntrospectJobProcessedId);
+  }
+
+  static class RecordLastIntrospectJobProcessedUidStep extends DomainStatusUpdaterStep {
+    private final String lastIntrospectJobProcessedId;
+
+    public RecordLastIntrospectJobProcessedUidStep(String lastIntrospectJobProcessedId) {
+      super(null);
+      this.lastIntrospectJobProcessedId = lastIntrospectJobProcessedId;
+    }
+
+    @Override
+    void modifyStatus(DomainStatus domainStatus) {
+      domainStatus.setLastIntrospectJobProcessedUid(lastIntrospectJobProcessedId);
+    }
+  }
+
   public static class ProgressingStep extends DomainStatusUpdaterStep {
     private final String reason;
     private final boolean isPreserveAvailable;

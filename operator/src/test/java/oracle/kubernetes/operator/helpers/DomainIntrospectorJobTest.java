@@ -47,6 +47,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.Model;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
+import org.junit.Ignore;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -105,6 +106,7 @@ class DomainIntrospectorJobTest {
   private static final String SEVERE_PROBLEM_1 = "really bad";
   private static final String SEVERE_MESSAGE_1 = "@[SEVERE] " + SEVERE_PROBLEM_1;
   public static final String TEST_VOLUME_NAME = "test";
+  public static final String LAST_JOB_PROCESSED_ID = "some-unique-id";
 
   private final TerminalStep terminalStep = new TerminalStep();
   private final Domain domain = createDomain();
@@ -562,6 +564,54 @@ class DomainIntrospectorJobTest {
     final Domain updatedDomain = testSupport.<Domain>getResources(DOMAIN).get(0);
 
     assertThat(updatedDomain.getStatus().getIntrospectJobFailureCount(), equalTo(1));
+    logRecords.clear();
+  }
+
+  @Test
+  void whenReadJobLogCompletesWithSevereError_domainStatusContainsLastProcessedJobId() {
+    testSupport.defineResources(
+            new V1Job().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS).uid(LAST_JOB_PROCESSED_ID))
+                    .status(new V1JobStatus()));
+    IntrospectionTestUtils.defineResources(testSupport, SEVERE_MESSAGE_1);
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
+
+    testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
+
+    final Domain updatedDomain = testSupport.<Domain>getResources(DOMAIN).get(0);
+
+    assertThat(updatedDomain.getStatus().getLastIntrospectJobProcessedUid(), equalTo(LAST_JOB_PROCESSED_ID));
+    logRecords.clear();
+  }
+
+  @Test
+  void whenReadJobLogCompletesWithoutSevereError_domainStatusContainsLastProcessedJobId() {
+    testSupport.defineResources(
+            new V1Job().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS).uid(LAST_JOB_PROCESSED_ID))
+                    .status(new V1JobStatus()));
+    IntrospectionTestUtils.defineResources(testSupport, "passed");
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
+
+    testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
+
+    final Domain updatedDomain = testSupport.<Domain>getResources(DOMAIN).get(0);
+
+    assertThat(updatedDomain.getStatus().getLastIntrospectJobProcessedUid(), equalTo(LAST_JOB_PROCESSED_ID));
+    logRecords.clear();
+  }
+
+  @Ignore
+  void whenDomainStatusContainsProcessedJobIdSameAsCurrentJob_readReadJobLogNotExecuted() {
+    testSupport.defineResources(
+            new V1Job().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS).uid(LAST_JOB_PROCESSED_ID))
+                    .status(new V1JobStatus()));
+    IntrospectionTestUtils.defineResources(testSupport, "passed");
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
+
+    //testSupport.runSteps(JobHelper.replaceOrCreateJob(new Packet(), terminalStep));
+
+    final Domain updatedDomain = testSupport.<Domain>getResources(DOMAIN).get(0);
+
+    assertThat(updatedDomain.getStatus().getLastIntrospectJobProcessedUid(), equalTo(LAST_JOB_PROCESSED_ID));
     logRecords.clear();
   }
 
