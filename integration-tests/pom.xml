@@ -383,5 +383,25 @@
                 </includes-failsafe>
             </properties>
         </profile>
+        <profile>
+            <id>fmw-pipeline</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                    **/ItMiiAuxiliaryImage,
+                    **/ItMiiAuxiliaryImageCluster,
+                    **/ItMiiCustomSslStore,
+                    **/ItExternalRmiTunneling,
+                    **/ItIstioDomainInPV,
+                    **/ItMiiDomain,
+                    **/ItMiiUpdateDomainConfig,
+                    **/ItIstioDomainInImage,
+                    **/ItPodsShutdownOption,
+                    **/ItProductionSecureMode,
+                    **/ItSessionMigration,
+                    **/ItSystemResOverrides
+                </includes-failsafe>
+            </properties>
+        </profile>
     </profiles>
 </project>
