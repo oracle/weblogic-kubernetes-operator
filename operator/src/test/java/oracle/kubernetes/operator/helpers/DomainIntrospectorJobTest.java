@@ -34,6 +34,7 @@ import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.FiberTestSupport;
+import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
@@ -45,10 +46,10 @@ import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.Model;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.junit.Ignore;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -58,6 +59,7 @@ import static com.meterware.simplestub.Stub.createStrictStub;
 import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
+import static oracle.kubernetes.operator.DomainUpPlanTest.StepChainMatcher.hasChainWithStepsInOrder;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.JOBWATCHER_COMPONENT_NAME;
@@ -602,20 +604,53 @@ class DomainIntrospectorJobTest {
     logRecords.clear();
   }
 
-  @Ignore
-  void whenDomainStatusContainsProcessedJobIdSameAsCurrentJob_readReadJobLogNotExecuted() {
-    testSupport.defineResources(
-            new V1Job().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS).uid(LAST_JOB_PROCESSED_ID))
-                    .status(new V1JobStatus()));
+  @Test
+  void whenDomainStatusContainsNullLastIntrospectProcessedJobUid_correctStepsExecuted() {
+    List<Step> nextSteps = new ArrayList<>();
+    domainPresenceInfo.getDomain()
+            .setStatus(new DomainStatus().withLastIntrospectJobProcessedUid(null));
+    V1Job job = new V1Job().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS).uid(LAST_JOB_PROCESSED_ID))
+            .status(new V1JobStatus());
+    testSupport.defineResources(job);
     IntrospectionTestUtils.defineResources(testSupport, "passed");
     testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
 
-    //testSupport.runSteps(JobHelper.replaceOrCreateJob(new Packet(), terminalStep));
+    JobHelper.ReplaceOrCreateStep.createNextSteps(nextSteps, domainPresenceInfo, job, terminalStep);
 
-    final Domain updatedDomain = testSupport.<Domain>getResources(DOMAIN).get(0);
+    assertThat(nextSteps.get(0), hasChainWithStepsInOrder("WatchDomainIntrospectorJobReadyStep",
+            "ReadDomainIntrospectorPodStep", "ReadDomainIntrospectorPodLogStep",
+            "DeleteDomainIntrospectorJobStep", "IntrospectionConfigMapStep"));
+  }
 
-    assertThat(updatedDomain.getStatus().getLastIntrospectJobProcessedUid(), equalTo(LAST_JOB_PROCESSED_ID));
-    logRecords.clear();
+  @Test
+  void whenDomainStatusContainsProcessedJobIdSameAsCurrentJob_correctStepsExecuted() {
+    List<Step> nextSteps = new ArrayList<>();
+    domainPresenceInfo.getDomain()
+            .setStatus(new DomainStatus().withLastIntrospectJobProcessedUid(LAST_JOB_PROCESSED_ID));
+    V1Job job = new V1Job().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS).uid(LAST_JOB_PROCESSED_ID))
+            .status(new V1JobStatus());
+    testSupport.defineResources(job);
+    IntrospectionTestUtils.defineResources(testSupport, "passed");
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
+
+    JobHelper.ReplaceOrCreateStep.createNextSteps(nextSteps, domainPresenceInfo, job, terminalStep);
+
+    assertThat(nextSteps.get(0), hasChainWithStepsInOrder("WatchDomainIntrospectorJobReadyStep",
+            "DeleteDomainIntrospectorJobStep", "IntrospectionRequestStep",
+            "DomainIntrospectorJobStep"));
+  }
+
+  @Test
+  void whenCurrentJobIsNull_correctStepsExecuted() {
+    List<Step> nextSteps = new ArrayList<>();
+    V1Job job = null;
+    IntrospectionTestUtils.defineResources(testSupport, "passed");
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
+
+    JobHelper.ReplaceOrCreateStep.createNextSteps(nextSteps, domainPresenceInfo, job, terminalStep);
+
+    assertThat(nextSteps.get(0), hasChainWithStepsInOrder("ReadIntrospectorConfigMapStep",
+            "DomainIntrospectorJobStep"));
   }
 
   @Test
