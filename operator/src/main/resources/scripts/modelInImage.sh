@@ -960,7 +960,12 @@ function wdtUpdateModelDomain() {
 
   if [ $ret -ne 0 ]; then
     if [ "true" == "${CREATED_JRF_PRIMODIAL}" ] ; then
-      trace SEVERE "Model in Image: FatalIntrospectorError: WDT Update Domain Failed, ret=${ret}"
+      trace SEVERE "Model in Image: FatalIntrospectorError: WDT Update Domain Failed, return code=${ret}." \
+       "Model In Image JRF domain creation encountered an unrecoverable error. If it is database" \
+       "credential related error such as wrong password, schema prefix, or database connect string; then correct the" \
+       "error, patch the domain resource 'domain.spec.introspectVersion' with a new value.  If the error is not" \
+       "related to database credential, you must also drop and recreate the JRF schemas before patching the domain" \
+       "resource. Introspection Error: "
     else
       trace SEVERE "WDT Update Domain command Failed:"
     fi
@@ -1024,7 +1029,7 @@ function wdtHandleOnlineUpdate() {
   for file in $(sort_files ${IMG_ARCHIVES_ROOTDIR} "*.zip")
     do
         # expand the archive domain libraries to the domain lib
-        cd ${DOMAIN_HOME}/lib || return exitOrLoop
+        cd ${DOMAIN_HOME}/lib || exitOrLoop
         ${JAVA_HOME}/bin/jar xf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainLibraries/
 
         if [ $? -ne 0 ] ; then
