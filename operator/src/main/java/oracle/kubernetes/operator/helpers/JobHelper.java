@@ -52,6 +52,7 @@ import org.jetbrains.annotations.Nullable;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static oracle.kubernetes.operator.DomainFailureReason.Introspection;
 import static oracle.kubernetes.operator.DomainSourceType.FromModel;
+import static oracle.kubernetes.operator.DomainStatusUpdater.createFailureCountStep;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createFailureRelatedSteps;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
@@ -85,7 +86,6 @@ public class JobHelper {
    * @return Step for creating job
    */
   public static Step createDomainIntrospectorJobStep(Step next) {
-
     return new DomainIntrospectorJobStep(next);
   }
 
@@ -258,12 +258,11 @@ public class JobHelper {
     /**
      * Creates the specified new pod and performs any additional needed processing.
      *
-     * @param next the next step to perform after the pod creation is complete.
      * @return a step to be scheduled.
      */
     @Override
-    Step createNewJob(Step next) {
-      return createJob(next);
+    Step createNewJob() {
+      return createJob();
     }
 
     @Override
@@ -422,7 +421,7 @@ public class JobHelper {
             Step.chain(
                 DomainValidationSteps.createAdditionalDomainValidationSteps(
                     Objects.requireNonNull(context.getJobModel().getSpec()).getTemplate().getSpec()),
-                context.createNewJob(null),
+                context.createNewJob(),
                 readDomainIntrospectorPodLogStep(),
                 deleteDomainIntrospectorJobStep(null),
                 ConfigMapHelper.createIntrospectorConfigMapStep(getNext())),
@@ -453,12 +452,12 @@ public class JobHelper {
             JobHelper.createJobName(info.getDomain().getDomainUid()),
             info.getNamespace(),
             info.getDomain().getDomainUid(),
-            new ReplaceOrCreateStep<>(next));
+            new ReplaceOrCreateResponseStep<>(next));
     }
 
-    private static class ReplaceOrCreateStep<T> extends DefaultResponseStep<T> {
+    private static class ReplaceOrCreateResponseStep<T> extends DefaultResponseStep<T> {
 
-      ReplaceOrCreateStep(Step next) {
+      ReplaceOrCreateResponseStep(Step next) {
         super(next);
       }
 
@@ -553,11 +552,15 @@ public class JobHelper {
     private NextAction handleFailure(Packet packet, V1Job domainIntrospectorJob) {
       Optional.ofNullable(domainIntrospectorJob).ifPresent(job -> logIntrospectorFailure(packet, job));
 
-      return doNext(
-              Step.chain(
-                    createFailureRelatedSteps(Introspection, onSeparateLines(severeStatuses)),
-                    getNextStep(packet, domainIntrospectorJob)),
-            packet);
+      Step nextSteps = Step.chain(
+            createFailureRelatedSteps(Introspection, onSeparateLines(severeStatuses)),
+            getNextStep(packet, domainIntrospectorJob));
+
+      if (!severeStatuses.isEmpty()) {
+        nextSteps = Step.chain(createFailureCountStep(domainIntrospectorJob), nextSteps);
+      }
+
+      return doNext(nextSteps, packet);
     }
 
     @Nullable

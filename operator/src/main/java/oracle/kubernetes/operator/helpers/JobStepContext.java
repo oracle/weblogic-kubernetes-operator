@@ -134,19 +134,18 @@ public abstract class JobStepContext extends BasePodStepContext {
   /**
    * Creates the specified new pod and performs any additional needed processing.
    *
-   * @param next the next step to perform after the pod creation is complete.
    * @return a step to be scheduled.
    */
-  abstract Step createNewJob(Step next);
+  abstract Step createNewJob();
 
   /**
    * Creates the specified new job.
    *
-   * @param next the next step to perform after the job creation is complete.
    * @return a step to be scheduled.
    */
-  Step createJob(Step next) {
-    return new CallBuilder().createJobAsync(getNamespace(), getDomainUid(), getJobModel(), createResponse(next));
+  Step createJob() {
+    final Step createJobStep = new CallBuilder().createJobAsync(getNamespace(), getDomainUid(), getJobModel(), null);
+    return Step.chain(createJobStep, createResponse(createJobStep));
   }
 
   private void logJobCreated() {
@@ -172,10 +171,6 @@ public abstract class JobStepContext extends BasePodStepContext {
     return getDomain().getWdtInstallHome();
   }
 
-  List<AuxiliaryImage> getAuxiliaryImages() {
-    return getServerSpec().getAuxiliaryImages();
-  }
-
   String getWdtDomainType() {
     return getDomain().getWdtDomainType();
   }
@@ -193,7 +188,7 @@ public abstract class JobStepContext extends BasePodStepContext {
   }
 
   public boolean isAdminChannelPortForwardingEnabled(DomainSpec domainSpec) {
-    return getDomain().isAdminChannelPortForwardingEnabled(domainSpec);
+    return Domain.isAdminChannelPortForwardingEnabled(domainSpec);
   }
 
   int getIstioReadinessPort() {
@@ -235,8 +230,8 @@ public abstract class JobStepContext extends BasePodStepContext {
     return emptyToNull(getDomain().getWdtConfigMap());
   }
 
-  private ResponseStep<V1Job> createResponse(Step next) {
-    return new CreateResponseStep(next);
+  private ResponseStep<V1Job> createResponse(Step conflictStep) {
+    return new CreateResponseStep(conflictStep, null);
   }
 
   private V1Job createJobModel() {
@@ -296,15 +291,13 @@ public abstract class JobStepContext extends BasePodStepContext {
     return metadata;
   }
 
-  protected V1PodSpec addAuxiliaryImageInitContainers(V1PodSpec podSpec, List<AuxiliaryImage> auxiliaryImages) {
+  protected void addAuxiliaryImageInitContainers(V1PodSpec podSpec, List<AuxiliaryImage> auxiliaryImages) {
     Optional.ofNullable(auxiliaryImages).ifPresent(cl -> addInitContainers(podSpec, cl));
-    return podSpec;
   }
 
-  private V1PodSpec addInitContainers(V1PodSpec podSpec, List<AuxiliaryImage> auxiliaryImages) {
+  private void addInitContainers(V1PodSpec podSpec, List<AuxiliaryImage> auxiliaryImages) {
     IntStream.range(0, auxiliaryImages.size()).forEach(idx ->
         podSpec.addInitContainersItem(createInitContainerForAuxiliaryImage(auxiliaryImages.get(idx), idx)));
-    return podSpec;
   }
 
   protected V1PodSpec createPodSpec(TuningParameters tuningParameters) {
@@ -520,8 +513,12 @@ public abstract class JobStepContext extends BasePodStepContext {
   }
 
   private class CreateResponseStep extends ResponseStep<V1Job> {
-    CreateResponseStep(Step next) {
+
+    private final Step conflictStep;
+
+    CreateResponseStep(Step conflictStep, Step next) {
       super(next);
+      this.conflictStep = conflictStep;
     }
 
     @Override
@@ -529,7 +526,7 @@ public abstract class JobStepContext extends BasePodStepContext {
       if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
         return updateDomainStatus(packet, callResponse);
       } else {
-        return super.onFailure(packet, callResponse);
+        return onFailure(conflictStep, packet, callResponse);
       }
     }
 

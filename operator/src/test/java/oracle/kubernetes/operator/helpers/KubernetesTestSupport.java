@@ -896,7 +896,6 @@ public class KubernetesTestSupport extends FiberTestSupport {
       return resource;
     }
 
-    @SuppressWarnings("unchecked")
     T fromJsonStructure(JsonStructure jsonStructure) {
       return new JSON().deserialize(jsonStructure.toString(), resourceType);
     }
