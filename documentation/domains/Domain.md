@@ -189,7 +189,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `message` | string | Human-readable message indicating details about last transition. |
 | `reason` | string | Unique, one-word, CamelCase reason for the condition's last transition. |
 | `status` | string | The status of the condition. Can be True, False, Unknown. |
-| `type` | string | The type of the condition. Valid types are Progressing, Available, Failed, and ConfigChangesPendingRestart. |
+| `type` | string | The type of the condition. Valid types are Completed, Available, Failed, and ConfigChangesPendingRestart. |
 
 ### Server Status
 

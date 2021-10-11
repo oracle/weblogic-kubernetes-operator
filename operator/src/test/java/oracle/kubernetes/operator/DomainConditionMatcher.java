@@ -16,17 +16,17 @@ import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 
 @SuppressWarnings("unused")
-class DomainConditionMatcher extends TypeSafeDiagnosingMatcher<Domain> {
+public class DomainConditionMatcher extends TypeSafeDiagnosingMatcher<Domain> {
   private final DomainConditionType expectedType;
   private String expectedStatus;
-  private String expectedReason;
+  private DomainFailureReason expectedReason;
   private String expectedMessage;
 
   private DomainConditionMatcher(DomainConditionType expectedType) {
     this.expectedType = expectedType;
   }
 
-  static DomainConditionMatcher hasCondition(DomainConditionType type) {
+  public static DomainConditionMatcher hasCondition(DomainConditionType type) {
     return new DomainConditionMatcher(type);
   }
 
@@ -35,12 +35,12 @@ class DomainConditionMatcher extends TypeSafeDiagnosingMatcher<Domain> {
     return this;
   }
 
-  DomainConditionMatcher withReason(String reason) {
+  public DomainConditionMatcher withReason(DomainFailureReason reason) {
     expectedReason = reason;
     return this;
   }
 
-  DomainConditionMatcher withMessage(String message) {
+  public DomainConditionMatcher withMessageContaining(String message) {
     expectedMessage = message;
     return this;
   }
@@ -53,8 +53,12 @@ class DomainConditionMatcher extends TypeSafeDiagnosingMatcher<Domain> {
       }
     }
 
-    mismatchDescription.appendValueList(
-        "found domain with conditions ", ", ", ".", getStatus(item).getConditions());
+    if (getStatus(item).getConditions().isEmpty()) {
+      mismatchDescription.appendText("found domain with no conditions");
+    } else {
+      mismatchDescription.appendValueList(
+          "found domain with conditions ", ", ", ".", getStatus(item).getConditions());
+    }
     return false;
   }
 
@@ -65,10 +69,14 @@ class DomainConditionMatcher extends TypeSafeDiagnosingMatcher<Domain> {
     if (expectedStatus != null && !expectedStatus.equals(condition.getStatus())) {
       return false;
     }
-    if (expectedMessage != null && !expectedMessage.equals(condition.getMessage())) {
+    if (expectedMessage != null && !messageContainsExpectedString(condition)) {
       return false;
     }
-    return expectedReason == null || expectedReason.equals(condition.getReason());
+    return expectedReason == null || expectedReason.toString().equals(condition.getReason());
+  }
+
+  private boolean messageContainsExpectedString(DomainCondition condition) {
+    return condition.getMessage() != null && condition.getMessage().contains(expectedMessage);
   }
 
   private DomainStatus getStatus(Domain domain) {
@@ -83,10 +91,10 @@ class DomainConditionMatcher extends TypeSafeDiagnosingMatcher<Domain> {
       expectations.add(expectation("status", expectedStatus));
     }
     if (expectedReason != null) {
-      expectations.add(expectation("reason", expectedReason));
+      expectations.add(expectation("reason", expectedReason.toString()));
     }
     if (expectedMessage != null) {
-      expectations.add(expectation("reason", expectedMessage));
+      expectations.add(expectation("message containing", expectedMessage));
     }
     description
         .appendText("domain containing condition: ")

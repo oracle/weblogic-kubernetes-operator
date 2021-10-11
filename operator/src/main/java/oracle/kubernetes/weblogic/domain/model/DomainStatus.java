@@ -5,7 +5,6 @@ package oracle.kubernetes.weblogic.domain.model;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -26,6 +25,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
 import static oracle.kubernetes.weblogic.domain.model.ObjectPatch.createObjectPatch;
 
 /**
@@ -64,7 +64,7 @@ public class DomainStatus {
   @Description("Status of WebLogic clusters in this domain.")
   @Valid
   // sorted list of ClusterStatus
-  private List<ClusterStatus> clusters = new ArrayList<>();
+  private final List<ClusterStatus> clusters = new ArrayList<>();
 
   @Description(
       "RFC 3339 date and time at which the operator started the domain. This will be when "
@@ -93,7 +93,7 @@ public class DomainStatus {
     reason = that.reason;
     conditions = that.conditions.stream().map(DomainCondition::new).collect(Collectors.toList());
     servers = that.servers.stream().map(ServerStatus::new).collect(Collectors.toList());
-    clusters = that.clusters.stream().map(ClusterStatus::new).collect(Collectors.toList());
+    clusters.addAll(that.clusters.stream().map(ClusterStatus::new).collect(Collectors.toList()));
     startTime = that.startTime;
     replicas = that.replicas;
     introspectJobFailureCount = that.introspectJobFailureCount;
@@ -120,40 +120,52 @@ public class DomainStatus {
       return this;
     }
 
-    conditions = conditions.stream().filter(c -> preserve(c, newCondition.getType())).collect(Collectors.toList());
+    conditions = conditions.stream()
+          .filter(c -> !c.getType().isObsolete())
+          .filter(c -> c.isCompatibleWith(newCondition))
+          .collect(Collectors.toList());
 
     conditions.add(newCondition);
-    reason = newCondition.getStatusReason();
-    message = newCondition.getStatusMessage();
+    Collections.sort(conditions);
+    setReasonAndMessage();
     return this;
   }
 
-  // Returns true if adding a condition of the new type should not remove the specified condition.
-  private boolean preserve(DomainCondition condition, DomainConditionType newType) {
-    if (newType == condition.getType() && !"True".equalsIgnoreCase(condition.getStatus())) {
-      return false;
-    } else {
-      return !Arrays.asList(newType.typesToRemove()).contains(condition.getType());
-    }
+  private void setReasonAndMessage() {
+    DomainCondition selected = conditions.stream()
+          .filter(this::maySupplyStatusMessage)
+          .findFirst().orElse(new DomainCondition(Failed));
+    reason = selected.getReason();
+    message = selected.getMessage();
+  }
+
+  private boolean maySupplyStatusMessage(DomainCondition c) {
+    return c.getMessage() != null && "True".equals(c.getStatus());
   }
 
   /**
-   * True, if condition present based on predicate.
-   *
-   * @param predicate Predicate
-   * @return True, if predicate is satisfied
+   * Returns true if any condition of the specified type is present.
+   * @param type the type of condition to find
+   */
+  public boolean hasConditionWithType(DomainConditionType type) {
+    return conditions.stream().anyMatch(c -> c.getType() == type);
+  }
+
+  /**
+   * Returns true if there is a condition matching the specified predicate.
+   * @param predicate a predicate to match against a condition
    */
   public boolean hasConditionWith(Predicate<DomainCondition> predicate) {
     return !getConditionsMatching(predicate).isEmpty();
   }
 
   /**
-   * Removes condition based on predicate.
+   * Removes any condition with the specified type.
    *
-   * @param predicate Predicate
+   * @param type the type of the condition
    */
-  public void removeConditionIf(Predicate<DomainCondition> predicate) {
-    for (DomainCondition condition : getConditionsMatching(predicate)) {
+  public void removeConditionWithType(DomainConditionType type) {
+    for (DomainCondition condition : getConditionsMatching(c -> c.hasType(type))) {
       removeCondition(condition);
     }
   }
@@ -162,25 +174,13 @@ public class DomainStatus {
     return conditions.stream().filter(predicate).collect(Collectors.toList());
   }
 
-  private void removeCondition(DomainCondition condition) {
-    if (condition != null) {
-      conditions.remove(condition);
-    }
-  }
-
   /**
-   * Get condition of the given type..
-   *
-   * @return condition
+   * Removes the specified condition from the status.
+   * @param condition a condition
    */
-  public DomainCondition getConditionWithType(DomainConditionType type) {
-    for (DomainCondition condition : conditions) {
-      if (type == condition.getType()) {
-        return condition;
-      }
-    }
-
-    return null;
+  public void removeCondition(@Nonnull DomainCondition condition) {
+    conditions.remove(condition);
+    setReasonAndMessage();
   }
 
   /**
@@ -419,7 +419,8 @@ public class DomainStatus {
       List<ClusterStatus> sortedClusters = new ArrayList<>(clusters);
       sortedClusters.sort(Comparator.naturalOrder());
 
-      this.clusters = sortedClusters;
+      this.clusters.clear();
+      this.clusters.addAll(sortedClusters);
     }
   }
 

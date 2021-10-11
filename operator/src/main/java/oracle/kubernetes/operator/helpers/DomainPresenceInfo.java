@@ -7,9 +7,12 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -18,6 +21,7 @@ import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -31,7 +35,10 @@ import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
+import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Packet;
+import oracle.kubernetes.operator.work.PacketComponent;
+import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
@@ -40,7 +47,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static java.lang.System.lineSeparator;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_COMPONENT_NAME;
 import static oracle.kubernetes.operator.helpers.PodHelper.hasClusterNameOrNull;
 import static oracle.kubernetes.operator.helpers.PodHelper.isNotAdminServer;
 
@@ -48,7 +55,7 @@ import static oracle.kubernetes.operator.helpers.PodHelper.isNotAdminServer;
  * Operator's mapping between custom resource Domain and runtime details about that domain,
  * including the scan and the Pods and Services for servers.
  */
-public class DomainPresenceInfo {
+public class DomainPresenceInfo implements PacketComponent {
   private final String namespace;
   private final String domainUid;
   private final AtomicReference<Domain> domain;
@@ -64,9 +71,10 @@ public class DomainPresenceInfo {
   private final ReadWriteLock webLogicCredentialsSecretLock = new ReentrantReadWriteLock();
   private V1Secret webLogicCredentialsSecret;
   private OffsetDateTime webLogicCredentialsSecretLastSet;
+  private String adminServerName;
 
   private final List<String> validationWarnings = Collections.synchronizedList(new ArrayList<>());
-  private EventItem lastEventItem;
+  private Map<String, Step.StepAndPacket> serversToRoll = Collections.emptyMap();
 
   /**
    * Create presence for a domain.
@@ -194,6 +202,18 @@ public class DomainPresenceInfo {
 
   public static Optional<DomainPresenceInfo> fromPacket(Packet packet) {
     return Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class));
+  }
+
+  public void addToPacket(Packet packet) {
+    packet.getComponents().put(DOMAIN_COMPONENT_NAME, Component.createFor(this));
+  }
+
+  public String getAdminServerName() {
+    return adminServerName;
+  }
+
+  public void setAdminServerName(String adminServerName) {
+    this.adminServerName = adminServerName;
   }
 
   /**
@@ -564,14 +584,6 @@ public class DomainPresenceInfo {
     resetFailureCount();
   }
 
-  EventItem getLastEventItem() {
-    return lastEventItem;
-  }
-
-  void setLastEventItem(EventItem lastEventItem) {
-    this.lastEventItem = lastEventItem;
-  }
-
   /**
    * Gets the domain. Except the instance to change frequently based on status updates.
    *
@@ -623,7 +635,7 @@ public class DomainPresenceInfo {
    * @return Server startup info
    */
   public Collection<ServerStartupInfo> getServerStartupInfo() {
-    return serverStartupInfo.get();
+    return Optional.ofNullable(serverStartupInfo.get()).orElse(Collections.emptyList());
   }
 
   /**
@@ -687,6 +699,28 @@ public class DomainPresenceInfo {
     return String.join(lineSeparator(), validationWarnings);
   }
 
+  /**
+   * Returns the names of the servers which are supposed to be running.
+   */
+  public Set<String> getExpectedRunningServers() {
+    final Set<String> result = new HashSet<>(getExpectedRunningManagedServers());
+    Optional.ofNullable(adminServerName).ifPresent(result::add);
+    return result;
+  }
+
+  @Nonnull
+  private Set<String> getExpectedRunningManagedServers() {
+    return getServerStartupInfo().stream().map(ServerStartupInfo::getServerName).collect(Collectors.toSet());
+  }
+
+  public Map<String, Step.StepAndPacket> getServersToRoll() {
+    return serversToRoll;
+  }
+
+  public void setServersToRoll(Map<String, Step.StepAndPacket> serversToRoll) {
+    this.serversToRoll = serversToRoll;
+  }
+
   /** Details about a specific managed server that will be started up. */
   public static class ServerStartupInfo {
     public final WlsServerConfig serverConfig;
@@ -737,21 +771,8 @@ public class DomainPresenceInfo {
       return clusterName;
     }
 
-    /**
-     * Returns the desired state for the started server.
-     *
-     * @return return a string, which may be null.
-     */
-    public String getDesiredState() {
-      return serverSpec == null ? null : serverSpec.getDesiredState();
-    }
-
     public List<V1EnvVar> getEnvironment() {
       return serverSpec == null ? Collections.emptyList() : serverSpec.getEnvironmentVariables();
-    }
-
-    public boolean isNotServiceOnly() {
-      return !isServiceOnly;
     }
 
     @Override
@@ -793,6 +814,7 @@ public class DomainPresenceInfo {
           .append(isServiceOnly)
           .toHashCode();
     }
+
   }
 
   /** Details about a specific managed server that will be shutdown. */

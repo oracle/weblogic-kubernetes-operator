@@ -132,8 +132,7 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseIma
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createJobAndWaitUntilComplete;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_CHANGED;
-import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_COMPLETED;
-import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_STARTING;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_COMPLETED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.POD_STARTED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.POD_TERMINATED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEvent;
@@ -761,21 +760,12 @@ class ItParameterizedDomain {
         "domain event {0} to be logged",
         DOMAIN_CHANGED);
 
-    // verify the DomainProcessing Starting/Completed event is generated
-    testUntil(
-        checkDomainEvent(
-            opNamespace, miiDomainNamespace, miiDomainUid, DOMAIN_PROCESSING_STARTING, "Normal", timestamp),
-        logger,
-        "domain event {0} to be logged",
-        DOMAIN_PROCESSING_STARTING);
-
     // wait for longer time for DomainProcessingCompleted event
     testUntil(
         withLongRetryPolicy,
-        checkDomainEvent(
-            opNamespace, miiDomainNamespace, miiDomainUid, DOMAIN_PROCESSING_COMPLETED, "Normal", timestamp),
+        checkDomainEvent(opNamespace, miiDomainNamespace, miiDomainUid, DOMAIN_COMPLETED, "Normal", timestamp),
         logger,
-        DOMAIN_PROCESSING_COMPLETED);
+        DOMAIN_COMPLETED);
 
     // Verify that pod termination and started events are logged only once for each managed server in each cluster
     for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
