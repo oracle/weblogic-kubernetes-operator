@@ -61,7 +61,7 @@ public interface ProcessingConstants {
     + "credential related error such as wrong password, schema prefix, or database connect string; then correct the "
     + "error, patch the domain resource 'domain.spec.introspectVersion' with a new value.  If the error is not "
     + "related to database credential, you must also drop and recreate the JRF schemas before patching the domain "
-    + "resource: ";
+    + "resource. Error: ";
 
   String OPERATOR_EVENT_LABEL_FILTER = LabelConstants.getCreatedByOperatorSelector();
 }
