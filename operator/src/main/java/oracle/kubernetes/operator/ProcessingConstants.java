@@ -56,6 +56,11 @@ public interface ProcessingConstants {
       + " The domainPresenceFailureRetryMaxCount is an operator tuning parameter and can be controlled"
       + " by adding it to the weblogic-operator-cm configmap.";
 
-  String FATAL_INTROSPECTOR_ERROR_MSG = "Stop introspection retry - MII Fatal Error: ";
+  String FATAL_INTROSPECTOR_ERROR_MSG = "Stop introspection retry - MII Fatal Error: "
+    + "Model In Image JRF domain creation encountered an unrecoverable error. If it is database "
+    + "credential related error such as wrong password, schema prefix or database connect string, then correct the "
+    + "error, update the domain resource 'domain.spec.introspectVersion'.  If it is not database credential "
+    + "related error, you must also recreate the JRF schemas before updating the domain resource: ";
+
   String OPERATOR_EVENT_LABEL_FILTER = LabelConstants.getCreatedByOperatorSelector();
 }

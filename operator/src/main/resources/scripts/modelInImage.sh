@@ -887,7 +887,9 @@ function wdtCreatePrimordialDomain() {
     #  output configmap and save it for reuse.
 
     ${WDT_BINDIR}/createDomain.sh ${wdtArgs} > ${WDT_OUTPUT} 2>&1
-
+    if [ "JRF" == "$WDT_DOMAIN_TYPE" ]; then
+      CREATED_JRF_PRIMODIAL="true"
+    fi
   else
 
     # We get here only for JRF domain 'second time' (or more) case.
@@ -957,7 +959,11 @@ function wdtUpdateModelDomain() {
   ret=$?
 
   if [ $ret -ne 0 ]; then
-    trace SEVERE "WDT Update Domain command Failed:"
+    if [ "true" == "${CREATED_JRF_PRIMODIAL}" ] ; then
+      trace SEVERE "Model in Image: FatalIntrospectorError: WDT Update Domain Failed, ret=${ret}"
+    else
+      trace SEVERE "WDT Update Domain command Failed:"
+    fi
     cat ${WDT_OUTPUT}
     exitOrLoop
   fi
