@@ -52,6 +52,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.isWebLogicPsuPatchApplied;
@@ -252,23 +253,13 @@ class ItIstioDomainInPV  {
     createDomainAndVerify(domain, domainNamespace);
 
     // verify the admin server service created
-    checkServiceExists(adminServerPodName, domainNamespace);
-
-    // verify admin server pod is ready
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
-
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
     // verify managed server services created
+    // verify managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Checking managed service {0} is created in namespace {1}",
           managedServerPodNamePrefix + i, domainNamespace);
-      checkServiceExists(managedServerPodNamePrefix + i, domainNamespace);
-    }
-
-    // verify managed server pods are ready
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Waiting for managed pod {0} to be ready in namespace {1}",
-          managedServerPodNamePrefix + i, domainNamespace);
-      checkPodReady(managedServerPodNamePrefix + i, domainUid, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace);
     }
 
     String clusterService = domainUid + "-cluster-" + clusterName + "." + domainNamespace + ".svc.cluster.local";
