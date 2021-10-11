@@ -11,9 +11,9 @@ weight: 3
 - [Kubernetes, WebLogic, and operating system prerequisites](#kubernetes-weblogic-and-operating-system-prerequisites)
 - [Pricing and licensing](#pricing-and-licensing)
 - [Important notes about specific cloud environments](#important-notes-about-specific-cloud-environments)
-  - [Oracle Cloud Infrastructure](#oracle-cloud-infrastructure-oci)
+  - [Oracle Cloud Infrastructure (OCI)](#oracle-cloud-infrastructure-oci)
   - [Oracle Linux Cloud Native Environment (OLCNE)](#oracle-linux-cloud-native-environment-olcne)
-  - [Microsoft Azure Kubernetes Service](#microsoft-azure-kubernetes-service)
+  - [Microsoft Azure Kubernetes Service (AKS)](#microsoft-azure-kubernetes-service-aks)
   - [VMware Tanzu Kubernetes Grid (TKG)](#vmware-tanzu-kubernetes-grid-tkg)
   - [OpenShift](#openshift)
   - [Development-focused Kubernetes distributions](#development-focused-kubernetes-distributions)
@@ -28,7 +28,7 @@ The official document that defines the supported configurations
 is [here](https://www.oracle.com/middleware/technologies/ias/oracleas-supported-virtualization.html).
 
 Some supported environments are subject to limitations and restrictions: see
-[Important Notes About Specific Environments](#important-notes-about-specific-environments).
+[Important notes about specific environments](#important-notes-about-specific-environments).
 
 ### Kubernetes, WebLogic, and operating system prerequisites
 
@@ -53,7 +53,7 @@ provides details about licensing practices and policies.
 Here are some important considerations for specific environments.
 
 **Note:** This section does not list all supported environments.
-See [Supported cloud environments](#supported-cloud-environments).
+See [Supported cloud environments](#supported-cloud-environments)
 for a list of all supported environments.
 
 #### Oracle Cloud Infrastructure (OCI)
@@ -72,7 +72,7 @@ WebLogic Server and the WebLogic Kubernetes Operator are certified and supported
 - Operator v2.6.0 is certified on OLCNE 1.1 and v3.2.5 is certified on OLCNE 1.3.
 - Operator v3.2.5 provides certified support of OLCNE 1.3 with Kubernetes 1.20.6 and CRI-O 1.20.2.
 
-#### Microsoft Azure Kubernetes Service
+#### Microsoft Azure Kubernetes Service (AKS)
 
 [Azure Kubernetes Service (AKS)](https://docs.microsoft.com/en-us/azure/aks/) is a hosted Kubernetes environment.  The WebLogic Kubernetes
 Operator, Oracle WebLogic Sever 12c, and Oracle Fusion Middleware Infrastructure 12c are fully supported and certified on Azure Kubernetes Service (as per the documents

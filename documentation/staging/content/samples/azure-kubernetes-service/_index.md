@@ -26,8 +26,9 @@ Azure Kubernetes Service makes it simple to deploy a managed Kubernetes cluster 
 
 To learn more, see the [What is Azure Kubernetes Service?](https://docs.microsoft.com/en-us/azure/aks/intro-kubernetes).
 
-For operator support limitations that are specific to AKS,
-see [Supported platforms]({{< relref "userguide/platforms/environments.md" >}}).
+See [Supported platforms]({{< relref "userguide/platforms/environments.md" >}})
+for general operator prerequisites
+and operator support limitations that are specific to AKS.
 
 #### Domain home source types
 
