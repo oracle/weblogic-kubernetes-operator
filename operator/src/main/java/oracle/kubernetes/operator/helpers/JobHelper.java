@@ -9,21 +9,17 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import javax.annotation.Nonnull;
 
-import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Job;
-import io.kubernetes.client.openapi.models.V1JobCondition;
-import io.kubernetes.client.openapi.models.V1JobStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
-import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.DomainProcessorImpl;
-import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.JobWatcher;
 import oracle.kubernetes.operator.LabelConstants;
@@ -41,6 +37,7 @@ import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImageEnvVars;
 import oracle.kubernetes.weblogic.domain.model.Cluster;
 import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
@@ -48,13 +45,14 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
-import oracle.kubernetes.weblogic.domain.model.ManagedServer;
+import oracle.kubernetes.weblogic.domain.model.Server;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
+import org.jetbrains.annotations.Nullable;
 
 import static java.time.temporal.ChronoUnit.SECONDS;
+import static oracle.kubernetes.operator.DomainFailureReason.Introspection;
 import static oracle.kubernetes.operator.DomainSourceType.FromModel;
-import static oracle.kubernetes.operator.DomainStatusUpdater.INSPECTING_DOMAIN_PROGRESS_REASON;
-import static oracle.kubernetes.operator.DomainStatusUpdater.createProgressingStartedEventStep;
+import static oracle.kubernetes.operator.DomainStatusUpdater.createFailureRelatedSteps;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
@@ -123,13 +121,16 @@ public class JobHelper {
   }
 
   private static String getIntrospectVersion(DomainPresenceInfo info) {
-    return Optional.ofNullable(info.getDomain()).map(Domain::getSpec).map(s -> s.getIntrospectVersion())
+    return Optional.ofNullable(info.getDomain()).map(Domain::getSpec).map(DomainSpec::getIntrospectVersion)
             .orElse("");
   }
 
   private static String getGeneration(DomainPresenceInfo info) {
-    return Optional.ofNullable(info.getDomain()).map(Domain::getMetadata).map(m -> m.getGeneration().toString())
-            .orElse("");
+    return Optional.ofNullable(info.getDomain())
+          .map(Domain::getMetadata)
+          .map(V1ObjectMeta::getGeneration)
+          .map(Object::toString)
+          .orElse("");
   }
 
   private static boolean isModelInImageUpdate(Packet packet, DomainPresenceInfo info) {
@@ -159,50 +160,54 @@ public class JobHelper {
    * @return True, if creating servers
    */
   static boolean creatingServers(DomainPresenceInfo info) {
-    Domain dom = info.getDomain();
-    DomainSpec spec = dom.getSpec();
-    List<Cluster> clusters = spec.getClusters();
-    List<ManagedServer> servers = spec.getManagedServers();
+    return new StartupComputation(info).isCreatingAServer();
+  }
 
-    // Are we starting a cluster?
-    // NOTE: clusterServerStartPolicy == null indicates default policy
-    for (Cluster cluster : clusters) {
-      int replicaCount = dom.getReplicaCount(cluster.getClusterName());
-      String clusterServerStartPolicy = cluster.getServerStartPolicy();
-      LOGGER.fine(
-            "Start Policy: "
-                  + clusterServerStartPolicy
-                  + ", replicaCount: "
-                  + replicaCount
-                  + " for cluster: "
-                  + cluster);
-      if ((clusterServerStartPolicy == null
-            || !clusterServerStartPolicy.equals(ConfigurationConstants.START_NEVER))
-            && replicaCount > 0) {
-        return true;
-      }
+  private static class StartupComputation {
+    private final DomainPresenceInfo info;
+
+    private StartupComputation(DomainPresenceInfo info) {
+      this.info = info;
     }
 
-    // If Domain level Server Start Policy = ALWAYS, IF_NEEDED or ADMIN_ONLY then we most likely
-    // will start a server pod
-    // NOTE: domainServerStartPolicy == null indicates default policy
-    String domainServerStartPolicy = dom.getSpec().getServerStartPolicy();
-    if (domainServerStartPolicy == null
-          || !domainServerStartPolicy.equals(ConfigurationConstants.START_NEVER)) {
-      return true;
+    private boolean isCreatingAServer() {
+      return domainShouldStart() || willStartACluster() || willStartAServer();
     }
 
-    // Are we starting any explicitly specified individual server?
-    // NOTE: serverStartPolicy == null indicates default policy
-    for (ManagedServer server : servers) {
-      String serverStartPolicy = server.getServerStartPolicy();
-      if (serverStartPolicy == null
-            || !serverStartPolicy.equals(ConfigurationConstants.START_NEVER)) {
-        return true;
-      }
+    // If Domain level Server Start Policy = ALWAYS, IF_NEEDED or ADMIN_ONLY we most likely will start a server pod.
+    // NOTE: that will not be the case if every cluster and server is marked as NEVER.
+    private boolean domainShouldStart() {
+      return shouldStart(getDomainSpec().getServerStartPolicy());
     }
 
-    return false;
+    // Returns true if any cluster is configured to start.
+    private boolean willStartACluster() {
+      return getDomainSpec().getClusters().stream().anyMatch(this::shouldStart);
+    }
+
+    // Returns true if any server is configured to start.
+    private boolean willStartAServer() {
+      return getDomainSpec().getManagedServers().stream().map(Server::getServerStartPolicy).anyMatch(this::shouldStart);
+    }
+
+    // Returns true if the specified cluster is configured to start.
+    private boolean shouldStart(Cluster cluster) {
+      return (shouldStart(cluster.getServerStartPolicy())) && getDomain().getReplicaCount(cluster.getClusterName()) > 0;
+    }
+
+    // Returns true if the specified server start policy will allow starting a server.
+    private boolean shouldStart(String serverStartPolicy) {
+      return !ConfigurationConstants.START_NEVER.equals(serverStartPolicy);
+    }
+
+    @Nonnull
+    private DomainSpec getDomainSpec() {
+      return getDomain().getSpec();
+    }
+
+    private Domain getDomain() {
+      return info.getDomain();
+    }
   }
 
   /**
@@ -222,12 +227,11 @@ public class JobHelper {
   /**
    * Factory for {@link Step} that reads WebLogic domain introspector job results from pod's log.
    *
-   * @param next Next processing step
    * @return Step for reading WebLogic domain introspector pod log
    */
-  private static Step readDomainIntrospectorPodLogStep(Step next) {
+  private static Step readDomainIntrospectorPodLogStep() {
     return createWatchDomainIntrospectorJobReadyStep(
-          readDomainIntrospectorPodStep(readDomainIntrospectorPodLog(next)));
+          readDomainIntrospectorPodStep(readDomainIntrospectorPodLog(null)));
   }
 
   /**
@@ -418,9 +422,8 @@ public class JobHelper {
             Step.chain(
                 DomainValidationSteps.createAdditionalDomainValidationSteps(
                     Objects.requireNonNull(context.getJobModel().getSpec()).getTemplate().getSpec()),
-                createProgressingStartedEventStep(info, INSPECTING_DOMAIN_PROGRESS_REASON, true, null),
                 context.createNewJob(null),
-                readDomainIntrospectorPodLogStep(null),
+                readDomainIntrospectorPodLogStep(),
                 deleteDomainIntrospectorJobStep(null),
                 ConfigMapHelper.createIntrospectorConfigMapStep(getNext())),
               packet);
@@ -446,19 +449,21 @@ public class JobHelper {
 
     private Step replaceOrCreateJob(Packet packet, Step next) {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-      return new CallBuilder().readJobAsync(JobHelper.createJobName(info.getDomain().getDomainUid()),
-              info.getNamespace(), info.getDomain().getDomainUid(),
-              new ReplaceOrCreateStep(next));
+      return new CallBuilder().readJobAsync(
+            JobHelper.createJobName(info.getDomain().getDomainUid()),
+            info.getNamespace(),
+            info.getDomain().getDomainUid(),
+            new ReplaceOrCreateStep<>(next));
     }
 
-    private class ReplaceOrCreateStep extends DefaultResponseStep {
+    private static class ReplaceOrCreateStep<T> extends DefaultResponseStep<T> {
 
       ReplaceOrCreateStep(Step next) {
         super(next);
       }
 
       @Override
-      public NextAction onSuccess(Packet packet, CallResponse callResponse) {
+      public NextAction onSuccess(Packet packet, CallResponse<T> callResponse) {
         DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
         String namespace = info.getNamespace();
         V1Job job = (V1Job) callResponse.getResult();
@@ -468,10 +473,9 @@ public class JobHelper {
 
         if (job != null) {
           packet.putIfAbsent(START_TIME, Optional.ofNullable(job.getMetadata())
-                  .map(m -> m.getCreationTimestamp()).orElse(OffsetDateTime.now()));
+                  .map(V1ObjectMeta::getCreationTimestamp).orElse(OffsetDateTime.now()));
           return doNext(Step.chain(
-                  createProgressingStartedEventStep(info, INSPECTING_DOMAIN_PROGRESS_REASON, true, null),
-                  readDomainIntrospectorPodLogStep(null),
+                  readDomainIntrospectorPodLogStep(),
                   deleteDomainIntrospectorJobStep(null),
                   ConfigMapHelper.createIntrospectorConfigMapStep(null),
                   ConfigMapHelper.readExistingIntrospectorConfigMap(namespace, info.getDomainUid()),
@@ -526,65 +530,58 @@ public class JobHelper {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<String> callResponse) {
-      String result = callResponse.getResult();
-      LOGGER.fine("+++++ ReadDomainIntrospectorPodLogResponseStep: \n" + result);
+      Optional.ofNullable(callResponse.getResult()).ifPresent(result -> processIntrospectionResult(packet, result));
 
-      if (result != null) {
-        convertJobLogsToOperatorLogs(result);
-        if (!severeStatuses.isEmpty()) {
-          updateStatus(packet.getSpi(DomainPresenceInfo.class));
-        }
-        packet.put(ProcessingConstants.DOMAIN_INTROSPECTOR_LOG_RESULT, result);
-        MakeRightDomainOperation.recordInspection(packet);
+      final V1Job domainIntrospectorJob = packet.getValue(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
+      if (JobWatcher.isComplete(domainIntrospectorJob)) {
+        return doNext(packet);
+      } else {
+        return handleFailure(packet, domainIntrospectorJob);
       }
-
-      V1Job domainIntrospectorJob =
-              (V1Job) packet.get(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
-
-      if (isNotComplete(domainIntrospectorJob)) {
-        List<String> jobConditionsReason = new ArrayList<>();
-        if (domainIntrospectorJob != null) {
-          logIntrospectorFailure(packet, domainIntrospectorJob);
-          V1JobStatus status = domainIntrospectorJob.getStatus();
-          if (status != null && status.getConditions() != null) {
-            for (V1JobCondition cond : status.getConditions()) {
-              jobConditionsReason.add(cond.getReason());
-            }
-          }
-        }
-        if (jobConditionsReason.size() == 0) {
-          jobConditionsReason.add(DomainStatusUpdater.ERR_INTROSPECTOR);
-        }
-        //Introspector job is incomplete, update domain status and terminate processing
-        Step nextStep = null;
-        int retryIntervalSeconds = TuningParameters.getInstance().getMainTuning().domainPresenceRecheckIntervalSeconds;
-
-        if (OffsetDateTime.now().isAfter(
-                getJobCreationTime(domainIntrospectorJob).plus(retryIntervalSeconds, SECONDS))) {
-          //Introspector job is incomplete and current time is greater than the lazy deletion time for the job,
-          //update the domain status and execute the next step
-          packet.put(DOMAIN_INTROSPECT_REQUESTED, INTROSPECTION_FAILED);
-          nextStep = getNext();
-        }
-
-        return doNext(
-                DomainStatusUpdater.createFailureRelatedSteps(
-                        onSeparateLines(jobConditionsReason),
-                        onSeparateLines(severeStatuses),
-                        nextStep),
-                packet);
-      }
-
-      return doNext(packet);
     }
+
+    private void processIntrospectionResult(Packet packet, String result) {
+      LOGGER.fine("+++++ ReadDomainIntrospectorPodLogResponseStep: \n" + result);
+      convertJobLogsToOperatorLogs(result);
+      if (!severeStatuses.isEmpty()) {
+        updateStatus(packet.getSpi(DomainPresenceInfo.class));
+      }
+      packet.put(ProcessingConstants.DOMAIN_INTROSPECTOR_LOG_RESULT, result);
+      MakeRightDomainOperation.recordInspection(packet);
+    }
+
+    private NextAction handleFailure(Packet packet, V1Job domainIntrospectorJob) {
+      Optional.ofNullable(domainIntrospectorJob).ifPresent(job -> logIntrospectorFailure(packet, job));
+
+      return doNext(
+              Step.chain(
+                    createFailureRelatedSteps(Introspection, onSeparateLines(severeStatuses)),
+                    getNextStep(packet, domainIntrospectorJob)),
+            packet);
+    }
+
+    @Nullable
+    private Step getNextStep(Packet packet, V1Job domainIntrospectorJob) {
+      if (isRecheckIntervalExceeded(domainIntrospectorJob)) {
+        packet.put(DOMAIN_INTROSPECT_REQUESTED, INTROSPECTION_FAILED);
+        return getNext();
+      } else {
+        return null;
+      }
+    }
+
+    // Returns true if the job is left over from an earlier make-right, and we may now delete it.
+    private boolean isRecheckIntervalExceeded(V1Job domainIntrospectorJob) {
+      final int retryInterval = TuningParameters.getInstance().getMainTuning().domainPresenceRecheckIntervalSeconds;
+      return SystemClock.now().isAfter(getJobCreationTime(domainIntrospectorJob).plus(retryInterval, SECONDS));
+    }
+
 
     private OffsetDateTime getJobCreationTime(V1Job domainIntrospectorJob) {
-      return Optional.ofNullable(domainIntrospectorJob.getMetadata())
-              .map(m -> m.getCreationTimestamp()).orElse(OffsetDateTime.now());
-    }
-
-    private boolean isNotComplete(V1Job domainIntrospectorJob) {
-      return !JobWatcher.isComplete(domainIntrospectorJob);
+      return Optional.ofNullable(domainIntrospectorJob)
+            .map(V1Job::getMetadata)
+            .map(V1ObjectMeta::getCreationTimestamp)
+            .orElse(OffsetDateTime.now());
     }
 
     // Parse log messages out of a Job Log
@@ -651,7 +648,7 @@ public class JobHelper {
 
     private void updateStatus(DomainPresenceInfo domainPresenceInfo) {
       DomainStatusPatch.updateSynchronously(
-            domainPresenceInfo.getDomain(), DomainStatusUpdater.ERR_INTROSPECTOR, onSeparateLines(severeStatuses));
+            domainPresenceInfo.getDomain(), Introspection, onSeparateLines(severeStatuses));
     }
 
     private String onSeparateLines(List<String> lines) {
@@ -667,7 +664,7 @@ public class JobHelper {
       LOGGER.info(INTROSPECTOR_JOB_FAILED,
           Objects.requireNonNull(domainIntrospectorJob.getMetadata()).getName(),
           domainIntrospectorJob.getMetadata().getNamespace(),
-          domainIntrospectorJob.getStatus().toString(),
+          domainIntrospectorJob.getStatus(),
           jobPodName);
       LOGGER.fine(INTROSPECTOR_JOB_FAILED_DETAIL,
           domainIntrospectorJob.getMetadata().getNamespace(),
@@ -783,16 +780,8 @@ public class JobHelper {
       return Optional.of(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getName).orElse("");
     }
 
-    private List<V1Container> getInitContainers(V1Pod pod) {
-      return Optional.of(pod).map(V1Pod::getSpec).map(V1PodSpec::getInitContainers).orElse(Collections.emptyList());
-    }
-
     private boolean isJobPodName(String podName) {
       return podName.startsWith(createJobName(domainUid));
-    }
-
-    private boolean isJobPod(V1Pod pod) {
-      return pod.getMetadata().getName().startsWith(createJobName(domainUid));
     }
 
     private void recordJobPodName(Packet packet, String podName) {

@@ -38,6 +38,7 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.steps.ManagedServersUpStep.ServersUpStepFactory;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
+import oracle.kubernetes.operator.utils.WlsDomainConfigSupport.DynamicClusterConfigBuilder;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Step;
@@ -143,7 +144,7 @@ class ManagedServersUpStepTest {
   }
 
   @BeforeEach
-  public void setUp() throws NoSuchFieldException {
+  void setUp() throws NoSuchFieldException {
     mementos.add(consoleHandlerMemento = TestUtils.silenceOperatorLogger());
     mementos.add(factoryMemento = TestStepFactory.install());
     mementos.add(testSupport.install());
@@ -153,7 +154,7 @@ class ManagedServersUpStepTest {
   }
 
   @AfterEach
-  public void tearDown() throws Exception {
+  void tearDown() throws Exception {
     mementos.forEach(Memento::revert);
 
     testSupport.throwOnCompletionFailure();
@@ -184,16 +185,17 @@ class ManagedServersUpStepTest {
       int minDynamicClusterSize,
       int maxDynamicClusterSize,
       String... serverNames) {
-    configSupport.addDynamicWlsCluster(clusterName, serverNames);
-    configSupport.getWlsCluster(clusterName).getDynamicServersConfig().setMinDynamicClusterSize(minDynamicClusterSize);
-    configSupport.getWlsCluster(clusterName).getDynamicServersConfig().setMaxDynamicClusterSize(maxDynamicClusterSize);
+    configSupport.addWlsCluster(
+          new DynamicClusterConfigBuilder(clusterName)
+                .withClusterLimits(minDynamicClusterSize, maxDynamicClusterSize)
+                .withServerNames(serverNames));
   }
 
   @Test
   void whenStartPolicyUndefined_startServers() {
     invokeStepWithConfiguredServer();
 
-    assertServersToBeStarted();
+    assertManagedServersUpStepCreated();
   }
 
   private void invokeStepWithConfiguredServer() {
@@ -208,7 +210,7 @@ class ManagedServersUpStepTest {
 
     invokeStepWithConfiguredServer();
 
-    assertServersToBeStarted();
+    assertManagedServersUpStepCreated();
   }
 
   @Test
@@ -217,7 +219,7 @@ class ManagedServersUpStepTest {
 
     invokeStepWithConfiguredServer();
 
-    assertServersToBeStarted();
+    assertManagedServersUpStepCreated();
   }
 
   private void startAllServers() {
@@ -228,7 +230,7 @@ class ManagedServersUpStepTest {
     setDefaultServerStartPolicy(ConfigurationConstants.START_IF_NEEDED);
   }
 
-  private void assertServersToBeStarted() {
+  private void assertManagedServersUpStepCreated() {
     assertThat(TestStepFactory.next, instanceOf(ManagedServerUpIteratorStep.class));
   }
 
@@ -238,7 +240,7 @@ class ManagedServersUpStepTest {
 
     invokeStepWithConfiguredServer();
 
-    assertServersWillNotBeStarted();
+    assertManagedServersUpStepNotCreated();
   }
 
   private void startAdminServerOnly() {
@@ -254,7 +256,7 @@ class ManagedServersUpStepTest {
 
     invokeStepWithConfiguredServer();
 
-    assertServersWillNotBeStarted();
+    assertManagedServersUpStepNotCreated();
   }
 
   private void startNoServers() {
@@ -473,6 +475,7 @@ class ManagedServersUpStepTest {
     invokeStep();
 
     assertThat(getServers(), containsInAnyOrder("ms1", "ms2", "ms3"));
+    assertThat(domainPresenceInfo.getExpectedRunningServers(), containsInAnyOrder("ms1", "ms2", "ms3"));
   }
 
   @Test
@@ -484,20 +487,6 @@ class ManagedServersUpStepTest {
 
     assertThat(getServers(), hasItem("ms1"));
     assertThat(getServerStartupInfo("ms1").serverConfig, equalTo(getWlsServer("ms1")));
-  }
-
-  @Test
-  void whenShuttingDown_insertCreateAvailableStep() {
-    configurator.setShuttingDown(true);
-
-    assertThat(createNextStep().getClass().getSimpleName(), equalTo("AvailableStep"));
-  }
-
-  @Test
-  void whenNotShuttingDown_dontInsertCreateAvailableStep() {
-    configurator.setShuttingDown(false);
-
-    assertThat(createNextStep(), instanceOf(ClusterServicesStep.class));
   }
 
   @Test
@@ -750,13 +739,13 @@ class ManagedServersUpStepTest {
   void whenDomainTopologyIsMissing_noExceptionAndDontStartServers() {
     invokeStepWithoutDomainTopology();
 
-    assertServersWillNotBeStarted();
+    assertManagedServersUpStepNotCreated();
   }
 
   private static Step skipProgressingStep(Step step) {
     Step stepLocal = step;
     while (stepLocal instanceof EventHelper.CreateEventStep
-        || stepLocal instanceof DomainStatusUpdater.ProgressingStep) {
+        || stepLocal instanceof DomainStatusUpdater.RemoveFailuresStep) {
       stepLocal = stepLocal.getNext();
     }
 
@@ -779,7 +768,7 @@ class ManagedServersUpStepTest {
     configSupport.setAdminServerName(ADMIN);
     WlsDomainConfig config = configSupport.createDomainConfig();
     ManagedServersUpStep.NextStepFactory factory = factoryMemento.getOriginalValue();
-    ServersUpStepFactory serversUpStepFactory = new ServersUpStepFactory(config, domain, domainPresenceInfo, false);
+    ServersUpStepFactory serversUpStepFactory = new ServersUpStepFactory(config, domainPresenceInfo, false);
     List<DomainPresenceInfo.ServerShutdownInfo> ssi = new ArrayList<>();
     domainPresenceInfo.getServerPods().map(PodHelper::getPodServerName).collect(Collectors.toList())
             .forEach(s -> addShutdownServerInfo(s, servers, ssi));
@@ -856,7 +845,7 @@ class ManagedServersUpStepTest {
     return configurator.configureCluster(clusterName).withReplicas(1);
   }
 
-  private void assertServersWillNotBeStarted() {
+  private void assertManagedServersUpStepNotCreated() {
     assertThat(TestStepFactory.next, sameInstance(nextStep));
   }
 

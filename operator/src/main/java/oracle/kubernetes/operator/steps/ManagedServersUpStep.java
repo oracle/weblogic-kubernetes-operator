@@ -15,7 +15,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
-import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
@@ -38,8 +37,6 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 
 import static java.util.Comparator.comparing;
-import static oracle.kubernetes.operator.DomainStatusUpdater.MANAGED_SERVERS_STARTING_PROGRESS_REASON;
-import static oracle.kubernetes.operator.DomainStatusUpdater.createProgressingStartedEventStep;
 import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
 
 public class ManagedServersUpStep extends Step {
@@ -68,16 +65,13 @@ public class ManagedServersUpStep extends Step {
     List<Step> steps = new ArrayList<>(Collections.singletonList(next));
 
     if (info.getDomain().isShuttingDown()) {
-      insert(steps, createAvailableHookStep());
       factory.shutdownInfos.add(new ServerShutdownInfo(domainTopology.getAdminServerName(), null));
     }
 
     List<ServerShutdownInfo> serversToStop = getServersToStop(info, factory.shutdownInfos);
 
     if (!serversToStop.isEmpty()) {
-      insert(steps,
-              Step.chain(createProgressingStartedEventStep(info, MANAGED_SERVERS_STARTING_PROGRESS_REASON, true,
-                      null), new ServerDownIteratorStep(factory.shutdownInfos, null)));
+      insert(steps, new ServerDownIteratorStep(factory.shutdownInfos, null));
     }
 
     return Step.chain(steps.toArray(new Step[0]));
@@ -95,11 +89,6 @@ public class ManagedServersUpStep extends Step {
             || (ssi.isServiceOnly() && info.getServerService(ssi.getServerName()) == null);
   }
 
-  private static Step createAvailableHookStep() {
-    return DomainStatusUpdater.createAvailableStep(
-        DomainStatusUpdater.ALL_STOPPED_AVAILABLE_REASON, null);
-  }
-
   private static void insert(List<Step> steps, Step step) {
     steps.add(0, step);
   }
@@ -111,8 +100,7 @@ public class ManagedServersUpStep extends Step {
     boolean isExplicitRecheck = MakeRightDomainOperation.isExplicitRecheck(packet);
     WlsDomainConfig config = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
 
-    ServersUpStepFactory factory = new ServersUpStepFactory(config,
-        info.getDomain(), info, isExplicitRecheck);
+    ServersUpStepFactory factory = new ServersUpStepFactory(config, info, isExplicitRecheck);
 
     if (LOGGER.isFineEnabled()) {
       LOGGER.fine(SERVERS_UP_MSG, factory.domain.getDomainUid(), getRunningServers(info));
@@ -179,10 +167,10 @@ public class ManagedServersUpStep extends Step {
     final Map<String, Integer> replicas = new HashMap<>();
     private Step eventStep;
 
-    ServersUpStepFactory(WlsDomainConfig domainTopology, Domain domain,
-        DomainPresenceInfo info, boolean skipEventCreation) {
+    ServersUpStepFactory(WlsDomainConfig domainTopology,
+                         DomainPresenceInfo info, boolean skipEventCreation) {
       this.domainTopology = domainTopology;
-      this.domain = domain;
+      this.domain = info.getDomain();
       this.info = info;
       this.skipEventCreation = skipEventCreation;
     }
