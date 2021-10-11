@@ -36,6 +36,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static java.lang.System.lineSeparator;
+import static oracle.kubernetes.operator.DomainConditionMatcher.hasCondition;
+import static oracle.kubernetes.operator.DomainFailureReason.DomainInvalid;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.DOMAINZIP_HASH;
@@ -48,8 +50,8 @@ import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.getIntro
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
-import static oracle.kubernetes.operator.helpers.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory.forDomain;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
@@ -181,7 +183,8 @@ class IntrospectorConfigMapTest {
 
     testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(terminalStep));
 
-    assertThat(getDomain(), hasStatus("BadTopology", perLine("first problem", "second problem")));
+    assertThat(getDomain(), hasCondition(Failed).withReason(DomainInvalid)
+          .withMessageContaining(perLine("first problem", "second problem")));
   }
 
   @Nonnull

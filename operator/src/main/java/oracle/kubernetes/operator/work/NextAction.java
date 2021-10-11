@@ -12,7 +12,7 @@ import java.util.function.Consumer;
  *
  * <p>To allow reuse of this object, this class is mutable.
  */
-public final class NextAction {
+public final class NextAction implements BreadCrumbFactory {
   Kind kind;
   Step next;
   Packet packet;
@@ -87,6 +87,11 @@ public final class NextAction {
     return next;
   }
 
+  @Override
+  public BreadCrumb createBreadCrumb() {
+    return new NextActionBreadCrumb(this);
+  }
+
   /** Dumps the contents to assist debugging. */
   @Override
   public String toString() {
@@ -100,6 +105,50 @@ public final class NextAction {
   public enum Kind {
     INVOKE,
     SUSPEND,
-    THROW
+    THROW;
+    Kind getPreviousKind(BreadCrumb previous) {
+      return (previous instanceof NextActionBreadCrumb) ? ((NextActionBreadCrumb) previous).na.kind : null;
+    }
+  }
+
+  static class NextActionBreadCrumb implements BreadCrumb {
+    private final NextAction na;
+
+    NextActionBreadCrumb(NextAction na) {
+      this.na = na;
+    }
+
+    @Override
+    public void writeTo(StringBuilder sb, BreadCrumb previous, PacketDumper dumper) {
+      Kind previousKind = na.kind.getPreviousKind(previous);
+      switch (na.kind) {
+        case INVOKE:
+          if (na.next != null) {
+            if (previousKind == Kind.INVOKE) {
+              sb.append(",");
+            }
+            sb.append(na.next.getName());
+            dumper.dump(sb, na.packet);
+          }
+          break;
+        case SUSPEND:
+          if (previousKind != Kind.SUSPEND) {
+            sb.append("][");
+          }
+          break;
+        case THROW:
+          if (na.throwable != null) {
+            if (previousKind == Kind.INVOKE) {
+              sb.append(",");
+            }
+            sb.append('(');
+            sb.append(na.throwable.getClass().getSimpleName());
+            sb.append(')');
+          }
+          break;
+        default:
+          throw new AssertionError();
+      }
+    }
   }
 }

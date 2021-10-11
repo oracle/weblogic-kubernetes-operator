@@ -11,10 +11,6 @@ import java.util.function.Function;
 import java.util.logging.LogRecord;
 
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.V1ContainerState;
-import io.kubernetes.client.openapi.models.V1ContainerStateTerminated;
-import io.kubernetes.client.openapi.models.V1ContainerStateWaiting;
-import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
@@ -37,7 +33,6 @@ import static oracle.kubernetes.operator.helpers.LegalNames.DEFAULT_INTROSPECTOR
 import static oracle.kubernetes.operator.logging.MessageKeys.EXECUTE_MAKE_RIGHT_DOMAIN;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_POD_FAILED;
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
-import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
@@ -159,24 +154,6 @@ class PodWatcherTest extends WatcherTestBase implements WatchListener<V1Pod> {
     return pod.status(new V1PodStatus().phase("Running").addConditionsItem(createCondition("Ready")));
   }
 
-  private V1Pod addContainerStateWaitingMessage(V1Pod pod) {
-    return pod.status(new V1PodStatus()
-        .containerStatuses(java.util.Collections.singletonList(
-            new V1ContainerStatus()
-                .ready(false)
-                .state(new V1ContainerState().waiting(
-                    new V1ContainerStateWaiting().message("Error"))))));
-  }
-
-  private V1Pod addContainerStateTerminatedReason(V1Pod pod) {
-    return pod.status(new V1PodStatus()
-        .containerStatuses(java.util.Collections.singletonList(
-            new V1ContainerStatus()
-                .ready(false)
-                .state(new V1ContainerState().terminated(
-                    new V1ContainerStateTerminated().reason("Error"))))));
-  }
-
   @SuppressWarnings("SameParameterValue")
   private V1PodCondition createCondition(String type) {
     return new V1PodCondition().type(type).status("True");
@@ -283,22 +260,6 @@ class PodWatcherTest extends WatcherTestBase implements WatchListener<V1Pod> {
     testSupport.setTime(RECHECK_SECONDS, TimeUnit.SECONDS);
 
     assertThat(terminalStep.wasRun(), is(true));
-  }
-
-  @Test
-  void whenIntrospectPodNotReadyWithTerminatedReason_logPodStatus() {
-    sendIntrospectorPodModifiedWatchAfterWaitForReady(this::addContainerStateTerminatedReason);
-
-    assertThat(terminalStep.wasRun(), is(false));
-    assertThat(logRecords, containsInfo(getPodFailedMessageKey()));
-  }
-
-  @Test
-  void whenIntrospectPodNotReadyWithWaitingMessage_logPodStatus() {
-    sendIntrospectorPodModifiedWatchAfterWaitForReady(this::addContainerStateWaitingMessage);
-
-    assertThat(terminalStep.wasRun(), is(false));
-    assertThat(logRecords, containsInfo(getPodFailedMessageKey()));
   }
 
   // Starts the waitForReady step with an incomplete pod and sends a watch indicating that the pod has changed
