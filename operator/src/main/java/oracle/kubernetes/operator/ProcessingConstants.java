@@ -58,9 +58,10 @@ public interface ProcessingConstants {
 
   String FATAL_INTROSPECTOR_ERROR_MSG = "Stop introspection retry - MII Fatal Error: "
     + "Model In Image JRF domain creation encountered an unrecoverable error. If it is database "
-    + "credential related error such as wrong password, schema prefix or database connect string, then correct the "
-    + "error, update the domain resource 'domain.spec.introspectVersion'.  If it is not database credential "
-    + "related error, you must also recreate the JRF schemas before updating the domain resource: ";
+    + "credential related error such as wrong password, schema prefix, or database connect string; then correct the "
+    + "error, patch the domain resource 'domain.spec.introspectVersion' with a new value.  If the error is not "
+    + "related to database credential, you must also drop and recreate the JRF schemas before patching the domain "
+    + "resource: ";
 
   String OPERATOR_EVENT_LABEL_FILTER = LabelConstants.getCreatedByOperatorSelector();
 }
