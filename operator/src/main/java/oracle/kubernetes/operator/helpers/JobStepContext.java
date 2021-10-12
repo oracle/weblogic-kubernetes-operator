@@ -53,6 +53,7 @@ public abstract class JobStepContext extends BasePodStepContext {
   private static final String CONFIGMAP_TYPE = "cm";
   private static final String SECRET_TYPE = "st";
   private V1Job jobModel;
+  private Step conflictStep;
 
   JobStepContext(Packet packet) {
     super(packet.getSpi(DomainPresenceInfo.class));
@@ -144,8 +145,8 @@ public abstract class JobStepContext extends BasePodStepContext {
    * @return a step to be scheduled.
    */
   Step createJob() {
-    final Step createJobStep = new CallBuilder().createJobAsync(getNamespace(), getDomainUid(), getJobModel(), null);
-    return Step.chain(createJobStep, createResponse(createJobStep));
+    conflictStep = new CallBuilder().createJobAsync(getNamespace(), getDomainUid(), getJobModel(), newCreateResponse());
+    return conflictStep;
   }
 
   private void logJobCreated() {
@@ -230,8 +231,8 @@ public abstract class JobStepContext extends BasePodStepContext {
     return emptyToNull(getDomain().getWdtConfigMap());
   }
 
-  private ResponseStep<V1Job> createResponse(Step conflictStep) {
-    return new CreateResponseStep(conflictStep, null);
+  private ResponseStep<V1Job> newCreateResponse() {
+    return new CreateResponseStep(null);
   }
 
   private V1Job createJobModel() {
@@ -514,11 +515,8 @@ public abstract class JobStepContext extends BasePodStepContext {
 
   private class CreateResponseStep extends ResponseStep<V1Job> {
 
-    private final Step conflictStep;
-
-    CreateResponseStep(Step conflictStep, Step next) {
+    CreateResponseStep(Step next) {
       super(next);
-      this.conflictStep = conflictStep;
     }
 
     @Override
