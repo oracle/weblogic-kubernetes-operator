@@ -64,7 +64,7 @@ import static oracle.kubernetes.operator.DomainUpPlanTest.StepChainMatcher.hasCh
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG;
-import static oracle.kubernetes.operator.ProcessingConstants.FATAL_ERROR_STATUS_MESSAGE;
+import static oracle.kubernetes.operator.ProcessingConstants.FATAL_ERROR_DOMAIN_STATUS_MESSAGE;
 import static oracle.kubernetes.operator.ProcessingConstants.INTROSPECTION_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.JOBWATCHER_COMPONENT_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
@@ -118,6 +118,7 @@ class DomainIntrospectorJobTest {
   private static final String FATAL_MESSAGE_1 = "@[SEVERE] " + FATAL_PROBLEM_1;
   public static final String TEST_VOLUME_NAME = "test";
   public static final String JOB_UID = "some-unique-id";
+  public static final String INFO_MESSAGE_1 = "informational message";
 
   private final TerminalStep terminalStep = new TerminalStep();
   private final Domain domain = createDomain();
@@ -539,10 +540,7 @@ class DomainIntrospectorJobTest {
 
   @Test
   void whenJobLogContainsSevereError_logJobInfosOnDelete() {
-    testSupport.defineResources(
-        new V1Job().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS)).status(new V1JobStatus()));
-    IntrospectionTestUtils.defineResources(testSupport, SEVERE_MESSAGE_1);
-    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
+    createIntrospectionLog(SEVERE_MESSAGE_1, false);
 
     testSupport.runSteps(JobHelper.deleteDomainIntrospectorJobStep(terminalStep));
 
@@ -553,10 +551,7 @@ class DomainIntrospectorJobTest {
 
   @Test
   void whenJobLogContainsSevereError_logJobInfosOnReadPogLog() {
-    testSupport.defineResources(
-        new V1Job().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS)).status(new V1JobStatus()));
-    IntrospectionTestUtils.defineResources(testSupport, SEVERE_MESSAGE_1);
-    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
+    createIntrospectionLog(SEVERE_MESSAGE_1, false);
 
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
 
@@ -566,38 +561,25 @@ class DomainIntrospectorJobTest {
 
   @Test
   void whenJobLogContainsSevereError_incrementFailureCount() {
-    testSupport.defineResources(
-        new V1Job().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS)).status(new V1JobStatus()));
-    IntrospectionTestUtils.defineResources(testSupport, SEVERE_MESSAGE_1);
-    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
+    createIntrospectionLog(SEVERE_MESSAGE_1);
 
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
 
-    final Domain updatedDomain = testSupport.<Domain>getResources(DOMAIN).get(0);
-
-    assertThat(updatedDomain.getStatus().getIntrospectJobFailureCount(), equalTo(1));
-    logRecords.clear();
+    assertThat(getUpdatedDomain().getStatus().getIntrospectJobFailureCount(), equalTo(1));
   }
 
   @Test
   void whenReadJobLogCompletesWithSevereError_domainStatusContainsLastProcessedJobId() {
-    testSupport.defineResources(
-            new V1Job().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS).uid(JOB_UID))
-                    .status(new V1JobStatus()));
-    IntrospectionTestUtils.defineResources(testSupport, SEVERE_MESSAGE_1);
-    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
+    createIntrospectionLog(SEVERE_MESSAGE_1);
 
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
 
-    final Domain updatedDomain = testSupport.<Domain>getResources(DOMAIN).get(0);
-
-    assertThat(updatedDomain.getStatus().getLastIntrospectJobProcessedUid(), equalTo(JOB_UID));
-    logRecords.clear();
+    assertThat(getUpdatedDomain().getStatus().getLastIntrospectJobProcessedUid(), equalTo(JOB_UID));
   }
 
   @Test
   void whenReadJobLogCompletesWithoutSevereError_domainStatusContainsLastProcessedJobId() {
-    createIntrospectionLog("passed");
+    createIntrospectionLog(INFO_MESSAGE_1);
 
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
 
@@ -670,8 +652,8 @@ class DomainIntrospectorJobTest {
   }
 
   @Test
-  void whenJobLogContainsSevereError_domainStatusHasExpectedMessage() {
-    createIntrospectionLog();
+  void whenJobLogContainsSevereErrorAndRetriesLeft_domainStatusHasExpectedMessage() {
+    createIntrospectionLog(SEVERE_MESSAGE_1);
 
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
 
@@ -680,13 +662,41 @@ class DomainIntrospectorJobTest {
             SEVERE_PROBLEM_1)));
   }
 
-  private void createIntrospectionLog() {
+  @Test
+  void whenJobLogContainsFatalError_domainStatusHasExpectedMessage() {
+    createIntrospectionLog(FATAL_MESSAGE_1);
+
+    testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
+
+    final Domain updatedDomain = testSupport.<Domain>getResources(DOMAIN).get(0);
+
+    assertThat(updatedDomain.getStatus().getMessage(), equalTo(String.join(System.lineSeparator(),
+            FATAL_ERROR_DOMAIN_STATUS_MESSAGE, INTROSPECTION_ERROR,
+            FATAL_PROBLEM_1)));
+  }
+
+  @Test
+  void whenJobLogContainsSevereErrorAndNumberOfRetriesExceedsMaxLimit_domainStatusHasExpectedMessage() {
     createIntrospectionLog(SEVERE_MESSAGE_1);
+
+    getUpdatedDomain().setStatus(createDomainStatusWithIntrospectJobFailureCount(2));
+
+    testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
+
+    assertThat(getUpdatedDomain().getStatus().getMessage(), equalTo(String.join(System.lineSeparator(),
+            EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG, INTROSPECTION_ERROR,
+            SEVERE_PROBLEM_1)));
   }
 
   private void createIntrospectionLog(String logMessage) {
-    consoleHandlerMemento.ignoreMessage(getJobFailedMessageKey());
-    consoleHandlerMemento.ignoreMessage(getJobFailedDetailMessageKey());
+    createIntrospectionLog(logMessage, true);
+  }
+
+  private void createIntrospectionLog(String logMessage, boolean ignoreLogMessages) {
+    if (ignoreLogMessages) {
+      consoleHandlerMemento.ignoreMessage(getJobFailedMessageKey());
+      consoleHandlerMemento.ignoreMessage(getJobFailedDetailMessageKey());
+    }
     testSupport.defineResources(createIntrospectorJob());
     IntrospectionTestUtils.defineResources(testSupport, logMessage);
     testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
@@ -698,33 +708,6 @@ class DomainIntrospectorJobTest {
 
   private V1ObjectMeta createJobMetadata() {
     return new V1ObjectMeta().name(getJobName()).namespace(NS).creationTimestamp(SystemClock.now()).uid(JOB_UID);
-  }
-
-  @Test
-  void whenJobLogContainsSevereError_domainStatusHasExpectedMessage1() {
-    createIntrospectionLog(FATAL_MESSAGE_1);
-
-    testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
-
-    final Domain updatedDomain = testSupport.<Domain>getResources(DOMAIN).get(0);
-
-    assertThat(updatedDomain.getStatus().getMessage(), equalTo(String.join(System.lineSeparator(),
-            FATAL_ERROR_STATUS_MESSAGE, INTROSPECTION_ERROR,
-            FATAL_PROBLEM_1)));
-    logRecords.clear();
-  }
-
-  @Test
-  void whenJobLogContainsSevereError_domainStatusHasExpectedMessage2() {
-    createIntrospectionLog();
-
-    getUpdatedDomain().setStatus(createDomainStatusWithIntrospectJobFailureCount(2));
-
-    testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
-
-    assertThat(getUpdatedDomain().getStatus().getMessage(), equalTo(String.join(System.lineSeparator(),
-            EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG, INTROSPECTION_ERROR,
-            SEVERE_PROBLEM_1)));
   }
 
   private DomainStatus createDomainStatusWithIntrospectJobFailureCount(int failureCount) {

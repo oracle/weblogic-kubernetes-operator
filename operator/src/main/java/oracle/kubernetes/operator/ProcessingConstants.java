@@ -62,7 +62,7 @@ public interface ProcessingConstants {
 
   String INTROSPECTION_ERROR = "Introspection Error: ";
 
-  String FATAL_ERROR_STATUS_MESSAGE = "Introspection encountered a fatal error and will not retry automatically."
+  String FATAL_ERROR_DOMAIN_STATUS_MESSAGE = "Introspection encountered a fatal error and will not retry automatically."
           + " Please resolve the error and then update 'domain.spec.introspectVersion' to force a retry.";
 
 

@@ -61,7 +61,7 @@ import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.MIINonDynamicChangesMethod.CommitUpdateOnly;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG;
-import static oracle.kubernetes.operator.ProcessingConstants.FATAL_ERROR_STATUS_MESSAGE;
+import static oracle.kubernetes.operator.ProcessingConstants.FATAL_ERROR_DOMAIN_STATUS_MESSAGE;
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR_MSG;
 import static oracle.kubernetes.operator.ProcessingConstants.INTROSPECTION_ERROR;
@@ -779,15 +779,18 @@ public class DomainStatusUpdater {
     private void setStatusMessage(DomainStatus domainStatus) {
 
       if (hasExceededMaxRetryCount(domainStatus)) {
-        domainStatus.setMessage(String.join(System.lineSeparator(), EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG,
-                INTROSPECTION_ERROR, getNonNullMessage(domainStatus)));
+        domainStatus.setMessage(onSeparateLines(domainStatus, EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG));
       } else if (isFatalError(domainStatus)) {
-        domainStatus.setMessage(String.join(System.lineSeparator(), FATAL_ERROR_STATUS_MESSAGE,
-                INTROSPECTION_ERROR, getNonNullMessage(domainStatus)));
+        domainStatus.setMessage(onSeparateLines(domainStatus, FATAL_ERROR_DOMAIN_STATUS_MESSAGE));
       } else {
-        domainStatus.setMessage(String.join(System.lineSeparator(), getNonFatalErrorMessage(domainStatus),
-                INTROSPECTION_ERROR, getNonNullMessage(domainStatus)));
+        domainStatus.setMessage(onSeparateLines(domainStatus, getNonFatalErrorStatusMessage(domainStatus)));
       }
+    }
+
+    @NotNull
+    private String onSeparateLines(DomainStatus domainStatus, String exceededIntrospectorMaxRetryCountErrorMsg) {
+      return String.join(System.lineSeparator(), exceededIntrospectorMaxRetryCountErrorMsg,
+              INTROSPECTION_ERROR, getNonNullMessage(domainStatus));
     }
 
     private String getNonNullMessage(DomainStatus domainStatus) {
@@ -804,7 +807,7 @@ public class DomainStatusUpdater {
     }
 
     @NotNull
-    private String getNonFatalErrorMessage(DomainStatus domainStatus) {
+    private String getNonFatalErrorStatusMessage(DomainStatus domainStatus) {
       return "Introspection failed on try " + domainStatus.getIntrospectJobFailureCount()
               + " of " + DomainPresence.getDomainPresenceFailureRetryMaxCount() + ".";
     }
