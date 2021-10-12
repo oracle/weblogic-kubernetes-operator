@@ -16,7 +16,7 @@ import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 
 @SuppressWarnings("unused")
-public class DomainConditionMatcher extends TypeSafeDiagnosingMatcher<Domain> {
+class DomainConditionMatcher extends TypeSafeDiagnosingMatcher<Domain> {
   private final DomainConditionType expectedType;
   private String expectedStatus;
   private String expectedReason;
@@ -26,7 +26,7 @@ public class DomainConditionMatcher extends TypeSafeDiagnosingMatcher<Domain> {
     this.expectedType = expectedType;
   }
 
-  public static DomainConditionMatcher hasCondition(DomainConditionType type) {
+  static DomainConditionMatcher hasCondition(DomainConditionType type) {
     return new DomainConditionMatcher(type);
   }
 
