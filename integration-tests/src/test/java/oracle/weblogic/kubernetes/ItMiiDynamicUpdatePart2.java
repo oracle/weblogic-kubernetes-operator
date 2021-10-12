@@ -66,7 +66,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class ItMiiDynamicUpdatePart2 {
 
   static MiiDynamicUpdateHelper dynamicUpdateHelper = new MiiDynamicUpdateHelper();
-  private static final String domainUid = "mii-dynamic-update1";
+  private static final String domainUid = "mii-dynamic-update2";
   static String domainNamespace = null;
   static String adminServerPodName = null;
   static String opNamespace = null;
