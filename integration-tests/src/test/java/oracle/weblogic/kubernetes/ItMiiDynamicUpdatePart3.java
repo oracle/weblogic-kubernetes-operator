@@ -27,8 +27,11 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 import static oracle.weblogic.kubernetes.TestConstants.MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodStatusPhase;
@@ -39,6 +42,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetry
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * This test class verifies the following scenarios
@@ -281,6 +285,27 @@ class ItMiiDynamicUpdatePart3 {
     // Verifying introspector pod is deleted
     logger.info("Verifying introspector pod is deleted");
     checkPodDoesNotExist(getIntrospectJobName(domainUid), domainUid, domainNamespace);
+  }
+
+  /**
+   * Verify the operator log contains the introspector job logs.
+   * When the introspector fails, it should log the correct error msg. For example,
+   * the Domain resource specified 'spec.configuration.model.onlineUpdate.enabled=true',
+   * but there are unsupported model changes for online update.
+   */
+  @Test
+  @Order(5)
+  @DisplayName("verify the operator logs introspector job messages")
+  void testOperatorLogIntrospectorMsg() {
+    String operatorPodName =
+        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+    logger.info("operator pod name: {0}", operatorPodName);
+    String operatorPodLog = assertDoesNotThrow(() -> getPodLog(operatorPodName, opNamespace));
+    logger.info("operator pod log: {0}", operatorPodLog);
+    assertTrue(operatorPodLog.contains("Introspector Job Log"));
+    assertTrue(operatorPodLog.contains("WebLogic version='" + WEBLOGIC_VERSION + "'"));
+    assertTrue(operatorPodLog.contains("Job mii-dynamic-update1-introspector has failed"));
+    assertTrue(operatorPodLog.contains(MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG));
   }
 
   private void verifyIntrospectorFailsWithExpectedErrorMsg(String expectedErrorMsg) {

@@ -28,15 +28,10 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
-import static oracle.weblogic.kubernetes.TestConstants.MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_UPDATED_RESTART_REQUIRED_LABEL;
-import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
-import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
-import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewRestartVersion;
@@ -439,27 +434,6 @@ class ItMiiDynamicUpdatePart2 {
         "Couldn't check pod label");
     logger.info("Verified pod label");
 
-  }
-
-  /**
-   * Verify the operator log contains the introspector job logs.
-   * When the introspector fails, it should log the correct error msg. For example,
-   * the Domain resource specified 'spec.configuration.model.onlineUpdate.enabled=true',
-   * but there are unsupported model changes for online update.
-   */
-  @Test
-  @Order(6)
-  @DisplayName("verify the operator logs introspector job messages")
-  void testOperatorLogIntrospectorMsg() {
-    String operatorPodName =
-        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
-    logger.info("operator pod name: {0}", operatorPodName);
-    String operatorPodLog = assertDoesNotThrow(() -> getPodLog(operatorPodName, opNamespace));
-    logger.info("operator pod log: {0}", operatorPodLog);
-    assertTrue(operatorPodLog.contains("Introspector Job Log"));
-    assertTrue(operatorPodLog.contains("WebLogic version='" + WEBLOGIC_VERSION + "'"));
-    assertTrue(operatorPodLog.contains("Job mii-dynamic-update-introspector has failed"));
-    assertTrue(operatorPodLog.contains(MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG));
   }
 
   void verifyPodLabelUpdated(Set<String> podNames, String label) throws ApiException {
