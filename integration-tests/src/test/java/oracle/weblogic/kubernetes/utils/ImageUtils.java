@@ -34,6 +34,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_IMAGE_DOMAINHOME_BASE_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
@@ -362,6 +363,7 @@ public class ImageUtils {
       env.put("JAVA_HOME", witJavaHome);
     }
 
+    String witTarget = ((OKD) ? "OpenShift" : "Default");
     // build an image using WebLogic Image Tool
     logger.info("Creating image {0} using model directory {1}", image, MODEL_DIR);
     boolean result = false;
@@ -380,6 +382,7 @@ public class ImageUtils {
               .wdtModelOnly(modelType)
               .wdtOperation("CREATE")
               .wdtVersion(WDT_VERSION)
+              .target(witTarget)
               .env(env)
               .redirect(true));
     } else {
@@ -394,6 +397,7 @@ public class ImageUtils {
           .modelArchiveFiles(archiveList)
           .wdtModelOnly(modelType)
           .wdtVersion(WDT_VERSION)
+          .target(witTarget)
           .env(env)
           .redirect(true);
 
@@ -407,6 +411,11 @@ public class ImageUtils {
 
         witParams.additionalBuildFiles(additionalBuildFilesBuff.toString().trim());
       }
+
+      if (OKD) {
+        witParams.target("OpenShift");
+      }
+
       result = createImage(witParams);
     }
 

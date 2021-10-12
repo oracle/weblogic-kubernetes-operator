@@ -100,8 +100,8 @@ public class WebLogicImageTool {
         + " update "
         + " --tag " + params.modelImageName() + ":" + params.modelImageTag()
         + " --fromImage " + params.baseImageName() + ":" + params.baseImageTag()
-        + " --wdtDomainType " + params.domainType()
-        + " --chown oracle:root";
+        + " --wdtDomainType " + params.domainType();
+    //    + " --chown oracle:root";
 
     if (params.wdtModelOnly()) {
       command += " --wdtModelOnly ";
@@ -135,6 +135,10 @@ public class WebLogicImageTool {
 
     if (params.additionalBuildFiles() != null) {
       command += " --additionalBuildFiles " + params.additionalBuildFiles();
+    }
+
+    if (params.target() != null) {
+      command += " --target " + params.target();
     }
 
     logger.info("Build image with command: {0} and domainType: {1}", command,  params.domainType());

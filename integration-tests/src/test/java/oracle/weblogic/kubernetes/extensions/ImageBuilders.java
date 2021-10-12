@@ -507,6 +507,8 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
         env.put("JAVA_HOME", witJavaHome);
       }
 
+      String witTarget = ((OKD) ? "OpenShift" : "Default");
+
       // build an image using WebLogic Image Tool
       boolean imageCreation = false;
       logger.info("Create image {0} using model directory {1}", image, MODEL_DIR);
@@ -522,6 +524,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
                 .domainHome(WDT_BASIC_IMAGE_DOMAINHOME)
                 .wdtOperation("CREATE")
                 .wdtVersion(WDT_VERSION)
+                .target(witTarget)
                 .env(env)
                 .redirect(true));
       } else if (domainType.equalsIgnoreCase("mii")) {
@@ -533,6 +536,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
                 .modelArchiveFiles(archiveList)
                 .wdtModelOnly(true)
                 .wdtVersion(WDT_VERSION)
+                .target(witTarget)
                 .env(env)
                 .redirect(true));
       }
