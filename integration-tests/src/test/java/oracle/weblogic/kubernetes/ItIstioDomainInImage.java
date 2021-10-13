@@ -38,6 +38,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.SSL_PROPERTIES;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
@@ -122,7 +123,7 @@ class ItIstioDomainInImage {
    * Deploy istio gateways and virtual service 
    * Verify server pods are in ready state and services are created.
    * Verify WebLogic console is accessible thru istio ingress http port
-   * Verify WebLogic console is accessible thru kubectl forwarded port
+   * Verify WebLogic console is accessible thru kubectl forwarded port(s)
    * Deploy a web application thru istio http ingress port using REST api  
    * Access web application thru istio http ingress port using curl
    */
@@ -167,7 +168,6 @@ class ItIstioDomainInImage {
     }
 
     String clusterService = domainUid + "-cluster-" + clusterName + "." + domainNamespace + ".svc.cluster.local";
-
     Map<String, String> templateMap  = new HashMap();
     templateMap.put("NAMESPACE", domainNamespace);
     templateMap.put("DUID", domainUid);
@@ -204,6 +204,7 @@ class ItIstioDomainInImage {
       assertTrue(checkConsole, "Failed to access WebLogic console");
       logger.info("WebLogic console is accessible");
       String localhost = "localhost";
+      // Forward the non-ssl port 7001 
       String forwardPort = 
            startPortForwardProcess(localhost, domainNamespace, 
            domainUid, 7001);
@@ -213,7 +214,19 @@ class ItIstioDomainInImage {
       checkConsole = 
           checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
       assertTrue(checkConsole, "Failed to access WebLogic console thru port-forwarded port");
-      logger.info("WebLogic console is accessible thru port forwarding");
+      logger.info("WebLogic console is accessible thru non-ssl port forwarding");
+      // Forward the ssl port 7002 
+      forwardPort = 
+           startPortForwardProcess(localhost, domainNamespace, 
+           domainUid, 7002);
+      assertNotNull(forwardPort, "(ssl) port-forward fails to assign local port");
+      logger.info("Forwarded local port is {0}", forwardPort);
+      consoleUrl = "https://" + localhost + ":" + forwardPort + "/console/login/LoginForm.jsp";
+      checkConsole = 
+          checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
+      assertTrue(checkConsole, "Failed to access WebLogic console thru port-forwarded port");
+      logger.info("WebLogic console is accessible thru ssl port forwarding");
+
       stopPortForwardProcess(domainNamespace);
     } else {
       logger.info("Skipping WebLogic console in WebLogic slim image");
@@ -304,7 +317,7 @@ class ItIstioDomainInImage {
                     .serverPod(new ServerPod()
                             .addEnvItem(new V1EnvVar()
                                     .name("JAVA_OPTIONS")
-                                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                                    .value(SSL_PROPERTIES))
                             .addEnvItem(new V1EnvVar()
                                     .name("USER_MEM_ARGS")
                                     .value("-Djava.security.egd=file:/dev/./urandom ")))
