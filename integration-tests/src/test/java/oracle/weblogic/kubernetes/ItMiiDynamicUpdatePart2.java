@@ -136,7 +136,7 @@ class ItMiiDynamicUpdatePart2 {
    * Verify domain will rolling restart.
    * Verify introspectVersion is updated.
    * Verify the datasource parameter is updated by checking the MBean using REST api.
-   * Verify domain status should have a condition type as "Available" and condition reason as "ServersReady".
+   * Verify domain status should have a condition type as "Complete".
    */
   @Test
   @DisplayName("Changing datasource parameters with CommitUpdateAndRoll using mii dynamic update")
@@ -177,8 +177,8 @@ class ItMiiDynamicUpdatePart2 {
     logger.info("JDBCSystemResource configuration found");
 
     // check that the domain status condition contains the correct type and expected reason
-    logger.info("verifying the domain status condition contains the correct type and expected reason");
-    verifyDomainStatusConditionNoErrorMsg("Available", "ServersReady");
+    logger.info("verifying the domain status condition contains the correct type and expected status");
+    verifyDomainStatusConditionNoErrorMsg("Completed", "True");
 
     // change the datasource jndi name back to original in order to create a clean environment for the next test
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
@@ -207,7 +207,7 @@ class ItMiiDynamicUpdatePart2 {
    * Verify introspectVersion is updated.
    * Verify the datasource URL is updated by checking the MBean using REST api.
    * Verify the application is undeployed.
-   * Verify domain status should have a condition type as "Available" and condition reason as "ServersReady".
+   * Verify domain status should have a condition type as "Completed".
    */
   @Test
   @DisplayName("Changing Weblogic datasource URL and deleting application with CommitUpdateAndRoll "
@@ -273,8 +273,8 @@ class ItMiiDynamicUpdatePart2 {
     logger.info("Application myear is undeployed");
 
     // check that the domain status condition contains the correct type and expected reason
-    logger.info("verifying the domain status condition contains the correct type and expected reason");
-    verifyDomainStatusConditionNoErrorMsg("Available", "ServersReady");
+    logger.info("verifying the domain status condition contains the correct type and expected status");
+    verifyDomainStatusConditionNoErrorMsg("Completed", "True");
   }
 
   /**
@@ -327,9 +327,9 @@ class ItMiiDynamicUpdatePart2 {
         "TestDataSource2"), "Found JDBCSystemResource datasource, should be deleted");
     logger.info("JDBCSystemResource Datasource is deleted");
 
-    // check that the domain status condition contains the correct type and expected reason
-    logger.info("verifying the domain status condition contains the correct type and expected reason");
-    verifyDomainStatusConditionNoErrorMsg("Available", "ServersReady");
+    // check that the domain status condition contains the correct type and expected status
+    logger.info("verifying the domain status condition contains the correct type and expected status");
+    verifyDomainStatusConditionNoErrorMsg("Completed", "True");
   }
 
   /**
@@ -491,19 +491,18 @@ class ItMiiDynamicUpdatePart2 {
    * Verify domain status conditions contains the given condition type and reason.
    *
    * @param conditionType   condition type
-   * @param conditionReason reason in condition
-   * @return true if the condition matches
+   * @param conditionStatus status in condition (true / false / unknown)
    */
-  private boolean verifyDomainStatusConditionNoErrorMsg(String conditionType, String conditionReason) {
+  private void verifyDomainStatusConditionNoErrorMsg(String conditionType, String conditionStatus) {
     testUntil(
         () -> {
           Domain miidomain = getDomainCustomResource(domainUid, domainNamespace);
           if ((miidomain != null) && (miidomain.getStatus() != null)) {
             for (DomainCondition domainCondition : miidomain.getStatus().getConditions()) {
               logger.info("Condition Type =" + domainCondition.getType()
-                  + " Condition Reason =" + domainCondition.getReason());
+                  + " Condition Status =" + domainCondition.getStatus());
               if ((domainCondition.getType() != null && domainCondition.getType().equalsIgnoreCase(conditionType))
-                  && (domainCondition.getReason() != null && domainCondition.getReason().contains(conditionReason))) {
+                  && (domainCondition.getStatus() != null && domainCondition.getStatus().contains(conditionStatus))) {
                 return true;
               }
             }
@@ -512,8 +511,7 @@ class ItMiiDynamicUpdatePart2 {
         },
         logger,
         "domain status condition message contains the expected msg \"{0}\"",
-        conditionReason);
-    return false;
+        conditionStatus);
   }
 
   /**

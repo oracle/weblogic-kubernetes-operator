@@ -5,7 +5,7 @@ description: "Review the prerequisites for the current release of the operator."
 weight: 2
 ---
 
-For the current production release 3.3.1:
+For the current production release 3.3.2:
 
 * Kubernetes 1.16.15+, 1.17.13+, 1.18.10+, 1.19.7+, and 1.20.6+  (check with `kubectl version`).
 * Flannel networking v0.9.1-amd64 or later (check with `docker images | grep flannel`), Calico networking v3.16.1 or later,

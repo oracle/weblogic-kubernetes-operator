@@ -12,6 +12,10 @@ import oracle.kubernetes.operator.calls.FailureStatusSource;
 import oracle.kubernetes.operator.calls.RequestParams;
 import org.junit.jupiter.api.Test;
 
+import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNPROCESSABLE_ENTITY;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -31,9 +35,9 @@ class UnprocessableEntityTest {
          + "\"message\":" + quoted(MESSAGE_1) + ","
          + "\"reason\":\"Invalid\",\"details\":{\"name\":" + quoted(NAME) + ",\"kind\":" + quoted(KIND) + ","
          + "\"causes\":[{" + CAUSE + "}]},"
-         + "\"code\":422}\n";
+         + "\"code\":" + HTTP_UNPROCESSABLE_ENTITY + "}\n";
   private static final RequestParams REQUEST_PARAMS
-      = new RequestParams("testcall", "junit", "testName", "body", (CallParams) null);
+      = new RequestParams("replacePod", "junit", "pod1", "body", (CallParams) null);
 
   private static String escape(String s) {
     return s.replaceAll("\"", "\\\\\"");
@@ -45,22 +49,24 @@ class UnprocessableEntityTest {
 
   @Test
   void extractReasonFromException() {
-    ApiException exception = new ApiException(422, Collections.emptyMap(), SAMPLE_MESSAGE_BODY);
+    ApiException exception = new ApiException(HTTP_UNPROCESSABLE_ENTITY, Collections.emptyMap(), SAMPLE_MESSAGE_BODY);
 
     FailureStatusSource builder = UnrecoverableErrorBuilderImpl.fromFailedCall(
-        CallResponse.createFailure(REQUEST_PARAMS, exception, 422));
+        CallResponse.createFailure(REQUEST_PARAMS, exception, HTTP_UNPROCESSABLE_ENTITY));
 
-    assertThat(builder.getReason(), equalTo("FieldValueNotFound"));
+    assertThat(builder.getReason(), equalTo(Kubernetes.toString()));
   }
 
   @Test
   void extractMessageFromException() {
-    ApiException exception = new ApiException(422, Collections.emptyMap(), SAMPLE_MESSAGE_BODY);
+    ApiException exception = new ApiException(HTTP_UNPROCESSABLE_ENTITY, Collections.emptyMap(), SAMPLE_MESSAGE_BODY);
 
     FailureStatusSource builder = UnrecoverableErrorBuilderImpl.fromFailedCall(
-        CallResponse.createFailure(REQUEST_PARAMS, exception, 422));
+        CallResponse.createFailure(REQUEST_PARAMS, exception, HTTP_UNPROCESSABLE_ENTITY));
 
-    assertThat(builder.getMessage(), equalTo("testcall in namespace junit, for testName: " + MESSAGE_1));
+    assertThat(builder.getMessage(), allOf(
+          containsString("replace"), containsString("pod"), containsString("pod1"),
+          containsString("junit"), containsString(MESSAGE_1)));
   }
 
   @Test
@@ -70,10 +76,12 @@ class UnprocessableEntityTest {
         .withMessage("This explanation")
         .build();
 
-    FailureStatusSource builder = UnrecoverableErrorBuilderImpl.fromFailedCall(
-        CallResponse.createFailure(REQUEST_PARAMS, exception, 422));
+    FailureStatusSource source = UnrecoverableErrorBuilderImpl.fromFailedCall(
+        CallResponse.createFailure(REQUEST_PARAMS, exception, HTTP_UNPROCESSABLE_ENTITY));
 
-    assertThat(builder.getReason(), equalTo("SomethingWrong"));
-    assertThat(builder.getMessage(), equalTo("testcall in namespace junit, for testName: This explanation"));
+    assertThat(source.getReason(), equalTo(Kubernetes.toString()));
+    assertThat(source.getMessage(), allOf(
+          containsString("replace"), containsString("pod"), containsString("pod1"),
+                    containsString("junit"), containsString("This explanation")));
   }
 }

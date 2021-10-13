@@ -407,6 +407,20 @@ public class WlsDomainConfig implements WlsDomain {
     return this;
   }
 
+  /**
+   * Build the domain config with a WLS server.
+   * @param server WLS server configuration
+   * @param isAdmin Specifies if the server is Admin or managed server.
+   * @return domain config
+   */
+  public WlsDomainConfig withServer(WlsServerConfig server, boolean isAdmin) {
+    if (isAdmin) {
+      setAdminServerName(server.getName());
+    }
+    getServers().add(server);
+    return this;
+  }
+
   public WlsDomainConfig addWlsServer(String name, String listenAddress, int port) {
     getServers().add(new WlsServerConfig(name, listenAddress, port));
     return this;

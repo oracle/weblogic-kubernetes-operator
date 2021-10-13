@@ -3,6 +3,11 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import com.meterware.simplestub.Stub;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
@@ -10,17 +15,35 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
+import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
+import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.CoreMatchers.sameInstance;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 class DomainPresenceInfoTest {
+  private static final String[] MANAGED_SERVER_NAMES = {"ms1", "ms2", "ms3"};
+  private static final List<ServerStartupInfo> STARTUP_INFOS = Arrays.stream(MANAGED_SERVER_NAMES)
+        .map(DomainPresenceInfoTest::toServerStartupInfo)
+        .collect(Collectors.toList());
   private final DomainPresenceInfo info = new DomainPresenceInfo("ns", "domain");
+
+  private static ServerStartupInfo toServerStartupInfo(String serverName) {
+    return new ServerStartupInfo(
+          new WlsServerConfig(serverName, "host", 7001),
+          null,
+          Stub.createStub(ServerSpec.class)
+          );
+  }
 
   @Test
   void whenNoneDefined_getClusterServiceReturnsNull() {
@@ -38,6 +61,30 @@ class DomainPresenceInfoTest {
   @Test
   void whenNoneDefined_getServerServiceReturnsNull() {
     assertThat(info.getServerService("admin"), nullValue());
+  }
+
+  @Test
+  void whenNoServersDefined_getServerStartupInfoReturnsEmptyCollection() {
+    assertThat(info.getServerStartupInfo(), empty());
+  }
+
+  @Test
+  void whenNoServersDefined_expectedRunningServersReturnsEmptyCollection() {
+    assertThat(info.getExpectedRunningServers(), empty());
+  }
+
+  @Test
+  void whenAdminServerNameDefined_expectedRunningServersIncludesAdminServerName() {
+    info.setAdminServerName("admin");
+
+    assertThat(info.getExpectedRunningServers(), hasItem("admin"));
+  }
+
+  @Test
+  void whenServerStartupInfoDefined_expectedRunningServersIncludesDefinedServers() {
+    info.setServerStartupInfo(STARTUP_INFOS);
+
+    assertThat(info.getExpectedRunningServers(), hasItems(MANAGED_SERVER_NAMES));
   }
 
   @Test
@@ -156,4 +203,6 @@ class DomainPresenceInfoTest {
     pod.spec(new V1PodSpec().nodeName("aNode"));
   }
 
+
+  // todo compute availability per cluster: how many servers need to be running, list of servers in cluster
 }

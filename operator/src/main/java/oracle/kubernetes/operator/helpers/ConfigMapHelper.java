@@ -51,7 +51,7 @@ import org.yaml.snakeyaml.Yaml;
 
 import static java.lang.System.lineSeparator;
 import static java.time.temporal.ChronoUnit.MILLIS;
-import static oracle.kubernetes.operator.DomainStatusUpdater.BAD_TOPOLOGY;
+import static oracle.kubernetes.operator.DomainFailureReason.DomainInvalid;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.DOMAINZIP_HASH;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.DOMAIN_INPUTS_HASH;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.DOMAIN_RESTART_VERSION;
@@ -668,7 +668,7 @@ public class ConfigMapHelper {
     @Override
     public NextAction apply(Packet packet) {
       List<String> errors = getErrors(packet);
-      Step step = DomainStatusUpdater.createFailureRelatedSteps(BAD_TOPOLOGY, perLine(errors), null);
+      Step step = DomainStatusUpdater.createFailureRelatedSteps(DomainInvalid, perLine(errors));
       return doNext(step, packet);
     }
 
