@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V1;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
@@ -57,13 +58,9 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * This test class verifies the following scenarios
- *
- * <p>testMiiAddWorkManager
- * Add a new work manager to a running WebLogic domain
- *
- * <p>testMiiUpdateWorkManager
- * Update dynamic work manager configurations in a running WebLogic domain.
+ * This test class verifies the adding and updating work manager, adding cluster,
+ * changing application target, changing dynamic cluster size and removing application target
+ * in a running WebLogic domain.
  */
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
@@ -268,7 +265,7 @@ class ItMiiDynamicUpdatePart1 {
         "Application deployed on " + adminServerName + " before the dynamic update");
 
     // check and wait for the application to be accessible in all server pods
-    dynamicUpdateHelper.verifyApplicationAccessOnCluster();
+    verifyApplicationAccessOnCluster();
 
     // Replace contents of an existing configMap
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
@@ -281,7 +278,7 @@ class ItMiiDynamicUpdatePart1 {
     verifyIntrospectorRuns(domainUid, domainNamespace);
 
     // check and wait for the application to be accessible in all server pods
-    dynamicUpdateHelper.verifyApplicationAccessOnCluster();
+    verifyApplicationAccessOnCluster();
 
     // check and wait for the application to be accessible in admin pod
     checkAppIsRunning(
@@ -498,7 +495,7 @@ class ItMiiDynamicUpdatePart1 {
     }
 
     // check and wait for the application to be accessible in all server pods
-    dynamicUpdateHelper.verifyApplicationAccessOnCluster();
+    verifyApplicationAccessOnCluster();
 
     // write sparse yaml to file
     Path pathToRemoveTargetYaml = Paths.get(WORK_DIR + "/removetarget.yaml");
@@ -524,7 +521,7 @@ class ItMiiDynamicUpdatePart1 {
     verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, domainNamespace);
 
     // make sure the application is not deployed on cluster
-    dynamicUpdateHelper.verifyApplicationRuntimeOnCluster("404");
+    verifyApplicationRuntimeOnCluster("404");
 
     // make sure the application is not deployed on admin
     testUntil(
@@ -565,6 +562,40 @@ class ItMiiDynamicUpdatePart1 {
     }
     logger.info("readMinThreadsConstraintRuntime failed to read from WebLogic server ");
     return false;
+  }
+
+
+  /**
+   * Check application runtime using REST Api.
+   *
+   * @param expectedStatusCode expected status code
+   */
+  private void verifyApplicationRuntimeOnCluster(String expectedStatusCode) {
+    // make sure the application is deployed on cluster
+    for (int i = 1; i <= replicaCount; i++) {
+      final int j = i;
+      testUntil(
+          () -> checkApplicationRuntime(adminSvcExtHost, domainNamespace, adminServerPodName,
+              MANAGED_SERVER_NAME_BASE + j, expectedStatusCode),
+          logger,
+          "application target to be updated");
+    }
+  }
+
+  /**
+   * Verify the application access on all the servers pods in the cluster.
+   */
+  private void verifyApplicationAccessOnCluster() {
+    // check and wait for the application to be accessible in all server pods
+    for (int i = 1; i <= replicaCount; i++) {
+      checkAppIsRunning(
+          withQuickRetryPolicy,
+          domainNamespace,
+          managedServerPrefix + i,
+          "8001",
+          "sample-war/index.jsp",
+          MII_APP_RESPONSE_V1 + i);
+    }
   }
 
   /*

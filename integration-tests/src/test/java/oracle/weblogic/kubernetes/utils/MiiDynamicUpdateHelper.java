@@ -6,30 +6,22 @@ package oracle.weblogic.kubernetes.utils;
 import java.util.Collections;
 import java.util.List;
 
-import oracle.weblogic.domain.Domain;
-import oracle.weblogic.domain.DomainCondition;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
-import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V1;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
-import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
-import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppIsRunning;
-import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.checkApplicationRuntime;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDatabaseSecret;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResourceWithLogHome;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainSecret;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createJobToChangePermissionsOnPvHostPath;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withQuickRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
@@ -54,7 +46,6 @@ public class MiiDynamicUpdateHelper {
   public String adminServerPodName = null;
   public String managedServerPrefix = null;
   public String adminServerName = "admin-server";
-  static String workManagerName = "newWM";
   public LoggingFacade logger = null;
   public String adminSvcExtHost = null;
 
@@ -164,98 +155,4 @@ public class MiiDynamicUpdateHelper {
     }
   }
 
-  /**
-   * Check application runtime using REST Api.
-   *
-   * @param expectedStatusCode expected status code
-   */
-  public void verifyApplicationRuntimeOnCluster(String expectedStatusCode) {
-    // make sure the application is deployed on cluster
-    for (int i = 1; i <= replicaCount; i++) {
-      final int j = i;
-      testUntil(
-          () -> checkApplicationRuntime(adminSvcExtHost, domainNamespace, adminServerPodName,
-            MANAGED_SERVER_NAME_BASE + j, expectedStatusCode),
-          logger,
-          "application target to be updated");
-    }
-  }
-
-  /**
-   * Verify the application access on all the servers pods in the cluster.
-   */
-  public void verifyApplicationAccessOnCluster() {
-    // check and wait for the application to be accessible in all server pods
-    for (int i = 1; i <= replicaCount; i++) {
-      checkAppIsRunning(
-          withQuickRetryPolicy,
-          domainNamespace,
-          managedServerPrefix + i,
-          "8001",
-          "sample-war/index.jsp",
-          MII_APP_RESPONSE_V1 + i);
-    }
-  }
-
-  /**
-   * Verify domain status conditions contains the given condition type and message.
-   *
-   * @param conditionType condition type
-   * @param conditionMsg  messsage in condition
-   * @return true if the condition matches
-   */
-  public boolean verifyDomainStatusCondition(String conditionType, String conditionMsg) {
-    testUntil(
-        () -> {
-          Domain miidomain = getDomainCustomResource(domainUid, domainNamespace);
-          if ((miidomain != null) && (miidomain.getStatus() != null)) {
-            for (DomainCondition domainCondition : miidomain.getStatus().getConditions()) {
-              logger.info("Condition Type =" + domainCondition.getType()
-                  + " Condition Msg =" + domainCondition.getMessage());
-              if (domainCondition.getType() != null && domainCondition.getMessage() != null) {
-                logger.info("condition " + domainCondition.getType().equalsIgnoreCase(conditionType)
-                    + " msg " + domainCondition.getMessage().contains(conditionMsg));
-              }
-              if ((domainCondition.getType() != null && domainCondition.getType().equalsIgnoreCase(conditionType))
-                  && (domainCondition.getMessage() != null && domainCondition.getMessage().contains(conditionMsg))) {
-                return true;
-              }
-            }
-          }
-          return false;
-        },
-        logger,
-        "domain status condition message contains the expected msg \"{0}\"",
-        conditionMsg);
-    return false;
-  }
-
-  /**
-   * Verify domain status conditions contains the given condition type and reason.
-   *
-   * @param conditionType   condition type
-   * @param conditionReason reason in condition
-   * @return true if the condition matches
-   */
-  public boolean verifyDomainStatusConditionNoErrorMsg(String conditionType, String conditionReason) {
-    testUntil(
-        () -> {
-          Domain miidomain = getDomainCustomResource(domainUid, domainNamespace);
-          if ((miidomain != null) && (miidomain.getStatus() != null)) {
-            for (DomainCondition domainCondition : miidomain.getStatus().getConditions()) {
-              logger.info("Condition Type =" + domainCondition.getType()
-                  + " Condition Reason =" + domainCondition.getReason());
-              if ((domainCondition.getType() != null && domainCondition.getType().equalsIgnoreCase(conditionType))
-                  && (domainCondition.getReason() != null && domainCondition.getReason().contains(conditionReason))) {
-                return true;
-              }
-            }
-          }
-          return false;
-        },
-        logger,
-        "domain status condition message contains the expected msg \"{0}\"",
-        conditionReason);
-    return false;
-  }
 }

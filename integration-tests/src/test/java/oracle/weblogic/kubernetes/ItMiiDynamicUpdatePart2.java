@@ -14,6 +14,8 @@ import java.util.Set;
 import java.util.logging.Level;
 
 import io.kubernetes.client.openapi.ApiException;
+import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainCondition;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -21,16 +23,14 @@ import oracle.weblogic.kubernetes.utils.MiiDynamicUpdateHelper;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_UPDATED_RESTART_REQUIRED_LABEL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
@@ -45,6 +45,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExist
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfig;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfiguration;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceRuntime;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
@@ -59,7 +60,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * This test class verifies the dynamic update use cases using data source.
  */
 
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test dynamic updates to a model in image domain, part2")
 @IntegrationTest
 @Tag("okdenv")
@@ -123,7 +123,6 @@ class ItMiiDynamicUpdatePart2 {
    * Verify the datasource is added by checking the MBean using REST api.
    */
   @Test
-  @Order(1)
   @DisplayName("Add datasource in MII domain using mii dynamic update")
   void testMiiAddDataSource() {
     // This test uses the WebLogic domain created in BeforeAll method
@@ -140,7 +139,6 @@ class ItMiiDynamicUpdatePart2 {
    * Verify domain status should have a condition type as "Available" and condition reason as "ServersReady".
    */
   @Test
-  @Order(2)
   @DisplayName("Changing datasource parameters with CommitUpdateAndRoll using mii dynamic update")
   void testMiiChangeDataSourceParameterWithCommitUpdateAndRoll() {
 
@@ -180,7 +178,7 @@ class ItMiiDynamicUpdatePart2 {
 
     // check that the domain status condition contains the correct type and expected reason
     logger.info("verifying the domain status condition contains the correct type and expected reason");
-    dynamicUpdateHelper.verifyDomainStatusConditionNoErrorMsg("Available", "ServersReady");
+    verifyDomainStatusConditionNoErrorMsg("Available", "ServersReady");
 
     // change the datasource jndi name back to original in order to create a clean environment for the next test
     replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
@@ -212,7 +210,6 @@ class ItMiiDynamicUpdatePart2 {
    * Verify domain status should have a condition type as "Available" and condition reason as "ServersReady".
    */
   @Test
-  @Order(3)
   @DisplayName("Changing Weblogic datasource URL and deleting application with CommitUpdateAndRoll "
       + "using mii dynamic update")
   void testMiiDeleteAppChangeDBUrlWithCommitUpdateAndRoll() {
@@ -277,7 +274,7 @@ class ItMiiDynamicUpdatePart2 {
 
     // check that the domain status condition contains the correct type and expected reason
     logger.info("verifying the domain status condition contains the correct type and expected reason");
-    dynamicUpdateHelper.verifyDomainStatusConditionNoErrorMsg("Available", "ServersReady");
+    verifyDomainStatusConditionNoErrorMsg("Available", "ServersReady");
   }
 
   /**
@@ -291,7 +288,6 @@ class ItMiiDynamicUpdatePart2 {
    * Verify the domain status condition contains the correct type and expected reason.
    */
   @Test
-  @Order(4)
   @DisplayName("Deleting Datasource")
   void testMiiDeleteDatasource() {
 
@@ -333,7 +329,7 @@ class ItMiiDynamicUpdatePart2 {
 
     // check that the domain status condition contains the correct type and expected reason
     logger.info("verifying the domain status condition contains the correct type and expected reason");
-    dynamicUpdateHelper.verifyDomainStatusConditionNoErrorMsg("Available", "ServersReady");
+    verifyDomainStatusConditionNoErrorMsg("Available", "ServersReady");
   }
 
   /**
@@ -347,9 +343,8 @@ class ItMiiDynamicUpdatePart2 {
    * Restart the domain and verify both the changes are effective using REST Api.
    */
   @Test
-  @Order(5)
   @DisplayName("Test non-dynamic changes with onNonDynamicChanges default value CommitUpdateOnly")
-  void testOnNonDynamicChangesCommitUpdateOnly() {
+  void testOnNonDynamicChangesCommitUpdateOnlyDSAndReads() {
 
     String expectedMsgForCommitUpdateOnly =
         "Online WebLogic configuration updates complete but there are pending non-dynamic changes "
@@ -405,7 +400,7 @@ class ItMiiDynamicUpdatePart2 {
     // check that the domain status condition type is "ConfigChangesPendingRestart"
     // and message contains the expected msg
     logger.info("Verifying the domain status condition message contains the expected msg");
-    dynamicUpdateHelper.verifyDomainStatusCondition(
+    verifyDomainStatusCondition(
         "ConfigChangesPendingRestart", expectedMsgForCommitUpdateOnly);
 
     // restart domain and verify the changes are effective
@@ -489,6 +484,69 @@ class ItMiiDynamicUpdatePart2 {
         "TestDataSource2", "200"), "JDBCSystemResource not found");
     logger.info("JDBCSystemResource configuration found");
     return pods;
-
   }
+
+
+  /**
+   * Verify domain status conditions contains the given condition type and reason.
+   *
+   * @param conditionType   condition type
+   * @param conditionReason reason in condition
+   * @return true if the condition matches
+   */
+  private boolean verifyDomainStatusConditionNoErrorMsg(String conditionType, String conditionReason) {
+    testUntil(
+        () -> {
+          Domain miidomain = getDomainCustomResource(domainUid, domainNamespace);
+          if ((miidomain != null) && (miidomain.getStatus() != null)) {
+            for (DomainCondition domainCondition : miidomain.getStatus().getConditions()) {
+              logger.info("Condition Type =" + domainCondition.getType()
+                  + " Condition Reason =" + domainCondition.getReason());
+              if ((domainCondition.getType() != null && domainCondition.getType().equalsIgnoreCase(conditionType))
+                  && (domainCondition.getReason() != null && domainCondition.getReason().contains(conditionReason))) {
+                return true;
+              }
+            }
+          }
+          return false;
+        },
+        logger,
+        "domain status condition message contains the expected msg \"{0}\"",
+        conditionReason);
+    return false;
+  }
+
+  /**
+   * Verify domain status conditions contains the given condition type and message.
+   *
+   * @param conditionType condition type
+   * @param conditionMsg  messsage in condition
+   * @return true if the condition matches
+   */
+  private boolean verifyDomainStatusCondition(String conditionType, String conditionMsg) {
+    testUntil(
+        () -> {
+          Domain miidomain = getDomainCustomResource(domainUid, domainNamespace);
+          if ((miidomain != null) && (miidomain.getStatus() != null)) {
+            for (DomainCondition domainCondition : miidomain.getStatus().getConditions()) {
+              logger.info("Condition Type =" + domainCondition.getType()
+                  + " Condition Msg =" + domainCondition.getMessage());
+              if (domainCondition.getType() != null && domainCondition.getMessage() != null) {
+                logger.info("condition " + domainCondition.getType().equalsIgnoreCase(conditionType)
+                    + " msg " + domainCondition.getMessage().contains(conditionMsg));
+              }
+              if ((domainCondition.getType() != null && domainCondition.getType().equalsIgnoreCase(conditionType))
+                  && (domainCondition.getMessage() != null && domainCondition.getMessage().contains(conditionMsg))) {
+                return true;
+              }
+            }
+          }
+          return false;
+        },
+        logger,
+        "domain status condition message contains the expected msg \"{0}\"",
+        conditionMsg);
+    return false;
+  }
+
 }

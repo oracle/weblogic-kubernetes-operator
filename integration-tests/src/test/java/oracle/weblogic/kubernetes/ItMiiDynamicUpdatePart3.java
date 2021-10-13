@@ -20,11 +20,8 @@ import oracle.weblogic.kubernetes.utils.MiiDynamicUpdateHelper;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
 import static oracle.weblogic.kubernetes.TestConstants.MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
@@ -45,16 +42,9 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * This test class verifies the following scenarios
- *
- * <p>testMiiAddWorkManager
- * Add a new work manager to a running WebLogic domain
- *
- * <p>testMiiUpdateWorkManager
- * Update dynamic work manager configurations in a running WebLogic domain.
+ * This test class verifies the runtime updates that are not supported.
  */
 
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Test dynamic updates to a model in image domain, part2")
 @IntegrationTest
 @Tag("okdenv")
@@ -118,7 +108,6 @@ class ItMiiDynamicUpdatePart3 {
    * Check the domain status condition type is "Failed" and message contains the expected error msg
    */
   @Test
-  @Order(1)
   @DisplayName("Negative test changing domain name using mii dynamic update")
   void testMiiChangeDomainName() {
     // write sparse yaml to file
@@ -160,7 +149,6 @@ class ItMiiDynamicUpdatePart3 {
    * Check the domain status condition type is "Failed" and message contains the expected error msg
    */
   @Test
-  @Order(2)
   @DisplayName("Negative test changing listen port of a server using mii dynamic update")
   void testMiiChangeListenPort() {
 
@@ -199,48 +187,6 @@ class ItMiiDynamicUpdatePart3 {
   }
 
   /**
-   * Negative test: Changing the listen address of a server using mii dynamic update.
-   * Check the introspector will fail with error message showed in the introspector pod log
-   * Check the status phase of the introspector pod is failed
-   * Check the domain status message contains the expected error msg
-   * Check the domain status condition type is "Failed" and message contains the expected error msg
-   */
-  @Test
-  @Order(3)
-  @DisplayName("Negative test changing listen address of a server using mii dynamic update")
-  void testMiiChangeListenAddress() {
-    // write sparse yaml to file
-    Path pathToChangeListenAddressYaml = Paths.get(WORK_DIR + "/changelistenAddress.yaml");
-    String yamlToChangeListenAddress = "topology:\n"
-        + "  ServerTemplate:\n"
-        + "    'cluster-1-template':\n"
-        + "       ListenAddress: myAddress";
-    assertDoesNotThrow(() -> Files.write(pathToChangeListenAddressYaml, yamlToChangeListenAddress.getBytes()));
-
-    // Replace contents of an existing configMap
-    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
-        Arrays.asList(pathToChangeListenAddressYaml.toString()), withStandardRetryPolicy);
-
-    // Patch a running domain with introspectVersion.
-    patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
-
-    // Verifying introspector pod is created and failed
-    logger.info("verifying the introspector failed and the pod log contains the expected error msg");
-    verifyIntrospectorFailsWithExpectedErrorMsg(MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG);
-
-    // clean failed introspector
-    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
-        Arrays.asList(), withStandardRetryPolicy);
-
-    // Patch a running domain with introspectVersion.
-    patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
-
-    // Verifying introspector pod is deleted
-    logger.info("Verifying introspector pod is deleted");
-    checkPodDoesNotExist(getIntrospectJobName(domainUid), domainUid, domainNamespace);
-  }
-
-  /**
    * Negative test: Changing SSL setting of a server using mii dynamic update.
    * Check the introspector will fail with error message showed in the introspector pod log.
    * Check the status phase of the introspector pod is failed
@@ -248,7 +194,6 @@ class ItMiiDynamicUpdatePart3 {
    * Check the domain status condition type is "Failed" and message contains the expected error msg
    */
   @Test
-  @Order(4)
   @DisplayName("Negative test changing SSL setting of a server using mii dynamic update")
   void testMiiChangeSSL() {
 
@@ -294,7 +239,6 @@ class ItMiiDynamicUpdatePart3 {
    * but there are unsupported model changes for online update.
    */
   @Test
-  @Order(5)
   @DisplayName("verify the operator logs introspector job messages")
   void testOperatorLogIntrospectorMsg() {
     String operatorPodName =
@@ -362,7 +306,6 @@ class ItMiiDynamicUpdatePart3 {
   }
 
   boolean podStatusPhaseContainsString(String namespace, String jobName, String expectedPhase) {
-    //String introspectPodName = getPodNameFromJobName(namespace, jobName);
     String introspectPodName;
     V1Pod introspectorPod;
 
