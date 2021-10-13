@@ -1,5 +1,5 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
-// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 REMOTE_WORKSTATION_HOST=@host@
 REMOTE_WORKSTATION_USER=@user@
 REMOTE_WORKSTATION_SUDOPASS=@pass@
