@@ -3,34 +3,56 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.List;
 
+
+import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Slammer;
 import oracle.weblogic.kubernetes.actions.impl.primitive.SlammerParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.PodUtils;
 import oracle.weblogic.kubernetes.utils.SlammerUtils;
 import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.opentest4j.AssertionFailedError;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
+import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
+import static oracle.weblogic.kubernetes.utils.SlammerUtils.changeTraffic;
+import static oracle.weblogic.kubernetes.utils.SlammerUtils.generateSlammerInPodPropertiesFile;
+import static oracle.weblogic.kubernetes.utils.SlammerUtils.setupSlammerInPod;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 
 // Test resilience using slammer
@@ -115,6 +137,14 @@ class ItResilience {
             managedServerPrefix + i, domainNamespace);
         checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
       }
+      String adminServerContainerID = null;
+      try {
+        adminServerContainerID = PodUtils.getDockerContainerID(domainUid, domainNamespace, "weblogic-server", adminServerPodName);
+      logger.info( "AdminServer Container ID " + adminServerContainerID);
+      } catch (ApiException ex) {
+        getLogger().info("Got exception, command failed with errors " + ex.getMessage());
+      }
+
 
       Thread t2 = new ScalingUpThread(5);
       SlammerParams params = new SlammerParams().delay("9");
@@ -131,8 +161,73 @@ class ItResilience {
         checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
       }
     } finally {
-      SlammerUtils.deleteNetworkLatencyDelay();
+      SlammerUtils.deleteNetworkLatencyDelay(null);
     }
+  }
+
+  /**
+   * verify the cluster is scaled up.
+   */
+  @Test
+  @DisplayName("execute slammer inside the admin pod and block and release port 7001")
+  void testBlockPort() {
+    String slammerPodPropertyFile = null;
+    try {
+
+      String adminServerContainerID = null;
+      try {
+        adminServerContainerID = PodUtils.getDockerContainerID(domainUid, domainNamespace, "weblogic-server", adminServerPodName);
+        logger.info( "AdminServer Container ID " + adminServerContainerID);
+      } catch (ApiException ex) {
+        getLogger().info("Got exception, command failed with errors " + ex.getMessage());
+      }
+      assertNotNull(adminServerContainerID,"Failed to retrieve admin server pod container id");
+
+      try {
+        slammerPodPropertyFile = generateSlammerInPodPropertiesFile("localhost",
+            "marina.kogan@oracle.com", adminServerContainerID, "adminpod.props");
+      } catch (Exception ex) {
+        getLogger().info("Got exception during property file generation, command failed with errors " + ex.getMessage());
+      }
+      assertNotNull(slammerPodPropertyFile, "Failed to generate slammer property file for pod");
+      setupSlammerInPod(slammerPodPropertyFile);
+      changeTraffic("incoming", "7001", "block", null, slammerPodPropertyFile);
+      assertFalse(testAdminConsoleLogin(), "Access to console did not fail, port was not blocked");
+      changeTraffic("incoming", "8001", "block", null, slammerPodPropertyFile);
+      runScaleOperation(1);
+      //check managed server2 still running, since operator can't connect to 7001,8001
+      checkPodReadyAndServiceExists(managedServerPrefix + 2, domainUid, domainNamespace);
+
+    } finally {
+      changeTraffic("incoming", "7001", "delete", null, slammerPodPropertyFile);
+      changeTraffic("incoming", "8001", "delete", null, slammerPodPropertyFile);
+      //check managed server2 is not running, since operator can perfom scale down now
+      checkPodDoesNotExist(managedServerPrefix + 2, domainUid, domainNamespace);
+      runScaleOperation(2);
+    }
+  }
+
+  private boolean testAdminConsoleLogin() {
+
+    assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");
+
+    String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+    logger.info("Getting node port for default channel");
+    int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
+        domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
+        "Getting admin server node port failed");
+
+    logger.info("Validating WebLogic admin server access by login to console");
+    try {
+        adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+        return true;
+    } catch (AssertionFailedError ex) {
+      logger.info("Access to admin server node port failed", ex.getMessage());
+      return false;
+    } catch (IOException e) {
+    logger.info("Failed to check to access to admin server node port ", e.getMessage());
+    return false;
+  }
   }
 
   private void runScaleOperation(int replicaCount) {
@@ -170,10 +265,11 @@ class ItResilience {
       logger.info("Started Slammer thread");
       logger.info("Adding Network delay for " +  params.getDelay());
       Slammer.list("network");
-      assertTrue(SlammerUtils.addNetworkLatencyDelay(params.getDelay()), "addNetworkLatencyDelay failed");
+      assertTrue(SlammerUtils.addNetworkLatencyDelay(params.getDelay(), null), "addNetworkLatencyDelay failed");
       Slammer.list("network");
       logger.info("Finished Slammer thread");
     }
   }
+
 
 }

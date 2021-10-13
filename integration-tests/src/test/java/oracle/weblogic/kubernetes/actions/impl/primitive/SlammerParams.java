@@ -21,6 +21,8 @@ public class SlammerParams {
   private String remotesudopass;
   private String propertyFile;
   private String ociimage;
+  private boolean debug = false;
+
 
   public SlammerParams service(String service) {
     this.service = service;
@@ -102,8 +104,17 @@ public class SlammerParams {
     return this;
   }
 
+  public SlammerParams debug(boolean debug) {
+    this.debug = debug;
+    return this;
+  }
+
   public SlammerParams defaults() {
     return this;
+  }
+
+  public boolean getDebug() {
+    return debug;
   }
 
   public String getVm() {

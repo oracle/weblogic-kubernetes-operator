@@ -3,8 +3,22 @@
 
 package oracle.weblogic.kubernetes.utils;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+
+
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+
 import oracle.weblogic.kubernetes.actions.impl.primitive.Slammer;
 import oracle.weblogic.kubernetes.actions.impl.primitive.SlammerParams;
+import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import org.apache.commons.io.FileUtils;
 
 public class SlammerUtils {
 
@@ -17,13 +31,15 @@ public class SlammerUtils {
    *
    * @param cpuPercent - desired cpu percent
    * @param timeout    -time in seconds
+   * @param propFile - slammer properties file or null
    */
-  public static boolean stressByCpuPercentage(String cpuPercent, String timeout) {
+  public static boolean stressByCpuPercentage(String cpuPercent, String timeout, String propFile) {
     SlammerParams slammerParams = new SlammerParams()
         .service("stress")
         .operation("infuse")
         .cpuPercent(cpuPercent)
-        .timeout(timeout);
+        .timeout(timeout)
+        .propertyFile(propFile);
 
     return Slammer.run(slammerParams);
   }
@@ -35,13 +51,15 @@ public class SlammerUtils {
    *
    * @param cpuNumber number of cpu to stress
    * @param timeout   time in seconds
+   * @param propFile - slammer properties file or null
    */
-  public static boolean stressByNumberOfCpus(String cpuNumber, String timeout) {
+  public static boolean stressByNumberOfCpus(String cpuNumber, String timeout, String propFile) {
     SlammerParams slammerParams = new SlammerParams()
         .service("stress")
         .operation("cpu")
         .cpuPercent(cpuNumber)
-        .timeout(timeout);
+        .timeout(timeout)
+        .propertyFile(propFile);
 
     return Slammer.run(slammerParams);
   }
@@ -55,13 +73,14 @@ public class SlammerUtils {
    * this affects all applications running on the target host
    *
    * @param delayTime time to delay in milliseconds
+   * @param propFile - slammer properties file or null
    */
-  public static boolean addNetworkLatencyDelay(String delayTime) {
+  public static boolean addNetworkLatencyDelay(String delayTime, String propFile) {
     SlammerParams slammerParams = new SlammerParams()
         .service("network")
         .operation("add")
-        .delay(delayTime);
-
+        .delay(delayTime)
+        .propertyFile(propFile);
     return Slammer.run(slammerParams);
   }
 
@@ -71,24 +90,27 @@ public class SlammerUtils {
    * causing latency in response at the network layer,
    * this affects all applications running on the target host
    * @param delayTime
+   * @param propFile - slammer properties file or null
    **/
-  public static boolean changeNetworkLatencyDelay(String delayTime) {
+  public static boolean changeNetworkLatencyDelay(String delayTime, String propFile) {
     SlammerParams slammerParams = new SlammerParams()
         .service("network")
         .operation("change")
-        .delay(delayTime);
-
+        .delay(delayTime)
+        .propertyFile(propFile);
     return Slammer.run(slammerParams);
   }
 
   /**
    * Delete network delay to your target's network interface.
    * A network delay of delayTime im ms is deleted from the active interface
+   * @param propFile - slammer properties file or null
    */
-  public static boolean deleteNetworkLatencyDelay() {
+  public static boolean deleteNetworkLatencyDelay(String propFile) {
     SlammerParams slammerParams = new SlammerParams()
         .service("network")
-        .operation("delete");
+        .operation("delete")
+        .propertyFile(propFile);
     return Slammer.run(slammerParams);
   }
 
@@ -101,13 +123,15 @@ public class SlammerUtils {
    * @param portNumber       - port number to restrict the traffic
    * @param trafficDirection incoming or outgoing
    * @param timeout          , optional timeout time in seconds
+   * @param propertyFile    - slammer property file or null
    */
-  public static boolean changeTraffic(String trafficDirection, String portNumber, String operation, String timeout) {
+  public static boolean changeTraffic(String trafficDirection, String portNumber, String operation, String timeout, String propertyFile) {
     SlammerParams slammerParams = new SlammerParams()
         .service("iptables")
         .operation(operation)
         .port(portNumber)
-        .traffic(trafficDirection);
+        .traffic(trafficDirection)
+        .propertyFile(propertyFile);
     if (timeout != null) {
       slammerParams.timeout(timeout);
     }
@@ -123,13 +147,15 @@ public class SlammerUtils {
    *
    * @param portNumber - port number to restrict the traffic
    * @param chain      - custom iptable chain
+   * @param propFile - slammer properties file or null
    */
-  public static boolean allowTrafficToChain(String portNumber, String chain) {
+  public static boolean allowTrafficToChain(String portNumber, String chain, String propFile) {
     SlammerParams slammerParams = new SlammerParams()
         .service("iptables")
         .operation("accept")
         .port(portNumber)
-        .chain(chain);
+        .chain(chain)
+        .propertyFile(propFile);
     return Slammer.run(slammerParams);
   }
 
@@ -142,20 +168,23 @@ public class SlammerUtils {
    *
    * @param portNumber - port number to restrict the traffic
    * @param chain      - custom iptable chain
+   * @param propertyFile    - slammer property file or null
    */
-  public static boolean deleteTrafficToChain(String portNumber, String chain) {
+  public static boolean deleteTrafficToChain(String portNumber, String chain, String propertyFile) {
     SlammerParams slammerParams = new SlammerParams()
         .service("iptables")
         .operation("delete")
         .port(portNumber)
-        .chain(chain);
+        .chain(chain)
+        .propertyFile(propertyFile);
     return Slammer.run(slammerParams);
   }
 
   /**
    * Backup a target host's iptables rules.
+   * @param propFile - slammer properties file or null
    */
-  public static boolean backupHostIptablesRules() {
+  public static boolean backupHostIptablesRules(String propFile) {
     SlammerParams slammerParams = new SlammerParams()
         .service("iptables")
         .operation("backup");
@@ -164,11 +193,13 @@ public class SlammerUtils {
 
   /**
    * Restore a target host's iptables rules.
+   * @param propFile - slammer property file or null
    */
-  public static boolean restoreHostIptablesRules() {
+  public static boolean restoreHostIptablesRules(String propFile) {
     SlammerParams slammerParams = new SlammerParams()
         .service("iptables")
-        .operation("restore");
+        .operation("restore")
+        .propertyFile(propFile);
     return Slammer.run(slammerParams);
   }
 
@@ -182,14 +213,73 @@ public class SlammerUtils {
    * @param vm      - number of threads
    * @param vmSize  memory size in gigabytes
    * @param timeout - time in seconds
+   * @param propertyFile    - slammer property file or null
    */
-  public static boolean memoryStress(String vm, String vmSize, String timeout) {
+  public static boolean memoryStress(String vm, String vmSize, String timeout, String propertyFile) {
     SlammerParams slammerParams = new SlammerParams()
         .service("stress")
         .operation("operation")
         .vm(vm)
         .vmSize(vmSize)
-        .timeout(timeout);
+        .timeout(timeout)
+        .propertyFile(propertyFile);
     return Slammer.run(slammerParams);
+  }
+
+  /**
+   * Setup slammer inside the pod.
+   *
+   * @param propFile      - slammer property file for pod
+   */
+  public static boolean setupSlammerInPod(String propFile) {
+    SlammerParams slammerParams = new SlammerParams()
+        .service("docker")
+        .operation("setup")
+        .debug(true)
+        .propertyFile(propFile);
+    return Slammer.run(slammerParams);
+  }
+
+  /**
+   * Generate slammer property file to run slammer inside the pod.
+   *
+   * @param host  - localhost or ip address for remote host
+   * @param email  - email for user
+   * @param containerID  - docker container id for pod
+   * @param fileName  - file name
+   */
+  public static String generateSlammerInPodPropertiesFile(String host,
+                                                          String email,
+                                                          String containerID,
+                                                          String fileName) throws IOException
+  {
+    LoggingFacade logger = getLogger();
+    logger.info("create a staging location for slammer property file");
+    Path slammerDir = Paths.get(Slammer.getSlammerDir());
+
+    Path srcPropFile = Paths.get(RESOURCE_DIR, "slammer", "slammer.props");
+    Path targetPropFile = Paths.get(slammerDir.toString(), fileName);
+    logger.info("copy the slammer.props to staging location" + targetPropFile.toString());
+    Files.copy(srcPropFile, targetPropFile, StandardCopyOption.REPLACE_EXISTING);
+    String oldValue = "@host@";
+    replaceStringInFile(targetPropFile.toString(),
+        "@host@",
+        host);
+    replaceStringInFile(targetPropFile.toString(),
+        "@user@",
+        Slammer.remoteuser);
+    replaceStringInFile(targetPropFile.toString(),
+        "@pass@",
+        Slammer.remotepass);
+    replaceStringInFile(targetPropFile.toString(),
+        "@email@",
+        email);
+    replaceStringInFile(targetPropFile.toString(),
+        "@containerID@",
+        containerID);
+    replaceStringInFile(targetPropFile.toString(),
+        "@slammerSrcLocation@",
+        Slammer.slammerSrcLocation);
+    return targetPropFile.toString();
   }
 }

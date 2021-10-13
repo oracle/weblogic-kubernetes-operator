@@ -3,6 +3,9 @@
 
 package oracle.weblogic.kubernetes.actions.impl.primitive;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -22,15 +25,17 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class Slammer {
 
+  public static String slammerSrcLocation = Optional.ofNullable(System.getenv("SLAMMER_DOWNLOAD_URL"))
+      .orElse(null);
   private static String slammerPropertyFile = Optional.ofNullable(System.getenv("SLAMMER_PROPERTY_FILE"))
       .orElse(null);
 
-  private static String remotehost = Optional.ofNullable(System.getenv("SLAMMER_REMOTEHOST"))
+  public static String remotehost = Optional.ofNullable(System.getenv("SLAMMER_REMOTEHOST"))
       .orElse(K8S_NODEPORT_HOST);
 
-  private static String remotepass = Optional.ofNullable(System.getenv("SLAMMER_REMOTEHOST_PASS"))
+  public static String remotepass = Optional.ofNullable(System.getenv("SLAMMER_REMOTEHOST_PASS"))
       .orElse(null);
-  private static String remoteuser = Optional.ofNullable(System.getenv("SLAMMER_REMOTEHOST_USER"))
+  public static String remoteuser = Optional.ofNullable(System.getenv("SLAMMER_REMOTEHOST_USER"))
       .orElse(null);
 
   private static String slammerInstallDir = Optional.ofNullable(System.getenv("SLAMMER_INSTALL_DIR"))
@@ -39,6 +44,7 @@ public class Slammer {
   public static String getSlammerDir() {
     return slammerInstallDir + "/slammer";
   }
+
 
   /**
    * install slammer src using specific location.
@@ -57,9 +63,6 @@ public class Slammer {
     Path slammerTemp = Paths.get(installDir);
     assertDoesNotThrow(() -> deleteDirectory(slammerTemp.toFile()));
     assertDoesNotThrow(() -> Files.createDirectories(slammerTemp));
-
-    String slammerSrcLocation = Optional.ofNullable(System.getenv("SLAMMER_DOWNLOAD_URL"))
-        .orElse(null);
 
     CommandParams params = Command.defaultCommandParams()
         .command("cd " + installDir + " && wget  --no-proxy "
@@ -80,6 +83,9 @@ public class Slammer {
     String slammerDir = getSlammerDir();
     String operation = slammerParams.getOperation();
     String service = slammerParams.getService();
+    if (slammerParams.getPropertyFile() !=null) {
+      slammerPropertyFile = slammerParams.getPropertyFile();
+    }
     // assertions for required parameters
     assertThat(slammerDir)
         .as("make sure slammerDir is not empty or null")
@@ -177,6 +183,12 @@ public class Slammer {
     String ociimage = slammerParams.getOciImage();
     if (ociimage != null) {
       runCmd = runCmd  + "--ocitype kubectl " + " --ociimage " + ociimage;
+    }
+
+    // if we have debug
+    boolean debug = slammerParams.getDebug();
+    if (debug) {
+      runCmd = runCmd + " --debug ";
     }
 
     // run the command

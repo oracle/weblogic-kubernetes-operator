@@ -6,11 +6,14 @@ package oracle.weblogic.kubernetes.utils;
 import java.io.IOException;
 import java.time.OffsetDateTime;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Affinity;
+import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1LabelSelector;
 import io.kubernetes.client.openapi.models.V1LabelSelectorRequirement;
 import io.kubernetes.client.openapi.models.V1Pod;
@@ -310,6 +313,41 @@ public class PodUtils {
     } else {
       return "";
     }
+  }
+
+  /**
+   * Get the docker container pod id.
+   * @param domainUid domain uid of the domain
+   * @param domainNamespace domain namespace
+   * @param containerName
+   * @param podName
+   * @return the container id
+   * @throws ApiException if Kubernetes API calls fail
+   */
+  public static String getDockerContainerID(String domainUid, String domainNamespace, String containerName, String podName) throws ApiException {
+    checkPodExists(podName, domainUid, domainNamespace);
+
+    //String labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
+
+    //V1Pod myPod = getPod(domainNamespace, labelSelector, podName);
+
+    V1Pod myPod = getPod(domainNamespace, null, podName);
+
+    if (myPod != null && myPod.getStatus() != null) {
+
+      List<V1ContainerStatus> containerList = myPod.getStatus().getContainerStatuses();
+      for (V1ContainerStatus container : containerList) {
+        if (container.getName().equals(containerName)) {
+          String containerID = container.getContainerID();
+          if (containerID.contains("docker://")) {
+            return containerID.substring(9);
+          } else {
+            return containerID;
+          }
+        }
+      }
+    }
+    return "";
   }
 
 }

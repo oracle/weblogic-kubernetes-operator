@@ -438,7 +438,7 @@ public class TestAssertions {
    */
   public static boolean adminNodePortAccessible(int nodePort, String userName, String password)
       throws IOException {
-    return Domain.adminNodePortAccessible(nodePort, userName, password);
+      return Domain.adminNodePortAccessible(nodePort, userName, password);
   }
 
   /**
