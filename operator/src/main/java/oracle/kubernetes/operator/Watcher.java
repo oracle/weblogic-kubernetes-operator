@@ -25,7 +25,7 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.watcher.WatchListener;
 
-import static java.net.HttpURLConnection.HTTP_GONE;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_GONE;
 import static oracle.kubernetes.utils.OperatorUtils.isNullOrEmpty;
 
 /**

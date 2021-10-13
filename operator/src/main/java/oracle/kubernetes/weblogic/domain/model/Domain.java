@@ -421,6 +421,19 @@ public class Domain implements KubernetesObject {
    * DomainStatus represents information about the status of a domain. Status may trail the actual
    * state of a system.
    *
+   * @return Status
+   */
+  public DomainStatus getOrCreateStatus() {
+    if (status == null) {
+      setStatus(new DomainStatus());
+    }
+    return status;
+  }
+
+  /**
+   * DomainStatus represents information about the status of a domain. Status may trail the actual
+   * state of a system.
+   *
    * @param status Status
    */
   public void setStatus(DomainStatus status) {
@@ -435,7 +448,7 @@ public class Domain implements KubernetesObject {
    * @return this instance
    */
   public Domain withStatus(DomainStatus status) {
-    this.status = status;
+    setStatus(status);
     return this;
   }
 

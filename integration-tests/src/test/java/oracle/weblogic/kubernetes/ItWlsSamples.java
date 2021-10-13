@@ -81,7 +81,6 @@ class ItWlsSamples {
 
   private static String traefikNamespace = null;
   private static String nginxNamespace = null;
-  private static String voyagerNamespace = null;
   private static String domainNamespace = null;
   private static final String domainName = "domain1";
   private static final String diiImageNameBase = "domain-home-in-image";
@@ -107,7 +106,7 @@ class ItWlsSamples {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(5) List<String> namespaces) {
+  public static void initAll(@Namespaces(4) List<String> namespaces) {
     logger = getLogger();
 
     logger.info("Assign a unique namespace for operator");
@@ -124,10 +123,6 @@ class ItWlsSamples {
     logger.info("Assign a unique namespace for Nginx controller");
     assertNotNull(namespaces.get(3), "Namespace is null");
     nginxNamespace = namespaces.get(3);
-
-    logger.info("Assign a unique namespace for Voyager controller");
-    assertNotNull(namespaces.get(4), "Namespace is null");
-    voyagerNamespace = namespaces.get(4);
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
@@ -357,22 +352,9 @@ class ItWlsSamples {
   }
 
   /**
-   * Verify setupLoadBalancer scripts for managing Voyager LoadBalancer.
-   */
-  @Order(8)
-  @Test
-  @DisplayName("Manage Voyager Ingress Controller with setupLoadBalancer")
-  void testVoyagerIngressController() {
-    setupSample();
-    Path scriptBase = Paths.get(tempSamplePath.toString(), "charts/util");
-    setupLoadBalancer(scriptBase, "voyager", " -c -n " + voyagerNamespace);
-    setupLoadBalancer(scriptBase, "voyager", " -d -n " + voyagerNamespace);
-  }
-
-  /**
    * Verify setupLoadBalancer scripts for managing Nginx LoadBalancer.
    */
-  @Order(9)
+  @Order(8)
   @Test
   @DisplayName("Manage Nginx Ingress Controller with setupLoadBalancer")
   void testNginxIngressController() {
