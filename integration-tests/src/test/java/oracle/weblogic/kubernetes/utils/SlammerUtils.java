@@ -9,16 +9,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 
-
-import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
-import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
-import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-
 import oracle.weblogic.kubernetes.actions.impl.primitive.Slammer;
 import oracle.weblogic.kubernetes.actions.impl.primitive.SlammerParams;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import org.apache.commons.io.FileUtils;
+
+import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
 public class SlammerUtils {
 
@@ -89,7 +86,7 @@ public class SlammerUtils {
    * A network delay of delayTime im ms is added to the active interface
    * causing latency in response at the network layer,
    * this affects all applications running on the target host
-   * @param delayTime
+   * @param delayTime - delay time
    * @param propFile - slammer properties file or null
    **/
   public static boolean changeNetworkLatencyDelay(String delayTime, String propFile) {
@@ -125,7 +122,11 @@ public class SlammerUtils {
    * @param timeout          , optional timeout time in seconds
    * @param propertyFile    - slammer property file or null
    */
-  public static boolean changeTraffic(String trafficDirection, String portNumber, String operation, String timeout, String propertyFile) {
+  public static boolean changeTraffic(String trafficDirection,
+                                      String portNumber,
+                                      String operation,
+                                      String timeout,
+                                      String propertyFile) {
     SlammerParams slammerParams = new SlammerParams()
         .service("iptables")
         .operation(operation)
@@ -251,8 +252,7 @@ public class SlammerUtils {
   public static String generateSlammerInPodPropertiesFile(String host,
                                                           String email,
                                                           String containerID,
-                                                          String fileName) throws IOException
-  {
+                                                          String fileName) throws IOException {
     LoggingFacade logger = getLogger();
     logger.info("create a staging location for slammer property file");
     Path slammerDir = Paths.get(Slammer.getSlammerDir());

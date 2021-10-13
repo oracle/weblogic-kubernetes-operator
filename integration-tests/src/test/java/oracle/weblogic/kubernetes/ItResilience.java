@@ -3,13 +3,8 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.io.File;
-import java.io.FileWriter;
 import java.io.IOException;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.List;
-
 
 import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Slammer;
@@ -46,7 +41,6 @@ import static oracle.weblogic.kubernetes.utils.SlammerUtils.changeTraffic;
 import static oracle.weblogic.kubernetes.utils.SlammerUtils.generateSlammerInPodPropertiesFile;
 import static oracle.weblogic.kubernetes.utils.SlammerUtils.setupSlammerInPod;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -139,8 +133,9 @@ class ItResilience {
       }
       String adminServerContainerID = null;
       try {
-        adminServerContainerID = PodUtils.getDockerContainerID(domainUid, domainNamespace, "weblogic-server", adminServerPodName);
-      logger.info( "AdminServer Container ID " + adminServerContainerID);
+        adminServerContainerID = PodUtils.getDockerContainerID(domainUid,
+            domainNamespace, "weblogic-server", adminServerPodName);
+        logger.info("AdminServer Container ID " + adminServerContainerID);
       } catch (ApiException ex) {
         getLogger().info("Got exception, command failed with errors " + ex.getMessage());
       }
@@ -176,8 +171,9 @@ class ItResilience {
 
       String adminServerContainerID = null;
       try {
-        adminServerContainerID = PodUtils.getDockerContainerID(domainUid, domainNamespace, "weblogic-server", adminServerPodName);
-        logger.info( "AdminServer Container ID " + adminServerContainerID);
+        adminServerContainerID = PodUtils.getDockerContainerID(domainUid,
+            domainNamespace, "weblogic-server", adminServerPodName);
+        logger.info("AdminServer Container ID " + adminServerContainerID);
       } catch (ApiException ex) {
         getLogger().info("Got exception, command failed with errors " + ex.getMessage());
       }
@@ -187,7 +183,8 @@ class ItResilience {
         slammerPodPropertyFile = generateSlammerInPodPropertiesFile("localhost",
             "marina.kogan@oracle.com", adminServerContainerID, "adminpod.props");
       } catch (Exception ex) {
-        getLogger().info("Got exception during property file generation, command failed with errors " + ex.getMessage());
+        getLogger().info("Got exception during property file generation, "
+            + "command failed with errors " + ex.getMessage());
       }
       assertNotNull(slammerPodPropertyFile, "Failed to generate slammer property file for pod");
       setupSlammerInPod(slammerPodPropertyFile);
@@ -219,15 +216,15 @@ class ItResilience {
 
     logger.info("Validating WebLogic admin server access by login to console");
     try {
-        adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-        return true;
+      adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+      return true;
     } catch (AssertionFailedError ex) {
       logger.info("Access to admin server node port failed", ex.getMessage());
       return false;
     } catch (IOException e) {
-    logger.info("Failed to check to access to admin server node port ", e.getMessage());
-    return false;
-  }
+      logger.info("Failed to check to access to admin server node port ", e.getMessage());
+      return false;
+    }
   }
 
   private void runScaleOperation(int replicaCount) {

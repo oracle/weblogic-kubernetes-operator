@@ -3,9 +3,6 @@
 
 package oracle.weblogic.kubernetes.actions.impl.primitive;
 
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -83,7 +80,7 @@ public class Slammer {
     String slammerDir = getSlammerDir();
     String operation = slammerParams.getOperation();
     String service = slammerParams.getService();
-    if (slammerParams.getPropertyFile() !=null) {
+    if (slammerParams.getPropertyFile() != null) {
       slammerPropertyFile = slammerParams.getPropertyFile();
     }
     // assertions for required parameters

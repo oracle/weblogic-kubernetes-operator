@@ -12,7 +12,6 @@ import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Affinity;
-import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1LabelSelector;
 import io.kubernetes.client.openapi.models.V1LabelSelectorRequirement;
@@ -317,14 +316,17 @@ public class PodUtils {
 
   /**
    * Get the docker container pod id.
-   * @param domainUid domain uid of the domain
-   * @param domainNamespace domain namespace
-   * @param containerName
-   * @param podName
+   * @param domainUid - domain uid of the domain
+   * @param domainNamespace - domain namespace
+   * @param containerName - container name
+   * @param podName - name of pod
    * @return the container id
    * @throws ApiException if Kubernetes API calls fail
    */
-  public static String getDockerContainerID(String domainUid, String domainNamespace, String containerName, String podName) throws ApiException {
+  public static String getDockerContainerID(String domainUid,
+                                            String domainNamespace,
+                                            String containerName,
+                                            String podName) throws ApiException {
     checkPodExists(podName, domainUid, domainNamespace);
 
     //String labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
