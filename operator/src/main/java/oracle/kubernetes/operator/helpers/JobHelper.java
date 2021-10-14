@@ -330,6 +330,11 @@ public class JobHelper {
 
       addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_READINESS_PORT, Integer.toString(getIstioReadinessPort()));
       addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_POD_NAMESPACE, getNamespace());
+      //if (isIstioEnabled()) {
+      LOGGER.info("isIstioEnabled: " + isIstioEnabled());
+      LOGGER.info("getIstioVersion: " + getIstioVersion());
+      addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_VERSION, getIstioVersion());
+      //}
       if (isUseOnlineUpdate()) {
         addEnvVar(vars, IntrospectorJobEnvVars.MII_USE_ONLINE_UPDATE, "true");
         addEnvVar(vars, IntrospectorJobEnvVars.MII_WDT_ACTIVATE_TIMEOUT,

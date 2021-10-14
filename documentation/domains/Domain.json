@@ -568,9 +568,20 @@
     "Istio": {
       "type": "object",
       "properties": {
+        "replicationChannelPort": {
+          "description": "The operator will create a WebLogic network access point with this port that will then be exposed from the container running the WebLogic Server instance. The WebLogic Replication Service will use this network access point for all replication traffic. Defaults to 4358.",
+          "type": "number"
+        },
+        "semanticVersion": {
+          "$ref": "#/definitions/SemanticVersion"
+        },
         "readinessPort": {
           "description": "The operator will create a WebLogic network access point with this port that will then be exposed from the container running the WebLogic Server instance. The readiness probe will use this network access point to verify that the server instance is ready for application traffic. Defaults to 8888.",
           "type": "number"
+        },
+        "version": {
+          "description": "Starting with Istio 1.10, the networking behavior was changed in that the proxy no longer redirects the traffic to the localhost interface, but instead forwards (or passes it through) it to the network interface associated with the pod\u0027s IP. True, if Istio v1.10 or higher is installed. Defaults to false",
+          "type": "string"
         },
         "enabled": {
           "description": "True, if this domain is deployed under an Istio service mesh. Defaults to true when the `istio` field is specified.",
@@ -742,6 +753,25 @@
           "type": "number"
         }
       }
+    },
+    "SemanticVersion": {
+      "type": "object",
+      "properties": {
+        "major": {
+          "type": "number"
+        },
+        "minor": {
+          "type": "number"
+        },
+        "revision": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "major",
+        "minor",
+        "revision"
+      ]
     },
     "ServerHealth": {
       "type": "object",

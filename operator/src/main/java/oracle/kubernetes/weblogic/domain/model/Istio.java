@@ -4,6 +4,7 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import oracle.kubernetes.json.Description;
+import oracle.kubernetes.operator.helpers.SemanticVersion;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -19,6 +20,21 @@ public class Istio {
           + "from the container running the WebLogic Server instance. The readiness probe will use this network "
           + "access point to verify that the server instance is ready for application traffic. Defaults to 8888.")
   private Integer readinessPort = 8888;
+
+  public static Integer DEFAULT_REPLICATION_PORT = 4358;
+
+  @Description("The operator will create a WebLogic network access point with this port that will then be exposed "
+      + "from the container running the WebLogic Server instance. The WebLogic Replication Service will use this "
+      + "network access point for all replication traffic. Defaults to 4358.")
+  private Integer replicationChannelPort = DEFAULT_REPLICATION_PORT;
+
+  @Description("Starting with Istio 1.10, the networking behavior was changed in that the proxy no "
+      + "longer redirects the traffic to the localhost interface, but instead forwards (or passes it "
+      + "through) it to the network interface associated with the pod's IP. True, if Istio v1.10 or "
+      + "higher is installed. Defaults to false")
+  private String version;
+
+  private SemanticVersion semanticVersion;
 
   /**
    * True, if this domain is deployed under an Istio service mesh.
@@ -57,6 +73,55 @@ public class Istio {
   }
 
   /**
+   * Get the replication channel port.
+   *
+   * @return the replication channel port.
+   */
+  public Integer getReplicationChannelPort() {
+    return this.replicationChannelPort;
+  }
+
+  /**
+   * Sets the replication channel port.
+   *
+   * @param replicationChannelPort the port for replication channel.
+   */
+  public void setReplicationChannelPort(Integer replicationChannelPort) {
+    this.replicationChannelPort = replicationChannelPort;
+  }
+
+  /**
+   * Get the Istio version.
+   *
+   * @return the version of Istio.
+   */
+  public String getVersion() {
+    return this.version;
+  }
+
+  /**
+   * Sets the Istio version.
+   *
+   * @param version the version of Istio.
+   */
+  public void setVersion(String version) {
+    this.version = version;
+  }
+
+  /**
+   * Get the semantic version.
+   *
+   * @return the semantic version
+   */
+  public SemanticVersion getSemanticVersion() {
+    if (semanticVersion == null) {
+      semanticVersion = new SemanticVersion(version);
+    }
+
+    return semanticVersion;
+  }
+
+  /**
    * Sets the Istio enabled status.
    *
    * @param istioEnabled True, if this domain is deployed under an Istio service mesh.
@@ -72,14 +137,17 @@ public class Istio {
     ToStringBuilder builder =
         new ToStringBuilder(this)
             .append("enabled", enabled)
-            .append("readinessPort", readinessPort);
+            .append("readinessPort", readinessPort)
+            .append("replicationChannelPort", replicationChannelPort)
+            .append("version", version);
 
     return builder.toString();
   }
 
   @Override
   public int hashCode() {
-    HashCodeBuilder builder = new HashCodeBuilder().append(enabled).append(readinessPort);
+    HashCodeBuilder builder = new HashCodeBuilder().append(enabled).append(readinessPort)
+        .append(replicationChannelPort).append(version);
 
     return builder.toHashCode();
   }
@@ -97,7 +165,9 @@ public class Istio {
     EqualsBuilder builder =
         new EqualsBuilder()
             .append(enabled, rhs.enabled)
-            .append(readinessPort, rhs.readinessPort);
+            .append(readinessPort, rhs.readinessPort)
+            .append(replicationChannelPort, rhs.replicationChannelPort)
+            .append(version, rhs.version);
 
     return builder.isEquals();
   }

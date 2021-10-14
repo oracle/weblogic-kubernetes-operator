@@ -844,6 +844,10 @@ public class DomainSpec extends BaseConfiguration {
         .orElse(false);
   }
 
+  Istio getIstio() {
+    return Optional.ofNullable(configuration).map(Configuration::getIstio).orElse(null);
+  }
+
   /**
    * The WebLogic readiness port used under Istio environment.
    *
@@ -854,6 +858,18 @@ public class DomainSpec extends BaseConfiguration {
         .map(Configuration::getIstio)
         .map(Istio::getReadinessPort)
         .orElse(8888);
+  }
+
+  /**
+   * The Istio version.
+   *
+   * @return Istio version
+   */
+  String getIstioVersion() {
+    return Optional.ofNullable(configuration)
+        .map(Configuration::getIstio)
+        .map(Istio::getVersion)
+        .orElse("");
   }
 
   String getWdtDomainType() {

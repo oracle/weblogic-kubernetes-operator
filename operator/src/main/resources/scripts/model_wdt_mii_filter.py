@@ -48,6 +48,7 @@ import copy
 import inspect
 import os
 import sys
+from distutils.version import LooseVersion
 
 tmp_callerframerecord = inspect.stack()[0]    # 0 represents this line # 1 represents line at caller
 tmp_info = inspect.getframeinfo(tmp_callerframerecord[0])
@@ -56,7 +57,6 @@ sys.path.append(tmp_scriptdir)
 
 env = None
 ISTIO_NAP_NAMES = ['tcp-cbt', 'tcp-ldap', 'tcp-iiop', 'tcp-snmp', 'http-default', 'tcp-default', 'https-secure', 'tls-ldaps', 'tls-default', 'tls-cbts', 'tls-iiops', 'https-admin']
-WLS_LOCALHOST_IDENTIFIER = '-lh'
 
 
 class OfflineWlstEnv(object):
@@ -73,6 +73,7 @@ class OfflineWlstEnv(object):
     self.ACCESS_LOG_IN_LOG_HOME   = self.getEnvOrDef('ACCESS_LOG_IN_LOG_HOME', 'true')
     self.DATA_HOME                = self.getEnvOrDef('DATA_HOME', "")
     self.CREDENTIALS_SECRET_NAME  = self.getEnv('CREDENTIALS_SECRET_NAME')
+    self.ISTIO_VERSION            = self.getEnvOrDef('ISTIO_VERSION', None)
 
     # initialize globals
     self.CREDENTIALS_SECRET_PATH = self.getEnvOrDef('CREDENTIALS_SECRET_PATH', '/weblogic-operator/secrets')
@@ -144,6 +145,15 @@ class OfflineWlstEnv(object):
     # unconventional import within function definition for unit testing
     from weblogic.management.configuration import LegalHelper
     return LegalHelper.versionEarlierThan("14.1.2.0", version)
+
+  def isVersionEarlierThan(self, version1, version2):
+    if version1 is None:
+      return True
+
+    if version2 is None:
+      return False
+
+    return LooseVersion(version1) < LooseVersion(version2)
 
 class SecretManager(object):
 
@@ -417,63 +427,63 @@ def customizeServerIstioNetworkAccessPoint(server, listen_address):
 
   # readiness probe
   _writeIstioNAP(name='http-probe', server=server, listen_address=listen_address,
-                      listen_port=istio_readiness_port, protocol='http', http_enabled="true",
-                      bind_to_localhost="false")
-
-  # readiness probe NAP binding to localhost
-  _writeIstioNAP(name=createNameForLocalHostNetworkAccessPoint('http-probe', {}), server=server, listen_address=listen_address,
-                 listen_port=istio_readiness_port, protocol='http', http_enabled="true")
+                   listen_port=istio_readiness_port, protocol='http', http_enabled="true")
 
   # Generate NAP for each protocols
-  _writeIstioNAP(name='tcp-ldap', server=server, listen_address=listen_address,
+  if istioVersionRequiresLocalHostBindings():
+    _writeIstioNAP(name='tcp-ldap', server=server, listen_address=listen_address,
                       listen_port=admin_server_port, protocol='ldap')
 
-  _writeIstioNAP(name='tcp-default', server=server, listen_address=listen_address,
+    _writeIstioNAP(name='tcp-default', server=server, listen_address=listen_address,
                       listen_port=admin_server_port, protocol='t3')
 
-  _writeIstioNAP(name='http-default', server=server, listen_address=listen_address,
+    _writeIstioNAP(name='http-default', server=server, listen_address=listen_address,
                       listen_port=admin_server_port, protocol='http')
 
-  _writeIstioNAP(name='tcp-snmp', server=server, listen_address=listen_address,
+    _writeIstioNAP(name='tcp-snmp', server=server, listen_address=listen_address,
                       listen_port=admin_server_port, protocol='snmp')
 
-  _writeIstioNAP(name='tcp-cbt', server=server, listen_address=listen_address,
+    _writeIstioNAP(name='tcp-cbt', server=server, listen_address=listen_address,
                       listen_port=admin_server_port, protocol='CLUSTER-BROADCAST')
 
-  _writeIstioNAP(name='tcp-iiop', server=server, listen_address=listen_address,
+    _writeIstioNAP(name='tcp-iiop', server=server, listen_address=listen_address,
                       listen_port=admin_server_port, protocol='iiop')
 
-  ssl = getSSLOrNone(server)
-  ssl_listen_port = None
-  model = env.getModel()
-  if ssl is not None and 'Enabled' in ssl and ssl['Enabled'] == 'true':
-    ssl_listen_port = ssl['ListenPort']
-    if ssl_listen_port is None:
+    ssl = getSSLOrNone(server)
+    ssl_listen_port = None
+    model = env.getModel()
+    if ssl is not None and 'Enabled' in ssl and ssl['Enabled'] == 'true':
+      ssl_listen_port = ssl['ListenPort']
+      if ssl_listen_port is None:
+        ssl_listen_port = "7002"
+    elif ssl is None and isSecureModeEnabledForDomain(model['topology']):
       ssl_listen_port = "7002"
-  elif ssl is None and isSecureModeEnabledForDomain(model['topology']):
-    ssl_listen_port = "7002"
 
 
-  if ssl_listen_port is not None:
-    _writeIstioNAP(name='https-secure', server=server, listen_address=listen_address,
+    if ssl_listen_port is not None:
+      _writeIstioNAP(name='https-secure', server=server, listen_address=listen_address,
                         listen_port=ssl_listen_port, protocol='https', http_enabled="true")
 
-    _writeIstioNAP(name='tls-ldaps', server=server, listen_address=listen_address,
+      _writeIstioNAP(name='tls-ldaps', server=server, listen_address=listen_address,
                         listen_port=ssl_listen_port, protocol='ldaps')
 
-    _writeIstioNAP(name='tls-default', server=server, listen_address=listen_address,
+      _writeIstioNAP(name='tls-default', server=server, listen_address=listen_address,
                         listen_port=ssl_listen_port, protocol='t3s')
 
-    _writeIstioNAP(name='tls-cbts', server=server, listen_address=listen_address,
+      _writeIstioNAP(name='tls-cbts', server=server, listen_address=listen_address,
                         listen_port=ssl_listen_port, protocol='CLUSTER-BROADCAST-SECURE')
 
-    _writeIstioNAP(name='tls-iiops', server=server, listen_address=listen_address,
+      _writeIstioNAP(name='tls-iiops', server=server, listen_address=listen_address,
                         listen_port=ssl_listen_port, protocol='iiops')
 
-  if isAdministrationPortEnabledForServer(server, model['topology']):
-    _writeIstioNAP(name='https-admin', server=server, listen_address=listen_address,
+    if isAdministrationPortEnabledForServer(server, model['topology']):
+      _writeIstioNAP(name='https-admin', server=server, listen_address=listen_address,
                         listen_port=getAdministrationPort(server, model['topology']), protocol='https', http_enabled="true")
-
+  else:
+    # readiness probe NAP binding to server IP pod address Istio versions >= 1.10.x
+    _writeIstioNAP(name='http-probe-ext', server=server, listen_address=listen_address,
+                   listen_port=istio_readiness_port, protocol='http', http_enabled="true",
+                   bind_to_localhost="false")
 
 def customizeManagedIstioNetworkAccessPoint(template, listen_address):
   istio_enabled = env.getEnvOrDef("ISTIO_ENABLED", "false")
@@ -486,64 +496,67 @@ def customizeManagedIstioNetworkAccessPoint(template, listen_address):
   # Set the default if it is not provided to avoid nap default to 0 which fails validation.
   if listen_port is None:
     listen_port = 7001
+
   # readiness probe
   _writeIstioNAP(name='http-probe', server=template, listen_address=listen_address,
-                 listen_port=istio_readiness_port, protocol='http', http_enabled="true",
-                 bind_to_localhost="false")
-
-  # readiness probe NAP binding to localhost address for Istio versions < 1.10.x
-  _writeIstioNAP(name=createNameForLocalHostNetworkAccessPoint('http-probe', {}), server=template, listen_address=listen_address,
-                 listen_port=istio_readiness_port, protocol='http', http_enabled="true")
+                   listen_port=istio_readiness_port, protocol='http', http_enabled="true")
 
   # Generate NAP for each protocols
-  _writeIstioNAP(name='tcp-ldap', server=template, listen_address=listen_address,
+  if istioVersionRequiresLocalHostBindings():
+    _writeIstioNAP(name='tcp-ldap', server=template, listen_address=listen_address,
                  listen_port=listen_port, protocol='ldap')
 
-  _writeIstioNAP(name='tcp-default', server=template, listen_address=listen_address,
+    _writeIstioNAP(name='tcp-default', server=template, listen_address=listen_address,
                  listen_port=listen_port, protocol='t3')
 
-  _writeIstioNAP(name='http-default', server=template, listen_address=listen_address,
+    _writeIstioNAP(name='http-default', server=template, listen_address=listen_address,
                  listen_port=listen_port, protocol='http')
 
-  _writeIstioNAP(name='tcp-snmp', server=template, listen_address=listen_address,
+    _writeIstioNAP(name='tcp-snmp', server=template, listen_address=listen_address,
                  listen_port=listen_port, protocol='snmp')
 
-  _writeIstioNAP(name='tcp-cbt', server=template, listen_address=listen_address,
+    _writeIstioNAP(name='tcp-cbt', server=template, listen_address=listen_address,
                  listen_port=listen_port, protocol='CLUSTER-BROADCAST')
 
-  _writeIstioNAP(name='tcp-iiop', server=template, listen_address=listen_address,
+    _writeIstioNAP(name='tcp-iiop', server=template, listen_address=listen_address,
                  listen_port=listen_port, protocol='iiop')
 
-  ssl = getSSLOrNone(template)
-  ssl_listen_port = None
-  model = env.getModel()
-  if ssl is not None and 'Enabled' in ssl and ssl['Enabled'] == 'true':
-    ssl_listen_port = ssl['ListenPort']
-    if ssl_listen_port is None:
+    ssl = getSSLOrNone(template)
+    ssl_listen_port = None
+    model = env.getModel()
+    if ssl is not None and 'Enabled' in ssl and ssl['Enabled'] == 'true':
+      ssl_listen_port = ssl['ListenPort']
+      if ssl_listen_port is None:
+        ssl_listen_port = "7002"
+    elif ssl is None and isSecureModeEnabledForDomain(model['topology']):
       ssl_listen_port = "7002"
-  elif ssl is None and isSecureModeEnabledForDomain(model['topology']):
-    ssl_listen_port = "7002"
 
-  if ssl_listen_port is not None:
-    _writeIstioNAP(name='https-secure', server=template, listen_address=listen_address,
+    if ssl_listen_port is not None:
+      _writeIstioNAP(name='https-secure', server=template, listen_address=listen_address,
                    listen_port=ssl_listen_port, protocol='https', http_enabled="true")
 
-    _writeIstioNAP(name='tls-ldaps', server=template, listen_address=listen_address,
+      _writeIstioNAP(name='tls-ldaps', server=template, listen_address=listen_address,
                    listen_port=ssl_listen_port, protocol='ldaps')
 
-    _writeIstioNAP(name='tls-default', server=template, listen_address=listen_address,
+      _writeIstioNAP(name='tls-default', server=template, listen_address=listen_address,
                    listen_port=ssl_listen_port, protocol='t3s')
 
-    _writeIstioNAP(name='tls-cbts', server=template, listen_address=listen_address,
+      _writeIstioNAP(name='tls-cbts', server=template, listen_address=listen_address,
                    listen_port=ssl_listen_port, protocol='CLUSTER-BROADCAST-SECURE')
 
-    _writeIstioNAP(name='tls-iiops', server=template, listen_address=listen_address,
+      _writeIstioNAP(name='tls-iiops', server=template, listen_address=listen_address,
                    listen_port=ssl_listen_port, protocol='iiops')
+  else:
+    # readiness probe NAP binding to pod IP address for Istio versions >= 1.10.x
+    _writeIstioNAP(name='http-probe-ext', server=template, listen_address=listen_address,
+                   listen_port=istio_readiness_port, protocol='http', http_enabled="true",
+                   bind_to_localhost="false")
 
 def addAdminChannelPortForwardNetworkAccessPoints(server):
   istio_enabled = env.getEnvOrDef("ISTIO_ENABLED", "false")
   admin_channel_port_forwarding_enabled = env.getEnvOrDef("ADMIN_CHANNEL_PORT_FORWARDING_ENABLED", "true")
-  if (admin_channel_port_forwarding_enabled == 'false') or (istio_enabled == 'true'):
+  if (admin_channel_port_forwarding_enabled == 'false') or \
+      (istio_enabled == 'true' and istioVersionRequiresLocalHostBindings()):
     return
 
   admin_server_port = server['ListenPort']
@@ -610,88 +623,25 @@ def customizeNetworkAccessPoints(server, listen_address):
 
   naps = server['NetworkAccessPoint']
   nap_names = naps.keys()
-  # Dictionary to track the count of naps that have names > 15 characters
-  # key = 10 char name, value = index count
-  nap_name_dict = {}
-  # Dictionary of LocalHost NAP's created
-  local_nap_dict = {}
   for nap_name in nap_names:
     nap = naps[nap_name]
     customizeNetworkAccessPoint(nap_name, nap, listen_address)
-    createLocalHostNetworkAccessPoint(nap_name, nap, nap_name_dict, local_nap_dict)
-
-  # Iterate through the Dictionary of cloned local NAP's and add to the NetworkAccesPoint
-  # list of the model
-  local_nap_names = local_nap_dict.keys()
-  for local_nap_name in local_nap_names:
-    server['NetworkAccessPoint'][local_nap_name] = local_nap_dict[local_nap_name]
 
 
 def customizeNetworkAccessPoint(nap_name, nap, listen_address):
-  if nap_name in ISTIO_NAP_NAMES or nameContainsLocalHostIdentifier(nap_name):
+  if nap_name in ISTIO_NAP_NAMES:
     # skip creating ISTIO channels
     return
+
+  istio_enabled = env.getEnvOrDef("ISTIO_ENABLED", "false")
+  if istio_enabled and istioVersionRequiresLocalHostBindings():
+    listen_address = '127.0.0.1'
 
   # fix NAP listen address
   if 'ListenAddress' in nap:
     original_listen_address = nap['ListenAddress']
     if len(original_listen_address) > 0:
-        nap['ListenAddress'] = listen_address
-
-# Create copy of custom NAP for binding to localhost for handling k8s 'port-forward'
-# feature and Istio versions < 1.10.x
-def createLocalHostNetworkAccessPoint(nap_name, nap, nap_name_dict, local_nap_dict):
-  istio_enabled = env.getEnvOrDef("ISTIO_ENABLED", "false")
-  if istio_enabled == 'true':
-    if nap_name in ISTIO_NAP_NAMES or nameContainsLocalHostIdentifier(nap_name):
-      # skip creating ISTIO channels
-      return
-
-    wls_local_nap = copy.deepcopy(nap)
-    wls_local_nap['ListenAddress'] = '127.0.0.1'
-    local_nap_name = createNameForLocalHostNetworkAccessPoint(nap_name, nap_name_dict)
-    local_nap_dict[local_nap_name] = wls_local_nap
-
-def createNameForLocalHostNetworkAccessPoint(nap_name, nap_name_dict):
-  # NAP names can be a maximum of 15 characters in length
-  key = nap_name
-  idx = 1
-  if len(nap_name) >= 10:
-    # Slice out the first 10 characters to use since there is a 15 character
-    # limit to NAP names
-    key = nap_name[:10]
-    if key not in nap_name_dict:
-      # Add the first nap name with index=1 into the Dictionary
-      nap_name_dict[key] = idx
-    else:
-      # Found a nap with the same first 10 characters so increment and
-      # save the index
-      idx = nap_name_dict[key] + 1
-      nap_name_dict[key] = idx
-
-  # zero fill to the left for single digit index (e.g. 01)
-  idx_str = str(idx)
-  if idx < 10:
-    idx_str = '0' + idx_str
-
-  # NAP name of for localhost binding will be of the form 'xxxxxxxxxx-lh01'
-  return key + WLS_LOCALHOST_IDENTIFIER + idx_str
-
-def nameContainsLocalHostIdentifier(name):
-  # look for '-lh'
-  identifierIdx = name.find(WLS_LOCALHOST_IDENTIFIER)
-  # check if there is a localhost identifier
-  if identifierIdx > -1:
-    endIdentifierIdx = identifierIdx + len(WLS_LOCALHOST_IDENTIFIER)
-    # get substring from localhost identifier to end
-    subStr = name[endIdentifierIdx:]
-    # should be only 2 digits 'NN' from '-lhNN' format
-    if len(subStr) == 2:
-      # verify the last two chars are digits
-      if subStr.isdigit():
-        return True
-
-  return False
+      nap['ListenAddress'] = listen_address
 
 def setServerListenAddress(serverOrTemplate, listen_address):
   serverOrTemplate['ListenAddress'] = listen_address
@@ -790,3 +740,8 @@ def getDynamicServerPropertyOrNone(dynamicServer, name):
 
 def getSecretManager():
   return secret_manager
+
+def istioVersionRequiresLocalHostBindings():
+  offlineWlstEnv = getOfflineWlstEnv()
+  return offlineWlstEnv.isVersionEarlierThan(offlineWlstEnv.ISTIO_VERSION, '1.10')
+

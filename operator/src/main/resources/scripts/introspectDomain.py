@@ -85,6 +85,7 @@ import re
 import sys
 import traceback
 import xml.dom.minidom
+from distutils.version import LooseVersion
 from xml.dom.minidom import parse
 
 # Include this script's current directory in the import path (so we can import utils, etc.)
@@ -100,7 +101,7 @@ from utils import *
 from weblogic.management.configuration import LegalHelper
 
 ISTIO_NAP_NAMES = ['tcp-cbt', 'tcp-ldap', 'tcp-iiop', 'tcp-snmp', 'http-default', 'tcp-default', 'https-secure', 'tls-ldaps', 'tls-default', 'tls-cbts', 'tls-iiops', 'https-admin']
-WLS_LOCALHOST_IDENTIFIER = '-lh'
+ISTIO_VERSION = None
 
 class OfflineWlstEnv(object):
 
@@ -117,6 +118,7 @@ class OfflineWlstEnv(object):
     self.ACCESS_LOG_IN_LOG_HOME   = self.getEnvOrDef('ACCESS_LOG_IN_LOG_HOME', 'true')
     self.DATA_HOME                = self.getEnvOrDef('DATA_HOME', "")
     self.CREDENTIALS_SECRET_NAME  = self.getEnv('CREDENTIALS_SECRET_NAME')
+    ISTIO_VERSION                 = self.getEnvOrDef('ISTIO_VERSION', None)
 
     # initialize globals
 
@@ -754,7 +756,7 @@ class TopologyGenerator(Generator):
     if istio_enabled == 'true':
       name = nap.getName()
       if name.startswith('http-') or name.startswith('tcp-') or name.startswith('tls-') \
-          or name.startswith('https-') or nameContainsLocalHostIdentifier(name):
+          or name.startswith('https-'):
         # skip istio ports already defined by WDT filtering for MII
         return
       http_protocol = [ 'http' ]
@@ -1063,124 +1065,6 @@ class SitConfigGenerator(Generator):
       repVerb="\"add\""
     self.writeln("<d:listen-address f:combine-mode=" + repVerb + ">" + newValue + "</d:listen-address>")
 
-  def writeName(self, name):
-    self.writeln("<d:name>" + name + "</d:name>")
-
-  def writeProtocol(self, protocol):
-    self.writeln("<d:protocol f:combine-mode=\"add\">" + protocol + "</d:protocol>")
-
-  def writeListenPort(self, listen_port):
-    # offline WLST initializes int values to 0
-    if listen_port > 0:
-      self.writeln("<d:listen-port f:combine-mode=\"add\">" + str(listen_port) + "</d:listen-port>")
-
-  def writePublicAddress(self, public_address):
-    if public_address is not None and len(public_address) > 0:
-      self.writeln("<d:public-address f:combine-mode=\"add\">" + public_address + "</d:public-address>")
-
-  def writePublicPort(self, public_port):
-    # offline WLST initializes int values to 0
-    if public_port > 0:
-      self.writeln("<d:public-port f:combine-mode=\"add\">" + str(public_port) + "</d:public-port>")
-
-  def writeAcceptBacklog(self, accept_backlog):
-    # offline WLST initializes int values to 0
-    if accept_backlog > 0:
-      self.writeln("<d:accept-backlog f:combine-mode=\"add\">" + str(accept_backlog) + "</d:accept-backlog>")
-
-  def writeMaxBackoffBetweenFailures(self, maxBackoffBetweenFailures):
-    if maxBackoffBetweenFailures > 0:
-      self.writeln("<d:max-backoff-between-failures f:combine-mode=\"add\">" + str(maxBackoffBetweenFailures) + "</d:max-backoff-between-failures>")
-
-  def writeLoginTimeoutMillis(self, loginTimeoutMillis):
-    # offline WLST initializes int values to 0
-    if loginTimeoutMillis > 0:
-      self.writeln("<d:login-timeout-millis f:combine-mode=\"add\">" + str(loginTimeoutMillis) + "</d:login-timeout-millis>")
-
-  def writeCompleteMessageTimeout(self, completeMessageTimeout):
-    # offline WLST initializes int values to 0
-    if completeMessageTimeout > 0:
-      self.writeln("<d:complete-message-timeout f:combine-mode=\"add\">" + str(completeMessageTimeout) + "</d:complete-message-timeout>")
-
-  def writeIdleConnectionTimeout(self, idleConnectionTimeout):
-    # offline WLST initializes int values to 0
-    if idleConnectionTimeout > 0:
-      self.writeln("<d:idle-connection-timeout f:combine-mode=\"add\">" + str(idleConnectionTimeout) + "</d:idle-connection-timeout>")
-
-  def writeConnectTimeout(self, connectTimeout):
-    # offline WLST initializes int values to 0
-    if connectTimeout > 0:
-      self.writeln("<d:connect-timeout f:combine-mode=\"add\">" + str(connectTimeout) + "</d:connect-timeout>")
-
-  def writeTunnelingClientPingSecs(self, tunnelingClientPingSecs):
-    # offline WLST initializes int values to 0
-    if tunnelingClientPingSecs > 0:
-      self.writeln("<d:tunneling-client-ping-secs f:combine-mode=\"add\">" + str(tunnelingClientPingSecs) + "</d:tunneling-client-ping-secs>")
-
-  def writeTunnelingClientTimeoutSecs(self, tunnelingClientTimeoutSecs):
-    # offline WLST initializes int values to 0
-    if tunnelingClientTimeoutSecs > 0:
-      self.writeln("<d:tunneling-client-timeout-secs f:combine-mode=\"add\">" + str(tunnelingClientTimeoutSecs) + "</d:tunneling-client-timeout-secs>")
-
-  def writeMaxMessageSize(self, maxMessageSize):
-    # offline WLST initializes int values to 0
-    # Legal minimum max message size is 4096
-    # Allow WLS to check legal range
-    if maxMessageSize > 0:
-      self.writeln("<d:max-message-size f:combine-mode=\"add\">" + str(maxMessageSize) + "</d:max-message-size>")
-
-  def writeChannelWeight(self, channelWeight):
-    # default is 50
-    if channelWeight != 50:
-      self.writeln("<d:channel-weight f:combine-mode=\"add\">" + str(channelWeight) + "</d:channel-weight>")
-
-  def writeMaxConnectedClients(self, maxConnectedClients):
-    # default = java.lang.Integer.MAX_VALUE
-    if maxConnectedClients != 2147483647:
-      self.writeln("<d:max-connected-clients f:combine-mode=\"add\">" + str(maxConnectedClients) + "</d:max-connected-clients>")
-
-  def writeEnabled(self, nap):
-    # default enabled = 'true'
-    if nap.isEnabled() == false:
-      enabled = 'false'
-      self.writeln("<d:enabled f:combine-mode=\"add\">" + enabled + "</d:enabled>")
-
-  def writeTunnelingEnabled(self, nap):
-    # default tunnelingEnabled = 'false'
-    if nap.isTunnelingEnabled() == true:
-      tunnelingEnabled = 'true'
-      self.writeln("<d:tunneling-enabled f:combine-mode=\"add\">" + tunnelingEnabled + "</d:tunneling-enabled>")
-
-  def writeOutboundEnabled(self, nap):
-    # default outboundEnabled = 'false'
-    if nap.isOutboundEnabled() == true:
-      outboundEnabled = 'true'
-      self.writeln("<d:outbound-enabled f:combine-mode=\"add\">" + outboundEnabled + "</d:outbound-enabled>")
-
-  def writeUseFastSerialization(self, nap):
-    # default useFastSerialization = 'false'
-    if nap.getUseFastSerialization() == true:
-      useFastSerialization = 'true'
-      self.writeln("<d:use-fast-serialization f:combine-mode=\"add\">" + useFastSerialization + "</d:use-fast-serialization>")
-
-  def writeHttpEnabledForThisProtocol(self, nap):
-    # default httpEnabledForThisProtocol = 'true'
-    if nap.isHttpEnabledForThisProtocol() == false:
-      httpEnabledForThisProtocol = 'false'
-      self.writeln("<d:http-enabled-for-this-protocol f:combine-mode=\"add\">" + httpEnabledForThisProtocol + "</d:http-enabled-for-this-protocol>")
-
-  def writeTimeoutConnectionWithPendingResponses(self, nap):
-    # default timeoutConnectionWithPendingResponses = 'false'
-    if nap.getTimeoutConnectionWithPendingResponses() == true:
-      timeoutConnectionWithPendingResponses = 'true'
-      self.writeln("<d:timeout-connection-with-pending-responses f:combine-mode=\"add\">" + timeoutConnectionWithPendingResponses + "</d:timeout-connection-with-pending-responses>")
-
-  def writeSDPEnabled(self, nap):
-    # default sdpEnabled = 'false'
-    if nap.isSDPEnabled() == true:
-      sdpEnabled = 'true'
-      self.writeln("<d:sdp-enabled f:combine-mode=\"add\">" + sdpEnabled + "</d:sdp-enabled>")
-
   def writeTwoWaySSLEnabled(self, nap):
     # default twoWaySSLEnabled = 'false'
     if nap.isTwoWaySSLEnabled() == true:
@@ -1252,32 +1136,6 @@ class SitConfigGenerator(Generator):
     if outboundCertificateValidation is not None and len(outboundCertificateValidation) > 0:
       self.writeln("<d:outbound-certificate-validation f:combine-mode=\"add\">" + outboundCertificateValidation + "</d:outbound-certificate-validation>")
 
-  def createNameForLocalHostNetworkAccessPoint(self, nap_name, nap_name_dict):
-    # NAP names can be a maximum of 15 characters in length
-    key = nap_name
-    idx = 1
-    if len(nap_name) >= 10:
-      # Slice out the first 10 characters to use since there is a 15 character
-      # limit to NAP names
-      key = nap_name[:10]
-      if key not in nap_name_dict:
-        # Add the first nap name with index=1 into the Dictionary
-        nap_name_dict[key] = idx
-      else:
-        # Found a nap with the same first 10 characters so increment and
-        # save the index
-        idx = nap_name_dict[key] + 1
-        nap_name_dict[key] = idx
-
-    # zero fill to the left for single digit index (e.g. 01)
-    idx_str = str(idx)
-    if idx < 10:
-      idx_str = '0' + idx_str
-
-    # NAP name of for localhost binding will be of the form 'xxxxxxxxxx-lh01'
-    return key + WLS_LOCALHOST_IDENTIFIER + idx_str
-
-
 
   def customizeServer(self, server):
     name=server.getName()
@@ -1323,10 +1181,8 @@ class SitConfigGenerator(Generator):
     self.writeln("</d:server-template>")
 
   def customizeNetworkAccessPoints(self, server, listen_address):
-    nap_name_dict = {}
     for nap in server.getNetworkAccessPoints():
       self.customizeNetworkAccessPoint(nap,listen_address)
-      self.createLocalHostNetworkAccessPoint(nap, '127.0.0.1', listen_address, nap_name_dict)
 
   def customizeNetworkAccessPoint(self, nap, listen_address):
     # Don't bother 'add' a nap listen-address, only do a 'replace'.
@@ -1336,9 +1192,11 @@ class SitConfigGenerator(Generator):
     #   since the runtime default is the server listen-address.
 
     istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
+    if istio_enabled and istioVersionRequiresLocalHostBindings():
+      listen_address = '127.0.0.1'
 
     nap_name=nap.getName()
-    if nap_name in ISTIO_NAP_NAMES or nameContainsLocalHostIdentifier(nap_name):
+    if nap_name in ISTIO_NAP_NAMES:
       # skip customizing internal channels that were generated
       return
 
@@ -1350,55 +1208,6 @@ class SitConfigGenerator(Generator):
         self.writeListenAddress("force a replace",listen_address)
         self.undent()
         self.writeln("</d:network-access-point>")
-
-  # Create copy of custom NAP for binding to localhost for handling k8s 'port-forward'
-  # feature and Istio versions < 1.10.x
-  def createLocalHostNetworkAccessPoint(self, nap, listen_address, public_listen_address, nap_name_dict):
-    # Don't bother 'add' a nap listen-address, only do a 'replace'.
-    # If we try 'add' this appears to mess up an attempt to
-    #   'add' PublicAddress/Port via custom sit-cfg.
-    # FWIW there's theoretically no need to 'add' or 'replace' when empty
-    #   since the runtime default is the server listen-address.
-
-    istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
-    if istio_enabled == 'true':
-      nap_name=nap.getName()
-      if nap_name in ISTIO_NAP_NAMES or nameContainsLocalHostIdentifier(nap_name):
-        # skip creating ISTIO channels
-        return
-
-      self.writeln('<d:network-access-point f:combine-mode="add">')
-      self.indent()
-      self.writeName(self.createNameForLocalHostNetworkAccessPoint(nap_name, nap_name_dict))
-      self.writeGeneralNetworkAccessPointConfiguration(nap, listen_address, public_listen_address)
-      self.writeSecureNetworkAccessPointConfiguration(nap)
-      self.undent()
-      self.writeln("</d:network-access-point>")
-
-  def writeGeneralNetworkAccessPointConfiguration(self, nap, listen_address, public_listen_address):
-    self.writeProtocol(nap.getProtocol())
-    self.writeListenAddress("", listen_address)
-    self.writeListenPort(nap.getListenPort())
-    self.writePublicAddress(public_listen_address)
-    self.writePublicPort(nap.getPublicPort())
-    self.writeEnabled(nap)
-    self.writeOutboundEnabled(nap)
-    self.writeAcceptBacklog(nap.getAcceptBacklog())
-    self.writeMaxBackoffBetweenFailures(nap.getMaxBackoffBetweenFailures())
-    self.writeHttpEnabledForThisProtocol(nap)
-    self.writeLoginTimeoutMillis(nap.getLoginTimeoutMillis())
-    self.writeCompleteMessageTimeout(nap.getCompleteMessageTimeout())
-    self.writeIdleConnectionTimeout(nap.getIdleConnectionTimeout())
-    self.writeConnectTimeout(nap.getConnectTimeout())
-    self.writeTimeoutConnectionWithPendingResponses(nap)
-    self.writeTunnelingEnabled(nap)
-    self.writeTunnelingClientPingSecs(nap.getTunnelingClientPingSecs())
-    self.writeTunnelingClientTimeoutSecs(nap.getTunnelingClientTimeoutSecs())
-    self.writeMaxMessageSize(nap.getMaxMessageSize())
-    self.writeChannelWeight(nap.getChannelWeight())
-    self.writeMaxConnectedClients(nap.getMaxConnectedClients())
-    self.writeUseFastSerialization(nap)
-    self.writeSDPEnabled(nap)
 
   def writeSecureNetworkAccessPointConfiguration(self, nap):
     protocol = nap.getProtocol()
@@ -1433,7 +1242,7 @@ class SitConfigGenerator(Generator):
     else:
       return add_action, "add"
 
-  def _writeIstioNAP(self, name, server, listen_address, listen_port, protocol, http_enabled="true"):
+  def _writeIstioNAP(self, name, server, listen_address, listen_port, protocol, http_enabled="true", bind_to_localhost="true"):
 
     action, type = self._getNapConfigOverrideAction(server, "http-probe")
 
@@ -1451,11 +1260,11 @@ class SitConfigGenerator(Generator):
       self.writeln('<d:name>%s</d:name>' % name)
 
     self.writeln('<d:protocol %s>%s</d:protocol>' % (action, protocol))
-    if name == 'http-probe':
-      self.writeln('<d:listen-address %s>%s.%s</d:listen-address>' % (action, listen_address,
-                                                          self.env.getEnvOrDef("ISTIO_POD_NAMESPACE", "default")))
-    else:
+    if bind_to_localhost:
       self.writeln('<d:listen-address %s>127.0.0.1</d:listen-address>' % action)
+    else:
+      self.writeln('<d:listen-address %s>%s.%s</d:listen-address>' % (action, listen_address,
+                                                                      self.env.getEnvOrDef("ISTIO_POD_NAMESPACE", "default")))
     self.writeln('<d:public-address %s>%s.%s</d:public-address>' % (action, listen_address,
                                                           self.env.getEnvOrDef("ISTIO_POD_NAMESPACE", "default")))
     self.writeln('<d:listen-port %s>%s</d:listen-port>' % (action, listen_port))
@@ -1552,50 +1361,51 @@ class SitConfigGenerator(Generator):
     self._writeIstioNAP(name='http-probe', server=server, listen_address=listen_address,
                         listen_port=istio_readiness_port, protocol='http', http_enabled="true")
 
-    self._writeIstioNAP(name=self.createNameForLocalHostNetworkAccessPoint('http-probe', {}), server=server, listen_address=listen_address,
-                        listen_port=istio_readiness_port, protocol='http', http_enabled="true")
-
     # Generate NAP for each protocols
-    self._writeIstioNAP(name='tcp-ldap', server=server, listen_address=listen_address,
-                        listen_port=admin_server_port, protocol='ldap')
+    if istioVersionRequiresLocalHostBindings():
+      self._writeIstioNAP(name='tcp-ldap', server=server, listen_address=listen_address,
+                          listen_port=admin_server_port, protocol='ldap')
 
-    self._writeIstioNAP(name='tcp-default', server=server, listen_address=listen_address,
-                        listen_port=admin_server_port, protocol='t3')
+      self._writeIstioNAP(name='tcp-default', server=server, listen_address=listen_address,
+                          listen_port=admin_server_port, protocol='t3')
 
-    self._writeIstioNAP(name='http-default', server=server, listen_address=listen_address,
-                        listen_port=admin_server_port, protocol='http')
+      self._writeIstioNAP(name='http-default', server=server, listen_address=listen_address,
+                          listen_port=admin_server_port, protocol='http')
 
-    self._writeIstioNAP(name='tcp-snmp', server=server, listen_address=listen_address,
-                        listen_port=admin_server_port, protocol='snmp')
+      self._writeIstioNAP(name='tcp-snmp', server=server, listen_address=listen_address,
+                          listen_port=admin_server_port, protocol='snmp')
 
-    self._writeIstioNAP(name='tcp-cbt', server=server, listen_address=listen_address,
-                        listen_port=admin_server_port, protocol='CLUSTER-BROADCAST')
+      self._writeIstioNAP(name='tcp-cbt', server=server, listen_address=listen_address,
+                          listen_port=admin_server_port, protocol='CLUSTER-BROADCAST')
 
-    self._writeIstioNAP(name='tcp-iiop', server=server, listen_address=listen_address,
-                        listen_port=admin_server_port, protocol='iiop')
+      self._writeIstioNAP(name='tcp-iiop', server=server, listen_address=listen_address,
+                          listen_port=admin_server_port, protocol='iiop')
 
-    ssl_listen_port = getSSLPortIfEnabled(server, self.env.getDomain(), is_server_template=False)
+      ssl_listen_port = getSSLPortIfEnabled(server, self.env.getDomain(), is_server_template=False)
 
-    if ssl_listen_port is not None:
-      self._writeIstioNAP(name='https-secure', server=server, listen_address=listen_address,
-                        listen_port=ssl_listen_port, protocol='https', http_enabled="true")
+      if ssl_listen_port is not None:
+        self._writeIstioNAP(name='https-secure', server=server, listen_address=listen_address,
+                          listen_port=ssl_listen_port, protocol='https', http_enabled="true")
 
-      self._writeIstioNAP(name='tls-ldaps', server=server, listen_address=listen_address,
-                          listen_port=ssl_listen_port, protocol='ldaps')
+        self._writeIstioNAP(name='tls-ldaps', server=server, listen_address=listen_address,
+                            listen_port=ssl_listen_port, protocol='ldaps')
 
-      self._writeIstioNAP(name='tls-default', server=server, listen_address=listen_address,
-                          listen_port=ssl_listen_port, protocol='t3s')
+        self._writeIstioNAP(name='tls-default', server=server, listen_address=listen_address,
+                            listen_port=ssl_listen_port, protocol='t3s')
 
-      self._writeIstioNAP(name='tls-cbts', server=server, listen_address=listen_address,
-                          listen_port=ssl_listen_port, protocol='CLUSTER-BROADCAST-SECURE')
+        self._writeIstioNAP(name='tls-cbts', server=server, listen_address=listen_address,
+                            listen_port=ssl_listen_port, protocol='CLUSTER-BROADCAST-SECURE')
 
-      self._writeIstioNAP(name='tls-iiops', server=server, listen_address=listen_address,
-                          listen_port=ssl_listen_port, protocol='iiops')
+        self._writeIstioNAP(name='tls-iiops', server=server, listen_address=listen_address,
+                            listen_port=ssl_listen_port, protocol='iiops')
 
-    if isAdministrationPortEnabledForServer(server, self.env.getDomain()):
-      self._writeIstioNAP(name='https-admin', server=server, listen_address=listen_address,
-                          listen_port=getAdministrationPort(server, self.env.getDomain()), protocol='https', http_enabled="true")
-
+      if isAdministrationPortEnabledForServer(server, self.env.getDomain()):
+        self._writeIstioNAP(name='https-admin', server=server, listen_address=listen_address,
+                            listen_port=getAdministrationPort(server, self.env.getDomain()), protocol='https', http_enabled="true")
+    else:
+      self._writeIstioNAP(name='http-probe-ext', server=server, listen_address=listen_address,
+                          listen_port=istio_readiness_port, protocol='http', http_enabled="true",
+                          bind_to_localhost="false")
 
   def customizeManagedIstioNetworkAccessPoint(self, listen_address, template):
     istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
@@ -1609,47 +1419,48 @@ class SitConfigGenerator(Generator):
     self._writeIstioNAP(name='http-probe', server=template, listen_address=listen_address,
                         listen_port=istio_readiness_port, protocol='http')
 
-    self._writeIstioNAP(name=self.createNameForLocalHostNetworkAccessPoint('http-probe', {}), server=template, listen_address=listen_address,
-                        listen_port=istio_readiness_port, protocol='http')
+    if istioVersionRequiresLocalHostBindings():
+      self._writeIstioNAP(name='tcp-default', server=template, listen_address=listen_address,
+                          listen_port=listen_port, protocol='t3', http_enabled='false')
 
-    self._writeIstioNAP(name='tcp-default', server=template, listen_address=listen_address,
-                        listen_port=listen_port, protocol='t3', http_enabled='false')
+      self._writeIstioNAP(name='http-default', server=template, listen_address=listen_address,
+                          listen_port=listen_port, protocol='http')
 
-    self._writeIstioNAP(name='http-default', server=template, listen_address=listen_address,
-                        listen_port=listen_port, protocol='http')
+      self._writeIstioNAP(name='tcp-snmp', server=template, listen_address=listen_address,
+                          listen_port=listen_port, protocol='snmp')
 
-    self._writeIstioNAP(name='tcp-snmp', server=template, listen_address=listen_address,
-                        listen_port=listen_port, protocol='snmp')
+      self._writeIstioNAP(name='tcp-cbt', server=template, listen_address=listen_address,
+                          listen_port=listen_port, protocol='CLUSTER-BROADCAST')
 
-    self._writeIstioNAP(name='tcp-cbt', server=template, listen_address=listen_address,
-                        listen_port=listen_port, protocol='CLUSTER-BROADCAST')
+      self._writeIstioNAP(name='tcp-iiop', server=template, listen_address=listen_address,
+                          listen_port=listen_port, protocol='iiop')
 
-    self._writeIstioNAP(name='tcp-iiop', server=template, listen_address=listen_address,
-                        listen_port=listen_port, protocol='iiop')
+      ssl_listen_port = getSSLPortIfEnabled(template, self.env.getDomain())
 
-    ssl_listen_port = getSSLPortIfEnabled(template, self.env.getDomain())
+      if ssl_listen_port is not None:
+        self._writeIstioNAP(name='https-secure', server=template, listen_address=listen_address,
+                            listen_port=ssl_listen_port, protocol='https')
 
-    if ssl_listen_port is not None:
-      self._writeIstioNAP(name='https-secure', server=template, listen_address=listen_address,
-                          listen_port=ssl_listen_port, protocol='https')
+        self._writeIstioNAP(name='tls-ldaps', server=template, listen_address=listen_address,
+                            listen_port=ssl_listen_port, protocol='ldaps')
 
-      self._writeIstioNAP(name='tls-ldaps', server=template, listen_address=listen_address,
-                          listen_port=ssl_listen_port, protocol='ldaps')
+        self._writeIstioNAP(name='tls-default', server=template, listen_address=listen_address,
+                            listen_port=ssl_listen_port, protocol='t3s', http_enabled='false')
 
-      self._writeIstioNAP(name='tls-default', server=template, listen_address=listen_address,
-                          listen_port=ssl_listen_port, protocol='t3s', http_enabled='false')
+        self._writeIstioNAP(name='tls-cbts', server=template, listen_address=listen_address,
+                            listen_port=ssl_listen_port, protocol='CLUSTER-BROADCAST-SECURE')
 
-      self._writeIstioNAP(name='tls-cbts', server=template, listen_address=listen_address,
-                          listen_port=ssl_listen_port, protocol='CLUSTER-BROADCAST-SECURE')
-
-      self._writeIstioNAP(name='tls-iiops', server=template, listen_address=listen_address,
-                          listen_port=ssl_listen_port, protocol='iiops')
-
+        self._writeIstioNAP(name='tls-iiops', server=template, listen_address=listen_address,
+                            listen_port=ssl_listen_port, protocol='iiops')
+    else:
+      self._writeIstioNAP(name='http-probe-ext', server=template, listen_address=listen_address,
+                         listen_port=istio_readiness_port, protocol='http', bind_to_localhost="false")
 
   def addAdminChannelPortForwardNetworkAccessPoints(self, server):
     istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
     admin_channel_port_forward_enabled = self.env.getEnvOrDef("ADMIN_CHANNEL_PORT_FORWARDING_ENABLED", "true")
-    if (admin_channel_port_forward_enabled == 'false') or (istio_enabled == 'true') :
+    if (admin_channel_port_forward_enabled == 'false') or \
+        (istio_enabled == 'true' and istioVersionRequiresLocalHostBindings()) :
       return
 
     index = 0
@@ -2254,8 +2065,17 @@ def get_server_template_listening_ports_from_configxml(config_xml):
 
   return server_template_ssls, server_template_ports
 
-def nameContainsLocalHostIdentifier(name):
-  return name.find(WLS_LOCALHOST_IDENTIFIER) > -1
+def isVersionEarlierThan(self, version1, version2):
+  if version1 is None:
+    return True
+
+  if version2 is None:
+    return False
+
+  return LooseVersion(version1) < LooseVersion(version2)
+
+def istioVersionRequiresLocalHostBindings():
+  return isVersionEarlierThan(ISTIO_VERSION, '1.10')
 
 def main(env):
   try:

@@ -8,7 +8,7 @@ import model_wdt_mii_filter
 
 class WdtUpdateFilterCase(unittest.TestCase):
 
-  ISTIO_NAP_NAMES = ['tcp-cbt', 'tcp-ldap', 'tcp-iiop', 'tcp-snmp', 'http-probe', 'http-probe' + model_wdt_mii_filter.WLS_LOCALHOST_IDENTIFIER + '01', 'http-default', 'tcp-default']
+  ISTIO_NAP_NAMES = ['tcp-cbt', 'tcp-ldap', 'tcp-iiop', 'tcp-snmp', 'http-probe', 'http-default', 'tcp-default']
 
   def setUp(self):
     self.initialize_environment_variables()
@@ -22,6 +22,7 @@ class WdtUpdateFilterCase(unittest.TestCase):
       'CREDENTIALS_SECRET_NAME'] = 'sample-domain1-weblogic-credentials'
     os.environ['DOMAIN_SOURCE_TYPE'] = 'FromModel'
     os.environ['DATA_HOME'] = '/u01/datahome'
+    os.environ['ISTIO_VERSION'] = '1.8.5'
 
   def initialize_istio_naps(self):
     istio_naps = {}
@@ -130,13 +131,30 @@ class WdtUpdateFilterCase(unittest.TestCase):
     self.assertEqual('/u01/datahome', default_filestore, "Expected default file store directory to be \'/u01/datahome\'")
 
 
-  def test_customize_network_access_points_in_server_template(self):
-    model = self.getModel()
+  def test_customize_network_access_points_in_server_template_istio_localhost_binding(self):
+    try:
+      os.environ['ISTIO_ENABLED'] = 'true'
+      model = self.getModel()
 
-    server_template = self.getServerTemplate(model)
-    model_wdt_mii_filter.customizeNetworkAccessPoints(server_template, 'sample-domain1-managed-server${id}')
-    nap_listen_address = model['topology']['ServerTemplate']['cluster-1-template']['NetworkAccessPoint']['T3Channel']['ListenAddress']
-    self.assertEqual('sample-domain1-managed-server${id}', nap_listen_address, "Expected nap listen address to be \'sample-domain1-managed-server${id}\'")
+      server_template = self.getServerTemplate(model)
+      model_wdt_mii_filter.customizeNetworkAccessPoints(server_template, 'sample-domain1-managed-server${id}')
+      nap_listen_address = model['topology']['ServerTemplate']['cluster-1-template']['NetworkAccessPoint']['T3Channel']['ListenAddress']
+      self.assertEqual('127.0.0.1', nap_listen_address, "Expected nap listen address to be \'127.0.0.1\'")
+    finally:
+      del os.environ['ISTIO_ENABLED']
+
+  def test_customize_network_access_points_in_server_template_istio_1_10_or_higher(self):
+    try:
+      os.environ['ISTIO_ENABLED'] = 'true'
+      os.environ['ISTIO_VERSION'] = '1.10.4'
+      model = self.getModel()
+
+      server_template = self.getServerTemplate(model)
+      model_wdt_mii_filter.customizeNetworkAccessPoints(server_template, 'sample-domain1-managed-server${id}')
+      nap_listen_address = model['topology']['ServerTemplate']['cluster-1-template']['NetworkAccessPoint']['T3Channel']['ListenAddress']
+      self.assertEqual('sample-domain1-managed-server${id}', nap_listen_address, "Expected nap listen address to be \'sample-domain1-managed-server${id}\'")
+    finally:
+      del os.environ['ISTIO_ENABLED']
 
   def test_customize_istio_enabled_network_access_points_in_server_template(self):
     try:
@@ -146,17 +164,7 @@ class WdtUpdateFilterCase(unittest.TestCase):
       server_template = self.getServerTemplate(model)
       model_wdt_mii_filter.customizeNetworkAccessPoints(server_template, 'sample-domain1-managed-server${id}')
       nap_listen_address = model['topology']['ServerTemplate']['cluster-1-template']['NetworkAccessPoint']['T3Channel']['ListenAddress']
-      self.assertEqual('sample-domain1-managed-server${id}', nap_listen_address, "Expected nap listen address to be \'sample-domain1-managed-server${id}\'")
-
-      # Assert LocalHost channel listen address is '127.0.0.1'
-      nap_local_host = model['topology']['ServerTemplate']['cluster-1-template']['NetworkAccessPoint']['T3Channel' + model_wdt_mii_filter.WLS_LOCALHOST_IDENTIFIER + '01']['ListenAddress']
-      self.assertEqual('127.0.0.1', nap_local_host, "Expected nap listen address to be \'127.0.0.1\'")
-
-      # Verify we don't duplicate channels more than once
-      model_wdt_mii_filter.customizeNetworkAccessPoints(server_template, 'sample-domain1-managed-server${id}')
-      naps = server_template['NetworkAccessPoint']
-      nap_names = naps.keys()
-      self.assertEqual(2, len(nap_names), "Expected only two NAPS")
+      self.assertEqual('127.0.0.1', nap_listen_address, "Expected nap listen address to be \'127.0.0.1\'")
     finally:
       del os.environ['ISTIO_ENABLED']
 
@@ -271,85 +279,33 @@ class WdtUpdateFilterCase(unittest.TestCase):
     domain_name = model_wdt_mii_filter.env.getDomainName()
     self.assertEqual('wls-domain1', domain_name, "Expected domain name to be \'wls-domain1\'")
 
-  def test_createNameForLocalHostNetworkAccessPoint(self):
+  def test_istio_version1_none(self):
     model = self.getModel()
-    nap_name_copy = model_wdt_mii_filter.createNameForLocalHostNetworkAccessPoint('http-probe', {})
-    self.assertEqual('http-probe' + model_wdt_mii_filter.WLS_LOCALHOST_IDENTIFIER + '01', nap_name_copy, "Expected name to be http-probe" + model_wdt_mii_filter.WLS_LOCALHOST_IDENTIFIER + '01')
+    offlineWlstEnv = model_wdt_mii_filter.getOfflineWlstEnv()
+    self.assertTrue(offlineWlstEnv.isVersionEarlierThan(None, '1.10'),
+                    "Expected no istio version1 to default as True as earlier than 1.10")
 
-  def test_createNameForLocalHostNetworkAccessPoint_with_long_name(self):
-    nap_name_10_chars = 'abcdefghij'
-    nap_name_15_chars = nap_name_10_chars + 'klmno'
-    nap_name_20_chars = nap_name_15_chars + 'pqrst'
-
+  def test_istio_version2_none(self):
     model = self.getModel()
-    nap_name_dict = {}
-    nap_name_copy = model_wdt_mii_filter.createNameForLocalHostNetworkAccessPoint(nap_name_10_chars, nap_name_dict)
-    self.assertEqual(nap_name_10_chars + model_wdt_mii_filter.WLS_LOCALHOST_IDENTIFIER + '01', nap_name_copy, "Expected name to be " + nap_name_10_chars + model_wdt_mii_filter.WLS_LOCALHOST_IDENTIFIER + '01')
+    offlineWlstEnv = model_wdt_mii_filter.getOfflineWlstEnv()
+    self.assertFalse(offlineWlstEnv.isVersionEarlierThan('1.10', None),
+                    "Expected no istio version2 to default as False as earlier than 1.10")
 
-    nap_name_copy = model_wdt_mii_filter.createNameForLocalHostNetworkAccessPoint(nap_name_15_chars, nap_name_dict)
-    self.assertEqual(nap_name_10_chars + model_wdt_mii_filter.WLS_LOCALHOST_IDENTIFIER + '02', nap_name_copy, "Expected 15 character name to be " + nap_name_10_chars + model_wdt_mii_filter.WLS_LOCALHOST_IDENTIFIER + '02')
+  def test_istio_version_later_than(self):
+    model = self.getModel()
+    offlineWlstEnv = model_wdt_mii_filter.getOfflineWlstEnv()
+    self.assertFalse(offlineWlstEnv.isVersionEarlierThan('1.11.3', '1.10'),
+                    "Expected istio version 1.11.3 > 1.10")
 
-    nap_name_copy = model_wdt_mii_filter.createNameForLocalHostNetworkAccessPoint(nap_name_20_chars, nap_name_dict)
-    self.assertEqual(nap_name_10_chars + model_wdt_mii_filter.WLS_LOCALHOST_IDENTIFIER + '03', nap_name_copy, "Expected name to be " + nap_name_10_chars + model_wdt_mii_filter.WLS_LOCALHOST_IDENTIFIER + '03')
+  def test_istio_version_equal(self):
+    model = self.getModel()
+    offlineWlstEnv = model_wdt_mii_filter.getOfflineWlstEnv()
+    self.assertFalse(offlineWlstEnv.isVersionEarlierThan('1.10.0', '1.10'),
+                     "Expected istio version 1.10.0 == 1.10")
 
-  def test_createNameForLocalHostNetworkAccessPoint_with_double_digit_idx(self):
-    nap_name_10_chars = 'abcdefghij'
-    nap_name_20_chars = nap_name_10_chars + 'klmnopqrst'
-    nap_name_dict = {}
-
-    # 01
-    nap_name_copy = model_wdt_mii_filter.createNameForLocalHostNetworkAccessPoint(nap_name_20_chars, nap_name_dict)
-    self.assertEqual(nap_name_10_chars + model_wdt_mii_filter.WLS_LOCALHOST_IDENTIFIER + '01', nap_name_copy, "Expected name to be " + nap_name_10_chars + model_wdt_mii_filter.WLS_LOCALHOST_IDENTIFIER + '01')
-
-    # 02
-    nap_name_copy = model_wdt_mii_filter.createNameForLocalHostNetworkAccessPoint(nap_name_20_chars, nap_name_dict)
-    self.assertEqual(nap_name_10_chars + model_wdt_mii_filter.WLS_LOCALHOST_IDENTIFIER + '02', nap_name_copy, "Expected name to be " + nap_name_10_chars + model_wdt_mii_filter.WLS_LOCALHOST_IDENTIFIER + '01')
-
-    model_wdt_mii_filter.createNameForLocalHostNetworkAccessPoint(nap_name_20_chars, nap_name_dict)
-    model_wdt_mii_filter.createNameForLocalHostNetworkAccessPoint(nap_name_20_chars, nap_name_dict)
-    model_wdt_mii_filter.createNameForLocalHostNetworkAccessPoint(nap_name_20_chars, nap_name_dict)
-    model_wdt_mii_filter.createNameForLocalHostNetworkAccessPoint(nap_name_20_chars, nap_name_dict)
-    model_wdt_mii_filter.createNameForLocalHostNetworkAccessPoint(nap_name_20_chars, nap_name_dict)
-    model_wdt_mii_filter.createNameForLocalHostNetworkAccessPoint(nap_name_20_chars, nap_name_dict)
-    model_wdt_mii_filter.createNameForLocalHostNetworkAccessPoint(nap_name_20_chars, nap_name_dict)
-    # 10
-    nap_name_copy = model_wdt_mii_filter.createNameForLocalHostNetworkAccessPoint(nap_name_20_chars, nap_name_dict)
-    self.assertEqual(nap_name_10_chars + model_wdt_mii_filter.WLS_LOCALHOST_IDENTIFIER + '10', nap_name_copy, "Expected name to be " + nap_name_10_chars + model_wdt_mii_filter.WLS_LOCALHOST_IDENTIFIER + '10')
-
-  def test_createLocalHostNetworkAccessPoint(self):
-    try:
-      os.environ['ISTIO_ENABLED'] = 'true'
-      model = self.getModel()
-      server_template = self.getServerTemplate(model)
-      naps = server_template['NetworkAccessPoint']
-
-      nap_name_dict = {}
-      local_nap_dict = {}
-      nap = naps['T3Channel']
-      model_wdt_mii_filter.createLocalHostNetworkAccessPoint('T3Channel',
-                        nap, nap_name_dict, local_nap_dict)
-      self.assertEqual(1, len(local_nap_dict), "Expected only one dictionary entry")
-      nap = local_nap_dict['T3Channel' +
-                           model_wdt_mii_filter.WLS_LOCALHOST_IDENTIFIER + '01']
-      self.assertEqual('127.0.0.1', nap['ListenAddress'],
-                       "Expected ListenAddress to be '\127.0.0.1\'")
-    finally:
-      del os.environ['ISTIO_ENABLED']
-
-  def test_nameContainsLocalHostIdentifier(self):
-    channelName = 'abced' + model_wdt_mii_filter.WLS_LOCALHOST_IDENTIFIER + '01'
-    self.assertTrue(model_wdt_mii_filter.nameContainsLocalHostIdentifier(channelName),
-                "Expected name to contain " + model_wdt_mii_filter.WLS_LOCALHOST_IDENTIFIER)
-
-  def test_nameDoesNotContainsLocalHostIdentifier(self):
-    channelName = 'abcedefg-l01'
-    self.assertFalse(model_wdt_mii_filter.nameContainsLocalHostIdentifier(channelName),
-                    "Expected name to not contain " + model_wdt_mii_filter.WLS_LOCALHOST_IDENTIFIER)
-
-  def test_localHostIdentifierDoesNotContainDigits(self):
-    channelName = 'abced' + model_wdt_mii_filter.WLS_LOCALHOST_IDENTIFIER + 'o1'
-    self.assertFalse(model_wdt_mii_filter.nameContainsLocalHostIdentifier(channelName),
-                     "Expected name to not contain " + model_wdt_mii_filter.WLS_LOCALHOST_IDENTIFIER)
+  def test_istioVersionRequiresLocalHostBindings(self):
+    model = self.getModel()
+    self.assertTrue(model_wdt_mii_filter.istioVersionRequiresLocalHostBindings())
 
 class MockOfflineWlstEnv(model_wdt_mii_filter.OfflineWlstEnv):
 

@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: fc558513a2650fa19f6bb20b9bb959cdcdea01fc45a37dc3841385467b7131e8
+    weblogic.sha256: a2ee3aa0f61d9204d5c8a7107acf6810c454f8432cef4ffbe2575db3a6595c94
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -210,6 +210,26 @@ spec:
                   istio:
                     description: The Istio service mesh integration settings.
                     properties:
+                      replicationChannelPort:
+                        description: The operator will create a WebLogic network access
+                          point with this port that will then be exposed from the
+                          container running the WebLogic Server instance. The WebLogic
+                          Replication Service will use this network access point for
+                          all replication traffic. Defaults to 4358.
+                        type: number
+                      semanticVersion:
+                        properties:
+                          major:
+                            type: number
+                          minor:
+                            type: number
+                          revision:
+                            type: number
+                        required:
+                        - major
+                        - minor
+                        - revision
+                        type: object
                       readinessPort:
                         description: The operator will create a WebLogic network access
                           point with this port that will then be exposed from the
@@ -218,6 +238,14 @@ spec:
                           the server instance is ready for application traffic. Defaults
                           to 8888.
                         type: number
+                      version:
+                        description: Starting with Istio 1.10, the networking behavior
+                          was changed in that the proxy no longer redirects the traffic
+                          to the localhost interface, but instead forwards (or passes
+                          it through) it to the network interface associated with
+                          the pod's IP. True, if Istio v1.10 or higher is installed.
+                          Defaults to false
+                        type: string
                       enabled:
                         description: True, if this domain is deployed under an Istio
                           service mesh. Defaults to true when the `istio` field is

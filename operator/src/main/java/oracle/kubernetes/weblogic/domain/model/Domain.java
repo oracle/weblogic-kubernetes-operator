@@ -650,6 +650,10 @@ public class Domain implements KubernetesObject {
     return spec.getIstioReadinessPort();
   }
 
+  public String getIstioVersion() {
+    return spec.getIstioVersion();
+  }
+
   /**
    * Returns the domain home. May be null, but will not be an empty string.
    *
