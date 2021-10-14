@@ -30,8 +30,8 @@ using the operator to deploy and run a WebLogic domain container-packaged web ap
 ***
 #### Current production release
 
-The [current release of the operator](https://github.com/oracle/weblogic-kubernetes-operator/releases) is 3.3.1.
-This release was published on August 23, 2021. See the [operator prerequisites]({{< relref "/userguide/prerequisites/introduction.md" >}}) and [supported environments]({{< relref "/userguide/platforms/environments.md" >}}).
+The [current release of the operator](https://github.com/oracle/weblogic-kubernetes-operator/releases) is 3.3.2.
+This release was published on September 24, 2021. See the [operator prerequisites]({{< relref "/userguide/prerequisites/introduction.md" >}}) and [supported environments]({{< relref "/userguide/platforms/environments.md" >}}).
 
 ***
 

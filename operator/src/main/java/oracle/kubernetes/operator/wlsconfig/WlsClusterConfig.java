@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import javax.annotation.Nonnull;
 
 import oracle.kubernetes.utils.OperatorUtils;
@@ -226,9 +227,8 @@ public class WlsClusterConfig {
   public synchronized List<WlsServerConfig> getServerConfigs() {
     int dcsize = dynamicServersConfig == null ? 0 : dynamicServersConfig.getDynamicClusterSize();
     List<WlsServerConfig> result = new ArrayList<>(dcsize + servers.size());
-    if (dynamicServersConfig != null) {
-      result.addAll(dynamicServersConfig.getServerConfigs());
-    }
+    Optional.ofNullable(dynamicServersConfig).map(WlsDynamicServersConfig::getServerConfigs)
+        .ifPresent(dynamicServers -> dynamicServers.forEach(item -> result.add(item)));
     result.addAll(servers);
     result.sort(Comparator.comparing((WlsServerConfig sc) -> OperatorUtils.getSortingString(sc.getName())));
     return result;

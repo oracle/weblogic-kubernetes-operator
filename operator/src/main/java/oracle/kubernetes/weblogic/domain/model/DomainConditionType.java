@@ -4,45 +4,38 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 public enum DomainConditionType {
-  Progressing {
+  Failed {
     @Override
-    DomainConditionType[] typesToRemove() {
-      return new DomainConditionType[] {Progressing};
+    boolean allowMultipleConditionsWithThisType() {
+      return true;
+    }
+
+    @Override
+    boolean statusMustBeTrue() {
+      return true;
     }
   },
   Available,
-  ConfigChangesPendingRestart {
-    @Override
-    DomainConditionType[] typesToRemove() {
-      return new DomainConditionType[] {};
-    }
-  },
-  Failed {
-    @Override
-    String getStatusMessage(DomainCondition condition) {
-      return condition.getMessage();
-    }
+  Completed,
+  ConfigChangesPendingRestart,
 
+  Progressing {
     @Override
-    String getStatusReason(DomainCondition condition) {
-      return condition.getReason();
-    }
-
-    @Override
-    DomainConditionType[] typesToRemove() {
-      return new DomainConditionType[] {Progressing, Available};
+    boolean isObsolete() {
+      return true;
     }
   };
 
-  DomainConditionType[] typesToRemove() {
-    return new DomainConditionType[] {Progressing, Available, Failed};
+  boolean allowMultipleConditionsWithThisType() {
+    return false;
   }
 
-  String getStatusMessage(DomainCondition condition) {
-    return null;
+  boolean statusMustBeTrue() {
+    return false;
   }
 
-  String getStatusReason(DomainCondition condition) {
-    return null;
+  boolean isObsolete() {
+    return false;
   }
+
 }

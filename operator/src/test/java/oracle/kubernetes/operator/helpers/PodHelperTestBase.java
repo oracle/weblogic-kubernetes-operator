@@ -95,6 +95,8 @@ import org.yaml.snakeyaml.Yaml;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static com.meterware.simplestub.Stub.createStub;
+import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
+import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_ROLL_STARTING_EVENT;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventWithNamespace;
 import static oracle.kubernetes.operator.EventTestUtils.getEventsWithReason;
@@ -107,6 +109,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_EXPORTER_SI
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_DEBUG_CONFIG_MAP_SUFFIX;
 import static oracle.kubernetes.operator.KubernetesConstants.EXPORTER_CONTAINER_NAME;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
@@ -119,8 +122,8 @@ import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_SUCCESS;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_SCAN;
 import static oracle.kubernetes.operator.helpers.AnnotationHelper.SHA256_ANNOTATION;
+import static oracle.kubernetes.operator.helpers.BasePodStepContext.KUBERNETES_PLATFORM_HELM_VARIABLE;
 import static oracle.kubernetes.operator.helpers.DomainIntrospectorJobTest.TEST_VOLUME_NAME;
-import static oracle.kubernetes.operator.helpers.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_STARTING;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
@@ -145,7 +148,6 @@ import static oracle.kubernetes.operator.helpers.TuningParametersStub.LIVENESS_T
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_INITIAL_DELAY;
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_PERIOD;
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_TIMEOUT;
-import static oracle.kubernetes.operator.logging.MessageKeys.CYCLING_POD;
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND;
@@ -160,6 +162,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
@@ -200,6 +203,8 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   private static final int READ_AND_EXECUTE_MODE = 0555;
   private static final String TEST_PRODUCT_VERSION = "unit-test";
   private static final String NOOP_EXPORTER_CONFIG = "queries:\n";
+  public static final String LONG_CHANNEL_NAME = "Very_Long_Channel_Name";
+  public static final String TRUNCATED_PORT_NAME_PREFIX = "very-long-ch";
 
   final TerminalStep terminalStep = new TerminalStep();
   private final Domain domain = createDomain();
@@ -218,12 +223,15 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   protected final V1Affinity affinity = createAffinity();
   private Memento hashMemento;
   private final Map<String, Map<String, KubernetesEventObjects>> domainEventObjects = new ConcurrentHashMap<>();
-
-  private TestUtils.ConsoleHandlerMemento consoleHandlerMemento = TestUtils.silenceOperatorLogger();
+  private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
 
   PodHelperTestBase(String serverName, int listenPort) {
     this.serverName = serverName;
     this.listenPort = listenPort;
+  }
+
+  TestUtils.ConsoleHandlerMemento getConsoleHandlerMemento() {
+    return consoleHandlerMemento;
   }
 
   Domain getDomain() {
@@ -298,7 +306,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     mementos.add(InMemoryCertificates.install());
     mementos.add(setProductVersion(TEST_PRODUCT_VERSION));
     mementos.add(
-        TestUtils.silenceOperatorLogger()
+          consoleHandlerMemento = TestUtils.silenceOperatorLogger()
             .collectLogMessages(logRecords, getMessageKeys())
             .withLogLevel(Level.FINE)
             .ignoringLoggedExceptions(ApiException.class));
@@ -375,6 +383,43 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
             hasEntry("prometheus.io/port", "7001"),
             hasEntry("prometheus.io/path", "/wls-exporter/metrics"),
             hasEntry("prometheus.io/scrape", "true")));
+  }
+
+  @Test
+  void whenPodCreatedWithAdminNapNameExceedingMaxPortNameLength_podContainerCreatedWithTruncatedPortName() {
+    getServerTopology().addNetworkAccessPoint(new NetworkAccessPoint(LONG_CHANNEL_NAME, "admin", 8001, 8001));
+    assertThat(
+            getContainerPorts(),
+            hasItem(createContainerPort(TRUNCATED_PORT_NAME_PREFIX + "-01")));
+  }
+
+  private List<V1ContainerPort> getContainerPorts() {
+    return getCreatedPod().getSpec().getContainers().stream()
+            .filter(c -> c.getName().equals(WLS_CONTAINER_NAME)).findFirst().map(c -> c.getPorts()).orElse(null);
+  }
+
+  private V1ContainerPort createContainerPort(String portName) {
+    return new V1ContainerPort().name(portName).containerPort(8001).protocol("TCP");
+  }
+
+  @Test
+  void whenPodCreatedWithMultipleNapsWithNamesExceedingMaxPortNameLength_podContainerCreatedWithTruncatedPortNames() {
+    getServerTopology().addNetworkAccessPoint(new NetworkAccessPoint(LONG_CHANNEL_NAME + "1", "admin", 8001, 8001));
+    getServerTopology().addNetworkAccessPoint(new NetworkAccessPoint(LONG_CHANNEL_NAME + "11", "admin", 8001, 8001));
+    assertThat(
+            getContainerPorts(),
+            hasItems(createContainerPort(TRUNCATED_PORT_NAME_PREFIX + "-01"),
+                     createContainerPort(TRUNCATED_PORT_NAME_PREFIX + "-02")));
+  }
+
+  @Test
+  void whenPodCreatedWithMultipleNapsSomeWithNamesExceedingMaxPortNameLength_podContainerCreatedWithMixedPortNames() {
+    getServerTopology().addNetworkAccessPoint(new NetworkAccessPoint(LONG_CHANNEL_NAME, "admin", 8001, 8001));
+    getServerTopology().addNetworkAccessPoint(new NetworkAccessPoint("My_Channel_Name", "admin", 8001, 8001));
+    assertThat(
+            getContainerPorts(),
+            hasItems(createContainerPort(TRUNCATED_PORT_NAME_PREFIX + "-01"),
+                     createContainerPort("my-channel-name")));
   }
 
   protected DomainConfigurator defineExporterConfiguration() {
@@ -932,22 +977,22 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
                 CONFIGURED_SUCCESS_THRESHOLD, CONFIGURED_FAILURE_THRESHOLD));
   }
 
-  @Test 
+  @Test
   public void whenPodCreationFailsDueToUnprocessableEntityFailure_reportInDomainStatus() {
-    testSupport.failOnResource(POD, getPodName(), NS, new UnrecoverableErrorBuilderImpl()
+    testSupport.failOnCreate(POD, NS, new UnrecoverableErrorBuilderImpl()
         .withReason("FieldValueNotFound")
         .withMessage("Test this failure")
         .build());
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
-    assertThat(getDomain(), hasStatus("FieldValueNotFound",
-        "testcall in namespace junit, for testName: Test this failure"));
+    assertThat(getDomain(), hasStatus().withReason(Kubernetes)
+        .withMessageContaining("create", "pod", NS, "Test this failure"));
   }
 
   @Test
   void whenPodCreationFailsDueToUnprocessableEntityFailure_abortFiber() {
-    testSupport.failOnResource(POD, getPodName(), NS, new UnrecoverableErrorBuilderImpl()
+    testSupport.failOnCreate(POD, NS, new UnrecoverableErrorBuilderImpl()
         .withReason("FieldValueNotFound")
         .withMessage("Test this failure")
         .build());
@@ -959,12 +1004,12 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
 
   @Test
   void whenPodCreationFailsDueToQuotaExceeded_reportInDomainStatus() {
-    testSupport.failOnResource(POD, getPodName(), NS, createQuotaExceededException());
+    testSupport.failOnCreate(POD, NS, createQuotaExceededException());
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
-    assertThat(getDomain(), hasStatus("Forbidden",
-        "testcall in namespace junit, for testName: " + getQuotaExceededMessage()));
+    assertThat(getDomain(), hasStatus().withReason(Kubernetes)
+          .withMessageContaining("create", "pod", NS, getQuotaExceededMessage()));
   }
 
   private ApiException createQuotaExceededException() {
@@ -977,7 +1022,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
 
   @Test
   void whenPodCreationFailsDueToQuotaExceeded_abortFiber() {
-    testSupport.failOnResource(POD, getPodName(), NS, createQuotaExceededException());
+    testSupport.failOnCreate(POD, NS, createQuotaExceededException());
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
@@ -1075,6 +1120,21 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     final String customScript = "/u01/customLiveness.sh";
     domainPresenceInfo.getDomain().getSpec().setLivenessProbeCustomScript(customScript);
     assertThat(getCreatedPodSpecContainer().getEnv(), hasEnvVar("LIVENESS_PROBE_CUSTOM_SCRIPT", customScript));
+  }
+
+  @Test
+  void whenOperatorHasKubernetesPlatformConfigured_createdPodSpecContainerHasKubernetesPlatformEnvVariable() {
+    TuningParametersStub.setParameter(KUBERNETES_PLATFORM_HELM_VARIABLE, "Openshift");
+    assertThat(getCreatedPodSpecContainer().getEnv(),
+            hasEnvVar(ServerEnvVars.KUBERNETES_PLATFORM, "Openshift")
+    );
+  }
+
+  @Test
+  void whenNotConfigured_KubernetesPlatform_createdPodSpecContainerHasNoKubernetesPlatformEnvVariable() {
+    assertThat(getCreatedPodSpecContainer().getEnv(),
+            not(hasEnvVar(ServerEnvVars.KUBERNETES_PLATFORM, "Openshift"))
+    );
   }
 
   private static final String OVERRIDE_DATA_DIR = "/u01/data";
@@ -1578,16 +1638,15 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  void whenNoPod_onFiveHundred() {
+  void whenNoPod_onInternalError() {
     testSupport.addRetryStrategy(retryStrategy);
-    testSupport.failOnCreate(KubernetesTestSupport.POD, getPodName(), NS, 500);
+    testSupport.failOnCreate(KubernetesTestSupport.POD, NS, HTTP_INTERNAL_ERROR);
 
     FiberTestSupport.StepFactory stepFactory = getStepFactory();
     Step initialStep = stepFactory.createStepList(terminalStep);
     testSupport.runSteps(initialStep);
 
-    assertThat(getDomain(), hasStatus("ServerError",
-            "testcall in namespace junit, for testName: failure reported in test"));
+    assertThat(getDomain(), hasStatus().withReason(Kubernetes).withMessageContaining("create", "pod", NS));
   }
 
   @Test
@@ -2264,10 +2323,6 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
         getExpectedEventMessage(DOMAIN_ROLL_STARTING),
         stringContainsInOrder("Rolling restart", UID, "domain resource changed",
             "WebLogic domain configuration changed"));
-  }
-
-  protected static String getCyclePodKey() {
-    return CYCLING_POD;
   }
 
   protected static String getDomainRollStartingKey() {

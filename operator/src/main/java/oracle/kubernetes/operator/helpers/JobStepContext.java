@@ -534,7 +534,7 @@ public abstract class JobStepContext extends BasePodStepContext {
     }
 
     private NextAction updateDomainStatus(Packet packet, CallResponse<V1Job> callResponse) {
-      return doNext(DomainStatusUpdater.createFailureRelatedSteps(callResponse, null), packet);
+      return doNext(DomainStatusUpdater.createFailureRelatedSteps(callResponse), packet);
     }
 
     @Override

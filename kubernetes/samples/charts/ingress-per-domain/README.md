@@ -1,10 +1,10 @@
 # An ingress per domain chart
-This chart is for deploying an Ingress resource in front of a WebLogic domain cluster. We support ingress types: Traefik, Voyager, and NGINX.
+This chart is for deploying an Ingress resource in front of a WebLogic domain cluster. We support ingress types: Traefik and NGINX.
 
 ## Prerequisites
 - Have Docker and a Kubernetes cluster running and have `kubectl` installed and configured.
 - Have Helm installed.
-- The corresponding ingress controller, Traefik, Voyager, or NGINX, is installed in the Kubernetes cluster.
+- The corresponding ingress controller, Traefik or NGINX, is installed in the Kubernetes cluster.
 - A WebLogic domain cluster deployed by `weblogic-operator` is running in the Kubernetes cluster.
 
 ## Installing the chart
@@ -33,24 +33,6 @@ wlsDomain:
 traefik:
   # hostname used by host-routing
   hostname: domain1.org
-```
-
-Sample `values.yaml` file for the Voyager Ingress:
-```yaml
-type: VOYAGER
-
-# WLS domain as backend to the load balancer
-wlsDomain:
-  domainUID: domain1
-  clusterName: cluster1  
-  managedServerPort: 8001
-
-# Voyager specific values
-voyager:
-  # web port
-  webPort: 30305
-  # stats port
-  statsPort: 30315
 ```
 
 Sample `values.yaml` file for the NGINX Ingress:
@@ -85,7 +67,5 @@ The following table lists the configurable parameters of this chart and their de
 | `wlsDomain.managedServerPort` | Port number of the managed servers in the WLS domain cluster. | `8001` |
 | `traefik.hostname` | Hostname to route to the WLS domain cluster. | `domain1.org` |
 | `nginx.hostname` | Hostname to route to the WLS domain cluster. | `domain1.org` |
-| `voyager.webPort` | Web port to access the Voyager load balancer. | `30305` |
-| `voyager.statsPort` | Port to access the Voyager/HAProxy stats page. | `30315` |
 
 **Note:** The input values `domainUID` and `clusterName` will be used to generate the Kubernetes `serviceName` of the WLS cluster with the format `domainUID-cluster-clusterName`.

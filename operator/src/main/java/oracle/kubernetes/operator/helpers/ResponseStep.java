@@ -16,6 +16,8 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_FORBIDDEN;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAUTHORIZED;
 import static oracle.kubernetes.operator.calls.AsyncRequestStep.CONTINUE;
 import static oracle.kubernetes.operator.calls.AsyncRequestStep.accessContinue;
 
@@ -137,12 +139,16 @@ public abstract class ResponseStep<T> extends Step {
   private NextAction doPotentialRetry(Step conflictStep, Packet packet, CallResponse<T> callResponse) {
     return Optional.ofNullable(packet.getSpi(RetryStrategy.class))
         .map(rs -> rs.doPotentialRetry(conflictStep, packet, callResponse.getStatusCode()))
-        .orElseGet(() -> {
-          LOGGER.fine(MessageKeys.ASYNC_NO_RETRY,
-                  callResponse.getRequestParams().call,
-                  callResponse.getExceptionString(), callResponse.getStatusCode(), callResponse.getHeadersString());
-          return null;
-        });
+        .orElseGet(() -> logNoRetry(callResponse));
+  }
+
+  private NextAction logNoRetry(CallResponse<T> callResponse) {
+    if (LOGGER.isFineEnabled()) {
+      LOGGER.fine(MessageKeys.ASYNC_NO_RETRY,
+            Optional.ofNullable(callResponse.getRequestParams()).map(r -> r.call).orElse("--no call--"),
+            callResponse.getExceptionString(), callResponse.getStatusCode(), callResponse.getHeadersString());
+    }
+    return null;
   }
 
   /**
@@ -184,11 +190,8 @@ public abstract class ResponseStep<T> extends Step {
    * @return Next action for fiber processing, which may be a retry
    */
   public NextAction onFailure(Step conflictStep, Packet packet, CallResponse<T> callResponse) {
-    Optional<NextAction> optionalNextAction =
-        Optional.ofNullable(doPotentialRetry(conflictStep, packet, callResponse));
-    return optionalNextAction
-        .filter(na -> optionalNextAction.isPresent())
-        .orElseGet(() -> onFailureNoRetry(packet, callResponse));
+    return Optional.ofNullable(doPotentialRetry(conflictStep, packet, callResponse))
+          .orElseGet(() -> onFailureNoRetry(packet, callResponse));
   }
 
   protected NextAction onFailureNoRetry(Packet packet, CallResponse<T> callResponse) {
@@ -196,11 +199,11 @@ public abstract class ResponseStep<T> extends Step {
   }
 
   protected boolean isNotAuthorizedOrForbidden(CallResponse<T> callResponse) {
-    return callResponse.getStatusCode() == 401 || callResponse.getStatusCode() == 403;
+    return callResponse.getStatusCode() == HTTP_UNAUTHORIZED || callResponse.getStatusCode() == HTTP_FORBIDDEN;
   }
 
   protected boolean isForbidden(CallResponse<T> callResponse) {
-    return callResponse.getStatusCode() == 403;
+    return callResponse.getStatusCode() == HTTP_FORBIDDEN;
   }
 
   /**
