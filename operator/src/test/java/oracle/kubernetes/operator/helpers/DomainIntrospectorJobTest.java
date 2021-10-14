@@ -35,6 +35,7 @@ import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.FiberTestSupport;
+import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.SystemClockTestSupport;
@@ -54,12 +55,11 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import static com.meterware.simplestub.Stub.createNiceStub;
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static java.net.HttpURLConnection.HTTP_CONFLICT;
+import static oracle.kubernetes.operator.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
@@ -88,11 +88,13 @@ import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_I
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_VOLUME_NAME_PREFIX;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImageVolume.DEFAULT_AUXILIARY_IMAGE_PATH;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.core.AllOf.allOf;
@@ -113,8 +115,8 @@ class DomainIntrospectorJobTest {
   private static final String MS_PREFIX = "managed-server";
   private static final String[] MANAGED_SERVER_NAMES =
       IntStream.rangeClosed(1, MAX_SERVERS).mapToObj(n -> MS_PREFIX + n).toArray(String[]::new);
-  private static final String SEVERE_PROBLEM_1 = "really bad";
-  private static final String SEVERE_MESSAGE_1 = "@[SEVERE] " + SEVERE_PROBLEM_1;
+  private static final String SEVERE_PROBLEM = "really bad";
+  private static final String SEVERE_MESSAGE = "@[SEVERE] " + SEVERE_PROBLEM;
   private static final String INFO_MESSAGE = "@[INFO] just letting you know";
   public static final String TEST_VOLUME_NAME = "test";
   private static final String JOB_UID = "FAILED_JOB";
@@ -129,6 +131,7 @@ class DomainIntrospectorJobTest {
   private final RetryStrategyStub retryStrategy = createStrictStub(RetryStrategyStub.class);
   private final String jobPodName = LegalNames.toJobIntrospectorName(UID);
   private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
+  private boolean jobDeleted;
 
   public DomainIntrospectorJobTest() {
   }
@@ -151,9 +154,14 @@ class DomainIntrospectorJobTest {
     testSupport.addToPacket(JOB_POD_NAME, jobPodName);
     testSupport.addDomainPresenceInfo(domainPresenceInfo);
     testSupport.defineResources(domain);
-    testSupport.addComponent(JOBWATCHER_COMPONENT_NAME,
-          JobAwaiterStepFactory.class,
-          createNiceStub(JobAwaiterStepFactory.class));
+    testSupport.addComponent(JOBWATCHER_COMPONENT_NAME, JobAwaiterStepFactory.class, new JobAwaiterStepFactoryStub());
+  }
+
+  private static class JobAwaiterStepFactoryStub implements JobAwaiterStepFactory {
+    @Override
+    public Step waitForReady(V1Job job, Step next) {
+      return next;
+    }
   }
 
   private String[] getMessageKeys() {
@@ -243,7 +251,7 @@ class DomainIntrospectorJobTest {
 
   @Test
   void whenNoJob_createIt() throws JsonProcessingException {
-    IntrospectionTestUtils.defineResources(testSupport, createDomainConfig("cluster-1"));
+    establishWlsDomainWithCluster("cluster-1");
     testSupport.defineResources(
         new V1ConfigMap()
             .metadata(
@@ -257,6 +265,10 @@ class DomainIntrospectorJobTest {
     assertThat(logRecords, containsFine(getJobDeletedMessageKey()));
   }
 
+  private void establishWlsDomainWithCluster(String s) throws JsonProcessingException {
+    IntrospectionTestUtils.defineResources(testSupport, createDomainConfig(s));
+  }
+
   private static WlsDomainConfig createDomainConfig(String clusterName) {
     WlsClusterConfig clusterConfig = new WlsClusterConfig(clusterName);
     for (String serverName : MANAGED_SERVER_NAMES) {
@@ -268,7 +280,7 @@ class DomainIntrospectorJobTest {
   }
 
   private FiberTestSupport.StepFactory getStepFactory() {
-    return JobHelper::createDomainIntrospectorJobStep;
+    return JobHelper::createIntrospectionStartStep;
   }
 
   @Test
@@ -479,36 +491,119 @@ class DomainIntrospectorJobTest {
   }
 
   @Test
-  void whenPreviousSuccessfulJobExists_readOldPodLogWithoutCreatingNewJob() {
+  void whenNewSuccessfulJobExists_readOldPodLogWithoutCreatingNewJob() {
     consoleHandlerMemento.ignoreMessage(getJobDeletedMessageKey());
-    testSupport.defineResources(asCompletedJob(createIntrospectorJob()));
-    IntrospectionTestUtils.defineResources(testSupport, INFO_MESSAGE);
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
+    defineCompletedIntrospection();
     testSupport.failOnCreate(JOB, NS, HTTP_FORBIDDEN);
 
-    testSupport.runSteps(JobHelper.replaceOrCreateDomainIntrospectorJobStep(terminalStep));
+    testSupport.runSteps(JobHelper.createIntrospectionStartStep(null));
+
+    assertThat(getUpdatedDomain(), not(hasCondition(Failed)));
+  }
+
+  private void defineCompletedIntrospection() {
+    testSupport.defineResources(asCompletedJob(createIntrospectorJob()));
+    testSupport.definePodLog(LegalNames.toJobIntrospectorName(UID), NS, INFO_MESSAGE);
   }
 
   @Test
-  @Disabled("maybe use the failure count logic to handle this?")
-  void whenPreviousFailedJobExists_createNewJob() {
-    consoleHandlerMemento.ignoreMessage(getJobDeletedMessageKey());
-    testSupport.defineResources(asCompletedJob(createIntrospectorJob()));
-    IntrospectionTestUtils.defineResources(testSupport, SEVERE_MESSAGE_1);
-    testSupport.doOnCreate(JOB, this::recordJob);
+  void whenNewFailedJobExists_readPodLogAndReportFailure() {
+    ignoreIntrospectorFailureLogs();
 
-    testSupport.runSteps(JobHelper.replaceOrCreateDomainIntrospectorJobStep(terminalStep));
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
+    defineFailedIntrospection();
+    testSupport.runSteps(JobHelper.createIntrospectionStartStep(terminalStep));
 
-    assertThat(createdJob, notNullValue());
+    assertThat(getUpdatedDomain(), hasCondition(Failed));
   }
 
-  private V1Job createdJob;
+  private void ignoreIntrospectorFailureLogs() {
+    consoleHandlerMemento.ignoreMessage(getJobFailedMessageKey());
+    consoleHandlerMemento.ignoreMessage(getJobFailedDetailMessageKey());
+  }
+
+  private void defineFailedIntrospection() {
+    testSupport.defineResources(asFailedJob(createIntrospectorJob()));
+    testSupport.definePodLog(LegalNames.toJobIntrospectorName(UID), NS, SEVERE_MESSAGE);
+  }
+
+  @Test
+  void whenPreviousFailedJobExists_readOnlyNewPodLog() throws Exception {
+    ignoreJobCreatedAndDeletedLogs();
+    ignoreIntrospectorFailureLogs();
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
+    definePreviousFailedIntrospectionWithoutPodLog();
+    testSupport.doAfterCall(JOB, "deleteJob", this::defineNewIntrospectionResult);
+
+    testSupport.runSteps(JobHelper.createIntrospectionStartStep(null));
+
+    testSupport.throwOnCompletionFailure();
+  }
+
+  private void defineNewIntrospectionResult() {
+    testSupport.getPacket().put(JOB_POD_NAME, jobPodName);
+    testSupport.definePodLog(jobPodName, NS, SEVERE_MESSAGE);
+  }
+
+  private void ignoreJobCreatedAndDeletedLogs() {
+    consoleHandlerMemento.ignoreMessage(getJobCreatedMessageKey());
+    consoleHandlerMemento.ignoreMessage(getJobDeletedMessageKey());
+  }
+
+  private void definePreviousFailedIntrospection() {
+    defineFailedIntrospection();
+    getDomain().getOrCreateStatus().incrementIntrospectJobFailureCount(JOB_UID);
+  }
+
+  private void definePreviousFailedIntrospectionWithoutPodLog() {
+    testSupport.defineResources(asFailedJob(createIntrospectorJob()));
+    getDomain().getOrCreateStatus().incrementIntrospectJobFailureCount(JOB_UID);
+  }
+
+  @Test
+  void whenPreviousFailedJobExists_deleteIt() {
+    ignoreJobCreatedAndDeletedLogs();
+    ignoreIntrospectorFailureLogs();
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
+    definePreviousFailedIntrospection();
+    testSupport.doAfterCall(JOB, "deleteJob", this::recordJobDeleted);
+
+    testSupport.runSteps(JobHelper.createIntrospectionStartStep(null));
+
+    assertThat(jobDeleted, is(true));
+  }
+
+  private void recordJobDeleted() {
+    this.jobDeleted = true;
+  }
+
+  @Test
+  void whenPreviousFailedJobExists_createNewJob() {
+    ignoreIntrospectorFailureLogs();
+    ignoreJobCreatedAndDeletedLogs();
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
+    definePreviousFailedIntrospection();
+    testSupport.doOnCreate(JOB, this::recordJob);
+
+    testSupport.runSteps(JobHelper.createIntrospectionStartStep(null));
+
+    assertThat(affectedJob, notNullValue());
+  }
+
+  private V1Job affectedJob;
 
   private void recordJob(Object job) {
-    createdJob = (V1Job) job;
+    affectedJob = asCompletedJob((V1Job) job);
   }
 
   private V1Job asCompletedJob(V1Job job) {
     job.setStatus(new V1JobStatus().addConditionsItem(new V1JobCondition().status("True").type("Complete")));
+    return job;
+  }
+
+  private V1Job asFailedJob(V1Job job) {
+    job.setStatus(new V1JobStatus().addConditionsItem(new V1JobCondition().status("True").type("Failed")));
     return job;
   }
 
@@ -543,8 +638,7 @@ class DomainIntrospectorJobTest {
 
   @Test
   void whenIntrospectorJobIsRun_validatesDomainTopology() throws JsonProcessingException {
-    // create WlsDomainConfig with "cluster-2" whereas domain spec contains cluster-1
-    IntrospectionTestUtils.defineResources(testSupport, createDomainConfig("cluster-2"));
+    establishWlsDomainWithCluster("cluster-2");
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
@@ -572,7 +666,7 @@ class DomainIntrospectorJobTest {
   @Test
   void whenJobLogContainsSevereError_logJobInfosOnDelete() {
     testSupport.defineResources(createIntrospectorJob());
-    IntrospectionTestUtils.defineResources(testSupport, SEVERE_MESSAGE_1);
+    IntrospectionTestUtils.defineResources(testSupport, SEVERE_MESSAGE);
     testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
 
     testSupport.runSteps(JobHelper.deleteDomainIntrospectorJobStep(terminalStep));
@@ -593,7 +687,7 @@ class DomainIntrospectorJobTest {
   @Test
   void whenJobLogContainsSevereError_logJobInfosOnReadPogLog() {
     testSupport.defineResources(createIntrospectorJob());
-    IntrospectionTestUtils.defineResources(testSupport, SEVERE_MESSAGE_1);
+    IntrospectionTestUtils.defineResources(testSupport, SEVERE_MESSAGE);
     testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
 
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
@@ -612,10 +706,9 @@ class DomainIntrospectorJobTest {
   }
 
   private void createFailedIntrospectionLog() {
-    consoleHandlerMemento.ignoreMessage(getJobFailedMessageKey());
-    consoleHandlerMemento.ignoreMessage(getJobFailedDetailMessageKey());
+    ignoreIntrospectorFailureLogs();
     testSupport.defineResources(createIntrospectorJob());
-    IntrospectionTestUtils.defineResources(testSupport, SEVERE_MESSAGE_1);
+    IntrospectionTestUtils.defineResources(testSupport, SEVERE_MESSAGE);
     testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
   }
 

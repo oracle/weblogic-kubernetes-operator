@@ -21,6 +21,7 @@ import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1PodSpec;
@@ -33,8 +34,6 @@ import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.JobAwaiterStepFactory;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
-import oracle.kubernetes.operator.TuningParameters;
-import oracle.kubernetes.operator.helpers.JobHelper.DomainIntrospectorJobStepContext;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Packet;
@@ -57,6 +56,7 @@ import static com.meterware.simplestub.Stub.createNiceStub;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.createTestDomain;
+import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.JOBWATCHER_COMPONENT_NAME;
 import static oracle.kubernetes.operator.helpers.BasePodStepContext.KUBERNETES_PLATFORM_HELM_VARIABLE;
@@ -314,9 +314,7 @@ class JobHelperTest extends DomainValidationBaseTest {
     packet
         .getComponents()
         .put(ProcessingConstants.DOMAIN_COMPONENT_NAME, Component.createFor(domainPresenceInfo));
-    DomainIntrospectorJobStepContext domainIntrospectorJobStepContext =
-        new DomainIntrospectorJobStepContext(packet);
-    return domainIntrospectorJobStepContext.createJobSpec(TuningParameters.getInstance());
+    return JobHelper.createJobSpec(packet);
   }
 
   @Test
@@ -562,7 +560,7 @@ class JobHelperTest extends DomainValidationBaseTest {
   }
 
   @Test
-  void whenDomainHasAdditionalVolumesWithCustomVariablesInvalidValue_jobNotCreated() {
+  void whenDomainFailsValidation_dontStartIntrospectorJob() {
     resourceLookup.defineResource(SECRET_NAME, KubernetesResourceType.Secret, NS);
     resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
     resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
@@ -778,7 +776,7 @@ class JobHelperTest extends DomainValidationBaseTest {
 
     assertThat(
         getMatchingContainer(domainPresenceInfo, jobSpec).map(V1Container::getName).orElse(null),
-        is(JobHelper.createJobName(UID)));
+        is(JobStepContext.createJobName(UID)));
   }
 
   @Test
@@ -1014,7 +1012,7 @@ class JobHelperTest extends DomainValidationBaseTest {
 
   private void runCreateJob() {
     testSupport.doOnCreate(KubernetesTestSupport.JOB, j -> recordJob((V1Job) j));
-    testSupport.runSteps(JobHelper.createDomainIntrospectorJobStep(null));
+    testSupport.runSteps(JobHelper.createIntrospectionStartStep(null));
   }
 
   @Test
@@ -1045,6 +1043,54 @@ class JobHelperTest extends DomainValidationBaseTest {
     assertThat(job, notNullValue());
   }
 
+  @Test
+  void whenStartingFromNoServersAndDomainConfigurationDoesNotMatchPacketValue_runIntrospector() {
+    defineTopologyWithCluster();
+    configureServersToStart();
+    domain.getMetadata().setGeneration(121L);
+    testSupport.addToPacket(INTROSPECTION_DOMAIN_SPEC_GENERATION, "123");
+
+    runCreateJob();
+
+    assertThat(job, notNullValue());
+  }
+
+  @Test
+  void whenNotStartingServersAndDomainConfigurationDoesNotMatchPacketValue_dontRunIntrospector() {
+    defineTopologyWithCluster();
+    domain.getMetadata().setGeneration(121L);
+    testSupport.addToPacket(INTROSPECTION_DOMAIN_SPEC_GENERATION, "123");
+
+    runCreateJob();
+
+    assertThat(job, nullValue());
+  }
+
+  @Test
+  void whenStartingFromNoServersAndDomainConfigurationMatchesPacketValue_dontRunIntrospector() {
+    defineTopologyWithCluster();
+    configureServersToStart();
+    domain.getMetadata().setGeneration(121L);
+    testSupport.addToPacket(INTROSPECTION_DOMAIN_SPEC_GENERATION, "121");
+
+    runCreateJob();
+
+    assertThat(job, nullValue());
+  }
+
+  @Test
+  void whenHaveExistingServersAndDomainConfigurationDoesNotMatchPacketValue_dontRunIntrospector() {
+    domainPresenceInfo.setServerPod("ms1", new V1Pod());
+    defineTopologyWithCluster();
+    configureServersToStart();
+    domain.getMetadata().setGeneration(121L);
+    testSupport.addToPacket(INTROSPECTION_DOMAIN_SPEC_GENERATION, "123");
+
+    runCreateJob();
+
+    assertThat(job, nullValue());
+  }
+
   private V1Job job;
 
   private void recordJob(V1Job job) {
@@ -1056,6 +1102,18 @@ class JobHelperTest extends DomainValidationBaseTest {
     configSupport.addWlsServer("admin", 8045);
     configSupport.setAdminServerName("admin");
     testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
+  }
+
+  private void defineTopologyWithCluster() {
+    WlsDomainConfigSupport configSupport = new WlsDomainConfigSupport("domain");
+    configSupport.addWlsServer("admin", 8045);
+    configSupport.setAdminServerName("admin");
+    configSupport.addWlsCluster("cluster1", "ms1", "ms2");
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, configSupport.createDomainConfig());
+  }
+
+  private void configureServersToStart() {
+    configureDomain(domainPresenceInfo).withDefaultServerStartPolicy(ConfigurationConstants.START_IF_NEEDED);
   }
 
   private DomainPresenceInfo createDomainPresenceInfo(Domain domain) {
@@ -1102,7 +1160,7 @@ class JobHelperTest extends DomainValidationBaseTest {
   }
 
   private boolean hasCreateJobName(V1Container container, String domainUid) {
-    return JobHelper.createJobName(domainUid).equals(container.getName());
+    return JobStepContext.createJobName(domainUid).equals(container.getName());
   }
 
   private Stream<V1Container> getContainerStream(V1JobSpec jobSpec) {
