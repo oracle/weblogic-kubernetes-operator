@@ -558,8 +558,6 @@ public class CommonTestUtils {
     verifyCommandResultContainsMsg(new String(curlString), expectedStatusCode);
   }
 
-
-
   /**
    * Check the system resource configuration using REST API.
    * @param nodePort admin node port
