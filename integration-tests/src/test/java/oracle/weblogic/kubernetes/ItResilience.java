@@ -63,6 +63,7 @@ class ItResilience {
   private static int replicaCount = 2;
   private static LoggingFacade logger = null;
   private static String ingressHost = null; //only used for OKD
+  private static String adminServerContainerID = null;
 
   /**
    * Perform initialization for all the tests in this class.
@@ -131,15 +132,6 @@ class ItResilience {
             managedServerPrefix + i, domainNamespace);
         checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
       }
-      String adminServerContainerID = null;
-      try {
-        adminServerContainerID = PodUtils.getDockerContainerID(domainUid,
-            domainNamespace, "weblogic-server", adminServerPodName);
-        logger.info("AdminServer Container ID " + adminServerContainerID);
-      } catch (ApiException ex) {
-        getLogger().info("Got exception, command failed with errors " + ex.getMessage());
-      }
-
 
       Thread t2 = new ScalingUpThread(5);
       SlammerParams params = new SlammerParams().delay("9");
@@ -169,36 +161,44 @@ class ItResilience {
     String slammerPodPropertyFile = null;
     try {
 
-      String adminServerContainerID = null;
-      try {
-        adminServerContainerID = PodUtils.getDockerContainerID(domainUid,
-            domainNamespace, "weblogic-server", adminServerPodName);
-        logger.info("AdminServer Container ID " + adminServerContainerID);
-      } catch (ApiException ex) {
-        getLogger().info("Got exception, command failed with errors " + ex.getMessage());
+      if (adminServerContainerID == null) {
+        try {
+          adminServerContainerID = PodUtils.getDockerContainerID(domainUid,
+              domainNamespace, "weblogic-server", adminServerPodName);
+          logger.info("AdminServer Container ID " + adminServerContainerID);
+        } catch (ApiException ex) {
+          logger.info("Got exception, command failed with errors " + ex.getMessage());
+        }
       }
       assertNotNull(adminServerContainerID,"Failed to retrieve admin server pod container id");
 
       try {
+        logger.info("Generating slammer property file for AdminServer pod ");
         slammerPodPropertyFile = generateSlammerInPodPropertiesFile("localhost",
-            "marina.kogan@oracle.com", adminServerContainerID, "adminpod.props");
+            "test@oracle.com", adminServerContainerID, "adminpod.props");
       } catch (Exception ex) {
-        getLogger().info("Got exception during property file generation, "
+        logger.info("Got exception during slammer property file generation for AdminServer pod, "
             + "command failed with errors " + ex.getMessage());
       }
       assertNotNull(slammerPodPropertyFile, "Failed to generate slammer property file for pod");
+      logger.info("Running slammer setup inside the admin server pod");
       setupSlammerInPod(slammerPodPropertyFile);
+      logger.info("Running slammer command to block incoming traffic to port 7001 inside the admin server pod");
       changeTraffic("incoming", "7001", "block", null, slammerPodPropertyFile);
       assertFalse(testAdminConsoleLogin(), "Access to console did not fail, port was not blocked");
+      logger.info("Running slammer command to block incoming traffic to port 8001 inside the admin server pod");
       changeTraffic("incoming", "8001", "block", null, slammerPodPropertyFile);
+      logger.info("Attempt to scale domain to 1 replica");
       runScaleOperation(1);
-      //check managed server2 still running, since operator can't connect to 7001,8001
+      logger.info("Check that the managed server2 still running, since operator "
+          + "can't connect to 7001,8001 and perfome scale operation");
       checkPodReadyAndServiceExists(managedServerPrefix + 2, domainUid, domainNamespace);
 
     } finally {
+      logger.info("Running slammer command to unblock incoming traffic to port 7001 inside the admin server pod");
       changeTraffic("incoming", "7001", "delete", null, slammerPodPropertyFile);
       changeTraffic("incoming", "8001", "delete", null, slammerPodPropertyFile);
-      //check managed server2 is not running, since operator can perfom scale down now
+      logger.info("check that the managed server2 is not running, since operator now can perfom scaledown operation");
       checkPodDoesNotExist(managedServerPrefix + 2, domainUid, domainNamespace);
       runScaleOperation(2);
     }
