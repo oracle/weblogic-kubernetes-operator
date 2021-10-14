@@ -188,7 +188,8 @@ public class SlammerUtils {
   public static boolean backupHostIptablesRules(String propFile) {
     SlammerParams slammerParams = new SlammerParams()
         .service("iptables")
-        .operation("backup");
+        .operation("backup")
+        .propertyFile(propFile);
     return Slammer.run(slammerParams);
   }
 
@@ -236,7 +237,6 @@ public class SlammerUtils {
     SlammerParams slammerParams = new SlammerParams()
         .service("docker")
         .operation("setup")
-        .debug(true)
         .propertyFile(propFile);
     return Slammer.run(slammerParams);
   }
@@ -247,7 +247,7 @@ public class SlammerUtils {
    * @param host  - localhost or ip address for remote host
    * @param email  - email for user
    * @param containerID  - docker container id for pod
-   * @param fileName  - file name
+   * @param fileName  - slammer property file name
    */
   public static String generateSlammerInPodPropertiesFile(String host,
                                                           String email,

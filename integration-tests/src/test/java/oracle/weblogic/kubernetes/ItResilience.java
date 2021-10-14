@@ -153,17 +153,18 @@ class ItResilience {
   }
 
   /**
-   * verify the cluster is scaled up.
+   * verify that admin console is not accessible if port 7001 is blocked
+   * verify the operator can't scale domain if admin port is blocked.
    */
   @Test
   @DisplayName("execute slammer inside the admin pod and block and release port 7001")
-  void testBlockPort() {
+  void testBlockPortInsideThePod() {
     String slammerPodPropertyFile = null;
     try {
 
       if (adminServerContainerID == null) {
         try {
-          adminServerContainerID = PodUtils.getDockerContainerID(domainUid,
+          adminServerContainerID = PodUtils.getDockerContainerID(
               domainNamespace, "weblogic-server", adminServerPodName);
           logger.info("AdminServer Container ID " + adminServerContainerID);
         } catch (ApiException ex) {

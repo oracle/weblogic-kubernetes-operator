@@ -315,23 +315,17 @@ public class PodUtils {
   }
 
   /**
-   * Get the docker container pod id.
-   * @param domainUid - domain uid of the domain
+   * Get the docker container id for the pod.
    * @param domainNamespace - domain namespace
    * @param containerName - container name
    * @param podName - name of pod
    * @return the container id
    * @throws ApiException if Kubernetes API calls fail
    */
-  public static String getDockerContainerID(String domainUid,
-                                            String domainNamespace,
+  public static String getDockerContainerID(String domainNamespace,
                                             String containerName,
                                             String podName) throws ApiException {
-    checkPodExists(podName, domainUid, domainNamespace);
-
-    //String labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
-
-    //V1Pod myPod = getPod(domainNamespace, labelSelector, podName);
+    checkPodExists(podName, null, domainNamespace);
 
     V1Pod myPod = getPod(domainNamespace, null, podName);
 

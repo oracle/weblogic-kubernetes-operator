@@ -80,8 +80,9 @@ public class Slammer {
     String slammerDir = getSlammerDir();
     String operation = slammerParams.getOperation();
     String service = slammerParams.getService();
-    if (slammerParams.getPropertyFile() != null) {
-      slammerPropertyFile = slammerParams.getPropertyFile();
+    String propertyFile = slammerParams.getPropertyFile();
+    if (propertyFile != null) {
+      slammerPropertyFile = propertyFile;
     }
     // assertions for required parameters
     assertThat(slammerDir)
