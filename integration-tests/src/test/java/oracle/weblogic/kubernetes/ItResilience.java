@@ -192,7 +192,7 @@ class ItResilience {
       logger.info("Attempt to scale domain to 1 replica");
       runScaleOperation(1);
       logger.info("Check that the managed server2 still running, since operator "
-          + "can't connect to 7001,8001 and perfome scale operation");
+          + "can't connect to 7001,8001 and perfom scale operation");
       checkPodReadyAndServiceExists(managedServerPrefix + 2, domainUid, domainNamespace);
 
     } finally {
