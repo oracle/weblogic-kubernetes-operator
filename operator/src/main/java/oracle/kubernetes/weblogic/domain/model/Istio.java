@@ -127,7 +127,7 @@ public class Istio {
    * @param istioEnabled True, if this domain is deployed under an Istio service mesh.
    * @return this
    */
-  public Istio withIstioEnabled(Boolean istioEnabled) {
+  public Istio istioEnabled(Boolean istioEnabled) {
     this.enabled = istioEnabled;
     return this;
   }
