@@ -305,12 +305,10 @@ function validateLoadBalancer {
       ;;
       "APACHE")
       ;;
-      "VOYAGER")
-      ;;
       "NONE")
       ;;
       *)
-        validationError "Invalid value for loadBalancer: ${loadBalancer}. Valid values are APACHE, TRAEFIK, VOYAGER and NONE."
+        validationError "Invalid value for loadBalancer: ${loadBalancer}. Valid values are APACHE, TRAEFIK and NONE."
       ;;
     esac
   fi
