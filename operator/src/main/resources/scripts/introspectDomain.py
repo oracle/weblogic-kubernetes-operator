@@ -2065,7 +2065,7 @@ def get_server_template_listening_ports_from_configxml(config_xml):
 
   return server_template_ssls, server_template_ports
 
-def isVersionEarlierThan(self, version1, version2):
+def isVersionEarlierThan(version1, version2):
   if version1 is None:
     return True
 
