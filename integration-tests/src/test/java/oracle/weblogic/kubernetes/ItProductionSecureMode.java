@@ -197,6 +197,9 @@ class ItProductionSecureMode {
    * Verify no NodePort service is available thru default channel since 
    * clear text default port (7001) is disabled.
    * Check the `default-secure` and `default-admin` port on cluster service.
+   * Make sure kubectl port-forward works thru Administration port(9002)
+   * Make sure kubectl port-forward does not work thru default SSL Port(7002)
+   * when Administration port(9002) is enabled.
    */
   @Test
   @DisplayName("Verify the secure service through administration port")
