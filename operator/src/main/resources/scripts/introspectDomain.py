@@ -101,7 +101,6 @@ from utils import *
 from weblogic.management.configuration import LegalHelper
 
 ISTIO_NAP_NAMES = ['tcp-cbt', 'tcp-ldap', 'tcp-iiop', 'tcp-snmp', 'http-default', 'tcp-default', 'https-secure', 'tls-ldaps', 'tls-default', 'tls-cbts', 'tls-iiops', 'https-admin']
-ISTIO_VERSION = None
 
 class OfflineWlstEnv(object):
 
@@ -118,7 +117,6 @@ class OfflineWlstEnv(object):
     self.ACCESS_LOG_IN_LOG_HOME   = self.getEnvOrDef('ACCESS_LOG_IN_LOG_HOME', 'true')
     self.DATA_HOME                = self.getEnvOrDef('DATA_HOME', "")
     self.CREDENTIALS_SECRET_NAME  = self.getEnv('CREDENTIALS_SECRET_NAME')
-    ISTIO_VERSION                 = self.getEnvOrDef('ISTIO_VERSION', None)
 
     # initialize globals
 
@@ -1192,7 +1190,8 @@ class SitConfigGenerator(Generator):
     #   since the runtime default is the server listen-address.
 
     istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
-    if istio_enabled and istioVersionRequiresLocalHostBindings():
+    istio_version = self.env.getEnvOrDef('ISTIO_VERSION', None)
+    if istio_enabled and isVersionEarlierThan(istio_version, '1.10'):
       listen_address = '127.0.0.1'
 
     nap_name=nap.getName()
@@ -1260,7 +1259,7 @@ class SitConfigGenerator(Generator):
       self.writeln('<d:name>%s</d:name>' % name)
 
     self.writeln('<d:protocol %s>%s</d:protocol>' % (action, protocol))
-    if bind_to_localhost:
+    if bind_to_localhost == "true":
       self.writeln('<d:listen-address %s>127.0.0.1</d:listen-address>' % action)
     else:
       self.writeln('<d:listen-address %s>%s.%s</d:listen-address>' % (action, listen_address,
@@ -1356,13 +1355,14 @@ class SitConfigGenerator(Generator):
     istio_readiness_port = self.env.getEnvOrDef("ISTIO_READINESS_PORT", None)
     if istio_readiness_port is None:
       return
+    istio_version = self.env.getEnvOrDef("ISTIO_VERSION", None)
     admin_server_port = getRealListenPort(server)
     # readiness probe
     self._writeIstioNAP(name='http-probe', server=server, listen_address=listen_address,
                         listen_port=istio_readiness_port, protocol='http', http_enabled="true")
 
     # Generate NAP for each protocols
-    if istioVersionRequiresLocalHostBindings():
+    if isVersionEarlierThan(istio_version, '1.10'):
       self._writeIstioNAP(name='tcp-ldap', server=server, listen_address=listen_address,
                           listen_port=admin_server_port, protocol='ldap')
 
@@ -1414,12 +1414,12 @@ class SitConfigGenerator(Generator):
     istio_readiness_port = self.env.getEnvOrDef("ISTIO_READINESS_PORT", None)
     if istio_readiness_port is None:
       return
-
+    istio_version = self.env.getEnvOrDef("ISTIO_VERSION", None)
     listen_port = getRealListenPort(template)
     self._writeIstioNAP(name='http-probe', server=template, listen_address=listen_address,
                         listen_port=istio_readiness_port, protocol='http')
 
-    if istioVersionRequiresLocalHostBindings():
+    if isVersionEarlierThan(istio_version, '1.10'):
       self._writeIstioNAP(name='tcp-default', server=template, listen_address=listen_address,
                           listen_port=listen_port, protocol='t3', http_enabled='false')
 
@@ -1458,9 +1458,10 @@ class SitConfigGenerator(Generator):
 
   def addAdminChannelPortForwardNetworkAccessPoints(self, server):
     istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
+    istio_version = self.env.getEnvOrDef("ISTIO_VERSION", None)
     admin_channel_port_forward_enabled = self.env.getEnvOrDef("ADMIN_CHANNEL_PORT_FORWARDING_ENABLED", "true")
     if (admin_channel_port_forward_enabled == 'false') or \
-        (istio_enabled == 'true' and istioVersionRequiresLocalHostBindings()) :
+        (istio_enabled == 'true' and isVersionEarlierThan(istio_version, '1.10')) :
       return
 
     index = 0
@@ -2074,8 +2075,6 @@ def isVersionEarlierThan(version1, version2):
 
   return LooseVersion(version1) < LooseVersion(version2)
 
-def istioVersionRequiresLocalHostBindings():
-  return isVersionEarlierThan(ISTIO_VERSION, '1.10')
 
 def main(env):
   try:
