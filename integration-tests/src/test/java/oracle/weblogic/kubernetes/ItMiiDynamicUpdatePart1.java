@@ -53,7 +53,6 @@ import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResou
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
-import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -76,7 +75,6 @@ class ItMiiDynamicUpdatePart1 {
   public static Path pathToChangeTargetYaml = null;
   public static Path pathToAddClusterYaml = null;
   static LoggingFacade logger = null;
-  public String adminSvcExtHost = null;
 
   /**
    * Install Operator.
@@ -88,7 +86,7 @@ class ItMiiDynamicUpdatePart1 {
   @BeforeAll
   public static void initAll(@Namespaces(2) List<String> namespaces) {
     helper.initAll(namespaces, domainUid);
-    logger = getLogger();
+    logger = helper.logger;
 
     // write sparse yaml to change target to file
     pathToChangeTargetYaml = Paths.get(WORK_DIR + "/changetarget.yaml");
@@ -126,7 +124,6 @@ class ItMiiDynamicUpdatePart1 {
   @BeforeEach
   public void beforeEach() {
     helper.beforeEach();
-    adminSvcExtHost = helper.adminSvcExtHost;
   }
 
   /**
@@ -164,8 +161,8 @@ class ItMiiDynamicUpdatePart1 {
     verifyIntrospectorRuns(domainUid, helper.domainNamespace);
 
     testUntil(
-        () -> checkWorkManagerRuntime(adminSvcExtHost, helper.domainNamespace, helper.adminServerPodName,
-          MANAGED_SERVER_NAME_BASE + "1",
+        () -> checkWorkManagerRuntime(helper.adminSvcExtHost, helper.domainNamespace,
+            helper.adminServerPodName,MANAGED_SERVER_NAME_BASE + "1",
           workManagerName, "200"),
         logger,
         "work manager configuration to be updated.");
@@ -253,7 +250,7 @@ class ItMiiDynamicUpdatePart1 {
     }
 
     // make sure the application is not deployed on admin server
-    assertFalse(checkApplicationRuntime(adminSvcExtHost, helper.domainNamespace,
+    assertFalse(checkApplicationRuntime(helper.adminSvcExtHost, helper.domainNamespace,
             helper.adminServerPodName, helper.adminServerName, "200"),
         "Application deployed on " + helper.adminServerName + " before the dynamic update");
 
@@ -525,8 +522,8 @@ class ItMiiDynamicUpdatePart1 {
 
     // make sure the application is not deployed on admin
     testUntil(
-        () -> checkApplicationRuntime(adminSvcExtHost, helper.domainNamespace, helper.adminServerPodName,
-          helper.adminServerName, "404"),
+        () -> checkApplicationRuntime(helper.adminSvcExtHost, helper.domainNamespace,
+            helper.adminServerPodName, helper.adminServerName, "404"),
         logger,
         "application target to be updated.");
 
@@ -554,8 +551,9 @@ class ItMiiDynamicUpdatePart1 {
    *          with the provided count value.
    **/
   boolean checkMinThreadsConstraintRuntime(int count) {
-    ExecResult result = readMinThreadsConstraintRuntimeForWorkManager(adminSvcExtHost, helper.domainNamespace,
-        helper.adminServerPodName, MANAGED_SERVER_NAME_BASE + "1", workManagerName);
+    ExecResult result = readMinThreadsConstraintRuntimeForWorkManager(helper.adminSvcExtHost,
+        helper.domainNamespace, helper.adminServerPodName,
+        MANAGED_SERVER_NAME_BASE + "1", workManagerName);
     if (result != null) {
       logger.info("readMinThreadsConstraintRuntime read " + result.toString());
       return (result.stdout() != null && result.stdout().contains("\"count\": " + count));
@@ -575,8 +573,8 @@ class ItMiiDynamicUpdatePart1 {
     for (int i = 1; i <= helper.replicaCount; i++) {
       final int j = i;
       testUntil(
-          () -> checkApplicationRuntime(adminSvcExtHost, helper.domainNamespace, helper.adminServerPodName,
-              MANAGED_SERVER_NAME_BASE + j, expectedStatusCode),
+          () -> checkApplicationRuntime(helper.adminSvcExtHost, helper.domainNamespace,
+              helper.adminServerPodName,MANAGED_SERVER_NAME_BASE + j, expectedStatusCode),
           logger,
           "application target to be updated");
     }
@@ -605,8 +603,9 @@ class ItMiiDynamicUpdatePart1 {
    *          with the provided count value.
    **/
   boolean checkMaxThreadsConstraintRuntime(int count) {
-    ExecResult result = readMaxThreadsConstraintRuntimeForWorkManager(adminSvcExtHost, helper.domainNamespace,
-        helper.adminServerPodName, MANAGED_SERVER_NAME_BASE + "1", workManagerName);
+    ExecResult result = readMaxThreadsConstraintRuntimeForWorkManager(helper.adminSvcExtHost,
+        helper.domainNamespace, helper.adminServerPodName,
+        MANAGED_SERVER_NAME_BASE + "1", workManagerName);
     if (result != null) {
       logger.info("readMaxThreadsConstraintRuntime read " + result.toString());
       return (result.stdout() != null && result.stdout().contains("\"count\": " + count));

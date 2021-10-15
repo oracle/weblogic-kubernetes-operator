@@ -69,7 +69,6 @@ class ItMiiDynamicUpdatePart2 {
   static MiiDynamicUpdateHelper helper = new MiiDynamicUpdateHelper();
   private static final String domainUid = "mii-dynamic-update2";
   public static Path pathToChangReadsYaml = null;
-  private static String adminSvcExtHost = null;
   static LoggingFacade logger = null;
 
   /**
@@ -100,7 +99,6 @@ class ItMiiDynamicUpdatePart2 {
   @BeforeEach
   public void beforeEach() {
     helper.beforeEach();
-    adminSvcExtHost = helper.adminSvcExtHost;
   }
 
   /**
@@ -159,7 +157,7 @@ class ItMiiDynamicUpdatePart2 {
     int adminServiceNodePort
         = getServiceNodePort(helper.domainNamespace, getExternalServicePodName(helper.adminServerPodName), "default");
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-    assertTrue(checkSystemResourceConfig(adminSvcExtHost, adminServiceNodePort,
+    assertTrue(checkSystemResourceConfig(helper.adminSvcExtHost, adminServiceNodePort,
         "JDBCSystemResources/TestDataSource2/JDBCResource/JDBCDataSourceParams",
         "jdbc\\/TestDataSource2-2"), "JDBCSystemResource JNDIName not found");
     logger.info("JDBCSystemResource configuration found");
@@ -211,7 +209,7 @@ class ItMiiDynamicUpdatePart2 {
     int adminServiceNodePort
         = getServiceNodePort(helper.domainNamespace, getExternalServicePodName(helper.adminServerPodName), "default");
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-    assertTrue(checkSystemResourceConfig(adminSvcExtHost, adminServiceNodePort,
+    assertTrue(checkSystemResourceConfig(helper.adminSvcExtHost, adminServiceNodePort,
         "appDeployments",
         "myear"), "Application myear is not found");
     logger.info("Application myear is found");
@@ -249,13 +247,13 @@ class ItMiiDynamicUpdatePart2 {
     adminServiceNodePort
         = getServiceNodePort(helper.domainNamespace, getExternalServicePodName(helper.adminServerPodName), "default");
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-    assertTrue(checkSystemResourceConfig(adminSvcExtHost, adminServiceNodePort,
+    assertTrue(checkSystemResourceConfig(helper.adminSvcExtHost, adminServiceNodePort,
         "JDBCSystemResources/TestDataSource2/JDBCResource/JDBCDriverParams",
         "newdburl"), "JDBCSystemResource DB URL not found");
     logger.info("JDBCSystemResource DB URL found");
 
     // verify the application is undeployed
-    assertFalse(checkSystemResourceConfig(adminSvcExtHost, adminServiceNodePort,
+    assertFalse(checkSystemResourceConfig(helper.adminSvcExtHost, adminServiceNodePort,
         "appDeployments",
         "myear"), "Application myear found, should be undeployed");
     logger.info("Application myear is undeployed");
@@ -311,7 +309,7 @@ class ItMiiDynamicUpdatePart2 {
     int adminServiceNodePort
         = getServiceNodePort(helper.domainNamespace, getExternalServicePodName(helper.adminServerPodName), "default");
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-    assertFalse(checkSystemResourceConfig(adminSvcExtHost, adminServiceNodePort, "JDBCSystemResources",
+    assertFalse(checkSystemResourceConfig(helper.adminSvcExtHost, adminServiceNodePort, "JDBCSystemResources",
         "TestDataSource2"), "Found JDBCSystemResource datasource, should be deleted");
     logger.info("JDBCSystemResource Datasource is deleted");
 
@@ -374,13 +372,13 @@ class ItMiiDynamicUpdatePart2 {
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
 
     // check server config for ScatteredReadsEnabled is updated
-    assertTrue(checkSystemResourceConfig(adminSvcExtHost, adminServiceNodePort,
+    assertTrue(checkSystemResourceConfig(helper.adminSvcExtHost, adminServiceNodePort,
         "servers/" + helper.adminServerName,
         "\"scatteredReadsEnabled\": true"), "ScatteredReadsEnabled is not changed to true");
     logger.info("ScatteredReadsEnabled is changed to true");
 
     // check datasource configuration using REST api
-    assertTrue(checkSystemResourceConfig(adminSvcExtHost, adminServiceNodePort,
+    assertTrue(checkSystemResourceConfig(helper.adminSvcExtHost, adminServiceNodePort,
         "JDBCSystemResources/TestDataSource2/JDBCResource/JDBCDriverParams/properties/properties",
         "\"name\": \"testattrib\""), "JDBCSystemResource new property not found");
     logger.info("JDBCSystemResource new property found");
@@ -405,7 +403,7 @@ class ItMiiDynamicUpdatePart2 {
     }
 
     // check datasource runtime after restart
-    assertTrue(checkSystemResourceRuntime(adminSvcExtHost, adminServiceNodePort,
+    assertTrue(checkSystemResourceRuntime(helper.adminSvcExtHost, adminServiceNodePort,
         "serverRuntimes/" + MANAGED_SERVER_NAME_BASE + "1/JDBCServiceRuntime/"
             + "JDBCDataSourceRuntimeMBeans/TestDataSource2",
         "\"testattrib\": \"dummy\""), "JDBCSystemResource new property not found");
@@ -468,7 +466,7 @@ class ItMiiDynamicUpdatePart2 {
     int adminServiceNodePort
         = getServiceNodePort(helper.domainNamespace, getExternalServicePodName(helper.adminServerPodName), "default");
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-    assertTrue(checkSystemResourceConfiguration(adminSvcExtHost, adminServiceNodePort, "JDBCSystemResources",
+    assertTrue(checkSystemResourceConfiguration(helper.adminSvcExtHost, adminServiceNodePort, "JDBCSystemResources",
         "TestDataSource2", "200"), "JDBCSystemResource not found");
     logger.info("JDBCSystemResource configuration found");
     return pods;

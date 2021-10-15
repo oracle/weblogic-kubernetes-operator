@@ -38,7 +38,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
-import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -54,7 +53,6 @@ class ItMiiDynamicUpdatePart3 {
   static MiiDynamicUpdateHelper helper = new MiiDynamicUpdateHelper();
   private static final String domainUid = "mii-dynamic-update3";
   public static Path pathToChangReadsYaml = null;
-  private static String adminSvcExtHost = null;
   static LoggingFacade logger = null;
 
   /**
@@ -67,7 +65,7 @@ class ItMiiDynamicUpdatePart3 {
   @BeforeAll
   public static void initAll(@Namespaces(2) List<String> namespaces) {
     helper.initAll(namespaces, domainUid);
-    logger = getLogger();
+    logger = helper.logger;
 
     // write sparse yaml to change ScatteredReadsEnabled for adminserver
     pathToChangReadsYaml = Paths.get(WORK_DIR + "/changereads.yaml");
@@ -85,7 +83,6 @@ class ItMiiDynamicUpdatePart3 {
   @BeforeEach
   public void beforeEach() {
     helper.beforeEach();
-    adminSvcExtHost = helper.adminSvcExtHost;
   }
 
   /**
