@@ -38,6 +38,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -50,15 +51,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("okdenv")
 class ItMiiDynamicUpdatePart3 {
 
-  static MiiDynamicUpdateHelper dynamicUpdateHelper = new MiiDynamicUpdateHelper();
+  static MiiDynamicUpdateHelper helper = new MiiDynamicUpdateHelper();
   private static final String domainUid = "mii-dynamic-update3";
-  static String domainNamespace = null;
-  static String adminServerPodName = null;
-  static String opNamespace = null;
-  static int replicaCount = dynamicUpdateHelper.replicaCount;
-  static String managedServerPrefix = null;
-  static String adminServerName = dynamicUpdateHelper.adminServerName;
-  static String configMapName = MiiDynamicUpdateHelper.configMapName;
   public static Path pathToChangReadsYaml = null;
   private static String adminSvcExtHost = null;
   static LoggingFacade logger = null;
@@ -72,14 +66,8 @@ class ItMiiDynamicUpdatePart3 {
    */
   @BeforeAll
   public static void initAll(@Namespaces(2) List<String> namespaces) {
-    dynamicUpdateHelper.initAll(namespaces, domainUid);
-    domainNamespace = dynamicUpdateHelper.domainNamespace;
-    opNamespace = dynamicUpdateHelper.opNamespace;
-    adminServerPodName = dynamicUpdateHelper.adminServerPodName;
-    replicaCount = dynamicUpdateHelper.replicaCount;
-    managedServerPrefix = dynamicUpdateHelper.managedServerPrefix;
-    configMapName = MiiDynamicUpdateHelper.configMapName;
-    logger = dynamicUpdateHelper.logger;
+    helper.initAll(namespaces, domainUid);
+    logger = getLogger();
 
     // write sparse yaml to change ScatteredReadsEnabled for adminserver
     pathToChangReadsYaml = Paths.get(WORK_DIR + "/changereads.yaml");
@@ -96,8 +84,8 @@ class ItMiiDynamicUpdatePart3 {
    */
   @BeforeEach
   public void beforeEach() {
-    dynamicUpdateHelper.beforeEach();
-    adminSvcExtHost = dynamicUpdateHelper.adminSvcExtHost;
+    helper.beforeEach();
+    adminSvcExtHost = helper.adminSvcExtHost;
   }
 
   /**
@@ -119,26 +107,26 @@ class ItMiiDynamicUpdatePart3 {
     assertDoesNotThrow(() -> Files.write(pathToChangeDomainNameYaml, yamlToChangeDomainName.getBytes()));
 
     // Replace contents of an existing configMap
-    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+    replaceConfigMapWithModelFiles(helper.configMapName, domainUid, helper.domainNamespace,
         Arrays.asList(pathToChangeDomainNameYaml.toString()), withStandardRetryPolicy);
 
     // Patch a running domain with introspectVersion.
-    patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+    patchDomainResourceWithNewIntrospectVersion(domainUid, helper.domainNamespace);
 
     // Verifying introspector pod is created and failed
     logger.info("verifying the introspector failed with the expected error msg");
     verifyIntrospectorFailsWithExpectedErrorMsg(MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG);
 
     // clean failed introspector pods
-    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+    replaceConfigMapWithModelFiles(helper.configMapName, domainUid, helper.domainNamespace,
         Arrays.asList(), withStandardRetryPolicy);
 
     // Patch a running domain with introspectVersion.
-    patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+    patchDomainResourceWithNewIntrospectVersion(domainUid, helper.domainNamespace);
 
     // Verifying introspector pod is deleted
     logger.info("Verifying introspector pod is deleted");
-    checkPodDoesNotExist(getIntrospectJobName(domainUid), domainUid, domainNamespace);
+    checkPodDoesNotExist(getIntrospectJobName(domainUid), domainUid, helper.domainNamespace);
   }
 
   /**
@@ -164,26 +152,26 @@ class ItMiiDynamicUpdatePart3 {
     assertDoesNotThrow(() -> Files.write(pathToChangeListenPortYaml, yamlToChangeListenPort.getBytes()));
 
     // Replace contents of an existing configMap
-    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+    replaceConfigMapWithModelFiles(helper.configMapName, domainUid, helper.domainNamespace,
         Arrays.asList(pathToChangeListenPortYaml.toString()), withStandardRetryPolicy);
 
     // Patch a running domain with introspectVersion.
-    patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+    patchDomainResourceWithNewIntrospectVersion(domainUid, helper.domainNamespace);
 
     // Verifying introspector pod is created and failed
     logger.info("verifying the introspector failed and the pod log contains the expected error msg");
     verifyIntrospectorFailsWithExpectedErrorMsg(MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG);
 
     // clean failed introspector
-    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+    replaceConfigMapWithModelFiles(helper.configMapName, domainUid, helper.domainNamespace,
         Arrays.asList(), withStandardRetryPolicy);
 
     // Patch a running domain with introspectVersion.
-    patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+    patchDomainResourceWithNewIntrospectVersion(domainUid, helper.domainNamespace);
 
     // Verifying introspector pod is deleted
     logger.info("Verifying introspector pod is deleted");
-    checkPodDoesNotExist(getIntrospectJobName(domainUid), domainUid, domainNamespace);
+    checkPodDoesNotExist(getIntrospectJobName(domainUid), domainUid, helper.domainNamespace);
   }
 
   /**
@@ -210,26 +198,26 @@ class ItMiiDynamicUpdatePart3 {
     assertDoesNotThrow(() -> Files.write(pathToChangeSSLYaml, yamlToChangeSSL.getBytes()));
 
     // Replace contents of an existing configMap
-    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+    replaceConfigMapWithModelFiles(helper.configMapName, domainUid, helper.domainNamespace,
         Arrays.asList(pathToChangeSSLYaml.toString()), withStandardRetryPolicy);
 
     // Patch a running domain with introspectVersion.
-    patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+    patchDomainResourceWithNewIntrospectVersion(domainUid, helper.domainNamespace);
 
     // Verifying introspector pod is created and failed
     logger.info("verifying the introspector failed and the pod log contains the expected error msg");
     verifyIntrospectorFailsWithExpectedErrorMsg(MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG);
 
     // clean failed introspector
-    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+    replaceConfigMapWithModelFiles(helper.configMapName, domainUid, helper.domainNamespace,
         Arrays.asList(), withStandardRetryPolicy);
 
     // Patch a running domain with introspectVersion.
-    patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+    patchDomainResourceWithNewIntrospectVersion(domainUid, helper.domainNamespace);
 
     // Verifying introspector pod is deleted
     logger.info("Verifying introspector pod is deleted");
-    checkPodDoesNotExist(getIntrospectJobName(domainUid), domainUid, domainNamespace);
+    checkPodDoesNotExist(getIntrospectJobName(domainUid), domainUid, helper.domainNamespace);
   }
 
   /**
@@ -242,9 +230,9 @@ class ItMiiDynamicUpdatePart3 {
   @DisplayName("verify the operator logs introspector job messages")
   void testOperatorLogIntrospectorMsg() {
     String operatorPodName =
-        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, helper.opNamespace));
     logger.info("operator pod name: {0}", operatorPodName);
-    String operatorPodLog = assertDoesNotThrow(() -> getPodLog(operatorPodName, opNamespace));
+    String operatorPodLog = assertDoesNotThrow(() -> getPodLog(operatorPodName, helper.opNamespace));
     logger.info("operator pod log: {0}", operatorPodLog);
     assertTrue(operatorPodLog.contains("Introspector Job Log"));
     assertTrue(operatorPodLog.contains("WebLogic version='" + WEBLOGIC_VERSION + "'"));
@@ -260,7 +248,7 @@ class ItMiiDynamicUpdatePart3 {
     // check whether the introspector log contains the expected error message
     logger.info("verifying that the introspector log contains the expected error message");
     testUntil(
-        () -> podLogContainsExpectedErrorMsg(introspectJobName, domainNamespace, expectedErrorMsg),
+        () -> podLogContainsExpectedErrorMsg(introspectJobName, helper.domainNamespace, expectedErrorMsg),
         logger,
         "Checking for the log of introspector pod contains the expected error msg {0}",
         expectedErrorMsg);
@@ -268,7 +256,7 @@ class ItMiiDynamicUpdatePart3 {
     // check the status phase of the introspector pod is failed
     logger.info("verifying the status phase of the introspector pod is failed");
     testUntil(
-        () -> podStatusPhaseContainsString(domainNamespace, introspectJobName, "Failed"),
+        () -> podStatusPhaseContainsString(helper.domainNamespace, introspectJobName, "Failed"),
         logger,
         "Checking for status phase of introspector pod is failed");
 
@@ -276,7 +264,7 @@ class ItMiiDynamicUpdatePart3 {
     logger.info("verifying the domain status message contains the expected error msg");
     testUntil(
         () -> {
-          Domain miidomain = getDomainCustomResource(domainUid, domainNamespace);
+          Domain miidomain = getDomainCustomResource(domainUid, helper.domainNamespace);
           return (miidomain != null) && (miidomain.getStatus() != null) && (miidomain.getStatus().getMessage() != null)
               && miidomain.getStatus().getMessage().contains(expectedErrorMsg);
         },
@@ -288,7 +276,7 @@ class ItMiiDynamicUpdatePart3 {
     logger.info("verifying the domain status condition message contains the expected error msg");
     testUntil(
         () -> {
-          Domain miidomain = getDomainCustomResource(domainUid, domainNamespace);
+          Domain miidomain = getDomainCustomResource(domainUid, helper.domainNamespace);
           if ((miidomain != null) && (miidomain.getStatus() != null)) {
             for (DomainCondition domainCondition : miidomain.getStatus().getConditions()) {
               if ((domainCondition.getType() != null && domainCondition.getType().equalsIgnoreCase("Failed"))

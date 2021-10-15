@@ -49,6 +49,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -65,15 +66,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @Tag("okdenv")
 class ItMiiDynamicUpdatePart2 {
 
-  static MiiDynamicUpdateHelper dynamicUpdateHelper = new MiiDynamicUpdateHelper();
+  static MiiDynamicUpdateHelper helper = new MiiDynamicUpdateHelper();
   private static final String domainUid = "mii-dynamic-update2";
-  static String domainNamespace = null;
-  static String adminServerPodName = null;
-  static String opNamespace = null;
-  static int replicaCount = dynamicUpdateHelper.replicaCount;
-  static String managedServerPrefix = null;
-  static String adminServerName = dynamicUpdateHelper.adminServerName;
-  static String configMapName = MiiDynamicUpdateHelper.configMapName;
   public static Path pathToChangReadsYaml = null;
   private static String adminSvcExtHost = null;
   static LoggingFacade logger = null;
@@ -87,14 +81,8 @@ class ItMiiDynamicUpdatePart2 {
    */
   @BeforeAll
   public static void initAll(@Namespaces(2) List<String> namespaces) {
-    dynamicUpdateHelper.initAll(namespaces, domainUid);
-    domainNamespace = dynamicUpdateHelper.domainNamespace;
-    opNamespace = dynamicUpdateHelper.opNamespace;
-    adminServerPodName = dynamicUpdateHelper.adminServerPodName;
-    replicaCount = dynamicUpdateHelper.replicaCount;
-    managedServerPrefix = dynamicUpdateHelper.managedServerPrefix;
-    configMapName = MiiDynamicUpdateHelper.configMapName;
-    logger = dynamicUpdateHelper.logger;
+    helper.initAll(namespaces, domainUid);
+    logger = getLogger();
 
     // write sparse yaml to change ScatteredReadsEnabled for adminserver
     pathToChangReadsYaml = Paths.get(WORK_DIR + "/changereads.yaml");
@@ -111,8 +99,8 @@ class ItMiiDynamicUpdatePart2 {
    */
   @BeforeEach
   public void beforeEach() {
-    dynamicUpdateHelper.beforeEach();
-    adminSvcExtHost = dynamicUpdateHelper.adminSvcExtHost;
+    helper.beforeEach();
+    adminSvcExtHost = helper.adminSvcExtHost;
   }
 
   /**
@@ -149,27 +137,27 @@ class ItMiiDynamicUpdatePart2 {
 
     // Replace contents of an existing configMap with cm config and application target as
     // there are issues with removing them, WDT-535
-    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+    replaceConfigMapWithModelFiles(helper.configMapName, domainUid, helper.domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.update.jdbc2.yaml"), withStandardRetryPolicy);
 
     // Patch a running domain with onNonDynamicChanges
-    patchDomainResourceWithOnNonDynamicChanges(domainUid, domainNamespace, "CommitUpdateAndRoll");
+    patchDomainResourceWithOnNonDynamicChanges(domainUid, helper.domainNamespace, "CommitUpdateAndRoll");
 
     // Patch a running domain with introspectVersion.
-    String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+    String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, helper.domainNamespace);
 
     // Verifying introspector pod is created, runs and deleted
-    verifyIntrospectorRuns(domainUid, domainNamespace);
+    verifyIntrospectorRuns(domainUid, helper.domainNamespace);
 
     // Verifying the domain is rolling restarted
-    assertTrue(verifyRollingRestartOccurred(pods, 1, domainNamespace),
+    assertTrue(verifyRollingRestartOccurred(pods, 1, helper.domainNamespace),
         "Rolling restart failed");
 
-    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, domainNamespace);
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, helper.domainNamespace);
 
     // check datasource configuration using REST api
     int adminServiceNodePort
-        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+        = getServiceNodePort(helper.domainNamespace, getExternalServicePodName(helper.adminServerPodName), "default");
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
     assertTrue(checkSystemResourceConfig(adminSvcExtHost, adminServiceNodePort,
         "JDBCSystemResources/TestDataSource2/JDBCResource/JDBCDataSourceParams",
@@ -181,23 +169,23 @@ class ItMiiDynamicUpdatePart2 {
     verifyDomainStatusConditionNoErrorMsg("Completed", "True");
 
     // change the datasource jndi name back to original in order to create a clean environment for the next test
-    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+    replaceConfigMapWithModelFiles(helper.configMapName, domainUid, helper.domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.jdbc2.yaml"), withStandardRetryPolicy);
 
     // Patch a running domain with onNonDynamicChanges
-    patchDomainResourceWithOnNonDynamicChanges(domainUid, domainNamespace, "CommitUpdateAndRoll");
+    patchDomainResourceWithOnNonDynamicChanges(domainUid, helper.domainNamespace, "CommitUpdateAndRoll");
 
     // Patch a running domain with introspectVersion.
-    introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+    introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, helper.domainNamespace);
 
     // Verifying introspector pod is created, runs and deleted
-    verifyIntrospectorRuns(domainUid, domainNamespace);
+    verifyIntrospectorRuns(domainUid, helper.domainNamespace);
 
     // Verifying the domain is rolling restarted
-    assertTrue(verifyRollingRestartOccurred(pods, 1, domainNamespace),
+    assertTrue(verifyRollingRestartOccurred(pods, 1, helper.domainNamespace),
         "Rolling restart failed");
 
-    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, domainNamespace);
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, helper.domainNamespace);
   }
 
   /**
@@ -221,7 +209,7 @@ class ItMiiDynamicUpdatePart2 {
 
     // check the application myear is deployed using REST API
     int adminServiceNodePort
-        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+        = getServiceNodePort(helper.domainNamespace, getExternalServicePodName(helper.adminServerPodName), "default");
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
     assertTrue(checkSystemResourceConfig(adminSvcExtHost, adminServiceNodePort,
         "appDeployments",
@@ -238,28 +226,28 @@ class ItMiiDynamicUpdatePart2 {
 
     // Replace contents of an existing configMap with cm config and application target as
     // there are issues with removing them, WDT-535
-    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+    replaceConfigMapWithModelFiles(helper.configMapName, domainUid, helper.domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.jdbc2.update2.yaml", pathToUndeployAppYaml.toString()),
         withStandardRetryPolicy);
 
     // Patch a running domain with onNonDynamicChanges
-    patchDomainResourceWithOnNonDynamicChanges(domainUid, domainNamespace, "CommitUpdateAndRoll");
+    patchDomainResourceWithOnNonDynamicChanges(domainUid, helper.domainNamespace, "CommitUpdateAndRoll");
 
     // Patch a running domain with introspectVersion.
-    String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+    String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, helper.domainNamespace);
 
     // Verifying introspector pod is created, runs and deleted
-    verifyIntrospectorRuns(domainUid, domainNamespace);
+    verifyIntrospectorRuns(domainUid, helper.domainNamespace);
 
     // Verifying the domain is rolling restarted
-    assertTrue(verifyRollingRestartOccurred(pods, 1, domainNamespace),
+    assertTrue(verifyRollingRestartOccurred(pods, 1, helper.domainNamespace),
         "Rolling restart failed");
 
-    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, domainNamespace);
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, helper.domainNamespace);
 
     // check datasource configuration using REST api
     adminServiceNodePort
-        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+        = getServiceNodePort(helper.domainNamespace, getExternalServicePodName(helper.adminServerPodName), "default");
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
     assertTrue(checkSystemResourceConfig(adminSvcExtHost, adminServiceNodePort,
         "JDBCSystemResources/TestDataSource2/JDBCResource/JDBCDriverParams",
@@ -305,23 +293,23 @@ class ItMiiDynamicUpdatePart2 {
     assertDoesNotThrow(() -> Files.write(pathToDeleteDSYaml, yamlToDeleteDS.getBytes()));
 
     // Replace contents of an existing configMap with cm config
-    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+    replaceConfigMapWithModelFiles(helper.configMapName, domainUid, helper.domainNamespace,
         Arrays.asList(pathToDeleteDSYaml.toString()), withStandardRetryPolicy);
 
     // Patch a running domain with introspectVersion.
-    String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+    String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, helper.domainNamespace);
 
     // Verifying introspector pod is created, runs and deleted
-    verifyIntrospectorRuns(domainUid, domainNamespace);
+    verifyIntrospectorRuns(domainUid, helper.domainNamespace);
 
     // Verifying the domain is not restarted
-    verifyPodsNotRolled(domainNamespace, pods);
+    verifyPodsNotRolled(helper.domainNamespace, pods);
 
-    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, domainNamespace);
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, helper.domainNamespace);
 
     // check datasource configuration is deleted using REST api
     int adminServiceNodePort
-        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+        = getServiceNodePort(helper.domainNamespace, getExternalServicePodName(helper.adminServerPodName), "default");
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
     assertFalse(checkSystemResourceConfig(adminSvcExtHost, adminServiceNodePort, "JDBCSystemResources",
         "TestDataSource2"), "Found JDBCSystemResource datasource, should be deleted");
@@ -355,24 +343,24 @@ class ItMiiDynamicUpdatePart2 {
     LinkedHashMap<String, OffsetDateTime> pods = addDataSourceAndVerify(false);
 
     // make two non-dynamic changes, add  datasource JDBC driver params and change scatteredreadenabled
-    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+    replaceConfigMapWithModelFiles(helper.configMapName, domainUid, helper.domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.jdbc2.updatejdbcdriverparams.yaml", pathToChangReadsYaml.toString()),
         withStandardRetryPolicy);
 
     // Patch a running domain with onNonDynamicChanges - update with CommitUpdateOnly so that even if previous test
     // updates onNonDynamicChanges, this test will work
-    patchDomainResourceWithOnNonDynamicChanges(domainUid, domainNamespace, "CommitUpdateOnly");
+    patchDomainResourceWithOnNonDynamicChanges(domainUid, helper.domainNamespace, "CommitUpdateOnly");
 
     // Patch a running domain with introspectVersion, uses default value for onNonDynamicChanges
-    String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+    String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, helper.domainNamespace);
 
     // Verifying introspector pod is created, runs and deleted
-    verifyIntrospectorRuns(domainUid, domainNamespace);
+    verifyIntrospectorRuns(domainUid, helper.domainNamespace);
 
     // Verify domain is not restarted when non-dynamic change is made using default CommitUpdateOnly
-    verifyPodsNotRolled(domainNamespace, pods);
+    verifyPodsNotRolled(helper.domainNamespace, pods);
 
-    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, domainNamespace);
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, helper.domainNamespace);
 
     // check pod label for MII_UPDATED_RESTART_REQUIRED_LABEL
     assertDoesNotThrow(() -> verifyPodLabelUpdated(pods.keySet(),
@@ -382,12 +370,12 @@ class ItMiiDynamicUpdatePart2 {
 
     // check the change is committed
     int adminServiceNodePort
-        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+        = getServiceNodePort(helper.domainNamespace, getExternalServicePodName(helper.adminServerPodName), "default");
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
 
     // check server config for ScatteredReadsEnabled is updated
     assertTrue(checkSystemResourceConfig(adminSvcExtHost, adminServiceNodePort,
-        "servers/" + adminServerName,
+        "servers/" + helper.adminServerName,
         "\"scatteredReadsEnabled\": true"), "ScatteredReadsEnabled is not changed to true");
     logger.info("ScatteredReadsEnabled is changed to true");
 
@@ -404,16 +392,16 @@ class ItMiiDynamicUpdatePart2 {
         "ConfigChangesPendingRestart", expectedMsgForCommitUpdateOnly);
 
     // restart domain and verify the changes are effective
-    String newRestartVersion = patchDomainResourceWithNewRestartVersion(domainUid, domainNamespace);
+    String newRestartVersion = patchDomainResourceWithNewRestartVersion(domainUid, helper.domainNamespace);
     logger.log(Level.INFO, "New restart version is {0}", newRestartVersion);
-    assertTrue(verifyRollingRestartOccurred(pods, 1, domainNamespace),
+    assertTrue(verifyRollingRestartOccurred(pods, 1, helper.domainNamespace),
         "Rolling restart failed");
 
     // Even if pods are created, need the service to created
-    for (int i = 1; i <= replicaCount; i++) {
+    for (int i = 1; i <= helper.replicaCount; i++) {
       logger.info("Check managed server service {0} created in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkServiceExists(managedServerPrefix + i, domainNamespace);
+          helper.managedServerPrefix + i, helper.domainNamespace);
+      checkServiceExists(helper.managedServerPrefix + i, helper.domainNamespace);
     }
 
     // check datasource runtime after restart
@@ -433,14 +421,14 @@ class ItMiiDynamicUpdatePart2 {
 
   void verifyPodLabelUpdated(Set<String> podNames, String label) throws ApiException {
     for (String podName : podNames) {
-      assertNotNull(getPod(domainNamespace, label, podName),
+      assertNotNull(getPod(helper.domainNamespace, label, podName),
           "Pod " + podName + " doesn't have label " + label);
     }
   }
 
   void verifyPodLabelRemoved(Set<String> podNames, String label) throws ApiException {
     for (String podName : podNames) {
-      assertNull(getPod(domainNamespace, label, podName),
+      assertNull(getPod(helper.domainNamespace, label, podName),
           "Pod " + podName + " still have the label " + label);
     }
   }
@@ -450,35 +438,35 @@ class ItMiiDynamicUpdatePart2 {
     LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
 
     // get the creation time of the admin server pod before patching
-    OffsetDateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
-    pods.put(adminServerPodName, getPodCreationTime(domainNamespace, adminServerPodName));
+    pods.put(helper.adminServerPodName, getPodCreationTime(helper.domainNamespace, helper.adminServerPodName));
     // get the creation time of the managed server pods before patching
-    for (int i = 1; i <= replicaCount; i++) {
-      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
+    for (int i = 1; i <= helper.replicaCount; i++) {
+      pods.put(helper.managedServerPrefix + i,
+          getPodCreationTime(helper.domainNamespace, helper.managedServerPrefix + i));
     }
 
     // Replace contents of an existing configMap with cm config and application target as
     // there are issues with removing them, WDT-535
-    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+    replaceConfigMapWithModelFiles(helper.configMapName, domainUid, helper.domainNamespace,
         Arrays.asList(MODEL_DIR + "/model.jdbc2.yaml"), withStandardRetryPolicy);
 
     // Patch a running domain with introspectVersion.
-    String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+    String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, helper.domainNamespace);
 
     // Verifying introspector pod is created, runs and deleted
     // if the config map content is not changed, its possible to miss the introspector pod creation/deletion as
     // it will be very quick, skip the check in those cases
     if (introspectorRuns) {
-      verifyIntrospectorRuns(domainUid, domainNamespace);
+      verifyIntrospectorRuns(domainUid, helper.domainNamespace);
     }
 
-    verifyPodsNotRolled(domainNamespace, pods);
+    verifyPodsNotRolled(helper.domainNamespace, pods);
 
-    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, domainNamespace);
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, helper.domainNamespace);
 
     // check datasource configuration using REST api
     int adminServiceNodePort
-        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+        = getServiceNodePort(helper.domainNamespace, getExternalServicePodName(helper.adminServerPodName), "default");
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
     assertTrue(checkSystemResourceConfiguration(adminSvcExtHost, adminServiceNodePort, "JDBCSystemResources",
         "TestDataSource2", "200"), "JDBCSystemResource not found");
@@ -496,7 +484,7 @@ class ItMiiDynamicUpdatePart2 {
   private void verifyDomainStatusConditionNoErrorMsg(String conditionType, String conditionStatus) {
     testUntil(
         () -> {
-          Domain miidomain = getDomainCustomResource(domainUid, domainNamespace);
+          Domain miidomain = getDomainCustomResource(domainUid, helper.domainNamespace);
           if ((miidomain != null) && (miidomain.getStatus() != null)) {
             for (DomainCondition domainCondition : miidomain.getStatus().getConditions()) {
               logger.info("Condition Type =" + domainCondition.getType()
@@ -524,7 +512,7 @@ class ItMiiDynamicUpdatePart2 {
   private boolean verifyDomainStatusCondition(String conditionType, String conditionMsg) {
     testUntil(
         () -> {
-          Domain miidomain = getDomainCustomResource(domainUid, domainNamespace);
+          Domain miidomain = getDomainCustomResource(domainUid, helper.domainNamespace);
           if ((miidomain != null) && (miidomain.getStatus() != null)) {
             for (DomainCondition domainCondition : miidomain.getStatus().getConditions()) {
               logger.info("Condition Type =" + domainCondition.getType()
