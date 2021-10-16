@@ -661,15 +661,6 @@ public class DomainStatusUpdater {
                 .map(p -> PodHelper.isDeleting(p)).orElse(false);
       }
 
-      private boolean isStateShutdown(String serverName) {
-        return isStateShutdown(getCachedInfo().getLastKnownServerStatus(serverName), SHUTDOWN_STATE);
-      }
-
-      private boolean isStateShutdown(LastKnownStatus lastKnownStatus, String shutdownState) {
-        String status = Optional.ofNullable(lastKnownStatus).map(s -> s.getStatus()).orElse(null);
-        return Objects.equals(status, shutdownState);
-      }
-
       private String getDesiredState(String serverName, String clusterName, boolean isAdminServer) {
         return isAdminServer | shouldStart(serverName)
             ? getDomain().getServer(serverName, clusterName).getDesiredState()

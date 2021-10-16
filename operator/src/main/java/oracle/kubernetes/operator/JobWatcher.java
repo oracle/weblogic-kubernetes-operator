@@ -244,6 +244,10 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
 
     @Override
     boolean isReady(V1Job job, DomainPresenceInfo info, String serverName) {
+      return isReady(job);
+    }
+
+    boolean isReady(V1Job job) {
       return isComplete(job) || isFailed(job);
     }
 
@@ -256,7 +260,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
     // where the job is not yet ready.
     @Override
     boolean shouldProcessCallback(V1Job job, Packet packet) {
-      return hasExpectedCreationTime(job) && isReady(job, null, null);
+      return hasExpectedCreationTime(job) && isReady(job);
     }
 
     private boolean hasExpectedCreationTime(V1Job job) {
@@ -317,7 +321,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
       return new DefaultResponseStep<>(null) {
         @Override
         public NextAction onSuccess(Packet packet, CallResponse<V1Job> callResponse) {
-          if (isReady(callResponse.getResult(), null, null) || callback.didResumeFiber()) {
+          if (isReady(callResponse.getResult()) || callback.didResumeFiber()) {
             callback.proceedFromWait(callResponse.getResult());
             return doNext(packet);
           }

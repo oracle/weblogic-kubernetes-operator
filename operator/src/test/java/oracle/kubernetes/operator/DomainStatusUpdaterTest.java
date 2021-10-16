@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import com.google.common.collect.ImmutableMap;
 import com.meterware.simplestub.Memento;
@@ -61,6 +62,7 @@ import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progre
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
@@ -436,7 +438,7 @@ class DomainStatusUpdaterTest {
   }
 
   @Test
-  void whenDomainHasOneCluster_statusReplicaCountShowsServersInThatCluster() {
+  void forDomainWithAClusterOf3Servers_statusHasCorrectReplicaCount() {
     testSupport.addToPacket(DOMAIN_TOPOLOGY, createWlsDomainConfigSupport().createDomainConfig());
 
     testSupport.runSteps(DomainStatusUpdater.createStatusUpdateStep(endStep));
@@ -445,7 +447,7 @@ class DomainStatusUpdaterTest {
   }
 
   @Test
-  void whenAllSeverPodsInClusterAreBeingTerminated_ClusterStatusHasNullReadyReplicaCount() {
+  void whenAllSeverPodsInClusterAreBeingTerminated_ClusterStatusDoesNotShowReadyReplicaCount() {
     testSupport.addToPacket(DOMAIN_TOPOLOGY, createWlsDomainConfigSupport().createDomainConfig());
 
     markServerPodsInClusterForDeletion();
@@ -458,9 +460,22 @@ class DomainStatusUpdaterTest {
     info.getServerPod("server1").getMetadata().setDeletionTimestamp(OffsetDateTime.now());
     info.getServerPod("server2").getMetadata().setDeletionTimestamp(OffsetDateTime.now());
     info.getServerPod("server3").getMetadata().setDeletionTimestamp(OffsetDateTime.now());
-    info.setServerPodBeingDeleted("server1", true);
-    info.setServerPodBeingDeleted("server2", true);
-    info.setServerPodBeingDeleted("server3", true);
+  }
+
+  @Test
+  void whenAllSeverPodsInClusterAreTerminated_ClusterStatusDoesNotShowReadyReplicaCount() {
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, createWlsDomainConfigSupport().createDomainConfig());
+
+    deleteServerPodsInCluster();
+    testSupport.runSteps(DomainStatusUpdater.createStatusUpdateStep(endStep));
+
+    assertThat(getClusterStatus().getReadyReplicas(), nullValue());
+  }
+
+  private void deleteServerPodsInCluster() {
+    info.setServerPod("server1", null);
+    info.setServerPod("server2", null);
+    info.setServerPod("server3", null);
   }
 
   @Test
@@ -471,16 +486,10 @@ class DomainStatusUpdaterTest {
     testSupport.runSteps(DomainStatusUpdater.createStatusUpdateStep(endStep));
 
     assertThat(
-            getServerStatus(getRecordedDomain(), "server1"),
-            equalTo(
-                    createServerStatus(SHUTTING_DOWN_STATE, SHUTDOWN_STATE, "cluster1", "server1", "server1")));
-    assertThat(
-            getServerStatus(getRecordedDomain(), "server2"),
-            equalTo(
-                    createServerStatus(SHUTTING_DOWN_STATE, SHUTDOWN_STATE, "cluster1", "server2", "server2")));
-    assertThat(
-            getServerStatus(getRecordedDomain(), "server3"),
-            equalTo(
+            getRecordedDomain().getStatus().getServers(),
+            hasItems(
+                    createServerStatus(SHUTTING_DOWN_STATE, SHUTDOWN_STATE, "cluster1", "server1", "server1"),
+                    createServerStatus(SHUTTING_DOWN_STATE, SHUTDOWN_STATE, "cluster1", "server2", "server2"),
                     createServerStatus(SHUTTING_DOWN_STATE, SHUTDOWN_STATE, "cluster1", "server3", "server3")));
   }
 
@@ -502,23 +511,11 @@ class DomainStatusUpdaterTest {
     testSupport.runSteps(DomainStatusUpdater.createStatusUpdateStep(endStep));
 
     assertThat(
-            getServerStatus(getRecordedDomain(), "server1"),
-            equalTo(
-                    createServerStatus(SHUTDOWN_STATE, SHUTDOWN_STATE, "cluster1", "server1", "server1")));
-    assertThat(
-            getServerStatus(getRecordedDomain(), "server2"),
-            equalTo(
-                    createServerStatus(SHUTDOWN_STATE, SHUTDOWN_STATE, "cluster1", "server2", "server2")));
-    assertThat(
-            getServerStatus(getRecordedDomain(), "server3"),
-            equalTo(
-                    createServerStatus(SHUTDOWN_STATE, SHUTDOWN_STATE, "cluster1", "server3", "server3")));
-  }
-
-  private void deleteServerPodsInCluster() {
-    info.deleteServerPodFromEvent("server1", null);
-    info.deleteServerPodFromEvent("server2", null);
-    info.deleteServerPodFromEvent("server3", null);
+            getRecordedDomain().getStatus().getServers(),
+            hasItems(
+                    createServerStatus(SHUTDOWN_STATE, SHUTDOWN_STATE, "cluster1", null, "server1"),
+                    createServerStatus(SHUTDOWN_STATE, SHUTDOWN_STATE, "cluster1", null, "server2"),
+                    createServerStatus(SHUTDOWN_STATE, SHUTDOWN_STATE, "cluster1", null, "server3")));
   }
 
   @NotNull
