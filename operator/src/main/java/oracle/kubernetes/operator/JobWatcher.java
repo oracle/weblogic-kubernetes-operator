@@ -28,6 +28,7 @@ import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
+import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -241,9 +242,8 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
           metadata.getCreationTimestamp());
     }
 
-    // A job is considered ready once it has either successfully completed, or been marked as failed.
     @Override
-    boolean isReady(V1Job job) {
+    boolean isReady(V1Job job, DomainPresenceInfo info, String serverName) {
       return isComplete(job) || isFailed(job);
     }
 
@@ -255,8 +255,8 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
     // Ignore modified callbacks from different jobs (identified by having different creation times) or those
     // where the job is not yet ready.
     @Override
-    boolean shouldProcessCallback(V1Job job) {
-      return hasExpectedCreationTime(job) && isReady(job);
+    boolean shouldProcessCallback(V1Job job, Packet packet) {
+      return hasExpectedCreationTime(job) && isReady(job, null, null);
     }
 
     private boolean hasExpectedCreationTime(V1Job job) {
@@ -317,7 +317,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
       return new DefaultResponseStep<>(null) {
         @Override
         public NextAction onSuccess(Packet packet, CallResponse<V1Job> callResponse) {
-          if (isReady(callResponse.getResult()) || callback.didResumeFiber()) {
+          if (isReady(callResponse.getResult(), null, null) || callback.didResumeFiber()) {
             callback.proceedFromWait(callResponse.getResult());
             return doNext(packet);
           }

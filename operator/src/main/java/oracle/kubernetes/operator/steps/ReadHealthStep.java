@@ -26,6 +26,8 @@ import io.kubernetes.client.openapi.models.V1Service;
 import oracle.kubernetes.operator.Pair;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.WebLogicConstants;
+import oracle.kubernetes.operator.calls.CallResponse;
+import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.SecretHelper;
 import oracle.kubernetes.operator.http.HttpResponseStep;
@@ -227,10 +229,42 @@ public class ReadHealthStep extends Step {
 
     @Override
     public NextAction onFailure(Packet packet, HttpResponse<String> response) {
-      new HealthResponseProcessing(packet, response).recordFailedStateAndHealth();
-      return doNext(packet);
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+      String serverName = (String) packet.get(ProcessingConstants.SERVER_NAME);
+      return doNext(listPodStep(serverName, info, response, getNext()), packet);
     }
 
+    private Step listPodStep(String name, DomainPresenceInfo info, HttpResponse httpResponse, Step next) {
+      return new CallBuilder().readPodAsync(name, info.getNamespace(), info.getDomainUid(),
+              new ReadPodResponseStep(name, httpResponse, next));
+    }
+
+    private class ReadPodResponseStep extends DefaultResponseStep<V1Pod> {
+      private final HttpResponse httpResponse;
+      private final String serverName;
+
+      ReadPodResponseStep(String serverName, HttpResponse httpResponse, Step next) {
+        super(next);
+        this.httpResponse = httpResponse;
+        this.serverName = serverName;
+      }
+
+      @Override
+      public NextAction onFailure(Packet packet, CallResponse<V1Pod> callResponse) {
+        if (callResponse.getStatusCode() == CallBuilder.NOT_FOUND) {
+          DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+          info.setServerPod(serverName, null);
+          return doNext(packet);
+        }
+        return onFailure(packet, callResponse);
+      }
+
+      @Override
+      public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
+        new HealthResponseProcessing(packet, httpResponse).recordFailedStateAndHealth();
+        return doNext(packet);
+      }
+    }
 
     static class HealthResponseProcessing {
       private final String serverName;
