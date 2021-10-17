@@ -68,8 +68,8 @@ public class JobStepContext extends BasePodStepContext {
 
   JobStepContext(Packet packet) {
     super(packet.getSpi(DomainPresenceInfo.class));
-    init();
     domainTopology = packet.getValue(ProcessingConstants.DOMAIN_TOPOLOGY);
+    init();
   }
 
   private static V1VolumeMount readOnlyVolumeMount(String volumeName, String mountPath) {

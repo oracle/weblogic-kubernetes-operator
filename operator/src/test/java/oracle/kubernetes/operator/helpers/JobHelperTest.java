@@ -11,7 +11,10 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.V1Affinity;
@@ -93,6 +96,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
+import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
@@ -1041,6 +1045,32 @@ class JobHelperTest extends DomainValidationBaseTest {
     runCreateJob();
 
     assertThat(job, notNullValue());
+  }
+
+  @Test
+  void whenRerunIntrospectorWithTopologyDefined_containerHasAdminServiceVars() {
+    defineTopology();
+    testSupport.addToPacket(ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED, "123");
+
+    runCreateJob();
+
+    assertThat(getEnvNames(job), hasItems("ADMIN_NAME", "ADMIN_PORT", "AS_SERVICE_NAME"));
+  }
+
+  private List<String> getEnvNames(@Nonnull V1Job job) {
+    return Optional.of(job)
+          .map(V1Job::getSpec)
+          .map(V1JobSpec::getTemplate)
+          .map(V1PodTemplateSpec::getSpec)
+          .map(V1PodSpec::getContainers)
+          .map(this::getFirst)
+          .map(V1Container::getEnv).orElse(Collections.emptyList()).stream()
+          .map(V1EnvVar::getName)
+          .collect(Collectors.toList());
+  }
+
+  private @Nullable V1Container getFirst(@Nonnull List<V1Container> containers) {
+    return containers.isEmpty() ? null : containers.get(0);
   }
 
   @Test
