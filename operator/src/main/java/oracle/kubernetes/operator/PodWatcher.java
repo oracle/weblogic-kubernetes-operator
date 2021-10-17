@@ -470,5 +470,27 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
     protected void removeCallback(String podName, Consumer<V1Pod> callback) {
       removeOnDeleteCallback(podName, callback);
     }
+
+    @Override
+    protected DefaultResponseStep<V1Pod> resumeIfReady(Callback callback) {
+      return new DefaultResponseStep<>(getNext()) {
+        @Override
+        public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
+
+          DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+          String serverName = (String)packet.get(SERVER_NAME);
+          if ((info != null) && (callResponse != null) && (callResponse.getResult() == null)) {
+            info.setServerPod(serverName, null);
+          }
+
+          if (isReady(callResponse.getResult(), info, serverName) || callback.didResumeFiber()) {
+            callback.proceedFromWait(callResponse.getResult());
+            return null;
+          }
+          return doDelay(createReadAndIfReadyCheckStep(callback), packet,
+                  getWatchBackstopRecheckDelaySeconds(), TimeUnit.SECONDS);
+        }
+      };
+    }
   }
 }
