@@ -100,8 +100,8 @@ public class WebLogicImageTool {
         + " update "
         + " --tag " + params.modelImageName() + ":" + params.modelImageTag()
         + " --fromImage " + params.baseImageName() + ":" + params.baseImageTag()
-        + " --wdtDomainType " + params.domainType();
-    //    + " --chown oracle:root";
+        + " --wdtDomainType " + params.domainType()
+        + " --chown oracle:root";
 
     if (params.wdtModelOnly()) {
       command += " --wdtModelOnly ";
