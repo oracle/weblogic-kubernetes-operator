@@ -43,12 +43,10 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodIntro
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfig;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfiguration;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceRuntime;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
-import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -102,91 +100,6 @@ class ItMiiDynamicUpdatePart2 {
   }
 
   /**
-   * Recreate configmap containing datasource config.
-   * Patch the domain resource with the configmap.
-   * Update the introspect version of the domain resource.
-   * Wait for introspector to complete
-   * Verify the datasource is added by checking the MBean using REST api.
-   */
-  @Test
-  @DisplayName("Add datasource in MII domain using mii dynamic update")
-  void testMiiAddDataSource() {
-    // This test uses the WebLogic domain created in BeforeAll method
-    // BeforeEach method ensures that the server pods are running
-    addDataSourceAndVerify(true);
-  }
-
-  /**
-   * Non-dynamic change using dynamic update by changing datasource parameters.
-   * Set onNonDynamicChanges to CommitUpdateAndRoll.
-   * Verify domain will rolling restart.
-   * Verify introspectVersion is updated.
-   * Verify the datasource parameter is updated by checking the MBean using REST api.
-   * Verify domain status should have a condition type as "Complete".
-   */
-  @Test
-  @DisplayName("Changing datasource parameters with CommitUpdateAndRoll using mii dynamic update")
-  void testMiiChangeDataSourceParameterWithCommitUpdateAndRoll() {
-
-    // This test uses the WebLogic domain created in BeforeAll method
-    // BeforeEach method ensures that the server pods are running
-    LinkedHashMap<String, OffsetDateTime> pods =
-        addDataSourceAndVerify(false);
-
-    // Replace contents of an existing configMap with cm config and application target as
-    // there are issues with removing them, WDT-535
-    replaceConfigMapWithModelFiles(helper.configMapName, domainUid, helper.domainNamespace,
-        Arrays.asList(MODEL_DIR + "/model.update.jdbc2.yaml"), withStandardRetryPolicy);
-
-    // Patch a running domain with onNonDynamicChanges
-    patchDomainResourceWithOnNonDynamicChanges(domainUid, helper.domainNamespace, "CommitUpdateAndRoll");
-
-    // Patch a running domain with introspectVersion.
-    String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, helper.domainNamespace);
-
-    // Verifying introspector pod is created, runs and deleted
-    verifyIntrospectorRuns(domainUid, helper.domainNamespace);
-
-    // Verifying the domain is rolling restarted
-    assertTrue(verifyRollingRestartOccurred(pods, 1, helper.domainNamespace),
-        "Rolling restart failed");
-
-    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, helper.domainNamespace);
-
-    // check datasource configuration using REST api
-    int adminServiceNodePort
-        = getServiceNodePort(helper.domainNamespace, getExternalServicePodName(helper.adminServerPodName), "default");
-    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-    assertTrue(checkSystemResourceConfig(helper.adminSvcExtHost, adminServiceNodePort,
-        "JDBCSystemResources/TestDataSource2/JDBCResource/JDBCDataSourceParams",
-        "jdbc\\/TestDataSource2-2"), "JDBCSystemResource JNDIName not found");
-    logger.info("JDBCSystemResource configuration found");
-
-    // check that the domain status condition contains the correct type and expected reason
-    logger.info("verifying the domain status condition contains the correct type and expected status");
-    verifyDomainStatusConditionNoErrorMsg("Completed", "True");
-
-    // change the datasource jndi name back to original in order to create a clean environment for the next test
-    replaceConfigMapWithModelFiles(helper.configMapName, domainUid, helper.domainNamespace,
-        Arrays.asList(MODEL_DIR + "/model.jdbc2.yaml"), withStandardRetryPolicy);
-
-    // Patch a running domain with onNonDynamicChanges
-    patchDomainResourceWithOnNonDynamicChanges(domainUid, helper.domainNamespace, "CommitUpdateAndRoll");
-
-    // Patch a running domain with introspectVersion.
-    introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, helper.domainNamespace);
-
-    // Verifying introspector pod is created, runs and deleted
-    verifyIntrospectorRuns(domainUid, helper.domainNamespace);
-
-    // Verifying the domain is rolling restarted
-    assertTrue(verifyRollingRestartOccurred(pods, 1, helper.domainNamespace),
-        "Rolling restart failed");
-
-    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, helper.domainNamespace);
-  }
-
-  /**
    * Mixed update by changing the DataSource URL (non-dynamic) and undeploying an application (dynamic).
    * Patched the domain resource and set onNonDynamicChanges to CommitUpdateAndRoll.
    * Verify domain will rolling restart.
@@ -203,7 +116,7 @@ class ItMiiDynamicUpdatePart2 {
     // This test uses the WebLogic domain created in BeforeAll method
     // BeforeEach method ensures that the server pods are running
     LinkedHashMap<String, OffsetDateTime> pods =
-        addDataSourceAndVerify(false);
+        helper.addDataSourceAndVerify(false);
 
     // check the application myear is deployed using REST API
     int adminServiceNodePort
@@ -260,7 +173,7 @@ class ItMiiDynamicUpdatePart2 {
 
     // check that the domain status condition contains the correct type and expected reason
     logger.info("verifying the domain status condition contains the correct type and expected status");
-    verifyDomainStatusConditionNoErrorMsg("Completed", "True");
+    helper.verifyDomainStatusConditionNoErrorMsg("Completed", "True");
   }
 
   /**
@@ -280,7 +193,7 @@ class ItMiiDynamicUpdatePart2 {
     // This test uses the WebLogic domain created in BeforeAll method
     // BeforeEach method ensures that the server pods are running
     LinkedHashMap<String, OffsetDateTime> pods =
-        addDataSourceAndVerify(false);
+        helper.addDataSourceAndVerify(false);
 
     // write sparse yaml to delete datasource to file
     Path pathToDeleteDSYaml = Paths.get(WORK_DIR + "/deleteds.yaml");
@@ -315,7 +228,7 @@ class ItMiiDynamicUpdatePart2 {
 
     // check that the domain status condition contains the correct type and expected status
     logger.info("verifying the domain status condition contains the correct type and expected status");
-    verifyDomainStatusConditionNoErrorMsg("Completed", "True");
+    helper.verifyDomainStatusConditionNoErrorMsg("Completed", "True");
   }
 
   /**
@@ -338,7 +251,7 @@ class ItMiiDynamicUpdatePart2 {
 
     // This test uses the WebLogic domain created in BeforeAll method
     // BeforeEach method ensures that the server pods are running
-    LinkedHashMap<String, OffsetDateTime> pods = addDataSourceAndVerify(false);
+    LinkedHashMap<String, OffsetDateTime> pods = helper.addDataSourceAndVerify(false);
 
     // make two non-dynamic changes, add  datasource JDBC driver params and change scatteredreadenabled
     replaceConfigMapWithModelFiles(helper.configMapName, domainUid, helper.domainNamespace,
@@ -429,75 +342,6 @@ class ItMiiDynamicUpdatePart2 {
       assertNull(getPod(helper.domainNamespace, label, podName),
           "Pod " + podName + " still have the label " + label);
     }
-  }
-
-  LinkedHashMap<String, OffsetDateTime> addDataSourceAndVerify(boolean introspectorRuns) {
-
-    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
-
-    // get the creation time of the admin server pod before patching
-    pods.put(helper.adminServerPodName, getPodCreationTime(helper.domainNamespace, helper.adminServerPodName));
-    // get the creation time of the managed server pods before patching
-    for (int i = 1; i <= helper.replicaCount; i++) {
-      pods.put(helper.managedServerPrefix + i,
-          getPodCreationTime(helper.domainNamespace, helper.managedServerPrefix + i));
-    }
-
-    // Replace contents of an existing configMap with cm config and application target as
-    // there are issues with removing them, WDT-535
-    replaceConfigMapWithModelFiles(helper.configMapName, domainUid, helper.domainNamespace,
-        Arrays.asList(MODEL_DIR + "/model.jdbc2.yaml"), withStandardRetryPolicy);
-
-    // Patch a running domain with introspectVersion.
-    String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, helper.domainNamespace);
-
-    // Verifying introspector pod is created, runs and deleted
-    // if the config map content is not changed, its possible to miss the introspector pod creation/deletion as
-    // it will be very quick, skip the check in those cases
-    if (introspectorRuns) {
-      verifyIntrospectorRuns(domainUid, helper.domainNamespace);
-    }
-
-    verifyPodsNotRolled(helper.domainNamespace, pods);
-
-    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, helper.domainNamespace);
-
-    // check datasource configuration using REST api
-    int adminServiceNodePort
-        = getServiceNodePort(helper.domainNamespace, getExternalServicePodName(helper.adminServerPodName), "default");
-    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-    assertTrue(checkSystemResourceConfiguration(helper.adminSvcExtHost, adminServiceNodePort, "JDBCSystemResources",
-        "TestDataSource2", "200"), "JDBCSystemResource not found");
-    logger.info("JDBCSystemResource configuration found");
-    return pods;
-  }
-
-
-  /**
-   * Verify domain status conditions contains the given condition type and reason.
-   *
-   * @param conditionType   condition type
-   * @param conditionStatus status in condition (true / false / unknown)
-   */
-  private void verifyDomainStatusConditionNoErrorMsg(String conditionType, String conditionStatus) {
-    testUntil(
-        () -> {
-          Domain miidomain = getDomainCustomResource(domainUid, helper.domainNamespace);
-          if ((miidomain != null) && (miidomain.getStatus() != null)) {
-            for (DomainCondition domainCondition : miidomain.getStatus().getConditions()) {
-              logger.info("Condition Type =" + domainCondition.getType()
-                  + " Condition Status =" + domainCondition.getStatus());
-              if ((domainCondition.getType() != null && domainCondition.getType().equalsIgnoreCase(conditionType))
-                  && (domainCondition.getStatus() != null && domainCondition.getStatus().contains(conditionStatus))) {
-                return true;
-              }
-            }
-          }
-          return false;
-        },
-        logger,
-        "domain status condition message contains the expected msg \"{0}\"",
-        conditionStatus);
   }
 
   /**

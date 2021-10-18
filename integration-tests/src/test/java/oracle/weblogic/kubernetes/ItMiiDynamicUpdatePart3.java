@@ -6,7 +6,9 @@ package oracle.weblogic.kubernetes;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.time.OffsetDateTime;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.List;
 
 import io.kubernetes.client.openapi.ApiException;
@@ -26,23 +28,35 @@ import org.junit.jupiter.api.Test;
 import static oracle.weblogic.kubernetes.TestConstants.MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_VERSION;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodStatusPhase;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
+import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithOnNonDynamicChanges;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.replaceConfigMapWithModelFiles;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyIntrospectorRuns;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodIntrospectVersionUpdated;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfig;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
+import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * This test class verifies the runtime updates that are not supported.
+ * This test class verifies the runtime updates that are not supported and non-dynamic
+ * changes using CommitUpdateAndRoll.
  */
 
 @DisplayName("Test dynamic updates to a model in image domain, part2")
@@ -235,6 +249,94 @@ class ItMiiDynamicUpdatePart3 {
     assertTrue(operatorPodLog.contains("WebLogic version='" + WEBLOGIC_VERSION + "'"));
     assertTrue(operatorPodLog.contains("Job " + domainUid + "-introspector has failed"));
     assertTrue(operatorPodLog.contains(MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG));
+  }
+
+
+  /**
+   * Non-dynamic change using dynamic update by changing datasource parameters.
+   * Set onNonDynamicChanges to CommitUpdateAndRoll.
+   * Verify domain will rolling restart.
+   * Verify introspectVersion is updated.
+   * Verify the datasource parameter is updated by checking the MBean using REST api.
+   * Verify domain status should have a condition type as "Complete".
+   */
+  @Test
+  @DisplayName("Changing datasource parameters with CommitUpdateAndRoll using mii dynamic update")
+  void testMiiChangeDataSourceParameterWithCommitUpdateAndRoll() {
+
+    // This test uses the WebLogic domain created in BeforeAll method
+    // BeforeEach method ensures that the server pods are running
+    LinkedHashMap<String, OffsetDateTime> pods =
+        helper.addDataSourceAndVerify(false);
+
+    // Replace contents of an existing configMap with cm config and application target as
+    // there are issues with removing them, WDT-535
+    replaceConfigMapWithModelFiles(helper.configMapName, domainUid, helper.domainNamespace,
+        Arrays.asList(MODEL_DIR + "/model.update.jdbc2.yaml"), withStandardRetryPolicy);
+
+    // Patch a running domain with onNonDynamicChanges
+    patchDomainResourceWithOnNonDynamicChanges(domainUid, helper.domainNamespace, "CommitUpdateAndRoll");
+
+    // Patch a running domain with introspectVersion.
+    String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, helper.domainNamespace);
+
+    // Verifying introspector pod is created, runs and deleted
+    verifyIntrospectorRuns(domainUid, helper.domainNamespace);
+
+    // Verifying the domain is rolling restarted
+    assertTrue(verifyRollingRestartOccurred(pods, 1, helper.domainNamespace),
+        "Rolling restart failed");
+
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, helper.domainNamespace);
+
+    // check datasource configuration using REST api
+    int adminServiceNodePort
+        = getServiceNodePort(helper.domainNamespace, getExternalServicePodName(helper.adminServerPodName), "default");
+    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
+    assertTrue(checkSystemResourceConfig(helper.adminSvcExtHost, adminServiceNodePort,
+        "JDBCSystemResources/TestDataSource2/JDBCResource/JDBCDataSourceParams",
+        "jdbc\\/TestDataSource2-2"), "JDBCSystemResource JNDIName not found");
+    logger.info("JDBCSystemResource configuration found");
+
+    // check that the domain status condition contains the correct type and expected reason
+    logger.info("verifying the domain status condition contains the correct type and expected status");
+    helper.verifyDomainStatusConditionNoErrorMsg("Completed", "True");
+
+    // write sparse yaml to delete datasource to file, delete ds to keep the config clean
+    Path pathToDeleteDSYaml = Paths.get(WORK_DIR + "/deleteds.yaml");
+    String yamlToDeleteDS = "resources:\n"
+        + "  JDBCSystemResource:\n"
+        + "    !TestDataSource2:";
+
+    assertDoesNotThrow(() -> Files.write(pathToDeleteDSYaml, yamlToDeleteDS.getBytes()));
+
+    // Replace contents of an existing configMap with cm config
+    replaceConfigMapWithModelFiles(helper.configMapName, domainUid, helper.domainNamespace,
+        Arrays.asList(pathToDeleteDSYaml.toString()), withStandardRetryPolicy);
+
+    // Patch a running domain with introspectVersion.
+    introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, helper.domainNamespace);
+
+    // Verifying introspector pod is created, runs and deleted
+    verifyIntrospectorRuns(domainUid, helper.domainNamespace);
+
+    // Verifying the domain is not restarted
+    verifyPodsNotRolled(helper.domainNamespace, pods);
+
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, helper.domainNamespace);
+
+    // check datasource configuration is deleted using REST api
+    adminServiceNodePort
+        = getServiceNodePort(helper.domainNamespace, getExternalServicePodName(helper.adminServerPodName), "default");
+    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
+    assertFalse(checkSystemResourceConfig(helper.adminSvcExtHost, adminServiceNodePort, "JDBCSystemResources",
+        "TestDataSource2"), "Found JDBCSystemResource datasource, should be deleted");
+    logger.info("JDBCSystemResource Datasource is deleted");
+
+    // check that the domain status condition contains the correct type and expected status
+    logger.info("verifying the domain status condition contains the correct type and expected status");
+    helper.verifyDomainStatusConditionNoErrorMsg("Completed", "True");
+
   }
 
   private void verifyIntrospectorFailsWithExpectedErrorMsg(String expectedErrorMsg) {

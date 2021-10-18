@@ -3,9 +3,14 @@
 
 package oracle.weblogic.kubernetes.utils;
 
+import java.time.OffsetDateTime;
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 
+import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainCondition;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
@@ -15,13 +20,23 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDatabaseSecret;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResourceWithLogHome;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainSecret;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createJobToChangePermissionsOnPvHostPath;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.replaceConfigMapWithModelFiles;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyIntrospectorRuns;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodIntrospectVersionUpdated;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfiguration;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
@@ -30,9 +45,12 @@ import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOpe
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
+import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MiiDynamicUpdateHelper {
 
@@ -153,6 +171,79 @@ public class MiiDynamicUpdateHelper {
       adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
       logger.info("admin svc host = {0}", adminSvcExtHost);
     }
+  }
+
+  /**
+   * Verify domain status conditions contains the given condition type and reason.
+   *
+   * @param conditionType   condition type
+   * @param conditionStatus status in condition (true / false / unknown)
+   */
+  public void verifyDomainStatusConditionNoErrorMsg(String conditionType, String conditionStatus) {
+    testUntil(
+        () -> {
+          Domain miidomain = getDomainCustomResource(domainUid, domainNamespace);
+          if ((miidomain != null) && (miidomain.getStatus() != null)) {
+            for (DomainCondition domainCondition : miidomain.getStatus().getConditions()) {
+              logger.info("Condition Type =" + domainCondition.getType()
+                  + " Condition Status =" + domainCondition.getStatus());
+              if ((domainCondition.getType() != null && domainCondition.getType().equalsIgnoreCase(conditionType))
+                  && (domainCondition.getStatus() != null && domainCondition.getStatus().contains(conditionStatus))) {
+                return true;
+              }
+            }
+          }
+          return false;
+        },
+        logger,
+        "domain status condition message contains the expected msg \"{0}\"",
+        conditionStatus);
+  }
+
+  /**
+   * Add a datasource.
+   * @param introspectorRuns check if introspector ran or not
+   * @return map with pods creation time
+   */
+  public LinkedHashMap<String, OffsetDateTime> addDataSourceAndVerify(boolean introspectorRuns) {
+
+    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
+
+    // get the creation time of the admin server pod before patching
+    pods.put(adminServerPodName, getPodCreationTime(domainNamespace, adminServerPodName));
+    // get the creation time of the managed server pods before patching
+    for (int i = 1; i <= replicaCount; i++) {
+      pods.put(managedServerPrefix + i,
+          getPodCreationTime(domainNamespace, managedServerPrefix + i));
+    }
+
+    // Replace contents of an existing configMap with cm config and application target as
+    // there are issues with removing them, WDT-535
+    replaceConfigMapWithModelFiles(configMapName, domainUid, domainNamespace,
+        Arrays.asList(MODEL_DIR + "/model.jdbc2.yaml"), withStandardRetryPolicy);
+
+    // Patch a running domain with introspectVersion.
+    String introspectVersion = patchDomainResourceWithNewIntrospectVersion(domainUid, domainNamespace);
+
+    // Verifying introspector pod is created, runs and deleted
+    // if the config map content is not changed, its possible to miss the introspector pod creation/deletion as
+    // it will be very quick, skip the check in those cases
+    if (introspectorRuns) {
+      verifyIntrospectorRuns(domainUid, domainNamespace);
+    }
+
+    verifyPodsNotRolled(domainNamespace, pods);
+
+    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, domainNamespace);
+
+    // check datasource configuration using REST api
+    int adminServiceNodePort
+        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
+    assertTrue(checkSystemResourceConfiguration(adminSvcExtHost, adminServiceNodePort, "JDBCSystemResources",
+        "TestDataSource2", "200"), "JDBCSystemResource not found");
+    logger.info("JDBCSystemResource configuration found");
+    return pods;
   }
 
 }
