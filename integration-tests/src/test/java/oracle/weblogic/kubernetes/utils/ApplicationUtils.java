@@ -41,7 +41,7 @@ public class ApplicationUtils {
     } else {
       headerString = new StringBuffer("");
     }
-    curlString.append(" --noproxy '*' ")
+    curlString.append(" -sk --noproxy '*' ")
         .append(" --silent --show-error ")
         .append(headerString.toString())
         .append(url)

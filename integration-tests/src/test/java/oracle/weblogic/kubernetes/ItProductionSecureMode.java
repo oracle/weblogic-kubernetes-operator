@@ -59,6 +59,8 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyIntrospe
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodIntrospectVersionUpdated;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.startPortForwardProcess;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.stopPortForwardProcess;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
@@ -71,6 +73,7 @@ import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsern
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -194,6 +197,9 @@ class ItProductionSecureMode {
    * Verify no NodePort service is available thru default channel since 
    * clear text default port (7001) is disabled.
    * Check the `default-secure` and `default-admin` port on cluster service.
+   * Make sure kubectl port-forward works thru Administration port(9002)
+   * Make sure kubectl port-forward does not work thru default SSL Port(7002)
+   * when Administration port(9002) is enabled.
    */
   @Test
   @DisplayName("Verify the secure service through administration port")
@@ -206,7 +212,7 @@ class ItProductionSecureMode {
 
     // Here the SSL port is explicitly set to 7002 (on-prem default) in
     // in ServerTemplate section on topology file. Here the generated 
-    // config.xml has no SSL port assigned, but the default-secure service i
+    // config.xml has no SSL port assigned, but the default-secure service 
     // must be active with port 7002 
     int defaultClusterSecurePort = assertDoesNotThrow(()
         -> getServicePort(domainNamespace, 
@@ -228,6 +234,36 @@ class ItProductionSecureMode {
       logger.info("Executing default-admin nodeport curl command {0}", curlCmd);
       assertTrue(callWebAppAndWaitTillReady(curlCmd, 10));
       logger.info("WebLogic console is accessible thru default-admin service");
+ 
+      String localhost = "localhost";
+      String forwardPort = 
+           startPortForwardProcess(localhost, domainNamespace, 
+           domainUid, 9002);
+      assertNotNull(forwardPort, "port-forward fails to assign local port");
+      logger.info("Forwarded admin-port is {0}", forwardPort);
+      curlCmd = "curl -sk --show-error --noproxy '*' "
+          + " https://" + localhost + ":" + forwardPort
+          + "/console/login/LoginForm.jsp --write-out %{http_code} " 
+          + " -o /dev/null";
+      logger.info("Executing default-admin port-fwd curl command {0}", curlCmd);
+      assertTrue(callWebAppAndWaitTillReady(curlCmd, 10));
+      logger.info("WebLogic console is accessible thru admin port forwarding");
+
+      // When port-forwarding is happening on admin-port, port-forwarding will
+      // not work for SSL port i.e. 7002
+      forwardPort = 
+           startPortForwardProcess(localhost, domainNamespace, 
+           domainUid, 7002);
+      assertNotNull(forwardPort, "port-forward fails to assign local port");
+      logger.info("Forwarded ssl port is {0}", forwardPort);
+      curlCmd = "curl -sk --show-error --noproxy '*' "
+          + " https://" + localhost + ":" + forwardPort
+          + "/console/login/LoginForm.jsp --write-out %{http_code} " 
+          + " -o /dev/null";
+      logger.info("Executing default-admin port-fwd curl command {0}", curlCmd);
+      assertFalse(callWebAppAndWaitTillReady(curlCmd, 10));
+      logger.info("WebLogic console should not be accessible thru ssl port forwarding");
+      stopPortForwardProcess(domainNamespace);
     } else {
       logger.info("Skipping WebLogic console in WebLogic slim image");
     }

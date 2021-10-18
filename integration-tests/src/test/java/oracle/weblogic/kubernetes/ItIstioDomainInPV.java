@@ -52,9 +52,12 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.isWebLogicPsuPatchApplied;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.startPortForwardProcess;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.stopPortForwardProcess;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployToClusterUsingRest;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
@@ -130,7 +133,8 @@ class ItIstioDomainInPV  {
    * Add istio configuration.
    * Deploy istio gateways and virtual service.
    * Verify domain pods runs in ready state and services are created.
-   * Verify login to WebLogic console is successful thru istio ingress Port.
+   * Verify WebLogic console is accessible thru istio ingress http port
+   * Verify WebLogic console is accessible thru kubectl forwarded port
    * Additionally, the test verifies that WebLogic cluster can be scaled down
    * and scaled up in the absence of Administration server.
    */
@@ -249,23 +253,13 @@ class ItIstioDomainInPV  {
     createDomainAndVerify(domain, domainNamespace);
 
     // verify the admin server service created
-    checkServiceExists(adminServerPodName, domainNamespace);
-
-    // verify admin server pod is ready
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
-
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
     // verify managed server services created
+    // verify managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Checking managed service {0} is created in namespace {1}",
           managedServerPodNamePrefix + i, domainNamespace);
-      checkServiceExists(managedServerPodNamePrefix + i, domainNamespace);
-    }
-
-    // verify managed server pods are ready
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Waiting for managed pod {0} to be ready in namespace {1}",
-          managedServerPodNamePrefix + i, domainNamespace);
-      checkPodReady(managedServerPodNamePrefix + i, domainUid, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace);
     }
 
     String clusterService = domainUid + "-cluster-" + clusterName + "." + domainNamespace + ".svc.cluster.local";
@@ -296,6 +290,18 @@ class ItIstioDomainInPV  {
           checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
       assertTrue(checkConsole, "Failed to access WebLogic console");
       logger.info("WebLogic console is accessible");
+      String localhost = "localhost";
+      String forwardPort = 
+           startPortForwardProcess(localhost, domainNamespace, 
+           domainUid, 7001);
+      assertNotNull(forwardPort, "port-forward fails to assign local port");
+      logger.info("Forwarded local port is {0}", forwardPort);
+      consoleUrl = "http://" + localhost + ":" + forwardPort + "/console/login/LoginForm.jsp";
+      checkConsole = 
+          checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
+      assertTrue(checkConsole, "Failed to access WebLogic console thru port-forwarded port");
+      logger.info("WebLogic console is accessible thru port forwarding");
+      stopPortForwardProcess(domainNamespace);
     } else {
       logger.info("Skipping WebLogic console in WebLogic slim image");
     }
