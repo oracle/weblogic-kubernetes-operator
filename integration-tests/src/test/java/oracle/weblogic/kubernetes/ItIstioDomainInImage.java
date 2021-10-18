@@ -252,9 +252,6 @@ class ItIstioDomainInImage {
   /**
    * Verify that Security Warning Tool does not detect any security warning
    * messages on console.
-   * Ref https://jira.oraclecorp.com/jira/browse/OWLS-92319
-   * However due to WDT issue, Security warning (related to minimum umask) 
-   * are reported in Console.
   */
   
   @Test
