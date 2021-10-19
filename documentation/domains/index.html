@@ -1490,11 +1490,8 @@ window.onload = function() {
       "type": "object",
       "properties": {
         "replicationChannelPort": {
-          "description": "The operator will create a WebLogic network access point with this port that will then be exposed from the container running the WebLogic Server instance. The WebLogic Replication Service will use this network access point for all replication traffic. Defaults to 4358.",
+          "description": "The operator will create a WebLogic network access point with this port that will then be exposed from the container running the WebLogic Server instance. The WebLogic Replication Service will use this network access point for all replication traffic. Defaults to 4564.",
           "type": "number"
-        },
-        "semanticVersion": {
-          "$ref": "#/definitions/SemanticVersion"
         },
         "readinessPort": {
           "description": "The operator will create a WebLogic network access point with this port that will then be exposed from the container running the WebLogic Server instance. The readiness probe will use this network access point to verify that the server instance is ready for application traffic. Defaults to 8888.",
@@ -1674,25 +1671,6 @@ window.onload = function() {
           "type": "number"
         }
       }
-    },
-    "SemanticVersion": {
-      "type": "object",
-      "properties": {
-        "major": {
-          "type": "number"
-        },
-        "minor": {
-          "type": "number"
-        },
-        "revision": {
-          "type": "number"
-        }
-      },
-      "required": [
-        "major",
-        "minor",
-        "revision"
-      ]
     },
     "ServerHealth": {
       "type": "object",

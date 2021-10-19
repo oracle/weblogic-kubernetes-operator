@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: a2ee3aa0f61d9204d5c8a7107acf6810c454f8432cef4ffbe2575db3a6595c94
+    weblogic.sha256: 3686723dbb5f012ec42ac212a6caf89114d41cacd05c1ea8aa5431e16d35cc69
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -215,21 +215,8 @@ spec:
                           point with this port that will then be exposed from the
                           container running the WebLogic Server instance. The WebLogic
                           Replication Service will use this network access point for
-                          all replication traffic. Defaults to 4358.
+                          all replication traffic. Defaults to 4564.
                         type: number
-                      semanticVersion:
-                        properties:
-                          major:
-                            type: number
-                          minor:
-                            type: number
-                          revision:
-                            type: number
-                        required:
-                        - major
-                        - minor
-                        - revision
-                        type: object
                       readinessPort:
                         description: The operator will create a WebLogic network access
                           point with this port that will then be exposed from the

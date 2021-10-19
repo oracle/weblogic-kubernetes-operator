@@ -650,6 +650,10 @@ public class Domain implements KubernetesObject {
     return spec.getIstioReadinessPort();
   }
 
+  public int getIstioReplicationPort() {
+    return spec.getIstioReplicationPort();
+  }
+
   public String getIstioVersion() {
     return spec.getIstioVersion();
   }

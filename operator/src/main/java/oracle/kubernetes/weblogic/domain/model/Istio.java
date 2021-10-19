@@ -4,7 +4,6 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import oracle.kubernetes.json.Description;
-import oracle.kubernetes.operator.helpers.SemanticVersion;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -21,11 +20,11 @@ public class Istio {
           + "access point to verify that the server instance is ready for application traffic. Defaults to 8888.")
   private Integer readinessPort = 8888;
 
-  public static Integer DEFAULT_REPLICATION_PORT = 4358;
+  public static Integer DEFAULT_REPLICATION_PORT = 4564;
 
   @Description("The operator will create a WebLogic network access point with this port that will then be exposed "
       + "from the container running the WebLogic Server instance. The WebLogic Replication Service will use this "
-      + "network access point for all replication traffic. Defaults to 4358.")
+      + "network access point for all replication traffic. Defaults to 4564.")
   private Integer replicationChannelPort = DEFAULT_REPLICATION_PORT;
 
   @Description("Starting with Istio 1.10, the networking behavior was changed in that the proxy no "
@@ -33,8 +32,6 @@ public class Istio {
       + "through) it to the network interface associated with the pod's IP. True, if Istio v1.10 or "
       + "higher is installed. Defaults to false")
   private String version;
-
-  private SemanticVersion semanticVersion;
 
   /**
    * True, if this domain is deployed under an Istio service mesh.
@@ -106,19 +103,6 @@ public class Istio {
    */
   public void setVersion(String version) {
     this.version = version;
-  }
-
-  /**
-   * Get the semantic version.
-   *
-   * @return the semantic version
-   */
-  public SemanticVersion getSemanticVersion() {
-    if (semanticVersion == null) {
-      semanticVersion = new SemanticVersion(version);
-    }
-
-    return semanticVersion;
   }
 
   /**

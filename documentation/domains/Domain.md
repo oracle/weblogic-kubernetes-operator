@@ -224,8 +224,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | --- | --- | --- |
 | `enabled` | Boolean | True, if this domain is deployed under an Istio service mesh. Defaults to true when the `istio` field is specified. |
 | `readinessPort` | number | The operator will create a WebLogic network access point with this port that will then be exposed from the container running the WebLogic Server instance. The readiness probe will use this network access point to verify that the server instance is ready for application traffic. Defaults to 8888. |
-| `replicationChannelPort` | number | The operator will create a WebLogic network access point with this port that will then be exposed from the container running the WebLogic Server instance. The WebLogic Replication Service will use this network access point for all replication traffic. Defaults to 4358. |
-| `semanticVersion` | [Semantic Version](#semantic-version) |  |
+| `replicationChannelPort` | number | The operator will create a WebLogic network access point with this port that will then be exposed from the container running the WebLogic Server instance. The WebLogic Replication Service will use this network access point for all replication traffic. Defaults to 4564. |
 | `version` | string | Starting with Istio 1.10, the networking behavior was changed in that the proxy no longer redirects the traffic to the localhost interface, but instead forwards (or passes it through) it to the network interface associated with the pod's IP. True, if Istio v1.10 or higher is installed. Defaults to false |
 
 ### Model
@@ -287,14 +286,6 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | --- | --- | --- |
 | `channelName` | string | Name of the channel. The "default" value refers to the Administration Server's default channel, which is configured using the ServerMBean's ListenPort. The "default-secure" value refers to the Administration Server's default secure channel, which is configured using the ServerMBean's SSLMBean's ListenPort. The "default-admin" value refers to the Administration Server's default administrative channel, which is configured using the DomainMBean's AdministrationPort. Otherwise, provide the name of one of the Administration Server's network access points, which is configured using the ServerMBean's NetworkAccessMBeans. The "default", "default-secure", and "default-admin" channels may not be specified here when using Istio. |
 | `nodePort` | number | Specifies the port number used to access the WebLogic channel outside of the Kubernetes cluster. If not specified, defaults to the port defined by the WebLogic channel. |
-
-### Semantic Version
-
-| Name | Type | Description |
-| --- | --- | --- |
-| `major` | number |  |
-| `minor` | number |  |
-| `revision` | number |  |
 
 ### Online Update
 
