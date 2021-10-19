@@ -258,7 +258,7 @@ class ItMiiDynamicUpdatePart3 {
    * Verify introspectVersion is updated.
    * Verify the datasource parameter is updated by checking the MBean using REST api.
    * Verify domain status should have a condition type as "Complete".
-   * Delete the datasource creates in this test and
+   * Delete the datasource created in this test and
    * verify the domain status condition contains the correct type and expected reason.
    */
   @Test
