@@ -22,7 +22,6 @@ import oracle.weblogic.kubernetes.utils.MiiDynamicUpdateHelper;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.MII_DYNAMIC_UPDATE_EXPECTED_ERROR_MSG;
@@ -49,6 +48,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetry
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
+import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
@@ -59,9 +59,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * changes using CommitUpdateAndRoll.
  */
 
-@DisplayName("Test dynamic updates to a model in image domain, part2")
+@DisplayName("Test dynamic updates to a model in image domain, part3")
 @IntegrationTest
-@Tag("okdenv")
 class ItMiiDynamicUpdatePart3 {
 
   static MiiDynamicUpdateHelper helper = new MiiDynamicUpdateHelper();
@@ -259,6 +258,8 @@ class ItMiiDynamicUpdatePart3 {
    * Verify introspectVersion is updated.
    * Verify the datasource parameter is updated by checking the MBean using REST api.
    * Verify domain status should have a condition type as "Complete".
+   * Delete the datasource creates in this test and
+   * verify the domain status condition contains the correct type and expected reason.
    */
   @Test
   @DisplayName("Changing datasource parameters with CommitUpdateAndRoll using mii dynamic update")
@@ -309,6 +310,15 @@ class ItMiiDynamicUpdatePart3 {
         + "    !TestDataSource2:";
 
     assertDoesNotThrow(() -> Files.write(pathToDeleteDSYaml, yamlToDeleteDS.getBytes()));
+
+    pods = new LinkedHashMap<>();
+    // get the creation time of the admin server pod before patching
+    pods.put(helper.adminServerPodName, getPodCreationTime(helper.domainNamespace, helper.adminServerPodName));
+    // get the creation time of the managed server pods before patching
+    for (int i = 1; i <= helper.replicaCount; i++) {
+      pods.put(helper.managedServerPrefix + i,
+          getPodCreationTime(helper.domainNamespace, helper.managedServerPrefix + i));
+    }
 
     // Replace contents of an existing configMap with cm config
     replaceConfigMapWithModelFiles(helper.configMapName, domainUid, helper.domainNamespace,

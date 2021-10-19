@@ -23,7 +23,6 @@ import oracle.weblogic.kubernetes.utils.MiiDynamicUpdateHelper;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
@@ -61,7 +60,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Test dynamic updates to a model in image domain, part2")
 @IntegrationTest
-@Tag("okdenv")
 class ItMiiDynamicUpdatePart2 {
 
   static MiiDynamicUpdateHelper helper = new MiiDynamicUpdateHelper();
