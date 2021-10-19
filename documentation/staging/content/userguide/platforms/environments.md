@@ -26,7 +26,7 @@ Oracle cloud environments such as
 Oracle Cloud Infrastructure (OCI),
 Oracle Linux Cloud Native Environment (OLCNE),
 Oracle Private Cloud Appliance (PCA),
-Oracle Private Cloud at Customer (OPCC),
+or Oracle Private Cloud at Customer (OPCC),
 and on "Authorized Cloud Environments" as defined in
 [this Oracle licensing policy](https://www.oracle.com/assets/cloud-licensing-070579.pdf)
 for [this list of eligible products](http://www.oracle.com/us/corporate/pricing/authorized-cloud-environments-3493562.pdf).
