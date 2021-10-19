@@ -1289,8 +1289,7 @@ class SitConfigGenerator(Generator):
     if bind_to_localhost == "true":
       self.writeln('<d:listen-address %s>127.0.0.1</d:listen-address>' % action)
     else:
-      self.writeln('<d:listen-address %s>%s.%s</d:listen-address>' % (action, listen_address,
-                                                                      self.env.getEnvOrDef("ISTIO_POD_NAMESPACE", "default")))
+      self.writeln('<d:listen-address %s>%s</d:listen-address>' % (action, listen_address))
     self.writeln('<d:public-address %s>%s.%s</d:public-address>' % (action, listen_address,
                                                           self.env.getEnvOrDef("ISTIO_POD_NAMESPACE", "default")))
     self.writeln('<d:listen-port %s>%s</d:listen-port>' % (action, listen_port))

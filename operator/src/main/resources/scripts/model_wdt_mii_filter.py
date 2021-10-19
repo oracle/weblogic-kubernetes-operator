@@ -422,7 +422,7 @@ def _writeIstioNAP(name, server, listen_address, listen_port, protocol, http_ena
   if bind_to_localhost == 'true':
     nap['ListenAddress'] = '127.0.0.1'
   else:
-    nap['ListenAddress'] = '%s.%s' % (listen_address, env.getEnvOrDef("ISTIO_POD_NAMESPACE", "default"))
+    nap['ListenAddress'] = '%s' % (listen_address)
   nap['PublicAddress'] = '%s.%s' % (listen_address, env.getEnvOrDef("ISTIO_POD_NAMESPACE", "default"))
   nap['ListenPort'] = listen_port
   nap['HttpEnabledForThisProtocol'] = http_enabled

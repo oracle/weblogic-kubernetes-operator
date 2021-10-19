@@ -391,8 +391,8 @@ class WdtUpdateFilterCase(unittest.TestCase):
 
       nap_listen_address = istiorepl_nap['ListenAddress']
       print nap_listen_address
-      self.assertEqual('sample-domain1-managed-server${id}.default', nap_listen_address,
-                       "Expected nap listen address to be \'sample-domain1-managed-server${id}.default\'")
+      self.assertEqual('sample-domain1-managed-server${id}', nap_listen_address,
+                       "Expected nap listen address to be \'sample-domain1-managed-server${id}\'")
     finally:
       del os.environ['ISTIO_ENABLED']
       del os.environ['ISTIO_VERSION']
