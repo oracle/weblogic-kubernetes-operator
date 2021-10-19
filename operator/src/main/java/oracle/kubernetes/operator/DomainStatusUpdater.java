@@ -72,6 +72,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_AVAILABLE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_COMPLETE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_FAILED;
@@ -349,20 +350,29 @@ public class DomainStatusUpdater {
 
     private Step createUpdateSteps() {
       final Step next = createDomainStatusReplaceStep();
-      EventData eventData = createDomainEvent();
-      return eventData == null ? next : Step.chain(EventHelper.createEventStep(eventData), next);
+      ArrayList<EventData> eventDataList = createDomainEvent();
+      return eventDataList.isEmpty() ? next : Step.chain(createEventSteps(eventDataList), next);
+    }
+
+    private Step createEventSteps(ArrayList<EventData> eventDataList) {
+      Step nextStep = null;
+      for (int i = eventDataList.size() - 1; i >= 0; i--) {
+        nextStep = Step.chain(EventHelper.createEventStep(eventDataList.get(i)), nextStep);
+      }
+      return nextStep;
     }
 
     @Nullable
-    EventData createDomainEvent() {
+    ArrayList<EventData> createDomainEvent() {
+      ArrayList<EventData> list = new ArrayList<>();
       if (hasJustExceededMaxRetryCount()) {
-        return new EventData(DOMAIN_PROCESSING_ABORTED).message(EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG);
+        list.add(
+            new EventData(DOMAIN_PROCESSING_ABORTED).message(EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG));
       } else if (hasJustGotFatalIntrospectorError()) {
-        return new EventData(DOMAIN_PROCESSING_ABORTED)
-              .message(FATAL_INTROSPECTOR_ERROR_MSG + getNewStatus().getMessage());
-      } else {
-        return null;
+        list.add(new EventData(DOMAIN_PROCESSING_ABORTED)
+              .message(FATAL_INTROSPECTOR_ERROR_MSG + getNewStatus().getMessage()));
       }
+      return list;
     }
 
     private boolean hasJustGotFatalIntrospectorError() {
@@ -428,8 +438,15 @@ public class DomainStatusUpdater {
 
       @Nullable
       @Override
-      EventData createDomainEvent() {
-        return processingJustCompleted() ? new EventData(DOMAIN_COMPLETE) : null;
+      ArrayList<EventData> createDomainEvent() {
+        ArrayList<EventData> list = new ArrayList<>();
+        if (domainJustAvailable()) {
+          list.add(new EventData(DOMAIN_AVAILABLE));
+        }
+        if (processingJustCompleted()) {
+          list.add(new EventData(DOMAIN_COMPLETE));
+        }
+        return list;
       }
 
       private boolean processingJustCompleted() {
@@ -438,6 +455,14 @@ public class DomainStatusUpdater {
 
       private boolean oldStatusWasCompleted() {
         return getStatus() != null && getStatus().hasConditionWith(this::isDomainCompleted);
+      }
+
+      private boolean oldStatusWasAvailable() {
+        return getStatus() != null && getStatus().hasConditionWith(this::isDomainAvailable);
+      }
+
+      private boolean domainJustAvailable() {
+        return sufficientServersRunning() && !oldStatusWasAvailable();
       }
 
       private void setStatusConditions(DomainStatus status) {
@@ -507,6 +532,10 @@ public class DomainStatusUpdater {
 
       private boolean isDomainCompleted(DomainCondition condition) {
         return condition.hasType(Completed) && condition.getStatus().equals("True");
+      }
+
+      private boolean isDomainAvailable(DomainCondition condition) {
+        return condition.hasType(Available) && condition.getStatus().equals("True");
       }
 
       private void setStatusDetails(DomainStatus status) {

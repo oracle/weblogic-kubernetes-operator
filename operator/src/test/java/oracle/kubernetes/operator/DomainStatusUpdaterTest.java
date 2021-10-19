@@ -53,6 +53,7 @@ import static oracle.kubernetes.operator.DomainFailureReason.ReplicasTooHigh;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainStatusUpdaterTest.ServerStatusMatcher.hasStatusForServer;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_AVAILABLE_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_COMPLETED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_ABORTED_EVENT;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
@@ -671,6 +672,69 @@ class DomainStatusUpdaterTest {
     assertThat(getRecordedDomain(), hasCondition(Available).withStatus("False"));
     assertThat(getRecordedDomain(), not(hasCondition(Available).withStatus("True")));
     assertThat(getRecordedDomain(), hasCondition(Completed).withStatus("False"));
+  }
+
+  @Test
+  void whenAllServersRunningAndAvailableConditionFound_dontGenerateAvailableEvent() {
+    domain.getStatus().addCondition(new DomainCondition(Available).withStatus("True"));
+    defineScenario()
+        .withCluster("clusterA", "server1")
+        .withCluster("clusterB", "server2")
+        .build();
+
+    updateDomainStatus();
+
+    assertThat(getEvents().stream().anyMatch(this::isDomainAvailableEvent), is(false));
+  }
+
+  private boolean isDomainAvailableEvent(CoreV1Event e) {
+    return DOMAIN_AVAILABLE_EVENT.equals(e.getReason());
+  }
+
+  @Test
+  void whenServersRunningAvailableConditionNotFoundCompletedConditionNotFound_generateCompletedEvent() {
+    domain.getStatus()
+        .addCondition(new DomainCondition(Available).withStatus("False"))
+        .addCondition(new DomainCondition(Completed).withStatus("False"));
+    defineScenario()
+        .withCluster("clusterA", "server1")
+        .withCluster("clusterB", "server2")
+        .build();
+
+    updateDomainStatus();
+
+    assertThat(getEvents().stream().anyMatch(this::isDomainCompletedEvent), is(true));
+  }
+
+  @Test
+  void whenServersRunningAvailableConditionNotFoundCompletedConditionNotFound_generateAvailableEvent() {
+    domain.getStatus()
+        .addCondition(new DomainCondition(Available).withStatus("False"))
+        .addCondition(new DomainCondition(Completed).withStatus("False"));
+    defineScenario()
+        .withCluster("clusterA", "server1")
+        .withCluster("clusterB", "server2")
+        .build();
+
+    updateDomainStatus();
+
+    assertThat(getEvents().stream().anyMatch(this::isDomainAvailableEvent), is(true));
+  }
+
+
+  @Test
+  void whenUnexpectedServersRunningAndNoMatchingAvailableConditionFound_generateAvailableEvent() {
+    domain.getStatus()
+        .addCondition(new DomainCondition(Available).withStatus("False"));
+    defineScenario()
+        .withCluster("clusterA", "server1")
+        .withCluster("clusterB", "server2")
+        .withServersReachingState("Unknown","server3")
+        .build();
+
+    updateDomainStatus();
+
+    assertThat(getEvents().stream().anyMatch(this::isDomainAvailableEvent), is(true));
   }
 
   private DomainConfigurator configureDomain() {
