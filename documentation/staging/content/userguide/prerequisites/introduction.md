@@ -24,4 +24,4 @@ For the current production release 3.3.2:
   not need the `cluster-admin` role at runtime. For more information, see the role-based access control, [RBAC]({{< relref "/security/rbac.md" >}}), documentation.
 * We do not currently support running WebLogic in non-Linux containers.
 
-See also [Supported platforms]({{< relref "userguide/platforms/environments.md" >}}) for cloud environment and licensing requirements.
+See also [Supported platforms]({{< relref "userguide/platforms/environments.md" >}}) for environment and licensing requirements.
