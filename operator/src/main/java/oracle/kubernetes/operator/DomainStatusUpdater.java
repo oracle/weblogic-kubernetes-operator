@@ -350,7 +350,7 @@ public class DomainStatusUpdater {
 
     private Step createUpdateSteps() {
       final Step next = createDomainStatusReplaceStep();
-      ArrayList<EventData> eventDataList = createDomainEvent();
+      ArrayList<EventData> eventDataList = createDomainEvents();
       return eventDataList.isEmpty() ? next : Step.chain(createEventSteps(eventDataList), next);
     }
 
@@ -363,7 +363,7 @@ public class DomainStatusUpdater {
     }
 
     @Nullable
-    ArrayList<EventData> createDomainEvent() {
+    ArrayList<EventData> createDomainEvents() {
       ArrayList<EventData> list = new ArrayList<>();
       if (hasJustExceededMaxRetryCount()) {
         list.add(
@@ -438,7 +438,7 @@ public class DomainStatusUpdater {
 
       @Nullable
       @Override
-      ArrayList<EventData> createDomainEvent() {
+      ArrayList<EventData> createDomainEvents() {
         ArrayList<EventData> list = new ArrayList<>();
         if (domainJustAvailable()) {
           list.add(new EventData(DOMAIN_AVAILABLE));

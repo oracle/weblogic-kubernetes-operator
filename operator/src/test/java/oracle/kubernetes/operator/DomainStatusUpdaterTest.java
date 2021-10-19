@@ -692,7 +692,7 @@ class DomainStatusUpdaterTest {
   }
 
   @Test
-  void whenServersRunningAvailableConditionNotFoundCompletedConditionNotFound_generateCompletedEvent() {
+  void whenAllServersRunningAndAvailableConditionNotFoundCompletedConditionNotFound_generateCompletedEvent() {
     domain.getStatus()
         .addCondition(new DomainCondition(Available).withStatus("False"))
         .addCondition(new DomainCondition(Completed).withStatus("False"));
@@ -707,7 +707,7 @@ class DomainStatusUpdaterTest {
   }
 
   @Test
-  void whenServersRunningAvailableConditionNotFoundCompletedConditionNotFound_generateAvailableEvent() {
+  void whenAllServersRunningAndAvailableConditionNotFoundCompletedConditionNotFound_generateAvailableEvent() {
     domain.getStatus()
         .addCondition(new DomainCondition(Available).withStatus("False"))
         .addCondition(new DomainCondition(Completed).withStatus("False"));
@@ -721,9 +721,8 @@ class DomainStatusUpdaterTest {
     assertThat(getEvents().stream().anyMatch(this::isDomainAvailableEvent), is(true));
   }
 
-
   @Test
-  void whenUnexpectedServersRunningAndNoMatchingAvailableConditionFound_generateAvailableEvent() {
+  void whenUnexpectedServersRunningAndAvailableConditionNotFound_generateAvailableEvent() {
     domain.getStatus()
         .addCondition(new DomainCondition(Available).withStatus("False"));
     defineScenario()
