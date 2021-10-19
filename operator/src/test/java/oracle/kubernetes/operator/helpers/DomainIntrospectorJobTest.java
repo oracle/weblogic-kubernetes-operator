@@ -599,7 +599,7 @@ class DomainIntrospectorJobTest {
     IntrospectionTestUtils.defineResources(testSupport, "passed");
     testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
 
-    JobHelper.ReplaceOrCreateStep.createNextSteps(nextSteps, domainPresenceInfo, job, terminalStep);
+    JobHelper.ReplaceOrCreateStep.createNextSteps(nextSteps, testSupport.getPacket(), job, terminalStep);
 
     assertThat(nextSteps.get(0), hasChainWithStepsInOrder("WatchDomainIntrospectorJobReadyStep",
             "ReadDomainIntrospectorPodStep", "ReadDomainIntrospectorPodLogStep",
@@ -617,10 +617,27 @@ class DomainIntrospectorJobTest {
     IntrospectionTestUtils.defineResources(testSupport, "passed");
     testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
 
-    JobHelper.ReplaceOrCreateStep.createNextSteps(nextSteps, domainPresenceInfo, job, terminalStep);
+    JobHelper.ReplaceOrCreateStep.createNextSteps(nextSteps, testSupport.getPacket(), job, terminalStep);
 
     assertThat(nextSteps.get(0), hasChainWithStepsInOrder("WatchDomainIntrospectorJobReadyStep",
             "DeleteDomainIntrospectorJobStep", "IntrospectionRequestStep",
+            "DomainIntrospectorJobStep"));
+  }
+
+  @Test
+  void whenJobTimedout_correctStepsExecuted() {
+    List<Step> nextSteps = new ArrayList<>();
+    domainPresenceInfo.getDomain()
+            .setStatus(new DomainStatus().withReason("DeadlineExceeded"));
+    V1Job job = new V1Job().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS).uid(JOB_UID))
+            .status(new V1JobStatus());
+    testSupport.defineResources(job);
+    IntrospectionTestUtils.defineResources(testSupport, "passed");
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
+
+    JobHelper.ReplaceOrCreateStep.createNextSteps(nextSteps, testSupport.getPacket(), job, terminalStep);
+
+    assertThat(nextSteps.get(0), hasChainWithStepsInOrder("DeleteDomainIntrospectorJobStep",
             "DomainIntrospectorJobStep"));
   }
 
@@ -631,7 +648,7 @@ class DomainIntrospectorJobTest {
     IntrospectionTestUtils.defineResources(testSupport, "passed");
     testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
 
-    JobHelper.ReplaceOrCreateStep.createNextSteps(nextSteps, domainPresenceInfo, job, terminalStep);
+    JobHelper.ReplaceOrCreateStep.createNextSteps(nextSteps, testSupport.getPacket(), job, terminalStep);
 
     assertThat(nextSteps.get(0), hasChainWithStepsInOrder("ReadIntrospectorConfigMapStep",
             "DomainIntrospectorJobStep"));

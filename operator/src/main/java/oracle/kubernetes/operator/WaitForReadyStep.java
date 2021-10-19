@@ -178,7 +178,6 @@ abstract class WaitForReadyStep<T> extends Step {
   @Override
   public final NextAction apply(Packet packet) {
     String serverName = (String)packet.get(SERVER_NAME);
-    DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
     if (shouldTerminateFiber(initialResource)) {
       return doTerminate(createTerminationException(initialResource), packet);
     } else if (isReady(initialResource, packet.getSpi(DomainPresenceInfo.class), serverName)) {

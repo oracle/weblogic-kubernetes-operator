@@ -1092,11 +1092,11 @@ public class DomainProcessorImpl implements DomainProcessor {
           @Override
           public void onThrowable(Packet packet, Throwable throwable) {
             logThrowable(throwable);
-
             gate.startFiberIfLastFiberMatches(
                 domainUid,
                 Fiber.getCurrentIfSet(),
-                DomainStatusUpdater.createFailureRelatedSteps(throwable, null),
+                Step.chain(DomainStatusUpdater.createFailureCountStep(),
+                        DomainStatusUpdater.createFailureRelatedSteps(throwable, null)),
                 plan.packet,
                 new CompletionCallback() {
                   @Override

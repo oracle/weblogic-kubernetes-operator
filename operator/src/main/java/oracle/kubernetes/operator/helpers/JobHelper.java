@@ -466,22 +466,27 @@ public class JobHelper {
         packet.put(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB, job);
       }
 
-      OffsetDateTime startTime = createNextSteps(nextSteps, info, job, getNext());
+      OffsetDateTime startTime = createNextSteps(nextSteps, packet, job, getNext());
       packet.putIfAbsent(START_TIME, startTime);
       return doNext(nextSteps.get(0), packet);
     }
 
 
-    static OffsetDateTime createNextSteps(List<Step> nextSteps, DomainPresenceInfo info,
-                                                 V1Job job, Step next) {
+    static OffsetDateTime createNextSteps(List<Step> nextSteps, Packet packet, V1Job job, Step next) {
       OffsetDateTime jobStartTime;
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       String namespace = info.getNamespace();
       if (job != null) {
         jobStartTime = Optional.ofNullable(job.getMetadata())
                 .map(V1ObjectMeta::getCreationTimestamp).orElse(OffsetDateTime.now());
         String lastIntrospectJobProcessedId = getLastIntrospectJobProcessedId(info);
-        if ((lastIntrospectJobProcessedId == null)
-                || (!lastIntrospectJobProcessedId.equals(job.getMetadata().getUid()))) {
+
+        if (isJobTimedout(info)) {
+          jobStartTime = OffsetDateTime.now();
+          packet.put(DOMAIN_INTROSPECT_REQUESTED, ReadDomainIntrospectorPodLogResponseStep.INTROSPECTION_FAILED);
+          nextSteps.add(Step.chain(deleteDomainIntrospectorJobStep(null),
+                  createDomainIntrospectorJobStep(next)));
+        } else if (isJobNewOrNotProcesssed(job, lastIntrospectJobProcessedId)) {
           nextSteps.add(Step.chain(readDomainIntrospectorPodLogStep(null),
                   deleteDomainIntrospectorJobStep(null),
                   ConfigMapHelper.createIntrospectorConfigMapStep(next)));
@@ -500,12 +505,36 @@ public class JobHelper {
       return jobStartTime;
     }
 
+    private static boolean isJobTimedout(DomainPresenceInfo info) {
+      return Objects.equals(getReason(info), "DeadlineExceeded") || getMessage(info).contains("DeadlineExceeded");
+    }
+
+    private static boolean isJobNewOrNotProcesssed(V1Job job, String lastJobProcessedUid) {
+      return (lastJobProcessedUid == null) || (!lastJobProcessedUid.equals(job.getMetadata().getUid()));
+    }
+
     private static String getLastIntrospectJobProcessedId(DomainPresenceInfo info) {
       return Optional.of(info)
               .map(DomainPresenceInfo::getDomain)
               .map(Domain::getStatus)
               .map(DomainStatus::getLastIntrospectJobProcessedUid)
               .orElse(null);
+    }
+
+    private static String getReason(DomainPresenceInfo info) {
+      return Optional.of(info)
+              .map(DomainPresenceInfo::getDomain)
+              .map(Domain::getStatus)
+              .map(DomainStatus::getReason)
+              .orElse(null);
+    }
+
+    private static String getMessage(DomainPresenceInfo info) {
+      return Optional.of(info)
+              .map(DomainPresenceInfo::getDomain)
+              .map(Domain::getStatus)
+              .map(DomainStatus::getMessage)
+              .orElse("");
     }
   }
 
