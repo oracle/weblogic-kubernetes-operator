@@ -1154,7 +1154,6 @@ public class DomainProcessorImpl implements DomainProcessor {
   Step createDomainUpPlan(DomainPresenceInfo info) {
     Step managedServerStrategy = Step.chain(
         bringManagedServersUp(null),
-        EventHelper.createEventStep(EventItem.DOMAIN_PROCESSING_COMPLETED),
         MonitoringExporterSteps.updateExporterSidecars(),
         new TailStep());
 

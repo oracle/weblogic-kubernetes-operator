@@ -40,8 +40,6 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_DELETED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_DELETED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_ABORTED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_ABORTED_PATTERN;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_COMPLETED_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_COMPLETED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_FAILED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_ROLL_STARTING_EVENT;
@@ -376,22 +374,6 @@ public class EventHelper {
       @Override
       public String getPattern() {
         return DOMAIN_DELETED_PATTERN;
-      }
-    },
-    DOMAIN_PROCESSING_COMPLETED {
-      @Override
-      public String getReason() {
-        return DOMAIN_PROCESSING_COMPLETED_EVENT;
-      }
-
-      @Override
-      public String getPattern() {
-        return DOMAIN_PROCESSING_COMPLETED_PATTERN;
-      }
-
-      @Override
-      public boolean shouldSetLastEventItem() {
-        return true;
       }
     },
     DOMAIN_PROCESSING_FAILED {
