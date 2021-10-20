@@ -264,7 +264,7 @@ class ItMonitoringExporterSamples {
     assertDoesNotThrow(() -> createPvAndPvc("prometheustest", monitoringNS, labels));
     assertDoesNotThrow(() -> createPvAndPvc("alertmanagertest",monitoringNS, labels));
     assertDoesNotThrow(() -> createPvAndPvc("grafanatest", monitoringNS, labels));
-    //cleanupPromGrafanaClusterRoles();
+    cleanupPromGrafanaClusterRoles();
   }
 
   /**
@@ -385,7 +385,7 @@ class ItMonitoringExporterSamples {
   ) throws IOException, ApiException {
     final String prometheusRegexValue = String.format("regex: %s;%s", domainNS, domainUid);
     if (promHelmParams == null) {
-      //cleanupPromGrafanaClusterRoles();
+      cleanupPromGrafanaClusterRoles();
       logger.info("create a staging location for monitoring creation scripts");
       Path fileTemp = Paths.get(RESULTS_ROOT, "ItMonitoringExporterSamples", "createTempValueFile");
       FileUtils.deleteDirectory(fileTemp.toFile());
@@ -414,7 +414,7 @@ class ItMonitoringExporterSamples {
 
       nodeportserver = getNextFreePort();
       int nodeportalertmanserver = getNextFreePort();
-      promHelmParams = installAndVerifyPrometheus("prometheus",
+      promHelmParams = installAndVerifyPrometheus("prometheustest",
           monitoringNS,
           targetPromFile.toString(),
           promChartVersion,
@@ -434,7 +434,7 @@ class ItMonitoringExporterSamples {
     if (grafanaHelmParams == null) {
       //logger.info("Node Port for Grafana is " + nodeportgrafana);
 
-      grafanaHelmParams = installAndVerifyGrafana("grafana",
+      grafanaHelmParams = installAndVerifyGrafana("grafanatest",
           monitoringNS,
           monitoringExporterEndToEndDir + "/grafana/values.yaml",
           grafanaChartVersion);
@@ -1239,7 +1239,7 @@ class ItMonitoringExporterSamples {
       grafanaHelmParams = null;
       logger.info("Grafana is uninstalled");
     }
-    //cleanupPromGrafanaClusterRoles();
+    cleanupPromGrafanaClusterRoles();
   }
 
   private static void cleanupPromGrafanaClusterRoles() {
