@@ -82,6 +82,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
+//import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_MODEL_PROPERTIES_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_IMAGE_DOMAINHOME_BASE_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
@@ -117,9 +118,12 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterRoleBi
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterRoleExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
+import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.startPortForwardProcess;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.stopPortForwardProcess;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
@@ -175,6 +179,7 @@ class ItParameterizedDomain {
   private static final String clusterName = "cluster-1";
   private static final int MANAGED_SERVER_PORT = 8001;
   private static final int ADMIN_SERVER_PORT = 7001;
+  private static final int ADMIN_SERVER_SECURE_PORT = 7002;
   private static final int replicaCount = 2;
   private static final String SAMPLE_APP_CONTEXT_ROOT = "sample-war";
   private static final String WLDF_OPENSESSION_APP = "opensessionapp";
@@ -353,6 +358,18 @@ class ItParameterizedDomain {
       scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
           numberOfServers, replicaCount, curlCmd, managedServersBeforeScale);
     }
+
+    // Test that `kubectl port-foward` is able to forward a local port to default channel port (7001 in this test)
+    // and default secure channel port (7002 in this test)
+    // Verify that the WLS admin console can be accessed using http://localhost:localPort/console/login/LoginForm.jsp
+    final String hostName = "localhost";
+    String forwardedPortNo = startPortForwardProcess(hostName, domainNamespace, domainUid, ADMIN_SERVER_PORT);
+    verifyAdminConsoleAccessible(domainNamespace, hostName, forwardedPortNo, false);
+
+    forwardedPortNo = startPortForwardProcess(hostName, domainNamespace, domainUid, ADMIN_SERVER_SECURE_PORT);
+    verifyAdminConsoleAccessible(domainNamespace, hostName, forwardedPortNo, true);
+
+    stopPortForwardProcess(domainNamespace);
   }
 
   /**
@@ -895,6 +912,9 @@ class ItParameterizedDomain {
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
+                    .value("-Dweblogic.security.SSL.ignoreHostnameVerification=true"))
+                .addEnvItem(new V1EnvVar()
+                    .name("JAVA_OPTIONS")
                     .value("-Dweblogic.StdoutDebugEnabled=false"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
@@ -904,7 +924,11 @@ class ItParameterizedDomain {
                     .limits(resourceLimit)))
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING")
+                .adminChannelPortForwardingAttr(true)
                 .adminService(new AdminService()
+                    .addChannelsItem(new Channel()
+                        .channelName("default-secure")
+                        .nodePort(0))
                     .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(0))))
@@ -1014,6 +1038,7 @@ class ItParameterizedDomain {
     p.setProperty("t3ChannelPort", Integer.toString(t3ChannelPort));
     p.setProperty("t3PublicAddress", K8S_NODEPORT_HOST);
     p.setProperty("managedServerPort", "8001");
+    p.setProperty("adminServerSslPort", ADMIN_SERVER_SECURE_PORT + "");
     assertDoesNotThrow(() ->
             p.store(new FileOutputStream(domainPropertiesFile), "WDT properties file"),
         "Failed to write domain properties file");
@@ -1055,6 +1080,9 @@ class ItParameterizedDomain {
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
+                    .value("-Dweblogic.security.SSL.ignoreHostnameVerification=true"))
+                .addEnvItem(new V1EnvVar()
+                    .name("JAVA_OPTIONS")
                     .value("-Dweblogic.StdoutDebugEnabled=false"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
@@ -1071,7 +1099,11 @@ class ItParameterizedDomain {
                     .requests(resourceRequest)))
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING")
+                .adminChannelPortForwardingAttr(true)
                 .adminService(new AdminService()
+                    .addChannelsItem(new Channel()
+                        .channelName("default-secure")
+                        .nodePort(0))
                     .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(0))))
@@ -1361,6 +1393,10 @@ class ItParameterizedDomain {
     logger.info("Create secret for admin credentials");
     createSecretWithUsernamePassword(wlSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
+    // create encryption secret
+    logger.info("Creating encryption secret");
+    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc", "weblogicenc");
+
     // create image with model files
     logger.info("Creating image with model file and verify");
     List<String> appSrcDirList = new ArrayList<>();
@@ -1403,6 +1439,9 @@ class ItParameterizedDomain {
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
+                    .value("-Dweblogic.security.SSL.ignoreHostnameVerification=true"))
+                .addEnvItem(new V1EnvVar()
+                    .name("JAVA_OPTIONS")
                     .value("-Dweblogic.StdoutDebugEnabled=false"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
@@ -1412,7 +1451,11 @@ class ItParameterizedDomain {
                     .requests(resourceRequest)))
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING")
+                .adminChannelPortForwardingAttr(true)
                 .adminService(new AdminService()
+                    .addChannelsItem(new Channel()
+                        .channelName("default-secure")
+                        .nodePort(0))
                     .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(0))))
@@ -1422,7 +1465,8 @@ class ItParameterizedDomain {
                 .serverStartState("RUNNING"))
             .configuration(new Configuration()
                 .model(new Model()
-                    .domainType(WLS_DOMAIN_TYPE))
+                    .domainType(WLS_DOMAIN_TYPE)
+                    .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(300L)));
     setPodAntiAffinity(domain);
     createDomainAndVerify(domain, domainNamespace);
@@ -1610,5 +1654,26 @@ class ItParameterizedDomain {
     dockerLoginAndPushImageToRegistry(miiImage);
 
     return miiImage;
+  }
+
+  private void verifyAdminConsoleAccessible(String domainNamespace,
+                                            String hostName,
+                                            String port,
+                                            boolean secureMode) {
+    LoggingFacade logger = getLogger();
+    String httpKey = "http://";
+    if (secureMode) {
+      // Since WLS servers use self-signed certificates, it's ok to use --insecure option
+      // to ignore SSL/TLS certificate errors:
+      // curl: (60) SSL certificate problem: Invalid certificate chain
+      // and explicitly allows curl to perform “insecure” SSL connections and transfers
+      httpKey = " --insecure https://";
+    }
+    String consoleUrl = httpKey + hostName + ":" + port + "/console/login/LoginForm.jsp";
+
+    boolean checkConsole = assertDoesNotThrow(() ->
+        checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org"));
+    assertTrue(checkConsole, "Failed to access WebLogic console");
+    logger.info("WebLogic console is accessible");
   }
 }
