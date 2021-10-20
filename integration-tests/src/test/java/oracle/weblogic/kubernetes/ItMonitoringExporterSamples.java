@@ -236,6 +236,9 @@ class ItMonitoringExporterSamples {
 
     logger.info("install monitoring exporter");
     installMonitoringExporter();
+    assertDoesNotThrow(()-> replaceStringInFile(monitoringExporterEndToEndDir + "/grafana/values.yaml",
+       "pvc-grafana",
+       "pvc-grafanatest"));
 
     logger.info("create and verify WebLogic domain image using model in image with model files");
     miiImage = createAndVerifyMiiImage(monitoringExporterAppDir, MODEL_DIR + "/" + MONEXP_MODEL_FILE);
@@ -403,6 +406,7 @@ class ItMonitoringExporterSamples {
       replaceStringInFile(targetPromFile.toString(),
           "pvc-prometheus",
           "pvc-prometheustest");
+
       //replace with webhook ns
       replaceStringInFile(targetPromFile.toString(),
           "webhook.webhook.svc.cluster.local",
@@ -430,9 +434,7 @@ class ItMonitoringExporterSamples {
 
     if (grafanaHelmParams == null) {
       //logger.info("Node Port for Grafana is " + nodeportgrafana);
-      replaceStringInFile(monitoringExporterEndToEndDir + "/grafana/values.yaml",
-          "pvc-grafana",
-          "pvc-grafanatest");
+
       grafanaHelmParams = installAndVerifyGrafana("grafana",
           monitoringNS,
           monitoringExporterEndToEndDir + "/grafana/values.yaml",
