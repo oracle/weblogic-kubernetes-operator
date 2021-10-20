@@ -95,19 +95,27 @@ spec:
     istio:
       enabled: true
       readinessPort: 8888
+      replicationChannelPort: 4564
+      version: 1.7.3
 ```
 
 To enable Istio support, you must include the `istio` section
 and set `enabled: true` as shown.  The `readinessPort` is optional
 and defaults to `8888` if not provided; it is used for a readiness health check.
+The `replicationChannelPort` is optional and defaults to `4564` if not provided;
+it is the port used in the network access point by the WebLogic Replication Service 
+for all replication traffic. The `version` is optional and represents the Istio version
+run by the operator and WebLogic domains managed by the operator.  If not provided, the
+operator will assume it's supporting Istio version 1.9 or earlier.
 
 ##### How Istio-enabled domains differ from regular domains
 
 Istio enforces a number of requirements on Pods.  When you enable Istio support in the Domain YAML file, the
 introspector job automatically creates configuration overrides with the necessary channels for the domain to satisfy Istio's requirements, including:
 
-When deploying a domain with Istio sidecar injection enabled, the operator automatically adds the following network
-channels using configuration overrides.
+When deploying a domain with Istio sidecar injection enabled, to support Istio versions 1.9 or earlier, the introspector job 
+automatically adds the following network channels using configuration overrides. **NOTE**: For supporting Istio versions 1.10 and later,
+see [Support for network changes in Istio v1.10 and later](#support-for-network-changes-in-istio-v110-and-later)
 
 https://istio.io/latest/docs/ops/configuration/traffic-management/protocol-selection/
 
@@ -150,32 +158,20 @@ with the pod's IP.
 
 To learn more about changes to Istio networking beginning with Istio 1.10, see [Upcoming networking changes in Istio 1.10](https://istio.io/latest/blog/2021/upcoming-networking-changes/).
 
-In order to support Istio v1.10 and later, as well as previous releases, the
-operator will:
+In order to support Istio v1.10 and later, you must specify the Istio `version` (in the `istio` configuration in the domain custom resource yaml) so that the introspector job will:
     
-* Add an additional WebLogic HTTP protocol network channel for the readiness probe that is bound to the localhost network interface.
-* Add additional WebLogic network channels, bound to the localhost network interface, for each defined custom network channel.  
-* Continue to automatically add the network channels described above in [How Istio-enabled domains differ from regular domains](#how-istio-enabled-domains-differ-from-regular-domains)
+* Add an additional WebLogic HTTP protocol network channel for the readiness probe that is bound to the server pod's network interface. 
 
-When adding additional WebLogic network channels for the readiness probe and any defined custom channels,
-the name of the additional channel will be appended with '-lhNN', where NN represents
-a two digit value for uniqueness.
+    For example, the additional WebLogic HTTP protocol network channel for the readiness probe would be
+    defined as follows:
 
-For example, the additional WebLogic HTTP protocol network channel for the readiness probe would be
-defined as follows:
+    |Name|Port|Listening address|Protocol|Exposed as a container port|
+    |----|----|----|--------|-----|
+    |`http-probe-ext`|From configuration Istio `readinessPort` | Server Pod's IP | `http`| No |
 
-|Name|Port|Listening address|Protocol|Exposed as a container port|
-|----|----|----|--------|-----|
-|`http-probe-lh01`|From configuration Istio `readinessPort` | `127.0.0.1` | `http`| No |
+* Will not automatically add the network channels as described in [How Istio-enabled domains differ from regular domains](#how-istio-enabled-domains-differ-from-regular-domains). 
 
-As another example, for a custom WebLogic network channel defined as `T3Channel` with port `5556`
-and protocol `t3`, the additional channel would be defined as follows: 
-
-|Name|Port|Listening address|Protocol|Exposed as a container port|
-|----|----|----|--------|-----|
-|`T3Channel-lh01`| `5556` | `127.0.0.1` | `t3`| Yes |
-
-### Apply the Domain YAML file
+#### Apply the Domain YAML file
 
 After the Domain YAML file is modified, apply it by:
 
@@ -280,6 +276,30 @@ Refer to [Determining the ingress IP and ports](https://istio.io/latest/docs/set
 
 For more information about providing ingress using Istio, see the [Istio documentation](https://istio.io/docs/tasks/traffic-management/ingress/).
 
+#### WebLogic Replication Traffic
+
+To support replication traffic in an Istio service mesh, the introspector job will:
+
+* Automatically create a network access point using the `replicationChannelPort` specified in the `istio` configuration in the domain custom resouorce yaml.
+
+    For example, the additional WebLogic HTTP protocol network channel for the readiness probe would be defined as follows:
+    |Name|Port|Protocol|Exposed as a container port|
+    |----|----|--------|-----|
+    |`istiorepl`|From configuration Istio `replicationChannelPort` |`t3`| No |
+
+* Configure each WebLogic cluster in the domain to use the network access point for all replication traffic.
+
+    For example, the following `replication-channel` attribute will be configured in each WebLogic cluster configuration:
+    ```
+    <cluster>
+      <name>cluster-1</name>
+      <replication-channe>istiorepl</replication-channel>
+    <cluster>
+    ```
+{{% notice note %}}
+The introspector job will not automatically inject a replication network access point if one is already configured for a WebLogic cluster.
+{{% /notice %}}
+    
 #### Traffic management
 
 Istio provides traffic management capabilities, including the ability to
