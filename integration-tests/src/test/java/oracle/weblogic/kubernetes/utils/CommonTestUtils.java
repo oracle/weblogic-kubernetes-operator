@@ -3,8 +3,11 @@
 
 package oracle.weblogic.kubernetes.utils;
 
+
 import java.io.IOException;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.text.DateFormat;
 import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
@@ -17,6 +20,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 import java.util.stream.Stream;
 
 import io.kubernetes.client.openapi.ApiException;
@@ -36,9 +41,11 @@ import org.awaitility.core.TimeoutEvent;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
@@ -52,6 +59,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceDoesNo
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
+import static oracle.weblogic.kubernetes.utils.FileUtils.isFileExistAndNotEmpty;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
@@ -59,6 +67,8 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -558,8 +568,6 @@ public class CommonTestUtils {
     verifyCommandResultContainsMsg(new String(curlString), expectedStatusCode);
   }
 
-
-
   /**
    * Check the system resource configuration using REST API.
    * @param nodePort admin node port
@@ -958,6 +966,93 @@ public class CommonTestUtils {
           return false;
         });
     return false;
+  }
+
+  /**
+   * Start a port-forward process with a given set of attributes.
+   * @param hostName host information to used against address param
+   * @param domainNamespace domain namespace
+   * @param domainUid domain uid
+   * @param port the remote port
+   * @return generated local forward port
+   */
+  public static String startPortForwardProcess(String hostName,
+                                       String domainNamespace,
+                                       String domainUid,
+                                       int port) {
+    LoggingFacade logger = getLogger();
+    // Create a unique stdout file for kubectl port-forward command
+    String pfFileName = RESULTS_ROOT + "/pf-" + domainNamespace 
+                    + "-" + port + ".out"; 
+
+    logger.info("Start port forward process");
+    String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+
+    // Let kubectl choose and allocate a local port number that is not in use
+    StringBuffer cmd = new StringBuffer("kubectl port-forward --address ")
+        .append(hostName)
+        .append(" pod/")
+        .append(adminServerPodName)
+        .append(" -n ")
+        .append(domainNamespace)
+        .append(" :")
+        .append(String.valueOf(port))
+        .append(" > ")
+        .append(pfFileName)
+        .append(" 2>&1 &");
+    logger.info("Command to forward port {0} ", cmd.toString());
+    ExecResult result = assertDoesNotThrow(() -> ExecCommand.exec(cmd.toString(), true),
+        String.format("Failed to forward port by running command %s", cmd));
+    assertEquals(0, result.exitValue(),
+        String.format("Failed to forward a local port to admin port. Error is %s ", result.stderr()));
+    assertNotNull(getForwardedPort(pfFileName), 
+          "port-forward command fails to assign a local port");
+    return getForwardedPort(pfFileName);
+  }
+
+  /**
+   * Stop port-forward process(es) started through startPortForwardProcess.
+   * @param domainNamespace namespace where port-forward procees were started 
+   */
+  public static void stopPortForwardProcess(String domainNamespace) {
+    LoggingFacade logger = getLogger();
+    logger.info("Stop port forward process");
+    final StringBuffer getPids = new StringBuffer("ps -ef | ")
+        .append("grep 'kubectl* port-forward ' | grep ")
+        .append(domainNamespace)
+        .append(" | awk ")
+        .append(" '{print $2}'");
+    logger.info("Command to get pids for port-forward processes {0}", getPids.toString());
+    ExecResult result = assertDoesNotThrow(() -> exec(getPids.toString(), true));
+    if (result.exitValue() == 0) {
+      String[] pids = result.stdout().split(System.lineSeparator());
+
+      for (String pid : pids) {
+        logger.info("Command to kill port forward process: {0}", "kill -9 " + pid);
+        result = assertDoesNotThrow(() -> exec("kill -9 " + pid, true));
+        logger.info("stopPortForwardProcess command returned {0}", result.toString());
+      }
+    }
+  }
+
+  private static String getForwardedPort(String portForwardFileName) {
+    //wait until forwarded port number is written to the file upto 5 minutes
+    LoggingFacade logger = getLogger();
+    assertDoesNotThrow(() ->
+        testUntil(
+            isFileExistAndNotEmpty(portForwardFileName),
+            logger,
+            "forwarded port number is written to the file " + portForwardFileName));
+    String portFile = assertDoesNotThrow(() -> Files.readAllLines(Paths.get(portForwardFileName)).get(0));
+    logger.info("Port forward info:\n {0}", portFile);
+    String forwardedPortNo = null;
+    String regex = ".*Forwarding.*:(\\d+).*";
+    Pattern pattern = Pattern.compile(regex, Pattern.DOTALL | Pattern.MULTILINE);
+    Matcher matcher = pattern.matcher(portFile);
+    if (matcher.find()) {
+      forwardedPortNo = matcher.group(1);
+    }
+    return forwardedPortNo;
   }
 
 }
