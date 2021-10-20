@@ -1268,7 +1268,9 @@ class SitConfigGenerator(Generator):
     else:
       return add_action, "add"
 
-  def _writeIstioNAP(self, name, server, listen_address, listen_port, protocol, http_enabled="true", bind_to_localhost="true"):
+  def _writeIstioNAP(self, name, server, listen_address, listen_port, protocol,
+        http_enabled="true", bind_to_localhost="true", use_fast_serialization='false',
+        tunneling_enabled='false', outbound_enabled='false'):
 
     action, type = self._getNapConfigOverrideAction(server, "http-probe")
 
@@ -1296,8 +1298,10 @@ class SitConfigGenerator(Generator):
     self.writeln('<d:http-enabled-for-this-protocol %s>%s</d:http-enabled-for-this-protocol>' %
                  (action, http_enabled))
     # This needs to be enabled, since we are splitting from server default channel
-    self.writeln('<d:outbound-enabled %s>true</d:outbound-enabled>' % action)
+    self.writeln('<d:outbound-enabled %s>%s</d:outbound-enabled>' % (action, outbound_enabled))
     self.writeln('<d:enabled %s>true</d:enabled>' % action)
+    self.writeln('<d:use-fast-serialization %s>%s</d:use-fast-serialization>' % (action, use_fast_serialization))
+    self.writeln('<d:tunneling-enabled %s>%s</d:tunneling-enabled>' % (action, tunneling_enabled))
     self.undent()
     self.writeln('</d:network-access-point>')
 
@@ -1349,19 +1353,20 @@ class SitConfigGenerator(Generator):
     self.writeln('<d:network-access-point %s>' % action)
     self.indent()
     self.writeln('<d:name %s>%s</d:name>' % (action, 'istiorepl'))
+    self.writeln('<d:protocol %s>%s</d:protocol>' % (action, 't3'))
     if bind_to_localhost == "true":
       self.writeln('<d:listen-address %s>127.0.0.1</d:listen-address>' % action)
     else:
-      self.writeln('<d:listen-address %s>%s.%s</d:listen-address>' % (action, listen_address,
-                                    self.env.getEnvOrDef("ISTIO_POD_NAMESPACE", "default")))
+      self.writeln('<d:listen-address %s>%s</d:listen-address>' % (action, listen_address))
     self.writeln('<d:public-address %s>%s.%s</d:public-address>' % (action, listen_address,
                                     self.env.getEnvOrDef("ISTIO_POD_NAMESPACE", "default")))
     self.writeln('<d:listen-port %s>%s</d:listen-port>' % (action, listen_port))
     self.writeln('<d:http-enabled-for-this-protocol %s>true</d:http-enabled-for-this-protocol>' %
                  (action))
     self.writeln('<d:enabled %s>true</d:enabled>' % action)
-    self.writeln('<d:outbound-enabled %s>true</d:outbound-enabled>' % action)
+    self.writeln('<d:outbound-enabled %s>false</d:outbound-enabled>' % action)
     self.writeln('<d:use-fast-serialization %s>true</d:use-fast-serialization>' % action)
+    self.writeln('<d:tunneling-enabled %s>true</d:tunneling-enabled>' % action)
     self.undent()
     self.writeln('</d:network-access-point>')
 
