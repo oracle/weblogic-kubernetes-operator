@@ -383,7 +383,7 @@ class ItMonitoringExporterSamples {
   ) throws IOException, ApiException {
     final String prometheusRegexValue = String.format("regex: %s;%s", domainNS, domainUid);
     if (promHelmParams == null) {
-      cleanupPromGrafanaClusterRoles();
+      //cleanupPromGrafanaClusterRoles();
       logger.info("create a staging location for monitoring creation scripts");
       Path fileTemp = Paths.get(RESULTS_ROOT, "ItMonitoringExporterSamples", "createTempValueFile");
       FileUtils.deleteDirectory(fileTemp.toFile());
@@ -430,6 +430,9 @@ class ItMonitoringExporterSamples {
 
     if (grafanaHelmParams == null) {
       //logger.info("Node Port for Grafana is " + nodeportgrafana);
+      replaceStringInFile(monitoringExporterEndToEndDir + "/grafana/values.yaml",
+          "pvc-grafana",
+          "pvc-grafanatest");
       grafanaHelmParams = installAndVerifyGrafana("grafana",
           monitoringNS,
           monitoringExporterEndToEndDir + "/grafana/values.yaml",
@@ -521,12 +524,12 @@ class ItMonitoringExporterSamples {
 
     uninstallPrometheusGrafana();
 
-    deletePersistentVolumeClaim("pvc-alertmanager",monitoringNS);
-    deletePersistentVolume("pv-testalertmanager");
-    deletePersistentVolumeClaim("pvc-prometheus",monitoringNS);
-    deletePersistentVolume("pv-testprometheus");
-    deletePersistentVolumeClaim("pvc-grafana",monitoringNS);
-    deletePersistentVolume("pv-testgrafana");
+    deletePersistentVolumeClaim("pvc-alertmanagertest",monitoringNS);
+    deletePersistentVolume("pv-testalertmanagertest");
+    deletePersistentVolumeClaim("pvc-prometheustest",monitoringNS);
+    deletePersistentVolume("pv-testprometheustest");
+    deletePersistentVolumeClaim("pvc-grafanatest",monitoringNS);
+    deletePersistentVolume("pv-testgrafanatest");
     deleteNamespace(monitoringNS);
     uninstallDeploymentService(webhookDepl, webhookService);
     uninstallDeploymentService(coordinatorDepl, coordinatorService);
@@ -1235,7 +1238,7 @@ class ItMonitoringExporterSamples {
       grafanaHelmParams = null;
       logger.info("Grafana is uninstalled");
     }
-    cleanupPromGrafanaClusterRoles();
+    //cleanupPromGrafanaClusterRoles();
   }
 
   private static void cleanupPromGrafanaClusterRoles() {

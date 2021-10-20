@@ -293,7 +293,7 @@ class ItMonitoringExporter {
     assertDoesNotThrow(() -> createPvAndPvc("prometheus", monitoringNS, labels));
     assertDoesNotThrow(() -> createPvAndPvc("alertmanager",monitoringNS, labels));
     assertDoesNotThrow(() -> createPvAndPvc("grafana", monitoringNS, labels));
-    cleanupPromGrafanaClusterRoles();
+    //cleanupPromGrafanaClusterRoles();
   }
 
   /**
@@ -602,7 +602,7 @@ class ItMonitoringExporter {
                                         ) throws IOException, ApiException {
     final String prometheusRegexValue = String.format("regex: %s;%s", domainNS, domainUid);
     if (promHelmParams == null) {
-      cleanupPromGrafanaClusterRoles();
+      //cleanupPromGrafanaClusterRoles();
       logger.info("create a staging location for monitoring creation scripts");
       Path fileTemp = Paths.get(RESULTS_ROOT, "ItMonitoringExporter", "createTempValueFile");
       FileUtils.deleteDirectory(fileTemp.toFile());
@@ -1200,7 +1200,7 @@ class ItMonitoringExporter {
       grafanaHelmParams = null;
       logger.info("Grafana is uninstalled");
     }
-    cleanupPromGrafanaClusterRoles();
+    //cleanupPromGrafanaClusterRoles();
   }
 
   private static void cleanupPromGrafanaClusterRoles() {
