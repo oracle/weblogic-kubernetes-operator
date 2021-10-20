@@ -352,7 +352,6 @@ public class EventHelper {
       public String getPattern() {
         return DOMAIN_CHANGED_PATTERN;
       }
-
     },
     DOMAIN_COMPLETE {
       @Override
@@ -396,12 +395,6 @@ public class EventHelper {
       public String getMessage(EventData eventData) {
         return getMessageFromEventData(eventData);
       }
-
-      @Override
-      public boolean shouldSetLastEventItem() {
-        return true;
-      }
-
     },
     DOMAIN_PROCESSING_ABORTED {
       @Override
@@ -423,12 +416,6 @@ public class EventHelper {
       public String getMessage(EventData eventData) {
         return getMessageFromEventData(eventData);
       }
-
-      @Override
-      public boolean shouldSetLastEventItem() {
-        return true;
-      }
-
     },
     DOMAIN_ROLL_STARTING {
       @Override
@@ -445,7 +432,6 @@ public class EventHelper {
       public String getMessage(EventData eventData) {
         return getMessageFromEventData(eventData);
       }
-
     },
     DOMAIN_ROLL_COMPLETED {
       @Override
@@ -457,7 +443,6 @@ public class EventHelper {
       public String getPattern() {
         return EventConstants.DOMAIN_ROLL_COMPLETED_PATTERN;
       }
-
     },
     DOMAIN_VALIDATION_ERROR {
       @Override
@@ -478,11 +463,6 @@ public class EventHelper {
       @Override
       public String getMessage(EventData eventData) {
         return getMessageFromEventData(eventData);
-      }
-
-      @Override
-      public boolean shouldSetLastEventItem() {
-        return true;
       }
     },
     POD_CYCLE_STARTING {
@@ -699,10 +679,6 @@ public class EventHelper {
 
     String getType() {
       return EVENT_NORMAL;
-    }
-
-    boolean shouldSetLastEventItem() {
-      return false;
     }
 
     public abstract String getPattern();

@@ -54,7 +54,6 @@ import oracle.kubernetes.weblogic.domain.model.OnlineUpdate;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import org.apache.commons.lang3.StringUtils;
-import org.jetbrains.annotations.Nullable;
 
 import static oracle.kubernetes.operator.DomainFailureReason.Internal;
 import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
@@ -362,7 +361,7 @@ public class DomainStatusUpdater {
       return nextStep;
     }
 
-    @Nullable
+    @Nonnull
     ArrayList<EventData> createDomainEvents() {
       ArrayList<EventData> list = new ArrayList<>();
       if (hasJustExceededMaxRetryCount()) {
@@ -436,7 +435,7 @@ public class DomainStatusUpdater {
         }
       }
 
-      @Nullable
+      @Nonnull
       @Override
       ArrayList<EventData> createDomainEvents() {
         ArrayList<EventData> list = new ArrayList<>();
@@ -578,12 +577,6 @@ public class DomainStatusUpdater {
       }
 
       private void updateDomainConditions(DomainStatus status, String message) {
-        String introspectVersion = DomainPresenceInfo.fromPacket(packet)
-            .map(DomainPresenceInfo::getDomain)
-            .map(Domain::getSpec)
-            .map(DomainSpec::getIntrospectVersion)
-            .orElse("");
-
         DomainCondition onlineUpdateCondition = new DomainCondition(ConfigChangesPendingRestart)
             .withMessage(message)
             .withStatus("True");
