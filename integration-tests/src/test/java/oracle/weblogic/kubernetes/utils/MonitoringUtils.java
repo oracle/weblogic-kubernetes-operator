@@ -300,7 +300,7 @@ public class MonitoringUtils {
     // wait for the promethues pods to be ready
     logger.info("Wait for the promethues pod is ready in namespace {0}", promNamespace);
     testUntil(
-        assertDoesNotThrow(() -> isPrometheusReady(promNamespace),
+        assertDoesNotThrow(() -> isPrometheusReady(promNamespace,promReleaseName),
           "prometheusIsReady failed with ApiException"),
         logger,
         "prometheus to be running in namespace {0}",

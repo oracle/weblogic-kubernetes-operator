@@ -193,6 +193,7 @@ class ItMonitoringExporterSamples {
   private static Map<String, Integer> clusterNameMsPortMap;
   private static LoggingFacade logger = null;
   private static List<String> clusterNames = new ArrayList<>();
+  private static String prometheusReleaseName = "prometheustest";
 
   /**
    * Install operator and NGINX. Create model in image domain with multiple clusters.
@@ -309,7 +310,7 @@ class ItMonitoringExporterSamples {
 
     String oldRegex = String.format("regex: %s;%s", domain2Namespace, domain2Uid);
     String newRegex = String.format("regex: %s;%s", domain1Namespace, domain1Uid);
-    editPrometheusCM(oldRegex, newRegex, monitoringNS, "prometheus-server");
+    editPrometheusCM(oldRegex, newRegex, monitoringNS, prometheusReleaseName + "-server");
     String sessionAppPrometheusSearchKey =
         "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
     checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr",nodeportserver);
@@ -414,7 +415,7 @@ class ItMonitoringExporterSamples {
 
       nodeportserver = getNextFreePort();
       int nodeportalertmanserver = getNextFreePort();
-      promHelmParams = installAndVerifyPrometheus("prometheustest",
+      promHelmParams = installAndVerifyPrometheus(prometheusReleaseName,
           monitoringNS,
           targetPromFile.toString(),
           promChartVersion,
@@ -426,7 +427,7 @@ class ItMonitoringExporterSamples {
     //if prometheus already installed change CM for specified domain
     if (!prometheusRegexValue.equals(prometheusDomainRegexValue)) {
       logger.info("update prometheus Config Map with domain info");
-      editPrometheusCM(prometheusDomainRegexValue, prometheusRegexValue, monitoringNS, "prometheus-server");
+      editPrometheusCM(prometheusDomainRegexValue, prometheusRegexValue, monitoringNS, prometheusReleaseName + "-server");
       prometheusDomainRegexValue = prometheusRegexValue;
     }
     logger.info("Prometheus is running");
@@ -1245,31 +1246,31 @@ class ItMonitoringExporterSamples {
   private static void cleanupPromGrafanaClusterRoles() {
     //extra cleanup
     try {
-      if (ClusterRole.clusterRoleExists("prometheus-kube-state-metrics")) {
-        Kubernetes.deleteClusterRole("prometheus-kube-state-metrics");
+      if (ClusterRole.clusterRoleExists(prometheusReleaseName + "-kube-state-metrics")) {
+        Kubernetes.deleteClusterRole(prometheusReleaseName + "-kube-state-metrics");
       }
-      if (ClusterRole.clusterRoleExists("prometheus-server")) {
-        Kubernetes.deleteClusterRole("prometheus-server");
+      if (ClusterRole.clusterRoleExists(prometheusReleaseName + "-server")) {
+        Kubernetes.deleteClusterRole(prometheusReleaseName + "-server");
       }
-      if (ClusterRole.clusterRoleExists("prometheus-alertmanager")) {
-        Kubernetes.deleteClusterRole("prometheus-alertmanager");
+      if (ClusterRole.clusterRoleExists(prometheusReleaseName + "-alertmanager")) {
+        Kubernetes.deleteClusterRole(prometheusReleaseName + "-alertmanager");
       }
-      if (ClusterRole.clusterRoleExists("grafana-clusterrole")) {
-        Kubernetes.deleteClusterRole("grafana-clusterrole");
+      if (ClusterRole.clusterRoleExists("grafanatest-clusterrole")) {
+        Kubernetes.deleteClusterRole("grafanatest-clusterrole");
       }
-      if (ClusterRoleBinding.clusterRoleBindingExists("grafana-clusterrolebinding")) {
-        Kubernetes.deleteClusterRoleBinding("grafana-clusterrolebinding");
+      if (ClusterRoleBinding.clusterRoleBindingExists("grafanatest-clusterrolebinding")) {
+        Kubernetes.deleteClusterRoleBinding("grafanatest-clusterrolebinding");
       }
-      if (ClusterRoleBinding.clusterRoleBindingExists("prometheus-alertmanager")) {
-        Kubernetes.deleteClusterRoleBinding("prometheus-alertmanager");
+      if (ClusterRoleBinding.clusterRoleBindingExists(prometheusReleaseName + "-alertmanager")) {
+        Kubernetes.deleteClusterRoleBinding(prometheusReleaseName + "-alertmanager");
       }
-      if (ClusterRoleBinding.clusterRoleBindingExists("prometheus-kube-state-metrics")) {
-        Kubernetes.deleteClusterRoleBinding("prometheus-kube-state-metrics");
+      if (ClusterRoleBinding.clusterRoleBindingExists(prometheusReleaseName + "-kube-state-metrics")) {
+        Kubernetes.deleteClusterRoleBinding(prometheusReleaseName + "-kube-state-metrics");
       }
-      if (ClusterRoleBinding.clusterRoleBindingExists("prometheus-server")) {
-        Kubernetes.deleteClusterRoleBinding("prometheus-server");
+      if (ClusterRoleBinding.clusterRoleBindingExists(prometheusReleaseName + "-server")) {
+        Kubernetes.deleteClusterRoleBinding(prometheusReleaseName + "-server");
       }
-      String command = "kubectl delete psp grafana grafana-test";
+      String command = "kubectl delete psp grafanatest grafanatest-test";
       ExecCommand.exec(command);
     } catch (Exception ex) {
       //ignoring

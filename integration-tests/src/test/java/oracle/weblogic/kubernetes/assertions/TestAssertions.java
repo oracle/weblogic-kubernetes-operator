@@ -651,10 +651,11 @@ public class TestAssertions {
    * Check if Prometheus is running.
    *
    * @param namespace in which is prometheus is running
+   * @param releaseName name of prometheus helm chart release
    * @return true if running false otherwise
    */
-  public static Callable<Boolean> isPrometheusReady(String namespace) {
-    return Prometheus.isReady(namespace);
+  public static Callable<Boolean> isPrometheusReady(String namespace, String releaseName) {
+    return Prometheus.isReady(namespace, releaseName);
   }
 
   /**
