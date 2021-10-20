@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.ThreadFactory;
@@ -17,14 +16,8 @@ import java.util.function.Consumer;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.V1ContainerState;
-import io.kubernetes.client.openapi.models.V1ContainerStateTerminated;
-import io.kubernetes.client.openapi.models.V1ContainerStateWaiting;
-import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
-import io.kubernetes.client.openapi.models.V1PodCondition;
-import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.util.Watch;
 import io.kubernetes.client.util.Watchable;
 import oracle.kubernetes.operator.TuningParameters.WatchTuning;
@@ -33,7 +26,6 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
-import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -56,14 +48,6 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private final String namespace;
   private final WatchListener<V1Pod> listener;
-
-  public enum PodStatus {
-    PHASE_FAILED,
-    WAITING_NON_NULL_MESSAGE,
-    TERMINATED_ERROR_REASON,
-    UNSCHEDULABLE,
-    SUCCESS
-  }
 
   // Map of Pod name to callback. Note that since each pod name can be mapped to multiple callback registrations,
   // a concurrent map will not suffice; we therefore use an ordinary map and synchronous accesses.
@@ -164,115 +148,20 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
    * @param item item
    */
   public void receivedResponse(Watch.Response<V1Pod> item) {
-    LOGGER.entering();
-
     listener.receivedResponse(item);
 
     V1Pod pod = item.object;
     switch (item.type) {
       case "ADDED":
       case "MODIFIED":
-        if (getPodName(pod).contains(LegalNames.getIntrospectorJobNameSuffix()) && isFailed(pod)) {
-          LOGGER.info(MessageKeys.INTROSPECTOR_POD_FAILED, getPodName(pod), getPodNamespace(pod), pod.getStatus());
-        }
-        copyOf(getOnModifiedCallbacks(getPodName(pod))).forEach(c -> c.accept(pod));
+        copyOf(getOnModifiedCallbacks(PodHelper.getPodName(pod))).forEach(c -> c.accept(pod));
         break;
       case "DELETED":
-        getOnDeleteCallbacks(getPodName(pod)).forEach(c -> c.accept(pod));
+        getOnDeleteCallbacks(PodHelper.getPodName(pod)).forEach(c -> c.accept(pod));
         break;
       case "ERROR":
       default:
     }
-
-    LOGGER.exiting();
-  }
-
-  private static String getPodName(@Nonnull V1Pod pod) {
-    return Optional.of(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getName).orElse("");
-  }
-
-  private static String getPodNamespace(@Nonnull V1Pod pod) {
-    return Optional.of(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getNamespace).orElse("");
-  }
-
-  /**
-   * Test if pod is failed.
-   * @param pod pob
-   * @return true, if failed
-   */
-  private static boolean isFailed(@Nonnull V1Pod pod) {
-
-    LOGGER.fine(
-        "PodWatcher.isFailed status of pod " + getPodName(pod) + ": " + pod.getStatus());
-    return getContainerStatuses(pod).stream().anyMatch(PodWatcher::isPodFailed);
-  }
-
-  static PodStatus getPodStatus(@Nonnull V1Pod pod) {
-    V1ContainerStatus conStatus = getContainerStatus(pod);
-    String phase = Optional.ofNullable(pod.getStatus()).map(V1PodStatus::getPhase).orElse("");
-    if (phase.equals("Failed")) {
-      return PodStatus.PHASE_FAILED;
-    } else if (notReady(conStatus) && getContainerStateWaitingMessage(conStatus) != null) {
-      return PodStatus.WAITING_NON_NULL_MESSAGE;
-    } else if (notReady(conStatus) && getContainerStateTerminatedReason(conStatus).contains("Error")) {
-      return PodStatus.TERMINATED_ERROR_REASON;
-    } else if (isUnschedulable(pod)) {
-      return PodStatus.UNSCHEDULABLE;
-    }
-    return PodStatus.SUCCESS;
-  }
-
-  static V1ContainerStatus getContainerStatus(@Nonnull V1Pod pod) {
-    return getContainerStatuses(pod)
-            .stream()
-            .findFirst()
-            .orElse(new V1ContainerStatus());
-  }
-
-  private static List<V1ContainerStatus> getContainerStatuses(@Nonnull V1Pod pod) {
-    return Optional.ofNullable(pod.getStatus()).map(V1PodStatus::getContainerStatuses).orElse(Collections.emptyList());
-  }
-
-  private static boolean isPodFailed(V1ContainerStatus conStatus) {
-    return
-        notReady(conStatus)
-        && (getContainerStateWaitingMessage(conStatus) != null
-        || getContainerStateTerminatedReason(conStatus).contains("Error"));
-  }
-
-  private static boolean isUnschedulable(@Nonnull V1Pod pod) {
-    LOGGER.fine("PodWatcher.isUnschedulable status of pod " + getPodName(pod) + ": " + pod.getStatus());
-    return getPodConditions(pod).stream().anyMatch(PodWatcher::isPodUnschedulable);
-  }
-
-  private static List<V1PodCondition> getPodConditions(@Nonnull V1Pod pod) {
-    return Optional.ofNullable(pod.getStatus()).map(V1PodStatus::getConditions).orElse(Collections.emptyList());
-  }
-
-  private static boolean isPodUnschedulable(V1PodCondition podCondition) {
-    return getReason(podCondition).contains("Unschedulable");
-  }
-
-  private static String getReason(V1PodCondition podCondition) {
-    return Optional.ofNullable(podCondition).map(V1PodCondition::getReason).orElse("");
-  }
-
-  private static boolean notReady(V1ContainerStatus conStatus) {
-    return !Optional.ofNullable(conStatus).map(V1ContainerStatus::getReady).orElse(false);
-  }
-
-  static String getContainerStateTerminatedReason(V1ContainerStatus conStatus) {
-    return Optional.of(conStatus)
-        .map(V1ContainerStatus::getState)
-        .map(V1ContainerState::getTerminated)
-        .map(V1ContainerStateTerminated::getReason).orElse("");
-  }
-
-  private static String getContainerStateWaitingMessage(V1ContainerStatus conStatus) {
-    return Optional.of(conStatus)
-        .map(V1ContainerStatus::getState)
-        .map(V1ContainerState::getWaiting)
-        .map(V1ContainerStateWaiting::getMessage).orElse(null);
   }
 
   // make a copy to avoid concurrent modification

@@ -1235,13 +1235,14 @@ window.onload = function() {
           "type": "string"
         },
         "type": {
-          "description": "The type of the condition. Valid types are Progressing, Available, Failed, and ConfigChangesPendingRestart.",
+          "description": "The type of the condition. Valid types are Completed, Available, Failed, and ConfigChangesPendingRestart.",
           "type": "string",
           "enum": [
-            "Progressing",
+            "Failed",
             "Available",
+            "Completed",
             "ConfigChangesPendingRestart",
-            "Failed"
+            "Progressing"
           ]
         },
         "lastTransitionTime": {

@@ -12,7 +12,7 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodStatus;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
-import oracle.kubernetes.operator.calls.FailureStatusSourceException;
+import oracle.kubernetes.operator.calls.UnrecoverableCallException;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
@@ -95,7 +95,7 @@ class PodHelperTest {
 
     testSupport.runSteps(PodHelper.deletePodStep(SERVER_NAME, terminalStep));
 
-    testSupport.verifyCompletionThrowable(FailureStatusSourceException.class);
+    testSupport.verifyCompletionThrowable(UnrecoverableCallException.class);
   }
 
   @Test

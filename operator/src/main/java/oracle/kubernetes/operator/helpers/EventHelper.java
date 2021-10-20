@@ -28,8 +28,12 @@ import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
 import static oracle.kubernetes.operator.DomainProcessorImpl.getEventK8SObjects;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_AVAILABLE_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_AVAILABLE_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CHANGED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CHANGED_PATTERN;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_COMPLETED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_COMPLETED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CREATED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CREATED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_DELETED_EVENT;
@@ -40,10 +44,6 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_COMPLE
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_COMPLETED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_FAILED_PATTERN;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_RETRYING_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_RETRYING_PATTERN;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_STARTING_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_STARTING_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_ROLL_STARTING_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_PATTERN;
@@ -55,8 +55,6 @@ import static oracle.kubernetes.operator.EventConstants.POD_CYCLE_STARTING_EVENT
 import static oracle.kubernetes.operator.EventConstants.POD_CYCLE_STARTING_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_COMPLETED;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_STARTING;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STARTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STOPPED;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
@@ -126,16 +124,12 @@ public class EventHelper {
     }
 
     @Override
+    protected String getDetail() {
+      return eventData.eventItem.toString();
+    }
+
+    @Override
     public NextAction apply(Packet packet) {
-      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-      if (hasProcessingNotStarted(info) && (eventData.eventItem == DOMAIN_PROCESSING_COMPLETED)) {
-        return doNext(packet);
-      }
-
-      if (isDuplicatedStartedEvent(info)) {
-        return doNext(packet);
-      }
-
       return doNext(createEventAPICall(createEventModel(packet, eventData)), packet);
     }
 
@@ -171,15 +165,6 @@ public class EventHelper {
           .map(o -> o.getExistingEvent(event)).orElse(null);
     }
 
-    private boolean isDuplicatedStartedEvent(DomainPresenceInfo info) {
-      return eventData.eventItem == EventItem.DOMAIN_PROCESSING_STARTING
-          && Optional.ofNullable(info).map(dpi -> dpi.getLastEventItem() == DOMAIN_PROCESSING_STARTING).orElse(false);
-    }
-
-    private boolean hasProcessingNotStarted(DomainPresenceInfo info) {
-      return Optional.ofNullable(info).map(dpi -> dpi.getLastEventItem() != DOMAIN_PROCESSING_STARTING).orElse(false);
-    }
-
     private class CreateEventResponseStep extends ResponseStep<CoreV1Event> {
       CreateEventResponseStep(Step next) {
         super(next);
@@ -191,9 +176,6 @@ public class EventHelper {
           LOGGER.info(BEGIN_MANAGING_NAMESPACE, eventData.getNamespace());
           domainNamespaces.shouldStartNamespace(eventData.getNamespace());
         }
-
-        Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
-            .ifPresent(dpi -> setLastEventItemIfNeeded(dpi, eventData.eventItem));
         return doNext(packet);
       }
 
@@ -228,12 +210,6 @@ public class EventHelper {
       }
     }
 
-    private void setLastEventItemIfNeeded(DomainPresenceInfo dpi, EventItem eventItem) {
-      if (eventItem.shouldSetLastEventItem()) {
-        dpi.setLastEventItem(eventItem);
-      }
-    }
-
     private class ReplaceEventResponseStep extends ResponseStep<CoreV1Event> {
       Step replaceEventStep;
       CoreV1Event existingEvent;
@@ -246,8 +222,6 @@ public class EventHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<CoreV1Event> callResponse) {
-        Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
-            .ifPresent(dpi -> setLastEventItemIfNeeded(dpi, eventData.eventItem));
         return doNext(packet);
       }
 
@@ -348,6 +322,17 @@ public class EventHelper {
   }
 
   public enum EventItem {
+    DOMAIN_AVAILABLE {
+      @Override
+      public String getReason() {
+        return DOMAIN_AVAILABLE_EVENT;
+      }
+
+      @Override
+      public String getPattern() {
+        return DOMAIN_AVAILABLE_PATTERN;
+      }
+    },
     DOMAIN_CREATED {
       @Override
       public String getReason() {
@@ -371,6 +356,17 @@ public class EventHelper {
       }
 
     },
+    DOMAIN_COMPLETE {
+      @Override
+      public String getReason() {
+        return DOMAIN_COMPLETED_EVENT;
+      }
+
+      @Override
+      public String getPattern() {
+        return DOMAIN_COMPLETED_PATTERN;
+      }
+    },
     DOMAIN_DELETED {
       @Override
       public String getReason() {
@@ -380,23 +376,6 @@ public class EventHelper {
       @Override
       public String getPattern() {
         return DOMAIN_DELETED_PATTERN;
-      }
-
-    },
-    DOMAIN_PROCESSING_STARTING {
-      @Override
-      public String getReason() {
-        return DOMAIN_PROCESSING_STARTING_EVENT;
-      }
-
-      @Override
-      public String getPattern() {
-        return DOMAIN_PROCESSING_STARTING_PATTERN;
-      }
-
-      @Override
-      public boolean shouldSetLastEventItem() {
-        return true;
       }
     },
     DOMAIN_PROCESSING_COMPLETED {
@@ -441,22 +420,6 @@ public class EventHelper {
         return true;
       }
 
-    },
-    DOMAIN_PROCESSING_RETRYING {
-      @Override
-      public String getReason() {
-        return DOMAIN_PROCESSING_RETRYING_EVENT;
-      }
-
-      @Override
-      public String getPattern() {
-        return DOMAIN_PROCESSING_RETRYING_PATTERN;
-      }
-
-      @Override
-      public boolean shouldSetLastEventItem() {
-        return true;
-      }
     },
     DOMAIN_PROCESSING_ABORTED {
       @Override
