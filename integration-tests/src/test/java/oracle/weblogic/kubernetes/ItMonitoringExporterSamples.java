@@ -427,7 +427,8 @@ class ItMonitoringExporterSamples {
     //if prometheus already installed change CM for specified domain
     if (!prometheusRegexValue.equals(prometheusDomainRegexValue)) {
       logger.info("update prometheus Config Map with domain info");
-      editPrometheusCM(prometheusDomainRegexValue, prometheusRegexValue, monitoringNS, prometheusReleaseName + "-server");
+      editPrometheusCM(prometheusDomainRegexValue, prometheusRegexValue,
+          monitoringNS, prometheusReleaseName + "-server");
       prometheusDomainRegexValue = prometheusRegexValue;
     }
     logger.info("Prometheus is running");
