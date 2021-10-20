@@ -58,20 +58,17 @@ import oracle.weblogic.domain.MonitoringExporterConfiguration;
 import oracle.weblogic.domain.MonitoringExporterSpecification;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.TestActions;
-import oracle.weblogic.kubernetes.actions.impl.Grafana;
 import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
-import oracle.weblogic.kubernetes.actions.impl.Prometheus;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
-import oracle.weblogic.kubernetes.assertions.impl.ClusterRole;
-import oracle.weblogic.kubernetes.assertions.impl.ClusterRoleBinding;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
+import oracle.weblogic.kubernetes.utils.MonitoringUtils;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -97,7 +94,6 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
@@ -121,12 +117,15 @@ import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createIngressFo
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.buildMonitoringExporterApp;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.checkMetricsViaPrometheus;
+import static oracle.weblogic.kubernetes.utils.MonitoringUtils.cleanupPromGrafanaClusterRoles;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.cloneMonitoringExporter;
+import static oracle.weblogic.kubernetes.utils.MonitoringUtils.createAndVerifyMiiImage;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.downloadMonitoringExporterApp;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.editPrometheusCM;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyGrafana;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyPrometheus;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.searchForKey;
+import static oracle.weblogic.kubernetes.utils.MonitoringUtils.uninstallPrometheusGrafana;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVPVCAndVerify;
@@ -206,6 +205,8 @@ class ItMonitoringExporter {
   private static Map<String, Integer> clusterNameMsPortMap;
   private static LoggingFacade logger = null;
   private static List<String> clusterNames = new ArrayList<>();
+  private static String prometheusReleaseName = "prometheus";
+  private static String grafanaReleaseName = "grafana";
 
   /**
    * Install operator and NGINX. Create model in image domain with multiple clusters.
@@ -269,7 +270,8 @@ class ItMonitoringExporter {
     //buildMonitoringExporterImage("phx.ocir.io/weblogick8s/exporter:beta");
 
     logger.info("create and verify WebLogic domain image using model in image with model files");
-    miiImage = createAndVerifyMiiImage(monitoringExporterAppDir, MODEL_DIR + "/" + MONEXP_MODEL_FILE);
+    miiImage = MonitoringUtils.createAndVerifyMiiImage(monitoringExporterAppDir, MODEL_DIR + "/" + MONEXP_MODEL_FILE,
+        SESSMIGR_APP_NAME, MONEXP_IMAGE_NAME);
 
     // install and verify NGINX
     nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
@@ -290,10 +292,10 @@ class ItMonitoringExporter {
     HashMap<String, String> labels = new HashMap<>();
     labels.put("app", "monitoring");
     labels.put("weblogic.domainUid", "test");
-    assertDoesNotThrow(() -> createPvAndPvc("prometheus", monitoringNS, labels));
+    assertDoesNotThrow(() -> createPvAndPvc(prometheusReleaseName, monitoringNS, labels));
     assertDoesNotThrow(() -> createPvAndPvc("alertmanager",monitoringNS, labels));
-    assertDoesNotThrow(() -> createPvAndPvc("grafana", monitoringNS, labels));
-    cleanupPromGrafanaClusterRoles();
+    assertDoesNotThrow(() -> createPvAndPvc(grafanaReleaseName, monitoringNS, labels));
+    cleanupPromGrafanaClusterRoles(prometheusReleaseName,grafanaReleaseName);
   }
 
   /**
@@ -520,7 +522,9 @@ class ItMonitoringExporter {
 
     // create and verify one cluster mii domain with admin port enabled
     logger.info("Create domain and verify that it's running");
-    String  miiImage1 = createAndVerifyMiiImage(monitoringExporterAppDir, MODEL_DIR + "/model-adminportenabled.yaml");
+    String  miiImage1 = MonitoringUtils.createAndVerifyMiiImage(monitoringExporterAppDir,
+        MODEL_DIR + "/model-adminportenabled.yaml",
+        SESSMIGR_APP_NAME, MONEXP_IMAGE_NAME);
     createAndVerifyDomain(miiImage1, domain8Uid, domain8Namespace, "FromModel", 2, false);
     logger.info("checking access to wls metrics via https connection");
 
@@ -551,8 +555,8 @@ class ItMonitoringExporter {
     try {
       logger.info("create and verify WebLogic domain image using model in image with model files for norestport");
 
-      miiImage1 = createAndVerifyMiiImage(monitoringExporterAppDir + "/norestport",
-          MODEL_DIR + "/" + MONEXP_MODEL_FILE);
+      miiImage1 = MonitoringUtils.createAndVerifyMiiImage(monitoringExporterAppDir + "/norestport",
+          MODEL_DIR + "/" + MONEXP_MODEL_FILE, SESSMIGR_APP_NAME, MONEXP_IMAGE_NAME);
 
       // create and verify one cluster mii domain
       logger.info("Create domain and verify that it's running");
@@ -602,7 +606,7 @@ class ItMonitoringExporter {
                                         ) throws IOException, ApiException {
     final String prometheusRegexValue = String.format("regex: %s;%s", domainNS, domainUid);
     if (promHelmParams == null) {
-      cleanupPromGrafanaClusterRoles();
+      cleanupPromGrafanaClusterRoles(prometheusReleaseName,grafanaReleaseName);
       logger.info("create a staging location for monitoring creation scripts");
       Path fileTemp = Paths.get(RESULTS_ROOT, "ItMonitoringExporter", "createTempValueFile");
       FileUtils.deleteDirectory(fileTemp.toFile());
@@ -620,7 +624,7 @@ class ItMonitoringExporter {
 
       nodeportserver = getNextFreePort();
       int nodeportalertmanserver = getNextFreePort();
-      promHelmParams = installAndVerifyPrometheus("prometheus",
+      promHelmParams = installAndVerifyPrometheus(prometheusReleaseName,
               monitoringNS,
               targetPromFile.toString(),
               promChartVersion,
@@ -632,14 +636,15 @@ class ItMonitoringExporter {
     //if prometheus already installed change CM for specified domain
     if (!prometheusRegexValue.equals(prometheusDomainRegexValue)) {
       logger.info("update prometheus Config Map with domain info");
-      editPrometheusCM(prometheusDomainRegexValue, prometheusRegexValue, monitoringNS, "prometheus-server");
+      editPrometheusCM(prometheusDomainRegexValue, prometheusRegexValue, monitoringNS,
+          prometheusReleaseName + "-server");
       prometheusDomainRegexValue = prometheusRegexValue;
     }
     logger.info("Prometheus is running");
 
     if (grafanaHelmParams == null) {
       //logger.info("Node Port for Grafana is " + nodeportgrafana);
-      grafanaHelmParams = installAndVerifyGrafana("grafana",
+      grafanaHelmParams = installAndVerifyGrafana(grafanaReleaseName,
               monitoringNS,
               monitoringExporterEndToEndDir + "/grafana/values.yaml",
               grafanaChartVersion);
@@ -703,14 +708,14 @@ class ItMonitoringExporter {
       deleteImage(miiImage);
     }
 
-    uninstallPrometheusGrafana();
+    uninstallPrometheusGrafana(promHelmParams, grafanaHelmParams);
 
     deletePersistentVolumeClaim("pvc-alertmanager",monitoringNS);
     deletePersistentVolume("pv-testalertmanager");
-    deletePersistentVolumeClaim("pvc-prometheus",monitoringNS);
-    deletePersistentVolume("pv-testprometheus");
-    deletePersistentVolumeClaim("pvc-grafana",monitoringNS);
-    deletePersistentVolume("pv-testgrafana");
+    deletePersistentVolumeClaim("pvc-" + prometheusReleaseName, monitoringNS);
+    deletePersistentVolume("pv-test" + prometheusReleaseName);
+    deletePersistentVolumeClaim("pvc-" + grafanaReleaseName, monitoringNS);
+    deletePersistentVolume("pv-test" + grafanaReleaseName);
     deleteNamespace(monitoringNS);
     deleteMonitoringExporterTempDir();
   }
@@ -902,28 +907,6 @@ class ItMonitoringExporter {
     final List<String> modelList = Collections.singletonList(modelFile);
     String myImage =
         createMiiImageAndVerify(MONEXP_IMAGE_NAME, modelList, appList);
-
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(myImage);
-
-    return myImage;
-  }
-
-  /**
-   * Create mii image with monitoring exporter webapp.
-   */
-  private static String createAndVerifyMiiImage(String monexpAppDir, String modelFilePath) {
-    // create image with model files
-    logger.info("Create image with model file with monitoring exporter app and verify");
-    String appPath = String.format("%s/wls-exporter.war", monexpAppDir);
-    List<String> appList = new ArrayList();
-    appList.add(appPath);
-    appList.add(SESSMIGR_APP_NAME);
-
-    // build the model file list
-    final List<String> modelList = Collections.singletonList(modelFilePath);
-    String myImage =
-            createMiiImageAndVerify(MONEXP_IMAGE_NAME, modelList, appList);
 
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(myImage);
@@ -1182,60 +1165,6 @@ class ItMonitoringExporter {
   private static Callable<Boolean> searchPodLogForKey(V1Pod pod, String searchKey) {
     return () -> Kubernetes.getPodLog(pod.getMetadata().getName(),
             pod.getMetadata().getNamespace()).contains(searchKey);
-  }
-
-  /*
-   ** uninstall Prometheus and Grafana helm charts
-   */
-  private void uninstallPrometheusGrafana() {
-    if (promHelmParams != null) {
-      Prometheus.uninstall(promHelmParams);
-      promHelmParams = null;
-      prometheusDomainRegexValue = null;
-      logger.info("Prometheus is uninstalled");
-    }
-    if (grafanaHelmParams != null) {
-      Grafana.uninstall(grafanaHelmParams.getHelmParams());
-      deleteSecret("grafana-secret",monitoringNS);
-      grafanaHelmParams = null;
-      logger.info("Grafana is uninstalled");
-    }
-    cleanupPromGrafanaClusterRoles();
-  }
-
-  private static void cleanupPromGrafanaClusterRoles() {
-    //extra cleanup
-    try {
-      if (ClusterRole.clusterRoleExists("prometheus-kube-state-metrics")) {
-        Kubernetes.deleteClusterRole("prometheus-kube-state-metrics");
-      }
-      if (ClusterRole.clusterRoleExists("prometheus-server")) {
-        Kubernetes.deleteClusterRole("prometheus-server");
-      }
-      if (ClusterRole.clusterRoleExists("prometheus-alertmanager")) {
-        Kubernetes.deleteClusterRole("prometheus-alertmanager");
-      }
-      if (ClusterRole.clusterRoleExists("grafana-clusterrole")) {
-        Kubernetes.deleteClusterRole("grafana-clusterrole");
-      }
-      if (ClusterRoleBinding.clusterRoleBindingExists("grafana-clusterrolebinding")) {
-        Kubernetes.deleteClusterRoleBinding("grafana-clusterrolebinding");
-      }
-      if (ClusterRoleBinding.clusterRoleBindingExists("prometheus-alertmanager")) {
-        Kubernetes.deleteClusterRoleBinding("prometheus-alertmanager");
-      }
-      if (ClusterRoleBinding.clusterRoleBindingExists("prometheus-kube-state-metrics")) {
-        Kubernetes.deleteClusterRoleBinding("prometheus-kube-state-metrics");
-      }
-      if (ClusterRoleBinding.clusterRoleBindingExists("prometheus-server")) {
-        Kubernetes.deleteClusterRoleBinding("prometheus-server");
-      }
-      String command = "kubectl delete psp grafana grafana-test";
-      ExecCommand.exec(command);
-    } catch (Exception ex) {
-      //ignoring
-      logger.info("getting exception during delete artifacts for grafana and prometheus");
-    }
   }
 
   private void changeConfigNegative(String effect, String configFile, String expectedErrorMsg)

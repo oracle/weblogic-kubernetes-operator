@@ -7,6 +7,8 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -16,12 +18,16 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
+import oracle.weblogic.kubernetes.actions.impl.Grafana;
 import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
+import oracle.weblogic.kubernetes.actions.impl.Prometheus;
 import oracle.weblogic.kubernetes.actions.impl.PrometheusParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
+import oracle.weblogic.kubernetes.assertions.impl.ClusterRole;
+import oracle.weblogic.kubernetes.assertions.impl.ClusterRoleBinding;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_REPO_NAME;
@@ -32,6 +38,7 @@ import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MONITORING_EXPORTER_DOWNLOAD_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.installGrafana;
 import static oracle.weblogic.kubernetes.actions.TestActions.installPrometheus;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallGrafana;
@@ -43,6 +50,8 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkFile;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
@@ -54,6 +63,9 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * A utility class for Monitoring Weblogic Domain via Weblogic MonitoringExporter and Prometheus.
  */
 public class MonitoringUtils {
+
+  private static LoggingFacade logger = getLogger();
+
   /**
    * Download monitoring exporter webapp wls-exporter.war based on provided version
    * and insert provided configuration.
@@ -61,7 +73,6 @@ public class MonitoringUtils {
    * @param applicationDir location where application war file will be created
    */
   public static void downloadMonitoringExporterApp(String configFile, String applicationDir) {
-    LoggingFacade logger = getLogger();
     //version of wls-exporter.war published in https://github.com/oracle/weblogic-monitoring-exporter/releases/
     String monitoringExporterWebAppVersion = Optional.ofNullable(System.getenv("MONITORING_EXPORTER_WEBAPP_VERSION"))
         .orElse(MONITORING_EXPORTER_WEBAPP_VERSION);
@@ -402,5 +413,148 @@ public class MonitoringUtils {
     return grafanaParams;
   }
 
+  /**
+   * Extra clean up for Prometheus and  Grafana artifacts.
+   *
+   * @param grafanaReleaseName the grafana release name
+   * @param prometheusReleaseName prometheus release name
+   */
+  public static void cleanupPromGrafanaClusterRoles(String prometheusReleaseName, String grafanaReleaseName) {
+    //extra cleanup
+    try {
+      if (ClusterRole.clusterRoleExists(prometheusReleaseName + "-kube-state-metrics")) {
+        Kubernetes.deleteClusterRole(prometheusReleaseName + "-kube-state-metrics");
+      }
+      if (ClusterRole.clusterRoleExists(prometheusReleaseName + "-server")) {
+        Kubernetes.deleteClusterRole(prometheusReleaseName + "-server");
+      }
+      if (ClusterRole.clusterRoleExists(prometheusReleaseName + "-alertmanager")) {
+        Kubernetes.deleteClusterRole(prometheusReleaseName + "-alertmanager");
+      }
+      if (ClusterRole.clusterRoleExists(grafanaReleaseName + "-clusterrole")) {
+        Kubernetes.deleteClusterRole(grafanaReleaseName + "-clusterrole");
+      }
+      if (ClusterRoleBinding.clusterRoleBindingExists(grafanaReleaseName + "-clusterrolebinding")) {
+        Kubernetes.deleteClusterRoleBinding(grafanaReleaseName + "-clusterrolebinding");
+      }
+      if (ClusterRoleBinding.clusterRoleBindingExists(prometheusReleaseName + "-alertmanager")) {
+        Kubernetes.deleteClusterRoleBinding(prometheusReleaseName + "-alertmanager");
+      }
+      if (ClusterRoleBinding.clusterRoleBindingExists(prometheusReleaseName + "-kube-state-metrics")) {
+        Kubernetes.deleteClusterRoleBinding(prometheusReleaseName + "-kube-state-metrics");
+      }
+      if (ClusterRoleBinding.clusterRoleBindingExists(prometheusReleaseName + "-server")) {
+        Kubernetes.deleteClusterRoleBinding(prometheusReleaseName + "-server");
+      }
+      String command = "kubectl delete psp " + grafanaReleaseName + "  " + grafanaReleaseName + "-test";
+      ExecCommand.exec(command);
+    } catch (Exception ex) {
+      //ignoring
+      logger.info("getting exception during delete artifacts for grafana and prometheus");
+    }
+  }
+
+  /**
+   * Download src from monitoring exporter github project and build webapp.
+   *
+   * @param monitoringExporterDir full path to monitoring exporter install location
+   */
+  public static void installMonitoringExporter(String monitoringExporterDir) {
+
+    String monitoringExporterSrcDir = Paths.get(monitoringExporterDir, "srcdir").toString();
+    String monitoringExporterAppDir = Paths.get(monitoringExporterDir, "apps").toString();
+
+    cloneMonitoringExporter(monitoringExporterSrcDir);
+    Path monitoringApp = Paths.get(monitoringExporterAppDir);
+    assertDoesNotThrow(() -> deleteDirectory(monitoringApp.toFile()));
+    assertDoesNotThrow(() -> Files.createDirectories(monitoringApp));
+    Path monitoringAppNoRestPort = Paths.get(monitoringExporterAppDir, "norestport");
+    assertDoesNotThrow(() -> deleteDirectory(monitoringAppNoRestPort.toFile()));
+    assertDoesNotThrow(() -> Files.createDirectories(monitoringAppNoRestPort));
+
+    String monitoringExporterBranch = Optional.ofNullable(System.getenv("MONITORING_EXPORTER_BRANCH"))
+        .orElse("master");
+    //adding ability to build monitoring exporter if branch is not master
+    boolean toBuildMonitoringExporter = (!monitoringExporterBranch.equalsIgnoreCase(("master")));
+    monitoringExporterAppDir = monitoringApp.toString();
+    String monitoringExporterAppNoRestPortDir = monitoringAppNoRestPort.toString();
+
+    if (!toBuildMonitoringExporter) {
+      downloadMonitoringExporterApp(RESOURCE_DIR
+          + "/exporter/exporter-config.yaml", monitoringExporterAppDir);
+      downloadMonitoringExporterApp(RESOURCE_DIR
+          + "/exporter/exporter-config-norestport.yaml", monitoringExporterAppNoRestPortDir);
+    } else {
+      buildMonitoringExporterApp(monitoringExporterSrcDir, RESOURCE_DIR
+          + "/exporter/exporter-config.yaml", monitoringExporterAppDir);
+      buildMonitoringExporterApp(monitoringExporterSrcDir,RESOURCE_DIR
+          + "/exporter/exporter-config-norestport.yaml", monitoringExporterAppNoRestPortDir);
+    }
+    logger.info("Finished to build Monitoring Exporter webapp.");
+  }
+
+  /**
+   * Delete monitoring exporter dir.
+   *
+   * @param monitoringExporterDir full path to monitoring exporter install location
+   */
+  public static void deleteMonitoringExporterTempDir(String monitoringExporterDir) {
+    logger.info("delete temp dir for monitoring exporter github");
+    Path monitoringTemp = Paths.get(monitoringExporterDir, "srcdir");
+    assertDoesNotThrow(() -> org.apache.commons.io.FileUtils.deleteDirectory(monitoringTemp.toFile()));
+    Path monitoringApp = Paths.get(monitoringExporterDir, "apps");
+    assertDoesNotThrow(() -> org.apache.commons.io.FileUtils.deleteDirectory(monitoringApp.toFile()));
+    Path fileTemp = Paths.get(monitoringExporterDir, "../", "promCreateTempValueFile");
+    assertDoesNotThrow(() -> org.apache.commons.io.FileUtils.deleteDirectory(fileTemp.toFile()));
+  }
+
+  /**
+   * Create mii image with monitoring exporter webapp and one more app.
+   * @param modelFilePath - path to model file
+   * @param monexpAppDir - location for monitoring exporter webapp
+   * @param appName  -extra app name
+   * @param imageName - desired imagename
+   */
+  public static String createAndVerifyMiiImage(String monexpAppDir, String modelFilePath,
+                                               String appName, String imageName) {
+    // create image with model files
+    logger.info("Create image with model file with monitoring exporter app and verify");
+    String appPath = String.format("%s/wls-exporter.war", monexpAppDir);
+    List<String> appList = new ArrayList();
+    appList.add(appPath);
+    appList.add(appName);
+
+    // build the model file list
+    final List<String> modelList = Collections.singletonList(modelFilePath);
+    String myImage =
+        createMiiImageAndVerify(imageName, modelList, appList);
+
+    // docker login and push image to docker registry if necessary
+    dockerLoginAndPushImageToRegistry(myImage);
+
+    return myImage;
+  }
+
+  /*
+   ** uninstall Prometheus and Grafana helm charts
+   * @param promHelmParams  -helm chart params for prometheus
+   * @param grafanaHelmParams - helm chart params for grafana
+   */
+  public static void uninstallPrometheusGrafana(HelmParams promHelmParams, GrafanaParams grafanaHelmParams) {
+    String prometheusReleaseName = null;
+    String grafanaReleaseName = null;
+    if (promHelmParams != null) {
+      prometheusReleaseName = promHelmParams.getReleaseName();
+      Prometheus.uninstall(promHelmParams);
+      logger.info("Prometheus is uninstalled");
+    }
+    if (grafanaHelmParams != null) {
+      grafanaReleaseName = grafanaHelmParams.getHelmParams().getReleaseName();
+      Grafana.uninstall(grafanaHelmParams.getHelmParams());
+      deleteSecret("grafana-secret",grafanaHelmParams.getHelmParams().getNamespace());
+      logger.info("Grafana is uninstalled");
+    }
+    cleanupPromGrafanaClusterRoles(prometheusReleaseName, grafanaReleaseName);
+  }
 
 }
