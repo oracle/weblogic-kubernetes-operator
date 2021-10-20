@@ -259,10 +259,10 @@ class ItMonitoringExporterSamples {
     HashMap<String, String> labels = new HashMap<>();
     labels.put("app", "monitoring");
     labels.put("weblogic.domainUid", domain1Uid);
-    assertDoesNotThrow(() -> createPvAndPvc("prometheus", monitoringNS, labels));
-    assertDoesNotThrow(() -> createPvAndPvc("alertmanager",monitoringNS, labels));
-    assertDoesNotThrow(() -> createPvAndPvc("grafana", monitoringNS, labels));
-    cleanupPromGrafanaClusterRoles();
+    assertDoesNotThrow(() -> createPvAndPvc("prometheustest", monitoringNS, labels));
+    assertDoesNotThrow(() -> createPvAndPvc("alertmanagertest",monitoringNS, labels));
+    assertDoesNotThrow(() -> createPvAndPvc("grafanatest", monitoringNS, labels));
+    //cleanupPromGrafanaClusterRoles();
   }
 
   /**
@@ -883,13 +883,14 @@ class ItMonitoringExporterSamples {
 
   //download src from monitoring exporter github project and build webapp.
   private static void installMonitoringExporter() {
-    Path monitoringTemp = Paths.get(RESULTS_ROOT, "monitoringexp", "srcdir");
+    Path monitoringTemp = Paths.get(RESULTS_ROOT, "ItMonitoringExporterSamples", "monitoringexp", "srcdir");
     monitoringExporterSrcDir = monitoringTemp.toString();
     cloneMonitoringExporter(monitoringExporterSrcDir);
-    Path monitoringApp = Paths.get(RESULTS_ROOT, "monitoringexp", "apps");
+    Path monitoringApp = Paths.get(RESULTS_ROOT, "ItMonitoringExporterSamples", "monitoringexp", "apps");
     assertDoesNotThrow(() -> deleteDirectory(monitoringApp.toFile()));
     assertDoesNotThrow(() -> Files.createDirectories(monitoringApp));
-    Path monitoringAppNoRestPort = Paths.get(RESULTS_ROOT, "monitoringexp", "apps", "norestport");
+    Path monitoringAppNoRestPort = Paths.get(RESULTS_ROOT,
+        "ItMonitoringExporterSamples","monitoringexp", "apps", "norestport");
     assertDoesNotThrow(() -> deleteDirectory(monitoringAppNoRestPort.toFile()));
     assertDoesNotThrow(() -> Files.createDirectories(monitoringAppNoRestPort));
     monitoringExporterEndToEndDir = monitoringTemp + "/samples/kubernetes/end2end/";
@@ -920,9 +921,9 @@ class ItMonitoringExporterSamples {
    */
   private static void deleteMonitoringExporterTempDir() {
     logger.info("delete temp dir for monitoring exporter github");
-    Path monitoringTemp = Paths.get(RESULTS_ROOT, "monitoringexp", "srcdir");
+    Path monitoringTemp = Paths.get(RESULTS_ROOT, "ItMonitoringExporterSamples", "monitoringexp", "srcdir");
     assertDoesNotThrow(() -> FileUtils.deleteDirectory(monitoringTemp.toFile()));
-    Path monitoringApp = Paths.get(RESULTS_ROOT, "monitoringexp", "apps");
+    Path monitoringApp = Paths.get(RESULTS_ROOT, "ItMonitoringExporterSamples","monitoringexp", "apps");
     assertDoesNotThrow(() -> FileUtils.deleteDirectory(monitoringApp.toFile()));
     Path fileTemp = Paths.get(RESULTS_ROOT, "ItMonitoringExporterSamples", "promCreateTempValueFile");
     assertDoesNotThrow(() -> FileUtils.deleteDirectory(fileTemp.toFile()));
