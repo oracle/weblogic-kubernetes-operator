@@ -1347,12 +1347,12 @@ class SitConfigGenerator(Generator):
     self.undent()
     self.writeln('</d:network-access-point>')
 
-  def _writeIstioReplicationChannelNAP(self, name, server, listen_address, listen_port,
+  def _writeIstioReplicationChannelNAP(self, name, listen_address, listen_port,
                                        bind_to_localhost="true"):
     action = 'f:combine-mode="add"'
     self.writeln('<d:network-access-point %s>' % action)
     self.indent()
-    self.writeln('<d:name %s>%s</d:name>' % (action, 'istiorepl'))
+    self.writeln('<d:name %s>%s</d:name>' % (action, name))
     self.writeln('<d:protocol %s>%s</d:protocol>' % (action, 't3'))
     if bind_to_localhost == "true":
       self.writeln('<d:listen-address %s>127.0.0.1</d:listen-address>' % action)
@@ -1557,7 +1557,7 @@ class SitConfigGenerator(Generator):
     if isVersionEarlierThan(istio_version, '1.10'):
       bind_to_localhost = 'true'
 
-    self._writeIstioReplicationChannelNAP('istiorepl', server, listen_address, listen_port,
+    self._writeIstioReplicationChannelNAP('istiorepl', listen_address, listen_port,
                                           bind_to_localhost)
 
   def _verify_replication_port_conflict(self, server, replication_port, is_server_template):
