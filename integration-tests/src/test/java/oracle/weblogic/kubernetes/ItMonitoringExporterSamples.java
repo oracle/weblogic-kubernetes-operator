@@ -397,6 +397,12 @@ class ItMonitoringExporterSamples {
       replaceStringInFile(targetPromFile.toString(),
           oldValue,
           prometheusRegexValue);
+      replaceStringInFile(targetPromFile.toString(),
+          "pvc-alertmanager",
+          "pvc-alertmanagertest");
+      replaceStringInFile(targetPromFile.toString(),
+          "pvc-prometheus",
+          "pvc-prometheustest");
       //replace with webhook ns
       replaceStringInFile(targetPromFile.toString(),
           "webhook.webhook.svc.cluster.local",
