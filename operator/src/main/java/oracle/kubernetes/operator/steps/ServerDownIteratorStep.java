@@ -9,11 +9,13 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Queue;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
+import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
@@ -52,8 +54,19 @@ public class ServerDownIteratorStep extends Step {
     getShutdownClusteredServersStepFactories(getServerShutdownInfos(), packet).values()
             .forEach(factory -> shutdownDetails.addAll(factory.getServerShutdownStepAndPackets(info)));
 
+    Collection<StepAndPacket> shutdownWaiters =
+            getServerShutdownInfos().stream()
+                    .map(ssi -> createServerDownWaiters(packet, ssi)).collect(Collectors.toList());
+    shutdownDetails.addAll(shutdownWaiters);
     return doNext((new ShutdownManagedServersStep(shutdownDetails, getNext())), packet);
 
+  }
+
+  private StepAndPacket createServerDownWaiters(Packet packet, DomainPresenceInfo.ServerShutdownInfo ssi) {
+    DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+    return new StepAndPacket(Optional.ofNullable(packet.getSpi(PodAwaiterStepFactory.class))
+            .map(p -> p.waitForDelete(info.getServerPod(ssi.getServerName()), null)).orElse(null),
+            createPacketForServer(packet, ssi));
   }
 
   // pre-conditions: DomainPresenceInfo SPI
