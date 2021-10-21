@@ -17,6 +17,7 @@ import java.util.logging.LogRecord;
 import com.meterware.httpunit.Base64;
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
@@ -264,6 +265,7 @@ class ReadHealthStepTest {
     selectServer(MANAGED_SERVER1);
 
     defineResponse(500, "", "http://127.0.0.1:8001");
+    testSupport.defineResources(createPod(MANAGED_SERVER1));
 
     Packet packet = testSupport.runSteps(readHealthStep);
 
@@ -272,11 +274,16 @@ class ReadHealthStepTest {
     assertThat(getServerStateMap(packet).get(MANAGED_SERVER1), is("UNKNOWN"));
   }
 
+  private V1Pod createPod(String serverName) {
+    return new V1Pod().metadata(new V1ObjectMeta().name(serverName).namespace("namespace").uid("test-domain"));
+  }
+
   @Test
   void whenUnableToReadHealth_verifyNotAvailable() {
     selectServer(MANAGED_SERVER1);
 
     defineResponse(404, "");
+    testSupport.defineResources(createPod(MANAGED_SERVER1));
 
     Packet packet = testSupport.runSteps(readHealthStep);
 

@@ -23,6 +23,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
+import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
 import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLabel;
 
 /**
@@ -79,9 +80,11 @@ abstract class WaitForReadyStep<T> extends Step {
   /**
    * Returns true if the specified resource is deemed "ready." Different steps may define readiness in different ways.
    * @param resource the resource to check
+   * @param info domain presence info
+   * @param serverName Server name
    * @return true if processing can proceed
    */
-  abstract boolean isReady(T resource);
+  abstract boolean isReady(T resource, DomainPresenceInfo info, String serverName);
 
   /**
    * Returns true if the cached resource is not found during periodic listing.
@@ -100,7 +103,7 @@ abstract class WaitForReadyStep<T> extends Step {
    * @param resource the resource to check
    * @return true if the resource is expected
    */
-  boolean shouldProcessCallback(T resource) {
+  boolean shouldProcessCallback(T resource, Packet packet) {
     return true;
   }
 
@@ -174,9 +177,11 @@ abstract class WaitForReadyStep<T> extends Step {
 
   @Override
   public final NextAction apply(Packet packet) {
+    String serverName = (String)packet.get(SERVER_NAME);
+    DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
     if (shouldTerminateFiber(initialResource)) {
       return doTerminate(createTerminationException(initialResource), packet);
-    } else if (isReady(initialResource)) {
+    } else if (isReady(initialResource, packet.getSpi(DomainPresenceInfo.class), serverName)) {
       return doNext(packet);
     }
 
@@ -283,7 +288,7 @@ abstract class WaitForReadyStep<T> extends Step {
 
     @Override
     public void accept(T resource) {
-      boolean shouldProcessCallback = shouldProcessCallback(resource);
+      boolean shouldProcessCallback = shouldProcessCallback(resource, packet);
       if (shouldProcessCallback) {
         proceedFromWait(resource);
       }
