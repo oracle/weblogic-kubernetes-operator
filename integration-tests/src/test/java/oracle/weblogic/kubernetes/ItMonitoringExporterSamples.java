@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -6,10 +6,8 @@ package oracle.weblogic.kubernetes;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -17,7 +15,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.concurrent.Callable;
 
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.openapi.ApiException;
@@ -30,22 +27,19 @@ import io.kubernetes.client.openapi.models.V1LabelSelector;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
-import io.kubernetes.client.openapi.models.V1PodCondition;
-import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
+import oracle.weblogic.kubernetes.actions.impl.PrometheusParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.assertions.impl.Deployment;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.ExecCommand;
-import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -72,8 +66,9 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVol
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteNamespace;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodReady;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.searchPodLogForKey;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.listPods;
-import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
@@ -92,8 +87,9 @@ import static oracle.weblogic.kubernetes.utils.MonitoringUtils.editPrometheusCM;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyGrafana;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyPrometheus;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installMonitoringExporter;
-import static oracle.weblogic.kubernetes.utils.MonitoringUtils.searchForKey;
+import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installVerifyGrafanaDashBoard;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.uninstallPrometheusGrafana;
+import static oracle.weblogic.kubernetes.utils.MonitoringUtils.verifyMonExpAppAccessThroughNginx;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPvAndPvc;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -110,7 +106,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Verify WebLogic metrics can be accessed via NGINX ingress controller.
  * Verify WebLogic metrics can be accessed via Prometheus
  */
-@DisplayName("Verify WebLogic Metric is processed as expected by MonitoringExporter via Prometheus and Grafana")
+@DisplayName("Verify end to end sample, provided in the Monitoring Exporter github project")
 @IntegrationTest
 class ItMonitoringExporterSamples {
 
@@ -131,7 +127,7 @@ class ItMonitoringExporterSamples {
 
   private static String monitoringNS = null;
   private static String webhookNS = null;
-  HelmParams promHelmParams = null;
+  PrometheusParams promHelmParams = null;
   GrafanaParams grafanaHelmParams = null;
 
   private static V1Service webhookService = null;
@@ -152,14 +148,15 @@ class ItMonitoringExporterSamples {
   private static String exporterImage = null;
   private static String  coordinatorImage = null;
   private static int managedServerPort = 8001;
-  private static int nodeportserver;
+  private static int nodeportPrometheus;
   private static String exporterUrl = null;
   private static String prometheusDomainRegexValue = null;
   private static Map<String, Integer> clusterNameMsPortMap;
   private static LoggingFacade logger = null;
   private static List<String> clusterNames = new ArrayList<>();
-  private static String prometheusReleaseName = "prometheustest";
-  private static String grafanaReleaseName = "grafanatest";
+  private static String releaseSuffix = "test3";
+  private static String prometheusReleaseName = "prometheus" + releaseSuffix;
+  private static String grafanaReleaseName = "grafana" + releaseSuffix;
   private static  String monitoringExporterDir;
   private static  String monitoringExporterSrcDir;
   private static  String monitoringExporterEndToEndDir;
@@ -175,7 +172,7 @@ class ItMonitoringExporterSamples {
    */
   @BeforeAll
 
-  public static void initAll(@Namespaces(12) List<String> namespaces) {
+  public static void initAll(@Namespaces(6) List<String> namespaces) {
 
     logger = getLogger();
     monitoringExporterDir = monitoringExporterDir = Paths.get(RESULTS_ROOT,
@@ -241,7 +238,7 @@ class ItMonitoringExporterSamples {
     labels.put("weblogic.domainUid", domain1Uid);
     String pvDir = PV_ROOT + "/ItMonitoringExporterSamples/monexp-persistentVolume/";
     assertDoesNotThrow(() -> createPvAndPvc(prometheusReleaseName, monitoringNS, labels,pvDir));
-    assertDoesNotThrow(() -> createPvAndPvc("alertmanagertest",monitoringNS, labels,pvDir));
+    assertDoesNotThrow(() -> createPvAndPvc("alertmanager" + releaseSuffix, monitoringNS, labels,pvDir));
     assertDoesNotThrow(() -> createPvAndPvc(grafanaReleaseName, monitoringNS, labels,pvDir));
     cleanupPromGrafanaClusterRoles(prometheusReleaseName, grafanaReleaseName);
   }
@@ -273,11 +270,11 @@ class ItMonitoringExporterSamples {
     installCoordinator(domain2Namespace);
 
     logger.info("verify access to Monitoring Exporter");
-    verifyMonExpAppAccessThroughNginx(ingressHost2List.get(0), managedServersCount);
+    verifyMonExpAppAccessThroughNginx(ingressHost2List.get(0), managedServersCount,nodeportshttp);
     logger.info("verify metrics via prometheus");
     String testappPrometheusSearchKey =
         "wls_servlet_invocation_total_count%7Bapp%3D%22test-webapp%22%7D%5B15s%5D";
-    checkMetricsViaPrometheus(testappPrometheusSearchKey, "test-webapp",nodeportserver);
+    checkMetricsViaPrometheus(testappPrometheusSearchKey, "test-webapp",nodeportPrometheus);
     logger.info("fire alert by scaling down");
     fireAlert();
     logger.info("switch to monitor another domain");
@@ -293,7 +290,7 @@ class ItMonitoringExporterSamples {
     editPrometheusCM(oldRegex, newRegex, monitoringNS, prometheusReleaseName + "-server");
     String sessionAppPrometheusSearchKey =
         "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
-    checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr",nodeportserver);
+    checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr",nodeportPrometheus);
     checkPromGrafanaLatestVersion();
   }
 
@@ -305,7 +302,7 @@ class ItMonitoringExporterSamples {
    */
   private void checkPromGrafanaLatestVersion() throws Exception {
     //uninstall prometheus and grafana if running
-    uninstallPrometheusGrafana(promHelmParams, grafanaHelmParams);
+    uninstallPrometheusGrafana(promHelmParams.getHelmParams(), grafanaHelmParams);
     promHelmParams = null;
     grafanaHelmParams = null;
     prometheusDomainRegexValue = null;
@@ -317,11 +314,11 @@ class ItMonitoringExporterSamples {
 
     //verify access to Monitoring Exporter
     logger.info("verify http access");
-    verifyMonExpAppAccessThroughNginx(ingressHost2List.get(0),managedServersCount);
+    verifyMonExpAppAccessThroughNginx(ingressHost2List.get(0),managedServersCount, nodeportshttp);
     //verify metrics via prometheus
     String testappPrometheusSearchKey =
         "wls_servlet_invocation_total_count%7Bapp%3D%22test-webapp%22%7D%5B15s%5D";
-    checkMetricsViaPrometheus(testappPrometheusSearchKey, "test-webapp",nodeportserver);
+    checkMetricsViaPrometheus(testappPrometheusSearchKey, "test-webapp",nodeportPrometheus);
   }
 
   private void fireAlert() throws ApiException {
@@ -366,42 +363,20 @@ class ItMonitoringExporterSamples {
   ) throws IOException, ApiException {
     final String prometheusRegexValue = String.format("regex: %s;%s", domainNS, domainUid);
     if (promHelmParams == null) {
-      cleanupPromGrafanaClusterRoles(prometheusReleaseName, grafanaReleaseName);
-      logger.info("create a staging location for monitoring creation scripts");
-      Path fileTemp = Paths.get(RESULTS_ROOT, "ItMonitoringExporterSamples", "createTempValueFile");
-      FileUtils.deleteDirectory(fileTemp.toFile());
-      Files.createDirectories(fileTemp);
-
-      logger.info("copy the promvalue.yaml to staging location");
       Path srcPromFile = Paths.get(RESOURCE_DIR, "exporter", "promvalues.yaml");
-      Path targetPromFile = Paths.get(fileTemp.toString(), "promvalues.yaml");
-      Files.copy(srcPromFile, targetPromFile, StandardCopyOption.REPLACE_EXISTING);
-      String oldValue = "regex: default;domain1";
-      replaceStringInFile(targetPromFile.toString(),
-          oldValue,
-          prometheusRegexValue);
-      replaceStringInFile(targetPromFile.toString(),
-          "pvc-alertmanager",
-          "pvc-alertmanagertest");
-      replaceStringInFile(targetPromFile.toString(),
-          "pvc-prometheus",
-          "pvc-" + prometheusReleaseName);
 
       //replace with webhook ns
-      replaceStringInFile(targetPromFile.toString(),
+      replaceStringInFile(srcPromFile.toString(),
           "webhook.webhook.svc.cluster.local",
           String.format("webhook.%s.svc.cluster.local", webhookNS));
 
-
-      nodeportserver = getNextFreePort();
-      int nodeportalertmanserver = getNextFreePort();
-      promHelmParams = installAndVerifyPrometheus(prometheusReleaseName,
+      cleanupPromGrafanaClusterRoles(prometheusReleaseName,grafanaReleaseName);
+      promHelmParams = installAndVerifyPrometheus(releaseSuffix,
           monitoringNS,
-          targetPromFile.toString(),
           promChartVersion,
-          nodeportserver,
-          nodeportalertmanserver);
-
+          prometheusRegexValue);
+      assertNotNull(promHelmParams, " Failed to install prometheus");
+      nodeportPrometheus = promHelmParams.getNodePortServer();
       prometheusDomainRegexValue = prometheusRegexValue;
     }
     //if prometheus already installed change CM for specified domain
@@ -419,43 +394,7 @@ class ItMonitoringExporterSamples {
           monitoringExporterEndToEndDir + "/grafana/values.yaml",
           grafanaChartVersion);
       assertNotNull(grafanaHelmParams, "Grafana failed to install");
-      int nodeportgrafana = grafanaHelmParams.getNodePort();
-      //wait until it starts dashboard
-      String curlCmd = String.format("curl -v  -H 'Content-Type: application/json' "
-              + " -X GET http://admin:12345678@%s:%s/api/dashboards",
-          K8S_NODEPORT_HOST, nodeportgrafana);
-      testUntil(
-          assertDoesNotThrow(() -> searchForKey(curlCmd, "grafana"),
-              String.format("Check access to grafana dashboard")),
-          logger,
-          "Check access to grafana dashboard");
-      logger.info("installing grafana dashboard");
-      // url
-      String curlCmd0 =
-          String.format("curl -v -H 'Content-Type: application/json' -H \"Content-Type: application/json\""
-                  + "  -X POST http://admin:12345678@%s:%s/api/datasources/"
-                  + "  --data-binary @%s/grafana/datasource.json",
-              K8S_NODEPORT_HOST, nodeportgrafana, monitoringExporterEndToEndDir);
-
-      logger.info("Executing Curl cmd {0}", curlCmd);
-      assertDoesNotThrow(() -> ExecCommand.exec(curlCmd0));
-
-      String curlCmd1 =
-          String.format("curl -v -H 'Content-Type: application/json' -H \"Content-Type: application/json\""
-                  + "  -X POST http://admin:12345678@%s:%s/api/dashboards/db/"
-                  + "  --data-binary @%s/grafana/dashboard.json",
-              K8S_NODEPORT_HOST, nodeportgrafana, monitoringExporterEndToEndDir);
-      logger.info("Executing Curl cmd {0}", curlCmd1);
-      assertDoesNotThrow(() -> ExecCommand.exec(curlCmd1));
-
-      String curlCmd2 = String.format("curl -v  -H 'Content-Type: application/json' "
-              + " -X GET http://admin:12345678@%s:%s/api/dashboards/db/weblogic-server-dashboard",
-          K8S_NODEPORT_HOST, nodeportgrafana);
-      testUntil(
-          assertDoesNotThrow(() -> searchForKey(curlCmd2, "wls_jvm_uptime"),
-              String.format("Check grafana dashboard wls against expected %s", "wls_jvm_uptime")),
-          logger,
-          "Check grafana dashboard metric against expected wls_jvm_uptime");
+      installVerifyGrafanaDashBoard(grafanaHelmParams.getNodePort(), monitoringExporterEndToEndDir);
     }
     logger.info("Grafana is running");
   }
@@ -465,10 +404,12 @@ class ItMonitoringExporterSamples {
    * @throws ApiException when creating images or pods fails
    */
   private void installWebhook() throws ApiException {
+    Map<String,String> labelMap = new HashMap<>();
+    labelMap.put("app", "webhook");
     assertTrue(installAndVerifyPodFromCustomImage(monitoringExporterEndToEndDir + "/webhook",
         "webhook",
         webhookNS,
-        "app=webhook", OCIR_SECRET_NAME), "Failed to start webhook");
+        labelMap, OCIR_SECRET_NAME), "Failed to start webhook");
   }
 
   /**
@@ -477,10 +418,12 @@ class ItMonitoringExporterSamples {
    * @throws ApiException when creating images or pods fails
    */
   private void installCoordinator(String namespace) throws ApiException {
+    Map<String,String> labelMap = new HashMap<>();
+    labelMap.put("app", "coordinator");
     assertTrue(installAndVerifyPodFromCustomImage(monitoringExporterSrcDir + "/config_coordinator",
         "coordinator",
         namespace,
-        "app=coordinator", "coordsecret"), "Failed to start coordinator");
+        labelMap, "coordsecret"), "Failed to start coordinator");
   }
 
   @AfterAll
@@ -503,13 +446,13 @@ class ItMonitoringExporterSamples {
       deleteImage(miiImage);
     }
 
-    uninstallPrometheusGrafana(promHelmParams, grafanaHelmParams);
+    uninstallPrometheusGrafana(promHelmParams.getHelmParams(), grafanaHelmParams);
     promHelmParams = null;
     grafanaHelmParams = null;
     prometheusDomainRegexValue = null;
 
-    deletePersistentVolumeClaim("pvc-alertmanagertest", monitoringNS);
-    deletePersistentVolume("pv-testalertmanagertest");
+    deletePersistentVolumeClaim("pvc-alertmanager" + releaseSuffix, monitoringNS);
+    deletePersistentVolume("pv-testalertmanager" + releaseSuffix);
     deletePersistentVolumeClaim("pvc-" + prometheusReleaseName, monitoringNS);
     deletePersistentVolume("pv-test" + prometheusReleaseName);
     deletePersistentVolumeClaim("pvc-" + grafanaReleaseName, monitoringNS);
@@ -538,7 +481,7 @@ class ItMonitoringExporterSamples {
   public static boolean installAndVerifyPodFromCustomImage(String dockerFileDir,
                                                            String baseImageName,
                                                            String namespace,
-                                                           String labelSelector,
+                                                           Map<String, String> labels,
                                                            String secretName) throws ApiException {
     //build webhook image
     String imagePullPolicy = "IfNotPresent";
@@ -556,8 +499,8 @@ class ItMonitoringExporterSamples {
     // wait for the pod to be ready
     logger.info("Wait for the {0} pod is ready in namespace {1}", baseImageName, namespace);
     testUntil(
-        assertDoesNotThrow(() -> podIsReady(namespace, labelSelector, baseImageName),
-            baseImageName + " podIsReady failed with ApiException"),
+        assertDoesNotThrow(() -> isPodReady(namespace, labels, baseImageName),
+            baseImageName + " isPodReady failed with ApiException"),
         logger,
         "{0} to be running in namespace {1}",
         baseImageName,
@@ -642,8 +585,10 @@ class ItMonitoringExporterSamples {
         namespace));
     // wait for the webhook pod to be ready
     logger.info("Wait for the webhook pod is ready in namespace {0}", namespace);
+    Map<String,String> labelMap = new HashMap<>();
+    labelMap.put("app", "webhook");
     testUntil(
-        assertDoesNotThrow(() -> podIsReady(namespace, "app=webhook", "webhook"),
+        assertDoesNotThrow(() -> isPodReady(namespace, labelMap, "webhook"),
             "webhook podIsReady failed with ApiException"),
         logger,
         "webhook to be running in namespace {0}",
@@ -767,53 +712,6 @@ class ItMonitoringExporterSamples {
     }
   }
 
-  /**
-   * Checks if the pod is running in a given namespace.
-   * The method assumes the pod name to starts with provided value for podName
-   * and decorated with provided label selector
-   * @param namespace in which to check for the pod existence
-   * @return true if pods are exist and running otherwise false
-   * @throws ApiException when there is error in querying the cluster
-   */
-  public static boolean isPodReady(String namespace, String labelSelector, String podName) throws ApiException {
-    boolean status = false;
-    V1PodList pods = listPods(namespace, labelSelector);
-    V1Pod pod = null;
-    for (var testpod : pods.getItems()) {
-      if ((testpod.getMetadata().getName()).contains(podName)) {
-        pod = testpod;
-      }
-    }
-    if (pod != null) {
-      // get the podCondition with the 'Ready' type field
-      V1PodCondition v1PodReadyCondition = pod.getStatus().getConditions().stream()
-          .filter(v1PodCondition -> "Ready".equals(v1PodCondition.getType()))
-          .findAny()
-          .orElse(null);
-
-      if (v1PodReadyCondition != null) {
-        status = v1PodReadyCondition.getStatus().equalsIgnoreCase("true");
-      }
-    } else {
-      logger.info(podName + " pod doesn't exist");
-    }
-    return status;
-  }
-
-  /**
-   * Check if Pod is running.
-   *
-   * @param namespace in which is pod is running
-   * @return true if running false otherwise
-   */
-  public static Callable<Boolean> podIsReady(String namespace,
-                                             String labelSelector,
-                                             String podName) throws ApiException {
-    return () -> {
-      return isPodReady(namespace, labelSelector, podName);
-    };
-  }
-
 
   /**
    * Create and verify domain in image from endtoend sample topology with monitoring exporter.
@@ -877,43 +775,5 @@ class ItMonitoringExporterSamples {
     dockerLoginAndPushImageToRegistry(wdtImage);
 
     return wdtImage;
-  }
-
-  /**
-   * Verify the monitoring exporter app can be accessed from all managed servers in the domain through NGINX.
-   */
-  private void verifyMonExpAppAccessThroughNginx(String nginxHost, int replicaCount) {
-
-    List<String> managedServerNames = new ArrayList<>();
-    for (int i = 1; i <= replicaCount; i++) {
-      managedServerNames.add(MANAGED_SERVER_NAME_BASE + i);
-    }
-
-    // check that NGINX can access the sample apps from all managed servers in the domain
-    String curlCmd =
-        String.format("curl --silent --show-error --noproxy '*' -H 'host: %s' http://%s:%s@%s:%s/wls-exporter/metrics",
-            nginxHost,
-            ADMIN_USERNAME_DEFAULT,
-            ADMIN_PASSWORD_DEFAULT,
-            K8S_NODEPORT_HOST,
-            nodeportshttp);
-    assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, managedServerNames, 50))
-        .as("Verify NGINX can access the monitoring exporter metrics "
-            + "from all managed servers in the domain via http")
-        .withFailMessage("NGINX can not access the monitoring exporter metrics "
-            + "from one or more of the managed servers via http")
-        .isTrue();
-  }
-
-  /**
-   * Check if executed command contains expected output.
-   *
-   * @param pod   V1Pod object
-   * @param searchKey expected string in the log
-   * @return true if the output matches searchKey otherwise false
-   */
-  private static Callable<Boolean> searchPodLogForKey(V1Pod pod, String searchKey) {
-    return () -> Kubernetes.getPodLog(pod.getMetadata().getName(),
-        pod.getMetadata().getNamespace()).contains(searchKey);
   }
 }
