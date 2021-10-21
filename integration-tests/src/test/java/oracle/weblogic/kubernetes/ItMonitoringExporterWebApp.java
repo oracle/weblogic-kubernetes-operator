@@ -550,13 +550,12 @@ class ItMonitoringExporterWebApp {
   private void replaceConfiguration() throws Exception {
     HtmlPage page = submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/rest_jvm.yaml");
     assertNotNull(page, "Failed to replace configuration");
-    Thread.sleep(20 * 1000);
 
     assertTrue(page.asText().contains("JVMRuntime"),
         "Page does not contain expected JVMRuntime configuration");
     assertFalse(page.asText().contains("WebAppComponentRuntime"),
         "Page contains unexpected WebAppComponentRuntime configuration");
-    //needs 10 secs to fetch the metrics to prometheus
+    //needs 20 secs to fetch the metrics to prometheus
     Thread.sleep(20 * 1000);
     // "heap_free_current{name="managed-server1"}[15s]" search for results for last 15secs
     checkMetricsViaPrometheus("heap_free_current%7Bname%3D%22" + cluster1Name + "-managed-server1%22%7D%5B15s%5D",
@@ -733,7 +732,7 @@ class ItMonitoringExporterWebApp {
         submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/norestport.yaml");
     assertNotNull(page);
     assertFalse(page.asText().contains("restPort"));
-    //needs 10 secs to fetch the metrics to prometheus
+    //needs 20 secs to fetch the metrics to prometheus
     Thread.sleep(20 * 1000);
     // "heap_free_current{name="managed-server1"}[15s]" search for results for last 15secs
 
