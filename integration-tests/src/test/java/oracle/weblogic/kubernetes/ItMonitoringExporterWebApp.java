@@ -427,8 +427,8 @@ class ItMonitoringExporterWebApp {
 
     uninstallPrometheusGrafana(promHelmParams.getHelmParams(), grafanaHelmParams);
 
-    deletePersistentVolumeClaim("pvc-alertmanager",monitoringNS);
-    deletePersistentVolume("pv-testalertmanager");
+    deletePersistentVolumeClaim("pvc-alertmanager" + releaseSuffix ,monitoringNS);
+    deletePersistentVolume("pv-testalertmanager" + releaseSuffix);
     deletePersistentVolumeClaim("pvc-" + prometheusReleaseName, monitoringNS);
     deletePersistentVolume("pv-test" + prometheusReleaseName);
     deletePersistentVolumeClaim("pvc-" + grafanaReleaseName, monitoringNS);
