@@ -274,15 +274,18 @@ public class PersistentVolumeUtils {
   /**
    * Create a persistent volume and persistent volume claim.
    * @param nameSuffix unique nameSuffix for pv and pvc to create
+   * @param labels pv and pvc labels
+   * @param namespace pv and pvc namespace
+   * @param pvPath - path to pv dir
    * @throws IOException when creating pv path fails
    */
-  public static void createPvAndPvc(String nameSuffix, String namespace, HashMap<String,String> labels)
+  public static void createPvAndPvc(String nameSuffix, String namespace, HashMap<String,String> labels, String pvPath)
       throws IOException {
     LoggingFacade logger = getLogger();
     logger.info("creating persistent volume and persistent volume claim");
     // create persistent volume and persistent volume claims
     Path pvHostPath = assertDoesNotThrow(
-        () -> createDirectories(get(PV_ROOT, "ItMonitoringExporterSamples", "monexp-persistentVolume",nameSuffix)),
+        () -> createDirectories(get(pvPath,nameSuffix)),
         "createDirectories failed with IOException");
     logger.info("Creating PV directory {0}", pvHostPath);
     assertDoesNotThrow(() -> deleteDirectory(pvHostPath.toFile()), "deleteDirectory failed with IOException");

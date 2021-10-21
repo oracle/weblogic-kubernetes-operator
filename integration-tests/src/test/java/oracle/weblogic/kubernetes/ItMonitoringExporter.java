@@ -9,16 +9,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Base64;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.Callable;
-import java.util.stream.Collectors;
 
 import com.gargoylesoftware.htmlunit.FailingHttpStatusCodeException;
 import com.gargoylesoftware.htmlunit.TextPage;
@@ -29,38 +25,9 @@ import com.gargoylesoftware.htmlunit.html.HtmlPage;
 import com.gargoylesoftware.htmlunit.html.HtmlRadioButtonInput;
 import com.gargoylesoftware.htmlunit.html.HtmlSubmitInput;
 import com.google.gson.Gson;
-import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.V1Deployment;
-import io.kubernetes.client.openapi.models.V1EnvVar;
-import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
-import io.kubernetes.client.openapi.models.V1LocalObjectReference;
-import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1PersistentVolume;
-import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
-import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimSpec;
-import io.kubernetes.client.openapi.models.V1PersistentVolumeSpec;
 import io.kubernetes.client.openapi.models.V1Pod;
-import io.kubernetes.client.openapi.models.V1PodCondition;
-import io.kubernetes.client.openapi.models.V1PodList;
-import io.kubernetes.client.openapi.models.V1ResourceRequirements;
-import io.kubernetes.client.openapi.models.V1SecretReference;
-import io.kubernetes.client.openapi.models.V1Service;
-import oracle.weblogic.domain.AdminServer;
-import oracle.weblogic.domain.AdminService;
-import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
-import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
-import oracle.weblogic.domain.DomainSpec;
-import oracle.weblogic.domain.Model;
-import oracle.weblogic.domain.MonitoringExporterConfiguration;
-import oracle.weblogic.domain.MonitoringExporterSpecification;
-import oracle.weblogic.domain.ServerPod;
-import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
-import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -76,12 +43,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.yaml.snakeyaml.Yaml;
 
-import static java.nio.file.Files.createDirectories;
-import static java.nio.file.Paths.get;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
@@ -100,40 +64,28 @@ import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.copyFileToPod;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteNamespace;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.exec;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getDomainCustomResource;
-import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.listPods;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndCheckForServerNameInResponse;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDockerExtraArgs;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
-import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndPushToRepo;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createIngressForDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
-import static oracle.weblogic.kubernetes.utils.MonitoringUtils.buildMonitoringExporterApp;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.checkMetricsViaPrometheus;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.cleanupPromGrafanaClusterRoles;
-import static oracle.weblogic.kubernetes.utils.MonitoringUtils.cloneMonitoringExporter;
-import static oracle.weblogic.kubernetes.utils.MonitoringUtils.createAndVerifyMiiImage;
-import static oracle.weblogic.kubernetes.utils.MonitoringUtils.downloadMonitoringExporterApp;
+import static oracle.weblogic.kubernetes.utils.MonitoringUtils.createAndVerifyDomain;
+import static oracle.weblogic.kubernetes.utils.MonitoringUtils.deleteMonitoringExporterTempDir;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.editPrometheusCM;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyGrafana;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyPrometheus;
+import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installMonitoringExporter;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.searchForKey;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.uninstallPrometheusGrafana;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
-import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVPVCAndVerify;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPvAndPvc;
 import static oracle.weblogic.kubernetes.utils.PodUtils.execInPod;
-import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
-import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.apache.commons.io.FileUtils.deleteDirectory;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -182,10 +134,6 @@ class ItMonitoringExporter {
   private static String monitoringExporterEndToEndDir = null;
   private static String monitoringExporterSrcDir = null;
   private static String monitoringExporterAppDir = null;
-  private static V1Service webhookService = null;
-  private static V1Deployment webhookDepl = null;
-  private static V1Service coordinatorService = null;
-  private static V1Deployment coordinatorDepl = null;
   // constants for creating domain image using model in image
   private static final String MONEXP_MODEL_FILE = "model.monexp.yaml";
   private static final String MONEXP_WDT_FILE = "/demo-domains/domainBuilder/scripts/simple-topology.yaml";
@@ -205,8 +153,10 @@ class ItMonitoringExporter {
   private static Map<String, Integer> clusterNameMsPortMap;
   private static LoggingFacade logger = null;
   private static List<String> clusterNames = new ArrayList<>();
-  private static String prometheusReleaseName = "prometheus";
-  private static String grafanaReleaseName = "grafana";
+  private static String prometheusReleaseName = "prometheustest2";
+  private static String grafanaReleaseName = "grafanatest2";
+  private static  String monitoringExporterDir;
+
 
   /**
    * Install operator and NGINX. Create model in image domain with multiple clusters.
@@ -220,7 +170,11 @@ class ItMonitoringExporter {
   public static void initAll(@Namespaces(12) List<String> namespaces) {
 
     logger = getLogger();
-
+    monitoringExporterDir = monitoringExporterDir = Paths.get(RESULTS_ROOT,
+        "ItMonitoringExporterWebApp", "monitoringexp").toString();
+    monitoringExporterSrcDir = Paths.get(monitoringExporterDir, "srcdir").toString();
+    monitoringExporterEndToEndDir = Paths.get(monitoringExporterSrcDir, "samples", "kubernetes", "end2end/").toString();
+    monitoringExporterAppDir = Paths.get(monitoringExporterDir, "apps").toString();
     logger.info("Get a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
     final String opNamespace = namespaces.get(0);
@@ -262,7 +216,9 @@ class ItMonitoringExporter {
         domain4Namespace,domain5Namespace, domain6Namespace, domain7Namespace, domain8Namespace);
 
     logger.info("install monitoring exporter");
-    installMonitoringExporter();
+    installMonitoringExporter(monitoringExporterDir);
+    assertDoesNotThrow(() -> replaceStringInFile(monitoringExporterEndToEndDir + "/grafana/values.yaml",
+        "pvc-grafana", "pvc-" + grafanaReleaseName));
     exporterImage = assertDoesNotThrow(() -> createImageAndPushToRepo(monitoringExporterSrcDir, "exporter",
         domain5Namespace, OCIR_SECRET_NAME, getDockerExtraArgs()),
         "Failed to create image for exporter");
@@ -292,158 +248,13 @@ class ItMonitoringExporter {
     HashMap<String, String> labels = new HashMap<>();
     labels.put("app", "monitoring");
     labels.put("weblogic.domainUid", "test");
-    assertDoesNotThrow(() -> createPvAndPvc(prometheusReleaseName, monitoringNS, labels));
-    assertDoesNotThrow(() -> createPvAndPvc("alertmanager",monitoringNS, labels));
-    assertDoesNotThrow(() -> createPvAndPvc(grafanaReleaseName, monitoringNS, labels));
+    String pvDir = PV_ROOT + "/ItMonitoringExporterWebApp/monexp-persistentVolume/";
+    assertDoesNotThrow(() -> createPvAndPvc(prometheusReleaseName, monitoringNS, labels, pvDir));
+    assertDoesNotThrow(() -> createPvAndPvc("alertmanagertest2",monitoringNS, labels,pvDir));
+    assertDoesNotThrow(() -> createPvAndPvc(grafanaReleaseName, monitoringNS, labels,pvDir));
     cleanupPromGrafanaClusterRoles(prometheusReleaseName,grafanaReleaseName);
   }
 
-  /**
-   * Test covers basic functionality for MonitoringExporter SideCar .
-   * Create Prometheus, Grafana.
-   * Create Model in Image with monitoring exporter.
-   * Check generated monitoring exporter WebLogic metrics via Prometheus, Grafana.
-   * Check basic functionality of monitoring exporter.
-   */
-  @Test
-  @DisplayName("Test Basic Functionality of Monitoring Exporter SideCar.")
-  void testSideCarBasicFunctionality() throws Exception {
-
-    // create and verify one cluster mii domain
-    logger.info("Create domain and verify that it's running");
-    String miiImage1 = createAndVerifyMiiImage(MODEL_DIR + "/model.sessmigr.yaml");
-    String yaml = RESOURCE_DIR + "/exporter/rest_webapp.yaml";
-    createAndVerifyDomain(miiImage1, domain7Uid, domain7Namespace, "FromModel", 2, false, yaml);
-    installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
-        domain7Namespace,
-        domain7Uid);
-
-    String sessionAppPrometheusSearchKey =
-        "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
-    checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr",nodeportserver);
-    Domain domain = getDomainCustomResource(domain7Uid,domain7Namespace);
-    String monexpConfig = domain.getSpec().getMonitoringExporter().toString();
-    logger.info("MonitorinExporter new Configuration from crd " + monexpConfig);
-    assertTrue(monexpConfig.contains("openSessionsHighCount"));
-    logger.info("Testing replace configuration");
-    changeMonitoringExporterSideCarConfig(RESOURCE_DIR + "/exporter/rest_jvm.yaml", domain7Uid, domain7Namespace,
-        "heapFreeCurrent", "heap_free_current", "managed-server1");
-
-    logger.info("replace monitoring exporter configuration with configuration file with domainQualifier=true.");
-    changeMonitoringExporterSideCarConfig(RESOURCE_DIR + "/exporter/rest_domainqualtrue.yaml",
-        domain7Uid, domain7Namespace,
-        "domainQualifier", "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D",
-        "\"domain\":\"wls-sessmigr-domain-1\"");
-
-    logger.info("replace monitoring exporter configuration with configuration file with metricsNameSnakeCase=false.");
-    changeMonitoringExporterSideCarConfig(RESOURCE_DIR + "/exporter/rest_snakecasefalse.yaml",
-        domain7Uid, domain7Namespace,
-        "metricsNameSnakeCase", "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D",
-        "sessmigr");
-  }
-
-  private void changeMonitoringExporterSideCarConfig(String configYamlFile, String domainUid,
-                                                     String domainNamespace,
-                                                     String configSearchKey,
-                                                     String promSearchString, String expectedVal) throws Exception {
-    String contents = null;
-    try {
-      contents = new String(Files.readAllBytes(Paths.get(configYamlFile)));
-    } catch (IOException e) {
-      e.printStackTrace();
-    }
-
-    MonitoringExporterSpecification monexpSpec = new MonitoringExporterSpecification().configuration(contents);
-    MonitoringExporterConfiguration monexpCong = monexpSpec.configuration();
-
-    StringBuffer patchStr = null;
-    patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"replace\",")
-        .append(" \"path\": \"/spec/monitoringExporter/configuration\",")
-        .append("\"value\": ")
-        .append(monexpCong.asJsonString())
-        .append("}]");
-    logger.info("PatchStr for change Monitoring Exporter Configuration : {0}", patchStr.toString());
-
-    boolean cmPatched = patchDomainResource(domainUid, domainNamespace, patchStr);
-    assertTrue(cmPatched, "patchDomainCustomResource(changeMonExporter) failed");
-
-    Domain domain = assertDoesNotThrow(() -> TestActions.getDomainCustomResource(domainUid, domainNamespace),
-        String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
-            domainUid, domainNamespace));
-    assertNotNull(domain, "Got null domain resource after patching");
-    String monexpConfig = domain.getSpec().getMonitoringExporter().toString();
-    logger.info("MonitorinExporter new Configuration from crd " + monexpConfig);
-    assertTrue(monexpConfig.contains(configSearchKey));
-
-    logger.info(domain.getSpec().getMonitoringExporter().toString());
-    Thread.sleep(20 * 1000);
-    String managedServerPodName = domainUid + "-managed-server";
-    // check that the managed server pod exists
-    logger.info("Checking that managed server pod {0} exists and ready in namespace {1}",
-        managedServerPodName, domainNamespace);
-    checkPodReadyAndServiceExists(managedServerPodName + "1", domainUid, domainNamespace);
-    checkPodReadyAndServiceExists(managedServerPodName + "2", domainUid, domainNamespace);
-    checkMetricsViaPrometheus(promSearchString, expectedVal,nodeportserver);
-  }
-
-  /**
-   * Test covers basic functionality for MonitoringExporter SideCar for domain with two clusters.
-   * Create Prometheus, Grafana.
-   * Create Model in Image with monitoring exporter.
-   * Check generated monitoring exporter WebLogic metrics via Prometheus, Grafana.
-   * Check basic functionality of monitoring exporter.
-   */
-  @Test
-  @DisplayName("Test Basic Functionality of Monitoring Exporter SideCar for domain with two clusters.")
-  void testSideCarBasicFunctionalityTwoClusters() throws Exception {
-
-    // create and verify one cluster mii domain
-    logger.info("Create domain and verify that it's running");
-    String miiImage1 = createAndVerifyMiiImage(MODEL_DIR + "/model.sessmigr.2clusters.yaml");
-    String yaml = RESOURCE_DIR + "/exporter/rest_jvm.yaml";
-    createAndVerifyDomain(miiImage1, domain5Uid, domain5Namespace, "FromModel", 2, true, yaml);
-    installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
-        domain5Namespace,
-        domain5Uid);
-
-    // "heap_free_current{name="managed-server1"}[15s]" search for results for last 15secs
-    checkMetricsViaPrometheus("heap_free_current%7Bname%3D%22" + cluster1Name + "-managed-server1%22%7D%5B15s%5D",
-        cluster1Name + "-managed-server1",nodeportserver);
-    checkMetricsViaPrometheus("heap_free_current%7Bname%3D%22" + cluster2Name + "-managed-server2%22%7D%5B15s%5D",
-        cluster2Name + "-managed-server2",nodeportserver);
-  }
-
-  /**
-   * Test covers basic functionality for MonitoringExporter SideCar .
-   * Create Prometheus, Grafana.
-   * Create Model in Image with SSL enabled.
-   * Check generated monitoring exporter WebLogic metrics via Prometheus, Grafana.
-   * Check basic functionality of monitoring exporter.
-   */
-
-  @Test
-  @DisplayName("Test Basic Functionality of Monitoring Exporter SideCar with ssl enabled.")
-  void testSideCarBasicFunctionalityWithSSL() throws Exception {
-
-    // create and verify one cluster mii domain
-    logger.info("Create domain and verify that it's running");
-    String yaml = RESOURCE_DIR + "/exporter/rest_webapp.yaml";
-    String  miiImage1 = createAndVerifyMiiImage(MODEL_DIR + "/model.ssl.yaml");
-    createAndVerifyDomain(miiImage1, domain6Uid, domain6Namespace, "FromModel", 2, false, yaml);
-    installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
-        domain6Namespace,
-        domain6Uid);
-
-    String sessionAppPrometheusSearchKey =
-        "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
-    checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr",nodeportserver);
-
-    Domain domain = getDomainCustomResource(domain6Uid,domain6Namespace);
-    String monexpConfig = domain.getSpec().getMonitoringExporter().toString();
-    logger.info("MonitorinExporter new Configuration from crd " + monexpConfig);
-    assertTrue(monexpConfig.contains("openSessionsHighCount"));
-  }
 
   /**
    * Test covers end to end sample, provided in the Monitoring Exporter github project .
@@ -458,7 +269,7 @@ class ItMonitoringExporter {
   void testBasicFunctionality() throws Exception {
     // create and verify one cluster mii domain
     logger.info("Create domain and verify that it's running");
-    createAndVerifyDomain(miiImage, domain4Uid, domain4Namespace, "FromModel", 1, true);
+    createAndVerifyDomain(miiImage, domain4Uid, domain4Namespace, "FromModel", 1, true, null, null);
 
     // create ingress for the domain
     logger.info("Creating ingress for domain {0} in namespace {1}", domain4Uid, domain4Namespace);
@@ -525,7 +336,8 @@ class ItMonitoringExporter {
     String  miiImage1 = MonitoringUtils.createAndVerifyMiiImage(monitoringExporterAppDir,
         MODEL_DIR + "/model-adminportenabled.yaml",
         SESSMIGR_APP_NAME, MONEXP_IMAGE_NAME);
-    createAndVerifyDomain(miiImage1, domain8Uid, domain8Namespace, "FromModel", 2, false);
+    createAndVerifyDomain(miiImage1, domain8Uid, domain8Namespace,
+        "FromModel", 2, false, null, null);
     logger.info("checking access to wls metrics via https connection");
 
     assertTrue(verifyMonExpAppAccess("wls-exporter",
@@ -560,7 +372,8 @@ class ItMonitoringExporter {
 
       // create and verify one cluster mii domain
       logger.info("Create domain and verify that it's running");
-      createAndVerifyDomain(miiImage1, domain3Uid, domain3Namespace, "FromModel", 1, true);
+      createAndVerifyDomain(miiImage1, domain3Uid, domain3Namespace, "FromModel",
+          1, true, null, null);
       //verify access to Monitoring Exporter
       logger.info("checking access to wls metrics via http connection");
 
@@ -621,6 +434,12 @@ class ItMonitoringExporter {
               oldValue,
               prometheusRegexValue);
 
+      replaceStringInFile(targetPromFile.toString(),
+          "pvc-alertmanager",
+          "pvc-alertmanagertest2");
+      replaceStringInFile(targetPromFile.toString(),
+          "pvc-prometheus",
+          "pvc-" + prometheusReleaseName);
 
       nodeportserver = getNextFreePort();
       int nodeportalertmanserver = getNextFreePort();
@@ -717,360 +536,7 @@ class ItMonitoringExporter {
     deletePersistentVolumeClaim("pvc-" + grafanaReleaseName, monitoringNS);
     deletePersistentVolume("pv-test" + grafanaReleaseName);
     deleteNamespace(monitoringNS);
-    deleteMonitoringExporterTempDir();
-  }
-
-  /**
-   * Create a persistent volume and persistent volume claim.
-   * @param nameSuffix unique nameSuffix for pv and pvc to create
-   * @throws IOException when creating pv path fails
-   */
-  private static void createPvAndPvc(String nameSuffix, String namespace, HashMap<String,String> labels)
-          throws IOException {
-    logger.info("creating persistent volume and persistent volume claim");
-    // create persistent volume and persistent volume claims
-    Path pvHostPath = assertDoesNotThrow(
-        () -> createDirectories(get(PV_ROOT, "ItMonitoringExporter", "monexp-persistentVolume",nameSuffix)),
-            "createDirectories failed with IOException");
-    logger.info("Creating PV directory {0}", pvHostPath);
-    assertDoesNotThrow(() -> deleteDirectory(pvHostPath.toFile()), "deleteDirectory failed with IOException");
-    assertDoesNotThrow(() -> createDirectories(pvHostPath), "createDirectories failed with IOException");
-
-    V1PersistentVolume v1pv = new V1PersistentVolume()
-        .spec(new V1PersistentVolumeSpec()
-            .addAccessModesItem("ReadWriteMany")
-            .storageClassName(nameSuffix)
-            .volumeMode("Filesystem")
-            .putCapacityItem("storage", Quantity.fromString("10Gi"))
-            .persistentVolumeReclaimPolicy("Retain")
-            .accessModes(Arrays.asList("ReadWriteMany"))
-            .hostPath(new V1HostPathVolumeSource()
-                .path(pvHostPath.toString())))
-        .metadata(new V1ObjectMeta()
-            .name("pv-test" + nameSuffix)
-            .namespace(namespace));
-
-    boolean hasLabels = false;
-    String labelSelector = null;
-    if (labels != null || !labels.isEmpty()) {
-      hasLabels = true;
-      v1pv.getMetadata().setLabels(labels);
-      labelSelector = labels.entrySet()
-              .stream()
-              .map(e -> e.getKey() + "="
-                      + e.getValue())
-              .collect(Collectors.joining(","));
-    }
-
-
-    V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
-        .spec(new V1PersistentVolumeClaimSpec()
-        .addAccessModesItem("ReadWriteMany")
-        .storageClassName(nameSuffix)
-        .volumeName("pv-test" + nameSuffix)
-        .resources(new V1ResourceRequirements()
-            .putRequestsItem("storage", Quantity.fromString("10Gi"))))
-        .metadata(new V1ObjectMeta()
-            .name("pvc-" + nameSuffix)
-            .namespace(namespace));
-    if (hasLabels) {
-      v1pvc.getMetadata().setLabels(labels);
-    }
-
-    createPVPVCAndVerify(v1pv,v1pvc, labelSelector, namespace);
-  }
-
-  /**
-   * Checks if the pod is running in a given namespace.
-   * The method assumes the pod name to starts with provided value for podName
-   * and decorated with provided label selector
-   * @param namespace in which to check for the pod existence
-   * @return true if pods are exist and running otherwise false
-   * @throws ApiException when there is error in querying the cluster
-   */
-  public static boolean isPodReady(String namespace, String labelSelector, String podName) throws ApiException {
-    boolean status = false;
-    V1PodList pods = listPods(namespace, labelSelector);
-    V1Pod pod = null;
-    for (var testpod : pods.getItems()) {
-      if ((testpod.getMetadata().getName()).contains(podName)) {
-        pod = testpod;
-      }
-    }
-    if (pod != null) {
-      // get the podCondition with the 'Ready' type field
-      V1PodCondition v1PodReadyCondition = pod.getStatus().getConditions().stream()
-          .filter(v1PodCondition -> "Ready".equals(v1PodCondition.getType()))
-          .findAny()
-          .orElse(null);
-
-      if (v1PodReadyCondition != null) {
-        status = v1PodReadyCondition.getStatus().equalsIgnoreCase("true");
-      }
-    } else {
-      logger.info(podName + " pod doesn't exist");
-    }
-    return status;
-  }
-
-  //download src from monitoring exporter github project and build webapp.
-  private static void installMonitoringExporter() {
-    Path monitoringTemp = Paths.get(RESULTS_ROOT, "monitoringexp", "srcdir");
-    monitoringExporterSrcDir = monitoringTemp.toString();
-    cloneMonitoringExporter(monitoringExporterSrcDir);
-    Path monitoringApp = Paths.get(RESULTS_ROOT, "monitoringexp", "apps");
-    assertDoesNotThrow(() -> deleteDirectory(monitoringApp.toFile()));
-    assertDoesNotThrow(() -> Files.createDirectories(monitoringApp));
-    Path monitoringAppNoRestPort = Paths.get(RESULTS_ROOT, "monitoringexp", "apps", "norestport");
-    assertDoesNotThrow(() -> deleteDirectory(monitoringAppNoRestPort.toFile()));
-    assertDoesNotThrow(() -> Files.createDirectories(monitoringAppNoRestPort));
-    monitoringExporterEndToEndDir = monitoringTemp + "/samples/kubernetes/end2end/";
-
-    String monitoringExporterBranch = Optional.ofNullable(System.getenv("MONITORING_EXPORTER_BRANCH"))
-        .orElse("master");
-    //adding ability to build monitoring exporter if branch is not master
-    boolean toBuildMonitoringExporter = (!monitoringExporterBranch.equalsIgnoreCase(("master")));
-    monitoringExporterAppDir = monitoringApp.toString();
-    String monitoringExporterAppNoRestPortDir = monitoringAppNoRestPort.toString();
-
-    if (!toBuildMonitoringExporter) {
-      downloadMonitoringExporterApp(RESOURCE_DIR
-          + "/exporter/exporter-config.yaml", monitoringExporterAppDir);
-      downloadMonitoringExporterApp(RESOURCE_DIR
-          + "/exporter/exporter-config-norestport.yaml", monitoringExporterAppNoRestPortDir);
-    } else {
-      buildMonitoringExporterApp(monitoringExporterSrcDir, RESOURCE_DIR
-          + "/exporter/exporter-config.yaml", monitoringExporterAppDir);
-      buildMonitoringExporterApp(monitoringExporterSrcDir,RESOURCE_DIR
-          + "/exporter/exporter-config-norestport.yaml", monitoringExporterAppNoRestPortDir);
-    }
-    logger.info("Finished to build Monitoring Exporter webapp.");
-  }
-
-  private static void buildMonitoringExporterImage(String imageName) {
-    String httpsproxy = System.getenv("HTTPS_PROXY");
-    logger.info(" httpsproxy : " + httpsproxy);
-    String proxyHost = "";
-    String command;
-    if (httpsproxy != null) {
-      int firstIndex = httpsproxy.lastIndexOf("www");
-      int lastIndex = httpsproxy.lastIndexOf(":");
-      logger.info("Got indexes : " + firstIndex + " : " + lastIndex);
-      proxyHost = httpsproxy.substring(firstIndex,lastIndex);
-      logger.info(" proxyHost: " + proxyHost);
-
-      command = String.format("cd %s && mvn clean install -Dmaven.test.skip=true "
-            + " &&   docker build . -t "
-            + imageName
-            + " --build-arg MAVEN_OPTS=\"-Dhttps.proxyHost=%s -Dhttps.proxyPort=80\" --build-arg https_proxy=%s",
-        monitoringExporterSrcDir, proxyHost, httpsproxy);
-    } else {
-      command = String.format("cd %s && mvn clean install -Dmaven.test.skip=true "
-              + " &&   docker build . -t "
-              + imageName
-              + monitoringExporterSrcDir);
-    }
-    logger.info("Executing command " + command);
-    assertTrue(new Command()
-        .withParams(new CommandParams()
-            .command(command))
-        .execute(), "Failed to build monitoring exporter image");
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(imageName);
-  }
-
-  /**
-  * Delete monitoring exporter dir.
-   */
-  private static void deleteMonitoringExporterTempDir() {
-    logger.info("delete temp dir for monitoring exporter github");
-    Path monitoringTemp = Paths.get(RESULTS_ROOT, "monitoringexp", "srcdir");
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(monitoringTemp.toFile()));
-    Path monitoringApp = Paths.get(RESULTS_ROOT, "monitoringexp", "apps");
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(monitoringApp.toFile()));
-    Path fileTemp = Paths.get(RESULTS_ROOT, "ItMonitoringExporter", "promCreateTempValueFile");
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(fileTemp.toFile()));
-  }
-
-
-  /**
-   * Create mii image with SESSMIGR application.
-   */
-  private static String createAndVerifyMiiImage(String modelFile) {
-    // create image with model files
-    logger.info("Create image with model file and verify");
-
-    List<String> appList = new ArrayList();
-    appList.add(SESSMIGR_APP_NAME);
-
-    // build the model file list
-    final List<String> modelList = Collections.singletonList(modelFile);
-    String myImage =
-        createMiiImageAndVerify(MONEXP_IMAGE_NAME, modelList, appList);
-
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(myImage);
-
-    return myImage;
-  }
-
-  //create domain from provided image and verify it's start
-  private static void createAndVerifyDomain(String miiImage,
-                                            String domainUid,
-                                            String namespace,
-                                            String domainHomeSource,
-                                            int replicaCount,
-                                            boolean twoClusters) {
-    createAndVerifyDomain(miiImage,domainUid, namespace, domainHomeSource, replicaCount, twoClusters, null);
-
-  }
-
-  //create domain from provided image and monitoring exporter sidecar and verify it's start
-  private static void createAndVerifyDomain(String miiImage,
-                                            String domainUid,
-                                            String namespace,
-                                            String domainHomeSource,
-                                            int replicaCount,
-                                            boolean twoClusters,
-                                            String monexpConfig) {
-    // create docker registry secret to pull the image from registry
-    // this secret is used only for non-kind cluster
-    // create secret for admin credentials
-    logger.info("Create docker registry secret in namespace {0}", namespace);
-    createOcirRepoSecret(namespace);
-    logger.info("Create secret for admin credentials");
-    String adminSecretName = "weblogic-credentials";
-    assertDoesNotThrow(() -> createSecretWithUsernamePassword(adminSecretName, namespace,
-        "weblogic", "welcome1"),
-        String.format("create secret for admin credentials failed for %s", adminSecretName));
-
-    // create encryption secret
-    logger.info("Create encryption secret");
-    String encryptionSecretName = "encryptionsecret";
-    assertDoesNotThrow(() -> createSecretWithUsernamePassword(encryptionSecretName, namespace,
-        "weblogicenc", "weblogicenc"),
-        String.format("create encryption secret failed for %s", encryptionSecretName));
-
-    // create domain and verify
-    logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
-        domainUid, namespace, miiImage);
-    createDomainCrAndVerify(adminSecretName, OCIR_SECRET_NAME, encryptionSecretName, miiImage,domainUid,
-            namespace, domainHomeSource, replicaCount, twoClusters, monexpConfig);
-    String adminServerPodName = domainUid + "-admin-server";
-
-    // check that admin server pod is ready
-    logger.info("Checking that admin server pod {0} is ready in namespace {1}",
-        adminServerPodName, namespace);
-    checkPodReadyAndServiceExists(adminServerPodName, domainUid, namespace);
-
-    // check for managed server pods existence in the domain namespace
-
-    for (int i = 1; i <= replicaCount; i++) {
-      if (twoClusters) {
-        String managedServerCluster1PodName = domainUid
-            + "-" + cluster1Name + "-managed-server" + i;
-        String managedServerCluster2PodName = domainUid
-            + "-" + cluster2Name + "-managed-server" + i;
-        logger.info("Checking that managed server pod {0} exists and ready in namespace {1}",
-            managedServerCluster1PodName, namespace);
-        checkPodReadyAndServiceExists(managedServerCluster1PodName, domainUid, namespace);
-        logger.info("Checking that managed server pod {0} exists and ready in namespace {1}",
-            managedServerCluster2PodName, namespace);
-        checkPodReadyAndServiceExists(managedServerCluster2PodName, domainUid, namespace);
-      } else {
-        String managedServerPodName = domainUid + "-managed-server" + i;
-        // check that the managed server pod exists
-        logger.info("Checking that managed server pod {0} exists and ready in namespace {1}",
-            managedServerPodName, namespace);
-        checkPodReadyAndServiceExists(managedServerPodName, domainUid, namespace);
-      }
-    }
-  }
-
-  private static void createDomainCrAndVerify(String adminSecretName,
-                                              String repoSecretName,
-                                              String encryptionSecretName,
-                                              String miiImage,
-                                              String domainUid,
-                                              String namespace,
-                                              String domainHomeSource,
-                                              int replicaCount,
-                                              boolean twoClusters,
-                                              String monexpConfig) {
-    int t3ChannelPort = getNextFreePort();
-    // create the domain CR
-    Domain domain = new Domain()
-        .apiVersion(DOMAIN_API_VERSION)
-        .kind("Domain")
-        .metadata(new V1ObjectMeta()
-            .name(domainUid)
-            .namespace(namespace))
-        .spec(new DomainSpec()
-            .domainUid(domainUid)
-            .domainHomeSourceType(domainHomeSource)
-            .image(miiImage)
-            .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(repoSecretName))
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(adminSecretName)
-                .namespace(namespace))
-            .includeServerOutInPodLog(true)
-            .serverStartPolicy("IF_NEEDED")
-            .serverPod(new ServerPod()
-                .addEnvItem(new V1EnvVar()
-                    .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false "
-                        + "-Dweblogic.security.SSL.ignoreHostnameVerification=true "))
-                .addEnvItem(new V1EnvVar()
-                    .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom ")))
-            .adminServer(new AdminServer()
-                .serverStartState("RUNNING")
-                .adminService(new AdminService()
-                    .addChannelsItem(new Channel()
-                        .channelName("default")
-                        .nodePort(0))
-                    .addChannelsItem(new Channel()
-                        .channelName("T3Channel")
-                        .nodePort(t3ChannelPort))))
-            .addClustersItem(new Cluster()
-                .clusterName(cluster1Name)
-                .replicas(replicaCount)
-                .serverStartState("RUNNING"))
-            .configuration(new Configuration()
-                .model(new Model()
-                    .domainType("WLS")
-                    .runtimeEncryptionSecret(encryptionSecretName))
-                .introspectorJobActiveDeadlineSeconds(300L)));
-    if (twoClusters) {
-      domain.getSpec().getClusters().add(new Cluster()
-          .clusterName(cluster2Name)
-          .replicas(replicaCount)
-          .serverStartState("RUNNING"));
-    }
-    setPodAntiAffinity(domain);
-    // create domain using model in image
-    logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
-        domainUid, namespace, miiImage);
-    if (monexpConfig != null) {
-      //String monexpImage = "phx.ocir.io/weblogick8s/exporter:beta";
-      logger.info("yaml config file path : " + monexpConfig);
-      String contents = null;
-      try {
-        contents = new String(Files.readAllBytes(Paths.get(monexpConfig)));
-      } catch (IOException e) {
-        e.printStackTrace();
-      }
-      String imagePullPolicy = "IfNotPresent";
-      domain.getSpec().monitoringExporter(new MonitoringExporterSpecification()
-          .image(exporterImage)
-          .imagePullPolicy(imagePullPolicy)
-          .configuration(contents));
-
-      logger.info("Created domain CR with Monitoring exporter configuration : "
-          + domain.getSpec().getMonitoringExporter().toString());
-    }
-    createDomainAndVerify(domain, namespace);
+    deleteMonitoringExporterTempDir(monitoringExporterDir);
   }
 
   /**

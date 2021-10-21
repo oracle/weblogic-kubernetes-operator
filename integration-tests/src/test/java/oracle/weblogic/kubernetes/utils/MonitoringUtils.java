@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes.utils;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -16,8 +17,22 @@ import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
+import io.kubernetes.client.openapi.models.V1SecretReference;
+import oracle.weblogic.domain.AdminServer;
+import oracle.weblogic.domain.AdminService;
+import oracle.weblogic.domain.Channel;
+import oracle.weblogic.domain.Cluster;
+import oracle.weblogic.domain.Configuration;
+import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainSpec;
+import oracle.weblogic.domain.Model;
+import oracle.weblogic.domain.MonitoringExporterSpecification;
+import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.Grafana;
 import oracle.weblogic.kubernetes.actions.impl.GrafanaParams;
 import oracle.weblogic.kubernetes.actions.impl.Prometheus;
@@ -30,10 +45,12 @@ import oracle.weblogic.kubernetes.assertions.impl.ClusterRole;
 import oracle.weblogic.kubernetes.assertions.impl.ClusterRoleBinding;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_WEBAPP_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MONITORING_EXPORTER_DOWNLOAD_URL;
@@ -46,12 +63,16 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listS
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isGrafanaReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPrometheusReady;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
@@ -65,6 +86,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 public class MonitoringUtils {
 
   private static LoggingFacade logger = getLogger();
+  private static String cluster1Name = "cluster-1";
+  private static String cluster2Name = "cluster-2";
 
   /**
    * Download monitoring exporter webapp wls-exporter.war based on provided version
@@ -535,8 +558,9 @@ public class MonitoringUtils {
     return myImage;
   }
 
-  /*
-   ** uninstall Prometheus and Grafana helm charts
+  /**
+   * Uninstall Prometheus and Grafana helm charts.
+   *
    * @param promHelmParams  -helm chart params for prometheus
    * @param grafanaHelmParams - helm chart params for grafana
    */
@@ -557,4 +581,162 @@ public class MonitoringUtils {
     cleanupPromGrafanaClusterRoles(prometheusReleaseName, grafanaReleaseName);
   }
 
+  /**
+   * Create Domain Cr and verity.
+   *
+   */
+  public static void createDomainCrAndVerify(String adminSecretName,
+                                             String repoSecretName,
+                                             String encryptionSecretName,
+                                             String miiImage,
+                                             String domainUid,
+                                             String namespace,
+                                             String domainHomeSource,
+                                             int replicaCount,
+                                             boolean twoClusters,
+                                             String monexpConfig,
+                                             String exporterImage) {
+    int t3ChannelPort = getNextFreePort();
+    // create the domain CR
+    Domain domain = new Domain()
+        .apiVersion(DOMAIN_API_VERSION)
+        .kind("Domain")
+        .metadata(new V1ObjectMeta()
+            .name(domainUid)
+            .namespace(namespace))
+        .spec(new DomainSpec()
+            .domainUid(domainUid)
+            .domainHomeSourceType(domainHomeSource)
+            .image(miiImage)
+            .addImagePullSecretsItem(new V1LocalObjectReference()
+                .name(repoSecretName))
+            .webLogicCredentialsSecret(new V1SecretReference()
+                .name(adminSecretName)
+                .namespace(namespace))
+            .includeServerOutInPodLog(true)
+            .serverStartPolicy("IF_NEEDED")
+            .serverPod(new ServerPod()
+                .addEnvItem(new V1EnvVar()
+                    .name("JAVA_OPTIONS")
+                    .value("-Dweblogic.StdoutDebugEnabled=false "
+                        + "-Dweblogic.security.SSL.ignoreHostnameVerification=true "))
+                .addEnvItem(new V1EnvVar()
+                    .name("USER_MEM_ARGS")
+                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+            .adminServer(new AdminServer()
+                .serverStartState("RUNNING")
+                .adminService(new AdminService()
+                    .addChannelsItem(new Channel()
+                        .channelName("default")
+                        .nodePort(0))
+                    .addChannelsItem(new Channel()
+                        .channelName("T3Channel")
+                        .nodePort(t3ChannelPort))))
+            .addClustersItem(new Cluster()
+                .clusterName(cluster1Name)
+                .replicas(replicaCount)
+                .serverStartState("RUNNING"))
+            .configuration(new Configuration()
+                .model(new Model()
+                    .domainType("WLS")
+                    .runtimeEncryptionSecret(encryptionSecretName))
+                .introspectorJobActiveDeadlineSeconds(300L)));
+    if (twoClusters) {
+      domain.getSpec().getClusters().add(new Cluster()
+          .clusterName(cluster2Name)
+          .replicas(replicaCount)
+          .serverStartState("RUNNING"));
+    }
+    setPodAntiAffinity(domain);
+    // create domain using model in image
+    logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
+        domainUid, namespace, miiImage);
+    if (monexpConfig != null) {
+      //String monexpImage = "phx.ocir.io/weblogick8s/exporter:beta";
+      logger.info("yaml config file path : " + monexpConfig);
+      String contents = null;
+      try {
+        contents = new String(Files.readAllBytes(Paths.get(monexpConfig)));
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+
+      String imagePullPolicy = "IfNotPresent";
+      domain.getSpec().monitoringExporter(new MonitoringExporterSpecification()
+          .image(exporterImage)
+          .imagePullPolicy(imagePullPolicy)
+          .configuration(contents));
+
+      logger.info("Created domain CR with Monitoring exporter configuration : "
+          + domain.getSpec().getMonitoringExporter().toString());
+    }
+    createDomainAndVerify(domain, namespace);
+  }
+
+
+  /**
+   * create domain from provided image and monitoring exporter sidecar and verify it's start.
+   *
+   */
+  public static void createAndVerifyDomain(String miiImage,
+                                            String domainUid,
+                                            String namespace,
+                                            String domainHomeSource,
+                                            int replicaCount,
+                                            boolean twoClusters,
+                                            String monexpConfig,
+                                            String exporterImage) {
+    // create docker registry secret to pull the image from registry
+    // this secret is used only for non-kind cluster
+    // create secret for admin credentials
+    logger.info("Create docker registry secret in namespace {0}", namespace);
+    createOcirRepoSecret(namespace);
+    logger.info("Create secret for admin credentials");
+    String adminSecretName = "weblogic-credentials";
+    assertDoesNotThrow(() -> createSecretWithUsernamePassword(adminSecretName, namespace,
+        "weblogic", "welcome1"),
+        String.format("create secret for admin credentials failed for %s", adminSecretName));
+
+    // create encryption secret
+    logger.info("Create encryption secret");
+    String encryptionSecretName = "encryptionsecret";
+    assertDoesNotThrow(() -> createSecretWithUsernamePassword(encryptionSecretName, namespace,
+        "weblogicenc", "weblogicenc"),
+        String.format("create encryption secret failed for %s", encryptionSecretName));
+
+    // create domain and verify
+    logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
+        domainUid, namespace, miiImage);
+    createDomainCrAndVerify(adminSecretName, OCIR_SECRET_NAME, encryptionSecretName, miiImage,domainUid,
+        namespace, domainHomeSource, replicaCount, twoClusters, monexpConfig, exporterImage);
+    String adminServerPodName = domainUid + "-admin-server";
+
+    // check that admin server pod is ready
+    logger.info("Checking that admin server pod {0} is ready in namespace {1}",
+        adminServerPodName, namespace);
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, namespace);
+
+    // check for managed server pods existence in the domain namespace
+
+    for (int i = 1; i <= replicaCount; i++) {
+      if (twoClusters) {
+        String managedServerCluster1PodName = domainUid
+            + "-" + cluster1Name + "-managed-server" + i;
+        String managedServerCluster2PodName = domainUid
+            + "-" + cluster2Name + "-managed-server" + i;
+        logger.info("Checking that managed server pod {0} exists and ready in namespace {1}",
+            managedServerCluster1PodName, namespace);
+        checkPodReadyAndServiceExists(managedServerCluster1PodName, domainUid, namespace);
+        logger.info("Checking that managed server pod {0} exists and ready in namespace {1}",
+            managedServerCluster2PodName, namespace);
+        checkPodReadyAndServiceExists(managedServerCluster2PodName, domainUid, namespace);
+      } else {
+        String managedServerPodName = domainUid + "-managed-server" + i;
+        // check that the managed server pod exists
+        logger.info("Checking that managed server pod {0} exists and ready in namespace {1}",
+            managedServerPodName, namespace);
+        checkPodReadyAndServiceExists(managedServerPodName, domainUid, namespace);
+      }
+    }
+  }
 }
