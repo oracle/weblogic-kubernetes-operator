@@ -353,7 +353,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
             }
           }
 
-          if (isReady(callResponse.getResult()) || callback.didResumeFiber()) {
+          if (isReady(callResponse.getResult(), info, serverName) || callback.didResumeFiber()) {
             callback.proceedFromWait(callResponse.getResult());
             return null;
           }
@@ -407,16 +407,17 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
       super(podName, next);
     }
 
-    // A pod is ready if it is not being deleted and has the ready status.
     @Override
-    protected boolean isReady(V1Pod result) {
+    protected boolean isReady(V1Pod result, DomainPresenceInfo info, String serverName) {
       return result != null && !PodHelper.isDeleting(result) && PodHelper.isReady(result);
     }
 
     // Pods should be processed if ready.
     @Override
-    boolean shouldProcessCallback(V1Pod resource) {
-      return isReady(resource);
+    boolean shouldProcessCallback(V1Pod resource, Packet packet) {
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+      String serverName = (String)packet.get(SERVER_NAME);
+      return isReady(resource, info, serverName);
     }
 
     @Override
@@ -452,9 +453,11 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
       return false;
     }
 
-    // A pod is considered deleted when reading its value from Kubernetes returns null.
     @Override
-    protected boolean isReady(V1Pod result) {
+    protected boolean isReady(V1Pod result, DomainPresenceInfo info, String serverName) {
+      if (result == null) {
+        Optional.ofNullable(info).ifPresent(i -> i.setServerPod(serverName, null));
+      }
       return result == null;
     }
 
@@ -466,6 +469,28 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
     @Override
     protected void removeCallback(String podName, Consumer<V1Pod> callback) {
       removeOnDeleteCallback(podName, callback);
+    }
+
+    @Override
+    protected DefaultResponseStep<V1Pod> resumeIfReady(Callback callback) {
+      return new DefaultResponseStep<>(getNext()) {
+        @Override
+        public NextAction onSuccess(Packet packet, CallResponse<V1Pod> callResponse) {
+
+          DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+          String serverName = (String)packet.get(SERVER_NAME);
+          if ((info != null) && (callResponse != null) && (callResponse.getResult() == null)) {
+            info.setServerPod(serverName, null);
+          }
+
+          if (isReady(callResponse.getResult(), info, serverName) || callback.didResumeFiber()) {
+            callback.proceedFromWait(callResponse.getResult());
+            return null;
+          }
+          return doDelay(createReadAndIfReadyCheckStep(callback), packet,
+                  getWatchBackstopRecheckDelaySeconds(), TimeUnit.SECONDS);
+        }
+      };
     }
   }
 }
