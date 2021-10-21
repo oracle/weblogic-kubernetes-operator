@@ -390,7 +390,6 @@ class WdtUpdateFilterCase(unittest.TestCase):
       self.assertIsNotNone(istiorepl_nap, "Expected a NAP named \'istiorepl\' to be defined")
 
       nap_listen_address = istiorepl_nap['ListenAddress']
-      print nap_listen_address
       self.assertEqual('sample-domain1-managed-server${id}', nap_listen_address,
                        "Expected nap listen address to be \'sample-domain1-managed-server${id}\'")
     finally:
