@@ -870,17 +870,6 @@ class ItMiiUpdateDomainConfig {
                     + "for %s in namespace %s", domainUid, domNamespace));
   }
 
-  private void checkPodNotCreated(String podName, String domainUid, String domNamespace) {
-    testUntil(
-        assertDoesNotThrow(() -> podDoesNotExist(podName, domainUid, domNamespace),
-          String.format("podDoesNotExist failed with ApiException for %s in namespace in %s",
-            podName, domNamespace)),
-        logger,
-        "pod {0} to be not created in namespace {1}",
-        podName,
-        domNamespace);
-  }
-
   private void verifyManagedServerConfiguration(String managedServer) {
 
     int adminServiceNodePort
