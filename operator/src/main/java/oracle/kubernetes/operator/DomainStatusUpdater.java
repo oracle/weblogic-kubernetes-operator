@@ -349,11 +349,11 @@ public class DomainStatusUpdater {
 
     private Step createUpdateSteps() {
       final Step next = createDomainStatusReplaceStep();
-      ArrayList<EventData> eventDataList = createDomainEvents();
+      List<EventData> eventDataList = createDomainEvents();
       return eventDataList.isEmpty() ? next : Step.chain(createEventSteps(eventDataList), next);
     }
 
-    private Step createEventSteps(ArrayList<EventData> eventDataList) {
+    private Step createEventSteps(List<EventData> eventDataList) {
       Step nextStep = null;
       for (int i = eventDataList.size() - 1; i >= 0; i--) {
         nextStep = Step.chain(EventHelper.createEventStep(eventDataList.get(i)), nextStep);
@@ -362,8 +362,8 @@ public class DomainStatusUpdater {
     }
 
     @Nonnull
-    ArrayList<EventData> createDomainEvents() {
-      ArrayList<EventData> list = new ArrayList<>();
+    List<EventData> createDomainEvents() {
+      List<EventData> list = new ArrayList<>();
       if (hasJustExceededMaxRetryCount()) {
         list.add(
             new EventData(DOMAIN_PROCESSING_ABORTED).message(EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG));
@@ -437,8 +437,8 @@ public class DomainStatusUpdater {
 
       @Nonnull
       @Override
-      ArrayList<EventData> createDomainEvents() {
-        ArrayList<EventData> list = new ArrayList<>();
+      List<EventData> createDomainEvents() {
+        List<EventData> list = new ArrayList<>();
         if (domainJustAvailable()) {
           list.add(new EventData(DOMAIN_AVAILABLE));
         }
