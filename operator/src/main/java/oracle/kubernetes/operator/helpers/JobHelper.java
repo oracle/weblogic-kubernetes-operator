@@ -45,6 +45,7 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
+import oracle.kubernetes.weblogic.domain.model.Istio;
 import oracle.kubernetes.weblogic.domain.model.Server;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import org.jetbrains.annotations.Nullable;
@@ -335,8 +336,17 @@ public class JobHelper {
       addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_READINESS_PORT, Integer.toString(getIstioReadinessPort()));
       addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_POD_NAMESPACE, getNamespace());
       if (isIstioEnabled()) {
-        addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_VERSION, getIstioVersion());
-        addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_REPLICATION_PORT, Integer.toString(getIstioReplicationPort()));
+        // Only add the following Istio configuration environment variables when explicitly configured
+        // otherwise the introspection job will needlessly run, after operator upgrade, based on generated
+        // hash code of the set of environment variables.
+        String istioVersion = getIstioVersion();
+        if (istioVersion != null && !istioVersion.isEmpty()) {
+          addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_VERSION, getIstioVersion());
+        }
+
+        if (getIstioReplicationPort() != Istio.DEFAULT_REPLICATION_PORT) {
+          addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_REPLICATION_PORT, Integer.toString(getIstioReplicationPort()));
+        }
       }
       if (isUseOnlineUpdate()) {
         addEnvVar(vars, IntrospectorJobEnvVars.MII_USE_ONLINE_UPDATE, "true");

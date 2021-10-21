@@ -18,11 +18,11 @@ public class Istio {
   @ApiModelProperty("The WebLogic readiness port for Istio. Defaults to 8888. Not required.")
   private Integer readinessPort;
 
-  public static Integer DEFAULT_REPLICATION_PORT = 4358;
+  public static Integer DEFAULT_REPLICATION_PORT = 4564;
 
   @ApiModelProperty("The operator will create a WebLogic network access point with this port that will then be exposed "
       + "from the container running the WebLogic Server instance. The WebLogic Replication Service will use this "
-      + "network access point for all replication traffic. Defaults to 4358.")
+      + "network access point for all replication traffic. Defaults to 4564.")
   private Integer replicationChannelPort = DEFAULT_REPLICATION_PORT;
 
   @ApiModelProperty("Starting with Istio 1.10, the networking behavior was changed in that the proxy no "
