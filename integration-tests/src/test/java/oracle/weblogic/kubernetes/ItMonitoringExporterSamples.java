@@ -434,7 +434,7 @@ class ItMonitoringExporterSamples {
       String curlCmd0 =
           String.format("curl -v -H 'Content-Type: application/json' -H \"Content-Type: application/json\""
                   + "  -X POST http://admin:12345678@%s:%s/api/datasources/"
-                  + "  --data-binary @%sgrafana/datasource.json",
+                  + "  --data-binary @%s/grafana/datasource.json",
               K8S_NODEPORT_HOST, nodeportgrafana, monitoringExporterEndToEndDir);
 
       logger.info("Executing Curl cmd {0}", curlCmd);
@@ -443,7 +443,7 @@ class ItMonitoringExporterSamples {
       String curlCmd1 =
           String.format("curl -v -H 'Content-Type: application/json' -H \"Content-Type: application/json\""
                   + "  -X POST http://admin:12345678@%s:%s/api/dashboards/db/"
-                  + "  --data-binary @%sgrafana/dashboard.json",
+                  + "  --data-binary @%s/grafana/dashboard.json",
               K8S_NODEPORT_HOST, nodeportgrafana, monitoringExporterEndToEndDir);
       logger.info("Executing Curl cmd {0}", curlCmd1);
       assertDoesNotThrow(() -> ExecCommand.exec(curlCmd1));

@@ -150,7 +150,7 @@ class ItMonitoringExporterSideCar {
     monitoringExporterDir = monitoringExporterDir = Paths.get(RESULTS_ROOT,
         "ItMonitoringExporterSideCar", "monitoringexp").toString();
     monitoringExporterSrcDir = Paths.get(monitoringExporterDir, "srcdir").toString();
-    monitoringExporterEndToEndDir = Paths.get(monitoringExporterSrcDir, "samples", "kubernetes", "end2end/").toString();
+    monitoringExporterEndToEndDir = Paths.get(monitoringExporterSrcDir, "samples", "kubernetes", "end2end").toString();
     monitoringExporterAppDir = Paths.get(monitoringExporterDir, "apps").toString();
 
     logger.info("Get a unique namespace for operator");
@@ -438,7 +438,7 @@ class ItMonitoringExporterSideCar {
       String curlCmd0 =
           String.format("curl -v -H 'Content-Type: application/json' -H \"Content-Type: application/json\""
                   + "  -X POST http://admin:12345678@%s:%s/api/datasources/"
-                  + "  --data-binary @%sgrafana/datasource.json",
+                  + "  --data-binary @%s/grafana/datasource.json",
               K8S_NODEPORT_HOST, nodeportgrafana, monitoringExporterEndToEndDir);
 
       logger.info("Executing Curl cmd {0}", curlCmd);
@@ -447,7 +447,7 @@ class ItMonitoringExporterSideCar {
       String curlCmd1 =
           String.format("curl -v -H 'Content-Type: application/json' -H \"Content-Type: application/json\""
                   + "  -X POST http://admin:12345678@%s:%s/api/dashboards/db/"
-                  + "  --data-binary @%sgrafana/dashboard.json",
+                  + "  --data-binary @%s/grafana/dashboard.json",
               K8S_NODEPORT_HOST, nodeportgrafana, monitoringExporterEndToEndDir);
       logger.info("Executing Curl cmd {0}", curlCmd1);
       assertDoesNotThrow(() -> ExecCommand.exec(curlCmd1));
