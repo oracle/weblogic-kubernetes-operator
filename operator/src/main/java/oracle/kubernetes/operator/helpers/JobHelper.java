@@ -57,6 +57,7 @@ import static oracle.kubernetes.operator.DomainStatusUpdater.createProgressingSt
 import static oracle.kubernetes.operator.DomainStatusUpdater.recordLastIntrospectJobProcessedUid;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_JOB_POD_LOG_READ_FAILED;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED_DETAIL;
@@ -481,7 +482,8 @@ public class JobHelper {
                 .map(V1ObjectMeta::getCreationTimestamp).orElse(OffsetDateTime.now());
         String lastIntrospectJobProcessedId = getLastIntrospectJobProcessedId(info);
 
-        if (isJobTimedout(info)) {
+        if (isJobTimedout(info) || (isJobPodLogReadFailed(packet) != null)) {
+          packet.remove(DOMAIN_INTROSPECT_JOB_POD_LOG_READ_FAILED);
           jobStartTime = OffsetDateTime.now();
           packet.put(DOMAIN_INTROSPECT_REQUESTED, ReadDomainIntrospectorPodLogResponseStep.INTROSPECTION_FAILED);
           nextSteps.add(Step.chain(deleteDomainIntrospectorJobStep(null),
@@ -507,6 +509,10 @@ public class JobHelper {
 
     private static boolean isJobTimedout(DomainPresenceInfo info) {
       return Objects.equals(getReason(info), "DeadlineExceeded") || getMessage(info).contains("DeadlineExceeded");
+    }
+
+    private static String isJobPodLogReadFailed(Packet packet) {
+      return (String)packet.get(DOMAIN_INTROSPECT_JOB_POD_LOG_READ_FAILED);
     }
 
     private static boolean isJobNewOrNotProcesssed(V1Job job, String lastJobProcessedUid) {
@@ -726,6 +732,7 @@ public class JobHelper {
 
     @Override
     public NextAction onFailure(Packet packet, CallResponse<String> callResponse) {
+      packet.put(DOMAIN_INTROSPECT_JOB_POD_LOG_READ_FAILED, "True");
       if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
         return updateDomainStatus(packet, callResponse);
       } else {
@@ -845,6 +852,7 @@ public class JobHelper {
 
     @Override
     public NextAction onFailure(Packet packet, CallResponse<V1PodList> callResponse) {
+      packet.put(DOMAIN_INTROSPECT_JOB_POD_LOG_READ_FAILED, "True");
       return super.onFailure(packet, callResponse);
     }
 

@@ -30,6 +30,7 @@ public interface ProcessingConstants {
   String DOMAIN_INTROSPECTOR_JOB = "domainIntrospectorJob";
   String DOMAIN_INTROSPECTOR_LOG_RESULT = "domainIntrospectorLogResult";
   String DOMAIN_INTROSPECT_REQUESTED = "domainIntrospectRequested";
+  String DOMAIN_INTROSPECT_JOB_POD_LOG_READ_FAILED = "domainIntrospectJobPodLogReadFailed";
   String REMAINING_SERVERS_HEALTH_TO_READ = "serverHealthRead";
   String MII_DYNAMIC_UPDATE = "miiDynamicUpdate";
   String MII_DYNAMIC_UPDATE_WDTROLLBACKFILE = "miiDynamicUpdateRollbackFile";

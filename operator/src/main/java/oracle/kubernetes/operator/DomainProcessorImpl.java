@@ -1169,10 +1169,12 @@ public class DomainProcessorImpl implements DomainProcessor {
         DomainStatusUpdater.createEndProgressingStep(null),
         EventHelper.createEventStep(EventItem.DOMAIN_PROCESSING_COMPLETED),
         MonitoringExporterSteps.updateExporterSidecars(),
+        DomainStatusUpdater.createResetFailureCountStep(),
         new TailStep());
 
     Step domainUpStrategy =
         Step.chain(
+            DomainStatusUpdater.createResetFailureCountStep(),
             domainIntrospectionSteps(info),
             DomainValidationSteps.createAfterIntrospectValidationSteps(),
             new DomainStatusStep(info, null),
