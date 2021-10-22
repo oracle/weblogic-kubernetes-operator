@@ -339,9 +339,8 @@ public class JobHelper {
         // Only add the following Istio configuration environment variables when explicitly configured
         // otherwise the introspection job will needlessly run, after operator upgrade, based on generated
         // hash code of the set of environment variables.
-        String istioVersion = getIstioVersion();
-        if (istioVersion != null && !istioVersion.isEmpty()) {
-          addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_VERSION, getIstioVersion());
+        if (!isLocalhostBindingsEnabled()) {
+          addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_USE_LOCALHOST_BINDINGS, "false");
         }
 
         if (getIstioReplicationPort() != Istio.DEFAULT_REPLICATION_PORT) {

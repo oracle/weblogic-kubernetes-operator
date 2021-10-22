@@ -131,9 +131,9 @@ public class IntrospectorJobEnvVars {
   public static final String ISTIO_REPLICATION_PORT = "ISTIO_REPLICATION_PORT";
 
   /**
-   * Istio Version.
+   * Istio Version proxies traffic to localhost.
    */
-  public static final String ISTIO_VERSION = "ISTIO_VERSION";
+  public static final String ISTIO_USE_LOCALHOST_BINDINGS = "ISTIO_USE_LOCALHOST_BINDINGS";
 
   /**
    * Istio pod namespace.

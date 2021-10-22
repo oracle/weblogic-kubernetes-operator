@@ -667,8 +667,8 @@ public class Domain implements KubernetesObject {
     return spec.getIstioReplicationPort();
   }
 
-  public String getIstioVersion() {
-    return spec.getIstioVersion();
+  public boolean isLocalhostBindingsEnabled() {
+    return spec.isLocalhostBindingsEnabled();
   }
 
   /**

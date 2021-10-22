@@ -85,7 +85,6 @@ import re
 import sys
 import traceback
 import xml.dom.minidom
-from distutils.version import LooseVersion
 from xml.dom.minidom import parse
 
 # Include this script's current directory in the import path (so we can import utils, etc.)
@@ -1217,8 +1216,8 @@ class SitConfigGenerator(Generator):
     #   since the runtime default is the server listen-address.
 
     istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
-    istio_version = self.env.getEnvOrDef('ISTIO_VERSION', None)
-    if istio_enabled and isVersionEarlierThan(istio_version, '1.10'):
+    istio_use_localhost_bindings = self.env.getEnvOrDef("ISTIO_USE_LOCALHOST_BINDINGS", "true")
+    if istio_enabled  == 'true' and istio_use_localhost_bindings == 'true':
       listen_address = '127.0.0.1'
 
     nap_name=nap.getName()
@@ -1343,6 +1342,7 @@ class SitConfigGenerator(Generator):
     self.writeln('<d:listen-port %s>%s</d:listen-port>' % (action, listen_port))
     self.writeln('<d:http-enabled-for-this-protocol %s>true</d:http-enabled-for-this-protocol>' %
                  (action))
+    self.writeln('<d:outbound-enabled %s>false</d:outbound-enabled>' % action)
     self.writeln('<d:enabled %s>true</d:enabled>' % action)
     self.undent()
     self.writeln('</d:network-access-point>')
@@ -1408,14 +1408,13 @@ class SitConfigGenerator(Generator):
     istio_readiness_port = self.env.getEnvOrDef("ISTIO_READINESS_PORT", None)
     if istio_readiness_port is None:
       return
-    istio_version = self.env.getEnvOrDef("ISTIO_VERSION", None)
     admin_server_port = getRealListenPort(server)
     # readiness probe
     self._writeIstioNAP(name='http-probe', server=server, listen_address=listen_address,
                         listen_port=istio_readiness_port, protocol='http', http_enabled="true")
 
     # Generate NAP for each protocols
-    if isVersionEarlierThan(istio_version, '1.10'):
+    if self.env.getEnvOrDef("ISTIO_USE_LOCALHOST_BINDINGS", "true") == 'true':
       self._writeIstioNAP(name='tcp-ldap', server=server, listen_address=listen_address,
                           listen_port=admin_server_port, protocol='ldap')
 
@@ -1467,12 +1466,11 @@ class SitConfigGenerator(Generator):
     istio_readiness_port = self.env.getEnvOrDef("ISTIO_READINESS_PORT", None)
     if istio_readiness_port is None:
       return
-    istio_version = self.env.getEnvOrDef("ISTIO_VERSION", None)
     listen_port = getRealListenPort(template)
     self._writeIstioNAP(name='http-probe', server=template, listen_address=listen_address,
                         listen_port=istio_readiness_port, protocol='http')
 
-    if isVersionEarlierThan(istio_version, '1.10'):
+    if self.env.getEnvOrDef("ISTIO_USE_LOCALHOST_BINDINGS", "true") == 'true':
       self._writeIstioNAP(name='tcp-default', server=template, listen_address=listen_address,
                           listen_port=listen_port, protocol='t3', http_enabled='false')
 
@@ -1511,10 +1509,10 @@ class SitConfigGenerator(Generator):
 
   def addAdminChannelPortForwardNetworkAccessPoints(self, server):
     istio_enabled = self.env.getEnvOrDef("ISTIO_ENABLED", "false")
-    istio_version = self.env.getEnvOrDef("ISTIO_VERSION", None)
+    istio_use_localhost_bindings = self.env.getEnvOrDef("ISTIO_USE_LOCALHOST_BINDINGS", "true")
     admin_channel_port_forward_enabled = self.env.getEnvOrDef("ADMIN_CHANNEL_PORT_FORWARDING_ENABLED", "true")
     if (admin_channel_port_forward_enabled == 'false') or \
-        (istio_enabled == 'true' and isVersionEarlierThan(istio_version, '1.10')) :
+        (istio_enabled == 'true' and istio_use_localhost_bindings == 'true'):
       return
 
     index = 0
@@ -1552,9 +1550,8 @@ class SitConfigGenerator(Generator):
 
     self._verify_replication_port_conflict(server, listen_port, is_server_template)
 
-    istio_version = self.env.getEnvOrDef('ISTIO_VERSION', None)
     bind_to_localhost = 'false'
-    if isVersionEarlierThan(istio_version, '1.10'):
+    if self.env.getEnvOrDef("ISTIO_USE_LOCALHOST_BINDINGS", "true") == 'true':
       bind_to_localhost = 'true'
 
     self._writeIstioReplicationChannelNAP('istiorepl', listen_address, listen_port,
@@ -2160,15 +2157,6 @@ def get_server_template_listening_ports_from_configxml(config_xml):
     server_template_ssls[template_name] = sslport
 
   return server_template_ssls, server_template_ports
-
-def isVersionEarlierThan(version1, version2):
-  if version1 is None:
-    return True
-
-  if version2 is None:
-    return False
-
-  return LooseVersion(version1) < LooseVersion(version2)
 
 
 def main(env):

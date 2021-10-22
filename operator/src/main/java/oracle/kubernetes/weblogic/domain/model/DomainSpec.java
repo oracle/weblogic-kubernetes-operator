@@ -873,15 +873,15 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   /**
-   * The Istio version.
+   * Indicates if Istio proxy redirects traffic to localhost.
    *
-   * @return Istio version
+   * @return true if Istio proxy redirects traffic to localhost.
    */
-  String getIstioVersion() {
+  boolean isLocalhostBindingsEnabled() {
     return Optional.ofNullable(configuration)
         .map(Configuration::getIstio)
-        .map(Istio::getVersion)
-        .orElse("");
+        .map(Istio::getLocalhostBindingsEnabled)
+        .orElse(true);
   }
 
   String getWdtDomainType() {

@@ -48,7 +48,6 @@ import copy
 import inspect
 import os
 import sys
-from distutils.version import LooseVersion
 
 tmp_callerframerecord = inspect.stack()[0]    # 0 represents this line # 1 represents line at caller
 tmp_info = inspect.getframeinfo(tmp_callerframerecord[0])
@@ -73,7 +72,6 @@ class OfflineWlstEnv(object):
     self.ACCESS_LOG_IN_LOG_HOME   = self.getEnvOrDef('ACCESS_LOG_IN_LOG_HOME', 'true')
     self.DATA_HOME                = self.getEnvOrDef('DATA_HOME', "")
     self.CREDENTIALS_SECRET_NAME  = self.getEnv('CREDENTIALS_SECRET_NAME')
-    self.ISTIO_VERSION            = self.getEnvOrDef('ISTIO_VERSION', None)
 
     # initialize globals
     self.CREDENTIALS_SECRET_PATH = self.getEnvOrDef('CREDENTIALS_SECRET_PATH', '/weblogic-operator/secrets')
@@ -140,20 +138,6 @@ class OfflineWlstEnv(object):
 
   def getModel(self):
     return self.model
-
-  def wlsVersionEarlierThan(self, version):
-    # unconventional import within function definition for unit testing
-    from weblogic.management.configuration import LegalHelper
-    return LegalHelper.versionEarlierThan("14.1.2.0", version)
-
-  def isVersionEarlierThan(self, version1, version2):
-    if version1 is None:
-      return True
-
-    if version2 is None:
-      return False
-
-    return LooseVersion(version1) < LooseVersion(version2)
 
 class SecretManager(object):
 
@@ -730,7 +714,7 @@ def customizeNetworkAccessPoint(nap_name, nap, listen_address):
     return
 
   istio_enabled = env.getEnvOrDef("ISTIO_ENABLED", "false")
-  if istio_enabled and istioVersionRequiresLocalHostBindings():
+  if istio_enabled == 'true' and istioVersionRequiresLocalHostBindings():
     listen_address = '127.0.0.1'
 
   # fix NAP listen address
@@ -838,6 +822,9 @@ def getSecretManager():
   return secret_manager
 
 def istioVersionRequiresLocalHostBindings():
-  offlineWlstEnv = getOfflineWlstEnv()
-  return offlineWlstEnv.isVersionEarlierThan(offlineWlstEnv.ISTIO_VERSION, '1.10')
+  if env.getEnvOrDef("ISTIO_USE_LOCALHOST_BINDINGS", "true") == 'true':
+    return True
+
+  return False
+
 

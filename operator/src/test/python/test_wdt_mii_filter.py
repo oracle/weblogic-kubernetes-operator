@@ -22,7 +22,6 @@ class WdtUpdateFilterCase(unittest.TestCase):
       'CREDENTIALS_SECRET_NAME'] = 'sample-domain1-weblogic-credentials'
     os.environ['DOMAIN_SOURCE_TYPE'] = 'FromModel'
     os.environ['DATA_HOME'] = '/u01/datahome'
-    os.environ['ISTIO_VERSION'] = '1.8.5'
 
   def initialize_istio_naps(self):
     istio_naps = {}
@@ -146,7 +145,7 @@ class WdtUpdateFilterCase(unittest.TestCase):
   def test_customize_network_access_points_in_server_template_istio_1_10_or_higher(self):
     try:
       os.environ['ISTIO_ENABLED'] = 'true'
-      os.environ['ISTIO_VERSION'] = '1.10.4'
+      os.environ['ISTIO_USE_LOCALHOST_BINDINGS'] = 'false'
       model = self.getModel()
 
       server_template = self.getServerTemplate(model)
@@ -155,7 +154,7 @@ class WdtUpdateFilterCase(unittest.TestCase):
       self.assertEqual('sample-domain1-managed-server${id}', nap_listen_address, "Expected nap listen address to be \'sample-domain1-managed-server${id}\'")
     finally:
       del os.environ['ISTIO_ENABLED']
-      del os.environ['ISTIO_VERSION']
+      del os.environ['ISTIO_USE_LOCALHOST_BINDINGS']
 
   def test_customize_istio_enabled_network_access_points_in_server_template(self):
     try:
@@ -280,30 +279,6 @@ class WdtUpdateFilterCase(unittest.TestCase):
     domain_name = model_wdt_mii_filter.env.getDomainName()
     self.assertEqual('wls-domain1', domain_name, "Expected domain name to be \'wls-domain1\'")
 
-  def test_istio_version1_none(self):
-    model = self.getModel()
-    offlineWlstEnv = model_wdt_mii_filter.getOfflineWlstEnv()
-    self.assertTrue(offlineWlstEnv.isVersionEarlierThan(None, '1.10'),
-                    "Expected no istio version1 to default as True as earlier than 1.10")
-
-  def test_istio_version2_none(self):
-    model = self.getModel()
-    offlineWlstEnv = model_wdt_mii_filter.getOfflineWlstEnv()
-    self.assertFalse(offlineWlstEnv.isVersionEarlierThan('1.10', None),
-                    "Expected no istio version2 to default as False as earlier than 1.10")
-
-  def test_istio_version_later_than(self):
-    model = self.getModel()
-    offlineWlstEnv = model_wdt_mii_filter.getOfflineWlstEnv()
-    self.assertFalse(offlineWlstEnv.isVersionEarlierThan('1.11.3', '1.10'),
-                    "Expected istio version 1.11.3 > 1.10")
-
-  def test_istio_version_equal(self):
-    model = self.getModel()
-    offlineWlstEnv = model_wdt_mii_filter.getOfflineWlstEnv()
-    self.assertFalse(offlineWlstEnv.isVersionEarlierThan('1.10.0', '1.10'),
-                     "Expected istio version 1.10.0 == 1.10")
-
   def test_istioVersionRequiresLocalHostBindings(self):
     model = self.getModel()
     self.assertTrue(model_wdt_mii_filter.istioVersionRequiresLocalHostBindings())
@@ -375,7 +350,7 @@ class WdtUpdateFilterCase(unittest.TestCase):
   def test_customizeIstioReplicationChannel_version_1_10(self):
     try:
       os.environ['ISTIO_ENABLED'] = 'true'
-      os.environ['ISTIO_VERSION'] = '1.10.4'
+      os.environ['ISTIO_USE_LOCALHOST_BINDINGS'] = 'false'
       model = self.getModel()
 
       # define 'istiorepl' replication channel in the cluster
@@ -394,7 +369,7 @@ class WdtUpdateFilterCase(unittest.TestCase):
                        "Expected nap listen address to be \'sample-domain1-managed-server${id}\'")
     finally:
       del os.environ['ISTIO_ENABLED']
-      del os.environ['ISTIO_VERSION']
+      del os.environ['ISTIO_USE_LOCALHOST_BINDINGS']
 
 class MockOfflineWlstEnv(model_wdt_mii_filter.OfflineWlstEnv):
 
