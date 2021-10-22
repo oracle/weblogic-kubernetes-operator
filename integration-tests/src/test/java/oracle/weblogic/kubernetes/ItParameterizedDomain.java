@@ -1615,7 +1615,7 @@ class ItParameterizedDomain {
    * @param domainUid the uid of the domain to be created
    * @param domainNamespace namespace in which the domain will be created
    */
-  private Domain createMiiDomainNegative(String domainUid, String domainNamespace) {
+  private void createMiiDomainNegative(String domainUid, String domainNamespace) {
 
     // create docker registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
@@ -1655,7 +1655,6 @@ class ItParameterizedDomain {
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING")
-                .adminChannelPortForwardingEnabled(false)
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
@@ -1671,10 +1670,6 @@ class ItParameterizedDomain {
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
         domainUid, domainNamespace, miiImage);
     createDomainAndVerify(domain, domainNamespace);
-
-    String domainStr =  domain.getSpec().toString();
-
-    return domain;
   }
 
   /**
