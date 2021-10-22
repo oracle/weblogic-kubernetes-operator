@@ -1673,7 +1673,6 @@ class ItParameterizedDomain {
     createDomainAndVerify(domain, domainNamespace);
 
     String domainStr =  domain.getSpec().toString();
-    logger.info("=============> miiDomain domainStr created: ", domainStr);
 
     return domain;
   }

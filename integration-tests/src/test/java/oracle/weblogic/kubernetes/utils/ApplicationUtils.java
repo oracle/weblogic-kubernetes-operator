@@ -68,13 +68,6 @@ public class ApplicationUtils {
       }
     }
     return true;
-    /*
-    testUntil(
-        assertDoesNotThrow(() -> () -> exec(new String(curlString), true).stdout().contains("200")),
-        logger,
-        "application to be ready {0}",
-        url);
-    return true;*/
   }
 
   /**
