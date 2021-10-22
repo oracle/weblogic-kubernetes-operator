@@ -19,7 +19,7 @@ other components and services that have tracing enabled.
 
 The current support for Istio has these limitations:
 
-* It is tested with Istio 1.4.2 and later (up to 1.7.x); it is tested with both single and
+* It is tested with Istio 1.4.2 and later (up to 1.11.x); it is tested with both single and
   multicluster installations of Istio.
 
   **NOTE**: The WebLogic Kubernetes Operator creates Kubernetes headless Services for the domain; Istio 1.6.x does not work with headless Services. See [Headless service broken in 1.6.0](https://github.com/istio/istio/issues/24082). Instead, use Istio version 1.7 and higher.
@@ -282,7 +282,7 @@ To support replication traffic in an Istio service mesh, the introspector job wi
 
 * Automatically create a network access point using the `replicationChannelPort` specified in the `istio` configuration in the domain custom resouorce yaml.
 
-    For example, the additional WebLogic HTTP protocol network channel for the readiness probe would be defined as follows:
+    For example, the additional WebLogic 't3' protocol network channel for replication traffic would be defined as follows:
     |Name|Port|Protocol|Exposed as a container port|
     |----|----|--------|-----|
     |`istiorepl`|From configuration Istio `replicationChannelPort` |`t3`| No |
@@ -293,7 +293,7 @@ To support replication traffic in an Istio service mesh, the introspector job wi
     ```
     <cluster>
       <name>cluster-1</name>
-      <replication-channe>istiorepl</replication-channel>
+      <replication-channel>istiorepl</replication-channel>
     <cluster>
     ```
 {{% notice note %}}

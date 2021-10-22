@@ -64,7 +64,7 @@ This behavior depends on your version and domain resource configuration:
   run the `kubectl explain domain.spec.adminServer.adminChannelPortForwardingEnabled` command
   or see the domain resource [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md).
 
-* For Istio-enabled domains, the operator already adds a
+* For Istio-enabled domains running Istio version 1.9 and earlier, the operator already adds a
   network channel with a `localhost` listen address for each
   existing port. This means that no additional configuration is required
   to enable port forwarding when Istio is enabled.
