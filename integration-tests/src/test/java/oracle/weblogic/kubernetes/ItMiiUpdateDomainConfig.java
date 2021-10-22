@@ -66,7 +66,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomRe
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewRestartVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createJobToChangePermissionsOnPvHostPath;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyUpdateWebLogicCredential;
