@@ -179,15 +179,18 @@ def filter_model(model):
       topology = model['topology']
       customizeNodeManagerCreds(topology)
       customizeDomainLogPath(topology)
+
+      if 'Cluster' in topology:
+        # If Istio enabled, inject replication channel for each cluster
+        # before creating the corresponding NAP for each server and
+        # server-template
+        customizeIstioClusters(model)
+
       if 'Server' in topology:
         customizeServers(model)
 
       if 'ServerTemplate' in topology:
         customizeServerTemplates(model)
-
-      if 'Cluster' in topology:
-        customizeIstioClusters(model)
-
 
 def initOfflineWlstEnv(model):
   global env
