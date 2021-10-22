@@ -82,7 +82,6 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
-//import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_MODEL_PROPERTIES_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_IMAGE_DOMAINHOME_BASE_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
@@ -118,7 +117,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterRoleBi
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterRoleExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
-import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
+import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminConsoleAccessible;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
@@ -203,6 +202,7 @@ class ItParameterizedDomain {
   private static int t3ChannelPort = 0;
   private static String miiDomainNamespace = null;
   private static String miiDomainNegativeNamespace = null;
+  private static String miiDomainNegativeNamespacePortforward = null;
   private static String miiImage = null;
   private static String encryptionSecretName = "encryptionsecret";
   private static Map<String, Quantity> resourceRequest = new HashMap<>();
@@ -219,7 +219,7 @@ class ItParameterizedDomain {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(6) List<String> namespaces) {
+  public static void initAll(@Namespaces(7) List<String> namespaces) {
     logger = getLogger();
 
     // get a unique operator namespace
@@ -242,6 +242,7 @@ class ItParameterizedDomain {
     String domainInImageNamespace = namespaces.get(4);
     assertNotNull(namespaces.get(5));
     miiDomainNegativeNamespace = namespaces.get(5);
+    miiDomainNegativeNamespacePortforward = namespaces.get(6);
 
     // set the service account name for the operator
     opServiceAccount = opNamespace + "-sa";
@@ -251,7 +252,8 @@ class ItParameterizedDomain {
 
     // install and verify operator with REST API
     installAndVerifyOperator(opNamespace, opServiceAccount, true, 0,
-        miiDomainNamespace, domainOnPVNamespace, domainInImageNamespace, miiDomainNegativeNamespace);
+        miiDomainNamespace, domainOnPVNamespace, domainInImageNamespace,
+        miiDomainNegativeNamespace, miiDomainNegativeNamespacePortforward);
 
     externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
 
@@ -308,8 +310,7 @@ class ItParameterizedDomain {
   @DisplayName("verify the operator log has expected error msg when encryption secret not created for a mii domain")
   void testOperatorLogSevereMsg() {
     createMiiDomainNegative("miidomainnegative", miiDomainNegativeNamespace);
-    String operatorPodName =
-        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+    String operatorPodName = assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
     checkPodLogContainsString(opNamespace, operatorPodName,
         "Domain miidomainnegative is not valid: RuntimeEncryption secret '" + encryptionSecretName
         + "' not found in namespace '" + miiDomainNegativeNamespace + "'");
@@ -368,6 +369,32 @@ class ItParameterizedDomain {
 
     forwardedPortNo = startPortForwardProcess(hostName, domainNamespace, domainUid, ADMIN_SERVER_SECURE_PORT);
     verifyAdminConsoleAccessible(domainNamespace, hostName, forwardedPortNo, true);
+
+    stopPortForwardProcess(domainNamespace);
+  }
+
+  /**
+   * Negative test case for when domain resource attribute domain.spec.adminServer.adminChannelPortForwardingEnabled
+   * is set to false, `kubectl port-foward` is able to forward a local port to default channel port (7001 in this test)
+   * and default secure channel port (7002 in this test) but the WLS admin console can not be accessed
+   * using http://localhost:localPort/console/login/LoginForm.jsp
+   */
+  @Test
+  @DisplayName("Forward a local port to admin default and default secure channel port "
+      + "and verify WLS admin console is not accessible")
+  void testPortforwardDisabledInMiiDomain() {
+    Domain domain = createMiiDomainWithMultiClusters(miiDomainUid + "neg", miiDomainNamespace, "negativeTest");
+    assertDomainNotNull(domain);
+
+    String domainUid = domain.getSpec().getDomainUid();
+    String domainNamespace = domain.getMetadata().getNamespace();
+    final String hostName = "localhost";
+
+    String forwardedPortNo = startPortForwardProcess(hostName, domainNamespace, domainUid, ADMIN_SERVER_PORT);
+    verifyAdminConsoleAccessible(domainNamespace, hostName, forwardedPortNo, false, "checkNotAccessible");
+
+    forwardedPortNo = startPortForwardProcess(hostName, domainNamespace, domainUid, ADMIN_SERVER_SECURE_PORT);
+    verifyAdminConsoleAccessible(domainNamespace, hostName, forwardedPortNo, true, "checkNotAccessible");
 
     stopPortForwardProcess(domainNamespace);
   }
@@ -862,7 +889,13 @@ class ItParameterizedDomain {
    * @param domainNamespace namespace in which the domain will be created
    * @return oracle.weblogic.domain.Domain objects
    */
-  private static Domain createMiiDomainWithMultiClusters(String domainUid, String domainNamespace) {
+  private static Domain createMiiDomainWithMultiClusters(String domainUid,
+                                                         String domainNamespace,
+                                                         String... args) {
+
+    boolean adminChannelPortForwardingEnabled = (args.length == 0) ? true : false;
+    logger.info("Creating a Domain with adminChannelPortForwardingEnabled = {0}",
+        adminChannelPortForwardingEnabled);
 
     // admin/managed server name here should match with WDT model yaml file
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
@@ -872,14 +905,18 @@ class ItParameterizedDomain {
     logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
     createOcirRepoSecret(domainNamespace);
 
-    // create secret for admin credentials
-    logger.info("Creating secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
-    createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+    if (adminChannelPortForwardingEnabled) {
+      // create secret for admin credentials
+      logger.info("Creating secret for admin credentials");
+      createSecretWithUsernamePassword(adminSecretName, domainNamespace,
+          ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
-    // create encryption secret
-    logger.info("Creating encryption secret");
-    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc", "weblogicenc");
+      // create encryption secret
+      logger.info("Creating encryption secret");
+      createSecretWithUsernamePassword(encryptionSecretName, domainNamespace,
+          "weblogicenc", "weblogicenc");
+    }
 
     // construct the cluster list used for domain custom resource
     List<Cluster> clusterList = new ArrayList<>();
@@ -924,7 +961,7 @@ class ItParameterizedDomain {
                     .limits(resourceLimit)))
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING")
-                .adminChannelPortForwardingAttr(true)
+                .adminChannelPortForwardingEnabled(adminChannelPortForwardingEnabled)
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default-secure")
@@ -1099,7 +1136,7 @@ class ItParameterizedDomain {
                     .requests(resourceRequest)))
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING")
-                .adminChannelPortForwardingAttr(true)
+                .adminChannelPortForwardingEnabled(true)
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default-secure")
@@ -1451,7 +1488,7 @@ class ItParameterizedDomain {
                     .requests(resourceRequest)))
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING")
-                .adminChannelPortForwardingAttr(true)
+                .adminChannelPortForwardingEnabled(true)
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default-secure")
@@ -1578,7 +1615,7 @@ class ItParameterizedDomain {
    * @param domainUid the uid of the domain to be created
    * @param domainNamespace namespace in which the domain will be created
    */
-  private void createMiiDomainNegative(String domainUid, String domainNamespace) {
+  private Domain createMiiDomainNegative(String domainUid, String domainNamespace) {
 
     // create docker registry secret to pull the image from registry
     // this secret is used only for non-kind cluster
@@ -1618,6 +1655,7 @@ class ItParameterizedDomain {
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING")
+                .adminChannelPortForwardingEnabled(false)
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
@@ -1633,6 +1671,11 @@ class ItParameterizedDomain {
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
         domainUid, domainNamespace, miiImage);
     createDomainAndVerify(domain, domainNamespace);
+
+    String domainStr =  domain.getSpec().toString();
+    logger.info("=============> miiDomain domainStr created: ", domainStr);
+
+    return domain;
   }
 
   /**
@@ -1654,26 +1697,5 @@ class ItParameterizedDomain {
     dockerLoginAndPushImageToRegistry(miiImage);
 
     return miiImage;
-  }
-
-  private void verifyAdminConsoleAccessible(String domainNamespace,
-                                            String hostName,
-                                            String port,
-                                            boolean secureMode) {
-    LoggingFacade logger = getLogger();
-    String httpKey = "http://";
-    if (secureMode) {
-      // Since WLS servers use self-signed certificates, it's ok to use --insecure option
-      // to ignore SSL/TLS certificate errors:
-      // curl: (60) SSL certificate problem: Invalid certificate chain
-      // and explicitly allows curl to perform “insecure” SSL connections and transfers
-      httpKey = " --insecure https://";
-    }
-    String consoleUrl = httpKey + hostName + ":" + port + "/console/login/LoginForm.jsp";
-
-    boolean checkConsole = assertDoesNotThrow(() ->
-        checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org"));
-    assertTrue(checkConsole, "Failed to access WebLogic console");
-    logger.info("WebLogic console is accessible");
   }
 }

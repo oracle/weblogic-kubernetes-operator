@@ -22,15 +22,18 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withQuickRetryPol
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ApplicationUtils {
   /**
    * Check the application running in WebLogic server using host information in the header.
    * @param url url to access the application
    * @param hostHeader host information to be passed as http header
+   * @param checkNotAccessible true to check the console accessible, false otherwise
    * @return true if curl command returns HTTP code 200 otherwise false
    */
-  public static boolean checkAppUsingHostHeader(String url, String hostHeader) {
+  public static boolean checkAppUsingHostHeader(String url, String hostHeader, String... checkNotAccessible) {
     LoggingFacade logger = getLogger();
     StringBuffer curlString = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
     StringBuffer headerString = null;
@@ -49,12 +52,29 @@ public class ApplicationUtils {
         .append(" -w %{http_code});")
         .append("echo ${status}");
     logger.info("checkAppUsingHostInfo: curl command {0}", new String(curlString));
+
+    if (checkNotAccessible.length == 0) {
+      testUntil(
+          assertDoesNotThrow(() -> () -> exec(new String(curlString), true).stdout().contains("200")),
+          logger,
+          "application to be ready {0}",
+          url);
+    } else {
+      try {
+        return exec(new String(curlString), true).stdout().contains("200");
+      } catch (Exception ex) {
+        logger.info("Failed to exec command {0}. Caught exception {1}", curlString.toString(), ex.getMessage());
+        return false;
+      }
+    }
+    return true;
+    /*
     testUntil(
         assertDoesNotThrow(() -> () -> exec(new String(curlString), true).stdout().contains("200")),
         logger,
         "application to be ready {0}",
         url);
-    return true;
+    return true;*/
   }
 
   /**
@@ -375,4 +395,39 @@ public class ApplicationUtils {
     return false;
   }
 
+  /**
+   * verify admin console accessible.
+   *
+   * @param domainNamespace namespace of the domain
+   * @param hostName host name to access WLS console
+   * @param port port number to access WLS console
+   * @param secureMode true to access WLS console via ssh channel, false otherwise
+   * @param checkNotAccessible true to check the console accessible, false otherwise
+   */
+  public static void verifyAdminConsoleAccessible(String domainNamespace,
+                                                  String hostName,
+                                                  String port,
+                                                  boolean secureMode,
+                                                  String... checkNotAccessible) {
+    LoggingFacade logger = getLogger();
+    String httpKey = "http://";
+    if (secureMode) {
+      // Since WLS servers use self-signed certificates, it's ok to use --insecure option
+      // to ignore SSL/TLS certificate errors:
+      // curl: (60) SSL certificate problem: Invalid certificate chain
+      // and explicitly allows curl to perform “insecure” SSL connections and transfers
+      httpKey = " --insecure https://";
+    }
+    String consoleUrl = httpKey + hostName + ":" + port + "/console/login/LoginForm.jsp";
+
+    boolean checkConsole = assertDoesNotThrow(() ->
+        checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org", checkNotAccessible));
+    if (checkNotAccessible.length == 0) {
+      assertTrue(checkConsole, "Failed to access WebLogic console");
+      logger.info("WebLogic console is accessible");
+    } else {
+      assertFalse(checkConsole, "Shouldn't be able to access WebLogic console");
+      logger.info("WebLogic console is not accessible");
+    }
+  }
 }
