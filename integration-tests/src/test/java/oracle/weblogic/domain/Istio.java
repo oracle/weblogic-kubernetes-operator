@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.domain;
@@ -15,54 +15,66 @@ public class Istio {
           + "Defaults to true when the 'istio' element is included. Not required.")
   private Boolean enabled;
 
-  @ApiModelProperty("The WebLogic readiness port for Istio. Defaults to 8888. Not required.")
-  private Integer readinessPort;
+  @ApiModelProperty(
+      "The operator will create WebLogic network access points with this port on each WebLogic Server. "
+          + "The readiness probe on each pod will use these network access points to verify that the "
+          + "pod is ready for application traffic. Defaults to 8888.")
+  private Integer readinessPort = 8888;
 
   public static Integer DEFAULT_REPLICATION_PORT = 4564;
 
-  @ApiModelProperty("The operator will create a WebLogic network access point with this port that will then be exposed "
-      + "from the container running the WebLogic Server instance. The WebLogic Replication Service will use this "
-      + "network access point for all replication traffic. Defaults to 4564.")
+  @ApiModelProperty(
+      "The operator will create a `T3` protocol WebLogic network access point on each WebLogic server "
+          + "that is part of a cluster with this port to handle EJB and servlet session state replication traffic "
+          + "between servers. This setting is ignored for clusters where the WebLogic cluster configuration already "
+          + "defines a `replication-channel` attribute. Defaults to 4564.")
   private Integer replicationChannelPort = DEFAULT_REPLICATION_PORT;
 
-  @ApiModelProperty("Starting with Istio 1.10, the networking behavior was changed in that the proxy no "
-      + "longer redirects the traffic to the localhost interface, but instead forwards (or passes it "
-      + "through) it to the network interface associated with the pod's IP. True, if Istio v1.10 or "
-      + "higher is installed. Defaults to false")
-  private String version;
+  @ApiModelProperty(
+      "When `true` the operator creates a WebLogic network access point with a `localhost` binding "
+          + "for each existing channel and protocol. This must be set to true when using Istio versions prior "
+          + "to 1.10 and must be set to false for version 1.10 and later. Defaults to true.")
+  private Boolean localhostBindingsEnabled = true;
 
-  public Istio enabled(Boolean enabled) {
-    this.enabled = enabled;
-    return this;
-  }
-
-  public Boolean enabled() {
+  /**
+   * True, if this domain is deployed under an Istio service mesh.
+   *
+   * @return True, if this domain is deployed under an Istio service mesh.
+   */
+  public Boolean getEnabled() {
     return this.enabled;
   }
 
-  public Boolean getEnabled() {
-    return enabled;
-  }
-
+  /**
+   * Sets the Istio enabled status.
+   *
+   * @param enabled True, if this domain is deployed under an Istio service mesh.
+   */
   public void setEnabled(Boolean enabled) {
     this.enabled = enabled;
+  }
+
+  /**
+   * Get the readiness port.
+   *
+   * @return the readiness port.
+   */
+  public Integer getReadinessPort() {
+    return this.readinessPort;
+  }
+
+  /**
+   * Sets the Istio readiness port.
+   *
+   * @param readinessPort the Istio readiness port.
+   */
+  public void setReadinessPort(Integer readinessPort) {
+    this.readinessPort = readinessPort;
   }
 
   public Istio readinessPort(Integer readinessPort) {
     this.readinessPort = readinessPort;
     return this;
-  }
-
-  public Integer readinessPort() {
-    return this.readinessPort;
-  }
-
-  public Integer getReadinessPort() {
-    return readinessPort;
-  }
-
-  public void setReadinessPort(Integer readinessPort) {
-    this.readinessPort = readinessPort;
   }
 
   /**
@@ -84,25 +96,32 @@ public class Istio {
   }
 
   /**
-   * Get the Istio version.
+   * True, if the proxy redirects traffic to localhost.
    *
-   * @return the version of Istio.
+   * @return True, if the proxy redirects traffic to localhost.
    */
-  public String getVersion() {
-    return this.version;
+  public Boolean getLocalhostBindingsEnabled() {
+    return this.localhostBindingsEnabled;
   }
 
   /**
-   * Sets the Istio version.
+   * Sets the 'localhostBindingsEnabled' Istio configuration property to indicate the proxy
+   * redirects traffic to localhost.
    *
-   * @param version the version of Istio.
+   * @param localhostBindingsEnabled True, if proxy redirects traffic to localhost.
    */
-  public void setVersion(String version) {
-    this.version = version;
+  public void setLocalhostBindingsEnabled(Boolean localhostBindingsEnabled) {
+    this.localhostBindingsEnabled = localhostBindingsEnabled;
   }
 
-  public Istio version(String version) {
-    this.version = version;
+  /**
+   * Sets the 'localhostBindingsEnabled' Istio configuration property to indicate the proxy
+   * redirects traffic to localhost.
+   *
+   * @param localhostBindingsEnabled True, if proxy redirects traffic to localhost.
+   */
+  public Istio localhostBindingsEnabled(Boolean localhostBindingsEnabled) {
+    this.localhostBindingsEnabled = localhostBindingsEnabled;
     return this;
   }
 
@@ -112,7 +131,7 @@ public class Istio {
    * @param istioEnabled True, if this domain is deployed under an Istio service mesh.
    * @return this
    */
-  public Istio istioEnabled(Boolean istioEnabled) {
+  public Istio enabled(Boolean istioEnabled) {
     this.enabled = istioEnabled;
     return this;
   }
@@ -124,7 +143,7 @@ public class Istio {
             .append("enabled", enabled)
             .append("readinessPort", readinessPort)
             .append("replicationChannelPort", replicationChannelPort)
-            .append("version", version);
+            .append("localhostBindingsEnabled", localhostBindingsEnabled);
 
     return builder.toString();
   }
@@ -132,7 +151,7 @@ public class Istio {
   @Override
   public int hashCode() {
     HashCodeBuilder builder = new HashCodeBuilder().append(enabled).append(readinessPort)
-        .append(replicationChannelPort).append(version);
+        .append(replicationChannelPort).append(localhostBindingsEnabled);
 
     return builder.toHashCode();
   }
@@ -152,7 +171,7 @@ public class Istio {
             .append(enabled, rhs.enabled)
             .append(readinessPort, rhs.readinessPort)
             .append(replicationChannelPort, rhs.replicationChannelPort)
-            .append(version, rhs.version);
+            .append(localhostBindingsEnabled, rhs.localhostBindingsEnabled);
 
     return builder.isEquals();
   }
