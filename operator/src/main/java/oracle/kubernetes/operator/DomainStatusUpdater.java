@@ -843,7 +843,7 @@ public class DomainStatusUpdater {
   }
 
   public static Step createResetFailureCountStep() {
-    return new FailureCountStep();
+    return new ResetFailureCountStep();
   }
 
   static class ResetFailureCountStep extends DomainStatusUpdaterStep {
