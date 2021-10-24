@@ -59,7 +59,6 @@ import static oracle.kubernetes.operator.DomainStatusUpdater.createProgressingSt
 import static oracle.kubernetes.operator.DomainStatusUpdater.recordLastIntrospectJobProcessedUid;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
-import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_JOB_POD_LOG_READ_FAILED;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED_DETAIL;
@@ -478,16 +477,12 @@ public class JobHelper {
 
     private static boolean isImagePullError(String jobPodStatus) {
       return Optional.ofNullable(jobPodStatus)
-              .map(s -> s.contains("ErrImagePull") || s.contains("ImagePullBackOff") || s.contains("ImagePullError"))
+              .map(s -> s.contains("ErrImagePull") || s.contains("ImagePullBackOff"))
               .orElse(false);
     }
 
     private static boolean isJobTimedout(DomainPresenceInfo info) {
       return Objects.equals(getReason(info), "DeadlineExceeded") || getMessage(info).contains("DeadlineExceeded");
-    }
-
-    private static String isJobPodLogReadFailed(Packet packet) {
-      return (String)packet.get(DOMAIN_INTROSPECT_JOB_POD_LOG_READ_FAILED);
     }
 
     private static boolean isJobNewOrNotProcesssed(V1Job job, String lastJobProcessedUid) {
@@ -528,7 +523,6 @@ public class JobHelper {
 
       @Override
       public NextAction onFailure(Packet packet, CallResponse<V1PodList> callResponse) {
-        packet.put(DOMAIN_INTROSPECT_JOB_POD_LOG_READ_FAILED, "True");
         return super.onFailure(packet, callResponse);
       }
 
@@ -565,16 +559,13 @@ public class JobHelper {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       String namespace = info.getNamespace();
       String jobPodStatus = (String) packet.get(ProcessingConstants.JOB_POD_STATUS);
-      if (job == null) {
-        job = (V1Job) packet.get(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
-      }
+
       if (job != null) {
         jobStartTime = Optional.ofNullable(job.getMetadata())
                 .map(V1ObjectMeta::getCreationTimestamp).orElse(OffsetDateTime.now());
         String lastIntrospectJobProcessedId = getLastIntrospectJobProcessedId(info);
 
         if (isJobTimedout(info) || (isImagePullError(jobPodStatus))) {
-          packet.remove(DOMAIN_INTROSPECT_JOB_POD_LOG_READ_FAILED);
           jobStartTime = OffsetDateTime.now();
           packet.put(DOMAIN_INTROSPECT_REQUESTED, ReadDomainIntrospectorPodLogResponseStep.INTROSPECTION_FAILED);
           nextSteps.add(Step.chain(deleteDomainIntrospectorJobStep(null),
@@ -787,8 +778,6 @@ public class JobHelper {
 
     @Override
     public NextAction onFailure(Packet packet, CallResponse<String> callResponse) {
-      packet.put(DOMAIN_INTROSPECT_JOB_POD_LOG_READ_FAILED, "True");
-      //return super.onFailure(packet, callResponse);
       if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
         return updateDomainStatus(packet, callResponse);
       } else {
@@ -908,7 +897,6 @@ public class JobHelper {
 
     @Override
     public NextAction onFailure(Packet packet, CallResponse<V1PodList> callResponse) {
-      packet.put(DOMAIN_INTROSPECT_JOB_POD_LOG_READ_FAILED, "True");
       return super.onFailure(packet, callResponse);
     }
 

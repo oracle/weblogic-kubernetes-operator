@@ -68,6 +68,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.FATAL_ERROR_DOMAIN_
 import static oracle.kubernetes.operator.ProcessingConstants.INTROSPECTION_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.JOBWATCHER_COMPONENT_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
+import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_STATUS;
 import static oracle.kubernetes.operator.helpers.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.JOB;
@@ -634,6 +635,38 @@ class DomainIntrospectorJobTest {
     testSupport.defineResources(job);
     IntrospectionTestUtils.defineResources(testSupport, "passed");
     testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
+
+    JobHelper.ReplaceOrCreateStep.createNextSteps(nextSteps, testSupport.getPacket(), job, terminalStep);
+
+    assertThat(nextSteps.get(0), hasChainWithStepsInOrder("DeleteDomainIntrospectorJobStep",
+            "DomainIntrospectorJobStep"));
+  }
+
+  @Test
+  void whenJobHasErrorPullingImage_correctStepsExecuted() {
+    List<Step> nextSteps = new ArrayList<>();
+    V1Job job = new V1Job().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS).uid(JOB_UID))
+            .status(new V1JobStatus());
+    testSupport.defineResources(job);
+    IntrospectionTestUtils.defineResources(testSupport, "passed");
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
+    testSupport.addToPacket(JOB_POD_STATUS, "ErrImagePull");
+
+    JobHelper.ReplaceOrCreateStep.createNextSteps(nextSteps, testSupport.getPacket(), job, terminalStep);
+
+    assertThat(nextSteps.get(0), hasChainWithStepsInOrder("DeleteDomainIntrospectorJobStep",
+            "DomainIntrospectorJobStep"));
+  }
+
+  @Test
+  void whenJobHasImagePullBackOffError_correctStepsExecuted() {
+    List<Step> nextSteps = new ArrayList<>();
+    V1Job job = new V1Job().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS).uid(JOB_UID))
+            .status(new V1JobStatus());
+    testSupport.defineResources(job);
+    IntrospectionTestUtils.defineResources(testSupport, "passed");
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
+    testSupport.addToPacket(JOB_POD_STATUS, "ImagePullBackOff");
 
     JobHelper.ReplaceOrCreateStep.createNextSteps(nextSteps, testSupport.getPacket(), job, terminalStep);
 
