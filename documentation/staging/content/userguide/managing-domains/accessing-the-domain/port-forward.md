@@ -57,19 +57,29 @@ This behavior depends on your version and domain resource configuration:
   operator versions 3.3.2 and later, this behavior
   is configurable on the domain resource using the
   `domain.spec.adminServer.adminChannelPortForwardingEnabled`
-  domain resource attribute. This attribute
-  is enabled by default in operator versions 4.0 and later,
-  and is disabled by default in versions prior to 4.0.
-  For details about this attribute,
-  run the `kubectl explain domain.spec.adminServer.adminChannelPortForwardingEnabled` command
-  or see the domain resource [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md).
+  domain resource attribute. 
+  
+* For Istio-enabled domains running Istio version 1.10 and later, then, for
+  operator versions 3.3.3 and later, this behavior
+  is configurable on the domain resource using the
+  `domain.spec.adminServer.adminChannelPortForwardingEnabled`
+  domain resource attribute.  
+  
+{{% notice note %}}
+The `domain.spec.adminServer.adminChannelPortForwardingEnabled`domain resource attribute
+is enabled by default in operator versions 4.0 and later, and is disabled by default in versions prior to 4.0.
+For details about this attribute, run the `kubectl explain domain.spec.adminServer.adminChannelPortForwardingEnabled` 
+command or see the domain resource [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md).
+{{% /notice %}}
 
-* For Istio-enabled domains running Istio version 1.9 and earlier, the operator already adds a
+* For Istio-enabled domains running Istio versions prior to 1.10, the operator already adds a
   network channel with a `localhost` listen address for each
   existing port. This means that no additional configuration is required
   to enable port forwarding when Istio is enabled.
   For more details, see [How Istio-enabled domains differ from regular domains]({{< relref "/userguide/istio/istio#how-istio-enabled-domains-differ-from-regular-domains" >}}).
 
+
+  
 {{% notice note %}}
 If your domain is already running, and you have made configuration changes,
 then you will need to rerun its introspector job and ensure that the admin pod

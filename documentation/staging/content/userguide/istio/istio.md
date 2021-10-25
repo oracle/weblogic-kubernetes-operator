@@ -31,6 +31,15 @@ and access it through the `NodePort` instead of accessing the channel through th
 
 To learn more about service mesh, see [Istio](https://istio.io/latest/docs/concepts/what-is-istio/).  
 
+To see the Istio build version that is installed, use the `istioctl version` command.  For example:
+
+```shell script
+$ istioctl version
+client version: 1.10.4
+control plane version: 1.10.4
+data plane version: 1.10.4 (1 proxies)
+```
+
 #### Using the operator with Istio support
 
 {{% notice note %}}
@@ -96,26 +105,74 @@ spec:
       enabled: true
       readinessPort: 8888
       replicationChannelPort: 4564
-      version: 1.7.3
+      localhostBindingsEnabled: false
 ```
 
 To enable Istio support, you must include the `istio` section
 and set `enabled: true` as shown.  The `readinessPort` is optional
 and defaults to `8888` if not provided; it is used for a readiness health check.
 The `replicationChannelPort` is optional and defaults to `4564` if not provided;
-it is the port used in the network access point by the WebLogic Replication Service 
-for all replication traffic. The `version` is optional and represents the Istio version
-run by the operator and WebLogic domains managed by the operator.  If not provided, the
-operator will assume it's supporting Istio version 1.9 or earlier.
+The operator will create a `T3` protocol WebLogic network access point on each WebLogic 
+server that is part of a cluster with this port to handle EJB and servlet session state 
+replication traffic between servers. This setting is ignored for clusters 
+where the WebLogic cluster configuration already defines a `replication-channel` attribute. 
+The `localhostBindingsEnabled` is optional and defaults to `true`. The operator creates a WebLogic 
+network access point with a `localhost` binding for each existing channel and protocol. This must 
+be set to `true` when using Istio versions prior to 1.10 and must be set to `false` for version 1.10 
+and later.
+
+|Istio version|localhostBindingsEnabled|
+|----|----|
+|prior to 1.10|true|
+|1.10 and later|false|
+
+If the `localhostBindingsEnabled` is set incorrectly for the Istio version running in the domain, the
+`weblogic-server` container in the managed server pods will fail to reach `ready` state due to failure
+of the readiness probe.  For example, if the `localhostBindingsEnabled` is set `true` when running
+Istio versions 1.10 and later, you will see output like this:
+                                
+ ```shell
+$ kubectl -n sample-domain1-ns get pods
+```
+```
+NAME                             READY   STATUS    RESTARTS   AGE
+sample-domain1-admin-server      1/2     Running   0          2m
+```
+
+and using the `kubectl describe pod` command will show the readiness probe event failure:
+
+```shell
+$ kubectl describe po sample-domain1-admin-server -n sample-domain1-ns
+
+Events:
+     Type     Reason       Age                  From      Message
+     ----     ------       ----                 ----      -------
+ 
+    Warning  Unhealthy    60s (x10 over 105s)  kubelet   Readiness probe failed: HTTP probe failed with statuscode: 500
+```
+
+Also, viewing the logging output of the `istio-proxy` container of the managed server pod will show that the
+readiness probe was unable to successfully establish a connection to the endpoint of the managed server:
+
+```shell
+$ kubectl logs sample-domain1-admin-server -n sample-domain1-ns -c istio-proxy
+
+2021-10-22T20:35:01.354031Z	error	Request to probe app failed: Get "http://192.168.0.93:8888/weblogic/ready": dial tcp 127.0.0.6:0->192.168.0.93:8888: connect: connection refused, original URL path = /app-health/weblogic-server/readyz
+app URL path = /weblogic/ready
+```
 
 ##### How Istio-enabled domains differ from regular domains
 
 Istio enforces a number of requirements on Pods.  When you enable Istio support in the Domain YAML file, the
 introspector job automatically creates configuration overrides with the necessary channels for the domain to satisfy Istio's requirements, including:
 
-When deploying a domain with Istio sidecar injection enabled, to support Istio versions 1.9 or earlier, the introspector job 
-automatically adds the following network channels using configuration overrides. **NOTE**: For supporting Istio versions 1.10 and later,
+When deploying a domain with Istio sidecar injection enabled, to support Istio versions prior to 1.10, the introspector job 
+automatically adds the following network channels using configuration overrides. 
+
+{{% notice note %}}
+For supporting Istio versions 1.10 and later, 
 see [Support for network changes in Istio v1.10 and later](#support-for-network-changes-in-istio-v110-and-later)
+{{% /notice %}}
 
 https://istio.io/latest/docs/ops/configuration/traffic-management/protocol-selection/
 
@@ -158,7 +215,7 @@ with the pod's IP.
 
 To learn more about changes to Istio networking beginning with Istio 1.10, see [Upcoming networking changes in Istio 1.10](https://istio.io/latest/blog/2021/upcoming-networking-changes/).
 
-In order to support Istio v1.10 and later, you must specify the Istio `version` (in the `istio` configuration in the domain custom resource yaml) so that the introspector job will:
+In order to support Istio v1.10 and later, you must configure the Istio `localhostBindingsEnabled` to `false` (in the `istio` configuration in the domain custom resource yaml) so that the introspector job will:
     
 * Add an additional WebLogic HTTP protocol network channel for the readiness probe that is bound to the server pod's network interface. 
 
@@ -276,9 +333,9 @@ Refer to [Determining the ingress IP and ports](https://istio.io/latest/docs/set
 
 For more information about providing ingress using Istio, see the [Istio documentation](https://istio.io/docs/tasks/traffic-management/ingress/).
 
-#### WebLogic Replication Traffic
+#### WebLogic EJB and Servlet Session State Replication Traffic
 
-To support replication traffic in an Istio service mesh, the introspector job will:
+To support WebLogic EJB and servlet session state replication traffic in an Istio service mesh, the introspector job will:
 
 * Automatically create a network access point using the `replicationChannelPort` specified in the `istio` configuration in the domain custom resouorce yaml.
 
