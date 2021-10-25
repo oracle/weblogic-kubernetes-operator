@@ -67,8 +67,8 @@ import static oracle.kubernetes.operator.ProcessingConstants.EXCEEDED_INTROSPECT
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_ERROR_DOMAIN_STATUS_MESSAGE;
 import static oracle.kubernetes.operator.ProcessingConstants.INTROSPECTION_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.JOBWATCHER_COMPONENT_NAME;
+import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_CONTAINER_WAITING_REASON;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
-import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_STATUS;
 import static oracle.kubernetes.operator.helpers.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.JOB;
@@ -650,7 +650,7 @@ class DomainIntrospectorJobTest {
     testSupport.defineResources(job);
     IntrospectionTestUtils.defineResources(testSupport, "passed");
     testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
-    testSupport.addToPacket(JOB_POD_STATUS, "ErrImagePull");
+    testSupport.addToPacket(JOB_POD_CONTAINER_WAITING_REASON, "ErrImagePull");
 
     JobHelper.ReplaceOrCreateStep.createNextSteps(nextSteps, testSupport.getPacket(), job, terminalStep);
 
@@ -666,7 +666,7 @@ class DomainIntrospectorJobTest {
     testSupport.defineResources(job);
     IntrospectionTestUtils.defineResources(testSupport, "passed");
     testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
-    testSupport.addToPacket(JOB_POD_STATUS, "ImagePullBackOff");
+    testSupport.addToPacket(JOB_POD_CONTAINER_WAITING_REASON, "ImagePullBackOff");
 
     JobHelper.ReplaceOrCreateStep.createNextSteps(nextSteps, testSupport.getPacket(), job, terminalStep);
 

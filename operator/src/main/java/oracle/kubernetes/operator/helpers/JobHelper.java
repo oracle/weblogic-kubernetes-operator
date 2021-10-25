@@ -10,6 +10,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.kubernetes.client.openapi.models.V1ContainerState;
+import io.kubernetes.client.openapi.models.V1ContainerStateWaiting;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1EnvVar;
@@ -475,8 +477,8 @@ public class JobHelper {
               .listPodAsync(namespace, new IntrospectorPodStatusStep(domainUid, next));
     }
 
-    private static boolean isImagePullError(String jobPodStatus) {
-      return Optional.ofNullable(jobPodStatus)
+    private static boolean isImagePullError(String jobPodContainerWaitingReason) {
+      return Optional.ofNullable(jobPodContainerWaitingReason)
               .map(s -> s.contains("ErrImagePull") || s.contains("ImagePullBackOff"))
               .orElse(false);
     }
@@ -541,15 +543,14 @@ public class JobHelper {
       }
 
       private void recordJobPodNameAndStatus(Packet packet, V1Pod pod) {
-        String name = Optional.of(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getName).orElse(null);
+        String name = Optional.ofNullable(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getName).orElse("");
         if (name.startsWith(JobHelper.createJobName(domainUid))) {
           packet.put(ProcessingConstants.JOB_POD_NAME, name);
-          List<V1ContainerStatus> cs = Optional.of(pod).map(V1Pod::getStatus)
-                  .map(V1PodStatus::getContainerStatuses).orElse(null);
-          String status = Optional.ofNullable(cs).map(s -> s.get(0)).map(s1 -> s1.getState())
-                  .map(s2 -> s2.getWaiting()).map(w -> w.getReason()).orElse(null);
 
-          packet.put(ProcessingConstants.JOB_POD_STATUS, status);
+          packet.put(ProcessingConstants.JOB_POD_CONTAINER_WAITING_REASON, Optional.ofNullable(pod.getStatus())
+                  .map(V1PodStatus::getContainerStatuses).map(statuses -> statuses.get(0))
+                  .map(V1ContainerStatus::getState).map(V1ContainerState::getWaiting)
+                  .map(V1ContainerStateWaiting::getReason).orElse(null));
         }
       }
     }
@@ -558,14 +559,14 @@ public class JobHelper {
       OffsetDateTime jobStartTime;
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       String namespace = info.getNamespace();
-      String jobPodStatus = (String) packet.get(ProcessingConstants.JOB_POD_STATUS);
+      String jobPodContainerWaitingReason = (String) packet.get(ProcessingConstants.JOB_POD_CONTAINER_WAITING_REASON);
 
       if (job != null) {
         jobStartTime = Optional.ofNullable(job.getMetadata())
                 .map(V1ObjectMeta::getCreationTimestamp).orElse(OffsetDateTime.now());
         String lastIntrospectJobProcessedId = getLastIntrospectJobProcessedId(info);
 
-        if (isJobTimedout(info) || (isImagePullError(jobPodStatus))) {
+        if (isJobTimedout(info) || (isImagePullError(jobPodContainerWaitingReason))) {
           jobStartTime = OffsetDateTime.now();
           packet.put(DOMAIN_INTROSPECT_REQUESTED, ReadDomainIntrospectorPodLogResponseStep.INTROSPECTION_FAILED);
           nextSteps.add(Step.chain(deleteDomainIntrospectorJobStep(null),

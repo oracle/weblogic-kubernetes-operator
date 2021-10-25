@@ -1170,7 +1170,8 @@ public class DomainProcessorImpl implements DomainProcessor {
             bringAdminServerUp(info, delegate.getPodAwaiterStepFactory(info.getNamespace())),
             managedServerStrategy);
 
-    if (hasExceededRetryCount(info)) {
+    if (hasExceededRetryCount(info) && isImgRestartIntrospectVerChanged(info,
+            getExistingDomainPresenceInfo(info.getNamespace(), info.getDomainUid()))) {
       domainUpStrategy = Step.chain(DomainStatusUpdater.createResetFailureCountStep(), domainUpStrategy);
     }
 
