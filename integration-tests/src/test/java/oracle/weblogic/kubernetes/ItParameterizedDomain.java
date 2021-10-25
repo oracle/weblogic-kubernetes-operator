@@ -375,9 +375,8 @@ class ItParameterizedDomain {
 
   /**
    * Negative test case for when domain resource attribute domain.spec.adminServer.adminChannelPortForwardingEnabled
-   * is set to false, `kubectl port-foward` is able to forward a local port to default channel port (7001 in this test)
-   * and default secure channel port (7002 in this test) but the WLS admin console can not be accessed
-   * using http://localhost:localPort/console/login/LoginForm.jsp
+   * is set to false, the WLS admin console can not be accessed using the forwarded port, like
+   * http://localhost:localPort/console/login/LoginForm.jsp
    */
   @Test
   @DisplayName("Forward a local port to admin default and default secure channel port "

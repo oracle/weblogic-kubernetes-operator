@@ -30,10 +30,11 @@ public class ApplicationUtils {
    * Check the application running in WebLogic server using host information in the header.
    * @param url url to access the application
    * @param hostHeader host information to be passed as http header
-   * @param checkNotAccessible true to check the console accessible, false otherwise
+   * @param args arguments to determine whether to check the console accessible or not
    * @return true if curl command returns HTTP code 200 otherwise false
    */
-  public static boolean checkAppUsingHostHeader(String url, String hostHeader, String... checkNotAccessible) {
+  public static boolean checkAppUsingHostHeader(String url, String hostHeader, String... args) {
+    boolean checkConsoleAccessible = (args.length == 0) ? true : false;
     LoggingFacade logger = getLogger();
     StringBuffer curlString = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
     StringBuffer headerString = null;
@@ -53,7 +54,7 @@ public class ApplicationUtils {
         .append("echo ${status}");
     logger.info("checkAppUsingHostInfo: curl command {0}", new String(curlString));
 
-    if (checkNotAccessible.length == 0) {
+    if (checkConsoleAccessible) {
       testUntil(
           assertDoesNotThrow(() -> () -> exec(new String(curlString), true).stdout().contains("200")),
           logger,
@@ -395,13 +396,14 @@ public class ApplicationUtils {
    * @param hostName host name to access WLS console
    * @param port port number to access WLS console
    * @param secureMode true to access WLS console via ssh channel, false otherwise
-   * @param checkNotAccessible true to check the console accessible, false otherwise
+   * @param args arguments to determine whether to check the console accessible or not
    */
   public static void verifyAdminConsoleAccessible(String domainNamespace,
                                                   String hostName,
                                                   String port,
                                                   boolean secureMode,
-                                                  String... checkNotAccessible) {
+                                                  String... args) {
+    boolean checkConsoleAccessible = (args.length == 0) ? true : false;
     LoggingFacade logger = getLogger();
     String httpKey = "http://";
     if (secureMode) {
@@ -414,8 +416,8 @@ public class ApplicationUtils {
     String consoleUrl = httpKey + hostName + ":" + port + "/console/login/LoginForm.jsp";
 
     boolean checkConsole = assertDoesNotThrow(() ->
-        checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org", checkNotAccessible));
-    if (checkNotAccessible.length == 0) {
+        checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org", args));
+    if (checkConsoleAccessible) {
       assertTrue(checkConsole, "Failed to access WebLogic console");
       logger.info("WebLogic console is accessible");
     } else {
