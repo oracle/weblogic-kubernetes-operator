@@ -52,8 +52,13 @@ function checkJavaVersion {
 }
 function dockerLogin {
   echo 'docker login'
-  if [ -z $DOCKER_USERNAME ] && [ -z $DOCKER_PASSWORD ]; then
-    docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+  if [ ! -z ${DOCKER_USERNAME+x} ] && [ ! -z ${DOCKER_PASSWORD+x} ]; then
+    out=$(echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin)
+    res=$?
+    if [ $res -ne 0 ]; then
+      echo 'docker login failed'
+      exit 1
+    fi
   fi
 }
 
