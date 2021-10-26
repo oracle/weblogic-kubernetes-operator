@@ -66,7 +66,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomRe
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewRestartVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createJobToChangePermissionsOnPvHostPath;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyUpdateWebLogicCredential;
@@ -483,64 +482,6 @@ class ItMiiUpdateDomainConfig {
   }
 
   /**
-   * Patch the domain resource with the configmap to add a cluster.
-   * Update the restart version of the domain resource.
-   * Verify rolling restart of the domain by comparing PodCreationTimestamp
-   * before and after rolling restart.
-   * Verify servers from the new cluster are not in running state, because
-   * the spec level replica count to zero(default).
-   */
-  @Test
-  @Order(6)
-  @DisplayName("Add a dynamic cluster to the domain with default replica count")
-  void testMiiAddDynmicClusteriWithNoReplica() {
-
-    // This test uses the WebLogic domain created in the BeforeAll method
-    // BeforeEach method ensures that the server pods are running
-
-    String configMapName = "noreplicaconfigmap";
-    createClusterConfigMap(configMapName, "model.config.cluster.yaml");
-
-    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
-
-    // get the creation time of the server pods before patching
-    OffsetDateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
-    pods.put(adminServerPodName, adminPodCreationTime);
-    for (int i = 1; i <= replicaCount; i++) {
-      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace, managedServerPrefix + i));
-    }
-
-    StringBuffer patchStr = null;
-    patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"replace\",")
-        .append(" \"path\": \"/spec/configuration/model/configMap\",")
-        .append(" \"value\":  \"" + configMapName + "\"")
-        .append(" }]");
-    logger.log(Level.INFO, "Configmap patch string: {0}", patchStr);
-
-    patch = new V1Patch(new String(patchStr));
-    boolean cmPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(configMap)  failed ");
-    assertTrue(cmPatched, "patchDomainCustomResource(configMap) failed");
-
-    String newRestartVersion = patchDomainResourceWithNewRestartVersion(domainUid, domainNamespace);
-    logger.log(Level.INFO, "New restart version : {0}", newRestartVersion);
-
-    assertTrue(verifyRollingRestartOccurred(pods, 1, domainNamespace),
-        "Rolling restart failed");
-
-    // The ServerNamePrefix for the newly configured cluster is config-server
-    // Make sure the managed server from the new cluster is not running
-
-    String newServerPodName = domainUid + "-config-server1";
-    checkPodNotCreated(newServerPodName, domainUid, domainNamespace);
-
-    verifyManagedServerConfiguration("config-server1");
-    logger.info("Found new managed server configuration");
-  }
-
-  /**
    * Create a configmap with a sparse model file to add a dynamic cluster.
    * Patch the domain resource with the configmap.
    * Patch the domain resource with the spec/replicas set to 1.
@@ -550,7 +491,7 @@ class ItMiiUpdateDomainConfig {
    * Verify servers from the new cluster are running.
    */
   @Test
-  @Order(7)
+  @Order(6)
   @DisplayName("Add a dynamic cluster to domain with non-zero replica count")
   void testMiiAddDynamicCluster() {
 
@@ -617,79 +558,6 @@ class ItMiiUpdateDomainConfig {
   }
 
   /**
-   * Create a configmap with a sparse model file to add a configured cluster.
-   * Patch the domain resource with the configmap.
-   * Patch the domain resource with the spec/replicas set to 1.
-   * Update the restart version of the domain resource.
-   * Verify rolling restart of the domain by comparing PodCreationTimestamp
-   * before and after rolling restart.
-   * Verify servers from the new cluster are running.
-   */
-  @Test
-  @Order(8)
-  @DisplayName("Add a configured cluster to the domain")
-  void testMiiAddConfiguredCluster() {
-
-    // This test uses the WebLogic domain created in the BeforeAll method
-    // BeforeEach method ensures that the server pods are running
-
-    String configMapName = "configclusterconfigmap";
-    createClusterConfigMap(configMapName, "model.config.cluster.yaml");
-
-    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
-
-    // get the creation time of the admin server pod before patching
-    OffsetDateTime adminPodCreationTime = getPodCreationTime(domainNamespace, adminServerPodName);
-    // get the creation time of the managed server pods before patching
-    pods.put(adminServerPodName, adminPodCreationTime);
-    for (int i = 1; i <= replicaCount; i++) {
-      pods.put(managedServerPrefix + i, getPodCreationTime(domainNamespace,   managedServerPrefix + i));
-    }
-
-    StringBuffer patchStr = null;
-    patchStr = new StringBuffer("[{");
-    patchStr.append("\"op\": \"replace\",")
-        .append(" \"path\": \"/spec/configuration/model/configMap\",")
-        .append(" \"value\":  \"" + configMapName + "\"")
-        .append(" }]");
-    logger.log(Level.INFO, "Configmap patch string: {0}", patchStr);
-
-    patch = new V1Patch(new String(patchStr));
-    boolean cmPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(configMap)  failed ");
-    assertTrue(cmPatched, "patchDomainCustomResource(configMap) failed");
-
-    patchStr = new StringBuffer("[{");
-    patchStr.append(" \"op\": \"replace\",")
-        .append(" \"path\": \"/spec/replicas\",")
-        .append(" \"value\": 1")
-        .append(" }]");
-    logger.log(Level.INFO, "Replicas patch string: {0}", patchStr);
-
-    patch = new V1Patch(new String(patchStr));
-    boolean replicaPatched = assertDoesNotThrow(() ->
-            patchDomainCustomResource(domainUid, domainNamespace, patch, "application/json-patch+json"),
-        "patchDomainCustomResource(restartVersion)  failed ");
-    assertTrue(replicaPatched, "patchDomainCustomResource(replicas) failed");
-
-    String newRestartVersion = patchDomainResourceWithNewRestartVersion(domainUid, domainNamespace);
-    logger.log(Level.INFO, "New restart version : {0}", newRestartVersion);
-
-    assertTrue(verifyRollingRestartOccurred(pods, 1, domainNamespace),
-        "Rolling restart failed");
-
-    // The ServerNamePrefix for the new configured cluster is config-server
-    // Make sure the managed server from the new cluster is running
-    String newServerPodName = domainUid + "-config-server1";
-    checkPodReady(newServerPodName, domainUid, domainNamespace);
-    checkServiceExists(newServerPodName, domainNamespace);
-
-    verifyManagedServerConfiguration("config-server1");
-    logger.info("Found new managed server configuration");
-  }
-
-  /**
    * Start a WebLogic domain with model-in-image.
    * Patch the domain CRD with a new credentials secret.
    * Update domainRestartVersion to trigger a rolling restart of server pods.
@@ -697,7 +565,7 @@ class ItMiiUpdateDomainConfig {
    * Check the validity of new credentials by accessing WebLogic RESTful Service
    */
   @Test
-  @Order(9)
+  @Order(7)
   @DisplayName("Change the WebLogic Admin credential of the domain")
   void testMiiUpdateWebLogicCredential() {
     verifyUpdateWebLogicCredential(adminSvcExtHost, domainNamespace, domainUid, adminServerPodName,
@@ -721,7 +589,7 @@ class ItMiiUpdateDomainConfig {
    * Make sure that the cluster can be scaled down below 2 servers.
    */
   @Test
-  @Order(10)
+  @Order(8)
   @DisplayName("Test modification to Dynamic cluster size parameters")
   void testMiiUpdateDynamicClusterSize() {
 
@@ -999,17 +867,6 @@ class ItMiiUpdateDomainConfig {
                     domainUid, domNamespace));
     assertTrue(domCreated, String.format("Create domain custom resource failed with ApiException "
                     + "for %s in namespace %s", domainUid, domNamespace));
-  }
-
-  private void checkPodNotCreated(String podName, String domainUid, String domNamespace) {
-    testUntil(
-        assertDoesNotThrow(() -> podDoesNotExist(podName, domainUid, domNamespace),
-          String.format("podDoesNotExist failed with ApiException for %s in namespace in %s",
-            podName, domNamespace)),
-        logger,
-        "pod {0} to be not created in namespace {1}",
-        podName,
-        domNamespace);
   }
 
   private void verifyManagedServerConfiguration(String managedServer) {

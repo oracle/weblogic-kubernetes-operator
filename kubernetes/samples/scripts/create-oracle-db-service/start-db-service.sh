@@ -86,7 +86,8 @@ fi
 kubectl delete service oracle-db -n ${namespace} --ignore-not-found
 kubectl apply -f ${scriptDir}/common/oracle.db.yaml
 
-dbpod=`kubectl get po -n ${namespace} | grep oracle-db | cut -f1 -d " " `
+dbpod=$(detectPod ${namespace})
+echo "Is going to check dbpod: ${dbpod} in the namespace: ${namespace} "
 
 checkPod ${dbpod} ${namespace}
 checkPodState ${dbpod} ${namespace} "1/1"
