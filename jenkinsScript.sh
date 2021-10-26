@@ -50,6 +50,12 @@ function checkJavaVersion {
     exit 1
   fi
 }
+function dockerLogin {
+  echo 'docker login'
+  if [ -z $DOCKER_USERNAME ] && [ -z $DOCKER_PASSWORD ]; then
+    docker login -u $DOCKER_USERNAME -p $DOCKER_PASSWORD
+  fi
+}
 
 # Record start time in a format appropriate for journalctl --since
 start_time=$(date +"%Y-%m-%d %H:%M:%S")
@@ -131,6 +137,8 @@ echo "Info: soft limits"
 ulimit -a
 echo "Info: hard limits"
 ulimit -aH
+
+dockerLogin
 
 echo 'Info: Run build...'
 mvn clean install
