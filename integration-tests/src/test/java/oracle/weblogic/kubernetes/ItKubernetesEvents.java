@@ -310,10 +310,21 @@ class ItKubernetesEvents {
 
     OffsetDateTime timestamp = now();
     try {
+      patchStr = "[{\"op\": \"replace\", \"path\": \"/spec/serverStartPolicy\", value: \"NEVER\"}]";
+      patch = new V1Patch(patchStr);
+      assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+          "patchDomainCustomResource failed");
+
+      checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace1);
+      for (int i = 1; i <= replicaCount; i++) {
+        logger.info("Checking managed server service/pod {0} is created in namespace {1}",
+            managedServerPodNamePrefix + i, domainNamespace1);
+        checkPodDoesNotExist(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
+      }
 
       logger.info("Replace the domainHome to a invalid value to verify the following events"
           + " DomainChanged, DomainProcessingRetrying and DomainProcessingAborted are logged");
-      patchStr = "[{\"op\": \"replace\", \"path\": \"/spec/domainHome\", value: \"" + originalDomainHome + "-bad\"}]";
+      patchStr = "[{\"op\": \"replace\", \"path\": \"/spec/domainHome\", value: \"" + originalDomainHome + "bad\"}]";
       logger.info("PatchStr for domainHome: {0}", patchStr);
 
       patch = new V1Patch(patchStr);
@@ -325,7 +336,6 @@ class ItKubernetesEvents {
 
       // logger.info("verify domain processing retrying event");
       // checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_PROCESSING_RETRYING, "Normal", timestamp);
-
       logger.info("verify domain processing aborted event");
       checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_PROCESSING_ABORTED, "Warning", timestamp);
     } finally {
