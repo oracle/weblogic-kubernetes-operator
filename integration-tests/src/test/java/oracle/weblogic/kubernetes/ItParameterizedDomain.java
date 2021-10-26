@@ -390,10 +390,10 @@ class ItParameterizedDomain {
     final String hostName = "localhost";
 
     String forwardedPortNo = startPortForwardProcess(hostName, domainNamespace, domainUid, ADMIN_SERVER_PORT);
-    verifyAdminConsoleAccessible(domainNamespace, hostName, forwardedPortNo, false, "checkNotAccessible");
+    verifyAdminConsoleAccessible(domainNamespace, hostName, forwardedPortNo, false, Boolean.FALSE);
 
     forwardedPortNo = startPortForwardProcess(hostName, domainNamespace, domainUid, ADMIN_SERVER_SECURE_PORT);
-    verifyAdminConsoleAccessible(domainNamespace, hostName, forwardedPortNo, true, "checkNotAccessible");
+    verifyAdminConsoleAccessible(domainNamespace, hostName, forwardedPortNo, true, Boolean.FALSE);
 
     stopPortForwardProcess(domainNamespace);
   }

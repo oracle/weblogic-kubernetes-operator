@@ -33,7 +33,7 @@ public class ApplicationUtils {
    * @param args arguments to determine whether to check the console accessible or not
    * @return true if curl command returns HTTP code 200 otherwise false
    */
-  public static boolean checkAppUsingHostHeader(String url, String hostHeader, String... args) {
+  public static boolean checkAppUsingHostHeader(String url, String hostHeader, Boolean... args) {
     boolean checkConsoleAccessible = (args.length == 0) ? true : false;
     LoggingFacade logger = getLogger();
     StringBuffer curlString = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
@@ -402,7 +402,7 @@ public class ApplicationUtils {
                                                   String hostName,
                                                   String port,
                                                   boolean secureMode,
-                                                  String... args) {
+                                                  Boolean... args) {
     boolean checkConsoleAccessible = (args.length == 0) ? true : false;
     LoggingFacade logger = getLogger();
     String httpKey = "http://";
