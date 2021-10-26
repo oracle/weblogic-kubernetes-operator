@@ -187,7 +187,7 @@ class ItKubernetesEvents {
     externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
 
     // This test uses the operator restAPI to scale the domain. To do this in OKD cluster,
-    // we need to expose the external service as route and set tls termination to  passthrough 
+    // we need to expose the external service as route and set tls termination to  passthrough
     logger.info("Create a route for the operator external service - only for OKD");
     String opExternalSvc = createRouteForOKD("external-weblogic-operator-svc", opNamespace);
     // Patch the route just created to set tls termination to passthrough
@@ -305,13 +305,16 @@ class ItKubernetesEvents {
   void testDomainK8SEventsFailed() {
     V1Patch patch;
     String patchStr;
+    Domain domain = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace1));
+    String originalDomainHome = domain.getSpec().getDomainHome();
 
     OffsetDateTime timestamp = now();
     try {
-      logger.info("remove the webLogicCredentialsSecret to verify the following events"
+
+      logger.info("Replace the domainHome to a invalid value to verify the following events"
           + " DomainChanged, DomainProcessingRetrying and DomainProcessingAborted are logged");
-      patchStr = "[{\"op\": \"remove\", \"path\": \"/spec/webLogicCredentialsSecret\"}]";
-      logger.info("PatchStr for webLogicCredentialsSecret: {0}", patchStr);
+      patchStr = "[{\"op\": \"replace\", \"path\": \"/spec/domainHome\", value: \"" + originalDomainHome + "-bad\"}]";
+      logger.info("PatchStr for domainHome: {0}", patchStr);
 
       patch = new V1Patch(patchStr);
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
@@ -320,18 +323,20 @@ class ItKubernetesEvents {
       logger.info("verify domain changed event is logged");
       checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_CHANGED, "Normal", timestamp);
 
-      //      logger.info("verify domain processing retrying event");
-      //      checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_PROCESSING_RETRYING, "Normal", timestamp);
+      // logger.info("verify domain processing retrying event");
+      // checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_PROCESSING_RETRYING, "Normal", timestamp);
 
       logger.info("verify domain processing aborted event");
       checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_PROCESSING_ABORTED, "Warning", timestamp);
     } finally {
       timestamp = now();
-      // add back the webLogicCredentialsSecret
-      patchStr = "[{\"op\": \"add\", \"path\": \"/spec/webLogicCredentialsSecret\", "
-          + "\"value\" : {\"name\":\"" + wlSecretName + "\" , \"namespace\":\"" + domainNamespace1 + "\"}"
-          + "}]";
-      logger.info("PatchStr for webLogicCredentialsSecret: {0}", patchStr);
+      String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace1));
+      // add back the original domain home
+      patchStr = "["
+          + "{\"op\": \"replace\", \"path\": \"/spec/domainHome\", value: \"" + originalDomainHome + "\"},"
+          + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
+          + "]";
+      logger.info("PatchStr for domainHome: {0}", patchStr);
 
       patch = new V1Patch(patchStr);
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
@@ -339,8 +344,18 @@ class ItKubernetesEvents {
 
       logger.info("verify domain changed event is logged");
       checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_CHANGED, "Normal", timestamp);
+      // verify the admin server service created
+      checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace1);
+
+      // verify managed server services created
+      for (int i = 1; i <= replicaCount; i++) {
+        logger.info("Checking managed server service/pod {0} is created in namespace {1}",
+            managedServerPodNamePrefix + i, domainNamespace1);
+        checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
+      }
     }
   }
+
 
   /**
    * Test verifies there is only 1 DomainProcessing Starting/Completed event is logged
