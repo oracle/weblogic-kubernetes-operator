@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 328d3e24b80224e54eadd5b3b5429df5a544147ad24ef25623ca97d26e464232
+    weblogic.sha256: 7b4f18f84620265efc245e69b1779428c8747cacf8f0ed3376015c9afba14ddc
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -212,7 +212,7 @@ spec:
                     properties:
                       replicationChannelPort:
                         description: The operator will create a `T3` protocol WebLogic
-                          network access point on each WebLogic server that is part
+                          network access point on each WebLogic Server that is part
                           of a cluster with this port to handle EJB and servlet session
                           state replication traffic between servers. This setting
                           is ignored for clusters where the WebLogic cluster configuration
@@ -220,11 +220,15 @@ spec:
                           to 4564.
                         type: number
                       localhostBindingsEnabled:
-                        description: When `true` the operator creates a WebLogic network
-                          access point with a `localhost` binding for each existing
-                          channel and protocol. This must be set to true when using
-                          Istio versions prior to 1.10 and must be set to false for
-                          version 1.10 and later. Defaults to true.
+                        description: This setting was added in operator version 3.3.3,
+                          defaults to `true` in version 3.x, and is ignored in version
+                          4.0 and later. In version 3.x, when `true`, the operator
+                          creates a WebLogic network access point with a `localhost`
+                          binding for each existing channel and protocol.  In version
+                          3.x, use `true` for Istio versions prior to 1.10 and set
+                          to `false` for version 1.10 and later.  Version 4.0 and
+                          later requires Istio 1.10 and later, will not create localhost
+                          bindings, and ignores this attribute.
                         type: boolean
                       readinessPort:
                         description: The operator will create WebLogic network access
