@@ -339,8 +339,6 @@ class ItCrossDomainTransaction {
     createDomain(domainUid2, domain2Namespace, domain2AdminSecretName, domain2Image);
     domain2AdminExtSvcRouteHost = adminExtSvcRouteHost;
 
-    hostAndPort = getHostAndPort(domain1AdminExtSvcRouteHost, domain1AdminServiceNodePort);
-
     logger.info("Getting admin server external service node port(s)");
     domain1AdminServiceNodePort = assertDoesNotThrow(
         () -> getServiceNodePort(domain1Namespace, getExternalServicePodName(domain1AdminServerPodName), "default"),
@@ -352,6 +350,7 @@ class ItCrossDomainTransaction {
         "Getting admin server node port failed");
     assertNotEquals(-1, admin2ServiceNodePort, "admin server default node port is not valid");
 
+    hostAndPort = getHostAndPort(domain1AdminExtSvcRouteHost, domain1AdminServiceNodePort);
   }
 
   /*
