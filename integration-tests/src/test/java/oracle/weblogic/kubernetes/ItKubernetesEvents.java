@@ -310,7 +310,7 @@ class ItKubernetesEvents {
 
     OffsetDateTime timestamp = now();
     try {
-      patchStr = "[{\"op\": \"replace\", \"path\": \"/spec/serverStartPolicy\", value: \"NEVER\"}]";
+      patchStr = "[{\"op\": \"replace\", \"path\": \"/spec/serverStartPolicy\", \"value\": \"NEVER\"}]";
       patch = new V1Patch(patchStr);
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
           "patchDomainCustomResource failed");
@@ -324,7 +324,8 @@ class ItKubernetesEvents {
 
       logger.info("Replace the domainHome to a invalid value to verify the following events"
           + " DomainChanged, DomainProcessingRetrying and DomainProcessingAborted are logged");
-      patchStr = "[{\"op\": \"replace\", \"path\": \"/spec/domainHome\", value: \"" + originalDomainHome + "bad\"}]";
+      patchStr = "[{\"op\": \"replace\", "
+          + "\"path\": \"/spec/domainHome\", \"value\": \"" + originalDomainHome + "bad\"}]";
       logger.info("PatchStr for domainHome: {0}", patchStr);
 
       patch = new V1Patch(patchStr);
@@ -339,11 +340,16 @@ class ItKubernetesEvents {
       logger.info("verify domain processing aborted event");
       checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_PROCESSING_ABORTED, "Warning", timestamp);
     } finally {
+      try {
+        Thread.sleep(1000 * 60 * 60);
+      } catch (Exception e) {
+        ;
+      }
       timestamp = now();
       String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace1));
       // add back the original domain home
       patchStr = "["
-          + "{\"op\": \"replace\", \"path\": \"/spec/domainHome\", value: \"" + originalDomainHome + "\"},"
+          + "{\"op\": \"replace\", \"path\": \"/spec/domainHome\", \"value\": \"" + originalDomainHome + "\"},"
           + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
           + "]";
       logger.info("PatchStr for domainHome: {0}", patchStr);
