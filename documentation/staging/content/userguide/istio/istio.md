@@ -5,6 +5,24 @@ weight: 9
 description: "Lets you run the operator, and WebLogic domains managed by the operator, with Istio sidecar injection enabled. You can use Istio gateways and virtual services to access applications deployed in these domains."
 ---
 
+#### Contents
+
+- [Overview](#overview)
+- [Limitations](#limitations)
+- [Determining the Istio version](#determining-the-istio-version)
+- [Setting up an operator with Istio support](#setting-up-an-operator-with-istio-support)
+- [Creating a domain with Istio support](#creating-a-domain-with-istio-support)
+  - [Setting up the domain namespace](#setting-up-the-domain-namespace)
+  - [Configuring the domain resource](#configuring-the-domain-resource)
+  - [Applying a Domain YAML file](#applying-a-domain-yaml-file)
+  - [Exposing applications in Istio-enabled domains](#exposing-applications-in-istio-enabled-domains)
+- [Traffic management](#traffic-management)
+- [Distributed tracing](#distributed-tracing)
+- [Automatically added network channels](#automatically-added-network-channels)
+  - [Added network channels for Istio versions prior to v1.10](#added-network-channels-for-istio-versions-prior-to-v110)
+  - [Added network channel for Istio versions v1.10 and later](#added-network-channel-for-istio-versions-v110-and-later)
+  - [Added network channel for WebLogic EJB and Servlet Session State Replication Traffic](#added-network-channel-for-weblogic-ejb-and-servlet-session-state-replication-traffic)
+
 #### Overview
 
 {{% notice note %}}
@@ -227,10 +245,10 @@ sample-domain1-managed-server2   2/2     Running   0          153m
 
 If you use `istioctl proxy-status`, you will see the mesh status:
 
-```shell
-istioctl proxy-status
+```text
+$ istioctl proxy-status
 ```
-```
+```text
 NAME                                                               CDS        LDS        EDS        RDS          PILOT                            VERSION
 istio-ingressgateway-5c7d8d7b5d-tjgtd.istio-system                 SYNCED     SYNCED     SYNCED     NOT SENT     istio-pilot-6cfcdb75dd-87lqm     1.5.4
 sample-domain1-admin-server.sample-domain1-ns                      SYNCED     SYNCED     SYNCED     SYNCED       istio-pilot-6cfcdb75dd-87lqm     1.5.4
@@ -409,7 +427,7 @@ readiness probe is bound to the server pod's network interface:
     |----|----|----|--------|-----|
     |`http-probe-ext`|From configuration Istio `readinessPort` | Server Pod's IP | `http`| No |
 
-#### Added network channel for WebLogic EJB and Servlet Session State Replication Traffic
+##### Added network channel for WebLogic EJB and Servlet Session State Replication Traffic
 
 To support WebLogic EJB and servlet session state replication traffic in an Istio service mesh,
 operator versions 3.3.3 and later will automatically create a channel (network access point)
