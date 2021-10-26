@@ -19,6 +19,9 @@ topology:
                 ServerTemplate: '@@PROP:clusterName@@-template'
     Server:
         '@@PROP:adminServerName@@':
+            SSL:
+                Enabled: true
+                ListenPort: '@@PROP:adminServerSslPort@@'
             NetworkAccessPoint:
                 T3Channel:
                     ListenPort: '@@PROP:t3ChannelPort@@'
