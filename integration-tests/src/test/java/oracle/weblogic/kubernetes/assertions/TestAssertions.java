@@ -5,11 +5,13 @@ package oracle.weblogic.kubernetes.assertions;
 
 import java.io.IOException;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Secret;
+import oracle.weblogic.domain.DomainCondition;
 import oracle.weblogic.kubernetes.actions.impl.LoggingExporter;
 import oracle.weblogic.kubernetes.assertions.impl.Apache;
 import oracle.weblogic.kubernetes.assertions.impl.Application;
@@ -392,6 +394,67 @@ public class TestAssertions {
         }
         return false;
       }
+    };
+  }
+
+  /**
+   * Check the domain status condition type exists.
+   * @param domain oracle.weblogic.domain.Domain object
+   * @param conditionType the type name of condition, accepted value: Completed, Available, Failed and
+   *                      ConfigChangesPendingRestart
+   * @return true if the condition type exists, false otherwise
+   */
+  public static Callable<Boolean> domainStatusConditionTypeExists(oracle.weblogic.domain.Domain domain,
+                                                                  String conditionType) {
+    LoggingFacade logger = getLogger();
+    return () -> {
+      if (domain != null && domain.getStatus() != null) {
+        List<DomainCondition> domainConditionList = domain.getStatus().getConditions();
+        for (DomainCondition domainCondition : domainConditionList) {
+          if (domainCondition.getType().equalsIgnoreCase(conditionType)) {
+            return true;
+          }
+        }
+      } else {
+        if (domain == null) {
+          logger.info("domain is null");
+        } else {
+          logger.info("domain status is null");
+        }
+      }
+      return false;
+    };
+  }
+
+  /**
+   * Check the domain status condition type has expected status.
+   * @param domain oracle.weblogic.domain.Domain object
+   * @param conditionType the type name of condition, accepted value: Completed, Available, Failed and
+   *                      ConfigChangesPendingRestart
+   * @param expectedStatus expected status value, either True or False
+   * @return true if the condition type has the expected status, false otherwise
+   */
+  public static Callable<Boolean> domainStatusConditionTypeHasExpectedStatus(oracle.weblogic.domain.Domain domain,
+                                                                             String conditionType,
+                                                                             String expectedStatus) {
+    LoggingFacade logger = getLogger();
+    return () -> {
+      if (domain != null && domain.getStatus() != null) {
+        List<DomainCondition> domainConditionList = domain.getStatus().getConditions();
+        for (DomainCondition domainCondition : domainConditionList) {
+          if (domainCondition.getType().equalsIgnoreCase(conditionType)
+              && domainCondition.getStatus().equalsIgnoreCase(expectedStatus)) {
+            return true;
+          }
+        }
+      } else {
+        if (domain == null) {
+          logger.info("domain is null");
+        } else {
+          logger.info("domain status is null");
+        }
+      }
+      return false;
     };
   }
 
