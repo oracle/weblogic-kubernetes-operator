@@ -178,7 +178,6 @@ abstract class WaitForReadyStep<T> extends Step {
   @Override
   public final NextAction apply(Packet packet) {
     String serverName = (String)packet.get(SERVER_NAME);
-    DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
     if (shouldTerminateFiber(initialResource)) {
       return doTerminate(createTerminationException(initialResource), packet);
     } else if (isReady(initialResource, packet.getSpi(DomainPresenceInfo.class), serverName)) {
@@ -280,10 +279,12 @@ abstract class WaitForReadyStep<T> extends Step {
     private final Packet packet;
     private final AtomicBoolean didResume = new AtomicBoolean(false);
     private final AtomicInteger recheckCount = new AtomicInteger(0);
+    private final String serverName;
 
     Callback(AsyncFiber fiber, Packet packet) {
       this.fiber = fiber;
       this.packet = packet;
+      this.serverName = (String) packet.get(SERVER_NAME);
     }
 
     @Override
@@ -319,6 +320,10 @@ abstract class WaitForReadyStep<T> extends Step {
 
     int getRecheckCount() {
       return recheckCount.get();
+    }
+
+    String geServerName() {
+      return serverName;
     }
   }
 

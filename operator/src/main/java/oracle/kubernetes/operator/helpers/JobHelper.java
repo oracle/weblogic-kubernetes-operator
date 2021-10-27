@@ -10,6 +10,9 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 
+import io.kubernetes.client.openapi.models.V1ContainerState;
+import io.kubernetes.client.openapi.models.V1ContainerStateWaiting;
+import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1Job;
@@ -18,6 +21,7 @@ import io.kubernetes.client.openapi.models.V1JobStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.DomainProcessorImpl;
@@ -459,29 +463,115 @@ public class JobHelper {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse callResponse) {
-      List<Step> nextSteps = new ArrayList<>();
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       V1Job job = (V1Job) callResponse.getResult();
       if ((job != null) && (packet.get(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB) == null)) {
         packet.put(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB, job);
       }
-
-      OffsetDateTime startTime = createNextSteps(nextSteps, info, job, getNext());
-      packet.putIfAbsent(START_TIME, startTime);
-      return doNext(nextSteps.get(0), packet);
+      return doNext(getIntrospectorPodStatus(info.getDomainUid(), info.getNamespace(), getNext()), packet);
     }
 
+    private Step getIntrospectorPodStatus(String domainUid, String namespace, Step next) {
+      return new CallBuilder()
+              .withLabelSelectors(LabelConstants.JOBNAME_LABEL)
+              .listPodAsync(namespace, new IntrospectorPodStatusStep(domainUid, next));
+    }
 
-    static OffsetDateTime createNextSteps(List<Step> nextSteps, DomainPresenceInfo info,
-                                                 V1Job job, Step next) {
+    private static boolean isImagePullError(String jobPodContainerWaitingReason) {
+      return Optional.ofNullable(jobPodContainerWaitingReason)
+              .map(s -> s.contains("ErrImagePull") || s.contains("ImagePullBackOff"))
+              .orElse(false);
+    }
+
+    private static boolean isJobTimedout(DomainPresenceInfo info) {
+      return Objects.equals(getReason(info), "DeadlineExceeded") || getMessage(info).contains("DeadlineExceeded");
+    }
+
+    private static boolean isJobNewOrNotProcesssed(V1Job job, String lastJobProcessedUid) {
+      return (lastJobProcessedUid == null) || (!lastJobProcessedUid.equals(job.getMetadata().getUid()));
+    }
+
+    private static String getLastIntrospectJobProcessedId(DomainPresenceInfo info) {
+      return Optional.of(info)
+              .map(DomainPresenceInfo::getDomain)
+              .map(Domain::getStatus)
+              .map(DomainStatus::getLastIntrospectJobProcessedUid)
+              .orElse(null);
+    }
+
+    private static String getReason(DomainPresenceInfo info) {
+      return Optional.of(info)
+              .map(DomainPresenceInfo::getDomain)
+              .map(Domain::getStatus)
+              .map(DomainStatus::getReason)
+              .orElse(null);
+    }
+
+    private static String getMessage(DomainPresenceInfo info) {
+      return Optional.of(info)
+              .map(DomainPresenceInfo::getDomain)
+              .map(Domain::getStatus)
+              .map(DomainStatus::getMessage)
+              .orElse("");
+    }
+
+    private class IntrospectorPodStatusStep extends ResponseStep<V1PodList> {
+      private final String domainUid;
+
+      IntrospectorPodStatusStep(String domainUid, Step next) {
+        super(next);
+        this.domainUid = domainUid;
+      }
+
+      @Override
+      public NextAction onFailure(Packet packet, CallResponse<V1PodList> callResponse) {
+        return super.onFailure(packet, callResponse);
+      }
+
+      @Override
+      public NextAction onSuccess(Packet packet, CallResponse<V1PodList> callResponse) {
+        List<Step> nextSteps = new ArrayList<>();
+        Optional.ofNullable(callResponse.getResult())
+                .map(V1PodList::getItems)
+                .orElseGet(Collections::emptyList)
+                .forEach(pod -> recordJobPodNameAndStatus(packet, pod));
+
+        V1Job job = (V1Job) packet.get(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
+        OffsetDateTime startTime = createNextSteps(nextSteps, packet, job, getNext());
+        packet.putIfAbsent(START_TIME, startTime);
+        return doContinueListOrNext(callResponse, packet, nextSteps.get(0));
+      }
+
+      private void recordJobPodNameAndStatus(Packet packet, V1Pod pod) {
+        String name = Optional.ofNullable(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getName).orElse("");
+        if (name.startsWith(JobHelper.createJobName(domainUid))) {
+          packet.put(ProcessingConstants.JOB_POD_NAME, name);
+
+          packet.put(ProcessingConstants.JOB_POD_CONTAINER_WAITING_REASON, Optional.ofNullable(pod.getStatus())
+                  .map(V1PodStatus::getContainerStatuses).map(statuses -> statuses.get(0))
+                  .map(V1ContainerStatus::getState).map(V1ContainerState::getWaiting)
+                  .map(V1ContainerStateWaiting::getReason).orElse(null));
+        }
+      }
+    }
+
+    static OffsetDateTime createNextSteps(List<Step> nextSteps, Packet packet, V1Job job, Step next) {
       OffsetDateTime jobStartTime;
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       String namespace = info.getNamespace();
+      String jobPodContainerWaitingReason = (String) packet.get(ProcessingConstants.JOB_POD_CONTAINER_WAITING_REASON);
+
       if (job != null) {
         jobStartTime = Optional.ofNullable(job.getMetadata())
                 .map(V1ObjectMeta::getCreationTimestamp).orElse(OffsetDateTime.now());
         String lastIntrospectJobProcessedId = getLastIntrospectJobProcessedId(info);
-        if ((lastIntrospectJobProcessedId == null)
-                || (!lastIntrospectJobProcessedId.equals(job.getMetadata().getUid()))) {
+
+        if (isJobTimedout(info) || (isImagePullError(jobPodContainerWaitingReason))) {
+          jobStartTime = OffsetDateTime.now();
+          packet.put(DOMAIN_INTROSPECT_REQUESTED, ReadDomainIntrospectorPodLogResponseStep.INTROSPECTION_FAILED);
+          nextSteps.add(Step.chain(deleteDomainIntrospectorJobStep(null),
+                  createDomainIntrospectorJobStep(next)));
+        } else if (isJobNewOrNotProcesssed(job, lastIntrospectJobProcessedId)) {
           nextSteps.add(Step.chain(readDomainIntrospectorPodLogStep(null),
                   deleteDomainIntrospectorJobStep(null),
                   ConfigMapHelper.createIntrospectorConfigMapStep(next)));
@@ -498,14 +588,6 @@ public class JobHelper {
                 createDomainIntrospectorJobStep(next)));
       }
       return jobStartTime;
-    }
-
-    private static String getLastIntrospectJobProcessedId(DomainPresenceInfo info) {
-      return Optional.of(info)
-              .map(DomainPresenceInfo::getDomain)
-              .map(Domain::getStatus)
-              .map(DomainStatus::getLastIntrospectJobProcessedUid)
-              .orElse(null);
     }
   }
 

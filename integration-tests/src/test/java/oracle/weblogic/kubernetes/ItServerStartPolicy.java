@@ -1433,7 +1433,8 @@ class ItServerStartPolicy {
         executeLifecycleScript(STATUS_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, clusterName),
         String.format("Failed to run %s", STATUS_CLUSTER_SCRIPT));
 
-    assertTrue(verifyExecuteResult(result, regex), "The script should scale the given cluster: " + clusterName);
+    assertTrue(verifyExecuteResult(result, regex), "The script should scale the given cluster: " + clusterName
+            + ", the result is -> " + result + " . It doesn't match the expected pattern -> " + regex);
     logger.info("The cluster {0} scaled successfully.", clusterName);
   }
 

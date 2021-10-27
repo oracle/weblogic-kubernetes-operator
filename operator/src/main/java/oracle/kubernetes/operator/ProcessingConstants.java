@@ -27,6 +27,7 @@ public interface ProcessingConstants {
 
   String DOMAIN_TOPOLOGY = "domainTopology";
   String JOB_POD_NAME = "jobPodName";
+  String JOB_POD_CONTAINER_WAITING_REASON = "jobPodContainerWaitingReason";
   String DOMAIN_INTROSPECTOR_JOB = "domainIntrospectorJob";
   String DOMAIN_INTROSPECTOR_LOG_RESULT = "domainIntrospectorLogResult";
   String DOMAIN_INTROSPECT_REQUESTED = "domainIntrospectRequested";

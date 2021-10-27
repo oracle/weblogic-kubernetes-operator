@@ -13,7 +13,6 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
@@ -54,7 +53,6 @@ public class DomainPresenceInfo {
   private final AtomicReference<Domain> domain;
   private final AtomicBoolean isDeleting = new AtomicBoolean(false);
   private final AtomicBoolean isPopulated = new AtomicBoolean(false);
-  private final AtomicInteger retryCount = new AtomicInteger(0);
   private final AtomicReference<Collection<ServerStartupInfo>> serverStartupInfo;
   private final AtomicReference<Collection<ServerShutdownInfo>> serverShutdownInfo;
 
@@ -545,23 +543,6 @@ public class DomainPresenceInfo {
 
   public void setPopulated(boolean populated) {
     isPopulated.set(populated);
-  }
-
-  private void resetFailureCount() {
-    retryCount.set(0);
-  }
-
-  public int incrementAndGetFailureCount() {
-    return retryCount.incrementAndGet();
-  }
-
-  int getRetryCount() {
-    return retryCount.get();
-  }
-
-  /** Sets the last completion time to now. */
-  public void complete() {
-    resetFailureCount();
   }
 
   EventItem getLastEventItem() {
