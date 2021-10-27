@@ -94,7 +94,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("ServerStartPolicy attribute in different levels in a MII domain")
 @IntegrationTest
-class ItServerStartPolicy {
+class ItServerStartPolicyConfigCluster {
 
   public static final String SERVER_LIFECYCLE = "Server";
   public static final String CLUSTER_LIFECYCLE = "Cluster";
@@ -981,11 +981,11 @@ class ItServerStartPolicy {
             .apiVersion(DOMAIN_API_VERSION)
             .kind("Domain")
             .metadata(new V1ObjectMeta()
-                    .name(ItServerStartPolicy.domainUid)
+                    .name(domainUid)
                     .namespace(domNamespace))
             .spec(new DomainSpec()
                     .allowReplicasBelowMinDynClusterSize(false)
-                    .domainUid(ItServerStartPolicy.domainUid)
+                    .domainUid(domainUid)
                     .domainHomeSourceType("FromModel")
                     .image(MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG)
                     .addImagePullSecretsItem(new V1LocalObjectReference()
@@ -1010,12 +1010,12 @@ class ItServerStartPolicy {
                                             .nodePort(0))))
                     .addClustersItem(new Cluster()
                             .clusterName(CLUSTER_1)
-                            .replicas(ItServerStartPolicy.replicaCount)
+                            .replicas(ItServerStartPolicyConfigCluster.replicaCount)
                             .serverStartPolicy("IF_NEEDED")
                             .serverStartState("RUNNING"))
                     .addClustersItem(new Cluster()
                             .clusterName(CLUSTER_2)
-                            .replicas(ItServerStartPolicy.replicaCount)
+                            .replicas(ItServerStartPolicyConfigCluster.replicaCount)
                             .serverStartPolicy("IF_NEEDED")
                             .serverStartState("RUNNING"))
                     .addManagedServersItem(new ManagedServer()
@@ -1046,12 +1046,12 @@ class ItServerStartPolicy {
                         .introspectorJobActiveDeadlineSeconds(300L)));
     setPodAntiAffinity(domain);
     logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
-            ItServerStartPolicy.domainUid, domNamespace);
+            domainUid, domNamespace);
     boolean domCreated = assertDoesNotThrow(() -> createDomainCustomResource(domain),
             String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-                    ItServerStartPolicy.domainUid, domNamespace));
+                    domainUid, domNamespace));
     assertTrue(domCreated, String.format("Create domain custom resource failed with ApiException "
-                    + "for %s in namespace %s", ItServerStartPolicy.domainUid, domNamespace));
+                    + "for %s in namespace %s", domainUid, domNamespace));
   }
 
   /*
