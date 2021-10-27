@@ -325,7 +325,8 @@ class ItKubernetesEvents {
       logger.info("Replace the domainHome to a invalid value to verify the following events"
           + " DomainChanged, DomainProcessingRetrying and DomainProcessingAborted are logged");
       patchStr = "[{\"op\": \"replace\", "
-          + "\"path\": \"/spec/domainHome\", \"value\": \"" + originalDomainHome + "bad\"}]";
+          + "\"path\": \"/spec/domainHome\", \"value\": \"" + originalDomainHome + "bad\"},"
+          + "{\"op\": \"replace\", \"path\": \"/spec/serverStartPolicy\", \"value\": \"IF_NEEDED\"}]";
       logger.info("PatchStr for domainHome: {0}", patchStr);
 
       patch = new V1Patch(patchStr);
