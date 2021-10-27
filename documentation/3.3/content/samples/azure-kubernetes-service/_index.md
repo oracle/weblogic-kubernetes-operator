@@ -22,9 +22,8 @@ This sample demonstrates how to use the [WebLogic Kubernetes Operator]({{< relre
 
 #### Azure Kubernetes Service cluster
 
-Azure Kubernetes Service makes it simple to deploy a managed Kubernetes cluster in Azure. AKS reduces the complexity and operational overhead of managing Kubernetes by offloading much of that responsibility to Azure. As a hosted Kubernetes service, Azure handles critical tasks like health monitoring and maintenance for you. The Kubernetes masters are managed by Azure. You only manage and maintain the agent nodes. As a managed Kubernetes service, AKS is free - you only pay for the agent nodes within your clusters, not for the masters.
+{{< readfile file="/samples/azure-kubernetes-service/includes/aks-value-prop.txt" >}}
 
-To learn more, see the [What is Azure Kubernetes Service?](https://docs.microsoft.com/en-us/azure/aks/intro-kubernetes).
 
 #### Domain home source types
 
