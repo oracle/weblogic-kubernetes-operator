@@ -162,7 +162,8 @@ See the following description of each `spec.configuration.istio` attribute:
   where the WebLogic cluster configuration already defines a `replication-channel` attribute. 
 * `localhostBindingsEnabled`:
    This setting was added in operator version 3.3.3,
-   defaults to `true` in version 3.x,
+   defaults to the `istioLocalhostBindingsEnabled` [Operator Helm value]({{< relref "/userguide/managing-operators/using-helm.md" >}})
+   which in turn defaults to `true`,
    and is ignored in version 4.0 and later.
    * In version 3.x, when `true`, the operator
    creates a WebLogic 
