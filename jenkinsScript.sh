@@ -51,7 +51,7 @@ function checkJavaVersion {
   fi
 }
 function dockerLogin {
-  echo 'docker login'
+  echo "Info: about to do docker login"
   if [ ! -z ${DOCKER_USERNAME+x} ] && [ ! -z ${DOCKER_PASSWORD+x} ]; then
     out=$(echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin)
     res=$?
@@ -59,6 +59,8 @@ function dockerLogin {
       echo 'docker login failed'
       exit 1
     fi
+  else
+    echo "Info: Docker credentials DOCKER_USERNAME and DOCKER_PASSWORD are not set."
   fi
 }
 
