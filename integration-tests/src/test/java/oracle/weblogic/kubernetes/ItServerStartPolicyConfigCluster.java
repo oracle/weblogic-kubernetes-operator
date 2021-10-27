@@ -123,7 +123,7 @@ class ItServerStartPolicyConfigCluster {
   private final String managedServerPrefix = domainUid + "-" + managedServerNamePrefix;
   private static LoggingFacade logger = null;
   private static final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
-  private static final Path tempSamplePath = Paths.get(WORK_DIR, "sample-testing");
+  private static final Path tempSamplePath = Paths.get(WORK_DIR, "sample-testing-config-cluster");
   private static final Path domainLifecycleSamplePath = Paths.get(samplePath + "/scripts/domain-lifecycle");
   private static String ingressHost = null; //only used for OKD
 
@@ -1089,7 +1089,7 @@ class ItServerStartPolicyConfigCluster {
   private static void setupSample() {
     assertDoesNotThrow(() -> {
       logger.info("Deleting and recreating {0}", tempSamplePath);
-      Files.createDirectories(tempSamplePath);
+      //Files.createDirectories(tempSamplePath);
       deleteDirectory(tempSamplePath.toFile());
       Files.createDirectories(tempSamplePath);
       logger.info("Copying {0} to {1}", samplePath, tempSamplePath);
