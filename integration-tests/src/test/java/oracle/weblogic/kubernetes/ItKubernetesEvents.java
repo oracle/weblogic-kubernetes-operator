@@ -295,13 +295,13 @@ class ItKubernetesEvents {
   }
 
   /**
-   * Test the following domain events are logged when domain resource goes through various life cycle stages.
-   * Patch the domain resource to remove the webLogicCredentialsSecret and verify DomainChanged is
-   * logged when operator processes the domain resource changes.
-   * Verifies DomainProcessingRetrying is logged when operator retries the failed domain resource
-   * changes since webLogicCredentialsSecret is still missing.
+   * Test the following domain events are logged when domain resource goes through introspector failure.
+   * Patch the domain resource to shutdown servers.
+   * Patch the domain resource to point to a bad DOMAIN_HOME and update serverStartPolicy to IF_NEEDED.
+   * Verifies DomainProcessingFailed event is logged.
    * Verifies DomainProcessingAborted is logged when operator exceeds the maximum retries and gives
    * up processing the domain resource.
+   * Cleanup by patching the domain resource to a valid location and introspectVersion to bring up all servers again.
    */
   @Order(4)
   @Test
@@ -309,13 +309,33 @@ class ItKubernetesEvents {
   void testDomainK8SEventsFailed() {
     V1Patch patch;
     String patchStr;
+    Domain domain = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace1));
+    String originalDomainHome = domain.getSpec().getDomainHome();
 
     OffsetDateTime timestamp = now();
     try {
-      logger.info("remove the webLogicCredentialsSecret to verify the following events"
+      logger.info("Shutting down all servers in domain with serverStartPolicy : NEVER");
+      patchStr = "[{\"op\": \"replace\", \"path\": \"/spec/serverStartPolicy\", \"value\": \"NEVER\"}]";
+      patch = new V1Patch(patchStr);
+      assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+          "patchDomainCustomResource failed");
+
+      logger.info("Checking if the admin server {0} is shutdown in namespace {1}",
+          adminServerPodName, domainNamespace1);
+      checkPodDoesNotExist(adminServerPodName, domainUid, domainNamespace1);
+
+      for (int i = 1; i <= replicaCount; i++) {
+        logger.info("Checking if the managed server {0} is shutdown in namespace {1}",
+            managedServerPodNamePrefix + i, domainNamespace1);
+        checkPodDoesNotExist(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
+      }
+
+      logger.info("Replace the domainHome to a nonexisting location to verify the following events"
           + " DomainChanged, DomainProcessingRetrying and DomainProcessingAborted are logged");
-      patchStr = "[{\"op\": \"remove\", \"path\": \"/spec/webLogicCredentialsSecret\"}]";
-      logger.info("PatchStr for webLogicCredentialsSecret: {0}", patchStr);
+      patchStr = "[{\"op\": \"replace\", "
+          + "\"path\": \"/spec/domainHome\", \"value\": \"" + originalDomainHome + "bad\"},"
+          + "{\"op\": \"replace\", \"path\": \"/spec/serverStartPolicy\", \"value\": \"IF_NEEDED\"}]";
+      logger.info("PatchStr for domainHome: {0}", patchStr);
 
       patch = new V1Patch(patchStr);
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
@@ -323,19 +343,20 @@ class ItKubernetesEvents {
 
       logger.info("verify domain changed event is logged");
       checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_CHANGED, "Normal", timestamp);
-
       logger.info("verify domain processing retrying event");
       checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_PROCESSING_RETRYING, "Normal", timestamp);
-
       logger.info("verify domain processing aborted event");
       checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_PROCESSING_ABORTED, "Warning", timestamp);
     } finally {
+      logger.info("Restoring the domain with valid location and bringing up all servers");
       timestamp = now();
-      // add back the webLogicCredentialsSecret
-      patchStr = "[{\"op\": \"add\", \"path\": \"/spec/webLogicCredentialsSecret\", "
-          + "\"value\" : {\"name\":\"" + wlSecretName + "\" , \"namespace\":\"" + domainNamespace1 + "\"}"
-          + "}]";
-      logger.info("PatchStr for webLogicCredentialsSecret: {0}", patchStr);
+      String introspectVersion = assertDoesNotThrow(() -> getNextIntrospectVersion(domainUid, domainNamespace1));
+      // add back the original domain home
+      patchStr = "["
+          + "{\"op\": \"replace\", \"path\": \"/spec/domainHome\", \"value\": \"" + originalDomainHome + "\"},"
+          + "{\"op\": \"add\", \"path\": \"/spec/introspectVersion\", \"value\": \"" + introspectVersion + "\"}"
+          + "]";
+      logger.info("PatchStr for domainHome: {0}", patchStr);
 
       patch = new V1Patch(patchStr);
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
@@ -343,6 +364,15 @@ class ItKubernetesEvents {
 
       logger.info("verify domain changed event is logged");
       checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_CHANGED, "Normal", timestamp);
+      logger.info("verifying the admin server is created and started");
+      checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace1);
+
+      // verify managed server services created
+      for (int i = 1; i <= replicaCount; i++) {
+        logger.info("Checking managed server service/pod {0} is created in namespace {1}",
+            managedServerPodNamePrefix + i, domainNamespace1);
+        checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
+      }
     }
   }
 
