@@ -61,6 +61,7 @@ import static oracle.kubernetes.operator.DomainFailureReason.Internal;
 import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
 import static oracle.kubernetes.operator.DomainFailureReason.ReplicasTooHigh;
 import static oracle.kubernetes.operator.DomainFailureReason.ServerPod;
+import static oracle.kubernetes.operator.DomainProcessorImpl.getExistingDomainPresenceInfo;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.MIINonDynamicChangesMethod.CommitUpdateOnly;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
@@ -73,6 +74,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
+import static oracle.kubernetes.operator.WebLogicConstants.SHUTTING_DOWN_STATE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_COMPLETE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_FAILED;
@@ -278,19 +280,19 @@ public class DomainStatusUpdater {
     }
 
     String getDomainUid() {
-      return getDomain().getDomainUid();
+      return Optional.ofNullable(getDomain()).map(Domain::getDomainUid).orElse(info.getDomainUid());
     }
 
     boolean isStatusUnchanged() {
       return getDomain() == null || getNewStatus().equals(getStatus());
     }
 
-    private String getNamespace() {
-      return getMetadata().getNamespace();
+    String getNamespace() {
+      return Optional.ofNullable(getMetadata()).map(V1ObjectMeta::getNamespace).orElse(info.getNamespace());
     }
 
     private V1ObjectMeta getMetadata() {
-      return getDomain().getMetadata();
+      return Optional.ofNullable(getDomain()).map(Domain::getMetadata).orElse(null);
     }
 
     DomainPresenceInfo getInfo() {
@@ -407,8 +409,7 @@ public class DomainStatusUpdater {
         config = packet.getValue(DOMAIN_TOPOLOGY);
         serverState = packet.getValue(SERVER_STATE_MAP);
         serverHealth = packet.getValue(SERVER_HEALTH_MAP);
-        expectedRunningServers = DomainPresenceInfo.fromPacket(packet)
-              .map(DomainPresenceInfo::getExpectedRunningServers)
+        expectedRunningServers = Optional.ofNullable(getCachedInfo().getExpectedRunningServers())
               .orElse(Collections.emptySet());
       }
 
@@ -561,7 +562,11 @@ public class DomainStatusUpdater {
       }
 
       private V1Pod getServerPod(ServerStatus serverStatus) {
-        return getInfo().getServerPod(serverStatus.getServerName());
+        return getCachedInfo().getServerPod(serverStatus.getServerName());
+      }
+
+      private DomainPresenceInfo getCachedInfo() {
+        return Optional.ofNullable(getExistingDomainPresenceInfo(getNamespace(), getDomainUid())).orElse(getInfo());
       }
 
       private Map<String, String> getLabels(V1Pod pod) {
@@ -645,7 +650,7 @@ public class DomainStatusUpdater {
       }
 
       private Optional<WlsDomainConfig> getScanCacheDomainConfig() {
-        DomainPresenceInfo info = getInfo();
+        DomainPresenceInfo info = getCachedInfo();
         Scan scan = ScanCache.INSTANCE.lookupScan(info.getNamespace(), info.getDomainUid());
         return Optional.ofNullable(scan).map(Scan::getWlsDomainConfig);
       }
@@ -659,15 +664,17 @@ public class DomainStatusUpdater {
       }
 
       private boolean isHasFailedPod() {
-        return getInfo().getServerPods().anyMatch(PodHelper::isFailed);
+        return getCachedInfo().getServerPods().anyMatch(PodHelper::isFailed);
       }
 
       private boolean hasServerPod(String serverName) {
-        return Optional.ofNullable(getInfo().getServerPod(serverName)).isPresent();
+        return Optional.ofNullable(getCachedInfo().getServerPod(serverName)).isPresent();
       }
 
       private boolean hasReadyServerPod(String serverName) {
-        return Optional.ofNullable(getInfo().getServerPod(serverName)).filter(PodHelper::getReadyStatus).isPresent();
+        return (!getCachedInfo().isServerPodBeingDeleted(serverName))
+                && Optional.ofNullable(getCachedInfo().getServerPod(serverName))
+                .filter(PodHelper::getReadyStatus).isPresent();
       }
 
       Map<String, ServerStatus> getServerStatuses(final String adminServerName) {
@@ -689,7 +696,17 @@ public class DomainStatusUpdater {
       }
 
       private String getRunningState(String serverName) {
+        if (getCachedInfo().getServerPod(serverName) == null) {
+          return SHUTDOWN_STATE;
+        } else if (isDeleting(serverName)) {
+          return SHUTTING_DOWN_STATE;
+        }
         return Optional.ofNullable(serverState).map(m -> m.get(serverName)).orElse(null);
+      }
+
+      private boolean isDeleting(String serverName) {
+        return Optional.ofNullable(getCachedInfo().getServerPod(serverName))
+                .map(p -> PodHelper.isDeleting(p)).orElse(false);
       }
 
       private String getDesiredState(String serverName, String clusterName, boolean isAdminServer) {
@@ -743,7 +760,7 @@ public class DomainStatusUpdater {
 
 
       private String getNodeName(String serverName) {
-        return Optional.ofNullable(getInfo().getServerPod(serverName))
+        return Optional.ofNullable(getCachedInfo().getServerPod(serverName))
             .map(V1Pod::getSpec)
             .map(V1PodSpec::getNodeName)
             .orElse(null);
@@ -756,7 +773,7 @@ public class DomainStatusUpdater {
       }
 
       private String getClusterNameFromPod(String serverName) {
-        return Optional.ofNullable(getInfo().getServerPod(serverName))
+        return Optional.ofNullable(getCachedInfo().getServerPod(serverName))
             .map(V1Pod::getMetadata)
             .map(V1ObjectMeta::getLabels)
             .map(l -> l.get(CLUSTERNAME_LABEL))

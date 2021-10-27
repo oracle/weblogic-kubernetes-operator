@@ -116,7 +116,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     this.productVersion = productVersion;
   }
 
-  private static DomainPresenceInfo getExistingDomainPresenceInfo(String ns, String domainUid) {
+  static DomainPresenceInfo getExistingDomainPresenceInfo(String ns, String domainUid) {
     return DOMAINS.computeIfAbsent(ns, k -> new ConcurrentHashMap<>()).get(domainUid);
   }
 
