@@ -56,7 +56,6 @@ import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
-import static oracle.weblogic.kubernetes.TestConstants.SKIP_BUILD_IMAGES_IF_EXISTS;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_DOMAINHOME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_DOMAINTYPE;
@@ -189,81 +188,48 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
           }
         }
 
-        if (SKIP_BUILD_IMAGES_IF_EXISTS.equals("false")) {
-          // build MII basic image
-          miiBasicImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
+        miiBasicImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
+        wdtBasicImage = WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG;
+
+        // build MII basic image if does not exits
+        logger.info("Build/Check mii-basic image with tag {0}", MII_BASIC_IMAGE_TAG);
+        if (! dockerImageExists(MII_BASIC_IMAGE_NAME, MII_BASIC_IMAGE_TAG)) { 
+          logger.info("Building mii-basic image {0}", miiBasicImage);
           testUntil(
-              withVeryLongRetryPolicy,
-              createBasicImage(MII_BASIC_IMAGE_NAME, MII_BASIC_IMAGE_TAG, MII_BASIC_WDT_MODEL_FILE,
-                null, MII_BASIC_APP_NAME, MII_BASIC_IMAGE_DOMAINTYPE),
-              logger,
-              "createBasicImage to be successful");
-
-          // build WDT basic domain in image
-          wdtBasicImage = WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG;
-          testUntil(
-              withVeryLongRetryPolicy,
-              createBasicImage(WDT_BASIC_IMAGE_NAME, WDT_BASIC_IMAGE_TAG, WDT_BASIC_MODEL_FILE,
-                WDT_BASIC_MODEL_PROPERTIES_FILE, WDT_BASIC_APP_NAME, WDT_BASIC_IMAGE_DOMAINTYPE),
-              logger,
-              "createBasicImage to be successful");
-
-          /* Check image exists using docker images | grep image tag.
-           * Tag name is unique as it contains date and timestamp.
-           * This is a workaround for the issue on Jenkins machine
-           * as docker images imagename:imagetag is not working and
-           * the test fails even though the image exists.
-           */
-          assertTrue(doesImageExist(MII_BASIC_IMAGE_TAG),
-              String.format("Image %s doesn't exist", miiBasicImage));
-
-          assertTrue(doesImageExist(WDT_BASIC_IMAGE_TAG),
-              String.format("Image %s doesn't exist", wdtBasicImage));
-        }
-
-        if (SKIP_BUILD_IMAGES_IF_EXISTS.equals("true")) {
-          miiBasicImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
-          logger.info("Build/Check mii-basic image with tag {0}", MII_BASIC_IMAGE_TAG);
-          // build MII basic image if does not exits
-          if (! dockerImageExists(MII_BASIC_IMAGE_NAME, MII_BASIC_IMAGE_TAG)) { 
-            logger.info("Building mii-basic image {0}", miiBasicImage);
-            testUntil(
                 withVeryLongRetryPolicy,
                 createBasicImage(MII_BASIC_IMAGE_NAME, MII_BASIC_IMAGE_TAG, MII_BASIC_WDT_MODEL_FILE,
                 null, MII_BASIC_APP_NAME, MII_BASIC_IMAGE_DOMAINTYPE),
                 logger,
                 "createBasicImage to be successful");
-          } else {
-            logger.info("SKIP building mii-basic image {0}", miiBasicImage);
-          }
+        } else {
+          logger.info("!!!! domain image {0} exists !!!!", miiBasicImage);
+        }
 
-          wdtBasicImage = WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG;
-          logger.info("Build/Check wdt-basic image with tag {0}", WDT_BASIC_IMAGE_TAG);
-          // build WDT basic image if does not exits
-          if (! dockerImageExists(WDT_BASIC_IMAGE_NAME, WDT_BASIC_IMAGE_TAG)) {
-            logger.info("Building wdt-basic image {0}", wdtBasicImage);
-            testUntil(
+        logger.info("Build/Check wdt-basic image with tag {0}", WDT_BASIC_IMAGE_TAG);
+        // build WDT basic image if does not exits
+        if (! dockerImageExists(WDT_BASIC_IMAGE_NAME, WDT_BASIC_IMAGE_TAG)) {
+          logger.info("Building wdt-basic image {0}", wdtBasicImage);
+          testUntil(
                 withVeryLongRetryPolicy,
                 createBasicImage(WDT_BASIC_IMAGE_NAME, WDT_BASIC_IMAGE_TAG, WDT_BASIC_MODEL_FILE,
                 WDT_BASIC_MODEL_PROPERTIES_FILE, WDT_BASIC_APP_NAME, WDT_BASIC_IMAGE_DOMAINTYPE),
                 logger,
                 "createBasicImage to be successful");
-          } else {
-            logger.info("SKIP building wdt-basic image {0}", miiBasicImage);
-          }
+        } else {
+          logger.info("!!!! domain image {0} exists !!!!", wdtBasicImage);
+        }
 
-          /* Check image exists using docker images | grep image tag.
-           * Tag name is unique as it contains date and timestamp.
-           * This is a workaround for the issue on Jenkins machine
-           * as docker images imagename:imagetag is not working and
-           * the test fails even though the image exists.
-           */
-          assertTrue(doesImageExist(MII_BASIC_IMAGE_TAG),
+        /* Check image exists using docker images | grep image tag.
+         * Tag name is unique as it contains date and timestamp.
+         * This is a workaround for the issue on Jenkins machine
+         * as docker images imagename:imagetag is not working and
+         * the test fails even though the image exists.
+         */
+        assertTrue(doesImageExist(MII_BASIC_IMAGE_TAG),
               String.format("Image %s doesn't exist", miiBasicImage));
 
-          assertTrue(doesImageExist(WDT_BASIC_IMAGE_TAG),
+        assertTrue(doesImageExist(WDT_BASIC_IMAGE_TAG),
               String.format("Image %s doesn't exist", wdtBasicImage));
-        }
 
         if (!OCIR_USERNAME.equals(REPO_DUMMY_VALUE)) {
           logger.info("docker login");
