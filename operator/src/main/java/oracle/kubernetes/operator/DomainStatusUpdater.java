@@ -842,6 +842,22 @@ public class DomainStatusUpdater {
     }
   }
 
+  public static Step createResetFailureCountStep() {
+    return new ResetFailureCountStep();
+  }
+
+  static class ResetFailureCountStep extends DomainStatusUpdaterStep {
+
+    public ResetFailureCountStep() {
+      super(null);
+    }
+
+    @Override
+    void modifyStatus(DomainStatus domainStatus) {
+      domainStatus.resetIntrospectJobFailureCount();
+    }
+  }
+
   public static Step recordLastIntrospectJobProcessedUid(String lastIntrospectJobProcessedId) {
     return new RecordLastIntrospectJobProcessedUidStep(lastIntrospectJobProcessedId);
   }

@@ -67,6 +67,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.EXCEEDED_INTROSPECT
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_ERROR_DOMAIN_STATUS_MESSAGE;
 import static oracle.kubernetes.operator.ProcessingConstants.INTROSPECTION_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.JOBWATCHER_COMPONENT_NAME;
+import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_CONTAINER_WAITING_REASON;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
 import static oracle.kubernetes.operator.helpers.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
@@ -599,7 +600,7 @@ class DomainIntrospectorJobTest {
     IntrospectionTestUtils.defineResources(testSupport, "passed");
     testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
 
-    JobHelper.ReplaceOrCreateStep.createNextSteps(nextSteps, domainPresenceInfo, job, terminalStep);
+    JobHelper.ReplaceOrCreateStep.createNextSteps(nextSteps, testSupport.getPacket(), job, terminalStep);
 
     assertThat(nextSteps.get(0), hasChainWithStepsInOrder("WatchDomainIntrospectorJobReadyStep",
             "ReadDomainIntrospectorPodStep", "ReadDomainIntrospectorPodLogStep",
@@ -617,10 +618,59 @@ class DomainIntrospectorJobTest {
     IntrospectionTestUtils.defineResources(testSupport, "passed");
     testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
 
-    JobHelper.ReplaceOrCreateStep.createNextSteps(nextSteps, domainPresenceInfo, job, terminalStep);
+    JobHelper.ReplaceOrCreateStep.createNextSteps(nextSteps, testSupport.getPacket(), job, terminalStep);
 
     assertThat(nextSteps.get(0), hasChainWithStepsInOrder("WatchDomainIntrospectorJobReadyStep",
             "DeleteDomainIntrospectorJobStep", "IntrospectionRequestStep",
+            "DomainIntrospectorJobStep"));
+  }
+
+  @Test
+  void whenJobTimedout_correctStepsExecuted() {
+    List<Step> nextSteps = new ArrayList<>();
+    domainPresenceInfo.getDomain()
+            .setStatus(new DomainStatus().withReason("DeadlineExceeded"));
+    V1Job job = new V1Job().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS).uid(JOB_UID))
+            .status(new V1JobStatus());
+    testSupport.defineResources(job);
+    IntrospectionTestUtils.defineResources(testSupport, "passed");
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
+
+    JobHelper.ReplaceOrCreateStep.createNextSteps(nextSteps, testSupport.getPacket(), job, terminalStep);
+
+    assertThat(nextSteps.get(0), hasChainWithStepsInOrder("DeleteDomainIntrospectorJobStep",
+            "DomainIntrospectorJobStep"));
+  }
+
+  @Test
+  void whenJobHasErrorPullingImage_correctStepsExecuted() {
+    List<Step> nextSteps = new ArrayList<>();
+    V1Job job = new V1Job().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS).uid(JOB_UID))
+            .status(new V1JobStatus());
+    testSupport.defineResources(job);
+    IntrospectionTestUtils.defineResources(testSupport, "passed");
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
+    testSupport.addToPacket(JOB_POD_CONTAINER_WAITING_REASON, "ErrImagePull");
+
+    JobHelper.ReplaceOrCreateStep.createNextSteps(nextSteps, testSupport.getPacket(), job, terminalStep);
+
+    assertThat(nextSteps.get(0), hasChainWithStepsInOrder("DeleteDomainIntrospectorJobStep",
+            "DomainIntrospectorJobStep"));
+  }
+
+  @Test
+  void whenJobHasImagePullBackOffError_correctStepsExecuted() {
+    List<Step> nextSteps = new ArrayList<>();
+    V1Job job = new V1Job().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS).uid(JOB_UID))
+            .status(new V1JobStatus());
+    testSupport.defineResources(job);
+    IntrospectionTestUtils.defineResources(testSupport, "passed");
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
+    testSupport.addToPacket(JOB_POD_CONTAINER_WAITING_REASON, "ImagePullBackOff");
+
+    JobHelper.ReplaceOrCreateStep.createNextSteps(nextSteps, testSupport.getPacket(), job, terminalStep);
+
+    assertThat(nextSteps.get(0), hasChainWithStepsInOrder("DeleteDomainIntrospectorJobStep",
             "DomainIntrospectorJobStep"));
   }
 
@@ -631,7 +681,7 @@ class DomainIntrospectorJobTest {
     IntrospectionTestUtils.defineResources(testSupport, "passed");
     testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
 
-    JobHelper.ReplaceOrCreateStep.createNextSteps(nextSteps, domainPresenceInfo, job, terminalStep);
+    JobHelper.ReplaceOrCreateStep.createNextSteps(nextSteps, testSupport.getPacket(), job, terminalStep);
 
     assertThat(nextSteps.get(0), hasChainWithStepsInOrder("ReadIntrospectorConfigMapStep",
             "DomainIntrospectorJobStep"));

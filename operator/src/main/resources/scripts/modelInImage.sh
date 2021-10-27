@@ -33,7 +33,12 @@ IMG_MODELS_ROOTDIR="${IMG_MODELS_HOME}"
 IMG_ARCHIVES_ROOTDIR="${IMG_MODELS_HOME}"
 IMG_VARIABLE_FILES_ROOTDIR="${IMG_MODELS_HOME}"
 WDT_ROOT="${WDT_INSTALL_HOME:-/u01/wdt/weblogic-deploy}"
-WDT_OUTPUT="/tmp/wdt_output.log"
+WDT_OUTPUT_DIR="${LOG_HOME:-/tmp}"
+WDT_OUTPUT="${WDT_OUTPUT_DIR}/wdt_output.log"
+WDT_CREATE_DOMAIN_LOG=createDomain.log
+WDT_UPDATE_DOMAIN_LOG=updateDomain.log
+WDT_VALIDATE_MODEL_LOG=validateModel.log
+WDT_COMPARE_MODEL_LOG=compareModel.log
 WDT_BINDIR="${WDT_ROOT}/bin"
 WDT_FILTER_JSON="/weblogic-operator/scripts/model-filters.json"
 WDT_CREATE_FILTER="/weblogic-operator/scripts/model-wdt-create-filter.py"
@@ -64,6 +69,12 @@ export WDT_MODEL_SECRETS_DIRS="/weblogic-operator/config-overrides-secrets"
 #  export WDT_MODEL_SECRETS_NAME_DIR_PAIRS="__weblogic-credentials__=/weblogic-operator/secrets,__WEBLOGIC-CREDENTIALS__=/weblogic-operator/secrets,${CREDENTIALS_SECRET_NAME}=/weblogic-operator/secret"
 #For now:
 export WDT_MODEL_SECRETS_NAME_DIR_PAIRS="__weblogic-credentials__=/weblogic-operator/secrets,__WEBLOGIC-CREDENTIALS__=/weblogic-operator/secrets"
+
+if [ ! -d "${WDT_OUTPUT_DIR}" ]; then
+  trace "Creating WDT standard output directory: '${WDT_OUTPUT_DIR}'"
+  createFolder "${WDT_OUTPUT_DIR}"
+fi
+
 
 # sort_files  sort the files according to the names and naming conventions and write the result to stdout
 #    $1  directory
@@ -660,6 +671,8 @@ function diff_model() {
     fi
   fi
 
+  wdtRotateAndCopyLogFile "${WDT_COMPARE_MODEL_LOG}"
+
   trace "Exiting diff_model"
 }
 
@@ -829,6 +842,8 @@ function generateMergedModel() {
     exitOrLoop
   fi
 
+  wdtRotateAndCopyLogFile "${WDT_VALIDATE_MODEL_LOG}"
+
   # restore trap
   start_trap
   trace "Exiting generateMergedModel"
@@ -924,6 +939,8 @@ function wdtCreatePrimordialDomain() {
     cat ${WDT_OUTPUT}
   fi
 
+  wdtRotateAndCopyLogFile "${WDT_CREATE_DOMAIN_LOG}"
+
   # restore trap
   start_trap
   trace "Exiting wdtCreatePrimordialDomain"
@@ -991,6 +1008,8 @@ function wdtUpdateModelDomain() {
   base64 ${DOMAIN_HOME}/wlsdeploy/domain_model.json.gz > ${DOMAIN_HOME}/wlsdeploy/domain_model.json.b64 || exitOrLoop
   encrypt_decrypt_model "encrypt" ${DOMAIN_HOME}/wlsdeploy/domain_model.json.b64 ${MII_PASSPHRASE} \
     ${DOMAIN_HOME}/wlsdeploy/domain_model.json
+
+  wdtRotateAndCopyLogFile "${WDT_UPDATE_DOMAIN_LOG}"
 
   # restore trap
   start_trap
@@ -1083,6 +1102,8 @@ function wdtHandleOnlineUpdate() {
   # Restore encrypted merge model otherwise the on in the domain will be the diffed model
 
   cp  /tmp/encrypted_merge_model.json ${DOMAIN_HOME}/wlsdeploy/domain_model.json
+
+  wdtRotateAndCopyLogFile ${WDT_UPDATE_DOMAIN_LOG} 
 
   trace "wrote updateResult"
 
@@ -1311,4 +1332,17 @@ function cleanup_mii() {
 function logSevereAndExit() {
   trace SEVERE "cp '$1' failed"
   exitOrLoop
+}
+
+# Function to rotate WDT script log file and copy the file to WDT output dir.
+# parameter:
+#   1 - Name of the log file to rotate and copy to WDT output directory.
+function wdtRotateAndCopyLogFile() {
+  local logFileName=$1
+  testLogFileRotate "${WDT_OUTPUT_DIR}/${logFileName}"
+  [ $? -ne 0 ] && trace SEVERE "Error accessing '${WDT_OUTPUT_DIR}'. See previous log messages." && exit 1
+
+  logFileRotate ${WDT_OUTPUT_DIR}/${logFileName} ${WDT_LOG_FILE_MAX:-11}
+
+  cp ${WDT_ROOT}/logs/${logFileName} ${WDT_OUTPUT_DIR}/
 }

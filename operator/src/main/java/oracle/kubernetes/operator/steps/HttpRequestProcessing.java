@@ -58,12 +58,14 @@ abstract class HttpRequestProcessing {
   }
 
   final HttpRequest.Builder createRequestBuilder(String url) {
-    return HttpRequest.newBuilder()
+    HttpRequest.Builder builder = HttpRequest.newBuilder()
           .uri(URI.create(url))
-          .header("Authorization", getAuthorizationSource().createBasicAuthorizationString())
           .header("Accept", "application/json")
           .header("Content-Type", "application/json")
           .header("X-Requested-By", "WebLogic Operator");
+    Optional.ofNullable(getAuthorizationSource())
+            .ifPresent(source -> builder.header("Authorization", source.createBasicAuthorizationString()));
+    return builder;
   }
 
   /**

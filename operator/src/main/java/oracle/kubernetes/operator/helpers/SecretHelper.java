@@ -61,10 +61,13 @@ public class SecretHelper {
         secretName = dpi.getDomain().getWebLogicCredentialsSecretName();
         namespace = dpi.getNamespace();
 
-        LOGGER.fine(MessageKeys.RETRIEVING_SECRET, secretName);
-        Step read = new CallBuilder().readSecretAsync(secretName, namespace, new SecretResponseStep(getNext()));
-
-        return doNext(read, packet);
+        if (secretName != null) {
+          LOGGER.fine(MessageKeys.RETRIEVING_SECRET, secretName);
+          Step read = new CallBuilder().readSecretAsync(secretName, namespace, new SecretResponseStep(getNext()));
+          return doNext(read, packet);
+        } else {
+          return doNext(packet);
+        }
       }
     }
 

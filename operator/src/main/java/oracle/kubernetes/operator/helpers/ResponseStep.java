@@ -139,7 +139,7 @@ public abstract class ResponseStep<T> extends Step {
         .map(rs -> rs.doPotentialRetry(conflictStep, packet, callResponse.getStatusCode()))
         .orElseGet(() -> {
           LOGGER.fine(MessageKeys.ASYNC_NO_RETRY,
-                  callResponse.getRequestParams().call,
+                  Optional.ofNullable(callResponse.getRequestParams()).map(rp -> rp.call).orElse(""),
                   callResponse.getExceptionString(), callResponse.getStatusCode(), callResponse.getHeadersString());
           return null;
         });
