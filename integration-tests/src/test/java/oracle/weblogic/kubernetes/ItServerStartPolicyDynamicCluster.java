@@ -121,7 +121,7 @@ class ItServerStartPolicyDynamicCluster {
   private static LoggingFacade logger = null;
   private static final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
   private static final Path tempSamplePath = Paths.get(WORK_DIR, "sample-testing-dynamic-cluster");
-  private static final Path domainLifecycleSamplePath = Paths.get(samplePath + "/scripts/domain-lifecycle");
+  private static final Path domainLifecycleSamplePath = Paths.get(tempSamplePath + "/scripts/domain-lifecycle");
   private static String ingressHost = null; //only used for OKD
 
   /**
