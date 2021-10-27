@@ -407,6 +407,7 @@ public class K8sEvents {
   public static final String DOMAIN_CHANGED = "DomainChanged";
   public static final String DOMAIN_COMPLETED = "DomainCompleted";
   public static final String DOMAIN_PROCESSING_FAILED = "DomainProcessingFailed";
+  public static final String DOMAIN_PROCESSING_RETRYING = "DomainProcessingRetrying";
   public static final String DOMAIN_PROCESSING_ABORTED = "DomainProcessingAborted";
   public static final String DOMAIN_ROLL_STARTING = "DomainRollStarting";
   public static final String DOMAIN_ROLL_COMPLETED = "DomainRollCompleted";
