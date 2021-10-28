@@ -7,7 +7,7 @@
     <parent>
         <groupId>oracle.kubernetes</groupId>
         <artifactId>operator-parent</artifactId>
-        <version>3.3.2</version>
+        <version>3.3.3</version>
     </parent>
 
     <artifactId>integration-tests</artifactId>
@@ -336,7 +336,7 @@
                    **/ItSystemResOverrides
                 </includes-failsafe>
             </properties>
-        </profile>        
+        </profile>
         <profile>
             <id>wko-okd-wls-cert</id>
             <properties>
