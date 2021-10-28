@@ -292,8 +292,8 @@ class ItParameterizedDomain {
     domainOnPV = createDomainOnPvUsingWdt(domainOnPVNamespace);
 
     domains.add(miiDomain);
-    domains.add(domainInImage);
-    domains.add(domainOnPV);
+    //domains.add(domainInImage);
+    //domains.add(domainOnPV);
 
     // create ingress for each domain
     for (Domain domain: domains) {
@@ -311,14 +311,13 @@ class ItParameterizedDomain {
       for (int i = 1; i <= numClusters; i++) {
         clusterNameMsPortMap.put(CLUSTER_NAME_PREFIX + i, MANAGED_SERVER_PORT);
         createRouteForOKD(domainUid + "-cluster-cluster-" + i, domainNamespace);
-        if (!OKD) {
-          logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, domainNamespace);
-          createIngressForDomainAndVerify(domainUid, domainNamespace, nodeportshttp, clusterNameMsPortMap, true,
+      }
+      if (!OKD) {
+        logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, domainNamespace);
+        createIngressForDomainAndVerify(domainUid, domainNamespace, nodeportshttp, clusterNameMsPortMap, true,
               true, ADMIN_SERVER_PORT);
-        }
       }
     }
-
   }
 
   /**
@@ -380,17 +379,19 @@ class ItParameterizedDomain {
           numberOfServers, replicaCount, curlCmd, managedServersBeforeScale);
     }
 
-    // Test that `kubectl port-foward` is able to forward a local port to default channel port (7001 in this test)
-    // and default secure channel port (7002 in this test)
-    // Verify that the WLS admin console can be accessed using http://localhost:localPort/console/login/LoginForm.jsp
-    final String hostName = "localhost";
-    String forwardedPortNo = startPortForwardProcess(hostName, domainNamespace, domainUid, ADMIN_SERVER_PORT);
-    verifyAdminConsoleAccessible(domainNamespace, hostName, forwardedPortNo, false);
+    if (!OKD) {
+      // Test that `kubectl port-foward` is able to forward a local port to default channel port (7001 in this test)
+      // and default secure channel port (7002 in this test)
+      // Verify that the WLS admin console can be accessed using http://localhost:localPort/console/login/LoginForm.jsp
+      final String hostName = "localhost";
+      String forwardedPortNo = startPortForwardProcess(hostName, domainNamespace, domainUid, ADMIN_SERVER_PORT);
+      verifyAdminConsoleAccessible(domainNamespace, hostName, forwardedPortNo, false);
 
-    forwardedPortNo = startPortForwardProcess(hostName, domainNamespace, domainUid, ADMIN_SERVER_SECURE_PORT);
-    verifyAdminConsoleAccessible(domainNamespace, hostName, forwardedPortNo, true);
+      forwardedPortNo = startPortForwardProcess(hostName, domainNamespace, domainUid, ADMIN_SERVER_SECURE_PORT);
+      verifyAdminConsoleAccessible(domainNamespace, hostName, forwardedPortNo, true);
 
-    stopPortForwardProcess(domainNamespace);
+      stopPortForwardProcess(domainNamespace);
+    }
   }
 
   /**
@@ -398,6 +399,7 @@ class ItParameterizedDomain {
    * is set to false, the WLS admin console can not be accessed using the forwarded port, like
    * http://localhost:localPort/console/login/LoginForm.jsp
    */
+  @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   @Test
   @DisplayName("Forward a local port to admin default and default secure channel port "
       + "and verify WLS admin console is not accessible")
