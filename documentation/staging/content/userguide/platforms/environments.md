@@ -21,7 +21,7 @@ weight: 3
 
 ### Supported environments
 
-WebLogic Server and the operator are supported on 
+WebLogic Server and the operator are supported on
 Oracle cloud environments such as
 Oracle Cloud Infrastructure (OCI),
 Oracle Linux Cloud Native Environment (OLCNE),
@@ -32,7 +32,7 @@ and on "Authorized Cloud Environments" as defined in
 for [this list of eligible products](http://www.oracle.com/us/corporate/pricing/authorized-cloud-environments-3493562.pdf).
 
 The official document that defines the supported configurations
-is [here](https://www.oracle.com/middleware/technologies/ias/oracleas-supported-virtualization.html) 
+is [here](https://www.oracle.com/middleware/technologies/ias/oracleas-supported-virtualization.html)
 (search for keyword 'Kubernetes').
 
 Some supported environments have additional help or samples that are specific
@@ -101,7 +101,7 @@ portable across cloud environments.
 The document also highlights how applications deployed on
 Oracle Exalogic Elastic Cloud systems can be migrated to this infrastructure without application
 changes, enabling you to preserve your application investment as you adopt modern cloud
-native infrastructure. 
+native infrastructure.
 
 #### Microsoft Azure Kubernetes Service (AKS)
 
@@ -129,8 +129,8 @@ Operator and Oracle WebLogic Sever are fully supported and certified on VMware T
 TKG support and limitations:
 
 * Both Domain in Image and Model in Image domain home source types are supported. Domain in PV is not supported.
-* VSphere CSI driver supports only volumes with Read-Write-Once policy. This does not allow writing stores on PV.  
-   * For applications requiring HA, use JMS and JTA stores in the database.
+* VSphere CSI driver supports only volumes with Read-Write-Once policy. This does not allow writing stores on PV.
+  * For applications requiring HA, use JMS and JTA stores in the database.
 * The ingress used for certification is NGINX, with MetalLB load balancer.
 
 See also the [Tanzu Kubernetes Grid sample]({{<relref "/samples/tanzu-kubernetes-service/_index.md">}}).
@@ -139,7 +139,7 @@ See also the [Tanzu Kubernetes Grid sample]({{<relref "/samples/tanzu-kubernetes
 
 OpenShift can be a cloud platform or can be deployed on premise.
 
-Operator 2.0.1+ is certified for use on OpenShift Container Platform 3.11.43+, with Kubernetes 1.11.5+.  
+Operator 2.0.1+ is certified for use on OpenShift Container Platform 3.11.43+, with Kubernetes 1.11.5+.
 
 Operator 2.5.0+ is certified for use on OpenShift Container Platform 4.3.0+ with Kubernetes 1.16.2+.
 

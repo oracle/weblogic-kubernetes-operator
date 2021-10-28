@@ -112,7 +112,7 @@ kubernetesPlatform: OpenShift
 ##### `image`
 Specifies the container image containing the operator code.
 
-Defaults to `ghcr.io/oracle/weblogic-kubernetes-operator:3.3.2`.
+Defaults to `ghcr.io/oracle/weblogic-kubernetes-operator:{{< latestVersion >}}`.
 
 Example:
 ```yaml
