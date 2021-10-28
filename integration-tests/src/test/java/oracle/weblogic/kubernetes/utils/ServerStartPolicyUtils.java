@@ -77,12 +77,25 @@ public class ServerStartPolicyUtils {
   private static LoggingFacade logger = getLogger();
   private static String ingressHost = null; //only used for OKD
 
-  public static void scalingClusters(String domainUid, String domainNamespace, String clusterName, String serverPodName, int replicaNum,
+  /**
+   *  Scaling cluster util method.
+   * @param domainUid - domain uid
+   * @param domainNamespace - domain namespace
+   * @param clusterName - cluster name
+   * @param serverPodName -server pod name
+   * @param replicaNum -number of servers to scale
+   * @param regex - regex
+   * @param checkPodExist - to check if pod exists
+   * @param samplePathDir - name of sample script dir
+   */
+  public static void scalingClusters(String domainUid, String domainNamespace,
+                                     String clusterName, String serverPodName, int replicaNum,
                                String regex, boolean checkPodExist, String samplePathDir) {
     // use scaleCluster.sh to scale a given cluster
     logger.info("Scale cluster {0} using the script scaleCluster.sh", clusterName);
     String result =  assertDoesNotThrow(() ->
-            executeLifecycleScript(domainUid, domainNamespace, samplePathDir, SCALE_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, clusterName, " -r " + replicaNum, false),
+            executeLifecycleScript(domainUid, domainNamespace, samplePathDir,
+                SCALE_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, clusterName, " -r " + replicaNum, false),
         String.format("Failed to run %s", SCALE_CLUSTER_SCRIPT));
 
     if (checkPodExist) {
@@ -97,13 +110,20 @@ public class ServerStartPolicyUtils {
 
     // use clusterStatus.sh to verify scaling results
     result =  assertDoesNotThrow(() ->
-            executeLifecycleScript(domainUid, domainNamespace, samplePathDir, STATUS_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, clusterName),
+            executeLifecycleScript(domainUid, domainNamespace, samplePathDir,
+                STATUS_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, clusterName),
         String.format("Failed to run %s", STATUS_CLUSTER_SCRIPT));
 
     assertTrue(verifyExecuteResult(result, regex), "The script should scale the given cluster: " + clusterName);
     logger.info("The cluster {0} scaled successfully.", clusterName);
   }
 
+  /**
+   * Restore env to original.
+   * @param domainUid - domain uid
+   * @param domainNamespace - domain namespace
+   * @param samplePathDir -name of sample script dir
+   */
   public static void restoreEnv(String domainUid, String domainNamespace, String samplePathDir) {
     int newReplicaCount = 2;
     String configServerName = "config-cluster-server" + newReplicaCount;
@@ -113,18 +133,27 @@ public class ServerStartPolicyUtils {
 
     // restore test env
     assertDoesNotThrow(() ->
-            executeLifecycleScript(domainUid, domainNamespace, samplePathDir, STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, configServerName),
+            executeLifecycleScript(domainUid, domainNamespace, samplePathDir,
+                STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, configServerName),
         String.format("Failed to run %s", STOP_SERVER_SCRIPT));
     checkPodDeleted(configServerPodName, domainUid, domainNamespace);
     logger.info("managed server " + configServerPodName + " stopped successfully.");
 
     assertDoesNotThrow(() ->
-            executeLifecycleScript(domainUid, domainNamespace, samplePathDir, STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, dynamicServerName),
+            executeLifecycleScript(domainUid, domainNamespace, samplePathDir,
+                STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, dynamicServerName),
         String.format("Failed to run %s", STOP_SERVER_SCRIPT));
     checkPodDeleted(dynamicServerPodName, domainUid, domainNamespace);
     logger.info("managed server " + dynamicServerPodName + " stopped successfully.");
   }
 
+  /** Create domain resource.
+   * @param domNamespace - domain namespace
+   * @param domainUid -domain uid
+   * @param adminSecretName - adminserver secret name
+   * @param encryptionSecretName - encryption secret name
+   * @param configmapName - config map name
+   */
   public static void createDomainResource(
       String domNamespace, String domainUid, String adminSecretName,
       String encryptionSecretName,
@@ -210,12 +239,13 @@ public class ServerStartPolicyUtils {
         + "for %s in namespace %s", domainUid, domNamespace));
   }
 
-  /*
+  /**
    * Verify the server MBEAN configuration through rest API.
    * @param managedServer name of the managed server
    * @returns true if MBEAN is found otherwise false
    **/
-  public static boolean checkManagedServerConfiguration(String ingressHost, String managedServer, String domainNamespace, String adminServerPodName) {
+  public static boolean checkManagedServerConfiguration(String ingressHost, String managedServer,
+                                                        String domainNamespace, String adminServerPodName) {
     ExecResult result;
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
@@ -241,13 +271,15 @@ public class ServerStartPolicyUtils {
     return result.stdout().equals("200");
   }
 
-  // copy samples directory to a temporary location
+  /**
+   * copy samples directory to a temporary location.
+   * @param samplePathDir - name of sample script dir
+   */
   public static void setupSample(String samplePathDir) {
     Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
     Path tempSamplePath = Paths.get(WORK_DIR, samplePathDir);
     assertDoesNotThrow(() -> {
       logger.info("Deleting and recreating {0}", tempSamplePath);
-      //Files.createDirectories(tempSamplePath);
       deleteDirectory(tempSamplePath.toFile());
       Files.createDirectories(tempSamplePath);
       logger.info("Copying {0} to {1}", samplePath, tempSamplePath);
@@ -255,17 +287,53 @@ public class ServerStartPolicyUtils {
     });
   }
 
-  // Function to execute domain lifecyle scripts
-  public static String executeLifecycleScript(String domainUid, String domainNamespace, String samplePathDir, String script, String scriptType, String entityName) {
-    return executeLifecycleScript(domainUid, domainNamespace, samplePathDir, script, scriptType, entityName, "");
+  /**
+   * Function to execute domain lifecyle scripts.
+   * @param domainUid - domain uid
+   * @param domainNamespace - domain namespace
+   * @param samplePathDir - name of sample script dir
+   * @param script - script name
+   * @param scriptType -script type
+   * @param entityName - entity name
+   * @return status
+   */
+  public static String executeLifecycleScript(String domainUid, String domainNamespace, String samplePathDir,
+                                              String script, String scriptType, String entityName) {
+    return executeLifecycleScript(domainUid, domainNamespace, samplePathDir,
+        script, scriptType, entityName, "");
   }
 
-  // Function to execute domain lifecyle scripts
-  public static String executeLifecycleScript(String domainUid, String domainNamespace, String samplePathDir, String script, String scriptType, String entityName, String extraParams) {
-    return executeLifecycleScript(domainUid, domainNamespace, samplePathDir, script, scriptType, entityName, extraParams, true);
+  /**
+   * Function to execute domain lifecyle scripts.
+   * @param domainUid - domain uid
+   * @param domainNamespace - domain namespace
+   * @param samplePathDir - name of sample script dir
+   * @param script - script name
+   * @param scriptType -script type
+   * @param entityName entity name
+   * @param extraParams - extra params
+   * @return result
+   */
+  public static String executeLifecycleScript(String domainUid, String domainNamespace,
+                                              String samplePathDir, String script,
+                                              String scriptType, String entityName, String extraParams) {
+    return executeLifecycleScript(domainUid, domainNamespace, samplePathDir,
+        script, scriptType, entityName, extraParams, true);
   }
 
-  // Function to execute domain lifecyle scripts
+  /**
+   * Function to execute domain lifecyle scripts.
+   * @param domainUid - domain uid
+   * @param domainNamespace - domain namespace
+   * @param samplePathDir - name of sample script dir
+   * @param script - script name
+   * @param scriptType -script type
+   * @param entityName - entity name
+   * @param extraParams -extra params
+   * @param checkResult -specify if need to check result
+   * @param args - extra args
+   * @return result
+   */
   public static String executeLifecycleScript(String domainUid, String domainNamespace, String samplePathDir,
                                         String script,
                                         String scriptType,
@@ -306,6 +374,12 @@ public class ServerStartPolicyUtils {
     return execResult.toString();
   }
 
+  /**
+   *  Verify result.
+   * @param result - result object
+   * @param regex - check string
+   * @return true or false
+   */
   public static boolean verifyExecuteResult(String result, String regex) {
     Pattern pattern = Pattern.compile(regex);
     Matcher matcher = pattern.matcher(result);
