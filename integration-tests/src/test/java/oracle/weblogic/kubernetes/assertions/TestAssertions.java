@@ -36,8 +36,10 @@ import oracle.weblogic.kubernetes.assertions.impl.Voyager;
 import oracle.weblogic.kubernetes.assertions.impl.WitAssertion;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
+import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.listSecrets;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 /**
  * General assertions needed by the tests to validate CRD, Domain, Pods etc.
@@ -445,23 +447,35 @@ public class TestAssertions {
 
   /**
    * Check the domain status condition type has expected status.
-   * @param domain oracle.weblogic.domain.Domain object
+   * @param domainUid uid of the domain
+   * @param domainNamespace namespace of the domain
    * @param conditionType the type name of condition, accepted value: Completed, Available, Failed and
    *                      ConfigChangesPendingRestart
    * @param expectedStatus expected status value, either True or False
    * @return true if the condition type has the expected status, false otherwise
    */
-  public static Callable<Boolean> domainStatusConditionTypeHasExpectedStatus(oracle.weblogic.domain.Domain domain,
+  public static Callable<Boolean> domainStatusConditionTypeHasExpectedStatus(String domainUid,
+                                                                             String domainNamespace,
                                                                              String conditionType,
                                                                              String expectedStatus) {
     LoggingFacade logger = getLogger();
+    oracle.weblogic.domain.Domain domain =
+        assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace));
     return () -> {
       if (domain != null && domain.getStatus() != null) {
         List<DomainCondition> domainConditionList = domain.getStatus().getConditions();
+        if (domainConditionList.size() == 0) {
+          logger.info("DEBUG: condition list is empty");
+          return false;
+        }
         for (DomainCondition domainCondition : domainConditionList) {
+          logger.info("DEBUG: domainCondition={0}", domainCondition.toString());
           if (domainCondition.getType().equalsIgnoreCase(conditionType)
               && domainCondition.getStatus().equalsIgnoreCase(expectedStatus)) {
             return true;
+          } else {
+            logger.info("DEBUG: conditionType={0}; conditionStatus={1}", domainCondition.getType(),
+                domainCondition.getStatus());
           }
         }
       } else {

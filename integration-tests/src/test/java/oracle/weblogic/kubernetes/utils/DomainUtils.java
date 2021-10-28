@@ -20,6 +20,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusC
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusReasonMatches;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -129,8 +130,8 @@ public class DomainUtils {
                                                                      String conditionType,
                                                                      String expectedStatus) {
     testUntil(
-        domainStatusConditionTypeHasExpectedStatus(
-            assertDoesNotThrow(() -> getDomainCustomResource(domainUid, namespace)), conditionType, expectedStatus),
+        withLongRetryPolicy,
+        domainStatusConditionTypeHasExpectedStatus(domainUid, namespace, conditionType, expectedStatus),
         getLogger(),
         "waiting for domain status condition type {0} has expected status {1}",
         conditionType,
