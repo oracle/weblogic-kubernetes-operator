@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 7b4f18f84620265efc245e69b1779428c8747cacf8f0ed3376015c9afba14ddc
+    weblogic.sha256: cd220306c89115f42b3a97a5102563afaf87f82faa4a21ab267f3fdba7fbdf4e
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -221,14 +221,16 @@ spec:
                         type: number
                       localhostBindingsEnabled:
                         description: This setting was added in operator version 3.3.3,
-                          defaults to `true` in version 3.x, and is ignored in version
-                          4.0 and later. In version 3.x, when `true`, the operator
-                          creates a WebLogic network access point with a `localhost`
-                          binding for each existing channel and protocol.  In version
-                          3.x, use `true` for Istio versions prior to 1.10 and set
-                          to `false` for version 1.10 and later.  Version 4.0 and
-                          later requires Istio 1.10 and later, will not create localhost
-                          bindings, and ignores this attribute.
+                          defaults to the `istioLocalhostBindingsEnabled` [Operator
+                          Helm value]({{< relref "/userguide/managing-operators/using-helm.md"
+                          >}}) which in turn defaults to `true`, and is ignored in
+                          version 4.0 and later. In version 3.x, when `true`, the
+                          operator creates a WebLogic network access point with a
+                          `localhost` binding for each existing channel and protocol.  In
+                          version 3.x, use `true` for Istio versions prior to 1.10
+                          and set to `false` for version 1.10 and later.  Version
+                          4.0 and later requires Istio 1.10 and later, will not create
+                          localhost bindings, and ignores this attribute.
                         type: boolean
                       readinessPort:
                         description: The operator will create WebLogic network access

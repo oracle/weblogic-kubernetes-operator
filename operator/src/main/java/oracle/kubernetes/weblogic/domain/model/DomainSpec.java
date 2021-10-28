@@ -875,13 +875,14 @@ public class DomainSpec extends BaseConfiguration {
   /**
    * Indicates if Istio proxy redirects traffic to localhost.
    *
-   * @return true if Istio proxy redirects traffic to localhost.
+   * @return null if not defined in spec. true if Istio proxy redirects traffic to localhost or
+   *          false otherwise.
    */
-  boolean isLocalhostBindingsEnabled() {
+  Boolean isLocalhostBindingsEnabled() {
     return Optional.ofNullable(configuration)
         .map(Configuration::getIstio)
         .map(Istio::getLocalhostBindingsEnabled)
-        .orElse(true);
+        .orElse(null);
   }
 
   String getWdtDomainType() {

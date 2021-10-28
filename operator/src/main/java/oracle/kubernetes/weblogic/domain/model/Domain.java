@@ -667,8 +667,24 @@ public class Domain implements KubernetesObject {
     return spec.getIstioReplicationPort();
   }
 
+  /**
+   * For Istio version prior to 1.10, proxy redirects traffic to localhost and thus requires
+   * localhostBindingsEnabled configuration to be true.  Istio 1.10 and later redirects traffic
+   * to server pods' IP interface and thus localhostBindingsEnabled configuration should be false.
+   * @return true if if the proxy redirects traffic to localhost, false otherwise.
+   */
   public boolean isLocalhostBindingsEnabled() {
-    return spec.isLocalhostBindingsEnabled();
+    Boolean isLocalHostBindingsEnabled = spec.isLocalhostBindingsEnabled();
+    if (isLocalHostBindingsEnabled != null) {
+      return isLocalHostBindingsEnabled;
+    }
+
+    String istioLocalhostBindingsEnabled = TuningParameters.getInstance().get("istioLocalhostBindingsEnabled");
+    if (istioLocalhostBindingsEnabled != null) {
+      return Boolean.parseBoolean(istioLocalhostBindingsEnabled);
+    }
+
+    return true;
   }
 
   /**

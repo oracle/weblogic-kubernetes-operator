@@ -4,7 +4,6 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import oracle.kubernetes.json.Description;
-import oracle.kubernetes.operator.TuningParameters;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -32,13 +31,16 @@ public class Istio {
   private Integer replicationChannelPort = DEFAULT_REPLICATION_PORT;
 
   @Description(
-      "This setting was added in operator version 3.3.3, defaults to `true` in version 3.x, "
+      "This setting was added in operator version 3.3.3, "
+          + "defaults to the `istioLocalhostBindingsEnabled` "
+          + "[Operator Helm value]({{< relref \"/userguide/managing-operators/using-helm.md\" >}}) "
+          + "which in turn defaults to `true`, "
           + "and is ignored in version 4.0 and later. In version 3.x, when `true`, the operator "
           + "creates a WebLogic network access point with a `localhost` binding for each existing "
           + "channel and protocol.  In version 3.x, use `true` for Istio versions prior to 1.10 "
           + "and set to `false` for version 1.10 and later.  Version 4.0 and later requires Istio "
           + "1.10 and later, will not create localhost bindings, and ignores this attribute.")
-  private Boolean localhostBindingsEnabled = true;
+  private Boolean localhostBindingsEnabled;
 
   /**
    * True, if this domain is deployed under an Istio service mesh.
@@ -100,15 +102,6 @@ public class Istio {
    * @return True, if the proxy redirects traffic to localhost.
    */
   public Boolean getLocalhostBindingsEnabled() {
-    String localhostBindingsEnabled = TuningParameters.getInstance().get("localhostBindingsEnabled");
-    System.out.println("LNP: Istio.getLocalhostBindingsEnabled localhostBindingsEnabled: "
-        + localhostBindingsEnabled);
-    if (localhostBindingsEnabled != null) {
-      // defined as helm tuning parameter?
-      return Boolean.parseBoolean(localhostBindingsEnabled);
-    }
-    System.out.println("LNP: Istio.getLocalhostBindingsEnabled this.localhostBindingsEnabled: "
-        + this.localhostBindingsEnabled);
     return this.localhostBindingsEnabled;
   }
 
@@ -148,7 +141,10 @@ public class Istio {
   @Override
   public int hashCode() {
     HashCodeBuilder builder = new HashCodeBuilder().append(enabled).append(readinessPort)
-        .append(replicationChannelPort).append(localhostBindingsEnabled);
+        .append(replicationChannelPort);
+    if (localhostBindingsEnabled != null) {
+      builder.append(localhostBindingsEnabled);
+    }
 
     return builder.toHashCode();
   }
@@ -167,8 +163,11 @@ public class Istio {
         new EqualsBuilder()
             .append(enabled, rhs.enabled)
             .append(readinessPort, rhs.readinessPort)
-            .append(replicationChannelPort, rhs.replicationChannelPort)
-            .append(localhostBindingsEnabled, rhs.localhostBindingsEnabled);
+            .append(replicationChannelPort, rhs.replicationChannelPort);
+
+    if (localhostBindingsEnabled != null) {
+      builder.append(localhostBindingsEnabled, rhs.localhostBindingsEnabled);
+    }
 
     return builder.isEquals();
   }

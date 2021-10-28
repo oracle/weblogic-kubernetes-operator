@@ -31,10 +31,16 @@ public class Istio {
   private Integer replicationChannelPort = DEFAULT_REPLICATION_PORT;
 
   @ApiModelProperty(
-      "When `true` the operator creates a WebLogic network access point with a `localhost` binding "
-          + "for each existing channel and protocol. This must be set to true when using Istio versions prior "
-          + "to 1.10 and must be set to false for version 1.10 and later. Defaults to true.")
-  private Boolean localhostBindingsEnabled = true;
+      "This setting was added in operator version 3.3.3, "
+          + "defaults to the `istioLocalhostBindingsEnabled` "
+          + "[Operator Helm value]({{< relref \"/userguide/managing-operators/using-helm.md\" >}}) "
+          + "which in turn defaults to `true`, "
+          + "and is ignored in version 4.0 and later. In version 3.x, when `true`, the operator "
+          + "creates a WebLogic network access point with a `localhost` binding for each existing "
+          + "channel and protocol.  In version 3.x, use `true` for Istio versions prior to 1.10 "
+          + "and set to `false` for version 1.10 and later.  Version 4.0 and later requires Istio "
+          + "1.10 and later, will not create localhost bindings, and ignores this attribute.")
+  private Boolean localhostBindingsEnabled;
 
   /**
    * True, if this domain is deployed under an Istio service mesh.
@@ -142,8 +148,11 @@ public class Istio {
         new ToStringBuilder(this)
             .append("enabled", enabled)
             .append("readinessPort", readinessPort)
-            .append("replicationChannelPort", replicationChannelPort)
-            .append("localhostBindingsEnabled", localhostBindingsEnabled);
+            .append("replicationChannelPort", replicationChannelPort);
+
+    if (localhostBindingsEnabled != null) {
+      builder.append("localhostBindingsEnabled", localhostBindingsEnabled);
+    }
 
     return builder.toString();
   }
@@ -170,8 +179,11 @@ public class Istio {
         new EqualsBuilder()
             .append(enabled, rhs.enabled)
             .append(readinessPort, rhs.readinessPort)
-            .append(replicationChannelPort, rhs.replicationChannelPort)
-            .append(localhostBindingsEnabled, rhs.localhostBindingsEnabled);
+            .append(replicationChannelPort, rhs.replicationChannelPort);
+
+    if (localhostBindingsEnabled != null) {
+      builder.append(localhostBindingsEnabled, rhs.localhostBindingsEnabled);
+    }
 
     return builder.isEquals();
   }
