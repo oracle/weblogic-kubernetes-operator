@@ -14,6 +14,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 
 import io.kubernetes.client.openapi.models.V1Pod;
+import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -158,7 +159,9 @@ public class RollingHelper {
 
     @Override
     public NextAction apply(Packet packet) {
-      return doNext(createDomainRollCompletedEventStepIfNeeded(getNext(), packet), packet);
+      return doNext(createDomainRollCompletedEventStepIfNeeded(
+                        DomainStatusUpdater.createStatusUpdateStep(getNext()), packet),
+            packet);
     }
 
   }
