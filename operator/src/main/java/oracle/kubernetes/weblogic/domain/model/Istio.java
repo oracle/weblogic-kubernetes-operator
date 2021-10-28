@@ -4,6 +4,7 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import oracle.kubernetes.json.Description;
+import oracle.kubernetes.operator.TuningParameters;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -99,6 +100,15 @@ public class Istio {
    * @return True, if the proxy redirects traffic to localhost.
    */
   public Boolean getLocalhostBindingsEnabled() {
+    String localhostBindingsEnabled = TuningParameters.getInstance().get("localhostBindingsEnabled");
+    System.out.println("LNP: Istio.getLocalhostBindingsEnabled localhostBindingsEnabled: "
+        + localhostBindingsEnabled);
+    if (localhostBindingsEnabled != null) {
+      // defined as helm tuning parameter?
+      return Boolean.parseBoolean(localhostBindingsEnabled);
+    }
+    System.out.println("LNP: Istio.getLocalhostBindingsEnabled this.localhostBindingsEnabled: "
+        + this.localhostBindingsEnabled);
     return this.localhostBindingsEnabled;
   }
 

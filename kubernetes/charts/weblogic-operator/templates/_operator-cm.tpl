@@ -49,6 +49,9 @@ data:
   {{- if .tokenReviewAuthentication }}
   tokenReviewAuthentication: {{ .tokenReviewAuthentication | quote }}
   {{- end }}
+  {{- if .localhostBindingsEnabled }}
+  localhostBindingsEnabled: {{ .localhostBindingsEnabled | quote }}
+  {{- end }}
   {{- if .kubernetesPlatform }}
   kubernetesPlatform: {{ .kubernetesPlatform | quote }}
   {{- end }}
