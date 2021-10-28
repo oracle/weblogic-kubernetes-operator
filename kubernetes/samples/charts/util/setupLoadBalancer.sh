@@ -281,6 +281,7 @@ function createNginx() {
   if [ "$(helm list --namespace ${ns} | grep $chart |  wc -l)" = 0 ]; then
     purgeDefaultResources || true
     helm install $chart ingress-nginx/ingress-nginx \
+         --set "controller.admissionWebhooks.enabled=false" \
          --namespace ${ns} --version ${release}
     if [ $? != 0 ]; then
      printError "Helm istallation of the Nginx ingress controller failed."
