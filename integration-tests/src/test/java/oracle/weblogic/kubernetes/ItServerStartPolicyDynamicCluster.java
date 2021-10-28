@@ -55,7 +55,6 @@ import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.managedSer
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.restoreEnv;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.scalingClusters;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.setupSample;
-import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.verifyExecuteResult;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
