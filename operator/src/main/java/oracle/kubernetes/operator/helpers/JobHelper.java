@@ -30,7 +30,6 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
-import oracle.kubernetes.operator.steps.ManagedServersUpStep;
 import oracle.kubernetes.operator.steps.WatchDomainIntrospectorJobReadyStep;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -268,7 +267,7 @@ public class JobHelper {
       }
 
       private int getNumRunningServers() {
-        return ManagedServersUpStep.getRunningServers(info).size();
+        return info.getServerNames().size();
       }
 
       private boolean isDomainGenerationChanged(Packet packet) {

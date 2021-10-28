@@ -60,15 +60,11 @@ public class RollingHelper {
   }
 
   private static List<String> getReadyServers(DomainPresenceInfo info) {
-    // These are presently Ready servers
-    List<String> availableServers = new ArrayList<>();
-    for (Map.Entry<String, ServerKubernetesObjects> entry : info.getServers().entrySet()) {
-      V1Pod pod = entry.getValue().getPod().get();
-      if (pod != null && !PodHelper.isDeleting(pod) && PodHelper.getReadyStatus(pod)) {
-        availableServers.add(entry.getKey());
-      }
-    }
-    return availableServers;
+    return info.getSelectedActiveServerNames(RollingHelper::hasReadyServer);
+  }
+
+  private static boolean hasReadyServer(V1Pod pod) {
+    return !PodHelper.isDeleting(pod) && PodHelper.getReadyStatus(pod);
   }
 
   private static class RollingStep extends Step {
