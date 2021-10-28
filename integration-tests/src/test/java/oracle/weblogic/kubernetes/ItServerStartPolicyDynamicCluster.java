@@ -189,47 +189,6 @@ class ItServerStartPolicyDynamicCluster {
   }
 
   /**
-   * Verify the script stopServer.sh can not stop a server below the minimum
-   * DynamicServer count when allowReplicasBelowMinDynClusterSize is false.
-   * In the current domain configuration the minimum replica count is 1.
-   * The managed-server1 is up and running.
-   * Shutdown the managed-server1 using the script stopServer.sh.
-   * managed-server1 is shutdown and managed-server2 comes up to mantain the
-   * minimum replica count.
-   */
-  @Order(0)
-  @Test
-  @DisplayName("Stop a server below Limit")
-  void testStopManagedServerBeyondMinClusterLimit() {
-    String serverPodName = domainUid + "-managed-server1";
-    String serverPodName2 = domainUid + "-managed-server2";
-
-    // shutdown managed-server1 with keep_replica_constant option not set
-    // This operator MUST fail as the MinDynamicCluster size is 1
-    // and allowReplicasBelowMinDynClusterSize is false
-
-    String regex = "it is at its minimum";
-    String result =  assertDoesNotThrow(() ->
-            executeLifecycleScript(domainUid, domainNamespace, samplePath,
-                STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, "managed-server1", "", false),
-        String.format("Failed to run %s", STOP_CLUSTER_SCRIPT));
-    assertTrue(verifyExecuteResult(result, regex),"The script shouldn't stop a server to go below Minimum");
-
-    // Make sure managed-server1 is deleted
-    checkPodDeleted(serverPodName, domainUid, domainNamespace);
-    // Make sure managed-server2 is provisioned to mantain the replica count
-    checkPodReadyAndServiceExists(serverPodName2, domainUid, domainNamespace);
-
-    // start managed-server1 with keep_replica_constant option
-    // to bring the domain to original configuation with only managed-server1
-    executeLifecycleScript(domainUid, domainNamespace, samplePath,
-        START_SERVER_SCRIPT, SERVER_LIFECYCLE, "managed-server1", "-k");
-    checkPodDeleted(serverPodName2, domainUid, domainNamespace);
-    checkPodReadyAndServiceExists(serverPodName, domainUid, domainNamespace);
-
-  }
-
-  /**
    * Stop the dynamic cluster using the sample script stopCluster.sh.
    * Verify that server(s) in the dynamic cluster are stopped.
    * Verify that server(s) in the configured cluster are in the RUNNING state.
