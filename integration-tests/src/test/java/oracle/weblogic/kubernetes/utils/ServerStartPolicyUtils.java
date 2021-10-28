@@ -114,6 +114,7 @@ public class ServerStartPolicyUtils {
                 STATUS_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, clusterName),
         String.format("Failed to run %s", STATUS_CLUSTER_SCRIPT));
 
+    logger.info("The cluster {0} scaled result {1}.", clusterName, result);
     assertTrue(verifyExecuteResult(result, regex), "The script should scale the given cluster: " + clusterName);
     logger.info("The cluster {0} scaled successfully.", clusterName);
   }
