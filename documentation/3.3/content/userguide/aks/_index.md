@@ -59,8 +59,12 @@ Use the Basics blade to provide the basic configuration details for deploying Or
 | Field | Description |
 |-------|-------------|
 | Accept defaults for optional configuration? | If you want to retain the default values for the optional configuration, such as **Name prefix for Managed Server**, **WebLogic Domain Name** and others, set the toggle button to **Yes**, and click **Next: Configure AKS cluster**. If you want to specify different values for the optional configuration, set the toggle button to **No**, and enter the following details. |
-| 
-
+| Name prefix for Managed Server | Enter a prefix for the Managed Server name. |
+| WebLogic Domain Name | Enter the name of the domain that will be created by the offer. |
+| Cluster size | The initial number of nodes in the AKS cluster. For more information on AKS node count see [Scale the node count in an Azure Kubernetes Service (AKS) cluster](https://docs.microsoft.com/en-us/azure/aks/scale-cluster). |
+|Custom Java Options to start WebLogic Server | Java VM arguments passed to the invocation of WebLogic Server. For more information, see the [FAQ]({{< relref "/faq/resource-settings/_index.md" >}}). |
+|Enable T3 tunneling for Admin Server| If checked, configure the necessary settings to enable T3 tunneling to the Admin Server.  For more details see [External network access security]({{< relref "/security/domain-security/weblogic-channels.md" >}}).|
+|Enable T3 tunneling for WebLogic cluster| If checked, configure the necessary settings to enable T3 tunneling to the WebLogic Server cluster.  For more details see [External network access security]({{< relref "/security/domain-security/weblogic-channels.md" >}}).|
 
 
 
