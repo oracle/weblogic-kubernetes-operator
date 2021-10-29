@@ -372,6 +372,13 @@ Defaults to `true`.
 
 If `clusterSizePaddingValidationEnabed` is set to true, two additional characters will be reserved if the configured cluster's size is between one and nine, and one additional character will be reserved if the configured cluster's size is between 10 and 99. No additional character is reserved if the configured cluster's size is greater than 99.
 
+##### `istioLocalhostBindingsEnabled`
+
+Default for the domain resource `domain.spec.configuration.istio.localhostBindingsEnabled` setting.
+
+For more information, see [Configuring the domain resource]({{< relref "/userguide/istio/istio.md#configuring-the-domain-resource" >}})
+in the Istio chapter.
+
 #### Elastic Stack integration
 
 ##### `elkIntegrationEnabled`
