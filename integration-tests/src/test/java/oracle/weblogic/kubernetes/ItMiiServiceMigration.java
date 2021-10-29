@@ -218,7 +218,6 @@ class ItMiiServiceMigration {
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
     adminSvcExtRouteHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
     // create the required leasing table 'ACTIVE' before we start the cluster
-    //createLeasingTable(adminServerPodName, domainNamespace, dbNodePort);
     createLeasingTable(adminServerPodName, domainNamespace, 1521, dbPodIP);
     // check managed server services and pods are ready
     for (int i = 1; i <= replicaCount; i++) {

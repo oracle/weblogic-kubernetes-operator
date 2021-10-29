@@ -294,8 +294,8 @@ class ItParameterizedDomain {
     domainOnPV = createDomainOnPvUsingWdt(domainOnPVNamespace);
 
     domains.add(miiDomain);
-    //domains.add(domainInImage);
-    //domains.add(domainOnPV);
+    domains.add(domainInImage);
+    domains.add(domainOnPV);
 
     // create ingress for each domain
     for (Domain domain: domains) {
