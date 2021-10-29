@@ -63,8 +63,8 @@ Use the **Basics** blade to provide the basic configuration details for deployin
 | WebLogic Domain Name | Enter the name of the domain that will be created by the offer. |
 | Maximum dynamic cluster size | The maximum size of the dynamic WebLogic cluster created. |
 |Custom Java Options to start WebLogic Server | Java VM arguments passed to the invocation of WebLogic Server. For more information, see the [FAQ]({{< relref "/faq/resource-settings/_index.md" >}}). |
-|Enable T3 tunneling for Admin Server| If checked, configure the necessary settings to enable T3 tunneling to the Admin Server.  For more details see [External network access security]({{< relref "/security/domain-security/weblogic-channels.md" >}}).|
-|Enable T3 tunneling for WebLogic cluster| If checked, configure the necessary settings to enable T3 tunneling to the WebLogic Server cluster.  For more details see [External network access security]({{< relref "/security/domain-security/weblogic-channels.md" >}}).|
+|Enable T3 tunneling for Administration Server| If selected, configure the necessary settings to enable T3 tunneling to the Administration Server.  For more details, see [External network access security]({{< relref "/security/domain-security/weblogic-channels.md" >}}).|
+|Enable T3 tunneling for WebLogic cluster| If selected, configure the necessary settings to enable T3 tunneling to the WebLogic Server cluster.  For more details, see [External network access security]({{< relref "/security/domain-security/weblogic-channels.md" >}}).|
 
 When you are satisfied with your selections select **Next : Configure AKS cluster**.
 
@@ -81,8 +81,8 @@ This section allows you to configure some options about the AKS which will run W
 |Create a new AKS cluster| If set to **Yes**, the deployment will create a new AKS cluster resource in the specified resource group. If set to **No**, you have the opportunity to select an existing AKS cluster, into which the deployment is configured. Note: the offer assumes the existing AKS cluster has no WebLogic related deployments. |
 | Node count | The initial number of nodes in the AKS cluster. This value can be changed after deployment. For information, see [Scaling]({{< relref "/userguide/managing-domains/domain-lifecycle/scaling.md" >}}) |
 | Node size | The default VM size is 2x Standard DSv2, 2 vcpus, 7 GB memory. If you want to select a different VM size, click Change Size, select the size from the list (for example, A3) on the Select a VM size page, and click Select. For more information about sizing the virtual machine, see the [Azure documentation on Sizes](https://docs.microsoft.com/en-us/azure/cloud-services/cloud-services-sizes-specs).|
-|Enable Container insights| If checked, configure the necessary settings to integrate with Container insights. For more information, see [Container insights overview](https://aka.ms/wls-aks-container-insights).|
-|Create Persistent Volume using Azure File share service|If checked, configure the necessary settings to mount a persistent volume to the nodes of the AKS cluster. For more information, see [Persistent storage]({{< relref "/userguide/managing-domains/persistent-storage/_index.md" >}}).|
+|Enable Container insights| If selected, configure the necessary settings to integrate with Container insights. For more information, see [Container insights overview](https://aka.ms/wls-aks-container-insights).|
+|Create Persistent Volume using Azure File share service|If selected, configure the necessary settings to mount a persistent volume to the nodes of the AKS cluster. For more information, see [Persistent storage]({{< relref "/userguide/managing-domains/persistent-storage/_index.md" >}}).|
 
 ##### Image selection
 
@@ -107,7 +107,7 @@ Options in this section enable you to deploy a Java EE Application along with th
 |-------|-------------|
 | Deploy your application package? | If set to **Yes**, you must specify a Java EE WAR, EAR, or JAR file suitable for deployment with the selected version of WebLogic Server. If set to **No**, no application is deployed.| 
 | Application package (.war,.ear,.jar) | The **Browse** button enables you to browse and select a file from a pre-existing Azure Storage Account and Storage Container within that account.  To learn how to create a Storage Account and Container, see [Create a storage account](https://docs.microsoft.com/en-us/azure/storage/common/storage-account-create?tabs=azure-portal). |
-| Fail deployment if application does not become ACTIVE. | If checked, the deployment will wait for the deployed application to reach the **ACTIVE** state and fail the deployment if it does not. For more details, see the [Oracle documentation](https://aka.ms/wls-aks-deployment-state) |
+| Fail deployment if application does not become ACTIVE. | If selected, the deployment will wait for the deployed application to reach the **ACTIVE** state and fail the deployment if it does not. For more details, see the [Oracle documentation](https://aka.ms/wls-aks-deployment-state) |
 | Number of WebLogic Managed Server replicas | The initial value of the `replicas` field of the Domain. For information, see [Scaling]({{< relref "/userguide/managing-domains/domain-lifecycle/scaling.md" >}}). |
 
 When you are satisfied with your selections select **Next : TLS/SSL configuration**.
