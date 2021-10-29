@@ -4,7 +4,6 @@
 package oracle.weblogic.kubernetes;
 
 import java.time.OffsetDateTime;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -19,20 +18,12 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
-import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
-import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
-import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchServerStartPolicy;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodInitializing;
@@ -47,10 +38,9 @@ import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.STOP_CLUST
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.STOP_DOMAIN_SCRIPT;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.STOP_SERVER_SCRIPT;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.checkManagedServerConfiguration;
-import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.createDomainResource;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.executeLifecycleScript;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.managedServerNamePrefix;
-import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.setupSample;
+import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.prepare;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.verifyExecuteResult;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -97,56 +87,9 @@ class ItServerStartPolicy {
     assertNotNull(namespaces.get(1), "Namespace list is null");
     domainNamespace = namespaces.get(1);
 
-    // install and verify operator
-    installAndVerifyOperator(opNamespace, domainNamespace);
-
-    // Create the repo secret to pull the image
-    // this secret is used only for non-kind cluster
-    createOcirRepoSecret(domainNamespace);
-
-    // create secret for admin credentials
-    logger.info("Create secret for admin credentials");
-    String adminSecretName = "weblogic-credentials";
-    assertDoesNotThrow(() -> createDomainSecret(adminSecretName,"weblogic",
-        "welcome1", domainNamespace),
-        String.format("createSecret failed for %s", adminSecretName));
-
-    // create encryption secret
-    logger.info("Create encryption secret");
-    String encryptionSecretName = "encryptionsecret";
-    assertDoesNotThrow(() -> createDomainSecret(encryptionSecretName, "weblogicenc",
-        "weblogicenc", domainNamespace),
-        String.format("createSecret failed for %s", encryptionSecretName));
-
-    String configMapName = "wls-ext-configmap";
-    createConfigMapAndVerify(
-        configMapName, domainUid, domainNamespace,
-        Collections.singletonList(MODEL_DIR + "/model.wls.ext.config.yaml"));
-
-    // create the domain CR with a pre-defined configmap
-    createDomainResource(domainNamespace,domainUid, adminSecretName,
-        encryptionSecretName,
-        configMapName);
-
-    // wait for the domain to exist
-    logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
-    testUntil(
-        domainExists(domainUid, DOMAIN_VERSION, domainNamespace),
-        logger,
-        "domain {0} to be created in namespace {1}",
-        domainUid,
-        domainNamespace);
-
-    logger.info("Check admin service/pod {0} is created in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodReadyAndServiceExists(adminServerPodName,
-        domainUid, domainNamespace);
-
+    prepare(domainNamespace, domainUid, opNamespace, samplePath);
     // In OKD environment, the node port cannot be accessed directly. Have to create an ingress
     ingressHost = createRouteForOKD(adminServerPodName + "-ext", domainNamespace);
-
-    //copy the samples directory to a temporary location
-    setupSample(samplePath);
   }
 
   /**

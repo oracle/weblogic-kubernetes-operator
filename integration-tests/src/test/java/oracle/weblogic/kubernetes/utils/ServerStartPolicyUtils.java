@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -29,18 +30,28 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkClusterReplicaCountMatches;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
@@ -75,7 +86,63 @@ public class ServerStartPolicyUtils {
   private static final int replicaCount = 1;
 
   private static LoggingFacade logger = getLogger();
-  private static String ingressHost = null; //only used for OKD
+
+  /**
+   * Create operator and domain in specified namespaces, setup sample scripts directory.
+   * @param domainNamespace - domain namespace
+   * @param domainUid - domain uid
+   * @param opNamespace - operator namespace
+   * @param samplePath -name for samples script directory
+   */
+  public static void prepare(String domainNamespace, String domainUid, String opNamespace, String samplePath) {
+    // install and verify operator
+    installAndVerifyOperator(opNamespace, domainNamespace);
+
+    // Create the repo secret to pull the image
+    // this secret is used only for non-kind cluster
+    createOcirRepoSecret(domainNamespace);
+
+    // create secret for admin credentials
+    logger.info("Create secret for admin credentials");
+    String adminSecretName = "weblogic-credentials";
+    assertDoesNotThrow(() -> createDomainSecret(adminSecretName,ADMIN_USERNAME_DEFAULT,
+        ADMIN_PASSWORD_DEFAULT, domainNamespace),
+        String.format("createSecret failed for %s", adminSecretName));
+
+    // create encryption secret
+    logger.info("Create encryption secret");
+    String encryptionSecretName = "encryptionsecret";
+    assertDoesNotThrow(() -> createDomainSecret(encryptionSecretName, "weblogicenc",
+        "weblogicenc", domainNamespace),
+        String.format("createSecret failed for %s", encryptionSecretName));
+
+    String configMapName = "wls-ext-configmap";
+    createConfigMapAndVerify(
+        configMapName, domainUid, domainNamespace,
+        Collections.singletonList(MODEL_DIR + "/model.wls.ext.config.yaml"));
+
+    // create the domain CR with a pre-defined configmap
+    createDomainResource(domainNamespace, domainUid, adminSecretName,
+        encryptionSecretName,
+        configMapName);
+
+    // wait for the domain to exist
+    logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
+    testUntil(
+        domainExists(domainUid, DOMAIN_VERSION, domainNamespace),
+        logger,
+        "domain {0} to be created in namespace {1}",
+        domainUid,
+        domainNamespace);
+    String adminServerPodName = domainUid + "-admin-server";
+    logger.info("Check admin service/pod {0} is created in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName,
+        domainUid, domainNamespace);
+    //copy the samples directory to a temporary location
+    setupSample(samplePath);
+  }
+
 
   /**
    *  Scaling cluster util method.

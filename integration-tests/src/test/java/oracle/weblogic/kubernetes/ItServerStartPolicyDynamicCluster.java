@@ -19,6 +19,8 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
@@ -52,6 +54,7 @@ import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.checkManag
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.createDomainResource;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.executeLifecycleScript;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.managedServerNamePrefix;
+import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.prepare;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.restoreEnv;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.scalingClusters;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.setupSample;
@@ -65,7 +68,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Tests to verify that life cycle operation of dynamic cluster does not impact the state of config cluster.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("ServerStartPolicy attribute in different levels in a MII domain")
+@DisplayName("ServerStartPolicy attribute in different levels in a MII domain dynamic cluster")
 @IntegrationTest
 class ItServerStartPolicyDynamicCluster {
 
@@ -83,7 +86,7 @@ class ItServerStartPolicyDynamicCluster {
 
   /**
    * Install Operator.
-   * Create a domain resource definition.
+   * Create a domain resource.
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
   JUnit engine parameter resolution mechanism
    */
@@ -100,56 +103,10 @@ class ItServerStartPolicyDynamicCluster {
     assertNotNull(namespaces.get(1), "Namespace list is null");
     domainNamespace = namespaces.get(1);
 
-    // install and verify operator
-    installAndVerifyOperator(opNamespace, domainNamespace);
-
-    // Create the repo secret to pull the image
-    // this secret is used only for non-kind cluster
-    createOcirRepoSecret(domainNamespace);
-
-    // create secret for admin credentials
-    logger.info("Create secret for admin credentials");
-    String adminSecretName = "weblogic-credentials";
-    assertDoesNotThrow(() -> createDomainSecret(adminSecretName,"weblogic",
-        "welcome1", domainNamespace),
-        String.format("createSecret failed for %s", adminSecretName));
-
-    // create encryption secret
-    logger.info("Create encryption secret");
-    String encryptionSecretName = "encryptionsecret";
-    assertDoesNotThrow(() -> createDomainSecret(encryptionSecretName, "weblogicenc",
-        "weblogicenc", domainNamespace),
-        String.format("createSecret failed for %s", encryptionSecretName));
-
-    String configMapName = "wls-ext-configmap";
-    createConfigMapAndVerify(
-        configMapName, domainUid, domainNamespace,
-        Collections.singletonList(MODEL_DIR + "/model.wls.ext.config.yaml"));
-
-    // create the domain CR with a pre-defined configmap
-    createDomainResource(domainNamespace, domainUid, adminSecretName,
-        encryptionSecretName,
-        configMapName);
-
-    // wait for the domain to exist
-    logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
-    testUntil(
-        domainExists(domainUid, DOMAIN_VERSION, domainNamespace),
-        logger,
-        "domain {0} to be created in namespace {1}",
-        domainUid,
-        domainNamespace);
-
-    logger.info("Check admin service/pod {0} is created in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodReadyAndServiceExists(adminServerPodName,
-        domainUid, domainNamespace);
+    prepare(domainNamespace, domainUid, opNamespace, samplePath);
 
     // In OKD environment, the node port cannot be accessed directly. Have to create an ingress
     ingressHost = createRouteForOKD(adminServerPodName + "-ext", domainNamespace);
-
-    //copy the samples directory to a temporary location
-    setupSample(samplePath);
   }
 
   /**

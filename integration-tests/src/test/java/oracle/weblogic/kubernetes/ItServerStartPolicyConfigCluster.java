@@ -4,7 +4,6 @@
 package oracle.weblogic.kubernetes;
 
 import java.time.OffsetDateTime;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -19,19 +18,11 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
-import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkClusterReplicaCountMatches;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
-import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
-import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchServerStartPolicy;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkIsPodRestarted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
@@ -50,12 +41,11 @@ import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.START_SERV
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.STOP_CLUSTER_SCRIPT;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.STOP_SERVER_SCRIPT;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.checkManagedServerConfiguration;
-import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.createDomainResource;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.executeLifecycleScript;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.managedServerNamePrefix;
+import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.prepare;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.restoreEnv;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.scalingClusters;
-import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.setupSample;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -63,7 +53,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Tests to verify that life cycle operation of config cluster does not impact the state of dynamic cluster.
+ * Tests to verify that life cycle operation of configured cluster does not impact the state of dynamic cluster.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("ServerStartPolicy attribute in different levels in a MII domain")
@@ -84,7 +74,7 @@ class ItServerStartPolicyConfigCluster {
 
   /**
    * Install Operator.
-   * Create a domain resource definition.
+   * Create a domain resource.
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
    JUnit engine parameter resolution mechanism
    */
@@ -101,56 +91,10 @@ class ItServerStartPolicyConfigCluster {
     assertNotNull(namespaces.get(1), "Namespace list is null");
     domainNamespace = namespaces.get(1);
 
-    // install and verify operator
-    installAndVerifyOperator(opNamespace, domainNamespace);
-
-    // Create the repo secret to pull the image
-    // this secret is used only for non-kind cluster
-    createOcirRepoSecret(domainNamespace);
-
-    // create secret for admin credentials
-    logger.info("Create secret for admin credentials");
-    String adminSecretName = "weblogic-credentials";
-    assertDoesNotThrow(() -> createDomainSecret(adminSecretName,"weblogic",
-            "welcome1", domainNamespace),
-            String.format("createSecret failed for %s", adminSecretName));
-
-    // create encryption secret
-    logger.info("Create encryption secret");
-    String encryptionSecretName = "encryptionsecret";
-    assertDoesNotThrow(() -> createDomainSecret(encryptionSecretName, "weblogicenc",
-            "weblogicenc", domainNamespace),
-             String.format("createSecret failed for %s", encryptionSecretName));
-
-    String configMapName = "wls-ext-configmap";
-    createConfigMapAndVerify(
-        configMapName, domainUid, domainNamespace,
-            Collections.singletonList(MODEL_DIR + "/model.wls.ext.config.yaml"));
-
-    // create the domain CR with a pre-defined configmap
-    createDomainResource(domainNamespace,domainUid, adminSecretName,
-            encryptionSecretName,
-            configMapName);
-
-    // wait for the domain to exist
-    logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
-    testUntil(
-        domainExists(domainUid, DOMAIN_VERSION, domainNamespace),
-        logger,
-        "domain {0} to be created in namespace {1}",
-        domainUid,
-        domainNamespace);
-
-    logger.info("Check admin service/pod {0} is created in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodReadyAndServiceExists(adminServerPodName, 
-          domainUid, domainNamespace);
+    prepare(domainNamespace, domainUid, opNamespace, samplePath);
 
     // In OKD environment, the node port cannot be accessed directly. Have to create an ingress
     ingressHost = createRouteForOKD(adminServerPodName + "-ext", domainNamespace);
-
-    //copy the samples directory to a temporary location
-    setupSample(samplePath);
   }
 
   /**
@@ -217,7 +161,7 @@ class ItServerStartPolicyConfigCluster {
         STOP_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, CONFIG_CLUSTER);
 
     checkPodDeleted(configServerPodName, domainUid, domainNamespace);
-    logger.info("Config cluster shutdown success");
+    logger.info("configured cluster shutdown success");
 
     // check managed server from dynamic cluster are not affected
     logger.info("Check dynamic managed server pods are not affected");
@@ -242,7 +186,7 @@ class ItServerStartPolicyConfigCluster {
   }
 
   /**
-   * Verify ALWAYS serverStartPolicy (config cluster) overrides replica count.
+   * Verify ALWAYS serverStartPolicy (configured cluster) overrides replica count.
    * The configured cluster has a second managed server(config-cluster-server2)
    * with serverStartPolicy set to IF_NEEDED. Initially, the server will not 
    * come up since the replica count for the cluster is set to 1. 
@@ -256,7 +200,7 @@ class ItServerStartPolicyConfigCluster {
    */
   @Order(2)
   @Test
-  @DisplayName("Start/stop config cluster managed server by updating serverStartPolicy to ALWAYS/IF_NEEDED")
+  @DisplayName("Start/stop configured cluster managed server by updating serverStartPolicy to ALWAYS/IF_NEEDED")
   void testConfigClusterStartServerAlways() {
     String serverName = "config-cluster-server2";
     String serverPodName = domainUid + "-" + serverName;
@@ -278,7 +222,7 @@ class ItServerStartPolicyConfigCluster {
     logger.info("Domain resource patched to shutdown the second managed server in configured cluster");
     logger.info("Wait for managed server ${0} to be shutdown", serverPodName);
     checkPodDeleted(serverPodName, domainUid, domainNamespace);
-    logger.info("Config cluster managed server shutdown success");
+    logger.info("configured cluster managed server shutdown success");
   }
 
 
@@ -299,7 +243,7 @@ class ItServerStartPolicyConfigCluster {
    */
   @Order(3)
   @Test
-  @DisplayName("Stop/Start a running config cluster managed server and verify the replica count is maintained")
+  @DisplayName("Stop/Start a running configured cluster managed server and verify the replica count is maintained")
   void testConfigClusterReplicaCountIsMaintained() {
     String serverName = "config-cluster-server1";
     String serverPodName = domainUid + "-" + serverName;
