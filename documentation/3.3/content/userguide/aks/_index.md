@@ -66,7 +66,7 @@ Use the **Basics** blade to provide the basic configuration details for deployin
 |Enable T3 tunneling for Administration Server| If selected, configure the necessary settings to enable T3 tunneling to the Administration Server.  For more details, see [External network access security]({{< relref "/security/domain-security/weblogic-channels.md" >}}).|
 |Enable T3 tunneling for WebLogic cluster| If selected, configure the necessary settings to enable T3 tunneling to the WebLogic Server cluster.  For more details, see [External network access security]({{< relref "/security/domain-security/weblogic-channels.md" >}}).|
 
-When you are satisfied with your selections select **Next : Configure AKS cluster**.
+When you are satisfied with your selections, select **Next : Configure AKS cluster**.
 
 #### Configure AKS cluster
 
@@ -110,7 +110,7 @@ Options in this section enable you to deploy a Java EE Application along with th
 | Fail deployment if application does not become ACTIVE. | If selected, the deployment will wait for the deployed application to reach the **ACTIVE** state and fail the deployment if it does not. For more details, see the [Oracle documentation](https://aka.ms/wls-aks-deployment-state) |
 | Number of WebLogic Managed Server replicas | The initial value of the `replicas` field of the Domain. For information, see [Scaling]({{< relref "/userguide/managing-domains/domain-lifecycle/scaling.md" >}}). |
 
-When you are satisfied with your selections select **Next : TLS/SSL configuration**.
+When you are satisfied with your selections, select **Next : TLS/SSL configuration**.
 
 #### TLS/SSL configuration
 
@@ -136,7 +136,7 @@ If you want to upload existing keystores, select **Upload existing KeyStores** f
 | Confirm password | Re-enter the value of the preceding field. |
 | The Identity KeyStore type (JKS,PKCS12) | Select the type of custom trust keystore. The supported values are JKS and PKCS12. |
 
-When you are satisfied with your selections select **Next : Networking**.
+When you are satisfied with your selections, select **Next : Networking**.
 
 #### Networking
 
@@ -210,7 +210,7 @@ Regardless of how you provide the certificates, there are several other options 
 | Create ingress for Administration Console. | Select **Yes** to create an ingress for the admin console with the path `/console`. |
 | Create ingress for WebLogic Remote Console. | Select **Yes** to create an ingress for the remote console with the path `/remoteconsole`. |
 
-When you are satisfied with your selections select **Next : DNS Configuration**.
+When you are satisfied with your selections, select **Next : DNS Configuration**.
 
 #### DNS Configuration
 
@@ -243,7 +243,7 @@ See the preceding table for the description of these fields.
 In the case of creating an Azure DNS zone and a custom DNS alias, you must perform the DNS domain delegation at your DNS registry post deployment. See [Delegation of DNS zones with Azure DNS](https://docs.microsoft.com/en-us/azure/dns/dns-domain-delegation).
 {{% /notice %}}
 
-When you are satisfied with your selections select **Next : Database**.
+When you are satisfied with your selections, select **Next : Database**.
 
 #### Database
 
@@ -267,7 +267,7 @@ If you select **Other** as the database type, there are some additional values y
 | DataSource driver name | The fully qualified Java class name of the JDBC driver. |
 | Test table name | The name of the database table to use when testing physical database connections. This value depends on the specified database. Some suggested values include the following. {{< line_break >}}{{< line_break >}} • For Oracle, use `SQL ISVALID`. {{< line_break >}} • For PostgreSQL, SQL Server and MariaDB use `SQL SELECT 1`. {{< line_break >}} • For Informix use `SYSTABLES`.|
 
-When you are satisfied with your selections select **Next : Review + create**.
+When you are satisfied with your selections, select **Next : Review + create**.
 
 #### Review + create
 
