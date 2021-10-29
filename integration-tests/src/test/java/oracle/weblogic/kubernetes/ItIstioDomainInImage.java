@@ -319,8 +319,7 @@ class ItIstioDomainInImage {
                             .addEnvItem(new V1EnvVar()
                                     .name("USER_MEM_ARGS")
                                     .value("-Djava.security.egd=file:/dev/./urandom ")))
-                    .adminServer(new AdminServer()
-                            .serverStartState("RUNNING"))
+                    .adminServer(createAdminServer())
                     .addClustersItem(new Cluster()
                             .clusterName(clusterName)
                             .replicas(replicaCount)
@@ -341,6 +340,16 @@ class ItIstioDomainInImage {
                     domainUid, domNamespace));
     assertTrue(domCreated, String.format("Create domain custom resource failed with ApiException "
                     + "for %s in namespace %s", domainUid, domNamespace));
+  }
+
+  private AdminServer createAdminServer() {
+    AdminServer adminServer = new AdminServer()
+        .serverStartState("RUNNING");
+
+    if (!isLocalHostBindingsEnabled()) {
+      adminServer.adminChannelPortForwardingEnabled(true);
+    }
+    return adminServer;
   }
 
 }

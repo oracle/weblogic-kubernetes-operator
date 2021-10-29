@@ -355,8 +355,7 @@ class ItIstioMiiDomain {
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
-            .adminServer(new AdminServer()
-                .serverStartState("RUNNING"))
+            .adminServer(createAdminServer())
             .addClustersItem(new Cluster()
                 .clusterName(clusterName)
                 .replicas(replicaCount)
@@ -374,6 +373,16 @@ class ItIstioMiiDomain {
             .introspectorJobActiveDeadlineSeconds(300L)));
     setPodAntiAffinity(domain);
     return domain;
+  }
+
+  private AdminServer createAdminServer() {
+    AdminServer adminServer = new AdminServer()
+        .serverStartState("RUNNING");
+
+    if (!isLocalHostBindingsEnabled()) {
+      adminServer.adminChannelPortForwardingEnabled(true);
+    }
+    return adminServer;
   }
 
 }

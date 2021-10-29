@@ -235,8 +235,7 @@ class ItIstioDomainInPV  {
                 .addVolumeMountsItem(new V1VolumeMount()
                     .mountPath("/shared")
                     .name(pvName)))
-            .adminServer(new AdminServer() //admin server
-                .serverStartState("RUNNING")
+            .adminServer(createAdminServer()
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("T3Channel")
@@ -427,6 +426,16 @@ class ItIstioDomainInPV  {
     createDomainJob(WEBLOGIC_IMAGE_TO_USE_IN_SPEC, pvName, pvcName, domainScriptConfigMapName,
         namespace, jobCreationContainer, annotMap);
 
+  }
+
+  private AdminServer createAdminServer() {
+    AdminServer adminServer = new AdminServer()
+        .serverStartState("RUNNING");
+
+    if (!isLocalHostBindingsEnabled()) {
+      adminServer.adminChannelPortForwardingEnabled(true);
+    }
+    return adminServer;
   }
 
 }
