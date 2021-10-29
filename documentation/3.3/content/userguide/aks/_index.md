@@ -140,7 +140,7 @@ When you are satisfied with your selections, select **Next : Networking**.
 
 #### Networking
 
-This blade allows configuring options for load balancing and ingress controller.
+Use this blade to configure options for load balancing and ingress controller.
 
 ##### Standard Load Balancer service
 
