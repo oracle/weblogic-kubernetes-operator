@@ -3,7 +3,6 @@
 
 package oracle.kubernetes.operator;
 
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -32,6 +31,7 @@ import oracle.kubernetes.operator.utils.WlsDomainConfigSupport.DynamicClusterCon
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
+import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.SystemClockTestSupport;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
@@ -74,7 +74,6 @@ import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Comple
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.ConfigChangesPendingRestart;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
 import static org.hamcrest.CoreMatchers.containsString;
-import static org.hamcrest.CoreMatchers.hasItems;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
@@ -309,9 +308,9 @@ class DomainStatusUpdaterTest {
   }
 
   private void markServerPodsInClusterForDeletion() {
-    info.getServerPod("server1").getMetadata().setDeletionTimestamp(OffsetDateTime.now());
-    info.getServerPod("server2").getMetadata().setDeletionTimestamp(OffsetDateTime.now());
-    info.getServerPod("server3").getMetadata().setDeletionTimestamp(OffsetDateTime.now());
+    info.getServerPod("server1").getMetadata().setDeletionTimestamp(SystemClock.now());
+    info.getServerPod("server2").getMetadata().setDeletionTimestamp(SystemClock.now());
+    info.getServerPod("server3").getMetadata().setDeletionTimestamp(SystemClock.now());
     info.setServerStartupInfo(null);
   }
 
@@ -347,12 +346,9 @@ class DomainStatusUpdaterTest {
     markServerPodsInClusterForDeletion();
     testSupport.runSteps(DomainStatusUpdater.createStatusUpdateStep(endStep));
 
-    assertThat(
-            getRecordedDomain().getStatus().getServers(),
-            hasItems(
-                    createServerStatus(SHUTTING_DOWN_STATE, SHUTDOWN_STATE, CLUSTER, "node1", "server1", "health1"),
-                    createServerStatus(SHUTTING_DOWN_STATE, SHUTDOWN_STATE, CLUSTER, "node2", "server2", "health2"),
-                    createServerStatus(SHUTTING_DOWN_STATE, SHUTDOWN_STATE, CLUSTER, "node3", "server3", "health3")));
+    assertThat(getRecordedDomain(), hasStatusForServer("server1").withState(SHUTTING_DOWN_STATE));
+    assertThat(getRecordedDomain(), hasStatusForServer("server2").withState(SHUTTING_DOWN_STATE));
+    assertThat(getRecordedDomain(), hasStatusForServer("server3").withState(SHUTTING_DOWN_STATE));
   }
 
   private ServerStatus createServerStatus(String state, String desiredState,
@@ -375,12 +371,9 @@ class DomainStatusUpdaterTest {
     deleteServerPodsInCluster();
     testSupport.runSteps(DomainStatusUpdater.createStatusUpdateStep(endStep));
 
-    assertThat(
-            getRecordedDomain().getStatus().getServers(),
-            hasItems(
-                    createServerStatus(SHUTDOWN_STATE, SHUTDOWN_STATE, "cluster1", null, "server1", "health1"),
-                    createServerStatus(SHUTDOWN_STATE, SHUTDOWN_STATE, "cluster1", null, "server2", "health2"),
-                    createServerStatus(SHUTDOWN_STATE, SHUTDOWN_STATE, "cluster1", null, "server3", "health3")));
+    assertThat(getRecordedDomain(), hasStatusForServer("server1").withState(SHUTDOWN_STATE));
+    assertThat(getRecordedDomain(), hasStatusForServer("server2").withState(SHUTDOWN_STATE));
+    assertThat(getRecordedDomain(), hasStatusForServer("server3").withState(SHUTDOWN_STATE));
   }
 
   @Test
