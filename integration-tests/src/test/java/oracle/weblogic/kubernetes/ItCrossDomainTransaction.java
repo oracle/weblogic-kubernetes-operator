@@ -545,7 +545,6 @@ class ItCrossDomainTransaction {
 
     if (!WEBLOGIC_SLIM) {
       logger.info("Validating WebLogic admin console");
-      //boolean loginSuccessful = assertDoesNotThrow(() -> {
       testUntil(
           assertDoesNotThrow(() -> {
             return TestAssertions.adminNodePortAccessible(serviceNodePort,
@@ -553,7 +552,6 @@ class ItCrossDomainTransaction {
           }, "Access to admin server node port failed"),
           logger,
           "Console login validation");
-      //assertTrue(loginSuccessful, "Console login validation failed");
     } else {
       logger.info("Skipping WebLogic Console check for Weblogic slim images");
     }
