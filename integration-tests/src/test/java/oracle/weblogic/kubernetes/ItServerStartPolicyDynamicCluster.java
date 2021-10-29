@@ -39,9 +39,9 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodInitializing;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodRestarted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
-import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.CLUSTER_1;
-import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.CLUSTER_2;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.CLUSTER_LIFECYCLE;
+import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.CONFIG_CLUSTER;
+import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.DYNAMIC_CLUSTER;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.ROLLING_CLUSTER_SCRIPT;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.SERVER_LIFECYCLE;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.START_CLUSTER_SCRIPT;
@@ -62,10 +62,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Create a (MII) WebLogic domain with a dynamic cluster with two managed
- * servers, a configured cluster with two managed servers and a standalone
- * managed server. The replica count is set to 1 and serverStartPolicy is set
- * to IF_NEEDED at managed server level.
+ * Tests to verify that life cycle operation of dynamic cluster does not impact the state of config cluster.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("ServerStartPolicy attribute in different levels in a MII domain")
@@ -208,22 +205,23 @@ class ItServerStartPolicyDynamicCluster {
     checkPodReadyAndServiceExists(dynamicServerPodName, domainUid, domainNamespace);
     // startCluster.sh does not take any action on a running cluster
     String result = executeLifecycleScript(domainUid, domainNamespace,
-        samplePath, START_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, CLUSTER_1);
+        samplePath, START_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, DYNAMIC_CLUSTER);
     assertTrue(result.contains("No changes needed"), "startCluster.sh shouldn't make changes");
 
     // Verify dynamic server are shut down after stopCluster script execution
     logger.info("Stop dynamic cluster using the script");
-    executeLifecycleScript(domainUid, domainNamespace, samplePath, STOP_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, CLUSTER_1);
+    executeLifecycleScript(domainUid, domainNamespace, samplePath,
+        STOP_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, DYNAMIC_CLUSTER);
 
     checkPodDeleted(dynamicServerPodName, domainUid, domainNamespace);
     logger.info("Dynamic cluster shutdown success");
 
     // stopCluster.sh does not take any action on a stopped cluster
     result = executeLifecycleScript(domainUid, domainNamespace,
-        samplePath, STOP_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, CLUSTER_1);
+        samplePath, STOP_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, DYNAMIC_CLUSTER);
     assertTrue(result.contains("No changes needed"), "stopCluster.sh shouldn't make changes");
 
-    // check managed server from other cluster are not affected
+    // check managed server from config cluster are not affected
     Callable<Boolean> isCfgRestarted =
         assertDoesNotThrow(() -> isPodRestarted(configServerPodName,
             domainNamespace, cfgTs));
@@ -232,7 +230,8 @@ class ItServerStartPolicyDynamicCluster {
 
     // Verify clustered server are started after startCluster script execution
     logger.info("Start dynamic cluster using the script");
-    executeLifecycleScript(domainUid, domainNamespace, samplePath, START_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, CLUSTER_1);
+    executeLifecycleScript(domainUid, domainNamespace, samplePath,
+        START_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, DYNAMIC_CLUSTER);
     checkPodReadyAndServiceExists(dynamicServerPodName,
         domainUid, domainNamespace);
     logger.info("Dynamic cluster restart success");
@@ -357,7 +356,6 @@ class ItServerStartPolicyDynamicCluster {
   }
 
   /**
-   * Refer JIRA OWLS-86251
    * Once the admin server is stopped, operator can not start a new managed
    * server from scratch if it has never been started earlier with
    * administration server. Once the administration server is stopped,
@@ -442,7 +440,7 @@ class ItServerStartPolicyDynamicCluster {
   /**
    * Restart the clustered managed server that is part of the dynamic cluster using the sample scripts
    * stopServer.sh and startServer.sh while keeping the replica count constant.
-   * The test case verifies the fix for OWLS-87209 where scripts don't work when serverStartState
+   * The test case verifies that scripts work when serverStartState
    * is set at the managed server level but serverStartPolicy is not set at the managed server level.
    */
   @Order(6)
@@ -469,7 +467,7 @@ class ItServerStartPolicyDynamicCluster {
   /**
    * Restart the clustered managed server that is part of the dynamic cluster using the sample scripts
    * stopServer.sh and startServer.sh along with changing the replica count.
-   * The test case verifies the fix for OWLS-87209 where scripts don't work when serverStartState
+   * The test case verifies that scripts work when serverStartState
    * is set at the managed server level but serverStartPolicy is not set at the managed server level.
    */
   @Order(7)
@@ -486,15 +484,19 @@ class ItServerStartPolicyDynamicCluster {
     checkPodDeleted(managedServerPrefix + 3, domainUid, domainNamespace);
 
     // shut down the dynamic cluster managed server using the script stopServer.sh and let replicas decrease
-    executeLifecycleScript(domainUid, domainNamespace, samplePath, STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, serverName);
+    executeLifecycleScript(domainUid, domainNamespace, samplePath,
+        STOP_SERVER_SCRIPT, SERVER_LIFECYCLE, serverName);
     checkPodDeleted(serverPodName, domainUid, domainNamespace);
-    assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(CLUSTER_1, domainUid, domainNamespace, 1)));
+    assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(DYNAMIC_CLUSTER, domainUid,
+        domainNamespace, 1)));
     logger.info("managed server " + serverName + " stopped successfully.");
 
     // start the dynamic cluster managed server using the script startServer.sh and let replicas increase
-    executeLifecycleScript(domainUid, domainNamespace, samplePath, START_SERVER_SCRIPT, SERVER_LIFECYCLE, serverName);
+    executeLifecycleScript(domainUid, domainNamespace, samplePath,
+        START_SERVER_SCRIPT, SERVER_LIFECYCLE, serverName);
     checkPodReadyAndServiceExists(serverPodName, domainUid, domainNamespace);
-    assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(CLUSTER_1, domainUid, domainNamespace, 2)));
+    assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(DYNAMIC_CLUSTER,
+        domainUid, domainNamespace, 2)));
     logger.info("managed server " + serverName + " restarted successfully.");
   }
 
@@ -526,7 +528,7 @@ class ItServerStartPolicyDynamicCluster {
     logger.info("Rolling restart the dynamic cluster with rollCluster.sh script");
     assertDoesNotThrow(() ->
             executeLifecycleScript(domainUid, domainNamespace, samplePath,
-                ROLLING_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, CLUSTER_1),
+                ROLLING_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, DYNAMIC_CLUSTER),
         String.format("Failed to run %s", ROLLING_CLUSTER_SCRIPT));
 
     // wait till rolling restart has started by checking managed server pods have restarted
@@ -534,9 +536,9 @@ class ItServerStartPolicyDynamicCluster {
         dynamicServerPodName, domainNamespace);
     checkPodRestarted(domainUid, domainNamespace, dynamicServerPodName, dynServerPodCreationTime);
 
-    // check managed server from other cluster are not affected
+    // check managed server from config cluster are not affected
     logger.info("Check configured managed server pods are not affected");
-    assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(CLUSTER_2,
+    assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(CONFIG_CLUSTER,
         domainUid, domainNamespace, replicaCount)));
 
     boolean isPodRestarted =
@@ -568,27 +570,28 @@ class ItServerStartPolicyDynamicCluster {
     // String regex matches below
     // cluster        min  max  goal  current  ready
     // clusterName     1    5    1     1      1
-    String regex = ".*" + CLUSTER_1 + "(\\s+)1(\\s+)5(\\s+)1(\\s+)1(\\s+)1";
-    scalingClusters(domainUid, domainNamespace, CLUSTER_1,
+    String regex = ".*" + DYNAMIC_CLUSTER + "(\\s+)1(\\s+)5(\\s+)1(\\s+)1(\\s+)1";
+    scalingClusters(domainUid, domainNamespace, DYNAMIC_CLUSTER,
         dynamicServerPodName, replicaCount, regex, false, samplePath);
     // String regex matches below
     // cluster        min  max  goal  current  ready
     // clusterName     0    2    1     1      1
-    regex = ".*" + CLUSTER_2 + "(\\s+)0(\\s+)2(\\s+)1(\\s+)1(\\s+)1";
-    scalingClusters(domainUid, domainNamespace, CLUSTER_2, configServerPodName, replicaCount, regex, false, samplePath);
+    regex = ".*" + CONFIG_CLUSTER + "(\\s+)0(\\s+)2(\\s+)1(\\s+)1(\\s+)1";
+    scalingClusters(domainUid, domainNamespace, CONFIG_CLUSTER, configServerPodName,
+        replicaCount, regex, false, samplePath);
 
     // use scaleCluster.sh to scale a dynamic cluster and
     // use clusterStatus.sh to verify scaling results
     // String regex matches below
     // cluster        min  max  goal  current  ready
     // clusterName     1    5    2       2      2
-    regex = ".*" + CLUSTER_1 + "(\\s+)1(\\s+)5(\\s+)2(\\s+)2(\\s+)2";
-    scalingClusters(domainUid, domainNamespace, CLUSTER_1,
+    regex = ".*" + DYNAMIC_CLUSTER + "(\\s+)1(\\s+)5(\\s+)2(\\s+)2(\\s+)2";
+    scalingClusters(domainUid, domainNamespace, DYNAMIC_CLUSTER,
         dynamicServerPodName, newReplicaCount, regex, true, samplePath);
 
-    // check managed server from other cluster are not affected
+    // check managed server from config cluster are not affected
     logger.info("Check configured managed server pods are not affected");
-    assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(CLUSTER_2,
+    assertDoesNotThrow(() -> assertTrue(checkClusterReplicaCountMatches(CONFIG_CLUSTER,
         domainUid, domainNamespace, replicaCount)));
     checkPodDoesNotExist(configServerPodName, domainUid, domainNamespace);
 
@@ -596,7 +599,8 @@ class ItServerStartPolicyDynamicCluster {
     // String regex matches below
     // cluster        min  max  goal  current  ready
     // clusterName     1    5    1     1      1
-    regex = ".*" + CLUSTER_1 + "(\\s+)1(\\s+)5(\\s+)1(\\s+)1(\\s+)1";
-    scalingClusters(domainUid, domainNamespace,CLUSTER_1, dynamicServerPodName, replicaCount, regex, false, samplePath);
+    regex = ".*" + DYNAMIC_CLUSTER + "(\\s+)1(\\s+)5(\\s+)1(\\s+)1(\\s+)1";
+    scalingClusters(domainUid, domainNamespace,DYNAMIC_CLUSTER, dynamicServerPodName,
+        replicaCount, regex, false, samplePath);
   }
 }

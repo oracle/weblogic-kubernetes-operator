@@ -59,10 +59,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Create a (MII) WebLogic domain with a dynamic cluster with two managed
- * servers, a configured cluster with two managed servers and a standalone
- * managed server. The replica count is set to 1 and serverStartPolicy is set
- * to IF_NEEDED at managed server level.
+ * Tests to verify that life cycle operation for standalone servers and domain.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("ServerStartPolicy attribute in different levels in a MII domain")
@@ -549,9 +546,8 @@ class ItServerStartPolicy {
   }
 
   /**
-   * Verify Operator log can log warning messages.
-   * When the sample script tries to start a server that exceeds the max cluster size, the operator will log a warning
-   * messages.
+   * Verify Operator infrastructure log warning message, when the sample script
+   * tries to start a server that exceeds the max cluster size.
    */
   @Order(7)
   @Test
@@ -568,7 +564,6 @@ class ItServerStartPolicy {
   }
 
   /**
-   * Refer JIRA OWLS-86251
    * Once the admin server is stopped, operator can not start a new managed
    * server from scratch if it has never been started earlier with
    * administration Server. Once the administration server is stopped, the
