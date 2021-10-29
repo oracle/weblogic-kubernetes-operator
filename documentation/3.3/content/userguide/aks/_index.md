@@ -52,7 +52,7 @@ Use the **Basics** blade to provide the basic configuration details for deployin
 | Confirm password | Re-enter the value of the preceding field. |
 | Password for WebLogic Deploy Tooling runtime encrytion | The deployment uses Weblogic Deploy Tooling, including the capability to encrypt the model. This password is used for that encrption. For more information, see [Encrypt Model Tool](https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/encrypt/) and the [WebLogic Deploy Tooling documentation](https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/encrypt/).|
 | Confirm password | Re-enter the value of the preceding field. |
-| User assigned managed identity | The deployment requires a user-assigned managed identity with the **Contributor** or **Owner** role in the subscription referenced above.  For more information please see [Create, list, delete, or assign a role to a user-assigned managed identity using the Azure portal](https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/how-to-manage-ua-identity-portal). |
+| User assigned managed identity | The deployment requires a user-assigned managed identity with the **Contributor** or **Owner** role in the subscription referenced previously.  For more information, please see [Create, list, delete, or assign a role to a user-assigned managed identity using the Azure portal](https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/how-to-manage-ua-identity-portal). |
 
 ##### Optional Basic Configuration
 
@@ -81,8 +81,8 @@ This section allows you to configure some options about the AKS which will run W
 |Create a new AKS cluster| If set to **Yes**, the deployment will create a new AKS cluster resource in the specified resource group. If set to **No**, you have the opportunity to select an existing AKS cluster, into which the deployment is configured. Note: the offer assumes the existing AKS cluster has no WebLogic related deployments. |
 | Node count | The initial number of nodes in the AKS cluster. This value can be changed after deployment. For information, see [Scaling]({{< relref "/userguide/managing-domains/domain-lifecycle/scaling.md" >}}) |
 | Node size | The default VM size is 2x Standard DSv2, 2 vcpus, 7 GB memory. If you want to select a different VM size, click Change Size, select the size from the list (for example, A3) on the Select a VM size page, and click Select. For more information about sizing the virtual machine, see the [Azure documentation on Sizes](https://docs.microsoft.com/en-us/azure/cloud-services/cloud-services-sizes-specs).|
-|Enable Container insights| If checked, configure the necessary settings to integrate with Container insights. For more information see [Container insights overview](https://aka.ms/wls-aks-container-insights).|
-|Create Persistent Volume using Azure File share service|If checked, configure the necessary settings to mount a persistent volume to the nodes of the AKS cluster. For more information see [Persistent storage]({{< relref "/userguide/managing-domains/persistent-storage/_index.md" >}}).|
+|Enable Container insights| If checked, configure the necessary settings to integrate with Container insights. For more information, see [Container insights overview](https://aka.ms/wls-aks-container-insights).|
+|Create Persistent Volume using Azure File share service|If checked, configure the necessary settings to mount a persistent volume to the nodes of the AKS cluster. For more information, see [Persistent storage]({{< relref "/userguide/managing-domains/persistent-storage/_index.md" >}}).|
 
 ##### Image selection
 
@@ -183,7 +183,7 @@ You must select one of the following three options, each described in turn.
 | Password | The password for the certificate |
 | Confirm password | Re-enter the value of the preceding field. |
 | Trusted root certificate(.cer, .cert) | A trusted root certificate is required to allow backend instances in the application gateway. The root certificate is a Base-64 encoded X.509(.CER) format root certificate. |
-| Service Principal | A Base64 encoded JSON string of a service principal for the selected subscription. You can generate one with command `az ad sp create-for-rbac --sdk-auth | base64 -w0`. For more information see [Create a service principal](https://docs.microsoft.com/en-us/cli/azure/create-an-azure-service-principal-azure-cli#create-a-service-principal). |
+| Service Principal | A Base64 encoded JSON string of a service principal for the selected subscription. You can generate one with command `az ad sp create-for-rbac --sdk-auth | base64 -w0`. For more information, see [Create a service principal](https://docs.microsoft.com/en-us/cli/azure/create-an-azure-service-principal-azure-cli#create-a-service-principal). |
 
 **Identify an Azure Key Vault**
 
@@ -193,14 +193,14 @@ You must select one of the following three options, each described in turn.
 | Name of the Azure KeyVault containing secrets for the Certificate for SSL Termination | Enter the name of the Azure Key Vault that stores the application gateway SSL certificate and the data required for SSL termination. |
 | The name of the secret in the specified KeyVault whose value is the SSL Certificate Data | Enter the name of the Azure Key Vault secret that holds the value of the SSL certificate data. |
 | The name of the secret in the specified KeyVault whose value is the password for the SSL Certificate | Enter the name of the Azure Key Vault secret that holds the value of the SSL certificate password. |
-| Service Principal | A Base64 encoded JSON string of a service principal for the selected subscription. You can generate one with command `az ad sp create-for-rbac --sdk-auth | base64 -w0`. For more information see [Create a service principal](https://docs.microsoft.com/en-us/cli/azure/create-an-azure-service-principal-azure-cli#create-a-service-principal). |
+| Service Principal | A Base64 encoded JSON string of a service principal for the selected subscription. You can generate one with command `az ad sp create-for-rbac --sdk-auth | base64 -w0`. For more information, see [Create a service principal](https://docs.microsoft.com/en-us/cli/azure/create-an-azure-service-principal-azure-cli#create-a-service-principal). |
 
 **Generate a self-signed frontend certificate**
 
 | Field | Description |
 |-------|-------------|
 | Trusted root certificate(.cer, .cert) | A trusted root certificate is required to allow backend instances in the application gateway. The root certificate is a Base-64 encoded X.509(.CER) format root certificate. |
-| Service Principal | A Base64 encoded JSON string of a service principal for the selected subscription. You can generate one with command `az ad sp create-for-rbac --sdk-auth | base64 -w0`. For more information see [Create a service principal](https://docs.microsoft.com/en-us/cli/azure/create-an-azure-service-principal-azure-cli#create-a-service-principal). |
+| Service Principal | A Base64 encoded JSON string of a service principal for the selected subscription. You can generate one with command `az ad sp create-for-rbac --sdk-auth | base64 -w0`. For more information, see [Create a service principal](https://docs.microsoft.com/en-us/cli/azure/create-an-azure-service-principal-azure-cli#create-a-service-principal). |
 
 Regardless of how you provide the certificates, there are several other options when configuring the Application Gateway, as described next.
 
