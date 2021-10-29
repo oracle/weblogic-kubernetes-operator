@@ -121,6 +121,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndS
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.doesFileExistInPod;
@@ -760,10 +761,10 @@ class ItParameterizedDomain {
         DOMAIN_CHANGED);
 
     testUntil(
-        checkDomainEvent(
-            opNamespace, miiDomainNamespace, miiDomainUid, DOMAIN_COMPLETED, "Normal", timestamp),
-        logger,
-        DOMAIN_COMPLETED);
+          withLongRetryPolicy,
+          checkDomainEvent(opNamespace, miiDomainNamespace, miiDomainUid, DOMAIN_COMPLETED, "Normal", timestamp),
+          logger,
+          DOMAIN_COMPLETED);
 
     // Verify that pod termination and started events are logged only once for each managed server in each cluster
     for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
