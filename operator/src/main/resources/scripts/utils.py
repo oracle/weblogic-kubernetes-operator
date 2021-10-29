@@ -61,3 +61,8 @@ def trace(arg1,arg2='SENTINEL'):
     traceInner('FINE',arg1)
   else:
     traceInner(arg1,arg2)
+
+def raise_replication_port_conflict(name, listen_port, replication_port, SSL):
+  raise ValueError('Server/ServerTemplate %s %s listen port %s conflicts with default replication channel port %s when '
+                   'istio is enabled, please specify a different replication port for istio in '
+                   'domain.spec.configuration.istio.replicationPort' % (name, SSL, listen_port, replication_port))
