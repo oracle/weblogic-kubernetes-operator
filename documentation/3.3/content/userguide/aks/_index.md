@@ -47,8 +47,8 @@ Use the **Basics** blade to provide the basic configuration details for deployin
 
 | Field | Description |
 |-------|-------------|
-| Username for WebLogic Administrator | Enter a user name to access the WebLogic Administration Console which is started automatically after the provisioning. For more information about the WebLogic Administration Console, see [Overview of Administration Consoles](https://docs.oracle.com/pls/topic/lookup?ctx=en/middleware/standalone/weblogic-server/wlazu&id=INTRO-GUID-CC01963A-6073-4ABD-BC5F-5C509CA1EA90) in _Understanding Oracle WebLogic Server_. |
-| Password for WebLogic Administrator | Enter a password to access the WebLogic Administration Console. |
+| Username for WebLogic Administrator | Enter a user name to access the WebLogic Server Administration Console which is started automatically after the provisioning. For more information about the WebLogic Server Administration Console, see [Overview of Administration Consoles](https://docs.oracle.com/pls/topic/lookup?ctx=en/middleware/standalone/weblogic-server/wlazu&id=INTRO-GUID-CC01963A-6073-4ABD-BC5F-5C509CA1EA90) in _Understanding Oracle WebLogic Server_. |
+| Password for WebLogic Administrator | Enter a password to access the WebLogic Server Administration Console. |
 | Confirm password | Re-enter the value of the preceding field. |
 | Password for WebLogic Deploy Tooling runtime encrytion | The deployment uses Weblogic Deploy Tooling, including the capability to encrypt the model. This password is used for that encrption. For more information, see [Encrypt Model Tool](https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/encrypt/) and the [WebLogic Deploy Tooling documentation](https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/encrypt/).|
 | Confirm password | Re-enter the value of the preceding field. |
@@ -116,7 +116,7 @@ When you are satisfied with your selections select **Next : TLS/SSL configuratio
 
 The **TLS/SSL configuration** blade enables you to configure Oracle WebLogic Server Administration Console on a secure HTTPS port, with your own SSL certificate provided by a Certifying Authority (CA).
 
-Select **Yes** or **No** for the option **onfigure WebLogic Administration Console, Remote Console, cluster and custom T3 channel to use HTTPS (Secure) ports, with your own TLS/SSL certificate.** based on your preference. If you select No, you don't have to provide any details, and can proceed by selecting **Next : Networking** >. If you select **Yes**, you can choose to provide the required configuration details by either uploading existing keystores or by using keystores stored in Azure Key Vault.
+Select **Yes** or **No** for the option **Configure WebLogic Server Administration Console, Remote Console, cluster and custom T3 channel to use HTTPS (Secure) ports, with your own TLS/SSL certificate.** based on your preference. If you select No, you don't have to provide any details, and can proceed by selecting **Next : Networking** >. If you select **Yes**, you can choose to provide the required configuration details by either uploading existing keystores or by using keystores stored in Azure Key Vault.
 
 If you want to upload existing keystores, select **Upload existing KeyStores** for the option **How would you like to provide required configuration**, and enter the values for the fields listed in the following table.
 
@@ -228,13 +228,13 @@ If you choose to configure a custom DNS alias based on an existing Azure DNS zon
 |-------|-------------|
 | DNS Zone Name	| Enter the DNS zone name. |
 | Name of the resource group contains the DNS Zone in current subscription | Enter the name of the resource group that contains the DNS zone in the current subscription. |
-| Label for Oracle WebLogic Administration Console | Enter a label to generate a sub-domain of the Oracle WebLogic Server Administration Console. For example, if the domain is `mycompany.com` and the sub-domain is `admin`, then the WebLogic Server Administration Console URL will be `admin.mycompany.com`. |
+| Label for Oracle WebLogic Server Administration Console | Enter a label to generate a sub-domain of the Oracle WebLogic Server Administration Console. For example, if the domain is `mycompany.com` and the sub-domain is `admin`, then the WebLogic Server Administration Console URL will be `admin.mycompany.com`. |
 | Label for WebLogic Cluster | Specify a label to generate subdomain of WebLogic Cluster. |
 
 If you choose to create an Azure DNS zone and a custom DNS alias, by selecting **No** for the option **Use an existing Azure DNS Zone**, you must specify the values for the following fields:
 
 * DNS Zone Name
-* Label for Oracle WebLogic Administration Console
+* Label for Oracle WebLogic Server Administration Console
 * Label for WebLogic Cluster
 
 See the preceding table for the description of these fields.
