@@ -40,6 +40,8 @@ import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Packet;
+import oracle.kubernetes.utils.SystemClock;
+import oracle.kubernetes.utils.SystemClockTestSupport;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.ClusterConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
@@ -146,6 +148,7 @@ class JobHelperTest extends DomainValidationBaseTest {
     mementos.add(TestUtils.silenceOperatorLogger());
     mementos.add(TuningParametersStub.install());
     mementos.add(testSupport.install());
+    mementos.add(SystemClockTestSupport.installClock());
 
     domain.getSpec().setNodeName(null);
     testSupport.defineResources(domain);
@@ -1119,6 +1122,23 @@ class JobHelperTest extends DomainValidationBaseTest {
     runCreateJob();
 
     assertThat(job, nullValue());
+  }
+
+  @Test
+  void whenAllServersDeleted_runIntrospector() {
+    domainPresenceInfo.setServerPod("ms1", createPodWithCreationTime());
+    defineTopologyWithCluster();
+    configureServersToStart();
+    SystemClockTestSupport.increment();
+    domainPresenceInfo.deleteServerPodFromEvent("ms1", createPodWithCreationTime());
+
+    runCreateJob();
+
+    assertThat(job, notNullValue());
+  }
+
+  private V1Pod createPodWithCreationTime() {
+    return new V1Pod().metadata(new V1ObjectMeta().creationTimestamp(SystemClock.now()));
   }
 
   private V1Job job;
