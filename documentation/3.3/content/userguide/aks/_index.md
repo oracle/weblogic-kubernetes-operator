@@ -208,7 +208,7 @@ Regardless of how you provide the certificates, there are several other options 
 |-------|-------------|
 |Enable cookie based affinity | Select this box to enable cookie based affinity (sometimes called "sticky sessions"). For more information, see [Enable Cookie based affinity with an Application Gateway](https://docs.microsoft.com/en-us/azure/application-gateway/ingress-controller-cookie-affinity). |
 | Create ingress for Administration Console. | Select **Yes** to create an ingress for the Administration Console with the path `/console`. |
-| Create ingress for WebLogic Remote Console. | Select **Yes** to create an ingress for the remote console with the path `/remoteconsole`. |
+| Create ingress for WebLogic Remote Console. | Select **Yes** to create an ingress for the Remote Console with the path `/remoteconsole`. |
 
 When you are satisfied with your selections, select **Next : DNS Configuration**.
 
