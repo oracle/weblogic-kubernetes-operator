@@ -116,7 +116,7 @@ When you are satisfied with your selections, select **Next : TLS/SSL configurati
 
 With the **TLS/SSL configuration** blade, you can configure Oracle WebLogic Server Administration Console on a secure HTTPS port, with your own SSL certificate provided by a Certifying Authority (CA).
 
-Select **Yes** or **No** for the option **Configure WebLogic Server Administration Console, Remote Console, cluster and custom T3 channel to use HTTPS (Secure) ports, with your own TLS/SSL certificate.** based on your preference. If you select No, you don't have to provide any details, and can proceed by selecting **Next : Networking** >. If you select **Yes**, you can choose to provide the required configuration details by either uploading existing keystores or by using keystores stored in Azure Key Vault.
+Select **Yes** or **No** for the option **Configure WebLogic Server Administration Console, Remote Console, cluster and custom T3 channel to use HTTPS (Secure) ports, with your own TLS/SSL certificate.** based on your preference. If you select **No**, you don't have to provide any details, and can proceed by selecting **Next : Networking** >. If you select **Yes**, you can choose to provide the required configuration details by either uploading existing keystores or by using keystores stored in Azure Key Vault.
 
 If you want to upload existing keystores, select **Upload existing KeyStores** for the option **How would you like to provide required configuration**, and enter the values for the fields listed in the following table.
 
