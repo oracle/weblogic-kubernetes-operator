@@ -74,7 +74,7 @@ Use the **Configure AKS Cluster** blade to configure fundamental details of how 
 
 ##### Azure Kubernetes Service
 
-This section allows you to configure some options about the AKS which will run WebLogic Server.
+In this section, you can configure some options about the AKS which will run WebLogic Server.
 
 | Field | Description |
 |-------|-------------|
@@ -86,7 +86,7 @@ This section allows you to configure some options about the AKS which will run W
 
 ##### Image selection
 
-This section allows you to configure the image that is deployed using the model-in-image domain home source type. There are several options for the WebLogic image and the application image deployed therein.
+In this section, you can configure the image that is deployed using the model-in-image domain home source type. There are several options for the WebLogic image and the application image deployed therein.
 
 | Field | Description |
 |-------|-------------|
@@ -101,12 +101,12 @@ This section allows you to configure the image that is deployed using the model-
 
 ##### Java EE Application
 
-Options in this section enable you to deploy a Java EE Application along with the WebLogic Server deployment.
+In this section you can deploy a Java EE Application along with the WebLogic Server deployment.
 
 | Field | Description |
 |-------|-------------|
 | Deploy your application package? | If set to **Yes**, you must specify a Java EE WAR, EAR, or JAR file suitable for deployment with the selected version of WebLogic Server. If set to **No**, no application is deployed.| 
-| Application package (.war,.ear,.jar) | The **Browse** button enables you to browse and select a file from a pre-existing Azure Storage Account and Storage Container within that account.  To learn how to create a Storage Account and Container, see [Create a storage account](https://docs.microsoft.com/en-us/azure/storage/common/storage-account-create?tabs=azure-portal). |
+| Application package (.war,.ear,.jar) | With the **Browse** button, you can select a file from a pre-existing Azure Storage Account and Storage Container within that account.  To learn how to create a Storage Account and Container, see [Create a storage account](https://docs.microsoft.com/en-us/azure/storage/common/storage-account-create?tabs=azure-portal). |
 | Fail deployment if application does not become ACTIVE. | If selected, the deployment will wait for the deployed application to reach the **ACTIVE** state and fail the deployment if it does not. For more details, see the [Oracle documentation](https://aka.ms/wls-aks-deployment-state) |
 | Number of WebLogic Managed Server replicas | The initial value of the `replicas` field of the Domain. For information, see [Scaling]({{< relref "/userguide/managing-domains/domain-lifecycle/scaling.md" >}}). |
 
@@ -114,7 +114,7 @@ When you are satisfied with your selections, select **Next : TLS/SSL configurati
 
 #### TLS/SSL configuration
 
-The **TLS/SSL configuration** blade enables you to configure Oracle WebLogic Server Administration Console on a secure HTTPS port, with your own SSL certificate provided by a Certifying Authority (CA).
+With the **TLS/SSL configuration** blade, you can configure Oracle WebLogic Server Administration Console on a secure HTTPS port, with your own SSL certificate provided by a Certifying Authority (CA).
 
 Select **Yes** or **No** for the option **Configure WebLogic Server Administration Console, Remote Console, cluster and custom T3 channel to use HTTPS (Secure) ports, with your own TLS/SSL certificate.** based on your preference. If you select No, you don't have to provide any details, and can proceed by selecting **Next : Networking** >. If you select **Yes**, you can choose to provide the required configuration details by either uploading existing keystores or by using keystores stored in Azure Key Vault.
 
@@ -165,7 +165,7 @@ For the non-T3 ports, the recommended values are the usual 7001 for the **admin-
 
 ##### Application Gateway Ingress Controller
 
-This section enables you to create an Azure Application Gateway instance as the ingress controller of your WebLogic Server. This Application Gateway is pre-configured for end-to-end-SSL with TLS termination at the gateway using the provided SSL certificate and load balances across your cluster.
+In this section, you can create an Azure Application Gateway instance as the ingress controller of your WebLogic Server. This Application Gateway is pre-configured for end-to-end-SSL with TLS termination at the gateway using the provided SSL certificate and load balances across your cluster.
 
 Select **Yes** or **No** for the option **Connect to Azure Application Gateway?** based on your preference. If you select **No**, you don't have to provide any details, and can proceed by selecting **Next : DNS Configuration >**. If you select **Yes**, you must specify the details required for the Application Gateway integration by entering the values for the fields as described next.
 
@@ -214,7 +214,7 @@ When you are satisfied with your selections, select **Next : DNS Configuration**
 
 #### DNS Configuration
 
-The **DNS Configuration** blade enables you to provision the Oracle WebLogic Server Administration Console using a custom DNS name.
+With the **DNS Configuration** blade, you can provision the Oracle WebLogic Server Administration Console using a custom DNS name.
 
 Select **Yes** or **No** for the option Configure Custom DNS Alias? based on your preference. If you select **No**, you don't have to provide any details, and can proceed by selecting **Next : Database >**. If you select **Yes**, you must choose either to configure a custom DNS alias based on an existing Azure DNS zone, or create an Azure DNS zone and a custom DNS alias. This can be done by selecting **Yes** or **No** for the option **Use an existing Azure DNS Zone**.
 
