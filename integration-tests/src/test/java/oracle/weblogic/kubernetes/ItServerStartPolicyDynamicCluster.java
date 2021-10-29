@@ -4,7 +4,6 @@
 package oracle.weblogic.kubernetes;
 
 import java.time.OffsetDateTime;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.Callable;
 
@@ -19,21 +18,11 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
-import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainSecret;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkClusterReplicaCountMatches;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
-import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
-import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchServerStartPolicy;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkIsPodRestarted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
@@ -51,13 +40,11 @@ import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.START_SERV
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.STOP_CLUSTER_SCRIPT;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.STOP_SERVER_SCRIPT;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.checkManagedServerConfiguration;
-import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.createDomainResource;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.executeLifecycleScript;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.managedServerNamePrefix;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.prepare;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.restoreEnv;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.scalingClusters;
-import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.setupSample;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
