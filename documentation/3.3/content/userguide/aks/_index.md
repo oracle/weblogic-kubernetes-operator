@@ -23,11 +23,11 @@ description: "Deploying WebLogic Server on Azure Kubernetes Service."
 
 This section documents the Azure Marketplace offer that makes it easy to get started with WebLogic Server on Azure. The offer handles all the initial setup, creating the AKS cluster, container registry, WebLogic Kubernetes Operator installation, and domain creation using the model-in-image domain home source type. For complete details on domain home source types, see [Choose a domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}).
 
-It is also possible to run the WebLogic Kubernetes Operator manually, without the aid of the Azure Marketplace offer.  This steps for doing so are documented in the sample [Azure Kubernetes Service]({{< relref "/samples/azure-kubernetes-service/_index.md" >}}).
+It is also possible to run the WebLogic Kubernetes Operator manually, without the aid of the Azure Marketplace offer.  The steps for doing so are documented in the sample [Azure Kubernetes Service]({{< relref "/samples/azure-kubernetes-service/_index.md" >}}).
 
 #### Basics
 
-Use the **Basics** blade to provide the basic configuration details for deploying Oracle WebLogic Server configured cluster. To do this, enter the values for the fields listed in the following tables.
+Use the **Basics** blade to provide the basic configuration details for deploying an Oracle WebLogic Server configured cluster. To do this, enter the values for the fields listed in the following tables.
 
 ##### Project details
 
@@ -35,7 +35,7 @@ Use the **Basics** blade to provide the basic configuration details for deployin
 | Field | Description |
 |-------|-------------|
 | Subscription | Select a subscription to use for the charges accrued by this offer. You must have a valid active subscription associated with the Azure account that is currently logged in. If you don’t have it already, follow the steps described in [Associate or add an Azure subscription to your Azure Active Directory tenant](https://docs.microsoft.com/en-us/azure/active-directory/fundamentals/active-directory-how-subscriptions-associated-directory).| 
-| Resource group | A resource group is a container that holds related resources for an Azure solution. The resource group includes those resources that you want to manage as a group. You decide which resources belong in a resource group based on what makes the most sense for your organization. If you have an existing resource group into which you want to deploy this solution, you can enter its name here; however, the resource group must have no pre-existing resources in it. Alternatively, you can click the **Create new**, and enter the name so that Azure creates a new resource group before provisioning the resources.  For more information about resource groups, see [Azure documentation](https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-group-overview#resource-groups). |
+| Resource group | A resource group is a container that holds related resources for an Azure solution. The resource group includes those resources that you want to manage as a group. You decide which resources belong in a resource group based on what makes the most sense for your organization. If you have an existing resource group into which you want to deploy this solution, you can enter its name here; however, the resource group must have no pre-existing resources in it. Alternatively, you can click the **Create new**, and enter the name so that Azure creates a new resource group before provisioning the resources.  For more information about resource groups, see the [Azure documentation](https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-group-overview#resource-groups). |
 
 ##### Instance details
 
@@ -50,7 +50,7 @@ Use the **Basics** blade to provide the basic configuration details for deployin
 | Username for WebLogic Administrator | Enter a user name to access the WebLogic Administration Console which is started automatically after the provisioning. For more information about the WebLogic Administration Console, see [Overview of Administration Consoles](https://docs.oracle.com/pls/topic/lookup?ctx=en/middleware/standalone/weblogic-server/wlazu&id=INTRO-GUID-CC01963A-6073-4ABD-BC5F-5C509CA1EA90) in _Understanding Oracle WebLogic Server_. |
 | Password for WebLogic Administrator | Enter a password to access the WebLogic Administration Console. |
 | Confirm password | Re-enter the value of the preceding field. |
-| Password for WebLogic Deploy Tooling runtime encrytion | The deployment uses Weblogic Deploy Tooling, including the capability to encrypt the model. This password is used for that encrption. For more information, see [Encrypt Model Tool](https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/encrypt/). |
+| Password for WebLogic Deploy Tooling runtime encrytion | The deployment uses Weblogic Deploy Tooling, including the capability to encrypt the model. This password is used for that encrption. For more information, see [Encrypt Model Tool](https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/encrypt/) and the [WebLogic Deploy Tooling documentation](https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/encrypt/).|
 | Confirm password | Re-enter the value of the preceding field. |
 | User assigned managed identity | The deployment requires a user-assigned managed identity with the **Contributor** or **Owner** role in the subscription referenced above.  For more information please see [Create, list, delete, or assign a role to a user-assigned managed identity using the Azure portal](https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/how-to-manage-ua-identity-portal). |
 
@@ -61,7 +61,7 @@ Use the **Basics** blade to provide the basic configuration details for deployin
 | Accept defaults for optional configuration? | If you want to retain the default values for the optional configuration, such as **Name prefix for Managed Server**, **WebLogic Domain Name** and others, set the toggle button to **Yes**, and click **Next: Configure AKS cluster**. If you want to specify different values for the optional configuration, set the toggle button to **No**, and enter the following details. |
 | Name prefix for Managed Server | Enter a prefix for the Managed Server name. |
 | WebLogic Domain Name | Enter the name of the domain that will be created by the offer. |
-| Cluster size |  |
+| Maximum dynamic cluster size | The maximum size of the dynamic WebLogic cluster created. |
 |Custom Java Options to start WebLogic Server | Java VM arguments passed to the invocation of WebLogic Server. For more information, see the [FAQ]({{< relref "/faq/resource-settings/_index.md" >}}). |
 |Enable T3 tunneling for Admin Server| If checked, configure the necessary settings to enable T3 tunneling to the Admin Server.  For more details see [External network access security]({{< relref "/security/domain-security/weblogic-channels.md" >}}).|
 |Enable T3 tunneling for WebLogic cluster| If checked, configure the necessary settings to enable T3 tunneling to the WebLogic Server cluster.  For more details see [External network access security]({{< relref "/security/domain-security/weblogic-channels.md" >}}).|
@@ -80,7 +80,7 @@ This section allows you to configure some options about the AKS which will run W
 |-------|-------------|
 |Create a new AKS cluster| If set to **Yes**, the deployment will create a new AKS cluster resource in the specified resource group. If set to **No**, you have the opportunity to select an existing AKS cluster, into which the deployment is configured. Note: the offer assumes the existing AKS cluster has no WebLogic related deployments. |
 | Node count | The initial number of nodes in the AKS cluster. This value can be changed after deployment. For information, see [Scaling]({{< relref "/userguide/managing-domains/domain-lifecycle/scaling.md" >}}) |
-| Node size | The default VM size is 2x Standard DSv2, 2 vcpus, 7 GB memory. If you want to select a different VM size, click Change Size, select the size from the list (for example, A3) on the Select a VM size page, and click Select. For more information about sizing the virtual machine, see [Azure documentation on Sizes](https://docs.microsoft.com/en-us/azure/cloud-services/cloud-services-sizes-specs).|
+| Node size | The default VM size is 2x Standard DSv2, 2 vcpus, 7 GB memory. If you want to select a different VM size, click Change Size, select the size from the list (for example, A3) on the Select a VM size page, and click Select. For more information about sizing the virtual machine, see the [Azure documentation on Sizes](https://docs.microsoft.com/en-us/azure/cloud-services/cloud-services-sizes-specs).|
 |Enable Container insights| If checked, configure the necessary settings to integrate with Container insights. For more information see [Container insights overview](https://aka.ms/wls-aks-container-insights).|
 |Create Persistent Volume using Azure File share service|If checked, configure the necessary settings to mount a persistent volume to the nodes of the AKS cluster. For more information see [Persistent storage]({{< relref "/userguide/managing-domains/persistent-storage/_index.md" >}}).|
 
@@ -90,7 +90,7 @@ This section allows you to configure the image that is deployed using the model-
 
 | Field | Description |
 |-------|-------------|
-| Use a pre-existing WebLogic Server Docker image from Oracle Container Registry? | If set to **Yes**, the subsequent options are constrained to only allow selecting from a set of pre-existing WebLogic Server Docker images stored in the Oracle Container Registry. If set to **No**, the user may refer to a pre-existing Azure Container Registry, and must specify the Docker tag of the WebLogic Server image within that registry that will be used to create the domain. The specified image is assumed to be compatible with the WebLogic Kubernetes Operator. For more about WebLogic Server images see [WebLogic Server images]({{< relref "/userguide/base-images/_index.md" >}}).|
+| Use a pre-existing WebLogic Server Docker image from Oracle Container Registry? | If set to **Yes**, the subsequent options are constrained to only allow selecting from a set of pre-existing WebLogic Server Docker images stored in the Oracle Container Registry. Note: the images in the Oracle Container Registry are unpatched. If set to **No**, the user may refer to a pre-existing Azure Container Registry, and must specify the Docker tag of the WebLogic Server image within that registry that will be used to create the domain. The specified image is assumed to be compatible with the WebLogic Kubernetes Operator. This allows the use of custom images, such as with a specific set patches (PSUs). For more about WebLogic Server images see [WebLogic Server images]({{< relref "/userguide/base-images/_index.md" >}}).|
 |Create a new Azure Container Registry to store application images?|If set to **Yes**, the offer will create a new Azure Container Registry (ACR) to hold the Docker images for use in the deployment.  If set to **No**, you must specify an existing ACR. In this case, you must be sure the selected ACR has the admin account enabled. For details, please see [Admin account](https://docs.microsoft.com/en-us/azure/container-registry/container-registry-authentication?WT.mc_id=Portal-Microsoft_Azure_CreateUIDef&tabs=azure-cli#admin-account). |
 | Select existing ACR instance | This option is only shown if **Use a pre-existing WebLogic Server Docker image from Oracle Container Registry?** is set to **No**. If visible, select an existing Acure Container Registry instance. |
 | Please provide the image path | This option is only shown if **Use a pre-existing WebLogic Server Docker image from Oracle Container Registry?** is set to **No**. If visible, the value must be a fully qualified Docker tag of an image within the specified ACR. |
@@ -108,7 +108,7 @@ Options in this section enable you to deploy a Java EE Application along with th
 | Deploy your application package? | If set to **Yes**, you must specify a Java EE WAR, EAR, or JAR file suitable for deployment with the selected version of WebLogic Server. If set to **No**, no application is deployed.| 
 | Application package (.war,.ear,.jar) | The **Browse** button enables you to browse and select a file from a pre-existing Azure Storage Account and Storage Container within that account.  To learn how to create a Storage Account and Container, see [Create a storage account](https://docs.microsoft.com/en-us/azure/storage/common/storage-account-create?tabs=azure-portal). |
 | Fail deployment if application does not become ACTIVE. | If checked, the deployment will wait for the deployed application to reach the **ACTIVE** state and fail the deployment if it does not. For more details, see the [Oracle documentation](https://aka.ms/wls-aks-deployment-state) |
-| Number of application replicas | The initial value of the `replicas` field of the Domain. For information, see [Scaling]({{< relref "/userguide/managing-domains/domain-lifecycle/scaling.md" >}}). |
+| Number of WebLogic Managed Server replicas | The initial value of the `replicas` field of the Domain. For information, see [Scaling]({{< relref "/userguide/managing-domains/domain-lifecycle/scaling.md" >}}). |
 
 When you are satisfied with your selections select **Next : TLS/SSL configuration**.
 
@@ -231,7 +231,7 @@ If you choose to configure a custom DNS alias based on an existing Azure DNS zon
 | Label for Oracle WebLogic Administration Console | Enter a label to generate a sub-domain of the Oracle WebLogic Server Administration Console. For example, if the domain is `mycompany.com` and the sub-domain is `admin`, then the WebLogic Server Administration Console URL will be `admin.mycompany.com`. |
 | Label for WebLogic Cluster | Specify a label to generate subdomain of WebLogic Cluster. |
 
-If you choose to create an Azure DNS zone and a custom DNS alias, by selecting **No** for the option Use an existing **Azure DNS Zone**, you must specify the values for the following fields:
+If you choose to create an Azure DNS zone and a custom DNS alias, by selecting **No** for the option **Use an existing Azure DNS Zone**, you must specify the values for the following fields:
 
 * DNS Zone Name
 * Label for Oracle WebLogic Administration Console
@@ -240,31 +240,32 @@ If you choose to create an Azure DNS zone and a custom DNS alias, by selecting *
 See the preceding table for the description of these fields.
 
 {{% notice note %}}
-In case of creating an Azure DNS zone and a custom DNS alias, you must perform the DNS domain delegation at your DNS registry post deployment. See [Delegation of DNS zones with Azure DNS](https://docs.microsoft.com/en-us/azure/dns/dns-domain-delegation).
+In the case of creating an Azure DNS zone and a custom DNS alias, you must perform the DNS domain delegation at your DNS registry post deployment. See [Delegation of DNS zones with Azure DNS](https://docs.microsoft.com/en-us/azure/dns/dns-domain-delegation).
 {{% /notice %}}
 
 When you are satisfied with your selections select **Next : Database**.
 
 #### Database
 
-The Database blade enables you to configure Oracle WebLogic Server to connect to an existing database. Select **Yes** or **No** for the option **Connect to Database?** based on your preference. If you select **No**, you don't have to provide any details, and can proceed by clicking **Next : Review + create >**. If you select **Yes**, you must specify the details of your database by entering the values for the fields listed in the following table.
+Use the Database blade to configure Oracle WebLogic Server to connect to an existing database. Select **Yes** or **No** for the option **Connect to Database?** based on your preference. If you select **No**, you don't have to provide any details, and can proceed by clicking **Next : Review + create >**. If you select **Yes**, you must specify the details of your database by entering the values for the fields listed in the following table.
 
 | Field | Description |
 |-------|-------------|
 | Choose database type | Select an existing database that you want Oracle WebLogic Server to connect to, from the drop-down list. The available options are:{{< line_break >}}{{< line_break >}} • Azure Database for PostgreSQL {{< line_break >}} • Oracle Database {{< line_break >}} • Azure SQL {{< line_break >}} • Other |
 | JNDI Name	| Enter the JNDI name for your database JDBC connection. |
-| DataSource Connection String | Enter the JDBC connection string for your database. For information about obtaining the JDBC connection string, see Obtain the [JDBC Connection String for Your Database](https://docs.oracle.com/en/middleware/standalone/weblogic-server/wlazu/obtain-jdbc-connection-string-your-database.html#GUID-6523B742-EB68-4AF4-A85C-8B4561C133F3). |
+| DataSource Connection String | Enter the JDBC connection string for your database. For information about obtaining the JDBC connection string, see [Obtain the JDBC Connection String for Your Database](https://docs.oracle.com/en/middleware/standalone/weblogic-server/wlazu/obtain-jdbc-connection-string-your-database.html#GUID-6523B742-EB68-4AF4-A85C-8B4561C133F3). |
 | Global transactions protocol | Determines the transaction protocol (global transaction processing behavior) for the data source. For more information, see [JDBC Data Source Transaction Options](https://docs.oracle.com/en/middleware/standalone/weblogic-server/14.1.1.0/jdbca/transactions.html#GUID-4C929E67-5FD7-477B-A749-1EA0F4FD25D4). **IMPORTANT: The correct value for this parameter depends on the selected database type. For PostgreSQL, select EmulateTwoPhaseCommit**. |
-| Database Username	| Enter the username of your database. |
+| Database Username	| Enter the user name of your database. |
 | Database Password	| Enter the password for the database user. |
 | Confirm password | Re-enter the value of the preceding field. |
 
-If you select Other as the database type, there are some additional values you must provide.
+If you select **Other** as the database type, there are some additional values you must provide. WebLogic Server provides support for application data access to any database using a JDBC-compliant driver. Refer to the [documentation for driver requirements](https://aka.ms/wls-aks-dbdriver).
 
 | Field | Description |
 |-------|-------------|
+| DataSource driver (.jar) | Use the **Browse** button to upload the JAR file for the JDBC driver to a storage container. To learn how to create a Storage Account and Container, see [Create a storage account](https://docs.microsoft.com/en-us/azure/storage/common/storage-account-create?tabs=azure-portal). |
 | DataSource driver name | The fully qualified Java class name of the JDBC driver. |
-| Test table name | The name of the database table to use when testing physical database connections. |
+| Test table name | The name of the database table to use when testing physical database connections. This value depends on the specified database. Some suggested values include the following. {{< line_break >}}{{< line_break >}} • For Oracle, use `SQL ISVALID`. {{< line_break >}} • For PostgreSQL, SQL Server and MariaDB use `SQL SELECT 1`. {{< line_break >}} • For Informix use `SYSTABLES`.|
 
 When you are satisfied with your selections select **Next : Review + create**.
 
