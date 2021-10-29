@@ -159,13 +159,17 @@ public class DomainUtils {
 
   /**
    * Check the domain status condition type does not exist.
-   * @param domain oracle.weblogic.domain.Domain object
+   * @param domainUid uid of the domain
+   * @param domainNamespace namespace of the domain
    * @param conditionType the type name of condition, accepted value: Completed, Available, Failed and
    *                      ConfigChangesPendingRestart
    * @return true if the condition type does not exist, false otherwise
    */
-  public static boolean verifyDomainStatusConditionTypeDoesNotExist(oracle.weblogic.domain.Domain domain,
-                                                              String conditionType) {
+  public static boolean verifyDomainStatusConditionTypeDoesNotExist(String domainUid,
+                                                                    String domainNamespace,
+                                                                    String conditionType) {
+    Domain domain = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace));
+
     if (domain != null && domain.getStatus() != null) {
       List<DomainCondition> domainConditionList = domain.getStatus().getConditions();
       for (DomainCondition domainCondition : domainConditionList) {

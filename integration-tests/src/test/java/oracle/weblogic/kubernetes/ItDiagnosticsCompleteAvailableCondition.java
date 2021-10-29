@@ -87,8 +87,8 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
- * Tests related to Domain status conditions logged by operator.
- * The tests checks for the Completed/Available conditions for multiple usecases.
+ * Tests are related to Domain status conditions logged by operator.
+ * The tests check for the Completed/Available conditions for multiple usecases.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify the domain status conditions for domain lifecycle")
@@ -115,7 +115,7 @@ class ItDiagnosticsCompleteAvailableCondition {
   /**
    * Assigns unique namespaces for operator and domains.
    * Pull WebLogic image if running tests in Kind cluster.
-   * Installs operator.
+   * Installs operator and create domain.
    *
    * @param namespaces injected by JUnit
    */
@@ -148,7 +148,7 @@ class ItDiagnosticsCompleteAvailableCondition {
     // this secret is used only for non-kind cluster
     createSecretForBaseImages(domainNamespace1);
 
-    logger.info("Creating domain with serverStartPolicy set to IF_NEEDED");
+    logger.info("Creating domain with domain serverStartPolicy set to IF_NEEDED");
     createDomain();
   }
 
@@ -175,9 +175,7 @@ class ItDiagnosticsCompleteAvailableCondition {
     checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace1,
         DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True");
     // verify there is no status condition type Failed
-    verifyDomainStatusConditionTypeDoesNotExist(
-        assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace1)),
-        DOMAIN_STATUS_CONDITION_FAILED_TYPE);
+    verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
   }
 
   /**
@@ -222,13 +220,12 @@ class ItDiagnosticsCompleteAvailableCondition {
     checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace1,
         DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "False");
     // verify there is no status condition type Failed
-    verifyDomainStatusConditionTypeDoesNotExist(
-        assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace1)),
-        DOMAIN_STATUS_CONDITION_FAILED_TYPE);
+    verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
 
     // patch the domain back to the original state
     logger.info("patch the domain and change the serverStartPolicy to IF_NEEDED");
     patchStr = "[{\"op\": \"replace\",\"path\": \"/spec/serverStartPolicy\", \"value\": \"IF_NEEDED\"}]";
+
     logger.info("Updating domain configuration using patch string: {0}", patchStr);
     assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, new V1Patch(patchStr),
         V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch domain");
@@ -236,8 +233,8 @@ class ItDiagnosticsCompleteAvailableCondition {
     logger.info("Checking for admin server pod is up and running");
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace1);
 
-    // verify all the managed servers are shutdown
-    logger.info("Checking managed server pods were shutdown");
+    // verify all the managed servers are up and running
+    logger.info("Checking managed server pods are up and running");
     for (int i = 1; i <= replicaCount; i++) {
       checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
     }
@@ -283,9 +280,7 @@ class ItDiagnosticsCompleteAvailableCondition {
     checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace1,
         DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "False");
     // verify there is no status condition type Failed
-    verifyDomainStatusConditionTypeDoesNotExist(
-        assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace1)),
-        DOMAIN_STATUS_CONDITION_FAILED_TYPE);
+    verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
 
     // patch the domain back to the original state
     logger.info("patch the domain and change the serverStartPolicy to IF_NEEDED");
@@ -297,8 +292,8 @@ class ItDiagnosticsCompleteAvailableCondition {
     logger.info("Checking for admin server pod is up and running");
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace1);
 
-    // verify all the managed servers are shutdown
-    logger.info("Checking managed server pods were shutdown");
+    // verify all the managed servers are up and running
+    logger.info("Checking managed server pods are up and running");
     for (int i = 1; i <= replicaCount; i++) {
       checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
     }
@@ -346,9 +341,7 @@ class ItDiagnosticsCompleteAvailableCondition {
     checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace1,
         DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "False");
     // verify there is no status condition type Failed
-    verifyDomainStatusConditionTypeDoesNotExist(
-        assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace1)),
-        DOMAIN_STATUS_CONDITION_FAILED_TYPE);
+    verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
 
     // patch the domain back to the original state
     logger.info("patch the domain and change the cluster replicas to 2");
@@ -361,8 +354,8 @@ class ItDiagnosticsCompleteAvailableCondition {
     logger.info("Checking for admin server pod is up and running");
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace1);
 
-    // verify all the managed servers are shutdown
-    logger.info("Checking managed server pods were shutdown");
+    // verify all the managed servers are up and running
+    logger.info("Checking managed server pods are up and running");
     for (int i = 1; i <= replicaCount; i++) {
       checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
     }
@@ -410,9 +403,7 @@ class ItDiagnosticsCompleteAvailableCondition {
     checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace1,
         DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "False");
     // verify there is no status condition type Failed
-    verifyDomainStatusConditionTypeDoesNotExist(
-        assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace1)),
-        DOMAIN_STATUS_CONDITION_FAILED_TYPE);
+    verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
 
     // patch the domain back to the original state
     logger.info("patch the domain and change the cluster.serverStartPolicy to IF_NEEDED");
@@ -425,8 +416,8 @@ class ItDiagnosticsCompleteAvailableCondition {
     logger.info("Checking for admin server pod is up and running");
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace1);
 
-    // verify all the managed servers are shutdown
-    logger.info("Checking managed server pods were shutdown");
+    // verify all the managed servers are up and running
+    logger.info("Checking managed server pods are up and running");
     for (int i = 1; i <= replicaCount; i++) {
       checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
     }
@@ -476,14 +467,12 @@ class ItDiagnosticsCompleteAvailableCondition {
     checkDomainStatusConditionTypeExists(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE);
     // verify the condition Completed type has status True
     checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace1,
-        DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "false");
+        DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "False");
     // verify the condition Available type has status True
     checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace1,
-        DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "true");
+        DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True");
     // verify there is no status condition type Failed
-    verifyDomainStatusConditionTypeDoesNotExist(
-        assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace1)),
-        DOMAIN_STATUS_CONDITION_FAILED_TYPE);
+    verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
 
     // patch the domain back to the original state
     logger.info("patch the domain and change the cluster replicas to 2");
@@ -496,8 +485,8 @@ class ItDiagnosticsCompleteAvailableCondition {
     logger.info("Checking for admin server pod is up and running");
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace1);
 
-    // verify all the managed servers are shutdown
-    logger.info("Checking managed server pods were shutdown");
+    // verify all the managed servers are up and running
+    logger.info("Checking managed server pods are up and running");
     for (int i = 1; i <= replicaCount; i++) {
       checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
     }
@@ -505,7 +494,7 @@ class ItDiagnosticsCompleteAvailableCondition {
 
   /**
    * Test domain status condition with cluster replica set to less than max size of cluster.
-   * Verify all the cluster servers pods will be up and running.
+   * Verify all the cluster servers pods up to replicas will be up and running.
    * Verify the following conditions are generated:
    * type: Completed, status: true
    * type: Available, status: true
@@ -534,7 +523,7 @@ class ItDiagnosticsCompleteAvailableCondition {
       checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
     }
 
-    // verify there is no pod created larger than replicas
+    // verify there is no pod created larger than new replicas
     for (int i = newReplicaCount + 1; i <= replicaCount; i++) {
       checkPodDoesNotExist(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
     }
@@ -550,9 +539,7 @@ class ItDiagnosticsCompleteAvailableCondition {
     checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace1,
         DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True");
     // verify there is no status condition type Failed
-    verifyDomainStatusConditionTypeDoesNotExist(
-        assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace1)),
-        DOMAIN_STATUS_CONDITION_FAILED_TYPE);
+    verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
 
     // patch the domain back to the original state
     logger.info("patch the domain and change the cluster replicas to 2");
@@ -565,8 +552,8 @@ class ItDiagnosticsCompleteAvailableCondition {
     logger.info("Checking for admin server pod is up and running");
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace1);
 
-    // verify all the managed servers are shutdown
-    logger.info("Checking managed server pods were shutdown");
+    // verify all the managed servers are up and running
+    logger.info("Checking managed server pods are up and running");
     for (int i = 1; i <= replicaCount; i++) {
       checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
     }
@@ -615,15 +602,12 @@ class ItDiagnosticsCompleteAvailableCondition {
     checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace1,
         DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True");
     // verify there is no status condition type Failed
-    verifyDomainStatusConditionTypeDoesNotExist(
-        assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace1)),
-        DOMAIN_STATUS_CONDITION_FAILED_TYPE);
+    verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
 
     // scale up the cluster
     newReplicaCount = 2;
     assertDoesNotThrow(() ->
         scaleClusterWithRestApi(domainUid, cluster1Name, 2, externalRestHttpsPort, opNamespace, opServiceAccount));
-
 
     // verify the admin server service exists
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace1);
@@ -645,14 +629,12 @@ class ItDiagnosticsCompleteAvailableCondition {
     checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace1,
         DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True");
     // verify there is no status condition type Failed
-    verifyDomainStatusConditionTypeDoesNotExist(
-        assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace1)),
-        DOMAIN_STATUS_CONDITION_FAILED_TYPE);
+    verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
   }
 
   /**
    * Test domain status condition with new restartVersion.
-   * Verify all the cluster servers pods will be up and running.
+   * Verify all the server pods are restarted.
    * Verify the following conditions are generated:
    * type: Completed, status: true
    * type: Available, status: true
@@ -704,9 +686,7 @@ class ItDiagnosticsCompleteAvailableCondition {
     checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace1,
         DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True");
     // verify there is no status condition type Failed
-    verifyDomainStatusConditionTypeDoesNotExist(
-        assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace1)),
-        DOMAIN_STATUS_CONDITION_FAILED_TYPE);
+    verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
   }
 
   /**
@@ -777,9 +757,7 @@ class ItDiagnosticsCompleteAvailableCondition {
     checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace1,
         DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True");
     // verify there is no status condition type Failed
-    verifyDomainStatusConditionTypeDoesNotExist(
-        assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace1)),
-        DOMAIN_STATUS_CONDITION_FAILED_TYPE);
+    verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
   }
 
   /**
