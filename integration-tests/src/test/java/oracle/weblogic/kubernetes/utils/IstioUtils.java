@@ -421,7 +421,28 @@ public class IstioUtils {
     return domain;
   }
 
+  /**
+   * Check if Istio version used for integration tests require WebLogic NAP's with localhost bindings.
+   *
+   * @return true if Istio version used for integration tests is prior to version 1.10;
+   *        false otherwise
+   */
   public static boolean isLocalHostBindingsEnabled() {
     return installedIstioVersion.getCompatibilityWith("1.10") == Compatibility.VERSION_LOWER;
+  }
+
+  /**
+   *  Create an instance of AdminServer.
+   *
+   * @return AdminServer instance.
+   */
+  public static AdminServer createAdminServer() {
+    AdminServer adminServer = new AdminServer()
+        .serverStartState("RUNNING");
+
+    if (!isLocalHostBindingsEnabled()) {
+      adminServer.adminChannelPortForwardingEnabled(true);
+    }
+    return adminServer;
   }
 }

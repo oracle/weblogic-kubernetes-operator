@@ -21,7 +21,7 @@ description: "Lets you run the operator, and WebLogic domains managed by the ope
 - [Automatically added network channels](#automatically-added-network-channels)
   - [Added network channels for Istio versions prior to v1.10](#added-network-channels-for-istio-versions-prior-to-v110)
   - [Added network channel for Istio versions v1.10 and later](#added-network-channel-for-istio-versions-v110-and-later)
-  - [Added network channel for WebLogic EJB and Servlet Session State Replication Traffic](#added-network-channel-for-weblogic-ejb-and-servlet-session-state-replication-traffic)
+  - [Added network channel for WebLogic EJB and servlet session state replication traffic](#added-network-channel-for-weblogic-ejb-and-servlet-session-state-replication-traffic)
 
 #### Overview
 
@@ -198,7 +198,7 @@ NAME                             READY   STATUS    RESTARTS   AGE
 sample-domain1-admin-server      1/2     Running   0          2m
 ```
 
-and using the `kubectl describe pod` command will show a readiness probe event failure:
+Using the `kubectl describe pod` command will show a readiness probe event failure:
 
 ```text
 $ kubectl describe pod sample-domain1-admin-server -n sample-domain1-ns
@@ -426,9 +426,9 @@ readiness probe is bound to the server pod's network interface:
 
 |Channel Name|Port|Listen address|Protocol|Exposed as a container port|
 |----|----|----|--------|-----|
-|`http-probe-ext`|From configuration Istio `readinessPort` | Server Pod's IP | `http`| No |
+|`http-probe-ext`|From configuration Istio `readinessPort` | Server Pod's IP address | `http`| No |
 
-##### Added network channel for WebLogic EJB and Servlet Session State Replication Traffic
+##### Added network channel for WebLogic EJB and servlet session state replication traffic
 
 To support WebLogic EJB and servlet session state replication traffic in an Istio service mesh,
 operator versions 3.3.3 and later will automatically create a channel (network access point)
@@ -439,7 +439,7 @@ in the domain resource:
 |----|----|--------|-----|
 |`istiorepl`|From configuration Istio `replicationChannelPort` |`t3`| No |
 
-The operator will also setup the `replication-channel` attribute
+The operator will also set up the `replication-channel` attribute
 in each WebLogic cluster configuration:
 
 ```text

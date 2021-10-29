@@ -17,7 +17,6 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1SecretReference;
-import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
@@ -64,6 +63,7 @@ import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.IstioUtils.createAdminServer;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGatewayAndVirtualservice;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployIstioDestinationRule;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.getIstioHttpIngressPort;
@@ -374,15 +374,4 @@ class ItIstioMiiDomain {
     setPodAntiAffinity(domain);
     return domain;
   }
-
-  private AdminServer createAdminServer() {
-    AdminServer adminServer = new AdminServer()
-        .serverStartState("RUNNING");
-
-    if (!isLocalHostBindingsEnabled()) {
-      adminServer.adminChannelPortForwardingEnabled(true);
-    }
-    return adminServer;
-  }
-
 }

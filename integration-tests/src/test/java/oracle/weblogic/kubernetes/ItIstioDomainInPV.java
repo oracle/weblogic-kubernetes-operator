@@ -22,7 +22,6 @@ import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
-import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
 import oracle.weblogic.domain.Cluster;
@@ -64,6 +63,7 @@ import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.IstioUtils.createAdminServer;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGatewayAndVirtualservice;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.getIstioHttpIngressPort;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.isLocalHostBindingsEnabled;
@@ -427,15 +427,4 @@ class ItIstioDomainInPV  {
         namespace, jobCreationContainer, annotMap);
 
   }
-
-  private AdminServer createAdminServer() {
-    AdminServer adminServer = new AdminServer()
-        .serverStartState("RUNNING");
-
-    if (!isLocalHostBindingsEnabled()) {
-      adminServer.adminChannelPortForwardingEnabled(true);
-    }
-    return adminServer;
-  }
-
 }
