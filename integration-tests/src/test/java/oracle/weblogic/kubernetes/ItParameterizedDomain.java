@@ -170,6 +170,8 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
  * Verify scaling up and down the clusters in the domain with different domain types.
  * Also verify the sample application can be accessed via NGINX ingress controller.
  * Also verify the rolling restart behavior in a multi-cluster MII domain.
+ * In OKD cluster, we do not use thrid party loadbalancers, so the tests that
+ * specifically test nginx or traefik are diasbled for OKD cluster. 
  */
 @DisplayName("Verify scaling the clusters in the domain with different domain types, "
         + "rolling restart behavior in a multi-cluster MII domain and "

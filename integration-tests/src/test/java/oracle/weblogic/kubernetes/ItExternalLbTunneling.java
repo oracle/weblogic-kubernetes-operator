@@ -98,6 +98,9 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
  * load balancer. Set up a load balancer that redirects HTTP(s) traffic to
  * the custom channel. Configure a WebLogic dynamic cluster domain using
  * Model In Image. Add a cluster targeted JMS distributed destination.
+ * In OKD cluster, we do not use thrid party loadbalancers, so the tests that
+ * specifically test nginx or traefik are diasbled for OKD cluster. A test
+ * using routes are added to run only on OKD cluster.
  */
 
 @DisplayName("Test external RMI access through loadbalncer tunneling")
