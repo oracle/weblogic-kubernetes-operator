@@ -8,6 +8,7 @@ draft: false
 
 | Date | Version | Introduces backward incompatibilities? | Change - See also, [Change log](#change-log). |
 | --- | --- | --- | --- |
+| TBD, 2021 | v3.3.3 | no | Resolved an issue related to WebLogic cluster replication with Istio 1.10 and resolved several issues related to introspector failure, retry, and status. |
 | September 24, 2021 | v3.3.2 | no | Istio 1.10 support, enhanced liveness and readiness probe customization to support customizing failure thresholds, and additional validations. |
 | August 23, 2021 | v3.3.1 | no | Resolved an issue related to managed Coherence cluster formation when using Istio and another issue related to Secret and ConfigMap validation. |
 | July 20, 2021 | v3.3.0 | no | Auxiliary image support. |
@@ -44,6 +45,11 @@ draft: false
 | March 20, 2018 |  | yes | Several files and input parameters have been renamed.  This affects how operators and domains are created.  It also changes generated Kubernetes artifacts, therefore customers must recreate their operators and domains.
 
 ### Change log
+
+#### Operator 3.3.3
+
+* Resolved an issue related to WebLogic cluster replication when using Istio 1.10 ([#2582](https://github.com/oracle/weblogic-kubernetes-operator/pull/2582)).
+* Resolved several issues related to introspector failure, retry, and status ([#2564](https://github.com/oracle/weblogic-kubernetes-operator/pull/2564), [#2571](https://github.com/oracle/weblogic-kubernetes-operator/pull/2571), [#2578](https://github.com/oracle/weblogic-kubernetes-operator/pull/2578), [#2580](https://github.com/oracle/weblogic-kubernetes-operator/pull/2580)).
 
 #### Operator 3.3.2
 
