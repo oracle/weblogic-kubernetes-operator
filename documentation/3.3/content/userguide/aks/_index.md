@@ -216,7 +216,7 @@ When you are satisfied with your selections, select **Next : DNS Configuration**
 
 With the **DNS Configuration** blade, you can provision the Oracle WebLogic Server Administration Console using a custom DNS name.
 
-Select **Yes** or **No** for the option Configure Custom DNS Alias? based on your preference. If you select **No**, you don't have to provide any details, and can proceed by selecting **Next : Database >**. If you select **Yes**, you must choose either to configure a custom DNS alias based on an existing Azure DNS zone, or create an Azure DNS zone and a custom DNS alias. This can be done by selecting **Yes** or **No** for the option **Use an existing Azure DNS Zone**.
+Select **Yes** or **No** for the option **Configure Custom DNS Alias?** based on your preference. If you select **No**, you don't have to provide any details, and can proceed by selecting **Next : Database >**. If you select **Yes**, you must choose either to configure a custom DNS alias based on an existing Azure DNS zone, or create an Azure DNS zone and a custom DNS alias. This can be done by selecting **Yes** or **No** for the option **Use an existing Azure DNS Zone**.
 
 {{% notice note %}}
 For more information about the DNS zones, see [Overview of DNS zones and records](https://docs.microsoft.com/en-us/azure/dns/dns-zones-records).
