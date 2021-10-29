@@ -107,7 +107,7 @@ In this section you can deploy a Java EE Application along with the WebLogic Ser
 |-------|-------------|
 | Deploy your application package? | If set to **Yes**, you must specify a Java EE WAR, EAR, or JAR file suitable for deployment with the selected version of WebLogic Server. If set to **No**, no application is deployed.| 
 | Application package (.war,.ear,.jar) | With the **Browse** button, you can select a file from a pre-existing Azure Storage Account and Storage Container within that account.  To learn how to create a Storage Account and Container, see [Create a storage account](https://docs.microsoft.com/en-us/azure/storage/common/storage-account-create?tabs=azure-portal). |
-| Fail deployment if application does not become ACTIVE. | If selected, the deployment will wait for the deployed application to reach the **ACTIVE** state and fail the deployment if it does not. For more details, see the [Oracle documentation](https://aka.ms/wls-aks-deployment-state) |
+| Fail deployment if application does not become ACTIVE. | If selected, the deployment will wait for the deployed application to reach the **ACTIVE** state and fail the deployment if it does not. For more details, see the [Oracle documentation](https://aka.ms/wls-aks-deployment-state). |
 | Number of WebLogic Managed Server replicas | The initial value of the `replicas` field of the Domain. For information, see [Scaling]({{< relref "/userguide/managing-domains/domain-lifecycle/scaling.md" >}}). |
 
 When you are satisfied with your selections, select **Next : TLS/SSL configuration**.
