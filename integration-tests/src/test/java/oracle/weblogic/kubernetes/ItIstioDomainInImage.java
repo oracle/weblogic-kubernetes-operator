@@ -13,7 +13,6 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1SecretReference;
-import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
@@ -58,9 +57,11 @@ import static oracle.weblogic.kubernetes.utils.DeployUtil.deployToClusterUsingRe
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.IstioUtils.createAdminServer;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGatewayAndVirtualservice;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployIstioDestinationRule;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.getIstioHttpIngressPort;
+import static oracle.weblogic.kubernetes.utils.IstioUtils.isLocalHostBindingsEnabled;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
@@ -318,8 +319,7 @@ class ItIstioDomainInImage {
                             .addEnvItem(new V1EnvVar()
                                     .name("USER_MEM_ARGS")
                                     .value("-Djava.security.egd=file:/dev/./urandom ")))
-                    .adminServer(new AdminServer()
-                            .serverStartState("RUNNING"))
+                    .adminServer(createAdminServer())
                     .addClustersItem(new Cluster()
                             .clusterName(clusterName)
                             .replicas(replicaCount)
@@ -327,7 +327,8 @@ class ItIstioDomainInImage {
                     .configuration(new Configuration()
                             .istio(new Istio()
                                  .enabled(Boolean.TRUE)
-                                 .readinessPort(8888))
+                                 .readinessPort(8888)
+                                 .localhostBindingsEnabled(isLocalHostBindingsEnabled()))
                             .model(new Model()
                                     .domainType("WLS"))
                         .introspectorJobActiveDeadlineSeconds(300L)));
@@ -340,5 +341,4 @@ class ItIstioDomainInImage {
     assertTrue(domCreated, String.format("Create domain custom resource failed with ApiException "
                     + "for %s in namespace %s", domainUid, domNamespace));
   }
-
 }
