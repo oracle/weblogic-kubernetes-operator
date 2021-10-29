@@ -68,8 +68,8 @@ public class ServerStartPolicyUtils {
   public static final String ROLLING_DOMAIN_SCRIPT = "rollDomain.sh";
   public static final String ROLLING_CLUSTER_SCRIPT = "rollCluster.sh";
   public static final String managedServerNamePrefix = "managed-server";
-  public static final String CLUSTER_1 = "cluster-1";
-  public static final String CLUSTER_2 = "cluster-2";
+  public static final String DYNAMIC_CLUSTER = "cluster-1";
+  public static final String CONFIG_CLUSTER = "cluster-2";
 
 
   private static final int replicaCount = 1;
@@ -193,12 +193,12 @@ public class ServerStartPolicyUtils {
                         .channelName("default")
                         .nodePort(0))))
             .addClustersItem(new Cluster()
-                .clusterName(CLUSTER_1)
+                .clusterName(DYNAMIC_CLUSTER)
                 .replicas(replicaCount)
                 .serverStartPolicy("IF_NEEDED")
                 .serverStartState("RUNNING"))
             .addClustersItem(new Cluster()
-                .clusterName(CLUSTER_2)
+                .clusterName(CONFIG_CLUSTER)
                 .replicas(replicaCount)
                 .serverStartPolicy("IF_NEEDED")
                 .serverStartState("RUNNING"))
