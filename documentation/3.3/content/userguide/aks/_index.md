@@ -173,7 +173,7 @@ You must select one of the following three options, each described in turn.
 
 * Upload a TLS/SSL certificate: Upload the pre-signed certificate now.
 * Identify an Azure Key Vault: The Key Vault must already contain the certificate and its password stored as secrets.
-* Generate a self-signed frontend certificate: generate a self-signed frontend certificate and apply it during deployment.
+* Generate a self-signed front-end certificate: Generate a self-signed front-end certificate and apply it during deployment.
 
 **Upload a TLS/SSL certificate**
 
@@ -182,7 +182,7 @@ You must select one of the following three options, each described in turn.
 | Frontend TLS/SSL certificate(.pfx) | For information on how to create a certificate in PFX format, see [Overview of TLS termination and end to end TLS with Application Gateway](https://docs.microsoft.com/en-us/azure/application-gateway/ssl-overview). |
 | Password | The password for the certificate |
 | Confirm password | Re-enter the value of the preceding field. |
-| Trusted root certificate(.cer, .cert) | A trusted root certificate is required to allow backend instances in the application gateway. The root certificate is a Base-64 encoded X.509(.CER) format root certificate. |
+| Trusted root certificate(.cer, .cert) | A trusted root certificate is required to allow back-end instances in the application gateway. The root certificate is a Base-64 encoded X.509(.CER) format root certificate. |
 | Service Principal | A Base64 encoded JSON string of a service principal for the selected subscription. You can generate one with command `az ad sp create-for-rbac --sdk-auth | base64 -w0`. For more information, see [Create a service principal](https://docs.microsoft.com/en-us/cli/azure/create-an-azure-service-principal-azure-cli#create-a-service-principal). |
 
 **Identify an Azure Key Vault**
@@ -199,7 +199,7 @@ You must select one of the following three options, each described in turn.
 
 | Field | Description |
 |-------|-------------|
-| Trusted root certificate(.cer, .cert) | A trusted root certificate is required to allow backend instances in the application gateway. The root certificate is a Base-64 encoded X.509(.CER) format root certificate. |
+| Trusted root certificate(.cer, .cert) | A trusted root certificate is required to allow back-end instances in the application gateway. The root certificate is a Base-64 encoded X.509(.CER) format root certificate. |
 | Service Principal | A Base64 encoded JSON string of a service principal for the selected subscription. You can generate one with command `az ad sp create-for-rbac --sdk-auth | base64 -w0`. For more information, see [Create a service principal](https://docs.microsoft.com/en-us/cli/azure/create-an-azure-service-principal-azure-cli#create-a-service-principal). |
 
 Regardless of how you provide the certificates, there are several other options when configuring the Application Gateway, as described next.
