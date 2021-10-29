@@ -418,15 +418,20 @@ public class TestAssertions {
 
   /**
    * Check the domain status condition type exists.
-   * @param domain oracle.weblogic.domain.Domain object
+   * @param domainUid uid of the domain
+   * @param domainNamespace namespace of the domain
    * @param conditionType the type name of condition, accepted value: Completed, Available, Failed and
    *                      ConfigChangesPendingRestart
    * @return true if the condition type exists, false otherwise
    */
-  public static Callable<Boolean> domainStatusConditionTypeExists(oracle.weblogic.domain.Domain domain,
+  public static Callable<Boolean> domainStatusConditionTypeExists(String domainUid,
+                                                                  String domainNamespace,
                                                                   String conditionType) {
     LoggingFacade logger = getLogger();
     return () -> {
+      oracle.weblogic.domain.Domain domain =
+          assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace));
+
       if (domain != null && domain.getStatus() != null) {
         List<DomainCondition> domainConditionList = domain.getStatus().getConditions();
         for (DomainCondition domainCondition : domainConditionList) {

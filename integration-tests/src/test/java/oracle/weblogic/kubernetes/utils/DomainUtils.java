@@ -149,8 +149,7 @@ public class DomainUtils {
                                                           String namespace,
                                                           String conditionType) {
     testUntil(
-        domainStatusConditionTypeExists(
-            assertDoesNotThrow(() -> getDomainCustomResource(domainUid, namespace)), conditionType),
+        domainStatusConditionTypeExists(domainUid, namespace, conditionType),
         getLogger(),
         "waiting for domain status condition type {0} exists",
         conditionType
