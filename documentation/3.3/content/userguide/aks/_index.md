@@ -158,8 +158,8 @@ You can fill in any valid value in this column.
 
 The current offer has some restrictions on the T3 ports.
 
-* For a **Target** value of **admin-server-t3** you must use port 7005.
-* For a **Target** value of **cluster-1-t3** you must use port 8011.
+* For a **Target** value of **admin-server-t3**, you must use port 7005.
+* For a **Target** value of **cluster-1-t3**, you must use port 8011.
 
 For the non-T3 ports, the recommended values are the usual 7001 for the **admin-server** and 8001 for the **cluster-1**.
 
