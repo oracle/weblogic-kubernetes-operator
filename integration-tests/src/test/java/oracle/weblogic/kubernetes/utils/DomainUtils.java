@@ -133,7 +133,7 @@ public class DomainUtils {
         withLongRetryPolicy,
         domainStatusConditionTypeHasExpectedStatus(domainUid, namespace, conditionType, expectedStatus),
         getLogger(),
-        "waiting for domain status condition type {0} has expected status {1}",
+        "domain status condition type {0} has expected status {1}",
         conditionType,
         expectedStatus);
   }

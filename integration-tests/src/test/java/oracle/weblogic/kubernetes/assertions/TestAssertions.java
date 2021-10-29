@@ -466,15 +466,12 @@ public class TestAssertions {
 
       if (domain != null && domain.getStatus() != null) {
         List<DomainCondition> domainConditionList = domain.getStatus().getConditions();
-        if (domainConditionList.size() == 0) {
-          logger.info("DEBUG: condition list is empty");
-          return false;
-        }
         for (DomainCondition domainCondition : domainConditionList) {
-          logger.info("DEBUG: domainCondition={0}", domainCondition.toString());
           if (domainCondition.getType().equalsIgnoreCase(conditionType)
               && domainCondition.getStatus().equalsIgnoreCase(expectedStatus)) {
             return true;
+          } else {
+            logger.info("domainCondition={0}", domainCondition.toString());
           }
         }
       } else {
