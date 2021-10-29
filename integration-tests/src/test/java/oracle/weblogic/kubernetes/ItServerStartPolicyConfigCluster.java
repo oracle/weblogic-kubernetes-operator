@@ -211,7 +211,7 @@ class ItServerStartPolicyConfigCluster {
         samplePath,START_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, CONFIG_CLUSTER);
     assertTrue(result.contains("No changes needed"), "startCluster.sh shouldn't make changes");
 
-    // Verify dynamic server are shutdown after stopCluster script execution
+    // Verify config servers are shutdown after stopCluster script execution
     logger.info("Stop configured cluster using the script");
     executeLifecycleScript(domainUid, domainNamespace, samplePath,
         STOP_CLUSTER_SCRIPT, CLUSTER_LIFECYCLE, CONFIG_CLUSTER);
