@@ -49,6 +49,9 @@ data:
   {{- if .tokenReviewAuthentication }}
   tokenReviewAuthentication: {{ .tokenReviewAuthentication | quote }}
   {{- end }}
+  {{- if (hasKey . "istioLocalhostBindingsEnabled") }}
+  istioLocalhostBindingsEnabled: {{ .istioLocalhostBindingsEnabled | quote }}
+  {{- end }}
   {{- if .kubernetesPlatform }}
   kubernetesPlatform: {{ .kubernetesPlatform | quote }}
   {{- end }}
