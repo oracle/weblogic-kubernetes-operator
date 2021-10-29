@@ -75,7 +75,6 @@ import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
@@ -160,7 +159,7 @@ class ItDiagnosticsCompleteAvailableCondition {
    * Verify no Failed type condition generated.
    */
   @Order(1)
-  @Test
+  //@Test
   @DisplayName("Test domain status condition with serverStartPolicy set to IF_NEEDED")
   void testCompleteAvailableConditionWithIfNeeded() {
     logger.info("Creating domain with serverStartPolicy set to IF_NEEDED");
@@ -630,6 +629,8 @@ class ItDiagnosticsCompleteAvailableCondition {
   @DisplayName("Test domain status condition with new restartVersion")
   void testCompleteAvailableConditionWithNewImage() {
 
+    createDomain();
+
     // get the pod creation time stamps
     LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
     // get the creation time of the admin server pod before patching
@@ -653,6 +654,7 @@ class ItDiagnosticsCompleteAvailableCondition {
         : WEBLOGIC_IMAGE_NAME + ":" + imageTag;
     dockerTag(imageName, imageUpdate);
     dockerLoginAndPushImageToRegistry(imageUpdate);
+    logger.info("new image: {0}", imageUpdate);
 
     logger.info("patch the domain resource with new image");
     String patchStr

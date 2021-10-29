@@ -459,9 +459,11 @@ public class TestAssertions {
                                                                              String conditionType,
                                                                              String expectedStatus) {
     LoggingFacade logger = getLogger();
-    oracle.weblogic.domain.Domain domain =
-        assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace));
+
     return () -> {
+      oracle.weblogic.domain.Domain domain =
+          assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace));
+
       if (domain != null && domain.getStatus() != null) {
         List<DomainCondition> domainConditionList = domain.getStatus().getConditions();
         if (domainConditionList.size() == 0) {
@@ -473,9 +475,6 @@ public class TestAssertions {
           if (domainCondition.getType().equalsIgnoreCase(conditionType)
               && domainCondition.getStatus().equalsIgnoreCase(expectedStatus)) {
             return true;
-          } else {
-            logger.info("DEBUG: conditionType={0}; conditionStatus={1}", domainCondition.getType(),
-                domainCondition.getStatus());
           }
         }
       } else {
