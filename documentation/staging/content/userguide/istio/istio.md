@@ -167,12 +167,12 @@ See the following description of each `spec.configuration.istio` attribute:
    network access point with a `localhost` binding for each existing channel and protocol.
    Use `true` for Istio versions prior to 1.10 and set to `false` for version 1.10 and later.
 
-   |Istio version|Operator Version|localhostBindingsEnabled|notes|
-   |----|----|---|---|
-   |Pre-1.10|3.x|`true`|Supported. Note that `true` is the default.|
-   |Pre-1.10|3.x|`false`|Not supported.|
-   |1.10 and later|3.x|`true`|Not supported.|
-   |1.10 and later|3.x|`false`|Supported.|
+   |Istio version|localhostBindingsEnabled|notes|
+   |----|----|----|
+   |Pre-1.10|`true`|Supported. Note that `true` is the default.|
+   |Pre-1.10|`false`|Not supported.|
+   |1.10 and later|`true`|Not supported.|
+   |1.10 and later|`false`|Supported.|
    
 If the `localhostBindingsEnabled` is set incorrectly for the Istio version running in a domain,
 then the `weblogic-server` container in the managed server pods will

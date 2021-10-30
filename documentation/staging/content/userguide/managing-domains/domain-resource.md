@@ -215,16 +215,10 @@ Elements related to specifying and overriding WebLogic domain configuration:
     defines a `replication-channel` attribute. Defaults to 4564.
   * `localhostBindingsEnabled`:
     This setting was added in operator version 3.3.3,
-    defaults to `true` in version 3.x,
-    and is ignored in version 4.0 and later.
-    In version 3.x, when `true`, the operator
-    creates a WebLogic
+    defaults to the the Helm chart configuration value `istioLocalhostBindingsEnabled` 
+    which in turn defaults to `true`. When `true`, the operator creates a WebLogic 
     network access point with a `localhost` binding for each existing channel and protocol.
-    In version 3.x, use `true` for Istio versions prior to 1.10
-    and set to `false` for version 1.10 and later.
-    Version 4.0 and later requires Istio 1.10 and later,
-    will not create localhost bindings, and ignores
-    this attribute.
+    Use `true` for Istio versions prior to 1.10 and set to `false` for version 1.10 and later.
 
 Elements related to Kubernetes Pod and Service generation:
 
