@@ -199,24 +199,15 @@ class ItDiagnosticsFailedCondition {
     logger.info("Creating domain with serverStartPolicy set to IF_NEEDED");
 
     Domain domain = createDomainResourceWithConfigMap(domainUid, domainNamespace1, adminSecretName,
-        OCIR_SECRET_NAME, encryptionSecretName, replicaCount, imageName + ":" + imageTag, badModelFileCm);
+        OCIR_SECRET_NAME, encryptionSecretName, replicaCount, imageName + ":" + imageTag, badModelFileCm, 30L);
 
     createDomainAndVerify(domain, domainNamespace1);
 
-    // verify the condition type Completed exists
-    checkDomainStatusConditionTypeExists(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_COMPLETED_TYPE);
-    // verify the condition type Available exists
-    checkDomainStatusConditionTypeExists(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE);
-    // verify the condition Completed type has status True
+    // verify the condition type Failed exists
+    checkDomainStatusConditionTypeExists(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
+    // verify the condition Failed type has status True
     checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace1,
-        DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "True");
-    // verify the condition Available type has status True
-    checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace1,
-        DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True");
-    // verify there is no status condition type Failed
-    verifyDomainStatusConditionTypeDoesNotExist(
-        assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace1)),
-        DOMAIN_STATUS_CONDITION_FAILED_TYPE);
+        DOMAIN_STATUS_CONDITION_FAILED_TYPE, "True");
   }
 
   /**
@@ -745,7 +736,7 @@ class ItDiagnosticsFailedCondition {
   private Domain createDomainResourceWithConfigMap(String domainUid,
           String domNamespace, String adminSecretName,
           String repoSecretName, String encryptionSecretName,
-          int replicaCount, String miiImage, String configmapName) {
+          int replicaCount, String miiImage, String configmapName, Long introspectorDeadline) {
 
     Map keyValueMap = new HashMap<String, String>();
     keyValueMap.put("testkey", "testvalue");
@@ -793,7 +784,7 @@ class ItDiagnosticsFailedCondition {
                     .domainType("WLS")
                     .configMap(configmapName)
                     .runtimeEncryptionSecret(encryptionSecretName))
-                .introspectorJobActiveDeadlineSeconds(300L)));
+                .introspectorJobActiveDeadlineSeconds(introspectorDeadline != null ? introspectorDeadline : 300L)));
     setPodAntiAffinity(domain);
     return domain;
   }
