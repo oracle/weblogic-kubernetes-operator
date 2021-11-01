@@ -26,10 +26,6 @@ Azure Kubernetes Service makes it simple to deploy a managed Kubernetes cluster 
 
 To learn more, see the [What is Azure Kubernetes Service?](https://docs.microsoft.com/en-us/azure/aks/intro-kubernetes).
 
-See [Supported platforms]({{< relref "userguide/platforms/environments.md" >}})
-for general operator prerequisites
-and operator support limitations that are specific to AKS.
-
 #### Domain home source types
 
 This sample demonstrates running the WebLogic cluster on AKS using two domain home types. The instructions for each are self-contained and independent. This section lists the domain home source types recommended for use with AKS, along with some benefits of each. For complete details on domain home source types, see [Choose a domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}).
@@ -45,6 +41,9 @@ This sample demonstrates running the WebLogic cluster on AKS using two domain ho
    - Use standard Oracle-provided images with patches installed.
    - No Docker environment required. You are able to run your business quickly without building knowledge of Docker.
    - Mutate the live domain configuration with Administration Console from a browser or WLST.
+   
+{{% notice tip %}} Stop and Start an Azure Kubernetes Service (AKS) cluster using Azure CLI, as described [in the azure docs](https://docs.microsoft.com/en-us/azure/aks/start-stop-cluster). This allows you to optimize costs during your AKS cluster's idle time. Don't pay for running development clusters unless they are actively being used.  You can pick up objects and cluster state right where you were left off.
+{{% /notice %}}
 
 ### References
 
