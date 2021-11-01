@@ -198,8 +198,10 @@ class ItDiagnosticsFailedCondition {
     ConfigMapUtils.createConfigMapFromFiles(badModelFileCm, modelList, domainNamespace1);
     logger.info("Creating domain with serverStartPolicy set to IF_NEEDED");
 
-    createDomainResourceWithConfigMap(domainUid, domainNamespace1, adminSecretName,
+    Domain domain = createDomainResourceWithConfigMap(domainUid, domainNamespace1, adminSecretName,
         OCIR_SECRET_NAME, encryptionSecretName, replicaCount, imageName + ":" + imageTag, badModelFileCm);
+
+    createDomainAndVerify(domain, domainNamespace1);
 
     // verify the condition type Completed exists
     checkDomainStatusConditionTypeExists(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_COMPLETED_TYPE);
