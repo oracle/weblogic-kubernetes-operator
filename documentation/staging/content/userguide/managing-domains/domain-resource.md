@@ -206,19 +206,19 @@ Elements related to specifying and overriding WebLogic domain configuration:
     to verify that the pod is ready
     for application traffic. Defaults to 8888.
   * `replicationChannelPort`:
-    The operator will create a `T3` protocol 
+    The operator will create a `T3` protocol
     WebLogic network access point
-    on each WebLogic Server that is part of a cluster with this port 
+    on each WebLogic Server that is part of a cluster with this port
     to handle EJB and servlet session state replication traffic
-    between servers. This setting is ignored for clusters 
-    where the WebLogic cluster configuration already 
+    between servers. This setting is ignored for clusters
+    where the WebLogic cluster configuration already
     defines a `replication-channel` attribute. Defaults to 4564.
   * `localhostBindingsEnabled`:
-    This setting was added in operator version 3.3.3,
-    defaults to the the Helm chart configuration value `istioLocalhostBindingsEnabled` 
-    which in turn defaults to `true`. When `true`, the operator creates a WebLogic 
+    This setting was added in operator version 3.3.3;
+    it defaults to the Helm chart configuration value `istioLocalhostBindingsEnabled`,
+    which in turn defaults to `true`. When `true`, the operator creates a WebLogic
     network access point with a `localhost` binding for each existing channel and protocol.
-    Use `true` for Istio versions prior to 1.10 and set to `false` for version 1.10 and later.
+    Use `true` for Istio versions prior to 1.10 and set to `false` for versions 1.10 and later.
 
 Elements related to Kubernetes Pod and Service generation:
 

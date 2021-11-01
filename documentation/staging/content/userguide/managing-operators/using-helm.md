@@ -376,8 +376,7 @@ If `clusterSizePaddingValidationEnabed` is set to true, two additional character
 
 Default for the domain resource `domain.spec.configuration.istio.localhostBindingsEnabled` setting.
 
-For more information, see [Configuring the domain resource]({{< relref "/userguide/istio/istio.md#configuring-the-domain-resource" >}})
-in the Istio chapter.
+For more information, see [Configuring the domain resource]({{< relref "/userguide/istio/istio#configuring-the-domain-resource" >}}).
 
 #### Elastic Stack integration
 
