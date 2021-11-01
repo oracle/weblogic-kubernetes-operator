@@ -12,7 +12,6 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusConditionTypeExists;
@@ -149,12 +148,8 @@ public class DomainUtils {
                                                           String namespace,
                                                           String conditionType) {
     testUntil(
-        domainStatusConditionTypeExists(
-            assertDoesNotThrow(() -> getDomainCustomResource(domainUid, namespace)), conditionType),
-        getLogger(),
-        "waiting for domain status condition type {0} exists",
-        conditionType
-    );
+        domainStatusConditionTypeExists(domainUid, namespace, conditionType),
+        getLogger(), "waiting for domain status condition type {0} exists", conditionType);
   }
 
   /**
