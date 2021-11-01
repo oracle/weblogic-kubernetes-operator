@@ -88,7 +88,8 @@ else
     --namespace $TRAEFIK_NAMESPACE \
     --set "kubernetes.namespaces={$TRAEFIK_NAMESPACE,$DOMAIN_NAMESPACE}" \
     --set "ports.web.nodePort=${TRAEFIK_HTTP_NODEPORT}" \
-    --set "ports.websecure.nodePort=${TRAEFIK_HTTPS_NODEPORT}" 
+    --set "ports.websecure.nodePort=${TRAEFIK_HTTPS_NODEPORT}" \
+    --set "meta.helm.sh/release-namespace=${TRAEFIK_NAMESPACE}"
 
   set +x
 
