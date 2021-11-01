@@ -12,6 +12,7 @@ import java.util.concurrent.Callable;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.domain.DomainCondition;
 import oracle.weblogic.kubernetes.actions.impl.LoggingExporter;
 import oracle.weblogic.kubernetes.assertions.impl.Apache;
@@ -430,6 +431,7 @@ public class TestAssertions {
       if (domain != null && domain.getStatus() != null) {
         List<DomainCondition> domainConditionList = domain.getStatus().getConditions();
         for (DomainCondition domainCondition : domainConditionList) {
+          logger.info(Yaml.dump(domainCondition));
           if (domainCondition.getType().equalsIgnoreCase(conditionType)) {
             return true;
           }
