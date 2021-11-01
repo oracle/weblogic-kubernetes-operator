@@ -80,11 +80,9 @@ abstract class WaitForReadyStep<T> extends Step {
   /**
    * Returns true if the specified resource is deemed "ready." Different steps may define readiness in different ways.
    * @param resource the resource to check
-   * @param info domain presence info
-   * @param serverName Server name
    * @return true if processing can proceed
    */
-  abstract boolean isReady(T resource, DomainPresenceInfo info, String serverName);
+  abstract boolean isReady(T resource);
 
   /**
    * Returns true if the cached resource is not found during periodic listing.
@@ -101,11 +99,9 @@ abstract class WaitForReadyStep<T> extends Step {
    * This default implementation processes all callbacks.
    * 
    * @param resource the resource to check
-   * @param info domain presence info
-   * @param serverName Server name
    * @return true if the resource is expected
    */
-  boolean shouldProcessCallback(T resource, DomainPresenceInfo info, String serverName) {
+  boolean shouldProcessCallback(T resource) {
     return true;
   }
 
@@ -182,7 +178,7 @@ abstract class WaitForReadyStep<T> extends Step {
     String serverName = (String)packet.get(SERVER_NAME);
     if (shouldTerminateFiber(initialResource)) {
       return doTerminate(createTerminationException(initialResource), packet);
-    } else if (isReady(initialResource, packet.getSpi(DomainPresenceInfo.class), serverName)) {
+    } else if (isReady(initialResource)) {
       return doNext(packet);
     }
 
@@ -281,18 +277,16 @@ abstract class WaitForReadyStep<T> extends Step {
     private final Packet packet;
     private final AtomicBoolean didResume = new AtomicBoolean(false);
     private final AtomicInteger recheckCount = new AtomicInteger(0);
-    private final String serverName;
 
     Callback(AsyncFiber fiber, Packet packet) {
       this.fiber = fiber;
       this.packet = packet;
-      this.serverName = (String) packet.get(SERVER_NAME);
     }
 
     @Override
     public void accept(T resource) {
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-      boolean shouldProcessCallback = shouldProcessCallback(resource, info, serverName);
+      boolean shouldProcessCallback = shouldProcessCallback(resource);
       if (shouldProcessCallback) {
         proceedFromWait(resource);
       }
@@ -323,10 +317,6 @@ abstract class WaitForReadyStep<T> extends Step {
 
     int getRecheckCount() {
       return recheckCount.get();
-    }
-
-    String getServerName() {
-      return serverName;
     }
   }
 

@@ -65,7 +65,8 @@ public class ServerDownIteratorStep extends Step {
   private StepAndPacket createServerDownWaiters(Packet packet, DomainPresenceInfo.ServerShutdownInfo ssi) {
     DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
     return new StepAndPacket(Optional.ofNullable(packet.getSpi(PodAwaiterStepFactory.class))
-            .map(p -> p.waitForDelete(info.getServerPod(ssi.getServerName()), null)).orElse(null),
+            .map(p -> p.waitForDelete(info.getServerPod(ssi.getServerName()),
+                    createDomainPresenceInfoUpdateStep(ssi.getServerName(), null))).orElse(null),
             createPacketForServer(packet, ssi));
   }
 
@@ -191,6 +192,26 @@ public class ServerDownIteratorStep extends Step {
         Collection<StepAndPacket> servers = Collections.singletonList(serversToShutdown.poll());
         return doForkJoin(this, packet, servers);
       }
+    }
+  }
+
+  private Step createDomainPresenceInfoUpdateStep(String serverName, Step next) {
+    return new DomainPresenceInfoUpdateStep(serverName, next);
+  }
+
+  private class DomainPresenceInfoUpdateStep extends Step {
+    public final String serverName;
+
+    public DomainPresenceInfoUpdateStep(String serverName, Step next) {
+      super(next);
+      this.serverName = serverName;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+      info.setServerPod(serverName, null);
+      return doNext(packet);
     }
   }
 }

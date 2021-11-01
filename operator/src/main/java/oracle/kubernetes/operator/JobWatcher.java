@@ -244,7 +244,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
 
     // A job is considered ready once it has either successfully completed, or been marked as failed.
     @Override
-    boolean isReady(V1Job job, DomainPresenceInfo info, String resourceName) {
+    boolean isReady(V1Job job) {
       return isComplete(job) || isFailed(job);
     }
 
@@ -256,8 +256,8 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
     // Ignore modified callbacks from different jobs (identified by having different creation times) or those
     // where the job is not yet ready.
     @Override
-    boolean shouldProcessCallback(V1Job job, DomainPresenceInfo info, String resourceName) {
-      return hasExpectedCreationTime(job) && isReady(job, info, resourceName);
+    boolean shouldProcessCallback(V1Job job) {
+      return hasExpectedCreationTime(job) && isReady(job);
     }
 
     private boolean hasExpectedCreationTime(V1Job job) {
@@ -319,7 +319,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
         @Override
         public NextAction onSuccess(Packet packet, CallResponse<V1Job> callResponse) {
           DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-          if (isReady(callResponse.getResult(), info, callback.getServerName()) || callback.didResumeFiber()) {
+          if (isReady(callResponse.getResult()) || callback.didResumeFiber()) {
             callback.proceedFromWait(callResponse.getResult());
             return doNext(packet);
           }
