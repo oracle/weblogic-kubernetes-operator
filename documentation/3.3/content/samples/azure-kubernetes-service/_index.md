@@ -22,8 +22,13 @@ This sample demonstrates how to use the [WebLogic Kubernetes Operator]({{< relre
 
 #### Azure Kubernetes Service cluster
 
-{{< readfile file="/samples/azure-kubernetes-service/includes/aks-value-prop.txt" >}}
+Azure Kubernetes Service makes it simple to deploy a managed Kubernetes cluster in Azure. AKS reduces the complexity and operational overhead of managing Kubernetes by offloading much of that responsibility to Azure. As a hosted Kubernetes service, Azure handles critical tasks like health monitoring and maintenance for you. The Kubernetes masters are managed by Azure. You only manage and maintain the agent nodes. As a managed Kubernetes service, AKS is free - you only pay for the agent nodes within your clusters, not for the masters.
 
+To learn more, see the [What is Azure Kubernetes Service?](https://docs.microsoft.com/en-us/azure/aks/intro-kubernetes).
+
+See [Supported platforms]({{< relref "userguide/platforms/environments.md" >}})
+for general operator prerequisites
+and operator support limitations that are specific to AKS.
 
 #### Domain home source types
 
@@ -40,9 +45,6 @@ This sample demonstrates running the WebLogic cluster on AKS using two domain ho
    - Use standard Oracle-provided images with patches installed.
    - No Docker environment required. You are able to run your business quickly without building knowledge of Docker.
    - Mutate the live domain configuration with Administration Console from a browser or WLST.
-   
-{{% notice tip %}} Stop and Start an Azure Kubernetes Service (AKS) cluster using Azure CLI, as described [in the azure docs](https://docs.microsoft.com/en-us/azure/aks/start-stop-cluster). This allows you to optimize costs during your AKS cluster's idle time. Don't pay for running development clusters unless they are actively being used.  You can pick up objects and cluster state right where you were left off.
-{{% /notice %}}
 
 ### References
 
