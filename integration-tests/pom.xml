@@ -266,6 +266,8 @@
                 <includes-failsafe>
                   **/ItParameterizedDomain,
                   **/ItServerStartPolicy,
+                  **/ItServiceStartPolicyDynamicCluster,
+                  **/ItServerStartPolicyConfigCluster,
                   **/ItMiiUpdateDomainConfig,
                   **/ItIntrospectVersion,
                   **/ItFmwDomainInPVUsingWLST,
@@ -363,6 +365,8 @@
                   **/ItPodsShutdownOption,
                   **/ItPodTemplates,
                   **/ItServerStartPolicy,
+		  **/ItServiceStartPolicyDynamicCluster,
+                  **/ItServerStartPolicyConfigCluster,
                   **/ItSessionMigration,
                   **/ItStickySession
                 </includes-failsafe>
