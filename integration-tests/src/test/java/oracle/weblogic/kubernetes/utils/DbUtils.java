@@ -43,7 +43,8 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static io.kubernetes.client.util.Yaml.dump;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
-import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+//import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
@@ -51,6 +52,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.listServices;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.getPod;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.addSccToDBSvcAccount;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
@@ -94,6 +96,10 @@ public class DbUtils {
     // this secret is used only for non-kind cluster
     createSecretForBaseImages(dbNamespace);
 
+    if (OKD) {
+      addSccToDBSvcAccount("default", dbNamespace);
+    }
+
     logger.info("Start Oracle DB with dbImage: {0}, dbPort: {1}, dbNamespace: {2}, dbListenerPort:{3}",
         dbImage, dbPort, dbNamespace, dbListenerPort);
     startOracleDB(dbImage, dbPort, dbNamespace, dbListenerPort);
@@ -114,6 +120,11 @@ public class DbUtils {
   public static synchronized void startOracleDB(String dbBaseImageName, int dbPort, String dbNamespace,
       int dbListenerPort) throws ApiException {
     LoggingFacade logger = getLogger();
+
+    if (OKD) {
+      addSccToDBSvcAccount("default", dbNamespace);
+    }
+
     Map labels = new HashMap<String, String>();
     labels.put("app", "database");
 
@@ -518,6 +529,20 @@ public class DbUtils {
    * @param dbNodePort NodePort for the Oracle DB service
    */
   public static void createLeasingTable(String podName, String namespace, int dbNodePort) {
+    createLeasingTable(podName, namespace, dbNodePort, null);
+  }
+
+  /**
+   * Create leasing Table (ACTIVE) on an Oracle DB Instance.
+   * Uses the WebLogic utility utils.Schema to add the table
+   * So the command MUST be run inside a Weblogic Server pod
+   *
+   * @param podName the pod name
+   * @param namespace where pod exists
+   * @param dbNodePort NodePort for the Oracle DB service
+   * @param dbPodIP NodePort for the Oracle DB service
+   */
+  public static void createLeasingTable(String podName, String namespace, int dbNodePort, String dbPodIP) {
     Path ddlFile = Paths.get(WORK_DIR + "/leasing.ddl");
     String ddlString = "DROP TABLE ACTIVE;\n"
         + "CREATE TABLE ACTIVE (\n"
@@ -536,7 +561,8 @@ public class DbUtils {
              Paths.get(WORK_DIR, "leasing.ddl"),
              Paths.get(destLocation)));
 
-    String cpUrl = "jdbc:oracle:thin:@//" + K8S_NODEPORT_HOST + ":"
+    //String cpUrl = "jdbc:oracle:thin:@//" + K8S_NODEPORT_HOST + ":"
+    String cpUrl = "jdbc:oracle:thin:@//" + dbPodIP + ":"
                          + dbNodePort + "/devpdb.k8s";
     String jarLocation = "/u01/oracle/wlserver/server/lib/weblogic.jar";
     StringBuffer ecmd = new StringBuffer("java -cp ");

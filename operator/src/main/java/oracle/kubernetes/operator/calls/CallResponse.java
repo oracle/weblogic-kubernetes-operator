@@ -52,6 +52,10 @@ public final class CallResponse<T> {
     return ex != null;
   }
 
+  public String createFailureMessage() {
+    return requestParams.createFailureMessage(ex);
+  }
+
   public RequestParams getRequestParams() {
     return requestParams;
   }
@@ -75,5 +79,4 @@ public final class CallResponse<T> {
   public String getHeadersString() {
     return Optional.ofNullable(responseHeaders).map(Object::toString).orElse("");
   }
-  
 }

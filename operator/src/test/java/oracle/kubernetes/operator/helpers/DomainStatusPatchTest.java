@@ -32,6 +32,7 @@ import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
+import static oracle.kubernetes.operator.DomainFailureReason.Internal;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.STARTING_STATE;
 import static oracle.kubernetes.operator.helpers.DomainStatusPatchTest.OrderedArrayMatcher.hasItemsInOrder;
@@ -149,18 +150,17 @@ class DomainStatusPatchTest {
   void whenOnlyNewStatusHasConditions_addNewConditions() {
     DomainStatus status1 = new DomainStatus();
     DomainStatus status2 = new DomainStatus()
-          .addCondition(new DomainCondition(DomainConditionType.Available)
-                .withReason("because").withMessage("hello").withStatus("true"))
-          .addCondition(new DomainCondition(DomainConditionType.Progressing)
-                .withReason("ok now").withStatus("true"));
+          .addCondition(new DomainCondition(DomainConditionType.Failed)
+                .withReason(Internal).withMessage("hello").withStatus("True"))
+          .addCondition(new DomainCondition(DomainConditionType.Completed).withStatus("true"));
 
     computePatch(status1, status2);
 
     assertThat(builder.getPatches(),
           hasItemsInOrder(
                 "ADD /status/conditions []",
-                "ADD /status/conditions/- {'message':'hello','reason':'because','status':'true','type':'Available'}",
-                "ADD /status/conditions/- {'reason':'ok now','status':'true','type':'Progressing'}"
+                "ADD /status/conditions/- {'message':'hello','reason':'Internal','status':'True','type':'Failed'}",
+                "ADD /status/conditions/- {'status':'true','type':'Completed'}"
                 ));
   }
 
@@ -168,9 +168,9 @@ class DomainStatusPatchTest {
   void whenOnlyOldStatusHasConditions_removeThem() {
     DomainStatus status1 = new DomainStatus()
           .addCondition(new DomainCondition(DomainConditionType.Available)
-                .withReason("because").withMessage("hello").withStatus("true"))
-          .addCondition(new DomainCondition(DomainConditionType.Progressing)
-                .withReason("drat").withStatus("true"));
+                .withMessage("hello").withStatus("true"))
+          .addCondition(new DomainCondition(DomainConditionType.Completed)
+                .withStatus("true"));
     DomainStatus status2 = new DomainStatus();
 
     computePatch(status1, status2);
@@ -179,39 +179,33 @@ class DomainStatusPatchTest {
   }
 
   @Test
-  void whenBothStatusesHaveConditions_replaceMismatches() {  // time to rethink this
+  void whenBothStatusesHaveConditions_replaceMismatches() {
     DomainStatus status1 = new DomainStatus()
-          .addCondition(new DomainCondition(DomainConditionType.Available)
-                .withReason("ok now").withMessage("hello").withStatus("true"))
-          .addCondition(new DomainCondition(DomainConditionType.Progressing)
-                .withReason("because").withStatus("true"));
+          .addCondition(new DomainCondition(DomainConditionType.Available).withMessage("hello").withStatus("true"))
+          .addCondition(new DomainCondition(DomainConditionType.Completed).withStatus("true"));
     DomainStatus status2 = new DomainStatus()
-          .addCondition(new DomainCondition(DomainConditionType.Available)
-                .withReason("ok now").withMessage("hello").withStatus("true"))
-          .addCondition(new DomainCondition(DomainConditionType.Progressing)
-                .withReason("trying").withMessage("Almost"));
+          .addCondition(new DomainCondition(DomainConditionType.Available).withMessage("hello").withStatus("true"))
+          .addCondition(new DomainCondition(DomainConditionType.Completed).withMessage("Almost").withStatus("false"));
 
     computePatch(status1, status2);
 
     assertThat(builder.getPatches(),
           hasItemsInOrder("REMOVE /status/conditions/1",
-                          "ADD /status/conditions/- {'message':'Almost','reason':'trying','type':'Progressing'}"));
+                          "ADD /status/conditions/- {'message':'Almost','status':'false','type':'Completed'}"));
   }
 
   @Test
   void whenBothStatusesHaveSameConditionTypeWithMismatch_replaceIt() {  // time to rethink this
     DomainStatus status1 = new DomainStatus()
-          .addCondition(new DomainCondition(DomainConditionType.Progressing)
-                .withReason("because").withMessage("Not There"));
+          .addCondition(new DomainCondition(DomainConditionType.Completed));
     DomainStatus status2 = new DomainStatus()
-          .addCondition(new DomainCondition(DomainConditionType.Progressing)
-                .withReason("trying").withMessage("Almost"));
+          .addCondition(new DomainCondition(DomainConditionType.Completed).withMessage("Nope").withStatus("False"));
 
     computePatch(status1, status2);
 
     assertThat(builder.getPatches(),
           hasItemsInOrder("REMOVE /status/conditions/0",
-                          "ADD /status/conditions/- {'message':'Almost','reason':'trying','type':'Progressing'}"));
+                          "ADD /status/conditions/- {'message':'Nope','status':'False','type':'Completed'}"));
   }
 
   @Test

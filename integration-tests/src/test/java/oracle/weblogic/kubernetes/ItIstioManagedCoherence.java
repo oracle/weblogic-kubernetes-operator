@@ -34,7 +34,6 @@ import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
@@ -57,6 +56,7 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGatewayAndVirtualservice;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.getIstioHttpIngressPort;
+import static oracle.weblogic.kubernetes.utils.IstioUtils.isLocalHostBindingsEnabled;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
@@ -71,7 +71,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 // Test to associate a Coherence Cluster with multiple WebLogic server clusters.
 @DisplayName("Test to associate a Coherence Cluster with multiple WebLogic server clusters")
 @IntegrationTest
-@Tag("okdenv")
 class ItIstioManagedCoherence {
 
   // constants for Coherence
@@ -468,7 +467,8 @@ class ItIstioManagedCoherence {
             .configuration(new Configuration()
                 .istio(new Istio()
                    .enabled(Boolean.TRUE)
-                   .readinessPort(8888))
+                   .readinessPort(8888)
+                   .localhostBindingsEnabled(isLocalHostBindingsEnabled()))
                 .model(new Model()
                     .domainType("WLS"))
                 .introspectorJobActiveDeadlineSeconds(300L)));

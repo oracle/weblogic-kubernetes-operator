@@ -32,7 +32,6 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.FileUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
@@ -48,6 +47,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExist
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.IstioUtils.isLocalHostBindingsEnabled;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
@@ -63,7 +63,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 // which load and verify the cache.
 @DisplayName("Test to create a WebLogic domain with Coherence and verify the use of Coherence cache service")
 @IntegrationTest
-@Tag("okdenv")
 class ItIstioCoherenceTests {
 
   // constants for Coherence
@@ -346,7 +345,8 @@ class ItIstioCoherenceTests {
             .configuration(new Configuration()
                             .istio(new Istio()
                                  .enabled(Boolean.TRUE)
-                                 .readinessPort(8888))
+                                 .readinessPort(8888)
+                                 .localhostBindingsEnabled(isLocalHostBindingsEnabled()))
                             .model(new Model()
                                     .domainType("WLS"))
                  .introspectorJobActiveDeadlineSeconds(300L)));

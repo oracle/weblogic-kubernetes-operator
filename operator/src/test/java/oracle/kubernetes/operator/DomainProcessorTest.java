@@ -5,7 +5,6 @@ package oracle.kubernetes.operator;
 
 import java.net.URI;
 import java.net.http.HttpRequest;
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -14,11 +13,11 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
-import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -27,6 +26,7 @@ import javax.annotation.Nullable;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
+import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Job;
@@ -76,16 +76,18 @@ import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStub;
+import static oracle.kubernetes.operator.DomainConditionMatcher.hasCondition;
+import static oracle.kubernetes.operator.DomainFailureReason.Internal;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainSourceType.FromModel;
 import static oracle.kubernetes.operator.DomainSourceType.Image;
 import static oracle.kubernetes.operator.DomainSourceType.PersistentVolume;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_COMPLETED_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_STARTING_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_ABORTED_EVENT;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
@@ -103,6 +105,8 @@ import static oracle.kubernetes.operator.logging.MessageKeys.NOT_STARTING_DOMAIN
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_ALWAYS;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Completed;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
@@ -125,7 +129,8 @@ class DomainProcessorTest {
   private static final int NUM_JOB_PODS = 1;
   private static final String[] MANAGED_SERVER_NAMES =
       IntStream.rangeClosed(1, MAX_SERVERS).mapToObj(DomainProcessorTest::getManagedServerName).toArray(String[]::new);
-  public static final String DOMAIN_NAME = "base_domain";
+  static final String DOMAIN_NAME = "base_domain";
+  private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
 
   @Nonnull
   private static String getManagedServerName(int n) {
@@ -139,6 +144,8 @@ class DomainProcessorTest {
   private final Map<String, Map<String, DomainPresenceInfo>> presenceInfoMap = new HashMap<>();
   private final Map<String, Map<String, KubernetesEventObjects>> domainEventObjects = new ConcurrentHashMap<>();
   private final Map<String, KubernetesEventObjects> nsEventObjects = new ConcurrentHashMap<>();
+  private final Map<String, KubernetesEventObjects> makeRightFiberGates = new ConcurrentHashMap<>();
+  private final Map<String, KubernetesEventObjects> statusFiberGates = new ConcurrentHashMap<>();
   private final DomainProcessorDelegateStub processorDelegate = DomainProcessorDelegateStub.createDelegate(testSupport);
   private final DomainProcessorImpl processor = new DomainProcessorImpl(processorDelegate);
   private final Domain domain = DomainProcessorTestSetup.createTestDomain();
@@ -171,14 +178,17 @@ class DomainProcessorTest {
   }
 
   @BeforeEach
-  public void setUp() throws Exception {
-    mementos.add(TestUtils.silenceOperatorLogger()
-          .collectLogMessages(logRecords, NOT_STARTING_DOMAINUID_THREAD).withLogLevel(Level.FINE));
+  void setUp() throws Exception {
+    consoleHandlerMemento = TestUtils.silenceOperatorLogger()
+          .collectLogMessages(logRecords, NOT_STARTING_DOMAINUID_THREAD).withLogLevel(Level.FINE);
+    mementos.add(consoleHandlerMemento);
     mementos.add(testSupport.install());
     mementos.add(httpSupport.install());
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "DOMAINS", presenceInfoMap));
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domainEventK8SObjects", domainEventObjects));
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "namespaceEventK8SObjects", nsEventObjects));
+    mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "makeRightFiberGates", makeRightFiberGates));
+    mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "statusFiberGates", statusFiberGates));
     mementos.add(StaticStubSupport.install(PodStepContext.class, "productVersion", "unit-test"));
     mementos.add(TuningParametersStub.install());
     mementos.add(InMemoryCertificates.install());
@@ -193,7 +203,7 @@ class DomainProcessorTest {
   }
 
   @AfterEach
-  public void tearDown() throws Exception {
+  void tearDown() throws Exception {
     testSupport.throwOnCompletionFailure();
 
     mementos.forEach(Memento::revert);
@@ -227,7 +237,7 @@ class DomainProcessorTest {
   void whenDomainConfiguredForMaxServers_establishMatchingPresence() {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(MAX_SERVERS);
 
-    DomainPresenceInfo info = new DomainPresenceInfo(domain);
+    DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
     processor.createMakeRightOperation(info).execute();
 
     assertServerPodAndServicePresent(info, ADMIN_NAME);
@@ -243,7 +253,7 @@ class DomainProcessorTest {
   void whenMakeRightRun_updateDomainStatus() {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
 
-    processor.createMakeRightOperation(new DomainPresenceInfo(domain)).execute();
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
 
     Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
 
@@ -261,15 +271,10 @@ class DomainProcessorTest {
     Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineClusteredServerResources);
 
     domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
-    processor.createMakeRightOperation(new DomainPresenceInfo(domain)).withExplicitRecheck().execute();
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).withExplicitRecheck().execute();
 
     assertThat((int) getServerServices().count(), equalTo(MIN_REPLICAS + NUM_ADMIN_SERVERS));
     assertThat(getRunningPods().size(), equalTo(MIN_REPLICAS + NUM_ADMIN_SERVERS + NUM_JOB_PODS));
-  }
-
-  private List<CoreV1Event> getEventsAfterTimestamp(OffsetDateTime timestamp) {
-    return testSupport.<CoreV1Event>getResources(KubernetesTestSupport.EVENT).stream()
-            .filter(e -> e.getLastTimestamp().isAfter(timestamp)).collect(Collectors.toList());
   }
 
   @Test
@@ -357,8 +362,10 @@ class DomainProcessorTest {
   }
 
   private Boolean minAvailableMatches(List<V1beta1PodDisruptionBudget> runningPDBs, int count) {
-    return runningPDBs.stream().findFirst().map(V1beta1PodDisruptionBudget::getSpec)
-            .map(s -> s.getMinAvailable().getIntValue()).orElse(0) == count;
+    return runningPDBs.stream().findFirst()
+          .map(V1beta1PodDisruptionBudget::getSpec)
+          .map(V1beta1PodDisruptionBudgetSpec::getMinAvailable)
+          .map(IntOrString::getIntValue).orElse(0) == count;
   }
 
   @Test
@@ -469,79 +476,6 @@ class DomainProcessorTest {
     assertServerPodNotPresent(info, MS_PREFIX + 2);
 
     assertThat(info.getClusterService(CLUSTER), notNullValue());
-  }
-
-  @Test
-  void whenMakeRightOperationHasNoDomainUpdates_domainProcessingEventsNotGenerated()
-          throws JsonProcessingException {
-    establishPreviousIntrospection(null, Arrays.asList(1, 2, 3, 4));
-    for (Integer i : Arrays.asList(1,2,3,4)) {
-      domainConfigurator.configureServer(MS_PREFIX + i);
-    }
-    domainConfigurator.configureCluster(CLUSTER).withReplicas(3);
-    DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
-
-    processor.createMakeRightOperation(info).execute();
-
-    // Run the make right flow again with explicit recheck and no domain updates
-    OffsetDateTime timestamp = SystemClock.now();
-    processor.createMakeRightOperation(info).withExplicitRecheck().execute();
-    assertThat("Event DOMAIN_PROCESSING_STARTED",
-            doesNotContainEvent(getEventsAfterTimestamp(timestamp), DOMAIN_PROCESSING_STARTING_EVENT), is(true));
-    assertThat("Event DOMAIN_PROCESSING_COMPLETED_EVENT",
-            doesNotContainEvent(getEventsAfterTimestamp(timestamp), DOMAIN_PROCESSING_COMPLETED_EVENT), is(true));
-  }
-
-  @Test
-  void whenMakeRightOperationHasNoDomainUpdatesAndServiceOnlyServers_domainProcessingEventsNotGenerated()
-          throws JsonProcessingException {
-    establishPreviousIntrospection(null, Arrays.asList(1, 2, 3, 4));
-    for (Integer i : Arrays.asList(1,2,3,4)) {
-      domainConfigurator.configureServer(MS_PREFIX + i);
-    }
-    domainConfigurator.configureCluster(CLUSTER).withReplicas(3).withPrecreateServerService(true);
-    DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
-
-    processor.createMakeRightOperation(info).execute();
-
-    // Run the make right flow again with explicit recheck and no domain updates
-    OffsetDateTime timestamp = SystemClock.now();
-    processor.createMakeRightOperation(info).withExplicitRecheck().execute();
-    assertThat("Event DOMAIN_PROCESSING_STARTED",
-            doesNotContainEvent(getEventsAfterTimestamp(timestamp), DOMAIN_PROCESSING_STARTING_EVENT), is(true));
-    assertThat("Event DOMAIN_PROCESSING_COMPLETED_EVENT",
-            doesNotContainEvent(getEventsAfterTimestamp(timestamp), DOMAIN_PROCESSING_COMPLETED_EVENT), is(true));
-  }
-
-  private static boolean doesNotContainEvent(List<CoreV1Event> events, String reason) {
-    return Optional.ofNullable(events).get()
-            .stream()
-            .filter(e -> reason.equals(e.getReason())).findFirst().orElse(null) == null;
-  }
-
-  @Test
-  void whenScalingUpDomain_domainProcessingCompletedEventsGenerated()
-          throws JsonProcessingException {
-    establishPreviousIntrospection(null, Arrays.asList(1, 2));
-
-    domainConfigurator.configureCluster(CLUSTER).withReplicas(2);
-
-    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
-
-    // Scale up the cluster and execute the make right flow again with explicit recheck
-    domainConfigurator.configureCluster(CLUSTER).withReplicas(3);
-    newDomain.getMetadata().setCreationTimestamp(SystemClock.now());
-    OffsetDateTime timestamp = SystemClock.now();
-    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain))
-            .withExplicitRecheck().execute();
-    assertThat("Event DOMAIN_PROCESSING_COMPLETED_EVENT",
-            containsEvent(getEventsAfterTimestamp(timestamp), DOMAIN_PROCESSING_COMPLETED_EVENT), is(true));
-  }
-
-  private static boolean containsEvent(List<CoreV1Event> events, String reason) {
-    return Optional.ofNullable(events).get()
-            .stream()
-            .filter(e -> reason.equals(e.getReason())).findFirst().orElse(null) != null;
   }
 
   @Test
@@ -744,6 +678,15 @@ class DomainProcessorTest {
   private static final String OLD_INTROSPECTION_STATE = "123";
   private static final String NEW_INTROSPECTION_STATE = "124";
   private static final String INTROSPECTOR_MAP_NAME = UID + INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
+
+  @Test
+  void beforeIntrospectionForNewDomain_addDefaultCondition() {
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
+    testSupport.addDomainPresenceInfo(info);
+    testSupport.runSteps(new DomainProcessorImpl.StartPlanStep(info, null));
+
+    assertThat(info.getDomain(), hasCondition(Completed).withStatus("False"));
+  }
 
   @Test
   void whenDomainHasRunningServersAndExistingTopology_dontRunIntrospectionJob() throws JsonProcessingException {
@@ -955,7 +898,7 @@ class DomainProcessorTest {
     assertThat(makeRightOperation.wasInspectionRun(), is(false));
   }
 
-  public void configureForDomainInPV(Domain d) {
+  void configureForDomainInPV(Domain d) {
     configureDomain(d).withDomainHomeSourceType(PersistentVolume);
   }
 
@@ -1107,12 +1050,12 @@ class DomainProcessorTest {
   }
 
   @Nonnull
-  public String getManagedPodName(int i) {
+  String getManagedPodName(int i) {
     return LegalNames.toPodName(UID, getManagedServerName(i));
   }
 
   @Nonnull
-  public String getAdminPodName() {
+  String getAdminPodName() {
     return LegalNames.toPodName(UID, ADMIN_NAME);
   }
 
@@ -1316,7 +1259,7 @@ class DomainProcessorTest {
     processor.createMakeRightOperation(new DomainPresenceInfo(domain)).withExplicitRecheck().execute();
 
     Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
-    assertThat(getStatusReason(updatedDomain), equalTo("ErrBadDomain"));
+    assertThat(getStatusReason(updatedDomain), equalTo("DomainInvalid"));
     assertThat(getStatusMessage(updatedDomain), stringContainsInOrder("managedServers", "ms1"));
   }
   
@@ -1364,4 +1307,43 @@ class DomainProcessorTest {
         .build();
   }
 
+  @Test
+  @Disabled
+  void whenExceptionDuringProcessing_reportInDomainStatus() {
+    DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
+    forceExceptionDuringProcessing();
+
+    processor.createMakeRightOperation(new DomainPresenceInfo(domain)).withExplicitRecheck().execute();
+    testSupport.setTime(DomainPresence.getDomainPresenceFailureRetrySeconds(), TimeUnit.SECONDS);
+
+    assertThat(domain, hasCondition(Failed).withReason(Internal));
+  }
+
+  private void forceExceptionDuringProcessing() {
+    consoleHandlerMemento.ignoringLoggedExceptions(NullPointerException.class);
+    domain.getSpec().withWebLogicCredentialsSecret(null);
+  }
+
+  @Test
+  void whenExceptionDuringProcessing_sendAbortedEvent() {
+    DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
+    forceExceptionDuringProcessing();
+    int time = 0;
+
+    for (int numRetries = 0; numRetries < DomainPresence.getDomainPresenceFailureRetryMaxCount(); numRetries++) {
+      processor.createMakeRightOperation(new DomainPresenceInfo(domain)).withExplicitRecheck().execute();
+      time += DomainPresence.getDomainPresenceFailureRetrySeconds();
+      testSupport.setTime(time, TimeUnit.SECONDS);
+    }
+
+    assertThat(getEvents().stream().anyMatch(this::isDomainProcessingAbortedEvent), is(true));
+  }
+
+  private List<CoreV1Event> getEvents() {
+    return testSupport.getResources(KubernetesTestSupport.EVENT);
+  }
+
+  private boolean isDomainProcessingAbortedEvent(CoreV1Event e) {
+    return DOMAIN_PROCESSING_ABORTED_EVENT.equals(e.getReason());
+  }
 }

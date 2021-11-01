@@ -54,6 +54,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_GITHUB_CHART_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.SSL_PROPERTIES;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -472,7 +473,7 @@ class ItOperatorWlsUpgrade {
                     .serverPod(new ServerPod()
                             .addEnvItem(new V1EnvVar()
                                     .name("JAVA_OPTIONS")
-                                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                                    .value(SSL_PROPERTIES))
                             .addEnvItem(new V1EnvVar()
                                     .name("USER_MEM_ARGS")
                                     .value("-Djava.security.egd=file:/dev/./urandom ")))
@@ -504,10 +505,14 @@ class ItOperatorWlsUpgrade {
         "Getting admin server node port failed");
 
     logger.info("Validating WebLogic admin server access by login to console");
-    boolean loginSuccessful = assertDoesNotThrow(() -> {
-      return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-    }, "Access to admin server node port failed");
-    assertTrue(loginSuccessful, "Console login validation failed");
+    //boolean loginSuccessful = assertDoesNotThrow(() -> {
+    testUntil(
+        assertDoesNotThrow(() -> {
+          return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+        }, "Access to admin server node port failed"),
+        logger,
+        "Console login validation");
+    //assertTrue(loginSuccessful, "Console login validation failed");
   }
   
   private void createDomainHomeInImageFromDomainYaml(
@@ -558,10 +563,14 @@ class ItOperatorWlsUpgrade {
         "Getting admin server node port failed");
 
     logger.info("Validating WebLogic admin server access by login to console");
-    boolean loginSuccessful = assertDoesNotThrow(() -> {
-      return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-    }, "Access to admin server node port failed");
-    assertTrue(loginSuccessful, "Console login validation failed");
+    //boolean loginSuccessful = assertDoesNotThrow(() -> {
+    testUntil(
+        assertDoesNotThrow(() -> {
+          return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+        }, "Access to admin server node port failed"),
+        logger,
+        "Console login validation");
+    //assertTrue(loginSuccessful, "Console login validation failed");
   }
 
   private String getApiVersion(String operatorVersion) {

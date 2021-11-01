@@ -395,20 +395,13 @@ function deleteNamespaces {
 # Delete everything individually by name, one by one, in order of type, that matches given label $LABEL_SELECTOR
 # The order is determined by NAMESPACED_TYPES NOT_NAMESPACED_TYPES below...
 function deleteByTypeAndLabel {
-  HANDLE_VOYAGER="false"
-  VOYAGER_ING_NAME="ingresses.voyager.appscode.com"
-  if [ `kubectl get crd $VOYAGER_ING_NAME --ignore-not-found | grep $VOYAGER_ING_NAME | wc -l` = 1 ]; then
-    HANDLE_VOYAGER="true"
-  else
-    VOYAGER_ING_NAME=""
-  fi
 
   DOMAIN_CRD="domains.weblogic.oracle"
   if [ ! `kubectl get crd $DOMAIN_CRD --ignore-not-found | grep $DOMAIN_CRD | wc -l` = 1 ]; then
     DOMAIN_CRD=""
   fi
 
-  NAMESPACED_TYPES="$DOMAIN_CRD pod job deploy rs service ingress $VOYAGER_ING_NAME pvc cm serviceaccount role rolebinding secret"
+  NAMESPACED_TYPES="$DOMAIN_CRD pod job deploy rs service ingress pvc cm serviceaccount role rolebinding secret"
 
   NOT_NAMESPACED_TYPES="pv crd clusterroles clusterrolebindings"
 
@@ -430,13 +423,6 @@ function deleteByTypeAndLabel {
   rm -f $tempfile-0
   rm -f $tempfile-1
 
-  if [ "$HANDLE_VOYAGER" = "true" ]; then
-    if [ ! "$DRY_RUN" = "true" ]; then
-      echo @@ `timestamp` Info: Deleting voyager controller.
-      # calls script in utility.sh
-      deleteVoyagerOperator
-    fi
-  fi
 }
 
 # function genericDelete
@@ -694,7 +680,7 @@ deleteByTypeAndLabel
 
 g_arg1="all,cm,pvc,roles,rolebindings,serviceaccount,secrets,ingress,deployments"
 g_arg2="crd,pv,ns,clusterroles,clusterrolebindings"
-g_arg3="Namespace/ns-|logstash|kibana|elastisearch|weblogic|elk|domain|traefik|voyager|apache-webtier|mysql|test|opns|oracle-db|rcu|prometheus-server|prometheus-alertmanager|prometheus-kube-state-metrics|grafana-clusterrole|grafana-clusterrolebinding"
+g_arg3="Namespace/ns-|logstash|kibana|elastisearch|weblogic|elk|domain|traefik|apache-webtier|mysql|test|opns|oracle-db|rcu|prometheus-server|prometheus-alertmanager|prometheus-kube-state-metrics|grafana-clusterrole|grafana-clusterrolebinding"
 
 #
 # Phase 1 (continued):  wait 15 seconds to see if artifacts dissappear naturally due to phase 1 effort

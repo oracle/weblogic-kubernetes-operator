@@ -34,6 +34,7 @@ public class OperatorParams {
   private static final String DOMAIN_PRESENCE_FAILURE_RETRY_MAX_COUNT = "domainPresenceFailureRetryMaxCount";
   private static final String DOMAIN_PRESENCE_FAILURE_RETRY_SECONDS = "domainPresenceFailureRetrySeconds";
   private static final String FEATURE_GATES = "featureGates";
+  private static final String KUBERNETES_PLATFORM = "kubernetesPlatform";
 
   // Adding some of the most commonly used params for now
   private List<String> domainNamespaces;
@@ -57,6 +58,7 @@ public class OperatorParams {
   private int domainPresenceFailureRetryMaxCount = 5;
   private int domainPresenceFailureRetrySeconds = 10;
   private String featureGates;
+  private String kubernetesPlatform;
 
   public OperatorParams domainNamespaces(List<String> domainNamespaces) {
     this.domainNamespaces = domainNamespaces;
@@ -163,6 +165,11 @@ public class OperatorParams {
     return this;
   }
 
+  public OperatorParams kubernetesPlatform(String kubernetesPlatform) {
+    this.kubernetesPlatform = kubernetesPlatform;
+    return this;
+  }
+
   public String getServiceAccount() {
     return serviceAccount;
   }
@@ -173,6 +180,10 @@ public class OperatorParams {
 
   public String getFeatureGates() {
     return featureGates;
+  }
+
+  public String getKubernetesPlatform() {
+    return kubernetesPlatform;
   }
 
   /**
@@ -226,7 +237,9 @@ public class OperatorParams {
     if (domainPresenceFailureRetrySeconds > 0) {
       values.put(DOMAIN_PRESENCE_FAILURE_RETRY_SECONDS, domainPresenceFailureRetrySeconds);
     }
-
+    if (kubernetesPlatform != null) {
+      values.put(KUBERNETES_PLATFORM, kubernetesPlatform);
+    }
     values.values().removeIf(Objects::isNull);
     return values;
   }

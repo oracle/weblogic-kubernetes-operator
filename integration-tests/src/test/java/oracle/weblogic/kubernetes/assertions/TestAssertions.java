@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Secret;
 import oracle.weblogic.kubernetes.actions.impl.LoggingExporter;
 import oracle.weblogic.kubernetes.assertions.impl.Apache;
@@ -286,6 +287,22 @@ public class TestAssertions {
   }
 
   /**
+   * Checks if the pod is running in a given namespace.
+   * The method assumes the pod name to starts with provided value for podName
+   * and decorated with provided label selector
+   * @param podName name of pod
+   * @param labels label for pod
+   * @param namespace in which to check for the pod existence
+   * @return true if pods are exist and running otherwise false
+   * @throws ApiException when there is error in querying the cluster
+   */
+  public static Callable<Boolean> isPodReady(String namespace,
+                                             Map<String, String> labels,
+                                             String podName) throws ApiException {
+    return Pod.podReady(namespace, podName,labels);
+  }
+
+  /**
    * Check if a Kubernetes pod is in initializing state.
    *
    * @param podName   name of the pod to check for
@@ -436,9 +453,14 @@ public class TestAssertions {
    * @return true if the WebLogic administration service node port is accessible otherwise false
    * @throws java.io.IOException when connection to WebLogic administration server fails
    */
-  public static boolean adminNodePortAccessible(int nodePort, String userName, String password)
+  public static Callable<Boolean> adminNodePortAccessible(int nodePort, String userName, 
+                                                     String password, String... routeHost)
       throws IOException {
-    return Domain.adminNodePortAccessible(nodePort, userName, password);
+    if (routeHost.length == 0) {
+      return () -> Domain.adminNodePortAccessible(nodePort, userName, password, null);
+    } else {
+      return () -> Domain.adminNodePortAccessible(nodePort, userName, password, routeHost[0]);
+    }
   }
 
   /**
@@ -651,10 +673,11 @@ public class TestAssertions {
    * Check if Prometheus is running.
    *
    * @param namespace in which is prometheus is running
+   * @param releaseName name of prometheus helm chart release
    * @return true if running false otherwise
    */
-  public static Callable<Boolean> isPrometheusReady(String namespace) {
-    return Prometheus.isReady(namespace);
+  public static Callable<Boolean> isPrometheusReady(String namespace, String releaseName) {
+    return Prometheus.isReady(namespace, releaseName);
   }
 
   /**
@@ -729,5 +752,17 @@ public class TestAssertions {
     }
 
     return false;
+  }
+
+  /**
+   * Check if executed command contains expected output.
+   *
+   * @param pod   V1Pod object
+   * @param searchKey expected string in the log
+   * @return true if the output matches searchKey otherwise false
+   */
+  public static Callable<Boolean> searchPodLogForKey(V1Pod pod, String searchKey) {
+    return () -> oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getPodLog(pod.getMetadata().getName(),
+        pod.getMetadata().getNamespace()).contains(searchKey);
   }
 }

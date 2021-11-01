@@ -119,7 +119,7 @@ the `helm upgrade` command requires that you supply a new Helm chart and image. 
 ```shell
 $ helm upgrade \
   --reuse-values \
-  --set image=ghcr.io/oracle/weblogic-kubernetes-operator:3.3.2 \
+  --set image=ghcr.io/oracle/weblogic-kubernetes-operator:{{< latestVersion >}} \
   --namespace weblogic-operator-namespace \
   --wait \
   weblogic-operator \

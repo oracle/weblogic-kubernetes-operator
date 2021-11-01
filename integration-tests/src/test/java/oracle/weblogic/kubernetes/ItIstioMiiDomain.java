@@ -17,7 +17,6 @@ import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1SecretReference;
-import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
@@ -41,6 +40,7 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -52,18 +52,23 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.replaceConfigM
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyIntrospectorRuns;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodIntrospectVersionUpdated;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.isWebLogicPsuPatchApplied;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.startPortForwardProcess;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.stopPortForwardProcess;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployToClusterUsingRest;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.IstioUtils.createAdminServer;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGatewayAndVirtualservice;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployIstioDestinationRule;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.getIstioHttpIngressPort;
+import static oracle.weblogic.kubernetes.utils.IstioUtils.isLocalHostBindingsEnabled;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
@@ -124,7 +129,8 @@ class ItIstioMiiDomain {
    * Deploy istio gateways and virtual service.
    *
    * Verify server pods are in ready state and services are created.
-   * Verify login to WebLogic console is successful thru istio ingress port.
+   * Verify WebLogic console is accessible thru istio ingress port.
+   * Verify WebLogic console is accessible thru kubectl forwarded port.
    * Deploy a web application thru istio http ingress port using REST api.  
    * Access web application thru istio http ingress port using curl.
    * 
@@ -138,7 +144,7 @@ class ItIstioMiiDomain {
    */
   @Test
   @DisplayName("Create WebLogic Domain with mii model with istio")
-  void testIstioMiiDomainWithDynamicUpdate() {
+  void testIstioModelInImageDomain() {
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
@@ -181,25 +187,12 @@ class ItIstioMiiDomain {
 
     logger.info("Check admin service {0} is created in namespace {1}",
         adminServerPodName, domainNamespace);
-    checkServiceExists(adminServerPodName, domainNamespace);
-
-    // check admin server pod is ready
-    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
-
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
     // check managed server services created
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Check managed service {0} is created in namespace {1}",
           managedServerPrefix + i, domainNamespace);
-      checkServiceExists(managedServerPrefix + i, domainNamespace);
-    }
-
-    // check managed server pods are ready
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Wait for managed pod {0} to be ready in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
 
     String clusterService = domainUid + "-cluster-" + clusterName + "." + domainNamespace + ".svc.cluster.local";
@@ -239,10 +232,49 @@ class ItIstioMiiDomain {
           checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
       assertTrue(checkConsole, "Failed to access WebLogic console");
       logger.info("WebLogic console is accessible");
+      String localhost = "localhost";
+      String forwardPort = 
+           startPortForwardProcess(localhost, domainNamespace, 
+           domainUid, 7001);
+      assertNotNull(forwardPort, "port-forward command fails to assign local port");
+      logger.info("Forwarded local port is {0}", forwardPort);
+      consoleUrl = "http://" + localhost + ":" + forwardPort + "/console/login/LoginForm.jsp";
+      checkConsole = 
+          checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
+      assertTrue(checkConsole, "Failed to access WebLogic console thru port-forwarded port");
+      logger.info("WebLogic console is accessible thru port forwarding");
+      stopPortForwardProcess(domainNamespace);
     } else {
       logger.info("Skipping WebLogic console in WebLogic slim image");
     }
-  
+
+    if (isWebLogicPsuPatchApplied()) {
+      String curlCmd2 = "curl -j -sk --show-error --noproxy '*' "
+          + " -H 'Host: " + domainNamespace + ".org'"
+          + " --user " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
+          + " --url http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort
+          + "/management/weblogic/latest/domainRuntime/domainSecurityRuntime?" 
+          + "link=none";
+
+      ExecResult result = null;
+      logger.info("curl command {0}", curlCmd2);
+      result = assertDoesNotThrow(
+        () -> exec(curlCmd2, true));
+
+      if (result.exitValue() == 0) {
+        logger.info("curl command returned {0}", result.toString());
+        assertTrue(result.stdout().contains("SecurityValidationWarnings"), 
+                "Could not access the Security Warning Tool page");
+        assertTrue(!result.stdout().contains("minimum of umask 027"), "umask warning check failed");
+        logger.info("No minimum umask warning reported");
+      } else {
+        assertTrue(false, "Curl command failed to get DomainSecurityRuntime");
+      }
+    } else {
+      logger.info("Skipping Security warning check, since Security Warning tool "
+            + " is not available in the WLS Release {0}", WEBLOGIC_IMAGE_TAG);
+    } 
+
     Path archivePath = Paths.get(ITTESTS_DIR, "../operator/integration-tests/apps/testwebapp.war");
     ExecResult result = null;
     result = deployToClusterUsingRest(K8S_NODEPORT_HOST, 
@@ -323,8 +355,7 @@ class ItIstioMiiDomain {
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
-            .adminServer(new AdminServer()
-                .serverStartState("RUNNING"))
+            .adminServer(createAdminServer())
             .addClustersItem(new Cluster()
                 .clusterName(clusterName)
                 .replicas(replicaCount)
@@ -332,7 +363,8 @@ class ItIstioMiiDomain {
             .configuration(new Configuration()
                     .istio(new Istio()
                          .enabled(Boolean.TRUE)
-                         .readinessPort(8888))
+                         .readinessPort(8888)
+                         .localhostBindingsEnabled(isLocalHostBindingsEnabled()))
                      .model(new Model()
                          .domainType("WLS")
                          .configMap(configmapName)
@@ -342,5 +374,4 @@ class ItIstioMiiDomain {
     setPodAntiAffinity(domain);
     return domain;
   }
-
 }
