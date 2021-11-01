@@ -397,6 +397,7 @@ public class ItMiiDomainModelInPV {
    * @param customWDTHome WDT home location to put the model file
    */
   public static void buildMIIandPushToRepo(String imageName, String imageTag, String customWDTHome) {
+    logger = getLogger();
     final String image = imageName + ":" + imageTag;
     logger.info("Building image {0}", image);
     Path emptyModelFile = Paths.get(TestConstants.RESULTS_ROOT, "miitemp", "empty-wdt-model.yaml");
@@ -431,6 +432,7 @@ public class ItMiiDomainModelInPV {
    * @param image image to push to repo
    */
   public static void dockerLoginAndPushImage(String image) {
+    logger = getLogger();
     // login to docker
     if (!OCIR_USERNAME.equals(REPO_DUMMY_VALUE)) {
       logger.info("docker login");
