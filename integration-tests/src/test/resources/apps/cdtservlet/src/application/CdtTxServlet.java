@@ -12,6 +12,7 @@ import java.sql.Statement;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Hashtable;
+import java.util.Date;
 import javax.jms.ConnectionFactory;
 import javax.jms.Destination;
 import javax.jms.JMSContext;
@@ -42,6 +43,8 @@ public class CdtTxServlet extends HttpServlet {
   private TransactionManager tm = (TransactionManager)
       TransactionHelper.getTransactionHelper().getTransactionManager();
   PrintWriter out = null;
+  String tableName = "cdt_table";
+  java.sql.Connection conn;
 
   /**
    * Handles the HTTP <code>GET</code> method.
@@ -53,7 +56,6 @@ public class CdtTxServlet extends HttpServlet {
    * @throws IOException      if an I/O error occurs
    */
   protected void doGet(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
-    //PrintWriter out = response.getWriter();
     out = response.getWriter();
     System.out.println("in cdttxservlet doGet method");
 
@@ -70,8 +72,8 @@ public class CdtTxServlet extends HttpServlet {
 
     String domain2Url = "t3://domain2-managed-server1." + domain2NsParam + ","
         + "domain2-managed-server2." + domain2NsParam + ":8001";
-    String tableName = "cdt_table";
-    java.sql.Connection conn;
+    //String tableName = "cdt_table";
+    //java.sql.Connection conn;
     Destination d;
     Context ctx;
     JMSContext context;
@@ -89,7 +91,7 @@ public class CdtTxServlet extends HttpServlet {
           "weblogic.jndi.WLInitialContextFactory");
       String providerUrl = "t3://domain1-managed-server1." + domain1NsParam + ","
           + "domain1-managed-server2." + domain1NsParam + ":8001";
-      System.out.println("BR: providerUrl = " + providerUrl);
+      System.out.println("providerUrl = " + providerUrl);
       h1.put(Context.PROVIDER_URL, providerUrl);
 
       //Get the context from domain1. This is where JMS Queue is configured
@@ -159,13 +161,14 @@ public class CdtTxServlet extends HttpServlet {
       sleep(30);
 
       String body = context.createConsumer(d).receiveBody(String.class);
-      System.out.println("message received from the queue : " + body);
+      System.out.println(getDateAndTimeStamp() + ":   message received from the queue : " + body);
       out.println("message received from the queue : " + body);
       boolean msgRecd = jmsMsg.equals(body);
 
       boolean dataGotInserted = readData(conn, tableName);
       if (dataGotInserted && msgRecd) {
-        out.println("Status=SUCCESS: Transaction committed successfully with TMAfterTLogBeforeCommitExit set");
+        System.out.println(getDateAndTimeStamp() + ":   Status=SUCCESS: Transaction committed successfully with TMAfterTLogBeforeCommitExit set");
+        out.println(getDateAndTimeStamp() + ":  Status=SUCCESS: Transaction committed successfully with TMAfterTLogBeforeCommitExit set");
       } else {
         out.println("Status=FAILURE: Transaction failed to commit with TMAfterTLogBeforeCommitExit set");
       }
@@ -173,8 +176,20 @@ public class CdtTxServlet extends HttpServlet {
     } catch (Exception unk) {
       out.println("Got Exception when inserting data into db table or JMS queue " + unk);
       unk.printStackTrace();
+    } finally {
+      try {
+        dropTable(conn, tableName);
+      } catch (SQLException sqle) {
+        sqle.printStackTrace();
+      }
     }
     out.close();
+  }
+
+  public static String getDateAndTimeStamp() {
+    DateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+    Date date = new Date();
+    return dateFormat.format(date) + "-" + System.currentTimeMillis();
   }
 
   protected void doPost(HttpServletRequest request,
@@ -202,6 +217,24 @@ public class CdtTxServlet extends HttpServlet {
     }
   }
 
+  private void dropTable(Connection conn, String tableName) throws SQLException {
+    Statement stmt = null;
+    try {
+      String dropSQL = String.format("drop table %s purge", tableName);
+      System.out.println("drop table String = " + dropSQL);
+      out.println("drop table String = " + dropSQL);
+      stmt = conn.createStatement();
+      stmt.execute(dropSQL);
+    } catch (SQLException sqle) {
+      System.out.println("Got SQL Exception when dropping table ");
+      out.println("Got SQL Exception when dropping table ");
+      sqle.getMessage();
+      throw sqle;
+    } finally {
+      out.println("Created table - closing stmt");
+      stmt.close();
+    }
+  }
   private void insertData(Connection conn, String tableName) throws SQLException {
     Statement stmt = null;
     try {
@@ -238,7 +271,7 @@ public class CdtTxServlet extends HttpServlet {
       System.out.println("got from DB - " + rs.getInt(1));
       out.println("got from DB - " + rs.getInt(1));
       String message = rs.getString(2);
-      System.out.println("got from DB - " + message);
+      System.out.println(getDateAndTimeStamp() + ":   got from DB - " + message);
       out.println("got from DB - " + message);
       getData = data.equals(message);
     } catch (SQLException sqle) {

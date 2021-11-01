@@ -43,18 +43,19 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPodIP;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppIsActive;
 import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DbUtils.getDBNodePort;
@@ -66,6 +67,7 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
@@ -108,6 +110,12 @@ class ItCrossDomainTransaction {
   private static LoggingFacade logger = null;
   static String dbUrl;
   static int dbNodePort;
+  private static String domain1AdminExtSvcRouteHost = null;
+  private static String domain2AdminExtSvcRouteHost = null;
+  private static String adminExtSvcRouteHost = null;
+  private static String hostAndPort = null;
+  private static String dbPodIP = null;
+  private static int dbPort = 1521;
 
   /**
    * Install Operator.
@@ -146,6 +154,11 @@ class ItCrossDomainTransaction {
     dbNodePort = getDBNodePort(domain2Namespace, "oracledb");
     logger.info("DB Node Port = {0}", dbNodePort);
 
+    dbPodIP = assertDoesNotThrow(
+        () -> getPodIP(domain2Namespace, "", "oracledb"),
+        String.format("Get pod IP address failed with ApiException for oracledb in namespace %s",
+            domain2Namespace));
+    logger.info("db Pod IP {0} ", dbPodIP);
     // Now that we got the namespaces for both the domains, we need to update the model properties
     // file with the namespaces. For a cross-domain transaction to work, we need to have the externalDNSName
     // set in the config file. Cannot set this after the domain is up since a server restart is
@@ -208,8 +221,10 @@ class ItCrossDomainTransaction {
 
     FileOutputStream out = new FileOutputStream(PROPS_TEMP_DIR + "/" + propFileName);
     props.setProperty("NAMESPACE", domainNamespace);
-    props.setProperty("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST);
-    props.setProperty("DBPORT", Integer.toString(dbNodePort));
+    //props.setProperty("K8S_NODEPORT_HOST", K8S_NODEPORT_HOST);
+    //props.setProperty("DBPORT", Integer.toString(dbNodePort));
+    props.setProperty("K8S_NODEPORT_HOST", dbPodIP);
+    props.setProperty("DBPORT", Integer.toString(dbPort));
     props.store(out, null);
     out.close();
   }
@@ -319,8 +334,10 @@ class ItCrossDomainTransaction {
 
     //create domain1
     createDomain(domainUid1, domain1Namespace, domain1AdminSecretName, domain1Image);
+    domain1AdminExtSvcRouteHost = adminExtSvcRouteHost;
     //create domain2
     createDomain(domainUid2, domain2Namespace, domain2AdminSecretName, domain2Image);
+    domain2AdminExtSvcRouteHost = adminExtSvcRouteHost;
 
     logger.info("Getting admin server external service node port(s)");
     domain1AdminServiceNodePort = assertDoesNotThrow(
@@ -332,6 +349,8 @@ class ItCrossDomainTransaction {
       () -> getServiceNodePort(domain2Namespace, getExternalServicePodName(domain2AdminServerPodName), "default"),
         "Getting admin server node port failed");
     assertNotEquals(-1, admin2ServiceNodePort, "admin server default node port is not valid");
+
+    hostAndPort = getHostAndPort(domain1AdminExtSvcRouteHost, domain1AdminServiceNodePort);
   }
 
   /*
@@ -355,8 +374,8 @@ class ItCrossDomainTransaction {
   void testCrossDomainTransaction() {
 
     String curlRequest = String.format("curl -v --show-error --noproxy '*' "
-            + "http://%s:%s/TxForward/TxForward?urls=t3://%s.%s:7001,t3://%s1.%s:8001,t3://%s1.%s:8001,t3://%s2.%s:8001",
-        K8S_NODEPORT_HOST, domain1AdminServiceNodePort, domain1AdminServerPodName, domain1Namespace,
+            + "http://%s/TxForward/TxForward?urls=t3://%s.%s:7001,t3://%s1.%s:8001,t3://%s1.%s:8001,t3://%s2.%s:8001",
+        hostAndPort, domain1AdminServerPodName, domain1Namespace,
         domain1ManagedServerPrefix, domain1Namespace, domain2ManagedServerPrefix, domain2Namespace,
         domain2ManagedServerPrefix, domain2Namespace);
 
@@ -389,8 +408,8 @@ class ItCrossDomainTransaction {
   void testCrossDomainTransactionWithFailInjection() {
 
     String curlRequest = String.format("curl -v --show-error --noproxy '*' "
-            + "http://%s:%s/cdttxservlet/cdttxservlet?namespaces=%s,%s",
-        K8S_NODEPORT_HOST, domain1AdminServiceNodePort, domain1Namespace, domain2Namespace);
+            + "http://%s/cdttxservlet/cdttxservlet?namespaces=%s,%s",
+        hostAndPort, domain1Namespace, domain2Namespace);
 
     ExecResult result = null;
     logger.info("curl command {0}", curlRequest);
@@ -425,7 +444,7 @@ class ItCrossDomainTransaction {
   void testCrossDomainTranscatedMDB() {
 
     // No extra header info
-    assertTrue(checkAppIsActive(K8S_NODEPORT_HOST,domain1AdminServiceNodePort,
+    assertTrue(checkAppIsActive(hostAndPort,
                  "", "mdbtopic","cluster-1",
                  ADMIN_USERNAME_DEFAULT,ADMIN_PASSWORD_DEFAULT),
              "MDB application can not be activated on domain1/cluster");
@@ -433,12 +452,12 @@ class ItCrossDomainTransaction {
     logger.info("MDB application is activated on domain1/cluster");
 
     String curlRequest = String.format("curl -v --show-error --noproxy '*' "
-            + "\"http://%s:%s/jmsservlet/jmstest?"
+            + "\"http://%s/jmsservlet/jmstest?"
             + "url=t3://domain2-cluster-cluster-1.%s:8001&"
             + "cf=jms.ClusterConnectionFactory&"
             + "action=send&"
             + "dest=jms/testCdtUniformTopic\"",
-        K8S_NODEPORT_HOST, domain1AdminServiceNodePort, domain2Namespace);
+           hostAndPort, domain2Namespace);
 
     ExecResult result = null;
     logger.info("curl command {0}", curlRequest);
@@ -457,10 +476,10 @@ class ItCrossDomainTransaction {
 
   private boolean checkLocalQueue() {
     String curlString = String.format("curl -v --show-error --noproxy '*' "
-            + "\"http://%s:%s/jmsservlet/jmstest?"
+            + "\"http://%s/jmsservlet/jmstest?"
             + "url=t3://localhost:7001&"
             + "action=receive&dest=jms.testAccountingQueue\"",
-        K8S_NODEPORT_HOST, domain1AdminServiceNodePort);
+            hostAndPort);
 
     logger.info("curl command {0}", curlString);
 
@@ -509,6 +528,16 @@ class ItCrossDomainTransaction {
       checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
 
+    adminExtSvcRouteHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
+    // The fail inject test case, the response to the curl command takes longer than the default timeout of 30s
+    // So, have to increase the proxy timeout for the route
+    String command = "oc -n " + domainNamespace + " annotate route " 
+                      + getExternalServicePodName(adminServerPodName) 
+                      + " --overwrite haproxy.router.openshift.io/timeout=600s"; 
+    logger.info("command to set timeout = {0}", command);
+    assertDoesNotThrow(
+        () -> exec(command, true));
+
     logger.info("Getting node port");
     int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(domainNamespace,
         getExternalServicePodName(adminServerPodName), "default"),
@@ -516,11 +545,13 @@ class ItCrossDomainTransaction {
 
     if (!WEBLOGIC_SLIM) {
       logger.info("Validating WebLogic admin console");
-      boolean loginSuccessful = assertDoesNotThrow(() -> {
-        return TestAssertions.adminNodePortAccessible(serviceNodePort,
-                 ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-      }, "Access to admin server node port failed");
-      assertTrue(loginSuccessful, "Console login validation failed");
+      testUntil(
+          assertDoesNotThrow(() -> {
+            return TestAssertions.adminNodePortAccessible(serviceNodePort,
+                 ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, adminExtSvcRouteHost);
+          }, "Access to admin server node port failed"),
+          logger,
+          "Console login validation");
     } else {
       logger.info("Skipping WebLogic Console check for Weblogic slim images");
     }
