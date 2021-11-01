@@ -191,7 +191,7 @@ class ItDiagnosticsFailedCondition {
     String imageTag = "empty-domain-image";
     ItMiiDomainModelInPV.buildMIIandPushToRepo(imageName, imageTag, null);
 
-    String badModelFileCm = "modelInCM";
+    String badModelFileCm = "bad-model-in-cm";
     Path badModelFile = Paths.get(MODEL_DIR, "bad-model-file.yaml");
     final List<Path> modelList = Collections.singletonList(badModelFile);
 
