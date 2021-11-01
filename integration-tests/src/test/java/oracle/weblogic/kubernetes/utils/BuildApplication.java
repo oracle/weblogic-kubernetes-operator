@@ -61,7 +61,7 @@ public class BuildApplication {
    *     antParams.put("key","value");
    *
    *     Path archivesDir = BuildApplication.buildApplication(
-   *         "/scratch/speriyat/weblogic-kubernetes-operator/new-integration-tests/src/test/resources/apps/clusterview",
+   *         "/scratch/uid/weblogic-kubernetes-operator/integration-tests/src/test/resources/apps/clusterview",
    *         antParams,
    *         "clean build all" // these targets must be supported by your build file
    *         "build" // the directory your build system creates
@@ -82,8 +82,28 @@ public class BuildApplication {
    * @param namespace name of the namespace to create the pod in
    * @return Path path of the archive built
    */
-  public static Path buildApplication(Path appSrcPath, Map<String, String> antParams,
-                                      String antTargets, String archiveDistDir, String namespace) {
+  public static Path buildApplication(
+          Path appSrcPath, 
+          Map<String, String> antParams,
+          String antTargets, String archiveDistDir, String namespace) {
+    return buildApplication(appSrcPath, antParams, antTargets, archiveDistDir, namespace, null);
+  }
+
+  /**
+   * Build application.
+   * @param appSrcPath path of the application source folder
+   * @param antParams ant parameters
+   * @param antTargets ant targets to call
+   * @param archiveDistDir location of the archive built inside source directory
+   * @param namespace name of the namespace to create the pod in
+   * @param targetPath the target path where the application will be archived
+   * @return Path path of the archive built
+   */
+  public static Path buildApplication(
+        Path appSrcPath, Map<String, String> antParams,
+        String antTargets, String archiveDistDir, 
+        String namespace, Path targetPath) {
+
     final LoggingFacade logger = getLogger();
 
     // this secret is used only for non-kind cluster
@@ -92,7 +112,9 @@ public class BuildApplication {
     // Path of temp location for application source directory
     Path tempAppPath = Paths.get(WORK_DIR, "j2eeapplications", appSrcPath.getFileName().toString());
     // directory to copy archives built
-    Path destArchiveBaseDir = Paths.get(WORK_DIR, appSrcPath.getFileName().toString());
+    Path destArchiveBaseDir = 
+         targetPath == null  ? Paths.get(WORK_DIR, appSrcPath.getFileName().toString()) : targetPath;
+    logger.info("DestArchiveBaseDir set to {0}", destArchiveBaseDir.toString());
     Path destDir = null;
 
     assertDoesNotThrow(() -> {
