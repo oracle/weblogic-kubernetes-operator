@@ -26,7 +26,7 @@ The fastest way to experience the operator is to follow the [Quick Start guide](
 
 ***
 The [current release of the operator](https://github.com/oracle/weblogic-kubernetes-operator/releases) is 3.3.3.
-This release was published on TBD, 2021.
+This release was published on November 1, 2021.
 ***
 
 # Documentation
