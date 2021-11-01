@@ -61,6 +61,8 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyClu
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
@@ -224,7 +226,6 @@ class ItManageNameSpace {
     //upgrade operator to manage domains with Labeled namespaces
     int externalRestHttpsPort = getServiceNodePort(opNamespaces[1], "external-weblogic-operator-svc");
     assertDoesNotThrow(() -> createNamespace(manageByLabelNS));
-    namespacesToClean.add(manageByLabelNS);
     Map<String, String> labels = new HashMap<>();
     labels.put("mytest", "weblogic2");
     setLabelToNamespace(manageByLabelNS, labels);
@@ -236,6 +237,7 @@ class ItManageNameSpace {
         .domainNamespaceSelectionStrategy("LabelSelector");
 
     assertTrue(upgradeAndVerifyOperator(opNamespaces[1], opParams));
+    namespacesToClean.add(manageByLabelNS);
 
     //verify domain is started
     createSecrets(manageByLabelNS);
@@ -395,12 +397,13 @@ class ItManageNameSpace {
     HelmParams opHelmParam = installAndVerifyOperator(OPERATOR_RELEASE_NAME,
         opNamespace, selector,
         selectorValue, true, domainNamespacesValue).getHelmParams();
+    String operExtSVCRouteName = createRouteForOKD("external-weblogic-operator-svc", opNamespace);
+    setTlsTerminationForRoute("external-weblogic-operator-svc", opNamespace);
     managedDomains.forEach((domainNS, domainUid) -> {
           logger.info("Installing and verifying domain {0} in namespace {1}", domainUid, domainNS);
           createSecrets(domainNS);
           assertTrue(createDomainResourceAndVerifyDomainIsRunning(domainNS, domainUid),
               "can't start or verify domain in namespace " + domainNS);
-
           checkOperatorCanScaleDomain(opNamespace, domainUid);
         }
     );

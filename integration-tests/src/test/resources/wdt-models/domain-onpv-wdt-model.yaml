@@ -37,7 +37,7 @@ topology:
 resources:
     FileStore:
         'FileStore-0':
-            Directory: '/u01/oracle/customFileStore/'
+            Directory: '/u01/customFileStore/'
             Target: '@@PROP:adminServerName@@'
     JMSServer:
         'JMSServer-0':

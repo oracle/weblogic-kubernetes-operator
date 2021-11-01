@@ -358,6 +358,7 @@ if [ "$DO_INITIAL_IMAGE" = "true" ]; then
     doCommand -c "echo Running in auxiliary image mode"
     doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-AI"
   fi
+  doCommand -c "export OKD=${OKD}"
   doCommand    "\$MIIWRAPPERDIR/stage-tooling.sh"
   doCommand    "\$MIIWRAPPERDIR/build-model-image.sh"
 fi
