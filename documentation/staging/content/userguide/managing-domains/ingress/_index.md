@@ -7,7 +7,7 @@ pre = "<b> </b>"
 
 Ingresses are one approach provided by Kubernetes to configure load balancers.
 Depending on the version of Kubernetes you are using, and your cloud provider, you may need to use Ingresses.
-For more information about Ingresses, see the [Kubernetes Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) documentation.  
+For more information about Ingresses, see the [Kubernetes Ingress](https://kubernetes.io/docs/concepts/services-networking/ingress/) documentation.
 
 #### WebLogic clusters as backends of an Ingress
 
@@ -58,7 +58,7 @@ additional pods become ready, or pods enter a non-ready state.
 
         Each ingress provider supports a number of annotations in Ingress resources. This Helm chart allows you to define the routing rules without dealing with the detailed provider-specific annotations.
 
-     * Create the Ingress resource manually from a YAML file.  
+      * Create the Ingress resource manually from a YAML file.
 
         Manually create an Ingress YAML file and then apply it to the Kubernetes cluster.
 
