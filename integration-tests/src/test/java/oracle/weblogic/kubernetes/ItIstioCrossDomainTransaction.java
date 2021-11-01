@@ -230,9 +230,8 @@ class ItIstioCrossDomainTransaction {
   private static void buildApplicationsAndDomains() {
 
     //build application archive
-    // Path targetDir = Paths.get(WORK_DIR, this.getClass().getSimpleName());
-    // non-static variable this cannot be referenced from a static context
-    Path targetDir = Paths.get(WORK_DIR, "ItIstioCrossDomainTransaction/txforward");
+    Path targetDir = Paths.get(WORK_DIR, 
+        ItIstioCrossDomainTransaction.class.getName() + "/txforward");
     Path distDir = buildApplication(Paths.get(APP_DIR, "txforward"), null, null,
         "build", domain1Namespace, targetDir);
     logger.info("distDir is {0}", distDir.toString());
@@ -243,7 +242,8 @@ class ItIstioCrossDomainTransaction {
     logger.info("Application is in {0}", appSource);
 
     //build application archive
-    targetDir = Paths.get(WORK_DIR, "ItIstioCrossDomainTransaction/cdtservlet");
+    targetDir = Paths.get(WORK_DIR, 
+        ItIstioCrossDomainTransaction.class.getName() + "/cdtservlet");
     distDir = buildApplication(Paths.get(APP_DIR, "cdtservlet"), null, null,
         "build", domain1Namespace, targetDir);
     logger.info("distDir is {0}", distDir.toString());
@@ -254,7 +254,8 @@ class ItIstioCrossDomainTransaction {
     logger.info("Application is in {0}", appSource1);
 
     //build application archive for JMS Send/Receive
-    targetDir = Paths.get(WORK_DIR, "ItIstioCrossDomainTransaction/jmsservlet");
+    targetDir = Paths.get(WORK_DIR, 
+        ItIstioCrossDomainTransaction.class.getName() + "/jmsservlet");
     distDir = buildApplication(Paths.get(APP_DIR, "jmsservlet"), null, null,
         "build", domain1Namespace, targetDir);
     logger.info("distDir is {0}", distDir.toString());
@@ -281,7 +282,8 @@ class ItIstioCrossDomainTransaction {
         "Could not modify the domain2Namespace in MDB Template file");
 
     //build application archive for MDB
-    targetDir = Paths.get(WORK_DIR, "ItIstioCrossDomainTransaction/mdbtopic");
+    targetDir = Paths.get(WORK_DIR, 
+         ItIstioCrossDomainTransaction.class.getName()  + "/mdbtopic");
     distDir = buildApplication(Paths.get(PROPS_TEMP_DIR, "mdbtopic"), null, null,
         "build", domain1Namespace, targetDir);
     logger.info("distDir is {0}", distDir.toString());

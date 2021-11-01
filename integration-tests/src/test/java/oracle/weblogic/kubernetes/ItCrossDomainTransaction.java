@@ -233,10 +233,9 @@ class ItCrossDomainTransaction {
   private static void buildApplicationsAndDomains() {
 
     //build application archive
-    // Path targetDir = Paths.get(WORK_DIR, this.getClass().getSimpleName());
-    // non-static variable this cannot be referenced from a static context
 
-    Path targetDir = Paths.get(WORK_DIR, "ItCrossDomainTransaction/txforward");
+    Path targetDir = Paths.get(WORK_DIR, 
+         ItCrossDomainTransaction.class.getName() + "/txforward");
     Path distDir = buildApplication(Paths.get(APP_DIR, "txforward"), null, null,
         "build", domain1Namespace, targetDir);
     logger.info("distDir is {0}", distDir.toString());
@@ -247,7 +246,8 @@ class ItCrossDomainTransaction {
     logger.info("Application is in {0}", appSource);
 
     //build application archive
-    targetDir = Paths.get(WORK_DIR, "ItCrossDomainTransaction/cdtservlet");
+    targetDir = Paths.get(WORK_DIR, 
+        ItCrossDomainTransaction.class.getName() + "/cdtservlet");
     distDir = buildApplication(Paths.get(APP_DIR, "cdtservlet"), null, null,
         "build", domain1Namespace, targetDir);
     logger.info("distDir is {0}", distDir.toString());
@@ -258,7 +258,8 @@ class ItCrossDomainTransaction {
     logger.info("Application is in {0}", appSource1);
 
     //build application archive for JMS Send/Receive
-    targetDir = Paths.get(WORK_DIR, "ItCrossDomainTransaction/jmsservlet");
+    targetDir = Paths.get(WORK_DIR, 
+        ItCrossDomainTransaction.class.getName() + "/jmsservlet");
     distDir = buildApplication(Paths.get(APP_DIR, "jmsservlet"), null, null,
         "build", domain1Namespace, targetDir);
     logger.info("distDir is {0}", distDir.toString());
@@ -285,7 +286,8 @@ class ItCrossDomainTransaction {
         "Could not modify the domain2Namespace in MDB Template file");
 
     //build application archive for MDB
-    targetDir = Paths.get(WORK_DIR, "ItCrossDomainTransaction/mdbtopic");
+    targetDir = Paths.get(WORK_DIR, 
+         ItCrossDomainTransaction.class.getName() + "/mdbtopic");
     distDir = buildApplication(Paths.get(PROPS_TEMP_DIR, "mdbtopic"), null, null,
         "build", domain1Namespace, targetDir);
     logger.info("distDir is {0}", distDir.toString());

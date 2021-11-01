@@ -96,7 +96,7 @@ public class BuildApplication {
    * @param antTargets ant targets to call
    * @param archiveDistDir location of the archive built inside source directory
    * @param namespace name of the namespace to create the pod in
-   * @param targetPath name of the namespace to create the pod in
+   * @param targetPath the target path where the application will be archived
    * @return Path path of the archive built
    */
   public static Path buildApplication(
