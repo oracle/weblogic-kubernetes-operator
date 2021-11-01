@@ -192,7 +192,7 @@ class ItDiagnosticsFailedCondition {
     ItMiiDomainModelInPV.buildMIIandPushToRepo(imageName, imageTag, null);
 
     String badModelFileCm = "modelInCM";
-    Path badModelFile = Paths.get(MODEL_DIR, "bad-model-file");
+    Path badModelFile = Paths.get(MODEL_DIR, "bad-model-file.yaml");
     final List<Path> modelList = Collections.singletonList(badModelFile);
 
     ConfigMapUtils.createConfigMapFromFiles(badModelFileCm, modelList, domainNamespace1);
