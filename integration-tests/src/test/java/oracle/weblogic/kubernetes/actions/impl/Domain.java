@@ -535,21 +535,21 @@ public class Domain {
     testUntil(
         () -> copyFileToPod(domainNamespace, adminServerPodName, null,
           Paths.get(RESOURCE_DIR, "python-scripts", "wldf.py"),
-          Paths.get("/u01/oracle/wldf.py")),
+          Paths.get("/u01/wldf.py")),
         logger,
         "Copying wldf.py to admin server pod");
 
     testUntil(
         () -> copyFileToPod(domainNamespace, adminServerPodName, null,
           Paths.get(RESOURCE_DIR, "bash-scripts", "callpyscript.sh"),
-          Paths.get("/u01/oracle/callpyscript.sh")),
+          Paths.get("/u01/callpyscript.sh")),
         logger,
         "Copying callpyscript.sh to admin server pod");
 
     logger.info("Adding execute mode for callpyscript.sh");
     testUntil(
         () -> executeCommandOnPod(adminPod, null, true,
-        "/bin/sh", "-c", "chmod +x /u01/oracle/callpyscript.sh"),
+        "/bin/sh", "-c", "chmod +x /u01/callpyscript.sh"),
         logger,
         "Adding execute mode for callpyscript.sh");
 
@@ -559,7 +559,7 @@ public class Domain {
     }
 
     logger.info("Creating WLDF policy rule and action");
-    String command = new StringBuffer("/u01/oracle/callpyscript.sh /u01/oracle/wldf.py ")
+    String command = new StringBuffer("/u01/callpyscript.sh /u01/wldf.py ")
         .append(ADMIN_USERNAME_DEFAULT)
         .append(" ")
         .append(ADMIN_PASSWORD_DEFAULT)
@@ -684,16 +684,18 @@ public class Domain {
     testUntil(
         () -> copyFileToPod(domainNamespace, adminServerPodName, null,
           Paths.get(PROJECT_ROOT + "/../operator/scripts/scaling/scalingAction.sh"),
-          Paths.get(domainHomeLocation + "/bin/scripts/scalingAction.sh")),
+          Paths.get("/u01/scalingAction.sh")),
         logger,
         "Copying scalingAction.sh to admin server pod");
+    //      Paths.get(domainHomeLocation + "/bin/scripts/scalingAction.sh")),
 
     logger.info("Adding execute mode for scalingAction.sh");
     testUntil(
         () -> executeCommandOnPod(adminPod, null, true,
-          "/bin/sh", "-c", "chmod +x " + domainHomeLocation + "/bin/scripts/scalingAction.sh"),
+          "/bin/sh", "-c", "chmod +x /u01/scalingAction.sh"),
         logger,
         "Adding execute mode for scalingAction.sh");
+    //      "/bin/sh", "-c", "chmod +x " + domainHomeLocation + "/bin/scripts/scalingAction.sh"),
 
     if (!scalingAction.equals("scaleUp") && !scalingAction.equals("scaleDown")) {
       logger.info("Set scaleAction to either scaleUp or scaleDown");
@@ -900,7 +902,8 @@ public class Domain {
                                      V1Pod adminPod) throws ApiException, InterruptedException {
     LoggingFacade logger = getLogger();
     StringBuffer scalingCommand = new StringBuffer()
-        .append(Paths.get(domainHomeLocation + "/bin/scripts/scalingAction.sh"))
+        //.append(Paths.get(domainHomeLocation + "/bin/scripts/scalingAction.sh"))
+        .append(Paths.get("cd /u01; /u01/scalingAction.sh"))
         .append(" --action=")
         .append(scalingAction)
         .append(" --domain_uid=")
@@ -933,10 +936,11 @@ public class Domain {
     // copy scalingAction.log to local
     testUntil(
         () -> copyFileFromPod(domainNamespace, adminPod.getMetadata().getName(), null,
-          domainHomeLocation + "/bin/scripts/scalingAction.log",
+          "/u01/scalingAction.log",
           Paths.get(RESULTS_ROOT + "/" + domainUid + "-scalingAction.log")),
         logger,
         "Copying scalingAction.log from admin server pod");
+    //      domainHomeLocation + "/bin/scripts/scalingAction.log",
 
     // checking for exitValue 0 for success fails sometimes as k8s exec api returns non-zero exit value even on success,
     // so checking for exitValue non-zero and stderr not empty for failure, otherwise its success
