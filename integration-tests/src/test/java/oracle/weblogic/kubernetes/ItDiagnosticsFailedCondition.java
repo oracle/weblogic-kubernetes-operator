@@ -64,6 +64,7 @@ import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.deleteConfigMap;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
@@ -77,6 +78,7 @@ import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFor
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeExists;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeHasExpectedStatus;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.verifyDomainStatusConditionTypeDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
@@ -201,13 +203,44 @@ class ItDiagnosticsFailedCondition {
     Domain domain = createDomainResourceWithConfigMap(domainUid, domainNamespace, adminSecretName,
         OCIR_SECRET_NAME, encryptionSecretName, replicaCount, imageName + ":" + imageTag, badModelFileCm, 30L);
 
-    createDomainAndVerify(domain, domainNamespace);
+    try {
+      createDomainAndVerify(domain, domainNamespace);
+      // verify the condition type Failed exists
+      checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
+      // verify the condition Failed type has status True
+      checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
+          DOMAIN_STATUS_CONDITION_FAILED_TYPE, "True");
+    } finally {
+      deleteDomainResource(domainUid, domainNamespace);
+      deleteConfigMap(badModelFileCm, domainNamespace);
+    }
+  }
 
-    // verify the condition type Failed exists
-    checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
-    // verify the condition Failed type has status True
-    checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
-        DOMAIN_STATUS_CONDITION_FAILED_TYPE, "True");
+  /**
+   * Test domain status condition with serverStartPolicy set to IF_NEEDED. Verify the following conditions are
+   * generated: type: Completed, status: true type: Available, status: true Verify no Failed type condition generated.
+   */
+  @Order(2)
+  @Test
+  @DisplayName("Test domain status condition with serverStartPolicy set to IF_NEEDED")
+  void testBadApiVersionStatus() {
+    String image = TestConstants.MII_BASIC_IMAGE_NAME + ":" + TestConstants.MII_BASIC_IMAGE_TAG;
+
+    Domain domain = createDomainResource(domainUid, domainNamespace, adminSecretName,
+        OCIR_SECRET_NAME, encryptionSecretName, replicaCount, image);
+    domain.setApiVersion("weblogic.oracle/v1");
+
+    try {
+      createDomainAndVerify(domain, domainNamespace);
+
+      // verify the condition type Failed exists
+      checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
+      // verify the condition Failed type has status True
+      checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
+          DOMAIN_STATUS_CONDITION_FAILED_TYPE, "True");
+    } finally {
+      deleteDomainResource(domainUid, domainNamespace);
+    }
   }
 
   /**
@@ -937,4 +970,52 @@ class ItDiagnosticsFailedCondition {
   private static void createImageWithEmptyModel(String imageName, String imageTag) {
     ItMiiDomainModelInPV.buildMIIandPushToRepo(imageName, imageTag, null);
   }
+
+  private Domain createDomainResource(String domainUid, String domNamespace, String adminSecretName,
+      String repoSecretName, String encryptionSecretName, int replicaCount,
+      String miiImage) {
+    // create the domain CR
+    Domain domain = new Domain()
+        .apiVersion(DOMAIN_API_VERSION)
+        .kind("Domain")
+        .metadata(new V1ObjectMeta()
+            .name(domainUid)
+            .namespace(domNamespace))
+        .spec(new DomainSpec()
+            .domainUid(domainUid)
+            .domainHomeSourceType("FromModel")
+            .image(miiImage)
+            .addImagePullSecretsItem(new V1LocalObjectReference()
+                .name(repoSecretName))
+            .webLogicCredentialsSecret(new V1SecretReference()
+                .name(adminSecretName)
+                .namespace(domNamespace))
+            .includeServerOutInPodLog(true)
+            .serverStartPolicy("IF_NEEDED")
+            .serverPod(new ServerPod()
+                .addEnvItem(new V1EnvVar()
+                    .name("JAVA_OPTIONS")
+                    .value("-Dweblogic.security.SSL.ignoreHostnameVerification=true"))
+                .addEnvItem(new V1EnvVar()
+                    .name("USER_MEM_ARGS")
+                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+            .adminServer(new AdminServer()
+                .serverStartState("RUNNING")
+                .adminService(new AdminService()
+                    .addChannelsItem(new Channel()
+                        .channelName("default")
+                        .nodePort(0))))
+            .addClustersItem(new Cluster()
+                .clusterName("cluster-1")
+                .replicas(replicaCount)
+                .serverStartState("RUNNING"))
+            .configuration(new Configuration()
+                .model(new Model()
+                    .domainType("WLS")
+                    .runtimeEncryptionSecret(encryptionSecretName))
+                .introspectorJobActiveDeadlineSeconds(300L)));
+    setPodAntiAffinity(domain);
+    return domain;
+  }
+
 }
