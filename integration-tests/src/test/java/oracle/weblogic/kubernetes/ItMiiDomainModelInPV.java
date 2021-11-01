@@ -389,8 +389,13 @@ public class ItMiiDomainModelInPV {
     return wlsPod;
   }
 
-  // create a model in image with no domain and custom wdtModelHome
-  // push the image to repo
+  /**
+   * create a model in image with no domain and custom wdtModelHome push the image to repo.
+   *
+   * @param imageName name of the image
+   * @param imageTag tag of the image
+   * @param customWDTHome WDT home location to put the model file
+   */
   public static void buildMIIandPushToRepo(String imageName, String imageTag, String customWDTHome) {
     final String image = imageName + ":" + imageTag;
     logger.info("Building image {0}", image);
@@ -420,6 +425,11 @@ public class ItMiiDomainModelInPV {
     dockerLoginAndPushImage(image);
   }
 
+  /**
+   * Login to docker repo and push image.
+   *
+   * @param image image to push to repo
+   */
   public static void dockerLoginAndPushImage(String image) {
     // login to docker
     if (!OCIR_USERNAME.equals(REPO_DUMMY_VALUE)) {

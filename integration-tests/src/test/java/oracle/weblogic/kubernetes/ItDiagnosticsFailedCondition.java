@@ -10,8 +10,11 @@ import java.nio.file.Paths;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import io.kubernetes.client.custom.V1Patch;
@@ -23,14 +26,16 @@ import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
-import java.util.Collections;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
 import oracle.weblogic.domain.Cluster;
+import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
+import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
+import oracle.weblogic.domain.ServerService;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -54,6 +59,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_C
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_FAILED_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -108,6 +114,10 @@ class ItDiagnosticsFailedCondition {
   final int managedServerPort = 8001;
   int replicaCount = 2;
 
+  private static String adminSecretName;
+  private static String encryptionSecretName;
+
+
   private static int externalRestHttpsPort = 0;
   private static final String domainUid = "diagnosticsdomain";
   private static final String pvName = domainUid + "-pv"; // name of the persistent volume
@@ -152,6 +162,18 @@ class ItDiagnosticsFailedCondition {
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
     createSecretForBaseImages(domainNamespace1);
+
+    // create secret for admin credentials
+    logger.info("Create secret for admin credentials");
+    adminSecretName = "weblogic-credentials";
+    createSecretWithUsernamePassword(adminSecretName, domainNamespace1,
+            ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+
+    // create encryption secret
+    logger.info("Create encryption secret");
+    encryptionSecretName = "encryptionsecret";
+    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace1,
+            "weblogicenc", "weblogicenc");
   }
 
   /**
@@ -175,7 +197,9 @@ class ItDiagnosticsFailedCondition {
 
     ConfigMapUtils.createConfigMapFromFiles(badModelFileCm, modelList, domainNamespace1);
     logger.info("Creating domain with serverStartPolicy set to IF_NEEDED");
-    createDomain();
+
+    createDomainResourceWithConfigMap(domainUid, domainNamespace1, adminSecretName,
+        OCIR_SECRET_NAME, encryptionSecretName, replicaCount, imageName + ":" + imageTag, badModelFileCm);
 
     // verify the condition type Completed exists
     checkDomainStatusConditionTypeExists(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_COMPLETED_TYPE);
@@ -713,6 +737,63 @@ class ItDiagnosticsFailedCondition {
       deletePersistentVolumeClaim(pvcName, domainNamespace1);
       deletePersistentVolume(pvName);
     }
+  }
+
+  // Create a domain resource with a custom ConfigMap
+  private Domain createDomainResourceWithConfigMap(String domainUid,
+          String domNamespace, String adminSecretName,
+          String repoSecretName, String encryptionSecretName,
+          int replicaCount, String miiImage, String configmapName) {
+
+    Map keyValueMap = new HashMap<String, String>();
+    keyValueMap.put("testkey", "testvalue");
+
+    // create the domain CR
+    Domain domain = new Domain()
+        .apiVersion(DOMAIN_API_VERSION)
+        .kind("Domain")
+        .metadata(new V1ObjectMeta()
+            .name(domainUid)
+            .namespace(domNamespace))
+        .spec(new DomainSpec()
+            .domainUid(domainUid)
+            .domainHomeSourceType("FromModel")
+            .image(miiImage)
+            .addImagePullSecretsItem(new V1LocalObjectReference()
+                .name(repoSecretName))
+            .webLogicCredentialsSecret(new V1SecretReference()
+                .name(adminSecretName)
+                .namespace(domNamespace))
+            .includeServerOutInPodLog(true)
+            .serverStartPolicy("IF_NEEDED")
+            .serverPod(new ServerPod()
+                .addEnvItem(new V1EnvVar()
+                    .name("JAVA_OPTIONS")
+                    .value("-Dweblogic.security.SSL.ignoreHostnameVerification=true"))
+                .addEnvItem(new V1EnvVar()
+                    .name("USER_MEM_ARGS")
+                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+            .adminServer(new AdminServer()
+                .serverStartState("RUNNING")
+                .serverService(new ServerService()
+                    .annotations(keyValueMap)
+                    .labels(keyValueMap))
+                .adminService(new AdminService()
+                    .addChannelsItem(new Channel()
+                        .channelName("default")
+                        .nodePort(0))))
+            .addClustersItem(new Cluster()
+                .clusterName("cluster-1")
+                .replicas(replicaCount)
+                .serverStartState("RUNNING"))
+            .configuration(new Configuration()
+                .model(new Model()
+                    .domainType("WLS")
+                    .configMap(configmapName)
+                    .runtimeEncryptionSecret(encryptionSecretName))
+                .introspectorJobActiveDeadlineSeconds(300L)));
+    setPodAntiAffinity(domain);
+    return domain;
   }
 
   // Create and start a WebLogic domain in PV
