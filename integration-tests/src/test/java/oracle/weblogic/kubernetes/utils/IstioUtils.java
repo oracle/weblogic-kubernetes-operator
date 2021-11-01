@@ -26,6 +26,7 @@ import oracle.weblogic.domain.OnlineUpdate;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.SemanticVersion.Compatibility;
 
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.ISTIO_VERSION;
@@ -48,6 +49,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * The istio utility class for tests.
  */
 public class IstioUtils {
+  private static SemanticVersion installedIstioVersion = new SemanticVersion(ISTIO_VERSION);
 
   /**
    * Install istio.
@@ -388,7 +390,8 @@ public class IstioUtils {
             .configuration(new Configuration()
                 .istio(new Istio()
                     .enabled(Boolean.TRUE)
-                    .readinessPort(8888))
+                    .readinessPort(8888)
+                    .localhostBindingsEnabled(isLocalHostBindingsEnabled()))
                 .model(new Model()
                     .domainType("WLS")
                     .configMap(configmapName)
@@ -416,5 +419,30 @@ public class IstioUtils {
     }
     setPodAntiAffinity(domain);
     return domain;
+  }
+
+  /**
+   * Check if Istio version used for integration tests require WebLogic NAP's with localhost bindings.
+   *
+   * @return true if Istio version used for integration tests is prior to version 1.10;
+   *        false otherwise
+   */
+  public static boolean isLocalHostBindingsEnabled() {
+    return installedIstioVersion.getCompatibilityWith("1.10") == Compatibility.VERSION_LOWER;
+  }
+
+  /**
+   *  Create an instance of AdminServer.
+   *
+   * @return AdminServer instance.
+   */
+  public static AdminServer createAdminServer() {
+    AdminServer adminServer = new AdminServer()
+        .serverStartState("RUNNING");
+
+    if (!isLocalHostBindingsEnabled()) {
+      adminServer.adminChannelPortForwardingEnabled(true);
+    }
+    return adminServer;
   }
 }

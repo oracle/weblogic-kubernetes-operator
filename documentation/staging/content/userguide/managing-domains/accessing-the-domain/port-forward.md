@@ -53,22 +53,21 @@ to add network channels (Network Access Points)
 with a `localhost` address for each existing  administration protocol capable port.
 This behavior depends on your version and domain resource configuration:
 
-* If Istio is _not_ enabled on the domain, then, for
-  operator versions 3.3.2 and later, this behavior
-  is configurable on the domain resource using the
-  `domain.spec.adminServer.adminChannelPortForwardingEnabled`
-  domain resource attribute. This attribute
-  is enabled by default in operator versions 4.0 and later,
-  and is disabled by default in versions prior to 4.0.
-  For details about this attribute,
-  run the `kubectl explain domain.spec.adminServer.adminChannelPortForwardingEnabled` command
-  or see the domain resource [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md).
+* If Istio is _not_ enabled on the domain or for Istio enabled domains running
+  Istio 1.10 and later, this behavior is configurable on the domain resource using the
+  `domain.spec.adminServer.adminChannelPortForwardingEnabled` domain resource attribute.
 
-* For Istio-enabled domains, the operator already adds a
+  For details about this attribute, run the
+  `kubectl explain domain.spec.adminServer.adminChannelPortForwardingEnabled`
+  command or see the domain resource
+  [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md).
+
+* For Istio-enabled domains running Istio versions prior to 1.10,
+  the operator already adds a
   network channel with a `localhost` listen address for each
   existing port. This means that no additional configuration is required
   to enable port forwarding when Istio is enabled.
-  For more details, see [How Istio-enabled domains differ from regular domains]({{< relref "/userguide/istio/istio#how-istio-enabled-domains-differ-from-regular-domains" >}}).
+  For more details, see [Added network channels for Istio versions prior to v1.10]({{< relref "/userguide/istio/istio#added-network-channels-for-istio-versions-prior-to-v110" >}}).
 
 {{% notice note %}}
 If your domain is already running, and you have made configuration changes,

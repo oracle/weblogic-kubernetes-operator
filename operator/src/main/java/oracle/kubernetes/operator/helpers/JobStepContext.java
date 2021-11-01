@@ -205,6 +205,14 @@ public abstract class JobStepContext extends BasePodStepContext {
     return getDomain().getIstioReadinessPort();
   }
 
+  int getIstioReplicationPort() {
+    return getDomain().getIstioReplicationPort();
+  }
+
+  boolean isLocalhostBindingsEnabled() {
+    return getDomain().isLocalhostBindingsEnabled();
+  }
+
   String getEffectiveLogHome() {
     return getDomain().getEffectiveLogHome();
   }
