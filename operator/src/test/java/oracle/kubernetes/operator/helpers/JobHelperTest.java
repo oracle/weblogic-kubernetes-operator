@@ -1074,8 +1074,7 @@ class JobHelperTest extends DomainValidationBaseTest {
 
   @Test
   void whenDomainIsIstioEnabled_localhostBindingsDisable_hasIstioUseLocalhostBindingsEnv() {
-    configureDomain()
-        .withIstioLocalhostBindingsEnabled(false);
+    configureDomain().withIstioLocalhostBindingsEnabled(false);
 
     V1JobSpec jobSpec = createJobSpec();
 
@@ -1087,8 +1086,7 @@ class JobHelperTest extends DomainValidationBaseTest {
 
   @Test
   void whenDomainIsIstioEnabled_localhostBindingsEnabled_doesNotHaveIstioUseLocalhostBindingsEnv() {
-    configureDomain()
-        .withIstioLocalhostBindingsEnabled(true);
+    configureDomain().withIstioLocalhostBindingsEnabled(true);
 
     V1JobSpec jobSpec = createJobSpec();
 
@@ -1100,23 +1098,20 @@ class JobHelperTest extends DomainValidationBaseTest {
 
   @Test
   void whenDomainIsIstioEnabled_replicationChannelPort_hasIstioEnvVar() {
-    String port = "6789";
-    configureDomain()
-        .withIstioReplicationChannelPort(Integer.valueOf(port));
+    final String REPLICATION_CHANNEL_PORT = "6789";
+    configureDomain().withIstioReplicationChannelPort(Integer.valueOf(REPLICATION_CHANNEL_PORT));
 
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
         getMatchingContainerEnv(domainPresenceInfo, jobSpec),
-        hasEnvVar(ISTIO_REPLICATION_PORT, "6789")
+        hasEnvVar(ISTIO_REPLICATION_PORT, REPLICATION_CHANNEL_PORT)
     );
   }
 
   @Test
   void whenDomainIsIstioEnabled_defaultReplicationChannelPort_doesNotHaveIstioEnvVar() {
-    String port = "6789";
-    configureDomain()
-        .withIstio();
+    configureDomain().withIstio();
 
     V1JobSpec jobSpec = createJobSpec();
 
@@ -1128,8 +1123,7 @@ class JobHelperTest extends DomainValidationBaseTest {
   @Test
   void whenDomainIsIstioEnabled_istioLocalhostBindingsEnabledEnv_hasIstioUseLocalhostBindingsEnv() {
     TuningParametersStub.setParameter("istioLocalhostBindingsEnabled", "false");
-    configureDomain()
-        .withIstio();
+    configureDomain().withIstio();
 
     V1JobSpec jobSpec = createJobSpec();
 
@@ -1142,8 +1136,7 @@ class JobHelperTest extends DomainValidationBaseTest {
   @Test
   void whenDomainIsIstioEnabled_istioLocalhostBindingsDisabledEnv_hasIstioUseLocalhostBindingsEnv() {
     TuningParametersStub.setParameter("istioLocalhostBindingsEnabled", "true");
-    configureDomain()
-        .withIstio();
+    configureDomain().withIstio();
 
     V1JobSpec jobSpec = createJobSpec();
 
