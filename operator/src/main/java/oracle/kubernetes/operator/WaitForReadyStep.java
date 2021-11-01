@@ -23,7 +23,6 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
-import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
 import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLabel;
 
 /**
@@ -175,7 +174,6 @@ abstract class WaitForReadyStep<T> extends Step {
 
   @Override
   public final NextAction apply(Packet packet) {
-    String serverName = (String)packet.get(SERVER_NAME);
     if (shouldTerminateFiber(initialResource)) {
       return doTerminate(createTerminationException(initialResource), packet);
     } else if (isReady(initialResource)) {
@@ -285,7 +283,6 @@ abstract class WaitForReadyStep<T> extends Step {
 
     @Override
     public void accept(T resource) {
-      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       boolean shouldProcessCallback = shouldProcessCallback(resource);
       if (shouldProcessCallback) {
         proceedFromWait(resource);

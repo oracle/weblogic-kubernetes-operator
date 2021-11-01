@@ -28,7 +28,6 @@ import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
-import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -318,7 +317,6 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
       return new DefaultResponseStep<>(null) {
         @Override
         public NextAction onSuccess(Packet packet, CallResponse<V1Job> callResponse) {
-          DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
           if (isReady(callResponse.getResult()) || callback.didResumeFiber()) {
             callback.proceedFromWait(callResponse.getResult());
             return doNext(packet);
