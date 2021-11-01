@@ -6,7 +6,7 @@
     <description>Recent content on WebLogic Kubernetes Operator</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Mon, 30 Nov 2020 16:43:45 -0500</lastBuildDate><atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Wed, 27 Oct 2021 15:27:38 -0500</lastBuildDate><atom:link href="https://oracle.github.io/weblogic-kubernetes-operator/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>Answers for newcomers</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/faq/newbie/</link>
@@ -366,17 +366,6 @@ You can access most of the REST services using GET, for example:
     </item>
     
     <item>
-      <title>Supported platforms</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/platforms/environments/</link>
-      <pubDate>Sat, 23 Feb 2019 16:40:54 -0500</pubDate>
-      
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/platforms/environments/</guid>
-      <description>Oracle Cloud Infrastructure The Oracle Global Pricing and Licensing site provides details about licensing practices and policies. WebLogic Server and the operator are supported on &amp;ldquo;Authorized Cloud Environments&amp;rdquo; as defined in this Oracle licensing policy and this list of eligible products.
-The official document that defines the supported configurations is here.
-In accordance with these policies, the operator and WebLogic Server are supported on Oracle Cloud Infrastructure using Oracle Container Engine for Kubernetes, or in a cluster running Oracle Linux Container Services for use with Kubernetes on OCI Compute, and on &amp;ldquo;Authorized Cloud Environments&amp;rdquo;.</description>
-    </item>
-    
-    <item>
       <title>Domain resource</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/reference/domain-resource/</link>
       <pubDate>Fri, 22 Feb 2019 16:17:07 -0500</pubDate>
@@ -477,6 +466,17 @@ Because we want to balance separating destabilizing work into feature branches a
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/introduction/get-help/</guid>
       <description>Oracle Slack We have a closely monitored public Slack channel where you can get in touch with us to ask questions about using the operator or give us feedback or suggestions about what features and improvements you would like to see. We can also create dedicated private channels upon request. We would love to hear from you.
 To join our public channel, please visit this site to get an invitation. The invitation email will include details of how to access our Slack workspace.</description>
+    </item>
+    
+    <item>
+      <title>Supported platforms</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/platforms/environments/</link>
+      <pubDate>Sat, 23 Feb 2019 16:40:54 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/platforms/environments/</guid>
+      <description>Oracle Cloud Infrastructure The Oracle Global Pricing and Licensing site provides details about licensing practices and policies. WebLogic Server and the operator are supported on &amp;ldquo;Authorized Cloud Environments&amp;rdquo; as defined in this Oracle licensing policy and this list of eligible products.
+The official document that defines the supported configurations is here.
+In accordance with these policies, the operator and WebLogic Server are supported on Oracle Cloud Infrastructure using Oracle Container Engine for Kubernetes, or in a cluster running Oracle Linux Container Services for use with Kubernetes on OCI Compute, and on &amp;ldquo;Authorized Cloud Environments&amp;rdquo;.</description>
     </item>
     
     <item>
@@ -716,15 +716,6 @@ After this, the operator starts watches for changes to Domains and any changes t
     </item>
     
     <item>
-      <title>Istio support</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/istio/istio/</link>
-      <pubDate>Thu, 15 Aug 2019 13:30:04 -0400</pubDate>
-      
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/istio/istio/</guid>
-      <description>Overview WebLogic Kubernetes Operator version 2.6 and later, includes support for Istio 1.4.2 and later. This support lets you run the operator, and WebLogic domains managed by the operator, with Istio sidecar injection enabled. You can use Istio gateways and virtual services to access applications deployed in these domains. If your applications have suitable tracing code in them, then you will also be able to use distributed tracing, such as Jaeger, to trace requests across domains and to other components and services that have tracing enabled.</description>
-    </item>
-    
-    <item>
       <title>Documentation</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/developerguide/documentation/</link>
       <pubDate>Tue, 19 Mar 2019 07:13:22 -0400</pubDate>
@@ -775,21 +766,21 @@ Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to p
     </item>
     
     <item>
-      <title>Set up Kubernetes</title>
-      <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/kubernetes/k8s-setup/</link>
-      <pubDate>Sat, 23 Feb 2019 16:43:10 -0500</pubDate>
-      
-      <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/kubernetes/k8s-setup/</guid>
-      <description>Contents  Cheat sheet for setting up Kubernetes Set up Kubernetes on bare compute resources in a cloud  Prerequisites Quick start   Install Kubernetes on your own compute resources Install Docker for Mac with Kubernetes  Cheat sheet for setting up Kubernetes If you need some help setting up a Kubernetes environment to experiment with the operator, please read on! The supported environments are either an on-premises installation of Kubernetes, for example, on bare metal, or on a cloud provider like Oracle Cloud, Microsoft Azure, Google, or Amazon.</description>
-    </item>
-    
-    <item>
       <title>External WebLogic clients</title>
       <link>https://oracle.github.io/weblogic-kubernetes-operator/faq/external-clients/</link>
       <pubDate>Thu, 21 Nov 2019 21:23:03 +0000</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/faq/external-clients/</guid>
       <description>Contents  Overview Load balancer tunneling Adding a WebLogic custom channel  When is a WebLogic custom channel needed? Configuring a WebLogic custom channel WebLogic custom channel notes   Kubernetes NodePorts  NodePort overview NodePort warnings NodePort steps Setting up a NodePort Sample NodePort resource Table of NodePort attributes   Enabling unknown host access  When is it necessary to enable unknown host access? How to enable unknown host access   Configuring WebLogic Server affinity load balancing algorithms Configuring external listen addresses for WebLogic default channels Security notes Optional reading  Overview If a WebLogic EJB or JMS resource is located in the same Kubernetes namespace as an application that calls the resource, then:</description>
+    </item>
+    
+    <item>
+      <title>Istio support</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/istio/istio/</link>
+      <pubDate>Thu, 15 Aug 2019 13:30:04 -0400</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/istio/istio/</guid>
+      <description>Overview WebLogic Kubernetes Operator version 2.6 and later, includes support for Istio 1.4.2 and later. This support lets you run the operator, and WebLogic domains managed by the operator, with Istio sidecar injection enabled. You can use Istio gateways and virtual services to access applications deployed in these domains. If your applications have suitable tracing code in them, then you will also be able to use distributed tracing, such as Jaeger, to trace requests across domains and to other components and services that have tracing enabled.</description>
     </item>
     
     <item>
@@ -801,6 +792,15 @@ Unlike Domain in PV and Domain in Image, Model in Image eliminates the need to p
       <description>If you are running Coherence on Kubernetes, either inside a WebLogic domain or standalone, then there are some additional requirements to make sure that Coherence can form clusters.
 Note that some Fusion Middleware products, like SOA Suite, use Coherence and so these requirements apply to them.
 Unicast and Well Known Address When the first Coherence process starts, it will form a cluster. The next Coherence process to start (for example, in a different pod), will use UDP to try to contact the senior member.</description>
+    </item>
+    
+    <item>
+      <title>Set up Kubernetes</title>
+      <link>https://oracle.github.io/weblogic-kubernetes-operator/userguide/kubernetes/k8s-setup/</link>
+      <pubDate>Sat, 23 Feb 2019 16:43:10 -0500</pubDate>
+      
+      <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/kubernetes/k8s-setup/</guid>
+      <description>Contents  Cheat sheet for setting up Kubernetes Set up Kubernetes on bare compute resources in a cloud  Prerequisites Quick start   Install Kubernetes on your own compute resources Install Docker for Mac with Kubernetes  Cheat sheet for setting up Kubernetes If you need some help setting up a Kubernetes environment to experiment with the operator, please read on! The supported environments are either an on-premises installation of Kubernetes, for example, on bare metal, or on a cloud provider like Oracle Cloud, Microsoft Azure, Google, or Amazon.</description>
     </item>
     
     <item>
