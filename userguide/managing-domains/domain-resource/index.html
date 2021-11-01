@@ -12,20 +12,20 @@
     <title>Domain resource :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1635783962" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1635783962" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1635783962" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1635783962" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1635783962" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1635783962" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1635783962" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1635783962" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1635783962" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1635783962" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1635790140" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1635790140" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1635790140" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1635790140" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1635790140" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1635790140" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1635790140" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1635790140" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1635790140" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1635790140" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1635783962"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1635790140"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -47,8 +47,8 @@
   <div id="header-wrapper">
     <div id="header">
       <a id="logo" href="https://oracle.github.io/weblogic-kubernetes-operator">
-  <img src="https://oracle.github.io/weblogic-kubernetes-operator/images/logo.png" height="60"><br/>
-  Kubernetes Operator
+  <img src="https://oracle.github.io/weblogic-kubernetes-operator/images/logo.png" height="90"><br/>
+  WebLogic Kubernetes Operator
 </a>
 
     </div>
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1635783962"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1635783962"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1635790140"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1635790140"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1635783962"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1635790140"></script>
 
     
   </div>
@@ -393,18 +393,13 @@
  
   
     
-    <li data-nav-id="/weblogic-kubernetes-operator/userguide/prepare/" title="Setup checklist" class="dd-item
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/platforms/environments/" title="Supported platforms" class="dd-item ">
+        <a href="/weblogic-kubernetes-operator/userguide/platforms/environments/">
+        Supported platforms
         
-        
-        
-        ">
-      <a href="/weblogic-kubernetes-operator/userguide/prepare/">
-          Setup checklist
-          
-      </a>
-      
-      
+        </a>
     </li>
+     
   
  
 
@@ -419,13 +414,18 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/userguide/platforms/environments/" title="Supported platforms" class="dd-item ">
-        <a href="/weblogic-kubernetes-operator/userguide/platforms/environments/">
-        Supported platforms
+    <li data-nav-id="/weblogic-kubernetes-operator/userguide/prepare/" title="Setup checklist" class="dd-item
         
-        </a>
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/userguide/prepare/">
+          Setup checklist
+          
+      </a>
+      
+      
     </li>
-     
   
  
 
@@ -1179,32 +1179,6 @@
         ">
       <a href="/weblogic-kubernetes-operator/userguide/managing-fmw-domains/">
           Manage FMW Infrastructure domains
-          
-      </a>
-      
-      
-    </li>
-  
- 
-
-            
-          
-            
-            
-
-
-
-
- 
-  
-    
-    <li data-nav-id="/weblogic-kubernetes-operator/userguide/aks/" title="Azure Kubernetes Service (AKS)" class="dd-item
-        
-        
-        
-        ">
-      <a href="/weblogic-kubernetes-operator/userguide/aks/">
-          Azure Kubernetes Service (AKS)
           
       </a>
       
@@ -3400,8 +3374,29 @@ timeouts, call <code>kubectl explain domain.spec.configuration.model.onlineUpdat
 <li>
 <p>These elements are under <code>configuration.istio</code>.</p>
 <ul>
-<li><code>enabled</code>: True, if this domain is deployed under an Istio service mesh. Defaults to true when the <code>istio</code> field is specified.</li>
-<li><code>readinessPort</code>: The operator will create a WebLogic network access point with this port that will then be exposed from the container running the WebLogic Server instance. The readiness probe will use this network access point to verify that the server instance is ready for application traffic. Defaults to 8888.</li>
+<li><code>enabled</code>: True, if this domain is deployed under an Istio service mesh.
+Defaults to true when the <code>istio</code> field is specified.</li>
+<li><code>readinessPort</code>:
+The operator will create WebLogic network access points
+with this port on each WebLogic Server.
+The readiness probe on each pod will use these
+network access points
+to verify that the pod is ready
+for application traffic. Defaults to 8888.</li>
+<li><code>replicationChannelPort</code>:
+The operator will create a <code>T3</code> protocol
+WebLogic network access point
+on each WebLogic Server that is part of a cluster with this port
+to handle EJB and servlet session state replication traffic
+between servers. This setting is ignored for clusters
+where the WebLogic cluster configuration already
+defines a <code>replication-channel</code> attribute. Defaults to 4564.</li>
+<li><code>localhostBindingsEnabled</code>:
+This setting was added in operator version 3.3.3;
+it defaults to the Helm chart configuration value <code>istioLocalhostBindingsEnabled</code>,
+which in turn defaults to <code>true</code>. When <code>true</code>, the operator creates a WebLogic
+network access point with a <code>localhost</code> binding for each existing channel and protocol.
+Use <code>true</code> for Istio versions prior to 1.10 and set to <code>false</code> for versions 1.10 and later.</li>
 </ul>
 </li>
 </ul>
@@ -4328,22 +4323,6 @@ timeouts, call <code>kubectl explain domain.spec.configuration.model.onlineUpdat
                     
             
         
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
-                
-                
-
-                    
-                    
-                    
-
                     
             
         
@@ -5677,19 +5656,19 @@ timeouts, call <code>kubectl explain domain.spec.configuration.model.onlineUpdat
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1635783962"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1635783962"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1635783962"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1635783962"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1635783962"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1635783962"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1635790140"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1635790140"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1635790140"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1635790140"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1635790140"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1635790140"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1635783962"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1635783962"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1635783962"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1635790140"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1635790140"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1635790140"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1635783962"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1635790140"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
