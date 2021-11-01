@@ -430,6 +430,7 @@ public class TestAssertions {
     return () -> {
       if (domain != null && domain.getStatus() != null) {
         List<DomainCondition> domainConditionList = domain.getStatus().getConditions();
+        logger.info(Yaml.dump(domain.getStatus()));
         for (DomainCondition domainCondition : domainConditionList) {
           logger.info(Yaml.dump(domainCondition));
           if (domainCondition.getType().equalsIgnoreCase(conditionType)) {
