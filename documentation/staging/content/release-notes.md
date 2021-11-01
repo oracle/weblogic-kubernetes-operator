@@ -8,7 +8,7 @@ draft: false
 
 | Date | Version | Introduces backward incompatibilities? | Change - See also, [Change log](#change-log). |
 | --- | --- | --- | --- |
-| TBD, 2021 | v3.3.3 | no | Resolved an issue related to WebLogic cluster replication with Istio 1.10 and resolved several issues related to introspector failure, retry, and status. |
+| November 1, 2021 | v3.3.3 | no | Resolved an issue related to WebLogic cluster replication with Istio 1.10 and resolved several issues related to introspector failure, retry, and status. |
 | September 24, 2021 | v3.3.2 | no | Istio 1.10 support, enhanced liveness and readiness probe customization to support customizing failure thresholds, and additional validations. |
 | August 23, 2021 | v3.3.1 | no | Resolved an issue related to managed Coherence cluster formation when using Istio and another issue related to Secret and ConfigMap validation. |
 | July 20, 2021 | v3.3.0 | no | Auxiliary image support. |

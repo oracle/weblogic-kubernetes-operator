@@ -943,7 +943,7 @@ window.onload = function() {
           "$ref": "#/definitions/ServerPod"
         },
         "adminChannelPortForwardingEnabled": {
-          "description": "When this flag is enabled, the operator updates the domain\u0027s WebLogic configuration for its Administration Server to have an admin protocol NetworkAccessPoint with a \u0027localhost\u0027 address for each existing admin protocol capable port. This allows external Administration Console and WLST \u0027T3\u0027 access when using the \u0027kubectl port-forward\u0027 pattern. Defaults to true.",
+          "description": "When this flag is enabled, the operator updates the domain\u0027s WebLogic configuration for its Administration Server to have an admin protocol NetworkAccessPoint with a \u0027localhost\u0027 address for each existing admin protocol capable port. This allows external Administration Console and WLST \u0027T3\u0027 access when using the \u0027kubectl port-forward\u0027 pattern. Defaults to false.",
           "type": "boolean"
         },
         "serverStartPolicy": {
@@ -1235,14 +1235,13 @@ window.onload = function() {
           "type": "string"
         },
         "type": {
-          "description": "The type of the condition. Valid types are Completed, Available, Failed, and ConfigChangesPendingRestart.",
+          "description": "The type of the condition. Valid types are Progressing, Available, Failed, and ConfigChangesPendingRestart.",
           "type": "string",
           "enum": [
-            "Failed",
+            "Progressing",
             "Available",
-            "Completed",
             "ConfigChangesPendingRestart",
-            "Progressing"
+            "Failed"
           ]
         },
         "lastTransitionTime": {
@@ -1463,6 +1462,10 @@ window.onload = function() {
           "type": "number",
           "minimum": 0.0
         },
+        "lastIntrospectJobProcessedUid": {
+          "description": "Unique id of the last introspector job that was processed for this domain.",
+          "type": "string"
+        },
         "startTime": {
           "description": "RFC 3339 date and time at which the operator started the domain. This will be when the operator begins processing and will precede when the various servers or clusters are available.",
           "$ref": "#/definitions/DateTime"
@@ -1495,7 +1498,7 @@ window.onload = function() {
           "type": "number"
         },
         "localhostBindingsEnabled": {
-          "description": "This setting was added in operator version 3.3.3, defaults to the `istioLocalhostBindingsEnabled` [Operator Helm value]({{\u003c relref \"/userguide/managing-operators/using-helm.md\" \u003e}}) which in turn defaults to `true`, and is ignored in version 4.0 and later. In version 3.x, when `true`, the operator creates a WebLogic network access point with a `localhost` binding for each existing channel and protocol.  In version 3.x, use `true` for Istio versions prior to 1.10 and set to `false` for version 1.10 and later.  Version 4.0 and later requires Istio 1.10 and later, will not create localhost bindings, and ignores this attribute.",
+          "description": "This setting was added in operator version 3.3.3, defaults to the Helm chart configuration value `istioLocalhostBindingsEnabled` which in turn defaults to `true`. When `true`, the operator creates a WebLogic network access point with a `localhost` binding for each existing channel and protocol.  Use `true` for Istio versions prior to 1.10 and set to `false` for version 1.10 and later.",
           "type": "boolean"
         },
         "readinessPort": {
