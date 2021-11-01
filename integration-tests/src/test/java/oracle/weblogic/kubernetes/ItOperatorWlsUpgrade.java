@@ -505,10 +505,14 @@ class ItOperatorWlsUpgrade {
         "Getting admin server node port failed");
 
     logger.info("Validating WebLogic admin server access by login to console");
-    boolean loginSuccessful = assertDoesNotThrow(() -> {
-      return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-    }, "Access to admin server node port failed");
-    assertTrue(loginSuccessful, "Console login validation failed");
+    //boolean loginSuccessful = assertDoesNotThrow(() -> {
+    testUntil(
+        assertDoesNotThrow(() -> {
+          return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+        }, "Access to admin server node port failed"),
+        logger,
+        "Console login validation");
+    //assertTrue(loginSuccessful, "Console login validation failed");
   }
   
   private void createDomainHomeInImageFromDomainYaml(
@@ -559,10 +563,14 @@ class ItOperatorWlsUpgrade {
         "Getting admin server node port failed");
 
     logger.info("Validating WebLogic admin server access by login to console");
-    boolean loginSuccessful = assertDoesNotThrow(() -> {
-      return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-    }, "Access to admin server node port failed");
-    assertTrue(loginSuccessful, "Console login validation failed");
+    //boolean loginSuccessful = assertDoesNotThrow(() -> {
+    testUntil(
+        assertDoesNotThrow(() -> {
+          return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+        }, "Access to admin server node port failed"),
+        logger,
+        "Console login validation");
+    //assertTrue(loginSuccessful, "Console login validation failed");
   }
 
   private String getApiVersion(String operatorVersion) {

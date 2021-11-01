@@ -124,6 +124,26 @@ public class ApplicationUtils {
       String username,
       String password
   ) {
+    return checkAppIsActive(host + ":" + port, headers, application, target, username, password);
+  }
+
+  /**
+   * Check if the the application is active for a given weblogic target.
+   * @param hostAndPort String containing host:port or routename for OKD cluster
+   * @param headers extra header info to pass to the REST url
+   * @param application name of the application
+   * @param target the weblogic target for the application
+   * @param username username to log into the system
+   * @param password password for the username
+   */
+  public static boolean checkAppIsActive(
+      String hostAndPort,
+      String headers,
+      String application,
+      String target,
+      String username,
+      String password
+  ) {
 
     LoggingFacade logger = getLogger();
     String curlString = String.format("curl -v --show-error --noproxy '*' "
@@ -132,8 +152,8 @@ public class ApplicationUtils {
         + "-H Content-Type:application/json "
         + " -d \"{ target: '" + target + "' }\" "
         + " -X POST "
-        + "http://%s:%s/management/weblogic/latest/domainRuntime/deploymentManager/appDeploymentRuntimes/"
-        + application + "/getState", host, port);
+        + "http://%s/management/weblogic/latest/domainRuntime/deploymentManager/appDeploymentRuntimes/"
+        + application + "/getState", hostAndPort);
 
     logger.info("curl command {0}", curlString);
     testUntil(

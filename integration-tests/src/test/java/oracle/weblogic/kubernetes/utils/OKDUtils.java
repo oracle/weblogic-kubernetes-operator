@@ -3,6 +3,9 @@
 
 package oracle.weblogic.kubernetes.utils;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -137,10 +140,19 @@ public class OKDUtils {
    * @param routeName name of the route
    * @param namespace namespace where the route is created
    */
-  public static void setTlsEdgeTerminationForRoute(String routeName, String namespace, String keyFiles) {
+  public static void setTlsEdgeTerminationForRoute(String routeName, String namespace, 
+                                                   Path keyFile, Path certFile) throws IOException {
     if (OKD) {
+      String tlsKey = Files.readString(keyFile);
+      // Remove the last \n from the String above
+      tlsKey = tlsKey.replaceAll("[\n\r]$", "");
+      String tlsCert = Files.readString(certFile);
+      // Remove the last \n from the String above
+      tlsCert = tlsCert.replaceAll("[\n\r]$", "");
       String command = "oc -n " + namespace + " patch route " + routeName
-                          +  " --patch '{\"spec\": {\"tls\": {\"termination\": \"edge\"}}}'";
+          + " --patch '{\"spec\": {\"tls\": {\"termination\": \"edge\"," 
+                                          + "\"key\": \"" + tlsKey + "\","  
+                                          + "\"certificate\": \"" + tlsCert + "\"}}}'";
 
       ExecResult result = Command.withParams(
           new CommandParams()

@@ -137,6 +137,10 @@ public class WebLogicImageTool {
       command += " --additionalBuildFiles " + params.additionalBuildFiles();
     }
 
+    if (params.target() != null) {
+      command += " --target " + params.target();
+    }
+
     logger.info("Build image with command: {0} and domainType: {1}", command,  params.domainType());
     return command;
   }
