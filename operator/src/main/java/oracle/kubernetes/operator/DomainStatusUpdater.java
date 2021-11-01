@@ -78,7 +78,6 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CO
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.TOO_MANY_REPLICAS_FAILURE;
-import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Completed;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.ConfigChangesPendingRestart;
@@ -706,16 +705,9 @@ public class DomainStatusUpdater {
 
 
       private String getDesiredState(String serverName, String clusterName, boolean isAdminServer) {
-        return (isAdminServer | expectedRunningServers.contains(serverName)) & (!isAdminServerStartPolicyNever())
+        return isAdminServer | expectedRunningServers.contains(serverName)
             ? getDomain().getServer(serverName, clusterName).getDesiredState()
             : SHUTDOWN_STATE;
-      }
-
-      private boolean isAdminServerStartPolicyNever() {
-        return getDomain().getSpec().getServerStartPolicy().equals(START_NEVER)
-                || Optional.ofNullable(getDomain().getSpec().getAdminServer())
-                .map(as -> as.getServerStartPolicy()).map(policy -> policy.equals(START_NEVER))
-                .orElse(false);
       }
 
       Integer getReplicaSetting() {
