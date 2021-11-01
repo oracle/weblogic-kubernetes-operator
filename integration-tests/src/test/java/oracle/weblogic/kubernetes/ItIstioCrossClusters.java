@@ -386,11 +386,15 @@ class ItIstioCrossClusters {
         "Getting admin server node port failed");
 
     logger.info("Validating WebLogic admin server access by login to console");
-    boolean loginSuccessful = assertDoesNotThrow(() -> {
-      return TestAssertions.adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT,
+    //boolean loginSuccessful = assertDoesNotThrow(() -> {
+    testUntil(
+        assertDoesNotThrow(() -> {    
+          return TestAssertions.adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT,
           ADMIN_PASSWORD_DEFAULT);
-    }, "Access to admin server node port failed");
-    assertTrue(loginSuccessful, "Console login validation failed");
+        }, "Access to admin server node port failed"),
+        logger,
+        "Console login validation");
+    //assertTrue(loginSuccessful, "Console login validation failed");
 
   }
 

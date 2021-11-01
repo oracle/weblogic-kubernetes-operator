@@ -344,9 +344,11 @@
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>
+                  **/ItCrossDomainTransaction,
                   **/ItCoherenceTests,
                   **/ItConfigDistributionStrategy,
                   **/ItDedicatedMode,
+                  **/ItExternalLbTunneling,
                   **/ItExternalNodePortService,
                   **/ItInitContainers,
                   **/ItIntrospectVersion,
@@ -354,21 +356,27 @@
                   **/ItLiftAndShiftFromOnPremDomain,
                   **/ItLivenessProbeCustomization,
                   **/ItManagedCoherence,
+                  **/ItManageNameSpace,
                   **/ItMiiCustomSslStore,
                   **/ItMiiDomain,
                   **/ItMiiDomainModelInPV,
                   **/ItMiiDynamicUpdate*,
                   **/ItMiiMultiModel,
+                  **/ItMiiSampleWlsAux,
                   **/ItMiiSampleWlsMain,
+                  **/ItMiiServiceMigration,
                   **/ItMiiUpdateDomainConfig,
                   **/ItOperatorRestart,
+                  **/ItParameterizedDomain,
+                  **/ItPodsRestart,
                   **/ItPodsShutdownOption,
                   **/ItPodTemplates,
                   **/ItServerStartPolicy,
 		  **/ItServiceStartPolicyDynamicCluster,
                   **/ItServerStartPolicyConfigCluster,
                   **/ItSessionMigration,
-                  **/ItStickySession
+                  **/ItStickySession,
+                  **/ItUsabilityOperatorHelmChart
                 </includes-failsafe>
             </properties>
         </profile>
