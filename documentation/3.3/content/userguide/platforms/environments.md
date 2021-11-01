@@ -2,7 +2,7 @@
 title: "Supported platforms"
 date: 2019-02-23T16:40:54-05:00
 description: "See the operator supported environments."
-weight: 3
+weight: 4
 ---
 
 ### Oracle Cloud Infrastructure
