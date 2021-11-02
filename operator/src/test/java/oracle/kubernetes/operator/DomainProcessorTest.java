@@ -56,6 +56,7 @@ import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.helpers.UnitTestHash;
 import oracle.kubernetes.operator.http.HttpAsyncTestSupport;
 import oracle.kubernetes.operator.http.HttpResponseStub;
+import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.rest.ScanCacheStub;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
@@ -75,12 +76,10 @@ import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.operator.DomainConditionMatcher.hasCondition;
-import static oracle.kubernetes.operator.DomainFailureReason.Internal;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.SECRET_NAME;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
@@ -111,7 +110,6 @@ import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_ALWAYS;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Completed;
-import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
@@ -171,6 +169,11 @@ class DomainProcessorTest {
 
   V1JobStatus createNotCompletedStatus() {
     return new V1JobStatus();
+  }
+
+  V1JobStatus createTimedoutStatus() {
+    return new V1JobStatus().addConditionsItem(new V1JobCondition().status("True").type("Failed")
+            .reason("DeadlineExceeded"));
   }
 
   private static WlsDomainConfig createDomainConfig() {
@@ -827,6 +830,7 @@ class DomainProcessorTest {
 
   @Test
   void whenIntrospectionJobNotComplete_waitForIt() throws Exception {
+    consoleHandlerMemento.ignoringLoggedExceptions(RuntimeException.class);
     establishPreviousIntrospection(null);
     jobStatus = createNotCompletedStatus();
 
@@ -836,6 +840,21 @@ class DomainProcessorTest {
     makeRight.execute();
 
     assertThat(processorDelegate.waitedForIntrospection(), is(true));
+    assertThat(newDomain.getStatus().getIntrospectJobFailureCount(), is(0));
+  }
+
+  @Test
+  void whenIntrospectionJobTimedout_failureCountIncremented() throws Exception {
+    consoleHandlerMemento.ignoringLoggedExceptions(RuntimeException.class);
+    consoleHandlerMemento.ignoreMessage(MessageKeys.NOT_STARTING_DOMAINUID_THREAD);
+    establishPreviousIntrospection(null);
+    jobStatus = createTimedoutStatus();
+
+    domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
+    MakeRightDomainOperation makeRight = this.processor.createMakeRightOperation(
+            new DomainPresenceInfo(newDomain)).interrupt();
+    makeRight.execute();
+    assertThat(newDomain.getStatus().getIntrospectJobFailureCount(), is(1));
   }
 
   private void establishPreviousIntrospection(Consumer<Domain> domainSetup) throws JsonProcessingException {
@@ -1384,38 +1403,6 @@ class DomainProcessorTest {
   private void defineDuplicateServerNames() {
     domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("ms1"));
     domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("ms1"));
-  }
-
-  @Test
-  @Disabled
-  void whenExceptionDuringProcessing_reportInDomainStatus() {
-    DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
-    forceExceptionDuringProcessing();
-
-    processor.createMakeRightOperation(new DomainPresenceInfo(domain)).withExplicitRecheck().execute();
-    testSupport.setTime(DomainPresence.getDomainPresenceFailureRetrySeconds(), TimeUnit.SECONDS);
-
-    assertThat(domain, hasCondition(Failed).withReason(Internal));
-  }
-
-  private void forceExceptionDuringProcessing() {
-    consoleHandlerMemento.ignoringLoggedExceptions(NullPointerException.class);
-    domain.getSpec().withWebLogicCredentialsSecret(null);
-  }
-
-  @Test
-  void whenExceptionDuringProcessing_sendAbortedEvent() {
-    DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
-    forceExceptionDuringProcessing();
-    int time = 0;
-
-    for (int numRetries = 0; numRetries < DomainPresence.getDomainPresenceFailureRetryMaxCount(); numRetries++) {
-      processor.createMakeRightOperation(new DomainPresenceInfo(domain)).withExplicitRecheck().execute();
-      time += DomainPresence.getDomainPresenceFailureRetrySeconds();
-      testSupport.setTime(time, TimeUnit.SECONDS);
-    }
-
-    assertThat(getEvents().stream().anyMatch(this::isDomainProcessingAbortedEvent), is(true));
   }
 
   private List<CoreV1Event> getEvents() {

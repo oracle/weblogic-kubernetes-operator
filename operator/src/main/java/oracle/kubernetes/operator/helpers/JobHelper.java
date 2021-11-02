@@ -13,12 +13,16 @@ import java.util.function.Function;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import io.kubernetes.client.openapi.models.V1ContainerState;
+import io.kubernetes.client.openapi.models.V1ContainerStateWaiting;
+import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.openapi.models.V1PodStatus;
 import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.JobWatcher;
 import oracle.kubernetes.operator.LabelConstants;
@@ -47,6 +51,8 @@ import static oracle.kubernetes.operator.DomainFailureReason.Introspection;
 import static oracle.kubernetes.operator.DomainSourceType.FromModel;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createFailureCountStep;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createFailureRelatedSteps;
+import static oracle.kubernetes.operator.JobWatcher.getFailedReason;
+import static oracle.kubernetes.operator.JobWatcher.isFailed;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
@@ -214,19 +220,75 @@ public class JobHelper {
           packet.put(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB, job);
         }
 
-        if (isKnownFailedJob(job)) {
-          return doNext(cleanUpAndReintrospect(), packet);
-        } else if (job != null) {
-          return doNext(processIntrospectionResults(), packet);
-        } else if (isIntrospectionNeeded(packet)) {
-          return doNext(createIntrospectionSteps(), packet);
-        } else {
-          return doNext(packet);
+        return doNext(getIntrospectorPodStatus(info.getDomainUid(), info.getNamespace(), getNext()), packet);
+      }
+
+      private Step getIntrospectorPodStatus(String domainUid, String namespace, Step next) {
+        return new CallBuilder()
+                .withLabelSelectors(LabelConstants.JOBNAME_LABEL)
+                .listPodAsync(namespace, new IntrospectorJobPodStatusStep(next));
+      }
+
+      private class IntrospectorJobPodStatusStep extends ResponseStep<V1PodList> {
+        IntrospectorJobPodStatusStep(Step next) {
+          super(next);
+        }
+
+        @Override
+        public NextAction onSuccess(Packet packet, CallResponse<V1PodList> callResponse) {
+          Optional.ofNullable(callResponse.getResult())
+                  .map(V1PodList::getItems)
+                  .orElseGet(Collections::emptyList)
+                  .forEach(pod -> recordJobPodNameAndStatus(packet, pod));
+
+          V1Job job = (V1Job) packet.get(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
+          String jobPodStatusReason = (String) packet.get(ProcessingConstants.JOB_POD_STATUS_REASON);
+          if (isKnownFailedJob(job, packet)) {
+            return doContinueListOrNext(callResponse, packet, cleanUpAndReintrospect());
+          } else if ((job != null) && isJobTimedout(job, jobPodStatusReason)) {
+            return doContinueListOrNext(callResponse, packet, recreateIntrospection());
+          } else if (job != null) {
+            return doContinueListOrNext(callResponse, packet, processIntrospectionResults());
+          } else if (isIntrospectionNeeded(packet)) {
+            return doContinueListOrNext(callResponse, packet, createIntrospectionSteps());
+          } else {
+            return doContinueListOrNext(callResponse, packet);
+          }
+        }
+
+        private void recordJobPodNameAndStatus(Packet packet, V1Pod pod) {
+          String name = Optional.ofNullable(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getName).orElse("");
+          if (name.startsWith(getJobName())) {
+            packet.put(ProcessingConstants.JOB_POD_NAME, name);
+
+            packet.put(ProcessingConstants.JOB_POD_CONTAINER_WAITING_REASON, Optional.ofNullable(pod.getStatus())
+                    .map(V1PodStatus::getContainerStatuses).map(statuses -> statuses.get(0))
+                    .map(V1ContainerStatus::getState).map(V1ContainerState::getWaiting)
+                    .map(V1ContainerStateWaiting::getReason).orElse(null));
+            packet.put(ProcessingConstants.JOB_POD_STATUS_REASON, Optional.ofNullable(pod.getStatus())
+                    .map(V1PodStatus::getReason).orElse(null));
+          }
         }
       }
 
-      private boolean isKnownFailedJob(V1Job job) {
+      private boolean isKnownFailedJob(V1Job job, Packet packet) {
+        String jobPodContainerWaitingReason = (String) packet.get(ProcessingConstants.JOB_POD_CONTAINER_WAITING_REASON);
+        if (isImagePullError(jobPodContainerWaitingReason)) {
+          packet.put(DOMAIN_INTROSPECT_REQUESTED, ReadPodLogResponseStep.INTROSPECTION_FAILED);
+          return true;
+        }
         return getUid(job).equals(getLastFailedUid());
+      }
+
+      private boolean isJobTimedout(V1Job job, String jobPodStatusReason) {
+        return isFailed(job) && (("DeadlineExceeded".equals(getFailedReason(job)))
+                || "DeadlineExceeded".equals(jobPodStatusReason));
+      }
+
+      private boolean isImagePullError(String jobPodContainerWaitingReason) {
+        return Optional.ofNullable(jobPodContainerWaitingReason)
+                .map(s -> s.contains("ErrImagePull") || s.contains("ImagePullBackOff"))
+                .orElse(false);
       }
 
       @Nonnull
@@ -246,6 +308,12 @@ public class JobHelper {
       private Step createIntrospectionSteps() {
         return Step.chain(
                 readExistingIntrospectorConfigMap(getNamespace(), getDomainUid()),
+                startNewIntrospection(getNext()));
+      }
+
+      private Step recreateIntrospection() {
+        return Step.chain(
+                deleteDomainIntrospectorJobStep(null),
                 startNewIntrospection(getNext()));
       }
 

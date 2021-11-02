@@ -115,8 +115,8 @@ public class FiberGate {
 
           @Override
           public void onThrowable(Packet packet, Throwable throwable) {
-            gateMap.remove(key, f);
             callback.onThrowable(packet, throwable);
+            gateMap.remove(key, f);
           }
         });
     return f;

@@ -188,7 +188,7 @@ public abstract class Step {
    * @param packet Packet
    * @return Next action that will end processing with a throwable
    */
-  protected final NextAction doTerminate(Throwable throwable, Packet packet) {
+  public final NextAction doTerminate(Throwable throwable, Packet packet) {
     NextAction na = new NextAction();
     na.terminate(throwable, packet);
     return na;
