@@ -45,11 +45,21 @@ import oracle.kubernetes.weblogic.domain.model.AuxiliaryImageEnvVars;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
+import oracle.kubernetes.weblogic.domain.model.Istio;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.jetbrains.annotations.Nullable;
 
 import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
+import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_USE_ONLINE_UPDATE;
+import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_ACTIVATE_TIMEOUT;
+import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_CONNECT_TIMEOUT;
+import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_DEPLOY_TIMEOUT;
+import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_REDEPLOY_TIMEOUT;
+import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_SET_SERVERGROUPS_TIMEOUT;
+import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_START_APPLICATION_TIMEOUT;
+import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_STOP_APPLICATION_TIMEOUT;
+import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_UNDEPLOY_TIMEOUT;
 
 public class JobStepContext extends BasePodStepContext {
   static final long DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS = 60L;
@@ -235,6 +245,14 @@ public class JobStepContext extends BasePodStepContext {
 
   int getIstioReadinessPort() {
     return getDomain().getIstioReadinessPort();
+  }
+
+  int getIstioReplicationPort() {
+    return getDomain().getIstioReplicationPort();
+  }
+
+  boolean isLocalhostBindingsEnabled() {
+    return getDomain().isLocalhostBindingsEnabled();
   }
 
   String getEffectiveLogHome() {
@@ -601,24 +619,11 @@ public class JobStepContext extends BasePodStepContext {
 
     addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_READINESS_PORT, Integer.toString(getIstioReadinessPort()));
     addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_POD_NAMESPACE, getNamespace());
+    if (isIstioEnabled()) {
+      addIstioEnvVars(vars);
+    }
     if (isUseOnlineUpdate()) {
-      addEnvVar(vars, IntrospectorJobEnvVars.MII_USE_ONLINE_UPDATE, "true");
-      addEnvVar(vars, IntrospectorJobEnvVars.MII_WDT_ACTIVATE_TIMEOUT,
-          Long.toString(getDomain().getWDTActivateTimeoutMillis()));
-      addEnvVar(vars, IntrospectorJobEnvVars.MII_WDT_CONNECT_TIMEOUT,
-          Long.toString(getDomain().getWDTConnectTimeoutMillis()));
-      addEnvVar(vars, IntrospectorJobEnvVars.MII_WDT_DEPLOY_TIMEOUT,
-          Long.toString(getDomain().getWDTDeployTimeoutMillis()));
-      addEnvVar(vars, IntrospectorJobEnvVars.MII_WDT_REDEPLOY_TIMEOUT,
-          Long.toString(getDomain().getWDTReDeployTimeoutMillis()));
-      addEnvVar(vars, IntrospectorJobEnvVars.MII_WDT_UNDEPLOY_TIMEOUT,
-          Long.toString(getDomain().getWDTUnDeployTimeoutMillis()));
-      addEnvVar(vars, IntrospectorJobEnvVars.MII_WDT_START_APPLICATION_TIMEOUT,
-          Long.toString(getDomain().getWDTStartApplicationTimeoutMillis()));
-      addEnvVar(vars, IntrospectorJobEnvVars.MII_WDT_STOP_APPLICAITON_TIMEOUT,
-          Long.toString(getDomain().getWDTStopApplicationTimeoutMillis()));
-      addEnvVar(vars, IntrospectorJobEnvVars.MII_WDT_SET_SERVERGROUPS_TIMEOUT,
-          Long.toString(getDomain().getWDTSetServerGroupsTimeoutMillis()));
+      addOnlineUpdateEnvVars(vars);
     }
 
     String dataHome = getDataHome();
@@ -637,16 +642,7 @@ public class JobStepContext extends BasePodStepContext {
     addEnvVar(vars, "OPERATOR_ENVVAR_NAMES", sb.toString());
 
     if (domainTopology != null) {
-      // The domainTopology != null when the job is rerun for the same domain. In which
-      // case we should now know how to contact the admin server, the admin server may
-      // already be running, and the job may want to contact the admin server.
-
-      addEnvVar(vars, "ADMIN_NAME", getAsName());
-      addEnvVar(vars, "ADMIN_PORT", getAsPort().toString());
-      if (isLocalAdminProtocolChannelSecure()) {
-        addEnvVar(vars, "ADMIN_PORT_SECURE", "true");
-      }
-      addEnvVar(vars, "AS_SERVICE_NAME", getAsServiceName());
+      addEnvVarsForExistingTopology(vars);
     }
 
     String modelHome = getModelHome();
@@ -663,6 +659,44 @@ public class JobStepContext extends BasePodStepContext {
         getDomain().getAuxiliaryImageVolumes()))
             .ifPresent(c -> addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATHS, c));
     return vars;
+  }
+
+  private void addEnvVarsForExistingTopology(List<V1EnvVar> vars) {
+    // The domainTopology != null when the job is rerun for the same domain. In which
+    // case we should now know how to contact the admin server, the admin server may
+    // already be running, and the job may want to contact the admin server.
+
+    addEnvVar(vars, "ADMIN_NAME", getAsName());
+    addEnvVar(vars, "ADMIN_PORT", getAsPort().toString());
+    if (isLocalAdminProtocolChannelSecure()) {
+      addEnvVar(vars, "ADMIN_PORT_SECURE", "true");
+    }
+    addEnvVar(vars, "AS_SERVICE_NAME", getAsServiceName());
+  }
+
+  private void addIstioEnvVars(List<V1EnvVar> vars) {
+    // Only add the following Istio configuration environment variables when explicitly configured
+    // otherwise the introspection job will needlessly run, after operator upgrade, based on generated
+    // hash code of the set of environment variables.
+    if (!isLocalhostBindingsEnabled()) {
+      addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_USE_LOCALHOST_BINDINGS, "false");
+    }
+
+    if (getIstioReplicationPort() != Istio.DEFAULT_REPLICATION_PORT) {
+      addEnvVar(vars, IntrospectorJobEnvVars.ISTIO_REPLICATION_PORT, Integer.toString(getIstioReplicationPort()));
+    }
+  }
+
+  private void addOnlineUpdateEnvVars(List<V1EnvVar> vars) {
+    addEnvVar(vars, MII_USE_ONLINE_UPDATE, "true");
+    addEnvVar(vars, MII_WDT_ACTIVATE_TIMEOUT, getDomain().getWDTActivateTimeoutMillis().toString());
+    addEnvVar(vars, MII_WDT_CONNECT_TIMEOUT, getDomain().getWDTConnectTimeoutMillis().toString());
+    addEnvVar(vars, MII_WDT_DEPLOY_TIMEOUT, getDomain().getWDTDeployTimeoutMillis().toString());
+    addEnvVar(vars, MII_WDT_REDEPLOY_TIMEOUT, getDomain().getWDTReDeployTimeoutMillis().toString());
+    addEnvVar(vars, MII_WDT_UNDEPLOY_TIMEOUT, getDomain().getWDTUnDeployTimeoutMillis().toString());
+    addEnvVar(vars, MII_WDT_START_APPLICATION_TIMEOUT, getDomain().getWDTStartApplicationTimeoutMillis().toString());
+    addEnvVar(vars, MII_WDT_STOP_APPLICATION_TIMEOUT, getDomain().getWDTStopApplicationTimeoutMillis().toString());
+    addEnvVar(vars, MII_WDT_SET_SERVERGROUPS_TIMEOUT, getDomain().getWDTSetServerGroupsTimeoutMillis().toString());
   }
 
   private String getKubernetesPlatform(TuningParameters tuningParameters) {

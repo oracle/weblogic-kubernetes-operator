@@ -7,7 +7,7 @@
     <parent>
         <groupId>oracle.kubernetes</groupId>
         <artifactId>operator-parent</artifactId>
-        <version>3.3.2</version>
+        <version>3.3.3</version>
     </parent>
 
     <artifactId>integration-tests</artifactId>
@@ -232,10 +232,10 @@
                    **/ItIstioMiiDomain,
                    **/ItManagedCoherence,
                    **/ItMiiDomain,
-                   **/ItMiiDynamicUpdate,
+                   **/ItMiiDynamicUpdate*,
                    **/ItMiiSampleWlsMain,
                    **/ItMiiUpdateDomainConfig,
-                   **/ItMonitoringExporter,
+                   **/ItMonitoringExporter*,
                    **/ItParameterizedDomain,
                    **/ItPodsShutdownOption,
                    **/ItProductionSecureMode,
@@ -268,7 +268,8 @@
                   **/ItServerStartPolicy,
                   **/ItMiiUpdateDomainConfig,
                   **/ItIntrospectVersion,
-                  **/ItFmwDomainInPV,
+                  **/ItFmwDomainInPVUsingWLST,
+                  **/ItFmwDomainInPVUsingWDT,
                   **/ItStickySession,
                   **/ItSessionMigration,
                   **/ItIstioTwoDomainsInImage,
@@ -323,10 +324,10 @@
                    **/ItMiiSampleWlsAux,
                    **/ItMiiServiceMigration,
                    **/ItMiiDomain,
-                   **/ItMiiDynamicUpdate,
+                   **/ItMiiDynamicUpdate*,
                    **/ItMiiSampleWlsMain,
                    **/ItMiiUpdateDomainConfig,
-                   **/ItMonitoringExporter,
+                   **/ItMonitoringExporter*,
                    **/ItParameterizedDomain,
                    **/ItPodsShutdownOption,
                    **/ItProductionSecureMode,
@@ -335,7 +336,7 @@
                    **/ItSystemResOverrides
                 </includes-failsafe>
             </properties>
-        </profile>        
+        </profile>
         <profile>
             <id>wko-okd-wls-cert</id>
             <properties>
@@ -354,7 +355,7 @@
                   **/ItMiiCustomSslStore,
                   **/ItMiiDomain,
                   **/ItMiiDomainModelInPV,
-                  **/ItMiiDynamicUpdate,
+                  **/ItMiiDynamicUpdate*,
                   **/ItMiiMultiModel,
                   **/ItMiiSampleWlsMain,
                   **/ItMiiUpdateDomainConfig,

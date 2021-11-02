@@ -87,7 +87,7 @@ import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_REDEPLOY_TIMEOUT;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_SET_SERVERGROUPS_TIMEOUT;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_START_APPLICATION_TIMEOUT;
-import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_STOP_APPLICAITON_TIMEOUT;
+import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_STOP_APPLICATION_TIMEOUT;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_UNDEPLOY_TIMEOUT;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -291,7 +291,7 @@ class JobHelperTest extends DomainValidationBaseTest {
             envVarOEVNContains(MII_WDT_REDEPLOY_TIMEOUT),
             envVarOEVNContains(MII_WDT_UNDEPLOY_TIMEOUT),
             envVarOEVNContains(MII_WDT_START_APPLICATION_TIMEOUT),
-            envVarOEVNContains(MII_WDT_STOP_APPLICAITON_TIMEOUT),
+            envVarOEVNContains(MII_WDT_STOP_APPLICATION_TIMEOUT),
             envVarOEVNContains(MII_WDT_SET_SERVERGROUPS_TIMEOUT)
             ));
   }
@@ -310,7 +310,7 @@ class JobHelperTest extends DomainValidationBaseTest {
             envVarOEVNContains(MII_WDT_REDEPLOY_TIMEOUT),
             envVarOEVNContains(MII_WDT_UNDEPLOY_TIMEOUT),
             envVarOEVNContains(MII_WDT_START_APPLICATION_TIMEOUT),
-            envVarOEVNContains(MII_WDT_STOP_APPLICAITON_TIMEOUT),
+            envVarOEVNContains(MII_WDT_STOP_APPLICATION_TIMEOUT),
             envVarOEVNContains(MII_WDT_SET_SERVERGROUPS_TIMEOUT)
             )));
 
