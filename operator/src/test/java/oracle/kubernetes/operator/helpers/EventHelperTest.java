@@ -108,7 +108,7 @@ class EventHelperTest {
   private final String jobPodName = LegalNames.toJobIntrospectorName(UID);
   private final TestUtils.ConsoleHandlerMemento loggerControl = TestUtils.silenceOperatorLogger();
   private final Collection<LogRecord> logRecords = new ArrayList<>();
-  private final EventRetryStrategyStub retryStrategy = createStrictStub(EventRetryStrategyStub.class);
+  private final OnConflictRetryStrategyStub retryStrategy = createStrictStub(OnConflictRetryStrategyStub.class);
 
   @BeforeEach
   void setUp() throws Exception {

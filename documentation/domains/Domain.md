@@ -55,6 +55,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | --- | --- | --- |
 | `clusters` | Array of [Cluster Status](#cluster-status) | Status of WebLogic clusters in this domain. |
 | `conditions` | Array of [Domain Condition](#domain-condition) | Current service state of the domain. |
+| `failedIntrospectionUid` | string | Unique ID of the last failed introspection job. |
 | `introspectJobFailureCount` | number | Non-zero if the introspector job fails for any reason. You can configure an introspector job retry limit for jobs that log script failures using the Operator tuning parameter 'domainPresenceFailureRetryMaxCount' (default 5). You cannot configure a limit for other types of failures, such as a Domain resource reference to an unknown secret name; in which case, the retries are unlimited. |
 | `message` | string | A human readable message indicating details about why the domain is in this condition. |
 | `reason` | string | A brief CamelCase message indicating details about why the domain is in this state. |
