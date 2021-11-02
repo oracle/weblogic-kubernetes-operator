@@ -543,7 +543,7 @@
           "minimum": 0
         },
         "failedIntrospectionUid": {
-          "description": "Unique id of the last failed introspector job.",
+          "description": "Unique ID of the last failed introspection job.",
           "type": "string"
         },
         "startTime": {

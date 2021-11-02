@@ -740,12 +740,12 @@ public class Kubernetes {
    * @param container name of the container
    * @param srcPath source file location
    * @param destPath destination file location on pod
+   * @return true if copy succeeds, otherwise false
    * @throws IOException when copy fails
    * @throws ApiException when pod interaction fails
    */
-  public static void copyFileToPod(
-      String namespace, String pod, String container, Path srcPath, Path destPath)
-      throws IOException, ApiException {
+  public static boolean copyFileToPod(
+      String namespace, String pod, String container, Path srcPath, Path destPath) throws IOException, ApiException {
     // kubectl cp /tmp/foo <some-namespace>/<some-pod>:/tmp/bar -c <specific-container>
     StringBuilder sb = new StringBuilder();
     sb.append("kubectl cp ");
@@ -763,9 +763,8 @@ public class Kubernetes {
       sb.append(container);
     }
     String cmdToExecute = sb.toString();
-    Command
-        .withParams(new CommandParams().command(cmdToExecute))
-        .execute();
+
+    return Command.withParams(new CommandParams().command(cmdToExecute)).execute();
   }
 
   /**
