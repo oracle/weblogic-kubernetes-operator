@@ -542,6 +542,10 @@
           "type": "number",
           "minimum": 0
         },
+        "failedIntrospectionUid": {
+          "description": "Unique ID of the last failed introspection job.",
+          "type": "string"
+        },
         "startTime": {
           "description": "RFC 3339 date and time at which the operator started the domain. This will be when the operator begins processing and will precede when the various servers or clusters are available.",
           "$ref": "#/definitions/DateTime"
