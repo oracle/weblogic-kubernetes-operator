@@ -47,7 +47,7 @@ public class AdminServer {
           + " NetworkAccessPoint with a 'localhost' address for each existing admin\n"
           + " protocol capable port. This allows external Administration Console and WLST\n"
           + " 'T3' access when using the 'kubectl port-forward' pattern. Defaults to true.")
-  private boolean adminChannelPortForwardingEnabled;
+  private boolean adminChannelPortForwardingEnabled = true;
 
   public AdminServer adminService(AdminService adminService) {
     this.adminService = adminService;
