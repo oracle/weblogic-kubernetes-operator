@@ -33,7 +33,6 @@ import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
-import oracle.weblogic.domain.ManagedServer;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.domain.ServerService;
@@ -230,6 +229,33 @@ class ItDiagnosticsFailedCondition {
     Domain domain = createDomainResource(domainUid, domainNamespace, adminSecretName,
         OCIR_SECRET_NAME, encryptionSecretName, replicaCount, image);
     domain.setApiVersion("weblogic.oracle/v1");
+
+    try {
+      createDomainAndVerify(domain, domainNamespace);
+
+      // verify the condition type Failed exists
+      checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
+      // verify the condition Failed type has status True
+      checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
+          DOMAIN_STATUS_CONDITION_FAILED_TYPE, "True");
+    } finally {
+      deleteDomainResource(domainUid, domainNamespace);
+    }
+  }
+
+
+  /**
+   * Test domain status condition with serverStartPolicy set to IF_NEEDED. Verify the following conditions are
+   * generated: type: Completed, status: true type: Available, status: true Verify no Failed type condition generated.
+   */
+  @Order(3)
+  @Test
+  @DisplayName("Test domain status condition with serverStartPolicy set to IF_NEEDED")
+  void testReplicasTooHigh() {
+    String image = TestConstants.MII_BASIC_IMAGE_NAME + ":" + TestConstants.MII_BASIC_IMAGE_TAG;
+
+    Domain domain = createDomainResource(domainUid, domainNamespace, adminSecretName,
+        OCIR_SECRET_NAME, encryptionSecretName, 100, image);
 
     try {
       createDomainAndVerify(domain, domainNamespace);
@@ -1009,9 +1035,6 @@ class ItDiagnosticsFailedCondition {
             .addClustersItem(new Cluster()
                 .clusterName("cluster-1")
                 .replicas(replicaCount)
-                .serverStartState("RUNNING"))
-            .addManagedServersItem(new ManagedServer()
-                .serverName("cluster-1")
                 .serverStartState("RUNNING"))
             .configuration(new Configuration()
                 .model(new Model()
