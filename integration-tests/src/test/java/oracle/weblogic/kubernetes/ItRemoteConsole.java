@@ -61,6 +61,11 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/** In OKD cluster, we do not use thrid party loadbalancers, so the tests that
+ * specifically test nginx or traefik are diasbled for OKD cluster. A test
+ * using routes are added to run only on OKD cluster.
+*/
+
 @DisplayName("Test WebLogic remote console connecting to mii domain")
 @IntegrationTest
 class ItRemoteConsole {
