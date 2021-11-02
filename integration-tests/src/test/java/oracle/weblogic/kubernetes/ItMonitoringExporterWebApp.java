@@ -52,6 +52,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.copyFileToPod;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteNamespace;
@@ -419,6 +420,10 @@ class ItMonitoringExporterWebApp {
           .withFailMessage("uninstallNginx() did not return true")
           .isTrue();
     }
+
+    shutdownDomain(domain1Namespace, domain1Uid);
+    shutdownDomain(domain2Namespace, domain2Uid);
+    shutdownDomain(domain3Namespace, domain3Uid);
 
     // delete mii domain images created
     if (miiImage != null) {

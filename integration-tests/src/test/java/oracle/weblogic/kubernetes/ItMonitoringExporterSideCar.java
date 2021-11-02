@@ -38,6 +38,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteNamespace;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getDomainCustomResource;
@@ -400,7 +401,9 @@ class ItMonitoringExporterSideCar {
           .withFailMessage("uninstallNginx() did not return true")
           .isTrue();
     }
-
+    shutdownDomain(domain1Namespace, domain1Uid);
+    shutdownDomain(domain2Namespace, domain2Uid);
+    shutdownDomain(domain3Namespace, domain3Uid);
     uninstallPrometheusGrafana(promHelmParams.getHelmParams(), grafanaHelmParams);
 
     deletePersistentVolumeClaim("pvc-alertmanager" + releaseSuffix,monitoringNS);
