@@ -7,7 +7,7 @@
     <parent>
         <groupId>oracle.kubernetes</groupId>
         <artifactId>operator-parent</artifactId>
-        <version>3.3.2</version>
+        <version>3.3.3</version>
     </parent>
 
     <artifactId>integration-tests</artifactId>
@@ -232,10 +232,10 @@
                    **/ItIstioMiiDomain,
                    **/ItManagedCoherence,
                    **/ItMiiDomain,
-                   **/ItMiiDynamicUpdate,
+                   **/ItMiiDynamicUpdate*,
                    **/ItMiiSampleWlsMain,
                    **/ItMiiUpdateDomainConfig,
-                   **/ItMonitoringExporter,
+                   **/ItMonitoringExporter*,
                    **/ItParameterizedDomain,
                    **/ItPodsShutdownOption,
                    **/ItProductionSecureMode,
@@ -266,9 +266,12 @@
                 <includes-failsafe>
                   **/ItParameterizedDomain,
                   **/ItServerStartPolicy,
+                  **/ItServiceStartPolicyDynamicCluster,
+                  **/ItServerStartPolicyConfigCluster,
                   **/ItMiiUpdateDomainConfig,
                   **/ItIntrospectVersion,
-                  **/ItFmwDomainInPV,
+                  **/ItFmwDomainInPVUsingWLST,
+                  **/ItFmwDomainInPVUsingWDT,
                   **/ItStickySession,
                   **/ItSessionMigration,
                   **/ItIstioTwoDomainsInImage,
@@ -323,10 +326,10 @@
                    **/ItMiiSampleWlsAux,
                    **/ItMiiServiceMigration,
                    **/ItMiiDomain,
-                   **/ItMiiDynamicUpdate,
+                   **/ItMiiDynamicUpdate*,
                    **/ItMiiSampleWlsMain,
                    **/ItMiiUpdateDomainConfig,
-                   **/ItMonitoringExporter,
+                   **/ItMonitoringExporter*,
                    **/ItParameterizedDomain,
                    **/ItPodsShutdownOption,
                    **/ItProductionSecureMode,
@@ -335,15 +338,17 @@
                    **/ItSystemResOverrides
                 </includes-failsafe>
             </properties>
-        </profile>        
+        </profile>
         <profile>
             <id>wko-okd-wls-cert</id>
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>
+                  **/ItCrossDomainTransaction,
                   **/ItCoherenceTests,
                   **/ItConfigDistributionStrategy,
                   **/ItDedicatedMode,
+                  **/ItExternalLbTunneling,
                   **/ItExternalNodePortService,
                   **/ItInitContainers,
                   **/ItIntrospectVersion,
@@ -351,19 +356,27 @@
                   **/ItLiftAndShiftFromOnPremDomain,
                   **/ItLivenessProbeCustomization,
                   **/ItManagedCoherence,
+                  **/ItManageNameSpace,
                   **/ItMiiCustomSslStore,
                   **/ItMiiDomain,
                   **/ItMiiDomainModelInPV,
-                  **/ItMiiDynamicUpdate,
+                  **/ItMiiDynamicUpdate*,
                   **/ItMiiMultiModel,
+                  **/ItMiiSampleWlsAux,
                   **/ItMiiSampleWlsMain,
+                  **/ItMiiServiceMigration,
                   **/ItMiiUpdateDomainConfig,
                   **/ItOperatorRestart,
+                  **/ItParameterizedDomain,
+                  **/ItPodsRestart,
                   **/ItPodsShutdownOption,
                   **/ItPodTemplates,
                   **/ItServerStartPolicy,
+		  **/ItServiceStartPolicyDynamicCluster,
+                  **/ItServerStartPolicyConfigCluster,
                   **/ItSessionMigration,
-                  **/ItStickySession
+                  **/ItStickySession,
+                  **/ItUsabilityOperatorHelmChart
                 </includes-failsafe>
             </properties>
         </profile>
@@ -377,7 +390,29 @@
                   **/ItFmwDynamicClusterMiiDomain,
                   **/ItFmwBigCMMiiDomain,
                   **/ItFmwDynamicDomainInPV,
-                  **/ItFmwMiiDomain
+                  **/ItFmwMiiDomain,
+                  **/ItMiiSampleFmwMain,
+                  **/ItMiiSampleFmwAux
+                </includes-failsafe>
+            </properties>
+        </profile>
+        <profile>
+            <id>fmw-pipeline</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                    **/ItMiiAuxiliaryImage,
+                    **/ItMiiAuxiliaryImageCluster,
+                    **/ItMiiCustomSslStore,
+                    **/ItExternalRmiTunneling,
+                    **/ItIstioDomainInPV,
+                    **/ItMiiDomain,
+                    **/ItMiiUpdateDomainConfig,
+                    **/ItIstioDomainInImage,
+                    **/ItPodsShutdownOption,
+                    **/ItProductionSecureMode,
+                    **/ItSessionMigration,
+                    **/ItSystemResOverrides
                 </includes-failsafe>
             </properties>
         </profile>

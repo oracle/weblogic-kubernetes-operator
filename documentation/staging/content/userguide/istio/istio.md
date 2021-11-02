@@ -5,33 +5,25 @@ weight: 9
 description: "Lets you run the operator, and WebLogic domains managed by the operator, with Istio sidecar injection enabled. You can use Istio gateways and virtual services to access applications deployed in these domains."
 ---
 
+#### Contents
+
+- [Overview](#overview)
+- [Limitations](#limitations)
+- [Determining the Istio version](#determining-the-istio-version)
+- [Setting up an operator with Istio support](#setting-up-an-operator-with-istio-support)
+- [Creating a domain with Istio support](#creating-a-domain-with-istio-support)
+  - [Setting up the domain namespace](#setting-up-the-domain-namespace)
+  - [Configuring the domain resource](#configuring-the-domain-resource)
+  - [Applying a Domain YAML file](#applying-a-domain-yaml-file)
+  - [Exposing applications in Istio-enabled domains](#exposing-applications-in-istio-enabled-domains)
+- [Traffic management](#traffic-management)
+- [Distributed tracing](#distributed-tracing)
+- [Automatically added network channels](#automatically-added-network-channels)
+  - [Added network channels for Istio versions prior to v1.10](#added-network-channels-for-istio-versions-prior-to-v110)
+  - [Added network channel for Istio versions v1.10 and later](#added-network-channel-for-istio-versions-v110-and-later)
+  - [Added network channel for WebLogic EJB and servlet session state replication traffic](#added-network-channel-for-weblogic-ejb-and-servlet-session-state-replication-traffic)
+
 #### Overview
-
-WebLogic Kubernetes Operator version 2.6 and later, includes support for Istio 1.4.2 and later.
-This support lets you run the operator, and WebLogic domains managed by
-the operator, with Istio sidecar injection enabled.  You can use
-Istio gateways and virtual services to access applications deployed in these domains.
-If your applications have suitable tracing code in them, then you will also be able to
-use distributed tracing, such as Jaeger, to trace requests across domains and to
-other components and services that have tracing enabled.
-
-#### Limitations
-
-The current support for Istio has these limitations:
-
-* It is tested with Istio 1.4.2 and later (up to 1.7.x); it is tested with both single and
-  multicluster installations of Istio.
-
-  **NOTE**: The WebLogic Kubernetes Operator creates Kubernetes headless Services for the domain; Istio 1.6.x does not work with headless Services. See [Headless service broken in 1.6.0](https://github.com/istio/istio/issues/24082). Instead, use Istio version 1.7 and higher.
-
-* You cannot expose any of the default channels; any attempt will result in an error when deploying the domain.  
-* If the `istio-ingressgateway` service in your environment does not have an `EXTERNAL-IP` defined,
-in order to use WLST commands, define a network access point (NAP) in your WebLogic domain and expose it as a `NodePort` in your Domain YAML file
-and access it through the `NodePort` instead of accessing the channel through the Istio mesh network.
-
-To learn more about service mesh, see [Istio](https://istio.io/latest/docs/concepts/what-is-istio/).  
-
-#### Using the operator with Istio support
 
 {{% notice note %}}
 These instructions assume that you are using a Kubernetes cluster with
@@ -39,8 +31,57 @@ These instructions assume that you are using a Kubernetes cluster with
 Istio for you.
 {{% /notice %}}
 
-You can deploy the operator into a namespace which has Istio automatic sidecar
-injection enabled.  Before installing the operator, create the namespace in which you want to run the domain and label it.
+Istio support lets you run the operator, and WebLogic domains managed by
+the operator, when Istio sidecar injection is enabled. You can use
+Istio gateways and virtual services to access applications deployed in these domains.
+If your applications have suitable tracing code in them, then you will also be able to
+use distributed tracing, such as Jaeger, to trace requests across domains and to
+other components and services that have tracing enabled.
+
+To learn more about Istio,
+see [What is Istio](https://istio.io/latest/docs/concepts/what-is-istio/).  
+
+#### Limitations
+
+The current support for Istio has these limitations:
+
+* The operator supports Istio versions 1.7 and higher,
+  and has been tested with single and multicluster
+  Istio installations from 1.7.3 up to 1.11.x.
+
+* You cannot set up a NodePort using `domain.spec.adminServer.adminService.channels`
+  with a `channelName` of `default`, `default-secure`, and `default-admin`.
+  Any attempt will result in an error when deploying a domain
+  in combination with Istio.
+
+* If the `istio-ingressgateway` service in your environment
+  does not have an `EXTERNAL-IP` defined and
+  you would like to externally run WLST commands,
+  then see
+  [Use WLST]({{< relref "/userguide/managing-domains/accessing-the-domain/wlst.md" >}}).  
+
+#### Determining the Istio version
+
+To see the Istio build version that is installed, use the `istioctl version` command.  For example:
+
+```shell script
+$ istioctl version
+client version: 1.10.4
+control plane version: 1.10.4
+data plane version: 1.10.4 (1 proxies)
+```
+
+#### Setting up an operator with Istio support
+
+Istio support requires labeling the operator namespace and 
+your domain namespaces to enable Istio automatic
+sidecar injection, plus modifying your domain resource
+configuration. In this section, we describe
+the steps for the operator namespace; we will describe
+the steps for the domain in later sections.
+
+Before installing the operator,
+create the namespace in which you want to run the operator and label it.
 
 ```shell
 $ kubectl create namespace weblogic-operator
@@ -66,9 +107,14 @@ In the second command, change `weblogic-operator-xxx-xxx` to the name of your po
 
 #### Creating a domain with Istio support
 
-You can configure your domains to run with Istio automatic sidecar injection enabled.
-Before creating your domain, create the namespace in which you want to run the operator
-and label it for automatic injection.
+Setting up Istio support for a domain requires labeling
+its namespace and defining `domain.spec.configuration.istio` attributes. 
+
+##### Setting up the domain namespace
+
+To allow your domains to run with Istio automatic sidecar injection enabled,
+create the namespace in which you want to run the domain
+and label it for automatic injection before deploying your domain.
 
 ```shell
 $ kubectl create namespace domain1
@@ -77,9 +123,11 @@ $ kubectl create namespace domain1
 $ kubectl label namespace domain1 istio-injection=enabled
 ```
 
-To enable Istio support for a domain, you need to add the
-`configuration` section to your domain custom resource YAML file, as shown in the
-following example:  
+##### Configuring the domain resource
+
+To enable Istio support for a domain, you need to add a
+`domain.spec.configuration.istio` section to your domain custom resource YAML file,
+as shown in the following example:  
 
 ```yaml
 apiVersion: "weblogic.oracle/v8"
@@ -95,89 +143,90 @@ spec:
     istio:
       enabled: true
       readinessPort: 8888
+      replicationChannelPort: 4564
+      localhostBindingsEnabled: false
 ```
 
-To enable Istio support, you must include the `istio` section
-and set `enabled: true` as shown.  The `readinessPort` is optional
-and defaults to `8888` if not provided; it is used for a readiness health check.
+See the following description of each `spec.configuration.istio` attribute:
 
-##### How Istio-enabled domains differ from regular domains
+* `enabled`: To enable Istio support, you must include the `istio` section
+  and set `enabled: true` as shown.
+* `readinessPort`: This attribute is optional
+   and defaults to `8888` if not provided; it is used for a readiness health check.
+* `replicationChannelPort`: This attribute is optional and defaults to `4564` if not provided;
+  the operator will create a `T3` protocol WebLogic network access point on each WebLogic 
+  Server that is part of a cluster with this port to handle EJB and servlet session state 
+  replication traffic between servers.
 
-Istio enforces a number of requirements on Pods.  When you enable Istio support in the Domain YAML file, the
-introspector job automatically creates configuration overrides with the necessary channels for the domain to satisfy Istio's requirements, including:
+  This setting is ignored for clusters 
+  where the WebLogic cluster configuration already defines a `replication-channel` attribute. 
+* `localhostBindingsEnabled`:
+   This setting was added in operator version 3.3.3,
+   defaults to the `istioLocalhostBindingsEnabled` [Operator Helm value]({{< relref "/userguide/managing-operators/using-helm.md" >}})
+   which in turn defaults to `true`,
+   and is ignored in version 4.0 and later.
+   * In version 3.x, when `true`, the operator
+   creates a WebLogic 
+   network access point with a `localhost` binding for each existing channel and protocol.
+   * In version 3.x, use `true` for Istio versions prior to 1.10
+   and set to `false` for version 1.10 and later.
+   * Version 4.0 and later requires Istio 1.10 and later,
+   will not create local bindings, and ignores
+   this attribute.
 
-When deploying a domain with Istio sidecar injection enabled, the operator automatically adds the following network
-channels using configuration overrides.
+   |Istio version|Operator Version|localhostBindingsEnabled|notes|
+   |----|----|---|---|
+   |Pre-1.10|3.x|`true`|Supported. Note that `true` is the default in 3.x.|
+   |Pre-1.10|3.x|`false`|Not supported.|
+   |Pre-1.10|4.x|N/A|Not supported. 4.x supports only Istio 1.10 and later.|
+   |1.10 and later|3.x|`true`|Not supported.|
+   |1.10 and later|3.x|`false`|Supported.|
+   |1.10 and later|4.x|N/A|Supported. Operator will not create localhost bindings because Istio 1.10 does not need them.|
+   
+If the `localhostBindingsEnabled` is set incorrectly for the Istio version running in a domain,
+then the `weblogic-server` container in the managed server pods will
+fail to reach a `ready` state due to readiness probe failures.
+For example, if the `localhostBindingsEnabled` is set to
+`true` in operator version 3.x when running Istio versions 1.10 and later,
+then a `kubectl get pods` will have output like this:
+                                
+```text
+$ kubectl -n sample-domain1-ns get pods
+```
+```text
+NAME                             READY   STATUS    RESTARTS   AGE
+sample-domain1-admin-server      1/2     Running   0          2m
+```
 
-https://istio.io/latest/docs/ops/configuration/traffic-management/protocol-selection/
+Using the `kubectl describe pod` command will show a readiness probe event failure:
 
-For non-SSL traffic:
-
-|Name|Port|Protocol|Exposed as a container port|
-|----|----|--------|-----|
-|`http-probe`|From configuration Istio `readinessPort` |`http`| No |
-|`tcp-default`|Server listening port|`t3`| Yes |
-|`http-default`|Server listening port|`http`| Yes |
-|`tcp-snmp`|Server listening port|`snmp`| Yes |
-|`tcp-cbt`|server listening port|`CLUSTER-BROADCAST`| No |
-|`tcp-iiop`|Server listening port|`http`| No |
-
-For SSL traffic, if SSL is enabled on the server:
-
-|Name|Port|Protocol|Exposed as a container port|
-|----|----|--------|-----|
-|`tls-default`|Server SSL listening port|`t3s`| Yes |
-|`https-secure`|Server SSL listening port|`https`| Yes |
-|`tls-iiops`|Server SSL listening port|`iiops`| No |
-|`tls-ldaps`|Server SSL listening port|`ldaps`| No |
-|`tls-cbts`|Server listening port|`CLUSTER-BROADCAST-SECURE`| No |
-
-If the WebLogic administration port is enabled on the Administration Server:
-
-|Name|Port|Protocol|Exposed in the container port|
-|----|----|--------|-----|
-|`https-admin`|WebLogic administration port|`https`| Yes |
-
-
-Additionally, when Istio support is enabled for a domain, the operator
-ensures that the Istio sidecar is not injected into the introspector job's pods.
-
-#### Support for network changes in Istio v1.10 and later
+```text
+$ kubectl describe pod sample-domain1-admin-server -n sample-domain1-ns
+```
+```text
+Events:
+     Type     Reason       Age                  From      Message
+     ----     ------       ----                 ----      -------
  
-Starting with Istio 1.10, the networking behavior was changed in that the proxy no longer redirects 
-the traffic to the localhost interface, but instead forwards it to the network interface associated
-with the pod's IP.  
+    Warning  Unhealthy    60s (x10 over 105s)  kubelet   Readiness probe failed: HTTP probe failed with statuscode: 500
+```
 
-To learn more about changes to Istio networking beginning with Istio 1.10, see [Upcoming networking changes in Istio 1.10](https://istio.io/latest/blog/2021/upcoming-networking-changes/).
+Also, viewing the logging output of the `istio-proxy` container in a managed server pod
+will show that the
+readiness probe was unable to successfully establish
+a connection to the endpoint of the managed server:
 
-In order to support Istio v1.10 and later, as well as previous releases, the
-operator will:
-    
-* Add an additional WebLogic HTTP protocol network channel for the readiness probe that is bound to the localhost network interface.
-* Add additional WebLogic network channels, bound to the localhost network interface, for each defined custom network channel.  
-* Continue to automatically add the network channels described above in [How Istio-enabled domains differ from regular domains](#how-istio-enabled-domains-differ-from-regular-domains)
+```text
+$ kubectl logs sample-domain1-admin-server -n sample-domain1-ns -c istio-proxy
+```
+```text
+2021-10-22T20:35:01.354031Z	error	Request to probe app failed: Get "http://192.168.0.93:8888/weblogic/ready": dial tcp 127.0.0.6:0->192.168.0.93:8888: connect: connection refused, original URL path = /app-health/weblogic-server/readyz
+app URL path = /weblogic/ready
+```
 
-When adding additional WebLogic network channels for the readiness probe and any defined custom channels,
-the name of the additional channel will be appended with '-lhNN', where NN represents
-a two digit value for uniqueness.
+##### Applying a Domain YAML file
 
-For example, the additional WebLogic HTTP protocol network channel for the readiness probe would be
-defined as follows:
-
-|Name|Port|Listening address|Protocol|Exposed as a container port|
-|----|----|----|--------|-----|
-|`http-probe-lh01`|From configuration Istio `readinessPort` | `127.0.0.1` | `http`| No |
-
-As another example, for a custom WebLogic network channel defined as `T3Channel` with port `5556`
-and protocol `t3`, the additional channel would be defined as follows: 
-
-|Name|Port|Listening address|Protocol|Exposed as a container port|
-|----|----|----|--------|-----|
-|`T3Channel-lh01`| `5556` | `127.0.0.1` | `t3`| Yes |
-
-### Apply the Domain YAML file
-
-After the Domain YAML file is modified, apply it by:
+After a Domain YAML file is modified, apply it by:
 
 ```shell
 $ kubectl apply -f domain.yaml
@@ -197,10 +246,10 @@ sample-domain1-managed-server2   2/2     Running   0          153m
 
 If you use `istioctl proxy-status`, you will see the mesh status:
 
-```shell
-istioctl proxy-status
+```text
+$ istioctl proxy-status
 ```
-```
+```text
 NAME                                                               CDS        LDS        EDS        RDS          PILOT                            VERSION
 istio-ingressgateway-5c7d8d7b5d-tjgtd.istio-system                 SYNCED     SYNCED     SYNCED     NOT SENT     istio-pilot-6cfcdb75dd-87lqm     1.5.4
 sample-domain1-admin-server.sample-domain1-ns                      SYNCED     SYNCED     SYNCED     SYNCED       istio-pilot-6cfcdb75dd-87lqm     1.5.4
@@ -209,7 +258,7 @@ sample-domain1-managed-server2.sample-domain1-ns                   SYNCED     SY
 weblogic-operator-7d86fffbdd-5dxzt.sample-weblogic-operator-ns     SYNCED     SYNCED     SYNCED     SYNCED       istio-pilot-6cfcdb75dd-87lqm     1.5.4
 ```
 
-#### Exposing applications in Istio-enabled domains
+##### Exposing applications in Istio-enabled domains
 
 When a domain is running with Istio support, you should use the Istio ingress
 gateway to provide external access to applications, instead of using an ingress
@@ -308,3 +357,101 @@ as shown in the image above.
 {{< img "Distributed tracing with Jaeger" "images/jaeger.png" >}}
 
 To learn more, see [distrubting tracing in Istio](https://istio.io/docs/tasks/telemetry/distributed-tracing/).
+
+#### Automatically added network channels
+
+The operator will automatically
+add network channels to each WebLogic Server
+when Istio is enabled for a domain.
+
+##### Added network channels for Istio versions prior to v1.10
+
+When deploying a domain that is configured to support Istio versions prior to 1.10,
+the operator automatically adds the following network channels 
+(also known as Network Access Points) to your
+WebLogic configuration so that Istio is able to route traffic:
+
+For non-SSL traffic:
+
+|Name|Port|Protocol|Exposed as a container port|
+|----|----|--------|-----|
+|`http-probe`|From configuration Istio `readinessPort` |`http`| No |
+|`tcp-default`|Server listening port|`t3`| Yes |
+|`http-default`|Server listening port|`http`| Yes |
+|`tcp-snmp`|Server listening port|`snmp`| Yes |
+|`tcp-cbt`|server listening port|`CLUSTER-BROADCAST`| No |
+|`tcp-iiop`|Server listening port|`http`| No |
+
+For SSL traffic, if SSL is enabled on the server:
+
+|Name|Port|Protocol|Exposed as a container port|
+|----|----|--------|-----|
+|`tls-default`|Server SSL listening port|`t3s`| Yes |
+|`https-secure`|Server SSL listening port|`https`| Yes |
+|`tls-iiops`|Server SSL listening port|`iiops`| No |
+|`tls-ldaps`|Server SSL listening port|`ldaps`| No |
+|`tls-cbts`|Server listening port|`CLUSTER-BROADCAST-SECURE`| No |
+
+If the WebLogic administration port is enabled on the Administration Server:
+
+|Name|Port|Protocol|Exposed in the container port|
+|----|----|--------|-----|
+|`https-admin`|WebLogic administration port|`https`| Yes |
+
+##### Added network channel for Istio versions v1.10 and later
+
+_Background_:
+ 
+Beginning with Istio version 1.10, Istio's networking behavior
+was simplified. It changed
+so that the Istio network proxy that runs in each Istio sidecar
+(the Envoy proxy) no longer redirects 
+network traffic to the current pod's localhost interface,
+but instead directly forwards it to the network interface associated
+with the pod's IP. This means that the operator 
+does not need to create additional localhost network
+channels on each WebLogic pod except to enable
+readiness probe.
+
+To learn more about changes to Istio networking beginning with Istio 1.10,
+see [Upcoming networking changes in Istio 1.10](https://istio.io/latest/blog/2021/upcoming-networking-changes/).
+
+_Channel behavior_:
+
+When deploying a domain that is configured to support Istio versions 1.10 and later,
+the operator automatically adds an HTTP protocol network channel
+(also known as Network Access Points) to your
+WebLogic configuration for each server so that the pod's
+readiness probe is bound to the server pod's network interface:
+
+|Channel Name|Port|Listen address|Protocol|Exposed as a container port|
+|----|----|----|--------|-----|
+|`http-probe-ext`|From configuration Istio `readinessPort` | Server Pod's IP address | `http`| No |
+
+##### Added network channel for WebLogic EJB and servlet session state replication traffic
+
+To support WebLogic EJB and servlet session state replication traffic in an Istio service mesh,
+operator versions 3.3.3 and later will automatically create a channel (network access point)
+using the `domain.spec.configuration.istio.replicationChannelPort` 
+in the domain resource:
+
+|Name|Port|Protocol|Exposed as a container port|
+|----|----|--------|-----|
+|`istiorepl`|From configuration Istio `replicationChannelPort` |`t3`| No |
+
+The operator will also set up the `replication-channel` attribute
+in each WebLogic cluster configuration:
+
+```text
+<cluster>
+   <name>cluster-1</name>
+   <replication-channel>istiorepl</replication-channel>
+<cluster>
+```
+{{% notice note %}}
+The operator will not create a replication channel or
+alter a cluster's `replication-channel` configuration
+if such a channel is already configured for a WebLogic cluster.
+(This is unnecessary when the channel already exists.)
+{{% /notice %}}
+    

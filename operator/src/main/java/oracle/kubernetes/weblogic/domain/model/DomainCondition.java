@@ -4,11 +4,13 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import java.time.OffsetDateTime;
+import java.util.Optional;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.json.Description;
+import oracle.kubernetes.operator.DomainFailureReason;
 import oracle.kubernetes.utils.SystemClock;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -20,7 +22,7 @@ import static oracle.kubernetes.weblogic.domain.model.ObjectPatch.createObjectPa
 public class DomainCondition implements Comparable<DomainCondition>, PatchableComponent<DomainCondition> {
 
   @Description(
-      "The type of the condition. Valid types are Progressing, "
+      "The type of the condition. Valid types are Completed, "
           + "Available, Failed, and ConfigChangesPendingRestart.")
   @NotNull
   private final DomainConditionType type;
@@ -49,8 +51,12 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
   @SerializedName("status")
   @Expose
   @NotNull
-  private String status;
+  private String status = "True";
 
+  /**
+   * Creates a new domain condition, initialized with its type.
+   * @param conditionType the enum that designates the condition type
+   */
   public DomainCondition(DomainConditionType conditionType) {
     lastTransitionTime = SystemClock.now();
     type = conditionType;
@@ -63,22 +69,6 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
     this.message = other.message;
     this.reason = other.reason;
     this.status = other.status;
-  }
-
-  /**
-   * Returns the reason to set on the domain status when this condition is added.
-   * @return a reason or null
-   */
-  String getStatusReason() {
-    return getType().getStatusReason(this);
-  }
-
-  /**
-   * Returns the message to set on the domain status when this condition is added.
-   * @return a message or null
-   */
-  String getStatusMessage() {
-    return getType().getStatusMessage(this);
   }
 
   /**
@@ -155,9 +145,9 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
    * @param reason reason
    * @return this
    */
-  public DomainCondition withReason(String reason) {
+  public DomainCondition withReason(DomainFailureReason reason) {
     lastTransitionTime = SystemClock.now();
-    this.reason = reason;
+    this.reason = Optional.ofNullable(reason).map(Enum::toString).orElse(null);
     return this;
   }
 
@@ -177,14 +167,14 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
    * @return this
    */
   public DomainCondition withStatus(String status) {
+    assert status.equals("True") || ! type.statusMustBeTrue() : "Attempt to set illegal status value";
     lastTransitionTime = SystemClock.now();
     this.status = status;
     return this;
   }
 
   /**
-   * Type is the type of the condition. Currently, valid types are Progressing, Available, and
-   * Failure. Required.
+   * The type of the condition. Required.
    *
    * @return type
    */
@@ -240,9 +230,15 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
         .isEquals();
   }
 
+  /**
+   * Conditions are sorted, first in ascending order of type, and next in descending order of transition time.
+   * @param o the condition against which to compare this one.
+   */
   @Override
   public int compareTo(DomainCondition o) {
-    return type.compareTo(o.type);
+    return type == o.type
+          ? -(lastTransitionTime.compareTo(o.lastTransitionTime))
+          : type.compareTo(o.type);
   }
 
   private static final ObjectPatch<DomainCondition> conditionPatch = createObjectPatch(DomainCondition.class)
@@ -253,6 +249,11 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
 
   static ObjectPatch<DomainCondition> getObjectPatch() {
     return conditionPatch;
+  }
+
+  // Returns true if adding the specified condition should not remove this condition.
+  boolean isCompatibleWith(DomainCondition newCondition) {
+    return (newCondition.getType() != getType()) || getType().allowMultipleConditionsWithThisType();
   }
 
 }

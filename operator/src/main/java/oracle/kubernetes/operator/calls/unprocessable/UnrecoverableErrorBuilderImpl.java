@@ -4,73 +4,69 @@
 package oracle.kubernetes.operator.calls.unprocessable;
 
 import java.util.Collections;
-import java.util.Optional;
+import java.util.Set;
 
 import com.google.gson.Gson;
 import io.kubernetes.client.openapi.ApiException;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.FailureStatusSource;
 
+import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_BAD_METHOD;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_BAD_REQUEST;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_CONFLICT;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_FORBIDDEN;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_GONE;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAUTHORIZED;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNPROCESSABLE_ENTITY;
+
+/**
+ * An object which encapsulates a human-readable description of a failure, along with information needed by the
+ * operator to handle it.
+ */
 public class UnrecoverableErrorBuilderImpl implements FailureStatusSource {
   private final String message;
   private final int code;
   private final ErrorBody errorBody;
 
   /**
-   * Create an UnrecoverableErrorBuilder from the provided failed call.
+   * Create a description of the failure from the provided failed call.
    * @param callResponse the failed call
    * @return the FailureStatusSource
    */
-  public static FailureStatusSource fromFailedCall(CallResponse callResponse) {
+  public static FailureStatusSource fromFailedCall(CallResponse<?> callResponse) {
     return new UnrecoverableErrorBuilderImpl(callResponse);
   }
 
-  private UnrecoverableErrorBuilderImpl(CallResponse callResponse) {
-    message = callResponse.getRequestParams().toString(false);
+  private UnrecoverableErrorBuilderImpl(CallResponse<?> callResponse) {
+    message = callResponse.createFailureMessage();
     code = callResponse.getStatusCode();
     ErrorBody eb = new Gson().fromJson(callResponse.getE().getResponseBody(), ErrorBody.class);
     if (eb == null) {
       eb = new ErrorBody();
       eb.setMessage(callResponse.getE().getMessage());
       eb.addDetails();
-      eb.getDetails().addCause(new Cause().withReason(getReasonCode()));
     }
     errorBody = eb;
   }
 
-  private String getReasonCode() {
-    switch (code) {
-      case 400:
-        return "BadRequest";
-      case 401:
-        return "Unauthorized";
-      case 403:
-        return "Forbidden";
-      case 404:
-        return "NotFound";
-      case 405:
-        return "MethodNotAllowed";
-      case 410:
-        return "Gone";
-      case 500:
-        return "ServerError";
-      default:
-        return String.valueOf(code);
-    }
-  }
+  private static final Set<Integer> UNRECOVERABLE_ERROR_CODES = Set.of(
+        HTTP_BAD_REQUEST, HTTP_UNAUTHORIZED, HTTP_FORBIDDEN, HTTP_NOT_FOUND,
+        HTTP_BAD_METHOD, HTTP_GONE, HTTP_UNPROCESSABLE_ENTITY, HTTP_INTERNAL_ERROR);
 
   public static boolean isUnrecoverable(ApiException e) {
-    int code = e.getCode();
-    return code == 400 || code == 401 || code == 403 || code == 404 || code == 405 || code == 410 || code == 500;
+    return UNRECOVERABLE_ERROR_CODES.contains(e.getCode());
   }
 
   public static boolean isNotFound(ApiException e) {
     int code = e.getCode();
-    return code == 404 || code == 410;
+    return code == HTTP_NOT_FOUND || code == HTTP_GONE;
   }
 
   public static boolean hasConflict(ApiException e) {
-    return e.getCode() == 409;
+    return e.getCode() == HTTP_CONFLICT;
   }
 
   /**
@@ -78,7 +74,7 @@ public class UnrecoverableErrorBuilderImpl implements FailureStatusSource {
    */
   public UnrecoverableErrorBuilderImpl() {
     message = "";
-    code = 500;
+    code = HTTP_INTERNAL_ERROR;
     errorBody = new ErrorBody();
   }
 
@@ -89,12 +85,7 @@ public class UnrecoverableErrorBuilderImpl implements FailureStatusSource {
 
   @Override
   public String getReason() {
-    return Optional.ofNullable(errorBody.getDetails())
-        .map(ErrorDetails::getCauses)
-        .filter(list -> list.length != 0)
-        .map(n -> n[0])
-        .map(Cause::getReason)
-        .orElse("");
+    return Kubernetes.toString();
   }
 
   /**

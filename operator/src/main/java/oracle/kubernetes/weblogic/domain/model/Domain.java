@@ -421,6 +421,19 @@ public class Domain implements KubernetesObject {
    * DomainStatus represents information about the status of a domain. Status may trail the actual
    * state of a system.
    *
+   * @return Status
+   */
+  public DomainStatus getOrCreateStatus() {
+    if (status == null) {
+      setStatus(new DomainStatus());
+    }
+    return status;
+  }
+
+  /**
+   * DomainStatus represents information about the status of a domain. Status may trail the actual
+   * state of a system.
+   *
    * @param status Status
    */
   public void setStatus(DomainStatus status) {
@@ -435,7 +448,7 @@ public class Domain implements KubernetesObject {
    * @return this instance
    */
   public Domain withStatus(DomainStatus status) {
-    this.status = status;
+    setStatus(status);
     return this;
   }
 
@@ -648,6 +661,30 @@ public class Domain implements KubernetesObject {
 
   public int getIstioReadinessPort() {
     return spec.getIstioReadinessPort();
+  }
+
+  public int getIstioReplicationPort() {
+    return spec.getIstioReplicationPort();
+  }
+
+  /**
+   * For Istio version prior to 1.10, proxy redirects traffic to localhost and thus requires
+   * localhostBindingsEnabled configuration to be true.  Istio 1.10 and later redirects traffic
+   * to server pods' IP interface and thus localhostBindingsEnabled configuration should be false.
+   * @return true if if the proxy redirects traffic to localhost, false otherwise.
+   */
+  public boolean isLocalhostBindingsEnabled() {
+    Boolean isLocalHostBindingsEnabled = spec.isLocalhostBindingsEnabled();
+    if (isLocalHostBindingsEnabled != null) {
+      return isLocalHostBindingsEnabled;
+    }
+
+    String istioLocalhostBindingsEnabled = TuningParameters.getInstance().get("istioLocalhostBindingsEnabled");
+    if (istioLocalhostBindingsEnabled != null) {
+      return Boolean.parseBoolean(istioLocalhostBindingsEnabled);
+    }
+
+    return true;
   }
 
   /**

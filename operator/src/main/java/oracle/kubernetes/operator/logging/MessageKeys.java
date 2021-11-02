@@ -177,6 +177,9 @@ public class MessageKeys {
   public static final String RESERVED_CONTAINER_NAME = "WLSDO-0030";
   public static final String ILLEGAL_CONTAINER_PORT_NAME_LENGTH = "WLSDO-0031";
   public static final String ILLEGAL_NETWORK_CHANNEL_NAME_LENGTH = "WLSDO-0032";
+  public static final String K8S_REQUEST_FAILURE = "WLSDO-0033";
+  public static final String SERVER_POD_FAILURE = "WLSDO-0034";
+  public static final String TOO_MANY_REPLICAS_FAILURE = "WLSDO-0035";
 
   private MessageKeys() {
   }

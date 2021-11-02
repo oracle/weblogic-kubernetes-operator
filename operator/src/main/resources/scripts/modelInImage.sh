@@ -57,6 +57,12 @@ SCRIPT_ERROR=255
 WDT_ONLINE_MIN_VERSION="1.9.9"
 WDT_OFFLINE_MIN_VERSION="1.7.3"
 
+FATAL_JRF_INTROSPECTOR_ERROR_MSG="Model In Image JRF domain creation and schema initialization encountered an unrecoverable error.
+ If it is a database credential related error such as wrong password, schema prefix, or database connect
+ string, then correct the error and patch the domain resource 'domain.spec.introspectVersion' with a new
+ value. If the error is not related to a database credential, then you must also drop and recreate the
+ JRF schemas before patching the domain resource. Introspection Error: "
+
 export WDT_MODEL_SECRETS_DIRS="/weblogic-operator/config-overrides-secrets"
 [ ! -d ${WDT_MODEL_SECRETS_DIRS} ] && unset WDT_MODEL_SECRETS_DIRS
 
@@ -64,6 +70,7 @@ export WDT_MODEL_SECRETS_DIRS="/weblogic-operator/config-overrides-secrets"
 #  export WDT_MODEL_SECRETS_NAME_DIR_PAIRS="__weblogic-credentials__=/weblogic-operator/secrets,__WEBLOGIC-CREDENTIALS__=/weblogic-operator/secrets,${CREDENTIALS_SECRET_NAME}=/weblogic-operator/secret"
 #For now:
 export WDT_MODEL_SECRETS_NAME_DIR_PAIRS="__weblogic-credentials__=/weblogic-operator/secrets,__WEBLOGIC-CREDENTIALS__=/weblogic-operator/secrets"
+
 
 # sort_files  sort the files according to the names and naming conventions and write the result to stdout
 #    $1  directory
@@ -887,9 +894,7 @@ function wdtCreatePrimordialDomain() {
     #  output configmap and save it for reuse.
 
     ${WDT_BINDIR}/createDomain.sh ${wdtArgs} > ${WDT_OUTPUT} 2>&1
-
   else
-
     # We get here only for JRF domain 'second time' (or more) case.
 
     # JRF wallet reuse note:
@@ -913,7 +918,8 @@ function wdtCreatePrimordialDomain() {
     # without admin intervention (retrying can compound the problem and obscure the original issue).
     #
     if [ "JRF" == "$WDT_DOMAIN_TYPE" ] && [ -z "${OPSS_FLAGS}" ] ; then
-      trace SEVERE "Model in Image: FatalIntrospectorError: WDT Create Primordial Domain Failed, ret=${ret}"
+      trace SEVERE "Model in Image: FatalIntrospectorError: WDT Create Domain Failed, return ${ret}. " \
+        ${FATAL_JRF_INTROSPECTOR_ERROR_MSG}
     else
       trace SEVERE "Model in Image: WDT Create Primordial Domain Failed, ret=${ret}"
     fi
@@ -922,6 +928,9 @@ function wdtCreatePrimordialDomain() {
   else
     trace "WDT Create Domain Succeeded, ret=${ret}:"
     cat ${WDT_OUTPUT}
+    if [ "JRF" == "$WDT_DOMAIN_TYPE" ]; then
+      CREATED_JRF_PRIMODIAL="true"
+    fi
   fi
 
   # restore trap
@@ -957,7 +966,12 @@ function wdtUpdateModelDomain() {
   ret=$?
 
   if [ $ret -ne 0 ]; then
-    trace SEVERE "WDT Update Domain command Failed:"
+    if [ "true" == "${CREATED_JRF_PRIMODIAL}" ] ; then
+      trace SEVERE "Model in Image: FatalIntrospectorError: WDT Update Domain Failed, return ${ret}. " \
+        ${FATAL_JRF_INTROSPECTOR_ERROR_MSG}
+    else
+      trace SEVERE "WDT Update Domain command Failed:"
+    fi
     cat ${WDT_OUTPUT}
     exitOrLoop
   fi
@@ -1018,7 +1032,7 @@ function wdtHandleOnlineUpdate() {
   for file in $(sort_files ${IMG_ARCHIVES_ROOTDIR} "*.zip")
     do
         # expand the archive domain libraries to the domain lib
-        cd ${DOMAIN_HOME}/lib || return exitOrLoop
+        cd ${DOMAIN_HOME}/lib || exitOrLoop
         ${JAVA_HOME}/bin/jar xf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainLibraries/
 
         if [ $? -ne 0 ] ; then

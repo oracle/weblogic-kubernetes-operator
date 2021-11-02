@@ -231,7 +231,6 @@ class ItExternalNodePortService {
     ExecResult result = assertDoesNotThrow(
         () -> exec(new String(deployNodePort), true));
 
-    // Unlike Voyager There is no such service to check for tunneling
     logger.info("kubectl apply returned {0}", result.toString());
     String serviceName = domainUid + "-cluster-" + clusterName + "-ext";
     String portName = "clustert3channel";
