@@ -639,13 +639,18 @@ public class TestActions {
    * @throws ApiException if Kubernetes client API call fails
    */
   public static String createUniqueNamespace() throws ApiException {
+    String name = Namespace.uniqueName();
     try {
-      String name = Namespace.uniqueName();
       new Namespace().name(name).create();
       return name;
     } catch (ApiException ex) {
       //retry in case of failure
-      return createUniqueNamespace();
+      if (listNamespaces().contains(name)) {
+        return createUniqueNamespace();
+      } else {
+        getLogger().severe(ex.getResponseBody());
+        throw ex;
+      }
     }
   }
 
