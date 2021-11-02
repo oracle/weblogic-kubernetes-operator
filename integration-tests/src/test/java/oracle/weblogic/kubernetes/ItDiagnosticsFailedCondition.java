@@ -33,6 +33,7 @@ import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
+import oracle.weblogic.domain.ManagedServer;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.domain.ServerService;
@@ -1008,6 +1009,9 @@ class ItDiagnosticsFailedCondition {
             .addClustersItem(new Cluster()
                 .clusterName("cluster-1")
                 .replicas(replicaCount)
+                .serverStartState("RUNNING"))
+            .addManagedServersItem(new ManagedServer()
+                .serverName("cluster-1")
                 .serverStartState("RUNNING"))
             .configuration(new Configuration()
                 .model(new Model()
