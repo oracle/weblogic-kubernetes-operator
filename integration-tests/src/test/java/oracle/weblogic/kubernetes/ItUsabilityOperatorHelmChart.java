@@ -41,7 +41,6 @@ import org.junit.jupiter.api.TestMethodOrder;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
@@ -68,11 +67,14 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorRestS
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
@@ -124,6 +126,7 @@ class ItUsabilityOperatorHelmChart {
   private boolean isDomain2Running = false;
   private int replicaCountDomain1 = 2;
   private int replicaCountDomain2 = 2;
+  private String adminSvcExtRouteHost = null;
 
   // ingress host list
   private List<String> ingressHostList;
@@ -215,6 +218,7 @@ class ItUsabilityOperatorHelmChart {
         assertDoesNotThrow(() -> getPodCreationTimestamp(domain1Namespace, "", adminServerPodName),
             String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
                 adminServerPodName, domain1Namespace));
+    adminSvcExtRouteHost = createRouteForOKD(adminServerPodName + "-ext", domain1Namespace);
 
     // get the managed server pods original creation timestamps
     logger.info("Getting managed server pods original creation timestamps");
@@ -315,6 +319,8 @@ class ItUsabilityOperatorHelmChart {
           null,"deployed", 0, opHelmParams, domain1Namespace);
 
       assertNotNull(opHelmParams, "Can't install operator");
+      String opExtRouteHost = createRouteForOKD("external-weblogic-operator-svc", opNamespace);
+      setTlsTerminationForRoute("external-weblogic-operator-svc", opNamespace);
       int externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
       assertTrue(externalRestHttpsPort != -1,
           "Could not get the Operator external service node port");
@@ -634,6 +640,10 @@ class ItUsabilityOperatorHelmChart {
       assertTrue(externalRestHttpsPort != -1,
           "Could not get the Operator external service node port");
       logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
+
+      String opExtRestRouteHost = createRouteForOKD("external-weblogic-operator-svc", op2Namespace);
+      setTlsTerminationForRoute("external-weblogic-operator-svc", op2Namespace);
+
       //upgrade operator to add domain
       OperatorParams opParams = new OperatorParams()
           .helmParams(opHelmParam2)
@@ -763,6 +773,8 @@ class ItUsabilityOperatorHelmChart {
       HelmParams opHelmParams = installAndVerifyOperator(op2Namespace, opServiceAccount, true,
           0, op1HelmParams, domain4Namespace).getHelmParams();
       assertNotNull(opHelmParams, "Can't install operator");
+      String opExtRestRouteHost = createRouteForOKD("external-weblogic-operator-svc", op2Namespace);
+      setTlsTerminationForRoute("external-weblogic-operator-svc", op2Namespace);
       int externalRestHttpsPort = getServiceNodePort(op2Namespace, "external-weblogic-operator-svc");
       assertTrue(externalRestHttpsPort != -1,
           "Could not get the Operator external service node port");
@@ -924,6 +936,8 @@ class ItUsabilityOperatorHelmChart {
     logger.info("Checking that admin service {0} exists in namespace {1}",
         adminServerPodName, domainNamespace);
     checkServiceExists(adminServerPodName, domainNamespace);
+    adminSvcExtRouteHost = createRouteForOKD(adminServerPodName + "-ext", domainNamespace);
+    
     // check for managed server pods existence in the domain namespace
     for (int i = 1; i <= replicaCount; i++) {
       String managedServerPodName = domainUid + managedServerPrefix + i;
@@ -1168,8 +1182,9 @@ class ItUsabilityOperatorHelmChart {
     String managedServer = "managed-server1";
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    String hostAndPort = getHostAndPort(adminSvcExtRouteHost, adminServiceNodePort);
     StringBuffer checkCluster = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
-    checkCluster.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+    checkCluster.append("http://" + hostAndPort)
         .append("/management/tenant-monitoring/servers/")
         .append(managedServer)
         .append(" --silent --show-error ")
