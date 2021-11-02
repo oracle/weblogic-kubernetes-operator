@@ -606,14 +606,14 @@
     <assertj.core.version>3.21.0</assertj.core.version>
     <commons.io.version>2.11.0</commons.io.version>
     <awaitility-version>4.1.1</awaitility-version>
-    <client-java-version>13.0.1</client-java-version>
-    <kotlin-stdlib-version>1.5.31</kotlin-stdlib-version>
+    <client-java-version>13.0.0</client-java-version>
+    <kotlin-stdlib-version>1.5.30</kotlin-stdlib-version>
     <junit.jupiter.version>5.8.1</junit.jupiter.version>
     <junit.vintage.version>5.7.1</junit.vintage.version>
     <junit.platform.version>1.7.0</junit.platform.version>
     <junit.platform.surefire.version>1.3.2</junit.platform.surefire.version>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-    <jersey-version>3.0.3</jersey-version>
+    <jersey-version>3.0.2</jersey-version>
     <jackson-version>2.13.0</jackson-version>
     <jackson-databind-version>2.13.0</jackson-databind-version>
     <dependency-check-version>6.1.5</dependency-check-version>
