@@ -3,10 +3,8 @@
 
 package oracle.kubernetes.operator.steps;
 
-import io.kubernetes.client.openapi.models.V1ServicePort;
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nonnull;
