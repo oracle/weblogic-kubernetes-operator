@@ -18,6 +18,7 @@ import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
@@ -152,6 +153,30 @@ public class DomainStatusUpdater {
         EventHelper.createEventStep(new EventData(DOMAIN_PROCESSING_FAILED, getEventMessage(reason, message))));
   }
 
+  public static Step createFailureCountStep(V1Job domainIntrospectorJob) {
+    return new FailureCountStep(domainIntrospectorJob);
+  }
+
+  static class FailureCountStep extends DomainStatusUpdaterStep {
+
+    private final V1Job domainIntrospectorJob;
+
+    public FailureCountStep(@Nonnull V1Job domainIntrospectorJob) {
+      super(null);
+      this.domainIntrospectorJob = domainIntrospectorJob;
+    }
+
+    @Override
+    void modifyStatus(DomainStatus domainStatus) {
+      domainStatus.incrementIntrospectJobFailureCount(getJobUid());
+    }
+
+    @Nullable
+    private String getJobUid() {
+      return Optional.of(domainIntrospectorJob).map(V1Job::getMetadata).map(V1ObjectMeta::getUid).orElse(null);
+    }
+  }
+
   private static String getEventMessage(@Nonnull DomainFailureReason reason, String message) {
     return !StringUtils.isBlank(message) ? message : reason.toString();
   }
@@ -248,37 +273,8 @@ public class DomainStatusUpdater {
         newStatus.setMessage(
             Optional.ofNullable(info).map(DomainPresenceInfo::getValidationWarningsAsString).orElse(null));
       }
-      if (shouldUpdateFailureCount(newStatus)) {
-        newStatus.incrementIntrospectJobFailureCount();
-      }
 
       return newStatus;
-    }
-
-    private String getExistingStatusMessage() {
-      return Optional.ofNullable(info)
-              .map(DomainPresenceInfo::getDomain)
-              .map(Domain::getStatus)
-              .map(DomainStatus::getMessage)
-              .orElse(null);
-    }
-
-    private boolean shouldUpdateFailureCount(DomainStatus newStatus) {
-      return getExistingStatusMessage() == null
-          && isBackoffLimitExceeded(newStatus);
-    }
-
-    private boolean isBackoffLimitExceeded(DomainStatus newStatus) {
-      List<DomainCondition> domainConditions = Optional.of(newStatus)
-          .map(DomainStatus::getConditions)
-          .orElse(Collections.emptyList());
-
-      for (DomainCondition cond : domainConditions) {
-        if ("BackoffLimitExceeded".equals(cond.getReason())) {
-          return true;
-        }
-      }
-      return false;
     }
 
     String getDomainUid() {
@@ -549,12 +545,6 @@ public class DomainStatusUpdater {
       }
 
       private void updateDomainConditions(DomainStatus status, String message) {
-        String introspectVersion = DomainPresenceInfo.fromPacket(packet)
-            .map(DomainPresenceInfo::getDomain)
-            .map(Domain::getSpec)
-            .map(DomainSpec::getIntrospectVersion)
-            .orElse("");
-
         DomainCondition onlineUpdateCondition = new DomainCondition(ConfigChangesPendingRestart)
             .withMessage(message)
             .withStatus("True");

@@ -69,6 +69,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class KubernetesTestSupportTest {
 
@@ -539,6 +540,31 @@ class KubernetesTestSupportTest {
 
     assertThat(getResourcesInNamespace("ns1"), empty());
     assertThat(getResourcesInNamespace("ns2"), hasSize(3));
+  }
+
+  @Test
+  void canPerformActionAfterCallIsCompleted() {
+    testSupport.setAddCreationTimestamp(true);
+    definePodResource();
+    final OffsetDateTime initialCreationTime = getPodCreationTime();
+
+    SystemClockTestSupport.increment();
+    testSupport.doAfterCall(POD, "deletePod", this::definePodResource);
+    testSupport.runSteps(new CallBuilder().deletePodAsync("pod", "ns", "uid", null, new DefaultResponseStep<>()));
+
+    assertTrue(getPodCreationTime().isAfter(initialCreationTime));
+  }
+
+  private void definePodResource() {
+    V1Pod pod = createPod("ns", "pod");
+    testSupport.defineResources(pod);
+  }
+
+  private OffsetDateTime getPodCreationTime() {
+    return Optional.ofNullable(testSupport.<V1Pod>getResources(POD).get(0))
+          .map(V1Pod::getMetadata)
+          .map(V1ObjectMeta::getCreationTimestamp)
+          .orElse(OffsetDateTime.MIN);
   }
 
   private List<KubernetesObject> getResourcesInNamespace(String name) {

@@ -125,6 +125,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
   private final Map<String, DataRepository<?>> repositories = new HashMap<>();
   private final Map<Class<?>, String> dataTypes = new HashMap<>();
   private Failure failure;
+  private AfterCallAction afterCallAction;
   private long resourceVersion;
   private int numCalls;
   private boolean addCreationTimestamp;
@@ -435,6 +436,16 @@ public class KubernetesTestSupport extends FiberTestSupport {
     failure = null;
   }
 
+  /**
+   * Specifies an action to perform after completing the next matching invocation.
+   * @param resourceType the type of resource
+   * @param call the call string
+   * @param action the action to perform
+   */
+  public void doAfterCall(@Nonnull String resourceType, @Nonnull String call, @Nonnull Runnable action) {
+    afterCallAction = new AfterCallAction(resourceType, call, action);
+  }
+
   @SuppressWarnings("unused")
   private enum Operation {
     create {
@@ -553,6 +564,27 @@ public class KubernetesTestSupport extends FiberTestSupport {
             .append("namespace", namespace)
             .append("operation", operation)
             .toString();
+    }
+  }
+
+  static class AfterCallAction {
+    private final String resourceType;
+    private final String call;
+    private final Runnable action;
+
+    AfterCallAction(@Nonnull String resourceType, @Nonnull String call, @Nonnull Runnable action) {
+      this.resourceType = resourceType;
+      this.call = call;
+      this.action = action;
+    }
+
+    boolean matches(String resourceType, RequestParams requestParams) {
+      return this.resourceType.equals(resourceType)
+          && (this.call.equals(requestParams.call));
+    }
+
+    void doAction() {
+      action.run();
     }
   }
 
@@ -896,7 +928,6 @@ public class KubernetesTestSupport extends FiberTestSupport {
       return resource;
     }
 
-    @SuppressWarnings("unchecked")
     T fromJsonStructure(JsonStructure jsonStructure) {
       return new JSON().deserialize(jsonStructure.toString(), resourceType);
     }
@@ -923,12 +954,12 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
 
     @SuppressWarnings("unchecked")
-    public void addCreateAction(Consumer<?> consumer) {
+    void addCreateAction(Consumer<?> consumer) {
       onCreateActions.add((Consumer<T>) consumer);
     }
 
     @SuppressWarnings("unchecked")
-    public void addUpdateAction(Consumer<?> consumer) {
+    void addUpdateAction(Consumer<?> consumer) {
       onUpdateActions.add((Consumer<T>) consumer);
     }
 
@@ -1125,15 +1156,22 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
 
     private Object execute() {
-      if (failure != null && failure.matches(resourceType, requestParams, operation)) {
-        try {
-          throw failure.getException();
-        } finally {
-          failure = null;
+      try {
+        if (failure != null && failure.matches(resourceType, requestParams, operation)) {
+          try {
+            throw failure.getException();
+          } finally {
+            failure = null;
+          }
+        }
+
+        return operation.execute(this, selectRepository(resourceType));
+      } finally {
+        if (afterCallAction != null && afterCallAction.matches(resourceType, requestParams)) {
+          afterCallAction.doAction();
+          afterCallAction = null;
         }
       }
-
-      return operation.execute(this, selectRepository(resourceType));
     }
 
     @SuppressWarnings("unchecked")
@@ -1185,6 +1223,11 @@ public class KubernetesTestSupport extends FiberTestSupport {
       if (next != null) {
         next.setPrevious(this);
       }
+    }
+
+    @Override
+    protected String getDetail() {
+      return getRequestParams().call;
     }
 
     @Override
