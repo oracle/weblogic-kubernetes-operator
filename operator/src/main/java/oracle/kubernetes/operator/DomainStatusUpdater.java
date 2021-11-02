@@ -163,11 +163,11 @@ public class DomainStatusUpdater {
     private final V1Job domainIntrospectorJob;
     private final boolean resetFailureCount;
 
-    public FailureCountStep(@Nonnull V1Job domainIntrospectorJob) {
+    public FailureCountStep(V1Job domainIntrospectorJob) {
       this(domainIntrospectorJob, false);
     }
 
-    public FailureCountStep(@Nonnull V1Job domainIntrospectorJob, boolean resetFailureCount) {
+    public FailureCountStep(V1Job domainIntrospectorJob, boolean resetFailureCount) {
       super(null);
       this.domainIntrospectorJob = domainIntrospectorJob;
       this.resetFailureCount = resetFailureCount;
@@ -175,10 +175,10 @@ public class DomainStatusUpdater {
 
     @Override
     void modifyStatus(DomainStatus domainStatus) {
-      if (!resetFailureCount) {
-        domainStatus.incrementIntrospectJobFailureCount(getJobUid());
-      } else {
+      if (resetFailureCount) {
         domainStatus.resetIntrospectJobFailureCount();
+      } else {
+        domainStatus.incrementIntrospectJobFailureCount(getJobUid());
       }
     }
 

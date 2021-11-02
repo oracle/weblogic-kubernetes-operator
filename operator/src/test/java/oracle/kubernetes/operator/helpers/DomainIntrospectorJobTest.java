@@ -10,7 +10,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 import java.util.stream.IntStream;
@@ -538,18 +537,6 @@ class DomainIntrospectorJobTest {
     testSupport.definePodLog(LegalNames.toJobIntrospectorName(UID), NS, SEVERE_MESSAGE);
   }
 
-  private void defineFailedIntrospectionWithImagePullError(String imagePullError) {
-    String jobName = UID + "-introspector";
-    List<V1ContainerStatus> statuses = Arrays.asList(new V1ContainerStatus().state(new V1ContainerState()
-            .waiting(new V1ContainerStateWaiting().reason(imagePullError))));
-    Map<String, String> labels = new HashMap<>();
-    labels.put(LabelConstants.JOBNAME_LABEL, jobName);
-    testSupport.defineResources(asFailedJobWithImagePullError(createIntrospectorJob()));
-    V1Pod pod = new V1Pod().metadata(new V1ObjectMeta().name(jobName).labels(labels).namespace(NS))
-            .status(new V1PodStatus().containerStatuses(statuses));
-    testSupport.defineResources(pod);
-  }
-
   @Test
   void whenPreviousFailedJobExists_readOnlyNewPodLog() throws Exception {
     ignoreJobCreatedAndDeletedLogs();
@@ -617,23 +604,17 @@ class DomainIntrospectorJobTest {
   void whenPreviousTimedoutJobExists_createNewJob() {
     ignoreIntrospectorFailureLogs();
     ignoreJobCreatedAndDeletedLogs();
-    //testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
     definePreviousTimedoutIntrospection();
     testSupport.doOnCreate(JOB, this::recordJob);
-    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
 
     testSupport.runSteps(Step.chain(new WatchDomainIntrospectorJobReadyStep(),
             JobHelper.createIntrospectionStartStep(null)));
-    //testSupport.runSteps(JobHelper.processIntrospectionResults(null));
 
     assertThat(affectedJob, notNullValue());
-    assertThat(affectedJob.getSpec().getActiveDeadlineSeconds(), is(getIntrospectorJobActiveDeadlineSeconds() + 60L));
-    assertThat(getDomain().getStatus().getIntrospectJobFailureCount(), is(1));
   }
 
   private void definePreviousTimedoutIntrospection() {
     defineTimedoutIntrospection();
-    getDomain().getOrCreateStatus().incrementIntrospectJobFailureCount(JOB_UID);
   }
 
   private void defineTimedoutIntrospection() {
@@ -661,9 +642,30 @@ class DomainIntrospectorJobTest {
     testSupport.runSteps(JobHelper.createIntrospectionStartStep(null));
 
     assertThat(affectedJob, notNullValue());
-    assertThat(affectedJob.getSpec().getActiveDeadlineSeconds(), is(getIntrospectorJobActiveDeadlineSeconds()));
-    assertThat(Optional.ofNullable(getDomain().getStatus()).map(s -> s.getIntrospectJobFailureCount())
-            .orElse(0), is(0));
+  }
+
+  private void defineFailedIntrospectionWithImagePullError(String imagePullError) {
+    testSupport.defineResources(asFailedJobWithBackoffLimitExceeded(createIntrospectorJob()));
+    testSupport.defineResources(asFailedJobPodWithImagePullError(createIntrospectorJobPod(), imagePullError));
+  }
+
+  private V1Pod asFailedJobPodWithImagePullError(V1Pod introspectorJobPod, String imagePullError) {
+    List<V1ContainerStatus> statuses = Arrays.asList(new V1ContainerStatus().state(new V1ContainerState()
+            .waiting(new V1ContainerStateWaiting().reason(imagePullError))));
+    return introspectorJobPod.status(new V1PodStatus().containerStatuses(statuses));
+  }
+
+  private V1Pod createIntrospectorJobPod() {
+    String jobName = UID + "-introspector";
+    Map<String, String> labels = new HashMap<>();
+    labels.put(LabelConstants.JOBNAME_LABEL, jobName);
+    return new V1Pod().metadata(new V1ObjectMeta().name(jobName).labels(labels).namespace(NS));
+  }
+
+  private V1Job asFailedJobWithBackoffLimitExceeded(V1Job job) {
+    job.setStatus(new V1JobStatus().addConditionsItem(new V1JobCondition().status("True").type("Failed")
+            .reason("BackoffLimitExceeded")));
+    return job;
   }
 
   @Test
@@ -677,9 +679,6 @@ class DomainIntrospectorJobTest {
     testSupport.runSteps(JobHelper.createIntrospectionStartStep(null));
 
     assertThat(affectedJob, notNullValue());
-    assertThat(affectedJob.getSpec().getActiveDeadlineSeconds(), is(getIntrospectorJobActiveDeadlineSeconds()));
-    assertThat(Optional.ofNullable(getDomain().getStatus()).map(s -> s.getIntrospectJobFailureCount())
-            .orElse(0), is(0));
   }
 
   private V1Job affectedJob;
@@ -695,12 +694,6 @@ class DomainIntrospectorJobTest {
 
   private V1Job asFailedJob(V1Job job) {
     job.setStatus(new V1JobStatus().addConditionsItem(new V1JobCondition().status("True").type("Failed")));
-    return job;
-  }
-
-  private V1Job asFailedJobWithImagePullError(V1Job job) {
-    job.setStatus(new V1JobStatus().addConditionsItem(new V1JobCondition().status("True").type("Failed")
-            .reason("BackoffLimitExceeded")));
     return job;
   }
 

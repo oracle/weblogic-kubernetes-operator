@@ -171,11 +171,6 @@ class DomainProcessorTest {
     return new V1JobStatus();
   }
 
-  V1JobStatus createTimedoutStatus() {
-    return new V1JobStatus().addConditionsItem(new V1JobCondition().status("True").type("Failed")
-            .reason("DeadlineExceeded"));
-  }
-
   private static WlsDomainConfig createDomainConfig() {
     WlsClusterConfig clusterConfig = new WlsClusterConfig(CLUSTER);
     for (String serverName : MANAGED_SERVER_NAMES) {
@@ -830,7 +825,6 @@ class DomainProcessorTest {
 
   @Test
   void whenIntrospectionJobNotComplete_waitForIt() throws Exception {
-    consoleHandlerMemento.ignoringLoggedExceptions(RuntimeException.class);
     establishPreviousIntrospection(null);
     jobStatus = createNotCompletedStatus();
 
@@ -840,7 +834,6 @@ class DomainProcessorTest {
     makeRight.execute();
 
     assertThat(processorDelegate.waitedForIntrospection(), is(true));
-    assertThat(newDomain.getStatus().getIntrospectJobFailureCount(), is(0));
   }
 
   @Test
@@ -855,6 +848,11 @@ class DomainProcessorTest {
             new DomainPresenceInfo(newDomain)).interrupt();
     makeRight.execute();
     assertThat(newDomain.getStatus().getIntrospectJobFailureCount(), is(1));
+  }
+
+  V1JobStatus createTimedoutStatus() {
+    return new V1JobStatus().addConditionsItem(new V1JobCondition().status("True").type("Failed")
+            .reason("DeadlineExceeded"));
   }
 
   private void establishPreviousIntrospection(Consumer<Domain> domainSetup) throws JsonProcessingException {

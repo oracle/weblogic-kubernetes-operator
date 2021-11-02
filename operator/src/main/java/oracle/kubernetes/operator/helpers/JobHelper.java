@@ -220,33 +220,37 @@ public class JobHelper {
           packet.put(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB, job);
         }
 
-        return doNext(getIntrospectorPodStatus(info.getDomainUid(), info.getNamespace(), getNext()), packet);
+        return doNext(verifyIntrospectorJobPod(info.getNamespace(), getNext()), packet);
       }
 
-      private Step getIntrospectorPodStatus(String domainUid, String namespace, Step next) {
+      private Step verifyIntrospectorJobPod(String namespace, Step next) {
         return new CallBuilder()
                 .withLabelSelectors(LabelConstants.JOBNAME_LABEL)
-                .listPodAsync(namespace, new IntrospectorJobPodStatusStep(next));
+                .listPodAsync(namespace, createReadJobPodResponse(next));
       }
 
-      private class IntrospectorJobPodStatusStep extends ResponseStep<V1PodList> {
-        IntrospectorJobPodStatusStep(Step next) {
+      @Nonnull
+      private VerifyIntrospectorJobPodResponseStep<V1Pod> createReadJobPodResponse(Step next) {
+        return new VerifyIntrospectorJobPodResponseStep<>(next);
+      }
+
+      private class VerifyIntrospectorJobPodResponseStep<T> extends ResponseStep<V1PodList> {
+        VerifyIntrospectorJobPodResponseStep(Step next) {
           super(next);
         }
 
         @Override
         public NextAction onSuccess(Packet packet, CallResponse<V1PodList> callResponse) {
-          Optional.ofNullable(callResponse.getResult())
-                  .map(V1PodList::getItems)
-                  .orElseGet(Collections::emptyList)
-                  .forEach(pod -> recordJobPodNameAndStatus(packet, pod));
-
           V1Job job = (V1Job) packet.get(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
-          String jobPodStatusReason = (String) packet.get(ProcessingConstants.JOB_POD_STATUS_REASON);
-          if (isKnownFailedJob(job, packet)) {
+          boolean hasImagePullError = checkJobPodForImagePullError(callResponse);
+          if (hasImagePullError) {
+            packet.put(DOMAIN_INTROSPECT_REQUESTED, ReadPodLogResponseStep.INTROSPECTION_FAILED);
+          }
+
+          if (isKnownFailedJob(job) || hasImagePullError) {
             return doContinueListOrNext(callResponse, packet, cleanUpAndReintrospect());
-          } else if ((job != null) && isJobTimedout(job, jobPodStatusReason)) {
-            return doContinueListOrNext(callResponse, packet, recreateIntrospection());
+          } else if (isJobTimedout(job)) {
+            return doContinueListOrNext(callResponse, packet, deleteJobAndStartNewIntrospection());
           } else if (job != null) {
             return doContinueListOrNext(callResponse, packet, processIntrospectionResults());
           } else if (isIntrospectionNeeded(packet)) {
@@ -256,39 +260,39 @@ public class JobHelper {
           }
         }
 
-        private void recordJobPodNameAndStatus(Packet packet, V1Pod pod) {
-          String name = Optional.ofNullable(pod).map(V1Pod::getMetadata).map(V1ObjectMeta::getName).orElse("");
-          if (name.startsWith(getJobName())) {
-            packet.put(ProcessingConstants.JOB_POD_NAME, name);
+        private boolean checkJobPodForImagePullError(CallResponse<V1PodList> callResponse) {
+          String podContainerWaitingReason = getJobPodContainerWaitingReason(Optional.ofNullable(
+                  callResponse.getResult()).map(V1PodList::getItems).orElseGet(Collections::emptyList));
+          return Optional.ofNullable(podContainerWaitingReason)
+                  .map(s -> s.contains("ErrImagePull") || s.contains("ImagePullBackOff"))
+                  .orElse(false);
+        }
 
-            packet.put(ProcessingConstants.JOB_POD_CONTAINER_WAITING_REASON, Optional.ofNullable(pod.getStatus())
-                    .map(V1PodStatus::getContainerStatuses).map(statuses -> statuses.get(0))
-                    .map(V1ContainerStatus::getState).map(V1ContainerState::getWaiting)
-                    .map(V1ContainerStateWaiting::getReason).orElse(null));
-            packet.put(ProcessingConstants.JOB_POD_STATUS_REASON, Optional.ofNullable(pod.getStatus())
-                    .map(V1PodStatus::getReason).orElse(null));
-          }
+        private String getJobPodContainerWaitingReason(List<V1Pod> podList) {
+          return getJobPodContainerWaitingReason(podList.stream().filter(pod -> isIntrospectionJobPod(pod)).findAny()
+                  .orElse(null));
+        }
+
+        private String getJobPodContainerWaitingReason(V1Pod pod) {
+          return Optional.ofNullable(pod).map(V1Pod::getStatus)
+                  .map(V1PodStatus::getContainerStatuses).map(statuses -> statuses.get(0))
+                  .map(V1ContainerStatus::getState).map(V1ContainerState::getWaiting)
+                  .map(V1ContainerStateWaiting::getReason).orElse(null);
+        }
+
+        private boolean isIntrospectionJobPod(V1Pod pod) {
+          return Optional.ofNullable(pod).map(V1Pod::getMetadata)
+                  .map(meta -> meta.getName().startsWith(getJobName())).orElse(false);
         }
       }
 
-      private boolean isKnownFailedJob(V1Job job, Packet packet) {
-        String jobPodContainerWaitingReason = (String) packet.get(ProcessingConstants.JOB_POD_CONTAINER_WAITING_REASON);
-        if (isImagePullError(jobPodContainerWaitingReason)) {
-          packet.put(DOMAIN_INTROSPECT_REQUESTED, ReadPodLogResponseStep.INTROSPECTION_FAILED);
-          return true;
-        }
+      private boolean isKnownFailedJob(V1Job job) {
         return getUid(job).equals(getLastFailedUid());
       }
 
-      private boolean isJobTimedout(V1Job job, String jobPodStatusReason) {
-        return isFailed(job) && (("DeadlineExceeded".equals(getFailedReason(job)))
-                || "DeadlineExceeded".equals(jobPodStatusReason));
-      }
-
-      private boolean isImagePullError(String jobPodContainerWaitingReason) {
-        return Optional.ofNullable(jobPodContainerWaitingReason)
-                .map(s -> s.contains("ErrImagePull") || s.contains("ImagePullBackOff"))
-                .orElse(false);
+      private boolean isJobTimedout(V1Job introspectorJob) {
+        return Optional.ofNullable(introspectorJob)
+                .map(job -> isFailed(job) && "DeadlineExceeded".equals(getFailedReason(job))).orElse(false);
       }
 
       @Nonnull
@@ -311,7 +315,7 @@ public class JobHelper {
                 startNewIntrospection(getNext()));
       }
 
-      private Step recreateIntrospection() {
+      private Step deleteJobAndStartNewIntrospection() {
         return Step.chain(
                 deleteDomainIntrospectorJobStep(null),
                 startNewIntrospection(getNext()));

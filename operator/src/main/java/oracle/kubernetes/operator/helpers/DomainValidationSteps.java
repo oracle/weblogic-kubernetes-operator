@@ -198,7 +198,7 @@ public class DomainValidationSteps {
 
     private void warnIfClusterDoesNotExist(WlsDomainConfig domainConfig,
         String clusterName, DomainPresenceInfo info) {
-      if (Optional.ofNullable(domainConfig).map(dc -> !dc.containsCluster(clusterName)).orElse(false)) {
+      if (!domainConfig.containsCluster(clusterName)) {
         logAndAddValidationWarning(info, MessageKeys.NO_CLUSTER_IN_DOMAIN, clusterName);
       }
     }
