@@ -6,6 +6,7 @@ package oracle.kubernetes.operator;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -75,6 +76,7 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_AV
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_COMPLETE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_FAILED;
+import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
 import static oracle.kubernetes.operator.logging.MessageKeys.TOO_MANY_REPLICAS_FAILURE;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Completed;
@@ -149,7 +151,7 @@ public class DomainStatusUpdater {
   public static Step createFailureRelatedSteps(@Nonnull DomainFailureReason reason, String message) {
     return Step.chain(
         new FailedStep(reason, message, null),
-        EventHelper.createEventStep(new EventData(DOMAIN_PROCESSING_FAILED, getEventMessage(reason, message))));
+        createEventStep(new EventData(DOMAIN_PROCESSING_FAILED, getEventMessage(reason, message))));
   }
 
   private static String getEventMessage(@Nonnull DomainFailureReason reason, String message) {
@@ -354,11 +356,12 @@ public class DomainStatusUpdater {
     }
 
     private Step createEventSteps(List<EventData> eventDataList) {
-      Step nextStep = null;
-      for (int i = eventDataList.size() - 1; i >= 0; i--) {
-        nextStep = Step.chain(EventHelper.createEventStep(eventDataList.get(i)), nextStep);
-      }
-      return nextStep;
+      return Step.chain(
+          eventDataList.stream()
+              .sorted(Comparator.comparing(EventData::getItem))
+              .map(EventHelper::createEventStep)
+              .toArray(Step[]::new)
+      );
     }
 
     @Nonnull
@@ -388,6 +391,7 @@ public class DomainStatusUpdater {
           && getNewStatus().getIntrospectJobFailureCount() == (getStatus().getIntrospectJobFailureCount() + 1)
           && getNewStatus().getIntrospectJobFailureCount() >= DomainPresence.getDomainPresenceFailureRetryMaxCount();
     }
+
   }
 
   /**
