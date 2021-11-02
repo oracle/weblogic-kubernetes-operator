@@ -13,10 +13,6 @@ import oracle.kubernetes.operator.work.Step;
 
 public class WatchDomainIntrospectorJobReadyStep extends Step {
 
-  public WatchDomainIntrospectorJobReadyStep(Step next) {
-    super(next);
-  }
-
   @Override
   public NextAction apply(Packet packet) {
     V1Job domainIntrospectorJob = (V1Job) packet.get(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
