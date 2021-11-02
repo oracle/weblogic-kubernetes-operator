@@ -56,7 +56,7 @@ public class DomainStatus {
   @Range(minimum = 0)
   private Integer introspectJobFailureCount = 0;
 
-  @Description("Unique id of the last failed introspector job.")
+  @Description("Unique ID of the last failed introspection job.")
   private String failedIntrospectionUid;
 
   @Description("Status of WebLogic Servers in this domain.")
