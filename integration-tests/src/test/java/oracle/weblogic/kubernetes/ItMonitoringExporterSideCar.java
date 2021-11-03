@@ -38,6 +38,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteNamespace;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.getDomainCustomResource;
@@ -86,7 +87,7 @@ class ItMonitoringExporterSideCar {
   private static String domain1Namespace = null;
   private static String domain2Namespace = null;
   private static String domain3Namespace = null;
-  
+
   private static String domain1Uid = "monexp-domain-1";
   private static String domain2Uid = "monexp-domain-2";
   private static String domain3Uid = "monexp-domain-3";
@@ -117,7 +118,7 @@ class ItMonitoringExporterSideCar {
   private static String releaseSuffix = "test1";
   private static String prometheusReleaseName = "prometheus" + releaseSuffix;
   private static String grafanaReleaseName = "grafana" + releaseSuffix;
-  private static  String monitoringExporterDir;
+  private static String monitoringExporterDir;
 
 
   /**
@@ -194,9 +195,9 @@ class ItMonitoringExporterSideCar {
     labels.put("weblogic.domainUid", "test");
     String pvDir = PV_ROOT + "/ItMonitoringExporterSideCar/monexp-persistentVolume/";
     assertDoesNotThrow(() -> createPvAndPvc(prometheusReleaseName, monitoringNS, labels, pvDir));
-    assertDoesNotThrow(() -> createPvAndPvc("alertmanager" + releaseSuffix,monitoringNS, labels, pvDir));
-    assertDoesNotThrow(() -> createPvAndPvc(grafanaReleaseName, monitoringNS, labels,pvDir));
-    cleanupPromGrafanaClusterRoles(prometheusReleaseName,grafanaReleaseName);
+    assertDoesNotThrow(() -> createPvAndPvc("alertmanager" + releaseSuffix, monitoringNS, labels, pvDir));
+    assertDoesNotThrow(() -> createPvAndPvc(grafanaReleaseName, monitoringNS, labels, pvDir));
+    cleanupPromGrafanaClusterRoles(prometheusReleaseName, grafanaReleaseName);
   }
 
   /**
@@ -209,38 +210,42 @@ class ItMonitoringExporterSideCar {
   @Test
   @DisplayName("Test Basic Functionality of Monitoring Exporter SideCar.")
   void testSideCarBasicFunctionality() throws Exception {
+    try {
+      // create and verify one cluster mii domain
+      logger.info("Create domain and verify that it's running");
+      String miiImage1 = createAndVerifyMiiImage(MODEL_DIR + "/model.sessmigr.yaml");
+      String yaml = RESOURCE_DIR + "/exporter/rest_webapp.yaml";
+      createAndVerifyDomain(miiImage1, domain3Uid, domain3Namespace, "FromModel", 2, false, yaml, exporterImage);
+      installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
+          domain3Namespace,
+          domain3Uid);
 
-    // create and verify one cluster mii domain
-    logger.info("Create domain and verify that it's running");
-    String miiImage1 = createAndVerifyMiiImage(MODEL_DIR + "/model.sessmigr.yaml");
-    String yaml = RESOURCE_DIR + "/exporter/rest_webapp.yaml";
-    createAndVerifyDomain(miiImage1, domain3Uid, domain3Namespace, "FromModel", 2, false, yaml, exporterImage);
-    installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
-        domain3Namespace,
-        domain3Uid);
+      String sessionAppPrometheusSearchKey =
+          "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
+      checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr", nodeportPrometheus);
+      Domain domain = getDomainCustomResource(domain3Uid, domain3Namespace);
+      String monexpConfig = domain.getSpec().getMonitoringExporter().toString();
+      logger.info("MonitorinExporter new Configuration from crd " + monexpConfig);
+      assertTrue(monexpConfig.contains("openSessionsHighCount"));
+      logger.info("Testing replace configuration");
+      changeMonitoringExporterSideCarConfig(RESOURCE_DIR + "/exporter/rest_jvm.yaml", domain3Uid, domain3Namespace,
+          "heapFreeCurrent", "heap_free_current", "managed-server1");
 
-    String sessionAppPrometheusSearchKey =
-        "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
-    checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr",nodeportPrometheus);
-    Domain domain = getDomainCustomResource(domain3Uid,domain3Namespace);
-    String monexpConfig = domain.getSpec().getMonitoringExporter().toString();
-    logger.info("MonitorinExporter new Configuration from crd " + monexpConfig);
-    assertTrue(monexpConfig.contains("openSessionsHighCount"));
-    logger.info("Testing replace configuration");
-    changeMonitoringExporterSideCarConfig(RESOURCE_DIR + "/exporter/rest_jvm.yaml", domain3Uid, domain3Namespace,
-        "heapFreeCurrent", "heap_free_current", "managed-server1");
+      logger.info("replace monitoring exporter configuration with configuration file with domainQualifier=true.");
+      changeMonitoringExporterSideCarConfig(RESOURCE_DIR + "/exporter/rest_domainqualtrue.yaml",
+          domain3Uid, domain3Namespace,
+          "domainQualifier", "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D",
+          "\"domain\":\"wls-sessmigr-domain-1\"");
 
-    logger.info("replace monitoring exporter configuration with configuration file with domainQualifier=true.");
-    changeMonitoringExporterSideCarConfig(RESOURCE_DIR + "/exporter/rest_domainqualtrue.yaml",
-        domain3Uid, domain3Namespace,
-        "domainQualifier", "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D",
-        "\"domain\":\"wls-sessmigr-domain-1\"");
+      logger.info("replace monitoring exporter configuration with configuration file with metricsNameSnakeCase=false.");
+      changeMonitoringExporterSideCarConfig(RESOURCE_DIR + "/exporter/rest_snakecasefalse.yaml",
+          domain3Uid, domain3Namespace,
+          "metricsNameSnakeCase", "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D",
+          "sessmigr");
+    } finally {
+      shutdownDomain(domain3Namespace, domain3Uid);
+    }
 
-    logger.info("replace monitoring exporter configuration with configuration file with metricsNameSnakeCase=false.");
-    changeMonitoringExporterSideCarConfig(RESOURCE_DIR + "/exporter/rest_snakecasefalse.yaml",
-        domain3Uid, domain3Namespace,
-        "metricsNameSnakeCase", "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D",
-        "sessmigr");
   }
 
   private void changeMonitoringExporterSideCarConfig(String configYamlFile, String domainUid,
@@ -298,21 +303,24 @@ class ItMonitoringExporterSideCar {
   @Test
   @DisplayName("Test Basic Functionality of Monitoring Exporter SideCar for domain with two clusters.")
   void testSideCarBasicFunctionalityTwoClusters() throws Exception {
+    try {
+      // create and verify one cluster mii domain
+      logger.info("Create domain and verify that it's running");
+      String miiImage1 = createAndVerifyMiiImage(MODEL_DIR + "/model.sessmigr.2clusters.yaml");
+      String yaml = RESOURCE_DIR + "/exporter/rest_jvm.yaml";
+      createAndVerifyDomain(miiImage1, domain1Uid, domain1Namespace, "FromModel", 2, true, yaml, exporterImage);
+      installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
+          domain1Namespace,
+          domain1Uid);
 
-    // create and verify one cluster mii domain
-    logger.info("Create domain and verify that it's running");
-    String miiImage1 = createAndVerifyMiiImage(MODEL_DIR + "/model.sessmigr.2clusters.yaml");
-    String yaml = RESOURCE_DIR + "/exporter/rest_jvm.yaml";
-    createAndVerifyDomain(miiImage1, domain1Uid, domain1Namespace, "FromModel", 2, true, yaml, exporterImage);
-    installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
-        domain1Namespace,
-        domain1Uid);
-
-    // "heap_free_current{name="managed-server1"}[15s]" search for results for last 15secs
-    checkMetricsViaPrometheus("heap_free_current%7Bname%3D%22" + cluster1Name + "-managed-server1%22%7D%5B15s%5D",
-        cluster1Name + "-managed-server1",nodeportPrometheus);
-    checkMetricsViaPrometheus("heap_free_current%7Bname%3D%22" + cluster2Name + "-managed-server2%22%7D%5B15s%5D",
-        cluster2Name + "-managed-server2",nodeportPrometheus);
+      // "heap_free_current{name="managed-server1"}[15s]" search for results for last 15secs
+      checkMetricsViaPrometheus("heap_free_current%7Bname%3D%22" + cluster1Name + "-managed-server1%22%7D%5B15s%5D",
+          cluster1Name + "-managed-server1",nodeportPrometheus);
+      checkMetricsViaPrometheus("heap_free_current%7Bname%3D%22" + cluster2Name + "-managed-server2%22%7D%5B15s%5D",
+          cluster2Name + "-managed-server2",nodeportPrometheus);
+    } finally {
+      shutdownDomain(domain1Namespace, domain1Uid);
+    }
   }
 
   /**
@@ -326,25 +334,28 @@ class ItMonitoringExporterSideCar {
   @Test
   @DisplayName("Test Basic Functionality of Monitoring Exporter SideCar with ssl enabled.")
   void testSideCarBasicFunctionalityWithSSL() throws Exception {
+    try {
+      // create and verify one cluster mii domain
+      logger.info("Create domain and verify that it's running");
+      String yaml = RESOURCE_DIR + "/exporter/rest_webapp.yaml";
+      String  miiImage1 = createAndVerifyMiiImage(MODEL_DIR + "/model.ssl.yaml");
+      createAndVerifyDomain(miiImage1, domain2Uid, domain2Namespace, "FromModel",
+          2, false, yaml, exporterImage);
+      installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
+          domain2Namespace,
+          domain2Uid);
 
-    // create and verify one cluster mii domain
-    logger.info("Create domain and verify that it's running");
-    String yaml = RESOURCE_DIR + "/exporter/rest_webapp.yaml";
-    String  miiImage1 = createAndVerifyMiiImage(MODEL_DIR + "/model.ssl.yaml");
-    createAndVerifyDomain(miiImage1, domain2Uid, domain2Namespace, "FromModel",
-        2, false, yaml, exporterImage);
-    installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
-        domain2Namespace,
-        domain2Uid);
+      String sessionAppPrometheusSearchKey =
+          "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
+      checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr",nodeportPrometheus);
 
-    String sessionAppPrometheusSearchKey =
-        "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
-    checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr",nodeportPrometheus);
-
-    Domain domain = getDomainCustomResource(domain2Uid,domain2Namespace);
-    String monexpConfig = domain.getSpec().getMonitoringExporter().toString();
-    logger.info("MonitorinExporter new Configuration from crd " + monexpConfig);
-    assertTrue(monexpConfig.contains("openSessionsHighCount"));
+      Domain domain = getDomainCustomResource(domain2Uid,domain2Namespace);
+      String monexpConfig = domain.getSpec().getMonitoringExporter().toString();
+      logger.info("MonitorinExporter new Configuration from crd " + monexpConfig);
+      assertTrue(monexpConfig.contains("openSessionsHighCount"));
+    } finally {
+      shutdownDomain(domain2Namespace, domain2Uid);
+    }
   }
 
   /**
@@ -400,7 +411,6 @@ class ItMonitoringExporterSideCar {
           .withFailMessage("uninstallNginx() did not return true")
           .isTrue();
     }
-
     uninstallPrometheusGrafana(promHelmParams.getHelmParams(), grafanaHelmParams);
 
     deletePersistentVolumeClaim("pvc-alertmanager" + releaseSuffix,monitoringNS);
