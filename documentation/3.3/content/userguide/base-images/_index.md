@@ -1,7 +1,7 @@
 ---
 title: "WebLogic Server images"
 date: 2019-02-23T16:45:55-05:00
-weight: 5
+weight: 6
 description: "Create or obtain WebLogic Server images."
 ---
 

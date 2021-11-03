@@ -313,4 +313,9 @@ public interface TestConstants {
 
   public static final String WEBLOGIC_VERSION = "12.2.1.4.0";
   public static final String HTTPS_PROXY = Optional.ofNullable(System.getenv("https_proxy")).orElse("");
+
+  // domain status condition type
+  public static final String DOMAIN_STATUS_CONDITION_COMPLETED_TYPE = "Completed";
+  public static final String DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE = "Available";
+  public static final String DOMAIN_STATUS_CONDITION_FAILED_TYPE = "Failed";
 }

@@ -52,6 +52,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.copyFileToPod;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteNamespace;
@@ -225,57 +226,61 @@ class ItMonitoringExporterWebApp {
   @Test
   @DisplayName("Test Basic Functionality of Monitoring Exporter.")
   void testBasicFunctionality() throws Exception {
-    // create and verify one cluster mii domain
-    logger.info("Create domain and verify that it's running");
-    createAndVerifyDomain(miiImage, domain1Uid, domain1Namespace, "FromModel", 1, true, null, null);
+    try {
+      // create and verify one cluster mii domain
+      logger.info("Create domain and verify that it's running");
+      createAndVerifyDomain(miiImage, domain1Uid, domain1Namespace, "FromModel", 1, true, null, null);
 
-    // create ingress for the domain
-    logger.info("Creating ingress for domain {0} in namespace {1}", domain1Uid, domain1Namespace);
-    ingressHost1List =
-       createIngressForDomainAndVerify(domain1Uid, domain1Namespace, clusterNameMsPortMap, false);
-    verifyMonExpAppAccessThroughNginx(ingressHost1List.get(0), 1, nodeportshttp);
-    installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
-        domain1Namespace,
-        domain1Uid);
+      // create ingress for the domain
+      logger.info("Creating ingress for domain {0} in namespace {1}", domain1Uid, domain1Namespace);
+      ingressHost1List =
+          createIngressForDomainAndVerify(domain1Uid, domain1Namespace, clusterNameMsPortMap, false);
+      verifyMonExpAppAccessThroughNginx(ingressHost1List.get(0), 1, nodeportshttp);
+      installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
+          domain1Namespace,
+          domain1Uid);
 
-    logger.info("Testing replace configuration");
-    replaceConfiguration();
-    logger.info("Testing append configuration");
-    appendConfiguration();
-    logger.info("Testing replace One Attribute Value AsArray configuration");
-    replaceOneAttributeValueAsArrayConfiguration();
-    logger.info("Testing append One Attribute Value AsArray configuration");
-    appendArrayWithOneExistedAndOneDifferentAttributeValueAsArrayConfiguration();
-    logger.info("Testing append with empty configuration");
-    appendWithEmptyConfiguration();
-    logger.info("Testing append with invalid yaml configuration");
-    appendWithNotYamlConfiguration();
-    logger.info("Testing replace with invalid yaml configuration");
-    replaceWithNotYamlConfiguration();
-    logger.info("Testing append with corrupted yaml configuration");
-    appendWithCorruptedYamlConfiguration();
-    logger.info("Testing replace with corrupted yaml configuration");
-    replaceWithCorruptedYamlConfiguration();
-    logger.info("Testing replace with dublicated values yaml configuration");
-    replaceWithDublicatedValuesConfiguration();
-    logger.info("Testing append with corrupted yaml configuration");
-    appendWithDuplicatedValuesConfiguration();
-    logger.info("Testing replace with name snake false yaml configuration");
-    replaceMetricsNameSnakeCaseFalseConfiguration();
-    logger.info("Testing change with no credentials configuration");
-    changeConfigNoCredentials();
-    logger.info("Testing change with no invalid user configuration");
-    changeConfigInvalidUser();
-    logger.info("Testing change with no invalid pass configuration");
-    changeConfigInvalidPass();
-    logger.info("Testing change with empty user configuration");
-    changeConfigEmptyUser();
-    logger.info("Testing change with no empty pass configuration");
-    changeConfigEmptyPass();
-    logger.info("Testing replace with domain qualifier configuration");
-    replaceMetricsDomainQualifierTrueConfiguration();
-    logger.info("Testing replace with no restPort configuration");
-    replaceMetricsNoRestPortConfiguration();
+      logger.info("Testing replace configuration");
+      replaceConfiguration();
+      logger.info("Testing append configuration");
+      appendConfiguration();
+      logger.info("Testing replace One Attribute Value AsArray configuration");
+      replaceOneAttributeValueAsArrayConfiguration();
+      logger.info("Testing append One Attribute Value AsArray configuration");
+      appendArrayWithOneExistedAndOneDifferentAttributeValueAsArrayConfiguration();
+      logger.info("Testing append with empty configuration");
+      appendWithEmptyConfiguration();
+      logger.info("Testing append with invalid yaml configuration");
+      appendWithNotYamlConfiguration();
+      logger.info("Testing replace with invalid yaml configuration");
+      replaceWithNotYamlConfiguration();
+      logger.info("Testing append with corrupted yaml configuration");
+      appendWithCorruptedYamlConfiguration();
+      logger.info("Testing replace with corrupted yaml configuration");
+      replaceWithCorruptedYamlConfiguration();
+      logger.info("Testing replace with dublicated values yaml configuration");
+      replaceWithDublicatedValuesConfiguration();
+      logger.info("Testing append with corrupted yaml configuration");
+      appendWithDuplicatedValuesConfiguration();
+      logger.info("Testing replace with name snake false yaml configuration");
+      replaceMetricsNameSnakeCaseFalseConfiguration();
+      logger.info("Testing change with no credentials configuration");
+      changeConfigNoCredentials();
+      logger.info("Testing change with no invalid user configuration");
+      changeConfigInvalidUser();
+      logger.info("Testing change with no invalid pass configuration");
+      changeConfigInvalidPass();
+      logger.info("Testing change with empty user configuration");
+      changeConfigEmptyUser();
+      logger.info("Testing change with no empty pass configuration");
+      changeConfigEmptyPass();
+      logger.info("Testing replace with domain qualifier configuration");
+      replaceMetricsDomainQualifierTrueConfiguration();
+      logger.info("Testing replace with no restPort configuration");
+      replaceMetricsNoRestPortConfiguration();
+    } finally {
+      shutdownDomain(domain1Namespace, domain1Uid);
+    }
   }
 
 
@@ -288,30 +293,32 @@ class ItMonitoringExporterWebApp {
   //@Test
   @DisplayName("Test Accesability of Monitoring Exporter dashboard and metrics if admin port is enabled.")
   void testAdminPortEnabled() throws Exception {
+    try {
+      // create and verify one cluster mii domain with admin port enabled
+      logger.info("Create domain and verify that it's running");
+      String miiImage1 = MonitoringUtils.createAndVerifyMiiImage(monitoringExporterAppDir,
+          MODEL_DIR + "/model-adminportenabled.yaml",
+          SESSMIGR_APP_NAME, MONEXP_IMAGE_NAME);
+      createAndVerifyDomain(miiImage1, domain2Uid, domain2Namespace,
+          "FromModel", 2, false, null, null);
+      logger.info("checking access to wls metrics via https connection");
 
-    // create and verify one cluster mii domain with admin port enabled
-    logger.info("Create domain and verify that it's running");
-    String  miiImage1 = MonitoringUtils.createAndVerifyMiiImage(monitoringExporterAppDir,
-        MODEL_DIR + "/model-adminportenabled.yaml",
-        SESSMIGR_APP_NAME, MONEXP_IMAGE_NAME);
-    createAndVerifyDomain(miiImage1, domain2Uid, domain2Namespace,
-        "FromModel", 2, false, null, null);
-    logger.info("checking access to wls metrics via https connection");
+      assertTrue(verifyMonExpAppAccess("wls-exporter",
+          "type: WebAppComponentRuntime",
+          domain2Uid,
+          domain2Namespace,
+          true, null),
+          "monitoring exporter dashboard page can't be accessed via https");
 
-    assertTrue(verifyMonExpAppAccess("wls-exporter",
-        "type: WebAppComponentRuntime",
-        domain2Uid,
-        domain2Namespace,
-        true, null),
-        "monitoring exporter dashboard page can't be accessed via https");
-
-    assertTrue(verifyMonExpAppAccess("wls-exporter/metrics",
-        "wls_servlet_invocation_total_count",
-        domain2Uid,
-        domain2Namespace,
-        true, null),
-        "monitoring exporter metrics page can't be accessed via https");
-
+      assertTrue(verifyMonExpAppAccess("wls-exporter/metrics",
+          "wls_servlet_invocation_total_count",
+          domain2Uid,
+          domain2Namespace,
+          true, null),
+          "monitoring exporter metrics page can't be accessed via https");
+    } finally {
+      shutdownDomain(domain2Namespace, domain2Uid);
+    }
   }
 
   /**
@@ -360,6 +367,7 @@ class ItMonitoringExporterWebApp {
       });
     } finally {
       logger.info("Shutting down domain3");
+      shutdownDomain(domain3Namespace, domain3Uid);
       if (miiImage1 != null) {
         deleteImage(miiImage1);
       }
@@ -419,7 +427,6 @@ class ItMonitoringExporterWebApp {
           .withFailMessage("uninstallNginx() did not return true")
           .isTrue();
     }
-
     // delete mii domain images created
     if (miiImage != null) {
       deleteImage(miiImage);

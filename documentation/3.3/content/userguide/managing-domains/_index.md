@@ -1,7 +1,7 @@
 ---
 title: "Manage WebLogic domains"
 date: 2019-02-23T16:43:45-05:00
-weight: 6
+weight: 7
 description: "Important considerations for WebLogic domains in Kubernetes."
 ---
 
