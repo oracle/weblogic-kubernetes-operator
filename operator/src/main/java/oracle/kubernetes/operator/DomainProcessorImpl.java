@@ -301,10 +301,14 @@ public class DomainProcessorImpl implements DomainProcessor {
     return Step.chain(
           ConfigMapHelper.readIntrospectionVersionStep(info.getNamespace(), info.getDomainUid()),
           new IntrospectionRequestStep(info),
-          JobHelper.replaceOrCreateDomainIntrospectorJobStep(null));
+          JobHelper.createIntrospectionStartStep(null));
   }
 
-  public static class IntrospectionRequestStep extends Step {
+  /**
+   * Compares the domain introspection version to current introspection state label and request introspection
+   * if they don't match.
+   */
+  private static class IntrospectionRequestStep extends Step {
 
     private final String requestedIntrospectVersion;
 

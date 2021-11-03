@@ -20,6 +20,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -163,7 +164,7 @@ public class DomainPresenceInfo implements PacketComponent {
 
   @Nonnull
   private Stream<V1Pod> getServersInNoOtherCluster(String clusterName) {
-    return getServers().values().stream()
+    return getActiveServers().values().stream()
             .map(ServerKubernetesObjects::getPod)
             .map(AtomicReference::get)
             .filter(this::isNotDeletingPod)
@@ -172,7 +173,7 @@ public class DomainPresenceInfo implements PacketComponent {
 
   @Nonnull
   private Stream<V1Pod> getManagedServersInNoOtherCluster(String clusterName, String adminServerName) {
-    return getServers().values().stream()
+    return getActiveServers().values().stream()
           .map(ServerKubernetesObjects::getPod)
           .map(AtomicReference::get)
           .filter(this::isNotDeletingPod)
@@ -189,7 +190,7 @@ public class DomainPresenceInfo implements PacketComponent {
   }
 
   private ServerKubernetesObjects getSko(String serverName) {
-    return getServers().computeIfAbsent(serverName, (n -> new ServerKubernetesObjects()));
+    return servers.computeIfAbsent(serverName, (n -> new ServerKubernetesObjects()));
   }
 
   public V1Service getServerService(String serverName) {
@@ -242,7 +243,7 @@ public class DomainPresenceInfo implements PacketComponent {
    * @return a pod stream
    */
   public Stream<V1Pod> getServerPods() {
-    return getServers().values().stream().map(this::getPod).filter(Objects::nonNull);
+    return getActiveServers().values().stream().map(this::getPod);
   }
 
   private V1Pod getPod(ServerKubernetesObjects sko) {
@@ -262,12 +263,14 @@ public class DomainPresenceInfo implements PacketComponent {
   }
 
   /**
-   * Returns a collection of all servers defined.
-   *
-   * @return the servers
+   * Returns a collection of the names of the active servers.
    */
   public Collection<String> getServerNames() {
-    return getServers().keySet();
+    return getActiveServers().keySet();
+  }
+
+  private boolean hasDefinedServer(Map.Entry<String, ServerKubernetesObjects> e) {
+    return e.getValue().getPod().get() != null;
   }
 
   /**
@@ -320,12 +323,12 @@ public class DomainPresenceInfo implements PacketComponent {
   }
 
   /**
-   * Computes the result of a delete attempt. If the current pod is newer than the one associated
-   * with the delete event, returns it; otherwise returns null, thus deleting the value.
+   * Handles a delete event. If the cached pod is newer than the one associated with the event, ignores the attempt
+   * as out-of-date and returns false; otherwise deletes the pod and returns true.
    *
    * @param serverName the server name associated with the pod
    * @param event the pod associated with the delete event
-   * @return the new value for the pod.
+   * @return true if the pod was deleted from the cache.
    */
   public boolean deleteServerPodFromEvent(String serverName, V1Pod event) {
     if (serverName == null) {
@@ -620,13 +623,28 @@ public class DomainPresenceInfo implements PacketComponent {
     return namespace;
   }
 
+  // Returns a map of the active servers (those with a known running pod).
+  private Map<String, ServerKubernetesObjects> getActiveServers() {
+    return servers.entrySet().stream()
+          .filter(this::hasDefinedServer)
+          .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
+
+  }
+
   /**
-   * Map from server name to server objects (Pods and Services).
-   *
-   * @return Server object map
+   * Returns a list of server names whose pods are defined and match the specified criteria.
+   * @param criteria a function that returns true for the desired pods.
    */
-  public ConcurrentMap<String, ServerKubernetesObjects> getServers() {
-    return servers;
+  public List<String> getSelectedActiveServerNames(Function<V1Pod,Boolean> criteria) {
+    return servers.entrySet().stream()
+          .filter(e -> hasMatchingServer(e, criteria))
+          .map(Map.Entry::getKey)
+          .collect(Collectors.toList());
+  }
+
+  private boolean hasMatchingServer(Map.Entry<String, ServerKubernetesObjects> e, Function<V1Pod,Boolean> criteria) {
+    final V1Pod pod = e.getValue().getPod().get();
+    return pod != null && criteria.apply(pod);
   }
 
   /**

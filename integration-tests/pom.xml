@@ -371,11 +371,13 @@
                   **/ItPodsRestart,
                   **/ItPodsShutdownOption,
                   **/ItPodTemplates,
+                  **/ItRemoteConsole,
                   **/ItServerStartPolicy,
 		  **/ItServiceStartPolicyDynamicCluster,
                   **/ItServerStartPolicyConfigCluster,
                   **/ItSessionMigration,
                   **/ItStickySession,
+                  **/ItSystemResOverrides,
                   **/ItUsabilityOperatorHelmChart
                 </includes-failsafe>
             </properties>
