@@ -139,15 +139,32 @@ public class FileUtils {
    * @param container name of the container inside of the pod
    * @param srcPath source location of the file
    * @param destPath destination location of the file
-   * @throws ApiException if Kubernetes API client call fails
-   * @throws IOException if copy fails
+   * @return true if copy succeeds, false otherwise
+   * @throws IOException when copy fails
+   * @throws ApiException when pod interaction fails
    */
-  public static void copyFileToPod(String namespace,
+  public static boolean copyFileToPod(String namespace,
                                    String pod,
                                    String container,
                                    Path srcPath,
-                                   Path destPath) throws ApiException, IOException {
-    Kubernetes.copyFileToPod(namespace, pod, container, srcPath, destPath);
+                                   Path destPath) throws IOException, ApiException {
+    return Kubernetes.copyFileToPod(namespace, pod, container, srcPath, destPath);
+  }
+
+  /**
+   * Copy a file to a pod in specified namespace.
+   * @param namespace namespace in which the pod exists
+   * @param pod name of pod where the file will be copied to
+   * @param container name of the container inside of the pod
+   * @param srcPath source location of the file
+   * @param destPath destination location of the file
+   */
+  public static Callable<Boolean> checkCopyFileToPod(String namespace,
+                                                     String pod,
+                                                     String container,
+                                                     Path srcPath,
+                                                     Path destPath) {
+    return () -> copyFileToPod(namespace, pod, container, srcPath, destPath);
   }
 
   /**
