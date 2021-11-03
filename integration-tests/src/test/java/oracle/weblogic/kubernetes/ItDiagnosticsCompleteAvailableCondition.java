@@ -17,7 +17,6 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -127,7 +126,6 @@ class ItDiagnosticsCompleteAvailableCondition {
    * type: Available, status: true
    * Verify no Failed type condition generated.
    */
-  @Order(1)
   @Test
   @DisplayName("Test domain status condition with serverStartPolicy set to IF_NEEDED")
   void testCompleteAvailableConditionWithIfNeeded() {
@@ -155,7 +153,6 @@ class ItDiagnosticsCompleteAvailableCondition {
    * Disabled due to bug.
    */
   @Disabled
-  @Order(2)
   @Test
   @DisplayName("Test domain events for various successful domain life cycle changes")
   void testCompleteAvailableConditionWithAdminOnly() {
@@ -191,23 +188,7 @@ class ItDiagnosticsCompleteAvailableCondition {
       // verify there is no status condition type Failed
       verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
     } finally {
-
-      // patch the domain back to the original state
-      logger.info("patch the domain and change the serverStartPolicy to IF_NEEDED");
-      patchStr = "[{\"op\": \"replace\",\"path\": \"/spec/serverStartPolicy\", \"value\": \"IF_NEEDED\"}]";
-
-      logger.info("Updating domain configuration using patch string: {0}", patchStr);
-      assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, new V1Patch(patchStr),
-          V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch domain");
-
-      logger.info("Checking for admin server pod is up and running");
-      checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace1);
-
-      // verify all the managed servers are up and running
-      logger.info("Checking managed server pods are up and running");
-      for (int i = 1; i <= replicaCount; i++) {
-        checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
-      }
+      restoreDomainResource();
     }
   }
 
@@ -221,7 +202,6 @@ class ItDiagnosticsCompleteAvailableCondition {
    * Disabled due to bug.
    */
   @Disabled
-  @Order(3)
   @Test
   @DisplayName("Test domain status condition with serverStartPolicy set to NEVER")
   void testCompleteAvailableConditionWithNever() {
@@ -256,21 +236,7 @@ class ItDiagnosticsCompleteAvailableCondition {
       verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
 
     } finally {
-      // patch the domain back to the original state
-      logger.info("patch the domain and change the serverStartPolicy to IF_NEEDED");
-      patchStr = "[{\"op\": \"replace\",\"path\": \"/spec/serverStartPolicy\", \"value\": \"IF_NEEDED\"}]";
-      logger.info("Updating domain configuration using patch string: {0}", patchStr);
-      assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, new V1Patch(patchStr),
-          V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch domain");
-
-      logger.info("Checking for admin server pod is up and running");
-      checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace1);
-
-      // verify all the managed servers are up and running
-      logger.info("Checking managed server pods are up and running");
-      for (int i = 1; i <= replicaCount; i++) {
-        checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
-      }
+      restoreDomainResource();
     }
   }
 
@@ -284,7 +250,6 @@ class ItDiagnosticsCompleteAvailableCondition {
    * Disabled due to bug.
    */
   @Disabled
-  @Order(4)
   @Test
   @DisplayName("Test domain status condition with cluster replica set to zero and min-replicas set to zero")
   void testCompleteAvailableConditionWithReplicaZero() {
@@ -320,22 +285,7 @@ class ItDiagnosticsCompleteAvailableCondition {
       verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
 
     } finally {
-      // patch the domain back to the original state
-      logger.info("patch the domain and change the cluster replicas to 2");
-      patchStr = "[{\"op\": \"replace\",\"path\": \"/spec/clusters/0/replicas\", \"value\": 2}]";
-
-      logger.info("Updating domain configuration using patch string: {0}", patchStr);
-      assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, new V1Patch(patchStr),
-          V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch domain");
-
-      logger.info("Checking for admin server pod is up and running");
-      checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace1);
-
-      // verify all the managed servers are up and running
-      logger.info("Checking managed server pods are up and running");
-      for (int i = 1; i <= replicaCount; i++) {
-        checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
-      }
+      restoreDomainResource();
     }
   }
 
@@ -349,7 +299,6 @@ class ItDiagnosticsCompleteAvailableCondition {
    * Disabled due to bug.
    */
   @Disabled
-  @Order(5)
   @Test
   @DisplayName("Test domain status condition with cluster serverStartPolicy to NEVER")
   void testCompleteAvailableConditionWithClusterNever() {
@@ -384,23 +333,7 @@ class ItDiagnosticsCompleteAvailableCondition {
       // verify there is no status condition type Failed
       verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
     } finally {
-
-      // patch the domain back to the original state
-      logger.info("patch the domain and change the cluster.serverStartPolicy to IF_NEEDED");
-      patchStr = "[{\"op\": \"replace\",\"path\": \"/spec/clusters/0/serverStartPolicy\", \"value\": \"IF_NEEDED\"}]";
-
-      logger.info("Updating domain configuration using patch string: {0}", patchStr);
-      assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, new V1Patch(patchStr),
-          V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch domain");
-
-      logger.info("Checking for admin server pod is up and running");
-      checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace1);
-
-      // verify all the managed servers are up and running
-      logger.info("Checking managed server pods are up and running");
-      for (int i = 1; i <= replicaCount; i++) {
-        checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
-      }
+      restoreDomainResource();
     }
   }
 
@@ -414,7 +347,6 @@ class ItDiagnosticsCompleteAvailableCondition {
    * Disabled due to bug.
    */
   @Disabled
-  @Order(6)
   @Test
   @DisplayName("Test domain status condition with cluster replica set to larger than max size of cluster")
   void testCompleteAvailableConditionWithReplicaExceedMaxSize() {
@@ -455,23 +387,7 @@ class ItDiagnosticsCompleteAvailableCondition {
       // verify there is no status condition type Failed
       verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
     } finally {
-
-      // patch the domain back to the original state
-      logger.info("patch the domain and change the cluster replicas to 2");
-      patchStr = "[{\"op\": \"replace\",\"path\": \"/spec/clusters/0/replicas\", \"value\": " + replicaCount + "}]";
-
-      logger.info("Updating domain configuration using patch string: {0}", patchStr);
-      assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, new V1Patch(patchStr),
-          V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch domain");
-
-      logger.info("Checking for admin server pod is up and running");
-      checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace1);
-
-      // verify all the managed servers are up and running
-      logger.info("Checking managed server pods are up and running");
-      for (int i = 1; i <= replicaCount; i++) {
-        checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
-      }
+      restoreDomainResource();
     }
   }
 
@@ -483,7 +399,6 @@ class ItDiagnosticsCompleteAvailableCondition {
    * type: Available, status: true
    * Verify no Failed type condition generated.
    */
-  @Order(7)
   @Test
   @DisplayName("Test domain status condition with cluster replica set to less than max size of cluster")
   void testCompleteAvailableConditionWithReplicaLessThanMaxSize() {
@@ -524,23 +439,7 @@ class ItDiagnosticsCompleteAvailableCondition {
       // verify there is no status condition type Failed
       verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
     } finally {
-
-      // patch the domain back to the original state
-      logger.info("patch the domain and change the cluster replicas to 2");
-      patchStr = "[{\"op\": \"replace\",\"path\": \"/spec/clusters/0/replicas\", \"value\": " + replicaCount + "}]";
-
-      logger.info("Updating domain configuration using patch string: {0}", patchStr);
-      assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, new V1Patch(patchStr),
-          V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch domain");
-
-      logger.info("Checking for admin server pod is up and running");
-      checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace1);
-
-      // verify all the managed servers are up and running
-      logger.info("Checking managed server pods are up and running");
-      for (int i = 1; i <= replicaCount; i++) {
-        checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
-      }
+      restoreDomainResource();
     }
   }
 
@@ -552,7 +451,6 @@ class ItDiagnosticsCompleteAvailableCondition {
    * type: Available, status: true
    * Verify no Failed type condition generated.
    */
-  @Order(8)
   @Test
   @DisplayName("Test domain status condition with scaling up and down of cluster")
   void testCompleteAvailableConditionWithScaleUpDownCluster() {
@@ -625,7 +523,6 @@ class ItDiagnosticsCompleteAvailableCondition {
    * type: Available, status: true
    * Verify no Failed type condition generated.
    */
-  @Order(9)
   @Test
   @DisplayName("Test domain status condition with new restartVersion")
   void testCompleteAvailableConditionWithNewRestartVersion() {
@@ -682,7 +579,6 @@ class ItDiagnosticsCompleteAvailableCondition {
    * type: Available, status: true
    * Verify no Failed type condition generated.
    */
-  @Order(10)
   @Test
   @DisplayName("Test domain status condition with new restartVersion")
   void testCompleteAvailableConditionWithNewImage() {
@@ -741,5 +637,29 @@ class ItDiagnosticsCompleteAvailableCondition {
         DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True");
     // verify there is no status condition type Failed
     verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
+  }
+
+  private void restoreDomainResource() {
+    // patch the domain back to the original state
+    logger.info("patch the domain and change the serverStartPolicy to IF_NEEDED");
+    String patchStr
+        = "["
+        + "{\"op\": \"replace\",\"path\": \"/spec/serverStartPolicy\", \"value\": \"IF_NEEDED\"},"
+        + "{\"op\": \"replace\",\"path\": \"/spec/clusters/0/replicas\", \"value\": 2},"
+        + "{\"op\": \"replace\",\"path\": \"/spec/clusters/0/serverStartPolicy\", \"value\": \"IF_NEEDED\"}"
+        + "]";
+
+    logger.info("Updating domain configuration using patch string: {0}", patchStr);
+    assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, new V1Patch(patchStr),
+        V1Patch.PATCH_FORMAT_JSON_PATCH), "Failed to patch domain");
+
+    logger.info("Checking for admin server pod is up and running");
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace1);
+
+    // verify all the managed servers are up and running
+    logger.info("Checking managed server pods are up and running");
+    for (int i = 1; i <= replicaCount; i++) {
+      checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
+    }
   }
 }
