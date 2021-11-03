@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -31,6 +32,7 @@ import oracle.kubernetes.operator.utils.WlsDomainConfigSupport.DynamicClusterCon
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
+import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.SystemClockTestSupport;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
@@ -52,7 +54,9 @@ import static oracle.kubernetes.operator.DomainFailureReason.Introspection;
 import static oracle.kubernetes.operator.DomainFailureReason.ReplicasTooHigh;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
+import static oracle.kubernetes.operator.DomainStatusUpdaterTest.EventMatcher.eventWithReason;
 import static oracle.kubernetes.operator.DomainStatusUpdaterTest.ServerStatusMatcher.hasStatusForServer;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_AVAILABLE_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_COMPLETED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_ABORTED_EVENT;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
@@ -66,12 +70,14 @@ import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.STANDBY_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.UNKNOWN_STATE;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.EVENT;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Completed;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.ConfigChangesPendingRestart;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
@@ -388,7 +394,7 @@ class DomainStatusUpdaterTest {
   }
 
   private List<CoreV1Event> getEvents() {
-    return testSupport.getResources(KubernetesTestSupport.EVENT);
+    return testSupport.getResources(EVENT);
   }
 
   private boolean isDomainCompletedEvent(CoreV1Event e) {
@@ -671,6 +677,128 @@ class DomainStatusUpdaterTest {
     assertThat(getRecordedDomain(), hasCondition(Available).withStatus("False"));
     assertThat(getRecordedDomain(), not(hasCondition(Available).withStatus("True")));
     assertThat(getRecordedDomain(), hasCondition(Completed).withStatus("False"));
+  }
+
+  @Test
+  void whenAllServersRunningAndAvailableConditionFound_dontGenerateAvailableEvent() {
+    domain.getStatus().addCondition(new DomainCondition(Available).withStatus("True"));
+    defineScenario()
+        .withCluster("clusterA", "server1")
+        .withCluster("clusterB", "server2")
+        .build();
+
+    updateDomainStatus();
+
+    assertThat(getEvents().stream().anyMatch(this::isDomainAvailableEvent), is(false));
+  }
+
+  private boolean isDomainAvailableEvent(CoreV1Event e) {
+    return DOMAIN_AVAILABLE_EVENT.equals(e.getReason());
+  }
+
+  @Test
+  void whenAllServersRunningAndAvailableConditionNotFoundCompletedConditionNotFound_generateCompletedEvent() {
+    domain.getStatus()
+        .addCondition(new DomainCondition(Available).withStatus("False"))
+        .addCondition(new DomainCondition(Completed).withStatus("False"));
+    defineScenario()
+        .withCluster("clusterA", "server1")
+        .withCluster("clusterB", "server2")
+        .build();
+
+    updateDomainStatus();
+
+    assertThat(getEvents().stream().anyMatch(this::isDomainCompletedEvent), is(true));
+  }
+
+  @Test
+  void whenAllServersRunningAndAvailableConditionNotFoundCompletedConditionNotFound_generateTwoEventsInOrder() {
+    domain.getStatus()
+        .addCondition(new DomainCondition(Available).withStatus("False"))
+        .addCondition(new DomainCondition(Completed).withStatus("False"));
+    defineScenario()
+        .withCluster("clusterA", "server1")
+        .withCluster("clusterB", "server2")
+        .build();
+    testSupport.doOnCreate(EVENT, this::setUniqueCreationTimestamp);
+
+    updateDomainStatus();
+
+    assertThat(getEvents().stream().sorted(this::compareEvents).collect(Collectors.toList()),
+        contains(eventWithReason(DOMAIN_AVAILABLE_EVENT), eventWithReason(DOMAIN_COMPLETED_EVENT)));
+  }
+
+  private void setUniqueCreationTimestamp(Object event) {
+    ((CoreV1Event) event).getMetadata().creationTimestamp(SystemClock.now());
+    SystemClockTestSupport.increment();
+  }
+
+  private int compareEvents(CoreV1Event event1, CoreV1Event event2) {
+    return getCreationStamp(event1).compareTo(getCreationStamp(event2));
+  }
+
+  private OffsetDateTime getCreationStamp(CoreV1Event event) {
+    return Optional.ofNullable(event)
+        .map(CoreV1Event::getMetadata)
+        .map(V1ObjectMeta::getCreationTimestamp)
+        .orElse(OffsetDateTime.MIN);
+  }
+
+  static class EventMatcher extends TypeSafeDiagnosingMatcher<CoreV1Event> {
+    private String expectedReason;
+
+    private EventMatcher(String expectedReason) {
+      this.expectedReason = expectedReason;
+    }
+
+    static EventMatcher eventWithReason(String expectedReason) {
+      return new EventMatcher(expectedReason);
+    }
+
+    @Override
+    protected boolean matchesSafely(CoreV1Event coreV1Event, Description description) {
+      if (expectedReason.equals(coreV1Event.getReason())) {
+        return true;
+      } else {
+        description.appendText(coreV1Event.getReason());
+        return false;
+      }
+    }
+
+    @Override
+    public void describeTo(Description description) {
+      description.appendText(expectedReason);
+    }
+  }
+
+  @Test
+  void whenAllServersRunningAndAvailableConditionNotFoundCompletedConditionNotFound_generateAvailableEvent() {
+    domain.getStatus()
+        .addCondition(new DomainCondition(Available).withStatus("False"))
+        .addCondition(new DomainCondition(Completed).withStatus("False"));
+    defineScenario()
+        .withCluster("clusterA", "server1")
+        .withCluster("clusterB", "server2")
+        .build();
+
+    updateDomainStatus();
+
+    assertThat(getEvents().stream().anyMatch(this::isDomainAvailableEvent), is(true));
+  }
+
+  @Test
+  void whenUnexpectedServersRunningAndAvailableConditionNotFound_generateAvailableEvent() {
+    domain.getStatus()
+        .addCondition(new DomainCondition(Available).withStatus("False"));
+    defineScenario()
+        .withCluster("clusterA", "server1")
+        .withCluster("clusterB", "server2")
+        .withServersReachingState("Unknown","server3")
+        .build();
+
+    updateDomainStatus();
+
+    assertThat(getEvents().stream().anyMatch(this::isDomainAvailableEvent), is(true));
   }
 
   private DomainConfigurator configureDomain() {

@@ -402,7 +402,7 @@ public class K8sEvents {
     }
   }
 
-
+  public static final String DOMAIN_AVAILABLE = "DomainAvailable";
   public static final String DOMAIN_CREATED = "DomainCreated";
   public static final String DOMAIN_DELETED = "DomainDeleted";
   public static final String DOMAIN_CHANGED = "DomainChanged";
