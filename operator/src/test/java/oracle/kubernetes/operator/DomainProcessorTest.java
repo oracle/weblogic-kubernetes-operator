@@ -76,10 +76,12 @@ import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.operator.DomainConditionMatcher.hasCondition;
+import static oracle.kubernetes.operator.DomainFailureReason.Internal;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.SECRET_NAME;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
@@ -110,6 +112,7 @@ import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_ALWAYS;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Completed;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
@@ -1401,6 +1404,39 @@ class DomainProcessorTest {
   private void defineDuplicateServerNames() {
     domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("ms1"));
     domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("ms1"));
+  }
+
+  @Test
+  @Disabled
+  void whenExceptionDuringProcessing_reportInDomainStatus() {
+    DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
+    forceExceptionDuringProcessing();
+
+    processor.createMakeRightOperation(new DomainPresenceInfo(domain)).withExplicitRecheck().execute();
+    testSupport.setTime(DomainPresence.getDomainPresenceFailureRetrySeconds(), TimeUnit.SECONDS);
+
+    assertThat(domain, hasCondition(Failed).withReason(Internal));
+  }
+
+  private void forceExceptionDuringProcessing() {
+    consoleHandlerMemento.ignoringLoggedExceptions(NullPointerException.class);
+    domain.getSpec().withWebLogicCredentialsSecret(null);
+  }
+
+  @Test
+  @Disabled
+  void whenExceptionDuringProcessing_sendAbortedEvent() {
+    DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
+    forceExceptionDuringProcessing();
+    int time = 0;
+
+    for (int numRetries = 0; numRetries < DomainPresence.getDomainPresenceFailureRetryMaxCount(); numRetries++) {
+      processor.createMakeRightOperation(new DomainPresenceInfo(domain)).withExplicitRecheck().execute();
+      time += DomainPresence.getDomainPresenceFailureRetrySeconds();
+      testSupport.setTime(time, TimeUnit.SECONDS);
+    }
+
+    assertThat(getEvents().stream().anyMatch(this::isDomainProcessingAbortedEvent), is(true));
   }
 
   private List<CoreV1Event> getEvents() {

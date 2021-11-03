@@ -241,15 +241,16 @@ public class JobHelper {
 
         @Override
         public NextAction onSuccess(Packet packet, CallResponse<V1PodList> callResponse) {
+          V1Pod pod = getJobPod(callResponse);
           V1Job job = (V1Job) packet.get(ProcessingConstants.DOMAIN_INTROSPECTOR_JOB);
-          boolean hasImagePullError = checkJobPodForImagePullError(callResponse);
+          boolean hasImagePullError = checkJobPodForImagePullError(pod);
           if (hasImagePullError) {
             packet.put(DOMAIN_INTROSPECT_REQUESTED, ReadPodLogResponseStep.INTROSPECTION_FAILED);
           }
 
           if (isKnownFailedJob(job) || hasImagePullError) {
             return doContinueListOrNext(callResponse, packet, cleanUpAndReintrospect());
-          } else if (isJobTimedout(job)) {
+          } else if (isJobTimedout(job, pod)) {
             return doContinueListOrNext(callResponse, packet, deleteJobAndStartNewIntrospection());
           } else if (job != null) {
             return doContinueListOrNext(callResponse, packet, processIntrospectionResults());
@@ -260,17 +261,16 @@ public class JobHelper {
           }
         }
 
-        private boolean checkJobPodForImagePullError(CallResponse<V1PodList> callResponse) {
-          String podContainerWaitingReason = getJobPodContainerWaitingReason(Optional.ofNullable(
-                  callResponse.getResult()).map(V1PodList::getItems).orElseGet(Collections::emptyList));
-          return Optional.ofNullable(podContainerWaitingReason)
-                  .map(s -> s.contains("ErrImagePull") || s.contains("ImagePullBackOff"))
-                  .orElse(false);
+        private V1Pod getJobPod(CallResponse<V1PodList> callResponse) {
+          return Optional.ofNullable(
+                  callResponse.getResult()).map(V1PodList::getItems).orElseGet(Collections::emptyList).stream()
+                  .filter(pod -> isIntrospectionJobPod(pod)).findAny().orElse(null);
         }
 
-        private String getJobPodContainerWaitingReason(List<V1Pod> podList) {
-          return getJobPodContainerWaitingReason(podList.stream().filter(pod -> isIntrospectionJobPod(pod)).findAny()
-                  .orElse(null));
+        private boolean checkJobPodForImagePullError(V1Pod pod) {
+          return Optional.ofNullable(getJobPodContainerWaitingReason(pod))
+                  .map(s -> s.contains("ErrImagePull") || s.contains("ImagePullBackOff"))
+                  .orElse(false);
         }
 
         private String getJobPodContainerWaitingReason(V1Pod pod) {
@@ -290,9 +290,18 @@ public class JobHelper {
         return getUid(job).equals(getLastFailedUid());
       }
 
-      private boolean isJobTimedout(V1Job introspectorJob) {
+      private boolean isJobTimedout(V1Job introspectorJob, V1Pod pod) {
         return Optional.ofNullable(introspectorJob)
-                .map(job -> isFailed(job) && "DeadlineExceeded".equals(getFailedReason(job))).orElse(false);
+                .map(job -> isFailed(job) && isDeadlineExceeded(job, pod)).orElse(false);
+      }
+
+      private boolean isDeadlineExceeded(V1Job job, V1Pod pod) {
+        return "DeadlineExceeded".equals(getFailedReason(job))
+                || "DeadlineExceeded".equals(getPodStatusReason(pod));
+      }
+
+      private String getPodStatusReason(V1Pod pod) {
+        return Optional.ofNullable(pod).map(V1Pod::getStatus).map(V1PodStatus::getReason).orElse(null);
       }
 
       @Nonnull
