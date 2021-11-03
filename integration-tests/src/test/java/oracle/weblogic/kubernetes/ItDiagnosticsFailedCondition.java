@@ -267,16 +267,16 @@ class ItDiagnosticsFailedCondition {
           DOMAIN_STATUS_CONDITION_FAILED_TYPE, "True");
 
       // verify the condition type Completed exists
-    checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_COMPLETED_TYPE);
-    // verify the condition Completed type has status True
-    checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
-        DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "False");
+      checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_COMPLETED_TYPE);
+      // verify the condition Completed type has status True
+      checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
+          DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "False");
 
-    // verify the condition type Available exists
-    checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE);
-    // verify the condition Available type has status False
-    checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
-        DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "False");
+      // verify the condition type Available exists
+      checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE);
+      // verify the condition Available type has status False
+      checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
+          DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "False");
 
     } finally {
       deleteDomainResource(domainUid, domainNamespace);
@@ -287,7 +287,7 @@ class ItDiagnosticsFailedCondition {
    * Test domain status condition with serverStartPolicy set to IF_NEEDED. Verify the following conditions are
    * generated: type: Completed, status: true type: Available, status: true Verify no Failed type condition generated.
    */
-  @Order(3)
+  @Order(4)
   @Test
   @DisplayName("Test domain status condition with serverStartPolicy set to IF_NEEDED")
   void testImageDoesnotExist() {
@@ -306,16 +306,16 @@ class ItDiagnosticsFailedCondition {
           DOMAIN_STATUS_CONDITION_FAILED_TYPE, "True");
 
       // verify the condition type Completed exists
-    checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_COMPLETED_TYPE);
-    // verify the condition Completed type has status True
-    checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
-        DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "False");
+      checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_COMPLETED_TYPE);
+      // verify the condition Completed type has status True
+      checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
+          DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "False");
 
-    // verify the condition type Available exists
-    checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE);
-    // verify the condition Available type has status False
-    checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
-        DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "False");
+      // verify the condition type Available exists
+      checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE);
+      // verify the condition Available type has status False
+      checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
+          DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "False");
 
     } finally {
       deleteDomainResource(domainUid, domainNamespace);
