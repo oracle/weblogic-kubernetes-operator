@@ -5,12 +5,14 @@ package oracle.weblogic.kubernetes.assertions;
 
 import java.io.IOException;
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Secret;
+import oracle.weblogic.domain.DomainCondition;
 import oracle.weblogic.kubernetes.actions.impl.LoggingExporter;
 import oracle.weblogic.kubernetes.assertions.impl.Apache;
 import oracle.weblogic.kubernetes.assertions.impl.Application;
@@ -34,8 +36,10 @@ import oracle.weblogic.kubernetes.assertions.impl.Voyager;
 import oracle.weblogic.kubernetes.assertions.impl.WitAssertion;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
+import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.listSecrets;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 
 /**
  * General assertions needed by the tests to validate CRD, Domain, Pods etc.
@@ -413,6 +417,80 @@ public class TestAssertions {
   }
 
   /**
+   * Check the domain status condition type exists.
+   * @param domainUid uid of the domain
+   * @param domainNamespace namespace of the domain
+   * @param conditionType the type name of condition, accepted value: Completed, Available, Failed and
+   *                      ConfigChangesPendingRestart
+   * @return true if the condition type exists, false otherwise
+   */
+  public static Callable<Boolean> domainStatusConditionTypeExists(String domainUid,
+                                                                  String domainNamespace,
+                                                                  String conditionType) {
+    LoggingFacade logger = getLogger();
+    return () -> {
+      oracle.weblogic.domain.Domain domain =
+          assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace));
+
+      if (domain != null && domain.getStatus() != null) {
+        List<DomainCondition> domainConditionList = domain.getStatus().getConditions();
+        for (DomainCondition domainCondition : domainConditionList) {
+          if (domainCondition.getType().equalsIgnoreCase(conditionType)) {
+            return true;
+          }
+        }
+      } else {
+        if (domain == null) {
+          logger.info("domain is null");
+        } else {
+          logger.info("domain status is null");
+        }
+      }
+      return false;
+    };
+  }
+
+  /**
+   * Check the domain status condition type has expected status.
+   * @param domainUid uid of the domain
+   * @param domainNamespace namespace of the domain
+   * @param conditionType the type name of condition, accepted value: Completed, Available, Failed and
+   *                      ConfigChangesPendingRestart
+   * @param expectedStatus expected status value, either True or False
+   * @return true if the condition type has the expected status, false otherwise
+   */
+  public static Callable<Boolean> domainStatusConditionTypeHasExpectedStatus(String domainUid,
+                                                                             String domainNamespace,
+                                                                             String conditionType,
+                                                                             String expectedStatus) {
+    LoggingFacade logger = getLogger();
+
+    return () -> {
+      oracle.weblogic.domain.Domain domain =
+          assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace));
+
+      if (domain != null && domain.getStatus() != null) {
+        List<DomainCondition> domainConditionList = domain.getStatus().getConditions();
+        for (DomainCondition domainCondition : domainConditionList) {
+          if (domainCondition.getType().equalsIgnoreCase(conditionType)
+              && domainCondition.getStatus().equalsIgnoreCase(expectedStatus)) {
+            return true;
+          } else {
+            logger.info("domainCondition={0}", domainCondition.toString());
+          }
+        }
+      } else {
+        if (domain == null) {
+          logger.info("domain is null");
+        } else {
+          logger.info("domain status is null");
+        }
+      }
+      return false;
+    };
+  }
+
+  /**
    * Check if a loadbalancer pod is ready.
    *
    * @param domainUid id of the WebLogic domain custom resource domain
@@ -453,9 +531,14 @@ public class TestAssertions {
    * @return true if the WebLogic administration service node port is accessible otherwise false
    * @throws java.io.IOException when connection to WebLogic administration server fails
    */
-  public static boolean adminNodePortAccessible(int nodePort, String userName, String password)
+  public static Callable<Boolean> adminNodePortAccessible(int nodePort, String userName, 
+                                                     String password, String... routeHost)
       throws IOException {
-    return Domain.adminNodePortAccessible(nodePort, userName, password);
+    if (routeHost.length == 0) {
+      return () -> Domain.adminNodePortAccessible(nodePort, userName, password, null);
+    } else {
+      return () -> Domain.adminNodePortAccessible(nodePort, userName, password, routeHost[0]);
+    }
   }
 
   /**

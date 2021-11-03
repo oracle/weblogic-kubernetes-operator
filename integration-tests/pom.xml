@@ -7,7 +7,7 @@
     <parent>
         <groupId>oracle.kubernetes</groupId>
         <artifactId>operator-parent</artifactId>
-        <version>3.3.2</version>
+        <version>3.3.3</version>
     </parent>
 
     <artifactId>integration-tests</artifactId>
@@ -59,7 +59,7 @@
         <dependency>
           <groupId>net.sourceforge.htmlunit</groupId>
           <artifactId>htmlunit</artifactId>
-          <version>2.51.0</version>
+          <version>2.54.0</version>
           <scope>test</scope>
         </dependency>
     </dependencies>
@@ -266,6 +266,8 @@
                 <includes-failsafe>
                   **/ItParameterizedDomain,
                   **/ItServerStartPolicy,
+                  **/ItServiceStartPolicyDynamicCluster,
+                  **/ItServerStartPolicyConfigCluster,
                   **/ItMiiUpdateDomainConfig,
                   **/ItIntrospectVersion,
                   **/ItFmwDomainInPVUsingWLST,
@@ -336,15 +338,17 @@
                    **/ItSystemResOverrides
                 </includes-failsafe>
             </properties>
-        </profile>        
+        </profile>
         <profile>
             <id>wko-okd-wls-cert</id>
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>
+                  **/ItCrossDomainTransaction,
                   **/ItCoherenceTests,
                   **/ItConfigDistributionStrategy,
                   **/ItDedicatedMode,
+                  **/ItExternalLbTunneling,
                   **/ItExternalNodePortService,
                   **/ItInitContainers,
                   **/ItIntrospectVersion,
@@ -352,19 +356,29 @@
                   **/ItLiftAndShiftFromOnPremDomain,
                   **/ItLivenessProbeCustomization,
                   **/ItManagedCoherence,
+                  **/ItManageNameSpace,
                   **/ItMiiCustomSslStore,
                   **/ItMiiDomain,
                   **/ItMiiDomainModelInPV,
                   **/ItMiiDynamicUpdate*,
                   **/ItMiiMultiModel,
+                  **/ItMiiSampleWlsAux,
                   **/ItMiiSampleWlsMain,
+                  **/ItMiiServiceMigration,
                   **/ItMiiUpdateDomainConfig,
                   **/ItOperatorRestart,
+                  **/ItParameterizedDomain,
+                  **/ItPodsRestart,
                   **/ItPodsShutdownOption,
                   **/ItPodTemplates,
+                  **/ItRemoteConsole,
                   **/ItServerStartPolicy,
+		  **/ItServiceStartPolicyDynamicCluster,
+                  **/ItServerStartPolicyConfigCluster,
                   **/ItSessionMigration,
-                  **/ItStickySession
+                  **/ItStickySession,
+                  **/ItSystemResOverrides,
+                  **/ItUsabilityOperatorHelmChart
                 </includes-failsafe>
             </properties>
         </profile>

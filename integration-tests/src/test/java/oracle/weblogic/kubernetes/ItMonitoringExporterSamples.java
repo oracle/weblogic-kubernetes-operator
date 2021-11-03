@@ -64,6 +64,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.shutdownDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteNamespace;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodReady;
@@ -255,43 +256,48 @@ class ItMonitoringExporterSamples {
   @Test
   @DisplayName("Test End to End example from MonitoringExporter github project.")
   void testEndToEndViaChart() throws Exception {
-    wdtImage = createAndVerifyDomainInImage();
-    logger.info("Create wdt domain and verify that it's running");
-    createAndVerifyDomain(wdtImage, domain2Uid, domain2Namespace, "Image", replicaCount,
-        false, null,null);
-    ingressHost2List =
-        createIngressForDomainAndVerify(domain2Uid, domain2Namespace, clusterNameMsPortMap);
-    logger.info("Installing Prometheus and Grafana");
-    installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
-        domain2Namespace,
-        domain2Uid);
+    try {
+      wdtImage = createAndVerifyDomainInImage();
+      logger.info("Create wdt domain and verify that it's running");
+      createAndVerifyDomain(wdtImage, domain2Uid, domain2Namespace, "Image", replicaCount,
+          false, null, null);
+      ingressHost2List =
+          createIngressForDomainAndVerify(domain2Uid, domain2Namespace, clusterNameMsPortMap);
+      logger.info("Installing Prometheus and Grafana");
+      installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
+          domain2Namespace,
+          domain2Uid);
 
-    installWebhook();
-    installCoordinator(domain2Namespace);
+      installWebhook();
+      installCoordinator(domain2Namespace);
 
-    logger.info("verify access to Monitoring Exporter");
-    verifyMonExpAppAccessThroughNginx(ingressHost2List.get(0), managedServersCount,nodeportshttp);
-    logger.info("verify metrics via prometheus");
-    String testappPrometheusSearchKey =
-        "wls_servlet_invocation_total_count%7Bapp%3D%22test-webapp%22%7D%5B15s%5D";
-    checkMetricsViaPrometheus(testappPrometheusSearchKey, "test-webapp",nodeportPrometheus);
-    logger.info("fire alert by scaling down");
-    fireAlert();
-    logger.info("switch to monitor another domain");
-    logger.info("create and verify WebLogic domain image using model in image with model files");
+      logger.info("verify access to Monitoring Exporter");
+      verifyMonExpAppAccessThroughNginx(ingressHost2List.get(0), managedServersCount, nodeportshttp);
+      logger.info("verify metrics via prometheus");
+      String testappPrometheusSearchKey =
+          "wls_servlet_invocation_total_count%7Bapp%3D%22test-webapp%22%7D%5B15s%5D";
+      checkMetricsViaPrometheus(testappPrometheusSearchKey, "test-webapp", nodeportPrometheus);
+      logger.info("fire alert by scaling down");
+      fireAlert();
+      logger.info("switch to monitor another domain");
+      logger.info("create and verify WebLogic domain image using model in image with model files");
 
-    // create and verify one cluster mii domain
-    logger.info("Create domain and verify that it's running");
-    createAndVerifyDomain(miiImage, domain1Uid, domain1Namespace, "FromModel", 1,
-        true, null, null);
+      // create and verify one cluster mii domain
+      logger.info("Create domain and verify that it's running");
+      createAndVerifyDomain(miiImage, domain1Uid, domain1Namespace, "FromModel", 1,
+          true, null, null);
 
-    String oldRegex = String.format("regex: %s;%s", domain2Namespace, domain2Uid);
-    String newRegex = String.format("regex: %s;%s", domain1Namespace, domain1Uid);
-    editPrometheusCM(oldRegex, newRegex, monitoringNS, prometheusReleaseName + "-server");
-    String sessionAppPrometheusSearchKey =
-        "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
-    checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr",nodeportPrometheus);
-    checkPromGrafanaLatestVersion();
+      String oldRegex = String.format("regex: %s;%s", domain2Namespace, domain2Uid);
+      String newRegex = String.format("regex: %s;%s", domain1Namespace, domain1Uid);
+      editPrometheusCM(oldRegex, newRegex, monitoringNS, prometheusReleaseName + "-server");
+      String sessionAppPrometheusSearchKey =
+          "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
+      checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr", nodeportPrometheus);
+      checkPromGrafanaLatestVersion();
+    } finally {
+      shutdownDomain(domain1Namespace, domain1Uid);
+      shutdownDomain(domain2Namespace, domain2Uid);
+    }
   }
 
   /**
@@ -445,7 +451,6 @@ class ItMonitoringExporterSamples {
     if (wdtImage != null) {
       deleteImage(miiImage);
     }
-
     uninstallPrometheusGrafana(promHelmParams.getHelmParams(), grafanaHelmParams);
     promHelmParams = null;
     grafanaHelmParams = null;

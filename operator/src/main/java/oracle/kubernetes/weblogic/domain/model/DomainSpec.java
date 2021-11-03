@@ -844,6 +844,10 @@ public class DomainSpec extends BaseConfiguration {
         .orElse(false);
   }
 
+  Istio getIstio() {
+    return Optional.ofNullable(configuration).map(Configuration::getIstio).orElse(null);
+  }
+
   /**
    * The WebLogic readiness port used under Istio environment.
    *
@@ -854,6 +858,31 @@ public class DomainSpec extends BaseConfiguration {
         .map(Configuration::getIstio)
         .map(Istio::getReadinessPort)
         .orElse(8888);
+  }
+
+  /**
+   * The WebLogic replication channel port used under Istio environment.
+   *
+   * @return replicationPort
+   */
+  int getIstioReplicationPort() {
+    return Optional.ofNullable(configuration)
+        .map(Configuration::getIstio)
+        .map(Istio::getReplicationChannelPort)
+        .orElse(Istio.DEFAULT_REPLICATION_PORT);
+  }
+
+  /**
+   * Indicates if Istio proxy redirects traffic to localhost.
+   *
+   * @return null if not defined in spec. true if Istio proxy redirects traffic to localhost or
+   *          false otherwise.
+   */
+  Boolean isLocalhostBindingsEnabled() {
+    return Optional.ofNullable(configuration)
+        .map(Configuration::getIstio)
+        .map(Istio::getLocalhostBindingsEnabled)
+        .orElse(null);
   }
 
   String getWdtDomainType() {

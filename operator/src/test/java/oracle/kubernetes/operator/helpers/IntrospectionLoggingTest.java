@@ -39,6 +39,7 @@ class IntrospectionLoggingTest {
   @BeforeEach
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger().collectAllLogMessages(logRecords));
+    mementos.add(TuningParametersStub.install());
     mementos.add(testSupport.install());
 
     testSupport.addDomainPresenceInfo(info);
