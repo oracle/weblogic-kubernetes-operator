@@ -74,6 +74,7 @@ import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_AVAILABLE;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_CHANGED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_COMPLETED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_CREATED;
@@ -356,9 +357,11 @@ class ItKubernetesEvents {
     OffsetDateTime timestamp = now();
     scaleClusterWithRestApi(domainUid, cluster2Name, 1,
         externalRestHttpsPort, opNamespace, opServiceAccount);
-    logger.info("verify the DomainProcessing Starting/Completed event is generated");
+    logger.info("verify the Domain_Available event is generated");
+    checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_AVAILABLE, "Normal", timestamp);
+    logger.info("verify the DomainCompleted event is generated");
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_COMPLETED, "Normal", timestamp);
-    logger.info("verify the only 1 DomainProcessing Starting/Completed event is generated");
+    logger.info("verify the only 1 DomainCompleted event is generated");
     assertEquals(1, getEventCount(domainNamespace1, domainUid, DOMAIN_COMPLETED, timestamp));
   }
 
