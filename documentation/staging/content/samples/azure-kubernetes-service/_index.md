@@ -8,12 +8,12 @@ description: "Sample for using the operator to set up a WLS cluster on the Azure
 
 ### Contents
 
-   - [Introduction](#introduction)
-     - [Azure Kubernetes Service cluster](#azure-kubernetes-service-cluster)
-     - [Domain home source types](#domain-home-source-types)
-   - [Domain in PV]({{< relref "/samples/azure-kubernetes-service/domain-on-pv.md" >}}): Running the WebLogic cluster on AKS with domain home on PV
-   - [Model in Image]({{< relref "/samples/azure-kubernetes-service/model-in-image.md" >}}): Running the WebLogic cluster on AKS with domain model in image
-   - [Troubleshooting]({{< relref "/samples/azure-kubernetes-service/troubleshooting.md" >}})
+- [Introduction](#introduction)
+    - [Azure Kubernetes Service cluster](#azure-kubernetes-service-cluster)
+    - [Domain home source types](#domain-home-source-types)
+- [Domain in PV]({{< relref "/samples/azure-kubernetes-service/domain-on-pv.md" >}}): Running the WebLogic cluster on AKS with domain home on PV
+- [Model in Image]({{< relref "/samples/azure-kubernetes-service/model-in-image.md" >}}): Running the WebLogic cluster on AKS with domain model in image
+- [Troubleshooting]({{< relref "/samples/azure-kubernetes-service/troubleshooting.md" >}})
 
 
 ### Introduction
@@ -22,9 +22,8 @@ This sample demonstrates how to use the [WebLogic Kubernetes Operator]({{< relre
 
 #### Azure Kubernetes Service cluster
 
-Azure Kubernetes Service makes it simple to deploy a managed Kubernetes cluster in Azure. AKS reduces the complexity and operational overhead of managing Kubernetes by offloading much of that responsibility to Azure. As a hosted Kubernetes service, Azure handles critical tasks like health monitoring and maintenance for you. The Kubernetes masters are managed by Azure. You only manage and maintain the agent nodes. As a managed Kubernetes service, AKS is free - you only pay for the agent nodes within your clusters, not for the masters.
+{{< readfile file="/samples/azure-kubernetes-service/includes/aks-value-prop.txt" >}}
 
-To learn more, see the [What is Azure Kubernetes Service?](https://docs.microsoft.com/en-us/azure/aks/intro-kubernetes).
 
 #### Domain home source types
 
@@ -32,21 +31,21 @@ This sample demonstrates running the WebLogic cluster on AKS using two domain ho
 
 - [Model in Image]({{< relref "/samples/azure-kubernetes-service/model-in-image.md" >}}): running the WebLogic cluster on AKS with domain home in image offers the following benefits:
 
-   - Reuse image to create different domains with different `domainUID` and different configurations.
-   - Mutate the domain home configuration with additional model files supplied in a `ConfigMap`.  Many such changes do not need to restart the entire domain for the change to take effect.
-   - The model file syntax is far simpler and less error prone than the configuration override syntax, and, unlike configuration overrides, allows you to directly add data sources and JMS modules.
+    - Reuse image to create different domains with different `domainUID` and different configurations.
+    - Mutate the domain home configuration with additional model files supplied in a `ConfigMap`.  Many such changes do not need to restart the entire domain for the change to take effect.
+    - The model file syntax is far simpler and less error prone than the configuration override syntax, and, unlike configuration overrides, allows you to directly add data sources and JMS modules.
 
 - [Domain in PV]({{< relref "/samples/azure-kubernetes-service/domain-on-pv.md" >}}): running the WebLogic cluster on AKS with domain home in PV offers the following benefits:
 
-   - Use standard Oracle-provided images with patches installed.
-   - No Docker environment required. You are able to run your business quickly without building knowledge of Docker.
-   - Mutate the live domain configuration with Administration Console from a browser or WLST.
-   
+    - Use standard Oracle-provided images with patches installed.
+    - No Docker environment required. You are able to run your business quickly without building knowledge of Docker.
+    - Mutate the live domain configuration with Administration Console from a browser or WLST.
+
 {{% notice tip %}} Stop and Start an Azure Kubernetes Service (AKS) cluster using Azure CLI, as described [in the azure docs](https://docs.microsoft.com/en-us/azure/aks/start-stop-cluster). This allows you to optimize costs during your AKS cluster's idle time. Don't pay for running development clusters unless they are actively being used.  You can pick up objects and cluster state right where you were left off.
 {{% /notice %}}
 
 ### References
 
 For references to the relevant user documentation, see:
- - [Choose a domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}) user documentation
- - [Model in Image]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}) user documentation
+- [Choose a domain home source type]({{< relref "/userguide/managing-domains/choosing-a-model/_index.md" >}}) user documentation
+- [Model in Image]({{< relref "/userguide/managing-domains/model-in-image/_index.md" >}}) user documentation

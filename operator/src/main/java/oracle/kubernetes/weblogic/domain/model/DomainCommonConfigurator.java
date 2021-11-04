@@ -384,6 +384,18 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
+  public DomainConfigurator withIstioLocalhostBindingsEnabled(Boolean localhostBindingsEnabled) {
+    getOrCreateIstio().setLocalhostBindingsEnabled(localhostBindingsEnabled);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withIstioReplicationChannelPort(Integer replicationChannelPort) {
+    getOrCreateIstio().setReplicationChannelPort(replicationChannelPort);
+    return this;
+  }
+
+  @Override
   public DomainConfigurator withDomainType(String type) {
     getOrCreateModel().withDomainType(type);
     return this;
