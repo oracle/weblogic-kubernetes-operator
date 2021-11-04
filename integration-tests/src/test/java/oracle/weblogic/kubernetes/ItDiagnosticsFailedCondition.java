@@ -202,16 +202,43 @@ class ItDiagnosticsFailedCondition {
     ConfigMapUtils.createConfigMapFromFiles(badModelFileCm, modelList, domainNamespace);
     logger.info("Creating domain with serverStartPolicy set to IF_NEEDED");
 
-    Domain domain = createDomainResourceWithConfigMap(domainUid, domainNamespace, adminSecretName,
-        OCIR_SECRET_NAME, encryptionSecretName, replicaCount, imageName + ":" + imageTag, badModelFileCm, 30L);
-
     try {
+      // Domain domain = createDomainResourceWithConfigMap(domainUid, domainNamespace, adminSecretName,
+      //    OCIR_SECRET_NAME, encryptionSecretName, replicaCount, imageName + ":" + imageTag, badModelFileCm, 30L);
+
+      // createDomainAndVerify(domain, domainNamespace);
+      // verify the condition type Failed exists
+      // checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
+      // verify the condition Failed type has status True
+      // checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
+      // DOMAIN_STATUS_CONDITION_FAILED_TYPE, "True");
+      ImageUtils.createDockerRegistrySecret("foo", "bar", "foo@bar.com", OCIR_REGISTRY,
+          "bad-pull-secret", domainNamespace);
+      // deleteDomainResource(domainUid, domainNamespace);
+
+      Domain domain = createDomainResourceWithConfigMap(domainUid, domainNamespace, adminSecretName,
+          "bad-pull-secret", encryptionSecretName, replicaCount, imageName + ":" + imageTag, badModelFileCm, 30L);
+
       createDomainAndVerify(domain, domainNamespace);
+
       // verify the condition type Failed exists
       checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
       // verify the condition Failed type has status True
       checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
           DOMAIN_STATUS_CONDITION_FAILED_TYPE, "True");
+
+      // verify the condition type Completed exists
+      checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_COMPLETED_TYPE);
+      // verify the condition Completed type has status True
+      checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
+          DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "False");
+
+      // verify the condition type Available exists
+      checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE);
+      // verify the condition Available type has status False
+      checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
+          DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "False");
+
     } finally {
       deleteDomainResource(domainUid, domainNamespace);
       deleteConfigMap(badModelFileCm, domainNamespace);
