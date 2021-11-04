@@ -44,7 +44,10 @@ import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_REPO_URL;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_RELEASE_NAME;
@@ -55,6 +58,9 @@ import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.createIngress;
 import static oracle.weblogic.kubernetes.actions.TestActions.createService;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerPull;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -164,6 +170,19 @@ public class LoadBalancerUtils {
                                                  int nodeportshttps,
                                                  String chartVersion) {
     LoggingFacade logger = getLogger();
+    testUntil(
+          () -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD),
+          logger,
+          "docker login to be successful");
+
+    String nginxImage = 
+          "phx.ocir.io/weblogick8s/ingress-nginx/controller:v0.35.0";
+    testUntil(
+          pullImageFromOcirAndTag(nginxImage),
+          logger,
+          "pullImageFromOcirAndTag for image {0} to be successful",
+          nginxImage);
+
     // Helm install parameters
     HelmParams nginxHelmParams = new HelmParams()
         .releaseName(NGINX_RELEASE_NAME + "-" + nginxNamespace.substring(3))
@@ -803,6 +822,16 @@ public class LoadBalancerUtils {
         ingressName, domainUid, domainNamespace);
 
     return ingressHostList;
+  }
+
+  private static Callable<Boolean> pullImageFromOcirAndTag(String localImage) {
+    return (() -> {
+      String nginxImage = "k8s.gcr.io/ingress-nginx/controller:v0.35.0";
+      LoggingFacade logger = getLogger();
+      logger.info("pulling image {0} from OCIR, tag it as image {1} ",
+          localImage, nginxImage);
+      return dockerPull(localImage) && dockerTag(localImage, nginxImage);
+    });
   }
 
   /**
