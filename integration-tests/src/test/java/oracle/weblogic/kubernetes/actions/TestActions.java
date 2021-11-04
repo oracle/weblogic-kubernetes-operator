@@ -638,7 +638,7 @@ public class TestActions {
    * @return true on success, false otherwise
    * @throws ApiException if Kubernetes client API call fails
    */
-  public static String createUniqueNamespace() throws ApiException {
+  public static synchronized String createUniqueNamespace() throws ApiException {
     String name = Namespace.uniqueName();
     try {
       new Namespace().name(name).create();
