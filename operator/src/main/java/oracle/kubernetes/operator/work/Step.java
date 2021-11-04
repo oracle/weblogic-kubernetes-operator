@@ -202,6 +202,7 @@ public abstract class Step {
    * @param unit Delay time unit
    * @return The next action
    */
+  @SuppressWarnings("SameParameterValue")
   protected NextAction doRetry(Packet packet, long delay, TimeUnit unit) {
     NextAction na = new NextAction();
     na.delay(this, packet, delay, unit);
@@ -296,7 +297,6 @@ public abstract class Step {
   }
 
   /** Multi-exception. */
-  @SuppressWarnings("serial")
   public static class MultiThrowable extends RuntimeException {
     private final List<Throwable> throwables;
 

@@ -7,11 +7,18 @@ import io.kubernetes.client.openapi.models.V1Job;
 import oracle.kubernetes.operator.JobAwaiterStepFactory;
 import oracle.kubernetes.operator.JobWatcher;
 import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
 public class WatchDomainIntrospectorJobReadyStep extends Step {
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
+  public WatchDomainIntrospectorJobReadyStep(Step next) {
+    super(next);
+  }
 
   @Override
   public NextAction apply(Packet packet) {
@@ -19,7 +26,8 @@ public class WatchDomainIntrospectorJobReadyStep extends Step {
 
     if (hasNotCompleted(domainIntrospectorJob)) {
       JobAwaiterStepFactory jw = packet.getSpi(JobAwaiterStepFactory.class);
-      return doNext(jw.waitForReady(domainIntrospectorJob, getNext()), packet);
+      final Step step = jw.waitForReady(domainIntrospectorJob, getNext());
+      return doNext(step, packet);
     } else {
       return doNext(packet);
     }

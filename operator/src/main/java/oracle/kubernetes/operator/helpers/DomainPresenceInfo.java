@@ -574,11 +574,12 @@ public class DomainPresenceInfo implements PacketComponent {
     retryCount.set(0);
   }
 
-  public int incrementAndGetFailureCount() {
-    return retryCount.incrementAndGet();
+  public void indicateFailure() {
+    retryCount.incrementAndGet();
+    isPopulated.set(false);
   }
 
-  int getRetryCount() {
+  public int getRetryCount() {
     return retryCount.get();
   }
 

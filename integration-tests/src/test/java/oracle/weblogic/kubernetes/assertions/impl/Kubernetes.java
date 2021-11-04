@@ -487,13 +487,18 @@ public class Kubernetes {
             null, // Timeout for the list/watch call.
             Boolean.FALSE // Watch for changes to the described resources.
         );
+    getLogger().info("REG-> found {0} pods in namespace {1}", v1PodList.getItems().size(), namespace);
     for (V1Pod item : v1PodList.getItems()) {
+      getLogger().info("REG-> comparing actual name {0} against specified pod name {1}",
+            item.getMetadata().getName(), podName);
       if (item.getMetadata().getName().contains(podName.trim())) {
         getLogger().info("Name: {0}, Namespace: {1}, Phase: {2}",
             item.getMetadata().getName(), namespace, item.getStatus().getPhase());
+        getLogger().info("REG-> found a match");
         return item;
       }
     }
+    getLogger().info("REG-> did not find a match");
     return null;
   }
 

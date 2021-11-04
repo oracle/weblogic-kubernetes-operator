@@ -648,7 +648,7 @@ class DomainIntrospectorJobTest {
   }
 
   @Test
-  void whenIntrospectorJobNotNeeded_doesNotValidatesDomainTopology() throws JsonProcessingException {
+  void whenIntrospectorJobNotNeeded_doesNotValidateDomainTopology() throws JsonProcessingException {
     // create WlsDomainConfig with "cluster-2" whereas domain spec contains "cluster-1"
     WlsDomainConfig wlsDomainConfig = createDomainConfig("cluster-2");
     IntrospectionTestUtils.defineResources(testSupport, wlsDomainConfig);

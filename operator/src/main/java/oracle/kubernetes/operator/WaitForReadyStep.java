@@ -35,8 +35,7 @@ abstract class WaitForReadyStep<T> extends Step {
   private static final int DEFAULT_RECHECK_SECONDS = 5;
   private static final int DEFAULT_RECHECK_COUNT = 60;
 
-  static NextStepFactory NEXT_STEP_FACTORY =
-          (callback, info, next) -> createMakeDomainRightStep(callback, info, next);
+  static NextStepFactory NEXT_STEP_FACTORY = WaitForReadyStep::createMakeDomainRightStep;
 
   protected static Step createMakeDomainRightStep(WaitForReadyStep.Callback callback,
                                            DomainPresenceInfo info, Step next) {
@@ -74,6 +73,11 @@ abstract class WaitForReadyStep<T> extends Step {
     super(next);
     this.initialResource = resource;
     this.resourceName = resourceName;
+  }
+
+  @Override
+  protected String getDetail() {
+    return getResourceName();
   }
 
   /**
@@ -180,7 +184,7 @@ abstract class WaitForReadyStep<T> extends Step {
       return doNext(packet);
     }
 
-    logWaiting(getName());
+    logWaiting(getResourceName());
     return doSuspend((fiber) -> resumeWhenReady(packet, fiber));
   }
 
@@ -188,7 +192,7 @@ abstract class WaitForReadyStep<T> extends Step {
   // verifies that we haven't already missed the update.
   private void resumeWhenReady(Packet packet, AsyncFiber fiber) {
     Callback callback = new Callback(fiber, packet);
-    addCallback(getName(), callback);
+    addCallback(getResourceName(), callback);
     checkUpdatedResource(packet, fiber, callback);
   }
 
@@ -206,9 +210,9 @@ abstract class WaitForReadyStep<T> extends Step {
 
   Step createReadAndIfReadyCheckStep(Callback callback) {
     if (initialResource != null) {
-      return createReadAsyncStep(getName(), getNamespace(), getDomainUid(), resumeIfReady(callback));
+      return createReadAsyncStep(getResourceName(), getNamespace(), getDomainUid(), resumeIfReady(callback));
     } else {
-      return new ReadAndIfReadyCheckStep(getName(), resumeIfReady(callback), getNext());
+      return new ReadAndIfReadyCheckStep(getResourceName(), resumeIfReady(callback), getNext());
     }
   }
 
@@ -222,7 +226,7 @@ abstract class WaitForReadyStep<T> extends Step {
     return getDomainUidLabel(getMetadata(initialResource));
   }
 
-  public String getName() {
+  private String getResourceName() {
     return initialResource != null ? getMetadata(initialResource).getName() : resourceName;
   }
 
@@ -291,7 +295,7 @@ abstract class WaitForReadyStep<T> extends Step {
 
     // The resource has now either completed or failed, so we can continue processing.
     void proceedFromWait(T resource) {
-      removeCallback(getName(), this);
+      removeCallback(getResourceName(), this);
       if (mayResumeFiber()) {
         handleResourceReady(fiber, packet, resource);
         fiber.resume(packet);

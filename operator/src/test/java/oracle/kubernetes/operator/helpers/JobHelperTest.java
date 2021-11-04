@@ -677,7 +677,8 @@ class JobHelperTest extends DomainValidationBaseTest {
 
   @Test
   void verify_introspectorPodSpec_activeDeadlineSeconds_retry_values() {
-    int failureCount = domainPresenceInfo.incrementAndGetFailureCount();
+    domainPresenceInfo.indicateFailure();
+    final int failureCount = domainPresenceInfo.getRetryCount();
 
     V1JobSpec jobSpec = createJobSpec();
 

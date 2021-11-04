@@ -28,6 +28,8 @@ public interface MakeRightDomainOperation {
 
   MakeRightDomainOperation withEventData(EventItem eventItem, String message);
 
+  MakeRightDomainOperation withDeleting(boolean deleting);
+
   MakeRightDomainOperation interrupt();
 
   void execute();
