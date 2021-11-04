@@ -41,6 +41,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.CommonTestUtils;
 import oracle.weblogic.kubernetes.utils.ConfigMapUtils;
+import oracle.weblogic.kubernetes.utils.ImageUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
@@ -59,6 +60,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_C
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_FAILED_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
@@ -334,6 +336,47 @@ class ItDiagnosticsFailedCondition {
 
     Domain domain = createDomainResource(domainUid, domainNamespace, adminSecretName,
         OCIR_SECRET_NAME + "bad", encryptionSecretName, 100, image);
+
+    try {
+      createDomainAndVerify(domain, domainNamespace);
+
+      // verify the condition type Failed exists
+      checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
+      // verify the condition Failed type has status True
+      checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
+          DOMAIN_STATUS_CONDITION_FAILED_TYPE, "True");
+
+      // verify the condition type Completed exists
+      checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_COMPLETED_TYPE);
+      // verify the condition Completed type has status True
+      checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
+          DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "False");
+
+      // verify the condition type Available exists
+      checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE);
+      // verify the condition Available type has status False
+      checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
+          DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "False");
+
+    } finally {
+      deleteDomainResource(domainUid, domainNamespace);
+    }
+  }
+
+  /**
+   * Test domain status condition with serverStartPolicy set to IF_NEEDED. Verify the following conditions are
+   * generated: type: Completed, status: true type: Available, status: true Verify no Failed type condition generated.
+   */
+  @Order(4)
+  @Test
+  @DisplayName("Test domain status condition with serverStartPolicy set to IF_NEEDED")
+  void testIncorrectImagePullSecret() {
+    String image = TestConstants.MII_BASIC_IMAGE_NAME + ":" + TestConstants.MII_BASIC_IMAGE_TAG;
+    ImageUtils.createDockerRegistrySecret("foo", "bar", "foo@bar.com", OCIR_REGISTRY,
+        "bad-pull-secret", domainNamespace);
+
+    Domain domain = createDomainResource(domainUid, domainNamespace, adminSecretName,
+        "bad-pull-secret", encryptionSecretName, replicaCount, image);
 
     try {
       createDomainAndVerify(domain, domainNamespace);
