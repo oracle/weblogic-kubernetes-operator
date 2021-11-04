@@ -130,7 +130,7 @@ To enable Istio support for a domain, you need to add a
 as shown in the following example:  
 
 ```yaml
-apiVersion: "weblogic.oracle/v8"
+apiVersion: "weblogic.oracle/v9"
 kind: Domain
 metadata:
   name: domain2

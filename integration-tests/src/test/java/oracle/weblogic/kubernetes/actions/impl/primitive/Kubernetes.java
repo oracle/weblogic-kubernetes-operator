@@ -99,7 +99,7 @@ public class Kubernetes {
   private static final String RESOURCE_VERSION_MATCH_UNSET = null;
   private static final Integer TIMEOUT_SECONDS = 5;
   private static final String DOMAIN_GROUP = "weblogic.oracle";
-  private static final String DOMAIN_VERSION = "v8";
+  private static final String DOMAIN_VERSION = "v9";
   private static final String DOMAIN_PLURAL = "domains";
   private static final String FOREGROUND = "Foreground";
   private static final String BACKGROUND = "Background";

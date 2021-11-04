@@ -31,7 +31,7 @@ test_get_domain_api_version() {
 
   result=$(get_domain_api_version)
 
-  assertEquals "Did not return expected api version" 'v8' "${result}"  
+  assertEquals "Did not return expected api version" 'v9' "${result}"
 }
 
 test_get_domain_api_version_jq() {
@@ -41,7 +41,7 @@ test_get_domain_api_version_jq() {
 
   result=$(get_domain_api_version)
 
-  assertEquals "Did not return expected api version" 'v8' "${result}"  
+  assertEquals "Did not return expected api version" 'v9' "${result}"
 }
 
 test_get_domain_api_version_without_weblogic_group() {
