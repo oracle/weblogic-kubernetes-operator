@@ -38,12 +38,16 @@ import static oracle.weblogic.kubernetes.TestConstants.APACHE_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.APACHE_SAMPLE_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.APPSCODE_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.APPSCODE_REPO_URL;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.GCR_NGINX_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_REPO_URL;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_NGINX_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
@@ -172,16 +176,15 @@ public class LoadBalancerUtils {
     LoggingFacade logger = getLogger();
     testUntil(
           () -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD),
-          logger,
-          "docker login to be successful");
+          logger, "docker login to be successful");
 
-    String nginxImage = 
-          "phx.ocir.io/weblogick8s/ingress-nginx/controller:v0.35.0";
+    String localNginxImage = BASE_IMAGES_REPO + "/" 
+              + OCIR_NGINX_IMAGE_NAME + ":" + NGINX_INGRESS_IMAGE_TAG;
     testUntil(
-          pullImageFromOcirAndTag(nginxImage),
+          pullImageFromOcirAndTag(localNginxImage),
           logger,
           "pullImageFromOcirAndTag for image {0} to be successful",
-          nginxImage);
+          localNginxImage);
 
     // Helm install parameters
     HelmParams nginxHelmParams = new HelmParams()
@@ -826,7 +829,7 @@ public class LoadBalancerUtils {
 
   private static Callable<Boolean> pullImageFromOcirAndTag(String localImage) {
     return (() -> {
-      String nginxImage = "k8s.gcr.io/ingress-nginx/controller:v0.35.0";
+      String nginxImage = GCR_NGINX_IMAGE_NAME + ":" + "v0.35.0";
       LoggingFacade logger = getLogger();
       logger.info("pulling image {0} from OCIR, tag it as image {1} ",
           localImage, nginxImage);
