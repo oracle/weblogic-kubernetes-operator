@@ -147,6 +147,10 @@ ulimit -aH
 
 dockerLogin
 
+docker pull wls-docker-dev-local.dockerhub-phx.oci.oraclecorp.com/ingress-nginx/controller:v0.35.0
+
+docker tag wls-docker-dev-local.dockerhub-phx.oci.oraclecorp.com/ingress-nginx/controller:v0.35.0  k8s.gcr.io/ingress-nginx/controller:v0.35.0
+
 echo 'Info: Run build...'
 mvn clean install
 
