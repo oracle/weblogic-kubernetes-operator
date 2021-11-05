@@ -203,21 +203,26 @@ class ItDiagnosticsFailedCondition {
     logger.info("Creating domain with serverStartPolicy set to IF_NEEDED");
 
     try {
-      // Domain domain = createDomainResourceWithConfigMap(domainUid, domainNamespace, adminSecretName,
-      //    OCIR_SECRET_NAME, encryptionSecretName, replicaCount, imageName + ":" + imageTag, badModelFileCm, 30L);
+      // Test - test bad model file status with introspector failure
+      Domain domain = createDomainResourceWithConfigMap(domainUid, domainNamespace, adminSecretName,
+          OCIR_SECRET_NAME, encryptionSecretName, replicaCount, imageName + ":" + imageTag, badModelFileCm, 30L);
 
-      // createDomainAndVerify(domain, domainNamespace);
+      createDomainAndVerify(domain, domainNamespace);
       // verify the condition type Failed exists
-      // checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
+      checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
       // verify the condition Failed type has status True
-      // checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
-      // DOMAIN_STATUS_CONDITION_FAILED_TYPE, "True");
+      checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
+      DOMAIN_STATUS_CONDITION_FAILED_TYPE, "True");
+
+      // Test - test incorrect secrets to pull images,
+      // this test will pass if you set REPO_REGISTRY in local cluster runs.
       ImageUtils.createDockerRegistrySecret("foo", "bar", "foo@bar.com", OCIR_REGISTRY,
           "bad-pull-secret", domainNamespace);
-      // deleteDomainResource(domainUid, domainNamespace);
+      deleteDomainResource(domainUid, domainNamespace);
 
-      Domain domain = createDomainResourceWithConfigMap(domainUid, domainNamespace, adminSecretName,
+      domain = createDomainResourceWithConfigMap(domainUid, domainNamespace, adminSecretName,
           "bad-pull-secret", encryptionSecretName, replicaCount, imageName + ":" + imageTag, badModelFileCm, 30L);
+      domain.getSpec().imagePullPolicy("ALWAYS");
 
       createDomainAndVerify(domain, domainNamespace);
 
@@ -398,12 +403,13 @@ class ItDiagnosticsFailedCondition {
   @Test
   @DisplayName("Test domain status condition with serverStartPolicy set to IF_NEEDED")
   void testIncorrectImagePullSecret() {
-    String image = TestConstants.MII_BASIC_IMAGE_NAME + ":" + TestConstants.MII_BASIC_IMAGE_TAG;
+    String image = WEBLOGIC_IMAGE_NAME + ":nonexistent";
     ImageUtils.createDockerRegistrySecret("foo", "bar", "foo@bar.com", OCIR_REGISTRY,
         "bad-pull-secret", domainNamespace);
 
     Domain domain = createDomainResource(domainUid, domainNamespace, adminSecretName,
         "bad-pull-secret", encryptionSecretName, replicaCount, image);
+    domain.getSpec().imagePullPolicy("Always");
 
     try {
       createDomainAndVerify(domain, domainNamespace);
