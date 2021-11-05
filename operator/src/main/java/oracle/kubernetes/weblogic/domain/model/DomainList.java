@@ -5,6 +5,7 @@ package oracle.kubernetes.weblogic.domain.model;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
@@ -225,5 +226,10 @@ public class DomainList implements KubernetesListObject {
         .append(items, rhs.items)
         .append(kind, rhs.kind)
         .isEquals();
+  }
+
+  public DomainList upgrade() {
+    Optional.ofNullable(items).ifPresent(list -> list.forEach(Domain::upgrade));
+    return this;
   }
 }

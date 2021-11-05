@@ -604,5 +604,9 @@ class KubernetesTestSupportTest {
       this.callResponse = callResponse;
       return super.onSuccess(packet, callResponse);
     }
+
+    public CallResponse<T> getCallResponse() {
+      return callResponse;
+    }
   }
 }

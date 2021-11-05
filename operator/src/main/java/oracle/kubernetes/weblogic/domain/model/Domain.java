@@ -1364,4 +1364,8 @@ public class Domain implements KubernetesObject {
 
   }
 
+  public Domain upgrade() {
+    Optional.ofNullable(getStatus()).ifPresent(DomainStatus::upgrade);
+    return this;
+  }
 }
