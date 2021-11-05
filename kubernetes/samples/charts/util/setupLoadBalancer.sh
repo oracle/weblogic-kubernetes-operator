@@ -17,6 +17,8 @@ kubernetesCli=${KUBERNETES_CLI:-kubectl}
 # https://github.com/containous/traefik/releases
 DefaultTraefikVersion=2.2.1
 
+#https://artifacthub.io/packages/helm/ingress-nginx/ingress-nginx
+#https://docs.nginx.com/nginx-ingress-controller/installation/installation-with-helm/
 # https://github.com/kubernetes/ingress-nginx/releases
 DefaultNginxVersion=2.16.0
 
@@ -152,37 +154,20 @@ function waitForIngressPod() {
   type=$1
   ns=$2
 
-  printInfo "Wait until ${type} ingress controller pod is running."
-  ipod=$(${kubernetesCli} -o name get po -n ${ns} | grep -v admission-patch)
-  if [[ "${ipod}" != *$chart* ]]; then
-   printError "Couldn't find the pod associated with ${type} helm deployment. List helm deployment status on namespace [${ns}]. "
-   helm list -n ${ns}
-   exit -1;
-  fi
-  printInfo "Found pod [${ipod}] associated with ${type} helm deployment on namespace [${ns}]."
+  printInfo "Wait (max 2min) until ${type} ingress controller pod to be ready."
+  ${kubernetesCli} wait --namespace ${ns} \
+  --for=condition=ready pod \
+  --selector=app.kubernetes.io/instance=${type}-release \
+  --timeout=120s
 
-  max=20
-  count=0
-  while test $count -lt $max; do
-    status=$(${kubernetesCli} get ${ipod} -n ${ns} --no-headers 2> /dev/null | awk '{print $2}')
-    #printInfo "[${type} Ingress controller pod status: ${status}]"
-    if [ x${status} == "x1/1" ]; then
-      echo " "
-      printInfo "${type} controller pod is running now."
-      ${kubernetesCli} get ${ipod} -n ${ns}
-      break;
-    fi
-    count=`expr $count + 1`
-    sleep 2
-    echo -n "."
-  done
-  if test $count -eq $max; then
-    ${kubernetesCli} describe ${ipod} -n ${ns}
-    printError "${type} controller pod failed to start."
-    exit 1
-  fi
-  ${kubernetesCli} get ${ipod} -n ${ns}
-  helm list -n ${ns}
+  if [ $? != 0 ]; then
+   printError "${type} ingress controller pod not READY in state in 2 min"
+   exit -1;
+  else 
+   ipod=$(${kubernetesCli} get pod -n ${ns} -l app.kubernetes.io/instance=${type}-release -o jsonpath="{.items[0].metadata.name}")
+   ${kubernetesCli} get po/${ipod} -n ${ns}
+   helm list -n ${ns}
+  fi 
  } 
 
 function createTraefik() {
@@ -249,7 +234,12 @@ function deleteIngress() {
   if [ "$(helm list --namespace $ns | grep $chart |  wc -l)" = 1 ]; then
     printInfo "Deleting ${type} controller from namespace $ns" 
     helm uninstall --namespace $ns $chart
+    ${kubernetesCli} wait --namespace ${ns} \
+       --for=delete pod \
+       --selector=app.kubernetes.io/instance=${type}-release \
+       --timeout=120s
     ${kubernetesCli} delete ns ${ns}
+    ${kubernetesCli} wait --for=delete namespace ${ns} --timeout=60s
     printInfo "Remove ${type} chart repository [${repository}] "
     helm repo remove ${repository}
   else
