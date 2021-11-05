@@ -214,24 +214,6 @@ class ItDiagnosticsFailedCondition {
       checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
           DOMAIN_STATUS_CONDITION_FAILED_TYPE, "True");
 
-      // Test - test incorrect secrets to pull images,
-      // this test will pass if you set REPO_REGISTRY in local cluster runs.
-      ImageUtils.createDockerRegistrySecret("foo", "bar", "foo@bar.com", OCIR_REGISTRY,
-          "bad-pull-secret", domainNamespace);
-      deleteDomainResource(domainUid, domainNamespace);
-
-      domain = createDomainResourceWithConfigMap(domainUid, domainNamespace, adminSecretName,
-          "bad-pull-secret", encryptionSecretName, replicaCount, imageName + ":" + imageTag, badModelFileCm, 30L);
-      domain.getSpec().imagePullPolicy("ALWAYS");
-
-      createDomainAndVerify(domain, domainNamespace);
-
-      // verify the condition type Failed exists
-      checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
-      // verify the condition Failed type has status True
-      checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
-          DOMAIN_STATUS_CONDITION_FAILED_TYPE, "True");
-
       // verify the condition type Completed exists
       checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_COMPLETED_TYPE);
       // verify the condition Completed type has status True
@@ -414,6 +396,88 @@ class ItDiagnosticsFailedCondition {
     try {
       createDomainAndVerify(domain, domainNamespace);
 
+      // verify the condition type Failed exists
+      checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
+      // verify the condition Failed type has status True
+      checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
+          DOMAIN_STATUS_CONDITION_FAILED_TYPE, "True");
+
+      // verify the condition type Completed exists
+      checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_COMPLETED_TYPE);
+      // verify the condition Completed type has status True
+      checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
+          DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "False");
+
+      // verify the condition type Available exists
+      checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE);
+      // verify the condition Available type has status False
+      checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
+          DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "False");
+
+    } finally {
+      deleteDomainResource(domainUid, domainNamespace);
+    }
+  }
+
+  /**
+   * Test domain status condition with serverStartPolicy set to IF_NEEDED. Verify the following conditions are
+   * generated: type: Completed, status: true type: Available, status: true Verify no Failed type condition generated.
+   */
+  @Order(4)
+  @Test
+  @DisplayName("Test domain status condition with serverStartPolicy set to IF_NEEDED")
+  void testNonexistetPVC() {
+    try {
+      // create a domain custom resource configuration object
+      logger.info("Creating domain custom resource");
+      Domain domain = new Domain()
+          .apiVersion(DOMAIN_API_VERSION)
+          .kind("Domain")
+          .metadata(new V1ObjectMeta()
+              .name(domainUid)
+              .namespace(domainNamespace))
+          .spec(new DomainSpec()
+              .domainUid(domainUid)
+              .domainHome("/shared/domains/" + domainUid) // point to domain home in pv
+              .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
+              .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
+              .imagePullPolicy("IfNotPresent")
+              .imagePullSecrets(Arrays.asList(
+                  new V1LocalObjectReference()
+                      .name(BASE_IMAGES_REPO_SECRET))) // this secret is used only in non-kind cluster
+              .webLogicCredentialsSecret(new V1SecretReference()
+                  .name(adminSecretName)
+                  .namespace(domainNamespace))
+              .includeServerOutInPodLog(true)
+              .logHomeEnabled(Boolean.TRUE)
+              .logHome("/shared/logs/" + domainUid)
+              .dataHome("")
+              .serverStartPolicy("IF_NEEDED")
+              .serverPod(new ServerPod() //serverpod
+                  .addEnvItem(new V1EnvVar()
+                      .name("USER_MEM_ARGS")
+                      .value("-Djava.security.egd=file:/dev/./urandom "))
+                  .addVolumesItem(new V1Volume()
+                      .name(pvName)
+                      .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource()
+                          .claimName(pvcName)))
+                  .addVolumeMountsItem(new V1VolumeMount()
+                      .mountPath("/shared")
+                      .name(pvName)))
+              .adminServer(new AdminServer() //admin server
+                  .serverStartState("RUNNING")
+                  .adminService(new AdminService()
+                      .addChannelsItem(new Channel()
+                          .channelName("default")
+                          .nodePort(0))))
+              .addClustersItem(new Cluster() //cluster
+                  .clusterName(cluster1Name)
+                  .replicas(replicaCount)
+                  .serverStartState("RUNNING")));
+      setPodAntiAffinity(domain);
+
+      // verify the domain custom resource is created
+      createDomainAndVerify(domain, domainNamespace);
       // verify the condition type Failed exists
       checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
       // verify the condition Failed type has status True
