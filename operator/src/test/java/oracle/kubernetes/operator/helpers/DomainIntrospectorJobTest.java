@@ -6,7 +6,9 @@ package oracle.kubernetes.operator.helpers;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -18,19 +20,26 @@ import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1ContainerState;
+import io.kubernetes.client.openapi.models.V1ContainerStateWaiting;
+import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.JobAwaiterStepFactory;
+import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderImpl;
 import oracle.kubernetes.operator.rest.ScanCacheStub;
+import oracle.kubernetes.operator.steps.WatchDomainIntrospectorJobReadyStep;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -591,6 +600,87 @@ class DomainIntrospectorJobTest {
     assertThat(affectedJob, notNullValue());
   }
 
+  @Test
+  void whenPreviousTimedoutJobExists_createNewJob() {
+    ignoreIntrospectorFailureLogs();
+    ignoreJobCreatedAndDeletedLogs();
+    definePreviousTimedoutIntrospection();
+    testSupport.doOnCreate(JOB, this::recordJob);
+
+    testSupport.runSteps(Step.chain(new WatchDomainIntrospectorJobReadyStep(),
+            JobHelper.createIntrospectionStartStep(null)));
+
+    assertThat(affectedJob, notNullValue());
+  }
+
+  private void definePreviousTimedoutIntrospection() {
+    defineTimedoutIntrospection();
+  }
+
+  private void defineTimedoutIntrospection() {
+    testSupport.defineResources(asTimedoutJob(createIntrospectorJob("TIMEDOUT_JOB")));
+  }
+
+  private V1Job asTimedoutJob(V1Job job) {
+    job.setStatus(new V1JobStatus().addConditionsItem(new V1JobCondition().status("True").type("Failed")
+            .reason("DeadlineExceeded")));
+    return job;
+  }
+
+  private long getIntrospectorJobActiveDeadlineSeconds() {
+    return TuningParameters.getInstance().getPodTuning().introspectorJobActiveDeadlineSeconds;
+  }
+
+  @Test
+  void whenPreviousFailedJobWithImagePullErrorExistsAndMakeRightContinued_createNewJob() {
+    ignoreIntrospectorFailureLogs();
+    ignoreJobCreatedAndDeletedLogs();
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
+    defineFailedIntrospectionWithImagePullError("ErrImagePull");
+    testSupport.doOnCreate(JOB, this::recordJob);
+
+    testSupport.runSteps(JobHelper.createIntrospectionStartStep(null));
+
+    assertThat(affectedJob, notNullValue());
+  }
+
+  private void defineFailedIntrospectionWithImagePullError(String imagePullError) {
+    testSupport.defineResources(asFailedJobWithBackoffLimitExceeded(createIntrospectorJob()));
+    testSupport.defineResources(asFailedJobPodWithImagePullError(createIntrospectorJobPod(), imagePullError));
+  }
+
+  private V1Pod asFailedJobPodWithImagePullError(V1Pod introspectorJobPod, String imagePullError) {
+    List<V1ContainerStatus> statuses = Arrays.asList(new V1ContainerStatus().state(new V1ContainerState()
+            .waiting(new V1ContainerStateWaiting().reason(imagePullError))));
+    return introspectorJobPod.status(new V1PodStatus().containerStatuses(statuses));
+  }
+
+  private V1Pod createIntrospectorJobPod() {
+    String jobName = UID + "-introspector";
+    Map<String, String> labels = new HashMap<>();
+    labels.put(LabelConstants.JOBNAME_LABEL, jobName);
+    return new V1Pod().metadata(new V1ObjectMeta().name(jobName).labels(labels).namespace(NS));
+  }
+
+  private V1Job asFailedJobWithBackoffLimitExceeded(V1Job job) {
+    job.setStatus(new V1JobStatus().addConditionsItem(new V1JobCondition().status("True").type("Failed")
+            .reason("BackoffLimitExceeded")));
+    return job;
+  }
+
+  @Test
+  void whenPreviousFailedJobWithImagePullBackoffErrorExistsAndMakeRightContinued_createNewJob() {
+    ignoreIntrospectorFailureLogs();
+    ignoreJobCreatedAndDeletedLogs();
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
+    defineFailedIntrospectionWithImagePullError("ImagePullBackOff");
+    testSupport.doOnCreate(JOB, this::recordJob);
+
+    testSupport.runSteps(JobHelper.createIntrospectionStartStep(null));
+
+    assertThat(affectedJob, notNullValue());
+  }
+
   private V1Job affectedJob;
 
   private void recordJob(Object job) {
@@ -677,11 +767,15 @@ class DomainIntrospectorJobTest {
   }
 
   private V1Job createIntrospectorJob() {
-    return new V1Job().metadata(createJobMetadata()).status(new V1JobStatus());
+    return createIntrospectorJob(JOB_UID);
   }
 
-  private V1ObjectMeta createJobMetadata() {
-    return new V1ObjectMeta().name(getJobName()).namespace(NS).creationTimestamp(SystemClock.now()).uid(JOB_UID);
+  private V1Job createIntrospectorJob(String uid) {
+    return new V1Job().metadata(createJobMetadata(uid)).status(new V1JobStatus());
+  }
+
+  private V1ObjectMeta createJobMetadata(String uid) {
+    return new V1ObjectMeta().name(getJobName()).namespace(NS).creationTimestamp(SystemClock.now()).uid(uid);
   }
 
   @Test

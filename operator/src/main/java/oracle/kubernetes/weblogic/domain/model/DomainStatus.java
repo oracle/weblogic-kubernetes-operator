@@ -295,7 +295,7 @@ public class DomainStatus {
    * @param uid the Kubernetes-assigned UID of the job which discovered the introspection failure
    */
   public void incrementIntrospectJobFailureCount(String uid) {
-    if (!Objects.equals(uid, failedIntrospectionUid)) {
+    if ((uid == null) || (!Objects.equals(uid, failedIntrospectionUid))) {
       introspectJobFailureCount = introspectJobFailureCount + 1;
     }
     failedIntrospectionUid = uid;
@@ -519,5 +519,10 @@ public class DomainStatus {
 
   public void createPatchFrom(JsonPatchBuilder builder, @Nullable DomainStatus oldStatus) {
     statusPatch.createPatch(builder, "/status", oldStatus, this);
+  }
+
+  public DomainStatus withIntrospectJobFailureCount(int failureCount) {
+    this.introspectJobFailureCount = failureCount;
+    return this;
   }
 }

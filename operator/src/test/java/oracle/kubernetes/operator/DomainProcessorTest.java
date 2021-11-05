@@ -56,6 +56,7 @@ import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.helpers.UnitTestHash;
 import oracle.kubernetes.operator.http.HttpAsyncTestSupport;
 import oracle.kubernetes.operator.http.HttpResponseStub;
+import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.rest.ScanCacheStub;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
@@ -838,6 +839,25 @@ class DomainProcessorTest {
     assertThat(processorDelegate.waitedForIntrospection(), is(true));
   }
 
+  @Test
+  void whenIntrospectionJobTimedout_failureCountIncremented() throws Exception {
+    consoleHandlerMemento.ignoringLoggedExceptions(RuntimeException.class);
+    consoleHandlerMemento.ignoreMessage(MessageKeys.NOT_STARTING_DOMAINUID_THREAD);
+    establishPreviousIntrospection(null);
+    jobStatus = createTimedoutStatus();
+
+    domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
+    MakeRightDomainOperation makeRight = this.processor.createMakeRightOperation(
+            new DomainPresenceInfo(newDomain)).interrupt();
+    makeRight.execute();
+    assertThat(newDomain.getStatus().getIntrospectJobFailureCount(), is(1));
+  }
+
+  V1JobStatus createTimedoutStatus() {
+    return new V1JobStatus().addConditionsItem(new V1JobCondition().status("True").type("Failed")
+            .reason("DeadlineExceeded"));
+  }
+
   private void establishPreviousIntrospection(Consumer<Domain> domainSetup) throws JsonProcessingException {
     establishPreviousIntrospection(domainSetup, Arrays.asList(1,2));
   }
@@ -1404,6 +1424,7 @@ class DomainProcessorTest {
   }
 
   @Test
+  @Disabled
   void whenExceptionDuringProcessing_sendAbortedEvent() {
     DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
     forceExceptionDuringProcessing();

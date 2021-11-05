@@ -137,7 +137,12 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
     return false;
   }
 
-  static boolean isFailed(V1Job job) {
+  /**
+   * Test if job is failed.
+   * @param job job
+   * @return true, if failed
+   */
+  public static boolean isFailed(V1Job job) {
     if (job == null) {
       return false;
     }
@@ -173,8 +178,12 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
     return Optional.ofNullable(jobCondition).map(V1JobCondition::getStatus).orElse("");
   }
 
-
-  static String getFailedReason(V1Job job) {
+  /**
+   * Get the reason for job failure.
+   * @param job job
+   * @return Job failure reason.
+   */
+  public static String getFailedReason(V1Job job) {
     V1JobStatus status = job.getStatus();
     if (status != null && status.getConditions() != null) {
       for (V1JobCondition cond : status.getConditions()) {

@@ -164,21 +164,36 @@ public class DomainStatusUpdater {
   static class FailureCountStep extends DomainStatusUpdaterStep {
 
     private final V1Job domainIntrospectorJob;
+    private final boolean resetFailureCount;
 
-    public FailureCountStep(@Nonnull V1Job domainIntrospectorJob) {
+    public FailureCountStep(V1Job domainIntrospectorJob) {
+      this(domainIntrospectorJob, false);
+    }
+
+    public FailureCountStep(V1Job domainIntrospectorJob, boolean resetFailureCount) {
       super(null);
       this.domainIntrospectorJob = domainIntrospectorJob;
+      this.resetFailureCount = resetFailureCount;
     }
 
     @Override
     void modifyStatus(DomainStatus domainStatus) {
-      domainStatus.incrementIntrospectJobFailureCount(getJobUid());
+      if (resetFailureCount) {
+        domainStatus.resetIntrospectJobFailureCount();
+      } else {
+        domainStatus.incrementIntrospectJobFailureCount(getJobUid());
+      }
     }
 
     @Nullable
     private String getJobUid() {
-      return Optional.of(domainIntrospectorJob).map(V1Job::getMetadata).map(V1ObjectMeta::getUid).orElse(null);
+      return Optional.ofNullable(domainIntrospectorJob).map(V1Job::getMetadata)
+              .map(V1ObjectMeta::getUid).orElse(null);
     }
+  }
+
+  public static Step createResetFailureCountStep() {
+    return new FailureCountStep(null, true);
   }
 
   private static String getEventMessage(@Nonnull DomainFailureReason reason, String message) {
@@ -735,7 +750,6 @@ public class DomainStatusUpdater {
       private boolean isDeleting(String serverName) {
         return Optional.ofNullable(getInfo().getServerPod(serverName)).map(PodHelper::isDeleting).orElse(false);
       }
-
 
       private String getDesiredState(String serverName, String clusterName, boolean isAdminServer) {
         return isAdminServer | expectedRunningServers.contains(serverName)
