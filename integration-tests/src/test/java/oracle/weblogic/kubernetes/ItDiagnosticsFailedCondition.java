@@ -540,6 +540,54 @@ class ItDiagnosticsFailedCondition {
     }
   }
 
+
+  /**
+   * Test domain status condition with serverStartPolicy set to IF_NEEDED. Verify the following conditions are
+   * generated: type: Completed, status: true type: Available, status: true Verify no Failed type condition generated.
+   */
+  @Order(3)
+  @Test
+  @DisplayName("Test domain status condition with serverStartPolicy set to IF_NEEDED")
+  void testInvalidNodePort() {
+    String image = TestConstants.MII_BASIC_IMAGE_NAME + ":" + TestConstants.MII_BASIC_IMAGE_TAG;
+
+    Domain domain = createDomainResource(domainUid, domainNamespace, adminSecretName,
+        OCIR_SECRET_NAME, encryptionSecretName, replicaCount, image);
+
+    AdminServer as = new AdminServer()
+        .serverStartState("RUNNING")
+        .adminService(new AdminService()
+            .addChannelsItem(new Channel()
+                .channelName("default")
+                .nodePort(19000)));
+    domain.getSpec().adminServer(as);
+
+    try {
+      createDomainAndVerify(domain, domainNamespace);
+
+      // verify the condition type Failed exists
+      checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
+      // verify the condition Failed type has status True
+      checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
+          DOMAIN_STATUS_CONDITION_FAILED_TYPE, "True");
+
+      // verify the condition type Completed exists
+      checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_COMPLETED_TYPE);
+      // verify the condition Completed type has status True
+      checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
+          DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "False");
+
+      // verify the condition type Available exists
+      checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE);
+      // verify the condition Available type has status False
+      checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
+          DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "False");
+
+    } finally {
+      deleteDomainResource(domainUid, domainNamespace);
+    }
+  }
+
   /**
    * Test domain status condition with serverStartPolicy set to ADMIN_ONLY.
    * Verify the following conditions are generated:
