@@ -1,7 +1,7 @@
 ---
 title: "Manage FMW Infrastructure domains"
 date: 2019-04-18T06:46:23-05:00
-weight: 7
+weight: 8
 description: "FMW Infrastructure domains contain the Java Required Files (JRF) feature and are
 the prerequisite for upper stack products like Oracle SOA Suite."
 ---

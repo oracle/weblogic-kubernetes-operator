@@ -22,13 +22,13 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPodIP;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
@@ -37,6 +37,7 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainRe
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainSecret;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createJobToChangePermissionsOnPvHostPath;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runClientInsidePod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runJavacInsidePod;
@@ -49,6 +50,7 @@ import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
@@ -107,6 +109,7 @@ class ItMiiServiceMigration {
   private static LoggingFacade logger = null;
   private static String cpUrl;
   private static int dbNodePort;
+  private static String adminSvcExtRouteHost = null;
 
   private final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
   private final Path domainLifecycleSamplePath = Paths.get(samplePath + "/scripts/domain-lifecycle");
@@ -164,8 +167,15 @@ class ItMiiServiceMigration {
 
     logger.info("Create database secret");
     final String dbSecretName = domainUid  + "-db-secret";
-    cpUrl = "jdbc:oracle:thin:@//" + K8S_NODEPORT_HOST + ":"
-                         + dbNodePort + "/devpdb.k8s";
+    String dbPodIP = assertDoesNotThrow(
+        () -> getPodIP(domainNamespace, "", "oracledb"),
+        String.format("Get pod IP address failed with ApiException for oracledb in namespace %s",
+            domainNamespace));
+    logger.info("db Pod IP {0} ", dbPodIP);
+
+    //cpUrl = "jdbc:oracle:thin:@//" + K8S_NODEPORT_HOST + ":"
+    //                     + dbNodePort + "/devpdb.k8s";
+    cpUrl = "jdbc:oracle:thin:@//" + dbPodIP + ":1521" + "/devpdb.k8s";
     logger.info("ConnectionPool URL = {0}", cpUrl);
     assertDoesNotThrow(() -> createDatabaseSecret(dbSecretName,
             "sys as sysdba", "Oradoc_db1", cpUrl, domainNamespace),
@@ -206,8 +216,9 @@ class ItMiiServiceMigration {
     logger.info("Check admin service and pod {0} is created in namespace {1}",
         adminServerPodName, domainNamespace);
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+    adminSvcExtRouteHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
     // create the required leasing table 'ACTIVE' before we start the cluster
-    createLeasingTable(adminServerPodName, domainNamespace, dbNodePort);
+    createLeasingTable(adminServerPodName, domainNamespace, 1521, dbPodIP);
     // check managed server services and pods are ready
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Wait for managed server services and pods are created in namespace {0}",
@@ -358,9 +369,10 @@ class ItMiiServiceMigration {
     ExecResult result = null;
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    String hostAndPort = getHostAndPort(adminSvcExtRouteHost, adminServiceNodePort);
     StringBuffer curlString = new StringBuffer("status=$(curl --user "
            + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT + " ");
-    curlString.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+    curlString.append("http://" + hostAndPort)
           .append("/management/weblogic/latest/domainRuntime/serverRuntimes/")
           .append(managedServer)
           .append("/JMSRuntime/JMSServers/")
@@ -388,9 +400,10 @@ class ItMiiServiceMigration {
     ExecResult result = null;
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    String hostAndPort = getHostAndPort(adminSvcExtRouteHost, adminServiceNodePort);
     StringBuffer curlString = new StringBuffer("status=$(curl --user "
            + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT + " ");
-    curlString.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+    curlString.append("http://" + hostAndPort)
           .append("/management/weblogic/latest/domainRuntime/serverRuntimes/")
           .append(managedServer)
           .append("/persistentStoreRuntimes/")
@@ -420,9 +433,10 @@ class ItMiiServiceMigration {
     ExecResult result = null;
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+    String hostAndPort = getHostAndPort(adminSvcExtRouteHost, adminServiceNodePort);
     StringBuffer curlString = new StringBuffer("curl --user "
            + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT + " ");
-    curlString.append("\"http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+    curlString.append("\"http://" + hostAndPort)
           .append("/management/weblogic/latest/domainRuntime/serverRuntimes/")
           .append(managedServer)
           .append("/JTARuntime/recoveryRuntimeMBeans/")

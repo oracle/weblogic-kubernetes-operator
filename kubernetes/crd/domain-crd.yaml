@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 6a3c7b30943beb82f82fd47a83b16e4bc1816de0a614fd6056af7cc2a82bdc1a
+    weblogic.sha256: 92c353823d1c6c8e70ca31c4d6d1be4aa5a58bf9c36123789e9e06cdd4b9adc3
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -11352,7 +11352,7 @@ spec:
                 minimum: 0.0
                 type: number
               failedIntrospectionUid:
-                description: Unique id of the last failed introspector job.
+                description: Unique ID of the last failed introspection job.
                 type: string
               startTime:
                 description: RFC 3339 date and time at which the operator started

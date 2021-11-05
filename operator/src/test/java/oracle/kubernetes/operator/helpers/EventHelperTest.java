@@ -45,8 +45,6 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_CREATED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CREATED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_DELETED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_ABORTED_PATTERN;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_COMPLETED_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_COMPLETED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_FAILED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_ROLL_COMPLETED_EVENT;
@@ -72,7 +70,6 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CH
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CREATED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_DELETED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_COMPLETED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_COMPLETED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_STARTING;
@@ -134,25 +131,6 @@ class EventHelperTest {
   }
 
   @Test
-  void whenCreateEventStepCalledForStartingAndCompleted_domainProcessingCompletedEventCreated() {
-    testSupport.runSteps(createEventStep(new EventData(DOMAIN_PROCESSING_COMPLETED)));
-
-    assertThat("Found DOMAIN_PROCESSING_COMPLETED event",
-        containsEvent(getEvents(testSupport), DOMAIN_PROCESSING_COMPLETED_EVENT), is(true));
-  }
-
-  @Test
-  void whenCreateEventStepCalled4StartingCompleted_domainProcessingCompletedEventCreatedWithExpectedMessage() {
-    testSupport.runSteps(createEventStep(new EventData(DOMAIN_PROCESSING_COMPLETED))
-    );
-
-    assertThat("Found DOMAIN_PROCESSING_COMPLETED event with expected message",
-        containsEventWithMessage(getEvents(testSupport),
-            DOMAIN_PROCESSING_COMPLETED_EVENT,
-            String.format(DOMAIN_PROCESSING_COMPLETED_PATTERN, UID)), is(true));
-  }
-
-  @Test
   void whenCreateEventCalledTwice_thenDeleteEvent_domainProcessingStartingEventCreatedTwice() {
     testSupport.runSteps(createEventStep(new EventData(DOMAIN_CREATED)));
 
@@ -165,21 +143,6 @@ class EventHelperTest {
     assertThat("Found 2 DOMAIN_CREATED events with expected count 1",
         containsEventsWithCountOne(getEvents(testSupport),
             DOMAIN_CREATED_EVENT, 2), is(true));
-  }
-
-  @Test
-  void whenCreateEventCalledTwice_thenDeleteCompletedEvent_domainProcessingCompletedEventCreatedTwice() {
-    testSupport.runSteps(createEventStep(new EventData(DOMAIN_PROCESSING_COMPLETED)));
-
-    dispatchAddedEventWatches();
-    dispatchDeletedEventWatches();
-
-    testSupport.runSteps(Step.chain(
-        createEventStep(new EventData(DOMAIN_PROCESSING_COMPLETED))));
-
-    assertThat("Found 2 DOMAIN_PROCESSING_COMPLETED events with expected count 1",
-        containsEventsWithCountOne(getEvents(testSupport),
-            DOMAIN_PROCESSING_COMPLETED_EVENT, 2), is(true));
   }
 
   @Test
