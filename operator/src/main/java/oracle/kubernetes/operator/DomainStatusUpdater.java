@@ -74,6 +74,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
+import static oracle.kubernetes.operator.WebLogicConstants.SHUTTING_DOWN_STATE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_AVAILABLE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_COMPLETE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
@@ -722,8 +723,19 @@ public class DomainStatusUpdater {
       }
 
       private String getRunningState(String serverName) {
-        return Optional.ofNullable(serverState).map(m -> m.get(serverName)).orElse(null);
+        if (!getInfo().getServerNames().contains(serverName)) {
+          return SHUTDOWN_STATE;
+        } else if (isDeleting(serverName)) {
+          return SHUTTING_DOWN_STATE;
+        } else {
+          return Optional.ofNullable(serverState).map(m -> m.get(serverName)).orElse(null);
+        }
       }
+
+      private boolean isDeleting(String serverName) {
+        return Optional.ofNullable(getInfo().getServerPod(serverName)).map(PodHelper::isDeleting).orElse(false);
+      }
+
 
       private String getDesiredState(String serverName, String clusterName, boolean isAdminServer) {
         return isAdminServer | expectedRunningServers.contains(serverName)

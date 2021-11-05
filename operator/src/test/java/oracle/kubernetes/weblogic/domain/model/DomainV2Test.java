@@ -29,6 +29,7 @@ import org.junit.jupiter.api.Test;
 import static oracle.kubernetes.operator.DomainSourceType.FromModel;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
+import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CONFIGURED_FAILURE_THRESHOLD;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CONFIGURED_SUCCESS_THRESHOLD;
 import static oracle.kubernetes.weblogic.domain.ChannelMatcher.channelWith;
@@ -260,6 +261,13 @@ class DomainV2Test extends DomainTestBase {
   }
 
   @Test
+  void whenDomainStartPolicyNever_adminServerDesiredStateIsShutdown() {
+    configureDomain(domain).withDefaultServerStartPolicy(ConfigurationConstants.START_NEVER);
+
+    assertThat(domain.getAdminServerSpec().getDesiredState(), is(SHUTDOWN_STATE));
+  }
+
+  @Test
   void whenClusterStartPolicyNever_ignoreServerSettings() {
     configureCluster("cluster1").withServerStartPolicy(ConfigurationConstants.START_NEVER);
     configureServer("server1").withServerStartPolicy(ConfigurationConstants.START_ALWAYS);
@@ -281,6 +289,14 @@ class DomainV2Test extends DomainTestBase {
     configureAdminServer().withServerStartPolicy(ConfigurationConstants.START_NEVER);
 
     assertThat(domain.getAdminServerSpec().shouldStart(0), is(false));
+  }
+
+  @Test
+  void whenAdminServerStartPolicyNever_desiredStateIsShutdown() {
+    configureDomain(domain).withDefaultServerStartPolicy(ConfigurationConstants.START_IF_NEEDED);
+    configureAdminServer().withServerStartPolicy(ConfigurationConstants.START_NEVER);
+
+    assertThat(domain.getAdminServerSpec().getDesiredState(), is(SHUTDOWN_STATE));
   }
 
   @Test
