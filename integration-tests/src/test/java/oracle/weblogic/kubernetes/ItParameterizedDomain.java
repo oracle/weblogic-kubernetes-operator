@@ -60,7 +60,6 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
@@ -402,7 +401,6 @@ class ItParameterizedDomain {
    * is set to false, the WLS admin console can not be accessed using the forwarded port, like
    * http://localhost:localPort/console/login/LoginForm.jsp
    */
-  @Disabled
   @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   @Test
   @DisplayName("Forward a local port to admin default and default secure channel port "
