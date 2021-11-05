@@ -212,7 +212,7 @@ class ItDiagnosticsFailedCondition {
       checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
       // verify the condition Failed type has status True
       checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
-      DOMAIN_STATUS_CONDITION_FAILED_TYPE, "True");
+          DOMAIN_STATUS_CONDITION_FAILED_TYPE, "True");
 
       // Test - test incorrect secrets to pull images,
       // this test will pass if you set REPO_REGISTRY in local cluster runs.
