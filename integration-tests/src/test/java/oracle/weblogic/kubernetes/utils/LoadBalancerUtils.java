@@ -175,7 +175,7 @@ public class LoadBalancerUtils {
                                                  int nodeportshttps,
                                                  String chartVersion) {
     LoggingFacade logger = getLogger();
-    if (! BASE_IMAGES_REPO.contains(OCIR_DEFAULT)) {
+    if (BASE_IMAGES_REPO.contains(OCIR_DEFAULT)) {
       testUntil(
           () -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD),
           logger, "docker login to be successful");
