@@ -41,6 +41,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.CommonTestUtils;
 import oracle.weblogic.kubernetes.utils.ConfigMapUtils;
+import oracle.weblogic.kubernetes.utils.FmwUtils;
 import oracle.weblogic.kubernetes.utils.ImageUtils;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
@@ -58,8 +59,11 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_COMPLETED_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_FAILED_TYPE;
+import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
@@ -77,11 +81,13 @@ import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomRe
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
+import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuAccessSecret;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeExists;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeHasExpectedStatus;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.verifyDomainStatusConditionTypeDoesNotExist;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
@@ -93,6 +99,7 @@ import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
+import static oracle.weblogic.kubernetes.utils.SecretUtils.createOpsswalletpasswordSecret;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -604,6 +611,102 @@ class ItDiagnosticsFailedCondition {
     domain.getSpec().configuration().introspectorJobActiveDeadlineSeconds(5L);
 
     try {
+      createDomainAndVerify(domain, domainNamespace);
+
+      // verify the condition type Failed exists
+      checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
+      // verify the condition Failed type has status True
+      checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
+          DOMAIN_STATUS_CONDITION_FAILED_TYPE, "True");
+
+      // verify the condition type Completed exists
+      checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_COMPLETED_TYPE);
+      // verify the condition Completed type has status True
+      checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
+          DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "False");
+
+      // verify the condition type Available exists
+      checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE);
+      // verify the condition Available type has status False
+      checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
+          DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "False");
+
+    } finally {
+      deleteDomainResource(domainUid, domainNamespace);
+    }
+  }
+
+
+  /**
+   * Test domain status condition with serverStartPolicy set to IF_NEEDED. Verify the following conditions are
+   * generated: type: Completed, status: true type: Available, status: true Verify no Failed type condition generated.
+   */
+  @Order(3)
+  @Test
+  @DisplayName("Test domain status condition with serverStartPolicy set to IF_NEEDED")
+  void testMSBootFailureStatus() {
+    try {
+
+      String fmwMiiImage = null;
+
+      String rcuSchemaPrefix = "FMWDOMAINMII";
+      String oracleDbUrlPrefix = "oracledb.";
+      String oracleDbSuffix = null;
+      String rcuSysUserName = "sys";
+      String rcuSysPassword = "Oradoc_db1";
+      String rcuSchemaUserName = "myrcuuser";
+      String rcuSchemaPassword = "Oradoc_db1";
+      String rcuSchemaPasswordNew = "Oradoc_db2";
+      String modelFile = "model-singleclusterdomain-sampleapp-jrf.yaml";
+
+      String rcuaccessSecretName = domainUid + "-rcu-access";
+      String opsswalletpassSecretName = domainUid + "-opss-wallet-password-secret";
+      String opsswalletfileSecretName = domainUid + "opss-wallet-file-secret";
+
+      String dbUrl = oracleDbUrlPrefix + domainNamespace + oracleDbSuffix;
+
+      // create RCU access secret
+      logger.info("Creating RCU access secret: {0}, with prefix: {1}, dbUrl: {2}, schemapassword: {3})",
+          rcuaccessSecretName, rcuSchemaPrefix, rcuSchemaPassword, dbUrl);
+      assertDoesNotThrow(() -> createRcuAccessSecret(rcuaccessSecretName,
+          domainNamespace,
+          rcuSchemaPrefix,
+          rcuSchemaPassword,
+          dbUrl),
+          String.format("createSecret failed for %s", rcuaccessSecretName));
+
+      logger.info("Create OPSS wallet password secret");
+      assertDoesNotThrow(() -> createOpsswalletpasswordSecret(
+          opsswalletpassSecretName,
+          domainNamespace,
+          "welcome1"),
+          String.format("createSecret failed for %s", opsswalletpassSecretName));
+
+      logger.info("Create an image with jrf model file");
+      final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + modelFile);
+      fmwMiiImage = createMiiImageAndVerify(
+          "jrf-mii-image-status",
+          modelList,
+          Collections.singletonList(MII_BASIC_APP_NAME),
+          FMWINFRA_IMAGE_NAME,
+          FMWINFRA_IMAGE_TAG,
+          "JRF",
+          false);
+
+      // push the image to a registry to make it accessible in multi-node cluster
+      dockerLoginAndPushImageToRegistry(fmwMiiImage);
+
+      // create the domain object
+      Domain domain = FmwUtils.createDomainResource(domainUid,
+          domainNamespace,
+          adminSecretName,
+          OCIR_SECRET_NAME,
+          encryptionSecretName,
+          rcuaccessSecretName,
+          opsswalletpassSecretName,
+          replicaCount,
+          fmwMiiImage);
+
       createDomainAndVerify(domain, domainNamespace);
 
       // verify the condition type Failed exists
