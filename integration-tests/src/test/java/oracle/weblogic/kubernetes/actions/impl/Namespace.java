@@ -25,12 +25,12 @@ public class Namespace {
 
   /**
    * Generates a "unique" name by choosing a random name from
-   * 26^4 possible combinations.
+   * 26^6 possible combinations.
    *
    * @return name
    */
   public static String uniqueName() {
-    char[] nsName = new char[4];
+    char[] nsName = new char[6];
     for (int i = 0; i < nsName.length; i++) {
       nsName[i] = (char) (random.nextInt(25) + (int) 'a');
     }
