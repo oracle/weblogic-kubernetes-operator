@@ -38,7 +38,7 @@ openAPIV3Schema:
                 field will be propagated to the exporter without requiring the
                 restart of the WebLogic Server instances.
               type: object
-              # x-kubernetes-preserve-unknown-fields: true
+              x-kubernetes-preserve-unknown-fields: true
             port:
               description: The port exposed by the WebLogic Monitoring Exporter
                 running in the sidecar container. Defaults to 8080. The port
