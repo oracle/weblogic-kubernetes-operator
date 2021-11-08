@@ -62,6 +62,18 @@ class WdtUpdateFilterCase(unittest.TestCase):
 
     return model
 
+  def getModelWithoutMockEnv(self):
+    # Load model as dictionary
+    file = open(r'../resources/model.dynamic_cluster_dict.txt')
+    contents = file.read()
+    model = ast.literal_eval(contents)
+    file.close()
+
+    # Setup environment
+    model_wdt_mii_filter.initOfflineWlstEnv(model)
+
+    return model
+
   def getStaticModel(self):
     # Load model as dictionary
     file = open(r'../resources/model.static_cluster_dict.txt')
@@ -393,6 +405,21 @@ class WdtUpdateFilterCase(unittest.TestCase):
 
     isSecureModeEnabled = model_wdt_mii_filter.isSecureModeEnabledForDomain(topology)
     self.assertTrue(isSecureModeEnabled, "Expected secure mode enabled for domain")
+
+  def test_isSecureModeEnabledForDomain_importLegalHelperError(self):
+    try:
+      model = self.getModelWithoutMockEnv()
+      topology = model['topology']
+
+      topology['ProductionModeEnabled'] = 'true'
+
+      isSecureModeEnabled = model_wdt_mii_filter.isSecureModeEnabledForDomain(topology)
+      self.fail("Expected import error for LegalHelper")
+    except ImportError, ie:
+      self.assertTrue(ie is not None)
+
+
+
 
 class MockOfflineWlstEnv(model_wdt_mii_filter.OfflineWlstEnv):
 
