@@ -1134,6 +1134,14 @@ class ItIntrospectVersion {
     // verify when a domain resource has spec.introspectVersion configured,
     // after a introspectVersion is modified, new server pods have the label
     // "weblogic.introspectVersion" set as well.
+    testUntil(
+        () -> {
+          assertDoesNotThrow(() -> verifyIntrospectVersionLabelInPod(replicaCount));
+          return true;
+        },
+        logger,
+        " Running verifyIntrospectVersionLabelInPod");
+
     try {
       verifyIntrospectVersionLabelInPod(replicaCount);
     } catch (AssertionFailedError error) {
