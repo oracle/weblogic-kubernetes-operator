@@ -640,8 +640,18 @@ public class TestActions {
    */
   public static String createUniqueNamespace() throws ApiException {
     String name = Namespace.uniqueName();
-    new Namespace().name(name).create();
-    return name;
+    try {
+      new Namespace().name(name).create();
+      return name;
+    } catch (ApiException ex) {
+      //retry in case of failure
+      if (listNamespaces().contains(name)) {
+        return createUniqueNamespace();
+      } else {
+        getLogger().severe(ex.getResponseBody());
+        throw ex;
+      }
+    }
   }
 
   /**

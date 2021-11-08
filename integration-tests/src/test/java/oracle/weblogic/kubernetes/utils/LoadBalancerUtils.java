@@ -38,13 +38,21 @@ import static oracle.weblogic.kubernetes.TestConstants.APACHE_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.APACHE_SAMPLE_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.APPSCODE_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.APPSCODE_REPO_URL;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.GCR_NGINX_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_REPO_URL;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_NGINX_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_RELEASE_NAME;
@@ -55,6 +63,9 @@ import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.createIngress;
 import static oracle.weblogic.kubernetes.actions.TestActions.createService;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerPull;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -164,6 +175,20 @@ public class LoadBalancerUtils {
                                                  int nodeportshttps,
                                                  String chartVersion) {
     LoggingFacade logger = getLogger();
+    if (BASE_IMAGES_REPO.contains(OCIR_DEFAULT)) {
+      testUntil(
+          () -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD),
+          logger, "docker login to be successful");
+
+      String localNginxImage = BASE_IMAGES_REPO + "/" 
+              + OCIR_NGINX_IMAGE_NAME + ":" + NGINX_INGRESS_IMAGE_TAG;
+      testUntil(
+          pullImageFromOcirAndTag(localNginxImage),
+          logger,
+          "pullImageFromOcirAndTag for image {0} to be successful",
+          localNginxImage);
+    }
+
     // Helm install parameters
     HelmParams nginxHelmParams = new HelmParams()
         .releaseName(NGINX_RELEASE_NAME + "-" + nginxNamespace.substring(3))
@@ -803,6 +828,16 @@ public class LoadBalancerUtils {
         ingressName, domainUid, domainNamespace);
 
     return ingressHostList;
+  }
+
+  private static Callable<Boolean> pullImageFromOcirAndTag(String localImage) {
+    return (() -> {
+      String nginxImage = GCR_NGINX_IMAGE_NAME + ":" + "v0.35.0";
+      LoggingFacade logger = getLogger();
+      logger.info("pulling image {0} from OCIR, tag it as image {1} ",
+          localImage, nginxImage);
+      return dockerPull(localImage) && dockerTag(localImage, nginxImage);
+    });
   }
 
   /**
