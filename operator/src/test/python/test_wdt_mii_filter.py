@@ -371,6 +371,29 @@ class WdtUpdateFilterCase(unittest.TestCase):
       del os.environ['ISTIO_ENABLED']
       del os.environ['ISTIO_USE_LOCALHOST_BINDINGS']
 
+  def test_isSecureModeEnabledForDomain_secureModeEnabled(self):
+    model = self.getModel()
+    topology = model['topology']
+    if 'SecurityConfiguration' not in topology:
+      topology['SecurityConfiguration'] = {}
+
+    if 'SecureMode' not in topology['SecurityConfiguration']:
+      topology['SecurityConfiguration']['SecureMode'] = {}
+
+    topology['SecurityConfiguration']['SecureMode']['SecureModeEnabled'] = 'true'
+
+    isSecureModeEnabled = model_wdt_mii_filter.isSecureModeEnabledForDomain(topology)
+    self.assertTrue(isSecureModeEnabled, "Expected secure mode enabled for domain")
+
+  def test_isSecureModeEnabledForDomain_productionModeEnabled(self):
+    model = self.getModel()
+    topology = model['topology']
+
+    topology['ProductionModeEnabled'] = 'true'
+
+    isSecureModeEnabled = model_wdt_mii_filter.isSecureModeEnabledForDomain(topology)
+    self.assertTrue(isSecureModeEnabled, "Expected secure mode enabled for domain")
+
 class MockOfflineWlstEnv(model_wdt_mii_filter.OfflineWlstEnv):
 
   WLS_CRED_USERNAME = 'weblogic'
@@ -387,6 +410,9 @@ class MockOfflineWlstEnv(model_wdt_mii_filter.OfflineWlstEnv):
       return self.WLS_CRED_USERNAME
 
     return self.WLS_CRED_PASSWORD
+
+  def wlsVersionEarlierThan(self, version):
+    return False
 
 if __name__ == '__main__':
   unittest.main()
