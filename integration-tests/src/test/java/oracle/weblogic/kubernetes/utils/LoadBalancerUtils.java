@@ -47,6 +47,7 @@ import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_REPO_URL;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_NGINX_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
@@ -174,17 +175,19 @@ public class LoadBalancerUtils {
                                                  int nodeportshttps,
                                                  String chartVersion) {
     LoggingFacade logger = getLogger();
-    testUntil(
+    if (BASE_IMAGES_REPO.contains(OCIR_DEFAULT)) {
+      testUntil(
           () -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD),
           logger, "docker login to be successful");
 
-    String localNginxImage = BASE_IMAGES_REPO + "/" 
+      String localNginxImage = BASE_IMAGES_REPO + "/" 
               + OCIR_NGINX_IMAGE_NAME + ":" + NGINX_INGRESS_IMAGE_TAG;
-    testUntil(
+      testUntil(
           pullImageFromOcirAndTag(localNginxImage),
           logger,
           "pullImageFromOcirAndTag for image {0} to be successful",
           localNginxImage);
+    }
 
     // Helm install parameters
     HelmParams nginxHelmParams = new HelmParams()
