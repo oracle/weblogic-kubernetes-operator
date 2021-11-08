@@ -129,7 +129,6 @@ class DomainIntrospectorJobTest {
   private static final String INFO_MESSAGE = "@[INFO] just letting you know";
   public static final String TEST_VOLUME_NAME = "test";
   private static final String JOB_UID = "FAILED_JOB";
-
   private final TerminalStep terminalStep = new TerminalStep();
   private final Domain domain = createDomain();
   private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
@@ -627,10 +626,6 @@ class DomainIntrospectorJobTest {
     return job;
   }
 
-  private long getIntrospectorJobActiveDeadlineSeconds() {
-    return TuningParameters.getInstance().getPodTuning().introspectorJobActiveDeadlineSeconds;
-  }
-
   @Test
   void whenPreviousFailedJobWithImagePullErrorExistsAndMakeRightContinued_createNewJob() {
     ignoreIntrospectorFailureLogs();
@@ -878,7 +873,6 @@ class DomainIntrospectorJobTest {
 
     assertThat(getUpdatedDomain().getStatus().getIntrospectJobFailureCount(), equalTo(2));
   }
-
 
   // create job
   // add job uid to status

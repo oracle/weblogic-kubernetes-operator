@@ -52,7 +52,7 @@ public abstract class DomainProcessorDelegateStub implements DomainProcessorDele
 
   @Override
   public JobAwaiterStepFactory getJobAwaiterStepFactory(String namespace) {
-    return new PassthroughJobAwaiterStepFactory();
+    return new TestJobAwaiterStepFactory();
   }
 
   @Override
@@ -98,7 +98,7 @@ public abstract class DomainProcessorDelegateStub implements DomainProcessorDele
     }
   }
 
-  private class PassthroughJobAwaiterStepFactory implements JobAwaiterStepFactory {
+  private class TestJobAwaiterStepFactory implements JobAwaiterStepFactory {
     @Override
     public Step waitForReady(V1Job job, Step next) {
       if (isFailed(job) && "DeadlineExceeded".equals(getFailedReason(job))) {

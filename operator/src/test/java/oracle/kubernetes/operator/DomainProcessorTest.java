@@ -1424,10 +1424,10 @@ class DomainProcessorTest {
   }
 
   @Test
-  @Disabled
-  void whenExceptionDuringProcessing_sendAbortedEvent() {
+  void whenWebLogicCredentialsSecretRemoved_NullPointerExceptionAndAbortedEventNotGenerated() {
+    consoleHandlerMemento.ignoreMessage(NOT_STARTING_DOMAINUID_THREAD);
     DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
-    forceExceptionDuringProcessing();
+    domain.getSpec().withWebLogicCredentialsSecret(null);
     int time = 0;
 
     for (int numRetries = 0; numRetries < DomainPresence.getDomainPresenceFailureRetryMaxCount(); numRetries++) {
@@ -1436,7 +1436,7 @@ class DomainProcessorTest {
       testSupport.setTime(time, TimeUnit.SECONDS);
     }
 
-    assertThat(getEvents().stream().anyMatch(this::isDomainProcessingAbortedEvent), is(true));
+    assertThat(getEvents().stream().anyMatch(this::isDomainProcessingAbortedEvent), is(false));
   }
 
   private List<CoreV1Event> getEvents() {

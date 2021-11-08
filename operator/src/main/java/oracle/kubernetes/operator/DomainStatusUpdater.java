@@ -164,36 +164,33 @@ public class DomainStatusUpdater {
   static class FailureCountStep extends DomainStatusUpdaterStep {
 
     private final V1Job domainIntrospectorJob;
-    private final boolean resetFailureCount;
 
     public FailureCountStep(V1Job domainIntrospectorJob) {
-      this(domainIntrospectorJob, false);
-    }
-
-    public FailureCountStep(V1Job domainIntrospectorJob, boolean resetFailureCount) {
       super(null);
       this.domainIntrospectorJob = domainIntrospectorJob;
-      this.resetFailureCount = resetFailureCount;
     }
 
     @Override
     void modifyStatus(DomainStatus domainStatus) {
-      if (resetFailureCount) {
-        domainStatus.resetIntrospectJobFailureCount();
-      } else {
-        domainStatus.incrementIntrospectJobFailureCount(getJobUid());
-      }
+      domainStatus.incrementIntrospectJobFailureCount(getJobUid());
     }
 
     @Nullable
     private String getJobUid() {
-      return Optional.ofNullable(domainIntrospectorJob).map(V1Job::getMetadata)
-              .map(V1ObjectMeta::getUid).orElse(null);
+      return Optional.ofNullable(domainIntrospectorJob).map(V1Job::getMetadata).map(V1ObjectMeta::getUid).orElse(null);
+    }
+  }
+
+  static class ResetFailureCountStep extends DomainStatusUpdaterStep {
+
+    @Override
+    void modifyStatus(DomainStatus domainStatus) {
+      domainStatus.resetIntrospectJobFailureCount();
     }
   }
 
   public static Step createResetFailureCountStep() {
-    return new FailureCountStep(null, true);
+    return new ResetFailureCountStep();
   }
 
   private static String getEventMessage(@Nonnull DomainFailureReason reason, String message) {

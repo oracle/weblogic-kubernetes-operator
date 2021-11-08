@@ -458,7 +458,7 @@ public class Domain implements KubernetesObject {
    * @return the secret name
    */
   public String getWebLogicCredentialsSecretName() {
-    return Optional.ofNullable(spec.getWebLogicCredentialsSecret()).map(s -> s.getName()).orElse(null);
+    return Optional.ofNullable(spec.getWebLogicCredentialsSecret()).map(V1SecretReference::getName).orElse(null);
   }
 
   /**

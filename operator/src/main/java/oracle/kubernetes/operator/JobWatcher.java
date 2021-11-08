@@ -138,9 +138,8 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
   }
 
   /**
-   * Test if job is failed.
-   * @param job job
-   * @return true, if failed
+   * Returns true if the specified job has a failed status or condition.
+   * @param job job to be tested
    */
   public static boolean isFailed(V1Job job) {
     if (job == null) {
