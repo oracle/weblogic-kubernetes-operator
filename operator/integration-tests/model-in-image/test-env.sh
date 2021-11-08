@@ -37,7 +37,7 @@ export DB_IMAGE_PULL_SECRET=${DB_IMAGE_PULL_SECRET:-docker-secret}
 # ::: Traefik settings/defaults, set NODEPORT values to 0 to have
 #     K8S dynamically choose the values for Traefik
 export TRAEFIK_NAMESPACE=${TRAEFIK_NAMESPACE:-traefik-operator-ns}
-TRAEFIK_NAME=${TRAEFIK_NAME:-traefik-operator-$TRAEFIK_NAMESPACE}
+export TRAEFIK_NAME=${TRAEFIK_NAME:-traefik-operator-$TRAEFIK_NAMESPACE}
 export TRAEFIK_HTTP_NODEPORT=${TRAEFIK_HTTP_NODEPORT:-30305}
 export TRAEFIK_HTTPS_NODEPORT=${TRAEFIK_HTTPS_NODEPORT:-30433}
 
