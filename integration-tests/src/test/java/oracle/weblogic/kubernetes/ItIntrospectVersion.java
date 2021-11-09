@@ -52,7 +52,6 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
-import org.opentest4j.AssertionFailedError;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_PATCH;
@@ -1142,12 +1141,6 @@ class ItIntrospectVersion {
         logger,
         " Running verifyIntrospectVersionLabelInPod");
 
-    try {
-      verifyIntrospectVersionLabelInPod(replicaCount);
-    } catch (AssertionFailedError error) {
-      //retry to check version
-      verifyIntrospectVersionLabelInPod(replicaCount);
-    }
 
     // use introspectDomain.sh to initiate introspection
     logger.info("Initiate introspection with non numeric string with space");
