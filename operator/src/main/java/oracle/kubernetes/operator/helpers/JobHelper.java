@@ -248,10 +248,8 @@ public class JobHelper {
             packet.put(DOMAIN_INTROSPECT_REQUESTED, ReadPodLogResponseStep.INTROSPECTION_FAILED);
           }
 
-          if (isKnownFailedJob(job) || hasImagePullError) {
+          if (isKnownFailedJob(job) || hasImagePullError || isJobTimedout(job, pod)) {
             return doContinueListOrNext(callResponse, packet, cleanUpAndReintrospect());
-          } else if (isJobTimedout(job, pod)) {
-            return doContinueListOrNext(callResponse, packet, deleteJobAndStartNewIntrospection());
           } else if (job != null) {
             return doContinueListOrNext(callResponse, packet, processIntrospectionResults());
           } else if (isIntrospectionNeeded(packet)) {

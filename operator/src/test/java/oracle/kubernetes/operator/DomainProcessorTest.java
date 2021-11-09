@@ -74,6 +74,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainConditionType;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -101,6 +102,7 @@ import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CONFIG_MAP;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.JOB;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SERVICE;
 import static oracle.kubernetes.operator.helpers.SecretHelper.PASSWORD_KEY;
@@ -851,6 +853,14 @@ class DomainProcessorTest {
             new DomainPresenceInfo(newDomain)).interrupt();
     makeRight.execute();
     assertThat(newDomain.getStatus().getIntrospectJobFailureCount(), is(1));
+    testSupport.setTime(10, TimeUnit.SECONDS);
+    makeRight.execute();
+    assertThat(getJob().getSpec().getActiveDeadlineSeconds(), is(240L));
+  }
+
+  @NotNull
+  private V1Job getJob() {
+    return (V1Job) testSupport.getResources(JOB).stream().findFirst().get();
   }
 
   V1JobStatus createTimedoutStatus() {
