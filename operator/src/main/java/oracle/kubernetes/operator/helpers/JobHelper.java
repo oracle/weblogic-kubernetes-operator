@@ -219,7 +219,7 @@ public class JobHelper {
           packet.put(DOMAIN_INTROSPECTOR_JOB, job);
         }
 
-        if (isKnownFailedJob(job)) {
+        if (isKnownFailedJob(job) || JobWatcher.isJobTimedOut(job)) {
           return doNext(cleanUpAndReintrospect(getNext()), packet);
         } else if (job != null) {
           return doNext(processIntrospectionResults(getNext()), packet);
