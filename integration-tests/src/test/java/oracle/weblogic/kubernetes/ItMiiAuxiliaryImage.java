@@ -192,8 +192,47 @@ class ItMiiAuxiliaryImage {
     createSecretWithUsernamePassword(encryptionSecretName, domainNamespace,
         "weblogicenc", "weblogicenc");
 
-    // create auxilary image 1
-    createAuxImage1();
+    // create stage dir for first auxiliary image with image1
+    Path multipleAIPath1 = Paths.get(RESULTS_ROOT, "multipleauxiliaryimage1");
+    assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleAIPath1.toFile()),
+        "Delete directory failed");
+    assertDoesNotThrow(() -> Files.createDirectories(multipleAIPath1),
+        "Create directory failed");
+    Path multipleAIPathToFile1 = Paths.get(RESULTS_ROOT, "multipleauxiliaryimage1/test.txt");
+    String content = "1";
+    assertDoesNotThrow(() -> Files.write(multipleAIPathToFile1, content.getBytes()),
+        "Can't write to file " + multipleAIPathToFile1);
+
+    // create models dir and copy model, archive files if any for image1
+    Path modelsPath1 = Paths.get(multipleAIPath1.toString(), "models");
+    assertDoesNotThrow(() -> Files.createDirectories(modelsPath1));
+    assertDoesNotThrow(() -> Files.copy(
+        Paths.get(MODEL_DIR, MII_BASIC_WDT_MODEL_FILE),
+        Paths.get(modelsPath1.toString(), MII_BASIC_WDT_MODEL_FILE),
+        StandardCopyOption.REPLACE_EXISTING));
+    assertDoesNotThrow(() -> Files.copy(
+        Paths.get(MODEL_DIR, "multi-model-one-ds.20.yaml"),
+        Paths.get(modelsPath1.toString(), "multi-model-one-ds.20.yaml"),
+        StandardCopyOption.REPLACE_EXISTING));
+
+    // build app
+    assertTrue(buildAppArchive(defaultAppParams()
+            .srcDirList(Collections.singletonList(MII_BASIC_APP_NAME))
+            .appName(MII_BASIC_APP_NAME)),
+        String.format("Failed to create app archive for %s", MII_BASIC_APP_NAME));
+
+    // copy app archive to models
+    assertDoesNotThrow(() -> Files.copy(
+        Paths.get(ARCHIVE_DIR, MII_BASIC_APP_NAME + ".zip"),
+        Paths.get(modelsPath1.toString(), MII_BASIC_APP_NAME + ".zip"),
+        StandardCopyOption.REPLACE_EXISTING));
+
+    // unzip WDT installation file into work dir
+    unzipWDTInstallationFile(multipleAIPath1.toString());
+
+    // create image1 with model and wdt installation files
+    createAuxiliaryImage(multipleAIPath1.toString(),
+        Paths.get(RESOURCE_DIR, "auxiliaryimage", "Dockerfile").toString(), miiAuxiliaryImage1);
 
     // push image1 to repo for multi node cluster
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
@@ -201,8 +240,28 @@ class ItMiiAuxiliaryImage {
       dockerLoginAndPushImageToRegistry(miiAuxiliaryImage1);
     }
 
-    // create auxilary image 2
-    createAuxImage2();
+    // create stage dir for second auxiliary image with image2
+    Path multipleAIPath2 = Paths.get(RESULTS_ROOT, "multipleauxiliaryimage2");
+    assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleAIPath2.toFile()),
+        "Delete directory failed");
+    assertDoesNotThrow(() -> Files.createDirectories(multipleAIPath2),
+        "Create directory failed");
+
+    // create models dir and copy model, archive files if any
+    Path modelsPath2 = Paths.get(multipleAIPath2.toString(), "models");
+    assertDoesNotThrow(() -> Files.createDirectories(modelsPath2));
+    Path multipleAIPathToFile2 = Paths.get(RESULTS_ROOT, "multipleauxiliaryimage2/test.txt");
+    String content2 = "2";
+    assertDoesNotThrow(() -> Files.write(multipleAIPathToFile2, content2.getBytes()),
+        "Can't write to file " + multipleAIPathToFile2);
+    assertDoesNotThrow(() -> Files.copy(
+        Paths.get(MODEL_DIR, "/model.jms2.yaml"),
+        Paths.get(modelsPath2.toString(), "/model.jms2.yaml"),
+        StandardCopyOption.REPLACE_EXISTING));
+
+    // create image2 with model and wdt installation files
+    createAuxiliaryImage(multipleAIPath2.toString(),
+        Paths.get(RESOURCE_DIR, "auxiliaryimage", "Dockerfile").toString(), miiAuxiliaryImage2);
 
     // push image2 to repo for multi node cluster
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
@@ -1093,77 +1152,7 @@ class ItMiiAuxiliaryImage {
     }
   }
 
-  public static void createAuxImage1() {
-    // create stage dir for first auxiliary image with image1
-    Path multipleAIPath1 = Paths.get(RESULTS_ROOT, "multipleauxiliaryimage1");
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleAIPath1.toFile()),
-        "Delete directory failed");
-    assertDoesNotThrow(() -> Files.createDirectories(multipleAIPath1),
-        "Create directory failed");
-    Path multipleAIPathToFile1 = Paths.get(RESULTS_ROOT, "multipleauxiliaryimage1/test.txt");
-    String content = "1";
-    assertDoesNotThrow(() -> Files.write(multipleAIPathToFile1, content.getBytes()),
-        "Can't write to file " + multipleAIPathToFile1);
-
-    // create models dir and copy model, archive files if any for image1
-    Path modelsPath1 = Paths.get(multipleAIPath1.toString(), "models");
-    assertDoesNotThrow(() -> Files.createDirectories(modelsPath1));
-    assertDoesNotThrow(() -> Files.copy(
-        Paths.get(MODEL_DIR, MII_BASIC_WDT_MODEL_FILE),
-        Paths.get(modelsPath1.toString(), MII_BASIC_WDT_MODEL_FILE),
-        StandardCopyOption.REPLACE_EXISTING));
-    assertDoesNotThrow(() -> Files.copy(
-        Paths.get(MODEL_DIR, "multi-model-one-ds.20.yaml"),
-        Paths.get(modelsPath1.toString(), "multi-model-one-ds.20.yaml"),
-        StandardCopyOption.REPLACE_EXISTING));
-
-    // build app
-    assertTrue(buildAppArchive(defaultAppParams()
-        .srcDirList(Collections.singletonList(MII_BASIC_APP_NAME))
-        .appName(MII_BASIC_APP_NAME)),
-        String.format("Failed to create app archive for %s", MII_BASIC_APP_NAME));
-
-    // copy app archive to models
-    assertDoesNotThrow(() -> Files.copy(
-        Paths.get(ARCHIVE_DIR, MII_BASIC_APP_NAME + ".zip"),
-        Paths.get(modelsPath1.toString(), MII_BASIC_APP_NAME + ".zip"),
-        StandardCopyOption.REPLACE_EXISTING));
-
-    // unzip WDT installation file into work dir
-    unzipWDTInstallationFile(multipleAIPath1.toString());
-
-    // create image1 with model and wdt installation files
-    createAuxiliaryImage(multipleAIPath1.toString(),
-        Paths.get(RESOURCE_DIR, "auxiliaryimage", "Dockerfile").toString(), miiAuxiliaryImage1);
-
-  }
-
-  public static void createAuxImage2() {
-    // create stage dir for second auxiliary image with image2
-    Path multipleAIPath2 = Paths.get(RESULTS_ROOT, "multipleauxiliaryimage2");
-    assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleAIPath2.toFile()),
-        "Delete directory failed");
-    assertDoesNotThrow(() -> Files.createDirectories(multipleAIPath2),
-        "Create directory failed");
-
-    // create models dir and copy model, archive files if any
-    Path modelsPath2 = Paths.get(multipleAIPath2.toString(), "models");
-    assertDoesNotThrow(() -> Files.createDirectories(modelsPath2));
-    Path multipleAIPathToFile2 = Paths.get(RESULTS_ROOT, "multipleauxiliaryimage2/test.txt");
-    String content2 = "2";
-    assertDoesNotThrow(() -> Files.write(multipleAIPathToFile2, content2.getBytes()),
-        "Can't write to file " + multipleAIPathToFile2);
-    assertDoesNotThrow(() -> Files.copy(
-        Paths.get(MODEL_DIR, "/model.jms2.yaml"),
-        Paths.get(modelsPath2.toString(), "/model.jms2.yaml"),
-        StandardCopyOption.REPLACE_EXISTING));
-
-    // create image2 with model and wdt installation files
-    createAuxiliaryImage(multipleAIPath2.toString(),
-        Paths.get(RESOURCE_DIR, "auxiliaryimage", "Dockerfile").toString(), miiAuxiliaryImage2);
-  }
-
-  private static void createAuxiliaryImage(String stageDirPath, String dockerFileLocation, String auxiliaryImage) {
+  private void createAuxiliaryImage(String stageDirPath, String dockerFileLocation, String auxiliaryImage) {
     String cmdToExecute = String.format("cd %s && docker build -f %s %s -t %s .",
         stageDirPath, dockerFileLocation,
         "--build-arg AUXILIARY_IMAGE_PATH=/auxiliary", auxiliaryImage);
