@@ -239,7 +239,7 @@ Useful Helm operations Show the available operator configuration values and thei
       <pubDate>Sat, 23 Feb 2019 16:40:54 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/prerequisites/introduction/</guid>
-      <description>For the current production release 3.3.3:
+      <description>For the current production release 3.3.4:
  Kubernetes 1.16.15+, 1.17.13+, 1.18.10+, 1.19.7+, and 1.20.6+ (check with kubectl version). Flannel networking v0.9.1-amd64 or later (check with docker images | grep flannel), Calico networking v3.16.1 or later, or OpenShift SDN on OpenShift 4.3 systems. Docker 18.9.1 or 19.03.1+ (check with docker version) or CRI-O 1.20.2+ (check with crictl version | grep RuntimeVersion). Helm 3.3.4+ (check with helm version --client --short). For domain home source type Model in Image, WebLogic Deploy Tooling 1.</description>
     </item>
     
@@ -381,7 +381,7 @@ You can access most of the REST services using GET, for example:
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/quickstart/get-images/</guid>
       <description>Get these images and put them into your local registry.   Pull the operator image:
-$ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:3.3.3   Pull the Traefik ingress controller image:
+$ docker pull ghcr.io/oracle/weblogic-kubernetes-operator:3.3.4   Pull the Traefik ingress controller image:
 $ docker pull traefik:2.2.1   Obtain the WebLogic Server image from the Oracle Container Registry.
 a. First time users, follow these directions.
 b. Find and then pull the WebLogic 12.2.1.4 install image:
@@ -877,7 +877,7 @@ If you are performing an online update to a running domain&amp;rsquo;s WebLogic 
       <pubDate>Fri, 15 Mar 2019 11:25:28 -0400</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/release-notes/</guid>
-      <description>Releases    Date Version Introduces backward incompatibilities? Change - See also, Change log.     November 1, 2021 v3.3.3 no Resolved an issue related to WebLogic cluster replication with Istio 1.10 and resolved several issues related to introspector failure, retry, and status.   September 24, 2021 v3.3.2 no Istio 1.10 support, enhanced liveness and readiness probe customization to support customizing failure thresholds, and additional validations.   August 23, 2021 v3.</description>
+      <description>Releases    Date Version Introduces backward incompatibilities? Change - See also, Change log.     November 9, 2021 v3.3.4 no Resolved an issue related to Model in Image domains and enabling WebLogic secure mode.   November 1, 2021 v3.3.3 no Resolved an issue related to WebLogic cluster replication with Istio 1.10 and resolved several issues related to introspector failure, retry, and status.   September 24, 2021 v3.</description>
     </item>
     
   </channel>
