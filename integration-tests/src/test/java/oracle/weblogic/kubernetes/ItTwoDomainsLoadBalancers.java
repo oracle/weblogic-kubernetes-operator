@@ -290,7 +290,6 @@ class ItTwoDomainsLoadBalancers {
   @Test
   @DisplayName("Create domain on PV using WLST script")
   void testTwoDomainsManagedByTwoOperators() {
-
     // create two domains on PV using WLST
     createTwoDomainsOnPVUsingWlstAndVerify();
 
@@ -335,88 +334,22 @@ class ItTwoDomainsLoadBalancers {
   }
 
   /**
-   * Test deploy applications and install ingress controllers Traefik, NGINX, and  Apache .
+   * Verify WebLogic admin console is accessible through NGINX path routing with HTTPS protocol.
    */
   @Order(3)
   @Test
-  void testDeployAppAndInstallIngressControllers() {
-
-    // install and verify Traefik
-    logger.info("Installing Traefik controller using helm");
-    traefikHelmParams = installAndVerifyTraefik(traefikNamespace, 0, 0);
-
-    // install and verify Nginx
-    nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
-
-    // build the clusterview application
-    logger.info("Building clusterview application");
-    Path distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "clusterview"), null, null,
-        "dist", defaultNamespace);
-    assertTrue(Paths.get(distDir.toString(),
-        "clusterview.war").toFile().exists(),
-        "Application archive is not available");
-    clusterViewAppPath = Paths.get(distDir.toString(), "clusterview.war");
-
-    // deploy clusterview application in default namespace
-    for (String domainUid : domainUids) {
-      // admin/managed server name here should match with model yaml in MII_BASIC_WDT_MODEL_FILE
-      String adminServerPodName = domainUid + "-admin-server";
-      deployApplication(defaultNamespace, domainUid, adminServerPodName);
-    }
-
-    // deploy clusterview application in domain1Namespace
-    deployApplication(domain1Namespace, domain1Uid, domain1Uid + "-admin-server");
-
-    // create TLS secret for Traefik HTTPS traffic
-    for (String domainUid : domainUids) {
-      createCertKeyFiles(domainUid + "." + defaultNamespace + ".cluster-1.test");
-      assertDoesNotThrow(() -> createSecretWithTLSCertKey(domainUid + "-traefik-tls-secret",
-          defaultNamespace, tlsKeyFile, tlsCertFile));
-    }
-
-    // create ingress rules with non-tls host routing, tls host routing and path routing for Traefik
-    createTraefikIngressRoutingRules();
-
-    // create ingress rules with non-tls host routing for NGINX
-    createNginxIngressHostRoutingForTwoDomains(false);
-
-    // create ingress rules with tls host routing for NGINX
-    createNginxIngressHostRoutingForTwoDomains(true);
-
-    // create ingress rules with path routing for NGINX
-    createNginxIngressPathRoutingForTwoDomains();
-
-    // create ingress rules with TLS path routing for NGINX
-    createNginxTLSPathRoutingForTwoDomains();
-
-    // install and verify Apache for default sample
-    apacheHelmParams1 = assertDoesNotThrow(
-        () -> installAndVerifyApache(domain1Namespace, kindRepoApacheImage, 0, 0, MANAGED_SERVER_PORT, domain1Uid));
-
-    // install and verify Apache for custom sample
-    LinkedHashMap<String, String> clusterNamePortMap = new LinkedHashMap<>();
-    for (int i = 0; i < numberOfDomains; i++) {
-      clusterNamePortMap.put(domainUids.get(i) + "-cluster-cluster-1", "" + MANAGED_SERVER_PORT);
-    }
-    createPVPVCForApacheCustomConfiguration(defaultNamespace);
-    apacheHelmParams2 = assertDoesNotThrow(
-        () -> installAndVerifyApache(defaultNamespace, kindRepoApacheImage, 0, 0, MANAGED_SERVER_PORT, domain1Uid,
-            apachePvcName, "apache-sample-host", ADMIN_SERVER_PORT, clusterNamePortMap));
-  }
-
-  /**
-   * Verify WebLogic admin console is accessible through NGINX path routing with HTTPS protocol.
-   */
-  @Order(4)
-  @Test
   @DisplayName("Verify WebLogic admin console is accessible through NGINX path routing with HTTPS protocol")
   void testNginxTLSPathRoutingAdminServer() {
-    assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");
+    // build and deploy app to be used by all test cases
+    buildAndDeployApp();
+
+    // install Nginx ingress controller for all test cases using Nginx
+    installIngressController("Nginx");
+
     logger.info("Verifying WebLogic admin console is accessible through NGINX path routing with HTTPS protocol");
     for (int i = 0; i < numberOfDomains; i++) {
       verifyAdminServerAccess(true, getNginxLbNodePort("https"), false, "",
           "/" + domainUids.get(i).substring(6) + "console");
-
 
       // verify the header 'WL-Proxy-Client-IP' is removed in the admin server log
       // verify the header 'WL-Proxy-SSL: false' is removed in the admin server log
@@ -430,11 +363,10 @@ class ItTwoDomainsLoadBalancers {
    * Accesses the clusterview application deployed in the WebLogic cluster through NGINX loadbalancer and verifies it
    * is correctly routed to the specific domain cluster.
    */
-  @Order(5)
+  @Order(4)
   @Test
   @DisplayName("Verify NGINX path routing with HTTPS protocol across two domains")
   void testNginxTLSPathRoutingAcrossDomains() {
-
     // verify NGINX path routing with HTTP protocol across two domains
     logger.info("Verifying NGINX path routing with HTTPS protocol across two domains");
     for (String domainUid : domainUids) {
@@ -446,11 +378,15 @@ class ItTwoDomainsLoadBalancers {
   /**
    * Verify WebLogic admin console is accessible through Traefik host routing with HTTP protocol.
    */
-  @Order(6)
+  @Order(5)
   @Test
   @DisplayName("Verify WebLogic admin console is accessible through Traefik host routing with HTTP protocol")
   void testTraefikHostRoutingAdminServer() {
     assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");
+
+    // install Traefik ingress controller for all test cases using Traefik
+    installIngressController("Traefik");
+
     logger.info("Verifying WebLogic admin console is accessible through Traefik host routing with HTTP protocol");
     for (String domainUid : domainUids) {
       verifyAdminServerAccess(false, getTraefikLbNodePort(false), true,
@@ -464,11 +400,10 @@ class ItTwoDomainsLoadBalancers {
    * channel and verifies it is correctly routed to the specific domain cluster identified by the -H host header.
    *
    */
-  @Order(7)
+  @Order(6)
   @Test
   @DisplayName("Verify Traefik host routing with HTTP protocol across two domains")
   void testTraefikHttpHostRoutingAcrossDomains() {
-
     // verify Traefik host routing with HTTP protocol across two domains
     logger.info("Verifying Traefik host routing with HTTP protocol across two domains");
     for (String domainUid : domainUids) {
@@ -482,11 +417,10 @@ class ItTwoDomainsLoadBalancers {
    * Accesses the clusterview application deployed in the WebLogic cluster through Traefik loadbalancer websecure
    * channel and verifies it is correctly routed to the specific domain cluster identified by the -H host header.
    */
-  @Order(8)
+  @Order(7)
   @Test
   @DisplayName("Verify Traefik host routing with HTTPS protocol across two domains")
   void testTraefikHttpsHostRoutingAcrossDomains() {
-
     logger.info("Verifying Traefik host routing with HTTPS protocol across two domains");
     for (String domainUid : domainUids) {
       verifyClusterLoadbalancing(domainUid, domainUid + "." + defaultNamespace + ".cluster-1.test",
@@ -497,11 +431,10 @@ class ItTwoDomainsLoadBalancers {
   /**
    * Verify Traefik path routing with HTTP protocol across two domains.
    */
-  @Order(9)
+  @Order(8)
   @Test
   @DisplayName("Verify Traefik path routing with HTTP protocol across two domains")
   void testTraefikPathRoutingAcrossDomains() {
-
     logger.info("Verifying Traefik path routing with HTTP protocol across two domains");
     for (String domainUid : domainUids) {
       verifyClusterLoadbalancing(domainUid, "", "http", getTraefikLbNodePort(false),
@@ -516,10 +449,12 @@ class ItTwoDomainsLoadBalancers {
    * For details, please see
    * https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/charts/apache-samples/default-sample
    */
-  @Order(10)
+  @Order(9)
   @Test
   @DisplayName("verify Apache load balancer default sample through HTTP channel")
   void testApacheLoadBalancingDefaultSample() {
+    // install Apache ingress controller for all test cases using Apache
+    installIngressController("Apache");
 
     // verify Apache default sample
     logger.info("Verifying Apache default sample");
@@ -535,11 +470,10 @@ class ItTwoDomainsLoadBalancers {
    * For more details, please check:
    * https://github.com/oracle/weblogic-kubernetes-operator/tree/master/kubernetes/samples/charts/apache-samples/custom-sample
    */
-  @Order(11)
+  @Order(10)
   @Test
   @DisplayName("verify Apache load balancer custom sample through HTTP and HTTPS channel")
   void testApacheLoadBalancingCustomSample() {
-
     // verify Apache custom sample
     logger.info("Verifying Apache custom sample");
     for (int i = 1; i <= numberOfDomains; i++) {
@@ -559,11 +493,10 @@ class ItTwoDomainsLoadBalancers {
    * and verifies it is correctly routed to the specific domain cluster identified by the -H host header.
    *
    */
-  @Order(12)
+  @Order(11)
   @Test
   @DisplayName("verify NGINX host routing with HTTP protocol across two domains")
   void testNginxHttpHostRoutingAcrossDomains() {
-
     // verify NGINX host routing with HTTP protocol
     logger.info("Verifying NGINX host routing with HTTP protocol");
     for (String domainUid : domainUids) {
@@ -578,11 +511,10 @@ class ItTwoDomainsLoadBalancers {
    * protocol and verifies it is correctly routed to the specific domain cluster identified by the -H host header.
    *
    */
-  @Order(13)
+  @Order(12)
   @Test
   @DisplayName("verify NGINX host routing with https protocol across two domains")
   void testNginxHttpsHostRoutingAcrossDomains() {
-
     // verify NGINX host routing with HTTPS protocol across two domains
     logger.info("Verifying NGINX host routing with HTTPS protocol across two domains");
     for (String domainUid : domainUids) {
@@ -596,11 +528,10 @@ class ItTwoDomainsLoadBalancers {
    * Accesses the clusterview application deployed in the WebLogic cluster through NGINX loadbalancer and verifies it
    * is correctly routed to the specific domain cluster.
    */
-  @Order(14)
+  @Order(13)
   @Test
   @DisplayName("Verify NGINX path routing with HTTP protocol across two domains")
   void testNginxPathRoutingAcrossDomains() {
-
     // verify NGINX path routing with HTTP protocol across two domains
     logger.info("Verifying NGINX path routing with HTTP protocol across two domains");
     for (String domainUid : domainUids) {
@@ -612,7 +543,7 @@ class ItTwoDomainsLoadBalancers {
   /**
    * Verify WebLogic admin console is accessible through Traefik path routing with HTTPS protocol.
    */
-  @Order(15)
+  @Order(14)
   @Test
   @DisplayName("Verify WebLogic admin console is accessible through Traefik path routing with HTTPS protocol")
   void testTraefikTLSPathRoutingAdminServer() {
@@ -632,11 +563,10 @@ class ItTwoDomainsLoadBalancers {
    * Accesses the clusterview application deployed in the WebLogic cluster through Traefik and verifies it
    * is correctly routed to the specific domain cluster.
    */
-  @Order(16)
+  @Order(15)
   @Test
   @DisplayName("Verify Traefik path routing with HTTPS protocol across two domains")
   void testTraefikTLSPathRoutingAcrossDomains() {
-
     // verify Traefik path routing with HTTP protocol across two domains
     logger.info("Verifying Traefik path routing with HTTPS protocol across two domains");
     for (String domainUid : domainUids) {
@@ -655,6 +585,7 @@ class ItTwoDomainsLoadBalancers {
         && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false"))) {
       // uninstall Traefik loadbalancer
       if (traefikHelmParams != null) {
+        logger.info("uninstall Traefik with namespace {0}", traefikHelmParams.getNamespace());
         assertThat(uninstallTraefik(traefikHelmParams))
             .as("Test uninstallTraefik returns true")
             .withFailMessage("uninstallTraefik() did not return true")
@@ -663,6 +594,7 @@ class ItTwoDomainsLoadBalancers {
 
       // uninstall Apache
       if (apacheHelmParams1 != null) {
+        logger.info("uninstall Apache1 with namespace {0}", apacheHelmParams1.getNamespace());
         assertThat(uninstallApache(apacheHelmParams1))
             .as("Test whether uninstallApache in domain1Namespace returns true")
             .withFailMessage("uninstallApache() in domain1Namespace did not return true")
@@ -670,6 +602,7 @@ class ItTwoDomainsLoadBalancers {
       }
 
       if (apacheHelmParams2 != null) {
+        logger.info("uninstall Apache2 with namespace {0}", apacheHelmParams2.getNamespace());
         assertThat(uninstallApache(apacheHelmParams2))
             .as("Test whether uninstallApache in default namespace returns true")
             .withFailMessage("uninstallApache() in default namespace did not return true")
@@ -678,6 +611,7 @@ class ItTwoDomainsLoadBalancers {
 
       // uninstall NGINX
       if (nginxHelmParams != null) {
+        logger.info("uninstall NGINX with namespace {0}", nginxHelmParams.getNamespace());
         assertThat(uninstallNginx(nginxHelmParams))
             .as("Test uninstallNginx returns true")
             .withFailMessage("uninstallNginx() did not return true")
@@ -787,9 +721,7 @@ class ItTwoDomainsLoadBalancers {
    * Create two domains on PV using WLST.
    */
   private void createTwoDomainsOnPVUsingWlstAndVerify() {
-
     for (int i = 0; i < numberOfDomains; i++) {
-
       // this secret is used only for non-kind cluster
       createSecretForBaseImages(domainNamespaces.get(i));
 
@@ -999,7 +931,6 @@ class ItTwoDomainsLoadBalancers {
    * Scale domain1 and verify there is no impact on domain2.
    */
   private void scaleDomain1AndVerifyNoImpactOnDomain2() {
-
     // scale domain1
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
         clusterName, domain1Uid, domain1Namespace, replicasAfterScale);
@@ -1141,7 +1072,6 @@ class ItTwoDomainsLoadBalancers {
    * @param domainUid the uid of the domain to shutdown
    */
   private void shutdownDomainAndVerify(String domainNamespace, String domainUid) {
-
     // shutdown domain
     logger.info("Shutting down domain {0} in namespace {1}", domainUid, domainNamespace);
     shutdownDomain(domainUid, domainNamespace);
@@ -1235,7 +1165,6 @@ class ItTwoDomainsLoadBalancers {
    * Create two domains on PV using WLST.
    */
   private void createTwoDomainsSharingPVUsingWlstAndVerify() {
-
     // create pull secrets for WebLogic image
     // this secret is used only for non-kind cluster
     createSecretForBaseImages(defaultNamespace);
@@ -1317,7 +1246,6 @@ class ItTwoDomainsLoadBalancers {
    * Scale domain2 and verify there is no impact on domain1.
    */
   private void scaleDomain2AndVerifyNoImpactOnDomain1() {
-
     // scale domain2 from 2 servers to 3 servers
     replicasAfterScale = 3;
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} to {3} servers.",
@@ -1404,7 +1332,6 @@ class ItTwoDomainsLoadBalancers {
   }
 
   private void createNginxIngressHostRoutingForTwoDomains(boolean isTLS) {
-
     // create an ingress in domain namespace
     String ingressName;
     if (isTLS) {
@@ -1483,7 +1410,6 @@ class ItTwoDomainsLoadBalancers {
   }
 
   private void createNginxIngressPathRoutingForTwoDomains() {
-
     // create an ingress in domain namespace
     String ingressName = defaultNamespace + "-nginx-path-routing";
 
@@ -1530,7 +1456,6 @@ class ItTwoDomainsLoadBalancers {
   }
 
   private void createNginxTLSPathRoutingForTwoDomains() {
-
     // create an ingress in domain namespace
     String ingressName = defaultNamespace + "-nginx-tls-pathrouting";
 
@@ -1653,7 +1578,6 @@ class ItTwoDomainsLoadBalancers {
                                        boolean isHostRouting,
                                        String ingressHostName,
                                        String pathLocation) {
-
     StringBuffer consoleUrl = new StringBuffer();
     if (isTLS) {
       consoleUrl.append("https://");
@@ -1720,7 +1644,6 @@ class ItTwoDomainsLoadBalancers {
                                           int replicaCount,
                                           boolean hostRouting,
                                           String locationString) {
-
     // access application in managed servers through load balancer
     logger.info("Accessing the clusterview app through load balancer to verify all servers in cluster");
     String curlRequest;
@@ -1882,7 +1805,6 @@ class ItTwoDomainsLoadBalancers {
    * @param apacheNamespace namespace in which to create PVC
    */
   private void createPVPVCForApacheCustomConfiguration(String apacheNamespace) {
-
     Path pvHostPath = get(PV_ROOT, this.getClass().getSimpleName(), "apache-persistentVolume");
 
     V1PersistentVolume v1pv = new V1PersistentVolume()
@@ -1916,7 +1838,6 @@ class ItTwoDomainsLoadBalancers {
   }
 
   private void verifyHeadersInAdminServerLog(String podName, String namespace) {
-
     logger.info("Getting admin server pod log from pod {0} in namespace {1}", podName, namespace);
 
     testUntil(
@@ -1954,5 +1875,75 @@ class ItTwoDomainsLoadBalancers {
         String.format(
             "Did not find 'WL-Proxy-SSL: true' in the admin server pod log, pod: %s; namespace: %s; pod log: %s",
             podName, namespace, adminServerPodLog0));
+  }
+
+  private void buildAndDeployApp() {
+    // build the clusterview application
+    logger.info("Building clusterview application");
+    Path distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "clusterview"),
+        null, null, "dist", defaultNamespace);
+    assertTrue(Paths.get(distDir.toString(),
+        "clusterview.war").toFile().exists(),
+        "Application archive is not available");
+    clusterViewAppPath = Paths.get(distDir.toString(), "clusterview.war");
+
+    // deploy clusterview application in default namespace
+    for (String domainUid : domainUids) {
+      // admin/managed server name here should match with model yaml in MII_BASIC_WDT_MODEL_FILE
+      String adminServerPodName = domainUid + "-admin-server";
+      deployApplication(defaultNamespace, domainUid, adminServerPodName);
+    }
+
+    // deploy clusterview application in domain1Namespace
+    deployApplication(domain1Namespace, domain1Uid, domain1Uid + "-admin-server");
+  }
+
+  private void installIngressController(String lberName) {
+    if (lberName.equalsIgnoreCase("Traefik")) {
+      // install and verify Traefik
+      logger.info("Installing Traefik controller using helm");
+      traefikHelmParams = installAndVerifyTraefik(traefikNamespace, 0, 0);
+
+      // create TLS secret for Traefik HTTPS traffic
+      for (String domainUid : domainUids) {
+        createCertKeyFiles(domainUid + "." + defaultNamespace + ".cluster-1.test");
+        assertDoesNotThrow(() -> createSecretWithTLSCertKey(domainUid + "-traefik-tls-secret",
+            defaultNamespace, tlsKeyFile, tlsCertFile));
+      }
+
+      // create ingress rules with non-tls host routing, tls host routing and path routing for Traefik
+      createTraefikIngressRoutingRules();
+    } else if (lberName.equalsIgnoreCase("Nginx")) {
+      // install and verify Nginx
+      logger.info("Installing Nginx controller using helm");
+      nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
+
+      // create ingress rules with non-tls host routing for NGINX
+      createNginxIngressHostRoutingForTwoDomains(false);
+
+      // create ingress rules with tls host routing for NGINX
+      createNginxIngressHostRoutingForTwoDomains(true);
+
+      // create ingress rules with path routing for NGINX
+      createNginxIngressPathRoutingForTwoDomains();
+
+      // create ingress rules with TLS path routing for NGINX
+      createNginxTLSPathRoutingForTwoDomains();
+    } else if (lberName.equalsIgnoreCase("Apache")) {
+      // install and verify Apache for default sample
+      logger.info("Installing Apache controller using helm");
+      apacheHelmParams1 = assertDoesNotThrow(
+          () -> installAndVerifyApache(domain1Namespace, kindRepoApacheImage, 0, 0, MANAGED_SERVER_PORT, domain1Uid));
+
+      // install and verify Apache for custom sample
+      LinkedHashMap<String, String> clusterNamePortMap = new LinkedHashMap<>();
+      for (int i = 0; i < numberOfDomains; i++) {
+        clusterNamePortMap.put(domainUids.get(i) + "-cluster-cluster-1", "" + MANAGED_SERVER_PORT);
+      }
+      createPVPVCForApacheCustomConfiguration(defaultNamespace);
+      apacheHelmParams2 = assertDoesNotThrow(
+          () -> installAndVerifyApache(defaultNamespace, kindRepoApacheImage, 0, 0, MANAGED_SERVER_PORT, domain1Uid,
+              apachePvcName, "apache-sample-host", ADMIN_SERVER_PORT, clusterNamePortMap));
+    }
   }
 }
