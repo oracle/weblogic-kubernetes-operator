@@ -61,6 +61,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
@@ -691,6 +692,8 @@ class ItMiiDomain {
       env.put("JAVA_HOME", witJavaHome);
     }
  
+    String witTarget = ((OKD) ? "OpenShift" : "Default");
+    
     // build an image using WebLogic Image Tool
     logger.info("Create image {0} using model list {1} and archive list {2}",
         image, modelList, archiveList);
@@ -702,6 +705,7 @@ class ItMiiDomain {
             .modelArchiveFiles(archiveList)
             .wdtModelOnly(true)
             .wdtVersion(WDT_VERSION)
+            .target(witTarget)
             .env(env)
             .redirect(true));
 

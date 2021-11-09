@@ -111,7 +111,7 @@ public class PersistentVolumeUtils {
                                           String labelSelector,
                                           String namespace, String storageClassName, Path pvHostPath) {
     LoggingFacade logger = getLogger();
-    if (!OKE_CLUSTER) {
+    if (!OKE_CLUSTER && !OKD) {
       logger.info("Creating PV directory {0}", pvHostPath);
       assertDoesNotThrow(() -> deleteDirectory(pvHostPath.toFile()), "deleteDirectory failed with IOException");
       assertDoesNotThrow(() -> createDirectories(pvHostPath), "createDirectories failed with IOException");
@@ -123,6 +123,13 @@ public class PersistentVolumeUtils {
               .path(FSS_DIR)
               .server(NFS_SERVER)
               .readOnly(false));
+    } else if (OKD) {
+      v1pv.getSpec()
+          .storageClassName("okd-nfsmnt")
+          .nfs(new V1NFSVolumeSource()
+              .path(PV_ROOT)
+              .server(NFS_SERVER)
+              .readOnly(false));
     } else {
       v1pv.getSpec()
           .storageClassName(storageClassName)
@@ -132,6 +139,9 @@ public class PersistentVolumeUtils {
     if (OKE_CLUSTER) {
       v1pvc.getSpec()
           .storageClassName("oci-fss");
+    } else if (OKD) {
+      v1pvc.getSpec()
+          .storageClassName("okd-nfsmnt");
     } else {
       v1pvc.getSpec()
           .storageClassName(storageClassName);

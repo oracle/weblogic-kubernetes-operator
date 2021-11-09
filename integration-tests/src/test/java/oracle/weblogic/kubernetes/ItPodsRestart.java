@@ -33,6 +33,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
@@ -40,6 +41,7 @@ import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
@@ -434,6 +436,7 @@ class ItPodsRestart {
    * The tested resource: podSecurityContext: runAsUser: 1000.
    */
   @Test
+  @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   @DisplayName("Verify server pods are restarted by adding serverPod podSecurityContext")
   void testServerPodsRestartByChaningPodSecurityContext() {
     // get the original domain resource before update
@@ -776,6 +779,23 @@ class ItPodsRestart {
     String encryptionSecretName = "encryptionsecret";
     createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc", "weblogicenc");
 
+    ServerPod srvrPod = new ServerPod()
+        .addEnvItem(new V1EnvVar()
+            .name("JAVA_OPTIONS")
+            .value("-Dweblogic.StdoutDebugEnabled=false"))
+        .addEnvItem(new V1EnvVar()
+            .name("USER_MEM_ARGS")
+            .value("-Djava.security.egd=file:/dev/./urandom "))
+        .resources(new V1ResourceRequirements()
+            .limits(new HashMap<>())
+            .requests(new HashMap<>()));
+
+    if (!OKD) { 
+      V1PodSecurityContext podSecCtxt = new V1PodSecurityContext() 
+                 .runAsUser(0L);
+      srvrPod.podSecurityContext(podSecCtxt);
+    }
+
     // create the domain CR
     Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
@@ -794,18 +814,7 @@ class ItPodsRestart {
                 .namespace(domainNamespace))
             .includeServerOutInPodLog(true)
             .serverStartPolicy("IF_NEEDED")
-            .serverPod(new ServerPod()
-                .addEnvItem(new V1EnvVar()
-                    .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false"))
-                .addEnvItem(new V1EnvVar()
-                    .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom "))
-                .resources(new V1ResourceRequirements()
-                    .limits(new HashMap<>())
-                    .requests(new HashMap<>()))
-                .podSecurityContext(new V1PodSecurityContext()
-                    .runAsUser(0L)))
+            .serverPod(srvrPod)
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING"))
             .addClustersItem(new Cluster()

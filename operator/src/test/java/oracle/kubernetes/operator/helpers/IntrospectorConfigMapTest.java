@@ -3,9 +3,6 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -96,8 +93,6 @@ class IntrospectorConfigMapTest {
 
     testSupport.defineResources(domain);
     testSupport.addDomainPresenceInfo(info);
-    testSupport.addToPacket(JobHelper.START_TIME,
-            OffsetDateTime.ofInstant(Instant.now().minusMillis(10L), ZoneId.systemDefault()));
   }
 
   @AfterEach

@@ -413,12 +413,14 @@ public class ItMiiDomainModelInPV {
     if (customWDTHome != null) {
       defaultWitParams.wdtModelHome(customWDTHome);
     }
+    String witTarget = ((OKD) ? "OpenShift" : "Default");
     createImage(defaultWitParams
         .modelImageName(imageName)
         .modelImageTag(imageTag)
         .modelFiles(modelList)
         .wdtModelOnly(true)
         .wdtVersion(WDT_VERSION)
+        .target(witTarget)
         .env(env)
         .redirect(true));
     assertTrue(doesImageExist(imageTag),

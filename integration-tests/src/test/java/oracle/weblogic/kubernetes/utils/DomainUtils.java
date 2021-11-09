@@ -12,6 +12,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusConditionTypeExists;
@@ -132,7 +133,7 @@ public class DomainUtils {
         withLongRetryPolicy,
         domainStatusConditionTypeHasExpectedStatus(domainUid, namespace, conditionType, expectedStatus),
         getLogger(),
-        "waiting for domain status condition type {0} has expected status {1}",
+        "domain status condition type {0} has expected status {1}",
         conditionType,
         expectedStatus);
   }
@@ -149,18 +150,25 @@ public class DomainUtils {
                                                           String conditionType) {
     testUntil(
         domainStatusConditionTypeExists(domainUid, namespace, conditionType),
-        getLogger(), "waiting for domain status condition type {0} exists", conditionType);
+        getLogger(),
+        "waiting for domain status condition type {0} exists",
+        conditionType
+    );
   }
 
   /**
    * Check the domain status condition type does not exist.
-   * @param domain oracle.weblogic.domain.Domain object
+   * @param domainUid uid of the domain
+   * @param domainNamespace namespace of the domain
    * @param conditionType the type name of condition, accepted value: Completed, Available, Failed and
    *                      ConfigChangesPendingRestart
    * @return true if the condition type does not exist, false otherwise
    */
-  public static boolean verifyDomainStatusConditionTypeDoesNotExist(oracle.weblogic.domain.Domain domain,
-                                                              String conditionType) {
+  public static boolean verifyDomainStatusConditionTypeDoesNotExist(String domainUid,
+                                                                    String domainNamespace,
+                                                                    String conditionType) {
+    Domain domain = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace));
+
     if (domain != null && domain.getStatus() != null) {
       List<DomainCondition> domainConditionList = domain.getStatus().getConditions();
       for (DomainCondition domainCondition : domainConditionList) {

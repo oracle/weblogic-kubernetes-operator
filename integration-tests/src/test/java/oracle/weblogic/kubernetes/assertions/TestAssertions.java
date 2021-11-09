@@ -12,7 +12,6 @@ import java.util.concurrent.Callable;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Secret;
-import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.domain.DomainCondition;
 import oracle.weblogic.kubernetes.actions.impl.LoggingExporter;
 import oracle.weblogic.kubernetes.assertions.impl.Apache;
@@ -419,22 +418,23 @@ public class TestAssertions {
 
   /**
    * Check the domain status condition type exists.
-   * @param domainUid domain id
-   * @param domainNamespace namespace
+   * @param domainUid uid of the domain
+   * @param domainNamespace namespace of the domain
    * @param conditionType the type name of condition, accepted value: Completed, Available, Failed and
    *                      ConfigChangesPendingRestart
    * @return true if the condition type exists, false otherwise
    */
-  public static Callable<Boolean> domainStatusConditionTypeExists(String domainUid, String domainNamespace,
+  public static Callable<Boolean> domainStatusConditionTypeExists(String domainUid,
+                                                                  String domainNamespace,
                                                                   String conditionType) {
     LoggingFacade logger = getLogger();
     return () -> {
-      oracle.weblogic.domain.Domain domain = getDomainCustomResource(domainUid, domainNamespace);
+      oracle.weblogic.domain.Domain domain =
+          assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace));
+
       if (domain != null && domain.getStatus() != null) {
         List<DomainCondition> domainConditionList = domain.getStatus().getConditions();
-        logger.info(Yaml.dump(domain.getStatus()));
         for (DomainCondition domainCondition : domainConditionList) {
-          logger.info(Yaml.dump(domainCondition));
           if (domainCondition.getType().equalsIgnoreCase(conditionType)) {
             return true;
           }
@@ -464,23 +464,19 @@ public class TestAssertions {
                                                                              String conditionType,
                                                                              String expectedStatus) {
     LoggingFacade logger = getLogger();
-    oracle.weblogic.domain.Domain domain =
-        assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace));
+
     return () -> {
+      oracle.weblogic.domain.Domain domain =
+          assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace));
+
       if (domain != null && domain.getStatus() != null) {
         List<DomainCondition> domainConditionList = domain.getStatus().getConditions();
-        if (domainConditionList.size() == 0) {
-          logger.info("DEBUG: condition list is empty");
-          return false;
-        }
         for (DomainCondition domainCondition : domainConditionList) {
-          logger.info("DEBUG: domainCondition={0}", domainCondition.toString());
           if (domainCondition.getType().equalsIgnoreCase(conditionType)
               && domainCondition.getStatus().equalsIgnoreCase(expectedStatus)) {
             return true;
           } else {
-            logger.info("DEBUG: conditionType={0}; conditionStatus={1}", domainCondition.getType(),
-                domainCondition.getStatus());
+            logger.info("domainCondition={0}", domainCondition.toString());
           }
         }
       } else {
@@ -535,9 +531,14 @@ public class TestAssertions {
    * @return true if the WebLogic administration service node port is accessible otherwise false
    * @throws java.io.IOException when connection to WebLogic administration server fails
    */
-  public static boolean adminNodePortAccessible(int nodePort, String userName, String password)
+  public static Callable<Boolean> adminNodePortAccessible(int nodePort, String userName, 
+                                                     String password, String... routeHost)
       throws IOException {
-    return Domain.adminNodePortAccessible(nodePort, userName, password);
+    if (routeHost.length == 0) {
+      return () -> Domain.adminNodePortAccessible(nodePort, userName, password, null);
+    } else {
+      return () -> Domain.adminNodePortAccessible(nodePort, userName, password, routeHost[0]);
+    }
   }
 
   /**

@@ -23,6 +23,8 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
+
 /** The effective configuration for a server configured by the version 2 domain model. */
 public abstract class ServerSpecCommonImpl extends ServerSpecBase {
   private final Server server;
@@ -108,7 +110,8 @@ public abstract class ServerSpecCommonImpl extends ServerSpecBase {
 
   @Override
   public String getDesiredState() {
-    return Optional.ofNullable(getConfiguredDesiredState()).orElse("RUNNING");
+    return getEffectiveServerStartPolicy() == ServerStartPolicy.NEVER ? SHUTDOWN_STATE
+            : Optional.ofNullable(getConfiguredDesiredState()).orElse("RUNNING");
   }
 
   private String getConfiguredDesiredState() {

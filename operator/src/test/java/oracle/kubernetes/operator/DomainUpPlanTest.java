@@ -137,7 +137,7 @@ class DomainUpPlanTest {
         plan,
         hasChainWithStepsInOrder(
             "DomainPresenceStep",
-            "ReplaceOrCreateIntrospectorJobStep",
+            "IntrospectionStartStep",
             "BeforeAdminServiceStep",
             "AdminPodStep",
             "ForServerStep",
