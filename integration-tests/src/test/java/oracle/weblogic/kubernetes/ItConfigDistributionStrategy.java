@@ -193,7 +193,7 @@ class ItConfigDistributionStrategy {
     logger.info("mysqlDBPort1 is: " + mysqlDBPort1);
     createMySQLDB("mysqldb-2", "root", "root456", getNextFreePort(), domainNamespace, null);
     mysqlDBPort2 = getMySQLNodePort(domainNamespace, "mysqldb-2");
-    logger.info("mysqlDBPort1 is: " + mysqlDBPort2);
+    logger.info("mysqlDBPort2 is: " + mysqlDBPort2);
 
     if (OKD) {
       mysql1SvcEndpoint = getMySQLSvcEndpoint(domainNamespace, "mysqldb-1");
