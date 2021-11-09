@@ -39,7 +39,6 @@ import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderImpl;
 import oracle.kubernetes.operator.rest.ScanCacheStub;
-import oracle.kubernetes.operator.steps.WatchDomainIntrospectorJobReadyStep;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -129,6 +128,7 @@ class DomainIntrospectorJobTest {
   private static final String INFO_MESSAGE = "@[INFO] just letting you know";
   public static final String TEST_VOLUME_NAME = "test";
   private static final String JOB_UID = "FAILED_JOB";
+  private static final String JOB_NAME = UID + "-introspector";
   private final TerminalStep terminalStep = new TerminalStep();
   private final Domain domain = createDomain();
   private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
@@ -600,43 +600,22 @@ class DomainIntrospectorJobTest {
   }
 
   @Test
-  void whenPreviousTimedoutJobExists_createNewJob() {
-    ignoreIntrospectorFailureLogs();
-    ignoreJobCreatedAndDeletedLogs();
-    definePreviousTimedoutIntrospection();
-    testSupport.doOnCreate(JOB, this::recordJob);
-
-    testSupport.runSteps(Step.chain(new WatchDomainIntrospectorJobReadyStep(),
-            JobHelper.createIntrospectionStartStep(null)));
-
-    assertThat(affectedJob, notNullValue());
-  }
-
-  private void definePreviousTimedoutIntrospection() {
-    defineTimedoutIntrospection();
-  }
-
-  private void defineTimedoutIntrospection() {
-    testSupport.defineResources(asTimedoutJob(createIntrospectorJob("TIMEDOUT_JOB")));
-  }
-
-  private V1Job asTimedoutJob(V1Job job) {
-    job.setStatus(new V1JobStatus().addConditionsItem(new V1JobCondition().status("True").type("Failed")
-            .reason("DeadlineExceeded")));
-    return job;
-  }
-
-  @Test
   void whenPreviousFailedJobWithImagePullErrorExistsAndMakeRightContinued_createNewJob() {
     ignoreIntrospectorFailureLogs();
     ignoreJobCreatedAndDeletedLogs();
     testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
     defineFailedIntrospectionWithImagePullError("ErrImagePull");
     testSupport.doOnCreate(JOB, this::recordJob);
+    testSupport.doAfterCall(JOB, "deleteJob", this::replaceFailedJobPodWithSuccess);
 
     testSupport.runSteps(JobHelper.createIntrospectionStartStep(null));
 
     assertThat(affectedJob, notNullValue());
+  }
+
+  private void replaceFailedJobPodWithSuccess() {
+    testSupport.deleteResources(createIntrospectorJobPod());
+    testSupport.defineResources(createIntrospectorJobPod());
   }
 
   private void defineFailedIntrospectionWithImagePullError(String imagePullError) {
@@ -645,16 +624,19 @@ class DomainIntrospectorJobTest {
   }
 
   private V1Pod asFailedJobPodWithImagePullError(V1Pod introspectorJobPod, String imagePullError) {
-    List<V1ContainerStatus> statuses = Arrays.asList(new V1ContainerStatus().state(new V1ContainerState()
-            .waiting(new V1ContainerStateWaiting().reason(imagePullError))));
+    List<V1ContainerStatus> statuses = List.of(createImagePullContainerStatus(imagePullError));
     return introspectorJobPod.status(new V1PodStatus().containerStatuses(statuses));
   }
 
+  private V1ContainerStatus createImagePullContainerStatus(String imagePullError) {
+    return new V1ContainerStatus().state(
+          new V1ContainerState().waiting(new V1ContainerStateWaiting().reason(imagePullError)));
+  }
+
   private V1Pod createIntrospectorJobPod() {
-    String jobName = UID + "-introspector";
     Map<String, String> labels = new HashMap<>();
-    labels.put(LabelConstants.JOBNAME_LABEL, jobName);
-    return new V1Pod().metadata(new V1ObjectMeta().name(jobName).labels(labels).namespace(NS));
+    labels.put(LabelConstants.JOBNAME_LABEL, JOB_NAME);
+    return new V1Pod().metadata(new V1ObjectMeta().name(JOB_NAME).labels(labels).namespace(NS));
   }
 
   private V1Job asFailedJobWithBackoffLimitExceeded(V1Job job) {
@@ -670,6 +652,7 @@ class DomainIntrospectorJobTest {
     testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
     defineFailedIntrospectionWithImagePullError("ImagePullBackOff");
     testSupport.doOnCreate(JOB, this::recordJob);
+    testSupport.doAfterCall(JOB, "deleteJob", this::replaceFailedJobPodWithSuccess);
 
     testSupport.runSteps(JobHelper.createIntrospectionStartStep(null));
 
