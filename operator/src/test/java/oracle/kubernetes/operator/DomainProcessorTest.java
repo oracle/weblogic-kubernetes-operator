@@ -98,6 +98,7 @@ import static oracle.kubernetes.operator.LabelConstants.DOMAINNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CONFIG_MAP;
@@ -883,6 +884,71 @@ class DomainProcessorTest {
             .reason("DeadlineExceeded"));
   }
 
+  @Test
+  void whenIntrospectionJobPodTimedOut_jobRecreatedAndFailedConditionCleared() throws Exception {
+    consoleHandlerMemento.ignoringLoggedExceptions(RuntimeException.class);
+    consoleHandlerMemento.ignoreMessage(MessageKeys.NOT_STARTING_DOMAINUID_THREAD);
+    jobStatus = createBackoffStatus();
+    establishPreviousIntrospection(null);
+    defineTimedoutIntrospection();
+    testSupport.doOnDelete(JOB, j -> deletePod());
+    testSupport.doOnCreate(JOB, j -> createJobPodAndSetCompletedStatus(job));
+    domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).interrupt().execute();
+
+    assertThat(isDomainConditionFailed(), is(false));
+  }
+
+  private boolean isDomainConditionFailed() {
+    return newDomain.getStatus().getConditions().stream().anyMatch(c -> c.getType() == Failed);
+  }
+
+  V1JobStatus createBackoffStatus() {
+    return new V1JobStatus().addConditionsItem(new V1JobCondition().status("True").type("Failed")
+            .reason("BackoffLimitExceeded"));
+  }
+
+  private void deletePod() {
+    testSupport.deleteResources(new V1Pod().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS)));
+  }
+
+  private static String getJobName() {
+    return LegalNames.toJobIntrospectorName(UID);
+  }
+
+  private void createJobPodAndSetCompletedStatus(V1Job job) {
+    Map<String, String> labels = new HashMap<>();
+    labels.put(LabelConstants.JOBNAME_LABEL, getJobName());
+    testSupport.defineResources(POD,
+            new V1Pod().metadata(new V1ObjectMeta().name(getJobName()).labels(labels).namespace(NS)));
+    job.setStatus(createCompletedStatus());
+  }
+
+  private void defineTimedoutIntrospection() {
+    V1Job job = asTimedoutJob(createIntrospectorJob("TIMEDOUT_JOB"));
+    testSupport.defineResources(job);
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, job);
+    setJobPodStatusReasonDeadlineExceeded();
+  }
+
+  private void setJobPodStatusReasonDeadlineExceeded() {
+    testSupport.<V1Pod>getResourceWithName(POD, getJobName()).status(new V1PodStatus().reason("DeadlineExceeded"));
+  }
+
+  private V1Job asTimedoutJob(V1Job job) {
+    job.setStatus(new V1JobStatus().addConditionsItem(new V1JobCondition().status("True").type("Failed")
+            .reason("BackoffLimitExceeded")));
+    return job;
+  }
+
+  private V1Job createIntrospectorJob(String uid) {
+    return new V1Job().metadata(createJobMetadata(uid)).status(new V1JobStatus());
+  }
+
+  private V1ObjectMeta createJobMetadata(String uid) {
+    return new V1ObjectMeta().name(getJobName()).namespace(NS).creationTimestamp(SystemClock.now()).uid(uid);
+  }
+
   private void establishPreviousIntrospection(Consumer<Domain> domainSetup) throws JsonProcessingException {
     establishPreviousIntrospection(domainSetup, Arrays.asList(1,2));
   }
@@ -1412,10 +1478,6 @@ class DomainProcessorTest {
 
   private String getDesiredState(Domain domain, String serverName) {
     return Optional.ofNullable(getServerStatus(domain, serverName)).map(ServerStatus::getDesiredState).orElse("");
-  }
-
-  private String getActualState(Domain domain, String serverName) {
-    return Optional.ofNullable(getServerStatus(domain, serverName)).map(ServerStatus::getState).orElse("");
   }
 
   private ServerStatus getServerStatus(Domain domain, String serverName) {

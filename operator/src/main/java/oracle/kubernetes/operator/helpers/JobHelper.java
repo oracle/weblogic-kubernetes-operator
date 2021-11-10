@@ -569,12 +569,20 @@ public class JobHelper {
 
         if (jobPod == null) {
           return doContinueListOrNext(callResponse, packet, processIntrospectorPodLog(getNext()));
-        } else if (hasImagePullFailure(jobPod)) {
+        } else if (hasImagePullFailure(jobPod) || isJobPodTimedOut(jobPod)) {
           return doNext(cleanUpAndReintrospect(getNext()), packet);
         } else {
           recordJobPodName(packet, getName(jobPod));
           return doNext(processIntrospectorPodLog(getNext()), packet);
         }
+      }
+
+      private boolean isJobPodTimedOut(V1Pod jobPod) {
+        return "DeadlineExceeded".equals(getJobPodStatusReason(jobPod));
+      }
+
+      private String getJobPodStatusReason(V1Pod jobPod) {
+        return Optional.ofNullable(jobPod.getStatus()).map(V1PodStatus::getReason).orElse(null);
       }
 
       // Returns a chain of steps which read the pod log and create a config map.
