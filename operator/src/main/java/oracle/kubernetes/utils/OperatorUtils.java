@@ -176,4 +176,14 @@ public class OperatorUtils {
     return sb;
   }
 
+  /**
+   * Returns a new String composed of copies of the CharSequence elements joined together with a copy
+   * of the system line separator.
+   *
+   * @param s Comma separated array of strings to be joined
+   */
+  public static String onSeparateLines(String... s) {
+    return String.join(System.lineSeparator(), s);
+  }
+
 }

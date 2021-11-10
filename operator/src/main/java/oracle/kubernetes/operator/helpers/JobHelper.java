@@ -408,15 +408,16 @@ public class JobHelper {
       }
 
       private NextAction handleFailure(Packet packet, V1Job domainIntrospectorJob) {
+        Step nextSteps = null;
         Optional.ofNullable(domainIntrospectorJob).ifPresent(job -> logIntrospectorFailure(packet, job));
-
-        Step nextSteps = Step.chain(
-              createFailureRelatedSteps(Introspection, onSeparateLines(severeStatuses)),
-              getNextStep(packet, domainIntrospectorJob));
 
         if (!severeStatuses.isEmpty()) {
           nextSteps = Step.chain(createFailureCountStep(domainIntrospectorJob), nextSteps);
         }
+
+        nextSteps = Step.chain(
+              createFailureRelatedSteps(Introspection, onSeparateLines(severeStatuses)),
+              getNextStep(packet, domainIntrospectorJob), nextSteps);
 
         return doNext(nextSteps, packet);
       }

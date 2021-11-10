@@ -76,6 +76,9 @@ import static oracle.kubernetes.operator.KubernetesConstants.HTTP_FORBIDDEN;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
+import static oracle.kubernetes.operator.ProcessingConstants.EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG;
+import static oracle.kubernetes.operator.ProcessingConstants.FATAL_ERROR_DOMAIN_STATUS_MESSAGE;
+import static oracle.kubernetes.operator.ProcessingConstants.INTROSPECTION_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.JOBWATCHER_COMPONENT_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
@@ -91,6 +94,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.NO_CLUSTER_IN_DOMAI
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.utils.LogMatcher.containsWarning;
+import static oracle.kubernetes.utils.OperatorUtils.onSeparateLines;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_VOLUME_NAME_PREFIX;
@@ -125,6 +129,8 @@ class DomainIntrospectorJobTest {
       IntStream.rangeClosed(1, MAX_SERVERS).mapToObj(n -> MS_PREFIX + n).toArray(String[]::new);
   private static final String SEVERE_PROBLEM = "really bad";
   private static final String SEVERE_MESSAGE = "@[SEVERE] " + SEVERE_PROBLEM;
+  private static final String FATAL_PROBLEM = "FatalIntrospectorError: really bad";
+  private static final String FATAL_MESSAGE = "@[SEVERE] " + FATAL_PROBLEM;
   private static final String INFO_MESSAGE = "@[INFO] just letting you know";
   public static final String TEST_VOLUME_NAME = "test";
   private static final String JOB_UID = "FAILED_JOB";
@@ -855,6 +861,65 @@ class DomainIntrospectorJobTest {
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
 
     assertThat(getUpdatedDomain().getStatus().getIntrospectJobFailureCount(), equalTo(2));
+  }
+
+  @Test
+  void whenJobLogContainsSevereErrorAndRetriesLeft_domainStatusHasExpectedMessage() {
+    createIntrospectionLog(SEVERE_MESSAGE);
+
+    testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
+
+    assertThat(getUpdatedDomain().getStatus().getMessage(), equalTo(
+            createRetryStatusMessage("Introspection failed on try 1 of 2.", SEVERE_PROBLEM)));
+  }
+
+  @NotNull
+  private String createRetryStatusMessage(String retryStatusMessage, String severeProblem) {
+    return onSeparateLines(retryStatusMessage, INTROSPECTION_ERROR, severeProblem);
+  }
+
+  @Test
+  void whenJobLogContainsFatalError_domainStatusHasExpectedMessage() {
+    createIntrospectionLog(FATAL_MESSAGE);
+
+    testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
+
+    final Domain updatedDomain = testSupport.<Domain>getResources(DOMAIN).get(0);
+
+    assertThat(updatedDomain.getStatus().getMessage(),
+            equalTo(createRetryStatusMessage(FATAL_ERROR_DOMAIN_STATUS_MESSAGE, FATAL_PROBLEM)));
+  }
+
+  @Test
+  void whenJobLogContainsSevereErrorAndNumberOfRetriesExceedsMaxLimit_domainStatusHasExpectedMessage() {
+    createIntrospectionLog(SEVERE_MESSAGE);
+
+    getUpdatedDomain().setStatus(createDomainStatusWithIntrospectJobFailureCount(2));
+
+    testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
+
+    assertThat(getUpdatedDomain().getStatus().getMessage(),
+            equalTo(createRetryStatusMessage(EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG, SEVERE_PROBLEM)));
+  }
+
+  private void createIntrospectionLog(String logMessage) {
+    createIntrospectionLog(logMessage, true);
+  }
+
+  private void createIntrospectionLog(String logMessage, boolean ignoreLogMessages) {
+    if (ignoreLogMessages) {
+      consoleHandlerMemento.ignoreMessage(getJobFailedMessageKey());
+      consoleHandlerMemento.ignoreMessage(getJobFailedDetailMessageKey());
+    }
+    testSupport.defineResources(createIntrospectorJob());
+    IntrospectionTestUtils.defineResources(testSupport, logMessage);
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
+  }
+
+  private DomainStatus createDomainStatusWithIntrospectJobFailureCount(int failureCount) {
+    final DomainStatus status = new DomainStatus();
+    status.withIntrospectJobFailureCount(failureCount);
+    return status;
   }
 
   // create job
