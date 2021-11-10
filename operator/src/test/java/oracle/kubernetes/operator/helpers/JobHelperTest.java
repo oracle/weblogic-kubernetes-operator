@@ -50,6 +50,7 @@ import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.DomainValidationBaseTest;
 import oracle.kubernetes.weblogic.domain.model.Istio;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
@@ -677,7 +678,9 @@ class JobHelperTest extends DomainValidationBaseTest {
 
   @Test
   void verify_introspectorPodSpec_activeDeadlineSeconds_retry_values() {
-    int failureCount = domainPresenceInfo.incrementAndGetFailureCount();
+    domainPresenceInfo.getDomain()
+            .setStatus(new DomainStatus().withIntrospectJobFailureCount(1));
+    int failureCount = domainPresenceInfo.getDomain().getStatus().getIntrospectJobFailureCount();
 
     V1JobSpec jobSpec = createJobSpec();
 
@@ -1217,7 +1220,6 @@ class JobHelperTest extends DomainValidationBaseTest {
         not(hasEnvVar(ISTIO_USE_LOCALHOST_BINDINGS, "false"))
     );
   }
-
 
   private V1Job job;
 
