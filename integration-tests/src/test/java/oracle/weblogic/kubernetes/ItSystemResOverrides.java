@@ -57,6 +57,7 @@ import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomRe
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
 import static oracle.weblogic.kubernetes.utils.BuildApplication.buildApplication;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
@@ -66,6 +67,7 @@ import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
@@ -104,6 +106,7 @@ class ItSystemResOverrides {
   final String wlSecretName = "weblogic-credentials";
   final String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
   int replicaCount = 2;
+  String adminSvcExtHost = null;
 
   static Path sitconfigAppPath;
   String overridecm = "configoverride-cm";
@@ -213,7 +216,13 @@ class ItSystemResOverrides {
 
     //verify server attribute MaxMessageSize
     String appURI = "/sitconfig/SitconfigServlet";
-    String url = "http://" + K8S_NODEPORT_HOST + ":" + serviceNodePort + appURI;
+   
+    if (adminSvcExtHost == null) {
+      adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
+    }
+    logger.info("admin svc host = {0}", adminSvcExtHost);
+    String hostAndPort = getHostAndPort(adminSvcExtHost, serviceNodePort);
+    String url = "http://" + hostAndPort + appURI;
 
     return (()
         -> {
@@ -223,8 +232,15 @@ class ItSystemResOverrides {
   }
 
   private void verifyJMSResourceOverride() {
-    int port = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    String uri = "http://" + K8S_NODEPORT_HOST + ":" + port + "/sitconfig/SitconfigServlet";
+    int port = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName),
+        "default");
+    if (adminSvcExtHost == null) {
+      adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
+    }
+    logger.info("admin svc host = {0}", adminSvcExtHost);
+    String hostAndPort = getHostAndPort(adminSvcExtHost, port);
+
+    String uri = "http://" + hostAndPort + "/sitconfig/SitconfigServlet";
 
     HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(uri, true));
     assertEquals(200, response.statusCode(), "Status code not equals to 200");
@@ -234,9 +250,15 @@ class ItSystemResOverrides {
   }
 
   private void verifyWLDFResourceOverride() {
-    int port = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    String uri = "http://" + K8S_NODEPORT_HOST + ":" + port + "/sitconfig/SitconfigServlet";
-
+    int port = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName),
+        "default");
+    if (adminSvcExtHost == null) {
+      adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
+    }
+    logger.info("admin svc host = {0}", adminSvcExtHost);
+    String hostAndPort = getHostAndPort(adminSvcExtHost, port);
+    String uri = "http://" + hostAndPort + "/sitconfig/SitconfigServlet";
+    
     HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(uri, true));
     assertEquals(200, response.statusCode(), "Status code not equals to 200");
     assertTrue(response.body().contains("MONITORS:PASSED"), "Didn't get MONITORS:PASSED");
@@ -409,6 +431,12 @@ class ItSystemResOverrides {
           managedServerPodNamePrefix + i, domainNamespace);
       checkPodReady(managedServerPodNamePrefix + i, domainUid, domainNamespace);
     }
+
+    //create router for admin service on OKD
+    if (adminSvcExtHost == null) {
+      adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
+    }
+    logger.info("admin svc host = {0}", adminSvcExtHost);
   }
 
   //deploy application sitconfig.war to domain

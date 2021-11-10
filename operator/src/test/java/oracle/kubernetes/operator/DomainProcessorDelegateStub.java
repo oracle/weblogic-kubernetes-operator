@@ -17,6 +17,8 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
+import static oracle.kubernetes.operator.JobWatcher.getFailedReason;
+import static oracle.kubernetes.operator.JobWatcher.isFailed;
 
 /** A test stub for processing domains in unit tests. */
 public abstract class DomainProcessorDelegateStub implements DomainProcessorDelegate {
@@ -50,7 +52,7 @@ public abstract class DomainProcessorDelegateStub implements DomainProcessorDele
 
   @Override
   public JobAwaiterStepFactory getJobAwaiterStepFactory(String namespace) {
-    return new PassthroughJobAwaiterStepFactory();
+    return new TestJobAwaiterStepFactory();
   }
 
   @Override
@@ -96,9 +98,12 @@ public abstract class DomainProcessorDelegateStub implements DomainProcessorDele
     }
   }
 
-  private class PassthroughJobAwaiterStepFactory implements JobAwaiterStepFactory {
+  private class TestJobAwaiterStepFactory implements JobAwaiterStepFactory {
     @Override
     public Step waitForReady(V1Job job, Step next) {
+      if (isFailed(job) && "DeadlineExceeded".equals(getFailedReason(job))) {
+        throw new RuntimeException("DeadlineExceeded");
+      }
       waitedForIntrospection = true;
       return next;
     }

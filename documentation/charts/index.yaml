@@ -2,8 +2,18 @@ apiVersion: v1
 entries:
   weblogic-operator:
   - apiVersion: v1
+    appVersion: 3.3.4
+    created: "2021-11-09T11:48:26.063673-05:00"
+    description: Helm chart for configuring the WebLogic operator.
+    digest: 1875193bb4c227baa127517b9686e939bcf0c1104470cb1f2486491ce377fb20
+    name: weblogic-operator
+    type: application
+    urls:
+    - https://oracle.github.io/weblogic-kubernetes-operator/charts/weblogic-operator-3.3.4.tgz
+    version: 3.3.4
+  - apiVersion: v1
     appVersion: 3.3.3
-    created: "2021-11-01T13:34:25.142943-04:00"
+    created: "2021-11-09T11:48:26.06108-05:00"
     description: Helm chart for configuring the WebLogic operator.
     digest: dae92f7a773c50cb28170bf166677fe717c599fca9385d67d3a9d62080604d10
     name: weblogic-operator
@@ -13,7 +23,7 @@ entries:
     version: 3.3.3
   - apiVersion: v1
     appVersion: 3.3.2
-    created: "2021-11-01T13:34:25.141347-04:00"
+    created: "2021-11-09T11:48:26.057956-05:00"
     description: Helm chart for configuring the WebLogic operator.
     digest: d2a865573129cb14122956a1a787c058859947e5687f651ea3f2eeff2ac7329e
     name: weblogic-operator
@@ -23,7 +33,7 @@ entries:
     version: 3.3.2
   - apiVersion: v1
     appVersion: 3.3.1
-    created: "2021-11-01T13:34:25.139529-04:00"
+    created: "2021-11-09T11:48:26.054843-05:00"
     description: Helm chart for configuring the WebLogic operator.
     digest: 39c84df7ee4ff70bea1752fe0ddfc98da14d9cbd3521b701310f0fbb15aaf938
     name: weblogic-operator
@@ -33,7 +43,7 @@ entries:
     version: 3.3.1
   - apiVersion: v1
     appVersion: 3.3.0
-    created: "2021-11-01T13:34:25.137601-04:00"
+    created: "2021-11-09T11:48:26.015781-05:00"
     description: Helm chart for configuring the WebLogic operator.
     digest: efd0ece5ebe1a7b4d826b44af71bbdf08f2c1b3573072a9d5725ca1b3ee18841
     name: weblogic-operator
@@ -43,7 +53,7 @@ entries:
     version: 3.3.0
   - apiVersion: v1
     appVersion: 3.2.5
-    created: "2021-11-01T13:34:25.135052-04:00"
+    created: "2021-11-09T11:48:26.013409-05:00"
     description: Helm chart for configuring the WebLogic operator.
     digest: fc90fc05e628fd7f019e4d4a7cfa5bcc3d728979d4baa729e667a95c9767aeaa
     name: weblogic-operator
@@ -53,7 +63,7 @@ entries:
     version: 3.2.5
   - apiVersion: v1
     appVersion: 3.2.4
-    created: "2021-11-01T13:34:25.133879-04:00"
+    created: "2021-11-09T11:48:26.011422-05:00"
     description: Helm chart for configuring the WebLogic operator.
     digest: b6fe80badb65a88c59d0f6f069e7838906451d19baa24ad6744b8a4ce3d51614
     name: weblogic-operator
@@ -63,7 +73,7 @@ entries:
     version: 3.2.4
   - apiVersion: v1
     appVersion: 3.2.3
-    created: "2021-11-01T13:34:25.132441-04:00"
+    created: "2021-11-09T11:48:26.008674-05:00"
     description: Helm chart for configuring the WebLogic operator.
     digest: 7a51397c11fdca27a23150abd7816c330009aca791e6013f959c69226b7bd89b
     name: weblogic-operator
@@ -73,7 +83,7 @@ entries:
     version: 3.2.3
   - apiVersion: v1
     appVersion: 3.2.2
-    created: "2021-11-01T13:34:25.09321-04:00"
+    created: "2021-11-09T11:48:26.005225-05:00"
     description: Helm chart for configuring the WebLogic operator.
     digest: a4101539f527fd8ac80cfaa5314e8ba10a28f5bba462b75932a9bed1b83874bf
     name: weblogic-operator
@@ -83,7 +93,7 @@ entries:
     version: 3.2.2
   - apiVersion: v1
     appVersion: 3.2.1
-    created: "2021-11-01T13:34:25.091827-04:00"
+    created: "2021-11-09T11:48:25.964636-05:00"
     description: Helm chart for configuring the WebLogic operator.
     digest: 002da958caed9fe625e11b075a5c6df28be956854a0b41dae46f0108a70f9321
     name: weblogic-operator
@@ -93,7 +103,7 @@ entries:
     version: 3.2.1
   - apiVersion: v1
     appVersion: 3.2.0
-    created: "2021-11-01T13:34:25.089326-04:00"
+    created: "2021-11-09T11:48:25.962032-05:00"
     description: Helm chart for configuring the WebLogic operator.
     digest: e1c9192b3590d10b8426b7e7bcae27213d9f2296ef4f2cf547e198fd2d89ab1b
     name: weblogic-operator
@@ -103,7 +113,7 @@ entries:
     version: 3.2.0
   - apiVersion: v1
     appVersion: 3.1.4
-    created: "2021-11-01T13:34:25.088088-04:00"
+    created: "2021-11-09T11:48:25.959759-05:00"
     description: Helm chart for configuring the WebLogic operator.
     digest: 9695fd3c29cd4f006f8e75ae0053683c9aa7213440525002f4f3d36eb8d86633
     name: weblogic-operator
@@ -113,7 +123,7 @@ entries:
     version: 3.1.4
   - apiVersion: v1
     appVersion: 3.1.3
-    created: "2021-11-01T13:34:25.086783-04:00"
+    created: "2021-11-09T11:48:25.957543-05:00"
     description: Helm chart for configuring the WebLogic operator.
     digest: e306bd590dbe84400c6b5bb7a64325330e597223dff63792bb5811c9cfae10ac
     name: weblogic-operator
@@ -123,7 +133,7 @@ entries:
     version: 3.1.3
   - apiVersion: v1
     appVersion: 3.1.2
-    created: "2021-11-01T13:34:25.085219-04:00"
+    created: "2021-11-09T11:48:25.954892-05:00"
     description: Helm chart for configuring the WebLogic operator.
     digest: 2d8b77038ba870cc66ddd45e07a593a5ac3159c8b9531b5309688028b5268a5f
     name: weblogic-operator
@@ -133,7 +143,7 @@ entries:
     version: 3.1.2
   - apiVersion: v1
     appVersion: 3.1.1
-    created: "2021-11-01T13:34:25.083837-04:00"
+    created: "2021-11-09T11:48:25.915289-05:00"
     description: Helm chart for configuring the WebLogic operator.
     digest: d839cb7bbce4421a59cd9c3df64b1df8649eeebcb6c6b7be34fec25ad00aa141
     name: weblogic-operator
@@ -143,7 +153,7 @@ entries:
     version: 3.1.1
   - apiVersion: v1
     appVersion: 3.1.0
-    created: "2021-11-01T13:34:25.082305-04:00"
+    created: "2021-11-09T11:48:25.913387-05:00"
     description: Helm chart for configuring the WebLogic operator.
     digest: 9e105bec11bab249973370a4d5e653f9104cd9fbaaa0c2090fb173805fb3a692
     name: weblogic-operator
@@ -152,7 +162,7 @@ entries:
     - https://oracle.github.io/weblogic-kubernetes-operator/charts/weblogic-operator-3.1.0.tgz
     version: 3.1.0
   - apiVersion: v1
-    created: "2021-11-01T13:34:25.04348-04:00"
+    created: "2021-11-09T11:48:25.911336-05:00"
     description: Helm chart for configuring the WebLogic operator.
     digest: 9dad4d85a6165dbfc57d0baadb5186a5c43c718a1a3ee2dbd6e886fe660cd65a
     name: weblogic-operator
@@ -160,7 +170,7 @@ entries:
     - https://oracle.github.io/weblogic-kubernetes-operator/charts/weblogic-operator-3.0.4.tgz
     version: 3.0.4
   - apiVersion: v1
-    created: "2021-11-01T13:34:25.042317-04:00"
+    created: "2021-11-09T11:48:25.909577-05:00"
     description: Helm chart for configuring the WebLogic operator.
     digest: 83a0ac84a033ddd9939d4bc5884cc60b22225d7326c43ce8e54a6f403b453814
     name: weblogic-operator
@@ -168,7 +178,7 @@ entries:
     - https://oracle.github.io/weblogic-kubernetes-operator/charts/weblogic-operator-3.0.3.tgz
     version: 3.0.3
   - apiVersion: v1
-    created: "2021-11-01T13:34:25.041083-04:00"
+    created: "2021-11-09T11:48:25.907814-05:00"
     description: Helm chart for configuring the WebLogic operator.
     digest: fa3af5d21f858ff93cc7d58664a6eb0a920207af09e4c669a7ffb12e9e15b88d
     name: weblogic-operator
@@ -176,7 +186,7 @@ entries:
     - https://oracle.github.io/weblogic-kubernetes-operator/charts/weblogic-operator-3.0.2.tgz
     version: 3.0.2
   - apiVersion: v1
-    created: "2021-11-01T13:34:25.039594-04:00"
+    created: "2021-11-09T11:48:25.905646-05:00"
     description: Helm chart for configuring the WebLogic operator.
     digest: aa2b2afe75305bd69f6b07d61e64a37d3bfd249074c81f6a999cef6b4a217fd0
     name: weblogic-operator
@@ -184,7 +194,7 @@ entries:
     - https://oracle.github.io/weblogic-kubernetes-operator/charts/weblogic-operator-3.0.1.tgz
     version: 3.0.1
   - apiVersion: v1
-    created: "2021-11-01T13:34:25.037157-04:00"
+    created: "2021-11-09T11:48:25.864686-05:00"
     description: Helm chart for configuring the WebLogic operator.
     digest: 6540a3a7c6a1c34fcf2ff66679947a1964a35e61232b2a8dea3da087a2d5411d
     name: weblogic-operator
@@ -192,7 +202,7 @@ entries:
     - https://oracle.github.io/weblogic-kubernetes-operator/charts/weblogic-operator-3.0.0.tgz
     version: 3.0.0
   - apiVersion: v1
-    created: "2021-11-01T13:34:25.035802-04:00"
+    created: "2021-11-09T11:48:25.862766-05:00"
     description: Helm chart for configuring the WebLogic operator.
     digest: 5f4cd8f4f3282b52b5e90a1169f26986e8272671845053606ade9c855fb04151
     name: weblogic-operator
@@ -200,7 +210,7 @@ entries:
     - https://oracle.github.io/weblogic-kubernetes-operator/charts/weblogic-operator-3.0.0-rc1.tgz
     version: 3.0.0-rc1
   - apiVersion: v1
-    created: "2021-11-01T13:34:25.034504-04:00"
+    created: "2021-11-09T11:48:25.861141-05:00"
     description: Helm chart for configuring the WebLogic operator.
     digest: e3596b2380b264a0a70ba438858ca9af102a79689bf2e21e237eb63ea2997d66
     name: weblogic-operator
@@ -208,7 +218,7 @@ entries:
     - https://oracle.github.io/weblogic-kubernetes-operator/charts/weblogic-operator-2.6.0.tgz
     version: 2.6.0
   - apiVersion: v1
-    created: "2021-11-01T13:34:25.03321-04:00"
+    created: "2021-11-09T11:48:25.859709-05:00"
     description: Helm chart for configuring the WebLogic operator.
     digest: fe41421b7dc45dc8a3b2888d3a626a37f5d3c8e1fa292fb6699deedc5e1db33d
     name: weblogic-operator
@@ -216,7 +226,7 @@ entries:
     - https://oracle.github.io/weblogic-kubernetes-operator/charts/weblogic-operator-2.5.0.tgz
     version: 2.5.0
   - apiVersion: v1
-    created: "2021-11-01T13:34:25.032049-04:00"
+    created: "2021-11-09T11:48:25.857868-05:00"
     description: Helm chart for configuring the WebLogic operator.
     digest: b36bd32083f67453a62d089a2c09ce38e6655d88ac8a7b38691230c55c40e672
     name: weblogic-operator
@@ -224,7 +234,7 @@ entries:
     - https://oracle.github.io/weblogic-kubernetes-operator/charts/weblogic-operator-2.4.0.tgz
     version: 2.4.0
   - apiVersion: v1
-    created: "2021-11-01T13:34:24.993408-04:00"
+    created: "2021-11-09T11:48:25.855955-05:00"
     description: Helm chart for configuring the WebLogic operator.
     digest: a3eafe4c2c6ff49384e56421201e59a3737d651af8d5b605b87a19eb1f6f1dc3
     name: weblogic-operator
@@ -232,7 +242,7 @@ entries:
     - https://oracle.github.io/weblogic-kubernetes-operator/charts/weblogic-operator-2.3.1.tgz
     version: 2.3.1
   - apiVersion: v1
-    created: "2021-11-01T13:34:24.990265-04:00"
+    created: "2021-11-09T11:48:25.815026-05:00"
     description: Helm chart for configuring the WebLogic operator.
     digest: cbc6caaa6eb28e3c7e906ede14b2ae511a0b35fc12a8e3ab629155b09993e8b2
     name: weblogic-operator
@@ -240,7 +250,7 @@ entries:
     - https://oracle.github.io/weblogic-kubernetes-operator/charts/weblogic-operator-2.3.0.tgz
     version: 2.3.0
   - apiVersion: v1
-    created: "2021-11-01T13:34:24.989132-04:00"
+    created: "2021-11-09T11:48:25.812571-05:00"
     description: Helm chart for configuring the WebLogic operator.
     digest: 23d5a1c554fa8211cc1e86b7ade09460917cb2069e68fb4bfdddafc8db44fdcd
     name: weblogic-operator
@@ -248,7 +258,7 @@ entries:
     - https://oracle.github.io/weblogic-kubernetes-operator/charts/weblogic-operator-2.2.1.tgz
     version: 2.2.1
   - apiVersion: v1
-    created: "2021-11-01T13:34:24.987567-04:00"
+    created: "2021-11-09T11:48:25.810215-05:00"
     description: Helm chart for configuring the WebLogic operator.
     digest: bba303686cb55d84fe8c0d693a2436e7e686b028085b56e012f6381699a3911f
     name: weblogic-operator
@@ -256,7 +266,7 @@ entries:
     - https://oracle.github.io/weblogic-kubernetes-operator/charts/weblogic-operator-2.2.0.tgz
     version: 2.2.0
   - apiVersion: v1
-    created: "2021-11-01T13:34:24.986447-04:00"
+    created: "2021-11-09T11:48:25.808634-05:00"
     description: Helm chart for configuring the WebLogic operator.
     digest: 391e23c0969ada5f0cd2a088ddc6f11f237f57521801ed3925db2149a8437a0d
     name: weblogic-operator
@@ -264,11 +274,11 @@ entries:
     - https://oracle.github.io/weblogic-kubernetes-operator/charts/weblogic-operator-2.1.tgz
     version: "2.1"
   - apiVersion: v1
-    created: "2021-11-01T13:34:24.983536-04:00"
+    created: "2021-11-09T11:48:25.806536-05:00"
     description: Helm chart for configuring the WebLogic operator.
     digest: 298acda78ab73db6b7ba6f2752311bfa40c65874e03fb196b70976192211c1a5
     name: weblogic-operator
     urls:
     - https://oracle.github.io/weblogic-kubernetes-operator/charts/weblogic-operator-2.0.1.tgz
     version: 2.0.1
-generated: "2021-11-01T13:34:24.981694-04:00"
+generated: "2021-11-09T11:48:25.803445-05:00"

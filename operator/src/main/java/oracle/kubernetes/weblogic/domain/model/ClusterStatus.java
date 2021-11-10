@@ -104,7 +104,7 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
     return this;
   }
 
-  Integer getReadyReplicas() {
+  public Integer getReadyReplicas() {
     return readyReplicas;
   }
 
