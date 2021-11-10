@@ -56,6 +56,7 @@ import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.helpers.UnitTestHash;
 import oracle.kubernetes.operator.http.HttpAsyncTestSupport;
 import oracle.kubernetes.operator.http.HttpResponseStub;
+import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.rest.ScanCacheStub;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
@@ -73,6 +74,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainConditionType;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Disabled;
@@ -96,10 +98,12 @@ import static oracle.kubernetes.operator.LabelConstants.DOMAINNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.DOMAINUID_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CONFIG_MAP;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.JOB;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SERVICE;
 import static oracle.kubernetes.operator.helpers.SecretHelper.PASSWORD_KEY;
@@ -838,6 +842,113 @@ class DomainProcessorTest {
     assertThat(processorDelegate.waitedForIntrospection(), is(true));
   }
 
+
+  @Test
+  void whenIntrospectionJobTimedOut_failureCountIncremented() throws Exception {
+    consoleHandlerMemento.ignoringLoggedExceptions(RuntimeException.class);
+    consoleHandlerMemento.ignoreMessage(MessageKeys.NOT_STARTING_DOMAINUID_THREAD);
+    establishPreviousIntrospection(null);
+    jobStatus = createTimedOutStatus();
+    domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).interrupt().execute();
+
+    assertThat(newDomain.getStatus().getIntrospectJobFailureCount(), is(1));
+  }
+
+  @Test
+  void whenIntrospectionJobTimedOut_activeDeadlineIncremented() throws Exception {
+    consoleHandlerMemento.ignoringLoggedExceptions(RuntimeException.class);
+    consoleHandlerMemento.ignoreMessage(MessageKeys.NOT_STARTING_DOMAINUID_THREAD);
+    establishPreviousIntrospection(null);
+    jobStatus = createTimedOutStatus();
+    domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).interrupt().execute();
+
+    executeScheduledRetry();
+
+    assertThat(getJob().getSpec().getActiveDeadlineSeconds(), is(240L));
+  }
+
+  private void executeScheduledRetry() {
+    testSupport.setTime(10, TimeUnit.SECONDS);
+  }
+
+
+  @NotNull
+  private V1Job getJob() {
+    return (V1Job) testSupport.getResources(JOB).stream().findFirst().get();
+  }
+
+  V1JobStatus createTimedOutStatus() {
+    return new V1JobStatus().addConditionsItem(new V1JobCondition().status("True").type("Failed")
+            .reason("DeadlineExceeded"));
+  }
+
+  @Test
+  void whenIntrospectionJobPodTimedOut_jobRecreatedAndFailedConditionCleared() throws Exception {
+    consoleHandlerMemento.ignoringLoggedExceptions(RuntimeException.class);
+    consoleHandlerMemento.ignoreMessage(MessageKeys.NOT_STARTING_DOMAINUID_THREAD);
+    jobStatus = createBackoffStatus();
+    establishPreviousIntrospection(null);
+    defineTimedoutIntrospection();
+    testSupport.doOnDelete(JOB, j -> deletePod());
+    testSupport.doOnCreate(JOB, j -> createJobPodAndSetCompletedStatus(job));
+    domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).interrupt().execute();
+
+    assertThat(isDomainConditionFailed(), is(false));
+  }
+
+  private boolean isDomainConditionFailed() {
+    return newDomain.getStatus().getConditions().stream().anyMatch(c -> c.getType() == Failed);
+  }
+
+  V1JobStatus createBackoffStatus() {
+    return new V1JobStatus().addConditionsItem(new V1JobCondition().status("True").type("Failed")
+            .reason("BackoffLimitExceeded"));
+  }
+
+  private void deletePod() {
+    testSupport.deleteResources(new V1Pod().metadata(new V1ObjectMeta().name(getJobName()).namespace(NS)));
+  }
+
+  private static String getJobName() {
+    return LegalNames.toJobIntrospectorName(UID);
+  }
+
+  private void createJobPodAndSetCompletedStatus(V1Job job) {
+    Map<String, String> labels = new HashMap<>();
+    labels.put(LabelConstants.JOBNAME_LABEL, getJobName());
+    testSupport.defineResources(POD,
+            new V1Pod().metadata(new V1ObjectMeta().name(getJobName()).labels(labels).namespace(NS)));
+    job.setStatus(createCompletedStatus());
+  }
+
+  private void defineTimedoutIntrospection() {
+    V1Job job = asTimedoutJob(createIntrospectorJob("TIMEDOUT_JOB"));
+    testSupport.defineResources(job);
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, job);
+    setJobPodStatusReasonDeadlineExceeded();
+  }
+
+  private void setJobPodStatusReasonDeadlineExceeded() {
+    testSupport.<V1Pod>getResourceWithName(POD, getJobName()).status(new V1PodStatus().reason("DeadlineExceeded"));
+  }
+
+  private V1Job asTimedoutJob(V1Job job) {
+    job.setStatus(new V1JobStatus().addConditionsItem(new V1JobCondition().status("True").type("Failed")
+            .reason("BackoffLimitExceeded")));
+    return job;
+  }
+
+  private V1Job createIntrospectorJob(String uid) {
+    return new V1Job().metadata(createJobMetadata(uid)).status(new V1JobStatus());
+  }
+
+  private V1ObjectMeta createJobMetadata(String uid) {
+    return new V1ObjectMeta().name(getJobName()).namespace(NS).creationTimestamp(SystemClock.now()).uid(uid);
+  }
+
   private void establishPreviousIntrospection(Consumer<Domain> domainSetup) throws JsonProcessingException {
     establishPreviousIntrospection(domainSetup, Arrays.asList(1,2));
   }
@@ -883,6 +994,8 @@ class DomainProcessorTest {
   private String defineTopology() throws JsonProcessingException {
     return IntrospectionTestUtils.createTopologyYaml(createDomainConfig());
   }
+
+  // case 1: job was able to pull, time out during introspection: pod will have DEADLINE_EXCEEDED
 
   @Test
   void afterIntrospection_introspectorConfigMapHasUpToDateLabel() throws Exception {
@@ -1367,10 +1480,6 @@ class DomainProcessorTest {
     return Optional.ofNullable(getServerStatus(domain, serverName)).map(ServerStatus::getDesiredState).orElse("");
   }
 
-  private String getActualState(Domain domain, String serverName) {
-    return Optional.ofNullable(getServerStatus(domain, serverName)).map(ServerStatus::getState).orElse("");
-  }
-
   private ServerStatus getServerStatus(Domain domain, String serverName) {
     for (ServerStatus status : domain.getStatus().getServers()) {
       if (status.getServerName().equals(serverName)) {
@@ -1404,9 +1513,10 @@ class DomainProcessorTest {
   }
 
   @Test
-  void whenExceptionDuringProcessing_sendAbortedEvent() {
+  void whenWebLogicCredentialsSecretRemoved_NullPointerExceptionAndAbortedEventNotGenerated() {
+    consoleHandlerMemento.ignoreMessage(NOT_STARTING_DOMAINUID_THREAD);
     DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
-    forceExceptionDuringProcessing();
+    domain.getSpec().withWebLogicCredentialsSecret(null);
     int time = 0;
 
     for (int numRetries = 0; numRetries < DomainPresence.getDomainPresenceFailureRetryMaxCount(); numRetries++) {
@@ -1415,7 +1525,7 @@ class DomainProcessorTest {
       testSupport.setTime(time, TimeUnit.SECONDS);
     }
 
-    assertThat(getEvents().stream().anyMatch(this::isDomainProcessingAbortedEvent), is(true));
+    assertThat(getEvents().stream().anyMatch(this::isDomainProcessingAbortedEvent), is(false));
   }
 
   private List<CoreV1Event> getEvents() {
