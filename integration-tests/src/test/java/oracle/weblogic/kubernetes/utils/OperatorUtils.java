@@ -22,7 +22,6 @@ import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
-import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
@@ -255,11 +254,6 @@ public class OperatorUtils {
 
     // Create a service account for the unique opNamespace
     logger.info("Creating service account");
-    assertDoesNotThrow(() -> createServiceAccount(new V1ServiceAccount()
-            .metadata(new V1ObjectMeta()
-                .namespace(opNamespace)
-                .name(opServiceAccount))), "failed to create ServiceAccount");
-
     testUntil(
         assertDoesNotThrow(() -> serviceAccountIsCreated(new V1ServiceAccount()
             .metadata(new V1ObjectMeta()
