@@ -12,8 +12,10 @@ import java.util.concurrent.Callable;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import oracle.weblogic.domain.DomainCondition;
 import oracle.weblogic.kubernetes.actions.impl.LoggingExporter;
+import oracle.weblogic.kubernetes.actions.impl.ServiceAccount;
 import oracle.weblogic.kubernetes.assertions.impl.Apache;
 import oracle.weblogic.kubernetes.assertions.impl.Application;
 import oracle.weblogic.kubernetes.assertions.impl.ClusterRole;
@@ -54,6 +56,18 @@ public class TestAssertions {
    */
   public static Callable<Boolean> operatorIsReady(String namespace) {
     return Operator.isReady(namespace);
+  }
+
+  /**
+   * Check if ServiceAccount is created.
+   *
+   * @param serviceAccount object
+   * @return true if created false otherwise
+   */
+  public static Callable<Boolean> serviceAccountIsCreated(V1ServiceAccount serviceAccount) {
+    return () -> {
+      return ServiceAccount.create(serviceAccount);
+    };
   }
 
   /**

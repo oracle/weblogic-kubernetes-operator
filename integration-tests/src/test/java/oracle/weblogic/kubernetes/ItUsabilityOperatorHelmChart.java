@@ -49,7 +49,6 @@ import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_SERVICE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
-import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteSecret;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteServiceAccount;
@@ -65,6 +64,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmRelease
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorRestServiceRunning;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceAccountIsCreated;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
@@ -713,10 +713,14 @@ class ItUsabilityOperatorHelmChart {
       }
       // Create a service account for the unique op2Namespace
       logger.info("Creating service account");
-      assertDoesNotThrow(() -> createServiceAccount(new V1ServiceAccount()
-          .metadata(new V1ObjectMeta()
-              .namespace(op2Namespace)
-              .name(opServiceAccount))));
+      testUntil(
+          assertDoesNotThrow(() -> serviceAccountIsCreated(new V1ServiceAccount()
+              .metadata(new V1ObjectMeta()
+                  .namespace(op2Namespace)
+                  .name(opServiceAccount))), "failed to create ServiceAccount"),
+          logger,
+          "creating operator service account");
+
       logger.info("Created service account: {0}", opServiceAccount);
 
       logger.info("Installing operator %s in namespace %s again", opReleaseName, op2Namespace);
@@ -993,10 +997,13 @@ class ItUsabilityOperatorHelmChart {
     if (createOpSA) {
       // Create a service account for the unique operNamespace
       logger.info("Creating service account");
-      assertDoesNotThrow(() -> createServiceAccount(new V1ServiceAccount()
-          .metadata(new V1ObjectMeta()
-              .namespace(operNamespace)
-              .name(opServiceAccount))));
+      testUntil(
+          assertDoesNotThrow(() -> serviceAccountIsCreated(new V1ServiceAccount()
+              .metadata(new V1ObjectMeta()
+                  .namespace(operNamespace)
+                  .name(opServiceAccount))), "failed to create ServiceAccount"),
+          logger,
+          "creating operator service account");
       logger.info("Created service account: {0}", opServiceAccount);
     }
 

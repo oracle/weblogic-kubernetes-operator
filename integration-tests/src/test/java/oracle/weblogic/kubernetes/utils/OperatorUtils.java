@@ -32,6 +32,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorRestServiceRunning;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceAccountIsCreated;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
@@ -255,9 +256,18 @@ public class OperatorUtils {
     // Create a service account for the unique opNamespace
     logger.info("Creating service account");
     assertDoesNotThrow(() -> createServiceAccount(new V1ServiceAccount()
-        .metadata(new V1ObjectMeta()
-            .namespace(opNamespace)
-            .name(opServiceAccount))));
+            .metadata(new V1ObjectMeta()
+                .namespace(opNamespace)
+                .name(opServiceAccount))), "failed to create ServiceAccount");
+
+    testUntil(
+        assertDoesNotThrow(() -> serviceAccountIsCreated(new V1ServiceAccount()
+            .metadata(new V1ObjectMeta()
+                .namespace(opNamespace)
+                .name(opServiceAccount))), "failed to create ServiceAccount"),
+        logger,
+        "creating operator service account");
+
     logger.info("Created service account: {0}", opServiceAccount);
 
 
