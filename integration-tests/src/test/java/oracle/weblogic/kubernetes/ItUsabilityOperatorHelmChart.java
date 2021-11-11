@@ -714,10 +714,10 @@ class ItUsabilityOperatorHelmChart {
       // Create a service account for the unique op2Namespace
       logger.info("Creating service account");
       testUntil(
-          assertDoesNotThrow(() -> serviceAccountIsCreated(new V1ServiceAccount()
+          serviceAccountIsCreated(new V1ServiceAccount()
               .metadata(new V1ObjectMeta()
                   .namespace(op2Namespace)
-                  .name(opServiceAccount))), "failed to create ServiceAccount"),
+                  .name(opServiceAccount))),
           logger,
           "creating operator service account");
 
@@ -998,10 +998,10 @@ class ItUsabilityOperatorHelmChart {
       // Create a service account for the unique operNamespace
       logger.info("Creating service account");
       testUntil(
-          assertDoesNotThrow(() -> serviceAccountIsCreated(new V1ServiceAccount()
+          serviceAccountIsCreated(new V1ServiceAccount()
               .metadata(new V1ObjectMeta()
                   .namespace(operNamespace)
-                  .name(opServiceAccount))), "failed to create ServiceAccount"),
+                  .name(opServiceAccount))),
           logger,
           "creating operator service account");
       logger.info("Created service account: {0}", opServiceAccount);
