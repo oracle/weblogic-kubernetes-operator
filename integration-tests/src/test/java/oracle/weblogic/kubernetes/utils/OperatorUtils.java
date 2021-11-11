@@ -255,10 +255,10 @@ public class OperatorUtils {
     // Create a service account for the unique opNamespace
     logger.info("Creating service account");
     testUntil(
-        assertDoesNotThrow(() -> serviceAccountIsCreated(new V1ServiceAccount()
+        serviceAccountIsCreated(new V1ServiceAccount()
             .metadata(new V1ObjectMeta()
                 .namespace(opNamespace)
-                .name(opServiceAccount))), "failed to create ServiceAccount"),
+                .name(opServiceAccount))),
         logger,
         "creating operator service account");
 
