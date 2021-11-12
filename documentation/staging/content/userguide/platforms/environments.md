@@ -10,6 +10,10 @@ weight: 4
 - [Supported environments](#supported-environments)
 - [Kubernetes, WebLogic, and operating system prerequisites](#kubernetes-weblogic-and-operating-system-prerequisites)
 - [Pricing and licensing](#pricing-and-licensing)
+  - [WebLogic Kubernetes Operator](#weblogic-kubernetes-operator)
+  - [WebLogic Server](#weblogic-server)
+  - [Oracle Linux and WebLogic Container Images](#oracle-linux-and-weblogic-container-images)
+  - [Reference](#reference)
 - [Important notes about specific environments](#important-notes-about-specific-environments)
   - [Oracle Cloud Infrastructure (OCI)](#oracle-cloud-infrastructure-oci)
   - [Oracle Linux Cloud Native Environment (OLCNE)](#oracle-linux-cloud-native-environment-olcne)
@@ -46,13 +50,33 @@ see [Operator prerequisites]({{< relref "/userguide/prerequisites/introduction.m
 
 ### Pricing and licensing
 
+The WebLogic Kubernetes Operator and Oracle Linux are open source and free;
+WebLogic Server requires licenses unless used in a single developer desktop development environment.
+In detail:
+
+#### WebLogic Kubernetes Operator
+
 The WebLogic Kubernetes Operator (the "operator") is open source and free,
 licensed under the Universal Permissive license (UPL), Version 1.0.
+
+#### WebLogic Server
 
 WebLogic Server is not open source.
 Licensing is required for each running WebLogic Server instance in Kubernetes,
 just as with any deployment of WebLogic Server.
 Licensing is free for a single developer desktop development environment.
+
+#### Oracle Linux and WebLogic Container Images
+
+Oracle Linux is under open source license and is completely free to download and use.
+- In addition, with Weblogic license and support,
+  customers have access to the latest Weblogic container images which bundle the latest slim Oracle Linux images.
+- Customer support for Weblogic container images is handled by the Weblogic support team.
+- Oracle Linux patches are only delivered with the newer Weblogic container images,
+  which can be automated.  Weblogic license and support do not give customers entitlements
+  to have direct access to Oracle Linux support or Unbreakable Linux Network (to access the standalone Oracle Linux patches).
+
+#### Reference
 
 The Oracle [Global Pricing and Licensing site](https://www.oracle.com/corporate/pricing/specialty-topics.html)
 provides details about licensing practices and policies.
