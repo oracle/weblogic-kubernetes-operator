@@ -86,8 +86,8 @@ import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.JOB;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CUSTOM_COMMAND_SCRIPT;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CUSTOM_MOUNT_PATH;
-import static oracle.kubernetes.operator.logging.MessageKeys.EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG;
-import static oracle.kubernetes.operator.logging.MessageKeys.FATAL_ERROR_DOMAIN_STATUS_MESSAGE;
+import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_MAX_ERRORS_EXCEEDED;
+import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_FATAL_ERROR;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED_DETAIL;
 import static oracle.kubernetes.operator.logging.MessageKeys.JOB_CREATED;
@@ -891,7 +891,7 @@ class DomainIntrospectorJobTest {
     final Domain updatedDomain = testSupport.<Domain>getResources(DOMAIN).get(0);
 
     assertThat(updatedDomain.getStatus().getMessage(),
-            equalTo(createRetryStatusMessage(LOGGER.formatMessage(FATAL_ERROR_DOMAIN_STATUS_MESSAGE), FATAL_PROBLEM)));
+            equalTo(createRetryStatusMessage(LOGGER.formatMessage(DOMAIN_FATAL_ERROR), FATAL_PROBLEM)));
   }
 
   @Test
@@ -903,7 +903,7 @@ class DomainIntrospectorJobTest {
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
 
     assertThat(getUpdatedDomain().getStatus().getMessage(),
-            equalTo(createRetryStatusMessage(LOGGER.formatMessage(EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG, 2),
+            equalTo(createRetryStatusMessage(LOGGER.formatMessage(INTROSPECTOR_MAX_ERRORS_EXCEEDED, 2),
                     SEVERE_PROBLEM)));
   }
 

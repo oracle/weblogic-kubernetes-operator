@@ -80,7 +80,8 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CO
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
-import static oracle.kubernetes.operator.logging.MessageKeys.EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG;
+import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_FATAL_ERROR;
+import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_MAX_ERRORS_EXCEEDED;
 import static oracle.kubernetes.operator.logging.MessageKeys.TOO_MANY_REPLICAS_FAILURE;
 import static oracle.kubernetes.utils.OperatorUtils.onSeparateLines;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
@@ -188,8 +189,7 @@ public class DomainStatusUpdater {
       if (hasExceededMaxRetryCount(domainStatus)) {
         domainStatus.setMessage(createStatusMessage(domainStatus, exceededMaxRetryCountErrorMessage()));
       } else if (isFatalError(domainStatus)) {
-        domainStatus.setMessage(
-                createStatusMessage(domainStatus, LOGGER.formatMessage(MessageKeys.FATAL_ERROR_DOMAIN_STATUS_MESSAGE)));
+        domainStatus.setMessage(createStatusMessage(domainStatus, LOGGER.formatMessage(DOMAIN_FATAL_ERROR)));
       } else {
         domainStatus.setMessage(createStatusMessage(domainStatus, getNonFatalRetryStatusMessage(domainStatus)));
       }
@@ -214,7 +214,7 @@ public class DomainStatusUpdater {
     }
 
     private String exceededMaxRetryCountErrorMessage() {
-      return LOGGER.formatMessage(EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG, getFailureRetryMaxCount());
+      return LOGGER.formatMessage(INTROSPECTOR_MAX_ERRORS_EXCEEDED, getFailureRetryMaxCount());
     }
   }
 
@@ -419,8 +419,7 @@ public class DomainStatusUpdater {
     List<EventData> createDomainEvents() {
       List<EventData> list = new ArrayList<>();
       if (hasJustExceededMaxRetryCount()) {
-        list.add(
-            new EventData(DOMAIN_PROCESSING_ABORTED).message(EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG));
+        list.add(new EventData(DOMAIN_PROCESSING_ABORTED).message(INTROSPECTOR_MAX_ERRORS_EXCEEDED));
       } else if (hasJustGotFatalIntrospectorError()) {
         list.add(new EventData(DOMAIN_PROCESSING_ABORTED)
               .message(FATAL_INTROSPECTOR_ERROR_MSG + getNewStatus().getMessage()));

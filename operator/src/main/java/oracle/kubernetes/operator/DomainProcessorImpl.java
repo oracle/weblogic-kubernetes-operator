@@ -842,7 +842,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       } else if (shouldReportAbortedEvent()) {
         return true;
       } else if (hasExceededRetryCount(liveInfo) && !isImgRestartIntrospectVerChanged(liveInfo, cachedInfo)) {
-        LOGGER.severe(MessageKeys.EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG, getFailureRetryMaxCount());
+        LOGGER.severe(MessageKeys.INTROSPECTOR_MAX_ERRORS_EXCEEDED, getFailureRetryMaxCount());
         return false;
       } else if (isFatalIntrospectorError()) {
         LOGGER.fine(ProcessingConstants.FATAL_INTROSPECTOR_ERROR_MSG);

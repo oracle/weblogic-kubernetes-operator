@@ -177,8 +177,7 @@ public class OperatorUtils {
   }
 
   /**
-   * Returns a new String composed of copies of the CharSequence elements joined together with a copy
-   * of the system line separator.
+   * Returns a new String composed of copies of the strings joined together with the system line separator.
    *
    * @param s Comma separated array of strings to be joined
    */
