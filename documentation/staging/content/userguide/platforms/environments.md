@@ -69,11 +69,11 @@ Licensing is free for a single developer desktop development environment.
 #### Oracle Linux and WebLogic Container Images
 
 Oracle Linux is under open source license and is completely free to download and use.
-- In addition, with Weblogic license and support,
-  customers have access to the latest Weblogic container images which bundle the latest slim Oracle Linux images.
-- Customer support for Weblogic container images is handled by the Weblogic support team.
-- Oracle Linux patches are only delivered with the newer Weblogic container images,
-  which can be automated.  Weblogic license and support do not give customers entitlements
+- In addition, with WebLogic license and support,
+  customers have access to the latest WebLogic container images which bundle the latest slim Oracle Linux images.
+- Customer support for WebLogic container images is handled by the WebLogic support team.
+- Oracle Linux patches are delivered only with the newer WebLogic container images,
+  which can be automated. WebLogic license and support do not give customers entitlements
   to have direct access to Oracle Linux support or Unbreakable Linux Network (to access the standalone Oracle Linux patches).
 
 #### Reference
