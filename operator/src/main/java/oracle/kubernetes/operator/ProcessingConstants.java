@@ -50,17 +50,7 @@ public interface ProcessingConstants {
 
   String FATAL_INTROSPECTOR_ERROR = "FatalIntrospectorError";
 
-  String EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG = "Stop introspection retry - "
-      + "exceeded configured domainPresenceFailureRetryMaxCount: "
-      + DomainPresence.getDomainPresenceFailureRetryMaxCount()
-      + " The domainPresenceFailureRetryMaxCount is an operator tuning parameter and can be controlled"
-      + " by adding it to the weblogic-operator-cm configmap."
-      + " To force the introspector to start retrying again, update 'domain.spec.introspectVersion'.";
-
   String INTROSPECTION_ERROR = "Introspection Error: ";
-
-  String FATAL_ERROR_DOMAIN_STATUS_MESSAGE = "Introspection encountered a fatal error and will not retry automatically."
-          + " Please resolve the error and then update 'domain.spec.introspectVersion' to force a retry.";
 
   String FATAL_INTROSPECTOR_ERROR_MSG = "Stop introspection retry - MII Fatal Error: ";
 

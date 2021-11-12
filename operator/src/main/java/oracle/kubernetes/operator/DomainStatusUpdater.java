@@ -65,8 +65,6 @@ import static oracle.kubernetes.operator.DomainFailureReason.ServerPod;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.MIINonDynamicChangesMethod.CommitUpdateOnly;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
-import static oracle.kubernetes.operator.ProcessingConstants.EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG;
-import static oracle.kubernetes.operator.ProcessingConstants.FATAL_ERROR_DOMAIN_STATUS_MESSAGE;
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR_MSG;
 import static oracle.kubernetes.operator.ProcessingConstants.INTROSPECTION_ERROR;
@@ -82,6 +80,7 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CO
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
+import static oracle.kubernetes.operator.logging.MessageKeys.EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG;
 import static oracle.kubernetes.operator.logging.MessageKeys.TOO_MANY_REPLICAS_FAILURE;
 import static oracle.kubernetes.utils.OperatorUtils.onSeparateLines;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
@@ -187,16 +186,17 @@ public class DomainStatusUpdater {
     private void addRetryInfoToStatusMessage(DomainStatus domainStatus) {
 
       if (hasExceededMaxRetryCount(domainStatus)) {
-        domainStatus.setMessage(createStatusMessage(domainStatus, EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG));
+        domainStatus.setMessage(createStatusMessage(domainStatus, exceededMaxRetryCountErrorMessage()));
       } else if (isFatalError(domainStatus)) {
-        domainStatus.setMessage(createStatusMessage(domainStatus, FATAL_ERROR_DOMAIN_STATUS_MESSAGE));
+        domainStatus.setMessage(
+                createStatusMessage(domainStatus, LOGGER.formatMessage(MessageKeys.FATAL_ERROR_DOMAIN_STATUS_MESSAGE)));
       } else {
         domainStatus.setMessage(createStatusMessage(domainStatus, getNonFatalRetryStatusMessage(domainStatus)));
       }
     }
 
     private boolean hasExceededMaxRetryCount(DomainStatus domainStatus) {
-      return domainStatus.getIntrospectJobFailureCount() >= DomainPresence.getDomainPresenceFailureRetryMaxCount();
+      return domainStatus.getIntrospectJobFailureCount() >= getFailureRetryMaxCount();
     }
 
     private String createStatusMessage(DomainStatus domainStatus, String retryStatusMessage) {
@@ -204,14 +204,22 @@ public class DomainStatusUpdater {
     }
 
     private String getNonFatalRetryStatusMessage(DomainStatus domainStatus) {
-      return "Introspection failed on try " + domainStatus.getIntrospectJobFailureCount()
-              + " of " + DomainPresence.getDomainPresenceFailureRetryMaxCount() + ".";
+      return LOGGER.formatMessage(MessageKeys.NON_FATAL_INTROSPECTOR_ERROR,
+              domainStatus.getIntrospectJobFailureCount(), getFailureRetryMaxCount());
     }
 
     private boolean isFatalError(DomainStatus domainStatus) {
       return Optional.ofNullable(domainStatus.getMessage())
               .map(m -> m.contains(FATAL_INTROSPECTOR_ERROR)).orElse(false);
     }
+
+    private String exceededMaxRetryCountErrorMessage() {
+      return LOGGER.formatMessage(EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG, getFailureRetryMaxCount());
+    }
+  }
+
+  private static int getFailureRetryMaxCount() {
+    return DomainPresence.getDomainPresenceFailureRetryMaxCount();
   }
 
   static class ResetFailureCountStep extends DomainStatusUpdaterStep {
@@ -432,7 +440,7 @@ public class DomainStatusUpdater {
     private boolean hasJustExceededMaxRetryCount() {
       return getStatus() != null
           && getNewStatus().getIntrospectJobFailureCount() == (getStatus().getIntrospectJobFailureCount() + 1)
-          && getNewStatus().getIntrospectJobFailureCount() >= DomainPresence.getDomainPresenceFailureRetryMaxCount();
+          && getNewStatus().getIntrospectJobFailureCount() >= getFailureRetryMaxCount();
     }
 
   }

@@ -38,6 +38,8 @@ import oracle.kubernetes.operator.JobAwaiterStepFactory;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderImpl;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.rest.ScanCacheStub;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -76,8 +78,6 @@ import static oracle.kubernetes.operator.KubernetesConstants.HTTP_FORBIDDEN;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
-import static oracle.kubernetes.operator.ProcessingConstants.EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG;
-import static oracle.kubernetes.operator.ProcessingConstants.FATAL_ERROR_DOMAIN_STATUS_MESSAGE;
 import static oracle.kubernetes.operator.ProcessingConstants.INTROSPECTION_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.JOBWATCHER_COMPONENT_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
@@ -86,6 +86,8 @@ import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.JOB;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CUSTOM_COMMAND_SCRIPT;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CUSTOM_MOUNT_PATH;
+import static oracle.kubernetes.operator.logging.MessageKeys.EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG;
+import static oracle.kubernetes.operator.logging.MessageKeys.FATAL_ERROR_DOMAIN_STATUS_MESSAGE;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED_DETAIL;
 import static oracle.kubernetes.operator.logging.MessageKeys.JOB_CREATED;
@@ -114,6 +116,8 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings({"SameParameterValue"})
 class DomainIntrospectorJobTest {
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
   private static final String NODEMGR_HOME = "/u01/nodemanager";
   private static final String OVERRIDES_CM = "overrides-config-map";
   private static final String OVERRIDE_SECRET_1 = "override-secret-1";
@@ -887,7 +891,7 @@ class DomainIntrospectorJobTest {
     final Domain updatedDomain = testSupport.<Domain>getResources(DOMAIN).get(0);
 
     assertThat(updatedDomain.getStatus().getMessage(),
-            equalTo(createRetryStatusMessage(FATAL_ERROR_DOMAIN_STATUS_MESSAGE, FATAL_PROBLEM)));
+            equalTo(createRetryStatusMessage(LOGGER.formatMessage(FATAL_ERROR_DOMAIN_STATUS_MESSAGE), FATAL_PROBLEM)));
   }
 
   @Test
@@ -899,7 +903,8 @@ class DomainIntrospectorJobTest {
     testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
 
     assertThat(getUpdatedDomain().getStatus().getMessage(),
-            equalTo(createRetryStatusMessage(EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG, SEVERE_PROBLEM)));
+            equalTo(createRetryStatusMessage(LOGGER.formatMessage(EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG, 2),
+                    SEVERE_PROBLEM)));
   }
 
   private void createIntrospectionLog(String logMessage) {
