@@ -160,6 +160,22 @@ public class DomainStatusUpdater {
         createEventStep(new EventData(DOMAIN_PROCESSING_FAILED, getEventMessage(reason, message))));
   }
 
+  /**
+   * Asynchronous steps to set Domain condition to Failed, increment the introspector failure count if needed
+   * and to generate DOMAIN_PROCESSING_FAILED event.
+   *
+   * @param reason the failure category
+   * @param message a fuller description of the problem
+   * @param domainIntrospectorJob Domain introspector job
+   */
+  public static Step createIntrospectionFailureRelatedSteps(@Nonnull DomainFailureReason reason, String message,
+                                                            V1Job domainIntrospectorJob) {
+    return Step.chain(
+            new FailedStep(reason, message, null),
+            new FailureCountStep(domainIntrospectorJob),
+            createEventStep(new EventData(DOMAIN_PROCESSING_FAILED, getEventMessage(reason, message))));
+  }
+
   public static Step createFailureCountStep(V1Job domainIntrospectorJob) {
     return new FailureCountStep(domainIntrospectorJob);
   }
