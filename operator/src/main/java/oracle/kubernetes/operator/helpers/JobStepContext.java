@@ -311,7 +311,12 @@ public class JobStepContext extends BasePodStepContext {
 
   private long getActiveDeadlineSeconds(TuningParameters.PodTuning podTuning) {
     return getIntrospectorJobActiveDeadlineSeconds(podTuning)
-          + (DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS * info.getRetryCount());
+          + (DEFAULT_ACTIVE_DEADLINE_INCREMENT_SECONDS * getIntrospectJobFailureCount());
+  }
+
+  private Integer getIntrospectJobFailureCount() {
+    return Optional.ofNullable(info.getDomain().getStatus())
+            .map(s -> s.getIntrospectJobFailureCount()).orElse(0);
   }
 
   V1JobSpec createJobSpec(TuningParameters tuningParameters) {

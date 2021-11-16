@@ -73,14 +73,15 @@ import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import org.jetbrains.annotations.NotNull;
 
+import static oracle.kubernetes.operator.DomainStatusUpdater.createInternalFailureRelatedSteps;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createStatusUpdateStep;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodDomainUid;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodName;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodNamespace;
@@ -760,18 +761,6 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     /**
-     * Set the event data that is associated with this operation.
-     * @param eventItem event data
-     * @param message event message
-     * @return the updated factory
-     */
-    public MakeRightDomainOperation withEventData(EventItem eventItem, String message, String additionalMessage) {
-      this.eventData = new EventData(eventItem, message);
-      eventData.additionalMessage(additionalMessage);
-      return this;
-    }
-
-    /**
      * Modifies the factory to handle shutting down the domain.
      * @return the updated factory
      */
@@ -851,10 +840,8 @@ public class DomainProcessorImpl implements DomainProcessor {
 
       if (isNewDomain(cachedInfo)) {
         return true;
-      } else if (shouldReportAbortedEvent()) {
-        return true;
-      } else if (hasExceededRetryCount() && !isImgRestartIntrospectVerChanged(liveInfo, cachedInfo)) {
-        LOGGER.severe(ProcessingConstants.EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG);
+      } else if (hasExceededRetryCount(liveInfo) && !isImgRestartIntrospectVerChanged(liveInfo, cachedInfo)) {
+        LOGGER.severe(MessageKeys.INTROSPECTOR_MAX_ERRORS_EXCEEDED, getFailureRetryMaxCount());
         return false;
       } else if (isFatalIntrospectorError()) {
         LOGGER.fine(ProcessingConstants.FATAL_INTROSPECTOR_ERROR_MSG);
@@ -864,10 +851,7 @@ public class DomainProcessorImpl implements DomainProcessor {
         return false;  // we have already cached this
       } else if (shouldRecheck(cachedInfo)) {
 
-        if (hasExceededRetryCount()) {
-          resetIntrospectorJobFailureCount();
-        }
-        if (getCurrentIntrospectFailureRetryCount() > 0) {
+        if (getCurrentIntrospectFailureRetryCount(liveInfo) > 0) {
           logRetryCount(cachedInfo);
         }
         LOGGER.fine("Continue the make-right domain presence, explicitRecheck -> " + explicitRecheck);
@@ -877,34 +861,13 @@ public class DomainProcessorImpl implements DomainProcessor {
       return false;
     }
 
-    private boolean shouldReportAbortedEvent() {
-      return Optional.ofNullable(eventData).map(EventData::getItem).orElse(null) == DOMAIN_FAILED;
-    }
-
-    private void resetIntrospectorJobFailureCount() {
-      Optional.ofNullable(liveInfo)
-          .map(DomainPresenceInfo::getDomain)
-          .map(Domain::getStatus)
-          .map(DomainStatus::resetIntrospectJobFailureCount);
-    }
-
-    private boolean hasExceededRetryCount() {
-      return getCurrentIntrospectFailureRetryCount()
-          >= DomainPresence.getDomainPresenceFailureRetryMaxCount();
-    }
-
-    private Integer getCurrentIntrospectFailureRetryCount() {
-      return Optional.ofNullable(liveInfo)
-          .map(DomainPresenceInfo::getDomain)
-          .map(Domain::getStatus)
-          .map(DomainStatus::getIntrospectJobFailureCount)
-          .orElse(0);
+    private int getFailureRetryMaxCount() {
+      return DomainPresence.getDomainPresenceFailureRetryMaxCount();
     }
 
     private void logRetryCount(DomainPresenceInfo cachedInfo) {
       LOGGER.info(MessageKeys.INTROSPECT_JOB_FAILED_RETRY_COUNT, cachedInfo.getDomain().getDomainUid(),
-          getCurrentIntrospectFailureRetryCount(),
-          DomainPresence.getDomainPresenceFailureRetryMaxCount());
+          getCurrentIntrospectFailureRetryCount(liveInfo), getFailureRetryMaxCount());
     }
 
     private boolean shouldRecheck(DomainPresenceInfo cachedInfo) {
@@ -1032,6 +995,19 @@ public class DomainProcessorImpl implements DomainProcessor {
         .orElse(null);
   }
 
+  private Integer getCurrentIntrospectFailureRetryCount(DomainPresenceInfo info) {
+    return Optional.ofNullable(info)
+            .map(DomainPresenceInfo::getDomain)
+            .map(Domain::getStatus)
+            .map(DomainStatus::getIntrospectJobFailureCount)
+            .orElse(0);
+  }
+
+  private boolean hasExceededRetryCount(DomainPresenceInfo info) {
+    return getCurrentIntrospectFailureRetryCount(info)
+            >= DomainPresence.getDomainPresenceFailureRetryMaxCount();
+  }
+
   private static boolean isCachedInfoNewer(DomainPresenceInfo liveInfo, DomainPresenceInfo cachedInfo) {
     return liveInfo.getDomain() != null
         && KubernetesUtils.isFirstNewer(cachedInfo.getDomain().getMetadata(), liveInfo.getDomain().getMetadata());
@@ -1060,7 +1036,7 @@ public class DomainProcessorImpl implements DomainProcessor {
             gate.startFiberIfLastFiberMatches(
                 domainUid,
                 Fiber.getCurrentIfSet(),
-                DomainStatusUpdater.createInternalFailureRelatedSteps(throwable),
+                Step.chain(createInternalFailureRelatedSteps(throwable, packet.getValue(DOMAIN_INTROSPECTOR_JOB))),
                 plan.packet,
                 new CompletionCallback() {
                   @Override
@@ -1083,7 +1059,7 @@ public class DomainProcessorImpl implements DomainProcessor {
                                  LoggingContext.setThreadContext().namespace(ns).domainUid(domainUid)) {
                           existing.setPopulated(false);
                           // proceed only if we have not already retried max number of times
-                          int retryCount = existing.incrementAndGetFailureCount();
+                          int retryCount = getCurrentIntrospectFailureRetryCount(existing);
                           LOGGER.fine(
                               "Failure count for DomainPresenceInfo: "
                                   + existing
@@ -1101,14 +1077,6 @@ public class DomainProcessorImpl implements DomainProcessor {
                                 ns,
                                 DomainPresence.getDomainPresenceFailureRetryMaxCount(),
                                 throwable);
-                            createMakeRightOperation(existing)
-                                .withEventData(DOMAIN_FAILED,
-                                    String.format(
-                                        "Unable to start domain %s after %s attempts due to exception: %s",
-                                        domainUid,
-                                        DomainPresence.getDomainPresenceFailureRetryMaxCount(),
-                                        throwable), EventConstants.WILL_NOT_RETRY)
-                                .execute();
                           }
                         }
                       }
@@ -1139,6 +1107,11 @@ public class DomainProcessorImpl implements DomainProcessor {
             new DomainStatusStep(info, null),
             bringAdminServerUp(info, delegate.getPodAwaiterStepFactory(info.getNamespace())),
             managedServerStrategy);
+
+    if (hasExceededRetryCount(info) && isImgRestartIntrospectVerChanged(info,
+            getExistingDomainPresenceInfo(info.getNamespace(), info.getDomainUid()))) {
+      domainUpStrategy = Step.chain(DomainStatusUpdater.createResetFailureCountStep(), domainUpStrategy);
+    }
 
     return Step.chain(
           createDomainUpInitialStep(info),
@@ -1186,8 +1159,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     @Override
     public NextAction apply(Packet packet) {
-      packet.getSpi(DomainPresenceInfo.class).complete();
-      return doNext(packet);
+      return doNext(DomainStatusUpdater.createResetFailureCountStep(), packet);
     }
   }
 

@@ -239,7 +239,7 @@ function deleteIngress() {
        --selector=app.kubernetes.io/instance=${type}-release \
        --timeout=120s
     ${kubernetesCli} delete ns ${ns}
-    ${kubernetesCli} wait --for=delete namespace ${ns} --timeout=60s
+    ${kubernetesCli} wait --for=delete namespace ${ns} --timeout=60s || true
     printInfo "Remove ${type} chart repository [${repository}] "
     helm repo remove ${repository}
   else

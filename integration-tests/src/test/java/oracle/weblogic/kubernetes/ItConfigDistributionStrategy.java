@@ -188,10 +188,12 @@ class ItConfigDistributionStrategy {
 
 
     //start two MySQL database instances
-    createMySQLDB("mysqldb-1", "root", "root123", 0, domainNamespace, null);
+    createMySQLDB("mysqldb-1", "root", "root123", getNextFreePort(), domainNamespace, null);
     mysqlDBPort1 = getMySQLNodePort(domainNamespace, "mysqldb-1");
-    createMySQLDB("mysqldb-2", "root", "root456", 0, domainNamespace, null);
+    logger.info("mysqlDBPort1 is: " + mysqlDBPort1);
+    createMySQLDB("mysqldb-2", "root", "root456", getNextFreePort(), domainNamespace, null);
     mysqlDBPort2 = getMySQLNodePort(domainNamespace, "mysqldb-2");
+    logger.info("mysqlDBPort2 is: " + mysqlDBPort2);
 
     if (OKD) {
       mysql1SvcEndpoint = getMySQLSvcEndpoint(domainNamespace, "mysqldb-1");

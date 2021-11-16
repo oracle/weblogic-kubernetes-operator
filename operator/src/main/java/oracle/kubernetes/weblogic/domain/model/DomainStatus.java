@@ -295,10 +295,18 @@ public class DomainStatus {
    * @param uid the Kubernetes-assigned UID of the job which discovered the introspection failure
    */
   public void incrementIntrospectJobFailureCount(String uid) {
-    if (!Objects.equals(uid, failedIntrospectionUid)) {
+    if (fiberException(uid) || failedIntrospectionNotRecorded(uid)) {
       introspectJobFailureCount = introspectJobFailureCount + 1;
     }
     failedIntrospectionUid = uid;
+  }
+
+  private boolean fiberException(String uid) {
+    return uid == null;
+  }
+
+  private boolean failedIntrospectionNotRecorded(String uid) {
+    return !uid.equals(failedIntrospectionUid);
   }
 
   /**
@@ -519,5 +527,10 @@ public class DomainStatus {
 
   public void createPatchFrom(JsonPatchBuilder builder, @Nullable DomainStatus oldStatus) {
     statusPatch.createPatch(builder, "/status", oldStatus, this);
+  }
+
+  public DomainStatus withIntrospectJobFailureCount(int failureCount) {
+    this.introspectJobFailureCount = failureCount;
+    return this;
   }
 }
