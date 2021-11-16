@@ -102,7 +102,7 @@ public class PodDisruptionBudgetHelper {
       }
 
       private NextAction updateDomainStatus(Packet packet, CallResponse<V1beta1PodDisruptionBudget> callResponse) {
-        return doNext(DomainStatusUpdater.createFailureRelatedSteps(callResponse), packet);
+        return doNext(DomainStatusUpdater.createKubernetesFailureRelatedSteps(callResponse), packet);
       }
 
       @Override

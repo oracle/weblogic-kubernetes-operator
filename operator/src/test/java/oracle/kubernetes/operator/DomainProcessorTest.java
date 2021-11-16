@@ -87,7 +87,8 @@ import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainSourceType.FromModel;
 import static oracle.kubernetes.operator.DomainSourceType.Image;
 import static oracle.kubernetes.operator.DomainSourceType.PersistentVolume;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_ABORTED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.WILL_NOT_RETRY;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_OK;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
@@ -1404,7 +1405,7 @@ class DomainProcessorTest {
   }
 
   @Test
-  void whenExceptionDuringProcessing_sendAbortedEvent() {
+  void whenExceptionDuringProcessing_sendFailedNoRetryEvent() {
     DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
     forceExceptionDuringProcessing();
     int time = 0;
@@ -1415,14 +1416,20 @@ class DomainProcessorTest {
       testSupport.setTime(time, TimeUnit.SECONDS);
     }
 
-    assertThat(getEvents().stream().anyMatch(this::isDomainProcessingAbortedEvent), is(true));
+    assertThat(getEvents().stream().anyMatch(this::isDomainFailedRetryEvent), is(true));
+    assertThat(getEvents().stream().anyMatch(this::isDomainFailedNoRetryEvent), is(true));
   }
 
   private List<CoreV1Event> getEvents() {
     return testSupport.getResources(KubernetesTestSupport.EVENT);
   }
 
-  private boolean isDomainProcessingAbortedEvent(CoreV1Event e) {
-    return DOMAIN_PROCESSING_ABORTED_EVENT.equals(e.getReason());
+  private boolean isDomainFailedRetryEvent(CoreV1Event e) {
+    return DOMAIN_FAILED_EVENT.equals(e.getReason()) && e.getMessage().contains(WILL_NOT_RETRY);
+  }
+
+  private boolean isDomainFailedNoRetryEvent(CoreV1Event e) {
+    return DOMAIN_FAILED_EVENT.equals(e.getReason())
+        && e.getMessage().contains(Integer.toString(DomainPresence.getDomainPresenceFailureRetrySeconds()));
   }
 }

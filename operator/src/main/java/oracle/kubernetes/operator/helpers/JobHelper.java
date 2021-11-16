@@ -19,6 +19,7 @@ import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
+import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.JobWatcher;
 import oracle.kubernetes.operator.LabelConstants;
@@ -46,7 +47,6 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import static oracle.kubernetes.operator.DomainFailureReason.Introspection;
 import static oracle.kubernetes.operator.DomainSourceType.FromModel;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createFailureCountStep;
-import static oracle.kubernetes.operator.DomainStatusUpdater.createFailureRelatedSteps;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
@@ -412,7 +412,7 @@ public class JobHelper {
         Optional.ofNullable(domainIntrospectorJob).ifPresent(job -> logIntrospectorFailure(packet, job));
 
         Step nextSteps = Step.chain(
-              createFailureRelatedSteps(Introspection, onSeparateLines(severeStatuses)),
+              DomainStatusUpdater.createIntrospectionFailureRelatedSteps(onSeparateLines(severeStatuses)),
               getNextStep(packet, domainIntrospectorJob));
 
         if (!severeStatuses.isEmpty()) {

@@ -49,7 +49,6 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.yaml.snakeyaml.Yaml;
 
 import static java.lang.System.lineSeparator;
-import static oracle.kubernetes.operator.DomainFailureReason.DomainInvalid;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.DOMAINZIP_HASH;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.DOMAIN_INPUTS_HASH;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.DOMAIN_RESTART_VERSION;
@@ -662,7 +661,7 @@ public class ConfigMapHelper {
     @Override
     public NextAction apply(Packet packet) {
       List<String> errors = getErrors(packet);
-      Step step = DomainStatusUpdater.createFailureRelatedSteps(DomainInvalid, perLine(errors));
+      Step step = DomainStatusUpdater.createDomainInvalidFailureRelatedSteps(perLine(errors));
       return doNext(step, packet);
     }
 
