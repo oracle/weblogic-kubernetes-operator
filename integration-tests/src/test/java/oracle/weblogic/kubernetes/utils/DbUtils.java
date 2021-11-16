@@ -786,7 +786,7 @@ public class DbUtils {
         getLogger(), "Waiting for database operator {0} to be ready in namespace {1}", dbOpPodName, dbOpNamespace);
 
   }
-  
+
   /**
    * Create Oracle database using Oracle Database Operator.
    * @param dbName name of the database
@@ -853,9 +853,6 @@ public class DbUtils {
   }
 
   private static void createHostPathProvisioner(String namespace, String hostPath) throws ApiException {
-
-    getLogger().info("Creating namespace");
-    TestActions.createNamespace(namespace);
 
     String name = "hostpath-provisioner";
     getLogger().info("Creating service account {0}", name);
