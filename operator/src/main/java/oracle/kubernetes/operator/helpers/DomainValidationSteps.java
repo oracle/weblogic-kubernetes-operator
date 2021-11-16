@@ -36,7 +36,6 @@ import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.KubernetesResourceLookup;
 
 import static java.lang.System.lineSeparator;
-import static oracle.kubernetes.operator.DomainFailureReason.DomainInvalid;
 import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
 import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_VALIDATION_FAILED;
 
@@ -120,7 +119,7 @@ public class DomainValidationSteps {
       }
 
       LOGGER.severe(DOMAIN_VALIDATION_FAILED, domain.getDomainUid(), perLine(validationFailures));
-      Step step = DomainStatusUpdater.createFailureRelatedSteps(DomainInvalid, perLine(validationFailures));
+      Step step = DomainStatusUpdater.createDomainInvalidFailureRelatedSteps(perLine(validationFailures));
       return doNext(step, packet);
     }
 
@@ -148,7 +147,7 @@ public class DomainValidationSteps {
       }
 
       LOGGER.severe(DOMAIN_VALIDATION_FAILED, domain.getDomainUid(), perLine(validationFailures));
-      Step step = DomainStatusUpdater.createFailureRelatedSteps(DomainInvalid, perLine(validationFailures));
+      Step step = DomainStatusUpdater.createDomainInvalidFailureRelatedSteps(perLine(validationFailures));
       return doNext(step, packet);
     }
 
@@ -322,7 +321,7 @@ public class DomainValidationSteps {
       }
 
       LOGGER.severe(DOMAIN_VALIDATION_FAILED, domain.getDomainUid(), perLine(validationFailures));
-      Step step = DomainStatusUpdater.createFailureRelatedSteps(DomainInvalid, perLine(validationFailures));
+      Step step = DomainStatusUpdater.createDomainInvalidFailureRelatedSteps(perLine(validationFailures));
       return doNext(step, packet);
     }
 

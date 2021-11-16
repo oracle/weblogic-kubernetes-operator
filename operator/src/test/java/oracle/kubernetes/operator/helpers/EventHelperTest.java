@@ -36,24 +36,31 @@ import static java.net.HttpURLConnection.HTTP_CONFLICT;
 import static java.net.HttpURLConnection.HTTP_FORBIDDEN;
 import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_UNAVAILABLE;
-import static oracle.kubernetes.operator.DomainFailureReason.DomainInvalid;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
-import static oracle.kubernetes.operator.DomainStatusUpdater.createFailureRelatedSteps;
+import static oracle.kubernetes.operator.DomainStatusUpdater.createDomainInvalidFailureRelatedSteps;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_AVAILABLE_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_AVAILABLE_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CHANGED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CREATED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CREATED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_DELETED_PATTERN;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_ABORTED_PATTERN;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_FAILED_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_FAILED_PATTERN;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_PATTERN;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILURE_RESOLVED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILURE_RESOLVED_PATTERN;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_INCOMPLETE_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_INCOMPLETE_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_ROLL_COMPLETED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_ROLL_STARTING_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_UNAVAILABLE_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_UNAVAILABLE_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STARTED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STOPPED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.POD_CYCLE_STARTING_EVENT;
 import static oracle.kubernetes.operator.EventConstants.START_MANAGING_NAMESPACE_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.STOP_MANAGING_NAMESPACE_EVENT;
+import static oracle.kubernetes.operator.EventConstants.WILL_NOT_RETRY;
 import static oracle.kubernetes.operator.EventTestUtils.containsEvent;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventWithInvolvedObject;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventWithLabels;
@@ -66,13 +73,16 @@ import static oracle.kubernetes.operator.EventTestUtils.getNumberOfEvents;
 import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_NAMESPACE_ENV;
 import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_POD_NAME_ENV;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_AVAILABLE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CHANGED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CREATED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_DELETED;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_FAILED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILURE_RESOLVED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_INCOMPLETE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_COMPLETED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_STARTING;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_UNAVAILABLE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STARTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STOPPED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.POD_CYCLE_STARTING;
@@ -131,7 +141,7 @@ class EventHelperTest {
   }
 
   @Test
-  void whenCreateEventCalledTwice_thenDeleteEvent_domainProcessingStartingEventCreatedTwice() {
+  void whenCreateEventCalledTwice_thenDeleteEvent_domainCreatedEventCreatedTwice() {
     testSupport.runSteps(createEventStep(new EventData(DOMAIN_CREATED)));
 
     dispatchAddedEventWatches();
@@ -146,31 +156,31 @@ class EventHelperTest {
   }
 
   @Test
-  void whenCreateEventStepCalledWithFailedEvent_domainProcessingFailedEventCreated() {
-    testSupport.runSteps(createFailureRelatedSteps(DomainInvalid, "Test failure"));
+  void whenCreateEventStepCalledWithFailedEvent_domainFailedEventCreated() {
+    testSupport.runSteps(createDomainInvalidFailureRelatedSteps("Test failure"));
 
-    assertThat("Found DOMAIN_PROCESSING_FAILED event",
-        containsEvent(getEvents(testSupport), DOMAIN_PROCESSING_FAILED_EVENT), is(true));
+    assertThat("Found DOMAIN_FAILED event",
+        containsEvent(getEvents(testSupport), DOMAIN_FAILED_EVENT), is(true));
   }
 
   @Test
-  void whenCreateEventStepCalledWithFailedEvent_domainProcessingFailedEventCreatedWithExpectedMessage() {
-    testSupport.runSteps(createFailureRelatedSteps(DomainInvalid, "Test this failure"));
+  void whenCreateEventStepCalledWithFailedEvent_domainFailedEventCreatedWithExpectedMessage() {
+    testSupport.runSteps(createDomainInvalidFailureRelatedSteps("Test this failure"));
 
-    assertThat("Found DOMAIN_PROCESSING_FAILED event with expected message",
+    assertThat("Found DOMAIN_FAILED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
-            DOMAIN_PROCESSING_FAILED_EVENT,
-            String.format(DOMAIN_PROCESSING_FAILED_PATTERN, UID, "Test this failure")), is(true));
+            DOMAIN_FAILED_EVENT,
+            String.format(DOMAIN_FAILED_PATTERN, UID, "Test this failure", ", will retry in 2 seconds")), is(true));
   }
 
   @Test
-  void whenCreateEventStepCalledWithFailedEventTwice_domainProcessingFailedEventCreatedOnceWithExpectedCount() {
-    testSupport.runSteps(createFailureRelatedSteps(DomainInvalid, "Test failure"));
+  void whenCreateEventStepCalledWithFailedEventTwice_domainFailedEventCreatedOnceWithExpectedCount() {
+    testSupport.runSteps(createDomainInvalidFailureRelatedSteps("Test failure"));
     dispatchAddedEventWatches();
-    testSupport.runSteps(createFailureRelatedSteps(DomainInvalid, "Test failure"));
+    testSupport.runSteps(createDomainInvalidFailureRelatedSteps("Test failure"));
 
-    assertThat("Found DOMAIN_PROCESSING_FAILED event",
-        containsOneEventWithCount(getEvents(testSupport), DOMAIN_PROCESSING_FAILED_EVENT, 2), is(true));
+    assertThat("Found DOMAIN_FAILED event",
+        containsOneEventWithCount(getEvents(testSupport), DOMAIN_FAILED_EVENT, 2), is(true));
   }
 
   @Test
@@ -241,27 +251,102 @@ class EventHelperTest {
   }
 
   @Test
-  void whenCreateEventStepCalledWithAbortedEvent_domainProcessingAbortedEventCreated() {
+  void whenCreateEventStepCalledWithFailedEventNoRetry_domainFailedEventCreated() {
     testSupport.runSteps(Step.chain(
-        createEventStep(new EventData(DOMAIN_PROCESSING_FAILED)),
-        createEventStep(new EventData(DOMAIN_PROCESSING_ABORTED).message("Test this failure")))
+        createEventStep(new EventData(DOMAIN_FAILED)),
+        createEventStep(new EventData(EventHelper.EventItem.DOMAIN_FAILED)
+            .message("Test this failure")))
     );
 
-    assertThat("Found DOMAIN_PROCESSING_ABORTED event",
-        containsEvent(getEvents(testSupport), EventConstants.DOMAIN_PROCESSING_ABORTED_EVENT), is(true));
+    assertThat("Found DOMAIN_FAILED event",
+        containsEvent(getEvents(testSupport), EventConstants.DOMAIN_FAILED_EVENT), is(true));
   }
 
   @Test
-  void whenCreateEventStepCalledWithAbortedEvent_domainProcessingAbortedEventCreatedWithExpectedMessage() {
+  void whenCreateEventStepCalledWithFailedEventNoRetry_domainFailedEventCreatedWithExpectedMessage() {
     testSupport.runSteps(Step.chain(
-        createEventStep(new EventData(DOMAIN_PROCESSING_FAILED)),
-        createEventStep(new EventData(DOMAIN_PROCESSING_ABORTED).message("Test this failure")))
+        createEventStep(new EventData(DOMAIN_FAILED)),
+        createEventStep(new EventData(EventHelper.EventItem.DOMAIN_FAILED)
+            .message("Test this failure").additionalMessage(WILL_NOT_RETRY)))
     );
 
-    assertThat("Found DOMAIN_PROCESSING_ABORTED event with expected message",
+    assertThat("Found DOMAIN_FAILED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
-            EventConstants.DOMAIN_PROCESSING_ABORTED_EVENT,
-            String.format(DOMAIN_PROCESSING_ABORTED_PATTERN, UID, "Test this failure")), is(true));
+            EventConstants.DOMAIN_FAILED_EVENT,
+            String.format(EventConstants.DOMAIN_FAILED_PATTERN, UID, "Test this failure", WILL_NOT_RETRY)),
+        is(true));
+  }
+
+  @Test
+  void whenMakeRightCalled_withAvailableEventData_domainAvailableEventCreated() {
+    makeRightOperation.withEventData(DOMAIN_AVAILABLE, null).execute();
+
+    assertThat("Found DOMAIN_AVAILABLE event",
+        containsEvent(getEvents(testSupport), DOMAIN_AVAILABLE_EVENT), is(true));
+  }
+
+  @Test
+  void whenMakeRightCalled_withAvailableEventData_domainAvailableEventCreatedWithExpectedMessage() {
+    makeRightOperation.withEventData(DOMAIN_AVAILABLE, null).execute();
+
+    assertThat("Found DOMAIN_AVAILABLE event with expected message",
+        containsEventWithMessage(getEvents(testSupport),
+            DOMAIN_AVAILABLE_EVENT,
+            String.format(DOMAIN_AVAILABLE_PATTERN, UID)), is(true));
+  }
+
+  @Test
+  void whenMakeRightCalled_withUnavailableEventData_domainUnavailableEventCreated() {
+    makeRightOperation.withEventData(DOMAIN_UNAVAILABLE, null).execute();
+
+    assertThat("Found DOMAIN_UNAVAILABLE event",
+        containsEvent(getEvents(testSupport), DOMAIN_UNAVAILABLE_EVENT), is(true));
+  }
+
+  @Test
+  void whenMakeRightCalled_withUnavailableEventData_domainUnavailableEventCreatedWithExpectedMessage() {
+    makeRightOperation.withEventData(DOMAIN_UNAVAILABLE, null).execute();
+
+    assertThat("Found DOMAIN_UNAVAILABLE event with expected message",
+        containsEventWithMessage(getEvents(testSupport),
+            DOMAIN_UNAVAILABLE_EVENT,
+            String.format(DOMAIN_UNAVAILABLE_PATTERN, UID)), is(true));
+  }
+
+  @Test
+  void whenMakeRightCalled_withIncompleteEventData_domainIncompleteEventCreated() {
+    makeRightOperation.withEventData(DOMAIN_INCOMPLETE, null).execute();
+
+    assertThat("Found DOMAIN_INCOMPLETE event",
+        containsEvent(getEvents(testSupport), DOMAIN_INCOMPLETE_EVENT), is(true));
+  }
+
+  @Test
+  void whenMakeRightCalled_withIncompleteEventData_domainIncompleteEventCreatedWithExpectedMessage() {
+    makeRightOperation.withEventData(DOMAIN_INCOMPLETE, null).execute();
+
+    assertThat("Found DOMAIN_INCOMPLETE event with expected message",
+        containsEventWithMessage(getEvents(testSupport),
+            DOMAIN_INCOMPLETE_EVENT,
+            String.format(DOMAIN_INCOMPLETE_PATTERN, UID)), is(true));
+  }
+
+  @Test
+  void whenMakeRightCalled_withFailureResolvedEventData_domainFailureResolvedEventCreated() {
+    makeRightOperation.withEventData(DOMAIN_FAILURE_RESOLVED, null).execute();
+
+    assertThat("Found DOMAIN_FAILURE_RESOLVED event",
+        containsEvent(getEvents(testSupport), DOMAIN_FAILURE_RESOLVED_EVENT), is(true));
+  }
+
+  @Test
+  void whenMakeRightCalled_withFailureResolvedEventData_domainFailureResolvedEventCreatedWithExpectedMessage() {
+    makeRightOperation.withEventData(DOMAIN_FAILURE_RESOLVED, null).execute();
+
+    assertThat("Found DOMAIN_FAILURE_RESOLVED event with expected message",
+        containsEventWithMessage(getEvents(testSupport),
+            DOMAIN_FAILURE_RESOLVED_EVENT,
+            String.format(DOMAIN_FAILURE_RESOLVED_PATTERN, UID)), is(true));
   }
 
   @Test

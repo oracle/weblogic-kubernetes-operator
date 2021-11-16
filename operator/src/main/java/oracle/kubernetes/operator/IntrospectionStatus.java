@@ -25,7 +25,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
 import static java.util.Collections.emptyList;
-import static oracle.kubernetes.operator.DomainFailureReason.ServerPod;
 import static oracle.kubernetes.operator.helpers.LegalNames.toJobIntrospectorName;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodDomainUid;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodName;
@@ -112,7 +111,7 @@ public class IntrospectionStatus {
 
       return Optional.ofNullable(getErrorMessage(pod))
             .map(m -> createFailureMessage(pod, m))
-            .map(f -> DomainStatusUpdater.createFailureRelatedSteps(ServerPod, f)).orElse(null);
+            .map(f -> DomainStatusUpdater.createServerPodFailureRelatedSteps(f)).orElse(null);
     }
 
     private String createFailureMessage(V1Pod pod, String message) {

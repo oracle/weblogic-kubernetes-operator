@@ -58,7 +58,9 @@ import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
+import static oracle.kubernetes.operator.DomainFailureReason.DomainInvalid;
 import static oracle.kubernetes.operator.DomainFailureReason.Internal;
+import static oracle.kubernetes.operator.DomainFailureReason.Introspection;
 import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
 import static oracle.kubernetes.operator.DomainFailureReason.ReplicasTooHigh;
 import static oracle.kubernetes.operator.DomainFailureReason.ServerPod;
@@ -77,8 +79,10 @@ import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTTING_DOWN_STATE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_AVAILABLE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_COMPLETE;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_FAILED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILURE_RESOLVED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_INCOMPLETE;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_UNAVAILABLE;
 import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
 import static oracle.kubernetes.operator.logging.MessageKeys.TOO_MANY_REPLICAS_FAILURE;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
@@ -117,13 +121,21 @@ public class DomainStatusUpdater {
     return new RemoveFailuresStep();
   }
 
+  private static DomainPresenceInfo getDomainPresenceInfoFromPacket(Packet packet) {
+    return packet.getSpi(DomainPresenceInfo.class);
+  }
+
+  private static String getRetryMessage() {
+    return String.format(", will retry in %s seconds", DomainPresence.getDomainPresenceFailureRetrySeconds());
+  }
+
   /**
    * Asynchronous steps to set Domain condition to Failed after an asynchronous call failure
    * and to generate DOMAIN_PROCESSING_FAILED event.
    *
    * @param callResponse the response from an unrecoverable call
    */
-  public static Step createFailureRelatedSteps(CallResponse<?> callResponse) {
+  public static Step createKubernetesFailureRelatedSteps(CallResponse<?> callResponse) {
     FailureStatusSource failure = UnrecoverableErrorBuilder.fromFailedCall(callResponse);
 
     LOGGER.severe(MessageKeys.CALL_FAILED, failure.getMessage(), failure.getReason());
@@ -132,7 +144,7 @@ public class DomainStatusUpdater {
       LOGGER.fine(MessageKeys.EXCEPTION, apiException);
     }
 
-    return createFailureRelatedSteps(Kubernetes, failure.getMessage());
+    return createFailureRelatedSteps(Kubernetes, failure.getMessage(), getRetryMessage());
   }
 
   /**
@@ -140,21 +152,51 @@ public class DomainStatusUpdater {
    *
    * @param throwable Throwable that caused failure
    */
-  static Step createFailureRelatedSteps(Throwable throwable) {
-    return throwable.getMessage() == null ? createFailureRelatedSteps(Internal, throwable.toString())
-        : createFailureRelatedSteps(Internal, throwable.getMessage());
+  static Step createInternalFailureRelatedSteps(Throwable throwable) {
+    return throwable.getMessage() == null
+        ?
+        createFailureRelatedSteps(Internal, throwable.toString(), getRetryMessage())
+        :
+        createFailureRelatedSteps(Internal, throwable.getMessage(), getRetryMessage());
   }
 
   /**
    * Asynchronous steps to set Domain condition to Failed and to generate DOMAIN_PROCESSING_FAILED event.
    *
-   * @param reason the failure category
+   * @param message a fuller description of the problem*/
+  public static Step createServerPodFailureRelatedSteps(String message) {
+    return createFailureRelatedSteps(ServerPod, getEventMessage(ServerPod, message), getRetryMessage());
+  }
+
+  /**
+   * Asynchronous steps to set Domain condition to Failed and to generate DOMAIN_PROCESSING_FAILED event.
+   *
+   * @param message a fuller description of the problem*/
+  public static Step createDomainInvalidFailureRelatedSteps(String message) {
+    return createFailureRelatedSteps(
+        DomainInvalid, getEventMessage(DomainInvalid, message), getRetryMessage());
+  }
+
+  /**
+   * Asynchronous steps to set Domain condition to Failed and to generate DOMAIN_PROCESSING_FAILED event.
+   *
+   * @param message a fuller description of the problem*/
+  public static Step createIntrospectionFailureRelatedSteps(String message) {
+    return createFailureRelatedSteps(
+        Introspection, getEventMessage(Introspection, getRetryMessage()), "");
+  }
+
+  /**
+   * Asynchronous steps to set Domain condition to Failed and to generate DOMAIN_PROCESSING_FAILED event.
+   *  @param reason the failure category
    * @param message a fuller description of the problem
    */
-  public static Step createFailureRelatedSteps(@Nonnull DomainFailureReason reason, String message) {
+  public static Step createFailureRelatedSteps(
+      @Nonnull DomainFailureReason reason, String message, String additionalMessage) {
     return Step.chain(
         new FailedStep(reason, message, null),
-        createEventStep(new EventData(DOMAIN_PROCESSING_FAILED, getEventMessage(reason, message))));
+        createEventStep(new EventData(DOMAIN_FAILED, getEventMessage(reason, message))
+            .additionalMessage(additionalMessage)));
   }
 
   public static Step createFailureCountStep(V1Job domainIntrospectorJob) {
@@ -367,10 +409,12 @@ public class DomainStatusUpdater {
       List<EventData> list = new ArrayList<>();
       if (hasJustExceededMaxRetryCount()) {
         list.add(
-            new EventData(DOMAIN_PROCESSING_ABORTED).message(EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG));
+            new EventData(EventHelper.EventItem.DOMAIN_FAILED).message(EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG)
+                .additionalMessage(EventConstants.WILL_NOT_RETRY));
       } else if (hasJustGotFatalIntrospectorError()) {
-        list.add(new EventData(DOMAIN_PROCESSING_ABORTED)
-              .message(FATAL_INTROSPECTOR_ERROR_MSG + getNewStatus().getMessage()));
+        list.add(new EventData(EventHelper.EventItem.DOMAIN_FAILED)
+            .message(FATAL_INTROSPECTOR_ERROR_MSG + getNewStatus().getMessage())
+            .additionalMessage(EventConstants.WILL_NOT_RETRY));
       }
       return list;
     }
@@ -441,17 +485,36 @@ public class DomainStatusUpdater {
       @Override
       List<EventData> createDomainEvents() {
         List<EventData> list = new ArrayList<>();
+        if (domainFailureJustResolved()) {
+          list.add(new EventData(DOMAIN_FAILURE_RESOLVED));
+        }
         if (domainJustAvailable()) {
           list.add(new EventData(DOMAIN_AVAILABLE));
+        } else if (domainJustUnavailable()) {
+          list.add(new EventData(DOMAIN_UNAVAILABLE));
         }
         if (processingJustCompleted()) {
           list.add(new EventData(DOMAIN_COMPLETE));
+        } else if (domainJustIncomplete()) {
+          list.add(new EventData(DOMAIN_INCOMPLETE));
         }
         return list;
       }
 
       private boolean processingJustCompleted() {
         return allIntendedServersRunning() && !oldStatusWasCompleted();
+      }
+
+      private boolean domainFailureJustResolved() {
+        return allIntendedServersRunning() && oldStatusWasFailed();
+      }
+
+      private boolean oldStatusWasFailed() {
+        return getStatus() != null && getStatus().hasConditionWith(this::isDomainFailed);
+      }
+
+      private boolean domainJustIncomplete() {
+        return !allIntendedServersRunning() && oldStatusWasCompleted();
       }
 
       private boolean oldStatusWasCompleted() {
@@ -464,6 +527,10 @@ public class DomainStatusUpdater {
 
       private boolean domainJustAvailable() {
         return sufficientServersRunning() && !oldStatusWasAvailable();
+      }
+
+      private boolean domainJustUnavailable() {
+        return !sufficientServersRunning() && oldStatusWasAvailable();
       }
 
       private void setStatusConditions(DomainStatus status) {
@@ -531,9 +598,14 @@ public class DomainStatusUpdater {
         }
       }
 
+      private boolean isDomainFailed(DomainCondition condition) {
+        return condition.hasType(Failed) && condition.getStatus().equals("True");
+      }
+
       private boolean isDomainCompleted(DomainCondition condition) {
         return condition.hasType(Completed) && condition.getStatus().equals("True");
       }
+
 
       private boolean isDomainAvailable(DomainCondition condition) {
         return condition.hasType(Available) && condition.getStatus().equals("True");
@@ -867,7 +939,6 @@ public class DomainStatusUpdater {
     private final String message;
 
     private FailedStep(DomainFailureReason reason, String message, Step next) {
-      super(next);
       this.reason = reason;
       this.message = message;
     }

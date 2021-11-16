@@ -16,7 +16,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
-import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.work.NextAction;
@@ -102,12 +101,7 @@ public class ServerDownIteratorStep extends Step {
   }
 
   private Packet createPacketForServer(Packet packet, DomainPresenceInfo.ServerShutdownInfo ssi) {
-    Packet p = packet.copy();
-    p.put(ProcessingConstants.CLUSTER_NAME, ssi.getClusterName());
-    p.put(ProcessingConstants.SERVER_NAME, ssi.getName());
-    p.put(ProcessingConstants.SERVER_SCAN, ssi.serverConfig);
-    p.put(ProcessingConstants.ENVVARS, ssi.getEnvironment());
-    return p;
+    return ssi.createPacket(packet);
   }
 
   private Map<String, ShutdownClusteredServersStepFactory> getShutdownClusteredServersStepFactories(

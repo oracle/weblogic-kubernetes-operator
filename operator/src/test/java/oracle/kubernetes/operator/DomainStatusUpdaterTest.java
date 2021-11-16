@@ -51,15 +51,18 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.operator.DomainFailureReason.Internal;
-import static oracle.kubernetes.operator.DomainFailureReason.Introspection;
 import static oracle.kubernetes.operator.DomainFailureReason.ReplicasTooHigh;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
+import static oracle.kubernetes.operator.DomainStatusUpdater.createIntrospectionFailureRelatedSteps;
 import static oracle.kubernetes.operator.DomainStatusUpdaterTest.EventMatcher.eventWithReason;
 import static oracle.kubernetes.operator.DomainStatusUpdaterTest.ServerStatusMatcher.hasStatusForServer;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_AVAILABLE_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_COMPLETED_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_ABORTED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILURE_RESOLVED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_INCOMPLETE_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_UNAVAILABLE_EVENT;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
@@ -257,7 +260,7 @@ class DomainStatusUpdaterTest {
     info.addValidationWarning(validationWarning);
     defineScenario().build();
 
-    testSupport.runSteps(DomainStatusUpdater.createFailureRelatedSteps(failure));
+    testSupport.runSteps(DomainStatusUpdater.createInternalFailureRelatedSteps(failure));
 
     assertThat(getRecordedDomain().getStatus().getMessage(), not(containsString(validationWarning)));
   }
@@ -481,9 +484,18 @@ class DomainStatusUpdaterTest {
     return testSupport.getResources(EVENT);
   }
 
+  private boolean isDomainFailureResolvedEvent(CoreV1Event e) {
+    return DOMAIN_FAILURE_RESOLVED_EVENT.equals(e.getReason());
+  }
+
   private boolean isDomainCompletedEvent(CoreV1Event e) {
     return DOMAIN_COMPLETED_EVENT.equals(e.getReason());
   }
+
+  private boolean isDomainIncompleteEvent(CoreV1Event e) {
+    return DOMAIN_INCOMPLETE_EVENT.equals(e.getReason());
+  }
+
 
   @Test
   void whenAllDesiredServersRunningAndNoMatchingCompletedConditionFound_generateCompletedEvent() {
@@ -497,6 +509,35 @@ class DomainStatusUpdaterTest {
     updateDomainStatus();
 
     assertThat(getEvents().stream().anyMatch(this::isDomainCompletedEvent), is(true));
+  }
+
+  @Test
+  void whenAllDesiredServersRunningAndMatchingFailedConditionFound_generateFailureResolvedEvent() {
+    domain.getStatus()
+        .addCondition(new DomainCondition(Failed).withStatus("True"));
+    defineScenario()
+        .withCluster("clusterA", "server1")
+        .withCluster("clusterB", "server2")
+        .build();
+
+    updateDomainStatus();
+
+    assertThat(getEvents().stream().anyMatch(this::isDomainFailureResolvedEvent), is(true));
+  }
+
+  @Test
+  void whenNoServerRunningAndCompletedConditionFound_generateIncompleteEvent() {
+    domain.getStatus()
+        .addCondition(new DomainCondition(Completed).withStatus("True"));
+    defineScenario()
+        .withServers("server1", "server2")
+        .withServersReachingState(SHUTDOWN_STATE, "server1", "server2")
+        .build();
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus("False"));
+    assertThat(getEvents().stream().anyMatch(this::isDomainIncompleteEvent), is(true));
   }
 
   @Test
@@ -780,6 +821,10 @@ class DomainStatusUpdaterTest {
     return DOMAIN_AVAILABLE_EVENT.equals(e.getReason());
   }
 
+  private boolean isDomainUnavailableEvent(CoreV1Event e) {
+    return DOMAIN_UNAVAILABLE_EVENT.equals(e.getReason());
+  }
+
   @Test
   void whenAllServersRunningAndAvailableConditionNotFoundCompletedConditionNotFound_generateCompletedEvent() {
     domain.getStatus()
@@ -885,6 +930,20 @@ class DomainStatusUpdaterTest {
     assertThat(getEvents().stream().anyMatch(this::isDomainAvailableEvent), is(true));
   }
 
+  @Test
+  void whenNoServerRunningAndAvailableConditionFound_generateUnavailableEvent() {
+    domain.getStatus()
+        .addCondition(new DomainCondition(Available).withStatus("True"));
+    defineScenario()
+        .withServers("server1", "server2")
+        .withServersReachingState(SHUTDOWN_STATE, "server1", "server2")
+        .build();
+
+    updateDomainStatus();
+
+    assertThat(getEvents().stream().anyMatch(this::isDomainUnavailableEvent), is(true));
+  }
+
   private DomainConfigurator configureDomain() {
     return DomainConfiguratorFactory.forDomain(domain);
   }
@@ -901,7 +960,7 @@ class DomainStatusUpdaterTest {
   void whenDomainLacksStatus_failedStepUpdatesDomainWithFailedTrueAndException() {
     domain.setStatus(null);
 
-    testSupport.runSteps(DomainStatusUpdater.createFailureRelatedSteps(failure));
+    testSupport.runSteps(DomainStatusUpdater.createInternalFailureRelatedSteps(failure));
 
     assertThat(
           getRecordedDomain(),
@@ -928,7 +987,7 @@ class DomainStatusUpdaterTest {
 
   @Test
   void whenDomainLacksFailedCondition_failedStepUpdatesDomainWithFailedTrueAndException() {
-    testSupport.runSteps(DomainStatusUpdater.createFailureRelatedSteps(failure));
+    testSupport.runSteps(DomainStatusUpdater.createInternalFailureRelatedSteps(failure));
 
     assertThat(
           getRecordedDomain(),
@@ -937,13 +996,13 @@ class DomainStatusUpdaterTest {
 
   @Test
   void afterIntrospectionFailure_generateDomainProcessingAbortedEvent() {
-    testSupport.runSteps(DomainStatusUpdater.createFailureRelatedSteps(Introspection, FATAL_INTROSPECTOR_ERROR));
+    testSupport.runSteps(createIntrospectionFailureRelatedSteps(FATAL_INTROSPECTOR_ERROR));
 
     assertThat(getEvents().stream().anyMatch(this::isDomainProcessingAbortedEvent), is(true));
   }
 
   private boolean isDomainProcessingAbortedEvent(CoreV1Event e) {
-    return DOMAIN_PROCESSING_ABORTED_EVENT.equals(e.getReason());
+    return DOMAIN_FAILED_EVENT.equals(e.getReason());
   }
 
   @Test
