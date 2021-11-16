@@ -695,7 +695,7 @@ public class ServiceHelper {
       }
 
       private NextAction updateDomainStatus(Packet packet, CallResponse<V1Service> callResponse) {
-        return doNext(DomainStatusUpdater.createFailureRelatedSteps(callResponse), packet);
+        return doNext(DomainStatusUpdater.createKubernetesFailureRelatedSteps(callResponse), packet);
       }
 
       @Override

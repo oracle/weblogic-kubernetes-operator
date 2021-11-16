@@ -33,6 +33,7 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
+import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -739,34 +740,22 @@ public class DomainPresenceInfo implements PacketComponent {
     this.serversToRoll = serversToRoll;
   }
 
-  /** Details about a specific managed server that will be started up. */
-  public static class ServerStartupInfo {
+  /** Details about a specific managed server. */
+  public static class ServerInfo {
     public final WlsServerConfig serverConfig;
-    private final String clusterName;
-    private final ServerSpec serverSpec;
-    private final boolean isServiceOnly;
+    protected final String clusterName;
+    protected final ServerSpec serverSpec;
+    protected final boolean isServiceOnly;
 
     /**
-     * Create server startup info.
-     *
-     * @param serverConfig Server config scan
-     * @param clusterName the name of the cluster
-     * @param serverSpec the server startup configuration
-     */
-    public ServerStartupInfo(
-        WlsServerConfig serverConfig, String clusterName, ServerSpec serverSpec) {
-      this(serverConfig, clusterName, serverSpec, false);
-    }
-
-    /**
-     * Create server startup info.
+     * Create server info.
      *
      * @param serverConfig Server config scan
      * @param clusterName the name of the cluster
      * @param serverSpec the server startup configuration
      * @param isServiceOnly true, if only the server service should be created
      */
-    public ServerStartupInfo(
+    public ServerInfo(
         @Nonnull WlsServerConfig serverConfig,
         @Nullable String clusterName,
         @Nonnull ServerSpec serverSpec,
@@ -793,6 +782,21 @@ public class DomainPresenceInfo implements PacketComponent {
       return serverSpec == null ? Collections.emptyList() : serverSpec.getEnvironmentVariables();
     }
 
+    /**
+     * Create a packet using this server info.
+     *
+     * @param packet the packet to copy from
+     * @return a new packet that is populated with the server info
+     */
+    public Packet createPacket(Packet packet) {
+      Packet p = packet.copy();
+      p.put(ProcessingConstants.CLUSTER_NAME, getClusterName());
+      p.put(ProcessingConstants.SERVER_NAME, getName());
+      p.put(ProcessingConstants.SERVER_SCAN, serverConfig);
+      p.put(ProcessingConstants.ENVVARS, getEnvironment());
+      return p;
+    }
+
     @Override
     public String toString() {
       return new ToStringBuilder(this)
@@ -813,7 +817,7 @@ public class DomainPresenceInfo implements PacketComponent {
         return false;
       }
 
-      ServerStartupInfo that = (ServerStartupInfo) o;
+      ServerInfo that = (ServerInfo) o;
 
       return new EqualsBuilder()
           .append(serverConfig, that.serverConfig)
@@ -835,13 +839,24 @@ public class DomainPresenceInfo implements PacketComponent {
 
   }
 
-  /** Details about a specific managed server that will be shutdown. */
-  public static class ServerShutdownInfo {
-    public final WlsServerConfig serverConfig;
-    private final String clusterName;
-    private final ServerSpec serverSpec;
-    private final boolean isServiceOnly;
+  /** Details about a specific managed server that will be started up. */
+  public static class ServerStartupInfo extends ServerInfo {
 
+    /**
+     * Create server startup info.
+     *
+     * @param serverConfig Server config scan
+     * @param clusterName the name of the cluster
+     * @param serverSpec the server startup configuration
+     */
+    public ServerStartupInfo(
+        WlsServerConfig serverConfig, String clusterName, ServerSpec serverSpec) {
+      super(serverConfig, clusterName, serverSpec, false);
+    }
+  }
+
+  /** Details about a specific managed server that will be shutdown. */
+  public static class ServerShutdownInfo extends ServerInfo {
     /**
      * Create server shutdown info.
      *
@@ -849,7 +864,7 @@ public class DomainPresenceInfo implements PacketComponent {
      * @param clusterName the name of the cluster
      */
     public ServerShutdownInfo(String serverName, String clusterName) {
-      this(new WlsServerConfig(serverName, null, 0), clusterName, null, false);
+      super(new WlsServerConfig(serverName, null, 0), clusterName, null, false);
     }
 
     /**
@@ -863,70 +878,11 @@ public class DomainPresenceInfo implements PacketComponent {
     public ServerShutdownInfo(
             WlsServerConfig serverConfig, String clusterName,
             ServerSpec serverSpec, boolean isServiceOnly) {
-      this.serverConfig = serverConfig;
-      this.clusterName = clusterName;
-      this.serverSpec = serverSpec;
-      this.isServiceOnly = isServiceOnly;
-    }
-
-    public String getName() {
-      return serverConfig.getName();
-    }
-
-    public String getServerName() {
-      return serverConfig.getName();
-    }
-
-    public String getClusterName() {
-      return clusterName;
+      super(serverConfig, clusterName, serverSpec, isServiceOnly);
     }
 
     public boolean isServiceOnly() {
       return  isServiceOnly;
-    }
-
-    public List<V1EnvVar> getEnvironment() {
-      return serverSpec == null ? Collections.emptyList() : serverSpec.getEnvironmentVariables();
-    }
-
-    @Override
-    public String toString() {
-      return new ToStringBuilder(this)
-              .append("serverConfig", serverConfig)
-              .append("clusterName", clusterName)
-              .append("serverSpec", serverSpec)
-              .append("isServiceOnly", isServiceOnly)
-              .toString();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) {
-        return true;
-      }
-
-      if (o == null || getClass() != o.getClass()) {
-        return false;
-      }
-
-      ServerShutdownInfo that = (ServerShutdownInfo) o;
-
-      return new EqualsBuilder()
-              .append(serverConfig, that.serverConfig)
-              .append(clusterName, that.clusterName)
-              .append(serverSpec, that.serverSpec)
-              .append(isServiceOnly, that.isServiceOnly)
-              .isEquals();
-    }
-
-    @Override
-    public int hashCode() {
-      return new HashCodeBuilder(17, 37)
-              .append(serverConfig)
-              .append(clusterName)
-              .append(serverSpec)
-              .append(isServiceOnly)
-              .toHashCode();
     }
   }
 }

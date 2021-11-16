@@ -80,7 +80,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodDomainUid;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodName;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodNamespace;
@@ -760,6 +760,18 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     /**
+     * Set the event data that is associated with this operation.
+     * @param eventItem event data
+     * @param message event message
+     * @return the updated factory
+     */
+    public MakeRightDomainOperation withEventData(EventItem eventItem, String message, String additionalMessage) {
+      this.eventData = new EventData(eventItem, message);
+      eventData.additionalMessage(additionalMessage);
+      return this;
+    }
+
+    /**
      * Modifies the factory to handle shutting down the domain.
      * @return the updated factory
      */
@@ -866,7 +878,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     private boolean shouldReportAbortedEvent() {
-      return Optional.ofNullable(eventData).map(EventData::getItem).orElse(null) == DOMAIN_PROCESSING_ABORTED;
+      return Optional.ofNullable(eventData).map(EventData::getItem).orElse(null) == DOMAIN_FAILED;
     }
 
     private void resetIntrospectorJobFailureCount() {
@@ -1048,7 +1060,7 @@ public class DomainProcessorImpl implements DomainProcessor {
             gate.startFiberIfLastFiberMatches(
                 domainUid,
                 Fiber.getCurrentIfSet(),
-                DomainStatusUpdater.createFailureRelatedSteps(throwable),
+                DomainStatusUpdater.createInternalFailureRelatedSteps(throwable),
                 plan.packet,
                 new CompletionCallback() {
                   @Override
@@ -1090,12 +1102,12 @@ public class DomainProcessorImpl implements DomainProcessor {
                                 DomainPresence.getDomainPresenceFailureRetryMaxCount(),
                                 throwable);
                             createMakeRightOperation(existing)
-                                .withEventData(DOMAIN_PROCESSING_ABORTED,
+                                .withEventData(DOMAIN_FAILED,
                                     String.format(
                                         "Unable to start domain %s after %s attempts due to exception: %s",
                                         domainUid,
                                         DomainPresence.getDomainPresenceFailureRetryMaxCount(),
-                                        throwable))
+                                        throwable), EventConstants.WILL_NOT_RETRY)
                                 .execute();
                           }
                         }
