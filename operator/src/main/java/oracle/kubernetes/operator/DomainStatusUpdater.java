@@ -535,20 +535,10 @@ public class DomainStatusUpdater {
       }
 
       private void setStatusConditions(DomainStatus status) {
-        if (allIntendedServersRunning()) {
-          status.removeConditionWithType(Failed);
-          status.addCondition(new DomainCondition(Completed).withStatus(TRUE));
-          status.addCondition(new DomainCondition(Available).withStatus(TRUE));
-        } else {
-          status.addCondition(new DomainCondition(Completed).withStatus(FALSE));
-          if (sufficientServersRunning()) {
-            status.addCondition(new DomainCondition(Available).withStatus(TRUE));
-          } else if (status.hasConditionWithType(Available)) {
-            status.addCondition(new DomainCondition(Available).withStatus(FALSE));
-          }
-
-          addTooManyReplicasFailures(status);
-        }
+        status.addCondition(new DomainCondition(Completed).withStatus(isProcessingCompleted() ? TRUE : FALSE));
+        status.addCondition(new DomainCondition(Available).withStatus(sufficientServersRunning() ? TRUE : FALSE));
+        removeUnneededFailures(status);
+        addTooManyReplicasFailuresIfNeeded(status);
 
         if (isHasFailedPod()) {
           status.addCondition(new DomainCondition(Failed).withStatus(TRUE).withReason(ServerPod));
@@ -564,11 +554,27 @@ public class DomainStatusUpdater {
         }
       }
 
-      private void addTooManyReplicasFailures(DomainStatus status) {
+      private boolean isProcessingCompleted() {
+        return !haveTooManyReplicas() && (isDomainIntentionallyShutdown() || allIntendedServersRunning());
+      }
+
+      private void removeUnneededFailures(DomainStatus status) {
+        if (allIntendedServersRunning()) {
+          status.removeConditionWithType(Failed);
+        }
+      }
+
+      private void addTooManyReplicasFailuresIfNeeded(DomainStatus status) {
         getConfiguredClusters().stream()
               .map(TooManyReplicasCheck::new)
               .filter(TooManyReplicasCheck::isFailure)
               .forEach(check -> status.addCondition(check.createFailureCondition()));
+      }
+
+      private boolean haveTooManyReplicas() {
+        return getConfiguredClusters().stream()
+              .map(TooManyReplicasCheck::new)
+              .anyMatch(TooManyReplicasCheck::isFailure);
       }
 
       private List<WlsClusterConfig> getConfiguredClusters() {
@@ -680,6 +686,13 @@ public class DomainStatusUpdater {
               && serversMarkedForRoll().isEmpty();
       }
 
+      private boolean isDomainIntentionallyShutdown() {
+        return getDomain().isShuttingDown()
+              && expectedRunningServers.stream().allMatch(this::isShutDown)
+              && expectedRunningServers.containsAll(serverState.keySet())
+              && serversMarkedForRoll().isEmpty();
+      }
+
       private boolean atLeastOneApplicationServerStarted() {
         return getInfo().getServerStartupInfo().size() > 0;
       }
@@ -758,6 +771,10 @@ public class DomainStatusUpdater {
 
       private boolean isNotRunning(@Nonnull String serverName) {
         return !RUNNING_STATE.equals(getRunningState(serverName));
+      }
+
+      private boolean isShutDown(@Nonnull String serverName) {
+        return SHUTDOWN_STATE.equals(getRunningState(serverName));
       }
 
       private boolean isHasFailedPod() {
