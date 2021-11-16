@@ -752,9 +752,10 @@ public class DbUtils {
   /**
    * Install Oracle Database Operator.
    *
+   * @param namespace name of the namespace
    * @throws IOException when fails to modify operator yaml file
    */
-  public static void installDBOperator() throws IOException {
+  public static void installDBOperator(String namespace) throws IOException {
     String certManager = "https://github.com/jetstack/cert-manager/releases/latest/download/cert-manager.yaml";
     CommandParams params = new CommandParams().defaults();
     params.command("kubectl apply -f " + certManager);
@@ -774,22 +775,23 @@ public class DbUtils {
     assertTrue(response, "Failed to download Oracle operator yaml file");
     replaceStringInFile(Paths.get(DOWNLOAD_DIR + "/oracle-database-operator.yaml").toString(),
         "replicas: 3", "replicas: 1");
+    replaceStringInFile(Paths.get(DOWNLOAD_DIR + "/oracle-database-operator.yaml").toString(),
+        "oracle-database-operator-system", namespace);
 
     params = new CommandParams().defaults();
     params.command("kubectl apply -f " + DOWNLOAD_DIR + "/oracle-database-operator.yaml");
     response = Command.withParams(params).execute();
     assertTrue(response, "Failed to install Oracle database operator");
 
-    String dbOpNamespace = "oracle-database-operator-system";
     String dbOpPodName = "oracle-database-operator-controller-manager";
 
     // wait for the pod to be ready
     getLogger().info("Wait for the database operator {0} pod to be ready in namespace {1}",
-        dbOpPodName, dbOpNamespace);
+        dbOpPodName, namespace);
     testUntil(
         assertDoesNotThrow(()
-            -> podIsReady(dbOpNamespace, null, dbOpPodName), "Checking for database pod ready threw exception"),
-        getLogger(), "Waiting for database operator {0} to be ready in namespace {1}", dbOpPodName, dbOpNamespace);
+            -> podIsReady(namespace, null, dbOpPodName), "Checking for database pod ready threw exception"),
+        getLogger(), "Waiting for database operator {0} to be ready in namespace {1}", dbOpPodName, namespace);
 
   }
 

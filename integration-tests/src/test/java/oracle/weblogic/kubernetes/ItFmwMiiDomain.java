@@ -122,7 +122,7 @@ class ItFmwMiiDomain {
     fmwDomainNamespace = namespaces.get(2);
 
     //install Oracle Database Operator
-    assertDoesNotThrow(() -> DbUtils.installDBOperator(), "Failed to install database operator");
+    assertDoesNotThrow(() -> DbUtils.installDBOperator(dbNamespace), "Failed to install database operator");
 
     logger.info("Create Oracle DB in namespace: {0} ", dbNamespace);
     dbUrl = assertDoesNotThrow(() -> DbUtils.createOracleDBUsingOperator(dbName, RCUSYSPASSWORD,
