@@ -86,6 +86,7 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseIma
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -798,12 +799,14 @@ public class DbUtils {
    * @param sysPassword Oracle database admin password
    * @param namespace namespace in which to create Oracle Database
    * @param hostPath Persistent volume mount path for database files
+   * @return database url 
    * @throws ApiException when fails to create various database artifacts
    * @throws IOException when fails to open database yaml file
    */
-  public static void createOracleDBUsingOperator(String dbName, String sysPassword,
+  public static String createOracleDBUsingOperator(String dbName, String sysPassword,
       String namespace, String hostPath) throws ApiException, IOException {
 
+    LoggingFacade logger = getLogger();
     final String DB_IMAGE_19C = OCR_REGISTRY + "/" + OCR_DB_IMAGE_NAME + ":" + OCR_DB_19C_IMAGE_TAG;
     String secretName = "db-password";
     String secretKey = "password";
@@ -838,7 +841,7 @@ public class DbUtils {
     replaceStringInFile(dbYaml, "pullSecrets:", "pullSecrets: " + OCR_SECRET_NAME);
     replaceStringInFile(dbYaml, "storageClass: \"\"", "storageClass: standard");
 
-    getLogger().info("Creating Oracle database using yaml file\n {0}", Files.readString(Paths.get(dbYaml)));
+    logger.info("Creating Oracle database using yaml file\n {0}", Files.readString(Paths.get(dbYaml)));
 
     params = new CommandParams().defaults();
     params.command("kubectl apply -f " + dbYaml);
@@ -849,16 +852,31 @@ public class DbUtils {
 
     ConditionFactory withLongRetryPolicy = with().pollDelay(2, SECONDS)
         .and().with().pollInterval(10, SECONDS)
-        .atMost(10, MINUTES).await();
+        .atMost(25, MINUTES).await();
 
     // wait for the pod to be ready
-    getLogger().info("Wait for the database {0} pod to be ready in namespace {1}", dbName, namespace);
+    logger.info("Wait for the database {0} pod to be ready in namespace {1}", dbName, namespace);
     testUntil(withLongRetryPolicy,
         assertDoesNotThrow(()
             -> podIsReady(namespace, null, dbName), "Checking for database pod ready threw exception"),
-        getLogger(), "Waiting for database {0} to be ready in namespace {1}", dbName, namespace);
+        logger, "Waiting for database {0} to be ready in namespace {1}", dbName, namespace);
 
+    String command = "kubectl get singleinstancedatabase -n "
+        + namespace + " " + dbName + " -o=jsonpath='{.status.connectString}'";
 
+    getLogger().info("Running {0}", command);
+    String dbUrl;
+    try {
+      ExecResult result = ExecCommand.exec(command, true);
+      dbUrl = result.stdout().trim();
+      logger.info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
+          result.exitValue(), response, result.stderr());
+      assertEquals(0, result.exitValue(), "Command didn't succeed");
+    } catch (IOException | InterruptedException ex) {
+      logger.severe(ex.getMessage());
+      return null;
+    }
+    return dbUrl;
   }
 
   private static void createHostPathProvisioner(String namespace, String hostPath) throws ApiException {
