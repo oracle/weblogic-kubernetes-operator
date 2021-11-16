@@ -837,7 +837,7 @@ public class DbUtils {
     getLogger().info("Creating Oracle database using yaml file\n {0}", Files.readString(Paths.get(dbYaml)));
 
     params = new CommandParams().defaults();
-    params.command("kubectl create -f " + dbYaml + " -o " + DOWNLOAD_DIR + "/oracledb.yaml");
+    params.command("kubectl apply -f " + dbYaml);
     response = Command.withParams(params).execute();
     assertTrue(response, "Failed to create Oracle database");
 
