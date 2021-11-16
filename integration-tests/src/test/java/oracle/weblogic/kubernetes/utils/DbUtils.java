@@ -16,26 +16,41 @@ import javax.net.ssl.SSLProtocolException;
 
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1ClusterRole;
+import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1DeploymentSpec;
 import io.kubernetes.client.openapi.models.V1DeploymentStrategy;
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1EnvVarSource;
+import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
 import io.kubernetes.client.openapi.models.V1LabelSelector;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
+import io.kubernetes.client.openapi.models.V1ObjectFieldSelector;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
+import io.kubernetes.client.openapi.models.V1PolicyRule;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
+import io.kubernetes.client.openapi.models.V1Role;
+import io.kubernetes.client.openapi.models.V1RoleBinding;
+import io.kubernetes.client.openapi.models.V1RoleRef;
 import io.kubernetes.client.openapi.models.V1RollingUpdateDeployment;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
+import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
+import io.kubernetes.client.openapi.models.V1StorageClass;
+import io.kubernetes.client.openapi.models.V1Subject;
+import io.kubernetes.client.openapi.models.V1Volume;
+import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
@@ -43,8 +58,13 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static io.kubernetes.client.util.Yaml.dump;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_DB_19C_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_DB_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 //import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
@@ -53,8 +73,11 @@ import static oracle.weblogic.kubernetes.actions.TestActions.listServices;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.getPod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.addSccToDBSvcAccount;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
+import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcrRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -102,7 +125,8 @@ public class DbUtils {
 
     logger.info("Start Oracle DB with dbImage: {0}, dbPort: {1}, dbNamespace: {2}, dbListenerPort:{3}",
         dbImage, dbPort, dbNamespace, dbListenerPort);
-    startOracleDB(dbImage, dbPort, dbNamespace, dbListenerPort);
+    // startOracleDB(dbImage, dbPort, dbNamespace, dbListenerPort);
+
     logger.info("Create RCU schema with fmwImage: {0}, rcuSchemaPrefix: {1}, dbUrl: {2}, "
         + " dbNamespace: {3}:", fmwImage, rcuSchemaPrefix, dbUrl, dbNamespace);
     createRcuSchema(fmwImage, rcuSchemaPrefix, dbUrl, dbNamespace);
@@ -716,6 +740,220 @@ public class DbUtils {
     assertTrue(Kubernetes.deleteSecret(secretName, namespace),
         String.format("create secret failed for %s", secretName));
     createRcuAccessSecret(secretName, namespace, rcuPrefix, password, rcuDbConnString);
+
+  }
+
+  /**
+   * Create Oracle database using Oracle Database Operator.
+   * @param dbName name of the database
+   * @param sysPassword Oracle database admin password
+   * @param namespace namespace in which to create Oracle Database
+   * @param hostPath Persistent volume mount path for database files
+   * @throws ApiException when fails to create various database artifacts
+   * @throws IOException when fails to open database yaml file
+   */
+  public static void createOracleDBUsingOperator(String dbName, String sysPassword,
+      String namespace, String hostPath) throws ApiException, IOException {
+
+    final String DB_IMAGE_19C = OCR_REGISTRY + "/" + OCR_DB_IMAGE_NAME + ":" + OCR_DB_19C_IMAGE_TAG;
+    String secretName = "db-password";
+    String secretKey = "password";
+    Map<String, String> secretMap = new HashMap<>();
+    secretMap.put(secretKey, sysPassword);
+    boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
+        .metadata(new V1ObjectMeta()
+            .name(secretName)
+            .namespace(namespace))
+        .stringData(secretMap)), "Create secret failed with ApiException");
+    assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
+
+    createOcrRepoSecret(namespace);
+
+    createHostPathProvisioner(namespace, hostPath);
+
+    String dbYamlUrl = "https://raw.githubusercontent.com/oracle/oracle-database-operator/main/"
+        + "config/samples/sidb/singleinstancedatabase.yaml";
+
+    Files.deleteIfExists(Paths.get(DOWNLOAD_DIR, "oracledb.yaml"));
+    CommandParams params = new CommandParams().defaults();
+    params.command("curl -fL " + dbYamlUrl + " -o " + DOWNLOAD_DIR + "/oracledb.yaml");
+    boolean response = Command.withParams(params).execute();
+    assertTrue(response, "Failed to download Oracle database yaml file");
+
+    String dbYaml = Paths.get(DOWNLOAD_DIR, "oracledb.yaml").toString();
+    replaceStringInFile(dbYaml, "name: singleinstancedatabase-sample", "name: " + dbName);
+    replaceStringInFile(dbYaml, "namespace: default", "namespace: " + namespace);
+    replaceStringInFile(dbYaml, "secretName:", "secretName: " + secretName);
+    replaceStringInFile(dbYaml, "secretKey:", "secretKey: " + secretKey);
+    replaceStringInFile(dbYaml, "pullFrom: ", "pullFrom: " + DB_IMAGE_19C);
+    replaceStringInFile(dbYaml, "pullSecrets: ", "pullSecrets: " + OCR_SECRET_NAME);
+    replaceStringInFile(dbYaml, "storageClass: \"\"", "storageClass: : standard");
+
+    getLogger().info("Creating Oracle database using yaml file\n {0}", Files.readString(Paths.get(dbYaml)));
+
+    params = new CommandParams().defaults();
+    params.command("kubectl create -f " + dbYaml + " -o " + DOWNLOAD_DIR + "/oracledb.yaml");
+    response = Command.withParams(params).execute();
+    assertTrue(response, "Failed to create Oracle database");
+
+    checkServiceExists("singleinstancedatabase-sample", namespace);
+
+    // wait for the pod to be ready
+    getLogger().info("Wait for the database {0} pod to be ready in namespace {1}", dbName, namespace);
+    testUntil(
+        assertDoesNotThrow(()
+            -> podIsReady(namespace, null, dbName), "Checking for database pod ready threw exception"),
+        getLogger(), "Waiting for database {0} to be ready in namespace {1}", dbName, namespace);
+
+
+  }
+
+  private static void createHostPathProvisioner(String namespace, String hostPath) throws ApiException {
+
+    getLogger().info("Creating namespace");
+    TestActions.createNamespace(namespace);
+
+    String name = "hostpath-provisioner";
+    getLogger().info("Creating service account {0}", name);
+    V1ServiceAccount sa = new V1ServiceAccount();
+    sa.metadata(new V1ObjectMeta()
+        .namespace(namespace)
+        .name(name));
+    assertTrue(TestActions.createServiceAccount(sa), "Failed to create service account");
+
+    getLogger().info("Creating cluster role {0}", name);
+    V1ClusterRole clusterRole = new V1ClusterRole();
+    clusterRole.apiVersion("rbac.authorization.k8s.io/v1")
+        .metadata(new V1ObjectMeta()
+            .name(name))
+        .rules(Arrays.asList(
+            new V1PolicyRule()
+                .addApiGroupsItem("")
+                .resources(Arrays.asList("persistentvolumes"))
+                .verbs(Arrays.asList("get", "list", "watch", "create", "delete")),
+            new V1PolicyRule()
+                .addApiGroupsItem("")
+                .resources(Arrays.asList("persistentvolumeclaims"))
+                .verbs(Arrays.asList("get", "list", "watch")),
+            new V1PolicyRule()
+                .addApiGroupsItem("storage.k8s.io")
+                .resources(Arrays.asList("storageclasses"))
+                .verbs(Arrays.asList("get", "list", "watch")),
+            new V1PolicyRule()
+                .addApiGroupsItem("")
+                .resources(Arrays.asList("events"))
+                .verbs(Arrays.asList("create", "update", "patch"))
+        ));
+    assertTrue(TestActions.createClusterRole(clusterRole), "Failed to create cluster role");
+
+    getLogger().info("Creating cluster role binding {0}", name);
+    V1ClusterRoleBinding clusterRoleBinding = new V1ClusterRoleBinding();
+    clusterRoleBinding.apiVersion("rbac.authorization.k8s.io/v1")
+        .metadata(new V1ObjectMeta()
+            .name(name))
+        .subjects(Arrays.asList(
+            new V1Subject()
+                .kind("ServiceAccount")
+                .name(name)
+                .namespace(namespace)))
+        .roleRef(new V1RoleRef()
+            .kind("ClusterRole")
+            .name(name)
+            .apiGroup("rbac.authorization.k8s.io"));
+    assertTrue(TestActions.createClusterRoleBinding(clusterRoleBinding), "Failed to create cluster role binding");
+
+    getLogger().info("Creating cluster role {0}", name);
+    V1Role role = new V1Role();
+    role.apiVersion("rbac.authorization.k8s.io/v1")
+        .metadata(new V1ObjectMeta()
+            .name("leader-locking-hostpath-provisioner")
+            .namespace(namespace))
+        .rules(Arrays.asList(
+            new V1PolicyRule()
+                .addApiGroupsItem("")
+                .resources(Arrays.asList("endpoints"))
+                .verbs(Arrays.asList("get", "update", "patch")),
+            new V1PolicyRule()
+                .addApiGroupsItem("")
+                .resources(Arrays.asList("endpoints"))
+                .verbs(Arrays.asList("create", "list", "watch"))
+        ));
+    assertTrue(TestActions.createRole(namespace, role), "Failed to create role");
+
+    getLogger().info("Creating cluster role binding {0}", name);
+    V1RoleBinding roleBinding = new V1RoleBinding();
+    roleBinding.apiVersion("rbac.authorization.k8s.io/v1")
+        .metadata(new V1ObjectMeta()
+            .name("leader-locking-hostpath-provisioner")
+            .namespace(namespace))
+        .subjects(Arrays.asList(
+            new V1Subject()
+                .kind("ServiceAccount")
+                .name(name)
+                .namespace(namespace)))
+        .roleRef(new V1RoleRef()
+            .kind("Role")
+            .name("leader-locking-hostpath-provisioner")
+            .apiGroup("rbac.authorization.k8s.io"));
+    assertTrue(TestActions.createRoleBinding(namespace, roleBinding), "Failed to create cluster role binding");
+
+    Map labels = new HashMap<String, String>();
+    labels.put("app", name);
+
+    //create V1Deployment for Oracle DB
+    getLogger().info("Configure V1Deployment in namespace {0} with name {1}", namespace, name);
+    V1Deployment hp = new V1Deployment()
+        .apiVersion("apps/v1")
+        .kind("Deployment")
+        .metadata(new V1ObjectMeta()
+            .name(name)
+            .namespace(namespace)
+            .labels(labels))
+        .spec(new V1DeploymentSpec()
+            .replicas(1)
+            .selector(new V1LabelSelector()
+                .matchLabels(labels))
+            .template(new V1PodTemplateSpec()
+                .metadata(new V1ObjectMeta()
+                    .labels(labels))
+                .spec(new V1PodSpec()
+                    .containers(Arrays.asList(new V1Container()
+                        .name(name)
+                        .image("mauilion/hostpath-provisioner:dev")
+                        .imagePullPolicy("IfNotPresent")
+                        .addEnvItem(new V1EnvVar()
+                            .name("NODE_NAME")
+                            .valueFrom(new V1EnvVarSource()
+                                .fieldRef(new V1ObjectFieldSelector()
+                                    .fieldPath("spec.nodeName"))))
+                        .volumeMounts(Arrays.asList(new V1VolumeMount()
+                            .name(name)
+                            .mountPath("/home/pvvolume")))))
+                    .serviceAccountName(name)
+                    .volumes(Arrays.asList(new V1Volume()
+                        .name("pv-volume")
+                        .hostPath(new V1HostPathVolumeSource()
+                            .path(hostPath)))))));
+
+    getLogger().info("Create deployment for {0} in namespace {1}", name, namespace);
+    assertTrue(assertDoesNotThrow(() -> Kubernetes.createDeployment(hp),
+        String.format("Create deployment failed with ApiException for hostpath provisioner in namespace %s",
+            namespace)),
+        String.format("Create deployment failed for hostpath provisioner in namespace %s",
+            namespace));
+
+    getLogger().info("Creating Storageclass with name {0}", name);
+    Map<String, String> annotations = new HashMap<>();
+    annotations.put("storageclass.kubernetes.io/is-default-class", "true");
+    V1StorageClass sc = new V1StorageClass();
+    sc.apiVersion("storage.k8s.io/v1")
+        .metadata(new V1ObjectMeta()
+            .name("standard")
+            .annotations(annotations))
+        .reclaimPolicy("Retain")
+        .provisioner("example.com/hostpath");
+
+    assertTrue(TestActions.createStorageClass(sc), "Failed to create storage class");
 
   }
 

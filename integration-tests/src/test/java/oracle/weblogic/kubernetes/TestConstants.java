@@ -82,6 +82,7 @@ public interface TestConstants {
   public static final String OCR_FMWINFRA_IMAGE_TAG = "12.2.1.4";
   public static final String OCR_DB_IMAGE_NAME = "database/enterprise";
   public static final String OCR_DB_IMAGE_TAG = "12.2.0.1-slim";
+  public static final String OCR_DB_19C_IMAGE_TAG = "19.3.0.0";
 
   // ----------------------------- base images constants ---------------------
   // Get BASE_IMAGES_REPO from env var, if its not provided use OCIR as default to pull base images
@@ -242,7 +243,7 @@ public interface TestConstants {
   public static final String WDT_BASIC_MODEL_PROPERTIES_FILE = "wdt-singleclusterdomain-sampleapp-wls.properties";
   public static final String WDT_BASIC_IMAGE_NAME = DOMAIN_IMAGES_REPO + "wdt-basic-image";
   // Skip the mii/wdt basic image build locally if needed
-  public static final String WDT_BASIC_IMAGE_TAG = 
+  public static final String WDT_BASIC_IMAGE_TAG =
       Boolean.valueOf(SKIP_BUILD_IMAGES_IF_EXISTS) ? "local" : getDateAndTimeStamp();
   public static final String WDT_BASIC_IMAGE_DOMAINHOME = "/u01/oracle/user_projects/domains/domain1";
   public static final String WDT_IMAGE_DOMAINHOME_BASE_DIR = "/u01/oracle/user_projects/domains";
