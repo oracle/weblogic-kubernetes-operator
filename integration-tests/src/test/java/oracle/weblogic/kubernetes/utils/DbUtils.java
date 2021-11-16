@@ -761,6 +761,7 @@ public class DbUtils {
     String operatorYaml = "https://raw.githubusercontent.com/"
         + "oracle/oracle-database-operator/main/oracle-database-operator.yaml";
 
+    Files.createDirectories(Paths.get(DOWNLOAD_DIR));
     Files.deleteIfExists(Paths.get(DOWNLOAD_DIR, "oracle-database-operator.yaml"));
     params = new CommandParams().defaults();
     params.command("curl -fL " + operatorYaml + " -o " + DOWNLOAD_DIR + "/oracle-database-operator.yaml");
