@@ -18,12 +18,14 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.DomainFailureReason.Introspection;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
+import static oracle.kubernetes.operator.ProcessingConstants.INTROSPECTION_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
 import static oracle.kubernetes.operator.helpers.JobHelper.INTROSPECTOR_LOG_PREFIX;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.utils.LogMatcher.containsSevere;
 import static oracle.kubernetes.utils.LogMatcher.containsWarning;
+import static oracle.kubernetes.utils.OperatorUtils.onSeparateLines;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -74,10 +76,6 @@ class IntrospectionLoggingTest {
     logRecords.clear();
   }
 
-  private String onSeparateLines(String... s) {
-    return String.join(System.lineSeparator(), s);
-  }
-
   @Test
   void whenIntrospectorMessageContainsAdditionalLines_logThem() {
     String extendedInfoMessage = onSeparateLines(INFO_MESSAGE, INFO_EXTRA1, INFO_EXTRA_2);
@@ -98,7 +96,8 @@ class IntrospectionLoggingTest {
 
     Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
     assertThat(updatedDomain.getStatus().getReason(), equalTo(Introspection.toString()));
-    assertThat(updatedDomain.getStatus().getMessage(), equalTo(SEVERE_PROBLEM_1));
+    assertThat(updatedDomain.getStatus().getMessage(),
+            equalTo(onSeparateLines("Introspection failed on try 1 of 2.", INTROSPECTION_ERROR, SEVERE_PROBLEM_1)));
   }
 
   @Test
@@ -113,6 +112,7 @@ class IntrospectionLoggingTest {
     assertThat(updatedDomain.getStatus().getReason(), equalTo(Introspection.toString()));
     assertThat(
         updatedDomain.getStatus().getMessage(),
-        equalTo(onSeparateLines(SEVERE_PROBLEM_1, SEVERE_PROBLEM_2)));
+        equalTo(onSeparateLines("Introspection failed on try 1 of 2.", INTROSPECTION_ERROR,
+                SEVERE_PROBLEM_1, SEVERE_PROBLEM_2)));
   }
 }
