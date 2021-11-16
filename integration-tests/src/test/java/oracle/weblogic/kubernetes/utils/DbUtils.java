@@ -933,7 +933,7 @@ public class DbUtils {
         ));
     assertTrue(TestActions.createRole(namespace, role), "Failed to create role");
 
-    getLogger().info("Creating cluster role binding {0}", name);
+    getLogger().info("Creating role binding {0}", name);
     V1RoleBinding roleBinding = new V1RoleBinding();
     roleBinding.apiVersion("rbac.authorization.k8s.io/v1")
         .metadata(new V1ObjectMeta()
@@ -980,7 +980,7 @@ public class DbUtils {
                                 .fieldRef(new V1ObjectFieldSelector()
                                     .fieldPath("spec.nodeName"))))
                         .volumeMounts(Arrays.asList(new V1VolumeMount()
-                            .name(name)
+                            .name("pv-volume")
                             .mountPath("/home/pvvolume")))))
                     .serviceAccountName(name)
                     .volumes(Arrays.asList(new V1Volume()
