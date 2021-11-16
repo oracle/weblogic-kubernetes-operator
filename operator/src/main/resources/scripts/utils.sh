@@ -715,7 +715,7 @@ function checkAuxiliaryImage() {
     rm -f ${AUXILIARY_IMAGE_PATH}/testaccess.tmp || return 1
 
     # The container .out files embed their container name, the names will sort in the same order in which the containers ran
-    out_files=$(set -o pipefail ; ls -1 $AUXILIARY_IMAGE_PATH/auxiliaryImageLogs/*.out 2>1 | sort --version-sort) \
+    out_files=$(set -o pipefail ; ls -1 $AUXILIARY_IMAGE_PATH/auxiliaryImageLogs/*.out 2>&1 | sort --version-sort) \
       || (trace SEVERE "Auxiliary Image: Assertion failure. No files found in '$AUXILIARY_IMAGE_PATH/auxiliaryImageLogs/*.out" \
       && return 1)
     severe_found=false
