@@ -274,6 +274,7 @@ class DomainStatusUpdaterTest {
                         .withDesiredState(SHUTDOWN_STATE)
                         .withServerName("server1")
                         .withHealth(overallHealth("health1"))))
+              .addCondition(new DomainCondition(Available).withStatus("False"))
               .addCondition(new DomainCondition(Completed).withStatus("False")));
 
     testSupport.clearNumCalls();
@@ -313,10 +314,15 @@ class DomainStatusUpdaterTest {
   }
 
   private void markServerPodsInClusterForDeletion() {
-    info.getServerPod("server1").getMetadata().setDeletionTimestamp(SystemClock.now());
-    info.getServerPod("server2").getMetadata().setDeletionTimestamp(SystemClock.now());
-    info.getServerPod("server3").getMetadata().setDeletionTimestamp(SystemClock.now());
+    getServerPodMetadata("server1").setDeletionTimestamp(SystemClock.now());
+    getServerPodMetadata("server2").setDeletionTimestamp(SystemClock.now());
+    getServerPodMetadata("server3").setDeletionTimestamp(SystemClock.now());
     info.setServerStartupInfo(null);
+  }
+
+  @Nonnull
+  private V1ObjectMeta getServerPodMetadata(String serverName) {
+    return Objects.requireNonNull(info.getServerPod(serverName).getMetadata());
   }
 
   private ClusterStatus getClusterStatus() {
@@ -354,17 +360,6 @@ class DomainStatusUpdaterTest {
     assertThat(getRecordedDomain(), hasStatusForServer("server1").withState(SHUTTING_DOWN_STATE));
     assertThat(getRecordedDomain(), hasStatusForServer("server2").withState(SHUTTING_DOWN_STATE));
     assertThat(getRecordedDomain(), hasStatusForServer("server3").withState(SHUTTING_DOWN_STATE));
-  }
-
-  private ServerStatus createServerStatus(String state, String desiredState,
-                                          String clusterName, String nodeName, String serverName, String health) {
-    return new ServerStatus()
-            .withState(state)
-            .withDesiredState(desiredState)
-            .withClusterName(clusterName)
-            .withNodeName(nodeName)
-            .withServerName(serverName)
-            .withHealth(new ServerHealth().withOverallHealth(health));
   }
 
   @Test
@@ -406,8 +401,32 @@ class DomainStatusUpdaterTest {
     assertThat(getRecordedDomain(), hasCondition(Completed).withStatus("False"));
   }
 
+  @Test  //olws-93193
+  void whenNoServersRunning_establishAvailableConditionFalse() {
+    defineScenario()
+          .withServers("server1", "server2")
+          .withServersReachingState(SHUTDOWN_STATE, "server1", "server2")
+          .build();
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(Available).withStatus("False"));
+  }
+
   @Test
-  void whenAllDesiredServersRunning_establishCompletedConditionTrue() {
+  void withoutAClusterWhenAllDesiredServersRunning_establishCompletedConditionTrue() {
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus("True"));
+    assertThat(
+        getRecordedDomain().getApiVersion(),
+        equalTo(KubernetesConstants.API_VERSION_WEBLOGIC_ORACLE));
+  }
+
+  @Test
+  void withAClusterWhenAllDesiredServersRunningAndNoClusters_establishCompletedConditionTrue() {
+    defineScenario().withCluster("cluster1", "ms1", "ms2", "ms3").build();
 
     updateDomainStatus();
 
@@ -656,14 +675,45 @@ class DomainStatusUpdaterTest {
   }
 
   @Test
+  void whenReplicaCountExceedsMaxReplicasForDynamicCluster_domainIsNotCompleted() {
+    domain.setReplicaCount("cluster1", 5);
+    defineScenario().addDynamicCluster("cluster1", 4).build();
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus("False"));
+  }
+
+  @Test
   void withServerStartPolicyNEVER_domainIsNotAvailable() {
     domain.getSpec().setServerStartPolicy("NEVER");
     defineScenario().withServers("server1").notStarting("server1").build();
 
     updateDomainStatus();
 
-    assertThat(getRecordedDomain(), not(hasCondition(Available)));
+    assertThat(getRecordedDomain(), hasCondition(Available).withStatus("False"));
+  }
+
+  @Test
+  void withServerStartPolicyNEVERAndServersStillRunning_domainIsNotCompleted() {
+    domain.getSpec().setServerStartPolicy("NEVER");
+    defineScenario().withServers("server1").withServersReachingState(SHUTTING_DOWN_STATE, "server1").build();
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(Available).withStatus("False"));
     assertThat(getRecordedDomain(), hasCondition(Completed).withStatus("False"));
+  }
+
+  @Test
+  void withServerStartPolicyNEVERAndServersShutdown_domainIsCompleted() {
+    domain.getSpec().setServerStartPolicy("NEVER");
+    defineScenario().withServers("server1").withServersReachingState(SHUTDOWN_STATE, ADMIN, "server1").build();
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(Available).withStatus("False"));
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus("True"));
   }
 
   @Test
@@ -677,7 +727,7 @@ class DomainStatusUpdaterTest {
 
     updateDomainStatus();
 
-    assertThat(getRecordedDomain(), not(hasCondition(Available)));
+    assertThat(getRecordedDomain(), hasCondition(Available).withStatus("False"));
     assertThat(getRecordedDomain(), hasCondition(Completed).withStatus("False"));
   }
 
@@ -829,7 +879,7 @@ class DomainStatusUpdaterTest {
   }
 
   static class EventMatcher extends TypeSafeDiagnosingMatcher<CoreV1Event> {
-    private String expectedReason;
+    private final String expectedReason;
 
     private EventMatcher(String expectedReason) {
       this.expectedReason = expectedReason;
@@ -1064,10 +1114,13 @@ class DomainStatusUpdaterTest {
       servers.add(serverName);
     }
 
+    @SuppressWarnings("SameParameterValue")
     ScenarioBuilder addDynamicCluster(String clusterName, int maxServers) {
       configSupport.addWlsCluster(new DynamicClusterConfigBuilder(clusterName)
             .withClusterLimits(1, maxServers)
             .withServerNames(generateServerNames(maxServers)));
+      Arrays.stream(generateServerNames(maxServers)).forEach(serverName -> addClusteredServer(clusterName, serverName));
+
       return this;
     }
 
