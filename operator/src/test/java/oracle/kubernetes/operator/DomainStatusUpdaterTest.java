@@ -54,6 +54,7 @@ import static oracle.kubernetes.operator.DomainFailureReason.Internal;
 import static oracle.kubernetes.operator.DomainFailureReason.ReplicasTooHigh;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
+import static oracle.kubernetes.operator.DomainStatusUpdater.createInternalFailureRelatedSteps;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createIntrospectionFailureRelatedSteps;
 import static oracle.kubernetes.operator.DomainStatusUpdaterTest.EventMatcher.eventWithReason;
 import static oracle.kubernetes.operator.DomainStatusUpdaterTest.ServerStatusMatcher.hasStatusForServer;
@@ -64,6 +65,7 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILURE_RESOLVED_
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_INCOMPLETE_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_UNAVAILABLE_EVENT;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
@@ -260,7 +262,8 @@ class DomainStatusUpdaterTest {
     info.addValidationWarning(validationWarning);
     defineScenario().build();
 
-    testSupport.runSteps(DomainStatusUpdater.createInternalFailureRelatedSteps(failure));
+    testSupport.runSteps(createInternalFailureRelatedSteps(failure,
+        testSupport.getPacket().getValue(DOMAIN_INTROSPECTOR_JOB)));
 
     assertThat(getRecordedDomain().getStatus().getMessage(), not(containsString(validationWarning)));
   }
@@ -960,7 +963,8 @@ class DomainStatusUpdaterTest {
   void whenDomainLacksStatus_failedStepUpdatesDomainWithFailedTrueAndException() {
     domain.setStatus(null);
 
-    testSupport.runSteps(DomainStatusUpdater.createInternalFailureRelatedSteps(failure));
+    testSupport.runSteps(createInternalFailureRelatedSteps(failure,
+        testSupport.getPacket().getValue(DOMAIN_INTROSPECTOR_JOB)));
 
     assertThat(
           getRecordedDomain(),
@@ -987,7 +991,8 @@ class DomainStatusUpdaterTest {
 
   @Test
   void whenDomainLacksFailedCondition_failedStepUpdatesDomainWithFailedTrueAndException() {
-    testSupport.runSteps(DomainStatusUpdater.createInternalFailureRelatedSteps(failure));
+    testSupport.runSteps(createInternalFailureRelatedSteps(failure,
+        testSupport.getPacket().getValue(DOMAIN_INTROSPECTOR_JOB)));
 
     assertThat(
           getRecordedDomain(),
