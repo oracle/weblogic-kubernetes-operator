@@ -289,7 +289,7 @@ class ItMiiDomain {
 
     // Test that `kubectl port-foward` is able to forward a local port to default channel port (7001 in this test)
     // and default secure channel port (7002 in this test)
-    // Verify that the WLS admin console can be accessed using http://localhost:localPort/console/login/LoginForm.jsp
+    // Verify that the WLS admin console can not be accessed using http://localhost:localPort/console/login/LoginForm.jsp
     String forwardedPortNo = startPortForwardProcess(hostName, domainNamespace, domainUid, adminServerPort);
     verifyAdminConsoleAccessible(domainNamespace, hostName, forwardedPortNo, false, Boolean.FALSE);
 
