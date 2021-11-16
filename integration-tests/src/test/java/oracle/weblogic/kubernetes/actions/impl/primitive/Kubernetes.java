@@ -2628,22 +2628,17 @@ public class Kubernetes {
    */
   public static boolean createStorageClass(V1StorageClass sco) {
     KubernetesApiResponse<V1StorageClass> response = storageClassClient.create(sco);
-    boolean status;
     if (response.isSuccess()) {
       getLogger().info("Successfully created StorageClass {0}", sco.getMetadata().getName());
-      status = true;
+      return true;
     } else {
       if (response.getStatus() != null) {
         getLogger().info(Yaml.dump(response.getStatus()));
       }
       getLogger().warning("Failed to create StorageClass {0} with error code {1}",
           sco.getMetadata().getName(), response.getHttpStatusCode());
-      if (response.getHttpStatusCode() == 409) {
-        status = true;
-      }
-      status = false;
+      return response.getHttpStatusCode() == 409;
     }
-    return status;
   }
 
   /**
