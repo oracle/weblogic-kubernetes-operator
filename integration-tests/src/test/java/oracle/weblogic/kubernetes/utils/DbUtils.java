@@ -885,7 +885,13 @@ public class DbUtils {
                 .resources(Arrays.asList("events"))
                 .verbs(Arrays.asList("create", "update", "patch"))
         ));
-    assertTrue(TestActions.createClusterRole(clusterRole), "Failed to create cluster role");
+    try {
+      TestActions.createClusterRole(clusterRole);
+    } catch (ApiException apiEx) {
+      if (!apiEx.getResponseBody().contains("AlreadyExists")) {
+        throw apiEx;
+      }
+    }
 
     getLogger().info("Creating cluster role binding {0}", name);
     V1ClusterRoleBinding clusterRoleBinding = new V1ClusterRoleBinding();
@@ -901,9 +907,15 @@ public class DbUtils {
             .kind("ClusterRole")
             .name(name)
             .apiGroup("rbac.authorization.k8s.io"));
-    assertTrue(TestActions.createClusterRoleBinding(clusterRoleBinding), "Failed to create cluster role binding");
+    try {
+      TestActions.createClusterRoleBinding(clusterRoleBinding);
+    } catch (ApiException apiEx) {
+      if (!apiEx.getResponseBody().contains("AlreadyExists")) {
+        throw apiEx;
+      }
+    }
 
-    getLogger().info("Creating cluster role {0}", name);
+    getLogger().info("Creating role {0}", name);
     V1Role role = new V1Role();
     role.apiVersion("rbac.authorization.k8s.io/v1")
         .metadata(new V1ObjectMeta()
@@ -993,7 +1005,6 @@ public class DbUtils {
             .annotations(annotations))
         .reclaimPolicy("Retain")
         .provisioner("example.com/hostpath");
-
     assertTrue(TestActions.createStorageClass(sc), "Failed to create storage class");
 
   }
