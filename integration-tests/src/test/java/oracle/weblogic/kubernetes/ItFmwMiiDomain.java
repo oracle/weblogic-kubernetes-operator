@@ -24,7 +24,6 @@ import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
-import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
@@ -37,9 +36,8 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getCurrentIntrospec
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyUpdateWebLogicCredential;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuAccessSecret;
-import static oracle.weblogic.kubernetes.utils.DbUtils.setupDBandRCUschema;
+import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuSchema;
 import static oracle.weblogic.kubernetes.utils.DbUtils.updateRcuAccessSecret;
 import static oracle.weblogic.kubernetes.utils.DbUtils.updateRcuPassword;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
@@ -85,6 +83,7 @@ class ItFmwMiiDomain {
   private static final String modelFile = "model-singleclusterdomain-sampleapp-jrf.yaml";
 
   private static String dbUrl = null;
+  private static String dbName = "my-oracle-sidb";
   private static LoggingFacade logger = null;
 
   private String domainUid = "fmwdomain-mii";
@@ -113,9 +112,6 @@ class ItFmwMiiDomain {
     logger.info("Assign a unique namespace for DB and RCU");
     assertNotNull(namespaces.get(0), "Namespace is null");
     dbNamespace = namespaces.get(0);
-    final int dbListenerPort = getNextFreePort();
-    ORACLEDBSUFFIX = ".svc.cluster.local:" + dbListenerPort + "/devpdb.k8s";
-    dbUrl = ORACLEDBURLPREFIX + dbNamespace + ORACLEDBSUFFIX;
 
     logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(1), "Namespace is null");
@@ -125,24 +121,20 @@ class ItFmwMiiDomain {
     assertNotNull(namespaces.get(2), "Namespace is null");
     fmwDomainNamespace = namespaces.get(2);
 
-    logger.info("Start DB and create RCU schema for namespace: {0}, dbListenerPort: {1}, RCU prefix: {2}, "
-         + "dbUrl: {3}, dbImage: {4},  fmwImage: {5} ", dbNamespace, dbListenerPort, RCUSCHEMAPREFIX, dbUrl,
-        DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC);
+    //install Oracle Database Operator
     assertDoesNotThrow(() -> DbUtils.installDBOperator(), "Failed to install database operator");
-    String dbUrl = assertDoesNotThrow(() -> DbUtils.createOracleDBUsingOperator("my-oracle-sidb",
-        "Oradoc_db1", dbNamespace, WORK_DIR + "/oracledatabase"));
 
-    assertDoesNotThrow(() -> setupDBandRCUschema(DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC,
-        RCUSCHEMAPREFIX, dbNamespace, getNextFreePort(), dbUrl, dbListenerPort),
-        String.format("Failed to create RCU schema for prefix %s in the namespace %s with "
-        + "dbUrl %s, dbListenerPost $s", RCUSCHEMAPREFIX, dbNamespace, dbUrl, dbListenerPort));
+    logger.info("Create Oracle DB in namespace: {0} ", dbNamespace);
+    dbUrl = assertDoesNotThrow(() -> DbUtils.createOracleDBUsingOperator(dbName, RCUSYSPASSWORD,
+        dbNamespace, WORK_DIR + "/oracledatabase"));
+
+    logger.info("Create RCU schema with fmwImage: {0}, rcuSchemaPrefix: {1}, dbUrl: {2}, "
+        + " dbNamespace: {3}:", FMWINFRA_IMAGE_TO_USE_IN_SPEC, RCUSCHEMAPREFIX, dbUrl, dbNamespace);
+    assertDoesNotThrow(() -> createRcuSchema(FMWINFRA_IMAGE_TO_USE_IN_SPEC, RCUSCHEMAPREFIX,
+        dbUrl, dbNamespace));
 
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, fmwDomainNamespace);
-
-    logger.info("For ItFmwMiiDomain using DB image: {0}, FMW image {1}",
-        DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC);
-
   }
 
   /**

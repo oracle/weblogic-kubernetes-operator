@@ -131,7 +131,7 @@ public class DbUtils {
 
     logger.info("Start Oracle DB with dbImage: {0}, dbPort: {1}, dbNamespace: {2}, dbListenerPort:{3}",
         dbImage, dbPort, dbNamespace, dbListenerPort);
-    // startOracleDB(dbImage, dbPort, dbNamespace, dbListenerPort);
+    startOracleDB(dbImage, dbPort, dbNamespace, dbListenerPort);
 
     logger.info("Create RCU schema with fmwImage: {0}, rcuSchemaPrefix: {1}, dbUrl: {2}, "
         + " dbNamespace: {3}:", fmwImage, rcuSchemaPrefix, dbUrl, dbNamespace);
