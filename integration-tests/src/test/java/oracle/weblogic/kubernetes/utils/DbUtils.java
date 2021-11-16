@@ -830,8 +830,8 @@ public class DbUtils {
     replaceStringInFile(dbYaml, "namespace: default", "namespace: " + namespace);
     replaceStringInFile(dbYaml, "secretName:", "secretName: " + secretName);
     replaceStringInFile(dbYaml, "secretKey:", "secretKey: " + secretKey);
-    replaceStringInFile(dbYaml, "pullFrom: ", "pullFrom: " + DB_IMAGE_19C);
-    replaceStringInFile(dbYaml, "pullSecrets: ", "pullSecrets: " + OCR_SECRET_NAME);
+    replaceStringInFile(dbYaml, "pullFrom:", "pullFrom: " + DB_IMAGE_19C);
+    replaceStringInFile(dbYaml, "pullSecrets:", "pullSecrets: " + OCR_SECRET_NAME);
     replaceStringInFile(dbYaml, "storageClass: \"\"", "storageClass: standard");
 
     getLogger().info("Creating Oracle database using yaml file\n {0}", Files.readString(Paths.get(dbYaml)));
