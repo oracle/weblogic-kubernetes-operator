@@ -79,6 +79,7 @@ import io.kubernetes.client.openapi.models.V1StorageClassList;
 import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.PatchUtils;
 import io.kubernetes.client.util.Streams;
+import io.kubernetes.client.util.Yaml;
 import io.kubernetes.client.util.exception.CopyNotSupportedException;
 import io.kubernetes.client.util.generic.GenericKubernetesApi;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
@@ -286,7 +287,7 @@ public class Kubernetes {
         new GenericKubernetesApi<>(
             V1StorageClass.class, // the api type class
             V1StorageClassList.class, // the api list type class
-            "", // the api group
+            "storage.k8s.io", // the api group
             "v1", // the api version
             "storageclasses", // the resource plural
             apiClient //the api client
@@ -2630,6 +2631,9 @@ public class Kubernetes {
     if (response.isSuccess()) {
       getLogger().info("Successfully created StorageClass {0}", sco.getMetadata().getName());
     } else {
+      if (response.getStatus() != null) {
+        getLogger().info(Yaml.dump(response.getStatus()));
+      }
       getLogger().info("Failed to create StorageClass {0} with error code {1}",
           sco.getMetadata().getName(), response.getHttpStatusCode());
       return false;
