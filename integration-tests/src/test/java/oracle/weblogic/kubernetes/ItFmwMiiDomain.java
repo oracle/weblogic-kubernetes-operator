@@ -128,6 +128,7 @@ class ItFmwMiiDomain {
     logger.info("Start DB and create RCU schema for namespace: {0}, dbListenerPort: {1}, RCU prefix: {2}, "
          + "dbUrl: {3}, dbImage: {4},  fmwImage: {5} ", dbNamespace, dbListenerPort, RCUSCHEMAPREFIX, dbUrl,
         DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC);
+    assertDoesNotThrow(() -> DbUtils.installDBOperator(), "Failed to install database operator");
     assertDoesNotThrow(() -> DbUtils.createOracleDBUsingOperator("my-oracle-sidb",
         "Oradoc_db1", dbNamespace, WORK_DIR + "/oracledatabase"));
     assertDoesNotThrow(() -> setupDBandRCUschema(DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC,

@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLProtocolException;
 
 import io.kubernetes.client.custom.IntOrString;
@@ -743,6 +744,49 @@ public class DbUtils {
 
   }
 
+  /**
+   * Install Oracle Database Operator.
+   *
+   * @throws IOException when fails to modify operator yaml file
+   */
+  public static void installDBOperator() throws IOException {
+    String certManager = "https://github.com/jetstack/cert-manager/releases/latest/download/cert-manager.yaml";
+    CommandParams params = new CommandParams().defaults();
+    params.command("kubectl apply -f " + certManager);
+    boolean response = Command.withParams(params).execute();
+    assertTrue(response, "Failed to install cert manager");
+
+    assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(10));
+
+    String operatorYaml = "https://raw.githubusercontent.com/"
+        + "oracle/oracle-database-operator/main/oracle-database-operator.yaml";
+
+    Files.deleteIfExists(Paths.get(DOWNLOAD_DIR, "oracle-database-operator.yaml"));
+    params = new CommandParams().defaults();
+    params.command("curl -fL " + operatorYaml + " -o " + DOWNLOAD_DIR + "/oracle-database-operator.yaml");
+    response = Command.withParams(params).execute();
+    assertTrue(response, "Failed to download Oracle operator yaml file");
+    replaceStringInFile(Paths.get(DOWNLOAD_DIR + "/oracle-database-operator.yaml").toString(),
+        "replicas: 3", "replicas: 1");
+
+    params = new CommandParams().defaults();
+    params.command("kubectl apply -f " + operatorYaml);
+    response = Command.withParams(params).execute();
+    assertTrue(response, "Failed to install Oracle database operator");
+
+    String dbOpNamespace = "oracle-database-operator-system";
+    String dbOpPodName = "oracle-database-operator-controller-manager";
+
+    // wait for the pod to be ready
+    getLogger().info("Wait for the database operator {0} pod to be ready in namespace {1}",
+        dbOpPodName, dbOpNamespace);
+    testUntil(
+        assertDoesNotThrow(()
+            -> podIsReady(dbOpNamespace, null, dbOpPodName), "Checking for database pod ready threw exception"),
+        getLogger(), "Waiting for database operator {0} to be ready in namespace {1}", dbOpPodName, dbOpNamespace);
+
+  }
+  
   /**
    * Create Oracle database using Oracle Database Operator.
    * @param dbName name of the database
