@@ -770,7 +770,7 @@ public class DbUtils {
         "replicas: 3", "replicas: 1");
 
     params = new CommandParams().defaults();
-    params.command("kubectl apply -f " + operatorYaml);
+    params.command("kubectl apply -f " + DOWNLOAD_DIR + "/oracle-database-operator.yaml");
     response = Command.withParams(params).execute();
     assertTrue(response, "Failed to install Oracle database operator");
 
