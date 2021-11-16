@@ -56,8 +56,11 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import org.awaitility.core.ConditionFactory;
 
 import static io.kubernetes.client.util.Yaml.dump;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_DB_19C_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_DB_IMAGE_NAME;
@@ -81,6 +84,7 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcrRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -841,11 +845,15 @@ public class DbUtils {
     response = Command.withParams(params).execute();
     assertTrue(response, "Failed to create Oracle database");
 
-    checkServiceExists("singleinstancedatabase-sample", namespace);
+    checkServiceExists(dbName, namespace);
+
+    ConditionFactory withLongRetryPolicy = with().pollDelay(2, SECONDS)
+        .and().with().pollInterval(10, SECONDS)
+        .atMost(10, MINUTES).await();
 
     // wait for the pod to be ready
     getLogger().info("Wait for the database {0} pod to be ready in namespace {1}", dbName, namespace);
-    testUntil(
+    testUntil(withLongRetryPolicy,
         assertDoesNotThrow(()
             -> podIsReady(namespace, null, dbName), "Checking for database pod ready threw exception"),
         getLogger(), "Waiting for database {0} to be ready in namespace {1}", dbName, namespace);
