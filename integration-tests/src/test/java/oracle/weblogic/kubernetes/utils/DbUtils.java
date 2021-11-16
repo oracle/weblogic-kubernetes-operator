@@ -799,7 +799,7 @@ public class DbUtils {
    * @param sysPassword Oracle database admin password
    * @param namespace namespace in which to create Oracle Database
    * @param hostPath Persistent volume mount path for database files
-   * @return database url 
+   * @return database url
    * @throws ApiException when fails to create various database artifacts
    * @throws IOException when fails to open database yaml file
    */
@@ -862,7 +862,7 @@ public class DbUtils {
         logger, "Waiting for database {0} to be ready in namespace {1}", dbName, namespace);
 
     String command = "kubectl get singleinstancedatabase -n "
-        + namespace + " " + dbName + " -o=jsonpath='{.status.connectString}'";
+        + namespace + " " + dbName + " -o=jsonpath='{.status.pdbConnectString}'";
 
     getLogger().info("Running {0}", command);
     String dbUrl;
