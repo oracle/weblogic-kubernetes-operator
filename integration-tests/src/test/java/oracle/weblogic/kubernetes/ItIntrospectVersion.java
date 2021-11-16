@@ -1133,7 +1133,14 @@ class ItIntrospectVersion {
     // verify when a domain resource has spec.introspectVersion configured,
     // after a introspectVersion is modified, new server pods have the label
     // "weblogic.introspectVersion" set as well.
-    verifyIntrospectVersionLabelInPod(replicaCount);
+    testUntil(
+        () -> {
+          assertDoesNotThrow(() -> verifyIntrospectVersionLabelInPod(replicaCount));
+          return true;
+        },
+        logger,
+        " Running verifyIntrospectVersionLabelInPod");
+
 
     // use introspectDomain.sh to initiate introspection
     logger.info("Initiate introspection with non numeric string with space");

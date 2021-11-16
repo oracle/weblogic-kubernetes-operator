@@ -31,8 +31,8 @@ source $TESTDIR/test-env.sh
 
 WORKDIR=${WORKDIR:-/tmp/$USER/model-in-image-sample-work-dir}
 
-TRAEFIK_NAME=${TRAEFIK_NAME:-traefik-operator}
 TRAEFIK_NAMESPACE=${TRAEFIK_NAMESPACE:-traefik-operator-ns}
+TRAEFIK_NAME=${TRAEFIK_NAME:-traefik-operator-$TRAEFIK_NAMESPACE}
 TRAEFIK_HTTP_NODEPORT=${TRAEFIK_HTTP_NODEPORT:-30305}
 TRAEFIK_HTTPS_NODEPORT=${TRAEFIK_HTTPS_NODEPORT:-30433}
 
@@ -88,7 +88,7 @@ else
     --namespace $TRAEFIK_NAMESPACE \
     --set "kubernetes.namespaces={$TRAEFIK_NAMESPACE,$DOMAIN_NAMESPACE}" \
     --set "ports.web.nodePort=${TRAEFIK_HTTP_NODEPORT}" \
-    --set "ports.websecure.nodePort=${TRAEFIK_HTTPS_NODEPORT}" 
+    --set "ports.websecure.nodePort=${TRAEFIK_HTTPS_NODEPORT}"
 
   set +x
 

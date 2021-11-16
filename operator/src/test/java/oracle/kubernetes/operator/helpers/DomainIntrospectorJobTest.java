@@ -6,7 +6,9 @@ package oracle.kubernetes.operator.helpers;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
@@ -18,18 +20,26 @@ import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1ContainerState;
+import io.kubernetes.client.openapi.models.V1ContainerStateWaiting;
+import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1PodStatus;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.JobAwaiterStepFactory;
+import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderImpl;
+import oracle.kubernetes.operator.logging.LoggingFacade;
+import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.rest.ScanCacheStub;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -68,6 +78,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.HTTP_FORBIDDEN;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
+import static oracle.kubernetes.operator.ProcessingConstants.INTROSPECTION_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.JOBWATCHER_COMPONENT_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
@@ -75,14 +86,17 @@ import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.JOB;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CUSTOM_COMMAND_SCRIPT;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CUSTOM_MOUNT_PATH;
+import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_FATAL_ERROR;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED_DETAIL;
+import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_MAX_ERRORS_EXCEEDED;
 import static oracle.kubernetes.operator.logging.MessageKeys.JOB_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.JOB_DELETED;
 import static oracle.kubernetes.operator.logging.MessageKeys.NO_CLUSTER_IN_DOMAIN;
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.utils.LogMatcher.containsWarning;
+import static oracle.kubernetes.utils.OperatorUtils.onSeparateLines;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_VOLUME_NAME_PREFIX;
@@ -102,6 +116,8 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings({"SameParameterValue"})
 class DomainIntrospectorJobTest {
+  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+
   private static final String NODEMGR_HOME = "/u01/nodemanager";
   private static final String OVERRIDES_CM = "overrides-config-map";
   private static final String OVERRIDE_SECRET_1 = "override-secret-1";
@@ -117,10 +133,12 @@ class DomainIntrospectorJobTest {
       IntStream.rangeClosed(1, MAX_SERVERS).mapToObj(n -> MS_PREFIX + n).toArray(String[]::new);
   private static final String SEVERE_PROBLEM = "really bad";
   private static final String SEVERE_MESSAGE = "@[SEVERE] " + SEVERE_PROBLEM;
+  private static final String FATAL_PROBLEM = "FatalIntrospectorError: really bad";
+  private static final String FATAL_MESSAGE = "@[SEVERE] " + FATAL_PROBLEM;
   private static final String INFO_MESSAGE = "@[INFO] just letting you know";
   public static final String TEST_VOLUME_NAME = "test";
   private static final String JOB_UID = "FAILED_JOB";
-
+  private static final String JOB_NAME = UID + "-introspector";
   private final TerminalStep terminalStep = new TerminalStep();
   private final Domain domain = createDomain();
   private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
@@ -591,6 +609,66 @@ class DomainIntrospectorJobTest {
     assertThat(affectedJob, notNullValue());
   }
 
+  @Test
+  void whenPreviousFailedJobWithImagePullErrorExistsAndMakeRightContinued_createNewJob() {
+    ignoreIntrospectorFailureLogs();
+    ignoreJobCreatedAndDeletedLogs();
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
+    defineFailedIntrospectionWithImagePullError("ErrImagePull");
+    testSupport.doOnCreate(JOB, this::recordJob);
+    testSupport.doAfterCall(JOB, "deleteJob", this::replaceFailedJobPodWithSuccess);
+
+    testSupport.runSteps(JobHelper.createIntrospectionStartStep(null));
+
+    assertThat(affectedJob, notNullValue());
+  }
+
+  private void replaceFailedJobPodWithSuccess() {
+    testSupport.deleteResources(createIntrospectorJobPod());
+    testSupport.defineResources(createIntrospectorJobPod());
+  }
+
+  private void defineFailedIntrospectionWithImagePullError(String imagePullError) {
+    testSupport.defineResources(asFailedJobWithBackoffLimitExceeded(createIntrospectorJob()));
+    testSupport.defineResources(asFailedJobPodWithImagePullError(createIntrospectorJobPod(), imagePullError));
+  }
+
+  private V1Pod asFailedJobPodWithImagePullError(V1Pod introspectorJobPod, String imagePullError) {
+    List<V1ContainerStatus> statuses = List.of(createImagePullContainerStatus(imagePullError));
+    return introspectorJobPod.status(new V1PodStatus().containerStatuses(statuses));
+  }
+
+  private V1ContainerStatus createImagePullContainerStatus(String imagePullError) {
+    return new V1ContainerStatus().state(
+          new V1ContainerState().waiting(new V1ContainerStateWaiting().reason(imagePullError)));
+  }
+
+  private V1Pod createIntrospectorJobPod() {
+    Map<String, String> labels = new HashMap<>();
+    labels.put(LabelConstants.JOBNAME_LABEL, JOB_NAME);
+    return new V1Pod().metadata(new V1ObjectMeta().name(JOB_NAME).labels(labels).namespace(NS));
+  }
+
+  private V1Job asFailedJobWithBackoffLimitExceeded(V1Job job) {
+    job.setStatus(new V1JobStatus().addConditionsItem(new V1JobCondition().status("True").type("Failed")
+            .reason("BackoffLimitExceeded")));
+    return job;
+  }
+
+  @Test
+  void whenPreviousFailedJobWithImagePullBackoffErrorExistsAndMakeRightContinued_createNewJob() {
+    ignoreIntrospectorFailureLogs();
+    ignoreJobCreatedAndDeletedLogs();
+    testSupport.addToPacket(DOMAIN_TOPOLOGY, createDomainConfig("cluster-1"));
+    defineFailedIntrospectionWithImagePullError("ImagePullBackOff");
+    testSupport.doOnCreate(JOB, this::recordJob);
+    testSupport.doAfterCall(JOB, "deleteJob", this::replaceFailedJobPodWithSuccess);
+
+    testSupport.runSteps(JobHelper.createIntrospectionStartStep(null));
+
+    assertThat(affectedJob, notNullValue());
+  }
+
   private V1Job affectedJob;
 
   private void recordJob(Object job) {
@@ -677,11 +755,15 @@ class DomainIntrospectorJobTest {
   }
 
   private V1Job createIntrospectorJob() {
-    return new V1Job().metadata(createJobMetadata()).status(new V1JobStatus());
+    return createIntrospectorJob(JOB_UID);
   }
 
-  private V1ObjectMeta createJobMetadata() {
-    return new V1ObjectMeta().name(getJobName()).namespace(NS).creationTimestamp(SystemClock.now()).uid(JOB_UID);
+  private V1Job createIntrospectorJob(String uid) {
+    return new V1Job().metadata(createJobMetadata(uid)).status(new V1JobStatus());
+  }
+
+  private V1ObjectMeta createJobMetadata(String uid) {
+    return new V1ObjectMeta().name(getJobName()).namespace(NS).creationTimestamp(SystemClock.now()).uid(uid);
   }
 
   @Test
@@ -785,6 +867,65 @@ class DomainIntrospectorJobTest {
     assertThat(getUpdatedDomain().getStatus().getIntrospectJobFailureCount(), equalTo(2));
   }
 
+  @Test
+  void whenJobLogContainsSevereErrorAndRetriesLeft_domainStatusHasExpectedMessage() {
+    createIntrospectionLog(SEVERE_MESSAGE);
+
+    testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
+
+    assertThat(getUpdatedDomain().getStatus().getMessage(), equalTo(
+            createRetryStatusMessage("Introspection failed on try 1 of 2.", SEVERE_PROBLEM)));
+  }
+
+  @NotNull
+  private String createRetryStatusMessage(String retryStatusMessage, String severeProblem) {
+    return onSeparateLines(retryStatusMessage, INTROSPECTION_ERROR, severeProblem);
+  }
+
+  @Test
+  void whenJobLogContainsFatalError_domainStatusHasExpectedMessage() {
+    createIntrospectionLog(FATAL_MESSAGE);
+
+    testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
+
+    final Domain updatedDomain = testSupport.<Domain>getResources(DOMAIN).get(0);
+
+    assertThat(updatedDomain.getStatus().getMessage(),
+            equalTo(createRetryStatusMessage(LOGGER.formatMessage(DOMAIN_FATAL_ERROR), FATAL_PROBLEM)));
+  }
+
+  @Test
+  void whenJobLogContainsSevereErrorAndNumberOfRetriesExceedsMaxLimit_domainStatusHasExpectedMessage() {
+    createIntrospectionLog(SEVERE_MESSAGE);
+
+    getUpdatedDomain().setStatus(createDomainStatusWithIntrospectJobFailureCount(2));
+
+    testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
+
+    assertThat(getUpdatedDomain().getStatus().getMessage(),
+            equalTo(createRetryStatusMessage(LOGGER.formatMessage(INTROSPECTOR_MAX_ERRORS_EXCEEDED, 2),
+                    SEVERE_PROBLEM)));
+  }
+
+  private void createIntrospectionLog(String logMessage) {
+    createIntrospectionLog(logMessage, true);
+  }
+
+  private void createIntrospectionLog(String logMessage, boolean ignoreLogMessages) {
+    if (ignoreLogMessages) {
+      consoleHandlerMemento.ignoreMessage(getJobFailedMessageKey());
+      consoleHandlerMemento.ignoreMessage(getJobFailedDetailMessageKey());
+    }
+    testSupport.defineResources(createIntrospectorJob());
+    IntrospectionTestUtils.defineResources(testSupport, logMessage);
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, testSupport.getResourceWithName(JOB, getJobName()));
+  }
+
+  private DomainStatus createDomainStatusWithIntrospectJobFailureCount(int failureCount) {
+    final DomainStatus status = new DomainStatus();
+    status.withIntrospectJobFailureCount(failureCount);
+    return status;
+  }
 
   // create job
   // add job uid to status
