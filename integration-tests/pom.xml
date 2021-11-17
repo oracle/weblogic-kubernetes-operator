@@ -339,7 +339,7 @@
                 </includes-failsafe>
             </properties>
         </profile>
-        <profile>
+        <!--profile>
             <id>wko-okd-wls-cert</id>
             <properties>
                 <skipITs>false</skipITs>
@@ -357,6 +357,8 @@
                   **/ItLivenessProbeCustomization,
                   **/ItManagedCoherence,
                   **/ItManageNameSpace,
+                  **/ItMiiAuxiliaryImage,
+                  **/tMiiAuxiliaryImageCluster,
                   **/ItMiiCustomSslStore,
                   **/ItMiiDomain,
                   **/ItMiiDomainModelInPV,
@@ -373,12 +375,22 @@
                   **/ItPodTemplates,
                   **/ItRemoteConsole,
                   **/ItServerStartPolicy,
-		  **/ItServiceStartPolicyDynamicCluster,
+		          **/ItServiceStartPolicyDynamicCluster,
                   **/ItServerStartPolicyConfigCluster,
                   **/ItSessionMigration,
                   **/ItStickySession,
                   **/ItSystemResOverrides,
                   **/ItUsabilityOperatorHelmChart
+                </includes-failsafe>
+            </properties>
+        </profile-->
+        <profile>
+            <id>wko-okd-wls-cert</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                  **/ItMiiAuxiliaryImage,
+                  **/tMiiAuxiliaryImageCluster
                 </includes-failsafe>
             </properties>
         </profile>
