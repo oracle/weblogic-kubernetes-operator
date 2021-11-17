@@ -3,7 +3,7 @@
 
 package oracle.kubernetes.json;
 
-public interface ObsoleteCheck {
+public interface Obsoleteable {
   /**
    * Determines if this field or enum constant is obsolete.
    * @return true, if the field or enum constant is obsolete

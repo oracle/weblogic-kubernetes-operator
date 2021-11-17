@@ -425,7 +425,7 @@ public class SchemaGenerator {
   }
 
   private boolean isNonObsolete(Object enumConstant) {
-    return !(enumConstant instanceof ObsoleteCheck) || !((ObsoleteCheck) enumConstant).isObsolete();
+    return !(enumConstant instanceof Obsoleteable) || !((Obsoleteable) enumConstant).isObsolete();
   }
 
   private boolean satisfiesQualifier(Object enumConstant, Method qualifier) {
