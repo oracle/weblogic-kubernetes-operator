@@ -304,63 +304,11 @@ public class CallBuilder {
 
   private final String resourceVersion = "";
 
-  private static class ApiCallbackWrapper<T> implements ApiCallback<T> {
-    private final ApiCallback<T> callback;
-
-    public ApiCallbackWrapper(ApiCallback<T> callback) {
-      this.callback = callback;
-    }
-
-    @Override
-    public void onFailure(ApiException e, int statusCode, Map<String, List<String>> responseHeaders) {
-      callback.onFailure(e, statusCode, responseHeaders);
-    }
-
-    @Override
-    public void onSuccess(T result, int statusCode, Map<String, List<String>> responseHeaders) {
-      callback.onSuccess(result, statusCode, responseHeaders);
-    }
-
-    @Override
-    public void onUploadProgress(long bytesWritten, long contentLength, boolean done) {
-      callback.onUploadProgress(bytesWritten, contentLength, done);
-    }
-
-    @Override
-    public void onDownloadProgress(long bytesRead, long contentLength, boolean done) {
-      callback.onDownloadProgress(bytesRead, contentLength, done);
-    }
-  }
-
-  private static class DomainListUpgrade extends ApiCallbackWrapper<DomainList> {
-
-    public DomainListUpgrade(ApiCallback<DomainList> callback) {
-      super(callback);
-    }
-
-    @Override
-    public void onSuccess(DomainList result, int statusCode, Map<String, List<String>> responseHeaders) {
-      super.onSuccess(result.upgrade(), statusCode, responseHeaders);
-    }
-  }
-
-  private static class DomainUpgrade extends ApiCallbackWrapper<Domain> {
-
-    public DomainUpgrade(ApiCallback<Domain> callback) {
-      super(callback);
-    }
-
-    @Override
-    public void onSuccess(Domain result, int statusCode, Map<String, List<String>> responseHeaders) {
-      super.onSuccess(result.upgrade(), statusCode, responseHeaders);
-    }
-  }
-
   private Integer maxRetryCount = 10;
   private final Boolean watch = Boolean.FALSE;
   private final CallFactory<DomainList> listDomain =
       (requestParams, usage, cont, callback) ->
-          wrap(listDomainAsync(usage, requestParams.namespace, cont, new DomainListUpgrade(callback)));
+          wrap(listDomainAsync(usage, requestParams.namespace, cont, callback));
   private final CallFactory<V1PodList> listPod =
       (requestParams, usage, cont, callback) ->
           wrap(listPodAsync(usage, requestParams.namespace, cont, callback));
@@ -387,7 +335,7 @@ public class CallBuilder {
   private final Boolean export = Boolean.FALSE;
   private final CallFactory<Domain> readDomain =
       (requestParams, usage, cont, callback) ->
-          wrap(readDomainAsync(usage, requestParams.name, requestParams.namespace, new DomainUpgrade(callback)));
+          wrap(readDomainAsync(usage, requestParams.name, requestParams.namespace, callback));
   private final CallFactory<V1CustomResourceDefinition> readCrd =
       (requestParams, usage, cont, callback) ->
           wrap(readCustomResourceDefinitionAsync(usage, requestParams.name, callback));
@@ -463,7 +411,7 @@ public class CallBuilder {
                   limit,
                   resourceVersion,
                   timeoutSeconds,
-                  watch).upgrade();
+                  watch);
   private final SynchronousCallFactory<Domain> replaceDomainCall =
       (client, requestParams) ->
           new WeblogicApi(client)

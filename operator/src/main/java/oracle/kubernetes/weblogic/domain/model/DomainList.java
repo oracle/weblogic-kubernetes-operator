@@ -13,12 +13,13 @@ import io.kubernetes.client.common.KubernetesListObject;
 import io.kubernetes.client.openapi.models.V1ListMeta;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
+import oracle.kubernetes.operator.Upgradable;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 /** DomainList is a list of Domains. */
-public class DomainList implements KubernetesListObject {
+public class DomainList implements KubernetesListObject, Upgradable<DomainList> {
 
   /**
    * APIVersion defines the versioned schema of this representation of an object. Servers should
@@ -228,6 +229,7 @@ public class DomainList implements KubernetesListObject {
         .isEquals();
   }
 
+  @Override
   public DomainList upgrade() {
     Optional.ofNullable(items).ifPresent(list -> list.forEach(Domain::upgrade));
     return this;

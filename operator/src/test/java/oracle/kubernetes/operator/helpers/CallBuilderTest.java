@@ -156,31 +156,6 @@ class CallBuilderTest {
   }
 
   @Test
-  void listDomains_returnsUpgrade() throws ApiException {
-    Domain domain1 = new Domain();
-    DomainStatus domainStatus1 = new DomainStatus().withStartTime(null);
-    domain1.setStatus(domainStatus1);
-
-    domainStatus1.getConditions().add(new DomainCondition(Progressing).withLastTransitionTime(null));
-    domainStatus1.getConditions().add(new DomainCondition(Available).withLastTransitionTime(null));
-
-    Domain domain2 = new Domain();
-    DomainStatus domainStatus2 = new DomainStatus().withStartTime(null);
-    domain2.setStatus(domainStatus2);
-
-    domainStatus2.getConditions().add(new DomainCondition(Progressing).withLastTransitionTime(null));
-    domainStatus2.getConditions().add(new DomainCondition(Failed).withLastTransitionTime(null));
-
-    DomainList list = new DomainList().withItems(Arrays.asList(domain1, domain2));
-    defineHttpGetResponse(DOMAIN_RESOURCE, list);
-
-    DomainList received = callBuilder.listDomain(NAMESPACE);
-    assertThat(received.getItems(), hasSize(2));
-    assertThat(received.getItems().get(0).getStatus(), not(hasCondition(Progressing)));
-    assertThat(received.getItems().get(1).getStatus(), not(hasCondition(Progressing)));
-  }
-
-  @Test
   void listDomainsAsync_returnsUpgrade() throws ApiException, InterruptedException {
     Domain domain1 = new Domain();
     DomainStatus domainStatus1 = new DomainStatus().withStartTime(null);
