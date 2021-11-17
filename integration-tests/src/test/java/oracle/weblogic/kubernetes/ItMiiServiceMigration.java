@@ -3,6 +3,7 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -13,6 +14,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.DbUtils;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -20,7 +22,6 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
@@ -28,7 +29,8 @@ import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
-import static oracle.weblogic.kubernetes.actions.TestActions.getPodIP;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
@@ -38,14 +40,10 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainSe
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createJobToChangePermissionsOnPvHostPath;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runClientInsidePod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runJavacInsidePod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
-import static oracle.weblogic.kubernetes.utils.DbUtils.createLeasingTable;
-import static oracle.weblogic.kubernetes.utils.DbUtils.getDBNodePort;
-import static oracle.weblogic.kubernetes.utils.DbUtils.startOracleDB;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
@@ -137,16 +135,14 @@ class ItMiiServiceMigration {
     // this secret is used only for non-kind cluster
     createOcirRepoSecret(domainNamespace);
 
-    //Start oracleDB
-    final int dbListenerPort = getNextFreePort();
-    logger.info("Start Oracle DB with namespace: {0}, dbListenerPort:{1}",
-        domainNamespace, dbListenerPort);
-    assertDoesNotThrow(() -> {
-      startOracleDB(DB_IMAGE_TO_USE_IN_SPEC, getNextFreePort(), domainNamespace, dbListenerPort);
-      String.format("Failed to start Oracle Database Service");
-    });
-    dbNodePort = getDBNodePort(domainNamespace, "oracledb");
-    logger.info("Oracle Database Service Node Port = {0}", dbNodePort);
+    //install Oracle Database Operator
+    assertDoesNotThrow(() -> DbUtils.installDBOperator(domainNamespace), "Failed to install database operator");
+
+    String dbName = "servicemigration";
+    String dbPassword = "Oradoc_db1";
+    logger.info("Create Oracle DB in namespace: {0} ", domainNamespace);
+    String dbUrl = assertDoesNotThrow(() -> DbUtils.createOracleDBUsingOperator(dbName, dbPassword,
+        domainNamespace, WORK_DIR + "/oracledatabase"));
 
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
@@ -167,15 +163,8 @@ class ItMiiServiceMigration {
 
     logger.info("Create database secret");
     final String dbSecretName = domainUid  + "-db-secret";
-    String dbPodIP = assertDoesNotThrow(
-        () -> getPodIP(domainNamespace, "", "oracledb"),
-        String.format("Get pod IP address failed with ApiException for oracledb in namespace %s",
-            domainNamespace));
-    logger.info("db Pod IP {0} ", dbPodIP);
 
-    //cpUrl = "jdbc:oracle:thin:@//" + K8S_NODEPORT_HOST + ":"
-    //                     + dbNodePort + "/devpdb.k8s";
-    cpUrl = "jdbc:oracle:thin:@//" + dbPodIP + ":1521" + "/devpdb.k8s";
+    cpUrl = "jdbc:oracle:thin:@//" + dbUrl;
     logger.info("ConnectionPool URL = {0}", cpUrl);
     assertDoesNotThrow(() -> createDatabaseSecret(dbSecretName,
             "sys as sysdba", "Oradoc_db1", cpUrl, domainNamespace),
@@ -218,7 +207,7 @@ class ItMiiServiceMigration {
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
     adminSvcExtRouteHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
     // create the required leasing table 'ACTIVE' before we start the cluster
-    createLeasingTable(adminServerPodName, domainNamespace, 1521, dbPodIP);
+    createLeasingTable(adminServerPodName, domainNamespace, dbUrl);
     // check managed server services and pods are ready
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Wait for managed server services and pods are created in namespace {0}",
@@ -234,7 +223,7 @@ class ItMiiServiceMigration {
   @DisplayName("Verify JMS/JTA Service migration with File(JDBC) Store")
   void testMiiJmsJtaServiceMigration() {
 
-    // build the standalone JMS Client on Admin pod 
+    // build the standalone JMS Client on Admin pod
     String destLocation = "/u01/JmsSendReceiveClient.java";
     assertDoesNotThrow(() -> copyFileToPod(domainNamespace,
         adminServerPodName, "",
@@ -242,16 +231,16 @@ class ItMiiServiceMigration {
         Paths.get(destLocation)));
     runJavacInsidePod(adminServerPodName, domainNamespace, destLocation);
 
-    assertTrue(checkJmsServerRuntime("ClusterJmsServer@managed-server2", 
+    assertTrue(checkJmsServerRuntime("ClusterJmsServer@managed-server2",
          "managed-server2"),
         "ClusterJmsServer@managed-server2 is not on managed-server2 before migration");
 
-    assertTrue(checkJmsServerRuntime("JdbcJmsServer@managed-server2", 
+    assertTrue(checkJmsServerRuntime("JdbcJmsServer@managed-server2",
         "managed-server2"),
         "JdbcJmsServer@managed-server2 is not on managed-server2 before migration");
 
-    assertTrue(checkJtaRecoveryServiceRuntime("managed-server2", 
-         "managed-server2", "true"), 
+    assertTrue(checkJtaRecoveryServiceRuntime("managed-server2",
+         "managed-server2", "true"),
          "JTARecoveryService@managed-server2 is not on managed-server2 before migration");
 
     // Send persistent messages to both FileStore and JDBCStore based
@@ -261,8 +250,8 @@ class ItMiiServiceMigration {
     runJmsClientOnAdminPod("send",
             "JdbcJmsServer@managed-server2@jms.jdbcUniformQueue");
 
-    // Scale down the cluster to repilca count of 1, this will shutdown 
-    // the managed server managed-server2 in the cluster to trigger 
+    // Scale down the cluster to repilca count of 1, this will shutdown
+    // the managed server managed-server2 in the cluster to trigger
     // JMS/JTA Service Migration.
     boolean psuccess = assertDoesNotThrow(() ->
             scaleCluster(domainUid, domainNamespace, "cluster-1", 1),
@@ -271,29 +260,29 @@ class ItMiiServiceMigration {
         String.format("Cluster replica patching failed for domain %s in namespace %s", domainUid, domainNamespace));
     checkPodDoesNotExist(managedServerPrefix + "2", domainUid, domainNamespace);
 
-    // Make sure the ClusterJmsServer@managed-server2 and 
+    // Make sure the ClusterJmsServer@managed-server2 and
     // JdbcJmsServer@managed-server2 are migrated to managed-server1
-    assertTrue(checkJmsServerRuntime("ClusterJmsServer@managed-server2", 
+    assertTrue(checkJmsServerRuntime("ClusterJmsServer@managed-server2",
             "managed-server1"),
             "ClusterJmsServer@managed-server2 is NOT migrated to managed-server1");
     logger.info("ClusterJmsServer@managed-server2 is migrated to managed-server1");
 
-    assertTrue(checkJmsServerRuntime("JdbcJmsServer@managed-server2", 
+    assertTrue(checkJmsServerRuntime("JdbcJmsServer@managed-server2",
              "managed-server1"),
              "JdbcJmsServer@managed-server2 is NOT migrated to managed-server1");
     logger.info("JdbcJmsServer@managed-server2 is migrated to managed-server1");
 
-    assertTrue(checkStoreRuntime("ClusterFileStore@managed-server2", 
+    assertTrue(checkStoreRuntime("ClusterFileStore@managed-server2",
             "managed-server1"),
             "ClusterFileStore@managed-server2 is NOT migrated to managed-server1");
     logger.info("ClusterFileStore@managed-server2 is migrated to managed-server1");
 
-    assertTrue(checkStoreRuntime("ClusterJdbcStore@managed-server2", 
+    assertTrue(checkStoreRuntime("ClusterJdbcStore@managed-server2",
             "managed-server1"),
             "JdbcStore@managed-server2 is NOT migrated to managed-server1");
     logger.info("JdbcStore@managed-server2 is migrated to managed-server1");
 
-    assertTrue(checkJtaRecoveryServiceRuntime("managed-server1", 
+    assertTrue(checkJtaRecoveryServiceRuntime("managed-server1",
             "managed-server2", "true"), "JTA RecoveryService@managed-server2 is not migrated to managed-server1");
     logger.info("JTA RecoveryService@managed-server2 is migrated to managed-server1");
 
@@ -305,29 +294,29 @@ class ItMiiServiceMigration {
     // Restart the managed server(2) to make sure the JTA Recovery Service is
     // migrated back to original hosting server
     restartManagedServer("managed-server2");
-    assertTrue(checkJtaRecoveryServiceRuntime("managed-server2", 
+    assertTrue(checkJtaRecoveryServiceRuntime("managed-server2",
          "managed-server2", "true"),
          "JTARecoveryService@managed-server2 is not on managed-server2 after restart");
     logger.info("JTA RecoveryService@managed-server2 is migrated back to managed-server1");
-    assertTrue(checkJtaRecoveryServiceRuntime("managed-server1", 
+    assertTrue(checkJtaRecoveryServiceRuntime("managed-server1",
          "managed-server2", "false"),
          "JTARecoveryService@managed-server2 is not deactivated on managed-server1 after restart");
     logger.info("JTA RecoveryService@managed-server2 is deactivated on managed-server1 after restart");
 
-    assertTrue(checkStoreRuntime("ClusterFileStore@managed-server2", 
+    assertTrue(checkStoreRuntime("ClusterFileStore@managed-server2",
             "managed-server2"),
             "FileStore@managed-server2 is NOT migrated back to managed-server2");
     logger.info("FileStore@managed-server2 is migrated back to managed-server2");
-    assertTrue(checkStoreRuntime("ClusterJdbcStore@managed-server2", 
+    assertTrue(checkStoreRuntime("ClusterJdbcStore@managed-server2",
             "managed-server2"),
             "JdbcStore@managed-server2 is NOT migrated back to managed-server2");
     logger.info("JdbcStore@managed-server2 is migrated back to managed-server2");
 
-    assertTrue(checkJmsServerRuntime("ClusterJmsServer@managed-server2", 
+    assertTrue(checkJmsServerRuntime("ClusterJmsServer@managed-server2",
             "managed-server2"),
             "ClusterJmsServer@managed-server2 is NOT migrated back to to managed-server2");
     logger.info("ClusterJmsServer@managed-server2 is migrated back to managed-server2");
-    assertTrue(checkJmsServerRuntime("JdbcJmsServer@managed-server2", 
+    assertTrue(checkJmsServerRuntime("JdbcJmsServer@managed-server2",
           "managed-server2"),
           "JdbcJmsServer@managed-server2 is NOT migrated back to managed-server2");
     logger.info("JdbcJmsServer@managed-server2 is migrated back to managed-server2");
@@ -450,6 +439,50 @@ class ItMiiServiceMigration {
         logger,
         "JTA Recovery Service to migrate");
     return true;
+  }
+
+  /**
+   * Create leasing Table (ACTIVE) on an Oracle DB Instance. Uses the WebLogic utility utils.Schema to add the table So
+   * the command MUST be run inside a Weblogic Server pod.
+   *
+   * @param wlPodName the pod name
+   * @param namespace the namespace in which WebLogic pod exists
+   * @param dbUrl Oracle database url
+   */
+  public static void createLeasingTable(String wlPodName, String namespace, String dbUrl) {
+    Path ddlFile = Paths.get(WORK_DIR + "/leasing.ddl");
+    String ddlString = "DROP TABLE ACTIVE;\n"
+        + "CREATE TABLE ACTIVE (\n"
+        + "  SERVER VARCHAR2(255) NOT NULL,\n"
+        + "  INSTANCE VARCHAR2(255) NOT NULL,\n"
+        + "  DOMAINNAME VARCHAR2(255) NOT NULL,\n"
+        + "  CLUSTERNAME VARCHAR2(255) NOT NULL,\n"
+        + "  TIMEOUT DATE,\n"
+        + "  PRIMARY KEY (SERVER, DOMAINNAME, CLUSTERNAME)\n"
+        + ");\n";
+
+    assertDoesNotThrow(() -> Files.write(ddlFile, ddlString.getBytes()));
+    String destLocation = "/u01/leasing.ddl";
+    assertDoesNotThrow(() -> copyFileToPod(namespace,
+        wlPodName, "",
+        Paths.get(WORK_DIR, "leasing.ddl"),
+        Paths.get(destLocation)));
+
+    //String cpUrl = "jdbc:oracle:thin:@//" + K8S_NODEPORT_HOST + ":"
+    String cpUrl = "jdbc:oracle:thin:@//" + dbUrl;
+    String jarLocation = "/u01/oracle/wlserver/server/lib/weblogic.jar";
+    StringBuffer ecmd = new StringBuffer("java -cp ");
+    ecmd.append(jarLocation);
+    ecmd.append(" utils.Schema ");
+    ecmd.append(cpUrl);
+    ecmd.append(" oracle.jdbc.OracleDriver");
+    ecmd.append(" -verbose ");
+    ecmd.append(" -u \"sys as sysdba\"");
+    ecmd.append(" -p Oradoc_db1");
+    ecmd.append(" /u01/leasing.ddl");
+    ExecResult execResult = assertDoesNotThrow(() -> execCommand(namespace, wlPodName,
+        null, true, "/bin/sh", "-c", ecmd.toString()));
+    assertTrue(execResult.exitValue() == 0, "Could not create the Leasing Table");
   }
 
 }

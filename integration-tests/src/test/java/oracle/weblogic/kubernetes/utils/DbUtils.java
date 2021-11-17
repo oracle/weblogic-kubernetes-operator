@@ -550,67 +550,6 @@ public class DbUtils {
   }
 
   /**
-   * Create leasing Table (ACTIVE) on an Oracle DB Instance.
-   * Uses the WebLogic utility utils.Schema to add the table
-   * So the command MUST be run inside a Weblogic Server pod
-   *
-   * @param podName the pod name
-   * @param namespace where pod exists
-   * @param dbNodePort NodePort for the Oracle DB service
-   */
-  public static void createLeasingTable(String podName, String namespace, int dbNodePort) {
-    createLeasingTable(podName, namespace, dbNodePort, null);
-  }
-
-  /**
-   * Create leasing Table (ACTIVE) on an Oracle DB Instance.
-   * Uses the WebLogic utility utils.Schema to add the table
-   * So the command MUST be run inside a Weblogic Server pod
-   *
-   * @param podName the pod name
-   * @param namespace where pod exists
-   * @param dbNodePort NodePort for the Oracle DB service
-   * @param dbPodIP NodePort for the Oracle DB service
-   */
-  public static void createLeasingTable(String podName, String namespace, int dbNodePort, String dbPodIP) {
-    Path ddlFile = Paths.get(WORK_DIR + "/leasing.ddl");
-    String ddlString = "DROP TABLE ACTIVE;\n"
-        + "CREATE TABLE ACTIVE (\n"
-        + "  SERVER VARCHAR2(255) NOT NULL,\n"
-        + "  INSTANCE VARCHAR2(255) NOT NULL,\n"
-        + "  DOMAINNAME VARCHAR2(255) NOT NULL,\n"
-        + "  CLUSTERNAME VARCHAR2(255) NOT NULL,\n"
-        + "  TIMEOUT DATE,\n"
-        + "  PRIMARY KEY (SERVER, DOMAINNAME, CLUSTERNAME)\n"
-        + ");\n";
-
-    assertDoesNotThrow(() -> Files.write(ddlFile, ddlString.getBytes()));
-    String destLocation = "/u01/leasing.ddl";
-    assertDoesNotThrow(() -> copyFileToPod(namespace,
-             podName, "",
-             Paths.get(WORK_DIR, "leasing.ddl"),
-             Paths.get(destLocation)));
-
-    //String cpUrl = "jdbc:oracle:thin:@//" + K8S_NODEPORT_HOST + ":"
-    String cpUrl = "jdbc:oracle:thin:@//" + dbPodIP + ":"
-                         + dbNodePort + "/devpdb.k8s";
-    String jarLocation = "/u01/oracle/wlserver/server/lib/weblogic.jar";
-    StringBuffer ecmd = new StringBuffer("java -cp ");
-    ecmd.append(jarLocation);
-    ecmd.append(" utils.Schema ");
-    ecmd.append(cpUrl);
-    ecmd.append(" oracle.jdbc.OracleDriver");
-    ecmd.append(" -verbose ");
-    ecmd.append(" -u \"sys as sysdba\"");
-    ecmd.append(" -p Oradoc_db1");
-    ecmd.append(" /u01/leasing.ddl");
-    ExecResult execResult = assertDoesNotThrow(
-        () -> execCommand(namespace, podName,
-            null, true, "/bin/sh", "-c", ecmd.toString()));
-    assertTrue(execResult.exitValue() == 0, "Could not create the Leasing Table");
-  }
-
-  /**
    * Update RCU schema password on an Oracle DB instance.
    *
    * @param dbNamespace namespace where DB instance started
