@@ -701,7 +701,7 @@ public class DbUtils {
     boolean response = Command.withParams(params).execute();
     assertTrue(response, "Failed to install cert manager");
 
-    assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(10));
+    assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(30));
 
     String operatorYaml = "https://raw.githubusercontent.com/"
         + "oracle/oracle-database-operator/main/oracle-database-operator.yaml";
@@ -785,7 +785,7 @@ public class DbUtils {
     logger.info("Creating Oracle database using yaml file\n {0}", Files.readString(Paths.get(dbYaml)));
 
     params = new CommandParams().defaults();
-    params.command("kubectl apply -f " + dbYaml);
+    params.command("kubectl create -f " + dbYaml);
     response = Command.withParams(params).execute();
     assertTrue(response, "Failed to create Oracle database");
 
