@@ -23,6 +23,7 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1PodStatus;
+import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.JobWatcher;
 import oracle.kubernetes.operator.LabelConstants;
@@ -49,7 +50,6 @@ import oracle.kubernetes.weblogic.domain.model.Server;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static oracle.kubernetes.operator.DomainFailureReason.Introspection;
 import static oracle.kubernetes.operator.DomainSourceType.FromModel;
-import static oracle.kubernetes.operator.DomainStatusUpdater.createFailureCountStep;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createFailureRelatedSteps;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
@@ -408,17 +408,25 @@ public class JobHelper {
       }
 
       private NextAction handleFailure(Packet packet, V1Job domainIntrospectorJob) {
+        Step nextSteps = null;
         Optional.ofNullable(domainIntrospectorJob).ifPresent(job -> logIntrospectorFailure(packet, job));
 
-        Step nextSteps = Step.chain(
-              createFailureRelatedSteps(Introspection, onSeparateLines(severeStatuses)),
-              getNextStep(packet, domainIntrospectorJob));
-
         if (!severeStatuses.isEmpty()) {
-          nextSteps = Step.chain(createFailureCountStep(domainIntrospectorJob), nextSteps);
+          nextSteps = Step.chain(
+                  createIntrospectionFailureRelatedSteps(domainIntrospectorJob),
+                  getNextStep(packet, domainIntrospectorJob), nextSteps);
+        } else {
+          nextSteps = Step.chain(
+                  createFailureRelatedSteps(Introspection, onSeparateLines(severeStatuses)),
+                  getNextStep(packet, domainIntrospectorJob), nextSteps);
         }
 
         return doNext(nextSteps, packet);
+      }
+
+      private Step createIntrospectionFailureRelatedSteps(V1Job domainIntrospectorJob) {
+        return DomainStatusUpdater.createIntrospectionFailureRelatedSteps(
+                Introspection, onSeparateLines(severeStatuses), domainIntrospectorJob);
       }
 
       @Nullable
