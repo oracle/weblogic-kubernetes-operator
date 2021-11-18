@@ -85,12 +85,12 @@ For more information, see the [Fusion Middleware Licensing Information User Manu
 Oracle Linux is under open source license
 and is completely free to download and use.
 
-In addition, with WebLogic license and support,
+In addition, with WebLogic Server licenses and support,
 customers have access to:
 - The latest WebLogic Server images
   which bundle Java SE and the latest slim Oracle Linux images.
 - Oracle Linux support.
-Note that WebLogic licenses and support do not include customer entitlements
+Note that WebLogic Server licenses and support do not include customer entitlements
 for direct access to Oracle Linux support or Unbreakable Linux Network
 (to access the standalone Oracle Linux patches).
 
@@ -186,9 +186,9 @@ The WebLogic Server on AKS Azure Marketplace
 offer lets you embrace cloud computing by providing greater choice
 and flexibility for deploying your WLS domains and applications.
 The offer leverages the WebLogic Kubernetes Toolkit to automate
-the provisioning of WebLogic and Azure resources so that you can easily move WLS workloads to AKS.
+the provisioning of WebLogic Server and Azure resources so that you can easily move WLS workloads to AKS.
 The automatically provisioned resources include an AKS cluster,
-the WebLogic Kubernetes Operator, WLS Docker images, and the Azure Container Registry (ACR).
+the WebLogic Kubernetes Operator, WebLogic Server images, and the Azure Container Registry (ACR).
 It is possible to use an existing AKS cluster or ACR instance with the offer if desired.
 The offer also supports configuring load balancing with Azure App Gateway or the Azure Load Balancer,
 DNS configuration, SSL/TLS configuration, easing database connectivity,
@@ -198,8 +198,8 @@ For details, see [WebLogic Server on AKS Marketplace]({{<relref "/userguide/aks/
 
 #### VMware Tanzu Kubernetes Grid (TKG)
 
-Tanzu Kubernetes Grid (TKG) is a managed Kubernetes Service that lets you quickly deploy and manage Kubernetes clusters. The WebLogic Kubernetes
-Operator and Oracle WebLogic Sever are fully supported and certified on VMware Tanzu Kubernetes Grid Multicloud 1.1.3 (with vSphere 6.7U3).
+Tanzu Kubernetes Grid (TKG) is a managed Kubernetes Service that lets you quickly deploy and manage Kubernetes clusters.
+The WebLogic Kubernetes Operator and Oracle WebLogic Server are fully supported and certified on VMware Tanzu Kubernetes Grid Multicloud 1.1.3 (with vSphere 6.7U3).
 
 TKG support and limitations:
 
@@ -219,7 +219,7 @@ Operator 2.0.1+ is certified for use on OpenShift Container Platform 3.11.43+, w
 Operator 2.5.0+ is certified for use on OpenShift Container Platform 4.3.0+ with Kubernetes 1.16.2+.
 
 To accommodate OpenShift security requirements:
-- For security requirements to run WebLogic in OpenShift, see the [OpenShift chapter]({{<relref "/security/openshift.md">}}) in the Security section.
+- For security requirements to run WebLogic Server in OpenShift, see the [OpenShift chapter]({{<relref "/security/openshift.md">}}) in the Security section.
 - Beginning with operator version 3.3.2, specify the `kubernetesPlatorm` Helm chart property with value `OpenShift`. For more information, see [Operator Helm configuration values]({{<relref "/userguide/managing-operators/using-helm#operator-helm-configuration-values">}}).
 
 #### Development-focused Kubernetes distributions
@@ -229,12 +229,12 @@ Often these run Kubernetes in a virtual machine on your development machine.  We
 present some extra challenges in areas like:
 
 * Separate container image caches, making it necessary to save/load images to move them between Docker file systems
-* Default virtual machine file sizes and resource limits that are too small to run WebLogic or hold the necessary images
-* Storage providers that do not always support the features that the operator or WebLogic rely on
-* Load balancing implementations that do not always support the features that the operator or WebLogic rely on
+* Default virtual machine file sizes and resource limits that are too small to run WebLogic Server or hold the necessary images
+* Storage providers that do not always support the features that the operator or WebLogic Server rely on
+* Load balancing implementations that do not always support the features that the operator or WebLogic Server rely on
 
-As such, we *do not* recommend using these distributions to run the operator or WebLogic, and we do not
-provide support for WebLogic or the operator running in these distributions.
+As such, we *do not* recommend using these distributions to run the operator or WebLogic Server, and we do not
+provide support for WebLogic Server or the operator running in these distributions.
 
 We have found that Docker for Desktop does not seem to suffer the same limitations, and we do support that as a
 development/test option.
