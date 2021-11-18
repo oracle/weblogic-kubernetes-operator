@@ -18,6 +18,7 @@ import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.kubernetes.operator.utils.LoggingUtil;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.AdminService;
 import oracle.weblogic.domain.Channel;
@@ -104,6 +105,7 @@ class ItDiagnosticsFailedCondition {
   private static String opNamespace = null;
 
   private static LoggingFacade logger = null;
+  private static List<String> ns;
 
   /**
    * Assigns unique namespaces for operator and domains.
@@ -114,6 +116,7 @@ class ItDiagnosticsFailedCondition {
    */
   @BeforeAll
   public static void initAll(@Namespaces(2) List<String> namespaces) {
+    ns = namespaces;
     logger = getLogger();
     logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
@@ -156,6 +159,7 @@ class ItDiagnosticsFailedCondition {
   @Test
   @DisplayName("Test domain status condition with bad model file")
   void testBadModelFileStatus() {
+    boolean testPassed = false;
     // build a build with empty WebLogic domain
     String imageName = MII_BASIC_IMAGE_NAME;
     String imageTag = "empty-domain-image";
@@ -177,8 +181,12 @@ class ItDiagnosticsFailedCondition {
 
       //check the desired completed, available and failed statuses
       checkStatus("True", "False", "True");
+      testPassed = true;
 
     } finally {
+      if (!testPassed) {
+        LoggingUtil.generateLog(this, ns);
+      }
       deleteDomainResource(domainNamespace, domainUid);
       deleteConfigMap(badModelFileCm, domainNamespace);
     }
@@ -191,6 +199,7 @@ class ItDiagnosticsFailedCondition {
   @Test
   @DisplayName("Test domain status condition with replicas set to more than available in cluster")
   void testReplicasTooHigh() {
+    boolean testPassed = false;
     String image = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
 
     logger.info("Creating domain resource with replicas=100");
@@ -203,8 +212,12 @@ class ItDiagnosticsFailedCondition {
 
       //check the desired completed, available and failed statuses
       checkStatus("True", "False", "True");
+      testPassed = true;
 
     } finally {
+      if (!testPassed) {
+        LoggingUtil.generateLog(this, ns);
+      }
       deleteDomainResource(domainNamespace, domainUid);
     }
   }
@@ -216,6 +229,7 @@ class ItDiagnosticsFailedCondition {
   @Test
   @DisplayName("Test domain status failed condition with non-existing image")
   void testImageDoesnotExist() {
+    boolean testPassed = false;
     String image = MII_BASIC_IMAGE_NAME + ":non-existing";
 
     logger.info("Creating domain resource with non-existing image");
@@ -228,8 +242,12 @@ class ItDiagnosticsFailedCondition {
 
       //check the desired completed, available and failed statuses
       checkStatus("True", "False", "True");
+      testPassed = true;
 
     } finally {
+      if (!testPassed) {
+        LoggingUtil.generateLog(this, ns);
+      }
       deleteDomainResource(domainNamespace, domainUid);
     }
   }
@@ -241,6 +259,7 @@ class ItDiagnosticsFailedCondition {
   @Test
   @DisplayName("Test domain status condition with missing image pull secret")
   void testImagePullSecretDoesnotExist() {
+    boolean testPassed = false;
     String image = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
 
     logger.info("Creating domain resource with missing image pull secret");
@@ -253,8 +272,12 @@ class ItDiagnosticsFailedCondition {
 
       //check the desired completed, available and failed statuses
       checkStatus("True", "False", "True");
+      testPassed = true;
 
     } finally {
+      if (!testPassed) {
+        LoggingUtil.generateLog(this, ns);
+      }
       deleteDomainResource(domainNamespace, domainUid);
     }
   }
@@ -266,6 +289,7 @@ class ItDiagnosticsFailedCondition {
   @Test
   @DisplayName("Test domain status condition with incorrect image pull secret")
   void testIncorrectImagePullSecret() {
+    boolean testPassed = false;
     String image = WEBLOGIC_IMAGE_NAME + ":nonexistent";
     logger.info("Creating a docker secret with invalid credentials");
     createDockerRegistrySecret("foo", "bar", "foo@bar.com", OCIR_REGISTRY,
@@ -282,8 +306,12 @@ class ItDiagnosticsFailedCondition {
 
       //check the desired completed, available and failed statuses
       checkStatus("True", "False", "True");
+      testPassed = true;
 
     } finally {
+      if (!testPassed) {
+        LoggingUtil.generateLog(this, ns);
+      }
       deleteDomainResource(domainNamespace, domainUid);
     }
   }
@@ -295,6 +323,7 @@ class ItDiagnosticsFailedCondition {
   @Test
   @DisplayName("Test domain status condition with non-existent pv")
   void testNonexistentPVC() {
+    boolean testPassed = false;
     try {
       // create a domain custom resource configuration object
       logger.info("Creating domain custom resource");
@@ -349,8 +378,12 @@ class ItDiagnosticsFailedCondition {
 
       //check the desired completed, available and failed statuses
       checkStatus("True", "False", "True");
+      testPassed = true;
 
     } finally {
+      if (!testPassed) {
+        LoggingUtil.generateLog(this, ns);
+      }
       deleteDomainResource(domainNamespace, domainUid);
     }
   }
@@ -362,6 +395,7 @@ class ItDiagnosticsFailedCondition {
   @Test
   @DisplayName("Test domain status condition with non-existent admin secret")
   void testNonexistentAdminSecret() {
+    boolean testPassed = false;
     String image = TestConstants.MII_BASIC_IMAGE_NAME + ":" + TestConstants.MII_BASIC_IMAGE_TAG;
 
     logger.info("Creating domain custom resource");
@@ -374,8 +408,12 @@ class ItDiagnosticsFailedCondition {
 
       //check the desired completed, available and failed statuses
       checkStatus("True", "False", "True");
+      testPassed = true;
 
     } finally {
+      if (!testPassed) {
+        LoggingUtil.generateLog(this, ns);
+      }
       deleteDomainResource(domainNamespace, domainUid);
     }
   }
@@ -388,6 +426,7 @@ class ItDiagnosticsFailedCondition {
   @Test
   @DisplayName("Test domain status failed condition with invalid node port.")
   void testInvalidNodePort() {
+    boolean testPassed = false;
     String image = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
 
     logger.info("Creating domain custom resource");
@@ -408,8 +447,12 @@ class ItDiagnosticsFailedCondition {
 
       //check the desired completed, available and failed statuses
       checkStatus("True", "False", "True");
+      testPassed = true;
 
     } finally {
+      if (!testPassed) {
+        LoggingUtil.generateLog(this, ns);
+      }
       deleteDomainResource(domainNamespace, domainUid);
     }
   }
@@ -421,6 +464,7 @@ class ItDiagnosticsFailedCondition {
   @Test
   @DisplayName("Test domain status condition with introspector failure")
   void testIntrospectorFailure() {
+    boolean testPassed = false;
     String image = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
 
     logger.info("Creating domain custom resource");
@@ -435,8 +479,12 @@ class ItDiagnosticsFailedCondition {
 
       //check the desired completed, available and failed statuses
       checkStatus("True", "False", "True");
+      testPassed = true;
 
     } finally {
+      if (!testPassed) {
+        LoggingUtil.generateLog(this, ns);
+      }
       deleteDomainResource(domainNamespace, domainUid);
     }
   }
@@ -446,9 +494,10 @@ class ItDiagnosticsFailedCondition {
    * Test domain status condition with serverStartPolicy set to IF_NEEDED. Verify the following conditions are
    * generated: type: Completed, status: true type: Available, status: true Verify no Failed type condition generated.
    */
-  @Test
+  //@Test
   @DisplayName("Test domain status condition with serverStartPolicy set to IF_NEEDED")
   void testMSBootFailureStatus() {
+    boolean testPassed = false;
     try {
 
       String fmwMiiImage = null;
@@ -515,8 +564,12 @@ class ItDiagnosticsFailedCondition {
 
       //check the desired completed, available and failed statuses
       checkStatus("True", "False", "True");
+      testPassed = true;
 
     } finally {
+      if (!testPassed) {
+        LoggingUtil.generateLog(this, ns);
+      }
       deleteDomainResource(domainNamespace, domainUid);
     }
   }
