@@ -25,14 +25,14 @@ weight: 4
 
 ### Supported environments
 
-WebLogic Server and the operator are supported on Oracle Cloud offerings such as:
+WebLogic Server and the operator are supported on Oracle Cloud offerings, such as:
 - Oracle Cloud Infrastructure (OCI)
 - Oracle Container Engine for Kubernetes (OKE)
 - Oracle Linux Cloud Native Environment (OLCNE)
 - Oracle Private Cloud Appliance (PCA)
 - Oracle Private Cloud at Customer (OPCC)
 
-WebLogic Server and the operator are certified on offerings such as:
+WebLogic Server and the operator are certified on offerings, such as:
 - Amazon Elastic Compute Cloud (EC2)
 - Microsoft Azure Platform
 - Microsoft Azure Kubernetes Service (AKS)
@@ -43,11 +43,11 @@ WebLogic Server and the operator are certified on offerings such as:
 WebLogic Server and the operator are also supported on service offerings which 
 deploy the WebLogic Server and the operator for you. These include:
 - Oracle WebLogic Server for OKE (WLS for OKE)
-- Oracle WebLogic Server on the Azure Kubernetes Service Marketplace (WLS on AKS Marketplace)
+- Oracle WebLogic Server on AKS from the Azure Marketplace (WLS on AKS Marketplace)
 
 [Development-focused Kubernetes distributions](#development-focused-kubernetes-distributions) are also supported.
 
-For detailed virtualization and cloud licensing discussions, see:
+For detailed virtualization and cloud licensing descriptions, see:
 - [Supported Virtualization Technologies for Oracle Fusion Middleware](https://www.oracle.com/middleware/technologies/ias/oracleas-supported-virtualization.html) (search for keyword 'Kubernetes')
 - [Running and Licensing Oracle Programs in Containers and Kubernetes](https://www.oracle.com/a/tech/docs/running-and-licensing-programs-in-containers-and-kubernetes.pdf)
 
@@ -80,7 +80,7 @@ just as with any deployment of WebLogic Server.
 Licensing is free for a single developer desktop development environment.
 For more information, see the [Fusion Middleware Licensing Information User Manual - Application Server Products](https://docs.oracle.com/en/middleware/fusion-middleware/fmwlc/application-server-products-new-structure.html).
 
-#### Oracle Linux and WebLogic Server Images
+#### Oracle Linux and WebLogic Server images
 
 Oracle Linux is under open source license
 and is completely free to download and use.
@@ -100,7 +100,7 @@ are released for Oracle Linux, WebLogic Server, or Java. In addition,
 patched images are rebuilt every CPU cycle, which is quarterly.
 Customer support for WebLogic Server images is handled by Oracle support.
 
-Using the [WebLogic Image Tool]("https://github.com/oracle/weblogic-image-tool")
+Using the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool)
 customers can also build their own WebLogic Server images with 
 the latest Oracle Linux images, Java updates, and WebLogic Server patches.
 
@@ -160,7 +160,7 @@ native infrastructure.
 There are three different approaches for deploying the operator to Microsoft Azure:
 - Microsoft Azure Platform
 - Microsoft Azure Kubernetes Service (AKS)
-- Oracle WebLogic Server on the Azure Kubernetes Service Marketplace (WLS on AKS Marketplace)
+- Oracle WebLogic Server on AKS from the Azure Marketplace (WLS on AKS Marketplace)
 
 ##### Microsoft Azure Kubernetes Service (AKS)
 
@@ -180,12 +180,12 @@ AKS support and limitations:
 
 See also the [Azure Kubernetes Service sample]({{<relref "/samples/azure-kubernetes-service/_index.md">}}).
 
-##### Oracle WebLogic Server on the Azure Kubernetes Service Marketplace (WLS on AKS Marketplace)
+##### Oracle WebLogic Server on AKS from the Azure Marketplace (WLS on AKS Marketplace)
 
-The WebLogic Server on AKS Marketplace
+The WebLogic Server on AKS Azure Marketplace
 offer lets you embrace cloud computing by providing greater choice
 and flexibility for deploying your WLS domains and applications.
-The offer leverages the WebLogic Kubernetes ToolKit to automate
+The offer leverages the WebLogic Kubernetes Toolkit to automate
 the provisioning of WebLogic and Azure resources so that you can easily move WLS workloads to AKS.
 The automatically provisioned resources include an AKS cluster,
 the WebLogic Kubernetes Operator, WLS Docker images, and the Azure Container Registry (ACR).
