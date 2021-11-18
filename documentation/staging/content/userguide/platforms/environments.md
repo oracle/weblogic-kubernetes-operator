@@ -8,44 +8,56 @@ weight: 4
 ### Contents
 
 - [Supported environments](#supported-environments)
-- [Kubernetes, WebLogic, and operating system prerequisites](#kubernetes-weblogic-and-operating-system-prerequisites)
+- [Kubernetes, WebLogic Server, and operating system prerequisites](#kubernetes-weblogic-server-and-operating-system-prerequisites)
 - [Pricing and licensing](#pricing-and-licensing)
   - [WebLogic Kubernetes Operator](#weblogic-kubernetes-operator)
   - [WebLogic Server](#weblogic-server)
-  - [Oracle Linux and WebLogic Container Images](#oracle-linux-and-weblogic-container-images)
+  - [Oracle Linux and WebLogic Server Images](#oracle-linux-and-weblogic-server-images)
   - [Reference](#reference)
 - [Important notes about specific environments](#important-notes-about-specific-environments)
   - [Oracle Cloud Infrastructure (OCI)](#oracle-cloud-infrastructure-oci)
   - [Oracle Linux Cloud Native Environment (OLCNE)](#oracle-linux-cloud-native-environment-olcne)
   - [Oracle Private Cloud Appliance (PCA) and Oracle Private Cloud at Customer (OPCC)](#oracle-private-cloud-appliance-pca-and-oracle-private-cloud-at-customer-opcc)
-  - [Microsoft Azure Kubernetes Service (AKS)](#microsoft-azure-kubernetes-service-aks)
+  - [Microsoft Azure](#microsoft-azure)
   - [VMware Tanzu Kubernetes Grid (TKG)](#vmware-tanzu-kubernetes-grid-tkg)
   - [OpenShift](#openshift)
   - [Development-focused Kubernetes distributions](#development-focused-kubernetes-distributions)
 
 ### Supported environments
 
-WebLogic Server and the operator are supported on
-Oracle cloud environments such as
-Oracle Cloud Infrastructure (OCI),
-Oracle Linux Cloud Native Environment (OLCNE),
-Oracle Private Cloud Appliance (PCA),
-or Oracle Private Cloud at Customer (OPCC),
-and on "Authorized Cloud Environments" as defined in
-[this Oracle licensing policy](https://www.oracle.com/assets/cloud-licensing-070579.pdf)
-for [this list of eligible products](http://www.oracle.com/us/corporate/pricing/authorized-cloud-environments-3493562.pdf).
+WebLogic Server and the operator are supported on Oracle Cloud offerings such as:
+- Oracle Cloud Infrastructure (OCI)
+- Oracle Container Engine for Kubernetes (OKE)
+- Oracle Linux Cloud Native Environment (OLCNE)
+- Oracle Private Cloud Appliance (PCA)
+- Oracle Private Cloud at Customer (OPCC)
 
-The official document that defines the supported configurations
-is [here](https://www.oracle.com/middleware/technologies/ias/oracleas-supported-virtualization.html)
-(search for keyword 'Kubernetes').
+WebLogic Server and the operator are certified on offerings such as:
+- Amazon Elastic Compute Cloud (EC2)
+- Microsoft Azure Platform
+- Microsoft Azure Kubernetes Service (AKS)
+- OpenShift Container Platform
+- VMWare Tanzu
+- VMware Tanzu Kubernetes Grid (TKG)
+
+WebLogic Server and the operator are also supported on service offerings which 
+deploy the WebLogic Server and the operator for you. These include:
+- Oracle WebLogic Server for OKE (WLS for OKE)
+- Oracle WebLogic Server on the Azure Kubernetes Service Marketplace (WLS on AKS Marketplace)
+
+[Development-focused Kubernetes distributions](#development-focused-kubernetes-distributions) are also supported.
+
+For detailed virtualization and cloud licensing discussions, see:
+- [Supported Virtualization Technologies for Oracle Fusion Middleware](https://www.oracle.com/middleware/technologies/ias/oracleas-supported-virtualization.html) (search for keyword 'Kubernetes')
+- [Running and Licensing Oracle Programs in Containers and Kubernetes](https://www.oracle.com/a/tech/docs/running-and-licensing-programs-in-containers-and-kubernetes.pdf)
 
 Some supported environments have additional help or samples that are specific
 to the operator, or are subject to limitations and restrictions: see
 [Important notes about specific environments](#important-notes-about-specific-environments).
 
-### Kubernetes, WebLogic, and operating system prerequisites
+### Kubernetes, WebLogic Server, and operating system prerequisites
 
-The operator is subject to Kubernetes, WebLogic, and operating system versioning prerequisites:
+The operator is subject to Kubernetes, WebLogic Server, and operating system versioning prerequisites:
 see [Operator prerequisites]({{< relref "/userguide/prerequisites/introduction.md" >}}).
 
 ### Pricing and licensing
@@ -58,6 +70,7 @@ In detail:
 
 The WebLogic Kubernetes Operator (the "operator") is open source and free,
 licensed under the Universal Permissive license (UPL), Version 1.0.
+For support details, see [Get help]({{< relref "userguide/introduction/get-help.md" >}}).
 
 #### WebLogic Server
 
@@ -65,16 +78,31 @@ WebLogic Server is not open source.
 Licensing is required for each running WebLogic Server instance in Kubernetes,
 just as with any deployment of WebLogic Server.
 Licensing is free for a single developer desktop development environment.
+For more information, see the [Fusion Middleware Licensing Information User Manual - Application Server Products](https://docs.oracle.com/en/middleware/fusion-middleware/fmwlc/application-server-products-new-structure.html).
 
-#### Oracle Linux and WebLogic Container Images
+#### Oracle Linux and WebLogic Server Images
 
-Oracle Linux is under open source license and is completely free to download and use.
-- In addition, with WebLogic license and support,
-  customers have access to the latest WebLogic container images which bundle the latest slim Oracle Linux images.
-- Customer support for WebLogic container images is handled by the WebLogic support team.
-- Oracle Linux patches are delivered only with the newer WebLogic container images,
-  which can be automated. WebLogic license and support do not give customers entitlements
-  to have direct access to Oracle Linux support or Unbreakable Linux Network (to access the standalone Oracle Linux patches).
+Oracle Linux is under open source license
+and is completely free to download and use.
+
+In addition, with WebLogic license and support,
+customers have access to:
+- The latest WebLogic Server images
+  which bundle Java SE and the latest slim Oracle Linux images.
+- Oracle Linux support.
+Note that WebLogic licenses and support do not include customer entitlements
+for direct access to Oracle Linux support or Unbreakable Linux Network
+(to access the standalone Oracle Linux patches).
+
+Oracle supplies two types of WebLogic Server images, patched (CPU) and unpatched.
+New WebLogic Server images are released when security fixes
+are released for Oracle Linux, WebLogic Server, or Java. In addition,
+patched images are rebuilt every CPU cycle, which is quarterly.
+Customer support for WebLogic Server images is handled by Oracle support.
+
+Using the [WebLogic Image Tool]("https://github.com/oracle/weblogic-image-tool")
+customers can also build their own WebLogic Server images with 
+the latest Oracle Linux images, Java updates, and WebLogic Server patches.
 
 #### Reference
 
@@ -127,11 +155,18 @@ Oracle Exalogic Elastic Cloud systems can be migrated to this infrastructure wit
 changes, enabling you to preserve your application investment as you adopt modern cloud
 native infrastructure.
 
-#### Microsoft Azure Kubernetes Service (AKS)
+#### Microsoft Azure
+
+There are three different approaches for deploying the operator to Microsoft Azure:
+- Microsoft Azure Platform
+- Microsoft Azure Kubernetes Service (AKS)
+- Oracle WebLogic Server on the Azure Kubernetes Service Marketplace (WLS on AKS Marketplace)
+
+##### Microsoft Azure Kubernetes Service (AKS)
 
 [Azure Kubernetes Service (AKS)](https://docs.microsoft.com/en-us/azure/aks/) is a hosted Kubernetes environment.  The WebLogic Kubernetes
-Operator, Oracle WebLogic Sever 12c, and Oracle Fusion Middleware Infrastructure 12c are fully supported and certified on Azure Kubernetes Service (as per the documents
-referenced in [Supported environments](#supported-environments)).
+Operator, Oracle WebLogic Server 12c, and Oracle Fusion Middleware Infrastructure 12c are fully supported and certified on Azure Kubernetes Service (as per the documents
+referenced in [Supported environments](#supported-environments)). In this environment, it is the customer's responsibility to install the operator and supply WebLogic Server images.
 
 AKS support and limitations:
 
@@ -144,6 +179,22 @@ AKS support and limitations:
 * Windows Server containers are not currently supported, only Linux containers.
 
 See also the [Azure Kubernetes Service sample]({{<relref "/samples/azure-kubernetes-service/_index.md">}}).
+
+##### Oracle WebLogic Server on the Azure Kubernetes Service Marketplace (WLS on AKS Marketplace)
+
+The WebLogic Server on AKS Marketplace
+offer lets you embrace cloud computing by providing greater choice
+and flexibility for deploying your WLS domains and applications.
+The offer leverages the WebLogic Kubernetes ToolKit to automate
+the provisioning of WebLogic and Azure resources so that you can easily move WLS workloads to AKS.
+The automatically provisioned resources include an AKS cluster,
+the WebLogic Kubernetes Operator, WLS Docker images, and the Azure Container Registry (ACR).
+It is possible to use an existing AKS cluster or ACR instance with the offer if desired.
+The offer also supports configuring load balancing with Azure App Gateway or the Azure Load Balancer,
+DNS configuration, SSL/TLS configuration, easing database connectivity,
+publishing metrics to Azure Monitor as well as mounting Azure Files as Kubernetes Persistent Volumes.
+
+For details, see [WebLogic Server on AKS Marketplace]({{<relref "/userguide/aks/_index.md">}}).
 
 #### VMware Tanzu Kubernetes Grid (TKG)
 
