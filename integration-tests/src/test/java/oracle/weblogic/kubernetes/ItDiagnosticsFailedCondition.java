@@ -179,7 +179,7 @@ class ItDiagnosticsFailedCondition {
       checkStatus("True", "False", "True");
 
     } finally {
-      deleteDomainResource(domainUid, domainNamespace);
+      deleteDomainResource(domainNamespace, domainUid);
       deleteConfigMap(badModelFileCm, domainNamespace);
     }
   }
@@ -205,7 +205,7 @@ class ItDiagnosticsFailedCondition {
       checkStatus("True", "False", "True");
 
     } finally {
-      deleteDomainResource(domainUid, domainNamespace);
+      deleteDomainResource(domainNamespace, domainUid);
     }
   }
 
@@ -230,7 +230,7 @@ class ItDiagnosticsFailedCondition {
       checkStatus("True", "False", "True");
 
     } finally {
-      deleteDomainResource(domainUid, domainNamespace);
+      deleteDomainResource(domainNamespace, domainUid);
     }
   }
 
@@ -255,7 +255,7 @@ class ItDiagnosticsFailedCondition {
       checkStatus("True", "False", "True");
 
     } finally {
-      deleteDomainResource(domainUid, domainNamespace);
+      deleteDomainResource(domainNamespace, domainUid);
     }
   }
 
@@ -284,7 +284,7 @@ class ItDiagnosticsFailedCondition {
       checkStatus("True", "False", "True");
 
     } finally {
-      deleteDomainResource(domainUid, domainNamespace);
+      deleteDomainResource(domainNamespace, domainUid);
     }
   }
 
@@ -351,7 +351,7 @@ class ItDiagnosticsFailedCondition {
       checkStatus("True", "False", "True");
 
     } finally {
-      deleteDomainResource(domainUid, domainNamespace);
+      deleteDomainResource(domainNamespace, domainUid);
     }
   }
 
@@ -376,7 +376,7 @@ class ItDiagnosticsFailedCondition {
       checkStatus("True", "False", "True");
 
     } finally {
-      deleteDomainResource(domainUid, domainNamespace);
+      deleteDomainResource(domainNamespace, domainUid);
     }
   }
 
@@ -410,7 +410,7 @@ class ItDiagnosticsFailedCondition {
       checkStatus("True", "False", "True");
 
     } finally {
-      deleteDomainResource(domainUid, domainNamespace);
+      deleteDomainResource(domainNamespace, domainUid);
     }
   }
 
@@ -437,7 +437,7 @@ class ItDiagnosticsFailedCondition {
       checkStatus("True", "False", "True");
 
     } finally {
-      deleteDomainResource(domainUid, domainNamespace);
+      deleteDomainResource(domainNamespace, domainUid);
     }
   }
 
@@ -517,7 +517,7 @@ class ItDiagnosticsFailedCondition {
       checkStatus("True", "False", "True");
 
     } finally {
-      deleteDomainResource(domainUid, domainNamespace);
+      deleteDomainResource(domainNamespace, domainUid);
     }
   }
 
