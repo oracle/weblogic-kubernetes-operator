@@ -1001,7 +1001,8 @@ class DomainStatusUpdaterTest {
 
   @Test
   void afterIntrospectionFailure_generateDomainProcessingAbortedEvent() {
-    testSupport.runSteps(createIntrospectionFailureRelatedSteps(FATAL_INTROSPECTOR_ERROR));
+    testSupport.runSteps(createIntrospectionFailureRelatedSteps(FATAL_INTROSPECTOR_ERROR,
+        testSupport.getPacket().getValue(DOMAIN_INTROSPECTOR_JOB)));
 
     assertThat(getEvents().stream().anyMatch(this::isDomainProcessingAbortedEvent), is(true));
   }
