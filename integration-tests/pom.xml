@@ -358,7 +358,7 @@
                   **/ItManagedCoherence,
                   **/ItManageNameSpace,
                   **/ItMiiAuxiliaryImage,
-                  **/tMiiAuxiliaryImageCluster,
+                  **/ItMiiAuxiliaryImageCluster,
                   **/ItMiiCustomSslStore,
                   **/ItMiiDomain,
                   **/ItMiiDomainModelInPV,
