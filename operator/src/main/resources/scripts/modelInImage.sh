@@ -1357,10 +1357,13 @@ function logSevereAndExit() {
 #   1 - Name of the log file to rotate and copy to WDT output directory.
 function wdtRotateAndCopyLogFile() {
   local logFileName=$1
-  testLogFileRotate "${WDT_OUTPUT_DIR}/${logFileName}"
-  [ $? -ne 0 ] && trace SEVERE "Error accessing '${WDT_OUTPUT_DIR}'. See previous log messages." && exit 1
+  # temporarily disable the trap as logFileRotate may return non-zero code
+  stop_trap
 
   logFileRotate "${WDT_OUTPUT_DIR}/${logFileName}" "${WDT_LOG_FILE_MAX:-11}"
 
   cp ${WDT_ROOT}/logs/${logFileName} ${WDT_OUTPUT_DIR}/
+
+  # restore trap
+  start_trap
 }
