@@ -53,7 +53,6 @@ import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteConfigMap;
@@ -180,7 +179,7 @@ class ItDiagnosticsFailedCondition {
       createDomainAndVerify(domain, domainNamespace);
 
       //check the desired completed, available and failed statuses
-      checkStatus("True", "False", "True");
+      checkStatus("False", "False", "True");
       testPassed = true;
 
     } finally {
@@ -211,7 +210,7 @@ class ItDiagnosticsFailedCondition {
       createDomainAndVerify(domain, domainNamespace);
 
       //check the desired completed, available and failed statuses
-      checkStatus("True", "False", "True");
+      checkStatus("False", "False", "True");
       testPassed = true;
 
     } finally {
@@ -241,7 +240,7 @@ class ItDiagnosticsFailedCondition {
       createDomainAndVerify(domain, domainNamespace);
 
       //check the desired completed, available and failed statuses
-      checkStatus("True", "False", "True");
+      checkStatus("False", "False", "True");
       testPassed = true;
 
     } finally {
@@ -271,7 +270,7 @@ class ItDiagnosticsFailedCondition {
       createDomainAndVerify(domain, domainNamespace);
 
       //check the desired completed, available and failed statuses
-      checkStatus("True", "False", "True");
+      checkStatus("False", "False", "True");
       testPassed = true;
 
     } finally {
@@ -290,7 +289,7 @@ class ItDiagnosticsFailedCondition {
   @DisplayName("Test domain status condition with incorrect image pull secret")
   void testIncorrectImagePullSecret() {
     boolean testPassed = false;
-    String image = WEBLOGIC_IMAGE_NAME + ":nonexistent";
+    String image = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
     logger.info("Creating a docker secret with invalid credentials");
     createDockerRegistrySecret("foo", "bar", "foo@bar.com", OCIR_REGISTRY,
         "bad-pull-secret", domainNamespace);
@@ -305,7 +304,7 @@ class ItDiagnosticsFailedCondition {
       createDomainAndVerify(domain, domainNamespace);
 
       //check the desired completed, available and failed statuses
-      checkStatus("True", "False", "True");
+      checkStatus("False", "False", "True");
       testPassed = true;
 
     } finally {
@@ -377,7 +376,7 @@ class ItDiagnosticsFailedCondition {
       createDomainAndVerify(domain, domainNamespace);
 
       //check the desired completed, available and failed statuses
-      checkStatus("True", "False", "True");
+      checkStatus("False", "False", "True");
       testPassed = true;
 
     } finally {
@@ -407,7 +406,7 @@ class ItDiagnosticsFailedCondition {
       createDomainAndVerify(domain, domainNamespace);
 
       //check the desired completed, available and failed statuses
-      checkStatus("True", "False", "True");
+      checkStatus("False", "False", "True");
       testPassed = true;
 
     } finally {
@@ -446,7 +445,7 @@ class ItDiagnosticsFailedCondition {
       createDomainAndVerify(domain, domainNamespace);
 
       //check the desired completed, available and failed statuses
-      checkStatus("True", "False", "True");
+      checkStatus("False", "False", "True");
       testPassed = true;
 
     } finally {
@@ -478,7 +477,8 @@ class ItDiagnosticsFailedCondition {
       createDomainAndVerify(domain, domainNamespace);
 
       //check the desired completed, available and failed statuses
-      checkStatus("True", "False", "True");
+      checkStatus("False", "False", "True");
+      checkStatus("True", "True", "False");
       testPassed = true;
 
     } finally {
@@ -694,12 +694,12 @@ class ItDiagnosticsFailedCondition {
   // check the desired statuses of Completed, Available and Failed type conditions
   private void checkStatus(String completed, String available, String failed) {
 
-    if (completed != null) {
-      // verify the condition type Failed exists
-      checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_COMPLETED_TYPE);
-      // verify the condition Failed type has status True
+    if (failed != null) {
+      // verify the condition type Available exists
+      checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
+      // verify the condition Available type has status False
       checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
-          DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, completed);
+          DOMAIN_STATUS_CONDITION_FAILED_TYPE, failed);
     }
 
     if (available != null) {
@@ -709,12 +709,13 @@ class ItDiagnosticsFailedCondition {
       checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
           DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, available);
     }
-    if (failed != null) {
-      // verify the condition type Available exists
-      checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
-      // verify the condition Available type has status False
+
+    if (completed != null) {
+      // verify the condition type Failed exists
+      checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_COMPLETED_TYPE);
+      // verify the condition Failed type has status True
       checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
-          DOMAIN_STATUS_CONDITION_FAILED_TYPE, failed);
+          DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, completed);
     }
   }
 
