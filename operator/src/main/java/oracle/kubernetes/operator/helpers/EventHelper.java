@@ -6,11 +6,13 @@ package oracle.kubernetes.operator.helpers;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.Random;
+import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import jakarta.validation.constraints.NotNull;
+import oracle.kubernetes.operator.DomainFailureReason;
 import oracle.kubernetes.operator.DomainNamespaces;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.EventConstants;
@@ -92,8 +94,8 @@ public class EventHelper {
    * Factory for {@link Step} that asynchronously create an event.
    *
    * @param domainNamespaces DomainSpaces instance
-   * @param eventData event item
-   * @param next next step
+   * @param eventData        event item
+   * @param next             next step
    * @return Step for creating an event
    */
   public static Step createEventStep(DomainNamespaces domainNamespaces, EventData eventData, Step next) {
@@ -104,7 +106,7 @@ public class EventHelper {
    * Factory for {@link Step} that asynchronously create an event.
    *
    * @param eventData event item
-   * @param next next step
+   * @param next      next step
    * @return Step for creating an event
    */
   public static Step createEventStep(EventData eventData, Step next) {
@@ -234,7 +236,7 @@ public class EventHelper {
           return doNext(packet);
         }
         if (UnrecoverableErrorBuilder.isAsyncCallNotFoundFailure(callResponse)
-                || UnrecoverableErrorBuilder.isAsyncCallConflictFailure(callResponse)) {
+            || UnrecoverableErrorBuilder.isAsyncCallConflictFailure(callResponse)) {
           return doNext(Step.chain(createCreateEventCall(createEventModel(packet, eventData)), getNext()), packet);
         } else if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
           return onFailureNoRetry(packet, callResponse);
@@ -295,6 +297,7 @@ public class EventHelper {
     DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
     EventItem eventItem = eventData.eventItem;
     eventData.domainPresenceInfo(info);
+    addAdditionalMessage(eventData, info);
 
     return new CoreV1Event()
         .metadata(createMetadata(eventData))
@@ -306,6 +309,19 @@ public class EventHelper {
         .message(eventItem.getMessage(eventData))
         .involvedObject(eventItem.createInvolvedObject(eventData))
         .count(1);
+  }
+
+  private static void addAdditionalMessage(@Nonnull EventData eventData, DomainPresenceInfo info) {
+    eventData.additionalMessage(getAdditionalMessage(eventData, info));
+  }
+
+  private static String getAdditionalMessageFromFailureReason(EventData eventData, DomainPresenceInfo info) {
+    return Optional.ofNullable(eventData.failureReason).map(f -> f.getSuggestion(info)).orElse("");
+  }
+
+  private static String getAdditionalMessage(EventData eventData, DomainPresenceInfo info) {
+    return Optional.ofNullable(eventData.additionalMessage)
+        .orElse(getAdditionalMessageFromFailureReason(eventData, info));
   }
 
   private static V1ObjectMeta createMetadata(
@@ -640,8 +656,29 @@ public class EventHelper {
 
     private static String getMessageFromFailedEventData(EventData eventData) {
       return String.format(eventData.eventItem.getPattern(),
-          eventData.getResourceNameFromInfo(), Optional.ofNullable(eventData.message).orElse(""),
-          Optional.ofNullable(eventData.additionalMessage).orElse(""));
+          eventData.getResourceNameFromInfo(),
+          getEffectiveReasonDetail(eventData),
+          getEffectiveMessage(eventData),
+          getAdditionalMessage(eventData));
+    }
+
+    @org.jetbrains.annotations.NotNull
+    private static String getAdditionalMessage(EventData eventData) {
+      return Optional.ofNullable(eventData.additionalMessage).orElse("");
+    }
+
+    @org.jetbrains.annotations.NotNull
+    private static String getEffectiveMessage(EventData eventData) {
+      return Optional.ofNullable(eventData.message).orElse(getFailureReason(eventData));
+    }
+
+    private static String getFailureReason(EventData eventData) {
+      return Optional.ofNullable(eventData.failureReason).map(DomainFailureReason::getError).orElse("");
+    }
+
+    @org.jetbrains.annotations.NotNull
+    private static String getEffectiveReasonDetail(EventData eventData) {
+      return eventData.message == null ? "" : getFailureReason(eventData);
     }
 
     private static String getMessageFromEventDataWithPod(EventData eventData) {
@@ -655,10 +692,10 @@ public class EventHelper {
 
     protected String generateEventName(EventData eventData) {
       return String.format("%s.%s.%h%h",
-              eventData.getResourceName(),
-              eventData.eventItem.getReason(),
-              System.currentTimeMillis(),
-              generateRandomLong());
+          eventData.getResourceName(),
+          eventData.eventItem.getReason(),
+          System.currentTimeMillis(),
+          generateRandomLong());
     }
 
     protected static V1ObjectReference createOperatorEventInvolvedObject() {
@@ -679,11 +716,11 @@ public class EventHelper {
 
     String generateOperatorNSEventName(EventData eventData) {
       return String.format("%s.%s.%s.%h%h",
-              getOperatorPodName(),
-              eventData.eventItem.getReason(),
-              eventData.getResourceName(),
-              System.currentTimeMillis(),
-              generateRandomLong());
+          getOperatorPodName(),
+          eventData.eventItem.getReason(),
+          eventData.getResourceName(),
+          System.currentTimeMillis(),
+          generateRandomLong());
     }
 
     public String getMessage(EventData eventData) {
@@ -720,6 +757,7 @@ public class EventHelper {
 
   public static class EventData {
     private final EventItem eventItem;
+    private DomainFailureReason failureReason;
     private String message;
     private String additionalMessage;
     private String namespace;
@@ -734,6 +772,11 @@ public class EventHelper {
     public EventData(EventItem eventItem, String message) {
       this.eventItem = eventItem;
       this.message = message;
+    }
+
+    public EventData failureReason(DomainFailureReason failureReason) {
+      this.failureReason = failureReason;
+      return this;
     }
 
     public EventData message(String message) {
@@ -794,6 +837,7 @@ public class EventHelper {
 
     /**
      * Get the UID from the domain metadata.
+     *
      * @return domain resource's UID
      */
     public String getUID() {

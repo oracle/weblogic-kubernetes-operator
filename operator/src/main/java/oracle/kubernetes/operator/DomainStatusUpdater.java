@@ -124,10 +124,6 @@ public class DomainStatusUpdater {
     return new RemoveFailuresStep();
   }
 
-  private static String getRetryMessage() {
-    return String.format(", will retry in %s seconds", DomainPresence.getDomainPresenceFailureRetrySeconds());
-  }
-
   /**
    * Asynchronous steps to set Domain condition to Failed after an asynchronous call failure
    * and to generate DOMAIN_PROCESSING_FAILED event.
@@ -143,7 +139,7 @@ public class DomainStatusUpdater {
       LOGGER.fine(MessageKeys.EXCEPTION, apiException);
     }
 
-    return createFailureRelatedSteps(Kubernetes, failure.getMessage(), getRetryMessage());
+    return createFailureRelatedSteps(Kubernetes, failure.getMessage());
   }
 
   /**
@@ -157,7 +153,7 @@ public class DomainStatusUpdater {
     return Step.chain(
         new FailedStep(Internal, message),
         createFailureCountStep(domainIntrospectorJob),
-        createEventStep(new EventData(DOMAIN_FAILED, getEventMessage(Internal, message))));
+        createEventStep(new EventData(DOMAIN_FAILED, message).failureReason(Internal)));
   }
 
   /**
@@ -165,7 +161,7 @@ public class DomainStatusUpdater {
    *
    * @param message a fuller description of the problem*/
   public static Step createServerPodFailureRelatedSteps(String message) {
-    return createFailureRelatedSteps(ServerPod, getEventMessage(ServerPod, message), getRetryMessage());
+    return createFailureRelatedSteps(ServerPod, message);
   }
 
   /**
@@ -173,21 +169,19 @@ public class DomainStatusUpdater {
    *
    * @param message a fuller description of the problem*/
   public static Step createDomainInvalidFailureRelatedSteps(String message) {
-    return createFailureRelatedSteps(
-        DomainInvalid, getEventMessage(DomainInvalid, message), getRetryMessage());
+    return createFailureRelatedSteps(DomainInvalid, message);
   }
 
   /**
    * Asynchronous steps to set Domain condition to Failed and to generate DOMAIN_PROCESSING_FAILED event.
-   *  @param reason the failure category
+   * @param reason the failure category
    * @param message a fuller description of the problem
    */
   public static Step createFailureRelatedSteps(
-      @Nonnull DomainFailureReason reason, String message, String additionalMessage) {
+      @Nonnull DomainFailureReason reason, String message) {
     return Step.chain(
         new FailedStep(reason, message),
-        createEventStep(new EventData(DOMAIN_FAILED, getEventMessage(reason, message))
-            .additionalMessage(additionalMessage)));
+        createEventStep(new EventData(DOMAIN_FAILED, message).failureReason(reason)));
   }
 
   /**
@@ -200,7 +194,7 @@ public class DomainStatusUpdater {
                                                             V1Job domainIntrospectorJob) {
     return Step.chain(new FailedStep(Introspection, message),
             createFailureCountStep(domainIntrospectorJob),
-            createEventStep(new EventData(DOMAIN_FAILED, getEventMessage(Introspection, message))));
+            createEventStep(new EventData(DOMAIN_FAILED, message).failureReason(Introspection)));
   }
 
   /**
@@ -212,8 +206,7 @@ public class DomainStatusUpdater {
     return
         Step.chain(
             new FailedStep(Introspection, message),
-            createEventStep(new EventData(DOMAIN_FAILED,
-                getEventMessage(Introspection, message)).additionalMessage(getRetryMessage())));
+            createEventStep(new EventData(DOMAIN_FAILED, message).failureReason(Introspection)));
   }
 
   public static Step createFailureCountStep(V1Job domainIntrospectorJob) {
@@ -476,12 +469,10 @@ public class DomainStatusUpdater {
       List<EventData> list = new ArrayList<>();
       if (hasJustExceededMaxRetryCount()) {
         list.add(
-            new EventData(EventHelper.EventItem.DOMAIN_FAILED).message(INTROSPECTOR_MAX_ERRORS_EXCEEDED)
-                .additionalMessage(EventConstants.WILL_NOT_RETRY));
+            new EventData(EventHelper.EventItem.DOMAIN_FAILED).message(INTROSPECTOR_MAX_ERRORS_EXCEEDED));
       } else if (hasJustGotFatalIntrospectorError()) {
         list.add(new EventData(EventHelper.EventItem.DOMAIN_FAILED)
-            .message(FATAL_INTROSPECTOR_ERROR_MSG + getNewStatus().getMessage())
-            .additionalMessage(EventConstants.WILL_NOT_RETRY));
+            .message(FATAL_INTROSPECTOR_ERROR_MSG + getNewStatus().getMessage()));
       }
       return list;
     }
