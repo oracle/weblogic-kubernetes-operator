@@ -159,6 +159,11 @@ class ItDBOperator {
     assertNotNull(namespaces.get(2), "Namespace is null");
     wlsDomainNamespace = namespaces.get(3);
 
+    // Create the repo secret to pull the image
+    // this secret is used only for non-kind cluster
+    createSecretForBaseImages(fmwDomainNamespace);
+    createSecretForBaseImages(wlsDomainNamespace);
+
     //install Oracle Database Operator
     assertDoesNotThrow(() -> DbUtils.installDBOperator(dbNamespace), "Failed to install database operator");
 
@@ -172,7 +177,7 @@ class ItDBOperator {
         dbUrl, dbNamespace));
 
     // install operator and verify its running in ready state
-    installAndVerifyOperator(opNamespace, fmwDomainNamespace);
+    installAndVerifyOperator(opNamespace, fmwDomainNamespace, wlsDomainNamespace);
   }
 
   /**
@@ -330,9 +335,6 @@ class ItDBOperator {
 
     createConfigMapAndVerify(configMapName, wlsDomainUid, wlsDomainNamespace,
         Arrays.asList(MODEL_DIR + "/jms.recovery.yaml"));
-
-    // this secret is used only for non-kind cluster
-    createSecretForBaseImages(wlsDomainNamespace);
 
     // create PV, PVC for logs/data
     createPV(pvName, wlsDomainUid, ItMiiServiceMigration.class.getSimpleName());

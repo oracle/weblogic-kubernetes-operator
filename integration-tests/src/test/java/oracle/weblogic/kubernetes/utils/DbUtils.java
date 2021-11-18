@@ -68,6 +68,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 //import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.ORACLE_DB_OPERATOR_RELEASE;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
@@ -701,10 +702,10 @@ public class DbUtils {
     boolean response = Command.withParams(params).execute();
     assertTrue(response, "Failed to install cert manager");
 
-    assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(30));
+    assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(60));
 
     String operatorYaml = "https://raw.githubusercontent.com/"
-        + "oracle/oracle-database-operator/main/oracle-database-operator.yaml";
+        + "oracle/oracle-database-operator/" + ORACLE_DB_OPERATOR_RELEASE + "/oracle-database-operator.yaml";
 
     Files.createDirectories(Paths.get(DOWNLOAD_DIR));
     Files.deleteIfExists(Paths.get(DOWNLOAD_DIR, "oracle-database-operator.yaml"));
