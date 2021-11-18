@@ -483,15 +483,14 @@ class ItDiagnosticsFailedCondition {
    * Verify after the introspector successfully completes the Failed condition is removed.
    */
   @Test
-  @DisplayName("Test domain status condition with introspector failure")
-  void testIntrospectorFailure() {
+  @DisplayName("Test domain status condition with introspector timeout failure")
+  void testIntrospectorTimeoutFailure() {
     boolean testPassed = false;
     String image = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
 
     logger.info("Creating domain custom resource");
     Domain domain = createDomainResource(domainUid, domainNamespace, adminSecretName,
         OCIR_SECRET_NAME, encryptionSecretName, replicaCount, image);
-
     domain.getSpec().configuration().introspectorJobActiveDeadlineSeconds(5L);
 
     try {
@@ -500,8 +499,6 @@ class ItDiagnosticsFailedCondition {
 
       //check the desired completed, available and failed statuses
       checkStatus("False", "False", "True");
-      logger.info("After introspector dead is incremented verify the status");
-      checkStatus("True", "True", null);
       testPassed = true;
 
     } finally {
