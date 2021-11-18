@@ -114,6 +114,14 @@ public class DomainStatusUpdater {
   }
 
   /**
+   * Creates an asynchronous step to initialize the domain status, if needed, to indicate that the operator has
+   * seen the domain and is now working on it.
+   */
+  public static Step createStatusInitializationStep() {
+    return new StatusInitializationStep();
+  }
+
+  /**
    * Asynchronous step to remove any current failure conditions.
    */
   public static Step createRemoveFailuresStep() {
@@ -460,6 +468,17 @@ public class DomainStatusUpdater {
 
   }
 
+  public static class StatusInitializationStep extends DomainStatusUpdaterStep {
+
+    @Override
+    void modifyStatus(DomainStatus status) {
+      if (status.getConditions().isEmpty()) {
+        status.addCondition(new DomainCondition(Completed).withStatus("False"));
+        status.addCondition(new DomainCondition(Available).withStatus("False"));
+      }
+    }
+  }
+
   /**
    * A step which updates the domain status from the domain topology in the current packet.
    */
@@ -555,7 +574,7 @@ public class DomainStatusUpdater {
       }
 
       private boolean isProcessingCompleted() {
-        return !haveTooManyReplicas() && (isDomainIntentionallyShutdown() || allIntendedServersRunning());
+        return !haveTooManyReplicas() && allIntendedServersRunning();
       }
 
       private void removeUnneededFailures(DomainStatus status) {
@@ -680,17 +699,30 @@ public class DomainStatusUpdater {
       }
 
       private boolean allIntendedServersRunning() {
-        return atLeastOneApplicationServerStarted()
-              && expectedRunningServers.stream().noneMatch(this::isNotRunning)
-              && expectedRunningServers.containsAll(serverState.keySet())
+        return haveServerData()
+              && allStartedServersAreRunning()
+              && allNonStartedServersAreShutdown()
               && serversMarkedForRoll().isEmpty();
       }
 
-      private boolean isDomainIntentionallyShutdown() {
-        return getDomain().isShuttingDown()
-              && expectedRunningServers.stream().allMatch(this::isShutDown)
-              && expectedRunningServers.containsAll(serverState.keySet())
-              && serversMarkedForRoll().isEmpty();
+      private boolean haveServerData() {
+        return serverState != null;
+      }
+
+      private boolean allStartedServersAreRunning() {
+        return expectedRunningServers.stream().allMatch(this::isRunning);
+      }
+
+      private boolean allNonStartedServersAreShutdown() {
+        return getNonStartedServersWithState().stream().allMatch(this::isShutDown);
+      }
+
+      private List<String> getNonStartedServersWithState() {
+        return serverState.keySet().stream().filter(this::isNonStartedServer).collect(Collectors.toList());
+      }
+
+      private boolean isNonStartedServer(String serverName) {
+        return !expectedRunningServers.contains(serverName);
       }
 
       private boolean atLeastOneApplicationServerStarted() {
