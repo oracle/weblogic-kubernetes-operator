@@ -337,7 +337,7 @@ class ItDBOperator {
         Arrays.asList(MODEL_DIR + "/jms.recovery.yaml"));
 
     // create PV, PVC for logs/data
-    createPV(pvName, wlsDomainUid, ItMiiServiceMigration.class.getSimpleName());
+    createPV(pvName, wlsDomainUid, ItDBOperator.class.getSimpleName());
     createPVC(pvName, pvcName, wlsDomainUid, wlsDomainNamespace);
 
     // create job to change permissions on PV hostPath
