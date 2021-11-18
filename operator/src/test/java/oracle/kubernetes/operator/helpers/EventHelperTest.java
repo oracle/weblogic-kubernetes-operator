@@ -15,6 +15,7 @@ import java.util.logging.LogRecord;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.openapi.models.CoreV1Event;
+import oracle.kubernetes.operator.DomainFailureReason;
 import oracle.kubernetes.operator.DomainProcessorDelegateStub;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
@@ -170,7 +171,9 @@ class EventHelperTest {
     assertThat("Found DOMAIN_FAILED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
             DOMAIN_FAILED_EVENT,
-            String.format(DOMAIN_FAILED_PATTERN, UID, "Test this failure", ", will retry in 2 seconds")), is(true));
+            String.format(DOMAIN_FAILED_PATTERN, UID,
+                EventConstants.DOMAIN_INVALID_ERROR, "Test this failure",
+                EventConstants.DOMAIN_INVALID_ERROR_SUGGESTION)), is(true));
   }
 
   @Test
@@ -267,13 +270,16 @@ class EventHelperTest {
     testSupport.runSteps(Step.chain(
         createEventStep(new EventData(DOMAIN_FAILED)),
         createEventStep(new EventData(EventHelper.EventItem.DOMAIN_FAILED)
-            .message("Test this failure").additionalMessage(WILL_NOT_RETRY)))
+            .message("Test this failure")
+            .failureReason(DomainFailureReason.Internal)
+            .additionalMessage(WILL_NOT_RETRY)))
     );
 
     assertThat("Found DOMAIN_FAILED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
             EventConstants.DOMAIN_FAILED_EVENT,
-            String.format(EventConstants.DOMAIN_FAILED_PATTERN, UID, "Test this failure", WILL_NOT_RETRY)),
+            String.format(EventConstants.DOMAIN_FAILED_PATTERN, UID,
+                EventConstants.INTERNAL_ERROR, "Test this failure", WILL_NOT_RETRY)),
         is(true));
   }
 
