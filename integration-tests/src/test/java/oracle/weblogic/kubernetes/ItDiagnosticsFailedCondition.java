@@ -500,7 +500,8 @@ class ItDiagnosticsFailedCondition {
 
       //check the desired completed, available and failed statuses
       checkStatus("False", "False", "True");
-      checkStatus("True", "True", "False");
+      logger.info("After introspector dead is incremented verify the status");
+      checkStatus("True", "True", null);
       testPassed = true;
 
     } finally {
