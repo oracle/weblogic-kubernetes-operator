@@ -841,8 +841,8 @@ public class DomainProcessorImpl implements DomainProcessor {
         return true;
       } else if (shouldReportAbortedEvent()) {
         return true;
-      } else if (hasExceededRetryCount() && !isImgRestartIntrospectVerChanged(liveInfo, cachedInfo)) {
-        LOGGER.severe(ProcessingConstants.EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG);
+      } else if (hasExceededRetryCount(liveInfo) && !isImgRestartIntrospectVerChanged(liveInfo, cachedInfo)) {
+        LOGGER.severe(MessageKeys.INTROSPECTOR_MAX_ERRORS_EXCEEDED, getFailureRetryMaxCount());
         return false;
       } else if (isFatalIntrospectorError()) {
         LOGGER.fine(ProcessingConstants.FATAL_INTROSPECTOR_ERROR_MSG);
@@ -852,10 +852,7 @@ public class DomainProcessorImpl implements DomainProcessor {
         return false;  // we have already cached this
       } else if (shouldRecheck(cachedInfo)) {
 
-        if (hasExceededRetryCount()) {
-          resetIntrospectorJobFailureCount();
-        }
-        if (getCurrentIntrospectFailureRetryCount() > 0) {
+        if (getCurrentIntrospectFailureRetryCount(liveInfo) > 0) {
           logRetryCount(cachedInfo);
         }
         LOGGER.fine("Continue the make-right domain presence, explicitRecheck -> " + explicitRecheck);
@@ -865,34 +862,17 @@ public class DomainProcessorImpl implements DomainProcessor {
       return false;
     }
 
+    private int getFailureRetryMaxCount() {
+      return DomainPresence.getDomainPresenceFailureRetryMaxCount();
+    }
+
     private boolean shouldReportAbortedEvent() {
       return Optional.ofNullable(eventData).map(EventData::getItem).orElse(null) == DOMAIN_PROCESSING_ABORTED;
     }
 
-    private void resetIntrospectorJobFailureCount() {
-      Optional.ofNullable(liveInfo)
-          .map(DomainPresenceInfo::getDomain)
-          .map(Domain::getStatus)
-          .map(DomainStatus::resetIntrospectJobFailureCount);
-    }
-
-    private boolean hasExceededRetryCount() {
-      return getCurrentIntrospectFailureRetryCount()
-          >= DomainPresence.getDomainPresenceFailureRetryMaxCount();
-    }
-
-    private Integer getCurrentIntrospectFailureRetryCount() {
-      return Optional.ofNullable(liveInfo)
-          .map(DomainPresenceInfo::getDomain)
-          .map(Domain::getStatus)
-          .map(DomainStatus::getIntrospectJobFailureCount)
-          .orElse(0);
-    }
-
     private void logRetryCount(DomainPresenceInfo cachedInfo) {
       LOGGER.info(MessageKeys.INTROSPECT_JOB_FAILED_RETRY_COUNT, cachedInfo.getDomain().getDomainUid(),
-          getCurrentIntrospectFailureRetryCount(),
-          DomainPresence.getDomainPresenceFailureRetryMaxCount());
+          getCurrentIntrospectFailureRetryCount(liveInfo), getFailureRetryMaxCount());
     }
 
     private boolean shouldRecheck(DomainPresenceInfo cachedInfo) {
@@ -1020,6 +1000,19 @@ public class DomainProcessorImpl implements DomainProcessor {
         .orElse(null);
   }
 
+  private Integer getCurrentIntrospectFailureRetryCount(DomainPresenceInfo info) {
+    return Optional.ofNullable(info)
+            .map(DomainPresenceInfo::getDomain)
+            .map(Domain::getStatus)
+            .map(DomainStatus::getIntrospectJobFailureCount)
+            .orElse(0);
+  }
+
+  private boolean hasExceededRetryCount(DomainPresenceInfo info) {
+    return getCurrentIntrospectFailureRetryCount(info)
+            >= DomainPresence.getDomainPresenceFailureRetryMaxCount();
+  }
+
   private static boolean isCachedInfoNewer(DomainPresenceInfo liveInfo, DomainPresenceInfo cachedInfo) {
     return liveInfo.getDomain() != null
         && KubernetesUtils.isFirstNewer(cachedInfo.getDomain().getMetadata(), liveInfo.getDomain().getMetadata());
@@ -1048,7 +1041,8 @@ public class DomainProcessorImpl implements DomainProcessor {
             gate.startFiberIfLastFiberMatches(
                 domainUid,
                 Fiber.getCurrentIfSet(),
-                DomainStatusUpdater.createFailureRelatedSteps(throwable),
+                Step.chain(DomainStatusUpdater.createFailureCountStep(null),
+                        DomainStatusUpdater.createFailureRelatedSteps(throwable)),
                 plan.packet,
                 new CompletionCallback() {
                   @Override
@@ -1071,7 +1065,7 @@ public class DomainProcessorImpl implements DomainProcessor {
                                  LoggingContext.setThreadContext().namespace(ns).domainUid(domainUid)) {
                           existing.setPopulated(false);
                           // proceed only if we have not already retried max number of times
-                          int retryCount = existing.incrementAndGetFailureCount();
+                          int retryCount = getCurrentIntrospectFailureRetryCount(existing);
                           LOGGER.fine(
                               "Failure count for DomainPresenceInfo: "
                                   + existing
@@ -1128,6 +1122,11 @@ public class DomainProcessorImpl implements DomainProcessor {
             bringAdminServerUp(info, delegate.getPodAwaiterStepFactory(info.getNamespace())),
             managedServerStrategy);
 
+    if (hasExceededRetryCount(info) && isImgRestartIntrospectVerChanged(info,
+            getExistingDomainPresenceInfo(info.getNamespace(), info.getDomainUid()))) {
+      domainUpStrategy = Step.chain(DomainStatusUpdater.createResetFailureCountStep(), domainUpStrategy);
+    }
+
     return Step.chain(
           createDomainUpInitialStep(info),
           ConfigMapHelper.readExistingIntrospectorConfigMap(info.getNamespace(), info.getDomainUid()),
@@ -1174,8 +1173,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     @Override
     public NextAction apply(Packet packet) {
-      packet.getSpi(DomainPresenceInfo.class).complete();
-      return doNext(packet);
+      return doNext(DomainStatusUpdater.createResetFailureCountStep(), packet);
     }
   }
 
