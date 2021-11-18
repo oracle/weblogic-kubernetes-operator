@@ -397,32 +397,6 @@ class ItParameterizedDomain {
   }
 
   /**
-   * Negative test case for when domain resource attribute domain.spec.adminServer.adminChannelPortForwardingEnabled
-   * is set to false, the WLS admin console can not be accessed using the forwarded port, like
-   * http://localhost:localPort/console/login/LoginForm.jsp
-   */
-  @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
-  @Test
-  @DisplayName("Forward a local port to admin default and default secure channel port "
-      + "and verify WLS admin console is not accessible")
-  void testPortforwardDisabledInMiiDomain() {
-    Domain domain = createMiiDomainWithMultiClusters(miiDomainUid + "neg", miiDomainNamespace, "negativeTest");
-    assertDomainNotNull(domain);
-
-    String domainUid = domain.getSpec().getDomainUid();
-    String domainNamespace = domain.getMetadata().getNamespace();
-    final String hostName = "localhost";
-
-    String forwardedPortNo = startPortForwardProcess(hostName, domainNamespace, domainUid, ADMIN_SERVER_PORT);
-    verifyAdminConsoleAccessible(domainNamespace, hostName, forwardedPortNo, false, Boolean.FALSE);
-
-    forwardedPortNo = startPortForwardProcess(hostName, domainNamespace, domainUid, ADMIN_SERVER_SECURE_PORT);
-    verifyAdminConsoleAccessible(domainNamespace, hostName, forwardedPortNo, true, Boolean.FALSE);
-
-    stopPortForwardProcess(domainNamespace);
-  }
-
-  /**
    * Scale cluster using REST API for three different type of domains.
    * i.e. domain-on-pv, domain-in-image and model-in-image
    *
@@ -923,13 +897,7 @@ class ItParameterizedDomain {
    * @return oracle.weblogic.domain.Domain objects
    */
   private static Domain createMiiDomainWithMultiClusters(String domainUid,
-                                                         String domainNamespace,
-                                                         String... args) {
-
-    boolean adminChannelPortForwardingEnabled = (args.length == 0) ? true : false;
-    logger.info("Creating a Domain with adminChannelPortForwardingEnabled = {0}",
-        adminChannelPortForwardingEnabled);
-
+                                                         String domainNamespace) {
     // admin/managed server name here should match with WDT model yaml file
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
 
@@ -939,17 +907,15 @@ class ItParameterizedDomain {
     createOcirRepoSecret(domainNamespace);
 
     String adminSecretName = "weblogic-credentials";
-    if (adminChannelPortForwardingEnabled) {
-      // create secret for admin credentials
-      logger.info("Creating secret for admin credentials");
-      createSecretWithUsernamePassword(adminSecretName, domainNamespace,
-          ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+    // create secret for admin credentials
+    logger.info("Creating secret for admin credentials");
+    createSecretWithUsernamePassword(adminSecretName, domainNamespace,
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
-      // create encryption secret
-      logger.info("Creating encryption secret");
-      createSecretWithUsernamePassword(encryptionSecretName, domainNamespace,
-          "weblogicenc", "weblogicenc");
-    }
+    // create encryption secret
+    logger.info("Creating encryption secret");
+    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace,
+        "weblogicenc", "weblogicenc");
 
     // construct the cluster list used for domain custom resource
     List<Cluster> clusterList = new ArrayList<>();
@@ -994,7 +960,7 @@ class ItParameterizedDomain {
                     .limits(resourceLimit)))
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING")
-                .adminChannelPortForwardingEnabled(adminChannelPortForwardingEnabled)
+                .adminChannelPortForwardingEnabled(true)
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default-secure")
