@@ -73,6 +73,7 @@ import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import org.jetbrains.annotations.NotNull;
 
+import static oracle.kubernetes.operator.DomainStatusUpdater.createStatusInitializationStep;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createStatusUpdateStep;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
@@ -1112,7 +1113,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     Step managedServerStrategy = Step.chain(
         bringManagedServersUp(null),
         MonitoringExporterSteps.updateExporterSidecars(),
-        new TailStep());
+        createStatusUpdateStep(new TailStep()));
 
     Step domainUpStrategy =
         Step.chain(
@@ -1193,8 +1194,8 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     private Step getNextSteps() {
-      if (lookForPodsAndServices()) {
-        return Step.chain(createStatusUpdateStep(null), getRecordExistingResourcesSteps(), getNext());
+      if (lookForPodsAndServices()) {   // REG-> change this to initialize-status-if-needed step
+        return Step.chain(createStatusInitializationStep(), getRecordExistingResourcesSteps(), getNext());
       } else {
         return getNext();
       }

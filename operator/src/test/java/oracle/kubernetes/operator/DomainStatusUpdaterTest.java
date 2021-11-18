@@ -71,6 +71,7 @@ import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTTING_DOWN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.STANDBY_STATE;
+import static oracle.kubernetes.operator.WebLogicConstants.STARTING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.UNKNOWN_STATE;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.EVENT;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
@@ -275,7 +276,7 @@ class DomainStatusUpdaterTest {
                         .withServerName("server1")
                         .withHealth(overallHealth("health1"))))
               .addCondition(new DomainCondition(Available).withStatus("False"))
-              .addCondition(new DomainCondition(Completed).withStatus("False")));
+              .addCondition(new DomainCondition(Completed).withStatus("True")));
 
     testSupport.clearNumCalls();
     updateDomainStatus();
@@ -524,7 +525,8 @@ class DomainStatusUpdaterTest {
           .addCondition(new DomainCondition(Completed).withStatus("False"));
     defineScenario()
           .withCluster("clusterA", "server1")
-          .withCluster("clusterB", "server2")
+          .withCluster("clusterB", "server2", "server3")
+          .notStarting("server3")
           .withServersReachingState("Unknown","server3")
           .build();
 
@@ -685,8 +687,7 @@ class DomainStatusUpdaterTest {
   }
 
   @Test
-  void withServerStartPolicyNEVER_domainIsNotAvailable() {
-    domain.getSpec().setServerStartPolicy("NEVER");
+  void withNonClusteredServerNotStarting_domainIsNotAvailable() {
     defineScenario().withServers("server1").notStarting("server1").build();
 
     updateDomainStatus();
@@ -695,8 +696,18 @@ class DomainStatusUpdaterTest {
   }
 
   @Test
-  void withServerStartPolicyNEVERAndServersStillRunning_domainIsNotCompleted() {
-    domain.getSpec().setServerStartPolicy("NEVER");
+  void whenNoServersInAClusterAreRunning_domainIsNotAvailable() {
+    defineScenario()
+          .withCluster("cluster1", "ms1")
+          .withServersReachingState(STARTING_STATE, "ms1").build();
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(Available).withStatus("False"));
+  }
+
+  @Test
+  void withServersShuttingDown_domainIsNotCompleted() {
     defineScenario().withServers("server1").withServersReachingState(SHUTTING_DOWN_STATE, "server1").build();
 
     updateDomainStatus();
@@ -706,9 +717,24 @@ class DomainStatusUpdaterTest {
   }
 
   @Test
-  void withServerStartPolicyNEVERAndServersShutdown_domainIsCompleted() {
-    domain.getSpec().setServerStartPolicy("NEVER");
-    defineScenario().withServers("server1").withServersReachingState(SHUTDOWN_STATE, ADMIN, "server1").build();
+  void withAllServersShutdown_domainIsCompleted() {   // !!!! can the admin server be NOT started?
+    defineScenario()
+          .withServers("server1")
+          .notStarting(ADMIN, "server1")
+          .withServersReachingState(SHUTDOWN_STATE, ADMIN, "server1").build();
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(Available).withStatus("False"));
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus("True"));
+  }
+
+  @Test
+  void withClusterIntentionallyShutdown_domainIsCompleted() {
+    defineScenario()
+          .withCluster("cluster1", "ms1", "ms2")
+          .notStarting("ms1", "ms2")
+          .build();
 
     updateDomainStatus();
 
@@ -718,7 +744,6 @@ class DomainStatusUpdaterTest {
 
   @Test
   void whenNonClusteredServerNotReady_domainIsNotAvailable() {
-    domain.getSpec().setServerStartPolicy("NEVER");
     defineScenario()
           .withServers("server0")
           .withCluster("clusterA", "server1", "server2")
@@ -1145,6 +1170,7 @@ class DomainStatusUpdaterTest {
     }
 
     void build() {
+      nonStartedServers.stream().filter(ADMIN::equals).findAny().ifPresent(s -> info.setAdminServerName(null));
       final WlsDomainConfig domainConfig = configSupport.createDomainConfig();
       testSupport.addToPacket(DOMAIN_TOPOLOGY, domainConfig);
       testSupport.addToPacket(SERVER_STATE_MAP, createStateMap());
