@@ -33,7 +33,6 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.FmwUtils;
 import oracle.weblogic.kubernetes.utils.LoggingUtil;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -56,8 +55,6 @@ import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteConfigMap;
-import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
-import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFromFiles;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuAccessSecret;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeExists;
@@ -150,16 +147,16 @@ class ItDiagnosticsFailedCondition {
 
   /**
    * Test domain status condition with a bad model file.
-   * Verify the following conditions are generated after a introspector failure.
-   * type: Completed, status: true
-   * type: Available, status: false
+   * Verify the following conditions are generated in an order after an introspector failure.
    * type: Failed, status: true
+   * type: Available, status: false
+   * type: Completed, status: false
    */
   @Test
   @DisplayName("Test domain status condition with bad model file")
   void testBadModelFileStatus() {
     boolean testPassed = false;
-    // build a build with empty WebLogic domain
+    // build an image with empty WebLogic domain
     String imageName = MII_BASIC_IMAGE_NAME;
     String imageTag = "empty-domain-image";
     buildMIIandPushToRepo(imageName, imageTag, null);
@@ -193,7 +190,10 @@ class ItDiagnosticsFailedCondition {
 
   /**
    * Test domain status condition with replicas set to more than maximum size of the WebLogic cluster created.
-   * generated: type: Completed, status: true type: Available, status: false type: Failed status: true
+   * Verify the following conditions are generated
+   * type: Failed, status: true
+   * type: Available, status: false
+   * type: Completed, status: false
    */
   @Test
   @DisplayName("Test domain status condition with replicas set to more than available in cluster")
@@ -222,8 +222,11 @@ class ItDiagnosticsFailedCondition {
   }
 
   /**
-   * Test domain status condition with non-existing image. Verify the following conditions are
-   * generated: type: Completed, status: true type: Available, status: false type: Failed status: true
+   * Test domain status condition with non-existing image.
+   * Verify the following conditions are generated
+   * type: Failed, status: true
+   * type: Available, status: false
+   * type: Completed, status: false
    */
   @Test
   @DisplayName("Test domain status failed condition with non-existing image")
@@ -252,8 +255,11 @@ class ItDiagnosticsFailedCondition {
   }
 
   /**
-   * Test domain status failed condition with missing image pull secret. Verify the following conditions are
-   * generated: type: Completed, status: true type: Available, status: false type: Failed status: true
+   * Test domain status failed condition with missing image pull secret.
+   * Verify the following conditions are generated
+   * type: Failed, status: true
+   * type: Available, status: false
+   * type: Completed, status: false
    */
   @Test
   @DisplayName("Test domain status condition with missing image pull secret")
@@ -282,8 +288,11 @@ class ItDiagnosticsFailedCondition {
   }
 
   /**
-   * Test domain status failed condition with incorrect image pull secret. Verify the following conditions are
-   * generated: type: Completed, status: true type: Available, status: false type: Failed status: true
+   * Test domain status failed condition with incorrect image pull secret.
+   * Verify the following conditions are generated
+   * type: Failed, status: true
+   * type: Available, status: false
+   * type: Completed, status: false
    */
   @Test
   @DisplayName("Test domain status condition with incorrect image pull secret")
@@ -316,8 +325,11 @@ class ItDiagnosticsFailedCondition {
   }
 
   /**
-   * Test domain status failed condition with non-existing persistent volume. Verify the following conditions are
-   * generated: type: Completed, status: true type: Available, status: false type: Failed status: true
+   * Test domain status failed condition with non-existing persistent volume.
+   * Verify the following conditions are generated
+   * type: Failed, status: true
+   * type: Available, status: false
+   * type: Completed, status: false
    */
   @Test
   @DisplayName("Test domain status condition with non-existent pv")
@@ -388,8 +400,11 @@ class ItDiagnosticsFailedCondition {
   }
 
   /**
-   * Test domain status failed condition with non-existent admin secret. Verify the following conditions are
-   * generated: type: Completed, status: true type: Available, status: false type: Failed status: true
+   * Test domain status failed condition with non-existent admin secret.
+   * Verify the following conditions are generated
+   * type: Failed, status: true
+   * type: Available, status: false
+   * type: Completed, status: false
    */
   @Test
   @DisplayName("Test domain status condition with non-existent admin secret")
@@ -419,8 +434,11 @@ class ItDiagnosticsFailedCondition {
 
 
   /**
-   * Test domain status failed condition with invalid node port. Verify the following conditions are
-   * generated: type: Completed, status: true type: Available, status: false type: Failed status: true
+   * Test domain status failed condition with invalid node port.
+   * Verify the following conditions are generated
+   * type: Failed, status: true
+   * type: Available, status: false
+   * type: Completed, status: false
    */
   @Test
   @DisplayName("Test domain status failed condition with invalid node port.")
@@ -457,8 +475,12 @@ class ItDiagnosticsFailedCondition {
   }
 
   /**
-   * Test domain status failed condition with introspector failure. Verify the following conditions are
-   * generated: type: Completed, status: true type: Available, status: false type: Failed status: true
+   * Test domain status failed condition with introspector failure.
+   * Verify the following conditions are generated
+   * type: Failed, status: true
+   * type: Available, status: false
+   * type: Completed, status: false
+   * Verify after the introspector successfully completes the Failed condition is removed.
    */
   @Test
   @DisplayName("Test domain status condition with introspector failure")
@@ -491,11 +513,14 @@ class ItDiagnosticsFailedCondition {
 
 
   /**
-   * Test domain status condition with serverStartPolicy set to IF_NEEDED. Verify the following conditions are
-   * generated: type: Completed, status: true type: Available, status: true Verify no Failed type condition generated.
+   * Test domain status condition with managed server boot failure.
+   * Verify the following conditions are generated
+   * type: Failed, status: true
+   * type: Available, status: false
+   * type: Completed, status: false
    */
   //@Test
-  @DisplayName("Test domain status condition with serverStartPolicy set to IF_NEEDED")
+  @DisplayName("Test domain status condition with managed server boot failure.")
   void testMSBootFailureStatus() {
     boolean testPassed = false;
     try {
@@ -571,19 +596,6 @@ class ItDiagnosticsFailedCondition {
         LoggingUtil.generateLog(this, ns);
       }
       deleteDomainResource(domainNamespace, domainUid);
-    }
-  }
-
-  /**
-   * Cleanup the persistent volume and persistent volume claim used by the test.
-   */
-  @AfterAll
-  public static void tearDown() {
-    if (System.getenv("SKIP_CLEANUP") == null
-        || (System.getenv("SKIP_CLEANUP") != null
-        && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false"))) {
-      deletePersistentVolumeClaim(pvcName, domainNamespace);
-      deletePersistentVolume(pvName);
     }
   }
 
