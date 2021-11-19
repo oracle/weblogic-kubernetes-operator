@@ -36,6 +36,7 @@ import oracle.kubernetes.operator.ModelInImageDomainType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
+import oracle.kubernetes.operator.Upgradable;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.SecretType;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -55,7 +56,7 @@ import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
 /**
  * Domain represents a WebLogic domain and how it will be realized in the Kubernetes cluster.
  */
-public class Domain implements KubernetesObject {
+public class Domain implements KubernetesObject, Upgradable<Domain> {
   /**
    * The starting marker of a token that needs to be substituted with a matching env var.
    */
@@ -1364,4 +1365,9 @@ public class Domain implements KubernetesObject {
 
   }
 
+  @Override
+  public Domain upgrade() {
+    Optional.ofNullable(getStatus()).ifPresent(DomainStatus::upgrade);
+    return this;
+  }
 }

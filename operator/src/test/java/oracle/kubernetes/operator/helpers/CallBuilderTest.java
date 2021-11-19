@@ -20,19 +20,30 @@ import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.VersionInfo;
 import oracle.kubernetes.operator.KubernetesConstants;
+import oracle.kubernetes.operator.calls.CallFactory;
 import oracle.kubernetes.operator.calls.RequestParams;
+import oracle.kubernetes.operator.calls.RetryStrategy;
 import oracle.kubernetes.operator.calls.SynchronousCallDispatcher;
 import oracle.kubernetes.operator.calls.SynchronousCallFactory;
+import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
 import static java.net.HttpURLConnection.HTTP_CONFLICT;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progressing;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
@@ -51,6 +62,8 @@ class CallBuilderTest {
   private Object requestBody;
   private final PseudoServer server = new PseudoServer();
 
+  private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
+
   private static String toJson(Object object) {
     return new GsonBuilder().create().toJson(object);
   }
@@ -58,7 +71,8 @@ class CallBuilderTest {
   @BeforeEach
   public void setUp() throws NoSuchFieldException, IOException {
     mementos.add(TestUtils.silenceOperatorLogger().ignoringLoggedExceptions(ApiException.class));
-    mementos.add(PseudoServletCallDispatcher.install(getHostPath()));
+    mementos.add(PseudoServletCallDispatcher.installSync(getHostPath()));
+    mementos.add(PseudoServletCallDispatcher.installAsync(getHostPath()));
   }
 
   private String getHostPath() throws IOException {
@@ -141,6 +155,35 @@ class CallBuilderTest {
     assertThrows(ApiException.class, () -> callBuilder.replaceDomain(UID, NAMESPACE, domain));
   }
 
+  @Test
+  void listDomainsAsync_returnsUpgrade() throws ApiException, InterruptedException {
+    Domain domain1 = new Domain();
+    DomainStatus domainStatus1 = new DomainStatus().withStartTime(null);
+    domain1.setStatus(domainStatus1);
+
+    domainStatus1.getConditions().add(new DomainCondition(Progressing).withLastTransitionTime(null));
+    domainStatus1.getConditions().add(new DomainCondition(Available).withLastTransitionTime(null));
+
+    Domain domain2 = new Domain();
+    DomainStatus domainStatus2 = new DomainStatus().withStartTime(null);
+    domain2.setStatus(domainStatus2);
+
+    domainStatus2.getConditions().add(new DomainCondition(Progressing).withLastTransitionTime(null));
+    domainStatus2.getConditions().add(new DomainCondition(Failed).withLastTransitionTime(null));
+
+    DomainList list = new DomainList().withItems(Arrays.asList(domain1, domain2));
+    defineHttpGetResponse(DOMAIN_RESOURCE, list);
+
+    KubernetesTestSupportTest.TestResponseStep<DomainList> responseStep
+        = new KubernetesTestSupportTest.TestResponseStep<>();
+    testSupport.runSteps(new CallBuilder().listDomainAsync(NAMESPACE, responseStep));
+
+    DomainList received = responseStep.waitForAndGetCallResponse().getResult();
+    assertThat(received.getItems(), hasSize(2));
+    assertThat(received.getItems().get(0).getStatus(), not(hasCondition(Progressing)));
+    assertThat(received.getItems().get(1).getStatus(), not(hasCondition(Progressing)));
+  }
+
   private Object fromJson(String json, Class<?> aaClass) {
     return new GsonBuilder().create().fromJson(json, aaClass);
   }
@@ -175,27 +218,50 @@ class CallBuilderTest {
     defineResource(resourceName + "/" + name, pseudoServlet);
   }
 
-  static class PseudoServletCallDispatcher implements SynchronousCallDispatcher {
+  static class PseudoServletCallDispatcher implements SynchronousCallDispatcher, AsyncRequestStepFactory {
     private static String basePath;
-    private SynchronousCallDispatcher underlyingDispatcher;
+    private SynchronousCallDispatcher underlyingSyncDispatcher;
+    private AsyncRequestStepFactory underlyingAsyncRequestStepFactory;
 
-    static Memento install(String basePath) throws NoSuchFieldException {
+    static Memento installSync(String basePath) throws NoSuchFieldException {
       PseudoServletCallDispatcher.basePath = basePath;
       PseudoServletCallDispatcher dispatcher = new PseudoServletCallDispatcher();
       Memento memento = StaticStubSupport.install(CallBuilder.class, "DISPATCHER", dispatcher);
-      dispatcher.setUnderlyingDispatcher(memento.getOriginalValue());
+      dispatcher.setUnderlyingSyncDispatcher(memento.getOriginalValue());
       return memento;
     }
 
-    void setUnderlyingDispatcher(SynchronousCallDispatcher underlyingDispatcher) {
-      this.underlyingDispatcher = underlyingDispatcher;
+    static Memento installAsync(String basePath) throws NoSuchFieldException {
+      PseudoServletCallDispatcher.basePath = basePath;
+      PseudoServletCallDispatcher dispatcher = new PseudoServletCallDispatcher();
+      Memento memento = StaticStubSupport.install(CallBuilder.class, "STEP_FACTORY", dispatcher);
+      dispatcher.setUnderlyingAsyncRequestStepFactory(memento.getOriginalValue());
+      return memento;
+    }
+
+    void setUnderlyingSyncDispatcher(SynchronousCallDispatcher underlyingSyncDispatcher) {
+      this.underlyingSyncDispatcher = underlyingSyncDispatcher;
+    }
+
+    void setUnderlyingAsyncRequestStepFactory(AsyncRequestStepFactory underlyingAsyncRequestStepFactory) {
+      this.underlyingAsyncRequestStepFactory = underlyingAsyncRequestStepFactory;
     }
 
     @Override
     public <T> T execute(
         SynchronousCallFactory<T> factory, RequestParams requestParams, Pool<ApiClient> pool)
         throws ApiException {
-      return underlyingDispatcher.execute(factory, requestParams, createSingleUsePool());
+      return underlyingSyncDispatcher.execute(factory, requestParams, createSingleUsePool());
+    }
+
+    @Override
+    public <T> Step createRequestAsync(ResponseStep<T> next, RequestParams requestParams, CallFactory<T> factory,
+                                       RetryStrategy retryStrategy, Pool<ApiClient> helper,
+                                       int timeoutSeconds, int maxRetryCount, Integer gracePeriodSeconds,
+                                       String fieldSelector, String labelSelector, String resourceVersion) {
+      return underlyingAsyncRequestStepFactory.createRequestAsync(
+          next, requestParams, factory, retryStrategy, createSingleUsePool(), timeoutSeconds, maxRetryCount,
+          gracePeriodSeconds, fieldSelector, labelSelector, resourceVersion);
     }
 
     private Pool<ApiClient> createSingleUsePool() {
@@ -208,7 +274,7 @@ class CallBuilderTest {
         }
 
         @Override
-        protected void discard(ApiClient client) {
+        public void discard(ApiClient client) {
 
         }
       };

@@ -454,7 +454,7 @@ class SchemaGeneratorTest {
   }
 
   @SuppressWarnings("unused")
-  private enum TrafficLightColors {
+  private enum TrafficLightColors implements Obsoleteable {
     RED,
     YELLOW {
       @Override
@@ -462,7 +462,13 @@ class SchemaGeneratorTest {
         return false;
       }
     },
-    GREEN;
+    GREEN,
+    BLUE {
+      @Override
+      public boolean isObsolete() {
+        return true;
+      }
+    };
 
     boolean forSmallLight() {
       return true;
