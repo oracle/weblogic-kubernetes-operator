@@ -169,7 +169,7 @@ class ItDiagnosticsFailedCondition {
       createDomainAndVerify(domain, domainNamespace);
 
       //check the desired completed, available and failed statuses
-      checkStatus("False", "False", "True");
+      checkStatus(domainName, "False", "False", "True");
       testPassed = true;
 
     } finally {
@@ -204,7 +204,7 @@ class ItDiagnosticsFailedCondition {
       createDomainAndVerify(domain, domainNamespace);
 
       //check the desired completed, available and failed statuses
-      checkStatus("False", "False", "True");
+      checkStatus(domainName, "False", "False", "True");
       testPassed = true;
 
     } finally {
@@ -238,7 +238,7 @@ class ItDiagnosticsFailedCondition {
       createDomainAndVerify(domain, domainNamespace);
 
       //check the desired completed, available and failed statuses
-      checkStatus("False", "False", "True");
+      checkStatus(domainName, "False", "False", "True");
       testPassed = true;
 
     } finally {
@@ -272,7 +272,7 @@ class ItDiagnosticsFailedCondition {
       createDomainAndVerify(domain, domainNamespace);
 
       //check the desired completed, available and failed statuses
-      checkStatus("False", "False", "True");
+      checkStatus(domainName, "False", "False", "True");
       testPassed = true;
 
     } finally {
@@ -310,7 +310,7 @@ class ItDiagnosticsFailedCondition {
       createDomainAndVerify(domain, domainNamespace);
 
       //check the desired completed, available and failed statuses
-      checkStatus("False", "False", "True");
+      checkStatus(domainName, "False", "False", "True");
       testPassed = true;
 
     } finally {
@@ -388,7 +388,7 @@ class ItDiagnosticsFailedCondition {
       createDomainAndVerify(domain, domainNamespace);
 
       //check the desired completed, available and failed statuses
-      checkStatus("False", "False", "True");
+      checkStatus(domainName, "False", "False", "True");
       testPassed = true;
 
     } finally {
@@ -422,7 +422,7 @@ class ItDiagnosticsFailedCondition {
       createDomainAndVerify(domain, domainNamespace);
 
       //check the desired completed, available and failed statuses
-      checkStatus("False", "False", "True");
+      checkStatus(domainName, "False", "False", "True");
       testPassed = true;
 
     } finally {
@@ -465,7 +465,7 @@ class ItDiagnosticsFailedCondition {
       createDomainAndVerify(domain, domainNamespace);
 
       //check the desired completed, available and failed statuses
-      checkStatus("False", "False", "True");
+      checkStatus(domainName, "False", "False", "True");
       testPassed = true;
 
     } finally {
@@ -501,7 +501,7 @@ class ItDiagnosticsFailedCondition {
       createDomainAndVerify(domain, domainNamespace);
 
       //check the desired completed, available and failed statuses
-      checkStatus("False", "False", "True");
+      checkStatus(domainName, "False", "False", "True");
       testPassed = true;
 
     } finally {
@@ -590,7 +590,7 @@ class ItDiagnosticsFailedCondition {
       createDomainAndVerify(domain, domainNamespace);
 
       //check the desired completed, available and failed statuses
-      checkStatus("True", "False", "True");
+      checkStatus(domainName, "True", "False", "True");
       testPassed = true;
 
     } finally {
@@ -706,29 +706,29 @@ class ItDiagnosticsFailedCondition {
   }
 
   // check the desired statuses of Completed, Available and Failed type conditions
-  private void checkStatus(String completed, String available, String failed) {
+  private void checkStatus(String domainName, String completed, String available, String failed) {
 
     if (failed != null) {
       // verify the condition type Available exists
-      checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
+      checkDomainStatusConditionTypeExists(domainName, domainNamespace, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
       // verify the condition Available type has status False
-      checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
+      checkDomainStatusConditionTypeHasExpectedStatus(domainName, domainNamespace,
           DOMAIN_STATUS_CONDITION_FAILED_TYPE, failed);
     }
 
     if (available != null) {
       // verify the condition type Completed exists
-      checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE);
+      checkDomainStatusConditionTypeExists(domainName, domainNamespace, DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE);
       // verify the condition Completed type has status True
-      checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
+      checkDomainStatusConditionTypeHasExpectedStatus(domainName, domainNamespace,
           DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, available);
     }
 
     if (completed != null) {
       // verify the condition type Failed exists
-      checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_COMPLETED_TYPE);
+      checkDomainStatusConditionTypeExists(domainName, domainNamespace, DOMAIN_STATUS_CONDITION_COMPLETED_TYPE);
       // verify the condition Failed type has status True
-      checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
+      checkDomainStatusConditionTypeHasExpectedStatus(domainName, domainNamespace,
           DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, completed);
     }
   }
