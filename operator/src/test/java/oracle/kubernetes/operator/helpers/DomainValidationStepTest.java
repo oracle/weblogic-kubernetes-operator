@@ -120,7 +120,7 @@ class DomainValidationStepTest {
     testSupport.defineResources(domain);
     testSupport.addDomainPresenceInfo(info);
     DomainProcessorTestSetup.defineRequiredResources(testSupport);
-    domainValidationSteps = DomainValidationSteps.createDomainValidationSteps(NS, terminalStep);
+    domainValidationSteps = Step.chain(DomainValidationSteps.createDomainValidationSteps(NS), terminalStep);
     topologyValidationStep = DomainValidationSteps.createValidateDomainTopologyStep(terminalStep);
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domainEventK8SObjects", domainEventObjects));
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "namespaceEventK8SObjects", nsEventObjects));

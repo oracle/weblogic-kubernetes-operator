@@ -24,6 +24,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
 import io.kubernetes.client.custom.IntOrString;
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1Job;
@@ -105,6 +106,7 @@ import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CONFIG_MA
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.JOB;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
+import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SECRET;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SERVICE;
 import static oracle.kubernetes.operator.helpers.SecretHelper.PASSWORD_KEY;
 import static oracle.kubernetes.operator.helpers.SecretHelper.USERNAME_KEY;
@@ -114,6 +116,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.NOT_STARTING_DOMAIN
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_ALWAYS;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Completed;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
 import static org.hamcrest.Matchers.allOf;
@@ -274,6 +277,19 @@ class DomainProcessorTest {
     assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[3]), equalTo(SHUTDOWN_STATE));
     assertThat(getDesiredState(updatedDomain, MANAGED_SERVER_NAMES[4]), equalTo(SHUTDOWN_STATE));
     assertThat(getResourceVersion(updatedDomain), not(getResourceVersion(domain)));
+  }
+
+  @Test
+  void whenMakeRightRunFailsEarly_populateAvailableAndCompletedConditions() {
+    consoleHandlerMemento.ignoringLoggedExceptions(ApiException.class);
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
+    testSupport.failOnResource(SECRET, null, NS, KubernetesConstants.HTTP_BAD_REQUEST);
+
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).execute();
+
+    Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
+    assertThat(updatedDomain, hasCondition(Available).withStatus("False"));
+    assertThat(updatedDomain, hasCondition(Completed).withStatus("False"));
   }
 
   @Test
@@ -790,9 +806,9 @@ class DomainProcessorTest {
 
   @Test
   void beforeIntrospectionForNewDomain_addDefaultCondition() {
-    DomainPresenceInfo info = new DomainPresenceInfo(domain);
+    DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
     testSupport.addDomainPresenceInfo(info);
-    testSupport.runSteps(new DomainProcessorImpl.StartPlanStep(info, null));
+    makeRightOperation.execute();
 
     assertThat(info.getDomain(), hasCondition(Completed).withStatus("False"));
   }
@@ -1491,8 +1507,8 @@ class DomainProcessorTest {
   }
 
   private void defineDuplicateServerNames() {
-    domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("ms1"));
-    domain.getSpec().getManagedServers().add(new ManagedServer().withServerName("ms1"));
+    newDomain.getSpec().getManagedServers().add(new ManagedServer().withServerName("ms1"));
+    newDomain.getSpec().getManagedServers().add(new ManagedServer().withServerName("ms1"));
   }
 
   @Test
