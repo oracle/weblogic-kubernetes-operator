@@ -627,7 +627,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
         RequestParams requestParams,
         CallFactory<T> factory,
         RetryStrategy retryStrategy,
-        ClientPool helper,
+        Pool<ApiClient> helper,
         int timeoutSeconds,
         int maxRetryCount,
         Integer gracePeriodSeconds,

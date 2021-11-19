@@ -424,7 +424,7 @@ that is included in the sample source.
     #
     # This is an example of how to define a Domain resource.
     #
-    apiVersion: "weblogic.oracle/v8"
+    apiVersion: "weblogic.oracle/v9"
     kind: Domain
     metadata:
       name: sample-domain1
