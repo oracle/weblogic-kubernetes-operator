@@ -161,7 +161,7 @@ class ItWlsSamples {
     // update domainHomeImageBase with right values in create-domain-inputs.yaml
     assertDoesNotThrow(() -> {
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-              "domainHomeImageBase: container-registry.oracle.com/middleware/weblogic:" + diiImageTag,
+              "domainHomeImageBase: container-registry.oracle.com/middleware/weblogic:12.2.1.4",
               "domainHomeImageBase: " + WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "#image:",
