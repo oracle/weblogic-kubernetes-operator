@@ -17,8 +17,8 @@ import io.kubernetes.client.openapi.ApiCallback;
 import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1ListMeta;
-import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.Pool;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingContext;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -61,7 +61,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
   private static final int MAX = 10000;
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
-  private final ClientPool helper;
+  private final Pool<ApiClient> helper;
   private final RequestParams requestParams;
   private final CallFactory<T> factory;
   private final int maxRetryCount;
@@ -89,7 +89,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
       ResponseStep<T> next,
       RequestParams requestParams,
       CallFactory<T> factory,
-      ClientPool helper,
+      Pool<ApiClient> helper,
       int timeoutSeconds,
       int maxRetryCount,
       String fieldSelector,
@@ -119,7 +119,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
           RequestParams requestParams,
           CallFactory<T> factory,
           RetryStrategy customRetryStrategy,
-          ClientPool helper,
+          Pool<ApiClient> helper,
           int timeoutSeconds,
           int maxRetryCount,
           Integer gracePeriodSeconds,
