@@ -206,7 +206,7 @@ class ItMiiDomain {
                MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG, configMapName);
 
     // set low introspectorJobActiveDeadlineSeconds
-    domain.getSpec().configuration().introspectorJobActiveDeadlineSeconds(5L);
+    domain.getSpec().configuration().introspectorJobActiveDeadlineSeconds(30L);
 
     // create model in image domain
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
