@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Random;
 
+import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -29,11 +30,13 @@ import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.domain.ServerService;
+import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.FmwUtils;
 import oracle.weblogic.kubernetes.utils.LoggingUtil;
+import oracle.weblogic.kubernetes.utils.PodUtils;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -42,12 +45,14 @@ import static oracle.weblogic.kubernetes.ItMiiDomainModelInPV.buildMIIandPushToR
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_COMPLETED_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_FAILED_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
@@ -56,8 +61,12 @@ import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteConfigMap;
+import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFromFiles;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuAccessSecret;
+import static oracle.weblogic.kubernetes.utils.DbUtils.setupDBandRCUschema;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeExists;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeHasExpectedStatus;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
@@ -73,6 +82,7 @@ import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsern
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Tests related to Domain status conditions logged by operator.
@@ -520,7 +530,7 @@ class ItDiagnosticsFailedCondition {
    * type: Available, status: false
    * type: Completed, status: false
    */
-  //@Test
+  @Test
   @DisplayName("Test domain status condition with managed server boot failure.")
   void testMSBootFailureStatus() {
     boolean testPassed = false;
@@ -528,22 +538,26 @@ class ItDiagnosticsFailedCondition {
     try {
 
       String fmwMiiImage = null;
-
       String rcuSchemaPrefix = "FMWDOMAINMII";
       String oracleDbUrlPrefix = "oracledb.";
       String oracleDbSuffix = null;
-      String rcuSysUserName = "sys";
-      String rcuSysPassword = "Oradoc_db1";
-      String rcuSchemaUserName = "myrcuuser";
       String rcuSchemaPassword = "Oradoc_db1";
-      String rcuSchemaPasswordNew = "Oradoc_db2";
       String modelFile = "model-singleclusterdomain-sampleapp-jrf.yaml";
+
+      final int dbListenerPort = getNextFreePort();
+      oracleDbSuffix = ".svc.cluster.local:" + dbListenerPort + "/devpdb.k8s";
+      String dbUrl = oracleDbUrlPrefix + domainNamespace + oracleDbSuffix;
 
       String rcuaccessSecretName = domainName + "-rcu-access";
       String opsswalletpassSecretName = domainName + "-opss-wallet-password-secret";
-      String opsswalletfileSecretName = domainName + "opss-wallet-file-secret";
 
-      String dbUrl = oracleDbUrlPrefix + domainNamespace + oracleDbSuffix;
+      logger.info("Start DB and create RCU schema for namespace: {0}, dbListenerPort: {1}, RCU prefix: {2}, "
+          + "dbUrl: {3}, dbImage: {4},  fmwImage: {5} ", domainNamespace, dbListenerPort, rcuSchemaPrefix, dbUrl,
+          DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC);
+      assertDoesNotThrow(() -> setupDBandRCUschema(DB_IMAGE_TO_USE_IN_SPEC, FMWINFRA_IMAGE_TO_USE_IN_SPEC,
+          rcuSchemaPrefix, domainNamespace, getNextFreePort(), dbUrl, dbListenerPort),
+          String.format("Failed to create RCU schema for prefix %s in the namespace %s with "
+              + "dbUrl %s, dbListenerPost $s", rcuSchemaPrefix, domainNamespace, dbUrl, dbListenerPort));
 
       // create RCU access secret
       logger.info("Creating RCU access secret: {0}, with prefix: {1}, dbUrl: {2}, schemapassword: {3})",
@@ -589,8 +603,51 @@ class ItDiagnosticsFailedCondition {
 
       createDomainAndVerify(domain, domainNamespace);
 
+      String adminServerPodName = domainName + "-admin-server";
+      String managedServerPrefix = domainName + "-managed-server";
+
+      checkPodReadyAndServiceExists(adminServerPodName, domainName, domainNamespace);
+
+      for (int i = 1; i <= replicaCount; i++) {
+        String managedServerName = managedServerPrefix + i + "-c1";
+        logger.info("Checking managed server service {0} is created in namespace {1}",
+            managedServerName, domainNamespace);
+        checkPodReadyAndServiceExists(managedServerName, domainName, domainNamespace);
+      }
+
+      String patchStr
+          = "[{\"op\": \"add\", \"path\": \"/spec/clusters/0/serverStartPolicy\", \"value\": \"NEVER\"}]";
+
+      logger.info("Shutting down cluster using patch string: {1}", patchStr);
+      V1Patch patch = new V1Patch(patchStr);
+      assertTrue(patchDomainCustomResource(domainName, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+          "Failed to patch domain");
+
+      for (int i = 1; i <= replicaCount; i++) {
+        String managedServerName = managedServerPrefix + i + "-c1";
+        logger.info("Checking managed server service {0} is created in namespace {1}",
+            managedServerName, domainNamespace);
+        PodUtils.checkPodDoesNotExist(managedServerName, domainName, domainNamespace);
+      }
+
+      // delete Oracle database
+      String dbPodName = "oracledb";
+      assertDoesNotThrow(() -> Kubernetes.deleteDeployment(domainNamespace, "oracledb"),
+          "deleting oracle db failed");
+
+      logger.info("Wait for the oracle Db pod: {0} to be deleted in namespace {1}", dbPodName, domainNamespace);
+      PodUtils.checkPodDeleted(dbPodName, null, domainNamespace);
+
+      patchStr
+          = "[{\"op\": \"replace\", \"path\": \"/spec/clusters/0/serverStartPolicy\", \"value\": \"IF_NEEDED\"}]";
+
+      logger.info("Starting cluster using patch string: {1}", patchStr);
+      patch = new V1Patch(patchStr);
+      assertTrue(patchDomainCustomResource(domainName, domainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
+          "Failed to patch domain");
+
       //check the desired completed, available and failed statuses
-      checkStatus(domainName, "True", "False", "True");
+      checkStatus(domainName, "False", "False", "True");
       testPassed = true;
 
     } finally {
