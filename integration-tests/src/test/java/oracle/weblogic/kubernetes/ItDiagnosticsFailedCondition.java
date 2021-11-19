@@ -10,6 +10,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
@@ -82,21 +83,12 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 class ItDiagnosticsFailedCondition {
 
   private static String domainNamespace = null;
-
-  final String adminServerName = "admin-server";
-  final String adminServerPodName = domainUid + "-" + adminServerName;
-  final String managedServerNameBase = "ms-";
-  final String cluster1Name = "mycluster";
-  String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
-  final int managedServerPort = 8001;
   int replicaCount = 2;
 
   private static String adminSecretName;
   private static String encryptionSecretName;
-
   private static final String domainUid = "diagnosticsdomain";
-  private static final String pvName = domainUid + "-pv"; // name of the persistent volume
-  private static final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
+
   private static String opServiceAccount = null;
   private static String opNamespace = null;
 
@@ -156,6 +148,7 @@ class ItDiagnosticsFailedCondition {
   @DisplayName("Test domain status condition with bad model file")
   void testBadModelFileStatus() {
     boolean testPassed = false;
+    String domainName = getDomainName();
     // build an image with empty WebLogic domain
     String imageName = MII_BASIC_IMAGE_NAME;
     String imageTag = "empty-domain-image";
@@ -171,7 +164,7 @@ class ItDiagnosticsFailedCondition {
     try {
       // Test - test bad model file status with introspector failure
       logger.info("Creating a domain resource with bad model file from configmap");
-      Domain domain = createDomainResourceWithConfigMap(domainUid, domainNamespace, adminSecretName,
+      Domain domain = createDomainResourceWithConfigMap(domainName, domainNamespace, adminSecretName,
           OCIR_SECRET_NAME, encryptionSecretName, replicaCount, imageName + ":" + imageTag, badModelFileCm, 30L);
       createDomainAndVerify(domain, domainNamespace);
 
@@ -183,7 +176,7 @@ class ItDiagnosticsFailedCondition {
       if (!testPassed) {
         LoggingUtil.generateLog(this, ns);
       }
-      deleteDomainResource(domainNamespace, domainUid);
+      deleteDomainResource(domainNamespace, domainName);
       deleteConfigMap(badModelFileCm, domainNamespace);
     }
   }
@@ -199,10 +192,11 @@ class ItDiagnosticsFailedCondition {
   @DisplayName("Test domain status condition with replicas set to more than available in cluster")
   void testReplicasTooHigh() {
     boolean testPassed = false;
+    String domainName = getDomainName();
     String image = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
 
     logger.info("Creating domain resource with replicas=100");
-    Domain domain = createDomainResource(domainUid, domainNamespace, adminSecretName,
+    Domain domain = createDomainResource(domainName, domainNamespace, adminSecretName,
         OCIR_SECRET_NAME, encryptionSecretName, 100, image);
 
     try {
@@ -217,7 +211,7 @@ class ItDiagnosticsFailedCondition {
       if (!testPassed) {
         LoggingUtil.generateLog(this, ns);
       }
-      deleteDomainResource(domainNamespace, domainUid);
+      deleteDomainResource(domainNamespace, domainName);
     }
   }
 
@@ -232,10 +226,11 @@ class ItDiagnosticsFailedCondition {
   @DisplayName("Test domain status failed condition with non-existing image")
   void testImageDoesnotExist() {
     boolean testPassed = false;
+    String domainName = getDomainName();
     String image = MII_BASIC_IMAGE_NAME + ":non-existing";
 
     logger.info("Creating domain resource with non-existing image");
-    Domain domain = createDomainResource(domainUid, domainNamespace, adminSecretName,
+    Domain domain = createDomainResource(domainName, domainNamespace, adminSecretName,
         OCIR_SECRET_NAME, encryptionSecretName, replicaCount, image);
 
     try {
@@ -250,7 +245,7 @@ class ItDiagnosticsFailedCondition {
       if (!testPassed) {
         LoggingUtil.generateLog(this, ns);
       }
-      deleteDomainResource(domainNamespace, domainUid);
+      deleteDomainResource(domainNamespace, domainName);
     }
   }
 
@@ -265,10 +260,11 @@ class ItDiagnosticsFailedCondition {
   @DisplayName("Test domain status condition with missing image pull secret")
   void testImagePullSecretDoesnotExist() {
     boolean testPassed = false;
+    String domainName = getDomainName();
     String image = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
 
     logger.info("Creating domain resource with missing image pull secret");
-    Domain domain = createDomainResource(domainUid, domainNamespace, adminSecretName,
+    Domain domain = createDomainResource(domainName, domainNamespace, adminSecretName,
         OCIR_SECRET_NAME + "bad", encryptionSecretName, 100, image);
 
     try {
@@ -283,7 +279,7 @@ class ItDiagnosticsFailedCondition {
       if (!testPassed) {
         LoggingUtil.generateLog(this, ns);
       }
-      deleteDomainResource(domainNamespace, domainUid);
+      deleteDomainResource(domainNamespace, domainName);
     }
   }
 
@@ -298,13 +294,14 @@ class ItDiagnosticsFailedCondition {
   @DisplayName("Test domain status condition with incorrect image pull secret")
   void testIncorrectImagePullSecret() {
     boolean testPassed = false;
+    String domainName = getDomainName();
     String image = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
     logger.info("Creating a docker secret with invalid credentials");
     createDockerRegistrySecret("foo", "bar", "foo@bar.com", OCIR_REGISTRY,
         "bad-pull-secret", domainNamespace);
 
     logger.info("Creating domain resource with incorrect image pull secret");
-    Domain domain = createDomainResource(domainUid, domainNamespace, adminSecretName,
+    Domain domain = createDomainResource(domainName, domainNamespace, adminSecretName,
         "bad-pull-secret", encryptionSecretName, replicaCount, image);
     domain.getSpec().imagePullPolicy("Always");
 
@@ -320,7 +317,7 @@ class ItDiagnosticsFailedCondition {
       if (!testPassed) {
         LoggingUtil.generateLog(this, ns);
       }
-      deleteDomainResource(domainNamespace, domainUid);
+      deleteDomainResource(domainNamespace, domainName);
     }
   }
 
@@ -335,6 +332,9 @@ class ItDiagnosticsFailedCondition {
   @DisplayName("Test domain status condition with non-existent pv")
   void testNonexistentPVC() {
     boolean testPassed = false;
+    String domainName = getDomainName();
+    String pvName = domainName + "-pv"; // name of the persistent volume
+    String pvcName = domainName + "-pvc"; // name of the persistent volume claim
     try {
       // create a domain custom resource configuration object
       logger.info("Creating domain custom resource");
@@ -342,11 +342,11 @@ class ItDiagnosticsFailedCondition {
           .apiVersion(DOMAIN_API_VERSION)
           .kind("Domain")
           .metadata(new V1ObjectMeta()
-              .name(domainUid)
+              .name(domainName)
               .namespace(domainNamespace))
           .spec(new DomainSpec()
-              .domainUid(domainUid)
-              .domainHome("/shared/domains/" + domainUid) // point to domain home in pv
+              .domainUid(domainName)
+              .domainHome("/shared/domains/" + domainName) // point to domain home in pv
               .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
               .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
               .imagePullPolicy("IfNotPresent")
@@ -358,7 +358,7 @@ class ItDiagnosticsFailedCondition {
                   .namespace(domainNamespace))
               .includeServerOutInPodLog(true)
               .logHomeEnabled(Boolean.TRUE)
-              .logHome("/shared/logs/" + domainUid)
+              .logHome("/shared/logs/" + domainName)
               .dataHome("")
               .serverStartPolicy("IF_NEEDED")
               .serverPod(new ServerPod() //serverpod
@@ -379,7 +379,7 @@ class ItDiagnosticsFailedCondition {
                           .channelName("default")
                           .nodePort(0))))
               .addClustersItem(new Cluster() //cluster
-                  .clusterName(cluster1Name)
+                  .clusterName("cluster-1")
                   .replicas(replicaCount)
                   .serverStartState("RUNNING")));
       setPodAntiAffinity(domain);
@@ -395,7 +395,7 @@ class ItDiagnosticsFailedCondition {
       if (!testPassed) {
         LoggingUtil.generateLog(this, ns);
       }
-      deleteDomainResource(domainNamespace, domainUid);
+      deleteDomainResource(domainNamespace, domainName);
     }
   }
 
@@ -410,10 +410,11 @@ class ItDiagnosticsFailedCondition {
   @DisplayName("Test domain status condition with non-existent admin secret")
   void testNonexistentAdminSecret() {
     boolean testPassed = false;
+    String domainName = getDomainName();
     String image = TestConstants.MII_BASIC_IMAGE_NAME + ":" + TestConstants.MII_BASIC_IMAGE_TAG;
 
     logger.info("Creating domain custom resource");
-    Domain domain = createDomainResource(domainUid, domainNamespace, "non-existent-secret",
+    Domain domain = createDomainResource(domainName, domainNamespace, "non-existent-secret",
         OCIR_SECRET_NAME, encryptionSecretName, replicaCount, image);
 
     try {
@@ -428,7 +429,7 @@ class ItDiagnosticsFailedCondition {
       if (!testPassed) {
         LoggingUtil.generateLog(this, ns);
       }
-      deleteDomainResource(domainNamespace, domainUid);
+      deleteDomainResource(domainNamespace, domainName);
     }
   }
 
@@ -444,10 +445,11 @@ class ItDiagnosticsFailedCondition {
   @DisplayName("Test domain status failed condition with invalid node port.")
   void testInvalidNodePort() {
     boolean testPassed = false;
+    String domainName = getDomainName();
     String image = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
 
     logger.info("Creating domain custom resource");
-    Domain domain = createDomainResource(domainUid, domainNamespace, adminSecretName,
+    Domain domain = createDomainResource(domainName, domainNamespace, adminSecretName,
         OCIR_SECRET_NAME, encryptionSecretName, replicaCount, image);
 
     AdminServer as = new AdminServer()
@@ -470,7 +472,7 @@ class ItDiagnosticsFailedCondition {
       if (!testPassed) {
         LoggingUtil.generateLog(this, ns);
       }
-      deleteDomainResource(domainNamespace, domainUid);
+      deleteDomainResource(domainNamespace, domainName);
     }
   }
 
@@ -486,10 +488,11 @@ class ItDiagnosticsFailedCondition {
   @DisplayName("Test domain status condition with introspector timeout failure")
   void testIntrospectorTimeoutFailure() {
     boolean testPassed = false;
+    String domainName = getDomainName();
     String image = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
 
     logger.info("Creating domain custom resource");
-    Domain domain = createDomainResource(domainUid, domainNamespace, adminSecretName,
+    Domain domain = createDomainResource(domainName, domainNamespace, adminSecretName,
         OCIR_SECRET_NAME, encryptionSecretName, replicaCount, image);
     domain.getSpec().configuration().introspectorJobActiveDeadlineSeconds(5L);
 
@@ -505,7 +508,7 @@ class ItDiagnosticsFailedCondition {
       if (!testPassed) {
         LoggingUtil.generateLog(this, ns);
       }
-      deleteDomainResource(domainNamespace, domainUid);
+      deleteDomainResource(domainNamespace, domainName);
     }
   }
 
@@ -521,6 +524,7 @@ class ItDiagnosticsFailedCondition {
   @DisplayName("Test domain status condition with managed server boot failure.")
   void testMSBootFailureStatus() {
     boolean testPassed = false;
+    String domainName = getDomainName();
     try {
 
       String fmwMiiImage = null;
@@ -535,9 +539,9 @@ class ItDiagnosticsFailedCondition {
       String rcuSchemaPasswordNew = "Oradoc_db2";
       String modelFile = "model-singleclusterdomain-sampleapp-jrf.yaml";
 
-      String rcuaccessSecretName = domainUid + "-rcu-access";
-      String opsswalletpassSecretName = domainUid + "-opss-wallet-password-secret";
-      String opsswalletfileSecretName = domainUid + "opss-wallet-file-secret";
+      String rcuaccessSecretName = domainName + "-rcu-access";
+      String opsswalletpassSecretName = domainName + "-opss-wallet-password-secret";
+      String opsswalletfileSecretName = domainName + "opss-wallet-file-secret";
 
       String dbUrl = oracleDbUrlPrefix + domainNamespace + oracleDbSuffix;
 
@@ -573,7 +577,7 @@ class ItDiagnosticsFailedCondition {
       dockerLoginAndPushImageToRegistry(fmwMiiImage);
 
       // create the domain object
-      Domain domain = FmwUtils.createDomainResource(domainUid,
+      Domain domain = FmwUtils.createDomainResource(domainName,
           domainNamespace,
           adminSecretName,
           OCIR_SECRET_NAME,
@@ -593,7 +597,7 @@ class ItDiagnosticsFailedCondition {
       if (!testPassed) {
         LoggingUtil.generateLog(this, ns);
       }
-      deleteDomainResource(domainNamespace, domainUid);
+      deleteDomainResource(domainNamespace, domainName);
     }
   }
 
@@ -727,6 +731,11 @@ class ItDiagnosticsFailedCondition {
       checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
           DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, completed);
     }
+  }
+
+  private String getDomainName() {
+    Random random = new Random();
+    return domainUid + random.nextInt();
   }
 
 }
