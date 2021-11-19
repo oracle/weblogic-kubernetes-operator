@@ -57,7 +57,6 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.SNAKE_DOWNLOADED_FILENAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLE_DOWNLOAD_FILENAME_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
-import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
@@ -202,38 +201,33 @@ class ItElasticLogging {
    */
   @AfterAll
   void tearDown() {
-    // uninstall ELK Stack
-    elasticsearchParams = new LoggingExporterParams()
-        .elasticsearchName(ELASTICSEARCH_NAME)
-        .elasticsearchImage(ELASTICSEARCH_IMAGE)
-        .elasticsearchHttpPort(ELASTICSEARCH_HTTP_PORT)
-        .elasticsearchHttpsPort(ELASTICSEARCH_HTTPS_PORT)
-        .loggingExporterNamespace(ELKSTACK_NAMESPACE);
+    if (System.getenv("SKIP_CLEANUP") == null
+        || (System.getenv("SKIP_CLEANUP") != null
+        && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false"))) {
 
-    kibanaParams = new LoggingExporterParams()
-        .kibanaName(KIBANA_NAME)
-        .kibanaImage(KIBANA_IMAGE)
-        .kibanaType(KIBANA_TYPE)
-        .loggingExporterNamespace(ELKSTACK_NAMESPACE)
-        .kibanaContainerPort(KIBANA_PORT);
+      // uninstall ELK Stack
+      elasticsearchParams = new LoggingExporterParams()
+          .elasticsearchName(ELASTICSEARCH_NAME)
+          .elasticsearchImage(ELASTICSEARCH_IMAGE)
+          .elasticsearchHttpPort(ELASTICSEARCH_HTTP_PORT)
+          .elasticsearchHttpsPort(ELASTICSEARCH_HTTPS_PORT)
+          .loggingExporterNamespace(ELKSTACK_NAMESPACE);
 
-    if (elasticsearchParams != null) {
+      kibanaParams = new LoggingExporterParams()
+          .kibanaName(KIBANA_NAME)
+          .kibanaImage(KIBANA_IMAGE)
+          .kibanaType(KIBANA_TYPE)
+          .loggingExporterNamespace(ELKSTACK_NAMESPACE)
+          .kibanaContainerPort(KIBANA_PORT);
+
       logger.info("Uninstall Elasticsearch pod");
       assertDoesNotThrow(() -> uninstallAndVerifyElasticsearch(elasticsearchParams),
           "uninstallAndVerifyElasticsearch failed with ApiException");
-    }
 
-    if (kibanaParams != null) {
       logger.info("Uninstall Kibana pod");
       assertDoesNotThrow(() -> uninstallAndVerifyKibana(kibanaParams),
           "uninstallAndVerifyKibana failed with ApiException");
     }
-
-    // delete domain custom resource
-    logger.info("Delete domain custom resource in namespace {0}", domainNamespace);
-    assertDoesNotThrow(() -> deleteDomainCustomResource(domainUid, domainNamespace),
-        "deleteDomainCustomResource failed with ApiException");
-    logger.info("Deleted Domain Custom Resource " + domainUid + " from " + domainNamespace);
   }
 
   /**
