@@ -62,6 +62,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
@@ -77,6 +78,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
@@ -95,6 +97,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetry
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.LoggingUtil.checkPodLogContainsString;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.setTargetPortForRoute;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
@@ -154,6 +157,7 @@ class ItMiiDomain {
    * Create a WebLogic domain with SSL enabled in WebLogic configuration by 
    * configuring an additional configmap to the domain resource.
    * Add two channels to the domain resource with name `default-secure` and `default`.
+   * Set low introspectorJobActiveDeadlineSeconds on the domain.
    * Make sure the pre-packaged application in domain image gets deployed to 
    * the cluster and accessible from all the managed server pods 
    * Make sure two external NodePort services are created in domain namespace.
@@ -200,6 +204,9 @@ class ItMiiDomain {
         OCIR_SECRET_NAME, encryptionSecretName,
                replicaCount,
                MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG, configMapName);
+
+    // set low introspectorJobActiveDeadlineSeconds
+    domain.getSpec().configuration().introspectorJobActiveDeadlineSeconds(5L);
 
     // create model in image domain
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
@@ -276,6 +283,11 @@ class ItMiiDomain {
       verifyCredentials(adminServerPodName, domainNamespace,
             ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, true);
     }
+
+    // check operator pod log contains message for introspectorJobActiveDeadlineSeconds as a low value is used
+    String operatorPodName = assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+    checkPodLogContainsString(opNamespace, operatorPodName,
+        "introspectorJobActiveDeadlineSeconds");
   }
 
   @Test
