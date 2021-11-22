@@ -12,20 +12,20 @@
     <title>Supported platforms :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1637591827" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1637591827" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1637591827" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1637591827" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1637591827" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1637591827" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1637591827" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1637591827" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1637591827" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1637591827" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1637592014" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1637592014" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1637592014" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1637592014" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1637592014" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1637592014" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1637592014" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1637592014" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1637592014" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1637592014" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1637591827"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1637592014"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1637591827"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1637591827"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1637592014"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1637592014"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1637591827"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1637592014"></script>
 
     
   </div>
@@ -3212,7 +3212,7 @@
       <ul>
         <li><a href="#contents">Contents</a></li>
         <li><a href="#supported-environments">Supported environments</a></li>
-        <li><a href="#kubernetes-weblogic-and-operating-system-prerequisites">Kubernetes, WebLogic, and operating system prerequisites</a></li>
+        <li><a href="#kubernetes-weblogic-server-and-operating-system-prerequisites">Kubernetes, WebLogic Server, and operating system prerequisites</a></li>
         <li><a href="#pricing-and-licensing">Pricing and licensing</a></li>
         <li><a href="#important-notes-about-specific-environments">Important notes about specific environments</a></li>
       </ul>
@@ -3244,14 +3244,21 @@
 <h3 id="contents">Contents</h3>
 <ul>
 <li><a href="#supported-environments">Supported environments</a></li>
-<li><a href="#kubernetes-weblogic-and-operating-system-prerequisites">Kubernetes, WebLogic, and operating system prerequisites</a></li>
-<li><a href="#pricing-and-licensing">Pricing and licensing</a></li>
+<li><a href="#kubernetes-weblogic-server-and-operating-system-prerequisites">Kubernetes, WebLogic Server, and operating system prerequisites</a></li>
+<li><a href="#pricing-and-licensing">Pricing and licensing</a>
+<ul>
+<li><a href="#weblogic-kubernetes-operator">WebLogic Kubernetes Operator</a></li>
+<li><a href="#weblogic-server">WebLogic Server</a></li>
+<li><a href="#oracle-linux-and-weblogic-server-images">Oracle Linux and WebLogic Server Images</a></li>
+<li><a href="#reference">Reference</a></li>
+</ul>
+</li>
 <li><a href="#important-notes-about-specific-environments">Important notes about specific environments</a>
 <ul>
 <li><a href="#oracle-cloud-infrastructure-oci">Oracle Cloud Infrastructure (OCI)</a></li>
 <li><a href="#oracle-linux-cloud-native-environment-olcne">Oracle Linux Cloud Native Environment (OLCNE)</a></li>
 <li><a href="#oracle-private-cloud-appliance-pca-and-oracle-private-cloud-at-customer-opcc">Oracle Private Cloud Appliance (PCA) and Oracle Private Cloud at Customer (OPCC)</a></li>
-<li><a href="#microsoft-azure-kubernetes-service-aks">Microsoft Azure Kubernetes Service (AKS)</a></li>
+<li><a href="#microsoft-azure">Microsoft Azure</a></li>
 <li><a href="#vmware-tanzu-kubernetes-grid-tkg">VMware Tanzu Kubernetes Grid (TKG)</a></li>
 <li><a href="#openshift">OpenShift</a></li>
 <li><a href="#development-focused-kubernetes-distributions">Development-focused Kubernetes distributions</a></li>
@@ -3259,31 +3266,77 @@
 </li>
 </ul>
 <h3 id="supported-environments">Supported environments</h3>
-<p>WebLogic Server and the operator are supported on
-Oracle cloud environments such as
-Oracle Cloud Infrastructure (OCI),
-Oracle Linux Cloud Native Environment (OLCNE),
-Oracle Private Cloud Appliance (PCA),
-or Oracle Private Cloud at Customer (OPCC),
-and on &ldquo;Authorized Cloud Environments&rdquo; as defined in
-<a href="https://www.oracle.com/assets/cloud-licensing-070579.pdf">this Oracle licensing policy</a>
-for <a href="http://www.oracle.com/us/corporate/pricing/authorized-cloud-environments-3493562.pdf">this list of eligible products</a>.</p>
-<p>The official document that defines the supported configurations
-is <a href="https://www.oracle.com/middleware/technologies/ias/oracleas-supported-virtualization.html">here</a>
-(search for keyword &lsquo;Kubernetes&rsquo;).</p>
+<p>WebLogic Server and the operator are supported on Oracle Cloud offerings, such as:</p>
+<ul>
+<li>Oracle Cloud Infrastructure (OCI)</li>
+<li>Oracle Container Engine for Kubernetes (OKE)</li>
+<li>Oracle Linux Cloud Native Environment (OLCNE)</li>
+<li>Oracle Private Cloud Appliance (PCA)</li>
+<li>Oracle Private Cloud at Customer (OPCC)</li>
+</ul>
+<p>WebLogic Server and the operator are certified on offerings, such as:</p>
+<ul>
+<li>Amazon Elastic Compute Cloud (EC2)</li>
+<li>Microsoft Azure Platform</li>
+<li>Microsoft Azure Kubernetes Service (AKS)</li>
+<li>OpenShift Container Platform</li>
+<li>VMWare Tanzu</li>
+<li>VMware Tanzu Kubernetes Grid (TKG)</li>
+</ul>
+<p>WebLogic Server and the operator are also supported on service offerings which
+deploy the WebLogic Server and the operator for you. These include:</p>
+<ul>
+<li>Oracle WebLogic Server for OKE (WLS for OKE)</li>
+<li>Oracle WebLogic Server on AKS from the Azure Marketplace (WLS on AKS Marketplace)</li>
+</ul>
+<p><a href="#development-focused-kubernetes-distributions">Development-focused Kubernetes distributions</a> are also supported.</p>
+<p>For detailed virtualization and cloud licensing descriptions, see:</p>
+<ul>
+<li><a href="https://www.oracle.com/middleware/technologies/ias/oracleas-supported-virtualization.html">Supported Virtualization Technologies for Oracle Fusion Middleware</a> (search for keyword &lsquo;Kubernetes&rsquo;)</li>
+<li><a href="https://www.oracle.com/a/tech/docs/running-and-licensing-programs-in-containers-and-kubernetes.pdf">Running and Licensing Oracle Programs in Containers and Kubernetes</a></li>
+</ul>
 <p>Some supported environments have additional help or samples that are specific
 to the operator, or are subject to limitations and restrictions: see
 <a href="#important-notes-about-specific-environments">Important notes about specific environments</a>.</p>
-<h3 id="kubernetes-weblogic-and-operating-system-prerequisites">Kubernetes, WebLogic, and operating system prerequisites</h3>
-<p>The operator is subject to Kubernetes, WebLogic, and operating system versioning prerequisites:
+<h3 id="kubernetes-weblogic-server-and-operating-system-prerequisites">Kubernetes, WebLogic Server, and operating system prerequisites</h3>
+<p>The operator is subject to Kubernetes, WebLogic Server, and operating system versioning prerequisites:
 see <a href="/weblogic-kubernetes-operator/userguide/prerequisites/introduction/">Operator prerequisites</a>.</p>
 <h3 id="pricing-and-licensing">Pricing and licensing</h3>
+<p>The WebLogic Kubernetes Operator and Oracle Linux are open source and free;
+WebLogic Server requires licenses unless used in a single developer desktop development environment.
+In detail:</p>
+<h4 id="weblogic-kubernetes-operator">WebLogic Kubernetes Operator</h4>
 <p>The WebLogic Kubernetes Operator (the &ldquo;operator&rdquo;) is open source and free,
-licensed under the Universal Permissive license (UPL), Version 1.0.</p>
+licensed under the Universal Permissive license (UPL), Version 1.0.
+For support details, see <a href="/weblogic-kubernetes-operator/userguide/introduction/get-help/">Get help</a>.</p>
+<h4 id="weblogic-server">WebLogic Server</h4>
 <p>WebLogic Server is not open source.
 Licensing is required for each running WebLogic Server instance in Kubernetes,
 just as with any deployment of WebLogic Server.
-Licensing is free for a single developer desktop development environment.</p>
+Licensing is free for a single developer desktop development environment.
+For more information, see the <a href="https://docs.oracle.com/en/middleware/fusion-middleware/fmwlc/application-server-products-new-structure.html">Fusion Middleware Licensing Information User Manual - Application Server Products</a>.</p>
+<h4 id="oracle-linux-and-weblogic-server-images">Oracle Linux and WebLogic Server images</h4>
+<p>Oracle Linux is under open source license
+and is completely free to download and use.</p>
+<p>In addition, with WebLogic Server licenses and support,
+customers have access to:</p>
+<ul>
+<li>The latest WebLogic Server images
+which bundle Java SE and the latest slim Oracle Linux images.</li>
+<li>Oracle Linux support.
+Note that WebLogic Server licenses and support do not include customer entitlements
+for direct access to Oracle Linux support or Unbreakable Linux Network
+(to access the standalone Oracle Linux patches).</li>
+</ul>
+<p>Oracle supplies two types of WebLogic Server images, patched (CPU) and unpatched.
+New WebLogic Server images are released when security fixes
+are released for Oracle Linux, WebLogic Server, or Java. In addition,
+patched images are rebuilt every CPU cycle, which is quarterly.
+Customer support for WebLogic Server images is handled by Oracle support.</p>
+<p>Using the <a href="https://github.com/oracle/weblogic-image-tool">WebLogic Image Tool</a>
+customers can also build their own WebLogic Server images with
+the latest Oracle Linux images, Java updates, and WebLogic Server patches.</p>
+<h4 id="reference">Reference</h4>
 <p>The Oracle <a href="https://www.oracle.com/corporate/pricing/specialty-topics.html">Global Pricing and Licensing site</a>
 provides details about licensing practices and policies.</p>
 <h3 id="important-notes-about-specific-environments">Important notes about specific environments</h3>
@@ -3323,10 +3376,17 @@ The document also highlights how applications deployed on
 Oracle Exalogic Elastic Cloud systems can be migrated to this infrastructure without application
 changes, enabling you to preserve your application investment as you adopt modern cloud
 native infrastructure.</p>
-<h4 id="microsoft-azure-kubernetes-service-aks">Microsoft Azure Kubernetes Service (AKS)</h4>
+<h4 id="microsoft-azure">Microsoft Azure</h4>
+<p>There are three different approaches for deploying the operator to Microsoft Azure:</p>
+<ul>
+<li>Microsoft Azure Platform</li>
+<li>Microsoft Azure Kubernetes Service (AKS)</li>
+<li>Oracle WebLogic Server on AKS from the Azure Marketplace (WLS on AKS Marketplace)</li>
+</ul>
+<h5 id="microsoft-azure-kubernetes-service-aks">Microsoft Azure Kubernetes Service (AKS)</h5>
 <p><a href="https://docs.microsoft.com/en-us/azure/aks/">Azure Kubernetes Service (AKS)</a> is a hosted Kubernetes environment.  The WebLogic Kubernetes
-Operator, Oracle WebLogic Sever 12c, and Oracle Fusion Middleware Infrastructure 12c are fully supported and certified on Azure Kubernetes Service (as per the documents
-referenced in <a href="#supported-environments">Supported environments</a>).</p>
+Operator, Oracle WebLogic Server 12c, and Oracle Fusion Middleware Infrastructure 12c are fully supported and certified on Azure Kubernetes Service (as per the documents
+referenced in <a href="#supported-environments">Supported environments</a>). In this environment, it is the customer&rsquo;s responsibility to install the operator and supply WebLogic Server images.</p>
 <p>AKS support and limitations:</p>
 <ul>
 <li>All three domain home source types are supported (Domain in Image, Model in Image, and Domain in PV).</li>
@@ -3338,9 +3398,22 @@ Infrastructure MDS data stores only when accessed through an OCI FastConnect.</l
 <li>Windows Server containers are not currently supported, only Linux containers.</li>
 </ul>
 <p>See also the <a href="/weblogic-kubernetes-operator/samples/azure-kubernetes-service/">Azure Kubernetes Service sample</a>.</p>
+<h5 id="oracle-weblogic-server-on-aks-from-the-azure-marketplace-wls-on-aks-marketplace">Oracle WebLogic Server on AKS from the Azure Marketplace (WLS on AKS Marketplace)</h5>
+<p>The WebLogic Server on AKS Azure Marketplace
+offer lets you embrace cloud computing by providing greater choice
+and flexibility for deploying your WLS domains and applications.
+The offer leverages the WebLogic Kubernetes Toolkit to automate
+the provisioning of WebLogic Server and Azure resources so that you can easily move WLS workloads to AKS.
+The automatically provisioned resources include an AKS cluster,
+the WebLogic Kubernetes Operator, WebLogic Server images, and the Azure Container Registry (ACR).
+It is possible to use an existing AKS cluster or ACR instance with the offer if desired.
+The offer also supports configuring load balancing with Azure App Gateway or the Azure Load Balancer,
+DNS configuration, SSL/TLS configuration, easing database connectivity,
+publishing metrics to Azure Monitor as well as mounting Azure Files as Kubernetes Persistent Volumes.</p>
+<p>For details, see <a href="/weblogic-kubernetes-operator/userguide/aks/">WebLogic Server on AKS Marketplace</a>.</p>
 <h4 id="vmware-tanzu-kubernetes-grid-tkg">VMware Tanzu Kubernetes Grid (TKG)</h4>
-<p>Tanzu Kubernetes Grid (TKG) is a managed Kubernetes Service that lets you quickly deploy and manage Kubernetes clusters. The WebLogic Kubernetes
-Operator and Oracle WebLogic Sever are fully supported and certified on VMware Tanzu Kubernetes Grid Multicloud 1.1.3 (with vSphere 6.7U3).</p>
+<p>Tanzu Kubernetes Grid (TKG) is a managed Kubernetes Service that lets you quickly deploy and manage Kubernetes clusters.
+The WebLogic Kubernetes Operator and Oracle WebLogic Server are fully supported and certified on VMware Tanzu Kubernetes Grid Multicloud 1.1.3 (with vSphere 6.7U3).</p>
 <p>TKG support and limitations:</p>
 <ul>
 <li>Both Domain in Image and Model in Image domain home source types are supported. Domain in PV is not supported.</li>
@@ -3358,7 +3431,7 @@ Operator and Oracle WebLogic Sever are fully supported and certified on VMware T
 <p>Operator 2.5.0+ is certified for use on OpenShift Container Platform 4.3.0+ with Kubernetes 1.16.2+.</p>
 <p>To accommodate OpenShift security requirements:</p>
 <ul>
-<li>For security requirements to run WebLogic in OpenShift, see the <a href="/weblogic-kubernetes-operator/security/openshift/">OpenShift chapter</a> in the Security section.</li>
+<li>For security requirements to run WebLogic Server in OpenShift, see the <a href="/weblogic-kubernetes-operator/security/openshift/">OpenShift chapter</a> in the Security section.</li>
 <li>Beginning with operator version 3.3.2, specify the <code>kubernetesPlatorm</code> Helm chart property with value <code>OpenShift</code>. For more information, see <a href="/weblogic-kubernetes-operator/userguide/managing-operators/using-helm/#operator-helm-configuration-values">Operator Helm configuration values</a>.</li>
 </ul>
 <h4 id="development-focused-kubernetes-distributions">Development-focused Kubernetes distributions</h4>
@@ -3367,12 +3440,12 @@ Often these run Kubernetes in a virtual machine on your development machine.  We
 present some extra challenges in areas like:</p>
 <ul>
 <li>Separate container image caches, making it necessary to save/load images to move them between Docker file systems</li>
-<li>Default virtual machine file sizes and resource limits that are too small to run WebLogic or hold the necessary images</li>
-<li>Storage providers that do not always support the features that the operator or WebLogic rely on</li>
-<li>Load balancing implementations that do not always support the features that the operator or WebLogic rely on</li>
+<li>Default virtual machine file sizes and resource limits that are too small to run WebLogic Server or hold the necessary images</li>
+<li>Storage providers that do not always support the features that the operator or WebLogic Server rely on</li>
+<li>Load balancing implementations that do not always support the features that the operator or WebLogic Server rely on</li>
 </ul>
-<p>As such, we <em>do not</em> recommend using these distributions to run the operator or WebLogic, and we do not
-provide support for WebLogic or the operator running in these distributions.</p>
+<p>As such, we <em>do not</em> recommend using these distributions to run the operator or WebLogic Server, and we do not
+provide support for WebLogic Server or the operator running in these distributions.</p>
 <p>We have found that Docker for Desktop does not seem to suffer the same limitations, and we do support that as a
 development/test option.</p>
 
@@ -5484,19 +5557,19 @@ development/test option.</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1637591827"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1637591827"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1637591827"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1637591827"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1637591827"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1637591827"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1637592014"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1637592014"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1637592014"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1637592014"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1637592014"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1637592014"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1637591827"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1637591827"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1637591827"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1637592014"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1637592014"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1637592014"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1637591827"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1637592014"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });
