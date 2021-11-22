@@ -368,6 +368,18 @@ class DomainProcessorTest {
   }
 
   @Test
+  void whenMakeRightExecuted_ignoreNonOperatorPodDisruptionBudgets() {
+    defineServerResources(ADMIN_NAME);
+    Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
+    testSupport.defineResources(createNonOperatorPodDisruptionBudget());
+
+    DomainPresenceInfo info = new DomainPresenceInfo(domain);
+    processor.createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
+
+    assertThat(info.getPodDisruptionBudget(CLUSTER), notNullValue());
+  }
+
+  @Test
   void whenClusterReplicas2_server3WithAlwaysPolicy_establishMatchingPresence() {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(2);
     domainConfigurator.configureServer(MS_PREFIX + 3).withServerStartPolicy(START_ALWAYS);
@@ -684,7 +696,7 @@ class DomainProcessorTest {
                             .putLabelsItem(CREATEDBYOPERATOR_LABEL, "false")
                             .putLabelsItem(DOMAINNAME_LABEL, DomainProcessorTestSetup.UID)
                             .putLabelsItem(DOMAINUID_LABEL, DomainProcessorTestSetup.UID)
-                            .putLabelsItem(CLUSTERNAME_LABEL, CLUSTER))
+            .putLabelsItem(DOMAINUID_LABEL, DomainProcessorTestSetup.UID))
             .spec(new V1beta1PodDisruptionBudgetSpec()
                     .selector(new V1LabelSelector()
                             .putMatchLabelsItem(CREATEDBYOPERATOR_LABEL, "false")
