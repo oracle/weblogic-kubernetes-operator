@@ -42,8 +42,8 @@ WebLogic Server and the operator are certified on offerings, such as:
 
 WebLogic Server and the operator are also supported on service offerings which 
 deploy the WebLogic Server and the operator for you. These include:
-- Oracle WebLogic Server for OKE (WLS for OKE)
-- Oracle WebLogic Server on AKS from the Azure Marketplace (WLS on AKS Marketplace)
+- [Oracle WebLogic Server for OKE (WLS for OKE)](https://docs.oracle.com/en/cloud/paas/weblogic-container/)
+- [Oracle WebLogic Server on AKS from the Azure Marketplace (WLS on AKS Marketplace)](#oracle-weblogic-server-on-aks-from-the-azure-marketplace-wls-on-aks-marketplace)
 
 [Development-focused Kubernetes distributions](#development-focused-kubernetes-distributions) are also supported.
 
