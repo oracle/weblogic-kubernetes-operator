@@ -14,7 +14,7 @@ public interface TestConstants {
 
   // domain constants
   public static final String DOMAIN_VERSION = Optional.ofNullable(System.getenv("DOMAIN_VERSION"))
-      .orElse("v8");
+      .orElse("v9");
   public static final String DOMAIN_API_VERSION = "weblogic.oracle/" + DOMAIN_VERSION;
   public static final String ADMIN_SERVER_NAME_BASE = "admin-server";
   public static final String MANAGED_SERVER_NAME_BASE = "managed-server";

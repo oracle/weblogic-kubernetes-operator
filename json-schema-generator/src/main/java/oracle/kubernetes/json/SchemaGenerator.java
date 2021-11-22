@@ -404,6 +404,7 @@ public class SchemaGenerator {
 
     return Arrays.stream(enumType.getEnumConstants())
           .filter(constant -> satisfiesQualifier(constant, qualifierMethod))
+          .filter(constant -> isNonObsolete(constant))
           .map(Object::toString)
           .toArray(String[]::new);
   }
@@ -421,6 +422,10 @@ public class SchemaGenerator {
   private boolean isBooleanMethod(Method method) {
     return method.getReturnType().equals(Boolean.class)
         || method.getReturnType().equals(boolean.class);
+  }
+
+  private boolean isNonObsolete(Object enumConstant) {
+    return !(enumConstant instanceof Obsoleteable) || !((Obsoleteable) enumConstant).isObsolete();
   }
 
   private boolean satisfiesQualifier(Object enumConstant, Method qualifier) {

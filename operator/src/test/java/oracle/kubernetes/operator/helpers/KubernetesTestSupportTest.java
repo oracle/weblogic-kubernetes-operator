@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.Semaphore;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
@@ -588,6 +589,7 @@ class KubernetesTestSupportTest {
   static class TestResponseStep<T> extends DefaultResponseStep<T> {
 
     private CallResponse<T> callResponse;
+    private static final Semaphore responseAvailableSignal = new Semaphore(0);
 
     TestResponseStep() {
       super(null);
@@ -596,13 +598,27 @@ class KubernetesTestSupportTest {
     @Override
     public NextAction onFailure(Packet packet, CallResponse<T> callResponse) {
       this.callResponse = callResponse;
+      responseAvailableSignal.release();
       return super.onFailure(packet, callResponse);
     }
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<T> callResponse) {
       this.callResponse = callResponse;
+      responseAvailableSignal.release();
       return super.onSuccess(packet, callResponse);
+    }
+
+    /**
+     * Wait for and then return call response. This method is needed for tests async CallBuilder
+     * methods because the suspending of the requesting thread otherwise allows test code to move
+     * on before the response is processed.
+     * @return Call response
+     * @throws InterruptedException Interrupted waiting for response available signal
+     */
+    public CallResponse<T> waitForAndGetCallResponse() throws InterruptedException {
+      responseAvailableSignal.acquire();
+      return callResponse;
     }
   }
 }

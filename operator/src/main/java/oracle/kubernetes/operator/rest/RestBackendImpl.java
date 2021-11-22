@@ -181,7 +181,7 @@ public class RestBackendImpl implements RestBackend {
 
   private List<Domain> getDomains(String ns) {
     try {
-      return callBuilder.listDomain(ns).getItems();
+      return callBuilder.listDomain(ns).upgrade().getItems();
     } catch (ApiException e) {
       throw handleApiException(e);
     }
