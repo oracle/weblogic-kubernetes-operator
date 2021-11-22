@@ -1897,6 +1897,10 @@ window.onload = function() {
         "timeoutSeconds": {
           "description": "For graceful shutdown only, number of seconds to wait before aborting in-flight work and shutting down the server. Defaults to 30 seconds.",
           "type": "number"
+        },
+        "waitForAllSessions": {
+          "description": "For graceful shutdown only, Set to true to wait for all HTTP sessions during inflight work handling; false to wait for non-persisted HTTP sessions only. Defaults to true.",
+          "type": "boolean"
         }
       }
     },

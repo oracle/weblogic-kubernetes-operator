@@ -271,6 +271,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `ignoreSessions` | Boolean | For graceful shutdown only, indicates to ignore pending HTTP sessions during in-flight work handling. Defaults to false. |
 | `shutdownType` | string | Specifies how the operator will shut down server instances. Defaults to graceful shutdown. |
 | `timeoutSeconds` | number | For graceful shutdown only, number of seconds to wait before aborting in-flight work and shutting down the server. Defaults to 30 seconds. |
+| `waitForAllSessions` | Boolean | For graceful shutdown only, Set to true to wait for all HTTP sessions during inflight work handling; false to wait for non-persisted HTTP sessions only. Defaults to true. |
 
 ### Server Health
 

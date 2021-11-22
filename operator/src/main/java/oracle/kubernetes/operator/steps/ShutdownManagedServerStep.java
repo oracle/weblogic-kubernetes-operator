@@ -15,10 +15,12 @@ import io.kubernetes.client.openapi.models.V1Service;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
+import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.SecretHelper;
 import oracle.kubernetes.operator.http.HttpResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
+import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.rest.Scan;
 import oracle.kubernetes.operator.rest.ScanCache;
 import oracle.kubernetes.operator.wlsconfig.PortDetails;
@@ -28,6 +30,8 @@ import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.model.ServerSpec;
+import oracle.kubernetes.weblogic.domain.model.Shutdown;
 
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.steps.HttpRequestProcessing.createRequestStep;
@@ -36,10 +40,12 @@ public class ShutdownManagedServerStep extends Step {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private String serverName;
+  private V1Pod pod;
 
-  private ShutdownManagedServerStep(Step next, String serverName) {
+  private ShutdownManagedServerStep(Step next, String serverName, V1Pod pod) {
     super(next);
     this.serverName = serverName;
+    this.pod = pod;
   }
 
   /**
@@ -47,18 +53,29 @@ public class ShutdownManagedServerStep extends Step {
    *
    * @param next Next processing step
    * @param serverName name of server
+   * @param pod server pod
    * @return asynchronous step
    */
-  public static Step createShutdownManagedServerStep(Step next, String serverName) {
-    return new ShutdownManagedServerStep(next, serverName);
+  public static Step createShutdownManagedServerStep(Step next, String serverName, V1Pod pod) {
+    return new ShutdownManagedServerStep(next, serverName, pod);
   }
 
   private static String getManagedServerShutdownPath() {
     return "/management/weblogic/latest/serverRuntime/shutdown";
   }
 
-  private static String getManagedServerShutdownPayload() {
-    return "{  \"ignoreSessions\": true, \"timeout\": 60, \"waitForAllSessions\": false }";
+  private static String getManagedServerShutdownPayload(Boolean ignoreSessions, Long timeout,
+      Boolean waitForAllSessions) {
+    StringBuilder stringBuilder = new StringBuilder();
+    stringBuilder.append("{  \"ignoreSessions\": ")
+        .append(ignoreSessions)
+        .append(", \"timeout\": ")
+        .append(timeout)
+        .append(", \"waitForAllSessions\": ")
+        .append(waitForAllSessions)
+        .append("}");
+
+    return stringBuilder.toString();
   }
 
   @Override
@@ -72,7 +89,7 @@ public class ShutdownManagedServerStep extends Step {
       return doNext(
             Step.chain(
                 SecretHelper.createAuthorizationSourceStep(),
-                new ShutdownManagedServerWithHttpStep(service, info.getServerPod(serverName), getNext())),
+                new ShutdownManagedServerWithHttpStep(service, pod, getNext())),
             packet);
     }
   }
@@ -84,11 +101,36 @@ public class ShutdownManagedServerStep extends Step {
     }
 
     private HttpRequest createRequest() {
+      String serverName = pod.getMetadata().getLabels().get(LabelConstants.SERVERNAME_LABEL);
+      String clusterName = getClusterNameFromServiceLabel();
+
+      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+      Shutdown shutdown = Optional.ofNullable(info.getDomain().getServer(serverName, clusterName))
+          .map(ServerSpec::getShutdown).orElse(null);
+
+      Long timeout = getTimeout(shutdown);
+      Boolean ignoreSessions = getIgnoreSessions(shutdown);
+      Boolean waitForAllSessions = getWaitForAllSessions(shutdown);
+
       HttpRequest request = createRequestBuilder(getRequestUrl())
-            .POST(HttpRequest.BodyPublishers.ofString(getManagedServerShutdownPayload()))
-            .build();
-      LOGGER.info("ShutdownManagedServerProcessing.createRequest request: " + request);
+            .POST(HttpRequest.BodyPublishers.ofString(getManagedServerShutdownPayload(
+                ignoreSessions, timeout, waitForAllSessions))).build();
       return request;
+    }
+
+    private Boolean getWaitForAllSessions(Shutdown shutdown) {
+      return Optional.ofNullable(shutdown).map(Shutdown::getWaitForAllSessions)
+              .orElse(Shutdown.DEFAULT_WAIT_FOR_ALL_SESSIONS);
+    }
+
+    private Boolean getIgnoreSessions(Shutdown shutdown) {
+      return Optional.ofNullable(shutdown).map(Shutdown::getIgnoreSessions)
+              .orElse(Shutdown.DEFAULT_IGNORESESSIONS);
+    }
+
+    private Long getTimeout(Shutdown shutdown) {
+      return Optional.ofNullable(shutdown).map(Shutdown::getTimeoutSeconds)
+              .orElse(Shutdown.DEFAULT_TIMEOUT);
     }
 
     private String getRequestUrl() {
@@ -150,12 +192,6 @@ public class ShutdownManagedServerStep extends Step {
     }
   }
 
-  /**
-   * Step to send a query to Kubernetes to obtain the health of a specified server.
-   * Packet values used:
-   *  SERVER_NAME                       the name of the server
-   *  DOMAIN_TOPOLOGY                   the topology of the domain
-   */
   static final class ShutdownManagedServerWithHttpStep extends Step {
     @Nonnull
     private final V1Service service;
@@ -171,37 +207,28 @@ public class ShutdownManagedServerStep extends Step {
     public NextAction apply(Packet packet) {
       ShutdownManagedServerProcessing processing = new ShutdownManagedServerProcessing(packet, service, pod);
       return doNext(createRequestStep(processing.createRequest(),
-          new ShutdownManagedServerResponseStep(getNext())), packet);
+          new ShutdownManagedServerResponseStep(PodHelper.getPodServerName(pod), getNext())), packet);
     }
 
   }
 
-  /**
-   * {@link Step} for processing json result object containing the response from the REST call.
-   * Packet values used:
-   *  SERVER_NAME                       the name of the server
-   *  SERVER_STATE_MAP                  a map of server names to state
-   *  SERVER_HEALTH_MAP                 a map of server names to health
-   *  REMAINING_SERVERS_HEALTH_TO_READ  a counter of the servers whose health needs to be read
-   *  (spi) HttpResponse.class          the response from the server
-   */
   static final class ShutdownManagedServerResponseStep extends HttpResponseStep {
+    String serverName;
 
-    ShutdownManagedServerResponseStep(Step next) {
+    ShutdownManagedServerResponseStep(String serverName, Step next) {
       super(next);
+      this.serverName = serverName;
     }
 
     @Override
     public NextAction onSuccess(Packet packet, HttpResponse<String> response) {
-      LOGGER.info("ShutdownManagedServerStep.onSuccess response: " + response);
+      LOGGER.fine(MessageKeys.SERVER_SHUTDOWN_REST_SUCCESS, serverName);
       return doNext(packet);
     }
 
     @Override
     public NextAction onFailure(Packet packet, HttpResponse<String> response) {
-      if (response != null) {
-        LOGGER.info("ShutdownManagedServerStep.onFailure response: " + response);
-      }
+      LOGGER.fine(MessageKeys.SERVER_SHUTDOWN_REST_FAILURE, serverName, response);
       return doNext(packet);
     }
   }
