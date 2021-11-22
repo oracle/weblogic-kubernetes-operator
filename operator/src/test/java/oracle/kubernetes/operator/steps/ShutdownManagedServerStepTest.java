@@ -11,12 +11,10 @@ import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
-import com.meterware.httpunit.Base64;
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Service;
-import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.helpers.AnnotationHelper;
@@ -43,7 +41,6 @@ import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
-import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
 import static oracle.kubernetes.operator.logging.MessageKeys.SERVER_SHUTDOWN_REST_FAILURE;
 import static oracle.kubernetes.operator.logging.MessageKeys.SERVER_SHUTDOWN_REST_SUCCESS;
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
@@ -78,7 +75,6 @@ class ShutdownManagedServerStepTest {
   private final V1Service standaloneServerService = createServerService(MANAGED_SERVER1, null);
   private final V1Service dynamicServerService = createServerService(DYNAMIC_MANAGED_SERVER1,
       DYNAMIC_CLUSTER_NAME);
-  private final V1Service headlessService = createStub(V1HeadlessServiceStub.class);
   private final List<LogRecord> logRecords = new ArrayList<>();
   private final List<Memento> mementos = new ArrayList<>();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
@@ -119,31 +115,14 @@ class ShutdownManagedServerStepTest {
     DomainProcessorTestSetup.defineSecretData(testSupport);
   }
 
-  private void selectServer(String serverName) {
-    selectServer(serverName, false);
-  }
-
   private void selectServer(String serverName, V1Service service) {
     testSupport.addToPacket(SERVER_NAME, serverName);
     info.setServerService(serverName, service);
   }
 
-  private void selectServer(String serverName, boolean headless) {
-    testSupport.addToPacket(SERVER_NAME, serverName);
-    if (headless) {
-      info.setServerService(serverName, headlessService);
-    } else {
-      info.setServerService(serverName, configuredServerService);
-    }
-  }
-
   @AfterEach
   public void tearDown() {
     mementos.forEach(Memento::revert);
-  }
-
-  private void defineResponse(int status, String body) {
-    defineResponse(status, body, null);
   }
 
   private void defineResponse(int status, String body, String url) {
@@ -157,19 +136,6 @@ class ShutdownManagedServerStepTest {
         .uri(URI.create(url + "/management/weblogic/latest/serverRuntime/shutdown"))
         .POST(HttpRequest.BodyPublishers.noBody())
         .build();
-  }
-
-
-  private boolean hasAuthenticationCredentials(HttpRequest request) {
-    return Objects.equals(getAuthorizationHeader(request), expectedAuthorizationHeader());
-  }
-
-  private String getAuthorizationHeader(HttpRequest request) {
-    return request.headers().firstValue("Authorization").orElse(null);
-  }
-
-  private String expectedAuthorizationHeader() {
-    return "Basic " + Base64.encode("user:password");
   }
 
   @Test
@@ -252,45 +218,6 @@ class ShutdownManagedServerStepTest {
     testSupport.runSteps(shutdownDynamicManagedServer);
 
     MatcherAssert.assertThat(logRecords, containsFine(SERVER_SHUTDOWN_REST_FAILURE));
-  }
-
-
-  public abstract static class V1ServiceStub extends V1Service {
-
-    @Override
-    public V1ServiceSpec getSpec() {
-      return new V1ServiceSpec().clusterIP("127.0.0.1");
-    }
-  }
-
-  public abstract static class V1HeadlessServiceStub extends V1Service {
-
-    @Override
-    public V1ObjectMeta getMetadata() {
-      return new V1ObjectMeta().name(ADMIN_NAME).namespace(NS);
-    }
-
-    @Override
-    public V1ServiceSpec getSpec() {
-      return new V1ServiceSpec().clusterIP("None");
-    }
-  }
-
-  public abstract static class V1HeadlessMSServiceStub extends V1Service {
-    @Override
-    public V1ObjectMeta getMetadata() {
-      return new V1ObjectMeta().name(DYNAMIC_MANAGED_SERVER2).namespace(NS)
-          .putLabelsItem(CLUSTERNAME_LABEL, DYNAMIC_CLUSTER_NAME);
-    }
-  }
-
-  private void configureServiceWithClusterName(String clusterName) {
-    configuredServerService
-        .setMetadata(new V1ObjectMeta().putLabelsItem(CLUSTERNAME_LABEL, clusterName));
-  }
-
-  private V1Pod getSelectedPod(String name) {
-    return testSupport.getResourceWithName(POD, name);
   }
 
   private V1Pod defineManagedPod(String name) {
