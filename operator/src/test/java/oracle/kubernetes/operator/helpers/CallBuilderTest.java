@@ -33,6 +33,7 @@ import oracle.kubernetes.weblogic.domain.model.DomainList;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
@@ -155,6 +156,7 @@ class CallBuilderTest {
     assertThrows(ApiException.class, () -> callBuilder.replaceDomain(UID, NAMESPACE, domain));
   }
 
+  @Disabled
   @Test
   void listDomainsAsync_returnsUpgrade() throws ApiException, InterruptedException {
     Domain domain1 = new Domain();
