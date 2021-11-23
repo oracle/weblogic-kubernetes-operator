@@ -529,16 +529,26 @@ public class ImageUtils {
    * @param dockerImage the Docker image to push to registry
    */
   public static void dockerLoginAndPushImageToRegistry(String dockerImage) {
+    dockerLoginAndPushImageToRegistry(DOMAIN_IMAGES_REPO, dockerImage);
+  }
+
+  /**
+   * Docker login and push the image to Docker registry.
+   *
+   * @param domainImageRepo the REPO_REGISTRY the domain image will push to
+   * @param dockerImage the Docker image to push to registry
+   */
+  public static void dockerLoginAndPushImageToRegistry(String domainImageRepo, String dockerImage) {
     LoggingFacade logger = getLogger();
     // push image, if necessary
-    if (!DOMAIN_IMAGES_REPO.isEmpty() && dockerImage.contains(DOMAIN_IMAGES_REPO)) {
+    if (!domainImageRepo.isEmpty() && dockerImage.contains(domainImageRepo)) {
       // docker login, if necessary
       if (!OCIR_USERNAME.equals(REPO_DUMMY_VALUE)) {
         logger.info("docker login");
         assertTrue(dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD), "docker login failed");
       }
 
-      logger.info("docker push image {0} to {1}", dockerImage, DOMAIN_IMAGES_REPO);
+      logger.info("docker push image {0} to {1}", dockerImage, domainImageRepo);
       assertTrue(dockerPush(dockerImage), String.format("docker push failed for image %s", dockerImage));
     }
   }
