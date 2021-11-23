@@ -53,6 +53,7 @@ import static oracle.kubernetes.operator.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.operator.DomainFailureReason.Internal;
 import static oracle.kubernetes.operator.DomainFailureReason.Introspection;
 import static oracle.kubernetes.operator.DomainFailureReason.ReplicasTooHigh;
+import static oracle.kubernetes.operator.DomainFailureReason.ServerPod;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainStatusUpdaterTest.EventMatcher.eventWithReason;
@@ -74,6 +75,8 @@ import static oracle.kubernetes.operator.WebLogicConstants.STANDBY_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.STARTING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.UNKNOWN_STATE;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.EVENT;
+import static oracle.kubernetes.weblogic.domain.model.DomainCondition.FALSE;
+import static oracle.kubernetes.weblogic.domain.model.DomainCondition.TRUE;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Completed;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.ConfigChangesPendingRestart;
@@ -275,8 +278,8 @@ class DomainStatusUpdaterTest {
                         .withDesiredState(SHUTDOWN_STATE)
                         .withServerName("server1")
                         .withHealth(overallHealth("health1"))))
-              .addCondition(new DomainCondition(Available).withStatus("False"))
-              .addCondition(new DomainCondition(Completed).withStatus("True")));
+              .addCondition(new DomainCondition(Available).withStatus(false))
+              .addCondition(new DomainCondition(Completed).withStatus(true)));
 
     testSupport.clearNumCalls();
     updateDomainStatus();
@@ -399,7 +402,7 @@ class DomainStatusUpdaterTest {
 
     updateDomainStatus();
 
-    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus("False"));
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus(FALSE));
   }
 
   @Test  //olws-93193
@@ -411,7 +414,7 @@ class DomainStatusUpdaterTest {
 
     updateDomainStatus();
 
-    assertThat(getRecordedDomain(), hasCondition(Available).withStatus("False"));
+    assertThat(getRecordedDomain(), hasCondition(Available).withStatus(FALSE));
   }
 
   @Test
@@ -419,7 +422,7 @@ class DomainStatusUpdaterTest {
 
     updateDomainStatus();
 
-    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus("True"));
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus(TRUE));
     assertThat(
         getRecordedDomain().getApiVersion(),
         equalTo(KubernetesConstants.API_VERSION_WEBLOGIC_ORACLE));
@@ -431,7 +434,7 @@ class DomainStatusUpdaterTest {
 
     updateDomainStatus();
 
-    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus("True"));
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus(TRUE));
     assertThat(
         getRecordedDomain().getApiVersion(),
         equalTo(KubernetesConstants.API_VERSION_WEBLOGIC_ORACLE));
@@ -443,7 +446,7 @@ class DomainStatusUpdaterTest {
 
     updateDomainStatus();
 
-    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus("True"));
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus(TRUE));
     assertThat(
         getRecordedDomain().getApiVersion(),
         equalTo(KubernetesConstants.API_VERSION_WEBLOGIC_ORACLE));
@@ -451,7 +454,7 @@ class DomainStatusUpdaterTest {
 
   @Test
   void whenAllDesiredServersRunningAndMatchingCompletedConditionFound_leaveIt() {
-    domain.getStatus().addCondition(new DomainCondition(Completed).withStatus("True"));
+    domain.getStatus().addCondition(new DomainCondition(Completed).withStatus(true));
     defineScenario()
           .withCluster("clusterA", "server1")
           .withCluster("clusterB", "server2")
@@ -459,16 +462,16 @@ class DomainStatusUpdaterTest {
 
     updateDomainStatus();
 
-    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus("True"));
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus(TRUE));
   }
 
   @Test
   void whenAllDesiredServersRunningAndMismatchedCompletedConditionStatusFound_changeIt() {
-    domain.getStatus().addCondition(new DomainCondition(Completed).withStatus("False"));
+    domain.getStatus().addCondition(new DomainCondition(Completed).withStatus(false));
 
     updateDomainStatus();
 
-    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus("True"));
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus(TRUE));
   }
 
   @Test
@@ -481,12 +484,12 @@ class DomainStatusUpdaterTest {
 
     updateDomainStatus();
 
-    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus("False"));
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus(FALSE));
   }
 
   @Test
   void whenAllDesiredServersRunningAndMatchingCompletedConditionFound_dontGenerateCompletedEvent() {
-    domain.getStatus().addCondition(new DomainCondition(Completed).withStatus("True"));
+    domain.getStatus().addCondition(new DomainCondition(Completed).withStatus(TRUE));
     defineScenario()
           .withCluster("clusterA", "server1")
           .withCluster("clusterB", "server2")
@@ -508,7 +511,7 @@ class DomainStatusUpdaterTest {
   @Test
   void whenAllDesiredServersRunningAndNoMatchingCompletedConditionFound_generateCompletedEvent() {
     domain.getStatus()
-          .addCondition(new DomainCondition(Completed).withStatus("False"));
+          .addCondition(new DomainCondition(Completed).withStatus(FALSE));
     defineScenario()
           .withCluster("clusterA", "server1")
           .withCluster("clusterB", "server2")
@@ -522,7 +525,7 @@ class DomainStatusUpdaterTest {
   @Test
   void whenUnexpectedServersRunningAndNoMatchingCompletedConditionFound_dontGenerateCompletedEvent() {
     domain.getStatus()
-          .addCondition(new DomainCondition(Completed).withStatus("False"));
+          .addCondition(new DomainCondition(Completed).withStatus(FALSE));
     defineScenario()
           .withCluster("clusterA", "server1")
           .withCluster("clusterB", "server2", "server3")
@@ -534,16 +537,7 @@ class DomainStatusUpdaterTest {
 
     assertThat(getEvents().stream().anyMatch(this::isDomainCompletedEvent), is(false));
   }
-
-  @Test
-  void whenAllDesiredServersRunningAndFailedConditionFound_removeIt() {
-    domain.getStatus().addCondition(new DomainCondition(Failed));
-
-    updateDomainStatus();
-
-    assertThat(getRecordedDomain(), not(hasCondition(Failed)));
-  }
-
+  
   @Test
   void whenNotAllDesiredServersRunning_establishCompletedConditionFalse() {
     defineScenario()
@@ -553,12 +547,12 @@ class DomainStatusUpdaterTest {
 
     updateDomainStatus();
 
-    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus("False"));
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus(FALSE));
   }
 
   @Test
   void whenNotAllDesiredServersRunningAndCompletedFalseConditionFound_ignoreIt() {
-    domain.getStatus().addCondition(new DomainCondition(Completed).withStatus("False"));
+    domain.getStatus().addCondition(new DomainCondition(Completed).withStatus(FALSE));
     defineScenario()
           .withCluster("clusterA","server1", "server2")
           .withServersReachingState(STANDBY_STATE, "server1")
@@ -566,7 +560,7 @@ class DomainStatusUpdaterTest {
 
     updateDomainStatus();
 
-    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus("False"));
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus(FALSE));
   }
 
   @Test
@@ -578,7 +572,7 @@ class DomainStatusUpdaterTest {
 
     updateDomainStatus();
 
-    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus("False"));
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus(FALSE));
   }
 
   @Test
@@ -590,11 +584,11 @@ class DomainStatusUpdaterTest {
 
   @Test
   void whenNoPodsFailedAndFailedConditionFound_removeIt() {
-    domain.getStatus().addCondition(new DomainCondition(Failed));
+    domain.getStatus().addCondition(new DomainCondition(Failed).withReason(ServerPod));
 
     updateDomainStatus();
 
-    assertThat(getRecordedDomain(), not(hasCondition(Failed)));
+    assertThat(getRecordedDomain(), not(hasCondition(Failed).withReason(ServerPod)));
   }
 
   @Test
@@ -620,12 +614,12 @@ class DomainStatusUpdaterTest {
 
   @Test
   void whenAtLeastOnePodAndFailedConditionTrueFound_leaveIt() {
-    domain.getStatus().addCondition(new DomainCondition(Failed).withStatus("True"));
+    domain.getStatus().addCondition(new DomainCondition(Failed).withStatus(TRUE));
     failPod("server2");
 
     updateDomainStatus();
 
-    assertThat(getRecordedDomain(), hasCondition(Failed).withStatus("True"));
+    assertThat(getRecordedDomain(), hasCondition(Failed).withStatus(TRUE));
   }
 
   @Test
@@ -634,17 +628,17 @@ class DomainStatusUpdaterTest {
 
     updateDomainStatus();
 
-    assertThat(getRecordedDomain(), not(hasCondition(Completed).withStatus("True")));
+    assertThat(getRecordedDomain(), not(hasCondition(Completed).withStatus(TRUE)));
   }
 
   @Test
   void whenAtLeastOnePodFailedAndCompletedTrueConditionFound_removeIt() {
-    domain.getStatus().addCondition(new DomainCondition(Completed).withStatus("True"));
+    domain.getStatus().addCondition(new DomainCondition(Completed).withStatus(TRUE));
     failPod("server2");
 
     updateDomainStatus();
 
-    assertThat(getRecordedDomain(), not(hasCondition(Completed).withStatus("True")));
+    assertThat(getRecordedDomain(), not(hasCondition(Completed).withStatus(TRUE)));
   }
 
   @Test
@@ -657,9 +651,20 @@ class DomainStatusUpdaterTest {
   }
 
   @Test
+  void whenReplicaCountDoesNotExceedMaxReplicasForDynamicCluster_removeOldReplicasTooHighFailure() {
+    domain.getStatus().addCondition(new DomainCondition(Failed).withReason(ReplicasTooHigh));
+    domain.setReplicaCount("cluster1", 4);
+    defineScenario().addDynamicCluster("cluster1", 0, 4).build();
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), not(hasCondition(Failed)));
+  }
+
+  @Test
   void whenReplicaCountDoesNotExceedMaxReplicasForDynamicCluster_doNotAddReplicasTooHighFailure() {
     domain.setReplicaCount("cluster1", 4);
-    defineScenario().addDynamicCluster("cluster1", 4).build();
+    defineScenario().addDynamicCluster("cluster1", 0, 4).build();
 
     updateDomainStatus();
 
@@ -669,7 +674,7 @@ class DomainStatusUpdaterTest {
   @Test
   void whenReplicaCountExceedsMaxReplicasForDynamicCluster_addFailedCondition() {
     domain.setReplicaCount("cluster1", 5);
-    defineScenario().addDynamicCluster("cluster1", 4).build();
+    defineScenario().addDynamicCluster("cluster1", 0, 4).build();
 
     updateDomainStatus();
 
@@ -678,12 +683,57 @@ class DomainStatusUpdaterTest {
 
   @Test
   void whenReplicaCountExceedsMaxReplicasForDynamicCluster_domainIsNotCompleted() {
-    domain.setReplicaCount("cluster1", 5);
-    defineScenario().addDynamicCluster("cluster1", 4).build();
+    configureDomain().configureCluster("cluster1").withReplicas(5);
+    defineScenario().addDynamicCluster("cluster1", 0, 4).build();
 
     updateDomainStatus();
 
-    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus("False"));
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus(FALSE));
+  }
+
+  @Test
+  void whenNumServersStartedBelowMinReplicasForDynamicClusterAndAllowed_domainIsAvailable() {
+    defineScenario()
+          .addDynamicCluster("cluster1", 3, 4)
+          .notStarting("ms3", "ms4")
+          .build();
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(Available).withStatus(TRUE));
+  }
+
+  @Test
+  void whenReplicaCountBelowMinReplicasForDynamicClusterAndNotAllowed_domainIsNotAvailable() {
+    configureDomain().withAllowReplicasBelowMinDynClusterSize(false);
+    defineScenario()
+          .addDynamicCluster("cluster1", 3, 4)
+          .notStarting("ms3", "ms4")
+          .build();
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(Available).withStatus(FALSE));
+  }
+
+  @Test
+  void whenReplicaCountWithinMaxUnavailableOfReplicas_domainIsAvailable() {
+    configureDomain().configureCluster("cluster1").withReplicas(5).withMaxUnavailable(1);
+    defineScenario().addDynamicCluster("cluster1", 0, 4).build();
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(Available).withStatus(TRUE));
+  }
+
+  @Test
+  void whenReplicaCountNotWithinMaxUnavailableOfReplicas_domainIsNotAvailable() {
+    configureDomain().configureCluster("cluster1").withReplicas(20).withMaxUnavailable(1);
+    defineScenario().addDynamicCluster("cluster1", 0, 4).build();
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(Available).withStatus(FALSE));
   }
 
   @Test
@@ -692,7 +742,7 @@ class DomainStatusUpdaterTest {
 
     updateDomainStatus();
 
-    assertThat(getRecordedDomain(), hasCondition(Available).withStatus("False"));
+    assertThat(getRecordedDomain(), hasCondition(Available).withStatus(FALSE));
   }
 
   @Test
@@ -703,7 +753,7 @@ class DomainStatusUpdaterTest {
 
     updateDomainStatus();
 
-    assertThat(getRecordedDomain(), hasCondition(Available).withStatus("False"));
+    assertThat(getRecordedDomain(), hasCondition(Available).withStatus(FALSE));
   }
 
   @Test
@@ -712,8 +762,8 @@ class DomainStatusUpdaterTest {
 
     updateDomainStatus();
 
-    assertThat(getRecordedDomain(), hasCondition(Available).withStatus("False"));
-    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus("False"));
+    assertThat(getRecordedDomain(), hasCondition(Available).withStatus(FALSE));
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus(FALSE));
   }
 
   @Test
@@ -725,8 +775,8 @@ class DomainStatusUpdaterTest {
 
     updateDomainStatus();
 
-    assertThat(getRecordedDomain(), hasCondition(Available).withStatus("False"));
-    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus("True"));
+    assertThat(getRecordedDomain(), hasCondition(Available).withStatus(FALSE));
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus(TRUE));
   }
 
   @Test
@@ -738,8 +788,8 @@ class DomainStatusUpdaterTest {
 
     updateDomainStatus();
 
-    assertThat(getRecordedDomain(), hasCondition(Available).withStatus("False"));
-    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus("True"));
+    assertThat(getRecordedDomain(), hasCondition(Available).withStatus(FALSE));
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus(TRUE));
   }
 
   @Test
@@ -752,8 +802,8 @@ class DomainStatusUpdaterTest {
 
     updateDomainStatus();
 
-    assertThat(getRecordedDomain(), hasCondition(Available).withStatus("False"));
-    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus("False"));
+    assertThat(getRecordedDomain(), hasCondition(Available).withStatus(FALSE));
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus(FALSE));
   }
 
   @Test
@@ -762,8 +812,8 @@ class DomainStatusUpdaterTest {
 
     updateDomainStatus();
 
-    assertThat(getRecordedDomain(), hasCondition(Available).withStatus("True"));
-    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus("True"));
+    assertThat(getRecordedDomain(), hasCondition(Available).withStatus(TRUE));
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus(TRUE));
   }
 
   @Test
@@ -776,8 +826,8 @@ class DomainStatusUpdaterTest {
 
     updateDomainStatus();
 
-    assertThat(getRecordedDomain(), hasCondition(Available).withStatus("True"));
-    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus("True"));
+    assertThat(getRecordedDomain(), hasCondition(Available).withStatus(TRUE));
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus(TRUE));
   }
 
   @Test
@@ -790,13 +840,13 @@ class DomainStatusUpdaterTest {
 
     updateDomainStatus();
 
-    assertThat(getRecordedDomain(), hasCondition(Available).withStatus("True"));
-    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus("False"));
+    assertThat(getRecordedDomain(), hasCondition(Available).withStatus(TRUE));
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus(FALSE));
   }
 
   @Test
-  void whenMoreThanMaxUnavailableServersNotRunningInACluster_domainIsNotAvailable() {
-    configureDomain().configureCluster("clusterA").withMaxUnavailable(2);
+  void whenTooManyServersNotRunningInACluster_domainIsNotAvailable() {
+    configureDomain().configureCluster("clusterA").withReplicas(4).withMaxUnavailable(2);
     defineScenario()
           .withCluster("clusterA", "server1", "server2", "server3", "server4")
           .withServersReachingState(SHUTDOWN_STATE, "server2", "server3", "server4")
@@ -804,8 +854,8 @@ class DomainStatusUpdaterTest {
 
     updateDomainStatus();
 
-    assertThat(getRecordedDomain(), not(hasCondition(Available).withStatus("True")));
-    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus("False"));
+    assertThat(getRecordedDomain(), hasCondition(Available).withStatus(FALSE));
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus(FALSE));
   }
 
   @Test
@@ -818,13 +868,13 @@ class DomainStatusUpdaterTest {
 
     updateDomainStatus();
 
-    assertThat(getRecordedDomain(), not(hasCondition(Available).withStatus("True")));
-    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus("False"));
+    assertThat(getRecordedDomain(), not(hasCondition(Available).withStatus(TRUE)));
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus(FALSE));
   }
 
   @Test
   void whenDomainWasAvailableAndNoLongerIs_domainAvailableConditionIsChangedToFalse() {
-    domain.getStatus().addCondition(new DomainCondition(Available).withStatus("True"));
+    domain.getStatus().addCondition(new DomainCondition(Available).withStatus(TRUE));
     configureDomain().configureCluster("clusterA").withMaxUnavailable(2);
     defineScenario()
           .withCluster("clusterA", "server1", "server2")
@@ -833,14 +883,14 @@ class DomainStatusUpdaterTest {
 
     updateDomainStatus();
 
-    assertThat(getRecordedDomain(), hasCondition(Available).withStatus("False"));
-    assertThat(getRecordedDomain(), not(hasCondition(Available).withStatus("True")));
-    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus("False"));
+    assertThat(getRecordedDomain(), hasCondition(Available).withStatus(FALSE));
+    assertThat(getRecordedDomain(), not(hasCondition(Available).withStatus(TRUE)));
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus(FALSE));
   }
 
   @Test
   void whenAllServersRunningAndAvailableConditionFound_dontGenerateAvailableEvent() {
-    domain.getStatus().addCondition(new DomainCondition(Available).withStatus("True"));
+    domain.getStatus().addCondition(new DomainCondition(Available).withStatus(TRUE));
     defineScenario()
         .withCluster("clusterA", "server1")
         .withCluster("clusterB", "server2")
@@ -858,8 +908,8 @@ class DomainStatusUpdaterTest {
   @Test
   void whenAllServersRunningAndAvailableConditionNotFoundCompletedConditionNotFound_generateCompletedEvent() {
     domain.getStatus()
-        .addCondition(new DomainCondition(Available).withStatus("False"))
-        .addCondition(new DomainCondition(Completed).withStatus("False"));
+        .addCondition(new DomainCondition(Available).withStatus(FALSE))
+        .addCondition(new DomainCondition(Completed).withStatus(FALSE));
     defineScenario()
         .withCluster("clusterA", "server1")
         .withCluster("clusterB", "server2")
@@ -873,8 +923,8 @@ class DomainStatusUpdaterTest {
   @Test
   void whenAllServersRunningAndAvailableConditionNotFoundCompletedConditionNotFound_generateTwoEventsInOrder() {
     domain.getStatus()
-        .addCondition(new DomainCondition(Available).withStatus("False"))
-        .addCondition(new DomainCondition(Completed).withStatus("False"));
+        .addCondition(new DomainCondition(Available).withStatus(FALSE))
+        .addCondition(new DomainCondition(Completed).withStatus(FALSE));
     defineScenario()
         .withCluster("clusterA", "server1")
         .withCluster("clusterB", "server2")
@@ -933,8 +983,8 @@ class DomainStatusUpdaterTest {
   @Test
   void whenAllServersRunningAndAvailableConditionNotFoundCompletedConditionNotFound_generateAvailableEvent() {
     domain.getStatus()
-        .addCondition(new DomainCondition(Available).withStatus("False"))
-        .addCondition(new DomainCondition(Completed).withStatus("False"));
+        .addCondition(new DomainCondition(Available).withStatus(FALSE))
+        .addCondition(new DomainCondition(Completed).withStatus(FALSE));
     defineScenario()
         .withCluster("clusterA", "server1")
         .withCluster("clusterB", "server2")
@@ -948,7 +998,7 @@ class DomainStatusUpdaterTest {
   @Test
   void whenUnexpectedServersRunningAndAvailableConditionNotFound_generateAvailableEvent() {
     domain.getStatus()
-        .addCondition(new DomainCondition(Available).withStatus("False"));
+        .addCondition(new DomainCondition(Available).withStatus(FALSE));
     defineScenario()
         .withCluster("clusterA", "server1")
         .withCluster("clusterB", "server2")
@@ -980,7 +1030,7 @@ class DomainStatusUpdaterTest {
 
     assertThat(
           getRecordedDomain(),
-        hasCondition(Failed).withStatus("True").withReason(Internal).withMessageContaining(message));
+        hasCondition(Failed).withStatus(TRUE).withReason(Internal).withMessageContaining(message));
   }
 
   @Test
@@ -1007,7 +1057,7 @@ class DomainStatusUpdaterTest {
 
     assertThat(
           getRecordedDomain(),
-        hasCondition(Failed).withStatus("True").withReason(Internal).withMessageContaining(message));
+        hasCondition(Failed).withStatus(TRUE).withReason(Internal).withMessageContaining(message));
   }
 
   @Test
@@ -1092,6 +1142,9 @@ class DomainStatusUpdaterTest {
     assertThat(getRecordedDomain(), not(hasCondition(ConfigChangesPendingRestart)));
   }
 
+  // todo when new failures match old ones, leave the old matches
+  // todo generate needed events from status update
+
   @SuppressWarnings("SameParameterValue")
   private ScenarioBuilder defineScenario() {
     return new ScenarioBuilder();
@@ -1140,9 +1193,9 @@ class DomainStatusUpdaterTest {
     }
 
     @SuppressWarnings("SameParameterValue")
-    ScenarioBuilder addDynamicCluster(String clusterName, int maxServers) {
+    ScenarioBuilder addDynamicCluster(String clusterName, int minServers, int maxServers) {
       configSupport.addWlsCluster(new DynamicClusterConfigBuilder(clusterName)
-            .withClusterLimits(1, maxServers)
+            .withClusterLimits(minServers, maxServers)
             .withServerNames(generateServerNames(maxServers)));
       Arrays.stream(generateServerNames(maxServers)).forEach(serverName -> addClusteredServer(clusterName, serverName));
 
@@ -1150,7 +1203,7 @@ class DomainStatusUpdaterTest {
     }
 
     private String[] generateServerNames(int maxServers) {
-      return IntStream.range(1, maxServers).boxed().map(i -> "ms" + i).toArray(String[]::new);
+      return IntStream.rangeClosed(1, maxServers).boxed().map(i -> "ms" + i).toArray(String[]::new);
     }
 
     // Adds non-clustered servers to the topology
