@@ -50,7 +50,7 @@ draft: false
 
 #### Operator 3.3.5
 
-* Resolved an issue related to collecting logs for failed Model in Image domains that used auxiliary images ([#2627](https://github.com/oracle/weblogic-kubernetes-operator/pull/2627)).
+* Resolved an issue related to collecting logs for failed Model in Image domains that used auxiliary images ([#2627](https://github.com/oracle/weblogic-kubernetes-operator/pull/2627), [#2629](https://github.com/oracle/weblogic-kubernetes-operator/pull/2629)).
 * Resolved an issue related to improperly reading PodDisruptionBudget resources not created by the operator ([#2633](https://github.com/oracle/weblogic-kubernetes-operator/pull/2633)).
 * Resolved [issue #2636](https://github.com/oracle/weblogic-kubernetes-operator/issues/2636) related to sample scripts having invalid line endings for the Windows platform ([#2637](https://github.com/oracle/weblogic-kubernetes-operator/pull/2637)).
 
