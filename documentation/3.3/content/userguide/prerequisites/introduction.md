@@ -5,7 +5,7 @@ description: "Review the prerequisites for the current release of the operator."
 weight: 2
 ---
 
-For the current production release 3.3.2:
+For the current production release {{< latestVersion >}}:
 
 * Kubernetes 1.16.15+, 1.17.13+, 1.18.10+, 1.19.7+, and 1.20.6+  (check with `kubectl version`).
 * Flannel networking v0.9.1-amd64 or later (check with `docker images | grep flannel`), Calico networking v3.16.1 or later,
@@ -23,3 +23,5 @@ For the current production release 3.3.2:
 * You must have the `cluster-admin` role to install the operator.  The operator does
   not need the `cluster-admin` role at runtime. For more information, see the role-based access control, [RBAC]({{< relref "/security/rbac.md" >}}), documentation.
 * We do not currently support running WebLogic in non-Linux containers.
+
+See also [Supported platforms]({{< relref "userguide/platforms/environments.md" >}}) for environment and licensing requirements.

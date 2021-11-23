@@ -137,13 +137,12 @@ class DomainUpPlanTest {
         plan,
         hasChainWithStepsInOrder(
             "DomainPresenceStep",
-            "ReplaceOrCreateIntrospectorJobStep",
+            "IntrospectionStartStep",
             "BeforeAdminServiceStep",
             "AdminPodStep",
             "ForServerStep",
             "WatchPodReadyAdminStep",
-            "ManagedServersUpStep",
-            "EndProgressingStep"));
+            "ManagedServersUpStep"));
   }
 
   @Test

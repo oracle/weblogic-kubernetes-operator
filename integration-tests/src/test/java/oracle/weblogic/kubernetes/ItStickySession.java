@@ -46,12 +46,10 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.LOGS_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
-import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallTraefik;
-import static oracle.weblogic.kubernetes.actions.TestActions.uninstallVoyager;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
@@ -62,9 +60,6 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerif
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyTraefik;
-import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyVoyager;
-import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installVoyagerIngressAndVerify;
-import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.isVoyagerPodReady;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
@@ -80,10 +75,10 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * This test is used for testing the affinity between a web client and a WebLogic server
- * for the duration of a HTTP session using Voyager and Traefik ingress controllers
+ * for the duration of a HTTP session using Traefik ingress controllers
  * as well as cluster service.
  */
-@DisplayName("Test sticky sessions management with Voyager, Traefik and ClusterService")
+@DisplayName("Test sticky sessions management with Traefik and ClusterService")
 @IntegrationTest
 class ItStickySession {
 
@@ -106,52 +101,37 @@ class ItStickySession {
   private static int replicaCount = 2;
   private static String opNamespace = null;
   private static String domainNamespace = null;
-  private static String voyagerNamespace = null;
   private static String traefikNamespace = null;
 
-  // constants for Voyager and Traefik
-  private static String cloudProvider = "baremetal";
-  private static boolean enableValidatingWebhook = false;
-  private static HelmParams voyagerHelmParams = null;
+  // constants for Traefik
   private static HelmParams traefikHelmParams = null;
   private static LoggingFacade logger = null;
 
   /**
-   * Install Voyager, Traefik and operator, create a custom image using model in image
+   * Install Traefik and operator, create a custom image using model in image
    * with model files and create a one cluster domain.
    *
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void init(@Namespaces(4) List<String> namespaces) {
+  public static void init(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
-
-    // get a unique Voyager namespace
-    logger.info("Get a unique namespace for Voyager");
-    assertNotNull(namespaces.get(0), "Namespace list is null");
-    voyagerNamespace = namespaces.get(0);
 
     // get a unique Traefik namespace
     logger.info("Get a unique namespace for Traefik");
-    assertNotNull(namespaces.get(1), "Namespace list is null");
-    traefikNamespace = namespaces.get(1);
+    assertNotNull(namespaces.get(0), "Namespace list is null");
+    traefikNamespace = namespaces.get(0);
 
     // get a unique operator namespace
     logger.info("Get a unique namespace for operator");
-    assertNotNull(namespaces.get(2), "Namespace list is null");
-    opNamespace = namespaces.get(2);
+    assertNotNull(namespaces.get(1), "Namespace list is null");
+    opNamespace = namespaces.get(1);
 
     // get a unique domain namespace
     logger.info("Get a unique namespace for WebLogic domain");
-    assertNotNull(namespaces.get(3), "Namespace list is null");
-    domainNamespace = namespaces.get(3);
-
-    // install and verify Voyager
-    if (!OKD) {
-      voyagerHelmParams =
-          installAndVerifyVoyager(voyagerNamespace, cloudProvider, enableValidatingWebhook);
-    }
+    assertNotNull(namespaces.get(2), "Namespace list is null");
+    domainNamespace = namespaces.get(2);
 
     // install and verify Traefik
     if (!OKD) {
@@ -179,14 +159,6 @@ class ItStickySession {
 
   @AfterAll
   void tearDown() {
-    // uninstall Voyager
-    if (voyagerHelmParams != null) {
-      assertThat(uninstallVoyager(voyagerHelmParams))
-          .as("Test uninstallVoyager returns true")
-          .withFailMessage("uninstallVoyager() did not return true")
-          .isTrue();
-    }
-
     // uninstall Traefik
     if (traefikHelmParams != null) {
       assertThat(uninstallTraefik(traefikHelmParams))
@@ -194,58 +166,6 @@ class ItStickySession {
           .withFailMessage("uninstallTraefik() did not return true")
           .isTrue();
     }
-  }
-
-  /**
-   * Verify that using Voyager ingress controller, two HTTP requests sent to WebLogic
-   * are directed to same WebLogic server.
-   * The test uses a web application deployed on WebLogic cluster to track HTTP session.
-   * server-affinity is achieved by Voyager ingress controller based on HTTP session information.
-   */
-  @Test
-  @DisplayName("Create a Voyager ingress resource and verify that two HTTP connections are sticky to the same server")
-  @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
-  void testSameSessionStickinessUsingVoyager() {
-    final String ingressName = domainUid + "-ingress-host-routing";
-    final String ingressServiceName = VOYAGER_CHART_NAME + "-" + ingressName;
-    final String channelName = "tcp-80";
-    final int maxRetry = 60;
-
-    // create Voyager ingress resource
-    Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
-    clusterNameMsPortMap.put(clusterName, managedServerPort);
-
-    List<String>  hostNames = null;
-
-    for (int i = 0; i < maxRetry; i++) {
-      hostNames =
-          installVoyagerIngressAndVerify(domainUid, domainNamespace, ingressName, clusterNameMsPortMap);
-      if (hostNames != null && !hostNames.isEmpty()) {
-        break;
-      }
-      try {
-        // sometimes the ingress may not be ready even the condition check is ready, sleep a little bit
-        Thread.sleep(1000);
-      } catch (InterruptedException ignore) {
-        // ignore
-      }
-    }
-
-    testUntil(
-        assertDoesNotThrow(() -> isVoyagerPodReady(domainNamespace, ingressServiceName),
-          String.format("podExists failed with ApiException for pod %s in namespace %s",
-            ingressServiceName, domainNamespace)),
-        logger,
-        "pod {0} to be created in namespace {1}",
-        ingressServiceName,
-        domainNamespace);
-
-    // get Voyager ingress service Nodeport
-    int ingressServiceNodePort =
-        getIngressServiceNodePort(domainNamespace, ingressServiceName, channelName);
-
-    // verify that two HTTP connections are sticky to the same server
-    sendHttpRequestsToTestSessionStickinessAndVerify(hostNames.get(0), ingressServiceNodePort);
   }
 
   /**

@@ -5,7 +5,7 @@
 # This is a YAML-formatted file.
 # Declare variables to be passed into your templates.
 
-# Load balancer type.  Supported values are: TRAEFIK, VOYAGER
+# Load balancer type.  Supported values are: TRAEFIK, NGINX
 type: TRAEFIK
 
 # WLS domain as backend to the load balancer
@@ -19,12 +19,6 @@ traefik:
   # hostname used by host-routing
   hostname: domain1.org
 
-# Voyager specific values
-voyager:
-  # web port
-  webPort: 30305
-  # stats port
-  statsPort: 30315
 
 # NGINX specific values
 nginx:

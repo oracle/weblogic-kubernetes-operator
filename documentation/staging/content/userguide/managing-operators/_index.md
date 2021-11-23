@@ -1,7 +1,7 @@
 ---
 title: "Manage operators"
 date: 2019-02-23T16:43:38-05:00
-weight: 4
+weight: 5
 pre: "<b> </b>"
 description: "Install, configure, and manage the operator."
 ---

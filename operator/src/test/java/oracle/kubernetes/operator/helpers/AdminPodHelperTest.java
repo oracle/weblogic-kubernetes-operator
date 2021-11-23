@@ -17,21 +17,24 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
-import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.LabelConstants;
-import oracle.kubernetes.operator.calls.FailureStatusSourceException;
+import oracle.kubernetes.operator.calls.UnrecoverableCallException;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import org.junit.jupiter.api.Test;
 
+import static oracle.kubernetes.operator.DomainFailureReason.DomainInvalid;
+import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
+import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAUTHORIZED;
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.helpers.DomainIntrospectorJobTest.TEST_VOLUME_NAME;
-import static oracle.kubernetes.operator.helpers.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.POD_CYCLE_STARTING;
 import static oracle.kubernetes.operator.helpers.Matchers.hasContainer;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
@@ -44,6 +47,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_EXISTS;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_PATCHED;
 import static oracle.kubernetes.operator.logging.MessageKeys.ADMIN_POD_REPLACED;
+import static oracle.kubernetes.operator.logging.MessageKeys.CYCLING_POD;
 import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_VALIDATION_FAILED;
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
@@ -72,9 +76,6 @@ class AdminPodHelperTest extends PodHelperTestBase {
   private static final String RAW_MOUNT_PATH_1 = "$(DOMAIN_HOME)/servers/$(SERVER_NAME)";
   private static final String END_MOUNT_PATH_1 = "/u01/oracle/user_projects/domains/servers/ADMIN_SERVER";
   public static final String CUSTOM_MOUNT_PATH2 = "/common1";
-  public static final String TEST_MEDIUM = "TestMedium";
-
-  private TestUtils.ConsoleHandlerMemento consoleHandlerMemento = TestUtils.silenceOperatorLogger();
 
   public AdminPodHelperTest() {
     super(ADMIN_SERVER, ADMIN_PORT);
@@ -179,7 +180,7 @@ class AdminPodHelperTest extends PodHelperTestBase {
   @Test
   void whenDeleteReportsNotFound_replaceAdminPod() {
     initializeExistingPod(getIncompatiblePod());
-    testSupport.failOnDelete(KubernetesTestSupport.POD, getPodName(), NS, CallBuilder.NOT_FOUND);
+    testSupport.failOnDelete(KubernetesTestSupport.POD, getPodName(), NS, HTTP_NOT_FOUND);
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
@@ -196,27 +197,27 @@ class AdminPodHelperTest extends PodHelperTestBase {
   void whenAdminPodDeletionFails_unrecoverableFailureOnUnauthorized() {
     testSupport.addRetryStrategy(retryStrategy);
     initializeExistingPod(getIncompatiblePod());
-    testSupport.failOnDelete(KubernetesTestSupport.POD, getPodName(), NS, 401);
+    testSupport.failOnDelete(KubernetesTestSupport.POD, getPodName(), NS, HTTP_UNAUTHORIZED);
 
     FiberTestSupport.StepFactory stepFactory = getStepFactory();
     Step initialStep = stepFactory.createStepList(terminalStep);
     testSupport.runSteps(initialStep);
 
-    testSupport.verifyCompletionThrowable(FailureStatusSourceException.class);
+    testSupport.verifyCompletionThrowable(UnrecoverableCallException.class);
   }
 
   @Test
   void whenAdminPodReplacementFails() {
     testSupport.addRetryStrategy(retryStrategy);
     initializeExistingPod(getIncompatiblePod());
-    testSupport.failOnCreate(KubernetesTestSupport.POD, getPodName(), NS, 500);
+    testSupport.failOnCreate(KubernetesTestSupport.POD, NS, HTTP_INTERNAL_ERROR);
 
     FiberTestSupport.StepFactory stepFactory = getStepFactory();
     Step initialStep = stepFactory.createStepList(terminalStep);
     testSupport.runSteps(initialStep);
 
-    assertThat(getDomain(), hasStatus("ServerError",
-            "testcall in namespace junit, for testName: failure reported in test"));
+    assertThat(getDomain(),
+          hasStatus().withReason(Kubernetes).withMessageContaining("create", "pod", NS));
   }
 
   @Test
@@ -425,7 +426,7 @@ class AdminPodHelperTest extends PodHelperTestBase {
     testSupport.runSteps(PodHelper.createAdminPodStep(terminalStep));
 
     assertThat(testSupport.getResources(KubernetesTestSupport.POD).isEmpty(), is(true));
-    assertThat(getDomain().getStatus().getReason(), is(DomainStatusUpdater.BAD_DOMAIN));
+    assertThat(getDomain().getStatus().getReason(), is(DomainInvalid.toString()));
     assertThat(logRecords, containsSevere(getDomainValidationFailedKey()));
   }
 
@@ -831,14 +832,14 @@ class AdminPodHelperTest extends PodHelperTestBase {
   @Test
   void whenDomainHomeChanged_generateExpectedLogMessage()
       throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-    consoleHandlerMemento.collectLogMessages(logRecords, getCyclePodKey());
+    getConsoleHandlerMemento().trackMessage(CYCLING_POD);
     initializeExistingPod();
     getConfiguredDomainSpec().setDomainHome("adfgg");
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
     assertThat(logRecords, containsInfo(getReplacedMessageKey()));
-    assertThat(logRecords, containsInfo(getCyclePodKey()));
+    assertThat(logRecords, containsInfo(CYCLING_POD));
   }
 
   private V1Pod createTestPodModel() {

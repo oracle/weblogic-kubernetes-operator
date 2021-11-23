@@ -27,27 +27,29 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
-import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
-import static oracle.weblogic.kubernetes.actions.TestActions.createIngress;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.listIngresses;
 import static oracle.weblogic.kubernetes.actions.impl.Service.getServiceNodePort;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.isVoyagerReady;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReturnedCode;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createSSLenabledMiiDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createIngressAndRetryIfFail;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyTraefik;
-import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyVoyager;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.setTargetPortForRoute;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -59,18 +61,20 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+/** In OKD cluster, we do not use thrid party loadbalancers, so the tests that
+ * specifically test nginx or traefik are diasbled for OKD cluster. A test
+ * using routes are added to run only on OKD cluster.
+*/
+
 @DisplayName("Test WebLogic remote console connecting to mii domain")
 @IntegrationTest
 class ItRemoteConsole {
 
   private static String domainNamespace = null;
   private static String traefikNamespace = null;
-  private static String voyagerNamespace = null;
   private static String nginxNamespace = null;
   private static HelmParams traefikHelmParams = null;
-  private static HelmParams voyagerHelmParams = null;
   private static HelmParams nginxHelmParams = null;
-  private static int voyagerNodePort;
   private static int nginxNodePort;
 
   // domain constants
@@ -80,7 +84,7 @@ class ItRemoteConsole {
   private static final String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
   private static LoggingFacade logger = null;
   private static final int ADMIN_SERVER_PORT = 7001;
-  private static final String voyagerIngressName = "voyager-path-routing";
+  private static String adminSvcExtHost = null;
 
   /**
    * Get namespaces for operator and WebLogic domain.
@@ -89,7 +93,7 @@ class ItRemoteConsole {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(5) List<String> namespaces) {
+  public static void initAll(@Namespaces(4) List<String> namespaces) {
     logger = getLogger();
     // get a unique operator namespace
     logger.info("Getting a unique namespace for operator");
@@ -105,31 +109,22 @@ class ItRemoteConsole {
     assertNotNull(namespaces.get(2), "Namespace list is null");
     traefikNamespace = namespaces.get(2);
 
-    // get a unique Voyager namespace
-    logger.info("Assign a unique namespace for Voyager");
-    assertNotNull(namespaces.get(3), "Namespace list is null");
-    voyagerNamespace = namespaces.get(3);
-
     // get a unique Nginx namespace
     logger.info("Assign a unique namespace for Nginx");
-    assertNotNull(namespaces.get(4), "Namespace list is null");
-    nginxNamespace = namespaces.get(4);
+    assertNotNull(namespaces.get(3), "Namespace list is null");
+    nginxNamespace = namespaces.get(3);
 
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
 
-    // install and verify Traefik
-    logger.info("Installing Traefik controller using helm");
-    traefikHelmParams = installAndVerifyTraefik(traefikNamespace, 0, 0);
+    if (!OKD) {
+      logger.info("Installing Traefik controller using helm");
+      traefikHelmParams = installAndVerifyTraefik(traefikNamespace, 0, 0);
 
-    // install and verify Voyager
-    final String cloudProvider = "baremetal";
-    final boolean enableValidatingWebhook = false;
-    voyagerHelmParams =
-        installAndVerifyVoyager(voyagerNamespace, cloudProvider, enableValidatingWebhook);
 
-    // install and verify Nginx
-    nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
+      // install and verify Nginx
+      nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
+    }
 
     createSSLenabledMiiDomainAndVerify(
         domainNamespace,
@@ -139,10 +134,11 @@ class ItRemoteConsole {
         managedServerPrefix,
         replicaCount);
 
-    // create ingress rules with path routing for Traefik, Voyager and NGINX
-    createTraefikIngressRoutingRules(domainNamespace);
-    createVoyagerIngressPathRoutingRules();
-    createNginxIngressPathRoutingRules();
+    // create ingress rules with path routing for Traefik and NGINX
+    if (!OKD) {
+      createTraefikIngressRoutingRules(domainNamespace);
+      createNginxIngressPathRoutingRules();
+    }
 
     // install WebLogic remote console
     assertTrue(installAndVerifyWlsRemoteConsole(domainNamespace, adminServerPodName),
@@ -153,10 +149,11 @@ class ItRemoteConsole {
   }
 
   /**
-   * Verify k8s WebLogic domain is accessible through remote console using Traefik.
+   * Access WebLogic domain through remote console using Traefik.
    */
   @Test
   @DisplayName("Verify Connecting to Mii domain WLS Remote Console through Traefik is successful")
+  @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   void testWlsRemoteConsoleConnectionThroughTraefik() {
 
     int traefikNodePort = getServiceNodePort(traefikNamespace, traefikHelmParams.getReleaseName(), "web");
@@ -174,30 +171,11 @@ class ItRemoteConsole {
   }
 
   /**
-   * Verify k8s WebLogic domain is accessible through remote console using Voyager.
-   */
-  @Test
-  @DisplayName("Verify Connecting to Mii domain WLS Remote Console through Voyager is successful")
-  void testWlsRemoteConsoleConnectionThroughVoyager() {
-
-    assertTrue(voyagerNodePort != -1, "Could not get the default external service node port");
-    logger.info("Found the Voyager service nodePort {0}", voyagerNodePort);
-    logger.info("The K8S_NODEPORT_HOST is {0}", K8S_NODEPORT_HOST);
-
-    String curlCmd = "curl -v --user weblogic:welcome1 -H Content-Type:application/json -d "
-        + "\"{ \\" + "\"domainUrl\\" + "\"" + ": " + "\\" + "\"" + "http://"
-        + K8S_NODEPORT_HOST + ":" + voyagerNodePort + "\\" + "\" }" + "\""
-        + " http://localhost:8012/api/connection  --write-out %{http_code} -o /dev/null";
-    logger.info("Executing Voyager nodeport curl command {0}", curlCmd);
-    assertTrue(callWebAppAndWaitTillReturnedCode(curlCmd, "201", 10), "Calling web app failed");
-    logger.info("WebLogic domain is accessible through remote console using Voyager");
-  }
-
-  /**
-   * Verify k8s WebLogic domain is accessible through remote console using NGINX.
+   * Access WebLogic domain through remote console using NGINX.
    */
   @Test
   @DisplayName("Verify Connecting to Mii domain WLS Remote Console through NGINX is successful")
+  @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   void testWlsRemoteConsoleConnectionThroughNginx() {
 
     assertTrue(nginxNodePort != -1, "Could not get the default external service node port");
@@ -224,11 +202,21 @@ class ItRemoteConsole {
     assertTrue(sslNodePort != -1,
           "Could not get the default-secure external service node port");
     logger.info("Found the administration service nodePort {0}", sslNodePort);
-    logger.info("The K8S_NODEPORT_HOST is {0}", K8S_NODEPORT_HOST);
+
+    //expose the admin server external service to access the console in OKD cluster
+    //set the sslPort as the target port
+    String adminSvcSslPortExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName),
+                    domainNamespace, "domain1-admin-server-sslport-ext");
+    setTlsTerminationForRoute("domain1-admin-server-sslport-ext", domainNamespace);
+    int sslPort = getServicePort(
+         domainNamespace, getExternalServicePodName(adminServerPodName), "default-secure");
+    setTargetPortForRoute("domain1-admin-server-sslport-ext", domainNamespace, sslPort);
+    String hostAndPort = getHostAndPort(adminSvcSslPortExtHost, sslNodePort);
+    logger.info("The hostAndPort is {0}", hostAndPort);
 
     //verify WebLogic console is accessible through default-secure nodeport
     String curlCmd = "curl -sk --show-error --noproxy '*' "
-          + " https://" + K8S_NODEPORT_HOST + ":" + sslNodePort
+          + " https://" + hostAndPort
           + "/console/login/LoginForm.jsp --write-out %{http_code} -o /dev/null";
     logger.info("Executing WebLogic console default-secure nodeport curl command {0}", curlCmd);
     assertTrue(callWebAppAndWaitTillReady(curlCmd, 10));
@@ -238,7 +226,7 @@ class ItRemoteConsole {
     curlCmd = "curl -sk -v --show-error --noproxy '*' --user weblogic:welcome1 -H "
         + "Content-Type:application/json -d "
         + "\"{ \\" + "\"domainUrl\\" + "\"" + ": " + "\\" + "\"" + "https://"
-        + K8S_NODEPORT_HOST + ":" + sslNodePort + "\\" + "\" }" + "\""
+        + hostAndPort + "\\" + "\" }" + "\""
         + " http://localhost:8012/api/connection  --write-out %{http_code} -o /dev/null";
     logger.info("Executing remote console default-secure nodeport curl command {0}", curlCmd);
     assertTrue(callWebAppAndWaitTillReturnedCode(curlCmd, "201", 10), "Calling web app failed");
@@ -281,61 +269,6 @@ class ItRemoteConsole {
     } catch (IOException | InterruptedException ex) {
       logger.severe(ex.getMessage());
     }
-  }
-
-  private static void createVoyagerIngressPathRoutingRules() {
-
-    // set the annotations for Voyager
-    HashMap<String, String> annotations = new HashMap<>();
-    annotations.put("ingress.appscode.com/type", "NodePort");
-    annotations.put("kubernetes.io/ingress.class", "voyager");
-    annotations.put("ingress.appscode.com/rewrite-target", "/");
-
-    List<NetworkingV1beta1IngressRule> ingressRules = new ArrayList<>();
-    List<NetworkingV1beta1HTTPIngressPath> httpIngressPaths = new ArrayList<>();
-
-    NetworkingV1beta1HTTPIngressPath httpIngressPath = new NetworkingV1beta1HTTPIngressPath()
-        .path("/")
-        .backend(new NetworkingV1beta1IngressBackend()
-            .serviceName(domainUid + "-admin-server")
-            .servicePort(new IntOrString(ADMIN_SERVER_PORT))
-        );
-    httpIngressPaths.add(httpIngressPath);
-
-    NetworkingV1beta1IngressRule ingressRule = new NetworkingV1beta1IngressRule()
-        .host("")
-        .http(new NetworkingV1beta1HTTPIngressRuleValue()
-            .paths(httpIngressPaths));
-
-    ingressRules.add(ingressRule);
-
-    assertDoesNotThrow(() -> createIngress(voyagerIngressName, domainNamespace, annotations, ingressRules, null));
-
-    // wait until voyager ingress pod is ready
-    testUntil(
-        assertDoesNotThrow(() -> isVoyagerReady(domainNamespace, voyagerIngressName),
-          "isVoyagerReady failed with ApiException"),
-        logger,
-        "Voyager ingress to be ready in namespace {0}",
-        domainNamespace);
-
-    // check the ingress was found in the domain namespace
-    assertThat(assertDoesNotThrow(() -> listIngresses(domainNamespace)))
-        .as(String.format("Test ingress %s was found in namespace %s", voyagerIngressName, domainNamespace))
-        .withFailMessage(String.format("Ingress %s was not found in namespace %s", voyagerIngressName, domainNamespace))
-        .contains(voyagerIngressName);
-
-    logger.info("ingress {0} was created in namespace {1}", voyagerIngressName, domainNamespace);
-
-    // check the ingress is ready to route the app to the server pod
-    voyagerNodePort = assertDoesNotThrow(() ->
-            getServiceNodePort(domainNamespace, VOYAGER_CHART_NAME + "-" + voyagerIngressName, "tcp-80"),
-        "Getting voyager loadbalancer service node port failed");
-    String curlCmd = "curl --silent --show-error --noproxy '*' http://" + K8S_NODEPORT_HOST + ":" + voyagerNodePort
-        + "/weblogic/ready --write-out %{http_code} -o /dev/null";
-
-    logger.info("Executing curl command {0}", curlCmd);
-    assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
   }
 
   private static void createNginxIngressPathRoutingRules() {
@@ -394,9 +327,15 @@ class ItRemoteConsole {
     logger.info("Found the default service nodePort {0}", nodePort);
     logger.info("The K8S_NODEPORT_HOST is {0}", K8S_NODEPORT_HOST);
 
+    if (adminSvcExtHost == null) {
+      adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
+    }
+    logger.info("admin svc host = {0}", adminSvcExtHost);
+    String hostAndPort = getHostAndPort(adminSvcExtHost, nodePort);
+
     String curlCmd = "curl -v --show-error --noproxy '*' --user weblogic:welcome1 -H Content-Type:application/json -d "
         + "\"{ \\" + "\"domainUrl\\" + "\"" + ": " + "\\" + "\"" + "http://"
-        + K8S_NODEPORT_HOST + ":" + nodePort + "\\" + "\" }" + "\""
+        + hostAndPort + "\\" + "\" }" + "\""
         + " http://localhost:8012/api/connection  --write-out %{http_code} -o /dev/null";
     logger.info("Executing default nodeport curl command {0}", curlCmd);
     assertTrue(callWebAppAndWaitTillReturnedCode(curlCmd, "201", 10), "Calling web app failed");

@@ -161,7 +161,7 @@ class DomainValidationStepTest {
     testSupport.runSteps(domainValidationSteps);
 
     Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
-    assertThat(getStatusReason(updatedDomain), equalTo("ErrBadDomain"));
+    assertThat(getStatusReason(updatedDomain), equalTo("DomainInvalid"));
     assertThat(getStatusMessage(updatedDomain), stringContainsInOrder("managedServers", "ms1"));
   }
 
@@ -195,7 +195,7 @@ class DomainValidationStepTest {
     testSupport.runSteps(domainValidationSteps);
 
     Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
-    assertThat(getStatusReason(updatedDomain), equalTo("ErrBadDomain"));
+    assertThat(getStatusReason(updatedDomain), equalTo("DomainInvalid"));
     assertThat(getStatusMessage(updatedDomain), stringContainsInOrder("name", "not found", NS));
   }
 

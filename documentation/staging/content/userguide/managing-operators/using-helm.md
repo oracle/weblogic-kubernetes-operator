@@ -152,7 +152,7 @@ kubernetesPlatform: OpenShift
 ##### `image`
 Specifies the container image containing the operator code.
 
-Defaults to `ghcr.io/oracle/weblogic-kubernetes-operator:3.3.2`.
+Defaults to `ghcr.io/oracle/weblogic-kubernetes-operator:{{< latestVersion >}}`.
 
 Example:
 ```yaml
@@ -411,6 +411,13 @@ Specifies if the operator needs to reserve additional padding when validating th
 Defaults to `true`.
 
 If `clusterSizePaddingValidationEnabed` is set to true, two additional characters will be reserved if the configured cluster's size is between one and nine, and one additional character will be reserved if the configured cluster's size is between 10 and 99. No additional character is reserved if the configured cluster's size is greater than 99.
+
+##### `istioLocalhostBindingsEnabled`
+
+Default for the domain resource `domain.spec.configuration.istio.localhostBindingsEnabled` setting.
+
+For more information, see [Configuring the domain resource]({{< relref "/userguide/istio/istio.md#configuring-the-domain-resource" >}})
+in the Istio chapter.
 
 #### Elastic Stack integration
 

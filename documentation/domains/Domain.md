@@ -55,6 +55,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | --- | --- | --- |
 | `clusters` | Array of [Cluster Status](#cluster-status) | Status of WebLogic clusters in this domain. |
 | `conditions` | Array of [Domain Condition](#domain-condition) | Current service state of the domain. |
+| `failedIntrospectionUid` | string | Unique ID of the last failed introspection job. |
 | `introspectJobFailureCount` | number | Non-zero if the introspector job fails for any reason. You can configure an introspector job retry limit for jobs that log script failures using the Operator tuning parameter 'domainPresenceFailureRetryMaxCount' (default 5). You cannot configure a limit for other types of failures, such as a Domain resource reference to an unknown secret name; in which case, the retries are unlimited. |
 | `message` | string | A human readable message indicating details about why the domain is in this condition. |
 | `reason` | string | A brief CamelCase message indicating details about why the domain is in this state. |
@@ -189,7 +190,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `message` | string | Human-readable message indicating details about last transition. |
 | `reason` | string | Unique, one-word, CamelCase reason for the condition's last transition. |
 | `status` | string | The status of the condition. Can be True, False, Unknown. |
-| `type` | string | The type of the condition. Valid types are Progressing, Available, Failed, and ConfigChangesPendingRestart. |
+| `type` | string | The type of the condition. Valid types are Completed, Available, Failed, and ConfigChangesPendingRestart. |
 
 ### Server Status
 
@@ -223,7 +224,9 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | Name | Type | Description |
 | --- | --- | --- |
 | `enabled` | Boolean | True, if this domain is deployed under an Istio service mesh. Defaults to true when the `istio` field is specified. |
-| `readinessPort` | number | The operator will create a WebLogic network access point with this port that will then be exposed from the container running the WebLogic Server instance. The readiness probe will use this network access point to verify that the server instance is ready for application traffic. Defaults to 8888. |
+| `localhostBindingsEnabled` | Boolean | This setting was added in operator version 3.3.3, defaults to the `istioLocalhostBindingsEnabled` Helm install value which in turn defaults to `true`, and is ignored in version 4.0 and later. In version 3.x, when `true`, the operator creates a WebLogic network access point with a `localhost` binding for each existing channel and protocol.  In version 3.x, use `true` for Istio versions prior to 1.10 and set to `false` for version 1.10 and later.  Version 4.0 and later requires Istio 1.10 and later, will not create localhost bindings, and ignores this attribute. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-operators/using-helm/#istiolocalhostbindingsenabled |
+| `readinessPort` | number | The operator will create WebLogic network access points with this port on each WebLogic Server. The readiness probe on each pod will use these network access points to verify that the pod is ready for application traffic. Defaults to 8888. |
+| `replicationChannelPort` | number | The operator will create a `T3` protocol WebLogic network access point on each WebLogic Server that is part of a cluster with this port to handle EJB and servlet session state replication traffic between servers. This setting is ignored for clusters where the WebLogic cluster configuration already defines a `replication-channel` attribute. Defaults to 4564. |
 
 ### Model
 

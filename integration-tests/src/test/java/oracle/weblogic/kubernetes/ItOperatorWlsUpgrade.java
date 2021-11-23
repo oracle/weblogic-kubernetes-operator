@@ -54,6 +54,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_GITHUB_CHART_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.SSL_PROPERTIES;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -165,14 +166,14 @@ class ItOperatorWlsUpgrade {
   }
 
   /**
-   * Operator upgrade from 3.3.1 to latest.
+   * Operator upgrade from 3.3.3 to latest.
    */
   @ParameterizedTest
-  @DisplayName("Upgrade Operator from 3.3.1 to main")
+  @DisplayName("Upgrade Operator from 3.3.3 to main")
   @ValueSource(strings = { "domain-in-image", "model-in-image" })
-  void testOperatorWlsUpgradeFrom331ToMain(String domainType) {
+  void testOperatorWlsUpgradeFrom333ToMain(String domainType) {
     logger.info("Starting test testOperatorWlsUpgradeFrom331ToMain with domain type {0}", domainType);
-    upgradeOperator(domainType, "3.3.1", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+    upgradeOperator(domainType, "3.3.3", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
@@ -472,7 +473,7 @@ class ItOperatorWlsUpgrade {
                     .serverPod(new ServerPod()
                             .addEnvItem(new V1EnvVar()
                                     .name("JAVA_OPTIONS")
-                                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                                    .value(SSL_PROPERTIES))
                             .addEnvItem(new V1EnvVar()
                                     .name("USER_MEM_ARGS")
                                     .value("-Djava.security.egd=file:/dev/./urandom ")))
@@ -504,10 +505,14 @@ class ItOperatorWlsUpgrade {
         "Getting admin server node port failed");
 
     logger.info("Validating WebLogic admin server access by login to console");
-    boolean loginSuccessful = assertDoesNotThrow(() -> {
-      return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-    }, "Access to admin server node port failed");
-    assertTrue(loginSuccessful, "Console login validation failed");
+    //boolean loginSuccessful = assertDoesNotThrow(() -> {
+    testUntil(
+        assertDoesNotThrow(() -> {
+          return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+        }, "Access to admin server node port failed"),
+        logger,
+        "Console login validation");
+    //assertTrue(loginSuccessful, "Console login validation failed");
   }
   
   private void createDomainHomeInImageFromDomainYaml(
@@ -558,10 +563,14 @@ class ItOperatorWlsUpgrade {
         "Getting admin server node port failed");
 
     logger.info("Validating WebLogic admin server access by login to console");
-    boolean loginSuccessful = assertDoesNotThrow(() -> {
-      return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-    }, "Access to admin server node port failed");
-    assertTrue(loginSuccessful, "Console login validation failed");
+    //boolean loginSuccessful = assertDoesNotThrow(() -> {
+    testUntil(
+        assertDoesNotThrow(() -> {
+          return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+        }, "Access to admin server node port failed"),
+        logger,
+        "Console login validation");
+    //assertTrue(loginSuccessful, "Console login validation failed");
   }
 
   private String getApiVersion(String operatorVersion) {

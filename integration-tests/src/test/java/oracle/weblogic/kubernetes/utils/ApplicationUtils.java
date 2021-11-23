@@ -22,15 +22,19 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withQuickRetryPol
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ApplicationUtils {
   /**
    * Check the application running in WebLogic server using host information in the header.
    * @param url url to access the application
    * @param hostHeader host information to be passed as http header
+   * @param args arguments to determine whether to check the console accessible or not
    * @return true if curl command returns HTTP code 200 otherwise false
    */
-  public static boolean checkAppUsingHostHeader(String url, String hostHeader) {
+  public static boolean checkAppUsingHostHeader(String url, String hostHeader, Boolean... args) {
+    boolean checkConsoleAccessible = (args.length == 0) ? true : false;
     LoggingFacade logger = getLogger();
     StringBuffer curlString = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
     StringBuffer headerString = null;
@@ -41,7 +45,7 @@ public class ApplicationUtils {
     } else {
       headerString = new StringBuffer("");
     }
-    curlString.append(" --noproxy '*' ")
+    curlString.append(" -sk --noproxy '*' ")
         .append(" --silent --show-error ")
         .append(headerString.toString())
         .append(url)
@@ -49,11 +53,21 @@ public class ApplicationUtils {
         .append(" -w %{http_code});")
         .append("echo ${status}");
     logger.info("checkAppUsingHostInfo: curl command {0}", new String(curlString));
-    testUntil(
-        assertDoesNotThrow(() -> () -> exec(new String(curlString), true).stdout().contains("200")),
-        logger,
-        "application to be ready {0}",
-        url);
+
+    if (checkConsoleAccessible) {
+      testUntil(
+          assertDoesNotThrow(() -> () -> exec(new String(curlString), true).stdout().contains("200")),
+          logger,
+          "application to be ready {0}",
+          url);
+    } else {
+      try {
+        return exec(new String(curlString), true).stdout().contains("200");
+      } catch (Exception ex) {
+        logger.info("Failed to exec command {0}. Caught exception {1}", curlString.toString(), ex.getMessage());
+        return false;
+      }
+    }
     return true;
   }
 
@@ -110,6 +124,26 @@ public class ApplicationUtils {
       String username,
       String password
   ) {
+    return checkAppIsActive(host + ":" + port, headers, application, target, username, password);
+  }
+
+  /**
+   * Check if the the application is active for a given weblogic target.
+   * @param hostAndPort String containing host:port or routename for OKD cluster
+   * @param headers extra header info to pass to the REST url
+   * @param application name of the application
+   * @param target the weblogic target for the application
+   * @param username username to log into the system
+   * @param password password for the username
+   */
+  public static boolean checkAppIsActive(
+      String hostAndPort,
+      String headers,
+      String application,
+      String target,
+      String username,
+      String password
+  ) {
 
     LoggingFacade logger = getLogger();
     String curlString = String.format("curl -v --show-error --noproxy '*' "
@@ -118,8 +152,8 @@ public class ApplicationUtils {
         + "-H Content-Type:application/json "
         + " -d \"{ target: '" + target + "' }\" "
         + " -X POST "
-        + "http://%s:%s/management/weblogic/latest/domainRuntime/deploymentManager/appDeploymentRuntimes/"
-        + application + "/getState", host, port);
+        + "http://%s/management/weblogic/latest/domainRuntime/deploymentManager/appDeploymentRuntimes/"
+        + application + "/getState", hostAndPort);
 
     logger.info("curl command {0}", curlString);
     testUntil(
@@ -375,4 +409,40 @@ public class ApplicationUtils {
     return false;
   }
 
+  /**
+   * verify admin console accessible.
+   *
+   * @param domainNamespace namespace of the domain
+   * @param hostName host name to access WLS console
+   * @param port port number to access WLS console
+   * @param secureMode true to access WLS console via ssh channel, false otherwise
+   * @param args arguments to determine whether to check the console accessible or not
+   */
+  public static void verifyAdminConsoleAccessible(String domainNamespace,
+                                                  String hostName,
+                                                  String port,
+                                                  boolean secureMode,
+                                                  Boolean... args) {
+    boolean checkConsoleAccessible = (args.length == 0) ? true : false;
+    LoggingFacade logger = getLogger();
+    String httpKey = "http://";
+    if (secureMode) {
+      // Since WLS servers use self-signed certificates, it's ok to use --insecure option
+      // to ignore SSL/TLS certificate errors:
+      // curl: (60) SSL certificate problem: Invalid certificate chain
+      // and explicitly allows curl to perform “insecure” SSL connections and transfers
+      httpKey = " --insecure https://";
+    }
+    String consoleUrl = httpKey + hostName + ":" + port + "/console/login/LoginForm.jsp";
+
+    boolean checkConsole = assertDoesNotThrow(() ->
+        checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org", args));
+    if (checkConsoleAccessible) {
+      assertTrue(checkConsole, "Failed to access WebLogic console");
+      logger.info("WebLogic console is accessible");
+    } else {
+      assertFalse(checkConsole, "Shouldn't be able to access WebLogic console");
+      logger.info("WebLogic console is not accessible");
+    }
+  }
 }

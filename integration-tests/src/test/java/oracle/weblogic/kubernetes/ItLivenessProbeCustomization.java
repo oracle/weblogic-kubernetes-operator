@@ -51,12 +51,12 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomReso
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.copyFileToPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appNotAccessibleInPod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.FileUtils.checkCopyFileToPod;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
@@ -165,10 +165,14 @@ class ItLivenessProbeCustomization {
 
         // copy script to pod
         String destLocation = "/u01/tempFile.txt";
-        assertDoesNotThrow(() -> copyFileToPod(domainNamespace, managedServerPodName, "weblogic-server",
-            tempFile.toPath(), Paths.get(destLocation)),
-            String.format("Failed to copy file %s to pod %s in namespace %s",
-            tempFile, managedServerPodName, domainNamespace));
+        testUntil(
+            checkCopyFileToPod(domainNamespace, managedServerPodName, "weblogic-server",
+                tempFile.toPath(), Paths.get(destLocation)),
+            logger,
+            "copying file {0} to pod {1} in namspace {2}",
+            tempFile.toPath(),
+            managedServerPodName,
+            domainNamespace);
         logger.info("File copied to Pod {0} in namespace {1}", managedServerPodName, domainNamespace);
 
         String expectedStr = "Hello World, you have reached server "
@@ -338,10 +342,14 @@ class ItLivenessProbeCustomization {
             managedServerPodName, beforeRestartCount);
 
         String destLocation = "/u01/tempFile.txt";
-        assertDoesNotThrow(() -> copyFileToPod(domainNamespace, managedServerPodName, "weblogic-server",
-            tempFile.toPath(), Paths.get(destLocation)),
-            String.format("Failed to copy file %s to pod %s in namespace %s",
-                tempFile, managedServerPodName, domainNamespace));
+        testUntil(
+            checkCopyFileToPod(domainNamespace, managedServerPodName, "weblogic-server",
+                tempFile.toPath(), Paths.get(destLocation)),
+            logger,
+            "copying file {0} to pod {1} in namspace {2}",
+            tempFile.toPath(),
+            managedServerPodName,
+            domainNamespace);
         logger.info("File copied to Pod {0} in namespace {1}", managedServerPodName, domainNamespace);
 
         // check the pod should be restarted after 1m since the livenessProbe periodSeconds is changed to 30s.
