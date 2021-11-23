@@ -7,24 +7,31 @@ description: "Help for common installing and upgrading mistakes."
 
 #### Contents
 
-- [Deleting and recreating a namespace that an operator manages without informing the operator](#deleting-and-recreating-a-namespace-that-an-operator-manages-without-informing-the-operator)
-- [Forgetting to configure the operator to monitor a namespace](#forgetting-to-configure-the-operator-to-monitor-a-namespace)
-- [Installing the operator a second time into the same namespace](#installing-the-operator-a-second-time-into-the-same-namespace)
-- [Installing an operator and having it manage a domain namespace that another operator is already managing](#installing-an-operator-and-having-it-manage-a-domain-namespace-that-another-operator-is-already-managing)
-- [Upgrading an operator and having it manage a domain namespace that another operator is already managing](#upgrading-an-operator-and-having-it-manage-a-domain-namespace-that-another-operator-is-already-managing)
-- [Installing an operator and assigning it the same external REST port number as another operator](#installing-an-operator-and-assigning-it-the-same-external-rest-port-number-as-another-operator)
-- [Upgrading an operator and assigning it the same external REST port number as another operator](#upgrading-an-operator-and-assigning-it-the-same-external-rest-port-number-as-another-operator)
-- [Installing an operator and assigning it a service account that doesn't exist](#installing-an-operator-and-assigning-it-a-service-account-that-doesnt-exist)
-- [Upgrading an operator and assigning it a service account that doesn't exist](#upgrading-an-operator-and-assigning-it-a-service-account-that-doesnt-exist)
-- [Installing an operator and having it manage a domain namespace that doesn't exist](#installing-an-operator-and-having-it-manage-a-domain-namespace-that-doesnt-exist)
-- [Upgrading an operator and having it manage a domain namespace that doesn't exist](#upgrading-an-operator-and-having-it-manage-a-domain-namespace-that-doesnt-exist)
+- [Namespace related](#namespace-related)
+  - [Deleting and recreating a namespace that an operator manages without informing the operator](#deleting-and-recreating-a-namespace-that-an-operator-manages-without-informing-the-operator)
+  - [Forgetting to configure the operator to monitor a namespace](#forgetting-to-configure-the-operator-to-monitor-a-namespace)
+  - [Installing the operator a second time into the same namespace](#installing-the-operator-a-second-time-into-the-same-namespace)
+  - [Installing an operator and having it manage a domain namespace that another operator is already managing](#installing-an-operator-and-having-it-manage-a-domain-namespace-that-another-operator-is-already-managing)
+  - [Upgrading an operator and having it manage a domain namespace that another operator is already managing](#upgrading-an-operator-and-having-it-manage-a-domain-namespace-that-another-operator-is-already-managing)
+  - [Installing an operator and having it manage a domain namespace that doesn't exist](#installing-an-operator-and-having-it-manage-a-domain-namespace-that-doesnt-exist)
+  - [Upgrading an operator and having it manage a domain namespace that doesn't exist](#upgrading-an-operator-and-having-it-manage-a-domain-namespace-that-doesnt-exist)
+- [REST port conflict](#rest-port-conflict)
+  - [Installing an operator and assigning it the same external REST port number as another operator](#installing-an-operator-and-assigning-it-the-same-external-rest-port-number-as-another-operator)
+  - [Upgrading an operator and assigning it the same external REST port number as another operator](#upgrading-an-operator-and-assigning-it-the-same-external-rest-port-number-as-another-operator)
+- [Missing service account](#missing-service-account)
+  - [Installing an operator and assigning it a service account that doesn't exist](#installing-an-operator-and-assigning-it-a-service-account-that-doesnt-exist)
+  - [Upgrading an operator and assigning it a service account that doesn't exist](#upgrading-an-operator-and-assigning-it-a-service-account-that-doesnt-exist)
 
-#### Deleting and recreating a namespace that an operator manages without informing the operator
+#### Namespace related
+
+Common namespace related mistakes.
+
+##### Deleting and recreating a namespace that an operator manages without informing the operator
 
 If you create a new domain in a namespace that is deleted and recreated, the domain does not start up until you notify the operator.
 For more details about the problem and solutions, see [Namespaces]({{<relref "/userguide/managing-operators/namespace-management.md">}}).
 
-#### Forgetting to configure the operator to monitor a namespace
+##### Forgetting to configure the operator to monitor a namespace
 
 If it appears that an operator is not managing a domain resource, for example:
 - A domain YAML file is deployed and no introspector or WebLogic Server pods start.
@@ -35,7 +42,7 @@ Then check to make sure that the Domain's namespace has been set up to be monito
 
 For more information, see [Namespaces]({{<relref "/userguide/managing-operators/namespace-management.md">}}).
 
-#### Installing the operator a second time into the same namespace
+##### Installing the operator a second time into the same namespace
 
 A new `FAILED` Helm release is created.
 ```shell
@@ -55,7 +62,7 @@ Both the previous and new release own the resources created by the previous oper
 
 See https://github.com/helm/helm/issues/2349.
 
-#### Installing an operator and having it manage a domain namespace that another operator is already managing
+##### Installing an operator and having it manage a domain namespace that another operator is already managing
 
 A new `FAILED` Helm release is created.
 ```shell
@@ -73,7 +80,7 @@ To recover:
   - This recreates the role binding.
   - There might be intermittent failures in the operator for the period of time when the role binding was deleted.
 
-#### Upgrading an operator and having it manage a domain namespace that another operator is already managing
+##### Upgrading an operator and having it manage a domain namespace that another operator is already managing
 
 The `helm upgrade` succeeds, and silently adopts the resources the first operator's Helm chart created in the domain namespace (for example, `rolebinding`), and, if you also instructed it to stop managing another domain namespace, it abandons the role binding it created in that namespace.
 
@@ -82,60 +89,7 @@ For example, if you delete this release, then the first operator will end up wit
 * This can be fixed by just upgrading the Helm release.
 * This may also be fixed by rolling back the Helm release.
 
-#### Installing an operator and assigning it the same external REST port number as another operator
-
-A new `FAILED` Helm release is created.
-```shell
-$ helm install --no-hooks --name op2 --namespace myuser-op2-ns --values o.yaml kubernetes/charts/weblogic-operator
-```
-```
-Error: release op2 failed: Service "external-weblogic-operator-svc" is invalid: spec.ports[0].nodePort: Invalid value: 31023: provided port is already allocated
-```
-
-To recover:
-
-- $ `helm delete --purge` the failed release.
-- Change the port number and `helm install` the second operator again.
-
-#### Upgrading an operator and assigning it the same external REST port number as another operator
-
-The `helm upgrade` fails and moves the release to the `FAILED` state.
-```shell
-$ helm upgrade --no-hooks --values o23.yaml op2 kubernetes/charts/weblogic-operator --wait
-```
-```
-Error: UPGRADE FAILED: Service "external-weblogic-operator-svc" is invalid: spec.ports[0].nodePort: Invalid value: 31023: provided port is already allocated
-```
-
-* You can fix this by upgrading the Helm release (to fix the port number).
-* You can also fix this by rolling back the Helm release.
-
-#### Installing an operator and assigning it a service account that doesn't exist
-
-The following `helm install` command fails because it tries to install an operator release with a non-existing service account `op2-sa`.
-```shell
-$ helm install op2 kubernetes/charts/weblogic-operator --namespace myuser-op2-ns --set serviceAccount=op2-sa --wait --no-hooks
-```
-
-The output contains the following error message.
-```
-ServiceAccount op2-sa not found in namespace myuser-op2-ns
-```
-To recover:
-
-- Create the service account.
-- `helm install` again.
-
-#### Upgrading an operator and assigning it a service account that doesn't exist
-
-The `helm upgrade` with a non-existing service account fails with the same error message as mentioned in the previous section, and the existing operator deployment stays unchanged.
-
-To recover:
-
-- Create the service account.
-- `helm upgrade` again.
-
-#### Installing an operator and having it manage a domain namespace that doesn't exist
+##### Installing an operator and having it manage a domain namespace that doesn't exist
 
 A new `FAILED` Helm release is created.
 ```shell
@@ -151,7 +105,7 @@ To recover:
 - Create the domain namespace.
 - `helm install` again.
 
-#### Upgrading an operator and having it manage a domain namespace that doesn't exist
+##### Upgrading an operator and having it manage a domain namespace that doesn't exist
 
 The `helm upgrade` fails and moves the release to the `FAILED` state.
 ```shell
@@ -164,4 +118,65 @@ To recover:
 
 - `helm rollback`
 - Create the domain namespace.
+- `helm upgrade` again.
+
+#### REST port conflict
+
+REST port conflict related.
+
+##### Installing an operator and assigning it the same external REST port number as another operator
+
+A new `FAILED` Helm release is created.
+```shell
+$ helm install --no-hooks --name op2 --namespace myuser-op2-ns --values o.yaml kubernetes/charts/weblogic-operator
+```
+```
+Error: release op2 failed: Service "external-weblogic-operator-svc" is invalid: spec.ports[0].nodePort: Invalid value: 31023: provided port is already allocated
+```
+
+To recover:
+
+- $ `helm delete --purge` the failed release.
+- Change the port number and `helm install` the second operator again.
+
+##### Upgrading an operator and assigning it the same external REST port number as another operator
+
+The `helm upgrade` fails and moves the release to the `FAILED` state.
+```shell
+$ helm upgrade --no-hooks --values o23.yaml op2 kubernetes/charts/weblogic-operator --wait
+```
+```
+Error: UPGRADE FAILED: Service "external-weblogic-operator-svc" is invalid: spec.ports[0].nodePort: Invalid value: 31023: provided port is already allocated
+```
+
+* You can fix this by upgrading the Helm release (to fix the port number).
+* You can also fix this by rolling back the Helm release.
+
+#### Missing service account
+
+Missing service account related.
+
+##### Installing an operator and assigning it a service account that doesn't exist
+
+The following `helm install` command fails because it tries to install an operator release with a non-existing service account `op2-sa`.
+```shell
+$ helm install op2 kubernetes/charts/weblogic-operator --namespace myuser-op2-ns --set serviceAccount=op2-sa --wait --no-hooks
+```
+
+The output contains the following error message.
+```
+ServiceAccount op2-sa not found in namespace myuser-op2-ns
+```
+To recover:
+
+- Create the service account.
+- `helm install` again.
+
+##### Upgrading an operator and assigning it a service account that doesn't exist
+
+The `helm upgrade` with a non-existing service account fails with the same error message as mentioned in the previous section, and the existing operator deployment stays unchanged.
+
+To recover:
+
+- Create the service account.
 - `helm upgrade` again.
