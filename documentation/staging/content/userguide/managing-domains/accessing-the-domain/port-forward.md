@@ -74,7 +74,7 @@ This behavior depends on your version and domain resource configuration:
   network channel with a `localhost` listen address for each
   existing port. This means that no additional configuration is required
   to enable port forwarding when Istio is enabled.
-  For more details, see [How Istio-enabled domains differ from regular domains]({{< relref "/userguide/istio/istio#how-istio-enabled-domains-differ-from-regular-domains" >}}).
+  For more details, see [Added network channels for Istio versions prior to v1.10]({{< relref "/userguide/istio/istio#added-network-channels-for-istio-versions-prior-to-v110" >}}).
 
 {{% notice note %}}
 If your domain is already running, and you have made configuration changes,
