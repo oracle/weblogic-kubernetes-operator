@@ -20,7 +20,7 @@ public interface KubernetesConstants {
   String DOMAIN_PLURAL = "domains";
   String DOMAIN_SINGULAR = "domain";
   String DOMAIN_SHORT = "dom";
-  String DOMAIN_VERSION = "v8";
+  String DOMAIN_VERSION = "v9";
 
   String API_VERSION_WEBLOGIC_ORACLE = DOMAIN_GROUP + "/" + DOMAIN_VERSION;
 
