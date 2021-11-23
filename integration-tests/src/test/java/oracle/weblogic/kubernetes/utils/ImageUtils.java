@@ -549,7 +549,8 @@ public class ImageUtils {
       }
 
       logger.info("docker push image {0} to {1}", dockerImage, domainImageRepo);
-      assertTrue(dockerPush(dockerImage), String.format("docker push failed for image %s", dockerImage));
+      assertTrue(dockerPush(domainImageRepo, dockerImage),
+          String.format("docker push failed for image %s", dockerImage));
     }
   }
 
