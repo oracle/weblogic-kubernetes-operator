@@ -92,6 +92,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndS
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withQuickRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
@@ -206,7 +207,7 @@ class ItMiiDomain {
                MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG, configMapName);
 
     // set low introspectorJobActiveDeadlineSeconds
-    domain.getSpec().configuration().introspectorJobActiveDeadlineSeconds(60L);
+    domain.getSpec().configuration().introspectorJobActiveDeadlineSeconds(30L);
 
     // create model in image domain
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
@@ -216,12 +217,14 @@ class ItMiiDomain {
     // check admin server pod is ready
     logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
         adminServerPodName, domainNamespace);
-    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+
+    checkPodReadyAndServiceExists(withLongRetryPolicy, adminServerPodName, domainUid, domainNamespace);
+
     // check managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
           managedServerPrefix + i, domainNamespace);
-      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
+      checkPodReadyAndServiceExists(withLongRetryPolicy,managedServerPrefix + i, domainUid, domainNamespace);
     }
     // Need to expose the admin server external service to access the console in OKD cluster only
     // We will create one route for sslport and another for default port
