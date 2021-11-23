@@ -49,8 +49,6 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_INCOMPLETE_PATTER
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_ROLL_STARTING_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_UNAVAILABLE_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_UNAVAILABLE_PATTERN;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.EVENT_NORMAL;
 import static oracle.kubernetes.operator.EventConstants.EVENT_WARNING;
 import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STARTED_PATTERN;
@@ -94,8 +92,8 @@ public class EventHelper {
    * Factory for {@link Step} that asynchronously create an event.
    *
    * @param domainNamespaces DomainSpaces instance
-   * @param eventData        event item
-   * @param next             next step
+   * @param eventData event item
+   * @param next next step
    * @return Step for creating an event
    */
   public static Step createEventStep(DomainNamespaces domainNamespaces, EventData eventData, Step next) {
@@ -106,7 +104,7 @@ public class EventHelper {
    * Factory for {@link Step} that asynchronously create an event.
    *
    * @param eventData event item
-   * @param next      next step
+   * @param next next step
    * @return Step for creating an event
    */
   public static Step createEventStep(EventData eventData, Step next) {
@@ -484,27 +482,6 @@ public class EventHelper {
       @Override
       public String getPattern() {
         return EventConstants.DOMAIN_ROLL_COMPLETED_PATTERN;
-      }
-    },
-    DOMAIN_VALIDATION_ERROR {
-      @Override
-      protected String getType() {
-        return EVENT_WARNING;
-      }
-
-      @Override
-      public String getReason() {
-        return DOMAIN_VALIDATION_ERROR_EVENT;
-      }
-
-      @Override
-      public String getPattern() {
-        return DOMAIN_VALIDATION_ERROR_PATTERN;
-      }
-
-      @Override
-      public String getMessage(EventData eventData) {
-        return getMessageFromEventData(eventData);
       }
     },
     POD_CYCLE_STARTING {

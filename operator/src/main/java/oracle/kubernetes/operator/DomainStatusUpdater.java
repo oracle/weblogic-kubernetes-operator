@@ -55,7 +55,6 @@ import oracle.kubernetes.weblogic.domain.model.Model;
 import oracle.kubernetes.weblogic.domain.model.OnlineUpdate;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
-import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.Nullable;
 
 import static oracle.kubernetes.operator.DomainFailureReason.DomainInvalid;
@@ -64,6 +63,7 @@ import static oracle.kubernetes.operator.DomainFailureReason.Introspection;
 import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
 import static oracle.kubernetes.operator.DomainFailureReason.ReplicasTooHigh;
 import static oracle.kubernetes.operator.DomainFailureReason.ServerPod;
+import static oracle.kubernetes.operator.DomainFailureReason.TopologyMismatch;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.MIINonDynamicChangesMethod.CommitUpdateOnly;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
@@ -86,7 +86,6 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_UN
 import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
 import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_FATAL_ERROR;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_MAX_ERRORS_EXCEEDED;
-import static oracle.kubernetes.operator.logging.MessageKeys.TOO_MANY_REPLICAS_FAILURE;
 import static oracle.kubernetes.utils.OperatorUtils.onSeparateLines;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Completed;
@@ -126,7 +125,7 @@ public class DomainStatusUpdater {
 
   /**
    * Asynchronous steps to set Domain condition to Failed after an asynchronous call failure
-   * and to generate DOMAIN_PROCESSING_FAILED event.
+   * and to generate DOMAIN_FAILED event.
    *
    * @param callResponse the response from an unrecoverable call
    */
@@ -143,7 +142,7 @@ public class DomainStatusUpdater {
   }
 
   /**
-   * Asynchronous steps to set Domain condition to Failed and to generate DOMAIN_PROCESSING_FAILED event.
+   * Asynchronous steps to set Domain condition to Failed and to generate DOMAIN_FAILED event.
    *
    * @param throwable Throwable that caused failure
    */
@@ -157,23 +156,44 @@ public class DomainStatusUpdater {
   }
 
   /**
-   * Asynchronous steps to set Domain condition to Failed and to generate DOMAIN_PROCESSING_FAILED event.
+   * Asynchronous steps to set Domain condition to Failed and to generate DOMAIN_FAILED event.
    *
-   * @param message a fuller description of the problem*/
+   * @param message a fuller description of the problem
+   */
   public static Step createServerPodFailureRelatedSteps(String message) {
     return createFailureRelatedSteps(ServerPod, message);
   }
 
   /**
-   * Asynchronous steps to set Domain condition to Failed and to generate DOMAIN_PROCESSING_FAILED event.
+   * Asynchronous steps to set Domain condition to Failed and to generate DOMAIN_FAILED event.
    *
-   * @param message a fuller description of the problem*/
+   * @param message a fuller description of the problem
+   */
   public static Step createDomainInvalidFailureRelatedSteps(String message) {
     return createFailureRelatedSteps(DomainInvalid, message);
   }
 
   /**
-   * Asynchronous steps to set Domain condition to Failed and to generate DOMAIN_PROCESSING_FAILED event.
+   * Asynchronous steps to set Domain condition to Failed and to generate DOMAIN_FAILED event.
+   *
+   * @param message a fuller description of the problem
+   */
+  public static Step createReplicasTooHighFailureRelatedSteps(String message) {
+    return createFailureRelatedSteps(ReplicasTooHigh, message);
+  }
+
+
+  /**
+   * Asynchronous steps to set Domain condition to Failed and to generate DOMAIN_FAILED event.
+   *
+   * @param message a fuller description of the problem
+   */
+  public static Step createTopologyMismatchFailureRelatedSteps(String message) {
+    return createFailureRelatedSteps(TopologyMismatch, message);
+  }
+
+  /**
+   * Asynchronous steps to set Domain condition to Failed and to generate DOMAIN_FAILED event.
    * @param reason the failure category
    * @param message a fuller description of the problem
    */
@@ -186,7 +206,7 @@ public class DomainStatusUpdater {
 
   /**
    * Asynchronous steps to set Domain condition to Failed, increment the introspector failure count if needed
-   * and to generate DOMAIN_PROCESSING_FAILED event.
+   * and to generate DOMAIN_FAILED event.
    *  @param message a fuller description of the problem
    * @param domainIntrospectorJob Domain introspector job
    */
@@ -199,7 +219,7 @@ public class DomainStatusUpdater {
 
   /**
    * Asynchronous steps to set Domain condition to Failed, increment the introspector failure count if needed
-   * and to generate DOMAIN_PROCESSING_FAILED event.
+   * and to generate DOMAIN_FAILED event.
    * @param message a fuller description of the problem
    */
   public static Step createIntrospectionFailureRelatedSteps(String message) {
@@ -281,10 +301,6 @@ public class DomainStatusUpdater {
 
   public static Step createResetFailureCountStep() {
     return new ResetFailureCountStep();
-  }
-
-  private static String getEventMessage(@Nonnull DomainFailureReason reason, String message) {
-    return !StringUtils.isBlank(message) ? message : reason.toString();
   }
 
   abstract static class DomainStatusUpdaterStep extends Step {
@@ -564,11 +580,15 @@ public class DomainStatusUpdater {
       }
 
       private boolean domainFailureJustResolved() {
-        return allIntendedServersRunning() && oldStatusWasFailed();
+        return !newStatusIsFailed() && oldStatusWasFailed();
       }
 
       private boolean oldStatusWasFailed() {
         return getStatus() != null && getStatus().hasConditionWith(this::isDomainFailed);
+      }
+
+      private boolean newStatusIsFailed() {
+        return getNewStatus() != null && getNewStatus().hasConditionWith(this::isDomainFailed);
       }
 
       private boolean domainJustIncomplete() {
@@ -604,7 +624,6 @@ public class DomainStatusUpdater {
             status.addCondition(new DomainCondition(Available).withStatus(FALSE));
           }
 
-          addTooManyReplicasFailures(status);
         }
 
         if (isHasFailedPod()) {
@@ -618,41 +637,6 @@ public class DomainStatusUpdater {
 
         if (miiNondynamicRestartRequired() && isCommitUpdateOnly()) {
           setOnlineUpdateNeedRestartCondition(status);
-        }
-      }
-
-      private void addTooManyReplicasFailures(DomainStatus status) {
-        getConfiguredClusters().stream()
-              .map(TooManyReplicasCheck::new)
-              .filter(TooManyReplicasCheck::isFailure)
-              .forEach(check -> status.addCondition(check.createFailureCondition()));
-      }
-
-      private List<WlsClusterConfig> getConfiguredClusters() {
-        return Optional.ofNullable(config).map(WlsDomainConfig::getConfiguredClusters).orElse(Collections.emptyList());
-      }
-
-      private class TooManyReplicasCheck {
-        private final String clusterName;
-        private final int maxReplicaCount;
-        private final int specifiedReplicaCount;
-
-        TooManyReplicasCheck(WlsClusterConfig cluster) {
-          clusterName = cluster.getClusterName();
-          maxReplicaCount = cluster.getMaxDynamicClusterSize();
-          specifiedReplicaCount = getDomain().getReplicaCount(clusterName);
-        }
-
-        private boolean isFailure() {
-          return maxReplicaCount > 0 && specifiedReplicaCount > maxReplicaCount;
-        }
-
-        private DomainCondition createFailureCondition() {
-          return new DomainCondition(Failed).withReason(ReplicasTooHigh).withMessage(createFailureMessage());
-        }
-
-        private String createFailureMessage() {
-          return LOGGER.formatMessage(TOO_MANY_REPLICAS_FAILURE, specifiedReplicaCount, clusterName, maxReplicaCount);
         }
       }
 

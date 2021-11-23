@@ -72,6 +72,17 @@ public enum DomainFailureReason {
       return EventConstants.REPLICAS_TOO_HIGH_ERROR_SUGGESTION;
     }
   },
+  TopologyMismatch {
+    @Override
+    public String getError() {
+      return EventConstants.TOPOLOGY_MISMATCH_ERROR;
+    }
+
+    @Override
+    public String getSuggestion(DomainPresenceInfo info) {
+      return EventConstants.TOPOLOGY_MISMATCH_ERROR_SUGGESTION;
+    }
+  },
   Internal {
     @Override
     public String getError() {

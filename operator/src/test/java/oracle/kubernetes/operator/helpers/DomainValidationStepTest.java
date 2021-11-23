@@ -45,8 +45,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_PATTERN;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_PATTERN;
+import static oracle.kubernetes.operator.EventConstants.TOPOLOGY_MISMATCH_ERROR;
+import static oracle.kubernetes.operator.EventConstants.TOPOLOGY_MISMATCH_ERROR_SUGGESTION;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventWithMessage;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
@@ -503,12 +505,12 @@ class DomainValidationStepTest {
 
   private void assertContainsEventWithFormattedMessage(String message) {
     assertThat(
-        "Expected Event with message was not created: " + getExpectedValidationEventMessage(message)
+        "Expected Event with message was not created: " + getExpectedTopologyMismatchEventMessage(message)
             + ".\nThere are " + getEvents().size() + " event.\nEvents: " + getEvents(),
         containsEventWithMessage(
             getEvents(),
-            DOMAIN_VALIDATION_ERROR_EVENT,
-            getExpectedValidationEventMessage(message)),
+            DOMAIN_FAILED_EVENT,
+            getExpectedTopologyMismatchEventMessage(message)),
         is(true));
   }
 
@@ -517,8 +519,9 @@ class DomainValidationStepTest {
     return logger.formatMessage(msgId, params);
   }
 
-  private String getExpectedValidationEventMessage(String message) {
-    return String.format(DOMAIN_VALIDATION_ERROR_PATTERN, UID, message);
+  private String getExpectedTopologyMismatchEventMessage(String message) {
+    return String.format(DOMAIN_FAILED_PATTERN, UID,
+        TOPOLOGY_MISMATCH_ERROR, message, TOPOLOGY_MISMATCH_ERROR_SUGGESTION);
   }
 
   private void setExplicitRecheck() {
