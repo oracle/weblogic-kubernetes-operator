@@ -80,6 +80,24 @@ public class K8sEvents {
         domainNamespace);
   }
 
+
+  /**
+   * Check if a given DomainFailed event is logged by the operator.
+   *  @param opNamespace namespace in which the operator is running
+   * @param domainNamespace namespace in which the domain exists
+   * @param domainUid UID of the domain
+   * @param failureReason DomainFailureReason to check
+   * @param type type of event, Normal of Warning
+   * @param timestamp the timestamp after which to see events
+   */
+  public static Callable<Boolean> checkDomainFailedEventWithReason(
+      String opNamespace, String domainNamespace, String domainUid, String failureReason,
+      String type, OffsetDateTime timestamp) {
+    return () -> {
+      return domainFailedEventExists(opNamespace, domainNamespace, domainUid, failureReason, type, timestamp);
+    };
+  }
+
   /**
    * Check if a given event is logged by the operator.
    *
@@ -90,7 +108,7 @@ public class K8sEvents {
    * @param type type of event, Normal of Warning
    * @param timestamp the timestamp after which to see events
    */
-  public static Callable<Boolean> checkDomainEvent(
+  public static Callable<Boolean>   checkDomainEvent(
       String opNamespace, String domainNamespace, String domainUid, String reason,
       String type, OffsetDateTime timestamp) {
     return () -> {
@@ -151,6 +169,39 @@ public class K8sEvents {
       }
       return false;
     };
+  }
+
+  /**
+   * Check if a given event is logged by the operator in the given namespace.
+   *
+   * @param opNamespace namespace in which the operator is running
+   * @param domainNamespace namespace in which the event is logged
+   * @param domainUid UID of the domain
+   * @param failureReason failure reason to check
+   * @param type type of event, Normal or Warning
+   * @param timestamp the timestamp after which to see events
+   */
+  public static boolean domainFailedEventExists(
+      String opNamespace, String domainNamespace, String domainUid, String failureReason,
+      String type, OffsetDateTime timestamp) {
+
+    try {
+      List<CoreV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
+      for (CoreV1Event event : events) {
+        if (DOMAIN_FAILED.equals(event.getReason()) && (isEqualOrAfter(timestamp, event))
+            && event.getMessage().contains(failureReason)) {
+          logger.info(Yaml.dump(event));
+          verifyOperatorDetails(event, opNamespace, domainUid);
+          //verify type
+          logger.info("Verifying domain event type {0}", type);
+          assertEquals(event.getType(), type);
+          return true;
+        }
+      }
+    } catch (ApiException ex) {
+      logger.log(Level.SEVERE, null, ex);
+    }
+    return false;
   }
 
   /**
@@ -407,16 +458,23 @@ public class K8sEvents {
   public static final String DOMAIN_DELETED = "DomainDeleted";
   public static final String DOMAIN_CHANGED = "DomainChanged";
   public static final String DOMAIN_COMPLETED = "DomainCompleted";
-  public static final String DOMAIN_PROCESSING_FAILED = "DomainProcessingFailed";
-  public static final String DOMAIN_PROCESSING_ABORTED = "DomainProcessingAborted";
-  public static final String DOMAIN_ROLL_STARTING = "DomainRollStarting";
+  public static final String DOMAIN_FAILED = "DomainProcessingFailed";
+  public static final String DOMAIN_ROLL_STARTING = "DomainRollCompleted";
   public static final String DOMAIN_ROLL_COMPLETED = "DomainRollCompleted";
-  public static final String DOMAIN_VALIDATION_ERROR = "DomainValidationError";
   public static final String NAMESPACE_WATCHING_STARTED = "NamespaceWatchingStarted";
   public static final String NAMESPACE_WATCHING_STOPPED = "NamespaceWatchingStopped";
   public static final String STOP_MANAGING_NAMESPACE = "StopManagingNamespace";
   public static final String POD_TERMINATED = "Killing";
   public static final String POD_STARTED = "Started";
   public static final String POD_CYCLE_STARTING = "PodCycleStarting";
+
+  public static final String DOMAIN_INVALID_ERROR = "Domain validation error";
+  public static final String TOPOLOGY_MISMATCH_ERROR
+      = "Domain resource and WebLogic domain configuration mismatch error";
+  public static final String INTROSPECTION_ERROR = "Introspection error";
+  public static final String KUBERNETES_ERROR = "Kubernetes Api call error";
+  public static final String SERVER_POD_ERROR = "Server pod error";
+  public static final String REPLICAS_TOO_HIGH_ERROR = "Replicas too high";
+  public static final String INTERNAL_ERROR = "Internal error";
 
 }

@@ -83,7 +83,7 @@ import static oracle.weblogic.kubernetes.utils.FileUtils.unzipWDTInstallationFil
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
-import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_FAILED;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_FAILED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEventContainsExpectedMsg;
 import static oracle.weblogic.kubernetes.utils.LoggingUtil.checkPodLogContainsString;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
@@ -485,7 +485,7 @@ class ItMiiAuxiliaryImage {
     verifyIntrospectorPodLogContainsExpectedErrorMsg(domainUid, errorpathDomainNamespace, expectedErrorMsg);
 
     // check the domain event contains the expected error message
-    checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
+    checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_FAILED,
         "Warning", timestamp, expectedErrorMsg);
 
     // check the operator pod log contains the expected error message
@@ -567,7 +567,7 @@ class ItMiiAuxiliaryImage {
     verifyIntrospectorPodLogContainsExpectedErrorMsg(domainUid, errorpathDomainNamespace, expectedErrorMsg);
 
     // check the domain event contains the expected error message
-    checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
+    checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_FAILED,
         "Warning", timestamp, expectedErrorMsg);
 
     // check the operator pod log contains the expected error message
@@ -653,7 +653,7 @@ class ItMiiAuxiliaryImage {
     verifyIntrospectorPodLogContainsExpectedErrorMsg(domainUid, errorpathDomainNamespace, expectedErrorMsg);
 
     // check the domain event contains the expected error message
-    checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
+    checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_FAILED,
         "Warning", timestamp, expectedErrorMsg);
 
     // check the operator pod log contains the expected error message
@@ -727,7 +727,7 @@ class ItMiiAuxiliaryImage {
     verifyIntrospectorPodLogContainsExpectedErrorMsg(domainUid, domainNamespace, expectedErrorMsg);
 
     // check the domain event contains the expected error message
-    checkDomainEventContainsExpectedMsg(opNamespace, domainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
+    checkDomainEventContainsExpectedMsg(opNamespace, domainNamespace, domainUid, DOMAIN_FAILED,
         "Warning", timestamp, expectedErrorMsg);
 
     // check the operator pod log contains the expected error message
@@ -848,7 +848,7 @@ class ItMiiAuxiliaryImage {
     verifyIntrospectorPodLogContainsExpectedErrorMsg(domainUid, errorpathDomainNamespace, expectedErrorMsg);
 
     // check the domain event contains the expected error message
-    checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_PROCESSING_FAILED,
+    checkDomainEventContainsExpectedMsg(opNamespace, errorpathDomainNamespace, domainUid, DOMAIN_FAILED,
         "Warning", timestamp, expectedErrorMsg);
 
     // check the operator pod log contains the expected error message

@@ -35,6 +35,8 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 
 import static java.util.Comparator.comparing;
+import static oracle.kubernetes.operator.DomainFailureReason.ReplicasTooHigh;
+import static oracle.kubernetes.operator.DomainStatusUpdater.createFailedStep;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createReplicasTooHighFailureRelatedSteps;
 
 public class ManagedServersUpStep extends Step {
@@ -108,6 +110,7 @@ public class ManagedServersUpStep extends Step {
 
     info.setServerStartupInfo(factory.getStartupInfos());
     info.setServerShutdownInfo(factory.getShutdownInfos());
+
     LOGGER.exiting();
 
     return doNext(
@@ -163,7 +166,7 @@ public class ManagedServersUpStep extends Step {
     final Collection<String> servers = new ArrayList<>();
     final Collection<String> preCreateServers = new ArrayList<>();
     final Map<String, Integer> replicas = new HashMap<>();
-    private Step eventStep;
+    private Step failureStep;
 
     ServersUpStepFactory(WlsDomainConfig domainTopology,
                          DomainPresenceInfo info, boolean skipEventCreation) {
@@ -229,7 +232,7 @@ public class ManagedServersUpStep extends Step {
 
     private Step createNextStep(Step next) {
       Step nextStep = (servers.isEmpty()) ? next : new ManagedServerUpIteratorStep(getStartupInfos(), next);
-      return Optional.ofNullable(eventStep).map(s -> Step.chain(s, nextStep)).orElse(nextStep);
+      return Optional.ofNullable(failureStep).map(s -> Step.chain(s, nextStep)).orElse(nextStep);
     }
 
     Collection<ServerStartupInfo> getStartupInfos() {
@@ -296,7 +299,9 @@ public class ManagedServersUpStep extends Step {
       LOGGER.warning(MessageKeys.REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT, messageParams);
       String message = LOGGER.formatMessage(MessageKeys.REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT, messageParams);
       if (!skipEventCreation) {
-        eventStep = createReplicasTooHighFailureRelatedSteps(message);
+        failureStep = createReplicasTooHighFailureRelatedSteps(message);
+      } else {
+        failureStep = createFailedStep(ReplicasTooHigh, message);
       }
       info.addValidationWarning(message);
     }
