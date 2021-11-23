@@ -320,7 +320,7 @@ topology:
                 TunnelingEnabled: true
                 OutboundEnabled: false
                 Enabled: true
-                TwoWaySslEnabled: false
+                TwoWaySSLEnabled: false
                 ClientCertificateEnforced: false
 ```
 
