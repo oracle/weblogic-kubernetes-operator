@@ -86,6 +86,7 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_UN
 import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
 import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_FATAL_ERROR;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_MAX_ERRORS_EXCEEDED;
+import static oracle.kubernetes.operator.logging.MessageKeys.TOO_MANY_REPLICAS_FAILURE;
 import static oracle.kubernetes.utils.OperatorUtils.onSeparateLines;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Completed;
@@ -109,6 +110,7 @@ public class DomainStatusUpdater {
 
   /**
    * Creates an asynchronous step to update domain status from the topology in the current packet.
+   *
    * @param next the next step
    * @return the new step
    */
@@ -121,6 +123,13 @@ public class DomainStatusUpdater {
    */
   public static Step createRemoveFailuresStep() {
     return new RemoveFailuresStep();
+  }
+
+  /**
+   * Asynchronous step to create a failure condition.
+   */
+  public static Step createFailedStep(DomainFailureReason reason, String message) {
+    return new FailedStep(reason, message);
   }
 
   /**
@@ -147,7 +156,7 @@ public class DomainStatusUpdater {
    * @param throwable Throwable that caused failure
    */
   static Step createInternalFailureRelatedSteps(Throwable throwable, V1Job domainIntrospectorJob) {
-    String message =  throwable.getMessage() == null ? throwable.toString() : throwable.getMessage();
+    String message = throwable.getMessage() == null ? throwable.toString() : throwable.getMessage();
 
     return Step.chain(
         new FailedStep(Internal, message),
@@ -194,6 +203,7 @@ public class DomainStatusUpdater {
 
   /**
    * Asynchronous steps to set Domain condition to Failed and to generate DOMAIN_FAILED event.
+   *
    * @param reason the failure category
    * @param message a fuller description of the problem
    */
@@ -207,19 +217,21 @@ public class DomainStatusUpdater {
   /**
    * Asynchronous steps to set Domain condition to Failed, increment the introspector failure count if needed
    * and to generate DOMAIN_FAILED event.
-   *  @param message a fuller description of the problem
+   *
+   * @param message               a fuller description of the problem
    * @param domainIntrospectorJob Domain introspector job
    */
   public static Step createIntrospectionFailureRelatedSteps(String message,
                                                             V1Job domainIntrospectorJob) {
     return Step.chain(new FailedStep(Introspection, message),
-            createFailureCountStep(domainIntrospectorJob),
-            createEventStep(new EventData(DOMAIN_FAILED, message).failureReason(Introspection)));
+        createFailureCountStep(domainIntrospectorJob),
+        createEventStep(new EventData(DOMAIN_FAILED, message).failureReason(Introspection)));
   }
 
   /**
    * Asynchronous steps to set Domain condition to Failed, increment the introspector failure count if needed
    * and to generate DOMAIN_FAILED event.
+   *
    * @param message a fuller description of the problem
    */
   public static Step createIntrospectionFailureRelatedSteps(String message) {
@@ -274,12 +286,12 @@ public class DomainStatusUpdater {
 
     private String getNonFatalRetryStatusMessage(DomainStatus domainStatus) {
       return LOGGER.formatMessage(MessageKeys.NON_FATAL_INTROSPECTOR_ERROR,
-              domainStatus.getIntrospectJobFailureCount(), getFailureRetryMaxCount());
+          domainStatus.getIntrospectJobFailureCount(), getFailureRetryMaxCount());
     }
 
     private boolean isFatalError(DomainStatus domainStatus) {
       return Optional.ofNullable(domainStatus.getMessage())
-              .map(m -> m.contains(FATAL_INTROSPECTOR_ERROR)).orElse(false);
+          .map(m -> m.contains(FATAL_INTROSPECTOR_ERROR)).orElse(false);
     }
 
     private String exceededMaxRetryCountErrorMessage() {
@@ -453,10 +465,10 @@ public class DomainStatusUpdater {
           .withStatus(getNewStatus());
 
       return new CallBuilder().replaceDomainStatusAsync(
-            getDomainName(),
-            getNamespace(),
-            newDomain,
-            domainStatusUpdaterStep.createResponseStep(this));
+          getDomainName(),
+          getNamespace(),
+          newDomain,
+          domainStatusUpdaterStep.createResponseStep(this));
     }
 
     private String createPatchString() {
@@ -495,7 +507,7 @@ public class DomainStatusUpdater {
 
     private boolean hasJustGotFatalIntrospectorError() {
       return isFatalIntrospectorMessage(getNewStatus().getMessage())
-            && !isFatalIntrospectorMessage(getStatus().getMessage());
+          && !isFatalIntrospectorMessage(getStatus().getMessage());
     }
 
     private boolean isFatalIntrospectorMessage(String statusMessage) {
@@ -541,8 +553,8 @@ public class DomainStatusUpdater {
         serverState = packet.getValue(SERVER_STATE_MAP);
         serverHealth = packet.getValue(SERVER_HEALTH_MAP);
         expectedRunningServers = DomainPresenceInfo.fromPacket(packet)
-              .map(DomainPresenceInfo::getExpectedRunningServers)
-              .orElse(Collections.emptySet());
+            .map(DomainPresenceInfo::getExpectedRunningServers)
+            .orElse(Collections.emptySet());
       }
 
       @Override
@@ -623,7 +635,7 @@ public class DomainStatusUpdater {
           } else if (status.hasConditionWithType(Available)) {
             status.addCondition(new DomainCondition(Available).withStatus(FALSE));
           }
-
+          addTooManyReplicasFailures(status);
         }
 
         if (isHasFailedPod()) {
@@ -642,6 +654,11 @@ public class DomainStatusUpdater {
 
       private boolean isDomainFailed(DomainCondition condition) {
         return condition.hasType(Failed) && condition.getStatus().equals("True");
+      }
+
+      private boolean isDomainFailedWithReplicasTooHigh(DomainCondition condition) {
+        return condition.hasType(Failed) && condition.getStatus().equals("True")
+            && ReplicasTooHigh.equals(condition.getReason());
       }
 
       private boolean isDomainCompleted(DomainCondition condition) {
@@ -684,8 +701,8 @@ public class DomainStatusUpdater {
       }
 
       private void setOnlineUpdateNeedRestartCondition(DomainStatus status) {
-        String dynamicUpdateRollBackFile = Optional.ofNullable((String)packet.get(
-            ProcessingConstants.MII_DYNAMIC_UPDATE_WDTROLLBACKFILE))
+        String dynamicUpdateRollBackFile = Optional.ofNullable((String) packet.get(
+                ProcessingConstants.MII_DYNAMIC_UPDATE_WDTROLLBACKFILE))
             .orElse("");
         String message = String.format("%s\n%s",
             LOGGER.formatMessage(MessageKeys.MII_DOMAIN_UPDATED_POD_RESTART_REQUIRED), dynamicUpdateRollBackFile);
@@ -721,9 +738,14 @@ public class DomainStatusUpdater {
 
       private boolean allIntendedServersRunning() {
         return atLeastOneApplicationServerStarted()
-              && expectedRunningServers.stream().noneMatch(this::isNotRunning)
-              && expectedRunningServers.containsAll(serverState.keySet())
-              && serversMarkedForRoll().isEmpty();
+            && expectedRunningServers.stream().noneMatch(this::isNotRunning)
+            && expectedRunningServers.containsAll(serverState.keySet())
+            && serversMarkedForRoll().isEmpty()
+            && noReplicasTooHighFailure();
+      }
+
+      private boolean noReplicasTooHighFailure() {
+        return getStatus() == null || !getStatus().hasConditionWith(this::isDomainFailedWithReplicasTooHigh);
       }
 
       private boolean atLeastOneApplicationServerStarted() {
@@ -752,7 +774,7 @@ public class DomainStatusUpdater {
 
       private boolean sufficientServersInClusterRunning(String clusterName) {
         return clusterHasRunningServer(clusterName)
-             && numServersInClusterNotReady(clusterName) <= maxUnavailable(clusterName);
+            && numServersInClusterNotReady(clusterName) <= maxUnavailable(clusterName);
       }
 
       private boolean isClusterIntentionallyShutDown(String clusterName) {
@@ -769,8 +791,8 @@ public class DomainStatusUpdater {
 
       private List<String> getStartedServersInCluster(String clusterName) {
         return expectedRunningServers.stream()
-              .filter(server -> clusterName.equals(getClusterName(server)))
-              .collect(Collectors.toList());
+            .filter(server -> clusterName.equals(getClusterName(server)))
+            .collect(Collectors.toList());
       }
 
       private int maxUnavailable(String clusterName) {
@@ -779,9 +801,9 @@ public class DomainStatusUpdater {
 
       private Set<String> serversMarkedForRoll() {
         return DomainPresenceInfo.fromPacket(packet)
-              .map(DomainPresenceInfo::getServersToRoll)
-              .map(Map::keySet)
-              .orElse(Collections.emptySet());
+            .map(DomainPresenceInfo::getServersToRoll)
+            .map(Map::keySet)
+            .orElse(Collections.emptySet());
       }
 
       private boolean isNonClusteredServer(String serverName) {
@@ -808,6 +830,41 @@ public class DomainStatusUpdater {
 
       private boolean isHasFailedPod() {
         return getInfo().getServerPods().anyMatch(PodHelper::isFailed);
+      }
+
+      private void addTooManyReplicasFailures(DomainStatus status) {
+        getConfiguredClusters().stream()
+            .map(TooManyReplicasCheck::new)
+            .filter(TooManyReplicasCheck::isFailure)
+            .forEach(check -> status.addCondition(check.createFailureCondition()));
+      }
+
+      private List<WlsClusterConfig> getConfiguredClusters() {
+        return Optional.ofNullable(config).map(WlsDomainConfig::getConfiguredClusters).orElse(Collections.emptyList());
+      }
+
+      private class TooManyReplicasCheck {
+        private final String clusterName;
+        private final int maxReplicaCount;
+        private final int specifiedReplicaCount;
+
+        TooManyReplicasCheck(WlsClusterConfig cluster) {
+          clusterName = cluster.getClusterName();
+          maxReplicaCount = cluster.getMaxDynamicClusterSize();
+          specifiedReplicaCount = getDomain().getReplicaCount(clusterName);
+        }
+
+        private boolean isFailure() {
+          return maxReplicaCount > 0 && specifiedReplicaCount > maxReplicaCount;
+        }
+
+        private DomainCondition createFailureCondition() {
+          return new DomainCondition(Failed).withReason(ReplicasTooHigh).withMessage(createFailureMessage());
+        }
+
+        private String createFailureMessage() {
+          return LOGGER.formatMessage(TOO_MANY_REPLICAS_FAILURE, specifiedReplicaCount, clusterName, maxReplicaCount);
+        }
       }
 
       private boolean hasServerPod(String serverName) {
@@ -899,7 +956,6 @@ public class DomainStatusUpdater {
             .withReplicasGoal(getClusterSizeGoal(clusterName));
       }
 
-
       private String getNodeName(String serverName) {
         return Optional.ofNullable(getInfo().getServerPod(serverName))
             .map(V1Pod::getSpec)
@@ -924,16 +980,16 @@ public class DomainStatusUpdater {
       private Collection<String> getServerNames() {
         Set<String> result = new HashSet<>();
         getDomainConfig()
-              .ifPresent(config -> {
-                result.addAll(config.getServerConfigs().keySet());
-                for (WlsClusterConfig cluster : config.getConfiguredClusters()) {
-                  Optional.ofNullable(cluster.getDynamicServersConfig())
-                        .flatMap(dynamicConfig -> Optional.ofNullable(dynamicConfig.getServerConfigs()))
-                        .ifPresent(servers -> servers.forEach(item -> result.add(item.getName())));
-                  Optional.ofNullable(cluster.getServerConfigs())
-                      .ifPresent(servers -> servers.forEach(item -> result.add(item.getName())));
-                }
-              });
+            .ifPresent(config -> {
+              result.addAll(config.getServerConfigs().keySet());
+              for (WlsClusterConfig cluster : config.getConfiguredClusters()) {
+                Optional.ofNullable(cluster.getDynamicServersConfig())
+                    .flatMap(dynamicConfig -> Optional.ofNullable(dynamicConfig.getServerConfigs()))
+                    .ifPresent(servers -> servers.forEach(item -> result.add(item.getName())));
+                Optional.ofNullable(cluster.getServerConfigs())
+                    .ifPresent(servers -> servers.forEach(item -> result.add(item.getName())));
+              }
+            });
         return result;
       }
 
@@ -945,17 +1001,17 @@ public class DomainStatusUpdater {
 
       private Integer getClusterMaximumSize(String clusterName) {
         return getDomainConfig()
-              .map(config -> config.getClusterConfig(clusterName))
-              .map(WlsClusterConfig::getMaxClusterSize)
-              .orElse(0);
+            .map(config -> config.getClusterConfig(clusterName))
+            .map(WlsClusterConfig::getMaxClusterSize)
+            .orElse(0);
       }
 
       private Integer getClusterMinimumSize(String clusterName) {
         return getDomain().isAllowReplicasBelowMinDynClusterSize(clusterName)
-              ? 0 : getDomainConfig()
-              .map(config -> config.getClusterConfig(clusterName))
-              .map(WlsClusterConfig::getMinClusterSize)
-              .orElse(0);
+            ? 0 : getDomainConfig()
+            .map(config -> config.getClusterConfig(clusterName))
+            .map(WlsClusterConfig::getMinClusterSize)
+            .orElse(0);
       }
 
       private Integer getClusterSizeGoal(String clusterName) {
