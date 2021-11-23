@@ -66,7 +66,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.collectAppAvailability;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.deployAndAccessApplication;
-import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
@@ -80,6 +79,7 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
+import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -140,7 +140,7 @@ class ItOperatorWlsUpgrade {
   @ValueSource(strings = { "domain-in-image", "model-in-image" })
   void testOperatorWlsUpgradeFrom304ToMain(String domainType) {
     logger.info("Starting test testOperatorWlsUpgradeFrom304ToMain with domain type {0}", domainType);
-    upgradeOperator(domainType, "3.0.4", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+    upgradeOperator(domainType, "3.0.4", "weblogic.oracle/v8", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
@@ -151,7 +151,7 @@ class ItOperatorWlsUpgrade {
   @ValueSource(strings = { "domain-in-image", "model-in-image" })
   void testOperatorWlsUpgradeFrom314ToMain(String domainType) {
     logger.info("Starting test testOperatorWlsUpgradeFrom314ToMain with domain type {0}", domainType);
-    upgradeOperator(domainType, "3.1.4", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+    upgradeOperator(domainType, "3.1.4", "weblogic.oracle/v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
@@ -162,7 +162,7 @@ class ItOperatorWlsUpgrade {
   @ValueSource(strings = { "domain-in-image", "model-in-image" })
   void testOperatorWlsUpgradeFrom325ToMain(String domainType) {
     logger.info("Starting test testOperatorWlsUpgradeFrom322ToMain with domain type {0}", domainType);
-    upgradeOperator(domainType, "3.2.5", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+    upgradeOperator(domainType, "3.2.5", "weblogic.oracle/v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
@@ -170,10 +170,10 @@ class ItOperatorWlsUpgrade {
    */
   @ParameterizedTest
   @DisplayName("Upgrade Operator from 3.3.3 to main")
-  @ValueSource(strings = { "domain-in-image", "model-in-image" })
+  @ValueSource(strings = { "domain-in-image" })
   void testOperatorWlsUpgradeFrom333ToMain(String domainType) {
     logger.info("Starting test testOperatorWlsUpgradeFrom331ToMain with domain type {0}", domainType);
-    upgradeOperator(domainType, "3.3.3", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+    upgradeOperator(domainType, "3.3.3", "weblogic.oracle/v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
   }
 
   /**
@@ -196,8 +196,9 @@ class ItOperatorWlsUpgrade {
   // Since Operator version 3.1.0 the service pod prefix has been changed 
   // from -external to -ext e.g.
   // domain1-adminserver-ext  NodePort    10.96.46.242   30001:30001/TCP 
-  private void upgradeOperator(String domainType, String operatorVersion, String externalServiceNameSuffix,
-                               boolean useHelmUpgrade) {
+  private void upgradeOperator(String domainType, String operatorVersion, 
+       String domApiVersion, String externalServiceNameSuffix,
+       boolean useHelmUpgrade) {
     logger.info("Assign a unique namespace for operator {0}", operatorVersion);
     assertNotNull(namespaces.get(0), "Namespace is null");
     final String opNamespace1 = namespaces.get(0);
@@ -230,12 +231,10 @@ class ItOperatorWlsUpgrade {
 
     // create domain
     if (domainType.equalsIgnoreCase("domain-in-image")) {
-      createDomainHomeInImageAndVerify(domainNamespace, operatorVersion, externalServiceNameSuffix);
+      createDomainHomeInImageAndVerify(domainNamespace, domApiVersion, externalServiceNameSuffix);
     } else {
-      createMiiDomainAndVerify(domainNamespace, domainUid, MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
-          adminServerPodName, managedServerPodNamePrefix, replicaCount);
+      createMiiDomainAndVerify(domainNamespace, domApiVersion, externalServiceNameSuffix); 
     }
-
     LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
     pods.put(adminServerPodName, getPodCreationTime(domainNamespace, adminServerPodName));
     // get the creation time of the managed server pods before patching
@@ -441,8 +440,91 @@ class ItOperatorWlsUpgrade {
     checkDomainStarted(domainUid, domainNamespace);
   }
 
+  private void createMiiDomainAndVerify(
+      String domainNamespace, String domApiVersion, 
+      String externalServiceNameSuffix) {
+    
+    // Create the repo secret to pull the image
+    // this secret is used only for non-kind cluster
+    createOcirRepoSecret(domainNamespace);
+
+    // create secret for admin credentials
+    logger.info("Create secret for admin credentials");
+    String adminSecretName = "weblogic-credentials";
+    createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+
+    // create encryption secret
+    logger.info("Create encryption secret");
+    String encryptionSecretName = "encryptionsecret";
+    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace,
+                      "weblogicenc", "weblogicenc");
+    logger.info("Domain API version selected {0}", domApiVersion);
+
+    // create the domain CR
+    Domain domain = new Domain()
+        .apiVersion(domApiVersion)
+        .kind("Domain")
+        .metadata(new V1ObjectMeta()
+            .name(domainUid)
+            .namespace(domainNamespace))
+        .spec(new DomainSpec()
+            .domainUid(domainUid)
+            .domainHomeSourceType("FromModel")
+            .image(MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG)
+            .addImagePullSecretsItem(new V1LocalObjectReference()
+                .name(OCIR_SECRET_NAME))
+            .webLogicCredentialsSecret(new V1SecretReference()
+                .name(adminSecretName)
+                .namespace(domainNamespace))
+            .includeServerOutInPodLog(true)
+            .serverStartPolicy("IF_NEEDED")
+            .serverPod(new ServerPod()
+                .addEnvItem(new V1EnvVar()
+                    .name("JAVA_OPTIONS")
+                    .value("-Dweblogic.security.SSL.ignoreHostnameVerification=true"))
+                .addEnvItem(new V1EnvVar()
+                    .name("USER_MEM_ARGS")
+                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+            .adminServer(new AdminServer()
+                .serverStartState("RUNNING")
+                .adminService(new AdminService()
+                    .addChannelsItem(new Channel()
+                        .channelName("default")
+                        .nodePort(0))))
+            .addClustersItem(new Cluster()
+                .clusterName("cluster-1")
+                .replicas(replicaCount)
+                .serverStartState("RUNNING"))
+            .configuration(new Configuration()
+                .model(new Model()
+                    .domainType("WLS")
+                    .runtimeEncryptionSecret(encryptionSecretName))
+                .introspectorJobActiveDeadlineSeconds(300L)));
+    logger.info("Create domain resource for domainUid {0} in namespace {1}",
+            domainUid, domainNamespace);
+    boolean domCreated = assertDoesNotThrow(() -> createDomainCustomResource(domain),
+          String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
+          domainUid, domainNamespace));
+    assertTrue(domCreated, String.format("Create domain custom resource failed with ApiException "
+                    + "for %s in namespace %s", domainUid, domainNamespace));
+    setPodAntiAffinity(domain);
+    checkDomainStarted(domainUid, domainNamespace);
+    logger.info("Getting node port for default channel");
+    int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
+        domainNamespace, getExternalServicePodName(adminServerPodName, externalServiceNameSuffix), "default"),
+        "Getting admin server node port failed");
+    logger.info("Validating WebLogic admin server access by login to console");
+    //boolean loginSuccessful = assertDoesNotThrow(() -> {
+    testUntil(
+        assertDoesNotThrow(() -> {
+          return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+        }, "Access to admin server node port failed"),
+        logger,
+        "Console login validation");
+  }
+
   private void createDomainHomeInImageAndVerify(String domainNamespace, 
-      String operatorVersion, String externalServiceNameSuffix) {
+      String domApiVersion, String externalServiceNameSuffix) {
 
     // Create the repo secret to pull the image
     //  this secret is used only for non-kind cluster
@@ -453,8 +535,9 @@ class ItOperatorWlsUpgrade {
     String adminSecretName = "weblogic-credentials";
     createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
+    logger.info("Domain API version selected {0}", domApiVersion);
     Domain domain = new Domain()
-            .apiVersion(TestConstants.DOMAIN_API_VERSION)
+            .apiVersion(domApiVersion)
             .kind("Domain")
             .metadata(new V1ObjectMeta()
                     .name(domainUid)
@@ -512,7 +595,6 @@ class ItOperatorWlsUpgrade {
         }, "Access to admin server node port failed"),
         logger,
         "Console login validation");
-    //assertTrue(loginSuccessful, "Console login validation failed");
   }
   
   private void createDomainHomeInImageFromDomainYaml(
