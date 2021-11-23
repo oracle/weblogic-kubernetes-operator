@@ -29,9 +29,9 @@ import org.junit.jupiter.params.provider.MethodSource;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
-import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_BUILD_IMAGES_IF_EXISTS;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
@@ -87,7 +87,7 @@ class ItWlsSamples {
   private static final String domainName = "domain1";
   private static final String diiImageNameBase = "domain-home-in-image";
   private static final String diiImageTag =
-      Boolean.valueOf(SKIP_BUILD_IMAGES_IF_EXISTS) ? "12.2.1.4" : getDateAndTimeStamp();
+      Boolean.valueOf(SKIP_BUILD_IMAGES_IF_EXISTS) ? OCIR_WEBLOGIC_IMAGE_TAG : getDateAndTimeStamp();
   private final int replicaCount = 2;
   private final String clusterName = "cluster-1";
   private final String managedServerNameBase = "managed-server";
@@ -102,6 +102,8 @@ class ItWlsSamples {
   private static final String[] params = {"wlst:domain1", "wdt:domain2"};
 
   private static LoggingFacade logger = null;
+  private static String domainImageRepo =
+      System.getenv("REPO_REGISTRY") != null ? System.getenv("REPO_REGISTRY") + "/weblogick8s/" : "";
 
   /**
    * Assigns unique namespaces for operator and domains and installs operator.
@@ -147,7 +149,7 @@ class ItWlsSamples {
     String domainName = model.split(":")[1];
     String script = model.split(":")[0];
 
-    String imageName = DOMAIN_IMAGES_REPO + diiImageNameBase + "-" + script + ":" + diiImageTag;
+    String imageName = domainImageRepo + diiImageNameBase + "-" + script + ":" + diiImageTag;
 
     //copy the samples directory to a temporary location
     setupSample();
@@ -162,7 +164,7 @@ class ItWlsSamples {
     // update domainHomeImageBase with right values in create-domain-inputs.yaml
     assertDoesNotThrow(() -> {
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-              "domainHomeImageBase: container-registry.oracle.com/middleware/weblogic:12.2.1.4",
+              "domainHomeImageBase: container-registry.oracle.com/middleware/weblogic:" + OCIR_WEBLOGIC_IMAGE_TAG,
               "domainHomeImageBase: " + WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "#image:",
@@ -235,7 +237,7 @@ class ItWlsSamples {
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "createDomainFilesDir: wlst", "createDomainFilesDir: " + script);
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-              "image: container-registry.oracle.com/middleware/weblogic:12.2.1.4",
+              "image: container-registry.oracle.com/middleware/weblogic:" + OCIR_WEBLOGIC_IMAGE_TAG,
               "image: " + WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
     });
 
@@ -541,7 +543,7 @@ class ItWlsSamples {
     if (sampleBase.toString().contains("domain-home-in-image")) {
       // docker login and push image to docker registry if necessary
       logger.info("Push the image {0} to Docker repo", imageName);
-      dockerLoginAndPushImageToRegistry(imageName);
+      dockerLoginAndPushImageToRegistry(domainImageRepo, imageName);
 
       // create docker registry secret to pull the image from registry
       // this secret is used only for non-kind cluster
