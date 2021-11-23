@@ -18,8 +18,6 @@ import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
-import oracle.kubernetes.operator.helpers.EventHelper.EventData;
-import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -36,7 +34,6 @@ import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.KubernetesResourceLookup;
 
 import static java.lang.System.lineSeparator;
-import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
 import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_VALIDATION_FAILED;
 
 public class DomainValidationSteps {
@@ -260,7 +257,7 @@ public class DomainValidationSteps {
       return skipCreateEvent
           ? next
           : Optional.ofNullable((message))
-              .map(m -> createEventStep(new EventData(EventItem.DOMAIN_VALIDATION_ERROR, m), next))
+              .map(m -> Step.chain(DomainStatusUpdater.createTopologyMismatchFailureRelatedSteps(m), next))
               .orElse(next);
     }
   }

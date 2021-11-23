@@ -47,6 +47,7 @@ import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.DomainConditionMatcher.hasCondition;
@@ -495,7 +496,7 @@ class DomainStatusUpdaterTest {
     return DOMAIN_COMPLETED_EVENT.equals(e.getReason());
   }
 
-  private boolean isDomainIncompleteEvent(CoreV1Event e) {
+  private boolean isDomainIncompletedEvent(CoreV1Event e) {
     return DOMAIN_INCOMPLETE_EVENT.equals(e.getReason());
   }
 
@@ -529,7 +530,21 @@ class DomainStatusUpdaterTest {
   }
 
   @Test
-  void whenNoServerRunningAndCompletedConditionFound_generateIncompleteEvent() {
+  void whenNoServersRunningAndFailedConditionFound_dontGenerateFailureResolvedEvent() {
+    domain.getStatus()
+        .addCondition(new DomainCondition(Failed).withStatus("True"));
+    defineScenario()
+        .withServers("server1", "server2")
+        .withServersReachingState(SHUTDOWN_STATE, "server1", "server2")
+        .build();
+
+    updateDomainStatus();
+
+    assertThat(getEvents().stream().anyMatch(this::isDomainFailureResolvedEvent), is(false));
+  }
+
+  @Test
+  void whenNoServerRunningAndCompletedConditionFound_generateIncompletedEvent() {
     domain.getStatus()
         .addCondition(new DomainCondition(Completed).withStatus("True"));
     defineScenario()
@@ -540,7 +555,21 @@ class DomainStatusUpdaterTest {
     updateDomainStatus();
 
     assertThat(getRecordedDomain(), hasCondition(Completed).withStatus("False"));
-    assertThat(getEvents().stream().anyMatch(this::isDomainIncompleteEvent), is(true));
+    assertThat(getEvents().stream().anyMatch(this::isDomainIncompletedEvent), is(true));
+  }
+
+  @Test
+  void whenAllServerRunningAndCompletedConditionFound_dontGenerateIncompletedEvent() {
+    domain.getStatus()
+        .addCondition(new DomainCondition(Completed).withStatus("True"));
+    defineScenario()
+        .withServers("server1", "server2")
+        .build();
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus("True"));
+    assertThat(getEvents().stream().anyMatch(this::isDomainIncompletedEvent), is(false));
   }
 
   @Test
@@ -690,6 +719,7 @@ class DomainStatusUpdaterTest {
   }
 
   @Test
+  @Disabled
   void whenReplicaCountExceedsMaxReplicasForDynamicCluster_addFailedCondition() {
     domain.setReplicaCount("cluster1", 5);
     defineScenario().addDynamicCluster("cluster1", 4).build();
@@ -945,6 +975,19 @@ class DomainStatusUpdaterTest {
     updateDomainStatus();
 
     assertThat(getEvents().stream().anyMatch(this::isDomainUnavailableEvent), is(true));
+  }
+
+  @Test
+  void whenExpectedServerRunningAndAvailableConditionFound_dontGenerateUnavailableEvent() {
+    domain.getStatus()
+        .addCondition(new DomainCondition(Available).withStatus("True"));
+    defineScenario()
+        .withServers("server1", "server2")
+        .build();
+
+    updateDomainStatus();
+
+    assertThat(getEvents().stream().anyMatch(this::isDomainUnavailableEvent), is(false));
   }
 
   private DomainConfigurator configureDomain() {
