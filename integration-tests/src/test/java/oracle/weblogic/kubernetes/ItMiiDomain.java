@@ -218,6 +218,7 @@ class ItMiiDomain {
     logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
         adminServerPodName, domainNamespace);
 
+    // as low value is used for introspectorJobActiveDeadlineSeconds, wait longer for services and pods
     checkPodReadyAndServiceExists(withLongRetryPolicy, adminServerPodName, domainUid, domainNamespace);
 
     // check managed server pods are ready
