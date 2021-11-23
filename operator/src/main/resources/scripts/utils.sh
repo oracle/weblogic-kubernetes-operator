@@ -160,8 +160,10 @@ function logFileRotateInner() {
     _logmax_=$((logmax - 1))
   fi
   for logcur in $(logFilesReverse ${1} | tail -n +${_logmax_}); do
-    [ ! "$3" = "quiet" ] && trace "Removing old log file '${logcur}'."
-    rm $logcur
+    if [ -f "$logcur" ] ; then
+      [ ! "$3" = "quiet" ] && trace "Removing old log file '${logcur}'."
+      rm $logcur
+    fi
   done
 
   # if highest lognum is 99999, renumber existing files starting with 1
@@ -172,7 +174,9 @@ function logFileRotateInner() {
     local logcur
     for logcur in $(logFiles "$1"); do
       lastlognum=$((lastlognum + 1))
-      mv "$logcur" "${1}$(printf "%0.5i" $lastlognum)"
+      if [ -f "$logcur" ] ; then
+        mv "$logcur" "${1}$(printf "%0.5i" $lastlognum)"
+      fi
     done
   fi
 
@@ -182,13 +186,16 @@ function logFileRotateInner() {
     if [ -f "$1" ]; then
       local nextlognum=$((lastlognum + 1))
       [ ! "$3" = "quiet" ] && trace "Rotating '$1' to '${1}$(printf "%0.5i" $nextlognum)'."
-      mv "$1" "${1}$(printf "%0.5i" $nextlognum)"
+      if [ -f "$1" ] ; then
+        mv "$1" "${1}$(printf "%0.5i" $nextlognum)"
+      fi
     fi
   else
-    rm -f "$1"
+    if [ -f "$1" ] ; then
+     rm -f "$1"
+    fi
   fi
 }
-
 #
 # internal helper for logFileRotate():
 #
@@ -715,7 +722,7 @@ function checkAuxiliaryImage() {
     rm -f ${AUXILIARY_IMAGE_PATH}/testaccess.tmp || return 1
 
     # The container .out files embed their container name, the names will sort in the same order in which the containers ran
-    out_files=$(set -o pipefail ; ls -1 $AUXILIARY_IMAGE_PATH/auxiliaryImageLogs/*.out 2>1 | sort --version-sort) \
+    out_files=$(set -o pipefail ; ls -1 $AUXILIARY_IMAGE_PATH/auxiliaryImageLogs/*.out 2>&1 | sort --version-sort) \
       || (trace SEVERE "Auxiliary Image: Assertion failure. No files found in '$AUXILIARY_IMAGE_PATH/auxiliaryImageLogs/*.out" \
       && return 1)
     severe_found=false

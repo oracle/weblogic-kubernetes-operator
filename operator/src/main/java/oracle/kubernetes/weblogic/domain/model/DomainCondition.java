@@ -110,6 +110,26 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
   }
 
   /**
+   * Last time we transitioned the condition.
+   *
+   * @param lastTransitionTime time
+   */
+  public void setLastTransitionTime(OffsetDateTime lastTransitionTime) {
+    this.lastTransitionTime = lastTransitionTime;
+  }
+
+  /**
+   * Last time we lastTransitionTime the condition.
+   *
+   * @param lastTransitionTime time
+   * @return this
+   */
+  public DomainCondition withLastTransitionTime(OffsetDateTime lastTransitionTime) {
+    this.lastTransitionTime = lastTransitionTime;
+    return this;
+  }
+
+  /**
    * Human-readable message indicating details about last transition.
    *
    * @return message

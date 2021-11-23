@@ -475,7 +475,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
     #
     # This is an example of how to define a Domain resource.
     #
-    apiVersion: "weblogic.oracle/v8"
+    apiVersion: "weblogic.oracle/v9"
     kind: Domain
     metadata:
       name: sample-domain1
@@ -597,7 +597,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
   #
   # This is an example of how to define a Domain resource.
   #
-  apiVersion: "weblogic.oracle/v8"
+  apiVersion: "weblogic.oracle/v9"
   kind: Domain
   metadata:
     name: sample-domain1
