@@ -19,6 +19,7 @@ import io.kubernetes.client.openapi.models.V1Capabilities;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerBuilder;
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1HostAlias;
 import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
 import io.kubernetes.client.openapi.models.V1NodeAffinity;
 import io.kubernetes.client.openapi.models.V1NodeSelector;
@@ -139,6 +140,10 @@ class ServerPod extends KubernetesResource {
       + "ServiceAccount will be used. The ServiceAccount has to exist at the time the Pod is created. "
       + "See `kubectl explain pods.spec.serviceAccountName`.")
   private String serviceAccountName = null;
+
+  @Description("HostAliases is an optional list of hosts and IPs that will be injected into the pod's hosts file "
+      + "if specified. This is only valid for non-hostNetwork pods.")
+  private List<V1HostAlias> hostAliases = new ArrayList<>();
 
   /**
    * Defines the requirements and limits for the pod server.
@@ -490,6 +495,7 @@ class ServerPod extends KubernetesResource {
       schedulerName = serverPod1.schedulerName;
     }
     tolerations.addAll(serverPod1.tolerations);
+    hostAliases.addAll(serverPod1.hostAliases);
   }
 
   private void addAuxiliaryImage(ServerPod serverPod1) {
@@ -777,6 +783,18 @@ class ServerPod extends KubernetesResource {
     tolerations.add(toleration);
   }
 
+  List<V1HostAlias> getHostAliases() {
+    return hostAliases;
+  }
+
+  void setHostAliases(List<V1HostAlias> hostAliases) {
+    this.hostAliases = hostAliases;
+  }
+
+  void addHostAlias(V1HostAlias hostAlias) {
+    hostAliases.add(hostAlias);
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
@@ -801,6 +819,7 @@ class ServerPod extends KubernetesResource {
         .append("nodeName", nodeName)
         .append("schedulerName", schedulerName)
         .append("tolerations", tolerations)
+        .append("hostAliases", hostAliases)
         .append("serviceAccountName", serviceAccountName)
         .append("auxiliaryImages", auxiliaryImages)
         .toString();
@@ -846,6 +865,7 @@ class ServerPod extends KubernetesResource {
         .append(nodeName, that.nodeName)
         .append(schedulerName, that.schedulerName)
         .append(tolerations, that.tolerations)
+        .append(hostAliases, that.hostAliases)
         .append(serviceAccountName, that.serviceAccountName)
         .append(auxiliaryImages, that.auxiliaryImages)
         .isEquals();
@@ -875,6 +895,7 @@ class ServerPod extends KubernetesResource {
         .append(nodeName)
         .append(schedulerName)
         .append(tolerations)
+        .append(hostAliases)
         .append(serviceAccountName)
         .append(auxiliaryImages)
         .toHashCode();

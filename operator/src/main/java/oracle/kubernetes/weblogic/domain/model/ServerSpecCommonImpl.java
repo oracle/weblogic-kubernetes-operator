@@ -11,6 +11,7 @@ import javax.annotation.Nonnull;
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1HostAlias;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
@@ -213,6 +214,11 @@ public abstract class ServerSpecCommonImpl extends ServerSpecBase {
   @Override
   public List<V1Toleration> getTolerations() {
     return server.getTolerations();
+  }
+
+  @Override
+  public List<V1HostAlias> getHostAliases() {
+    return server.getHostAliases();
   }
 
   @Override
