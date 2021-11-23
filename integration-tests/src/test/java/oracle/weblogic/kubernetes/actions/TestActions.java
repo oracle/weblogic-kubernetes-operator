@@ -1080,21 +1080,6 @@ public class TestActions {
   }
 
   /**
-   * Push an image to a registry.
-   *
-   * @param repoRegistry the repo registry the image to be pushed to
-   * @param image fully qualified docker image, image name:image tag
-   * @return true if successful
-   */
-  public static boolean dockerPush(String repoRegistry, String image) {
-    boolean result = Docker.push(repoRegistry, image);
-    if (result) {
-      ImageBuilders.registerPushedImage(image);
-    }
-    return result;
-  }
-
-  /**
    * Tag an image.
    *
    * @param originalImage fully qualified original docker image, image name:image tag

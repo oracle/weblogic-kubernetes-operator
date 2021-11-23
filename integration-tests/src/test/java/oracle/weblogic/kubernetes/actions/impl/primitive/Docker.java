@@ -64,23 +64,6 @@ public class Docker {
   }
 
   /**
-   * Push an image to a registry.
-   * @param repoRegistry repo registry the image to be pushed to
-   * @param image image
-   * @return true if successful
-   */
-  public static boolean push(String repoRegistry, String image) {
-    String cmdToExecute = String.format("docker push %s", image);
-    if (KIND_REPO != null && repoRegistry.contains(KIND_REPO)) {
-      cmdToExecute = String.format("kind load docker-image %s --name kind", image);
-    }
-    return new Command()
-        .withParams(new CommandParams()
-            .command(cmdToExecute))
-        .execute();
-  }
-
-  /**
    * Tag an image.
    * @param originalImage original image
    * @param taggedImage tagged image

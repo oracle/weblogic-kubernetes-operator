@@ -29,8 +29,10 @@ import org.junit.jupiter.params.provider.MethodSource;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.SKIP_BUILD_IMAGES_IF_EXISTS;
@@ -102,8 +104,6 @@ class ItWlsSamples {
   private static final String[] params = {"wlst:domain1", "wdt:domain2"};
 
   private static LoggingFacade logger = null;
-  private static String domainImageRepo =
-      System.getenv("REPO_REGISTRY") != null ? System.getenv("REPO_REGISTRY") + "/weblogick8s/" : "";
 
   /**
    * Assigns unique namespaces for operator and domains and installs operator.
@@ -149,7 +149,7 @@ class ItWlsSamples {
     String domainName = model.split(":")[1];
     String script = model.split(":")[0];
 
-    String imageName = domainImageRepo + diiImageNameBase + "-" + script + ":" + diiImageTag;
+    String imageName = DOMAIN_IMAGES_REPO + diiImageNameBase + "-" + script + ":" + diiImageTag;
 
     //copy the samples directory to a temporary location
     setupSample();
@@ -518,8 +518,10 @@ class ItWlsSamples {
               "#t3PublicAddress:", "t3PublicAddress: " + K8S_NODEPORT_HOST);
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "#imagePullSecretName:", "imagePullSecretName: " + BASE_IMAGES_REPO_SECRET);
-      replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-          "imagePullPolicy: IfNotPresent", "imagePullPolicy: Always");
+      if (KIND_REPO == null) {
+        replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+            "imagePullPolicy: IfNotPresent", "imagePullPolicy: Always");
+      }
     });
   }
 
@@ -543,7 +545,7 @@ class ItWlsSamples {
     if (sampleBase.toString().contains("domain-home-in-image")) {
       // docker login and push image to docker registry if necessary
       logger.info("Push the image {0} to Docker repo", imageName);
-      dockerLoginAndPushImageToRegistry(domainImageRepo, imageName);
+      dockerLoginAndPushImageToRegistry(imageName);
 
       // create docker registry secret to pull the image from registry
       // this secret is used only for non-kind cluster
