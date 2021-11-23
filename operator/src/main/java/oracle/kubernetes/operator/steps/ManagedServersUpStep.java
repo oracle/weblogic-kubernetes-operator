@@ -20,8 +20,6 @@ import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerShutdownInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
-import oracle.kubernetes.operator.helpers.EventHelper.EventData;
-import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -37,7 +35,7 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 
 import static java.util.Comparator.comparing;
-import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
+import static oracle.kubernetes.operator.DomainStatusUpdater.createReplicasTooHighFailureRelatedSteps;
 
 public class ManagedServersUpStep extends Step {
   static final String SERVERS_UP_MSG =
@@ -273,7 +271,7 @@ public class ManagedServersUpStep extends Step {
     private void logIfReplicasExceedsClusterServersMax(WlsClusterConfig clusterConfig) {
       if (exceedsMaxConfiguredClusterSize(clusterConfig)) {
         String clusterName = clusterConfig.getClusterName();
-        addValidationErrorEventAndWarning(MessageKeys.REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT,
+        addReplicasTooHighValidationErrorEventAndWarning(
             domain.getReplicaCount(clusterName),
             clusterConfig.getMaxDynamicClusterSize(),
             clusterName);
@@ -283,7 +281,7 @@ public class ManagedServersUpStep extends Step {
     private void logIfReplicasLessThanClusterServersMin(WlsClusterConfig clusterConfig) {
       if (lessThanMinConfiguredClusterSize(clusterConfig)) {
         String clusterName = clusterConfig.getClusterName();
-        addValidationErrorEventAndWarning(MessageKeys.REPLICAS_LESS_THAN_TOTAL_CLUSTER_SERVER_COUNT,
+        LOGGER.warning(MessageKeys.REPLICAS_LESS_THAN_TOTAL_CLUSTER_SERVER_COUNT,
             domain.getReplicaCount(clusterName),
             clusterConfig.getMinDynamicClusterSize(),
             clusterName);
@@ -294,11 +292,11 @@ public class ManagedServersUpStep extends Step {
       }
     }
 
-    private void addValidationErrorEventAndWarning(String msgId, Object... messageParams) {
-      LOGGER.warning(msgId, messageParams);
-      String message = LOGGER.formatMessage(msgId, messageParams);
+    private void addReplicasTooHighValidationErrorEventAndWarning(Object... messageParams) {
+      LOGGER.warning(MessageKeys.REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT, messageParams);
+      String message = LOGGER.formatMessage(MessageKeys.REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT, messageParams);
       if (!skipEventCreation) {
-        eventStep = createEventStep(new EventData(EventItem.DOMAIN_VALIDATION_ERROR, message));
+        eventStep = createReplicasTooHighFailureRelatedSteps(message);
       }
       info.addValidationWarning(message);
     }

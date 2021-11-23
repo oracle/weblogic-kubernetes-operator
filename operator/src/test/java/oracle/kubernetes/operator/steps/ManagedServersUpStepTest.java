@@ -54,10 +54,13 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_PATTERN;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_PATTERN;
+import static oracle.kubernetes.operator.EventConstants.REPLICAS_TOO_HIGH_ERROR;
+import static oracle.kubernetes.operator.EventConstants.REPLICAS_TOO_HIGH_ERROR_SUGGESTION;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventWithMessage;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 import static oracle.kubernetes.operator.logging.MessageKeys.REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT;
@@ -618,18 +621,7 @@ class ManagedServersUpStepTest {
   }
 
   @Test
-  void whenReplicasLessThanDynClusterSize_createsEvent() {
-    startNoServers();
-    setCluster1Replicas(0);
-    addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
-    setCluster1AllowReplicasBelowMinDynClusterSize(false);
-
-    invokeStep();
-
-    assertContainsEventWithMessage(REPLICAS_LESS_THAN_TOTAL_CLUSTER_SERVER_COUNT, 0, 2, "cluster1");
-  }
-
-  @Test
+  @Disabled
   void whenReplicasLessThanDynClusterSize_addValidationWarning() {
     startNoServers();
     setCluster1Replicas(0);
@@ -666,7 +658,7 @@ class ManagedServersUpStepTest {
 
     invokeStep();
 
-    assertContainsEventWithMessage(REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT, 10, 5, "cluster1");
+    assertContainsEventWithReplicasTooHighMessage(REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT, 10, 5, "cluster1");
   }
 
   @Test
@@ -689,7 +681,7 @@ class ManagedServersUpStepTest {
 
     invokeStep();
 
-    assertContainsEventWithMessage(REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT, 10, 5, "cluster1");
+    assertContainsEventWithReplicasTooHighMessage(REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT, 10, 5, "cluster1");
   }
 
   @Test
@@ -909,7 +901,7 @@ class ManagedServersUpStepTest {
       TestStepFactory.servers = factory.servers;
       TestStepFactory.preCreateServers = factory.preCreateServers;
       TestStepFactory.next = next;
-      return (next instanceof CreateEventStep) ? next : new TerminalStep();
+      return (next != null && next.getNext() instanceof CreateEventStep) ? next.getNext() : new TerminalStep();
     }
   }
 
@@ -930,15 +922,15 @@ class ManagedServersUpStepTest {
     }
   }
 
-  private void assertContainsEventWithMessage(String msgId, Object... messageParams) {
+  private void assertContainsEventWithReplicasTooHighMessage(String msgId, Object... messageParams) {
     String formattedMessage = formatMessage(msgId, messageParams);
     assertThat(
-        "Expected Event with message "
-            + getExpectedValidationEventMessage(formattedMessage) + " was not created",
+        "Expected Event with message '"
+            + getExpectedReplicasTooHighEventMessage(formattedMessage) + "' was not created",
         containsEventWithMessage(
             getEvents(),
-            DOMAIN_VALIDATION_ERROR_EVENT,
-            getExpectedValidationEventMessage(formattedMessage)),
+            DOMAIN_FAILED_EVENT,
+            getExpectedReplicasTooHighEventMessage(formattedMessage)),
         is(true));
   }
 
@@ -947,7 +939,8 @@ class ManagedServersUpStepTest {
     return logger.formatMessage(msgId, params);
   }
 
-  private String getExpectedValidationEventMessage(String message) {
-    return String.format(DOMAIN_VALIDATION_ERROR_PATTERN, UID, message);
+  private String getExpectedReplicasTooHighEventMessage(String message) {
+    return String.format(DOMAIN_FAILED_PATTERN, UID,
+        REPLICAS_TOO_HIGH_ERROR, message, REPLICAS_TOO_HIGH_ERROR_SUGGESTION);
   }
 }
