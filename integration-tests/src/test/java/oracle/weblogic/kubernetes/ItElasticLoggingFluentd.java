@@ -222,7 +222,7 @@ class ItElasticLoggingFluentd {
       assertDoesNotThrow(() -> uninstallAndVerifyElasticsearch(elasticsearchParams),
           "uninstallAndVerifyElasticsearch failed with ApiException");
 
-      logger.info("Uninstall Elasticsearch pod");
+      logger.info("Uninstall Kibana pod");
       assertDoesNotThrow(() -> uninstallAndVerifyKibana(kibanaParams),
           "uninstallAndVerifyKibana failed with ApiException");
     }
