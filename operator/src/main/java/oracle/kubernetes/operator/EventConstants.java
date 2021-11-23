@@ -27,7 +27,7 @@ public interface EventConstants {
   String DOMAIN_CHANGED_PATTERN = "Domain %s was changed";
   String DOMAIN_COMPLETED_PATTERN = "Domain %s is completely ready";
   String DOMAIN_DELETED_PATTERN = "Domain %s was deleted";
-  String DOMAIN_FAILED_PATTERN = "Domain %s failed due to %s: %s.%s";
+  String DOMAIN_FAILED_PATTERN = "Domain %s failed due to %s: %s. %s";
   String DOMAIN_UNAVAILABLE_PATTERN
       = "Domain %s became unavailable because none of the servers is up although some of them are supposed to be up";
   String DOMAIN_INCOMPLETE_PATTERN
