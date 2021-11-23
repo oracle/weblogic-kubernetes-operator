@@ -21,6 +21,9 @@ import static oracle.kubernetes.weblogic.domain.model.ObjectPatch.createObjectPa
 /** DomainCondition contains details for the current condition of this domain. */
 public class DomainCondition implements Comparable<DomainCondition>, PatchableComponent<DomainCondition> {
 
+  public static final String TRUE = "True";
+  public static final String FALSE = "False";
+
   @Description(
       "The type of the condition. Valid types are Completed, "
           + "Available, Failed, and ConfigChangesPendingRestart.")
@@ -163,13 +166,25 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
   /**
    * The status of the condition. Can be True, False, Unknown. Required.
    *
-   * @param status status
-   * @return this
+   * @param status the new status value
+   * @return this object
    */
   public DomainCondition withStatus(String status) {
-    assert status.equals("True") || ! type.statusMustBeTrue() : "Attempt to set illegal status value";
+    assert status.equals(TRUE) || ! type.statusMustBeTrue() : "Attempt to set illegal status value";
     lastTransitionTime = SystemClock.now();
     this.status = status;
+    return this;
+  }
+
+  /**
+   * Sets the condition status to a boolean value, which will be converted to a standard string.
+   * @param status the new status value
+   * @return this object
+   */
+  public DomainCondition withStatus(boolean status) {
+    assert status || ! type.statusMustBeTrue() : "Attempt to set illegal status value";
+    lastTransitionTime = SystemClock.now();
+    this.status = status ? TRUE : FALSE;
     return this;
   }
 
