@@ -177,6 +177,11 @@ public abstract class BaseConfiguration {
     return serverPod.getShutdown();
   }
 
+  public void setShutdown(String shutdownType, Long timeoutSeconds, Boolean ignoreSessions,
+      Boolean waitForAllSessions) {
+    serverPod.setShutdown(shutdownType, timeoutSeconds, ignoreSessions, waitForAllSessions);
+  }
+
   void addNodeSelector(String labelKey, String labelValue) {
     serverPod.addNodeSelector(labelKey, labelValue);
   }

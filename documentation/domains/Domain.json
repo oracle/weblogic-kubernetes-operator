@@ -978,7 +978,7 @@
           "type": "number"
         },
         "waitForAllSessions": {
-          "description": "For graceful shutdown only, Set to true to wait for all HTTP sessions during inflight work handling; false to wait for non-persisted HTTP sessions only. Defaults to true.",
+          "description": "For graceful shutdown only, Set to true to wait for all HTTP sessions during inflight work handling; false to wait for non-persisted HTTP sessions only. Defaults to false.",
           "type": "boolean"
         }
       }

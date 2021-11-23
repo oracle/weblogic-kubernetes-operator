@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 2182e35fa68a5927362c8d51fe51148e04a0a645c95363e666026f8b66447bf7
+    weblogic.sha256: 390026c1aa95969c3799eac802771682238622fb8861524edb459634fffc2c01
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -2727,7 +2727,7 @@ spec:
                             description: For graceful shutdown only, Set to true to
                               wait for all HTTP sessions during inflight work handling;
                               false to wait for non-persisted HTTP sessions only.
-                              Defaults to true.
+                              Defaults to false.
                             type: boolean
                         type: object
                       affinity:
@@ -5520,7 +5520,7 @@ spec:
                               description: For graceful shutdown only, Set to true
                                 to wait for all HTTP sessions during inflight work
                                 handling; false to wait for non-persisted HTTP sessions
-                                only. Defaults to true.
+                                only. Defaults to false.
                               type: boolean
                         affinity:
                           description: If specified, the Pod's scheduling constraints.
@@ -8309,7 +8309,7 @@ spec:
                         description: For graceful shutdown only, Set to true to wait
                           for all HTTP sessions during inflight work handling; false
                           to wait for non-persisted HTTP sessions only. Defaults to
-                          true.
+                          false.
                         type: boolean
                     type: object
                   affinity:
@@ -11009,7 +11009,7 @@ spec:
                               description: For graceful shutdown only, Set to true
                                 to wait for all HTTP sessions during inflight work
                                 handling; false to wait for non-persisted HTTP sessions
-                                only. Defaults to true.
+                                only. Defaults to false.
                               type: boolean
                         affinity:
                           description: If specified, the Pod's scheduling constraints.

@@ -14,6 +14,7 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Service;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
+import oracle.kubernetes.operator.ShutdownType;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.SecretHelper;
@@ -60,12 +61,18 @@ public class ShutdownManagedServerStep extends Step {
     return new ShutdownManagedServerStep(next, serverName, pod);
   }
 
-  private static String getManagedServerShutdownPath() {
-    return "/management/weblogic/latest/serverRuntime/shutdown";
+  private static String getManagedServerShutdownPath(Boolean isGracefulShutdown) {
+    StringBuilder stringBuilder = new StringBuilder("/management/weblogic/latest/serverRuntime/");
+    String shutdownString = isGracefulShutdown ? "shutdown" : "forceShutdown";
+    return stringBuilder.append(shutdownString).toString();
   }
 
-  private static String getManagedServerShutdownPayload(Boolean ignoreSessions, Long timeout,
-      Boolean waitForAllSessions) {
+  private static String getManagedServerShutdownPayload(Boolean isGracefulShutdown,
+      Boolean ignoreSessions, Long timeout, Boolean waitForAllSessions) {
+    if (!isGracefulShutdown) {
+      return "{}";
+    }
+
     StringBuilder stringBuilder = new StringBuilder();
     stringBuilder.append("{  \"ignoreSessions\": ")
         .append(ignoreSessions)
@@ -108,14 +115,21 @@ public class ShutdownManagedServerStep extends Step {
       Shutdown shutdown = Optional.ofNullable(info.getDomain().getServer(serverName, clusterName))
           .map(ServerSpec::getShutdown).orElse(null);
 
+      Boolean isGracefulShutdown = isGracefulShutdown(shutdown);
       Long timeout = getTimeout(shutdown);
       Boolean ignoreSessions = getIgnoreSessions(shutdown);
       Boolean waitForAllSessions = getWaitForAllSessions(shutdown);
 
-      HttpRequest request = createRequestBuilder(getRequestUrl())
+      HttpRequest request = createRequestBuilder(getRequestUrl(isGracefulShutdown))
             .POST(HttpRequest.BodyPublishers.ofString(getManagedServerShutdownPayload(
-                ignoreSessions, timeout, waitForAllSessions))).build();
+                isGracefulShutdown, ignoreSessions, timeout, waitForAllSessions))).build();
       return request;
+    }
+
+    private Boolean isGracefulShutdown(Shutdown shutdown) {
+      String shutdownType = Optional.ofNullable(shutdown).map(Shutdown::getShutdownType)
+          .orElse(ShutdownType.Graceful.name());
+      return shutdownType.equalsIgnoreCase(ShutdownType.Graceful.name());
     }
 
     private Boolean getWaitForAllSessions(Shutdown shutdown) {
@@ -133,8 +147,8 @@ public class ShutdownManagedServerStep extends Step {
               .orElse(Shutdown.DEFAULT_TIMEOUT);
     }
 
-    private String getRequestUrl() {
-      return getServiceUrl() + getManagedServerShutdownPath();
+    private String getRequestUrl(Boolean isGracefulShutdown) {
+      return getServiceUrl() + getManagedServerShutdownPath(isGracefulShutdown);
     }
 
     protected PortDetails getPortDetails() {

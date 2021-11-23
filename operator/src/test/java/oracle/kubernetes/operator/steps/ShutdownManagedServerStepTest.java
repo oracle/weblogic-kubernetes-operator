@@ -17,6 +17,7 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Service;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.LabelConstants;
+import oracle.kubernetes.operator.ShutdownType;
 import oracle.kubernetes.operator.helpers.AnnotationHelper;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
@@ -31,7 +32,7 @@ import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.SystemClockTestSupport;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
-import org.hamcrest.junit.MatcherAssert;
+import oracle.kubernetes.weblogic.domain.model.ManagedServer;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -44,6 +45,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
 import static oracle.kubernetes.operator.logging.MessageKeys.SERVER_SHUTDOWN_REST_FAILURE;
 import static oracle.kubernetes.operator.logging.MessageKeys.SERVER_SHUTDOWN_REST_SUCCESS;
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -126,14 +128,28 @@ class ShutdownManagedServerStepTest {
   }
 
   private void defineResponse(int status, String body, String url) {
-    httpSupport.defineResponse(
-        createExpectedRequest(Objects.requireNonNullElse(url, "http://127.0.0.1:7001")),
-        createStub(HttpResponseStub.class, status, body));
+    defineResponse(true, status, body, url);
+  }
+
+  private void defineResponse(boolean gracefulShutdown, int status, String body, String url) {
+    HttpRequest request = gracefulShutdown
+        ? createExpectedRequest(Objects.requireNonNullElse(
+            url, "http://127.0.0.1:7001"))
+        : createExpectedRequestForcedShutdown(Objects.requireNonNullElse(
+            url, "http://127.0.0.1:7001"));
+    httpSupport.defineResponse(request, createStub(HttpResponseStub.class, status, body));
   }
 
   private HttpRequest createExpectedRequest(String url) {
     return HttpRequest.newBuilder()
         .uri(URI.create(url + "/management/weblogic/latest/serverRuntime/shutdown"))
+        .POST(HttpRequest.BodyPublishers.noBody())
+        .build();
+  }
+
+  private HttpRequest createExpectedRequestForcedShutdown(String url) {
+    return HttpRequest.newBuilder()
+        .uri(URI.create(url + "/management/weblogic/latest/serverRuntime/forceShutdown"))
         .POST(HttpRequest.BodyPublishers.noBody())
         .build();
   }
@@ -151,7 +167,7 @@ class ShutdownManagedServerStepTest {
 
     // Validate is set after running steps
     assertThat(info.getWebLogicCredentialsSecret(), is(notNullValue()));
-    MatcherAssert.assertThat(logRecords, containsFine(SERVER_SHUTDOWN_REST_SUCCESS));
+    assertThat(logRecords, containsFine(SERVER_SHUTDOWN_REST_SUCCESS));
   }
 
   @Test
@@ -162,7 +178,7 @@ class ShutdownManagedServerStepTest {
 
     testSupport.runSteps(shutdownConfiguredManagedServer);
 
-    MatcherAssert.assertThat(logRecords, containsFine(SERVER_SHUTDOWN_REST_SUCCESS));
+    assertThat(logRecords, containsFine(SERVER_SHUTDOWN_REST_SUCCESS));
   }
 
   @Test
@@ -173,7 +189,7 @@ class ShutdownManagedServerStepTest {
 
     testSupport.runSteps(shutdownConfiguredManagedServer);
 
-    MatcherAssert.assertThat(logRecords, containsFine(SERVER_SHUTDOWN_REST_FAILURE));
+    assertThat(logRecords, containsFine(SERVER_SHUTDOWN_REST_FAILURE));
   }
 
   @Test
@@ -184,7 +200,7 @@ class ShutdownManagedServerStepTest {
 
     testSupport.runSteps(shutdownStandaloneManagedServer);
 
-    MatcherAssert.assertThat(logRecords, containsFine(SERVER_SHUTDOWN_REST_SUCCESS));
+    assertThat(logRecords, containsFine(SERVER_SHUTDOWN_REST_SUCCESS));
   }
 
   @Test
@@ -195,7 +211,7 @@ class ShutdownManagedServerStepTest {
 
     testSupport.runSteps(shutdownStandaloneManagedServer);
 
-    MatcherAssert.assertThat(logRecords, containsFine(SERVER_SHUTDOWN_REST_FAILURE));
+    assertThat(logRecords, containsFine(SERVER_SHUTDOWN_REST_FAILURE));
   }
 
   @Test
@@ -206,7 +222,7 @@ class ShutdownManagedServerStepTest {
 
     testSupport.runSteps(shutdownDynamicManagedServer);
 
-    MatcherAssert.assertThat(logRecords, containsFine(SERVER_SHUTDOWN_REST_SUCCESS));
+    assertThat(logRecords, containsFine(SERVER_SHUTDOWN_REST_SUCCESS));
   }
 
   @Test
@@ -217,7 +233,25 @@ class ShutdownManagedServerStepTest {
 
     testSupport.runSteps(shutdownDynamicManagedServer);
 
-    MatcherAssert.assertThat(logRecords, containsFine(SERVER_SHUTDOWN_REST_FAILURE));
+    assertThat(logRecords, containsFine(SERVER_SHUTDOWN_REST_FAILURE));
+  }
+
+  @Test
+  void whenInvokeForceShutdown_standaloneServer_verifySuccess() {
+    selectServer(MANAGED_SERVER1, standaloneServerService);
+
+    ManagedServer managedServer1 = new ManagedServer().withServerName(MANAGED_SERVER1);
+    managedServer1.setShutdown(ShutdownType.Forced.name(), 60L, true, false);
+    domain.getSpec().getManagedServers().add(managedServer1);
+
+    defineResponse(false, 200, "", "http://test-domain-managed-server1.namespace:8001");
+
+    testSupport.runSteps(shutdownStandaloneManagedServer);
+
+    System.out.println("httpSupport.getLastRequest: " + httpSupport.getLastRequest().toString());
+    assertThat(httpSupport.getLastRequest().toString(), containsString("forceShutdown"));
+    assertThat(logRecords, containsFine(SERVER_SHUTDOWN_REST_SUCCESS));
+
   }
 
   private V1Pod defineManagedPod(String name) {

@@ -18,7 +18,7 @@ public class Shutdown {
   // Default timeout must stay 30 seconds to match Kubernetes default
   public static final Long DEFAULT_TIMEOUT = 30L;
   public static final Boolean DEFAULT_IGNORESESSIONS = Boolean.FALSE;
-  public static final Boolean DEFAULT_WAIT_FOR_ALL_SESSIONS = Boolean.TRUE;
+  public static final Boolean DEFAULT_WAIT_FOR_ALL_SESSIONS = Boolean.FALSE;
 
   @Description(
       "Specifies how the operator will shut down server instances."
@@ -40,7 +40,7 @@ public class Shutdown {
       "For graceful shutdown only, Set to true to wait for all HTTP sessions"
           + " during inflight work handling; false to wait for non-persisted"
           + " HTTP sessions only."
-          + " Defaults to true.")
+          + " Defaults to false.")
   private Boolean waitForAllSessions;
 
   public Shutdown() {
