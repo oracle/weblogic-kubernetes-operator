@@ -9,7 +9,7 @@ description: "Kubernetes Secrets for the operator"
 * [Domain credentials secret](#domain-credentials-secret)
 * [Domain image pull secret](#domain-image-pull-secret)
 * [Operator image pull secret](#operator-image-pull-secret)
-* [Operator configuration override secrets](#operator-configuration-override-secrets)
+* [Operator configuration override or runtime update secrets](#operator-configuration-override-or-runtime-update-secrets)
 * [Operator external REST interface secret](#operator-external-rest-interface-secret)
 * [Operator internal REST interface secret](#operator-internal-rest-interface-secret)
 
@@ -104,16 +104,19 @@ For more information, see
 [Install the operator Helm chart]({{<relref "/userguide/managing-operators/installation.md#install-the-operator-helm-chart">}}).
 {{% /notice %}}
 
-#### Operator configuration override secrets
+#### Operator configuration override or runtime update secrets
 
 The operator supports embedding macros within configuration override templates
-that reference Kubernetes Secrets. These Kubernetes Secrets can be created with any name in the
-namespace where the `Domain` will be running. The Kubernetes Secret names are
+and Model in Image model files that reference Kubernetes Secrets.
+These Kubernetes Secrets can be created with any name in the
+namespace where a domain will be running. The Kubernetes Secret names are
 specified using `configuration.secrets` in the WebLogic `Domain` resource.
 
 {{% notice info %}}
 For more information, see
-[Configuration overrides]({{<relref "/userguide/managing-domains/configoverrides/_index.md#how-do-you-specify-overrides">}}).
+[Configuration overrides]({{<relref "/userguide/managing-domains/configoverrides/_index.md#how-do-you-specify-overrides">}})
+and
+[Runtime updates]({{<relref "/userguide/managing-domains/model-in-image/runtime-updates.md">}}).
 {{% /notice %}}
 
 #### Operator external REST interface secret
@@ -123,7 +126,7 @@ accessed from outside the Kubernetes cluster. A Kubernetes `tls secret`
 is used to hold the certificates and private key.
 
 {{% notice info %}}
-For more information, see [Certificates]({{<relref "/security/certificates#additional-reading">}}).
+For more information, see the operator user guide security [Certificates]({{<relref "/userguide/managing-operators/security/certificates#additional-reading">}}) chapter.
 {{% /notice %}}
 
 #### Operator internal REST interface secret

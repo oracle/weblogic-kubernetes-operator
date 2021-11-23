@@ -32,6 +32,7 @@ To enable the external REST interface, configure these values in a custom config
 
 * Set `externalRestEnabled` to `true`.
 * Set `externalRestIdentitySecret` to the name of the Kubernetes `tls secret` that contains the certificates and private key.
+  For more information about the REST identity secret, see [Updating REST certificates]({{< relref "/userguide/managing-operators/security/certificates.md" >}}).
 * Optionally, set `externalRestHttpsPort` to the external port number for the operator REST interface (defaults to `31001`).
 
 

@@ -1,5 +1,5 @@
 ---
-title: "Operator debugging"
+title: "Debugging"
 date: 2019-02-23T16:47:21-05:00
 weight: 8
 description: "General advice for debugging and monitoring the operator."
@@ -111,7 +111,6 @@ An operator's settings are automatically maintained by Helm in a Kubernetes Conf
 
 - See [Common Mistakes and Solutions]({{< relref "/userguide/managing-operators/common-mistakes.md" >}}).
 - Check the [FAQs]({{<relref "/faq/_index.md">}}).
-
 
 ### Force the operator to restart
 
