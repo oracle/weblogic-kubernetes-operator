@@ -27,6 +27,9 @@ import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 
+import static oracle.kubernetes.operator.LabelConstants.forDomainUidSelector;
+import static oracle.kubernetes.operator.LabelConstants.getCreatedByOperatorSelector;
+
 /**
  * A Class to manage listing Kubernetes resources associated with a namespace and doing processing on them.
  */
@@ -164,7 +167,7 @@ class NamespacedResources {
   }
 
   private Step createPodDisruptionBudgetListStep(List<Consumer<V1beta1PodDisruptionBudgetList>> processing) {
-    return new CallBuilder()
+    return new CallBuilder().withLabelSelectors(forDomainUidSelector(domainUid), getCreatedByOperatorSelector())
             .listPodDisruptionBudgetAsync(namespace, new ListResponseStep<>(processing));
   }
 

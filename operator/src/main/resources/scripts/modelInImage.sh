@@ -33,7 +33,12 @@ IMG_MODELS_ROOTDIR="${IMG_MODELS_HOME}"
 IMG_ARCHIVES_ROOTDIR="${IMG_MODELS_HOME}"
 IMG_VARIABLE_FILES_ROOTDIR="${IMG_MODELS_HOME}"
 WDT_ROOT="${WDT_INSTALL_HOME:-/u01/wdt/weblogic-deploy}"
-WDT_OUTPUT="/tmp/wdt_output.log"
+WDT_OUTPUT_DIR="${LOG_HOME:-/tmp}"
+WDT_OUTPUT="${WDT_OUTPUT_DIR}/wdt_output.log"
+WDT_CREATE_DOMAIN_LOG=createDomain.log
+WDT_UPDATE_DOMAIN_LOG=updateDomain.log
+WDT_VALIDATE_MODEL_LOG=validateModel.log
+WDT_COMPARE_MODEL_LOG=compareModel.log
 WDT_BINDIR="${WDT_ROOT}/bin"
 WDT_FILTER_JSON="/weblogic-operator/scripts/model-filters.json"
 WDT_CREATE_FILTER="/weblogic-operator/scripts/model-wdt-create-filter.py"
@@ -57,6 +62,12 @@ SCRIPT_ERROR=255
 WDT_ONLINE_MIN_VERSION="1.9.9"
 WDT_OFFLINE_MIN_VERSION="1.7.3"
 
+FATAL_JRF_INTROSPECTOR_ERROR_MSG="Model In Image JRF domain creation and schema initialization encountered an unrecoverable error.
+ If it is a database credential related error such as wrong password, schema prefix, or database connect
+ string, then correct the error and patch the domain resource 'domain.spec.introspectVersion' with a new
+ value. If the error is not related to a database credential, then you must also drop and recreate the
+ JRF schemas before patching the domain resource. Introspection Error: "
+
 export WDT_MODEL_SECRETS_DIRS="/weblogic-operator/config-overrides-secrets"
 [ ! -d ${WDT_MODEL_SECRETS_DIRS} ] && unset WDT_MODEL_SECRETS_DIRS
 
@@ -64,6 +75,11 @@ export WDT_MODEL_SECRETS_DIRS="/weblogic-operator/config-overrides-secrets"
 #  export WDT_MODEL_SECRETS_NAME_DIR_PAIRS="__weblogic-credentials__=/weblogic-operator/secrets,__WEBLOGIC-CREDENTIALS__=/weblogic-operator/secrets,${CREDENTIALS_SECRET_NAME}=/weblogic-operator/secret"
 #For now:
 export WDT_MODEL_SECRETS_NAME_DIR_PAIRS="__weblogic-credentials__=/weblogic-operator/secrets,__WEBLOGIC-CREDENTIALS__=/weblogic-operator/secrets"
+
+if [ ! -d "${WDT_OUTPUT_DIR}" ]; then
+  trace "Creating WDT standard output directory: '${WDT_OUTPUT_DIR}'"
+  createFolder "${WDT_OUTPUT_DIR}"
+fi
 
 # sort_files  sort the files according to the names and naming conventions and write the result to stdout
 #    $1  directory
@@ -610,6 +626,9 @@ function diff_model_v1() {
 
 function diff_model() {
   trace "Entering diff_model"
+  # wdt shell script or logFileRotate may return non-zero code if trap is on, then it will go to trap instead
+  # temporarily disable it
+  stop_trap
 
   export __WLSDEPLOY_STORE_MODEL__=1
   # $1 - new model, $2 original model
@@ -659,6 +678,11 @@ function diff_model() {
       exitOrLoop
     fi
   fi
+
+  wdtRotateAndCopyLogFile "${WDT_COMPARE_MODEL_LOG}"
+
+  # restore trap
+  start_trap
 
   trace "Exiting diff_model"
 }
@@ -829,6 +853,8 @@ function generateMergedModel() {
     exitOrLoop
   fi
 
+  wdtRotateAndCopyLogFile "${WDT_VALIDATE_MODEL_LOG}"
+
   # restore trap
   start_trap
   trace "Exiting generateMergedModel"
@@ -887,9 +913,7 @@ function wdtCreatePrimordialDomain() {
     #  output configmap and save it for reuse.
 
     ${WDT_BINDIR}/createDomain.sh ${wdtArgs} > ${WDT_OUTPUT} 2>&1
-
   else
-
     # We get here only for JRF domain 'second time' (or more) case.
 
     # JRF wallet reuse note:
@@ -913,7 +937,8 @@ function wdtCreatePrimordialDomain() {
     # without admin intervention (retrying can compound the problem and obscure the original issue).
     #
     if [ "JRF" == "$WDT_DOMAIN_TYPE" ] && [ -z "${OPSS_FLAGS}" ] ; then
-      trace SEVERE "Model in Image: FatalIntrospectorError: WDT Create Primordial Domain Failed, ret=${ret}"
+      trace SEVERE "Model in Image: FatalIntrospectorError: WDT Create Domain Failed, return ${ret}. " \
+        ${FATAL_JRF_INTROSPECTOR_ERROR_MSG}
     else
       trace SEVERE "Model in Image: WDT Create Primordial Domain Failed, ret=${ret}"
     fi
@@ -922,7 +947,12 @@ function wdtCreatePrimordialDomain() {
   else
     trace "WDT Create Domain Succeeded, ret=${ret}:"
     cat ${WDT_OUTPUT}
+    if [ "JRF" == "$WDT_DOMAIN_TYPE" ]; then
+      CREATED_JRF_PRIMODIAL="true"
+    fi
   fi
+
+  wdtRotateAndCopyLogFile "${WDT_CREATE_DOMAIN_LOG}"
 
   # restore trap
   start_trap
@@ -957,7 +987,12 @@ function wdtUpdateModelDomain() {
   ret=$?
 
   if [ $ret -ne 0 ]; then
-    trace SEVERE "WDT Update Domain command Failed:"
+    if [ "true" == "${CREATED_JRF_PRIMODIAL}" ] ; then
+      trace SEVERE "Model in Image: FatalIntrospectorError: WDT Update Domain Failed, return ${ret}. " \
+        ${FATAL_JRF_INTROSPECTOR_ERROR_MSG}
+    else
+      trace SEVERE "WDT Update Domain command Failed:"
+    fi
     cat ${WDT_OUTPUT}
     exitOrLoop
   fi
@@ -992,6 +1027,8 @@ function wdtUpdateModelDomain() {
   encrypt_decrypt_model "encrypt" ${DOMAIN_HOME}/wlsdeploy/domain_model.json.b64 ${MII_PASSPHRASE} \
     ${DOMAIN_HOME}/wlsdeploy/domain_model.json
 
+  wdtRotateAndCopyLogFile "${WDT_UPDATE_DOMAIN_LOG}"
+
   # restore trap
   start_trap
   trace "Exiting wdtUpdateModelDomain"
@@ -1018,7 +1055,7 @@ function wdtHandleOnlineUpdate() {
   for file in $(sort_files ${IMG_ARCHIVES_ROOTDIR} "*.zip")
     do
         # expand the archive domain libraries to the domain lib
-        cd ${DOMAIN_HOME}/lib || return exitOrLoop
+        cd ${DOMAIN_HOME}/lib || exitOrLoop
         ${JAVA_HOME}/bin/jar xf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainLibraries/
 
         if [ $? -ne 0 ] ; then
@@ -1083,6 +1120,8 @@ function wdtHandleOnlineUpdate() {
   # Restore encrypted merge model otherwise the on in the domain will be the diffed model
 
   cp  /tmp/encrypted_merge_model.json ${DOMAIN_HOME}/wlsdeploy/domain_model.json
+
+  wdtRotateAndCopyLogFile ${WDT_UPDATE_DOMAIN_LOG} 
 
   trace "wrote updateResult"
 
@@ -1311,4 +1350,15 @@ function cleanup_mii() {
 function logSevereAndExit() {
   trace SEVERE "cp '$1' failed"
   exitOrLoop
+}
+
+# Function to rotate WDT script log file and copy the file to WDT output dir.
+# parameter:
+#   1 - Name of the log file to rotate and copy to WDT output directory.
+function wdtRotateAndCopyLogFile() {
+  local logFileName=$1
+
+  logFileRotate "${WDT_OUTPUT_DIR}/${logFileName}" "${WDT_LOG_FILE_MAX:-11}"
+
+  cp ${WDT_ROOT}/logs/${logFileName} ${WDT_OUTPUT_DIR}/
 }

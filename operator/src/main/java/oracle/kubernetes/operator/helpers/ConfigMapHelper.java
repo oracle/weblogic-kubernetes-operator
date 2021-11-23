@@ -6,7 +6,6 @@ package oracle.kubernetes.operator.helpers;
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.StringReader;
-import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -50,8 +49,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.yaml.snakeyaml.Yaml;
 
 import static java.lang.System.lineSeparator;
-import static java.time.temporal.ChronoUnit.MILLIS;
-import static oracle.kubernetes.operator.DomainStatusUpdater.BAD_TOPOLOGY;
+import static oracle.kubernetes.operator.DomainFailureReason.DomainInvalid;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.DOMAINZIP_HASH;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.DOMAIN_INPUTS_HASH;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.DOMAIN_RESTART_VERSION;
@@ -242,6 +240,7 @@ public class ConfigMapHelper {
     void recordCurrentMap(Packet packet, V1ConfigMap configMap) {
     }
 
+    @SuppressWarnings("SameParameterValue")
     void setContentValue(String key, String value) {
       contents.put(key, value);
     }
@@ -503,25 +502,20 @@ public class ConfigMapHelper {
         loader.updateImageHashInPacket();
         return doNext(loader.createIntrospectionVersionUpdateStep(), packet);
       } else {
-        LOGGER.fine(MessageKeys.WLS_CONFIGURATION_READ, timeSinceJobStart(packet), loader.getDomainConfig());
         loader.updatePacket();
         return doNext(loader.createValidationStep(), packet);
       }
     }
-
-    private long timeSinceJobStart(Packet packet) {
-      return ((OffsetDateTime)packet.get(JobHelper.START_TIME)).until(OffsetDateTime.now(), MILLIS);
-    }
   }
 
   static class IntrospectionLoader {
+    private static final String NON_DYNAMIC_CHANGES_FILE = "non_dynamic_changes.file";
 
     private final Packet packet;
     private final Step conflictStep;
     private final DomainPresenceInfo info;
     private Map<String, String> data;
     private WlsDomainConfig wlsDomainConfig;
-    private final String nonDynamicChangesFileKey = "non_dynamic_changes.file";
 
     IntrospectionLoader(Packet packet, Step conflictStep) {
       this.packet = packet;
@@ -549,10 +543,10 @@ public class ConfigMapHelper {
       if (updateDomainResult != null) {
         LOGGER.fine("ConfigMapHelper.apply: MII Dynamic update result " + updateDomainResult);
         packet.put(ProcessingConstants.MII_DYNAMIC_UPDATE, updateDomainResult);
-        if (data.containsKey(nonDynamicChangesFileKey)) {
-          String rollbackFileContent = data.get(nonDynamicChangesFileKey);
+        if (data.containsKey(NON_DYNAMIC_CHANGES_FILE)) {
+          String rollbackFileContent = data.get(NON_DYNAMIC_CHANGES_FILE);
           packet.put(ProcessingConstants.MII_DYNAMIC_UPDATE_WDTROLLBACKFILE, rollbackFileContent);
-          data.remove(nonDynamicChangesFileKey);
+          data.remove(NON_DYNAMIC_CHANGES_FILE);
         }
         // remove this, there is no need to store it in the configmap
         data.remove(UPDATEDOMAINRESULT);
@@ -668,7 +662,7 @@ public class ConfigMapHelper {
     @Override
     public NextAction apply(Packet packet) {
       List<String> errors = getErrors(packet);
-      Step step = DomainStatusUpdater.createFailureRelatedSteps(BAD_TOPOLOGY, perLine(errors), null);
+      Step step = DomainStatusUpdater.createFailureRelatedSteps(DomainInvalid, perLine(errors));
       return doNext(step, packet);
     }
 

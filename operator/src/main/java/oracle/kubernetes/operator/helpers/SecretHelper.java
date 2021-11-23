@@ -15,6 +15,7 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.helpers.SecretType.WebLogicCredentials;
 import static oracle.kubernetes.operator.logging.MessageKeys.SECRET_NOT_FOUND;
 
@@ -61,10 +62,13 @@ public class SecretHelper {
         secretName = dpi.getDomain().getWebLogicCredentialsSecretName();
         namespace = dpi.getNamespace();
 
-        LOGGER.fine(MessageKeys.RETRIEVING_SECRET, secretName);
-        Step read = new CallBuilder().readSecretAsync(secretName, namespace, new SecretResponseStep(getNext()));
-
-        return doNext(read, packet);
+        if (secretName == null) {
+          return doNext(packet);
+        } else {
+          LOGGER.fine(MessageKeys.RETRIEVING_SECRET, secretName);
+          final Step read = new CallBuilder().readSecretAsync(secretName, namespace, new SecretResponseStep(getNext()));
+          return doNext(read, packet);
+        }
       }
     }
 
@@ -83,7 +87,7 @@ public class SecretHelper {
 
       @Override
       public NextAction onFailure(Packet packet, CallResponse<V1Secret> callResponse) {
-        if (callResponse.getStatusCode() == CallBuilder.NOT_FOUND) {
+        if (callResponse.getStatusCode() == HTTP_NOT_FOUND) {
           LoggingFilter loggingFilter = packet.getValue(LoggingFilter.LOGGING_FILTER_PACKET_KEY);
           LOGGER.warning(loggingFilter, SECRET_NOT_FOUND, secretName, namespace, WebLogicCredentials);
           return doNext(packet);

@@ -45,6 +45,7 @@ import org.junit.jupiter.api.Test;
 
 import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.not;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 class ServerDownIteratorStepTest {
@@ -162,7 +163,7 @@ class ServerDownIteratorStepTest {
 
     assertThat(serverPodsBeingDeleted(), containsInAnyOrder(MS2));
     testSupport.setTime(10, TimeUnit.SECONDS);
-    assertThat(serverPodsBeingDeleted(), containsInAnyOrder(MS1, MS2));
+    assertThat(serverPodsNotDeleted(), not(containsInAnyOrder(MS1, MS2)));
   }
 
   @Test
@@ -220,7 +221,7 @@ class ServerDownIteratorStepTest {
 
     assertThat(serverPodsBeingDeleted(), hasSize(2));
     testSupport.setTime(5, TimeUnit.SECONDS);
-    assertThat(serverPodsBeingDeleted(), hasSize(4));
+    assertThat(serverPodsNotDeleted(), hasSize(1));
   }
 
   @Test
@@ -274,6 +275,11 @@ class ServerDownIteratorStepTest {
   private List<String> serverPodsBeingDeleted() {
     return domainPresenceInfo.getServerNames().stream()
             .filter(s -> domainPresenceInfo.isServerPodBeingDeleted(s)).collect(Collectors.toList());
+  }
+
+  private List<String> serverPodsNotDeleted() {
+    return domainPresenceInfo.getServerNames().stream()
+            .filter(s -> domainPresenceInfo.getServerPod(s) != null).collect(Collectors.toList());
   }
 
   private ServerDownIteratorStepTest createShutdownInfos() {

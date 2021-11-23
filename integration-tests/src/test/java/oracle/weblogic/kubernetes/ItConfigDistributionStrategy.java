@@ -188,10 +188,12 @@ class ItConfigDistributionStrategy {
 
 
     //start two MySQL database instances
-    createMySQLDB("mysqldb-1", "root", "root123", 0, domainNamespace, null);
+    createMySQLDB("mysqldb-1", "root", "root123", getNextFreePort(), domainNamespace, null);
     mysqlDBPort1 = getMySQLNodePort(domainNamespace, "mysqldb-1");
-    createMySQLDB("mysqldb-2", "root", "root456", 0, domainNamespace, null);
+    logger.info("mysqlDBPort1 is: " + mysqlDBPort1);
+    createMySQLDB("mysqldb-2", "root", "root456", getNextFreePort(), domainNamespace, null);
     mysqlDBPort2 = getMySQLNodePort(domainNamespace, "mysqldb-2");
+    logger.info("mysqlDBPort2 is: " + mysqlDBPort2);
 
     if (OKD) {
       mysql1SvcEndpoint = getMySQLSvcEndpoint(domainNamespace, "mysqldb-1");
@@ -701,6 +703,38 @@ class ItConfigDistributionStrategy {
     //verify datasource attributes of JdbcTestDataSource-0
     String appURI = "resTest=true&resName=" + dsName0;
     String dsOverrideTestUrl = baseUri + appURI;
+    
+    testUntil(
+        () -> {
+          HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(dsOverrideTestUrl, true));
+          if (response.statusCode() != 200) {
+            logger.info("Response code is not 200 retrying...");
+            return false;
+          }
+          if (configUpdated) {
+            if (!(response.body().contains("getMaxCapacity:12"))) {
+              logger.info("Did get getMaxCapacity:12");
+              return false;
+            } 
+            if (!(response.body().contains("getInitialCapacity:2"))) {
+              logger.info("Did get getInitialCapacity:2");
+              return false;
+            }
+          } else {
+            if (!(response.body().contains("getMaxCapacity:15"))) {
+              logger.info("Did get getMaxCapacity:15");
+              return false;
+            }
+            if (!(response.body().contains("getInitialCapacity:1"))) {
+              logger.info("Did get getInitialCapacity:1");
+              return false;
+            }
+          }
+          return true;
+        },
+        logger,
+        "clusterview app in admin server is accessible after restart");
+    /*
     HttpResponse<String> response = assertDoesNotThrow(() -> OracleHttpClient.get(dsOverrideTestUrl, true));
 
     assertEquals(200, response.statusCode(), "Status code not equals to 200");
@@ -711,8 +745,10 @@ class ItConfigDistributionStrategy {
       assertTrue(response.body().contains("getMaxCapacity:15"), "Did get getMaxCapacity:15");
       assertTrue(response.body().contains("getInitialCapacity:1"), "Did get getInitialCapacity:1");
     }
+    */
 
     //test connection pool in all managed servers of dynamic cluster
+    HttpResponse<String> response = null;
     for (int i = 1; i <= replicaCount; i++) {
       appURI = "dsTest=true&dsName=" + dsName0 + "&" + "serverName=" + managedServerNameBase + i;
       String dsConnectionPoolTestUrl = baseUri + appURI;

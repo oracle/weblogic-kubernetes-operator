@@ -86,6 +86,7 @@ import oracle.weblogic.domain.DomainList;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -99,7 +100,6 @@ public class Kubernetes {
   private static final String RESOURCE_VERSION_MATCH_UNSET = null;
   private static final Integer TIMEOUT_SECONDS = 5;
   private static final String DOMAIN_GROUP = "weblogic.oracle";
-  private static final String DOMAIN_VERSION = "v8";
   private static final String DOMAIN_PLURAL = "domains";
   private static final String FOREGROUND = "Foreground";
   private static final String BACKGROUND = "Background";
@@ -740,12 +740,12 @@ public class Kubernetes {
    * @param container name of the container
    * @param srcPath source file location
    * @param destPath destination file location on pod
+   * @return true if copy succeeds, otherwise false
    * @throws IOException when copy fails
    * @throws ApiException when pod interaction fails
    */
-  public static void copyFileToPod(
-      String namespace, String pod, String container, Path srcPath, Path destPath)
-      throws IOException, ApiException {
+  public static boolean copyFileToPod(
+      String namespace, String pod, String container, Path srcPath, Path destPath) throws IOException, ApiException {
     // kubectl cp /tmp/foo <some-namespace>/<some-pod>:/tmp/bar -c <specific-container>
     StringBuilder sb = new StringBuilder();
     sb.append("kubectl cp ");
@@ -763,9 +763,8 @@ public class Kubernetes {
       sb.append(container);
     }
     String cmdToExecute = sb.toString();
-    Command
-        .withParams(new CommandParams().command(cmdToExecute))
-        .execute();
+
+    return Command.withParams(new CommandParams().command(cmdToExecute)).execute();
   }
 
   /**

@@ -25,6 +25,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -169,12 +170,12 @@ public class K8sEvents {
     try {
       List<CoreV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
       for (CoreV1Event event : events) {
-        if (event.getReason().equals(reason) && (isEqualOrAfter(timestamp, event))) {
+        if (reason.equals(event.getReason()) && (isEqualOrAfter(timestamp, event))) {
           logger.info(Yaml.dump(event));
           verifyOperatorDetails(event, opNamespace, domainUid);
           //verify type
           logger.info("Verifying domain event type {0}", type);
-          assertTrue(event.getType().equals(type));
+          assertEquals(event.getType(), type);
           return true;
         }
       }
@@ -401,14 +402,12 @@ public class K8sEvents {
     }
   }
 
-
+  public static final String DOMAIN_AVAILABLE = "DomainAvailable";
   public static final String DOMAIN_CREATED = "DomainCreated";
   public static final String DOMAIN_DELETED = "DomainDeleted";
   public static final String DOMAIN_CHANGED = "DomainChanged";
-  public static final String DOMAIN_PROCESSING_STARTING = "DomainProcessingStarting";
-  public static final String DOMAIN_PROCESSING_COMPLETED = "DomainProcessingCompleted";
+  public static final String DOMAIN_COMPLETED = "DomainCompleted";
   public static final String DOMAIN_PROCESSING_FAILED = "DomainProcessingFailed";
-  public static final String DOMAIN_PROCESSING_RETRYING = "DomainProcessingRetrying";
   public static final String DOMAIN_PROCESSING_ABORTED = "DomainProcessingAborted";
   public static final String DOMAIN_ROLL_STARTING = "DomainRollStarting";
   public static final String DOMAIN_ROLL_COMPLETED = "DomainRollCompleted";

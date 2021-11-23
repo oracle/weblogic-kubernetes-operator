@@ -34,12 +34,14 @@ import org.junit.jupiter.api.TestMethodOrder;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_WDT_MODEL_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_TEST_VERSION;
@@ -69,9 +71,10 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotR
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfig;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfiguration;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCommandResultContainsMsg;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifySystemResourceConfiguration;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.deleteDomainResource;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileFromPod;
@@ -83,6 +86,7 @@ import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_FAILED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEventContainsExpectedMsg;
 import static oracle.weblogic.kubernetes.utils.LoggingUtil.checkPodLogContainsString;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
@@ -110,22 +114,23 @@ class ItMiiAuxiliaryImage {
   private static String wdtDomainNamespace = null;
   private static LoggingFacade logger = null;
   private String domainUid = "domain1";
-  private static String miiAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG + "1";
-  private static String miiAuxiliaryImage2 = MII_AUXILIARY_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG + "2";
-  private static String miiAuxiliaryImage3 = MII_AUXILIARY_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG + "3";
-  private static String miiAuxiliaryImage4 = MII_AUXILIARY_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG + "4";
-  private static String miiAuxiliaryImage5 = MII_AUXILIARY_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG + "5";
-  private static String miiAuxiliaryImage6 = MII_AUXILIARY_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG + "6";
-  private static String errorPathAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + ":errorpathimage1";
-  private static String errorPathAuxiliaryImage2 = MII_AUXILIARY_IMAGE_NAME + ":errorpathimage2";
-  private static String errorPathAuxiliaryImage3 = MII_AUXILIARY_IMAGE_NAME + ":errorpathimage3";
-  private static String errorPathAuxiliaryImage4 = MII_AUXILIARY_IMAGE_NAME + ":errorpathimage4";
+  private static String miiAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + "-domain:" + MII_BASIC_IMAGE_TAG + "1";
+  private static String miiAuxiliaryImage2 = MII_AUXILIARY_IMAGE_NAME + "-domain:" + MII_BASIC_IMAGE_TAG + "2";
+  private static String miiAuxiliaryImage3 = MII_AUXILIARY_IMAGE_NAME + "-domain:" + MII_BASIC_IMAGE_TAG + "3";
+  private static String miiAuxiliaryImage4 = MII_AUXILIARY_IMAGE_NAME + "-domain:" + MII_BASIC_IMAGE_TAG + "4";
+  private static String miiAuxiliaryImage5 = MII_AUXILIARY_IMAGE_NAME + "-domain:" + MII_BASIC_IMAGE_TAG + "5";
+  private static String miiAuxiliaryImage6 = MII_AUXILIARY_IMAGE_NAME + "-domain:" + MII_BASIC_IMAGE_TAG + "6";
+  private static String errorPathAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + "-domain:errorpathimage1";
+  private static String errorPathAuxiliaryImage2 = MII_AUXILIARY_IMAGE_NAME + "-domain:errorpathimage2";
+  private static String errorPathAuxiliaryImage3 = MII_AUXILIARY_IMAGE_NAME + "-domain:errorpathimage3";
+  private static String errorPathAuxiliaryImage4 = MII_AUXILIARY_IMAGE_NAME + "-domain:errorpathimage4";
   private static Map<String, OffsetDateTime> podsWithTimeStamps = null;
   private final String adminServerPodName = domainUid + "-admin-server";
   private final String managedServerPrefix = domainUid + "-managed-server";
   private final int replicaCount = 2;
   private String adminSecretName = "weblogic-credentials";
   private String encryptionSecretName = "encryptionsecret";
+  private String adminSvcExtHost = null;
 
   /**
    * Install Operator.
@@ -188,12 +193,13 @@ class ItMiiAuxiliaryImage {
         "weblogicenc", "weblogicenc");
 
     // create stage dir for first auxiliary image with image1
-    Path multipleAIPath1 = Paths.get(RESULTS_ROOT, "multipleauxiliaryimage1");
+    Path multipleAIPath1 = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "multipleauxiliaryimage1");
     assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleAIPath1.toFile()),
         "Delete directory failed");
     assertDoesNotThrow(() -> Files.createDirectories(multipleAIPath1),
         "Create directory failed");
-    Path multipleAIPathToFile1 = Paths.get(RESULTS_ROOT, "multipleauxiliaryimage1/test.txt");
+    Path multipleAIPathToFile1 =
+        Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "multipleauxiliaryimage1/test.txt");
     String content = "1";
     assertDoesNotThrow(() -> Files.write(multipleAIPathToFile1, content.getBytes()),
         "Can't write to file " + multipleAIPathToFile1);
@@ -236,7 +242,7 @@ class ItMiiAuxiliaryImage {
     }
 
     // create stage dir for second auxiliary image with image2
-    Path multipleAIPath2 = Paths.get(RESULTS_ROOT, "multipleauxiliaryimage2");
+    Path multipleAIPath2 = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "multipleauxiliaryimage2");
     assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleAIPath2.toFile()),
         "Delete directory failed");
     assertDoesNotThrow(() -> Files.createDirectories(multipleAIPath2),
@@ -245,7 +251,8 @@ class ItMiiAuxiliaryImage {
     // create models dir and copy model, archive files if any
     Path modelsPath2 = Paths.get(multipleAIPath2.toString(), "models");
     assertDoesNotThrow(() -> Files.createDirectories(modelsPath2));
-    Path multipleAIPathToFile2 = Paths.get(RESULTS_ROOT, "multipleauxiliaryimage2/test.txt");
+    Path multipleAIPathToFile2 =
+        Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "multipleauxiliaryimage2/test.txt");
     String content2 = "2";
     assertDoesNotThrow(() -> Files.write(multipleAIPathToFile2, content2.getBytes()),
         "Can't write to file " + multipleAIPathToFile2);
@@ -282,14 +289,17 @@ class ItMiiAuxiliaryImage {
     checkConfiguredJMSresouce(domainNamespace, adminServerPodName);
 
     //checking the order of loading for the auxiliary images, expecting file with content =2
-    assertDoesNotThrow(() -> FileUtils.deleteQuietly(Paths.get(RESULTS_ROOT, "/test.txt").toFile()));
+    assertDoesNotThrow(() ->
+        FileUtils.deleteQuietly(Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "/test.txt").toFile()));
     assertDoesNotThrow(() -> copyFileFromPod(domainNamespace,
         adminServerPodName, "weblogic-server",
         auxiliaryImagePath + "/test.txt",
-        Paths.get(RESULTS_ROOT, "/test.txt")), " Can't find file in the pod, or failed to copy");
+        Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "/test.txt")),
+        " Can't find file in the pod, or failed to copy");
 
     assertDoesNotThrow(() -> {
-      String fileContent = Files.readAllLines(Paths.get(RESULTS_ROOT, "/test.txt")).get(0);
+      String fileContent =
+          Files.readAllLines(Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "/test.txt")).get(0);
       assertEquals("2", fileContent, "The content of the file from auxiliary image path "
           + fileContent + "does not match the expected 2");
     }, "File from image2 was not loaded in the expected order");
@@ -304,7 +314,7 @@ class ItMiiAuxiliaryImage {
   @Order(2)
   @DisplayName("Test to update data source url in the  domain using auxiliary image")
   void testUpdateDataSourceInDomainUsingAuxiliaryImage() {
-    Path multipleAIPath1 = Paths.get(RESULTS_ROOT, "multipleauxiliaryimage1");
+    Path multipleAIPath1 = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "multipleauxiliaryimage1");
     Path modelsPath1 = Paths.get(multipleAIPath1.toString(), "models");
 
 
@@ -430,7 +440,7 @@ class ItMiiAuxiliaryImage {
     createSecretsForDomain(adminSecretName, encryptionSecretName, errorpathDomainNamespace);
 
     // create stage dir for auxiliary image
-    Path errorpathAIPath1 = Paths.get(RESULTS_ROOT, "errorpathauxiimage1");
+    Path errorpathAIPath1 = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "errorpathauxiimage1");
     assertDoesNotThrow(() -> FileUtils.deleteDirectory(errorpathAIPath1.toFile()),
         "Delete directory failed");
     assertDoesNotThrow(() -> Files.createDirectories(errorpathAIPath1),
@@ -512,7 +522,7 @@ class ItMiiAuxiliaryImage {
     createSecretsForDomain(adminSecretName, encryptionSecretName, errorpathDomainNamespace);
 
     // create stage dir for auxiliary image
-    Path errorpathAIPath2 = Paths.get(RESULTS_ROOT, "errorpathauxiimage2");
+    Path errorpathAIPath2 = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "errorpathauxiimage2");
     assertDoesNotThrow(() -> FileUtils.deleteDirectory(errorpathAIPath2.toFile()),
         "Delete directory failed");
     assertDoesNotThrow(() -> Files.createDirectories(errorpathAIPath2),
@@ -595,7 +605,7 @@ class ItMiiAuxiliaryImage {
     createSecretsForDomain(adminSecretName, encryptionSecretName, errorpathDomainNamespace);
 
     // create stage dir for auxiliary image
-    Path errorpathAIPath3 = Paths.get(RESULTS_ROOT, "errorpathauxiimage3");
+    Path errorpathAIPath3 = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "errorpathauxiimage3");
     assertDoesNotThrow(() -> FileUtils.deleteDirectory(errorpathAIPath3.toFile()),
         "Delete directory failed");
     assertDoesNotThrow(() -> Files.createDirectories(errorpathAIPath3),
@@ -773,13 +783,14 @@ class ItMiiAuxiliaryImage {
     createSecretsForDomain(adminSecretName, encryptionSecretName, errorpathDomainNamespace);
 
     // create stage dir for auxiliary image
-    Path errorpathAIPath1 = Paths.get(RESULTS_ROOT, "errorpathauxiimage4");
+    Path errorpathAIPath1 = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "errorpathauxiimage4");
     assertDoesNotThrow(() -> FileUtils.deleteDirectory(errorpathAIPath1.toFile()),
         "Can't delete directory");
     assertDoesNotThrow(() -> Files.createDirectories(errorpathAIPath1),
         "Can't create directory");
 
-    Path errorpathAIPathToFile = Paths.get(RESULTS_ROOT, "errorpathauxiimage4/test1.txt");
+    Path errorpathAIPathToFile =
+        Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "errorpathauxiimage4/test1.txt");
     String content = "some text ";
     assertDoesNotThrow(() -> Files.write(errorpathAIPathToFile, content.getBytes()),
         "Can't write to file " + errorpathAIPathToFile);
@@ -891,7 +902,7 @@ class ItMiiAuxiliaryImage {
         "weblogicenc", "weblogicenc");
 
     // create stage dir for first auxiliary image containing domain configuration
-    Path multipleAIPath1 = Paths.get(RESULTS_ROOT, "multipleauxiliaryimage1");
+    Path multipleAIPath1 = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "multipleauxiliaryimage1");
     assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleAIPath1.toFile()),
         "Delete directory failed");
     assertDoesNotThrow(() -> Files.createDirectories(multipleAIPath1),
@@ -932,7 +943,7 @@ class ItMiiAuxiliaryImage {
     }
 
     // create stage dir for second auxiliary image
-    Path multipleAIPath2 = Paths.get(RESULTS_ROOT, "multipleauxiliaryimage2");
+    Path multipleAIPath2 = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "multipleauxiliaryimage2");
     assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleAIPath2.toFile()),
         "Delete directory failed");
     assertDoesNotThrow(() -> Files.createDirectories(multipleAIPath2), "Create directory failed");
@@ -958,7 +969,7 @@ class ItMiiAuxiliaryImage {
     }
 
     // create stage dir for third auxiliary image with latest wdt installation files only
-    Path multipleAIPath3 = Paths.get(RESULTS_ROOT, "multipleauxiliaryimage3");
+    Path multipleAIPath3 = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "multipleauxiliaryimage3");
     assertDoesNotThrow(() -> FileUtils.deleteDirectory(multipleAIPath3.toFile()),
         "Delete directory failed");
     assertDoesNotThrow(() -> Files.createDirectories(multipleAIPath3),
@@ -1180,8 +1191,15 @@ class ItMiiAuxiliaryImage {
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-    assertTrue(checkSystemResourceConfiguration(adminServiceNodePort, "JMSSystemResources",
-        "TestClusterJmsModule2", "200"), "JMSSystemResources not found");
+
+    // In OKD env, adminServers' external service nodeport cannot be accessed directly.
+    // We have to create a route for the admins server external service.
+    if ((adminSvcExtHost == null)) {
+      adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
+    }
+
+    verifySystemResourceConfiguration(adminSvcExtHost, adminServiceNodePort, "JMSSystemResources",
+        "TestClusterJmsModule2", "200");
     logger.info("Found the JMSSystemResource configuration");
   }
 
@@ -1189,21 +1207,35 @@ class ItMiiAuxiliaryImage {
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
-    assertTrue(checkSystemResourceConfig(adminServiceNodePort,
-        "JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams",
-        "jdbc:oracle:thin:@\\/\\/localhost:7001\\/dbsvc"), "Can't find expected URL configuration for DataSource");
+
+    // In OKD env, adminServers' external service nodeport cannot be accessed directly.
+    // We have to create a route for the admins server external service.
+    if ((adminSvcExtHost == null)) {
+      adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
+    }
+
+    String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + adminServiceNodePort;
+    logger.info("hostAndPort = {0} ", hostAndPort);
+    StringBuffer curlString = new StringBuffer("curl --user ");
+    curlString.append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
+        .append(" http://" + hostAndPort + "/management/weblogic/latest/domainConfig")
+        .append("/JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams/");
+
+    verifyCommandResultContainsMsg(new String(curlString), "jdbc:oracle:thin:@\\/\\/localhost:7001\\/dbsvc");
     logger.info("Found the DataResource configuration");
   }
 
   private String checkWDTVersion(String domainNamespace, String auxiliaryImagePath) throws Exception {
-    assertDoesNotThrow(() -> FileUtils.deleteQuietly(Paths.get(RESULTS_ROOT, "/WDTversion.txt").toFile()));
+    assertDoesNotThrow(() ->
+        FileUtils.deleteQuietly(Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "/WDTversion.txt").toFile()));
     assertDoesNotThrow(() -> copyFileFromPod(domainNamespace,
         adminServerPodName, "weblogic-server",
         auxiliaryImagePath + "/weblogic-deploy/VERSION.txt",
-        Paths.get(RESULTS_ROOT, "/WDTversion.txt")), " Can't find file in the pod, or failed to copy");
+        Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "/WDTversion.txt")),
+        " Can't find file in the pod, or failed to copy");
 
 
-    return Files.readAllLines(Paths.get(RESULTS_ROOT, "/WDTversion.txt")).get(0);
+    return Files.readAllLines(Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "/WDTversion.txt")).get(0);
   }
 
   private boolean introspectorPodLogContainsExpectedErrorMsg(String domainUid,

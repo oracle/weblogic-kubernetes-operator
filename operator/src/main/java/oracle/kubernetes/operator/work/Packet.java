@@ -19,6 +19,15 @@ public class Packet extends AbstractMap<String, Object> implements ComponentRegi
   public Packet() {
   }
 
+  /**
+   * Adds the specified component to this packet so that it can be retrieved. Returns the modified packet.
+   * @param component a component which knows how to add itself to a packet.
+   */
+  public Packet with(PacketComponent component) {
+    component.addToPacket(this);
+    return this;
+  }
+
   private Packet(Packet that) {
     components.putAll(that.components);
     delegate.putAll(that.delegate);

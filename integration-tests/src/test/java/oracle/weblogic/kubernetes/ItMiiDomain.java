@@ -61,6 +61,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
@@ -85,8 +86,11 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExis
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainResourceImagePatched;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podImagePatched;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
+import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminConsoleAccessible;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.startPortForwardProcess;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.stopPortForwardProcess;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withQuickRetryPolicy;
@@ -157,7 +161,11 @@ class ItMiiDomain {
    * the cluster and accessible from all the managed server pods 
    * Make sure two external NodePort services are created in domain namespace.
    * Make sure WebLogic console is accessible through both 
-   *   `default-secure` service and `default` service.  
+   *   `default-secure` service and `default` service.
+   *
+   * Negative test case for when domain resource attribute domain.spec.adminServer.adminChannelPortForwardingEnabled
+   * is set to false, the WLS admin console can not be accessed using the forwarded port, like
+   * http://localhost:localPort/console/login/LoginForm.jsp.
    */
   @Test
   @Order(1)
@@ -167,6 +175,9 @@ class ItMiiDomain {
     final String adminServerPodName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";
     final int replicaCount = 2;
+    final String hostName = "localhost";
+    final int adminServerPort = 7001;
+    final int adminServerSecurePort = 7008;
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
@@ -190,7 +201,7 @@ class ItMiiDomain {
         + "    'admin-server':\n"
         + "       SSL: \n"
         + "         Enabled: true \n"
-        + "         ListenPort: '7008' \n";
+        + "         ListenPort: '" + adminServerSecurePort + "' \n";
     createModelConfigMap(configMapName, yamlString, domainUid);
      
     // create the domain object
@@ -275,6 +286,17 @@ class ItMiiDomain {
       verifyCredentials(adminServerPodName, domainNamespace,
             ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, true);
     }
+
+    // Test that `kubectl port-foward` is able to forward a local port to default channel port (7001 in this test)
+    // and default secure channel port (7002 in this test)
+    // Verify that the WLS admin console can not be accessed using http://localhost:localPort/console/login/LoginForm.jsp
+    String forwardedPortNo = startPortForwardProcess(hostName, domainNamespace, domainUid, adminServerPort);
+    verifyAdminConsoleAccessible(domainNamespace, hostName, forwardedPortNo, false, Boolean.FALSE);
+
+    forwardedPortNo = startPortForwardProcess(hostName, domainNamespace, domainUid, adminServerSecurePort);
+    verifyAdminConsoleAccessible(domainNamespace, hostName, forwardedPortNo, true, Boolean.FALSE);
+
+    stopPortForwardProcess(domainNamespace);
   }
 
   @Test
@@ -691,6 +713,8 @@ class ItMiiDomain {
       env.put("JAVA_HOME", witJavaHome);
     }
  
+    String witTarget = ((OKD) ? "OpenShift" : "Default");
+    
     // build an image using WebLogic Image Tool
     logger.info("Create image {0} using model list {1} and archive list {2}",
         image, modelList, archiveList);
@@ -702,6 +726,7 @@ class ItMiiDomain {
             .modelArchiveFiles(archiveList)
             .wdtModelOnly(true)
             .wdtVersion(WDT_VERSION)
+            .target(witTarget)
             .env(env)
             .redirect(true));
 
@@ -803,6 +828,7 @@ class ItMiiDomain {
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING")
+                .adminChannelPortForwardingEnabled(false)
                 .serverService(new ServerService()
                     .annotations(keyValueMap)
                     .labels(keyValueMap))

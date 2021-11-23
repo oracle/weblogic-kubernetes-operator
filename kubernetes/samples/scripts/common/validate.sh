@@ -305,12 +305,10 @@ function validateLoadBalancer {
       ;;
       "APACHE")
       ;;
-      "VOYAGER")
-      ;;
       "NONE")
       ;;
       *)
-        validationError "Invalid value for loadBalancer: ${loadBalancer}. Valid values are APACHE, TRAEFIK, VOYAGER and NONE."
+        validationError "Invalid value for loadBalancer: ${loadBalancer}. Valid values are APACHE, TRAEFIK and NONE."
       ;;
     esac
   fi
@@ -339,13 +337,13 @@ function validateDomainSecret {
   # Verify the secret contains a username
   SECRET=`kubectl get secret ${weblogicCredentialsSecretName} -n ${namespace} -o jsonpath='{.data}' | tr -d '"' | grep username: | wc | awk ' { print $1; }'`
   if [ "${SECRET}" != "1" ]; then
-    validationError "The domain secret ${weblogicCredentialsSecretName} in namespace ${namespace} does contain a username"
+    validationError "The domain secret ${weblogicCredentialsSecretName} in namespace ${namespace} does not contain a username"
   fi
 
   # Verify the secret contains a password
   SECRET=`kubectl get secret ${weblogicCredentialsSecretName} -n ${namespace} -o jsonpath='{.data}' | tr -d '"'| grep password: | wc | awk ' { print $1; }'`
   if [ "${SECRET}" != "1" ]; then
-    validationError "The domain secret ${weblogicCredentialsSecretName} in namespace ${namespace} does contain a password"
+    validationError "The domain secret ${weblogicCredentialsSecretName} in namespace ${namespace} does not contain a password"
   fi
   failIfValidationErrors
 }

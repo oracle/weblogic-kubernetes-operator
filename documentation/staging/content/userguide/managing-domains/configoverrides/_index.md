@@ -350,7 +350,7 @@ Best practices for data source modules and their overrides:
 
 Example Domain YAML:
 ```yaml
-apiVersion: "weblogic.oracle/v8"
+apiVersion: "weblogic.oracle/v9"
 kind: Domain
 metadata:
   name: domain1

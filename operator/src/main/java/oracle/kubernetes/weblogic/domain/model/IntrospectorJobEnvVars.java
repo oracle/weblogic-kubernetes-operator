@@ -102,7 +102,7 @@ public class IntrospectorJobEnvVars {
   /**
    * WDT STOP APPLICATION TIMEOUT.
    */
-  public static final String MII_WDT_STOP_APPLICAITON_TIMEOUT = "WDT_STOP_APPLICATION_TIMEOUT";
+  public static final String MII_WDT_STOP_APPLICATION_TIMEOUT = "WDT_STOP_APPLICATION_TIMEOUT";
 
   /**
    * WDT SET SERVER GROUPS TIMEOUT.
@@ -124,6 +124,16 @@ public class IntrospectorJobEnvVars {
    * Istio readiness port.
    */
   public static final String ISTIO_READINESS_PORT = "ISTIO_READINESS_PORT";
+
+  /**
+   * Istio replication channel port.
+   */
+  public static final String ISTIO_REPLICATION_PORT = "ISTIO_REPLICATION_PORT";
+
+  /**
+   * Istio Version proxies traffic to localhost.
+   */
+  public static final String ISTIO_USE_LOCALHOST_BINDINGS = "ISTIO_USE_LOCALHOST_BINDINGS";
 
   /**
    * Istio pod namespace.
@@ -152,6 +162,6 @@ public class IntrospectorJobEnvVars {
       ISTIO_POD_NAMESPACE, WDT_MODEL_HOME, MII_USE_ONLINE_UPDATE,
       MII_COMMIT_AND_ROLL, MII_COMMIT_ONLY, MII_WDT_CONNECT_TIMEOUT, MII_WDT_ACTIVATE_TIMEOUT, MII_WDT_DEPLOY_TIMEOUT,
       MII_WDT_REDEPLOY_TIMEOUT, MII_WDT_UNDEPLOY_TIMEOUT, MII_WDT_START_APPLICATION_TIMEOUT,
-      MII_WDT_STOP_APPLICAITON_TIMEOUT, MII_WDT_SET_SERVERGROUPS_TIMEOUT,
+        MII_WDT_STOP_APPLICATION_TIMEOUT, MII_WDT_SET_SERVERGROUPS_TIMEOUT,
           ADMIN_CHANNEL_PORT_FORWARDING_ENABLED);
 }

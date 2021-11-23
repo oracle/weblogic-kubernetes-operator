@@ -7,7 +7,7 @@ An operator is an application-specific controller that extends Kubernetes to cre
 #### Clone the operator repository to a Cloud Shell instance ####
 First, clone the operator git repository to OCI Cloud Shell.
 ```shell
-$ git clone --branch v3.3.2 https://github.com/oracle/weblogic-kubernetes-operator.git
+$ git clone --branch v4.0.0 https://github.com/oracle/weblogic-kubernetes-operator.git
 ```
 The output should be similar to the following:
 ```shell
@@ -78,7 +78,7 @@ Execute the following `helm install`:
 $ helm install sample-weblogic-operator \
   kubernetes/charts/weblogic-operator \
   --namespace sample-weblogic-operator-ns \
-  --set "image=ghcr.io/oracle/weblogic-kubernetes-operator:3.3.2" \
+  --set "image=ghcr.io/oracle/weblogic-kubernetes-operator:4.0.0" \
   --set "serviceAccount=sample-weblogic-operator-sa" \
   --set "enableClusterRoleBinding=true" \
   --set "domainNamespaceSelectionStrategy=LabelSelector" \
