@@ -626,6 +626,9 @@ function diff_model_v1() {
 
 function diff_model() {
   trace "Entering diff_model"
+  # wdt shell script or logFileRotate may return non-zero code if trap is on, then it will go to trap instead
+  # temporarily disable it
+  stop_trap
 
   export __WLSDEPLOY_STORE_MODEL__=1
   # $1 - new model, $2 original model
@@ -677,6 +680,9 @@ function diff_model() {
   fi
 
   wdtRotateAndCopyLogFile "${WDT_COMPARE_MODEL_LOG}"
+
+  # restore trap
+  start_trap
 
   trace "Exiting diff_model"
 }
@@ -1351,10 +1357,8 @@ function logSevereAndExit() {
 #   1 - Name of the log file to rotate and copy to WDT output directory.
 function wdtRotateAndCopyLogFile() {
   local logFileName=$1
-  testLogFileRotate "${WDT_OUTPUT_DIR}/${logFileName}"
-  [ $? -ne 0 ] && trace SEVERE "Error accessing '${WDT_OUTPUT_DIR}'. See previous log messages." && exit 1
 
-  logFileRotate ${WDT_OUTPUT_DIR}/${logFileName} ${WDT_LOG_FILE_MAX:-11}
+  logFileRotate "${WDT_OUTPUT_DIR}/${logFileName}" "${WDT_LOG_FILE_MAX:-11}"
 
   cp ${WDT_ROOT}/logs/${logFileName} ${WDT_OUTPUT_DIR}/
 }
