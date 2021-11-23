@@ -92,7 +92,7 @@ $ kubectl label namespace weblogic-operator istio-injection=enabled
 
 After the namespace is labeled, you can [install the operator]({{< relref "/userguide/managing-operators/installation.md" >}}).  
 When the operator pod starts, you will notice that Istio automatically injects an `initContainer` called `istio-init`
-and the envoy container `istio-proxy`.
+and the Envoy container `istio-proxy`.
 
 You can validate this using the following commands:
 
@@ -267,7 +267,7 @@ traffic in Kiali and use distributed tracing from the entry point to
 the cluster.
 
 To configure external access to your domain, you need to create an Istio `Gateway` and
-`VirtualService`, as shown in the example below:
+`VirtualService`, as shown in the following example:
 
 ```yaml
 ---
@@ -333,9 +333,9 @@ For more information about providing ingress using Istio, see the [Istio documen
 
 Istio provides traffic management capabilities, including the ability to
 visualize traffic in Kiali.  You do not need to change your applications to use
-this feature.  The Istio proxy (envoy) sidecar that is injected into your pods
-provides it. The image below shows an example with traffic
-flowing: In from the Istio gateway on the left, to a domain called `domain1`.
+this feature.  The Istio proxy (Envoy) sidecar that is injected into your pods
+provides it. The following image shows an example with traffic
+flowing: in from the Istio gateway on the left, to a domain called `domain1`.
 
 In this example, you can see how the traffic flows to the cluster services and
 then to the individual Managed Servers.
@@ -350,9 +350,9 @@ Istio provides distributed tracing capabilities, including the ability to view
 traces in Jaeger.  In order to use distributed tracing though, first you will need to
 instrument your WebLogic application, for example, using the
 [Jaeger Java client](https://github.com/jaegertracing/jaeger-client-java).
-The image below shows an example of a distributed trace
+The following image shows an example of a distributed trace
 that shows a transaction following the same path through the system
-as shown in the image above.
+as shown in the previous image.
 
 {{< img "Distributed tracing with Jaeger" "images/jaeger.png" >}}
 
