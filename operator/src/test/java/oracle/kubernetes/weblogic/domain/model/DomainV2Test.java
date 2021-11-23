@@ -29,11 +29,15 @@ import org.junit.jupiter.api.Test;
 import static oracle.kubernetes.operator.DomainSourceType.FromModel;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
+import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CONFIGURED_FAILURE_THRESHOLD;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CONFIGURED_SUCCESS_THRESHOLD;
 import static oracle.kubernetes.weblogic.domain.ChannelMatcher.channelWith;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_ALWAYS;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progressing;
 import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.containsInAnyOrder;
@@ -260,6 +264,13 @@ class DomainV2Test extends DomainTestBase {
   }
 
   @Test
+  void whenDomainStartPolicyNever_adminServerDesiredStateIsShutdown() {
+    configureDomain(domain).withDefaultServerStartPolicy(ConfigurationConstants.START_NEVER);
+
+    assertThat(domain.getAdminServerSpec().getDesiredState(), is(SHUTDOWN_STATE));
+  }
+
+  @Test
   void whenClusterStartPolicyNever_ignoreServerSettings() {
     configureCluster("cluster1").withServerStartPolicy(ConfigurationConstants.START_NEVER);
     configureServer("server1").withServerStartPolicy(ConfigurationConstants.START_ALWAYS);
@@ -281,6 +292,14 @@ class DomainV2Test extends DomainTestBase {
     configureAdminServer().withServerStartPolicy(ConfigurationConstants.START_NEVER);
 
     assertThat(domain.getAdminServerSpec().shouldStart(0), is(false));
+  }
+
+  @Test
+  void whenAdminServerStartPolicyNever_desiredStateIsShutdown() {
+    configureDomain(domain).withDefaultServerStartPolicy(ConfigurationConstants.START_IF_NEEDED);
+    configureAdminServer().withServerStartPolicy(ConfigurationConstants.START_NEVER);
+
+    assertThat(domain.getAdminServerSpec().getDesiredState(), is(SHUTDOWN_STATE));
   }
 
   @Test
@@ -1678,5 +1697,36 @@ class DomainV2Test extends DomainTestBase {
     configureDomain(domain).withConfigOverrideDistributionStrategy(OverrideDistributionStrategy.ON_RESTART);
 
     assertThat(domain.getOverrideDistributionStrategy(), equalTo(OverrideDistributionStrategy.ON_RESTART));
+  }
+
+  @Test
+  void whenUpgraded_progressingConditionRemovedFromStatus() {
+    configureDomain(domain);
+    DomainStatus domainStatus = new DomainStatus();
+    domain.setStatus(domainStatus);
+
+    domainStatus.getConditions().add(new DomainCondition(Progressing));
+    domainStatus.getConditions().add(new DomainCondition(Available));
+
+    domain.upgrade();
+
+    assertThat(domainStatus, not(hasCondition(Progressing)));
+  }
+
+  @Test
+  void whenListUpgraded_progressingConditionRemovedFromStatus() {
+    configureDomain(domain);
+    DomainStatus domainStatus = new DomainStatus();
+    domain.setStatus(domainStatus);
+
+    domainStatus.getConditions().add(new DomainCondition(Progressing));
+    domainStatus.getConditions().add(new DomainCondition(Available));
+
+    DomainList list = new DomainList();
+    list.getItems().add(domain);
+
+    list.upgrade();
+
+    assertThat(domainStatus, not(hasCondition(Progressing)));
   }
 }

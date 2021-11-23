@@ -62,6 +62,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
@@ -80,6 +81,7 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_MODEL_PROPERTIES_FILE;
@@ -117,10 +119,14 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterRoleBi
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.clusterRoleExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
+import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminConsoleAccessible;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.startPortForwardProcess;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.stopPortForwardProcess;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployUsingWlst;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.doesFileExistInPod;
@@ -131,8 +137,7 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseIma
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createJobAndWaitUntilComplete;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_CHANGED;
-import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_COMPLETED;
-import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_PROCESSING_STARTING;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_COMPLETED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.POD_STARTED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.POD_TERMINATED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEvent;
@@ -140,6 +145,9 @@ import static oracle.weblogic.kubernetes.utils.K8sEvents.checkPodEventLoggedOnce
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createIngressForDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.LoggingUtil.checkPodLogContainsString;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.getRouteHost;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVPVCAndVerify;
@@ -162,6 +170,8 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
  * Verify scaling up and down the clusters in the domain with different domain types.
  * Also verify the sample application can be accessed via NGINX ingress controller.
  * Also verify the rolling restart behavior in a multi-cluster MII domain.
+ * In OKD cluster, we do not use thrid party loadbalancers, so the tests that
+ * specifically test nginx or traefik are diasbled for OKD cluster. 
  */
 @DisplayName("Verify scaling the clusters in the domain with different domain types, "
         + "rolling restart behavior in a multi-cluster MII domain and "
@@ -175,12 +185,13 @@ class ItParameterizedDomain {
   private static final String clusterName = "cluster-1";
   private static final int MANAGED_SERVER_PORT = 8001;
   private static final int ADMIN_SERVER_PORT = 7001;
+  private static final int ADMIN_SERVER_SECURE_PORT = 7002;
   private static final int replicaCount = 2;
   private static final String SAMPLE_APP_CONTEXT_ROOT = "sample-war";
   private static final String WLDF_OPENSESSION_APP = "opensessionapp";
   private static final String WLDF_OPENSESSION_APP_CONTEXT_ROOT = "opensession";
   private static final String wlSecretName = "weblogic-credentials";
-  private static final String DATA_HOME_OVERRIDE = "/u01/oracle/mydata";
+  private static final String DATA_HOME_OVERRIDE = "/u01/mydata";
   private static final String miiImageName = "mii-image";
   private static final String wdtModelFileForMiiDomain = "model-multiclusterdomain-sampleapp-wls.yaml";
   private static final String miiDomainUid = "miidomain";
@@ -198,10 +209,12 @@ class ItParameterizedDomain {
   private static int t3ChannelPort = 0;
   private static String miiDomainNamespace = null;
   private static String miiDomainNegativeNamespace = null;
+  private static String miiDomainNegativeNamespacePortforward = null;
   private static String miiImage = null;
   private static String encryptionSecretName = "encryptionsecret";
   private static Map<String, Quantity> resourceRequest = new HashMap<>();
   private static Map<String, Quantity> resourceLimit = new HashMap<>();
+  private static String operExtSvcRouteHost = null;
 
   private String curlCmd = null;
 
@@ -214,7 +227,7 @@ class ItParameterizedDomain {
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void initAll(@Namespaces(6) List<String> namespaces) {
+  public static void initAll(@Namespaces(7) List<String> namespaces) {
     logger = getLogger();
 
     // get a unique operator namespace
@@ -237,6 +250,7 @@ class ItParameterizedDomain {
     String domainInImageNamespace = namespaces.get(4);
     assertNotNull(namespaces.get(5));
     miiDomainNegativeNamespace = namespaces.get(5);
+    miiDomainNegativeNamespacePortforward = namespaces.get(6);
 
     // set the service account name for the operator
     opServiceAccount = opNamespace + "-sa";
@@ -246,16 +260,25 @@ class ItParameterizedDomain {
 
     // install and verify operator with REST API
     installAndVerifyOperator(opNamespace, opServiceAccount, true, 0,
-        miiDomainNamespace, domainOnPVNamespace, domainInImageNamespace, miiDomainNegativeNamespace);
+        miiDomainNamespace, domainOnPVNamespace, domainInImageNamespace,
+        miiDomainNegativeNamespace, miiDomainNegativeNamespacePortforward);
 
     externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
+    // This test uses the operator restAPI to scale the domain. To do this in OKD cluster,
+    // we need to expose the external service as route and set tls termination to  passthrough 
+    logger.info("Create a route for the operator external service - only for OKD");
+    operExtSvcRouteHost = createRouteForOKD("external-weblogic-operator-svc", opNamespace); 
+    // Patch the route just created to set tls termination to passthrough
+    setTlsTerminationForRoute("external-weblogic-operator-svc", opNamespace);
 
-    // install and verify NGINX
-    nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
-    String nginxServiceName = nginxHelmParams.getReleaseName() + "-ingress-nginx-controller";
-    logger.info("NGINX service name: {0}", nginxServiceName);
-    nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
-    logger.info("NGINX http node port: {0}", nodeportshttp);
+    if (!OKD) {
+      // install and verify NGINX
+      nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
+      String nginxServiceName = nginxHelmParams.getReleaseName() + "-ingress-nginx-controller";
+      logger.info("NGINX service name: {0}", nginxServiceName);
+      nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
+      logger.info("NGINX http node port: {0}", nodeportshttp);
+    }
 
     // set resource request and limit
     resourceRequest.put("cpu", new Quantity("250m"));
@@ -280,18 +303,23 @@ class ItParameterizedDomain {
 
       String domainUid = domain.getSpec().getDomainUid();
       String domainNamespace = domain.getMetadata().getNamespace();
+  
+      //create route for external admin service
+      createRouteForOKD(domainUid + "-admin-server-ext", domainNamespace);
 
       // create ingress using host based routing
       Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
       int numClusters = domain.getSpec().getClusters().size();
       for (int i = 1; i <= numClusters; i++) {
         clusterNameMsPortMap.put(CLUSTER_NAME_PREFIX + i, MANAGED_SERVER_PORT);
+        createRouteForOKD(domainUid + "-cluster-cluster-" + i, domainNamespace);
       }
-      logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, domainNamespace);
-      createIngressForDomainAndVerify(domainUid, domainNamespace, nodeportshttp, clusterNameMsPortMap, true,
-          true, ADMIN_SERVER_PORT);
+      if (!OKD) {
+        logger.info("Creating ingress for domain {0} in namespace {1}", domainUid, domainNamespace);
+        createIngressForDomainAndVerify(domainUid, domainNamespace, nodeportshttp, clusterNameMsPortMap, true,
+              true, ADMIN_SERVER_PORT);
+      }
     }
-
   }
 
   /**
@@ -303,8 +331,7 @@ class ItParameterizedDomain {
   @DisplayName("verify the operator log has expected error msg when encryption secret not created for a mii domain")
   void testOperatorLogSevereMsg() {
     createMiiDomainNegative("miidomainnegative", miiDomainNegativeNamespace);
-    String operatorPodName =
-        assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+    String operatorPodName = assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
     checkPodLogContainsString(opNamespace, operatorPodName,
         "Domain miidomainnegative is not valid: RuntimeEncryption secret '" + encryptionSecretName
         + "' not found in namespace '" + miiDomainNegativeNamespace + "'");
@@ -352,6 +379,20 @@ class ItParameterizedDomain {
       managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, numberOfServers);
       scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
           numberOfServers, replicaCount, curlCmd, managedServersBeforeScale);
+    }
+
+    if (!OKD) {
+      // Test that `kubectl port-foward` is able to forward a local port to default channel port (7001 in this test)
+      // and default secure channel port (7002 in this test)
+      // Verify that the WLS admin console can be accessed using http://localhost:localPort/console/login/LoginForm.jsp
+      final String hostName = "localhost";
+      String forwardedPortNo = startPortForwardProcess(hostName, domainNamespace, domainUid, ADMIN_SERVER_PORT);
+      verifyAdminConsoleAccessible(domainNamespace, hostName, forwardedPortNo, false);
+
+      forwardedPortNo = startPortForwardProcess(hostName, domainNamespace, domainUid, ADMIN_SERVER_SECURE_PORT);
+      verifyAdminConsoleAccessible(domainNamespace, hostName, forwardedPortNo, true);
+
+      stopPortForwardProcess(domainNamespace);
     }
   }
 
@@ -411,6 +452,7 @@ class ItParameterizedDomain {
     String managedServerPodNamePrefix = generateMsPodNamePrefix(numClusters, domainUid, clusterName);
 
     curlCmd = generateCurlCmd(domainUid, domainNamespace, clusterName, SAMPLE_APP_CONTEXT_ROOT);
+    logger.info("BR: curlCmd = {0}", curlCmd);
 
     // scale up the cluster by 1 server
     logger.info("Scaling cluster {0} of domain {1} in namespace {2} from {3} servers to {4} servers.",
@@ -418,6 +460,7 @@ class ItParameterizedDomain {
     List<String> managedServersBeforeScale = listManagedServersBeforeScale(numClusters, clusterName, replicaCount);
     String curlCmdForWLDFScript =
         generateCurlCmd(domainUid, domainNamespace, clusterName, WLDF_OPENSESSION_APP_CONTEXT_ROOT);
+    logger.info("BR: curlCmdForWLDFScript = {0}", curlCmdForWLDFScript);
 
     scaleAndVerifyCluster(clusterName, domainUid, domainNamespace, managedServerPodNamePrefix,
         replicaCount, replicaCount + 1, false, 0, opNamespace, opServiceAccount,
@@ -456,11 +499,18 @@ class ItParameterizedDomain {
         domainNamespace, getExternalServicePodName(adminServerPodName), "default"),
         "Getting admin server node port failed");
 
+    // In OKD cluster, we need to get the routeHost for the external admin service
+    String routeHost = getRouteHost(domainNamespace, getExternalServicePodName(adminServerPodName));
+
     logger.info("Validating WebLogic admin server access by login to console");
-    boolean loginSuccessful = assertDoesNotThrow(() ->
-        adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
-        "Access to admin server node port failed");
-    assertTrue(loginSuccessful, "Console login validation failed");
+    //boolean loginSuccessful = assertDoesNotThrow(() ->
+    testUntil(
+        assertDoesNotThrow(() -> {
+          return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, routeHost);
+        }, "Access to admin server node port failed"),
+        logger,
+        "Console login validation");
+    //assertTrue(loginSuccessful, "Console login validation failed");
   }
 
   /**
@@ -471,6 +521,7 @@ class ItParameterizedDomain {
   @ParameterizedTest
   @DisplayName("Test admin console login using ingress controller")
   @MethodSource("domainProvider")
+  @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   void testAdminConsoleLoginUsingIngressController(Domain domain) {
 
     assumeFalse(WEBLOGIC_SLIM, "Skipping the Console Test for slim image");
@@ -586,9 +637,9 @@ class ItParameterizedDomain {
 
   /**
    * Verify dataHome override in a domain with domain in image type.
-   * In this domain, set dataHome to /u01/oracle/mydata in domain custom resource
+   * In this domain, set dataHome to /u01/mydata in domain custom resource
    * The domain contains JMS and File Store configuration
-   * File store directory is set to /u01/oracle/customFileStore in the model file which should be overridden by dataHome
+   * File store directory is set to /u01/customFileStore in the model file which should be overridden by dataHome
    * File store and JMS server are targeted to the WebLogic cluster cluster-1
    * see resource/wdt-models/wdt-singlecluster-multiapps-usingprop-wls.yaml
    */
@@ -630,7 +681,7 @@ class ItParameterizedDomain {
    * Verify dataHome override in a domain with model in image type.
    * In this domain, dataHome is not specified in the domain custom resource
    * The domain contains JMS and File Store configuration
-   * File store directory is set to /u01/oracle/customFileStore in the model file which should not be overridden
+   * File store directory is set to /u01/customFileStore in the model file which should not be overridden
    * by dataHome
    * File store and JMS server are targeted to the WebLogic admin server
    * see resource/wdt-models/model-multiclusterdomain-sampleapp-wls.yaml
@@ -643,8 +694,8 @@ class ItParameterizedDomain {
     String domainUid = miiDomain.getSpec().getDomainUid();
     String domainNamespace = miiDomain.getMetadata().getNamespace();
 
-    // check in admin server pod, there is a data file for JMS server created in /u01/oracle/customFileStore
-    String dataFileToCheck = "/u01/oracle/customFileStore/FILESTORE-0000000.DAT";
+    // check in admin server pod, there is a data file for JMS server created in /u01/customFileStore
+    String dataFileToCheck = "/u01/customFileStore/FILESTORE-0000000.DAT";
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     waitForFileExistsInPod(domainNamespace, adminServerPodName, dataFileToCheck);
 
@@ -657,7 +708,7 @@ class ItParameterizedDomain {
     for (int i = 1; i <= replicaCount; i++) {
       for (int j = 1; j <= NUMBER_OF_CLUSTERS_MIIDOMAIN; j++) {
         String managedServerPodName = domainUid + "-cluster-" + j + "-" + MANAGED_SERVER_NAME_BASE + i;
-        String customDataFile = "/u01/oracle/customFileStore/FILESTORE-0@MANAGED-SERVER" + i + "000000.DAT";
+        String customDataFile = "/u01/customFileStore/FILESTORE-0@MANAGED-SERVER" + i + "000000.DAT";
         assertFalse(assertDoesNotThrow(() ->
                 doesFileExistInPod(domainNamespace, managedServerPodName, customDataFile),
             String.format("exception thrown when checking file %s exists in pod %s in namespace %s",
@@ -676,7 +727,7 @@ class ItParameterizedDomain {
    * Verify dataHome override in a domain with domain on PV type.
    * In this domain, dataHome is set to empty string in the domain custom resource
    * The domain contains JMS and File Store configuration
-   * File store directory is set to /u01/oracle/customFileStore in the model file which should not be overridden
+   * File store directory is set to /u01/customFileStore in the model file which should not be overridden
    * by dataHome
    * File store and JMS server are targeted to the WebLogic admin server
    * see resource/wdt-models/domain-onpv-wdt-model.yaml
@@ -689,8 +740,8 @@ class ItParameterizedDomain {
     String domainUid = domainOnPV.getSpec().getDomainUid();
     String domainNamespace = domainOnPV.getMetadata().getNamespace();
 
-    // check in admin server pod, there is a data file for JMS server created in /u01/oracle/customFileStore
-    String dataFileToCheck = "/u01/oracle/customFileStore/FILESTORE-0000000.DAT";
+    // check in admin server pod, there is a data file for JMS server created in /u01/customFileStore
+    String dataFileToCheck = "/u01/customFileStore/FILESTORE-0000000.DAT";
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     waitForFileExistsInPod(domainNamespace, adminServerPodName, dataFileToCheck);
 
@@ -702,7 +753,7 @@ class ItParameterizedDomain {
     // check in managed server pod, there is no custom data file for JMS is created
     for (int i = 1; i <= replicaCount; i++) {
       String managedServerPodName = domainUid + "-" + MANAGED_SERVER_NAME_BASE + i;
-      String customDataFile = "/u01/oracle/customFileStore/FILESTORE-0@MANAGED-SERVER" + i + "000000.DAT";
+      String customDataFile = "/u01/customFileStore/FILESTORE-0@MANAGED-SERVER" + i + "000000.DAT";
       assertFalse(assertDoesNotThrow(() ->
               doesFileExistInPod(domainNamespace, managedServerPodName, customDataFile),
           String.format("exception thrown when checking file %s exists in pod %s in namespace %s",
@@ -760,19 +811,12 @@ class ItParameterizedDomain {
         "domain event {0} to be logged",
         DOMAIN_CHANGED);
 
-    // verify the DomainProcessing Starting/Completed event is generated
+    // wait for longer time for DomainProcessingCompleted event
     testUntil(
-        checkDomainEvent(
-            opNamespace, miiDomainNamespace, miiDomainUid, DOMAIN_PROCESSING_STARTING, "Normal", timestamp),
+        withLongRetryPolicy,
+        checkDomainEvent(opNamespace, miiDomainNamespace, miiDomainUid, DOMAIN_COMPLETED, "Normal", timestamp),
         logger,
-        "domain event {0} to be logged",
-        DOMAIN_PROCESSING_STARTING);
-
-    testUntil(
-        checkDomainEvent(
-            opNamespace, miiDomainNamespace, miiDomainUid, DOMAIN_PROCESSING_COMPLETED, "Normal", timestamp),
-        logger,
-        DOMAIN_PROCESSING_COMPLETED);
+        DOMAIN_COMPLETED);
 
     // Verify that pod termination and started events are logged only once for each managed server in each cluster
     for (int i = 1; i <= NUMBER_OF_CLUSTERS_MIIDOMAIN; i++) {
@@ -852,8 +896,8 @@ class ItParameterizedDomain {
    * @param domainNamespace namespace in which the domain will be created
    * @return oracle.weblogic.domain.Domain objects
    */
-  private static Domain createMiiDomainWithMultiClusters(String domainUid, String domainNamespace) {
-
+  private static Domain createMiiDomainWithMultiClusters(String domainUid,
+                                                         String domainNamespace) {
     // admin/managed server name here should match with WDT model yaml file
     String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
 
@@ -862,14 +906,16 @@ class ItParameterizedDomain {
     logger.info("Creating docker registry secret in namespace {0}", domainNamespace);
     createOcirRepoSecret(domainNamespace);
 
+    String adminSecretName = "weblogic-credentials";
     // create secret for admin credentials
     logger.info("Creating secret for admin credentials");
-    String adminSecretName = "weblogic-credentials";
-    createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+    createSecretWithUsernamePassword(adminSecretName, domainNamespace,
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create encryption secret
     logger.info("Creating encryption secret");
-    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc", "weblogicenc");
+    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace,
+        "weblogicenc", "weblogicenc");
 
     // construct the cluster list used for domain custom resource
     List<Cluster> clusterList = new ArrayList<>();
@@ -902,6 +948,9 @@ class ItParameterizedDomain {
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
+                    .value("-Dweblogic.security.SSL.ignoreHostnameVerification=true"))
+                .addEnvItem(new V1EnvVar()
+                    .name("JAVA_OPTIONS")
                     .value("-Dweblogic.StdoutDebugEnabled=false"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
@@ -911,7 +960,11 @@ class ItParameterizedDomain {
                     .limits(resourceLimit)))
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING")
+                .adminChannelPortForwardingEnabled(true)
                 .adminService(new AdminService()
+                    .addChannelsItem(new Channel()
+                        .channelName("default-secure")
+                        .nodePort(0))
                     .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(0))))
@@ -1021,6 +1074,7 @@ class ItParameterizedDomain {
     p.setProperty("t3ChannelPort", Integer.toString(t3ChannelPort));
     p.setProperty("t3PublicAddress", K8S_NODEPORT_HOST);
     p.setProperty("managedServerPort", "8001");
+    p.setProperty("adminServerSslPort", ADMIN_SERVER_SECURE_PORT + "");
     assertDoesNotThrow(() ->
             p.store(new FileOutputStream(domainPropertiesFile), "WDT properties file"),
         "Failed to write domain properties file");
@@ -1062,6 +1116,9 @@ class ItParameterizedDomain {
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
+                    .value("-Dweblogic.security.SSL.ignoreHostnameVerification=true"))
+                .addEnvItem(new V1EnvVar()
+                    .name("JAVA_OPTIONS")
                     .value("-Dweblogic.StdoutDebugEnabled=false"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
@@ -1078,7 +1135,11 @@ class ItParameterizedDomain {
                     .requests(resourceRequest)))
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING")
+                .adminChannelPortForwardingEnabled(true)
                 .adminService(new AdminService()
+                    .addChannelsItem(new Channel()
+                        .channelName("default-secure")
+                        .nodePort(0))
                     .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(0))))
@@ -1142,10 +1203,17 @@ class ItParameterizedDomain {
    */
   private static String generateCurlCmd(String domainUid, String domainNamespace, String clusterName,
                                         String appContextRoot) {
-
-    return String.format("curl -v --show-error --noproxy '*' -H 'host: %s' http://%s:%s/%s/index.jsp",
-        domainUid + "." + domainNamespace + "." + clusterName + ".test",
-        K8S_NODEPORT_HOST, nodeportshttp, appContextRoot);
+    if (OKD) {
+      String routeHost = getRouteHost(domainNamespace, domainUid + "-cluster-" + clusterName);
+      logger.info("routeHost = {0}", routeHost);
+      return String.format("curl -v --show-error --noproxy '*' http://%s/%s/index.jsp",
+          routeHost, appContextRoot);
+    
+    } else { 
+      return String.format("curl -v --show-error --noproxy '*' -H 'host: %s' http://%s:%s/%s/index.jsp",
+          domainUid + "." + domainNamespace + "." + clusterName + ".test",
+          K8S_NODEPORT_HOST, nodeportshttp, appContextRoot);
+    }
   }
 
   /**
@@ -1234,6 +1302,7 @@ class ItParameterizedDomain {
             .value(HTTPS_PROXY));
 
     logger.info("Running a Kubernetes job to create the domain");
+    //createDomainJob(pvName, pvcName,
     createDomainJob(pvName, pvcName,
         domainScriptConfigMapName, namespace, jobCreationContainer);
   }
@@ -1289,19 +1358,10 @@ class ItParameterizedDomain {
                                       String namespace,
                                       V1Container jobContainer) {
     logger.info("Running Kubernetes job to create domain");
-    V1Job jobBody = new V1Job()
-        .metadata(
-            new V1ObjectMeta()
-                .name("create-domain-onpv-job-" + pvName) // name of the create domain job
-                .namespace(namespace))
-        .spec(new V1JobSpec()
-            .backoffLimit(0) // try only once
-            .template(new V1PodTemplateSpec()
-                .spec(new V1PodSpec()
-                    .restartPolicy("Never")
-                    .addInitContainersItem(createfixPVCOwnerContainer(pvName, "/u01/shared"))
-                    .addContainersItem(jobContainer  // container containing WLST or WDT details
-                        .name("create-weblogic-domain-onpv-container")
+    V1PodSpec podSpec = new V1PodSpec()
+        .restartPolicy("Never")
+        .addContainersItem(jobContainer  // container containing WLST or WDT details
+               .name("create-weblogic-domain-onpv-container")
                         .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
                         .imagePullPolicy("IfNotPresent")
                         .addPortsItem(new V1ContainerPort()
@@ -1309,7 +1369,7 @@ class ItParameterizedDomain {
                         .volumeMounts(Arrays.asList(
                             new V1VolumeMount()
                                 .name("create-weblogic-domain-job-cm-volume") // domain creation scripts volume
-                                .mountPath("/u01/weblogic"), // availble under /u01/weblogic inside pod
+                                  .mountPath("/u01/weblogic"), // availble under /u01/weblogic inside pod
                             new V1VolumeMount()
                                 .name(pvName) // location to write domain
                                 .mountPath("/u01/shared")))) // mounted under /u01/shared inside pod
@@ -1326,7 +1386,21 @@ class ItParameterizedDomain {
                                     .name(domainScriptCM)))) //config map containing domain scripts
                     .imagePullSecrets(Arrays.asList(
                         new V1LocalObjectReference()
-                            .name(BASE_IMAGES_REPO_SECRET))))));  // this secret is used only for non-kind cluster
+                            .name(BASE_IMAGES_REPO_SECRET)));  // this secret is used only for non-kind cluster
+    if (!OKD) {
+      podSpec.initContainers(Arrays.asList(createfixPVCOwnerContainer(pvName, "/u01/shared")));
+    }
+
+    V1PodTemplateSpec podTemplateSpec = new V1PodTemplateSpec();
+    podTemplateSpec.spec(podSpec);
+    V1Job jobBody = new V1Job()
+        .metadata(
+            new V1ObjectMeta()
+                .name("create-domain-onpv-job-" + pvName) // name of the create domain job
+                .namespace(namespace))
+        .spec(new V1JobSpec()
+            .backoffLimit(0) // try only once
+            .template(podTemplateSpec));
 
     String jobName = createJobAndWaitUntilComplete(jobBody, namespace);
 
@@ -1368,6 +1442,10 @@ class ItParameterizedDomain {
     logger.info("Create secret for admin credentials");
     createSecretWithUsernamePassword(wlSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
+    // create encryption secret
+    logger.info("Creating encryption secret");
+    createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc", "weblogicenc");
+
     // create image with model files
     logger.info("Creating image with model file and verify");
     List<String> appSrcDirList = new ArrayList<>();
@@ -1397,7 +1475,7 @@ class ItParameterizedDomain {
         .spec(new DomainSpec()
             .domainUid(domainUid)
             .domainHome(WDT_IMAGE_DOMAINHOME_BASE_DIR + "/" + domainUid)
-            .dataHome("/u01/oracle/mydata")
+            .dataHome("/u01/mydata")
             .domainHomeSourceType("Image")
             .image(domainInImageWithWDTImage)
             .addImagePullSecretsItem(new V1LocalObjectReference()
@@ -1410,6 +1488,9 @@ class ItParameterizedDomain {
             .serverPod(new ServerPod()
                 .addEnvItem(new V1EnvVar()
                     .name("JAVA_OPTIONS")
+                    .value("-Dweblogic.security.SSL.ignoreHostnameVerification=true"))
+                .addEnvItem(new V1EnvVar()
+                    .name("JAVA_OPTIONS")
                     .value("-Dweblogic.StdoutDebugEnabled=false"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
@@ -1419,7 +1500,11 @@ class ItParameterizedDomain {
                     .requests(resourceRequest)))
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING")
+                .adminChannelPortForwardingEnabled(true)
                 .adminService(new AdminService()
+                    .addChannelsItem(new Channel()
+                        .channelName("default-secure")
+                        .nodePort(0))
                     .addChannelsItem(new Channel()
                         .channelName("default")
                         .nodePort(0))))
@@ -1429,7 +1514,8 @@ class ItParameterizedDomain {
                 .serverStartState("RUNNING"))
             .configuration(new Configuration()
                 .model(new Model()
-                    .domainType(WLS_DOMAIN_TYPE))
+                    .domainType(WLS_DOMAIN_TYPE)
+                    .runtimeEncryptionSecret(encryptionSecretName))
                 .introspectorJobActiveDeadlineSeconds(300L)));
     setPodAntiAffinity(domain);
     createDomainAndVerify(domain, domainNamespace);

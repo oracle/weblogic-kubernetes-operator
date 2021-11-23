@@ -32,6 +32,10 @@ This sample assumes the following prerequisite environment setup:
 * [kubectl](https://kubernetes-io-vnext-staging.netlify.com/docs/tasks/tools/install-kubectl/); use `kubectl version` to test if `kubectl` works.  This document was tested with version v1.18.6.
 * [Helm](https://helm.sh/docs/intro/install/) version 3.1 or later; use `helm version` to check the `helm` version.  This document was tested with version v3.2.1.
 
+See [Supported platforms]({{< relref "userguide/platforms/environments" >}})
+for general operator prerequisites
+and operator support limitations that are specific to Tanzu.
+
 ##### Create a Tanzu Kubernetes cluster
 
 Create the Kubernetes cluster using the TKG CLI. See the [Tanzu documentation](https://docs.vmware.com/en/VMware-Tanzu-Kubernetes-Grid/1.2/vmware-tanzu-kubernetes-grid-12/GUID-index.html) to set up your Kubernetes cluster.
@@ -63,7 +67,7 @@ Kubernetes Operators use [Helm](https://helm.sh/) to manage Kubernetes applicati
 Clone the repository.
 
 ```shell
-$ git clone --branch v3.3.2 https://github.com/oracle/weblogic-kubernetes-operator.git
+$ git clone --branch v{{< latestVersion >}} https://github.com/oracle/weblogic-kubernetes-operator.git
 ```
 ```shell
 $ cd weblogic-kubernetes-operator
@@ -448,7 +452,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
     #
     # This is an example of how to define a Domain resource.
     #
-    apiVersion: "weblogic.oracle/v8"
+    apiVersion: "weblogic.oracle/v9"
     kind: Domain
     metadata:
       name: sample-domain1

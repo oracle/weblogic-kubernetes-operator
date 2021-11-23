@@ -3,17 +3,24 @@
 
 package oracle.weblogic.kubernetes.utils;
 
+import java.util.List;
+
 import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainCondition;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusConditionTypeExists;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusConditionTypeHasExpectedStatus;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainStatusReasonMatches;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -108,6 +115,75 @@ public class DomainUtils {
         domain,
         namespace,
         statusReason);
+  }
+
+  /**
+   * Check the domain status condition has expected status value.
+   * @param domainUid Uid of the domain
+   * @param namespace namespace of the domain
+   * @param conditionType the type name of condition, accepted value: Completed, Available, Failed and
+   *                      ConfigChangesPendingRestart
+   * @param expectedStatus the expected value of the status, either True or False
+   */
+  public static void checkDomainStatusConditionTypeHasExpectedStatus(String domainUid,
+                                                                     String namespace,
+                                                                     String conditionType,
+                                                                     String expectedStatus) {
+    testUntil(
+        withLongRetryPolicy,
+        domainStatusConditionTypeHasExpectedStatus(domainUid, namespace, conditionType, expectedStatus),
+        getLogger(),
+        "domain status condition type {0} has expected status {1}",
+        conditionType,
+        expectedStatus);
+  }
+
+  /**
+   * Check the domain status condition type exists.
+   * @param domainUid uid of the domain
+   * @param namespace namespace of the domain
+   * @param conditionType the type name of condition, accepted value: Completed, Available, Failed and
+   *                      ConfigChangesPendingRestart
+   */
+  public static void checkDomainStatusConditionTypeExists(String domainUid,
+                                                          String namespace,
+                                                          String conditionType) {
+    testUntil(
+        domainStatusConditionTypeExists(domainUid, namespace, conditionType),
+        getLogger(),
+        "waiting for domain status condition type {0} exists",
+        conditionType
+    );
+  }
+
+  /**
+   * Check the domain status condition type does not exist.
+   * @param domainUid uid of the domain
+   * @param domainNamespace namespace of the domain
+   * @param conditionType the type name of condition, accepted value: Completed, Available, Failed and
+   *                      ConfigChangesPendingRestart
+   * @return true if the condition type does not exist, false otherwise
+   */
+  public static boolean verifyDomainStatusConditionTypeDoesNotExist(String domainUid,
+                                                                    String domainNamespace,
+                                                                    String conditionType) {
+    Domain domain = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace));
+
+    if (domain != null && domain.getStatus() != null) {
+      List<DomainCondition> domainConditionList = domain.getStatus().getConditions();
+      for (DomainCondition domainCondition : domainConditionList) {
+        if (domainCondition.getType().equalsIgnoreCase(conditionType)) {
+          return false;
+        }
+      }
+    } else {
+      if (domain == null) {
+        getLogger().info("domain is null");
+      } else {
+        getLogger().info("domain status is null");
+      }
+    }
+    return true;
   }
 
   /**

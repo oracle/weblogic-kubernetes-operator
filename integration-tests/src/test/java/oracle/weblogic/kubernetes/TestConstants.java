@@ -14,7 +14,7 @@ public interface TestConstants {
 
   // domain constants
   public static final String DOMAIN_VERSION = Optional.ofNullable(System.getenv("DOMAIN_VERSION"))
-      .orElse("v8");
+      .orElse("v9");
   public static final String DOMAIN_API_VERSION = "weblogic.oracle/" + DOMAIN_VERSION;
   public static final String ADMIN_SERVER_NAME_BASE = "admin-server";
   public static final String MANAGED_SERVER_NAME_BASE = "managed-server";
@@ -157,6 +157,9 @@ public interface TestConstants {
   public static final String NGINX_REPO_NAME = "ingress-nginx";
   public static final String NGINX_CHART_NAME = "ingress-nginx";
   public static final String NGINX_CHART_VERSION = "2.16.0";
+  public static final String NGINX_INGRESS_IMAGE_TAG = "v0.35.0";
+  public static final String OCIR_NGINX_IMAGE_NAME = "weblogick8s/ingress-nginx/controller";
+  public static final String GCR_NGINX_IMAGE_NAME = "k8s.gcr.io/ingress-nginx/controller";
 
   // Traefik constants
   public static final String TRAEFIK_REPO_URL = "https://containous.github.io/traefik-helm-chart";
@@ -216,7 +219,12 @@ public interface TestConstants {
   public static final String MII_BASIC_WDT_MODEL_FILE = "model-singleclusterdomain-sampleapp-wls.yaml";
   public static final String MII_BASIC_IMAGE_NAME = DOMAIN_IMAGES_REPO + "mii-basic-image";
   public static final String MII_AUXILIARY_IMAGE_NAME = DOMAIN_IMAGES_REPO + "mii-ai-image";
-  public static final String MII_BASIC_IMAGE_TAG = getDateAndTimeStamp();
+  public static final String SKIP_BUILD_IMAGES_IF_EXISTS =
+        Optional.ofNullable(System.getenv("SKIP_BUILD_IMAGES_IF_EXISTS")).orElse("false");
+
+  // Skip the mii/wdt basic image build locally if needed
+  public static final String MII_BASIC_IMAGE_TAG =
+      Boolean.valueOf(SKIP_BUILD_IMAGES_IF_EXISTS) ? "local" : getDateAndTimeStamp();
   public static final String MII_BASIC_IMAGE_DOMAINTYPE = "mii";
   public static final String MII_BASIC_APP_NAME = "sample-app";
   public static final String MII_BASIC_APP_DEPLOYMENT_NAME = "myear";
@@ -233,7 +241,9 @@ public interface TestConstants {
   public static final String WDT_BASIC_MODEL_FILE = "wdt-singlecluster-sampleapp-usingprop-wls.yaml";
   public static final String WDT_BASIC_MODEL_PROPERTIES_FILE = "wdt-singleclusterdomain-sampleapp-wls.properties";
   public static final String WDT_BASIC_IMAGE_NAME = DOMAIN_IMAGES_REPO + "wdt-basic-image";
-  public static final String WDT_BASIC_IMAGE_TAG = getDateAndTimeStamp();
+  // Skip the mii/wdt basic image build locally if needed
+  public static final String WDT_BASIC_IMAGE_TAG = 
+      Boolean.valueOf(SKIP_BUILD_IMAGES_IF_EXISTS) ? "local" : getDateAndTimeStamp();
   public static final String WDT_BASIC_IMAGE_DOMAINHOME = "/u01/oracle/user_projects/domains/domain1";
   public static final String WDT_IMAGE_DOMAINHOME_BASE_DIR = "/u01/oracle/user_projects/domains";
   public static final String WDT_BASIC_IMAGE_DOMAINTYPE = "wdt";
@@ -306,4 +316,9 @@ public interface TestConstants {
 
   public static final String WEBLOGIC_VERSION = "12.2.1.4.0";
   public static final String HTTPS_PROXY = Optional.ofNullable(System.getenv("https_proxy")).orElse("");
+
+  // domain status condition type
+  public static final String DOMAIN_STATUS_CONDITION_COMPLETED_TYPE = "Completed";
+  public static final String DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE = "Available";
+  public static final String DOMAIN_STATUS_CONDITION_FAILED_TYPE = "Failed";
 }

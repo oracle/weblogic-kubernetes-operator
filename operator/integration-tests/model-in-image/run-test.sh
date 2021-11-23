@@ -288,6 +288,10 @@ if [ "$DO_DB" = "true" ]; then
   doCommand -c "echo ====== DB DEPLOY ======"
   # TBD note that start-db (and maybe stop-db) seem to alter files right inside the source tree - 
   #     this should be fixed to have a WORKDIR or similar, and means that they aren't suitable for multi-user/multi-ns environments
+  if [ "$OKD" = "true" ]; then
+    doCommand -c "echo adding scc to the DB namespace \$DB_NAMESPACE "
+    doCommand -c "oc adm policy add-scc-to-user anyuid -z default -n \$DB_NAMESPACE"
+  fi
   doCommand  "\$DBSAMPLEDIR/stop-db-service.sh -n \$DB_NAMESPACE"
   if [ ! -z "$DB_IMAGE_PULL_SECRET" ]; then
     doCommand  "\$DBSAMPLEDIR/start-db-service.sh -n \$DB_NAMESPACE -i \$DB_IMAGE_NAME:\$DB_IMAGE_TAG -p \$DB_NODE_PORT -s \$DB_IMAGE_PULL_SECRET"
@@ -354,6 +358,7 @@ if [ "$DO_INITIAL_IMAGE" = "true" ]; then
     doCommand -c "echo Running in auxiliary image mode"
     doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-AI"
   fi
+  doCommand -c "export OKD=${OKD}"
   doCommand    "\$MIIWRAPPERDIR/stage-tooling.sh"
   doCommand    "\$MIIWRAPPERDIR/build-model-image.sh"
 fi

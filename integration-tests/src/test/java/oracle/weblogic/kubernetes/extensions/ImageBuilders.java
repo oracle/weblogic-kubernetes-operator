@@ -3,7 +3,6 @@
 
 package oracle.weblogic.kubernetes.extensions;
 
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -83,6 +82,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPull;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.dockerImageExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
@@ -135,11 +135,10 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
         }
 
         // Only the first thread will enter this block.
-
         logger.info("Building docker Images before any integration test classes are run");
         context.getRoot().getStore(GLOBAL).put("BuildSetup", this);
 
-        // build operator image
+        // build the operator image
         operatorImage = Operator.getImageName();
         logger.info("Operator image name {0}", operatorImage);
         assertFalse(operatorImage.isEmpty(), "Image name can not be empty");
@@ -189,38 +188,48 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
           }
         }
 
-        if (System.getenv("SKIP_BASIC_IMAGE_BUILD") == null) {
-          // build MII basic image
-          miiBasicImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
+        miiBasicImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
+        wdtBasicImage = WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG;
+
+        // build MII basic image if does not exits
+        logger.info("Build/Check mii-basic image with tag {0}", MII_BASIC_IMAGE_TAG);
+        if (! dockerImageExists(MII_BASIC_IMAGE_NAME, MII_BASIC_IMAGE_TAG)) { 
+          logger.info("Building mii-basic image {0}", miiBasicImage);
           testUntil(
-              withVeryLongRetryPolicy,
-              createBasicImage(MII_BASIC_IMAGE_NAME, MII_BASIC_IMAGE_TAG, MII_BASIC_WDT_MODEL_FILE,
+                withVeryLongRetryPolicy,
+                createBasicImage(MII_BASIC_IMAGE_NAME, MII_BASIC_IMAGE_TAG, MII_BASIC_WDT_MODEL_FILE,
                 null, MII_BASIC_APP_NAME, MII_BASIC_IMAGE_DOMAINTYPE),
-              logger,
-              "createBasicImage to be successful");
+                logger,
+                "createBasicImage to be successful");
+        } else {
+          logger.info("!!!! domain image {0} exists !!!!", miiBasicImage);
+        }
 
-          // build basic wdt-domain-in-image image
-          wdtBasicImage = WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG;
+        logger.info("Build/Check wdt-basic image with tag {0}", WDT_BASIC_IMAGE_TAG);
+        // build WDT basic image if does not exits
+        if (! dockerImageExists(WDT_BASIC_IMAGE_NAME, WDT_BASIC_IMAGE_TAG)) {
+          logger.info("Building wdt-basic image {0}", wdtBasicImage);
           testUntil(
-              withVeryLongRetryPolicy,
-              createBasicImage(WDT_BASIC_IMAGE_NAME, WDT_BASIC_IMAGE_TAG, WDT_BASIC_MODEL_FILE,
+                withVeryLongRetryPolicy,
+                createBasicImage(WDT_BASIC_IMAGE_NAME, WDT_BASIC_IMAGE_TAG, WDT_BASIC_MODEL_FILE,
                 WDT_BASIC_MODEL_PROPERTIES_FILE, WDT_BASIC_APP_NAME, WDT_BASIC_IMAGE_DOMAINTYPE),
-              logger,
-              "createBasicImage to be successful");
+                logger,
+                "createBasicImage to be successful");
+        } else {
+          logger.info("!!!! domain image {0} exists !!!!", wdtBasicImage);
+        }
 
-          /* Check image exists using docker images | grep image tag.
-           * Tag name is unique as it contains date and timestamp.
-           * This is a workaround for the issue on Jenkins machine
-           * as docker images imagename:imagetag is not working and
-           * the test fails even though the image exists.
-           */
-          assertTrue(doesImageExist(MII_BASIC_IMAGE_TAG),
+        /* Check image exists using docker images | grep image tag.
+         * Tag name is unique as it contains date and timestamp.
+         * This is a workaround for the issue on Jenkins machine
+         * as docker images imagename:imagetag is not working and
+         * the test fails even though the image exists.
+         */
+        assertTrue(doesImageExist(MII_BASIC_IMAGE_TAG),
               String.format("Image %s doesn't exist", miiBasicImage));
 
-          assertTrue(doesImageExist(WDT_BASIC_IMAGE_TAG),
+        assertTrue(doesImageExist(WDT_BASIC_IMAGE_TAG),
               String.format("Image %s doesn't exist", wdtBasicImage));
-
-        }
 
         if (!OCIR_USERNAME.equals(REPO_DUMMY_VALUE)) {
           logger.info("docker login");
@@ -236,8 +245,8 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
 
           List<String> images = new ArrayList<>();
           images.add(operatorImage);
-          // add images only if SKIP_BASIC_IMAGE_BUILD is not set
-          if (System.getenv("SKIP_BASIC_IMAGE_BUILD") == null) {
+          // add images only if SKIP_BUILD_IMAGES_IF_EXISTS is not set
+          if (System.getenv("SKIP_BUILD_IMAGES_IF_EXISTS") == null) {
             images.add(miiBasicImage);
             images.add(wdtBasicImage);
           }
@@ -507,6 +516,8 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
         env.put("JAVA_HOME", witJavaHome);
       }
 
+      String witTarget = ((OKD) ? "OpenShift" : "Default");
+
       // build an image using WebLogic Image Tool
       boolean imageCreation = false;
       logger.info("Create image {0} using model directory {1}", image, MODEL_DIR);
@@ -522,6 +533,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
                 .domainHome(WDT_BASIC_IMAGE_DOMAINHOME)
                 .wdtOperation("CREATE")
                 .wdtVersion(WDT_VERSION)
+                .target(witTarget)
                 .env(env)
                 .redirect(true));
       } else if (domainType.equalsIgnoreCase("mii")) {
@@ -533,6 +545,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
                 .modelArchiveFiles(archiveList)
                 .wdtModelOnly(true)
                 .wdtVersion(WDT_VERSION)
+                .target(witTarget)
                 .env(env)
                 .redirect(true));
       }

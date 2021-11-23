@@ -30,7 +30,7 @@ This sample demonstrates how to use the [WebLogic Kubernetes Operator](/weblogic
 Clone the [WebLogic Kubernetes Operator repository](https://github.com/oracle/weblogic-kubernetes-operator) to your machine. We will use several scripts in this repository to create a WebLogic domain. This sample was tested with v3.1.1, but should work with the latest release.
 
 ```shell
-$ git clone --branch v3.3.2 https://github.com/oracle/weblogic-kubernetes-operator.git
+$ git clone --branch v{{< latestVersion >}} https://github.com/oracle/weblogic-kubernetes-operator.git
 ```
 ```shell
 $ cd weblogic-kubernetes-operator
@@ -720,13 +720,13 @@ Name:         sample-domain1
 Namespace:    sample-domain1-ns
 Labels:       weblogic.domainUID=sample-domain1
 Annotations:  <none>
-API Version:  weblogic.oracle/v8
+API Version:  weblogic.oracle/v9
 Kind:         Domain
 Metadata:
   Creation Timestamp:  2020-11-30T05:40:11Z
   Generation:          1
   Resource Version:    9346
-  Self Link:           /apis/weblogic.oracle/v8/namespaces/sample-domain1-ns/domains/sample-domain1
+  Self Link:           /apis/weblogic.oracle/v9/namespaces/sample-domain1-ns/domains/sample-domain1
   UID:                 9f10a602-714a-46c5-8dcb-815616b587af
 Spec:
   Admin Server:

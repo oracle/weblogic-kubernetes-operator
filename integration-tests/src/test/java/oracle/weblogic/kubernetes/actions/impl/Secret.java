@@ -89,8 +89,11 @@ public class Secret {
               for (V1ObjectReference reference : saSecretList) {
                 // Get the secret.
                 V1Secret secret = readSecretByReference(reference, namespace);
+                logger.info("secret = {0}", secret);
                 logger.info("secret token = {0}", secret.getMetadata().getName());
-                return secret.getMetadata().getName();
+                if (secret.getMetadata().getName().contains("token")) {
+                  return secret.getMetadata().getName();
+                }
               }
             }
           }

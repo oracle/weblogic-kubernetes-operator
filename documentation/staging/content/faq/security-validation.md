@@ -22,7 +22,19 @@ Warnings may be at the level of the JDK, or that SSL is not enabled. Some warnin
 
 - For Model in Image, supply model files with the recommended changes in its image's `modelHome` directory or use [runtime updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}).
 
+
+> Msg ID: 090985
+>
+> Description: Production Mode is enabled but the the file or directory /u01/oracle/user_projects/domains/domain/bin/setDomainEnv.sh is insecure since its permission is not a minimum of umask 027.
+>
+> SOLUTION: Change the file or directory permission to at most allow only write by owner, read by group.
+>
+> Description:  The file or directory SerializedSystemIni.dat is insecure since its permission is not a minimum of umask 027.
+>
+> SOLUTION: Change the file or directory permission to at most allow only write by owner, read by group.
+
+When the [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/) (WIT) creates a [Domain Home in Image](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/choosing-a-model/), you can specify the `--target OpenShift` option so that when WIT creates the domain, it sets the correct permissions in the domain home. When no `--target` option is specified, then the domain home directory has a umask of 027.
+
 {{% notice note %}}
 For information about handling file permission warnings on the OpenShift Kubernetes Platform, see the [OpenShift chapter]({{<relref "/security/openshift.md">}}) in the Security section.
 {{% /notice %}}
-

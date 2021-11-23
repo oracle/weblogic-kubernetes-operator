@@ -29,7 +29,7 @@ import io.kubernetes.client.openapi.models.V1NamespaceList;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.util.Watch;
 import oracle.kubernetes.operator.calls.CallResponse;
-import oracle.kubernetes.operator.calls.FailureStatusSourceException;
+import oracle.kubernetes.operator.calls.UnrecoverableCallException;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ClientPool;
 import oracle.kubernetes.operator.helpers.CrdHelper;
@@ -204,6 +204,11 @@ public class Main {
     @Override
     public void runSteps(Step firstStep) {
       runSteps(new Packet(), firstStep, null);
+    }
+
+    @Override
+    public void runSteps(Packet packet, Step firstStep) {
+      runSteps(packet, firstStep, null);
     }
 
     @Override
@@ -594,8 +599,8 @@ public class Main {
 
     @Override
     public void onThrowable(Packet packet, Throwable throwable) {
-      if (throwable instanceof FailureStatusSourceException) {
-        ((FailureStatusSourceException) throwable).log();
+      if (throwable instanceof UnrecoverableCallException) {
+        ((UnrecoverableCallException) throwable).log();
       } else {
         LOGGER.severe(MessageKeys.EXCEPTION, throwable);
       }
