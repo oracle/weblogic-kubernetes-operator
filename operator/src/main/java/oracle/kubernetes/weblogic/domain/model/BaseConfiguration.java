@@ -13,6 +13,7 @@ import com.google.gson.annotations.SerializedName;
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1HostAlias;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
@@ -251,6 +252,18 @@ public abstract class BaseConfiguration {
 
   void addToleration(V1Toleration toleration) {
     serverPod.addToleration(toleration);
+  }
+
+  public List<V1HostAlias> getHostAliases() {
+    return serverPod.getHostAliases();
+  }
+
+  public void setHostAliases(List<V1HostAlias> hostAliases) {
+    serverPod.setHostAliases(hostAliases);
+  }
+
+  void addHostAlias(V1HostAlias hostAlias) {
+    serverPod.addHostAlias(hostAlias);
   }
 
   public V1ResourceRequirements getResources() {
