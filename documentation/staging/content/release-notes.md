@@ -8,6 +8,7 @@ draft: false
 
 | Date | Version | Introduces backward incompatibilities? | Change - See also, [Change log](#change-log). |
 | --- | --- | --- | --- |
+| November 24, 2021 | v3.3.6 | no | Support added for a `hostAliases` field for WebLogic Server pod generation. |
 | November 23, 2021 | v3.3.5 | no | Resolved several issues, including an issue related to collecting logs from failed Model in Image domains that used auxiliary images and an issue related to reading PodDisruptionBudget resources not created by the operator. |
 | November 9, 2021 | v3.3.4 | no | Resolved an issue related to Model in Image domains and enabling WebLogic secure mode. |
 | November 1, 2021 | v3.3.3 | no | Resolved an issue related to WebLogic cluster replication with Istio 1.10 and resolved several issues related to introspector failure, retry, and status. |
@@ -47,6 +48,10 @@ draft: false
 | March 20, 2018 |  | yes | Several files and input parameters have been renamed.  This affects how operators and domains are created.  It also changes generated Kubernetes artifacts, therefore customers must recreate their operators and domains.
 
 ### Change log
+
+#### Operator 3.3.6
+
+* Support added for a `hostAliases` field for WebLogic Server pod generation ([#2627](https://github.com/oracle/weblogic-kubernetes-operator/pull/2627), [#2629](https://github.com/oracle/weblogic-kubernetes-operator/pull/2629)).
 
 #### Operator 3.3.5
 
