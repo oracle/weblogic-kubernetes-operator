@@ -206,9 +206,6 @@ class ItMiiDomain {
                replicaCount,
                MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG, configMapName);
 
-    // set low introspectorJobActiveDeadlineSeconds
-    domain.getSpec().configuration().introspectorJobActiveDeadlineSeconds(30L);
-
     // create model in image domain
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
         domainUid, domainNamespace, MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
@@ -217,15 +214,13 @@ class ItMiiDomain {
     // check admin server pod is ready
     logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
         adminServerPodName, domainNamespace);
-
-    // as low value is used for introspectorJobActiveDeadlineSeconds, wait longer for services and pods
-    checkPodReadyAndServiceExists(withLongRetryPolicy, adminServerPodName, domainUid, domainNamespace);
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
 
     // check managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
           managedServerPrefix + i, domainNamespace);
-      checkPodReadyAndServiceExists(withLongRetryPolicy,managedServerPrefix + i, domainUid, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
     // Need to expose the admin server external service to access the console in OKD cluster only
     // We will create one route for sslport and another for default port
@@ -288,10 +283,6 @@ class ItMiiDomain {
             ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, true);
     }
 
-    // check operator pod log contains message for introspectorJobActiveDeadlineSeconds as a low value is used
-    String operatorPodName = assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
-    checkPodLogContainsString(opNamespace, operatorPodName,
-        "introspectorJobActiveDeadlineSeconds");
   }
 
   @Test
@@ -328,23 +319,31 @@ class ItMiiDomain {
                 replicaCount,
                 MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
 
+    // set low introspectorJobActiveDeadlineSeconds
+    domain.getSpec().configuration().introspectorJobActiveDeadlineSeconds(30L);
+
     // create model in image domain
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
         domainUid1, domainNamespace1, MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
     createDomainAndVerify(domain, domainNamespace1);
 
     // check admin server pod is ready
+    // as low value is used for introspectorJobActiveDeadlineSeconds, wait longer for services and pods
     logger.info("Check admin service {0} is created in namespace {1}",
             adminServerPodName, domainNamespace1);
-    checkPodReadyAndServiceExists(adminServerPodName, domainUid1, domainNamespace1);
+    checkPodReadyAndServiceExists(withLongRetryPolicy, adminServerPodName, domainUid1, domainNamespace1);
 
     // check managed server services created
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Check managed server service {0} is created in namespace {1}",
               managedServerPrefix + i, domainNamespace1);
-      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid1, domainNamespace1);
+      checkPodReadyAndServiceExists(withLongRetryPolicy, managedServerPrefix + i, domainUid1, domainNamespace1);
     }
 
+    // check operator pod log contains message for introspectorJobActiveDeadlineSeconds as a low value is used
+    String operatorPodName = assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+    checkPodLogContainsString(opNamespace, operatorPodName,
+        "introspectorJobActiveDeadlineSeconds");
   }
 
   @Test
