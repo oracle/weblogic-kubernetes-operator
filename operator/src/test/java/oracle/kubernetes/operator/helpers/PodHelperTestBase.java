@@ -34,6 +34,7 @@ import io.kubernetes.client.openapi.models.V1EnvVarSource;
 import io.kubernetes.client.openapi.models.V1ExecAction;
 import io.kubernetes.client.openapi.models.V1HTTPGetAction;
 import io.kubernetes.client.openapi.models.V1Handler;
+import io.kubernetes.client.openapi.models.V1HostAlias;
 import io.kubernetes.client.openapi.models.V1LabelSelector;
 import io.kubernetes.client.openapi.models.V1LabelSelectorRequirement;
 import io.kubernetes.client.openapi.models.V1Lifecycle;
@@ -690,6 +691,14 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     configureDomain().withDefaultImagePullSecrets(imagePullSecret);
 
     assertThat(getCreatedPod().getSpec().getImagePullSecrets(), hasItem(imagePullSecret));
+  }
+
+  @Test
+  void whenPodCreatedWithHostAliases_addToPod() {
+    V1HostAlias hostAlias = new V1HostAlias().addHostnamesItem("www.test.com").ip("1.1.1.1");
+    configureDomain().withHostAliases(hostAlias);
+
+    assertThat(getCreatedPod().getSpec().getHostAliases(), hasItem(hostAlias));
   }
 
   @Test

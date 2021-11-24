@@ -10,6 +10,7 @@ import javax.annotation.Nonnull;
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1HostAlias;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
@@ -148,6 +149,8 @@ public interface ServerSpec {
   String getSchedulerName();
 
   List<V1Toleration> getTolerations();
+
+  List<V1HostAlias> getHostAliases();
 
   V1ResourceRequirements getResources();
 
