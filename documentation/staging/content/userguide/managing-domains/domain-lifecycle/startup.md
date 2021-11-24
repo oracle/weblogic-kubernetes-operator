@@ -207,12 +207,15 @@ The server will count toward the cluster's `replicas` count.  Also, if you confi
 The Domain YAML file includes the field `serverPod` that is available under `spec`, `adminServer`, and each entry of
 `clusters` and `managedServers`. The `serverPod` field controls many details of how Pods are generated for WebLogic Server instances.
 
-The `shutdown` field of `serverPod` controls how servers will be shut down and has three fields:
-`shutdownType`, `timeoutSeconds`, and `ignoreSessions`.  The `shutdownType` field can be set to either `Graceful`, the default,
+The `shutdown` field of `serverPod` controls how servers will be shut down and has four fields:
+`shutdownType`, `timeoutSeconds`, `ignoreSessions` and `waitForAllSessions`.  The `shutdownType` field can be set to either `Graceful`, the default,
 or `Forced` specifying the type of shutdown.  The `timeoutSeconds` property configures how long the server is given to
 complete shutdown before the server is killed.  The `ignoreSessions` property, which is only applicable for graceful shutdown, when `false`,
-the default, allows the shutdown process to take longer to give time for any active sessions to complete up to the configured timeout.
-The operator runtime monitors this property but will not restart any server pods solely to adjust the shutdown options.
+allows the shutdown process to take longer to give time for any active sessions to complete up to the configured timeout.
+The `waitForAllSessions` property, which is only applicable for graceful shutdown, when `false`,
+the shutdown process will wait for all non-persisted HTTP session to complete any inflight 
+work handling.  When `true`, the shutdown process will wait for all HTTP sessions to complete any 
+inflight work handling.  The operator runtime monitors these properties but will not restart any server pods solely to adjust the shutdown options.
 Instead, server pods created or restarted because of another property change will be configured to shutdown, at the appropriate
 time, using the shutdown options set when the WebLogic Server instance Pod is created.
 
@@ -227,6 +230,8 @@ the operator will not override the environment variable based on the shutdown co
 | `SHUTDOWN_TYPE` | `Graceful` | `Graceful` or `Forced` |
 | `SHUTDOWN_TIMEOUT` | 30 | Whole number in seconds where 0 means no timeout |
 | `SHUTDOWN_IGNORE_SESSIONS` | `false` | Boolean indicating if active sessions should be ignored; only applicable if shutdown is graceful |
+| `SHUTDOWN_WAIT_FOR_ALL_SESSIONS` | `false` | `true` to wait for all HTTP sessions during inflight work handling; `false` to wait for non-persisted HTTP sessions only ; only applicable if shutdown is graceful |
+
 
 #### `shutdown` rules
 
