@@ -51,7 +51,7 @@ draft: false
 
 #### Operator 3.3.6
 
-* Support added for a `hostAliases` field for WebLogic Server pod generation ([#2627](https://github.com/oracle/weblogic-kubernetes-operator/pull/2627), [#2629](https://github.com/oracle/weblogic-kubernetes-operator/pull/2629)).
+* Support added for a `hostAliases` field for WebLogic Server pod generation ([#2639](https://github.com/oracle/weblogic-kubernetes-operator/pull/2639)).
 
 #### Operator 3.3.5
 
