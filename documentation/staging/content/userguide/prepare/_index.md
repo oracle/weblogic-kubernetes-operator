@@ -5,18 +5,11 @@ weight: 3
 description: "Follow these steps to set up your environment."
 ---
 
+1. Fulfill the [operator prerequisite]({{< relref "/userguide/prerequisites/introduction.md" >}}) and [supported platforms]({{< relref "userguide/platforms/environments.md" >}}) requirements.
 
-
-
-1. Fulfill the [operator prerequisite]({{< relref "/userguide/prerequisites/introduction.md" >}}) requirements.
-
-1. Set up [Kubernetes]({{< relref "/userguide/kubernetes/k8s-setup.md" >}}).
+1. If your environment doesn't already have a Kubernetes setup, then see [set up Kubernetes]({{< relref "/userguide/kubernetes/k8s-setup.md" >}}).
 
 1. Optional. Enable [Istio]({{< relref "/userguide/istio/istio.md" >}}).
-
-1. Install [Helm]({{< relref "/userguide/managing-operators/_index.md#install-helm" >}}).
-
-1. Get the operator image from the [GitHub Container Registry](https://github.com/orgs/oracle/packages/container/package/weblogic-kubernetes-operator).
 
 1. [Install the operator]({{< relref "/userguide/managing-operators/installation.md" >}}).
 
