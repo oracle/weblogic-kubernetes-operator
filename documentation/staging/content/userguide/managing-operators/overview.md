@@ -11,6 +11,10 @@ A domain resource references WebLogic domain configuration,
 a WebLogic installation image,
 Kubernetes secrets,
 and anything else necessary to run a particular WebLogic domain.
+A single operator instance is capable of managing multiple domains
+in multiple namespaces depending on how it is configured.
+A Kubernetes cluster can host multiple operators, but no more than one per namespace,
+and two operators cannot manage domains in the same namespace.
 You can deploy, delete, and manage domain resources while an operator is running.
 For a full overview of how an operator runtime and its domain resources work together, see the
 [terms]({{<relref "/userguide/introduction/terms.md">}}),
@@ -45,6 +49,8 @@ See the operator [REST services]({{<relref "/userguide/managing-operators/the-re
 For an example of installing the operator, setting the namespace that it monitors, deploying a domain resource to its monitored namespace, and uninstalling the operator, see the [Quick Start]({{< relref "/quickstart/_index.md" >}}).
 
 {{% notice note %}}
-There can be multiple operators in a Kubernetes cluster, and in that case, you must ensure that the namespaces managed by these operators do not overlap.
+There can be multiple operators in a Kubernetes cluster,
+and in that case, you must ensure that the namespaces managed by these operators do not overlap.
 _At most, a namespace can be managed by one operator._
+In addition, you cannot deploy more than operator to a particular namespace.
 {{% /notice %}}
