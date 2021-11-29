@@ -316,7 +316,7 @@ class ItMiiDomain {
                 replicaCount,
                 MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
 
-    // set low introspectorJobActiveDeadlineSeconds
+    // set low introspectorJobActiveDeadlineSeconds and verify introspector retries on timeouts
     domain.getSpec().configuration().introspectorJobActiveDeadlineSeconds(30L);
 
     // create model in image domain
@@ -325,7 +325,8 @@ class ItMiiDomain {
     createDomainAndVerify(domain, domainNamespace1);
 
     // check admin server pod is ready
-    // as low value is used for introspectorJobActiveDeadlineSeconds, wait longer for services and pods
+    // as low value is used for introspectorJobActiveDeadlineSeconds, wait longer for services and pods to come
+    // to give enough time for make-right intervals and retries
     logger.info("Check admin service {0} is created in namespace {1}",
             adminServerPodName, domainNamespace1);
     checkPodReadyAndServiceExists(withLongRetryPolicy, adminServerPodName, domainUid1, domainNamespace1);
