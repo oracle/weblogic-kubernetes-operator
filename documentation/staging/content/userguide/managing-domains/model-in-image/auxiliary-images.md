@@ -319,16 +319,6 @@ Model In Image model files, application archives, and the WDT installation files
    ```
    We call this directory `WLS-AI-v1` to correspond with the image version tag that we plan to use for the auxiliary image.
 
-1. Install WDT in the staging directory and remove its `weblogic-deploy/bin/*.cmd` files, which are not used in UNIX environments:
-   ```shell
-   $ unzip /tmp/mii-sample/model-images/weblogic-deploy.zip -d .
-   $ rm ./weblogic-deploy/bin/*.cmd
-   ```
-   In a later step, we will specify a domain resource `domain.spec.configuration.model.wdtInstallHome`
-   attribute that references this WDT installation directory.
-
-   If the `weblogic-deploy.zip` file is missing, then you have skipped a step in the prerequisites.
-
 1. Create a `models` directory in the staging directory and copy the model YAML file, properties, and archive into it:
    ```shell
    $ mkdir ./models
@@ -339,49 +329,80 @@ Model In Image model files, application archives, and the WDT installation files
    In a later step, we will specify a domain resource `domain.spec.configuration.model.modelHome`
    attribute that references this directory.
 
-1. Run `docker build` using `/tmp/mii-sample/ai-docker-file/Dockerfile` to create your auxiliary
-   image using a small `busybox` image as the base image.
+1. Use one of the two options listed below to create the auxiliary image using a small `busybox` image as the base image. 
+   - Option 1 - Use the `createAuxImage` option of the [_WebLogic Image Tool_ (WIT)](https://oracle.github.io/weblogic-image-tool/) to create the auxiliary image.
+     See [Create Auxiliary Image](https://oracle.github.io/weblogic-image-tool/userguide/tools/create-aux-image/) for more details.
 
-   ```shell
-   $ docker build -f /tmp/mii-sample/ai-docker-file/Dockerfile \
-     --build-arg AUXILIARY_IMAGE_PATH=/auxiliary \
-     --tag model-in-image:WLS-AI-v1 .
-   ```
+     You've already set up the WebLogic Image Tool in the `/tmp/mii-sample/model-images` directory and added the WDT installer to the ImageTool cache during the prerequisite steps. 
 
-   See `./Dockerfile` for an explanation of each build argument.
 
-   {{%expand "Click here to view the Dockerfile." %}}
-   ```
-   # Copyright (c) 2021, Oracle and/or its affiliates.
-   # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+     ```shell
+     $ /tmp/mii-sample/model-images/imagetool/bin/imagetool.sh createAuxImage \
+       --tag model-in-image:WLS-AI-v1 \
+       --wdtModel ./models/model.10.yaml \
+       --wdtVariables ./models/model.10.properties \
+       --wdtArchive ./models/archive.zip
+     ```
+  
+     If you don't see the `imagetool` directory under `/tmp/mii-sample/model-images` or WDT installer is not in the ImageTool cache, then you have skipped step 9 in the [prerequisites]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}}).
+ 
+     In a later step, we will specify a domain resource `domain.spec.configuration.model.wdtInstallHome` attribute that references the WDT installation directory which defaults to `/auxiliary/weblogic-deploy`
+     (where `/auxiliary` is the default `{wdtHome}`). The domain resource attribute `domain.spec.configuration.model.modelHome` references `--wdtModelHome` which defaults to `/auxiliary/models`.
 
-   # This is a sample Dockerfile for supplying Model in Image model files
-   # and a WDT installation in a small separate auxiliary
-   # image. This is an alternative to supplying the files directly
-   # in the domain resource `domain.spec.image` image.
+   - Option 2 - Alternatively, you can create the auxiliary image manually by following these steps.
 
-   # AUXILIARY_IMAGE_PATH arg:
-   #   Parent location for Model in Image model and WDT installation files.
-   #   Must match domain resource 'domain.spec.auxiliaryImageVolumes.mountPath'
-   #   For model-in-image, the following two domain resource attributes can
-   #   be a directory in the mount path:
-   #     1) 'domain.spec.configuration.model.modelHome'
-   #     2) 'domain.spec.configuration.model.wdtInstallHome'
-   #   Default '/auxiliary'.
-   #
+     - First, install WDT in the staging directory and remove its `weblogic-deploy/bin/*.cmd` files, which are not used in UNIX environments:
+       ```shell
+       $ unzip /tmp/mii-sample/model-images/weblogic-deploy.zip -d .
+       $ rm ./weblogic-deploy/bin/*.cmd
+       ```
+       In a later step, we will specify a domain resource `domain.spec.configuration.model.wdtInstallHome`
+         attribute that references this WDT installation directory.
+    
+       If the `weblogic-deploy.zip` file is missing, then you have skipped a step in the prerequisites.
+  
+     - Run the `docker build` command using `/tmp/mii-sample/ai-docker-file/Dockerfile`.
+  
+       ```shell
+       $ docker build -f /tmp/mii-sample/ai-docker-file/Dockerfile \
+         --build-arg AUXILIARY_IMAGE_PATH=/auxiliary \
+         --tag model-in-image:WLS-AI-v1 .
+       ```
 
-   FROM busybox
-   ARG AUXILIARY_IMAGE_PATH=/auxiliary
-   ARG USER=oracle
-   ARG USERID=1000
-   ARG GROUP=root
-   ENV AUXILIARY_IMAGE_PATH=${AUXILIARY_IMAGE_PATH}
-   RUN adduser -D -u ${USERID} -G $GROUP $USER
-   COPY ./ ${AUXILIARY_IMAGE_PATH}/
-   RUN chown -R $USER:$GROUP ${AUXILIARY_IMAGE_PATH}
-   USER $USER
-   ```
-   {{% /expand %}}
+       See `./Dockerfile` for an explanation of each build argument.
+
+       {{%expand "Click here to view the Dockerfile." %}}
+       ```
+       # Copyright (c) 2021, Oracle and/or its affiliates.
+       # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+    
+       # This is a sample Dockerfile for supplying Model in Image model files
+       # and a WDT installation in a small separate auxiliary
+       # image. This is an alternative to supplying the files directly
+       # in the domain resource `domain.spec.image` image.
+    
+       # AUXILIARY_IMAGE_PATH arg:
+       #   Parent location for Model in Image model and WDT installation files.
+       #   Must match domain resource 'domain.spec.auxiliaryImageVolumes.mountPath'
+       #   For model-in-image, the following two domain resource attributes can
+       #   be a directory in the mount path:
+       #     1) 'domain.spec.configuration.model.modelHome'
+       #     2) 'domain.spec.configuration.model.wdtInstallHome'
+       #   Default '/auxiliary'.
+       #
+    
+       FROM busybox
+       ARG AUXILIARY_IMAGE_PATH=/auxiliary
+       ARG USER=oracle
+       ARG USERID=1000
+       ARG GROUP=root
+       ENV AUXILIARY_IMAGE_PATH=${AUXILIARY_IMAGE_PATH}
+       RUN adduser -D -u ${USERID} -G $GROUP $USER
+       COPY ./ ${AUXILIARY_IMAGE_PATH}/
+       RUN chown -R $USER:$GROUP ${AUXILIARY_IMAGE_PATH}
+       USER $USER
+       ```
+       {{% /expand %}}
 
 1. After the image is created, it should have the WDT executables in
    `/auxiliary/weblogic-deploy`, and WDT model, property, and archive
