@@ -164,7 +164,6 @@ public class MonitoringUtils {
 
     String command = String.format("cd %s && mvn clean install -Dmaven.test.skip=true -Dconfiguration=%s",
         monitoringExporterSrcDir,
-        RESOURCE_DIR,
         configFile);
     LoggingFacade logger = getLogger();
     logger.info("Executing command " + command);
