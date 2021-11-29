@@ -210,7 +210,7 @@ public class DomainStatusUpdater {
   public static Step createFailureRelatedSteps(
       @Nonnull DomainFailureReason reason, String message) {
     return Step.chain(
-        new FailedStep(reason, message),
+        createFailedStep(reason, message),
         createEventStep(new EventData(DOMAIN_FAILED, message).failureReason(reason)));
   }
 
@@ -584,6 +584,7 @@ public class DomainStatusUpdater {
         } else if (domainJustIncomplete()) {
           list.add(new EventData(DOMAIN_INCOMPLETE));
         }
+        Optional.ofNullable(createTooManyReplicasFailuresEventDataIfNeeded()).map(e -> list.add(e));
         return list;
       }
 
@@ -839,6 +840,13 @@ public class DomainStatusUpdater {
             .forEach(check -> status.addCondition(check.createFailureCondition()));
       }
 
+      private EventData createTooManyReplicasFailuresEventDataIfNeeded() {
+        return getConfiguredClusters().stream()
+            .map(TooManyReplicasCheck::new)
+            .filter(TooManyReplicasCheck::isFailure)
+            .findAny().map(check -> check.creatEventData()).orElse(null);
+      }
+
       private List<WlsClusterConfig> getConfiguredClusters() {
         return Optional.ofNullable(config).map(WlsDomainConfig::getConfiguredClusters).orElse(Collections.emptyList());
       }
@@ -864,6 +872,10 @@ public class DomainStatusUpdater {
 
         private String createFailureMessage() {
           return LOGGER.formatMessage(TOO_MANY_REPLICAS_FAILURE, specifiedReplicaCount, clusterName, maxReplicaCount);
+        }
+
+        private EventData creatEventData() {
+          return new EventData(DOMAIN_FAILED, createFailureMessage()).failureReason(ReplicasTooHigh);
         }
       }
 
