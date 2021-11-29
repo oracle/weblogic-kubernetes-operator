@@ -77,6 +77,7 @@ import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.JobUtils.createDomainJob;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.ABORTED_ERROR;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_AVAILABLE;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_CHANGED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_COMPLETED;
@@ -85,7 +86,6 @@ import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_DELETED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_FAILED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_COMPLETED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_STARTING;
-import static oracle.weblogic.kubernetes.utils.K8sEvents.INTERNAL_ERROR;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.NAMESPACE_WATCHING_STARTED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.POD_CYCLE_STARTING;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.REPLICAS_TOO_HIGH_ERROR;
@@ -304,7 +304,7 @@ class ItKubernetesEvents {
    * Test the following domain events are logged when domain resource goes through introspector failure.
    * Patch the domain resource to shutdown servers.
    * Patch the domain resource to point to a bad DOMAIN_HOME and update serverStartPolicy to IF_NEEDED.
-   * Verifies DomainFailed event is logged.
+   * Verifies DomainFailed event with Aborted failure reason is logged.
    * Cleanup by patching the domain resource to a valid location and introspectVersion to bring up all servers again.
    */
   @Order(4)
@@ -348,7 +348,7 @@ class ItKubernetesEvents {
       logger.info("verify domain changed event is logged");
       checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_CHANGED, "Normal", timestamp);
       logger.info("verify domain failed event");
-      checkFailedEvent(opNamespace, domainNamespace1, domainUid, INTERNAL_ERROR, "Warning", timestamp);
+      checkFailedEvent(opNamespace, domainNamespace1, domainUid, ABORTED_ERROR, "Warning", timestamp);
     } finally {
       logger.info("Restoring the domain with valid location and bringing up all servers");
       timestamp = now();
