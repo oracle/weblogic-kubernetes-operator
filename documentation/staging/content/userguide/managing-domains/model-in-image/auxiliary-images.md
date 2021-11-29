@@ -330,11 +330,7 @@ Model In Image model files, application archives, and the WDT installation files
    attribute that references this directory.
 
 1. Use one of the two options listed below to create the auxiliary image using a small `busybox` image as the base image. 
-   - Option 1 - Use the `createAuxImage` option of the [_WebLogic Image Tool_ (WIT)](https://oracle.github.io/weblogic-image-tool/) to create the auxiliary image.
-     See [Create Auxiliary Image](https://oracle.github.io/weblogic-image-tool/userguide/tools/create-aux-image/) for more details.
-
-     You've already set up the WebLogic Image Tool in the `/tmp/mii-sample/model-images` directory and added the WDT installer to the ImageTool cache during the prerequisite steps. 
-
+   - Option 1 - Use the `createAuxImage` option of the [_WebLogic Image Tool_ (WIT)](https://oracle.github.io/weblogic-image-tool/userguide/tools/create-aux-image/) to create the auxiliary image. Run the following command:
 
      ```shell
      $ /tmp/mii-sample/model-images/imagetool/bin/imagetool.sh createAuxImage \
@@ -410,6 +406,15 @@ Model In Image model files, application archives, and the WDT installation files
        USER $USER
        ```
        {{% /expand %}}
+
+1. If you have successfully created the image, then it should now be in your local machine's docker repository. For example:
+
+    ```
+    $ docker images model-in-image:WLS-AI-v1
+    REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+    model-in-image      WLS-AI-v1           eac9030a1f41        1 minute ago        4.04MB
+    ```
+
 
 1. After the image is created, it should have the WDT executables in
    `/auxiliary/weblogic-deploy`, and WDT model, property, and archive
