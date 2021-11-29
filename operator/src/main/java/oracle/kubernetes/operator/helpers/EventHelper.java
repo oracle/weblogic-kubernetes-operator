@@ -314,7 +314,7 @@ public class EventHelper {
   }
 
   private static String getAdditionalMessageFromFailureReason(EventData eventData, DomainPresenceInfo info) {
-    return Optional.ofNullable(eventData.failureReason).map(f -> f.getSuggestion(info)).orElse("");
+    return Optional.ofNullable(eventData.failureReason).map(f -> f.getEventSuggestion(info)).orElse("");
   }
 
   private static String getAdditionalMessage(EventData eventData, DomainPresenceInfo info) {
@@ -650,7 +650,7 @@ public class EventHelper {
     }
 
     private static String getFailureReason(EventData eventData) {
-      return Optional.ofNullable(eventData.failureReason).map(DomainFailureReason::getError).orElse("");
+      return Optional.ofNullable(eventData.failureReason).map(DomainFailureReason::getEventError).orElse("");
     }
 
     @org.jetbrains.annotations.NotNull
@@ -809,7 +809,7 @@ public class EventHelper {
     }
 
     public static boolean isProcessingAbortedEvent(@NotNull EventData eventData) {
-      return eventData.eventItem == DOMAIN_FAILED;
+      return eventData.eventItem == DOMAIN_FAILED && DomainFailureReason.Aborted.equals(eventData.failureReason);
     }
 
     /**
