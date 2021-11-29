@@ -158,7 +158,6 @@ class ItMiiDomain {
    * Create a WebLogic domain with SSL enabled in WebLogic configuration by 
    * configuring an additional configmap to the domain resource.
    * Add two channels to the domain resource with name `default-secure` and `default`.
-   * Set low introspectorJobActiveDeadlineSeconds on the domain.
    * Make sure the pre-packaged application in domain image gets deployed to 
    * the cluster and accessible from all the managed server pods 
    * Make sure two external NodePort services are created in domain namespace.
@@ -215,7 +214,6 @@ class ItMiiDomain {
     logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
         adminServerPodName, domainNamespace);
     checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
-
     // check managed server pods are ready
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Wait for managed server pod {0} to be ready in namespace {1}",
@@ -282,7 +280,6 @@ class ItMiiDomain {
       verifyCredentials(adminServerPodName, domainNamespace,
             ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, true);
     }
-
   }
 
   @Test
