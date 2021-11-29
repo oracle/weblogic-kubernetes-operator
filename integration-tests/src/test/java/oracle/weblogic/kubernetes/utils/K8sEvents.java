@@ -453,14 +453,14 @@ public class K8sEvents {
     }
   }
 
-  public static final String DOMAIN_AVAILABLE = "DomainAvailable";
-  public static final String DOMAIN_CREATED = "DomainCreated";
-  public static final String DOMAIN_DELETED = "DomainDeleted";
-  public static final String DOMAIN_CHANGED = "DomainChanged";
-  public static final String DOMAIN_COMPLETED = "DomainCompleted";
-  public static final String DOMAIN_FAILED = "DomainProcessingFailed";
-  public static final String DOMAIN_ROLL_STARTING = "DomainRollCompleted";
-  public static final String DOMAIN_ROLL_COMPLETED = "DomainRollCompleted";
+  public static final String DOMAIN_AVAILABLE = "Available";
+  public static final String DOMAIN_CREATED = "Created";
+  public static final String DOMAIN_DELETED = "Deleted";
+  public static final String DOMAIN_CHANGED = "Changed";
+  public static final String DOMAIN_COMPLETED = "Completed";
+  public static final String DOMAIN_FAILED = "Failed";
+  public static final String DOMAIN_ROLL_STARTING = "RollCompleted";
+  public static final String DOMAIN_ROLL_COMPLETED = "RollCompleted";
   public static final String NAMESPACE_WATCHING_STARTED = "NamespaceWatchingStarted";
   public static final String NAMESPACE_WATCHING_STOPPED = "NamespaceWatchingStopped";
   public static final String STOP_MANAGING_NAMESPACE = "StopManagingNamespace";
@@ -468,7 +468,6 @@ public class K8sEvents {
   public static final String POD_STARTED = "Started";
   public static final String POD_CYCLE_STARTING = "PodCycleStarting";
 
-  public static final String DOMAIN_INVALID_ERROR = "Domain validation error";
   public static final String TOPOLOGY_MISMATCH_ERROR
       = "Domain resource and WebLogic domain configuration mismatch error";
   public static final String INTROSPECTION_ERROR = "Introspection error";
@@ -476,5 +475,6 @@ public class K8sEvents {
   public static final String SERVER_POD_ERROR = "Server pod error";
   public static final String REPLICAS_TOO_HIGH_ERROR = "Replicas too high";
   public static final String INTERNAL_ERROR = "Internal error";
+  public static final String ABORTED_ERROR = "Domain processing is aborted";
 
 }
