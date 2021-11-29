@@ -57,6 +57,7 @@ import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import org.jetbrains.annotations.Nullable;
 
+import static oracle.kubernetes.operator.DomainFailureReason.Aborted;
 import static oracle.kubernetes.operator.DomainFailureReason.DomainInvalid;
 import static oracle.kubernetes.operator.DomainFailureReason.Internal;
 import static oracle.kubernetes.operator.DomainFailureReason.Introspection;
@@ -497,9 +498,12 @@ public class DomainStatusUpdater {
       List<EventData> list = new ArrayList<>();
       if (hasJustExceededMaxRetryCount()) {
         list.add(
-            new EventData(EventHelper.EventItem.DOMAIN_FAILED).message(INTROSPECTOR_MAX_ERRORS_EXCEEDED));
+            new EventData(EventHelper.EventItem.DOMAIN_FAILED)
+                .failureReason(Aborted)
+                .message(INTROSPECTOR_MAX_ERRORS_EXCEEDED));
       } else if (hasJustGotFatalIntrospectorError()) {
         list.add(new EventData(EventHelper.EventItem.DOMAIN_FAILED)
+            .failureReason(Aborted)
             .message(FATAL_INTROSPECTOR_ERROR_MSG + getNewStatus().getMessage()));
       }
       return list;
