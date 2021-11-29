@@ -47,7 +47,6 @@ import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.DomainConditionMatcher.hasCondition;
@@ -719,7 +718,6 @@ class DomainStatusUpdaterTest {
   }
 
   @Test
-  @Disabled
   void whenReplicaCountExceedsMaxReplicasForDynamicCluster_addFailedCondition() {
     domain.setReplicaCount("cluster1", 5);
     defineScenario().addDynamicCluster("cluster1", 4).build();
@@ -727,6 +725,17 @@ class DomainStatusUpdaterTest {
     updateDomainStatus();
 
     assertThat(getRecordedDomain(), hasCondition(Failed).withReason(ReplicasTooHigh).withMessageContaining("cluster1"));
+  }
+
+  @Test
+  void whenReplicaCountExceedsMaxReplicasForDynamicCluster_createFailedEvent() {
+    domain.getStatus().addCondition(new DomainCondition(Completed).withStatus("True"));
+    domain.setReplicaCount("cluster1", 5);
+    defineScenario().addDynamicCluster("cluster1", 4).build();
+
+    updateDomainStatus();
+
+    assertThat(getEvents().stream().anyMatch(this::isDomainFailedEvent), is(true));
   }
 
   @Test
@@ -856,6 +865,10 @@ class DomainStatusUpdaterTest {
 
   private boolean isDomainUnavailableEvent(CoreV1Event e) {
     return DOMAIN_UNAVAILABLE_EVENT.equals(e.getReason());
+  }
+
+  private boolean isDomainFailedEvent(CoreV1Event e) {
+    return DOMAIN_FAILED_EVENT.equals(e.getReason());
   }
 
   @Test
