@@ -28,6 +28,7 @@ topology:
                     ListenPort: 30012
                     PublicAddress: kubernetes
             Cluster: "cluster-1"
+            ListenPort: 7100
 
 appDeployments:
     Application:
