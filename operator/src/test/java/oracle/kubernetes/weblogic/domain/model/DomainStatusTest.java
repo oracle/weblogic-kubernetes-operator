@@ -449,6 +449,18 @@ class DomainStatusTest {
     assertThat(clusterStatuses.size(), is(equalTo(1)));
   }
 
+  @Test
+  void whenUpgraded_progressingConditionRemoved() {
+    // Insert conditions directly bypassing the addCondition() logic similarly to if this
+    // Domain had been read from K8s
+    domainStatus.getConditions().add(new DomainCondition(Progressing));
+    domainStatus.getConditions().add(new DomainCondition(Available));
+
+    domainStatus.upgrade();
+
+    assertThat(domainStatus, not(hasCondition(Progressing)));
+  }
+
   @SuppressWarnings("unused")
   static class ClusterStatusMatcher extends org.hamcrest.TypeSafeDiagnosingMatcher<ClusterStatus> {
     private final String name;

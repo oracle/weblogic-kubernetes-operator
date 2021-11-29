@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import io.kubernetes.client.openapi.ApiClient;
 import oracle.kubernetes.operator.calls.CallFactory;
 import oracle.kubernetes.operator.calls.RequestParams;
 import oracle.kubernetes.operator.calls.RetryStrategy;
@@ -14,7 +15,7 @@ public interface AsyncRequestStepFactory {
       RequestParams requestParams,
       CallFactory<T> factory,
       RetryStrategy retryStrategy,
-      ClientPool helper,
+      Pool<ApiClient> helper,
       int timeoutSeconds,
       int maxRetryCount,
       Integer gracePeriodSeconds,

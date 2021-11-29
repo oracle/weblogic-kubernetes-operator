@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.Semaphore;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
@@ -69,6 +70,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class KubernetesTestSupportTest {
 
@@ -541,6 +543,31 @@ class KubernetesTestSupportTest {
     assertThat(getResourcesInNamespace("ns2"), hasSize(3));
   }
 
+  @Test
+  void canPerformActionAfterCallIsCompleted() {
+    testSupport.setAddCreationTimestamp(true);
+    definePodResource();
+    final OffsetDateTime initialCreationTime = getPodCreationTime();
+
+    SystemClockTestSupport.increment();
+    testSupport.doAfterCall(POD, "deletePod", this::definePodResource);
+    testSupport.runSteps(new CallBuilder().deletePodAsync("pod", "ns", "uid", null, new DefaultResponseStep<>()));
+
+    assertTrue(getPodCreationTime().isAfter(initialCreationTime));
+  }
+
+  private void definePodResource() {
+    V1Pod pod = createPod("ns", "pod");
+    testSupport.defineResources(pod);
+  }
+
+  private OffsetDateTime getPodCreationTime() {
+    return Optional.ofNullable(testSupport.<V1Pod>getResources(POD).get(0))
+          .map(V1Pod::getMetadata)
+          .map(V1ObjectMeta::getCreationTimestamp)
+          .orElse(OffsetDateTime.MIN);
+  }
+
   private List<KubernetesObject> getResourcesInNamespace(String name) {
     List<KubernetesObject> result = new ArrayList<>();
     result.addAll(getResourcesInNamespace(DOMAIN, name));
@@ -562,6 +589,7 @@ class KubernetesTestSupportTest {
   static class TestResponseStep<T> extends DefaultResponseStep<T> {
 
     private CallResponse<T> callResponse;
+    private static final Semaphore responseAvailableSignal = new Semaphore(0);
 
     TestResponseStep() {
       super(null);
@@ -570,13 +598,27 @@ class KubernetesTestSupportTest {
     @Override
     public NextAction onFailure(Packet packet, CallResponse<T> callResponse) {
       this.callResponse = callResponse;
+      responseAvailableSignal.release();
       return super.onFailure(packet, callResponse);
     }
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<T> callResponse) {
       this.callResponse = callResponse;
+      responseAvailableSignal.release();
       return super.onSuccess(packet, callResponse);
+    }
+
+    /**
+     * Wait for and then return call response. This method is needed for tests async CallBuilder
+     * methods because the suspending of the requesting thread otherwise allows test code to move
+     * on before the response is processed.
+     * @return Call response
+     * @throws InterruptedException Interrupted waiting for response available signal
+     */
+    public CallResponse<T> waitForAndGetCallResponse() throws InterruptedException {
+      responseAvailableSignal.acquire();
+      return callResponse;
     }
   }
 }

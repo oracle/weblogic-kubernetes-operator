@@ -10,6 +10,7 @@ import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
@@ -26,6 +27,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Progressing;
 import static oracle.kubernetes.weblogic.domain.model.ObjectPatch.createObjectPatch;
 
 /**
@@ -55,6 +57,9 @@ public class DomainStatus {
           + "to an unknown secret name; in which case, the retries are unlimited.")
   @Range(minimum = 0)
   private Integer introspectJobFailureCount = 0;
+
+  @Description("Unique ID of the last failed introspection job.")
+  private String failedIntrospectionUid;
 
   @Description("Status of WebLogic Servers in this domain.")
   @Valid
@@ -97,6 +102,7 @@ public class DomainStatus {
     startTime = that.startTime;
     replicas = that.replicas;
     introspectJobFailureCount = that.introspectJobFailureCount;
+    failedIntrospectionUid = that.failedIntrospectionUid;
   }
 
   /**
@@ -288,11 +294,22 @@ public class DomainStatus {
   /**
    * Increment the number of introspect job failure count.
    *
+   * @param uid the Kubernetes-assigned UID of the job which discovered the introspection failure
    */
-  public void incrementIntrospectJobFailureCount() {
-    this.introspectJobFailureCount = this.introspectJobFailureCount + 1;
+  public void incrementIntrospectJobFailureCount(String uid) {
+    if (fiberException(uid) || failedIntrospectionNotRecorded(uid)) {
+      introspectJobFailureCount = introspectJobFailureCount + 1;
+    }
+    failedIntrospectionUid = uid;
   }
 
+  private boolean fiberException(String uid) {
+    return uid == null;
+  }
+
+  private boolean failedIntrospectionNotRecorded(String uid) {
+    return !uid.equals(failedIntrospectionUid);
+  }
 
   /**
    * Reset the number of introspect job failure to default.
@@ -305,13 +322,10 @@ public class DomainStatus {
   }
 
   /**
-   * Set the number of introspect job failure and return the DomainStatus.
-   * @param retryCount retryCount
-   * @return this
+   * Returns the UID of the last failed introspection job.
    */
-  public DomainStatus withIntrospectJobFailureCount(Integer retryCount) {
-    this.introspectJobFailureCount = retryCount;
-    return this;
+  public String getFailedIntrospectionUid() {
+    return failedIntrospectionUid;
   }
 
   /**
@@ -453,6 +467,26 @@ public class DomainStatus {
     return startTime;
   }
 
+  /**
+   * The time that the domain was started.
+   *
+   * @param startTime time
+   */
+  public void setStartTime(OffsetDateTime startTime) {
+    this.startTime = startTime;
+  }
+
+  /**
+   * The time that the domain was started.
+   *
+   * @param startTime time
+   * @return this
+   */
+  public DomainStatus withStartTime(OffsetDateTime startTime) {
+    this.startTime = startTime;
+    return this;
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
@@ -463,6 +497,7 @@ public class DomainStatus {
         .append("clusters", clusters)
         .append("startTime", startTime)
         .append("introspectJobFailureCount", introspectJobFailureCount)
+        .append("failedIntrospectionUid", failedIntrospectionUid)
         .toString();
   }
 
@@ -476,6 +511,7 @@ public class DomainStatus {
         .append(Domain.sortOrNull(conditions))
         .append(message)
         .append(introspectJobFailureCount)
+        .append(failedIntrospectionUid)
         .toHashCode();
   }
 
@@ -496,6 +532,7 @@ public class DomainStatus {
         .append(Domain.sortOrNull(conditions), Domain.sortOrNull(rhs.conditions))
         .append(message, rhs.message)
         .append(introspectJobFailureCount, rhs.introspectJobFailureCount)
+        .append(failedIntrospectionUid, rhs.failedIntrospectionUid)
         .isEquals();
   }
 
@@ -503,6 +540,7 @@ public class DomainStatus {
         .withConstructor(DomainStatus::new)
         .withStringField("message", DomainStatus::getMessage)
         .withStringField("reason", DomainStatus::getReason)
+        .withStringField("failedIntrospectionUid", DomainStatus::getFailedIntrospectionUid)
         .withIntegerField("introspectJobFailureCount", DomainStatus::getIntrospectJobFailureCount)
         .withIntegerField("replicas", DomainStatus::getReplicas)
         .withListField("conditions", DomainCondition.getObjectPatch(), DomainStatus::getConditions)
@@ -513,4 +551,13 @@ public class DomainStatus {
     statusPatch.createPatch(builder, "/status", oldStatus, this);
   }
 
+  public DomainStatus withIntrospectJobFailureCount(int failureCount) {
+    this.introspectJobFailureCount = failureCount;
+    return this;
+  }
+
+  public DomainStatus upgrade() {
+    Optional.ofNullable(conditions).ifPresent(x -> x.removeIf(cond -> cond.hasType(Progressing)));
+    return this;
+  }
 }

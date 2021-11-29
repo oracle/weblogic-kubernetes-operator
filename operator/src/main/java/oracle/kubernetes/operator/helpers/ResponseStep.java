@@ -88,7 +88,7 @@ public abstract class ResponseStep<T> extends Step {
     return (CallResponse<T>) packet.getSpi(CallResponse.class);
   }
 
-  private NextAction fromCallResponse(Packet packet,CallResponse<T> callResponse) {
+  private NextAction fromCallResponse(Packet packet, CallResponse<T> callResponse) {
     return callResponse.isFailure() ? onFailure(packet, callResponse) : onSuccess(packet, callResponse);
   }
 
