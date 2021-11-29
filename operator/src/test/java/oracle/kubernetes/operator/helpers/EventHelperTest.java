@@ -271,7 +271,7 @@ class EventHelperTest {
         createEventStep(new EventData(DOMAIN_FAILED)),
         createEventStep(new EventData(EventHelper.EventItem.DOMAIN_FAILED)
             .message("Test this failure")
-            .failureReason(DomainFailureReason.Internal)
+            .failureReason(DomainFailureReason.Aborted)
             .additionalMessage(WILL_NOT_RETRY)))
     );
 
@@ -279,7 +279,7 @@ class EventHelperTest {
         containsEventWithMessage(getEvents(testSupport),
             EventConstants.DOMAIN_FAILED_EVENT,
             String.format(EventConstants.DOMAIN_FAILED_PATTERN, UID,
-                EventConstants.INTERNAL_ERROR, "Test this failure", WILL_NOT_RETRY)),
+                EventConstants.ABORTED_ERROR, "Test this failure", WILL_NOT_RETRY)),
         is(true));
   }
 
