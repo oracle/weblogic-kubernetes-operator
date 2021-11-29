@@ -344,10 +344,17 @@ Model In Image model files, application archives, and the WDT installation files
        --wdtArchive ./models/archive.zip
      ```
   
-     If you don't see the `imagetool` directory under `/tmp/mii-sample/model-images` or WDT installer is not in the ImageTool cache, then you have skipped step 9 in the [prerequisites]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}}).
+     If you don't see the `imagetool` directory under `/tmp/mii-sample/model-images` or the WDT installer is not in the ImageTool cache, then you have skipped step 9 in the [prerequisites]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}}).
  
-     In a later step, we will specify a domain resource `domain.spec.configuration.model.wdtInstallHome` attribute that references the WDT installation directory which defaults to `/auxiliary/weblogic-deploy`
-     (where `/auxiliary` is the default `{wdtHome}`). The domain resource attribute `domain.spec.configuration.model.modelHome` references `--wdtModelHome` which defaults to `/auxiliary/models`.
+     In a later step, we will specify corresponding domain resource attributes:
+     - `domain.spec.configuration.model.wdtInstallHome`
+       so that it references the WDT installation directory,
+       which the `imagetool.sh createAuxImage` command
+       defaults to `/auxiliary/weblogic-deploy`
+       (where `/auxiliary` is the default `--wdtHome` value for the `imagetool.sh createAuxImage` command).
+     - `domain.spec.configuration.model.modelHome`
+       so that it matches the `imagetool.sh createAuxImage` command's `--wdtModelHome` value,
+       which defaults to `/auxiliary/models`.
 
    - Option 2 - Alternatively, you can create the auxiliary image manually by following these steps.
 
