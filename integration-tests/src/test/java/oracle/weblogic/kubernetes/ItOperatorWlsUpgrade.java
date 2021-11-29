@@ -3,9 +3,6 @@
 
 package oracle.weblogic.kubernetes;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -42,7 +39,6 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX;
@@ -54,16 +50,13 @@ import static oracle.weblogic.kubernetes.TestConstants.OLD_DEFAULT_EXTERNAL_SERV
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_GITHUB_CHART_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.SSL_PROPERTIES;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorContainerImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
-import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.collectAppAvailability;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.deployAndAccessApplication;
@@ -71,7 +64,6 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotR
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
-import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOperator;
@@ -117,11 +109,10 @@ class ItOperatorWlsUpgrade {
    * @param namespaces injected by JUnit
    */
   @BeforeEach
-  public void beforeEach(@Namespaces(3) List<String> namespaces) {
+  public void beforeEach(@Namespaces(2) List<String> namespaces) {
     this.namespaces = namespaces;
     assertNotNull(namespaces.get(0), "Namespace[0] is null");
     assertNotNull(namespaces.get(1), "Namespace[1] is null");
-    assertNotNull(namespaces.get(2), "Namespace[2] is null");
   }
   
   /**
@@ -141,7 +132,7 @@ class ItOperatorWlsUpgrade {
   @ValueSource(strings = { "domain-in-image", "model-in-image" })
   void testOperatorWlsUpgradeFrom304ToMain(String domainType) {
     logger.info("Starting test testOperatorWlsUpgradeFrom304ToMain with domain type {0}", domainType);
-    upgradeOperator(domainType, "3.0.4", "v8", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+    upgradeOperator(domainType, "3.0.4", "v8", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
@@ -152,7 +143,7 @@ class ItOperatorWlsUpgrade {
   @ValueSource(strings = { "domain-in-image", "model-in-image" })
   void testOperatorWlsUpgradeFrom314ToMain(String domainType) {
     logger.info("Starting test testOperatorWlsUpgradeFrom314ToMain with domain type {0}", domainType);
-    upgradeOperator(domainType, "3.1.4", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+    upgradeOperator(domainType, "3.1.4", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
@@ -163,7 +154,7 @@ class ItOperatorWlsUpgrade {
   @ValueSource(strings = { "domain-in-image", "model-in-image" })
   void testOperatorWlsUpgradeFrom325ToMain(String domainType) {
     logger.info("Starting test testOperatorWlsUpgradeFrom322ToMain with domain type {0}", domainType);
-    upgradeOperator(domainType, "3.2.5", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+    upgradeOperator(domainType, "3.2.5", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
@@ -174,7 +165,7 @@ class ItOperatorWlsUpgrade {
   @ValueSource(strings = { "domain-in-image", "model-in-image" })
   void testOperatorWlsUpgradeFrom336ToMain(String domainType) {
     logger.info("Starting test testOperatorWlsUpgradeFrom331ToMain with domain type {0}", domainType);
-    upgradeOperator(domainType, "3.3.6", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+    upgradeOperator(domainType, "3.3.6", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
@@ -198,17 +189,13 @@ class ItOperatorWlsUpgrade {
   // from -external to -ext e.g.
   // domain1-adminserver-ext  NodePort    10.96.46.242   30001:30001/TCP 
   private void upgradeOperator(String domainType, String operatorVersion, 
-       String domainVersion, String externalServiceNameSuffix,
-       boolean useHelmUpgrade) {
+       String domainVersion, String externalServiceNameSuffix) {
     logger.info("Assign a unique namespace for operator {0}", operatorVersion);
     assertNotNull(namespaces.get(0), "Namespace is null");
-    final String opNamespace1 = namespaces.get(0);
-    logger.info("Assign a unique namespace for latest operator");
-    assertNotNull(namespaces.get(1), "Namespace is null");
-    final String opNamespace2 = namespaces.get(1);
+    final String opNamespace = namespaces.get(0);
     logger.info("Assign a unique namespace for domain");
-    assertNotNull(namespaces.get(2), "Namespace is null");
-    String domainNamespace = namespaces.get(2);
+    assertNotNull(namespaces.get(1), "Namespace is null");
+    String domainNamespace = namespaces.get(1);
     latestOperatorImageName = getOperatorImageName();
 
     // delete existing CRD
@@ -219,14 +206,13 @@ class ItOperatorWlsUpgrade {
 
     HelmParams opHelmParams =
         new HelmParams().releaseName("weblogic-operator")
-            .namespace(opNamespace1)
+            .namespace(opNamespace)
             .repoUrl(OPERATOR_GITHUB_CHART_REPO_URL)
             .repoName("weblogic-operator")
             .chartName("weblogic-operator")
             .chartVersion(operatorVersion);
 
     // install operator
-    String opNamespace = opNamespace1;
     String opServiceAccount = opNamespace + "-sa";
     installAndVerifyOperator(opNamespace, opServiceAccount, true, 0, opHelmParams, domainNamespace);
 
@@ -266,9 +252,8 @@ class ItOperatorWlsUpgrade {
       pods.put(managedServerPodNamePrefix + i, getPodCreationTime(domainNamespace, managedServerPodNamePrefix + i));
     }
 
-    if (useHelmUpgrade) {
-      // deploy application and access the application once to make sure the app is accessible
-      deployAndAccessApplication(domainNamespace,
+    // deploy application and access the application once to make sure the app is accessible
+    deployAndAccessApplication(domainNamespace,
                                  domainUid,
                                 "cluster-1",
                                 "admin-server",
@@ -278,16 +263,16 @@ class ItOperatorWlsUpgrade {
                                 "7001",
                                 "8001");
 
-      // start a new thread to collect the availability data of the application while the
-      // main thread performs operator upgrade
-      List<Integer> appAvailability = new ArrayList<>();
-      logger.info("Start a thread to keep track of the application's availability");
-      Thread accountingThread =
+    // start a new thread to collect the availability data of the application 
+    // while the main thread performs operator upgrade
+    List<Integer> appAvailability = new ArrayList<>();
+    logger.info("Start a thread to keep track of the application's availability");
+    Thread accountingThread =
           new Thread(
               () -> {
                 collectAppAvailability(
                     domainNamespace,
-                    opNamespace1,
+                    opNamespace,
                     appAvailability,
                     adminServerPodName,
                     managedServerPodNamePrefix,
@@ -296,11 +281,11 @@ class ItOperatorWlsUpgrade {
                     "8001",
                     "testwebapp/index.jsp");
               });
-      accountingThread.start();
+    accountingThread.start();
 
-      try {
-        // upgrade to latest operator
-        HelmParams upgradeHelmParams = new HelmParams()
+    try {
+      // upgrade to latest operator
+      HelmParams upgradeHelmParams = new HelmParams()
             .releaseName(OPERATOR_RELEASE_NAME)
             .namespace(opNamespace)
             .chartDir(OPERATOR_CHART_DIR)
@@ -308,46 +293,36 @@ class ItOperatorWlsUpgrade {
             .chartVersion(null)
             .chartName(null);
 
-        // operator chart values
-        OperatorParams opParams = new OperatorParams()
+      // operator chart values
+      OperatorParams opParams = new OperatorParams()
             .helmParams(upgradeHelmParams)
             .image(latestOperatorImageName)
             .externalRestEnabled(true);
 
-        assertTrue(upgradeAndVerifyOperator(opNamespace, opParams),
+      assertTrue(upgradeAndVerifyOperator(opNamespace, opParams),
             String.format("Failed to upgrade operator in namespace %s", opNamespace));
-        // check operator image name after upgrade
-        logger.info("Checking image name in operator container ");
-        testUntil(
-            assertDoesNotThrow(() -> getOpContainerImageName(opNamespace1),
+      // check operator image name after upgrade
+      logger.info("Checking image name in operator container ");
+      testUntil(
+            assertDoesNotThrow(() -> getOpContainerImageName(opNamespace),
               "Exception while getting the operator image name"),
             logger,
             "Checking operator image name in namespace {0} after upgrade",
-            opNamespace1);
-        verifyPodsNotRolled(domainNamespace, pods);
-      } finally {
-        if (accountingThread != null) {
-          try {
-            accountingThread.join();
-          } catch (InterruptedException ie) {
-            // do nothing
-          }
-          // check the app availability data that we have collected, and see if
-          // the application has been available all the time during the upgrade
-          logger.info("Verify that application was available during upgrade");
-          assertTrue(appAlwaysAvailable(appAvailability),
-              "Application was not always available during operator upgrade");
+            opNamespace);
+      verifyPodsNotRolled(domainNamespace, pods);
+    } finally {
+      if (accountingThread != null) {
+        try {
+          accountingThread.join();
+        } catch (InterruptedException ie) {
+          // do nothing
         }
+        // check the app availability data that we have collected, and see if
+        // the application has been available all the time during the upgrade
+        logger.info("Verify that application was available during upgrade");
+        assertTrue(appAlwaysAvailable(appAvailability),
+              "Application was not always available during operator upgrade");
       }
-    } else {
-      opNamespace = opNamespace2;
-      opServiceAccount = opNamespace2 + "-sa";
-
-      // uninstall operator 2.5.0/2.6.0
-      assertTrue(uninstallOperator(opHelmParams),
-          String.format("Uninstall operator failed in namespace %s", opNamespace1));
-      // install latest operator
-      installAndVerifyOperator(opNamespace, opServiceAccount, true, 0, domainNamespace);
     }
 
     // check CRD version is updated
@@ -580,76 +555,4 @@ class ItOperatorWlsUpgrade {
     setPodAntiAffinity(domain);
   }
   
-  private void createDomainHomeInImageFromDomainYaml(
-      String domainNamespace, String operatorVersion, String externalServiceNameSuffix) {
-
-    // Create the repo secret to pull the image
-    // this secret is used only for non-kind cluster
-    createOcirRepoSecret(domainNamespace);
-
-    // create secret for admin credentials
-    logger.info("Create secret for admin credentials");
-    createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-
-    // use the checked in domain.yaml to create domain for old releases
-    // copy domain.yaml to results dir
-    Path srcDomainYaml = Paths.get(RESOURCE_DIR, "domain", "domain-260.yaml");
-    assertDoesNotThrow(() -> Files.createDirectories(
-        Paths.get(RESULTS_ROOT + "/" + this.getClass().getSimpleName())),
-        String.format("Could not create directory under %s", RESULTS_ROOT));
-    Path destDomainYaml =
-        Paths.get(RESULTS_ROOT + "/" + this.getClass().getSimpleName() + "/" + "domain.yaml");
-    assertDoesNotThrow(() -> Files.copy(srcDomainYaml, destDomainYaml, REPLACE_EXISTING),
-        "File copy failed for domain.yaml");
-
-    // replace apiVersion, namespace and image in domain.yaml
-    assertDoesNotThrow(() -> replaceStringInFile(
-        destDomainYaml.toString(), "v7", getApiVersion(operatorVersion)),
-        "Could not modify the apiVersion in the domain.yaml file");
-    assertDoesNotThrow(() -> replaceStringInFile(
-        destDomainYaml.toString(), "weblogic-domain260", domainNamespace),
-        "Could not modify the namespace in the domain.yaml file");
-    assertDoesNotThrow(() -> replaceStringInFile(
-        destDomainYaml.toString(), "domain-home-in-image:12.2.1.4",
-        WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG),
-        "Could not modify image name in the domain.yaml file");
-
-    assertTrue(new Command()
-        .withParams(new CommandParams()
-            .command("kubectl create -f " + destDomainYaml))
-        .execute(), "kubectl create failed");
-
-    checkDomainStarted(domainUid, domainNamespace);
-
-    logger.info("Getting node port for default channel");
-    int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
-        domainNamespace, getExternalServicePodName(adminServerPodName, externalServiceNameSuffix), "default"),
-        "Getting admin server node port failed");
-
-    logger.info("Validating WebLogic admin server access by login to console");
-    //boolean loginSuccessful = assertDoesNotThrow(() -> {
-    testUntil(
-        assertDoesNotThrow(() -> {
-          return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-        }, "Access to admin server node port failed"),
-        logger,
-        "Console login validation");
-    //assertTrue(loginSuccessful, "Console login validation failed");
-  }
-
-  private String getApiVersion(String operatorVersion) {
-    String apiVersion = null;
-    switch (operatorVersion) {
-      case "2.5.0":
-        apiVersion = "v6";
-        break;
-      case "2.6.0":
-        apiVersion = "v7";
-        break;
-      default:
-        apiVersion = TestConstants.DOMAIN_VERSION;
-    }
-    return apiVersion;
-  }
-
 }
