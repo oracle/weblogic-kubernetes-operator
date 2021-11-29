@@ -357,6 +357,8 @@
                   **/ItLivenessProbeCustomization,
                   **/ItManagedCoherence,
                   **/ItManageNameSpace,
+                  **/ItMiiAuxiliaryImage,
+                  **/ItMiiAuxiliaryImageCluster,
                   **/ItMiiCustomSslStore,
                   **/ItMiiDomain,
                   **/ItMiiDomainModelInPV,
