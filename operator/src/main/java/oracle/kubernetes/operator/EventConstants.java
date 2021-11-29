@@ -16,7 +16,7 @@ public interface EventConstants {
   String DOMAIN_ROLL_STARTING_EVENT = "RollStarting";
   String POD_CYCLE_STARTING_EVENT = "PodCycleStarting";
   String DOMAIN_UNAVAILABLE_EVENT = "Unavailable";
-  String DOMAIN_INCOMPLETE_EVENT = "Imcomplete";
+  String DOMAIN_INCOMPLETE_EVENT = "Incomplete";
   String DOMAIN_FAILURE_RESOLVED_EVENT = "FailureResolved";
   String EVENT_NORMAL = "Normal";
   String EVENT_WARNING = "Warning";
