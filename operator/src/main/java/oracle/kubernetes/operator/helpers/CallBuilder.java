@@ -304,7 +304,6 @@ public class CallBuilder {
 
   private final String resourceVersion = "";
 
-  /* Domains */
   private Integer maxRetryCount = 10;
   private final Boolean watch = Boolean.FALSE;
   private final CallFactory<DomainList> listDomain =

@@ -9,6 +9,7 @@ import java.util.Map;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1Affinity;
+import io.kubernetes.client.openapi.models.V1HostAlias;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
@@ -105,6 +106,11 @@ public abstract class ServerSpecBase implements ServerSpec {
 
   @Override
   public List<V1Toleration> getTolerations() {
+    return null;
+  }
+
+  @Override
+  public List<V1HostAlias> getHostAliases() {
     return null;
   }
 

@@ -842,7 +842,7 @@ public class DomainProcessorImpl implements DomainProcessor {
       } else if (shouldReportAbortedEvent()) {
         return true;
       } else if (hasExceededRetryCount(liveInfo) && !isImgRestartIntrospectVerChanged(liveInfo, cachedInfo)) {
-        LOGGER.severe(ProcessingConstants.EXCEEDED_INTROSPECTOR_MAX_RETRY_COUNT_ERROR_MSG);
+        LOGGER.severe(MessageKeys.INTROSPECTOR_MAX_ERRORS_EXCEEDED, getFailureRetryMaxCount());
         return false;
       } else if (isFatalIntrospectorError()) {
         LOGGER.fine(ProcessingConstants.FATAL_INTROSPECTOR_ERROR_MSG);
@@ -862,14 +862,17 @@ public class DomainProcessorImpl implements DomainProcessor {
       return false;
     }
 
+    private int getFailureRetryMaxCount() {
+      return DomainPresence.getDomainPresenceFailureRetryMaxCount();
+    }
+
     private boolean shouldReportAbortedEvent() {
       return Optional.ofNullable(eventData).map(EventData::getItem).orElse(null) == DOMAIN_PROCESSING_ABORTED;
     }
 
     private void logRetryCount(DomainPresenceInfo cachedInfo) {
       LOGGER.info(MessageKeys.INTROSPECT_JOB_FAILED_RETRY_COUNT, cachedInfo.getDomain().getDomainUid(),
-          getCurrentIntrospectFailureRetryCount(liveInfo),
-          DomainPresence.getDomainPresenceFailureRetryMaxCount());
+          getCurrentIntrospectFailureRetryCount(liveInfo), getFailureRetryMaxCount());
     }
 
     private boolean shouldRecheck(DomainPresenceInfo cachedInfo) {
