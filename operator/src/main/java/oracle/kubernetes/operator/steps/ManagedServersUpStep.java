@@ -35,9 +35,6 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 
 import static java.util.Comparator.comparing;
-import static oracle.kubernetes.operator.DomainFailureReason.ReplicasTooHigh;
-import static oracle.kubernetes.operator.DomainStatusUpdater.createFailedStep;
-import static oracle.kubernetes.operator.DomainStatusUpdater.createReplicasTooHighFailureRelatedSteps;
 
 public class ManagedServersUpStep extends Step {
   static final String SERVERS_UP_MSG =
@@ -232,7 +229,7 @@ public class ManagedServersUpStep extends Step {
 
     private Step createNextStep(Step next) {
       Step nextStep = (servers.isEmpty()) ? next : new ManagedServerUpIteratorStep(getStartupInfos(), next);
-      return Optional.ofNullable(failureStep).map(s -> Step.chain(s, nextStep)).orElse(nextStep);
+      return failureStep != null ?  Step.chain(failureStep, nextStep) : nextStep;
     }
 
     Collection<ServerStartupInfo> getStartupInfos() {
@@ -298,11 +295,11 @@ public class ManagedServersUpStep extends Step {
     private void addReplicasTooHighValidationErrorEventAndWarning(Object... messageParams) {
       LOGGER.warning(MessageKeys.REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT, messageParams);
       String message = LOGGER.formatMessage(MessageKeys.REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT, messageParams);
-      if (!skipEventCreation) {
-        failureStep = createReplicasTooHighFailureRelatedSteps(message);
-      } else {
-        failureStep = createFailedStep(ReplicasTooHigh, message);
-      }
+      //if (!skipEventCreation) {
+      //failureStep = createReplicasTooHighFailureRelatedSteps(message);
+      //} else {
+      //  failureStep = createFailedStep(ReplicasTooHigh, message);
+      //}
       info.addValidationWarning(message);
     }
 
