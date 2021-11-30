@@ -340,7 +340,7 @@ Model In Image model files, application archives, and the WDT installation files
        --wdtArchive ./models/archive.zip
      ```
   
-     If you don't see the `imagetool` directory under `/tmp/mii-sample/model-images` or the WDT installer is not in the ImageTool cache, then you have skipped step 9 in the [prerequisites]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}}).
+     If you don't see the `imagetool` directory under `/tmp/mii-sample/model-images` or the WDT installer is not in the ImageTool cache, then repeat the step to set up the WebLogic Image Tool in the [prerequisites]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}}).
  
      In a later step, we will specify corresponding domain resource attributes:
      - `domain.spec.configuration.model.wdtInstallHome`
@@ -362,7 +362,7 @@ Model In Image model files, application archives, and the WDT installation files
        In a later step, we will specify a domain resource `domain.spec.configuration.model.wdtInstallHome`
          attribute that references this WDT installation directory.
     
-       If the `weblogic-deploy.zip` file is missing, then you have skipped step 8 in the [prerequisites]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}}).
+       If the `weblogic-deploy.zip` file is missing, then repeat the step to download the latest WebLogic Deploy Tooling (WDT) in the [prerequisites]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}}).
   
      - Run the `docker build` command using `/tmp/mii-sample/ai-docker-file/Dockerfile`.
   
