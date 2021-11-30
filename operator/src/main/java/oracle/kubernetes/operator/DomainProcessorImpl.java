@@ -364,7 +364,7 @@ public class DomainProcessorImpl implements DomainProcessor {
             (key, fiber) -> Optional.ofNullable(fiber.getSuspendedStep()).ifPresent(suspendedStep -> {
               try (LoggingContext ignored
                   = LoggingContext.setThreadContext().namespace(namespace).domainUid(getDomainUid(fiber))) {
-                LOGGER.fine("Fiber is SUSPENDED at " + suspendedStep.getName());
+                LOGGER.fine("Fiber is SUSPENDED at " + suspendedStep.getResourceName());
               }
             }));
       makeRightFiberGates.forEach(consumer);

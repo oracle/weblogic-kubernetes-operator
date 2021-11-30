@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -21,6 +22,7 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.NextAction.Kind;
 
 import static oracle.kubernetes.operator.logging.MessageKeys.CURRENT_STEPS;
+import static oracle.kubernetes.operator.logging.MessageKeys.DUMP_BREADCRUMBS;
 
 /**
  * User-level thread&#x2E; Represents the execution of one processing flow. The {@link Engine} is
@@ -49,6 +51,13 @@ import static oracle.kubernetes.operator.logging.MessageKeys.CURRENT_STEPS;
  * what order and how they behaved.
  */
 public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber, BreadCrumbFactory {
+
+  /**
+   * Add this to a packet with a string value to log the current fiber breadcrumbs at the INFO level when it exits,
+   * along with any defined debug strings. The string value will be displayed as a prefix in the log message.
+   */
+  public static final String DEBUG_FIBER = "debugFiber";
+
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final int NOT_COMPLETE = 0;
   private static final int DONE = 1;
@@ -185,6 +194,15 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber, Bre
     }
   }
 
+  private String getStatus() {
+    switch (status.get()) {
+      case NOT_COMPLETE: return "NOT_COMPLETE";
+      case DONE: return "DONE";
+      case CANCELLED: return "CANCELLED";
+      default: return "UNKNOWN: " + status.get();
+    }
+  }
+
   /**
    * Terminates fiber with throwable. Must be called while the fiber is suspended.
    *
@@ -316,6 +334,13 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber, Bre
     Thread.interrupted();
   }
 
+  private void logFiberComplete(Packet packet) {
+    Optional.ofNullable(packet)
+          .map(p -> p.<String>getValue(DEBUG_FIBER))
+          .ifPresent(prefix -> LOGGER.info(DUMP_BREADCRUMBS, prefix, getBreadCrumbString()));
+  }
+
+
   private void completionCheck() {
     lock.lock();
     try {
@@ -333,6 +358,7 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber, Bre
           LOGGER.finest("{0} bread crumb: {1}", getName(), getBreadCrumbString());
         }
 
+
         try {
           if (s == NOT_COMPLETE && completionCallback != null) {
             if (na.throwable != null) {
@@ -349,6 +375,7 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber, Bre
         }
       }
     } finally {
+      logFiberComplete(getPacket());
       lock.unlock();
     }
   }
@@ -518,7 +545,7 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber, Bre
 
   @Override
   public String toString() {
-    return getName();
+    return getName() + " " + getStatus();
   }
 
   /**
