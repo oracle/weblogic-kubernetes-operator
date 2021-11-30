@@ -362,7 +362,7 @@ Model In Image model files, application archives, and the WDT installation files
        In a later step, we will specify a domain resource `domain.spec.configuration.model.wdtInstallHome`
          attribute that references this WDT installation directory.
     
-       If the `weblogic-deploy.zip` file is missing, then you have skipped a step in the prerequisites.
+       If the `weblogic-deploy.zip` file is missing, then you have skipped step 8 in the [prerequisites]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}}).
   
      - Run the `docker build` command using `/tmp/mii-sample/ai-docker-file/Dockerfile`.
   
