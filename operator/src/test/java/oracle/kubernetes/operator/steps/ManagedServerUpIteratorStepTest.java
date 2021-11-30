@@ -267,7 +267,7 @@ class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements W
 
     final Step step = createStepWithServerInfos();
 
-    assertThat(step.getName(), allOf(containsString(MS1), containsString(MS2), containsString(MS3)));
+    assertThat(step.getResourceName(), allOf(containsString(MS1), containsString(MS2), containsString(MS3)));
   }
 
   @Test

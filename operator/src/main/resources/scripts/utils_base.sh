@@ -150,7 +150,7 @@ function traceDirs() {
   local indir
   local val_indir
   for indir in $*; do
-    eval "val_indir=\"\${indir}\""
+    eval "val_indir=\"\$${indir}\""
     [ -z "${val_indir}" ] && continue
     trace "Directory trace for $indir=${val_indir} ($keyword)"
     local cnt=0
@@ -236,7 +236,7 @@ function initAuxiliaryImage() {
 
   trace FINE "Auxiliary Image: About to execute command '$AUXILIARY_IMAGE_COMMAND' in container image='$AUXILIARY_IMAGE_CONTAINER_IMAGE'. " \
              "AUXILIARY_IMAGE_PATH is '$AUXILIARY_IMAGE_PATH' and AUXILIARY_IMAGE_TARGET_PATH is '${AUXILIARY_IMAGE_TARGET_PATH}'."
-  traceDirs before $AUXILIARY_IMAGE_PATH
+  traceDirs before AUXILIARY_IMAGE_PATH
 
   if [ ! -d ${AUXILIARY_IMAGE_PATH} ] ||  [ -z "$(ls -A ${AUXILIARY_IMAGE_PATH})" ]; then
     trace SEVERE "Auxiliary Image: Dir '${AUXILIARY_IMAGE_PATH}' doesn't exist or is empty. Exiting."

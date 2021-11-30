@@ -35,8 +35,7 @@ abstract class WaitForReadyStep<T> extends Step {
   private static final int DEFAULT_RECHECK_SECONDS = 5;
   private static final int DEFAULT_RECHECK_COUNT = 60;
 
-  static NextStepFactory NEXT_STEP_FACTORY =
-          (callback, info, next) -> createMakeDomainRightStep(callback, info, next);
+  static NextStepFactory NEXT_STEP_FACTORY = WaitForReadyStep::createMakeDomainRightStep;
 
   protected static Step createMakeDomainRightStep(WaitForReadyStep.Callback callback,
                                            DomainPresenceInfo info, Step next) {
@@ -74,6 +73,11 @@ abstract class WaitForReadyStep<T> extends Step {
     super(next);
     this.initialResource = resource;
     this.resourceName = resourceName;
+  }
+
+  @Override
+  protected String getDetail() {
+    return getResourceName();
   }
 
   /**
@@ -180,7 +184,7 @@ abstract class WaitForReadyStep<T> extends Step {
       return doNext(packet);
     }
 
-    logWaiting(getName());
+    logWaiting(getResourceName());
     return doSuspend((fiber) -> resumeWhenReady(packet, fiber));
   }
 
@@ -188,7 +192,7 @@ abstract class WaitForReadyStep<T> extends Step {
   // verifies that we haven't already missed the update.
   private void resumeWhenReady(Packet packet, AsyncFiber fiber) {
     Callback callback = new Callback(fiber, packet);
-    addCallback(getName(), callback);
+    addCallback(getResourceName(), callback);
     checkUpdatedResource(packet, fiber, callback);
   }
 
@@ -206,13 +210,13 @@ abstract class WaitForReadyStep<T> extends Step {
 
   Step createReadAndIfReadyCheckStep(Callback callback) {
     if (initialResource != null) {
-      return createReadAsyncStep(getName(), getNamespace(), getDomainUid(), resumeIfReady(callback));
+      return createReadAsyncStep(getResourceName(), getNamespace(), getDomainUid(), resumeIfReady(callback));
     } else {
-      return new ReadAndIfReadyCheckStep(getName(), resumeIfReady(callback), getNext());
+      return new ReadAndIfReadyCheckStep(getResourceName(), resumeIfReady(callback), getNext());
     }
   }
 
-  protected abstract ResponseStep resumeIfReady(Callback callback);
+  protected abstract ResponseStep<T> resumeIfReady(Callback callback);
 
   private String getNamespace() {
     return getMetadata(initialResource).getNamespace();
@@ -222,16 +226,16 @@ abstract class WaitForReadyStep<T> extends Step {
     return getDomainUidLabel(getMetadata(initialResource));
   }
 
-  public String getName() {
+  public String getResourceName() {
     return initialResource != null ? getMetadata(initialResource).getName() : resourceName;
   }
 
 
   private class ReadAndIfReadyCheckStep extends Step {
     private final String resourceName;
-    private final ResponseStep responseStep;
+    private final ResponseStep<T> responseStep;
 
-    ReadAndIfReadyCheckStep(String resourceName, ResponseStep responseStep, Step next) {
+    ReadAndIfReadyCheckStep(String resourceName, ResponseStep<T> responseStep, Step next) {
       super(next);
       this.resourceName = resourceName;
       this.responseStep = responseStep;
@@ -246,7 +250,7 @@ abstract class WaitForReadyStep<T> extends Step {
 
   }
 
-  static class MakeRightDomainStep extends DefaultResponseStep {
+  static class MakeRightDomainStep<V> extends DefaultResponseStep<V> {
     public static final String WAIT_TIMEOUT_EXCEEDED = "Wait timeout exceeded";
     private final WaitForReadyStep.Callback callback;
 
@@ -256,7 +260,7 @@ abstract class WaitForReadyStep<T> extends Step {
     }
 
     @Override
-    public NextAction onSuccess(Packet packet, CallResponse callResponse) {
+    public NextAction onSuccess(Packet packet, CallResponse<V> callResponse) {
       MakeRightDomainOperation makeRightDomainOperation =
               (MakeRightDomainOperation)packet.get(MAKE_RIGHT_DOMAIN_OPERATION);
       if (makeRightDomainOperation != null) {
@@ -291,7 +295,7 @@ abstract class WaitForReadyStep<T> extends Step {
 
     // The resource has now either completed or failed, so we can continue processing.
     void proceedFromWait(T resource) {
-      removeCallback(getName(), this);
+      removeCallback(getResourceName(), this);
       if (mayResumeFiber()) {
         handleResourceReady(fiber, packet, resource);
         fiber.resume(packet);
