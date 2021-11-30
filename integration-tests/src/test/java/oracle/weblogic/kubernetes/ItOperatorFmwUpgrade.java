@@ -49,7 +49,6 @@ import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_GITHUB_CHART_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
@@ -198,18 +197,18 @@ class ItOperatorFmwUpgrade {
    * Operator upgrade from 3.0.4 to latest with a FMW Domain.
    */
   @Test
-  @DisplayName("Upgrade Operator from 3.0.4 to main")
-  void testOperatorFmwUpgradeFrom304ToMain() {
+  @DisplayName("Upgrade Operator from 3.0.4 to latest")
+  void testOperatorFmwUpgradeFrom304ToLatest() {
     this.namespaces = namespaces;
-    installAndUpgradeOperator("3.0.4", "v8", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+    installAndUpgradeOperator("3.0.4", "v8", "-external");
   }
 
   /**
    * Operator upgrade from 3.1.4 to latest with a FMW Domain.
    */
   @Test
-  @DisplayName("Upgrade Operator from 3.1.4 to main")
-  void testOperatorFmwUpgradeFrom314ToMain() {
+  @DisplayName("Upgrade Operator from 3.1.4 to latest")
+  void testOperatorFmwUpgradeFrom314ToLatest() {
     installAndUpgradeOperator("3.1.4", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
@@ -217,8 +216,8 @@ class ItOperatorFmwUpgrade {
    * Operator upgrade from 3.2.5 to latest with a FMW Domain.
    */
   @Test
-  @DisplayName("Upgrade Operator from 3.2.5 to main")
-  void testOperatorFmwUpgradeFrom325ToMain() {
+  @DisplayName("Upgrade Operator from 3.2.5 to latest")
+  void testOperatorFmwUpgradeFrom325ToLatest() {
     installAndUpgradeOperator("3.2.5", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
@@ -226,8 +225,8 @@ class ItOperatorFmwUpgrade {
    * Operator upgrade from 3.3.6 to latest with a FMW Domain.
    */
   @Test
-  @DisplayName("Upgrade Operator from 3.3.6 to main")
-  void testOperatorFmwUpgradeFrom336ToMain() {
+  @DisplayName("Upgrade Operator from 3.3.6 to latest")
+  void testOperatorFmwUpgradeFrom336ToLatest() {
     installAndUpgradeOperator("3.3.6", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 

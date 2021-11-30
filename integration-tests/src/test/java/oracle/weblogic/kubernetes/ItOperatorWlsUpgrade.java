@@ -46,7 +46,6 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_GITHUB_CHART_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
@@ -128,21 +127,21 @@ class ItOperatorWlsUpgrade {
    * Operator upgrade from 3.0.4 to latest.
    */
   @ParameterizedTest
-  @DisplayName("Upgrade Operator from 3.0.4 to main")
-  @ValueSource(strings = { "domain-in-image", "model-in-image" })
-  void testOperatorWlsUpgradeFrom304ToMain(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom304ToMain with domain type {0}", domainType);
-    upgradeOperator(domainType, "3.0.4", "v8", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  @DisplayName("Upgrade Operator from 3.0.4 to latest")
+  @ValueSource(strings = { "Image", "FromModel" })
+  void testOperatorWlsUpgradeFrom304ToLatest(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom304ToLatest with domain type {0}", domainType);
+    upgradeOperator(domainType, "3.0.4", "v8", "-external");
   }
 
   /**
    * Operator upgrade from 3.1.4 to latest.
    */
   @ParameterizedTest
-  @DisplayName("Upgrade Operator from 3.1.4 to main")
-  @ValueSource(strings = { "domain-in-image", "model-in-image" })
-  void testOperatorWlsUpgradeFrom314ToMain(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom314ToMain with domain type {0}", domainType);
+  @DisplayName("Upgrade Operator from 3.1.4 to latest")
+  @ValueSource(strings = { "Image", "FromModel" })
+  void testOperatorWlsUpgradeFrom314ToLatest(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom314ToLatest with domain type {0}", domainType);
     upgradeOperator(domainType, "3.1.4", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
@@ -150,10 +149,10 @@ class ItOperatorWlsUpgrade {
    * Operator upgrade from 3.2.5 to latest.
    */
   @ParameterizedTest
-  @DisplayName("Upgrade Operator from 3.2.5 to main")
-  @ValueSource(strings = { "domain-in-image", "model-in-image" })
-  void testOperatorWlsUpgradeFrom325ToMain(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom322ToMain with domain type {0}", domainType);
+  @DisplayName("Upgrade Operator from 3.2.5 to latest")
+  @ValueSource(strings = { "Image", "FromModel" })
+  void testOperatorWlsUpgradeFrom325ToLatest(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom325ToLatest with domain type {0}", domainType);
     upgradeOperator(domainType, "3.2.5", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
@@ -161,10 +160,10 @@ class ItOperatorWlsUpgrade {
    * Operator upgrade from 3.3.6 to latest.
    */
   @ParameterizedTest
-  @DisplayName("Upgrade Operator from 3.3.6 to main")
-  @ValueSource(strings = { "domain-in-image", "model-in-image" })
-  void testOperatorWlsUpgradeFrom336ToMain(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom331ToMain with domain type {0}", domainType);
+  @DisplayName("Upgrade Operator from 3.3.6 to latest")
+  @ValueSource(strings = { "Image", "FromModel" })
+  void testOperatorWlsUpgradeFrom336ToLatest(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom336ToLatest with domain type {0}", domainType);
     upgradeOperator(domainType, "3.3.6", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
@@ -190,12 +189,13 @@ class ItOperatorWlsUpgrade {
   // domain1-adminserver-ext  NodePort    10.96.46.242   30001:30001/TCP 
   private void upgradeOperator(String domainType, String operatorVersion, 
        String domainVersion, String externalServiceNameSuffix) {
-    logger.info("Assign a unique namespace for operator {0}", operatorVersion);
+    logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
-    final String opNamespace = namespaces.get(0);
+    String opNamespace = namespaces.get(0);
     logger.info("Assign a unique namespace for domain");
     assertNotNull(namespaces.get(1), "Namespace is null");
     String domainNamespace = namespaces.get(1);
+
     latestOperatorImageName = getOperatorImageName();
 
     // delete existing CRD
@@ -224,14 +224,17 @@ class ItOperatorWlsUpgrade {
     logger.info("Create secret for admin credentials");
     createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
-    // create domain
-    if (domainType.equalsIgnoreCase("domain-in-image")) {
-      createDomainHomeInImageAndVerify(
-          domainNamespace, domainVersion, externalServiceNameSuffix);
+    String domainImage = "";
+    if (domainType.equalsIgnoreCase("Image")) {
+      domainImage = WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG;
     } else {
-      createMiiDomainAndVerify(
-          domainNamespace, domainVersion, externalServiceNameSuffix); 
+      domainImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
     }
+
+    // create domain
+    createDomainResource(
+        domainNamespace, domainVersion, domainType, domainImage, 
+        externalServiceNameSuffix);
 
     checkDomainStarted(domainUid, domainNamespace);
     logger.info("Getting node port for default channel");
@@ -439,73 +442,26 @@ class ItOperatorWlsUpgrade {
     checkDomainStarted(domainUid, domainNamespace);
   }
 
-  private void createMiiDomainAndVerify(
-      String domainNamespace, String domVersion, 
+  private void createDomainResource(
+      String domainNamespace, 
+      String domVersion, 
+      String domainHomeSourceType,
+      String domainImage,
       String externalServiceNameSuffix) {
-    
+
+    String domApiVersion = "weblogic.oracle/" + domVersion;
+    logger.info("Default Domain API version {0}", DOMAIN_API_VERSION);
+    logger.info("Domain API version selected {0}", domApiVersion);
+    logger.info("Domain Image name selected {0}", domainImage);
+    logger.info("Create domain resource for domainUid {0} in namespace {1}",
+            domainUid, domainNamespace);
+
     // create encryption secret
     logger.info("Create encryption secret");
     String encryptionSecretName = "encryptionsecret";
     createSecretWithUsernamePassword(encryptionSecretName, domainNamespace,
                       "weblogicenc", "weblogicenc");
-    String domApiVersion = "weblogic.oracle/" + domVersion;
-    logger.info("Domain API version selected {0}", domApiVersion);
-    logger.info("Default Domain API version {0}", DOMAIN_API_VERSION);
-    logger.info("Create domain resource for domainUid {0} in namespace {1}",
-            domainUid, domainNamespace);
-    // create the domain CR
-    Domain domain = new Domain()
-        .apiVersion(domApiVersion)
-        .kind("Domain")
-        .metadata(new V1ObjectMeta()
-            .name(domainUid)
-            .namespace(domainNamespace))
-        .spec(new DomainSpec()
-            .domainUid(domainUid)
-            .domainHomeSourceType("FromModel")
-            .image(MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG)
-            .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(OCIR_SECRET_NAME))
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(adminSecretName)
-                .namespace(domainNamespace))
-            .includeServerOutInPodLog(true)
-            .serverStartPolicy("IF_NEEDED")
-            .serverPod(new ServerPod()
-                .addEnvItem(new V1EnvVar()
-                    .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.security.SSL.ignoreHostnameVerification=true"))
-                .addEnvItem(new V1EnvVar()
-                    .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom ")))
-            .adminServer(new AdminServer()
-                .serverStartState("RUNNING")
-                .adminService(new AdminService()
-                    .addChannelsItem(new Channel()
-                        .channelName("default")
-                        .nodePort(0))))
-            .addClustersItem(new Cluster()
-                .clusterName("cluster-1")
-                .replicas(replicaCount)
-                .serverStartState("RUNNING"))
-            .configuration(new Configuration()
-                .model(new Model()
-                    .domainType("WLS")
-                    .runtimeEncryptionSecret(encryptionSecretName))
-                .introspectorJobActiveDeadlineSeconds(300L)));
-    boolean domCreated = assertDoesNotThrow(() -> createDomainCustomResource(domain, domVersion),
-          String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
-          domainUid, domainNamespace));
-    assertTrue(domCreated, String.format("Create domain custom resource failed with ApiException "
-                    + "for %s in namespace %s", domainUid, domainNamespace));
-    setPodAntiAffinity(domain);
-  }
 
-  private void createDomainHomeInImageAndVerify(String domainNamespace, 
-      String domVersion, String externalServiceNameSuffix) {
-
-    String domApiVersion = "weblogic.oracle/" + domVersion;
-    logger.info("Domain API version selected {0}", domApiVersion);
     Domain domain = new Domain()
             .apiVersion(domApiVersion)
             .kind("Domain")
@@ -514,8 +470,8 @@ class ItOperatorWlsUpgrade {
                     .namespace(domainNamespace))
             .spec(new DomainSpec()
                     .domainUid(domainUid)
-                    .domainHomeSourceType("Image")
-                    .image(WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG)
+                    .domainHomeSourceType(domainHomeSourceType)
+                    .image(domainImage)
                     .addImagePullSecretsItem(new V1LocalObjectReference()
                             .name(OCIR_SECRET_NAME))
                     .webLogicCredentialsSecret(new V1SecretReference()
@@ -542,10 +498,9 @@ class ItOperatorWlsUpgrade {
                             .serverStartState("RUNNING"))
                     .configuration(new Configuration()
                             .model(new Model()
-                                    .domainType("WLS"))
-                        .introspectorJobActiveDeadlineSeconds(300L)));
-    logger.info("Create domain resource for domainUid {0} in namespace {1}",
-            domainUid, domainNamespace);
+                                .runtimeEncryptionSecret(encryptionSecretName)
+                                .domainType("WLS"))
+                            .introspectorJobActiveDeadlineSeconds(300L)));
     boolean domCreated = assertDoesNotThrow(() -> createDomainCustomResource(domain, domVersion),
           String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
           domainUid, domainNamespace));
@@ -554,5 +509,4 @@ class ItOperatorWlsUpgrade {
              + "for %s in namespace %s", domainUid, domainNamespace));
     setPodAntiAffinity(domain);
   }
-  
 }
