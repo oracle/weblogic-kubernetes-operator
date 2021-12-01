@@ -249,7 +249,7 @@ class ItKubernetesEvents {
     assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
     logger.info("verify the DomainFailed event is generated");
-    checkFailedEvent(opNamespace, domainNamespace1, domainUid, REPLICAS_TOO_HIGH_ERROR, "Warning", timestamp);
+    checkFailedEvent(opNamespace, domainNamespace1, domainUid, TOPOLOGY_MISMATCH_ERROR, "Warning", timestamp);
 
     // remove the managed server from domain resource
     timestamp = now();
@@ -470,9 +470,9 @@ class ItKubernetesEvents {
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
           "Failed to patch domain");
 
-      //No event will be created for this any more
-      // logger.info("verify the DomainFailed event is generated");
-      //checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_FAILED, "Warning", timestamp);
+      // No event will be created for this
+      logger.info("verify the DomainFailed event is NOT generated");
+      assertFalse(domainEventExists(opNamespace, domainNamespace1, domainUid,  DOMAIN_FAILED, "Warning", timestamp));
     } finally {
       timestamp = now();
       logger.info("Updating domain resource to set correct replicas size");

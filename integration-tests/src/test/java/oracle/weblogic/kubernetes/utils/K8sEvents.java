@@ -83,7 +83,8 @@ public class K8sEvents {
 
   /**
    * Check if a given DomainFailed event is logged by the operator.
-   *  @param opNamespace namespace in which the operator is running
+   *
+   * @param opNamespace namespace in which the operator is running
    * @param domainNamespace namespace in which the domain exists
    * @param domainUid UID of the domain
    * @param failureReason DomainFailureReason to check
@@ -108,7 +109,7 @@ public class K8sEvents {
    * @param type type of event, Normal of Warning
    * @param timestamp the timestamp after which to see events
    */
-  public static Callable<Boolean>   checkDomainEvent(
+  public static Callable<Boolean> checkDomainEvent(
       String opNamespace, String domainNamespace, String domainUid, String reason,
       String type, OffsetDateTime timestamp) {
     return () -> {
@@ -459,7 +460,7 @@ public class K8sEvents {
   public static final String DOMAIN_CHANGED = "Changed";
   public static final String DOMAIN_COMPLETED = "Completed";
   public static final String DOMAIN_FAILED = "Failed";
-  public static final String DOMAIN_ROLL_STARTING = "RollCompleted";
+  public static final String DOMAIN_ROLL_STARTING = "RollStarting";
   public static final String DOMAIN_ROLL_COMPLETED = "RollCompleted";
   public static final String NAMESPACE_WATCHING_STARTED = "NamespaceWatchingStarted";
   public static final String NAMESPACE_WATCHING_STOPPED = "NamespaceWatchingStopped";

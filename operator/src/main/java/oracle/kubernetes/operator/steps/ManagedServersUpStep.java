@@ -294,13 +294,6 @@ public class ManagedServersUpStep extends Step {
 
     private void addReplicasTooHighValidationErrorEventAndWarning(Object... messageParams) {
       LOGGER.warning(MessageKeys.REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT, messageParams);
-      String message = LOGGER.formatMessage(MessageKeys.REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT, messageParams);
-      //if (!skipEventCreation) {
-      //failureStep = createReplicasTooHighFailureRelatedSteps(message);
-      //} else {
-      //  failureStep = createFailedStep(ReplicasTooHigh, message);
-      //}
-      info.addValidationWarning(message);
     }
 
     private boolean lessThanMinConfiguredClusterSize(WlsClusterConfig clusterConfig) {
