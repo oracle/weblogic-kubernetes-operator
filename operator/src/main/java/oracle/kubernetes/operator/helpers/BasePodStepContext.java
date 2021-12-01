@@ -19,6 +19,7 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1EnvVarSource;
+import io.kubernetes.client.openapi.models.V1HostAlias;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Toleration;
@@ -167,6 +168,7 @@ public abstract class BasePodStepContext extends StepContextBase {
         .priorityClassName(getServerSpec().getPriorityClassName())
         .runtimeClassName(getServerSpec().getRuntimeClassName())
         .tolerations(getTolerations())
+        .hostAliases(getHostAliases())
         .restartPolicy(getServerSpec().getRestartPolicy())
         .securityContext(getServerSpec().getPodSecurityContext())
         .imagePullSecrets(getServerSpec().getImagePullSecrets());
@@ -177,6 +179,10 @@ public abstract class BasePodStepContext extends StepContextBase {
     return tolerations.isEmpty() ? null : tolerations;
   }
 
+  private List<V1HostAlias> getHostAliases() {
+    List<V1HostAlias> hostAliases = getServerSpec().getHostAliases();
+    return hostAliases.isEmpty() ? null : hostAliases;
+  }
 
   /**
    * Abstract method to be implemented by subclasses to return a list of configured and additional

@@ -22,6 +22,7 @@ import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.TestConstants;
 import oracle.weblogic.kubernetes.actions.impl.Exec;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import org.awaitility.core.ConditionFactory;
 
 import static oracle.weblogic.kubernetes.actions.TestActions.getPod;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
@@ -95,6 +96,28 @@ public class PodUtils {
         assertDoesNotThrow(() -> podReady(podName, domainUid, domainNamespace),
           String.format("podReady failed with ApiException for pod %s in namespace %s",
             podName, domainNamespace)),
+        logger,
+        "pod {0} to be ready in namespace {1}",
+        podName,
+        domainNamespace);
+  }
+
+
+  /**
+   * Check pod is ready.
+   *
+   * @param conditionFactory Configuration for Awaitility condition factory
+   * @param podName pod name to check
+   * @param domainUid the label the pod is decorated with
+   * @param domainNamespace the domain namespace in which the domain exists
+   */
+  public static void checkPodReady(ConditionFactory conditionFactory, String podName,
+                                   String domainUid, String domainNamespace) {
+    LoggingFacade logger = getLogger();
+    testUntil(conditionFactory,
+        assertDoesNotThrow(() -> podReady(podName, domainUid, domainNamespace),
+            String.format("podReady failed with ApiException for pod %s in namespace %s",
+                podName, domainNamespace)),
         logger,
         "pod {0} to be ready in namespace {1}",
         podName,

@@ -170,6 +170,25 @@ public class CommonTestUtils {
   }
 
   /**
+   * Check pod is ready and service exists in the specified namespace.
+   *
+   * @param conditionFactory Configuration for Awaitility condition factory
+   * @param podName pod name to check
+   * @param domainUid the label the pod is decorated with
+   * @param namespace the namespace in which the pod exists
+   */
+  public static void checkPodReadyAndServiceExists(ConditionFactory conditionFactory,
+                                                   String podName, String domainUid, String namespace) {
+    LoggingFacade logger = getLogger();
+
+    logger.info("Check service {0} exists in namespace {1}", podName, namespace);
+    checkServiceExists(conditionFactory, podName, namespace);
+
+    logger.info("Waiting for pod {0} to be ready in namespace {1}", podName, namespace);
+    checkPodReady(conditionFactory, podName, domainUid, namespace);
+  }
+
+  /**
    * Check service exists in the specified namespace.
    *
    * @param serviceName service name to check
@@ -181,6 +200,25 @@ public class CommonTestUtils {
         assertDoesNotThrow(() -> serviceExists(serviceName, null, namespace),
           String.format("serviceExists failed with ApiException for service %s in namespace %s",
             serviceName, namespace)),
+        logger,
+        "service {0} to exist in namespace {1}",
+        serviceName,
+        namespace);
+  }
+
+  /**
+   * Check service exists in the specified namespace.
+   *
+   * @param conditionFactory Configuration for Awaitility condition factory
+   * @param serviceName service name to check
+   * @param namespace the namespace in which to check for the service
+   */
+  public static void checkServiceExists(ConditionFactory conditionFactory,String serviceName, String namespace) {
+    LoggingFacade logger = getLogger();
+    testUntil(conditionFactory,
+        assertDoesNotThrow(() -> serviceExists(serviceName, null, namespace),
+            String.format("serviceExists failed with ApiException for service %s in namespace %s",
+                serviceName, namespace)),
         logger,
         "service {0} to exist in namespace {1}",
         serviceName,

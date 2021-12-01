@@ -5,6 +5,7 @@ package oracle.kubernetes.operator.helpers;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -222,12 +223,18 @@ public class JobHelper {
         if (isKnownFailedJob(job) || JobWatcher.isJobTimedOut(job)) {
           return doNext(cleanUpAndReintrospect(getNext()), packet);
         } else if (job != null) {
-          return doNext(processIntrospectionResults(getNext()), packet);
+          return doNext(processIntrospectionResults(getNext()), packet).withDebugComment(job, this::jobDescription);
         } else if (isIntrospectionNeeded(packet)) {
-          return doNext(createIntrospectionSteps(getNext()), packet);
+          return doNext(createIntrospectionSteps(getNext()), packet).withDebugComment(packet, this::introspectReason);
         } else {
-          return doNext(packet);
+          return doNext(packet).withDebugComment(packet, this::introspectionNotNeededReason);
         }
+      }
+
+      @Nonnull
+      private String jobDescription(@Nonnull V1Job job) {
+        return "found introspection job " + job.getMetadata().getName()
+                         + ", started at " + job.getMetadata().getCreationTimestamp();
       }
 
       private boolean isKnownFailedJob(V1Job job) {
@@ -250,6 +257,36 @@ public class JobHelper {
               || isIntrospectionRequested(packet)
               || isModelInImageUpdate(packet)
               || isIntrospectVersionChanged(packet);
+      }
+
+      private String introspectReason(Packet packet) {
+        StringBuilder sb = new StringBuilder("introspection needed because ");
+        if (getDomainTopology() == null) {
+          sb.append("domain topology is null");
+        } else if (isBringingUpNewDomain(packet)) {
+          sb.append("bringing up new domain");
+        } else {
+          sb.append("something else");
+        }
+        return sb.toString();
+      }
+
+      private String introspectionNotNeededReason(Packet packet) {
+        StringBuilder sb = new StringBuilder("introspection not needed because ");
+        if (getNumRunningServers() != 0) {
+          sb.append("have running servers: ").append(String.join(", ", getRunningServerNames()));
+        } else if (!creatingServers(info)) {
+          sb.append("should not be creating servers");
+        } else {
+          sb.append("domain generation = ").append(getDomainGeneration())
+                .append(" and packet last generation is ").append(packet.get(INTROSPECTION_DOMAIN_SPEC_GENERATION));
+        }
+        return sb.toString();
+      }
+
+      @Nonnull
+      private Collection<String> getRunningServerNames() {
+        return Optional.ofNullable(info).map(DomainPresenceInfo::getServerNames).orElse(Collections.emptyList());
       }
 
       private boolean isBringingUpNewDomain(Packet packet) {

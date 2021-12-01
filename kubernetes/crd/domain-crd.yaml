@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 591c48cdcb37247a815cee50b0f57cf3e9f95119ba1a50a9cceeb7d073958c49
+    weblogic.sha256: fb9a0b3deb5859c4df7aaa5250958f81404de48e1b19d146044b8cc72bac04bb
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -384,36 +384,6 @@ spec:
                           schedules this pod onto that node, assuming that it fits
                           the resource requirements. See `kubectl explain pods.spec.nodeName`.
                         type: string
-                      livenessProbe:
-                        description: Settings for the liveness probe associated with
-                          a WebLogic Server instance.
-                        properties:
-                          failureThreshold:
-                            description: Number of times the check is performed before
-                              giving up. Giving up in case of liveness probe means
-                              restarting the container. In case of readiness probe,
-                              the Pod will be marked Unready. Defaults to 1.
-                            minimum: 1.0
-                            type: number
-                          periodSeconds:
-                            description: The number of seconds between checks.
-                            type: number
-                          timeoutSeconds:
-                            description: The number of seconds with no response that
-                              indicates a failure.
-                            type: number
-                          successThreshold:
-                            description: Minimum number of times the check needs to
-                              pass for the probe to be considered successful after
-                              having failed. Defaults to 1. Must be 1 for liveness
-                              Probe.
-                            minimum: 1.0
-                            type: number
-                          initialDelaySeconds:
-                            description: The number of seconds before the first check
-                              is performed.
-                            type: number
-                        type: object
                       readinessGates:
                         description: 'If specified, all readiness gates will be evaluated
                           for Pod readiness. A Pod is ready when all its containers
@@ -502,6 +472,207 @@ spec:
                           the pod priority will be the default or zero, if there is
                           no default. See `kubectl explain pods.spec.priorityClassName`.
                         type: string
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: The annotations to be added to generated resources.
+                        type: object
+                      hostAliases:
+                        description: HostAliases is an optional list of hosts and
+                          IPs that will be injected into the pod's hosts file if specified.
+                          This is only valid for non-hostNetwork pods.
+                        items:
+                          type: object
+                          properties:
+                            ip:
+                              type: string
+                            hostnames:
+                              type: array
+                              items:
+                                type: string
+                        type: array
+                      nodeSelector:
+                        additionalProperties:
+                          type: string
+                        description: Selector which must match a Node's labels for
+                          the Pod to be scheduled on that Node. See `kubectl explain
+                          pods.spec.nodeSelector`.
+                        type: object
+                      volumeMounts:
+                        description: Additional volume mounts for the container running
+                          a WebLogic Server instance. See `kubectl explain pods.spec.containers.volumeMounts`.
+                        items:
+                          type: object
+                          properties:
+                            mountPath:
+                              type: string
+                            mountPropagation:
+                              type: string
+                            name:
+                              type: string
+                            readOnly:
+                              type: boolean
+                            subPath:
+                              type: string
+                            subPathExpr:
+                              type: string
+                          required:
+                          - mountPath
+                          - name
+                        type: array
+                      runtimeClassName:
+                        description: 'RuntimeClassName refers to a RuntimeClass object
+                          in the node.k8s.io group, which should be used to run this
+                          Pod. If no RuntimeClass resource matches the named class,
+                          the Pod will not be run. If unset or empty, the "legacy"
+                          RuntimeClass will be used, which is an implicit class with
+                          an empty definition that uses the default runtime handler.
+                          More info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md
+                          This is an alpha feature and may change in the future. See
+                          `kubectl explain pods.spec.runtimeClassName`.'
+                        type: string
+                      tolerations:
+                        description: If specified, the Pod's tolerations. See `kubectl
+                          explain pods.spec.tolerations`.
+                        items:
+                          type: object
+                          properties:
+                            effect:
+                              type: string
+                            tolerationSeconds:
+                              type: number
+                            value:
+                              type: string
+                            key:
+                              type: string
+                            operator:
+                              type: string
+                        type: array
+                      readinessProbe:
+                        description: Settings for the readiness probe associated with
+                          a WebLogic Server instance.
+                        properties:
+                          failureThreshold:
+                            description: Number of times the check is performed before
+                              giving up. Giving up in case of liveness probe means
+                              restarting the container. In case of readiness probe,
+                              the Pod will be marked Unready. Defaults to 1.
+                            minimum: 1.0
+                            type: number
+                          periodSeconds:
+                            description: The number of seconds between checks.
+                            type: number
+                          timeoutSeconds:
+                            description: The number of seconds with no response that
+                              indicates a failure.
+                            type: number
+                          successThreshold:
+                            description: Minimum number of times the check needs to
+                              pass for the probe to be considered successful after
+                              having failed. Defaults to 1. Must be 1 for liveness
+                              Probe.
+                            minimum: 1.0
+                            type: number
+                          initialDelaySeconds:
+                            description: The number of seconds before the first check
+                              is performed.
+                            type: number
+                        type: object
+                      containerSecurityContext:
+                        description: Container-level security attributes. Will override
+                          any matching Pod-level attributes. See `kubectl explain
+                          pods.spec.containers.securityContext`.
+                        properties:
+                          privileged:
+                            type: boolean
+                          runAsUser:
+                            type: number
+                          capabilities:
+                            properties:
+                              add:
+                                items:
+                                  type: string
+                                type: array
+                              drop:
+                                items:
+                                  type: string
+                                type: array
+                            type: object
+                          seLinuxOptions:
+                            properties:
+                              role:
+                                type: string
+                              level:
+                                type: string
+                              type:
+                                type: string
+                              user:
+                                type: string
+                            type: object
+                          seccompProfile:
+                            properties:
+                              localhostProfile:
+                                type: string
+                              type:
+                                type: string
+                            required:
+                            - type
+                            type: object
+                          windowsOptions:
+                            properties:
+                              gmsaCredentialSpec:
+                                type: string
+                              runAsUserName:
+                                type: string
+                              gmsaCredentialSpecName:
+                                type: string
+                            type: object
+                          procMount:
+                            type: string
+                          allowPrivilegeEscalation:
+                            type: boolean
+                          runAsGroup:
+                            type: number
+                          runAsNonRoot:
+                            type: boolean
+                          readOnlyRootFilesystem:
+                            type: boolean
+                        type: object
+                      schedulerName:
+                        description: If specified, the Pod will be dispatched by the
+                          specified scheduler. If not specified, the Pod will be dispatched
+                          by the default scheduler. See `kubectl explain pods.spec.schedulerName`.
+                        type: string
+                      livenessProbe:
+                        description: Settings for the liveness probe associated with
+                          a WebLogic Server instance.
+                        properties:
+                          failureThreshold:
+                            description: Number of times the check is performed before
+                              giving up. Giving up in case of liveness probe means
+                              restarting the container. In case of readiness probe,
+                              the Pod will be marked Unready. Defaults to 1.
+                            minimum: 1.0
+                            type: number
+                          periodSeconds:
+                            description: The number of seconds between checks.
+                            type: number
+                          timeoutSeconds:
+                            description: The number of seconds with no response that
+                              indicates a failure.
+                            type: number
+                          successThreshold:
+                            description: Minimum number of times the check needs to
+                              pass for the probe to be considered successful after
+                              having failed. Defaults to 1. Must be 1 for liveness
+                              Probe.
+                            minimum: 1.0
+                            type: number
+                          initialDelaySeconds:
+                            description: The number of seconds before the first check
+                              is performed.
+                            type: number
+                        type: object
                       volumes:
                         description: Additional volumes to be created in the server
                           Pod. See `kubectl explain pods.spec.volumes`.
@@ -1256,11 +1427,6 @@ spec:
                               type: string
                             type: object
                         type: object
-                      annotations:
-                        additionalProperties:
-                          type: string
-                        description: The annotations to be added to generated resources.
-                        type: object
                       env:
                         description: 'A list of environment variables to set in the
                           container running a WebLogic Server instance. More info:
@@ -1336,69 +1502,12 @@ spec:
                           More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy.
                           See `kubectl explain pods.spec.restartPolicy`.'
                         type: string
-                      nodeSelector:
-                        additionalProperties:
-                          type: string
-                        description: Selector which must match a Node's labels for
-                          the Pod to be scheduled on that Node. See `kubectl explain
-                          pods.spec.nodeSelector`.
-                        type: object
-                      volumeMounts:
-                        description: Additional volume mounts for the container running
-                          a WebLogic Server instance. See `kubectl explain pods.spec.containers.volumeMounts`.
-                        items:
-                          type: object
-                          properties:
-                            mountPath:
-                              type: string
-                            mountPropagation:
-                              type: string
-                            name:
-                              type: string
-                            readOnly:
-                              type: boolean
-                            subPath:
-                              type: string
-                            subPathExpr:
-                              type: string
-                          required:
-                          - mountPath
-                          - name
-                        type: array
                       labels:
                         additionalProperties:
                           type: string
                         description: The labels to be added to generated resources.
                           The label names must not start with "weblogic.".
                         type: object
-                      runtimeClassName:
-                        description: 'RuntimeClassName refers to a RuntimeClass object
-                          in the node.k8s.io group, which should be used to run this
-                          Pod. If no RuntimeClass resource matches the named class,
-                          the Pod will not be run. If unset or empty, the "legacy"
-                          RuntimeClass will be used, which is an implicit class with
-                          an empty definition that uses the default runtime handler.
-                          More info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md
-                          This is an alpha feature and may change in the future. See
-                          `kubectl explain pods.spec.runtimeClassName`.'
-                        type: string
-                      tolerations:
-                        description: If specified, the Pod's tolerations. See `kubectl
-                          explain pods.spec.tolerations`.
-                        items:
-                          type: object
-                          properties:
-                            effect:
-                              type: string
-                            tolerationSeconds:
-                              type: number
-                            value:
-                              type: string
-                            key:
-                              type: string
-                            operator:
-                              type: string
-                        type: array
                       auxiliaryImages:
                         description: Use an auxiliary image to automatically include
                           directory content from additional images. This is a useful
@@ -1445,36 +1554,6 @@ spec:
                                 volume.
                               type: string
                         type: array
-                      readinessProbe:
-                        description: Settings for the readiness probe associated with
-                          a WebLogic Server instance.
-                        properties:
-                          failureThreshold:
-                            description: Number of times the check is performed before
-                              giving up. Giving up in case of liveness probe means
-                              restarting the container. In case of readiness probe,
-                              the Pod will be marked Unready. Defaults to 1.
-                            minimum: 1.0
-                            type: number
-                          periodSeconds:
-                            description: The number of seconds between checks.
-                            type: number
-                          timeoutSeconds:
-                            description: The number of seconds with no response that
-                              indicates a failure.
-                            type: number
-                          successThreshold:
-                            description: Minimum number of times the check needs to
-                              pass for the probe to be considered successful after
-                              having failed. Defaults to 1. Must be 1 for liveness
-                              Probe.
-                            minimum: 1.0
-                            type: number
-                          initialDelaySeconds:
-                            description: The number of seconds before the first check
-                              is performed.
-                            type: number
-                        type: object
                       containers:
                         description: Additional containers to be included in the server
                           Pod. See `kubectl explain pods.spec.containers`.
@@ -2056,71 +2135,6 @@ spec:
                           required:
                           - name
                         type: array
-                      containerSecurityContext:
-                        description: Container-level security attributes. Will override
-                          any matching Pod-level attributes. See `kubectl explain
-                          pods.spec.containers.securityContext`.
-                        properties:
-                          privileged:
-                            type: boolean
-                          runAsUser:
-                            type: number
-                          capabilities:
-                            properties:
-                              add:
-                                items:
-                                  type: string
-                                type: array
-                              drop:
-                                items:
-                                  type: string
-                                type: array
-                            type: object
-                          seLinuxOptions:
-                            properties:
-                              role:
-                                type: string
-                              level:
-                                type: string
-                              type:
-                                type: string
-                              user:
-                                type: string
-                            type: object
-                          seccompProfile:
-                            properties:
-                              localhostProfile:
-                                type: string
-                              type:
-                                type: string
-                            required:
-                            - type
-                            type: object
-                          windowsOptions:
-                            properties:
-                              gmsaCredentialSpec:
-                                type: string
-                              runAsUserName:
-                                type: string
-                              gmsaCredentialSpecName:
-                                type: string
-                            type: object
-                          procMount:
-                            type: string
-                          allowPrivilegeEscalation:
-                            type: boolean
-                          runAsGroup:
-                            type: number
-                          runAsNonRoot:
-                            type: boolean
-                          readOnlyRootFilesystem:
-                            type: boolean
-                        type: object
-                      schedulerName:
-                        description: If specified, the Pod will be dispatched by the
-                          specified scheduler. If not specified, the Pod will be dispatched
-                          by the default scheduler. See `kubectl explain pods.spec.schedulerName`.
-                        type: string
                       initContainers:
                         description: Initialization containers to be included in the
                           server Pod. See `kubectl explain pods.spec.initContainers`.
@@ -3169,37 +3183,6 @@ spec:
                             it fits the resource requirements. See `kubectl explain
                             pods.spec.nodeName`.
                           type: string
-                        livenessProbe:
-                          description: Settings for the liveness probe associated
-                            with a WebLogic Server instance.
-                          type: object
-                          properties:
-                            failureThreshold:
-                              description: Number of times the check is performed
-                                before giving up. Giving up in case of liveness probe
-                                means restarting the container. In case of readiness
-                                probe, the Pod will be marked Unready. Defaults to
-                                1.
-                              type: number
-                              minimum: 1.0
-                            periodSeconds:
-                              description: The number of seconds between checks.
-                              type: number
-                            timeoutSeconds:
-                              description: The number of seconds with no response
-                                that indicates a failure.
-                              type: number
-                            successThreshold:
-                              description: Minimum number of times the check needs
-                                to pass for the probe to be considered successful
-                                after having failed. Defaults to 1. Must be 1 for
-                                liveness Probe.
-                              type: number
-                              minimum: 1.0
-                            initialDelaySeconds:
-                              description: The number of seconds before the first
-                                check is performed.
-                              type: number
                         readinessGates:
                           description: 'If specified, all readiness gates will be
                             evaluated for Pod readiness. A Pod is ready when all its
@@ -3290,6 +3273,211 @@ spec:
                             be the default or zero, if there is no default. See `kubectl
                             explain pods.spec.priorityClassName`.
                           type: string
+                        annotations:
+                          description: The annotations to be added to generated resources.
+                          additionalProperties:
+                            type: string
+                          type: object
+                        hostAliases:
+                          description: HostAliases is an optional list of hosts and
+                            IPs that will be injected into the pod's hosts file if
+                            specified. This is only valid for non-hostNetwork pods.
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              ip:
+                                type: string
+                              hostnames:
+                                type: array
+                                items:
+                                  type: string
+                        nodeSelector:
+                          description: Selector which must match a Node's labels for
+                            the Pod to be scheduled on that Node. See `kubectl explain
+                            pods.spec.nodeSelector`.
+                          additionalProperties:
+                            type: string
+                          type: object
+                        volumeMounts:
+                          description: Additional volume mounts for the container
+                            running a WebLogic Server instance. See `kubectl explain
+                            pods.spec.containers.volumeMounts`.
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              mountPath:
+                                type: string
+                              mountPropagation:
+                                type: string
+                              name:
+                                type: string
+                              readOnly:
+                                type: boolean
+                              subPath:
+                                type: string
+                              subPathExpr:
+                                type: string
+                            required:
+                            - mountPath
+                            - name
+                        runtimeClassName:
+                          description: 'RuntimeClassName refers to a RuntimeClass
+                            object in the node.k8s.io group, which should be used
+                            to run this Pod. If no RuntimeClass resource matches the
+                            named class, the Pod will not be run. If unset or empty,
+                            the "legacy" RuntimeClass will be used, which is an implicit
+                            class with an empty definition that uses the default runtime
+                            handler. More info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md
+                            This is an alpha feature and may change in the future.
+                            See `kubectl explain pods.spec.runtimeClassName`.'
+                          type: string
+                        tolerations:
+                          description: If specified, the Pod's tolerations. See `kubectl
+                            explain pods.spec.tolerations`.
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              effect:
+                                type: string
+                              tolerationSeconds:
+                                type: number
+                              value:
+                                type: string
+                              key:
+                                type: string
+                              operator:
+                                type: string
+                        readinessProbe:
+                          description: Settings for the readiness probe associated
+                            with a WebLogic Server instance.
+                          type: object
+                          properties:
+                            failureThreshold:
+                              description: Number of times the check is performed
+                                before giving up. Giving up in case of liveness probe
+                                means restarting the container. In case of readiness
+                                probe, the Pod will be marked Unready. Defaults to
+                                1.
+                              type: number
+                              minimum: 1.0
+                            periodSeconds:
+                              description: The number of seconds between checks.
+                              type: number
+                            timeoutSeconds:
+                              description: The number of seconds with no response
+                                that indicates a failure.
+                              type: number
+                            successThreshold:
+                              description: Minimum number of times the check needs
+                                to pass for the probe to be considered successful
+                                after having failed. Defaults to 1. Must be 1 for
+                                liveness Probe.
+                              type: number
+                              minimum: 1.0
+                            initialDelaySeconds:
+                              description: The number of seconds before the first
+                                check is performed.
+                              type: number
+                        containerSecurityContext:
+                          description: Container-level security attributes. Will override
+                            any matching Pod-level attributes. See `kubectl explain
+                            pods.spec.containers.securityContext`.
+                          type: object
+                          properties:
+                            privileged:
+                              type: boolean
+                            runAsUser:
+                              type: number
+                            capabilities:
+                              type: object
+                              properties:
+                                add:
+                                  type: array
+                                  items:
+                                    type: string
+                                drop:
+                                  type: array
+                                  items:
+                                    type: string
+                            seLinuxOptions:
+                              type: object
+                              properties:
+                                role:
+                                  type: string
+                                level:
+                                  type: string
+                                type:
+                                  type: string
+                                user:
+                                  type: string
+                            seccompProfile:
+                              type: object
+                              properties:
+                                localhostProfile:
+                                  type: string
+                                type:
+                                  type: string
+                              required:
+                              - type
+                            windowsOptions:
+                              type: object
+                              properties:
+                                gmsaCredentialSpec:
+                                  type: string
+                                runAsUserName:
+                                  type: string
+                                gmsaCredentialSpecName:
+                                  type: string
+                            procMount:
+                              type: string
+                            allowPrivilegeEscalation:
+                              type: boolean
+                            runAsGroup:
+                              type: number
+                            runAsNonRoot:
+                              type: boolean
+                            readOnlyRootFilesystem:
+                              type: boolean
+                        schedulerName:
+                          description: If specified, the Pod will be dispatched by
+                            the specified scheduler. If not specified, the Pod will
+                            be dispatched by the default scheduler. See `kubectl explain
+                            pods.spec.schedulerName`.
+                          type: string
+                        livenessProbe:
+                          description: Settings for the liveness probe associated
+                            with a WebLogic Server instance.
+                          type: object
+                          properties:
+                            failureThreshold:
+                              description: Number of times the check is performed
+                                before giving up. Giving up in case of liveness probe
+                                means restarting the container. In case of readiness
+                                probe, the Pod will be marked Unready. Defaults to
+                                1.
+                              type: number
+                              minimum: 1.0
+                            periodSeconds:
+                              description: The number of seconds between checks.
+                              type: number
+                            timeoutSeconds:
+                              description: The number of seconds with no response
+                                that indicates a failure.
+                              type: number
+                            successThreshold:
+                              description: Minimum number of times the check needs
+                                to pass for the probe to be considered successful
+                                after having failed. Defaults to 1. Must be 1 for
+                                liveness Probe.
+                              type: number
+                              minimum: 1.0
+                            initialDelaySeconds:
+                              description: The number of seconds before the first
+                                check is performed.
+                              type: number
                         volumes:
                           description: Additional volumes to be created in the server
                             Pod. See `kubectl explain pods.spec.volumes`.
@@ -4045,11 +4233,6 @@ spec:
                               additionalProperties:
                                 type: string
                               type: object
-                        annotations:
-                          description: The annotations to be added to generated resources.
-                          additionalProperties:
-                            type: string
-                          type: object
                         env:
                           description: 'A list of environment variables to set in
                             the container running a WebLogic Server instance. More
@@ -4125,70 +4308,12 @@ spec:
                             More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy.
                             See `kubectl explain pods.spec.restartPolicy`.'
                           type: string
-                        nodeSelector:
-                          description: Selector which must match a Node's labels for
-                            the Pod to be scheduled on that Node. See `kubectl explain
-                            pods.spec.nodeSelector`.
-                          additionalProperties:
-                            type: string
-                          type: object
-                        volumeMounts:
-                          description: Additional volume mounts for the container
-                            running a WebLogic Server instance. See `kubectl explain
-                            pods.spec.containers.volumeMounts`.
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              mountPath:
-                                type: string
-                              mountPropagation:
-                                type: string
-                              name:
-                                type: string
-                              readOnly:
-                                type: boolean
-                              subPath:
-                                type: string
-                              subPathExpr:
-                                type: string
-                            required:
-                            - mountPath
-                            - name
                         labels:
                           description: The labels to be added to generated resources.
                             The label names must not start with "weblogic.".
                           additionalProperties:
                             type: string
                           type: object
-                        runtimeClassName:
-                          description: 'RuntimeClassName refers to a RuntimeClass
-                            object in the node.k8s.io group, which should be used
-                            to run this Pod. If no RuntimeClass resource matches the
-                            named class, the Pod will not be run. If unset or empty,
-                            the "legacy" RuntimeClass will be used, which is an implicit
-                            class with an empty definition that uses the default runtime
-                            handler. More info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md
-                            This is an alpha feature and may change in the future.
-                            See `kubectl explain pods.spec.runtimeClassName`.'
-                          type: string
-                        tolerations:
-                          description: If specified, the Pod's tolerations. See `kubectl
-                            explain pods.spec.tolerations`.
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              effect:
-                                type: string
-                              tolerationSeconds:
-                                type: number
-                              value:
-                                type: string
-                              key:
-                                type: string
-                              operator:
-                                type: string
                         auxiliaryImages:
                           description: Use an auxiliary image to automatically include
                             directory content from additional images. This is a useful
@@ -4235,37 +4360,6 @@ spec:
                                   operator that resolves to the auxiliary image's
                                   internal emptyDir volume.
                                 type: string
-                        readinessProbe:
-                          description: Settings for the readiness probe associated
-                            with a WebLogic Server instance.
-                          type: object
-                          properties:
-                            failureThreshold:
-                              description: Number of times the check is performed
-                                before giving up. Giving up in case of liveness probe
-                                means restarting the container. In case of readiness
-                                probe, the Pod will be marked Unready. Defaults to
-                                1.
-                              type: number
-                              minimum: 1.0
-                            periodSeconds:
-                              description: The number of seconds between checks.
-                              type: number
-                            timeoutSeconds:
-                              description: The number of seconds with no response
-                                that indicates a failure.
-                              type: number
-                            successThreshold:
-                              description: Minimum number of times the check needs
-                                to pass for the probe to be considered successful
-                                after having failed. Defaults to 1. Must be 1 for
-                                liveness Probe.
-                              type: number
-                              minimum: 1.0
-                            initialDelaySeconds:
-                              description: The number of seconds before the first
-                                check is performed.
-                              type: number
                         containers:
                           description: Additional containers to be included in the
                             server Pod. See `kubectl explain pods.spec.containers`.
@@ -4847,72 +4941,6 @@ spec:
                                           type: boolean
                             required:
                             - name
-                        containerSecurityContext:
-                          description: Container-level security attributes. Will override
-                            any matching Pod-level attributes. See `kubectl explain
-                            pods.spec.containers.securityContext`.
-                          type: object
-                          properties:
-                            privileged:
-                              type: boolean
-                            runAsUser:
-                              type: number
-                            capabilities:
-                              type: object
-                              properties:
-                                add:
-                                  type: array
-                                  items:
-                                    type: string
-                                drop:
-                                  type: array
-                                  items:
-                                    type: string
-                            seLinuxOptions:
-                              type: object
-                              properties:
-                                role:
-                                  type: string
-                                level:
-                                  type: string
-                                type:
-                                  type: string
-                                user:
-                                  type: string
-                            seccompProfile:
-                              type: object
-                              properties:
-                                localhostProfile:
-                                  type: string
-                                type:
-                                  type: string
-                              required:
-                              - type
-                            windowsOptions:
-                              type: object
-                              properties:
-                                gmsaCredentialSpec:
-                                  type: string
-                                runAsUserName:
-                                  type: string
-                                gmsaCredentialSpecName:
-                                  type: string
-                            procMount:
-                              type: string
-                            allowPrivilegeEscalation:
-                              type: boolean
-                            runAsGroup:
-                              type: number
-                            runAsNonRoot:
-                              type: boolean
-                            readOnlyRootFilesystem:
-                              type: boolean
-                        schedulerName:
-                          description: If specified, the Pod will be dispatched by
-                            the specified scheduler. If not specified, the Pod will
-                            be dispatched by the default scheduler. See `kubectl explain
-                            pods.spec.schedulerName`.
-                          type: string
                         initContainers:
                           description: Initialization containers to be included in
                             the server Pod. See `kubectl explain pods.spec.initContainers`.
@@ -5975,35 +6003,6 @@ spec:
                       this pod onto that node, assuming that it fits the resource
                       requirements. See `kubectl explain pods.spec.nodeName`.
                     type: string
-                  livenessProbe:
-                    description: Settings for the liveness probe associated with a
-                      WebLogic Server instance.
-                    properties:
-                      failureThreshold:
-                        description: Number of times the check is performed before
-                          giving up. Giving up in case of liveness probe means restarting
-                          the container. In case of readiness probe, the Pod will
-                          be marked Unready. Defaults to 1.
-                        minimum: 1.0
-                        type: number
-                      periodSeconds:
-                        description: The number of seconds between checks.
-                        type: number
-                      timeoutSeconds:
-                        description: The number of seconds with no response that indicates
-                          a failure.
-                        type: number
-                      successThreshold:
-                        description: Minimum number of times the check needs to pass
-                          for the probe to be considered successful after having failed.
-                          Defaults to 1. Must be 1 for liveness Probe.
-                        minimum: 1.0
-                        type: number
-                      initialDelaySeconds:
-                        description: The number of seconds before the first check
-                          is performed.
-                        type: number
-                    type: object
                   readinessGates:
                     description: 'If specified, all readiness gates will be evaluated
                       for Pod readiness. A Pod is ready when all its containers are
@@ -6092,6 +6091,202 @@ spec:
                       be the default or zero, if there is no default. See `kubectl
                       explain pods.spec.priorityClassName`.
                     type: string
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: The annotations to be added to generated resources.
+                    type: object
+                  hostAliases:
+                    description: HostAliases is an optional list of hosts and IPs
+                      that will be injected into the pod's hosts file if specified.
+                      This is only valid for non-hostNetwork pods.
+                    items:
+                      type: object
+                      properties:
+                        ip:
+                          type: string
+                        hostnames:
+                          type: array
+                          items:
+                            type: string
+                    type: array
+                  nodeSelector:
+                    additionalProperties:
+                      type: string
+                    description: Selector which must match a Node's labels for the
+                      Pod to be scheduled on that Node. See `kubectl explain pods.spec.nodeSelector`.
+                    type: object
+                  volumeMounts:
+                    description: Additional volume mounts for the container running
+                      a WebLogic Server instance. See `kubectl explain pods.spec.containers.volumeMounts`.
+                    items:
+                      type: object
+                      properties:
+                        mountPath:
+                          type: string
+                        mountPropagation:
+                          type: string
+                        name:
+                          type: string
+                        readOnly:
+                          type: boolean
+                        subPath:
+                          type: string
+                        subPathExpr:
+                          type: string
+                      required:
+                      - mountPath
+                      - name
+                    type: array
+                  runtimeClassName:
+                    description: 'RuntimeClassName refers to a RuntimeClass object
+                      in the node.k8s.io group, which should be used to run this Pod.
+                      If no RuntimeClass resource matches the named class, the Pod
+                      will not be run. If unset or empty, the "legacy" RuntimeClass
+                      will be used, which is an implicit class with an empty definition
+                      that uses the default runtime handler. More info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md
+                      This is an alpha feature and may change in the future. See `kubectl
+                      explain pods.spec.runtimeClassName`.'
+                    type: string
+                  tolerations:
+                    description: If specified, the Pod's tolerations. See `kubectl
+                      explain pods.spec.tolerations`.
+                    items:
+                      type: object
+                      properties:
+                        effect:
+                          type: string
+                        tolerationSeconds:
+                          type: number
+                        value:
+                          type: string
+                        key:
+                          type: string
+                        operator:
+                          type: string
+                    type: array
+                  readinessProbe:
+                    description: Settings for the readiness probe associated with
+                      a WebLogic Server instance.
+                    properties:
+                      failureThreshold:
+                        description: Number of times the check is performed before
+                          giving up. Giving up in case of liveness probe means restarting
+                          the container. In case of readiness probe, the Pod will
+                          be marked Unready. Defaults to 1.
+                        minimum: 1.0
+                        type: number
+                      periodSeconds:
+                        description: The number of seconds between checks.
+                        type: number
+                      timeoutSeconds:
+                        description: The number of seconds with no response that indicates
+                          a failure.
+                        type: number
+                      successThreshold:
+                        description: Minimum number of times the check needs to pass
+                          for the probe to be considered successful after having failed.
+                          Defaults to 1. Must be 1 for liveness Probe.
+                        minimum: 1.0
+                        type: number
+                      initialDelaySeconds:
+                        description: The number of seconds before the first check
+                          is performed.
+                        type: number
+                    type: object
+                  containerSecurityContext:
+                    description: Container-level security attributes. Will override
+                      any matching Pod-level attributes. See `kubectl explain pods.spec.containers.securityContext`.
+                    properties:
+                      privileged:
+                        type: boolean
+                      runAsUser:
+                        type: number
+                      capabilities:
+                        properties:
+                          add:
+                            items:
+                              type: string
+                            type: array
+                          drop:
+                            items:
+                              type: string
+                            type: array
+                        type: object
+                      seLinuxOptions:
+                        properties:
+                          role:
+                            type: string
+                          level:
+                            type: string
+                          type:
+                            type: string
+                          user:
+                            type: string
+                        type: object
+                      seccompProfile:
+                        properties:
+                          localhostProfile:
+                            type: string
+                          type:
+                            type: string
+                        required:
+                        - type
+                        type: object
+                      windowsOptions:
+                        properties:
+                          gmsaCredentialSpec:
+                            type: string
+                          runAsUserName:
+                            type: string
+                          gmsaCredentialSpecName:
+                            type: string
+                        type: object
+                      procMount:
+                        type: string
+                      allowPrivilegeEscalation:
+                        type: boolean
+                      runAsGroup:
+                        type: number
+                      runAsNonRoot:
+                        type: boolean
+                      readOnlyRootFilesystem:
+                        type: boolean
+                    type: object
+                  schedulerName:
+                    description: If specified, the Pod will be dispatched by the specified
+                      scheduler. If not specified, the Pod will be dispatched by the
+                      default scheduler. See `kubectl explain pods.spec.schedulerName`.
+                    type: string
+                  livenessProbe:
+                    description: Settings for the liveness probe associated with a
+                      WebLogic Server instance.
+                    properties:
+                      failureThreshold:
+                        description: Number of times the check is performed before
+                          giving up. Giving up in case of liveness probe means restarting
+                          the container. In case of readiness probe, the Pod will
+                          be marked Unready. Defaults to 1.
+                        minimum: 1.0
+                        type: number
+                      periodSeconds:
+                        description: The number of seconds between checks.
+                        type: number
+                      timeoutSeconds:
+                        description: The number of seconds with no response that indicates
+                          a failure.
+                        type: number
+                      successThreshold:
+                        description: Minimum number of times the check needs to pass
+                          for the probe to be considered successful after having failed.
+                          Defaults to 1. Must be 1 for liveness Probe.
+                        minimum: 1.0
+                        type: number
+                      initialDelaySeconds:
+                        description: The number of seconds before the first check
+                          is performed.
+                        type: number
+                    type: object
                   volumes:
                     description: Additional volumes to be created in the server Pod.
                       See `kubectl explain pods.spec.volumes`.
@@ -6846,11 +7041,6 @@ spec:
                           type: string
                         type: object
                     type: object
-                  annotations:
-                    additionalProperties:
-                      type: string
-                    description: The annotations to be added to generated resources.
-                    type: object
                   env:
                     description: 'A list of environment variables to set in the container
                       running a WebLogic Server instance. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables.
@@ -6925,67 +7115,12 @@ spec:
                       https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy.
                       See `kubectl explain pods.spec.restartPolicy`.'
                     type: string
-                  nodeSelector:
-                    additionalProperties:
-                      type: string
-                    description: Selector which must match a Node's labels for the
-                      Pod to be scheduled on that Node. See `kubectl explain pods.spec.nodeSelector`.
-                    type: object
-                  volumeMounts:
-                    description: Additional volume mounts for the container running
-                      a WebLogic Server instance. See `kubectl explain pods.spec.containers.volumeMounts`.
-                    items:
-                      type: object
-                      properties:
-                        mountPath:
-                          type: string
-                        mountPropagation:
-                          type: string
-                        name:
-                          type: string
-                        readOnly:
-                          type: boolean
-                        subPath:
-                          type: string
-                        subPathExpr:
-                          type: string
-                      required:
-                      - mountPath
-                      - name
-                    type: array
                   labels:
                     additionalProperties:
                       type: string
                     description: The labels to be added to generated resources. The
                       label names must not start with "weblogic.".
                     type: object
-                  runtimeClassName:
-                    description: 'RuntimeClassName refers to a RuntimeClass object
-                      in the node.k8s.io group, which should be used to run this Pod.
-                      If no RuntimeClass resource matches the named class, the Pod
-                      will not be run. If unset or empty, the "legacy" RuntimeClass
-                      will be used, which is an implicit class with an empty definition
-                      that uses the default runtime handler. More info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md
-                      This is an alpha feature and may change in the future. See `kubectl
-                      explain pods.spec.runtimeClassName`.'
-                    type: string
-                  tolerations:
-                    description: If specified, the Pod's tolerations. See `kubectl
-                      explain pods.spec.tolerations`.
-                    items:
-                      type: object
-                      properties:
-                        effect:
-                          type: string
-                        tolerationSeconds:
-                          type: number
-                        value:
-                          type: string
-                        key:
-                          type: string
-                        operator:
-                          type: string
-                    type: array
                   auxiliaryImages:
                     description: Use an auxiliary image to automatically include directory
                       content from additional images. This is a useful alternative
@@ -7029,35 +7164,6 @@ spec:
                             to the auxiliary image's internal emptyDir volume.
                           type: string
                     type: array
-                  readinessProbe:
-                    description: Settings for the readiness probe associated with
-                      a WebLogic Server instance.
-                    properties:
-                      failureThreshold:
-                        description: Number of times the check is performed before
-                          giving up. Giving up in case of liveness probe means restarting
-                          the container. In case of readiness probe, the Pod will
-                          be marked Unready. Defaults to 1.
-                        minimum: 1.0
-                        type: number
-                      periodSeconds:
-                        description: The number of seconds between checks.
-                        type: number
-                      timeoutSeconds:
-                        description: The number of seconds with no response that indicates
-                          a failure.
-                        type: number
-                      successThreshold:
-                        description: Minimum number of times the check needs to pass
-                          for the probe to be considered successful after having failed.
-                          Defaults to 1. Must be 1 for liveness Probe.
-                        minimum: 1.0
-                        type: number
-                      initialDelaySeconds:
-                        description: The number of seconds before the first check
-                          is performed.
-                        type: number
-                    type: object
                   containers:
                     description: Additional containers to be included in the server
                       Pod. See `kubectl explain pods.spec.containers`.
@@ -7639,70 +7745,6 @@ spec:
                       required:
                       - name
                     type: array
-                  containerSecurityContext:
-                    description: Container-level security attributes. Will override
-                      any matching Pod-level attributes. See `kubectl explain pods.spec.containers.securityContext`.
-                    properties:
-                      privileged:
-                        type: boolean
-                      runAsUser:
-                        type: number
-                      capabilities:
-                        properties:
-                          add:
-                            items:
-                              type: string
-                            type: array
-                          drop:
-                            items:
-                              type: string
-                            type: array
-                        type: object
-                      seLinuxOptions:
-                        properties:
-                          role:
-                            type: string
-                          level:
-                            type: string
-                          type:
-                            type: string
-                          user:
-                            type: string
-                        type: object
-                      seccompProfile:
-                        properties:
-                          localhostProfile:
-                            type: string
-                          type:
-                            type: string
-                        required:
-                        - type
-                        type: object
-                      windowsOptions:
-                        properties:
-                          gmsaCredentialSpec:
-                            type: string
-                          runAsUserName:
-                            type: string
-                          gmsaCredentialSpecName:
-                            type: string
-                        type: object
-                      procMount:
-                        type: string
-                      allowPrivilegeEscalation:
-                        type: boolean
-                      runAsGroup:
-                        type: number
-                      runAsNonRoot:
-                        type: boolean
-                      readOnlyRootFilesystem:
-                        type: boolean
-                    type: object
-                  schedulerName:
-                    description: If specified, the Pod will be dispatched by the specified
-                      scheduler. If not specified, the Pod will be dispatched by the
-                      default scheduler. See `kubectl explain pods.spec.schedulerName`.
-                    type: string
                   initContainers:
                     description: Initialization containers to be included in the server
                       Pod. See `kubectl explain pods.spec.initContainers`.
@@ -8658,37 +8700,6 @@ spec:
                             it fits the resource requirements. See `kubectl explain
                             pods.spec.nodeName`.
                           type: string
-                        livenessProbe:
-                          description: Settings for the liveness probe associated
-                            with a WebLogic Server instance.
-                          type: object
-                          properties:
-                            failureThreshold:
-                              description: Number of times the check is performed
-                                before giving up. Giving up in case of liveness probe
-                                means restarting the container. In case of readiness
-                                probe, the Pod will be marked Unready. Defaults to
-                                1.
-                              type: number
-                              minimum: 1.0
-                            periodSeconds:
-                              description: The number of seconds between checks.
-                              type: number
-                            timeoutSeconds:
-                              description: The number of seconds with no response
-                                that indicates a failure.
-                              type: number
-                            successThreshold:
-                              description: Minimum number of times the check needs
-                                to pass for the probe to be considered successful
-                                after having failed. Defaults to 1. Must be 1 for
-                                liveness Probe.
-                              type: number
-                              minimum: 1.0
-                            initialDelaySeconds:
-                              description: The number of seconds before the first
-                                check is performed.
-                              type: number
                         readinessGates:
                           description: 'If specified, all readiness gates will be
                             evaluated for Pod readiness. A Pod is ready when all its
@@ -8779,6 +8790,211 @@ spec:
                             be the default or zero, if there is no default. See `kubectl
                             explain pods.spec.priorityClassName`.
                           type: string
+                        annotations:
+                          description: The annotations to be added to generated resources.
+                          additionalProperties:
+                            type: string
+                          type: object
+                        hostAliases:
+                          description: HostAliases is an optional list of hosts and
+                            IPs that will be injected into the pod's hosts file if
+                            specified. This is only valid for non-hostNetwork pods.
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              ip:
+                                type: string
+                              hostnames:
+                                type: array
+                                items:
+                                  type: string
+                        nodeSelector:
+                          description: Selector which must match a Node's labels for
+                            the Pod to be scheduled on that Node. See `kubectl explain
+                            pods.spec.nodeSelector`.
+                          additionalProperties:
+                            type: string
+                          type: object
+                        volumeMounts:
+                          description: Additional volume mounts for the container
+                            running a WebLogic Server instance. See `kubectl explain
+                            pods.spec.containers.volumeMounts`.
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              mountPath:
+                                type: string
+                              mountPropagation:
+                                type: string
+                              name:
+                                type: string
+                              readOnly:
+                                type: boolean
+                              subPath:
+                                type: string
+                              subPathExpr:
+                                type: string
+                            required:
+                            - mountPath
+                            - name
+                        runtimeClassName:
+                          description: 'RuntimeClassName refers to a RuntimeClass
+                            object in the node.k8s.io group, which should be used
+                            to run this Pod. If no RuntimeClass resource matches the
+                            named class, the Pod will not be run. If unset or empty,
+                            the "legacy" RuntimeClass will be used, which is an implicit
+                            class with an empty definition that uses the default runtime
+                            handler. More info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md
+                            This is an alpha feature and may change in the future.
+                            See `kubectl explain pods.spec.runtimeClassName`.'
+                          type: string
+                        tolerations:
+                          description: If specified, the Pod's tolerations. See `kubectl
+                            explain pods.spec.tolerations`.
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              effect:
+                                type: string
+                              tolerationSeconds:
+                                type: number
+                              value:
+                                type: string
+                              key:
+                                type: string
+                              operator:
+                                type: string
+                        readinessProbe:
+                          description: Settings for the readiness probe associated
+                            with a WebLogic Server instance.
+                          type: object
+                          properties:
+                            failureThreshold:
+                              description: Number of times the check is performed
+                                before giving up. Giving up in case of liveness probe
+                                means restarting the container. In case of readiness
+                                probe, the Pod will be marked Unready. Defaults to
+                                1.
+                              type: number
+                              minimum: 1.0
+                            periodSeconds:
+                              description: The number of seconds between checks.
+                              type: number
+                            timeoutSeconds:
+                              description: The number of seconds with no response
+                                that indicates a failure.
+                              type: number
+                            successThreshold:
+                              description: Minimum number of times the check needs
+                                to pass for the probe to be considered successful
+                                after having failed. Defaults to 1. Must be 1 for
+                                liveness Probe.
+                              type: number
+                              minimum: 1.0
+                            initialDelaySeconds:
+                              description: The number of seconds before the first
+                                check is performed.
+                              type: number
+                        containerSecurityContext:
+                          description: Container-level security attributes. Will override
+                            any matching Pod-level attributes. See `kubectl explain
+                            pods.spec.containers.securityContext`.
+                          type: object
+                          properties:
+                            privileged:
+                              type: boolean
+                            runAsUser:
+                              type: number
+                            capabilities:
+                              type: object
+                              properties:
+                                add:
+                                  type: array
+                                  items:
+                                    type: string
+                                drop:
+                                  type: array
+                                  items:
+                                    type: string
+                            seLinuxOptions:
+                              type: object
+                              properties:
+                                role:
+                                  type: string
+                                level:
+                                  type: string
+                                type:
+                                  type: string
+                                user:
+                                  type: string
+                            seccompProfile:
+                              type: object
+                              properties:
+                                localhostProfile:
+                                  type: string
+                                type:
+                                  type: string
+                              required:
+                              - type
+                            windowsOptions:
+                              type: object
+                              properties:
+                                gmsaCredentialSpec:
+                                  type: string
+                                runAsUserName:
+                                  type: string
+                                gmsaCredentialSpecName:
+                                  type: string
+                            procMount:
+                              type: string
+                            allowPrivilegeEscalation:
+                              type: boolean
+                            runAsGroup:
+                              type: number
+                            runAsNonRoot:
+                              type: boolean
+                            readOnlyRootFilesystem:
+                              type: boolean
+                        schedulerName:
+                          description: If specified, the Pod will be dispatched by
+                            the specified scheduler. If not specified, the Pod will
+                            be dispatched by the default scheduler. See `kubectl explain
+                            pods.spec.schedulerName`.
+                          type: string
+                        livenessProbe:
+                          description: Settings for the liveness probe associated
+                            with a WebLogic Server instance.
+                          type: object
+                          properties:
+                            failureThreshold:
+                              description: Number of times the check is performed
+                                before giving up. Giving up in case of liveness probe
+                                means restarting the container. In case of readiness
+                                probe, the Pod will be marked Unready. Defaults to
+                                1.
+                              type: number
+                              minimum: 1.0
+                            periodSeconds:
+                              description: The number of seconds between checks.
+                              type: number
+                            timeoutSeconds:
+                              description: The number of seconds with no response
+                                that indicates a failure.
+                              type: number
+                            successThreshold:
+                              description: Minimum number of times the check needs
+                                to pass for the probe to be considered successful
+                                after having failed. Defaults to 1. Must be 1 for
+                                liveness Probe.
+                              type: number
+                              minimum: 1.0
+                            initialDelaySeconds:
+                              description: The number of seconds before the first
+                                check is performed.
+                              type: number
                         volumes:
                           description: Additional volumes to be created in the server
                             Pod. See `kubectl explain pods.spec.volumes`.
@@ -9534,11 +9750,6 @@ spec:
                               additionalProperties:
                                 type: string
                               type: object
-                        annotations:
-                          description: The annotations to be added to generated resources.
-                          additionalProperties:
-                            type: string
-                          type: object
                         env:
                           description: 'A list of environment variables to set in
                             the container running a WebLogic Server instance. More
@@ -9614,70 +9825,12 @@ spec:
                             More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy.
                             See `kubectl explain pods.spec.restartPolicy`.'
                           type: string
-                        nodeSelector:
-                          description: Selector which must match a Node's labels for
-                            the Pod to be scheduled on that Node. See `kubectl explain
-                            pods.spec.nodeSelector`.
-                          additionalProperties:
-                            type: string
-                          type: object
-                        volumeMounts:
-                          description: Additional volume mounts for the container
-                            running a WebLogic Server instance. See `kubectl explain
-                            pods.spec.containers.volumeMounts`.
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              mountPath:
-                                type: string
-                              mountPropagation:
-                                type: string
-                              name:
-                                type: string
-                              readOnly:
-                                type: boolean
-                              subPath:
-                                type: string
-                              subPathExpr:
-                                type: string
-                            required:
-                            - mountPath
-                            - name
                         labels:
                           description: The labels to be added to generated resources.
                             The label names must not start with "weblogic.".
                           additionalProperties:
                             type: string
                           type: object
-                        runtimeClassName:
-                          description: 'RuntimeClassName refers to a RuntimeClass
-                            object in the node.k8s.io group, which should be used
-                            to run this Pod. If no RuntimeClass resource matches the
-                            named class, the Pod will not be run. If unset or empty,
-                            the "legacy" RuntimeClass will be used, which is an implicit
-                            class with an empty definition that uses the default runtime
-                            handler. More info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md
-                            This is an alpha feature and may change in the future.
-                            See `kubectl explain pods.spec.runtimeClassName`.'
-                          type: string
-                        tolerations:
-                          description: If specified, the Pod's tolerations. See `kubectl
-                            explain pods.spec.tolerations`.
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              effect:
-                                type: string
-                              tolerationSeconds:
-                                type: number
-                              value:
-                                type: string
-                              key:
-                                type: string
-                              operator:
-                                type: string
                         auxiliaryImages:
                           description: Use an auxiliary image to automatically include
                             directory content from additional images. This is a useful
@@ -9724,37 +9877,6 @@ spec:
                                   operator that resolves to the auxiliary image's
                                   internal emptyDir volume.
                                 type: string
-                        readinessProbe:
-                          description: Settings for the readiness probe associated
-                            with a WebLogic Server instance.
-                          type: object
-                          properties:
-                            failureThreshold:
-                              description: Number of times the check is performed
-                                before giving up. Giving up in case of liveness probe
-                                means restarting the container. In case of readiness
-                                probe, the Pod will be marked Unready. Defaults to
-                                1.
-                              type: number
-                              minimum: 1.0
-                            periodSeconds:
-                              description: The number of seconds between checks.
-                              type: number
-                            timeoutSeconds:
-                              description: The number of seconds with no response
-                                that indicates a failure.
-                              type: number
-                            successThreshold:
-                              description: Minimum number of times the check needs
-                                to pass for the probe to be considered successful
-                                after having failed. Defaults to 1. Must be 1 for
-                                liveness Probe.
-                              type: number
-                              minimum: 1.0
-                            initialDelaySeconds:
-                              description: The number of seconds before the first
-                                check is performed.
-                              type: number
                         containers:
                           description: Additional containers to be included in the
                             server Pod. See `kubectl explain pods.spec.containers`.
@@ -10336,72 +10458,6 @@ spec:
                                           type: boolean
                             required:
                             - name
-                        containerSecurityContext:
-                          description: Container-level security attributes. Will override
-                            any matching Pod-level attributes. See `kubectl explain
-                            pods.spec.containers.securityContext`.
-                          type: object
-                          properties:
-                            privileged:
-                              type: boolean
-                            runAsUser:
-                              type: number
-                            capabilities:
-                              type: object
-                              properties:
-                                add:
-                                  type: array
-                                  items:
-                                    type: string
-                                drop:
-                                  type: array
-                                  items:
-                                    type: string
-                            seLinuxOptions:
-                              type: object
-                              properties:
-                                role:
-                                  type: string
-                                level:
-                                  type: string
-                                type:
-                                  type: string
-                                user:
-                                  type: string
-                            seccompProfile:
-                              type: object
-                              properties:
-                                localhostProfile:
-                                  type: string
-                                type:
-                                  type: string
-                              required:
-                              - type
-                            windowsOptions:
-                              type: object
-                              properties:
-                                gmsaCredentialSpec:
-                                  type: string
-                                runAsUserName:
-                                  type: string
-                                gmsaCredentialSpecName:
-                                  type: string
-                            procMount:
-                              type: string
-                            allowPrivilegeEscalation:
-                              type: boolean
-                            runAsGroup:
-                              type: number
-                            runAsNonRoot:
-                              type: boolean
-                            readOnlyRootFilesystem:
-                              type: boolean
-                        schedulerName:
-                          description: If specified, the Pod will be dispatched by
-                            the specified scheduler. If not specified, the Pod will
-                            be dispatched by the default scheduler. See `kubectl explain
-                            pods.spec.schedulerName`.
-                          type: string
                         initContainers:
                           description: Initialization containers to be included in
                             the server Pod. See `kubectl explain pods.spec.initContainers`.
@@ -11485,7 +11541,7 @@ spec:
                 properties:
                   image:
                     description: The WebLogic Monitoring Exporter sidecar container
-                      image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.0.3
+                      image name. Defaults to ghcr.io/oracle/weblogic-monitoring-exporter:2.0.4
                     type: string
                   imagePullPolicy:
                     description: The image pull policy for the WebLogic Monitoring
@@ -11826,36 +11882,6 @@ spec:
                           schedules this pod onto that node, assuming that it fits
                           the resource requirements. See `kubectl explain pods.spec.nodeName`.
                         type: string
-                      livenessProbe:
-                        description: Settings for the liveness probe associated with
-                          a WebLogic Server instance.
-                        properties:
-                          failureThreshold:
-                            description: Number of times the check is performed before
-                              giving up. Giving up in case of liveness probe means
-                              restarting the container. In case of readiness probe,
-                              the Pod will be marked Unready. Defaults to 1.
-                            minimum: 1.0
-                            type: number
-                          periodSeconds:
-                            description: The number of seconds between checks.
-                            type: number
-                          timeoutSeconds:
-                            description: The number of seconds with no response that
-                              indicates a failure.
-                            type: number
-                          successThreshold:
-                            description: Minimum number of times the check needs to
-                              pass for the probe to be considered successful after
-                              having failed. Defaults to 1. Must be 1 for liveness
-                              Probe.
-                            minimum: 1.0
-                            type: number
-                          initialDelaySeconds:
-                            description: The number of seconds before the first check
-                              is performed.
-                            type: number
-                        type: object
                       readinessGates:
                         description: 'If specified, all readiness gates will be evaluated
                           for Pod readiness. A Pod is ready when all its containers
@@ -11944,6 +11970,207 @@ spec:
                           the pod priority will be the default or zero, if there is
                           no default. See `kubectl explain pods.spec.priorityClassName`.
                         type: string
+                      annotations:
+                        additionalProperties:
+                          type: string
+                        description: The annotations to be added to generated resources.
+                        type: object
+                      hostAliases:
+                        description: HostAliases is an optional list of hosts and
+                          IPs that will be injected into the pod's hosts file if specified.
+                          This is only valid for non-hostNetwork pods.
+                        items:
+                          type: object
+                          properties:
+                            ip:
+                              type: string
+                            hostnames:
+                              type: array
+                              items:
+                                type: string
+                        type: array
+                      nodeSelector:
+                        additionalProperties:
+                          type: string
+                        description: Selector which must match a Node's labels for
+                          the Pod to be scheduled on that Node. See `kubectl explain
+                          pods.spec.nodeSelector`.
+                        type: object
+                      volumeMounts:
+                        description: Additional volume mounts for the container running
+                          a WebLogic Server instance. See `kubectl explain pods.spec.containers.volumeMounts`.
+                        items:
+                          type: object
+                          properties:
+                            mountPath:
+                              type: string
+                            mountPropagation:
+                              type: string
+                            name:
+                              type: string
+                            readOnly:
+                              type: boolean
+                            subPath:
+                              type: string
+                            subPathExpr:
+                              type: string
+                          required:
+                          - mountPath
+                          - name
+                        type: array
+                      runtimeClassName:
+                        description: 'RuntimeClassName refers to a RuntimeClass object
+                          in the node.k8s.io group, which should be used to run this
+                          Pod. If no RuntimeClass resource matches the named class,
+                          the Pod will not be run. If unset or empty, the "legacy"
+                          RuntimeClass will be used, which is an implicit class with
+                          an empty definition that uses the default runtime handler.
+                          More info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md
+                          This is an alpha feature and may change in the future. See
+                          `kubectl explain pods.spec.runtimeClassName`.'
+                        type: string
+                      tolerations:
+                        description: If specified, the Pod's tolerations. See `kubectl
+                          explain pods.spec.tolerations`.
+                        items:
+                          type: object
+                          properties:
+                            effect:
+                              type: string
+                            tolerationSeconds:
+                              type: number
+                            value:
+                              type: string
+                            key:
+                              type: string
+                            operator:
+                              type: string
+                        type: array
+                      readinessProbe:
+                        description: Settings for the readiness probe associated with
+                          a WebLogic Server instance.
+                        properties:
+                          failureThreshold:
+                            description: Number of times the check is performed before
+                              giving up. Giving up in case of liveness probe means
+                              restarting the container. In case of readiness probe,
+                              the Pod will be marked Unready. Defaults to 1.
+                            minimum: 1.0
+                            type: number
+                          periodSeconds:
+                            description: The number of seconds between checks.
+                            type: number
+                          timeoutSeconds:
+                            description: The number of seconds with no response that
+                              indicates a failure.
+                            type: number
+                          successThreshold:
+                            description: Minimum number of times the check needs to
+                              pass for the probe to be considered successful after
+                              having failed. Defaults to 1. Must be 1 for liveness
+                              Probe.
+                            minimum: 1.0
+                            type: number
+                          initialDelaySeconds:
+                            description: The number of seconds before the first check
+                              is performed.
+                            type: number
+                        type: object
+                      containerSecurityContext:
+                        description: Container-level security attributes. Will override
+                          any matching Pod-level attributes. See `kubectl explain
+                          pods.spec.containers.securityContext`.
+                        properties:
+                          privileged:
+                            type: boolean
+                          runAsUser:
+                            type: number
+                          capabilities:
+                            properties:
+                              add:
+                                items:
+                                  type: string
+                                type: array
+                              drop:
+                                items:
+                                  type: string
+                                type: array
+                            type: object
+                          seLinuxOptions:
+                            properties:
+                              role:
+                                type: string
+                              level:
+                                type: string
+                              type:
+                                type: string
+                              user:
+                                type: string
+                            type: object
+                          seccompProfile:
+                            properties:
+                              localhostProfile:
+                                type: string
+                              type:
+                                type: string
+                            required:
+                            - type
+                            type: object
+                          windowsOptions:
+                            properties:
+                              gmsaCredentialSpec:
+                                type: string
+                              runAsUserName:
+                                type: string
+                              gmsaCredentialSpecName:
+                                type: string
+                            type: object
+                          procMount:
+                            type: string
+                          allowPrivilegeEscalation:
+                            type: boolean
+                          runAsGroup:
+                            type: number
+                          runAsNonRoot:
+                            type: boolean
+                          readOnlyRootFilesystem:
+                            type: boolean
+                        type: object
+                      schedulerName:
+                        description: If specified, the Pod will be dispatched by the
+                          specified scheduler. If not specified, the Pod will be dispatched
+                          by the default scheduler. See `kubectl explain pods.spec.schedulerName`.
+                        type: string
+                      livenessProbe:
+                        description: Settings for the liveness probe associated with
+                          a WebLogic Server instance.
+                        properties:
+                          failureThreshold:
+                            description: Number of times the check is performed before
+                              giving up. Giving up in case of liveness probe means
+                              restarting the container. In case of readiness probe,
+                              the Pod will be marked Unready. Defaults to 1.
+                            minimum: 1.0
+                            type: number
+                          periodSeconds:
+                            description: The number of seconds between checks.
+                            type: number
+                          timeoutSeconds:
+                            description: The number of seconds with no response that
+                              indicates a failure.
+                            type: number
+                          successThreshold:
+                            description: Minimum number of times the check needs to
+                              pass for the probe to be considered successful after
+                              having failed. Defaults to 1. Must be 1 for liveness
+                              Probe.
+                            minimum: 1.0
+                            type: number
+                          initialDelaySeconds:
+                            description: The number of seconds before the first check
+                              is performed.
+                            type: number
+                        type: object
                       volumes:
                         description: Additional volumes to be created in the server
                           Pod. See `kubectl explain pods.spec.volumes`.
@@ -12698,11 +12925,6 @@ spec:
                               type: string
                             type: object
                         type: object
-                      annotations:
-                        additionalProperties:
-                          type: string
-                        description: The annotations to be added to generated resources.
-                        type: object
                       env:
                         description: 'A list of environment variables to set in the
                           container running a WebLogic Server instance. More info:
@@ -12778,69 +13000,12 @@ spec:
                           More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy.
                           See `kubectl explain pods.spec.restartPolicy`.'
                         type: string
-                      nodeSelector:
-                        additionalProperties:
-                          type: string
-                        description: Selector which must match a Node's labels for
-                          the Pod to be scheduled on that Node. See `kubectl explain
-                          pods.spec.nodeSelector`.
-                        type: object
-                      volumeMounts:
-                        description: Additional volume mounts for the container running
-                          a WebLogic Server instance. See `kubectl explain pods.spec.containers.volumeMounts`.
-                        items:
-                          type: object
-                          properties:
-                            mountPath:
-                              type: string
-                            mountPropagation:
-                              type: string
-                            name:
-                              type: string
-                            readOnly:
-                              type: boolean
-                            subPath:
-                              type: string
-                            subPathExpr:
-                              type: string
-                          required:
-                          - mountPath
-                          - name
-                        type: array
                       labels:
                         additionalProperties:
                           type: string
                         description: The labels to be added to generated resources.
                           The label names must not start with "weblogic.".
                         type: object
-                      runtimeClassName:
-                        description: 'RuntimeClassName refers to a RuntimeClass object
-                          in the node.k8s.io group, which should be used to run this
-                          Pod. If no RuntimeClass resource matches the named class,
-                          the Pod will not be run. If unset or empty, the "legacy"
-                          RuntimeClass will be used, which is an implicit class with
-                          an empty definition that uses the default runtime handler.
-                          More info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md
-                          This is an alpha feature and may change in the future. See
-                          `kubectl explain pods.spec.runtimeClassName`.'
-                        type: string
-                      tolerations:
-                        description: If specified, the Pod's tolerations. See `kubectl
-                          explain pods.spec.tolerations`.
-                        items:
-                          type: object
-                          properties:
-                            effect:
-                              type: string
-                            tolerationSeconds:
-                              type: number
-                            value:
-                              type: string
-                            key:
-                              type: string
-                            operator:
-                              type: string
-                        type: array
                       auxiliaryImages:
                         description: Use an auxiliary image to automatically include
                           directory content from additional images. This is a useful
@@ -12887,36 +13052,6 @@ spec:
                                 volume.
                               type: string
                         type: array
-                      readinessProbe:
-                        description: Settings for the readiness probe associated with
-                          a WebLogic Server instance.
-                        properties:
-                          failureThreshold:
-                            description: Number of times the check is performed before
-                              giving up. Giving up in case of liveness probe means
-                              restarting the container. In case of readiness probe,
-                              the Pod will be marked Unready. Defaults to 1.
-                            minimum: 1.0
-                            type: number
-                          periodSeconds:
-                            description: The number of seconds between checks.
-                            type: number
-                          timeoutSeconds:
-                            description: The number of seconds with no response that
-                              indicates a failure.
-                            type: number
-                          successThreshold:
-                            description: Minimum number of times the check needs to
-                              pass for the probe to be considered successful after
-                              having failed. Defaults to 1. Must be 1 for liveness
-                              Probe.
-                            minimum: 1.0
-                            type: number
-                          initialDelaySeconds:
-                            description: The number of seconds before the first check
-                              is performed.
-                            type: number
-                        type: object
                       containers:
                         description: Additional containers to be included in the server
                           Pod. See `kubectl explain pods.spec.containers`.
@@ -13498,71 +13633,6 @@ spec:
                           required:
                           - name
                         type: array
-                      containerSecurityContext:
-                        description: Container-level security attributes. Will override
-                          any matching Pod-level attributes. See `kubectl explain
-                          pods.spec.containers.securityContext`.
-                        properties:
-                          privileged:
-                            type: boolean
-                          runAsUser:
-                            type: number
-                          capabilities:
-                            properties:
-                              add:
-                                items:
-                                  type: string
-                                type: array
-                              drop:
-                                items:
-                                  type: string
-                                type: array
-                            type: object
-                          seLinuxOptions:
-                            properties:
-                              role:
-                                type: string
-                              level:
-                                type: string
-                              type:
-                                type: string
-                              user:
-                                type: string
-                            type: object
-                          seccompProfile:
-                            properties:
-                              localhostProfile:
-                                type: string
-                              type:
-                                type: string
-                            required:
-                            - type
-                            type: object
-                          windowsOptions:
-                            properties:
-                              gmsaCredentialSpec:
-                                type: string
-                              runAsUserName:
-                                type: string
-                              gmsaCredentialSpecName:
-                                type: string
-                            type: object
-                          procMount:
-                            type: string
-                          allowPrivilegeEscalation:
-                            type: boolean
-                          runAsGroup:
-                            type: number
-                          runAsNonRoot:
-                            type: boolean
-                          readOnlyRootFilesystem:
-                            type: boolean
-                        type: object
-                      schedulerName:
-                        description: If specified, the Pod will be dispatched by the
-                          specified scheduler. If not specified, the Pod will be dispatched
-                          by the default scheduler. See `kubectl explain pods.spec.schedulerName`.
-                        type: string
                       initContainers:
                         description: Initialization containers to be included in the
                           server Pod. See `kubectl explain pods.spec.initContainers`.
@@ -14605,37 +14675,6 @@ spec:
                             it fits the resource requirements. See `kubectl explain
                             pods.spec.nodeName`.
                           type: string
-                        livenessProbe:
-                          description: Settings for the liveness probe associated
-                            with a WebLogic Server instance.
-                          type: object
-                          properties:
-                            failureThreshold:
-                              description: Number of times the check is performed
-                                before giving up. Giving up in case of liveness probe
-                                means restarting the container. In case of readiness
-                                probe, the Pod will be marked Unready. Defaults to
-                                1.
-                              type: number
-                              minimum: 1.0
-                            periodSeconds:
-                              description: The number of seconds between checks.
-                              type: number
-                            timeoutSeconds:
-                              description: The number of seconds with no response
-                                that indicates a failure.
-                              type: number
-                            successThreshold:
-                              description: Minimum number of times the check needs
-                                to pass for the probe to be considered successful
-                                after having failed. Defaults to 1. Must be 1 for
-                                liveness Probe.
-                              type: number
-                              minimum: 1.0
-                            initialDelaySeconds:
-                              description: The number of seconds before the first
-                                check is performed.
-                              type: number
                         readinessGates:
                           description: 'If specified, all readiness gates will be
                             evaluated for Pod readiness. A Pod is ready when all its
@@ -14726,6 +14765,211 @@ spec:
                             be the default or zero, if there is no default. See `kubectl
                             explain pods.spec.priorityClassName`.
                           type: string
+                        annotations:
+                          description: The annotations to be added to generated resources.
+                          additionalProperties:
+                            type: string
+                          type: object
+                        hostAliases:
+                          description: HostAliases is an optional list of hosts and
+                            IPs that will be injected into the pod's hosts file if
+                            specified. This is only valid for non-hostNetwork pods.
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              ip:
+                                type: string
+                              hostnames:
+                                type: array
+                                items:
+                                  type: string
+                        nodeSelector:
+                          description: Selector which must match a Node's labels for
+                            the Pod to be scheduled on that Node. See `kubectl explain
+                            pods.spec.nodeSelector`.
+                          additionalProperties:
+                            type: string
+                          type: object
+                        volumeMounts:
+                          description: Additional volume mounts for the container
+                            running a WebLogic Server instance. See `kubectl explain
+                            pods.spec.containers.volumeMounts`.
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              mountPath:
+                                type: string
+                              mountPropagation:
+                                type: string
+                              name:
+                                type: string
+                              readOnly:
+                                type: boolean
+                              subPath:
+                                type: string
+                              subPathExpr:
+                                type: string
+                            required:
+                            - mountPath
+                            - name
+                        runtimeClassName:
+                          description: 'RuntimeClassName refers to a RuntimeClass
+                            object in the node.k8s.io group, which should be used
+                            to run this Pod. If no RuntimeClass resource matches the
+                            named class, the Pod will not be run. If unset or empty,
+                            the "legacy" RuntimeClass will be used, which is an implicit
+                            class with an empty definition that uses the default runtime
+                            handler. More info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md
+                            This is an alpha feature and may change in the future.
+                            See `kubectl explain pods.spec.runtimeClassName`.'
+                          type: string
+                        tolerations:
+                          description: If specified, the Pod's tolerations. See `kubectl
+                            explain pods.spec.tolerations`.
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              effect:
+                                type: string
+                              tolerationSeconds:
+                                type: number
+                              value:
+                                type: string
+                              key:
+                                type: string
+                              operator:
+                                type: string
+                        readinessProbe:
+                          description: Settings for the readiness probe associated
+                            with a WebLogic Server instance.
+                          type: object
+                          properties:
+                            failureThreshold:
+                              description: Number of times the check is performed
+                                before giving up. Giving up in case of liveness probe
+                                means restarting the container. In case of readiness
+                                probe, the Pod will be marked Unready. Defaults to
+                                1.
+                              type: number
+                              minimum: 1.0
+                            periodSeconds:
+                              description: The number of seconds between checks.
+                              type: number
+                            timeoutSeconds:
+                              description: The number of seconds with no response
+                                that indicates a failure.
+                              type: number
+                            successThreshold:
+                              description: Minimum number of times the check needs
+                                to pass for the probe to be considered successful
+                                after having failed. Defaults to 1. Must be 1 for
+                                liveness Probe.
+                              type: number
+                              minimum: 1.0
+                            initialDelaySeconds:
+                              description: The number of seconds before the first
+                                check is performed.
+                              type: number
+                        containerSecurityContext:
+                          description: Container-level security attributes. Will override
+                            any matching Pod-level attributes. See `kubectl explain
+                            pods.spec.containers.securityContext`.
+                          type: object
+                          properties:
+                            privileged:
+                              type: boolean
+                            runAsUser:
+                              type: number
+                            capabilities:
+                              type: object
+                              properties:
+                                add:
+                                  type: array
+                                  items:
+                                    type: string
+                                drop:
+                                  type: array
+                                  items:
+                                    type: string
+                            seLinuxOptions:
+                              type: object
+                              properties:
+                                role:
+                                  type: string
+                                level:
+                                  type: string
+                                type:
+                                  type: string
+                                user:
+                                  type: string
+                            seccompProfile:
+                              type: object
+                              properties:
+                                localhostProfile:
+                                  type: string
+                                type:
+                                  type: string
+                              required:
+                              - type
+                            windowsOptions:
+                              type: object
+                              properties:
+                                gmsaCredentialSpec:
+                                  type: string
+                                runAsUserName:
+                                  type: string
+                                gmsaCredentialSpecName:
+                                  type: string
+                            procMount:
+                              type: string
+                            allowPrivilegeEscalation:
+                              type: boolean
+                            runAsGroup:
+                              type: number
+                            runAsNonRoot:
+                              type: boolean
+                            readOnlyRootFilesystem:
+                              type: boolean
+                        schedulerName:
+                          description: If specified, the Pod will be dispatched by
+                            the specified scheduler. If not specified, the Pod will
+                            be dispatched by the default scheduler. See `kubectl explain
+                            pods.spec.schedulerName`.
+                          type: string
+                        livenessProbe:
+                          description: Settings for the liveness probe associated
+                            with a WebLogic Server instance.
+                          type: object
+                          properties:
+                            failureThreshold:
+                              description: Number of times the check is performed
+                                before giving up. Giving up in case of liveness probe
+                                means restarting the container. In case of readiness
+                                probe, the Pod will be marked Unready. Defaults to
+                                1.
+                              type: number
+                              minimum: 1.0
+                            periodSeconds:
+                              description: The number of seconds between checks.
+                              type: number
+                            timeoutSeconds:
+                              description: The number of seconds with no response
+                                that indicates a failure.
+                              type: number
+                            successThreshold:
+                              description: Minimum number of times the check needs
+                                to pass for the probe to be considered successful
+                                after having failed. Defaults to 1. Must be 1 for
+                                liveness Probe.
+                              type: number
+                              minimum: 1.0
+                            initialDelaySeconds:
+                              description: The number of seconds before the first
+                                check is performed.
+                              type: number
                         volumes:
                           description: Additional volumes to be created in the server
                             Pod. See `kubectl explain pods.spec.volumes`.
@@ -15481,11 +15725,6 @@ spec:
                               additionalProperties:
                                 type: string
                               type: object
-                        annotations:
-                          description: The annotations to be added to generated resources.
-                          additionalProperties:
-                            type: string
-                          type: object
                         env:
                           description: 'A list of environment variables to set in
                             the container running a WebLogic Server instance. More
@@ -15561,70 +15800,12 @@ spec:
                             More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy.
                             See `kubectl explain pods.spec.restartPolicy`.'
                           type: string
-                        nodeSelector:
-                          description: Selector which must match a Node's labels for
-                            the Pod to be scheduled on that Node. See `kubectl explain
-                            pods.spec.nodeSelector`.
-                          additionalProperties:
-                            type: string
-                          type: object
-                        volumeMounts:
-                          description: Additional volume mounts for the container
-                            running a WebLogic Server instance. See `kubectl explain
-                            pods.spec.containers.volumeMounts`.
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              mountPath:
-                                type: string
-                              mountPropagation:
-                                type: string
-                              name:
-                                type: string
-                              readOnly:
-                                type: boolean
-                              subPath:
-                                type: string
-                              subPathExpr:
-                                type: string
-                            required:
-                            - mountPath
-                            - name
                         labels:
                           description: The labels to be added to generated resources.
                             The label names must not start with "weblogic.".
                           additionalProperties:
                             type: string
                           type: object
-                        runtimeClassName:
-                          description: 'RuntimeClassName refers to a RuntimeClass
-                            object in the node.k8s.io group, which should be used
-                            to run this Pod. If no RuntimeClass resource matches the
-                            named class, the Pod will not be run. If unset or empty,
-                            the "legacy" RuntimeClass will be used, which is an implicit
-                            class with an empty definition that uses the default runtime
-                            handler. More info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md
-                            This is an alpha feature and may change in the future.
-                            See `kubectl explain pods.spec.runtimeClassName`.'
-                          type: string
-                        tolerations:
-                          description: If specified, the Pod's tolerations. See `kubectl
-                            explain pods.spec.tolerations`.
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              effect:
-                                type: string
-                              tolerationSeconds:
-                                type: number
-                              value:
-                                type: string
-                              key:
-                                type: string
-                              operator:
-                                type: string
                         auxiliaryImages:
                           description: Use an auxiliary image to automatically include
                             directory content from additional images. This is a useful
@@ -15671,37 +15852,6 @@ spec:
                                   operator that resolves to the auxiliary image's
                                   internal emptyDir volume.
                                 type: string
-                        readinessProbe:
-                          description: Settings for the readiness probe associated
-                            with a WebLogic Server instance.
-                          type: object
-                          properties:
-                            failureThreshold:
-                              description: Number of times the check is performed
-                                before giving up. Giving up in case of liveness probe
-                                means restarting the container. In case of readiness
-                                probe, the Pod will be marked Unready. Defaults to
-                                1.
-                              type: number
-                              minimum: 1.0
-                            periodSeconds:
-                              description: The number of seconds between checks.
-                              type: number
-                            timeoutSeconds:
-                              description: The number of seconds with no response
-                                that indicates a failure.
-                              type: number
-                            successThreshold:
-                              description: Minimum number of times the check needs
-                                to pass for the probe to be considered successful
-                                after having failed. Defaults to 1. Must be 1 for
-                                liveness Probe.
-                              type: number
-                              minimum: 1.0
-                            initialDelaySeconds:
-                              description: The number of seconds before the first
-                                check is performed.
-                              type: number
                         containers:
                           description: Additional containers to be included in the
                             server Pod. See `kubectl explain pods.spec.containers`.
@@ -16283,72 +16433,6 @@ spec:
                                           type: boolean
                             required:
                             - name
-                        containerSecurityContext:
-                          description: Container-level security attributes. Will override
-                            any matching Pod-level attributes. See `kubectl explain
-                            pods.spec.containers.securityContext`.
-                          type: object
-                          properties:
-                            privileged:
-                              type: boolean
-                            runAsUser:
-                              type: number
-                            capabilities:
-                              type: object
-                              properties:
-                                add:
-                                  type: array
-                                  items:
-                                    type: string
-                                drop:
-                                  type: array
-                                  items:
-                                    type: string
-                            seLinuxOptions:
-                              type: object
-                              properties:
-                                role:
-                                  type: string
-                                level:
-                                  type: string
-                                type:
-                                  type: string
-                                user:
-                                  type: string
-                            seccompProfile:
-                              type: object
-                              properties:
-                                localhostProfile:
-                                  type: string
-                                type:
-                                  type: string
-                              required:
-                              - type
-                            windowsOptions:
-                              type: object
-                              properties:
-                                gmsaCredentialSpec:
-                                  type: string
-                                runAsUserName:
-                                  type: string
-                                gmsaCredentialSpecName:
-                                  type: string
-                            procMount:
-                              type: string
-                            allowPrivilegeEscalation:
-                              type: boolean
-                            runAsGroup:
-                              type: number
-                            runAsNonRoot:
-                              type: boolean
-                            readOnlyRootFilesystem:
-                              type: boolean
-                        schedulerName:
-                          description: If specified, the Pod will be dispatched by
-                            the specified scheduler. If not specified, the Pod will
-                            be dispatched by the default scheduler. See `kubectl explain
-                            pods.spec.schedulerName`.
-                          type: string
                         initContainers:
                           description: Initialization containers to be included in
                             the server Pod. See `kubectl explain pods.spec.initContainers`.
@@ -17405,35 +17489,6 @@ spec:
                       this pod onto that node, assuming that it fits the resource
                       requirements. See `kubectl explain pods.spec.nodeName`.
                     type: string
-                  livenessProbe:
-                    description: Settings for the liveness probe associated with a
-                      WebLogic Server instance.
-                    properties:
-                      failureThreshold:
-                        description: Number of times the check is performed before
-                          giving up. Giving up in case of liveness probe means restarting
-                          the container. In case of readiness probe, the Pod will
-                          be marked Unready. Defaults to 1.
-                        minimum: 1.0
-                        type: number
-                      periodSeconds:
-                        description: The number of seconds between checks.
-                        type: number
-                      timeoutSeconds:
-                        description: The number of seconds with no response that indicates
-                          a failure.
-                        type: number
-                      successThreshold:
-                        description: Minimum number of times the check needs to pass
-                          for the probe to be considered successful after having failed.
-                          Defaults to 1. Must be 1 for liveness Probe.
-                        minimum: 1.0
-                        type: number
-                      initialDelaySeconds:
-                        description: The number of seconds before the first check
-                          is performed.
-                        type: number
-                    type: object
                   readinessGates:
                     description: 'If specified, all readiness gates will be evaluated
                       for Pod readiness. A Pod is ready when all its containers are
@@ -17522,6 +17577,202 @@ spec:
                       be the default or zero, if there is no default. See `kubectl
                       explain pods.spec.priorityClassName`.
                     type: string
+                  annotations:
+                    additionalProperties:
+                      type: string
+                    description: The annotations to be added to generated resources.
+                    type: object
+                  hostAliases:
+                    description: HostAliases is an optional list of hosts and IPs
+                      that will be injected into the pod's hosts file if specified.
+                      This is only valid for non-hostNetwork pods.
+                    items:
+                      type: object
+                      properties:
+                        ip:
+                          type: string
+                        hostnames:
+                          type: array
+                          items:
+                            type: string
+                    type: array
+                  nodeSelector:
+                    additionalProperties:
+                      type: string
+                    description: Selector which must match a Node's labels for the
+                      Pod to be scheduled on that Node. See `kubectl explain pods.spec.nodeSelector`.
+                    type: object
+                  volumeMounts:
+                    description: Additional volume mounts for the container running
+                      a WebLogic Server instance. See `kubectl explain pods.spec.containers.volumeMounts`.
+                    items:
+                      type: object
+                      properties:
+                        mountPath:
+                          type: string
+                        mountPropagation:
+                          type: string
+                        name:
+                          type: string
+                        readOnly:
+                          type: boolean
+                        subPath:
+                          type: string
+                        subPathExpr:
+                          type: string
+                      required:
+                      - mountPath
+                      - name
+                    type: array
+                  runtimeClassName:
+                    description: 'RuntimeClassName refers to a RuntimeClass object
+                      in the node.k8s.io group, which should be used to run this Pod.
+                      If no RuntimeClass resource matches the named class, the Pod
+                      will not be run. If unset or empty, the "legacy" RuntimeClass
+                      will be used, which is an implicit class with an empty definition
+                      that uses the default runtime handler. More info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md
+                      This is an alpha feature and may change in the future. See `kubectl
+                      explain pods.spec.runtimeClassName`.'
+                    type: string
+                  tolerations:
+                    description: If specified, the Pod's tolerations. See `kubectl
+                      explain pods.spec.tolerations`.
+                    items:
+                      type: object
+                      properties:
+                        effect:
+                          type: string
+                        tolerationSeconds:
+                          type: number
+                        value:
+                          type: string
+                        key:
+                          type: string
+                        operator:
+                          type: string
+                    type: array
+                  readinessProbe:
+                    description: Settings for the readiness probe associated with
+                      a WebLogic Server instance.
+                    properties:
+                      failureThreshold:
+                        description: Number of times the check is performed before
+                          giving up. Giving up in case of liveness probe means restarting
+                          the container. In case of readiness probe, the Pod will
+                          be marked Unready. Defaults to 1.
+                        minimum: 1.0
+                        type: number
+                      periodSeconds:
+                        description: The number of seconds between checks.
+                        type: number
+                      timeoutSeconds:
+                        description: The number of seconds with no response that indicates
+                          a failure.
+                        type: number
+                      successThreshold:
+                        description: Minimum number of times the check needs to pass
+                          for the probe to be considered successful after having failed.
+                          Defaults to 1. Must be 1 for liveness Probe.
+                        minimum: 1.0
+                        type: number
+                      initialDelaySeconds:
+                        description: The number of seconds before the first check
+                          is performed.
+                        type: number
+                    type: object
+                  containerSecurityContext:
+                    description: Container-level security attributes. Will override
+                      any matching Pod-level attributes. See `kubectl explain pods.spec.containers.securityContext`.
+                    properties:
+                      privileged:
+                        type: boolean
+                      runAsUser:
+                        type: number
+                      capabilities:
+                        properties:
+                          add:
+                            items:
+                              type: string
+                            type: array
+                          drop:
+                            items:
+                              type: string
+                            type: array
+                        type: object
+                      seLinuxOptions:
+                        properties:
+                          role:
+                            type: string
+                          level:
+                            type: string
+                          type:
+                            type: string
+                          user:
+                            type: string
+                        type: object
+                      seccompProfile:
+                        properties:
+                          localhostProfile:
+                            type: string
+                          type:
+                            type: string
+                        required:
+                        - type
+                        type: object
+                      windowsOptions:
+                        properties:
+                          gmsaCredentialSpec:
+                            type: string
+                          runAsUserName:
+                            type: string
+                          gmsaCredentialSpecName:
+                            type: string
+                        type: object
+                      procMount:
+                        type: string
+                      allowPrivilegeEscalation:
+                        type: boolean
+                      runAsGroup:
+                        type: number
+                      runAsNonRoot:
+                        type: boolean
+                      readOnlyRootFilesystem:
+                        type: boolean
+                    type: object
+                  schedulerName:
+                    description: If specified, the Pod will be dispatched by the specified
+                      scheduler. If not specified, the Pod will be dispatched by the
+                      default scheduler. See `kubectl explain pods.spec.schedulerName`.
+                    type: string
+                  livenessProbe:
+                    description: Settings for the liveness probe associated with a
+                      WebLogic Server instance.
+                    properties:
+                      failureThreshold:
+                        description: Number of times the check is performed before
+                          giving up. Giving up in case of liveness probe means restarting
+                          the container. In case of readiness probe, the Pod will
+                          be marked Unready. Defaults to 1.
+                        minimum: 1.0
+                        type: number
+                      periodSeconds:
+                        description: The number of seconds between checks.
+                        type: number
+                      timeoutSeconds:
+                        description: The number of seconds with no response that indicates
+                          a failure.
+                        type: number
+                      successThreshold:
+                        description: Minimum number of times the check needs to pass
+                          for the probe to be considered successful after having failed.
+                          Defaults to 1. Must be 1 for liveness Probe.
+                        minimum: 1.0
+                        type: number
+                      initialDelaySeconds:
+                        description: The number of seconds before the first check
+                          is performed.
+                        type: number
+                    type: object
                   volumes:
                     description: Additional volumes to be created in the server Pod.
                       See `kubectl explain pods.spec.volumes`.
@@ -18276,11 +18527,6 @@ spec:
                           type: string
                         type: object
                     type: object
-                  annotations:
-                    additionalProperties:
-                      type: string
-                    description: The annotations to be added to generated resources.
-                    type: object
                   env:
                     description: 'A list of environment variables to set in the container
                       running a WebLogic Server instance. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables.
@@ -18355,67 +18601,12 @@ spec:
                       https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy.
                       See `kubectl explain pods.spec.restartPolicy`.'
                     type: string
-                  nodeSelector:
-                    additionalProperties:
-                      type: string
-                    description: Selector which must match a Node's labels for the
-                      Pod to be scheduled on that Node. See `kubectl explain pods.spec.nodeSelector`.
-                    type: object
-                  volumeMounts:
-                    description: Additional volume mounts for the container running
-                      a WebLogic Server instance. See `kubectl explain pods.spec.containers.volumeMounts`.
-                    items:
-                      type: object
-                      properties:
-                        mountPath:
-                          type: string
-                        mountPropagation:
-                          type: string
-                        name:
-                          type: string
-                        readOnly:
-                          type: boolean
-                        subPath:
-                          type: string
-                        subPathExpr:
-                          type: string
-                      required:
-                      - mountPath
-                      - name
-                    type: array
                   labels:
                     additionalProperties:
                       type: string
                     description: The labels to be added to generated resources. The
                       label names must not start with "weblogic.".
                     type: object
-                  runtimeClassName:
-                    description: 'RuntimeClassName refers to a RuntimeClass object
-                      in the node.k8s.io group, which should be used to run this Pod.
-                      If no RuntimeClass resource matches the named class, the Pod
-                      will not be run. If unset or empty, the "legacy" RuntimeClass
-                      will be used, which is an implicit class with an empty definition
-                      that uses the default runtime handler. More info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md
-                      This is an alpha feature and may change in the future. See `kubectl
-                      explain pods.spec.runtimeClassName`.'
-                    type: string
-                  tolerations:
-                    description: If specified, the Pod's tolerations. See `kubectl
-                      explain pods.spec.tolerations`.
-                    items:
-                      type: object
-                      properties:
-                        effect:
-                          type: string
-                        tolerationSeconds:
-                          type: number
-                        value:
-                          type: string
-                        key:
-                          type: string
-                        operator:
-                          type: string
-                    type: array
                   auxiliaryImages:
                     description: Use an auxiliary image to automatically include directory
                       content from additional images. This is a useful alternative
@@ -18459,35 +18650,6 @@ spec:
                             to the auxiliary image's internal emptyDir volume.
                           type: string
                     type: array
-                  readinessProbe:
-                    description: Settings for the readiness probe associated with
-                      a WebLogic Server instance.
-                    properties:
-                      failureThreshold:
-                        description: Number of times the check is performed before
-                          giving up. Giving up in case of liveness probe means restarting
-                          the container. In case of readiness probe, the Pod will
-                          be marked Unready. Defaults to 1.
-                        minimum: 1.0
-                        type: number
-                      periodSeconds:
-                        description: The number of seconds between checks.
-                        type: number
-                      timeoutSeconds:
-                        description: The number of seconds with no response that indicates
-                          a failure.
-                        type: number
-                      successThreshold:
-                        description: Minimum number of times the check needs to pass
-                          for the probe to be considered successful after having failed.
-                          Defaults to 1. Must be 1 for liveness Probe.
-                        minimum: 1.0
-                        type: number
-                      initialDelaySeconds:
-                        description: The number of seconds before the first check
-                          is performed.
-                        type: number
-                    type: object
                   containers:
                     description: Additional containers to be included in the server
                       Pod. See `kubectl explain pods.spec.containers`.
@@ -19069,70 +19231,6 @@ spec:
                       required:
                       - name
                     type: array
-                  containerSecurityContext:
-                    description: Container-level security attributes. Will override
-                      any matching Pod-level attributes. See `kubectl explain pods.spec.containers.securityContext`.
-                    properties:
-                      privileged:
-                        type: boolean
-                      runAsUser:
-                        type: number
-                      capabilities:
-                        properties:
-                          add:
-                            items:
-                              type: string
-                            type: array
-                          drop:
-                            items:
-                              type: string
-                            type: array
-                        type: object
-                      seLinuxOptions:
-                        properties:
-                          role:
-                            type: string
-                          level:
-                            type: string
-                          type:
-                            type: string
-                          user:
-                            type: string
-                        type: object
-                      seccompProfile:
-                        properties:
-                          localhostProfile:
-                            type: string
-                          type:
-                            type: string
-                        required:
-                        - type
-                        type: object
-                      windowsOptions:
-                        properties:
-                          gmsaCredentialSpec:
-                            type: string
-                          runAsUserName:
-                            type: string
-                          gmsaCredentialSpecName:
-                            type: string
-                        type: object
-                      procMount:
-                        type: string
-                      allowPrivilegeEscalation:
-                        type: boolean
-                      runAsGroup:
-                        type: number
-                      runAsNonRoot:
-                        type: boolean
-                      readOnlyRootFilesystem:
-                        type: boolean
-                    type: object
-                  schedulerName:
-                    description: If specified, the Pod will be dispatched by the specified
-                      scheduler. If not specified, the Pod will be dispatched by the
-                      default scheduler. See `kubectl explain pods.spec.schedulerName`.
-                    type: string
                   initContainers:
                     description: Initialization containers to be included in the server
                       Pod. See `kubectl explain pods.spec.initContainers`.
@@ -20082,37 +20180,6 @@ spec:
                             it fits the resource requirements. See `kubectl explain
                             pods.spec.nodeName`.
                           type: string
-                        livenessProbe:
-                          description: Settings for the liveness probe associated
-                            with a WebLogic Server instance.
-                          type: object
-                          properties:
-                            failureThreshold:
-                              description: Number of times the check is performed
-                                before giving up. Giving up in case of liveness probe
-                                means restarting the container. In case of readiness
-                                probe, the Pod will be marked Unready. Defaults to
-                                1.
-                              type: number
-                              minimum: 1.0
-                            periodSeconds:
-                              description: The number of seconds between checks.
-                              type: number
-                            timeoutSeconds:
-                              description: The number of seconds with no response
-                                that indicates a failure.
-                              type: number
-                            successThreshold:
-                              description: Minimum number of times the check needs
-                                to pass for the probe to be considered successful
-                                after having failed. Defaults to 1. Must be 1 for
-                                liveness Probe.
-                              type: number
-                              minimum: 1.0
-                            initialDelaySeconds:
-                              description: The number of seconds before the first
-                                check is performed.
-                              type: number
                         readinessGates:
                           description: 'If specified, all readiness gates will be
                             evaluated for Pod readiness. A Pod is ready when all its
@@ -20203,6 +20270,211 @@ spec:
                             be the default or zero, if there is no default. See `kubectl
                             explain pods.spec.priorityClassName`.
                           type: string
+                        annotations:
+                          description: The annotations to be added to generated resources.
+                          additionalProperties:
+                            type: string
+                          type: object
+                        hostAliases:
+                          description: HostAliases is an optional list of hosts and
+                            IPs that will be injected into the pod's hosts file if
+                            specified. This is only valid for non-hostNetwork pods.
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              ip:
+                                type: string
+                              hostnames:
+                                type: array
+                                items:
+                                  type: string
+                        nodeSelector:
+                          description: Selector which must match a Node's labels for
+                            the Pod to be scheduled on that Node. See `kubectl explain
+                            pods.spec.nodeSelector`.
+                          additionalProperties:
+                            type: string
+                          type: object
+                        volumeMounts:
+                          description: Additional volume mounts for the container
+                            running a WebLogic Server instance. See `kubectl explain
+                            pods.spec.containers.volumeMounts`.
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              mountPath:
+                                type: string
+                              mountPropagation:
+                                type: string
+                              name:
+                                type: string
+                              readOnly:
+                                type: boolean
+                              subPath:
+                                type: string
+                              subPathExpr:
+                                type: string
+                            required:
+                            - mountPath
+                            - name
+                        runtimeClassName:
+                          description: 'RuntimeClassName refers to a RuntimeClass
+                            object in the node.k8s.io group, which should be used
+                            to run this Pod. If no RuntimeClass resource matches the
+                            named class, the Pod will not be run. If unset or empty,
+                            the "legacy" RuntimeClass will be used, which is an implicit
+                            class with an empty definition that uses the default runtime
+                            handler. More info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md
+                            This is an alpha feature and may change in the future.
+                            See `kubectl explain pods.spec.runtimeClassName`.'
+                          type: string
+                        tolerations:
+                          description: If specified, the Pod's tolerations. See `kubectl
+                            explain pods.spec.tolerations`.
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              effect:
+                                type: string
+                              tolerationSeconds:
+                                type: number
+                              value:
+                                type: string
+                              key:
+                                type: string
+                              operator:
+                                type: string
+                        readinessProbe:
+                          description: Settings for the readiness probe associated
+                            with a WebLogic Server instance.
+                          type: object
+                          properties:
+                            failureThreshold:
+                              description: Number of times the check is performed
+                                before giving up. Giving up in case of liveness probe
+                                means restarting the container. In case of readiness
+                                probe, the Pod will be marked Unready. Defaults to
+                                1.
+                              type: number
+                              minimum: 1.0
+                            periodSeconds:
+                              description: The number of seconds between checks.
+                              type: number
+                            timeoutSeconds:
+                              description: The number of seconds with no response
+                                that indicates a failure.
+                              type: number
+                            successThreshold:
+                              description: Minimum number of times the check needs
+                                to pass for the probe to be considered successful
+                                after having failed. Defaults to 1. Must be 1 for
+                                liveness Probe.
+                              type: number
+                              minimum: 1.0
+                            initialDelaySeconds:
+                              description: The number of seconds before the first
+                                check is performed.
+                              type: number
+                        containerSecurityContext:
+                          description: Container-level security attributes. Will override
+                            any matching Pod-level attributes. See `kubectl explain
+                            pods.spec.containers.securityContext`.
+                          type: object
+                          properties:
+                            privileged:
+                              type: boolean
+                            runAsUser:
+                              type: number
+                            capabilities:
+                              type: object
+                              properties:
+                                add:
+                                  type: array
+                                  items:
+                                    type: string
+                                drop:
+                                  type: array
+                                  items:
+                                    type: string
+                            seLinuxOptions:
+                              type: object
+                              properties:
+                                role:
+                                  type: string
+                                level:
+                                  type: string
+                                type:
+                                  type: string
+                                user:
+                                  type: string
+                            seccompProfile:
+                              type: object
+                              properties:
+                                localhostProfile:
+                                  type: string
+                                type:
+                                  type: string
+                              required:
+                              - type
+                            windowsOptions:
+                              type: object
+                              properties:
+                                gmsaCredentialSpec:
+                                  type: string
+                                runAsUserName:
+                                  type: string
+                                gmsaCredentialSpecName:
+                                  type: string
+                            procMount:
+                              type: string
+                            allowPrivilegeEscalation:
+                              type: boolean
+                            runAsGroup:
+                              type: number
+                            runAsNonRoot:
+                              type: boolean
+                            readOnlyRootFilesystem:
+                              type: boolean
+                        schedulerName:
+                          description: If specified, the Pod will be dispatched by
+                            the specified scheduler. If not specified, the Pod will
+                            be dispatched by the default scheduler. See `kubectl explain
+                            pods.spec.schedulerName`.
+                          type: string
+                        livenessProbe:
+                          description: Settings for the liveness probe associated
+                            with a WebLogic Server instance.
+                          type: object
+                          properties:
+                            failureThreshold:
+                              description: Number of times the check is performed
+                                before giving up. Giving up in case of liveness probe
+                                means restarting the container. In case of readiness
+                                probe, the Pod will be marked Unready. Defaults to
+                                1.
+                              type: number
+                              minimum: 1.0
+                            periodSeconds:
+                              description: The number of seconds between checks.
+                              type: number
+                            timeoutSeconds:
+                              description: The number of seconds with no response
+                                that indicates a failure.
+                              type: number
+                            successThreshold:
+                              description: Minimum number of times the check needs
+                                to pass for the probe to be considered successful
+                                after having failed. Defaults to 1. Must be 1 for
+                                liveness Probe.
+                              type: number
+                              minimum: 1.0
+                            initialDelaySeconds:
+                              description: The number of seconds before the first
+                                check is performed.
+                              type: number
                         volumes:
                           description: Additional volumes to be created in the server
                             Pod. See `kubectl explain pods.spec.volumes`.
@@ -20958,11 +21230,6 @@ spec:
                               additionalProperties:
                                 type: string
                               type: object
-                        annotations:
-                          description: The annotations to be added to generated resources.
-                          additionalProperties:
-                            type: string
-                          type: object
                         env:
                           description: 'A list of environment variables to set in
                             the container running a WebLogic Server instance. More
@@ -21038,70 +21305,12 @@ spec:
                             More info: https://kubernetes.io/docs/concepts/workloads/pods/pod-lifecycle/#restart-policy.
                             See `kubectl explain pods.spec.restartPolicy`.'
                           type: string
-                        nodeSelector:
-                          description: Selector which must match a Node's labels for
-                            the Pod to be scheduled on that Node. See `kubectl explain
-                            pods.spec.nodeSelector`.
-                          additionalProperties:
-                            type: string
-                          type: object
-                        volumeMounts:
-                          description: Additional volume mounts for the container
-                            running a WebLogic Server instance. See `kubectl explain
-                            pods.spec.containers.volumeMounts`.
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              mountPath:
-                                type: string
-                              mountPropagation:
-                                type: string
-                              name:
-                                type: string
-                              readOnly:
-                                type: boolean
-                              subPath:
-                                type: string
-                              subPathExpr:
-                                type: string
-                            required:
-                            - mountPath
-                            - name
                         labels:
                           description: The labels to be added to generated resources.
                             The label names must not start with "weblogic.".
                           additionalProperties:
                             type: string
                           type: object
-                        runtimeClassName:
-                          description: 'RuntimeClassName refers to a RuntimeClass
-                            object in the node.k8s.io group, which should be used
-                            to run this Pod. If no RuntimeClass resource matches the
-                            named class, the Pod will not be run. If unset or empty,
-                            the "legacy" RuntimeClass will be used, which is an implicit
-                            class with an empty definition that uses the default runtime
-                            handler. More info: https://github.com/kubernetes/community/blob/master/keps/sig-node/0014-runtime-class.md
-                            This is an alpha feature and may change in the future.
-                            See `kubectl explain pods.spec.runtimeClassName`.'
-                          type: string
-                        tolerations:
-                          description: If specified, the Pod's tolerations. See `kubectl
-                            explain pods.spec.tolerations`.
-                          type: array
-                          items:
-                            type: object
-                            properties:
-                              effect:
-                                type: string
-                              tolerationSeconds:
-                                type: number
-                              value:
-                                type: string
-                              key:
-                                type: string
-                              operator:
-                                type: string
                         auxiliaryImages:
                           description: Use an auxiliary image to automatically include
                             directory content from additional images. This is a useful
@@ -21148,37 +21357,6 @@ spec:
                                   operator that resolves to the auxiliary image's
                                   internal emptyDir volume.
                                 type: string
-                        readinessProbe:
-                          description: Settings for the readiness probe associated
-                            with a WebLogic Server instance.
-                          type: object
-                          properties:
-                            failureThreshold:
-                              description: Number of times the check is performed
-                                before giving up. Giving up in case of liveness probe
-                                means restarting the container. In case of readiness
-                                probe, the Pod will be marked Unready. Defaults to
-                                1.
-                              type: number
-                              minimum: 1.0
-                            periodSeconds:
-                              description: The number of seconds between checks.
-                              type: number
-                            timeoutSeconds:
-                              description: The number of seconds with no response
-                                that indicates a failure.
-                              type: number
-                            successThreshold:
-                              description: Minimum number of times the check needs
-                                to pass for the probe to be considered successful
-                                after having failed. Defaults to 1. Must be 1 for
-                                liveness Probe.
-                              type: number
-                              minimum: 1.0
-                            initialDelaySeconds:
-                              description: The number of seconds before the first
-                                check is performed.
-                              type: number
                         containers:
                           description: Additional containers to be included in the
                             server Pod. See `kubectl explain pods.spec.containers`.
@@ -21760,72 +21938,6 @@ spec:
                                           type: boolean
                             required:
                             - name
-                        containerSecurityContext:
-                          description: Container-level security attributes. Will override
-                            any matching Pod-level attributes. See `kubectl explain
-                            pods.spec.containers.securityContext`.
-                          type: object
-                          properties:
-                            privileged:
-                              type: boolean
-                            runAsUser:
-                              type: number
-                            capabilities:
-                              type: object
-                              properties:
-                                add:
-                                  type: array
-                                  items:
-                                    type: string
-                                drop:
-                                  type: array
-                                  items:
-                                    type: string
-                            seLinuxOptions:
-                              type: object
-                              properties:
-                                role:
-                                  type: string
-                                level:
-                                  type: string
-                                type:
-                                  type: string
-                                user:
-                                  type: string
-                            seccompProfile:
-                              type: object
-                              properties:
-                                localhostProfile:
-                                  type: string
-                                type:
-                                  type: string
-                              required:
-                              - type
-                            windowsOptions:
-                              type: object
-                              properties:
-                                gmsaCredentialSpec:
-                                  type: string
-                                runAsUserName:
-                                  type: string
-                                gmsaCredentialSpecName:
-                                  type: string
-                            procMount:
-                              type: string
-                            allowPrivilegeEscalation:
-                              type: boolean
-                            runAsGroup:
-                              type: number
-                            runAsNonRoot:
-                              type: boolean
-                            readOnlyRootFilesystem:
-                              type: boolean
-                        schedulerName:
-                          description: If specified, the Pod will be dispatched by
-                            the specified scheduler. If not specified, the Pod will
-                            be dispatched by the default scheduler. See `kubectl explain
-                            pods.spec.schedulerName`.
-                          type: string
                         initContainers:
                           description: Initialization containers to be included in
                             the server Pod. See `kubectl explain pods.spec.initContainers`.

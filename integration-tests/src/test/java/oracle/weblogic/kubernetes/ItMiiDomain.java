@@ -62,6 +62,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
@@ -77,6 +78,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
@@ -93,11 +95,13 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.startPortForwardP
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.stopPortForwardProcess;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withQuickRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.LoggingUtil.checkPodLogContainsString;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.setTargetPortForRoute;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
@@ -333,23 +337,32 @@ class ItMiiDomain {
                 replicaCount,
                 MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
 
+    // set low introspectorJobActiveDeadlineSeconds and verify introspector retries on timeouts
+    domain.getSpec().configuration().introspectorJobActiveDeadlineSeconds(30L);
+
     // create model in image domain
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
         domainUid1, domainNamespace1, MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
     createDomainAndVerify(domain, domainNamespace1);
 
     // check admin server pod is ready
+    // as low value is used for introspectorJobActiveDeadlineSeconds, wait longer for services and pods to come
+    // to give enough time for make-right intervals and retries
     logger.info("Check admin service {0} is created in namespace {1}",
             adminServerPodName, domainNamespace1);
-    checkPodReadyAndServiceExists(adminServerPodName, domainUid1, domainNamespace1);
+    checkPodReadyAndServiceExists(withLongRetryPolicy, adminServerPodName, domainUid1, domainNamespace1);
 
     // check managed server services created
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Check managed server service {0} is created in namespace {1}",
               managedServerPrefix + i, domainNamespace1);
-      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid1, domainNamespace1);
+      checkPodReadyAndServiceExists(withLongRetryPolicy, managedServerPrefix + i, domainUid1, domainNamespace1);
     }
 
+    // check operator pod log contains message for introspectorJobActiveDeadlineSeconds as a low value is used
+    String operatorPodName = assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+    checkPodLogContainsString(opNamespace, operatorPodName,
+        "introspectorJobActiveDeadlineSeconds");
   }
 
   @Test
