@@ -1076,7 +1076,7 @@ public class Kubernetes {
           ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
           null, // String | The continue option should be set when retrieving more results from the server.
           null, // String | A selector to restrict the list of returned objects by their fields.
-          null, // String | A selector to restrict the list of returned objects by their labels.
+          "weblogic.createdByOperator", // String | A selector to restrict the list of returned objects by their labels.
           null, // Integer | limit is a maximum number of responses to return for a list call.
           RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
           RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset

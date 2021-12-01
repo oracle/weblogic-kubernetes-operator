@@ -282,7 +282,7 @@ class ManagedPodHelperTest extends PodHelperTestBase {
     testSupport.runSteps(PodHelper.createManagedPodStep(terminalStep));
 
     assertThat(testSupport.getResources(KubernetesTestSupport.POD).isEmpty(), is(true));
-    assertThat(getDomain().getStatus().getReason(), is(DomainInvalid.toString()));
+    assertThat(getDomain().getStatus().getReason(), is(DomainInvalid.name()));
     assertThat(logRecords, containsSevere(getDomainValidationFailedKey()));
   }
 

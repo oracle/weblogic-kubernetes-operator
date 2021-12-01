@@ -186,10 +186,9 @@ public class DomainStatusUpdater {
   /**
    * Asynchronous steps to set Domain condition to Failed and to generate DOMAIN_FAILED event.
    *
-   * @param message a fuller description of the problem
    */
-  public static Step createReplicasTooHighFailureRelatedSteps(String message) {
-    return createFailureRelatedSteps(ReplicasTooHigh, message);
+  public static Step createAbortedFailureRelatedSteps() {
+    return createEventStep(new EventData(DOMAIN_FAILED, INTROSPECTOR_MAX_ERRORS_EXCEEDED).failureReason(Aborted));
   }
 
 
@@ -588,7 +587,7 @@ public class DomainStatusUpdater {
         } else if (domainJustIncomplete()) {
           list.add(new EventData(DOMAIN_INCOMPLETE));
         }
-        Optional.ofNullable(createTooManyReplicasFailuresEventDataIfNeeded()).map(e -> list.add(e));
+        Optional.ofNullable(createTooManyReplicasFailuresEventDataIfNeeded()).map(list::add);
         return list;
       }
 
@@ -608,8 +607,12 @@ public class DomainStatusUpdater {
         return getNewStatus() != null && getNewStatus().hasConditionWith(this::isDomainFailed);
       }
 
+      private boolean newStatusIsIncomplete() {
+        return getNewStatus() != null && getNewStatus().hasConditionWith(this::isDomainIncomplete);
+      }
+
       private boolean domainJustIncomplete() {
-        return !allIntendedServersRunning() && oldStatusWasCompleted();
+        return !allIntendedServersRunning() && oldStatusWasCompleted() && newStatusIsIncomplete();
       }
 
       private boolean oldStatusWasCompleted() {
@@ -658,21 +661,24 @@ public class DomainStatusUpdater {
       }
 
       private boolean isDomainFailed(DomainCondition condition) {
-        return condition.hasType(Failed) && condition.getStatus().equals("True");
+        return condition.hasType(Failed) && "True".equalsIgnoreCase(condition.getStatus());
       }
 
       private boolean isDomainFailedWithReplicasTooHigh(DomainCondition condition) {
-        return condition.hasType(Failed) && condition.getStatus().equals("True")
-            && ReplicasTooHigh.equals(condition.getReason());
+        return condition.hasType(Failed) && "True".equalsIgnoreCase(condition.getStatus())
+            && ReplicasTooHigh.name().equals(condition.getReason());
       }
 
       private boolean isDomainCompleted(DomainCondition condition) {
-        return condition.hasType(Completed) && condition.getStatus().equals("True");
+        return condition.hasType(Completed) && "True".equalsIgnoreCase(condition.getStatus());
       }
 
+      private boolean isDomainIncomplete(DomainCondition condition) {
+        return condition.hasType(Completed) && "False".equalsIgnoreCase(condition.getStatus());
+      }
 
       private boolean isDomainAvailable(DomainCondition condition) {
-        return condition.hasType(Available) && condition.getStatus().equals("True");
+        return condition.hasType(Available) && "True".equalsIgnoreCase(condition.getStatus());
       }
 
       private void setStatusDetails(DomainStatus status) {
@@ -848,7 +854,7 @@ public class DomainStatusUpdater {
         return getConfiguredClusters().stream()
             .map(TooManyReplicasCheck::new)
             .filter(TooManyReplicasCheck::isFailure)
-            .findAny().map(check -> check.creatEventData()).orElse(null);
+            .findAny().map(TooManyReplicasCheck::creatEventData).orElse(null);
       }
 
       private List<WlsClusterConfig> getConfiguredClusters() {

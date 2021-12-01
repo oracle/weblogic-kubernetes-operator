@@ -99,6 +99,7 @@ import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
 import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_ROLL_STARTING_EVENT;
+import static oracle.kubernetes.operator.EventConstants.KUBERNETES_ERROR;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventWithNamespace;
 import static oracle.kubernetes.operator.EventTestUtils.getEventsWithReason;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.DOMAINZIP_HASH;
@@ -125,6 +126,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.SERVER_SCAN;
 import static oracle.kubernetes.operator.helpers.AnnotationHelper.SHA256_ANNOTATION;
 import static oracle.kubernetes.operator.helpers.BasePodStepContext.KUBERNETES_PLATFORM_HELM_VARIABLE;
 import static oracle.kubernetes.operator.helpers.DomainIntrospectorJobTest.TEST_VOLUME_NAME;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_STARTING;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
@@ -997,6 +999,21 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
 
     assertThat(getDomain(), hasStatus().withReason(Kubernetes)
         .withMessageContaining("create", "pod", NS, "Test this failure"));
+  }
+
+  @Test
+  public void whenPodCreationFailsDueToUnprocessableEntityFailure_createFailedKubernetesEvent() {
+    testSupport.failOnCreate(POD, NS, new UnrecoverableErrorBuilderImpl()
+        .withReason("FieldValueNotFound")
+        .withMessage("Test this failure")
+        .build());
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    assertThat(
+        "Expected Event " + DOMAIN_FAILED + " expected with message not found",
+        getExpectedEventMessage(DOMAIN_FAILED),
+        stringContainsInOrder("Domain", UID, "failed due to", KUBERNETES_ERROR));
   }
 
   @Test
