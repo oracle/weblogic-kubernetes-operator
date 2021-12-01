@@ -46,6 +46,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_GITHUB_CHART_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
@@ -131,7 +132,7 @@ class ItOperatorWlsUpgrade {
   @ValueSource(strings = { "Image", "FromModel" })
   void testOperatorWlsUpgradeFrom304ToLatest(String domainType) {
     logger.info("Starting test testOperatorWlsUpgradeFrom304ToLatest with domain type {0}", domainType);
-    upgradeOperator(domainType, "3.0.4", "v8", "-external");
+    upgradeOperator(domainType, "3.0.4", "v8", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
@@ -189,6 +190,7 @@ class ItOperatorWlsUpgrade {
   // domain1-adminserver-ext  NodePort    10.96.46.242   30001:30001/TCP 
   private void upgradeOperator(String domainType, String operatorVersion, 
        String domainVersion, String externalServiceNameSuffix) {
+
     logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
     String opNamespace = namespaces.get(0);
@@ -198,55 +200,30 @@ class ItOperatorWlsUpgrade {
 
     latestOperatorImageName = getOperatorImageName();
 
-    // delete existing CRD
-    new Command()
-        .withParams(new CommandParams()
-            .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
-        .execute();
+    // install operator with older release 
+    HelmParams opHelmParams = installOperator(operatorVersion, 
+                 opNamespace, domainNamespace);
 
-    HelmParams opHelmParams =
-        new HelmParams().releaseName("weblogic-operator")
-            .namespace(opNamespace)
-            .repoUrl(OPERATOR_GITHUB_CHART_REPO_URL)
-            .repoName("weblogic-operator")
-            .chartName("weblogic-operator")
-            .chartVersion(operatorVersion);
+    // create WLS domain and verify
+    createWlsDomainAndVerify(domainType, domainNamespace, domainVersion, 
+           externalServiceNameSuffix);
 
-    // install operator
+    // upgrade to latest operator
+    upgradeOperatorAndVerify(externalServiceNameSuffix, 
+          opNamespace, domainNamespace);
+  }
+
+  private void upgradeOperatorAndVerify(String externalServiceNameSuffix,
+                  String opNamespace, String domainNamespace) {
     String opServiceAccount = opNamespace + "-sa";
-    installAndVerifyOperator(opNamespace, opServiceAccount, true, 0, opHelmParams, domainNamespace);
+    String appName = "testwebapp.war";
 
-    // Create the repo secret to pull the image
-    // this secret is used only for non-kind cluster
-    createOcirRepoSecret(domainNamespace);
-
-    // create secret for admin credentials
-    logger.info("Create secret for admin credentials");
-    createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-
-    String domainImage = "";
-    if (domainType.equalsIgnoreCase("Image")) {
-      domainImage = WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG;
-    } else {
-      domainImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
-    }
-
-    // create domain
-    createDomainResource(
-        domainNamespace, domainVersion, domainType, domainImage, 
-        externalServiceNameSuffix);
-
-    checkDomainStarted(domainUid, domainNamespace);
-    logger.info("Getting node port for default channel");
-    int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
-        domainNamespace, getExternalServicePodName(adminServerPodName, externalServiceNameSuffix), "default"),
-        "Getting admin server node port failed");
-    logger.info("Validating WebLogic admin server access by login to console");
-    testUntil(
-        assertDoesNotThrow(() -> {
-          return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-        }, "Access to admin server node port failed"),
-        logger, "Console login validation");
+    // deploy application and access the application once 
+    // to make sure the app is accessible
+    deployAndAccessApplication(domainNamespace,
+          domainUid, "cluster-1", "admin-server",
+          adminServerPodName, managedServerPodNamePrefix,
+          replicaCount, "7001", "8001");
 
     LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
     pods.put(adminServerPodName, getPodCreationTime(domainNamespace, adminServerPodName));
@@ -254,35 +231,17 @@ class ItOperatorWlsUpgrade {
     for (int i = 1; i <= replicaCount; i++) {
       pods.put(managedServerPodNamePrefix + i, getPodCreationTime(domainNamespace, managedServerPodNamePrefix + i));
     }
-
-    // deploy application and access the application once to make sure the app is accessible
-    deployAndAccessApplication(domainNamespace,
-                                 domainUid,
-                                "cluster-1",
-                                "admin-server",
-                                 adminServerPodName,
-                                 managedServerPodNamePrefix,
-                                 replicaCount,
-                                "7001",
-                                "8001");
-
-    // start a new thread to collect the availability data of the application 
-    // while the main thread performs operator upgrade
-    List<Integer> appAvailability = new ArrayList<>();
-    logger.info("Start a thread to keep track of the application's availability");
+    // start a new thread to collect the availability data of 
+    // the application while the main thread performs operator upgrade
+    List<Integer> appAvailability = new ArrayList<Integer>();
+    logger.info("Start a thread to keep track of application availability");
     Thread accountingThread =
           new Thread(
               () -> {
                 collectAppAvailability(
-                    domainNamespace,
-                    opNamespace,
-                    appAvailability,
-                    adminServerPodName,
-                    managedServerPodNamePrefix,
-                    replicaCount,
-                    "7001",
-                    "8001",
-                    "testwebapp/index.jsp");
+                    domainNamespace, opNamespace, appAvailability,
+                    adminServerPodName, managedServerPodNamePrefix,
+                    replicaCount, "7001", "8001", "testwebapp/index.jsp");
               });
     accountingThread.start();
 
@@ -296,7 +255,7 @@ class ItOperatorWlsUpgrade {
             .chartVersion(null)
             .chartName(null);
 
-      // operator chart values
+      // build operator chart values
       OperatorParams opParams = new OperatorParams()
             .helmParams(upgradeHelmParams)
             .image(latestOperatorImageName)
@@ -304,6 +263,7 @@ class ItOperatorWlsUpgrade {
 
       assertTrue(upgradeAndVerifyOperator(opNamespace, opParams),
             String.format("Failed to upgrade operator in namespace %s", opNamespace));
+
       // check operator image name after upgrade
       logger.info("Checking image name in operator container ");
       testUntil(
@@ -320,22 +280,24 @@ class ItOperatorWlsUpgrade {
         } catch (InterruptedException ie) {
           // do nothing
         }
-        // check the app availability data that we have collected, and see if
-        // the application has been available all the time during the upgrade
-        logger.info("Verify that application was available during upgrade");
+        // check the application availability data that we have collected, 
+        // and see if the application has been available all the time 
+        // during the upgrade
+        logger.info("Verify that the application was available when the operator was being upgraded");
         assertTrue(appAlwaysAvailable(appAvailability),
-              "Application was not always available during operator upgrade");
+              "Application was not always available when the operator was getting upgraded");
       }
     }
-
+    
     // check CRD version is updated
     logger.info("Checking CRD version");
     testUntil(
         checkCrdVersion(),
         logger,
-        "the CRD version to be updated to v8");
+        "the CRD version to be updated to latest");
 
-    int externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
+    int externalRestHttpsPort = getServiceNodePort(
+        opNamespace, "external-weblogic-operator-svc");
     assertTrue(externalRestHttpsPort != -1,
         "Could not get the Operator external service node port");
     logger.info("externalRestHttpsPort {0}", externalRestHttpsPort);
@@ -352,6 +314,68 @@ class ItOperatorWlsUpgrade {
         false, "", "", 0, "", "", null, null);
 
     restartDomain(domainUid, domainNamespace);
+  }
+
+  private void createWlsDomainAndVerify(String domainType, 
+        String domainNamespace, String domainVersion, 
+        String externalServiceNameSuffix) {
+
+    // Create the repo secret to pull the image
+    // this secret is used only for non-kind cluster
+    createOcirRepoSecret(domainNamespace);
+
+    // create secret for admin credentials
+    logger.info("Create secret for admin credentials");
+    createSecretWithUsernamePassword(adminSecretName, domainNamespace, 
+         ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+
+    String domainImage = "";
+    if (domainType.equalsIgnoreCase("Image")) {
+      domainImage = WDT_BASIC_IMAGE_NAME + ":" + WDT_BASIC_IMAGE_TAG;
+    } else {
+      domainImage = MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
+    }
+
+    // create domain
+    createDomainResource(domainNamespace, domainVersion, 
+                         domainType, domainImage);
+    checkDomainStarted(domainUid, domainNamespace);
+    logger.info("Getting node port for default channel");
+    int serviceNodePort = assertDoesNotThrow(() -> getServiceNodePort(
+        domainNamespace, getExternalServicePodName(adminServerPodName, externalServiceNameSuffix), "default"),
+        "Getting admin server node port failed");
+    logger.info("Validating WebLogic admin server access by login to console");
+    testUntil(
+        assertDoesNotThrow(() -> {
+          return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+        }, "Access to admin server node port failed"),
+        logger, "Console login validation");
+
+  }
+
+  private HelmParams installOperator(String operatorVersion, 
+      String opNamespace, String domainNamespace) {
+    // delete existing CRD if any
+    new Command()
+        .withParams(new CommandParams()
+            .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
+        .execute();
+
+    // build Helm params to install the Operator
+    HelmParams opHelmParams =
+        new HelmParams().releaseName("weblogic-operator")
+            .namespace(opNamespace)
+            .repoUrl(OPERATOR_GITHUB_CHART_REPO_URL)
+            .repoName("weblogic-operator")
+            .chartName("weblogic-operator")
+            .chartVersion(operatorVersion);
+
+    // install operator with passed version
+    String opServiceAccount = opNamespace + "-sa";
+    installAndVerifyOperator(opNamespace, opServiceAccount, true,
+        0, opHelmParams, domainNamespace);
+
+    return opHelmParams;
   }
 
   private Callable<Boolean> checkCrdVersion() {
@@ -446,8 +470,7 @@ class ItOperatorWlsUpgrade {
       String domainNamespace, 
       String domVersion, 
       String domainHomeSourceType,
-      String domainImage,
-      String externalServiceNameSuffix) {
+      String domainImage) {
 
     String domApiVersion = "weblogic.oracle/" + domVersion;
     logger.info("Default Domain API version {0}", DOMAIN_API_VERSION);

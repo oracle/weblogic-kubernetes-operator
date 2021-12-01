@@ -49,6 +49,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_GITHUB_CHART_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
@@ -200,7 +201,7 @@ class ItOperatorFmwUpgrade {
   @DisplayName("Upgrade Operator from 3.0.4 to latest")
   void testOperatorFmwUpgradeFrom304ToLatest() {
     this.namespaces = namespaces;
-    installAndUpgradeOperator("3.0.4", "v8", "-external");
+    installAndUpgradeOperator("3.0.4", "v8", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
@@ -241,7 +242,7 @@ class ItOperatorFmwUpgrade {
     createFmwDomainAndVerify(domainVersion);
 
     // upgrade to latest operator
-    upgradeOperatorAndVerify(externalServiceNameSuffix, opHelmParams);
+    upgradeOperatorAndVerify(externalServiceNameSuffix);
   }
 
   private HelmParams installOperator(String operatorVersion) {
@@ -268,8 +269,7 @@ class ItOperatorFmwUpgrade {
     return opHelmParams;
   }
 
-  private void upgradeOperatorAndVerify(String externalServiceNameSuffix,
-                                        HelmParams opHelmParams) {
+  private void upgradeOperatorAndVerify(String externalServiceNameSuffix) {
     String opServiceAccount = opNamespace + "-sa";
     String appName = "testwebapp.war";
 
