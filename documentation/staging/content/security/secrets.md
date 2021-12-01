@@ -5,6 +5,10 @@ weight: 6
 description: "Kubernetes Secrets for the operator"
 ---
 
+TBD check if th Operator related secret material
+    already exists or is superceded by the operator 
+    doc - if so, then replace teh material with references...
+
 #### Contents
 * [Domain credentials secret](#domain-credentials-secret)
 * [Domain image pull secret](#domain-image-pull-secret)
