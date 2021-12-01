@@ -35,6 +35,8 @@ To enable the external REST interface, configure these values in a custom config
   For more information about the REST identity secret, see [Updating REST certificates]({{< relref "/userguide/managing-operators/security/certificates.md" >}}).
 * Optionally, set `externalRestHttpsPort` to the external port number for the operator REST interface (defaults to `31001`).
 
+**Note**: A node port is a security risk because the port may be publicly exposed to the internet in some environments. If you need external access to the REST port, then consider alternatives such as providing access through your load balancer, or using Kubernetes port forwarding.
+
 
 #### Use the operator's REST services
 

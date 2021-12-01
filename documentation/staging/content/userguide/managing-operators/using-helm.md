@@ -7,11 +7,12 @@ description: "An operator runtime is installed and configured using Helm. Here a
 
 ### Contents
 
+TBD regenerate TOC
+
 - [Useful Helm operations](#useful-helm-operations)
 - [Operator Helm configuration values](#operator-helm-configuration-values)
   - [Overall operator information](#overall-operator-information)
     - [`serviceAccount`](#serviceaccount)
-    - [`javaLoggingLevel`](#javalogginglevel)
     - [`kubernetesPlatform`](#kubernetesplatform)
   - [Creating the operator pod](#creating-the-operator-pod)
     - [`image`](#image)
@@ -44,6 +45,7 @@ description: "An operator runtime is installed and configured using Helm. Here a
     - [`externalOperatorKey` ***(Deprecated)***](#externaloperatorkey-deprecated)
     - [`tokenReviewAuthentication`](#tokenreviewauthentication)
   - [Debugging options](#debugging-options)
+    - [`javaLoggingLevel`](#javalogginglevel)
     - [`remoteDebugNodePortEnabled`](#remotedebugnodeportenabled)
     - [`internalDebugHttpPort`](#internaldebughttpport)
     - [`externalDebugHttpPort`](#externaldebughttpport)
@@ -122,19 +124,6 @@ Example:
 ```yaml
 serviceAccount: "weblogic-operator"
 ```
-
-##### `javaLoggingLevel`
-
-Specifies the level of Java logging that should be enabled in the operator. Valid values are:  `SEVERE`, `WARNING`, `INFO`, `CONFIG`, `FINE`, `FINER`, and `FINEST`.
-
-Defaults to `INFO`.
-
-Example:
-```yaml
-javaLoggingLevel:  "FINE"
-```
-
-**Note**: Please consult [Operator logging level]({{< relref "/userguide/managing-operators/debugging#operator-logging-level" >}}) before changing this setting.
 
 ##### `kubernetesPlatform`
 Specify the Kubernetes platform on which the operator is running. This setting has no default, the only valid value is OpenShift, and the setting should be left unset for other platforms. When set to `OpenShift`, the operator:
@@ -270,7 +259,12 @@ $ helm upgrade \
 
 #### WebLogic domain management
 
+The settings in this section determine the namespaces that an operator
+monitors for domain resources. For usage, 
+also see [Managing domain namespaces]({{< relref "/userguide/managing-operators/namespace-management.md" >}}).
+
 ##### `domainNamespaceSelectionStrategy`
+
 Specifies how the operator will select the set of namespaces that it will manage.
 Legal values are: `List`, `LabelSelector`, `RegExp`, and `Dedicated`.
 
@@ -310,10 +304,8 @@ You must include the `default` namespace in the list if you want the operator to
 {{% /notice %}}
 
 {{% notice note %}}
-This value is ignored if `dedicated` is set to `true`. Then, the operator will manage only domains in its own namespace.
+This value is ignored if the deprecated `dedicated` setting is set to `true`. Then, the operator will manage only domains in its own namespace.
 {{% /notice %}}
-
-For more details about managing `domainNamespaces`, see [Managing domain namespaces]({{< relref "/userguide/managing-operators/namespace-management.md" >}}).
 
 ##### `domainNamespaceLabelSelector`
 Specifies a [label selector](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors) that will be used when searching for namespaces that the operator will manage.
@@ -416,10 +408,13 @@ If `clusterSizePaddingValidationEnabed` is set to true, two additional character
 
 Default for the domain resource `domain.spec.configuration.istio.localhostBindingsEnabled` setting.
 
-For more information, see [Configuring the domain resource]({{< relref "/userguide/istio/istio.md#configuring-the-domain-resource" >}})
-in the Istio chapter.
+For more information, see [_Configuring the domain resource_ in the Istio user guide]({{< relref "/userguide/istio/istio.md#configuring-the-domain-resource" >}}).
 
 #### Elastic Stack integration
+
+The following settings are related to integrating the Elastic Stack with the operator pod. 
+
+For example usage, see the [Operator Elastic Stack (Elasticsearch, Logstash, and Kibana) integration sample]({{<relref "/samples/elastic-stack/operator/_index.md#elastic-stack-per-operator-configuration">}}).
 
 ##### `elkIntegrationEnabled`
 Specifies whether or not Elastic Stack integration is enabled.
@@ -463,8 +458,15 @@ elasticSearchPort: 9201
 
 #### REST interface configuration
 
+The REST interface configuration options are advanced settings for configuring the operator's external REST interface.
+
+For usage information, see the [Operator REST Services]({{<relref "/userguide/managing-operators/the-rest-api.md">}})
+chapter of the Operator user guide.
+
 ##### `externalRestEnabled`
-Determines whether the operator's REST interface will be exposed outside the Kubernetes cluster.
+Determines whether the operator's REST interface will be exposed outside the Kubernetes cluster using a node port.
+
+See also `externalRestHttpsPort` for customizing the port number.
 
 Defaults to `false`.
 
@@ -474,6 +476,8 @@ Example:
 ```yaml
 externalRestEnabled: true
 ```
+
+**Note**: A node port is a security risk because the port may be publicly exposed to the internet in some environments. If you need external access to the REST port, then consider alternatives such as providing access through your load balancer, or using Kubernetes port forwarding.
 
 ##### `externalRestHttpsPort`
 Specifies the node port that should be allocated for the external operator REST HTTPS interface.
@@ -486,6 +490,8 @@ Example:
 ```yaml
 externalRestHttpsPort: 32009
 ```
+
+**Note**: A node port is a security risk because the port may be publicly exposed to the internet in some environments. If you need external access to the REST port, then consider alternatives such as providing access through your load balancer, or using Kubernetes port forwarding.
 
 ##### `externalRestIdentitySecret`
 Specifies the user supplied secret that contains the SSL/TLS certificate and private key for the external operator REST HTTPS interface. The value must be the name of the Kubernetes `tls` secret previously created in the namespace where the operator is deployed. This parameter is required if `externalRestEnabled` is `true`, otherwise, it is ignored. In order to create the Kubernetes `tls` secret you can use the following command:
@@ -574,6 +580,19 @@ If set to `true`, `tokenReviewAuthentication` specifies whether the the operator
  ```
 #### Debugging options
 
+##### `javaLoggingLevel`
+
+Specifies the level of Java logging that should be enabled in the operator. Valid values are:  `SEVERE`, `WARNING`, `INFO`, `CONFIG`, `FINE`, `FINER`, and `FINEST`.
+
+Defaults to `INFO`.
+
+Example:
+```yaml
+javaLoggingLevel:  "FINE"
+```
+
+**Note**: Please consult [Operator logging level]({{< relref "/userguide/managing-operators/debugging#operator-logging-level" >}}) before changing this setting.
+
 ##### `remoteDebugNodePortEnabled`
 Specifies whether or not the operator will start a Java remote debug server on the provided port and suspend execution until a remote debugger has attached.
 
@@ -588,7 +607,7 @@ remoteDebugNodePortEnabled:  true
 
 Specifies the port number inside the Kubernetes cluster for the operator's Java remote debug server.
 
-This parameter is required if `remoteDebugNodePortEnabled` is `true`. Otherwise, it is ignored.
+This parameter is required if `remoteDebugNodePortEnabled` is `true` (default `false`). Otherwise, it is ignored.
 
 Defaults to `30999`.
 
@@ -608,9 +627,5 @@ Example:
 ```yaml
 externalDebugHttpPort:  30777
 ```
-### Advanced configuration options
 
-The following are optional:
-
-- [Configure the operator's external REST HTTPS interface]({{<relref "/userguide/managing-operators/the-rest-api#configure-the-operators-external-rest-https-interface">}})
-- [Elastic Stack (Elasticsearch, Logstash, and Kibana) integration]({{<relref "/samples/elastic-stack/operator/_index.md#elastic-stack-per-operator-configuration">}})
+**Note**: A node port is a security risk because the port may be publicly exposed to the internet in some environments. If you need external access to the debug port, then consider using Kubernetes port forwarding instead.
