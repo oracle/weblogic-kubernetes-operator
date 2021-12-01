@@ -5,13 +5,18 @@ package oracle.kubernetes.operator.steps;
 
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 
+import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Service;
+import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.ShutdownType;
@@ -87,6 +92,7 @@ public class ShutdownManagedServerStep extends Step {
 
   @Override
   public NextAction apply(Packet packet) {
+    LOGGER.fine(MessageKeys.BEGIN_SERVER_SHUTDOWN_REST, serverName);
     DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
     V1Service service = info.getServerService(serverName);
 
@@ -110,15 +116,16 @@ public class ShutdownManagedServerStep extends Step {
     private HttpRequest createRequest() {
       String serverName = pod.getMetadata().getLabels().get(LabelConstants.SERVERNAME_LABEL);
       String clusterName = getClusterNameFromServiceLabel();
+      Optional<List<V1EnvVar>> envVarList = Optional.ofNullable(pod.getSpec()).flatMap(this::getEnvVars);
 
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       Shutdown shutdown = Optional.ofNullable(info.getDomain().getServer(serverName, clusterName))
           .map(ServerSpec::getShutdown).orElse(null);
 
-      Boolean isGracefulShutdown = isGracefulShutdown(shutdown);
-      Long timeout = getTimeout(shutdown);
-      Boolean ignoreSessions = getIgnoreSessions(shutdown);
-      Boolean waitForAllSessions = getWaitForAllSessions(shutdown);
+      Boolean isGracefulShutdown = isGracefulShutdown(envVarList, shutdown);
+      Long timeout = getTimeout(envVarList, shutdown);
+      Boolean ignoreSessions = getIgnoreSessions(envVarList, shutdown);
+      Boolean waitForAllSessions = getWaitForAllSessions(envVarList, shutdown);
 
       HttpRequest request = createRequestBuilder(getRequestUrl(isGracefulShutdown))
             .POST(HttpRequest.BodyPublishers.ofString(getManagedServerShutdownPayload(
@@ -126,25 +133,67 @@ public class ShutdownManagedServerStep extends Step {
       return request;
     }
 
-    private Boolean isGracefulShutdown(Shutdown shutdown) {
-      String shutdownType = Optional.ofNullable(shutdown).map(Shutdown::getShutdownType)
-          .orElse(ShutdownType.Graceful.name());
+    private Optional<List<V1EnvVar>> getEnvVars(V1PodSpec v1PodSpec) {
+      return getContainer(v1PodSpec).map(V1Container::getEnv);
+    }
+
+    protected Optional<V1Container> getContainer(V1PodSpec v1PodSpec) {
+      return v1PodSpec.getContainers().stream().filter(this::isK8sContainer).findFirst();
+    }
+
+    protected boolean isK8sContainer(V1Container c) {
+      return KubernetesConstants.WLS_CONTAINER_NAME.equals(c.getName());
+    }
+
+    private String getEnvValue(List<V1EnvVar> vars, String name) {
+      for (V1EnvVar var : vars) {
+        if (var.getName().equals(name)) {
+          return var.getValue();
+        }
+      }
+      return null;
+    }
+
+    private Boolean isGracefulShutdown(Optional<List<V1EnvVar>> envVarList, Shutdown shutdown) {
+      String shutdownType = null;
+      if (envVarList.isPresent()) {
+        shutdownType = getEnvValue(envVarList.get(), "SHUTDOWN_TYPE");
+      }
+
+      shutdownType = shutdownType == null ? Optional.ofNullable(shutdown).map(Shutdown::getShutdownType)
+          .orElse(ShutdownType.Graceful.name()) : shutdownType;
+
+
       return shutdownType.equalsIgnoreCase(ShutdownType.Graceful.name());
     }
 
-    private Boolean getWaitForAllSessions(Shutdown shutdown) {
-      return Optional.ofNullable(shutdown).map(Shutdown::getWaitForAllSessions)
-              .orElse(Shutdown.DEFAULT_WAIT_FOR_ALL_SESSIONS);
+    private Boolean getWaitForAllSessions(Optional<List<V1EnvVar>> envVarList, Shutdown shutdown) {
+      String waitForAllSessions = null;
+      if (envVarList.isPresent()) {
+        waitForAllSessions = getEnvValue(envVarList.get(), "SHUTDOWN_WAIT_FOR_ALL_SESSIONS");
+      }
+
+      return waitForAllSessions == null ? Optional.ofNullable(shutdown).map(Shutdown::getWaitForAllSessions)
+              .orElse(Shutdown.DEFAULT_WAIT_FOR_ALL_SESSIONS) : Boolean.valueOf(waitForAllSessions);
     }
 
-    private Boolean getIgnoreSessions(Shutdown shutdown) {
-      return Optional.ofNullable(shutdown).map(Shutdown::getIgnoreSessions)
-              .orElse(Shutdown.DEFAULT_IGNORESESSIONS);
+    private Boolean getIgnoreSessions(Optional<List<V1EnvVar>> envVarList, Shutdown shutdown) {
+      String ignoreSessions = null;
+      if (envVarList.isPresent()) {
+        ignoreSessions = getEnvValue(envVarList.get(), "SHUTDOWN_IGNORE_SESSIONS");
+      }
+
+      return ignoreSessions == null ? Optional.ofNullable(shutdown).map(Shutdown::getIgnoreSessions)
+              .orElse(Shutdown.DEFAULT_IGNORESESSIONS) : Boolean.valueOf(ignoreSessions);
     }
 
-    private Long getTimeout(Shutdown shutdown) {
-      return Optional.ofNullable(shutdown).map(Shutdown::getTimeoutSeconds)
-              .orElse(Shutdown.DEFAULT_TIMEOUT);
+    private Long getTimeout(Optional<List<V1EnvVar>> envVarList, Shutdown shutdown) {
+      String timeout = null;
+      if (envVarList.isPresent()) {
+        timeout = getEnvValue(envVarList.get(), "SHUTDOWN_TIMEOUT");
+      }
+      return timeout == null ? Optional.ofNullable(shutdown).map(Shutdown::getTimeoutSeconds)
+              .orElse(Shutdown.DEFAULT_TIMEOUT) : Long.valueOf(timeout);
     }
 
     private String getRequestUrl(Boolean isGracefulShutdown) {

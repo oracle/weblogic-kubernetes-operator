@@ -12,10 +12,14 @@ import java.util.logging.Level;
 import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
+import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
+import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Service;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
+import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ShutdownType;
 import oracle.kubernetes.operator.helpers.AnnotationHelper;
@@ -32,7 +36,8 @@ import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.SystemClockTestSupport;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
-import oracle.kubernetes.weblogic.domain.model.ManagedServer;
+import oracle.kubernetes.weblogic.domain.model.Shutdown;
+import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -115,6 +120,13 @@ class ShutdownManagedServerStepTest {
     testSupport.defineResources(domain);
 
     DomainProcessorTestSetup.defineSecretData(testSupport);
+    defineServerPodsInDomainPresenceInfo();
+  }
+
+  private void defineServerPodsInDomainPresenceInfo() {
+    info.setServerPod(CONFIGURED_MANAGED_SERVER1, configuredManagedServer1);
+    info.setServerPod(MANAGED_SERVER1, standaloneManagedServer1);
+    info.setServerPod(DYNAMIC_MANAGED_SERVER1, dynamicManagedServer1);
   }
 
   private void selectServer(String serverName, V1Service service) {
@@ -152,6 +164,35 @@ class ShutdownManagedServerStepTest {
         .uri(URI.create(url + "/management/weblogic/latest/serverRuntime/forceShutdown"))
         .POST(HttpRequest.BodyPublishers.noBody())
         .build();
+  }
+
+  private V1Pod createPod(String serverName) {
+    List<V1EnvVar> env = addShutdownEnvVars();
+    List<V1Container> containers = addEnvToWLSContainer(env);
+    V1PodSpec podSpec = new V1PodSpec().containers(containers);
+    return new V1Pod().metadata(createManagedPodMetadata(serverName)).spec(podSpec);
+  }
+
+  @NotNull
+  private List<V1Container> addEnvToWLSContainer(List<V1EnvVar> env) {
+    List<V1Container> containers = new ArrayList<>();
+    V1Container container = new V1Container().name(KubernetesConstants.WLS_CONTAINER_NAME).env(env);
+    containers.add(container);
+    return containers;
+  }
+
+  @NotNull
+  private List<V1EnvVar> addShutdownEnvVars() {
+    List<V1EnvVar> env = new ArrayList<>();
+    addEnvVar(env, "SHUTDOWN_TYPE", KubernetesConstants.GRACEFUL_SHUTDOWNTYPE);
+    addEnvVar(env, "SHUTDOWN_TIMEOUT", String.valueOf(Shutdown.DEFAULT_TIMEOUT));
+    addEnvVar(env, "SHUTDOWN_IGNORE_SESSIONS", String.valueOf(Shutdown.DEFAULT_IGNORESESSIONS));
+    addEnvVar(env, "SHUTDOWN_WAIT_FOR_ALL_SESSIONS", String.valueOf(Shutdown.DEFAULT_WAIT_FOR_ALL_SESSIONS));
+    return env;
+  }
+
+  private void addEnvVar(List<V1EnvVar> vars, String name, String value) {
+    vars.add(new V1EnvVar().name(name).value(value));
   }
 
   @Test
@@ -239,23 +280,33 @@ class ShutdownManagedServerStepTest {
   @Test
   void whenInvokeForceShutdown_standaloneServer_verifySuccess() {
     selectServer(MANAGED_SERVER1, standaloneServerService);
-
-    ManagedServer managedServer1 = new ManagedServer().withServerName(MANAGED_SERVER1);
-    managedServer1.setShutdown(ShutdownType.Forced.name(), 60L, true, false);
-    domain.getSpec().getManagedServers().add(managedServer1);
+    setForcedShutdownType(MANAGED_SERVER1);
 
     defineResponse(false, 200, "", "http://test-domain-managed-server1.namespace:8001");
 
     testSupport.runSteps(shutdownStandaloneManagedServer);
 
-    System.out.println("httpSupport.getLastRequest: " + httpSupport.getLastRequest().toString());
     assertThat(httpSupport.getLastRequest().toString(), containsString("forceShutdown"));
     assertThat(logRecords, containsFine(SERVER_SHUTDOWN_REST_SUCCESS));
+  }
 
+  private void setForcedShutdownType(String serverName) {
+    V1Pod serverPod = info.getServerPod(serverName);
+    List<V1EnvVar> vars = serverPod.getSpec().getContainers().stream()
+        .filter(this::isK8sContainer).findFirst().map(V1Container::getEnv).get();
+    for (V1EnvVar var : vars) {
+      if (var.getName().equals("SHUTDOWN_TYPE")) {
+        var.setValue(ShutdownType.Forced.name());
+      }
+    }
+  }
+
+  private boolean isK8sContainer(V1Container c) {
+    return KubernetesConstants.WLS_CONTAINER_NAME.equals(c.getName());
   }
 
   private V1Pod defineManagedPod(String name) {
-    return new V1Pod().metadata(createManagedPodMetadata(name));
+    return createPod(name);
   }
 
   private V1ObjectMeta createManagedPodMetadata(String name) {

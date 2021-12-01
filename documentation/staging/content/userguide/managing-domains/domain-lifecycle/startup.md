@@ -219,6 +219,15 @@ inflight work handling.  The operator runtime monitors these properties but will
 Instead, server pods created or restarted because of another property change will be configured to shutdown, at the appropriate
 time, using the shutdown options set when the WebLogic Server instance Pod is created.
 
+{{% notice note %}}
+The `waitForAllSessions` property does not apply when the `ignoreSessions` property is `true`. When the
+`ignoreSessions` property is `false` then `waitForAllSessions` property is taken into account during 
+the WebLogic graceful shutdown process. When the`waitForAllSessions` is `true`, the graceful shutdown
+process will wait for all HTTP session to complete or be invalidated before proceeding. When `waitForAllSessions`
+is `false`, the graceful shutdown process will only wait for non-persisted HTTP sessions to complete 
+or be invalidated before proceeding.
+{{% /notice %}}
+
 #### Shutdown environment variables
 
 The operator configures shutdown behavior with the use of the following environment variables. Users may
