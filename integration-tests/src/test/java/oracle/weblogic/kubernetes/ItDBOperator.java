@@ -11,6 +11,7 @@ import java.util.Collections;
 import java.util.List;
 
 import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
@@ -21,6 +22,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.DbUtils;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.FmwUtils;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -478,6 +480,16 @@ class ItDBOperator {
         "managed-server2"),
         "JdbcJmsServer@managed-server2 is NOT migrated back to managed-server2");
     logger.info("JdbcJmsServer@managed-server2 is migrated back to managed-server2");
+  }
+
+  /**
+   * Uninstall DB operator.
+   * The cleanup framework does not uninstall storageclass.
+   * Do it here for now.
+   */
+  @AfterAll
+  public void tearDownAll() throws ApiException {
+    DbUtils.deleteStorageclass();
   }
 
   // Start the managed-server2 by incrementing the repilica count to 2

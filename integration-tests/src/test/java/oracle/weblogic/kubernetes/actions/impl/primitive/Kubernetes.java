@@ -2642,6 +2642,27 @@ public class Kubernetes {
   }
 
   /**
+   * Delete a StorageClass object.
+   *
+   * @param name V1StorageClass object name
+   * @return true if the deletion succeeds, false otherwise
+   */
+  public static boolean deleteStorageClass(String name) {
+    KubernetesApiResponse<V1StorageClass> response = storageClassClient.delete(name);
+    if (response.isSuccess()) {
+      getLogger().info("Successfully deleted StorageClass {0}", name);
+      return true;
+    } else {
+      if (response.getStatus() != null) {
+        getLogger().info(Yaml.dump(response.getStatus()));
+      }
+      getLogger().warning("Failed to delete StorageClass {0} with error code {1}",
+          name, response.getHttpStatusCode());
+      return false;
+    }
+  }
+
+  /**
    * List Ingresses in the given namespace.
    *
    * @param namespace name of the namespace

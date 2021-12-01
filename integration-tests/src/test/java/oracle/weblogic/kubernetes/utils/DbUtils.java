@@ -696,6 +696,7 @@ public class DbUtils {
    * @throws IOException when fails to modify operator yaml file
    */
   public static void installDBOperator(String namespace) throws IOException {
+    String operatorYamlFile = DOWNLOAD_DIR + "/oracle-database-operator.yaml";
     String certManager = "https://github.com/jetstack/cert-manager/releases/latest/download/cert-manager.yaml";
     CommandParams params = new CommandParams().defaults();
     params.command("kubectl apply -f " + certManager);
@@ -704,22 +705,22 @@ public class DbUtils {
 
     assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(60));
 
-    String operatorYaml = "https://raw.githubusercontent.com/"
+    String operatorYamlUrl = "https://raw.githubusercontent.com/"
         + "oracle/oracle-database-operator/" + ORACLE_DB_OPERATOR_RELEASE + "/oracle-database-operator.yaml";
 
     Files.createDirectories(Paths.get(DOWNLOAD_DIR));
     Files.deleteIfExists(Paths.get(DOWNLOAD_DIR, "oracle-database-operator.yaml"));
     params = new CommandParams().defaults();
-    params.command("curl -fL " + operatorYaml + " -o " + DOWNLOAD_DIR + "/oracle-database-operator.yaml");
+    params.command("curl -fL " + operatorYamlUrl + " -o " + operatorYamlFile);
     response = Command.withParams(params).execute();
     assertTrue(response, "Failed to download Oracle operator yaml file");
-    replaceStringInFile(Paths.get(DOWNLOAD_DIR + "/oracle-database-operator.yaml").toString(),
+    replaceStringInFile(Paths.get(operatorYamlFile).toString(),
         "replicas: 3", "replicas: 1");
-    replaceStringInFile(Paths.get(DOWNLOAD_DIR + "/oracle-database-operator.yaml").toString(),
+    replaceStringInFile(Paths.get(operatorYamlFile).toString(),
         "oracle-database-operator-system", namespace);
 
     params = new CommandParams().defaults();
-    params.command("kubectl apply -f " + DOWNLOAD_DIR + "/oracle-database-operator.yaml");
+    params.command("kubectl apply -f " + operatorYamlFile);
     response = Command.withParams(params).execute();
     assertTrue(response, "Failed to install Oracle database operator");
 
@@ -733,6 +734,35 @@ public class DbUtils {
             -> podIsReady(namespace, null, dbOpPodName), "Checking for database pod ready threw exception"),
         getLogger(), "Waiting for database operator {0} to be ready in namespace {1}", dbOpPodName, namespace);
 
+  }
+
+  /**
+   * Uninstall DB operator.
+   *
+   * @param namespace namespace in which DB is operator running
+   */
+  public static void uninstallDBOperator(String namespace) {
+    String operatorYamlFile = DOWNLOAD_DIR + "/oracle-database-operator.yaml";
+    String certManager = "https://github.com/jetstack/cert-manager/releases/latest/download/cert-manager.yaml";
+
+    CommandParams params = new CommandParams().defaults();
+
+    // delete operator
+    params.command("kubectl delete -f " + operatorYamlFile);
+    boolean response = Command.withParams(params).execute();
+    assertTrue(response, "Failed to uninstall Oracle database operator");
+
+    String dbOpPodName = "oracle-database-operator-controller-manager";
+
+    // wait for the pod to be deleted
+    getLogger().info("Wait for the database operator {0} pod to be ready in namespace {1}",
+        dbOpPodName, namespace);
+    PodUtils.checkPodDoesNotExist(dbOpPodName, null, namespace);
+
+    //delete the cert manager
+    params.command("kubectl delete -f " + certManager);
+    response = Command.withParams(params).execute();
+    assertTrue(response, "Failed to uninstall cert manager");
   }
 
   /**
@@ -768,25 +798,24 @@ public class DbUtils {
     String dbYamlUrl = "https://raw.githubusercontent.com/oracle/oracle-database-operator/main/"
         + "config/samples/sidb/singleinstancedatabase.yaml";
 
-    Files.deleteIfExists(Paths.get(DOWNLOAD_DIR, "oracledb.yaml"));
+    Path dbYaml = Paths.get(DOWNLOAD_DIR + "/oracledb.yaml");
+    Files.deleteIfExists(dbYaml);
     CommandParams params = new CommandParams().defaults();
-    params.command("curl -fL " + dbYamlUrl + " -o " + DOWNLOAD_DIR + "/oracledb.yaml");
+    params.command("curl -fL " + dbYamlUrl + " -o " + dbYaml.toString());
     boolean response = Command.withParams(params).execute();
     assertTrue(response, "Failed to download Oracle database yaml file");
 
-    String dbYaml = Paths.get(DOWNLOAD_DIR, "oracledb.yaml").toString();
-    replaceStringInFile(dbYaml, "name: singleinstancedatabase-sample", "name: " + dbName);
-    replaceStringInFile(dbYaml, "namespace: default", "namespace: " + namespace);
-    replaceStringInFile(dbYaml, "secretName:", "secretName: " + secretName);
-    replaceStringInFile(dbYaml, "secretKey:", "secretKey: " + secretKey);
-    replaceStringInFile(dbYaml, "pullFrom:", "pullFrom: " + DB_IMAGE_19C);
-    replaceStringInFile(dbYaml, "pullSecrets:", "pullSecrets: " + OCR_SECRET_NAME);
-    replaceStringInFile(dbYaml, "storageClass: \"\"", "storageClass: standard");
+    replaceStringInFile(dbYaml.toString(), "name: singleinstancedatabase-sample", "name: " + dbName);
+    replaceStringInFile(dbYaml.toString(), "namespace: default", "namespace: " + namespace);
+    replaceStringInFile(dbYaml.toString(), "secretName:", "secretName: " + secretName);
+    replaceStringInFile(dbYaml.toString(), "secretKey:", "secretKey: " + secretKey);
+    replaceStringInFile(dbYaml.toString(), "pullFrom:", "pullFrom: " + DB_IMAGE_19C);
+    replaceStringInFile(dbYaml.toString(), "pullSecrets:", "pullSecrets: " + OCR_SECRET_NAME);
+    replaceStringInFile(dbYaml.toString(), "storageClass: \"\"", "storageClass: standard");
 
-    logger.info("Creating Oracle database using yaml file\n {0}", Files.readString(Paths.get(dbYaml)));
-
+    logger.info("Creating Oracle database using yaml file\n {0}", Files.readString(dbYaml));
     params = new CommandParams().defaults();
-    params.command("kubectl create -f " + dbYaml);
+    params.command("kubectl create -f " + dbYaml.toString());
     response = Command.withParams(params).execute();
     assertTrue(response, "Failed to create Oracle database");
 
@@ -972,10 +1001,19 @@ public class DbUtils {
         .metadata(new V1ObjectMeta()
             .name("standard")
             .annotations(annotations))
-        .reclaimPolicy("Retain")
+        .reclaimPolicy("Delete")
         .provisioner("example.com/hostpath");
     assertTrue(TestActions.createStorageClass(sc), "Failed to create storage class");
 
+  }
+
+  /**
+   * Delete storage class.
+   * @throws ApiException when delete fails
+   */
+  public static void deleteStorageclass() throws ApiException {
+    //delete storageclass
+    TestActions.deleteStorageClass("standard");
   }
 
 }

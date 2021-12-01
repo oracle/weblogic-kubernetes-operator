@@ -1013,6 +1013,16 @@ public class TestActions {
     return Kubernetes.createStorageClass(sco);
   }
 
+  /**
+   * Delete StorageClass.
+   *
+   * @param name V1StorageClass object name
+   * @return true if success otherwise false
+   */
+  public static boolean deleteStorageClass(String name) {
+    return Kubernetes.deleteStorageClass(name);
+  }
+
   // ----------------------- Helm -----------------------------------
 
   /**
