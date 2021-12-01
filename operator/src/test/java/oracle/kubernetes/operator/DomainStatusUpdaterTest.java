@@ -47,6 +47,7 @@ import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.DomainConditionMatcher.hasCondition;
@@ -58,12 +59,14 @@ import static oracle.kubernetes.operator.DomainStatusUpdater.createInternalFailu
 import static oracle.kubernetes.operator.DomainStatusUpdater.createIntrospectionFailureRelatedSteps;
 import static oracle.kubernetes.operator.DomainStatusUpdaterTest.EventMatcher.eventWithReason;
 import static oracle.kubernetes.operator.DomainStatusUpdaterTest.ServerStatusMatcher.hasStatusForServer;
+import static oracle.kubernetes.operator.EventConstants.ABORTED_ERROR;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_AVAILABLE_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_COMPLETED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILURE_RESOLVED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_INCOMPLETE_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_UNAVAILABLE_EVENT;
+import static oracle.kubernetes.operator.EventConstants.REPLICAS_TOO_HIGH_ERROR;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
@@ -728,14 +731,26 @@ class DomainStatusUpdaterTest {
   }
 
   @Test
-  void whenReplicaCountExceedsMaxReplicasForDynamicCluster_createFailedEvent() {
+  void whenReplicaCountExceedsMaxReplicasForDynamicCluster_createFailedReplicasTooHighEvent() {
     domain.getStatus().addCondition(new DomainCondition(Completed).withStatus("True"));
     domain.setReplicaCount("cluster1", 5);
     defineScenario().addDynamicCluster("cluster1", 4).build();
 
     updateDomainStatus();
 
-    assertThat(getEvents().stream().anyMatch(this::isDomainFailedEvent), is(true));
+    assertThat(getEvents().stream().anyMatch(this::isDomainFailedReplicasTooHighEvent), is(true));
+  }
+
+  @Test
+  @Disabled
+  void whenReplicaCountLessThanMinReplicasForDynamicCluster_createCompleteEvent() {
+    domain.getStatus().addCondition(new DomainCondition(Completed).withStatus("True"));
+    domain.setReplicaCount("cluster1", 1);
+    defineScenario().addDynamicCluster("cluster1", 2,4).build();
+
+    updateDomainStatus();
+
+    assertThat(getEvents().stream().anyMatch(this::isDomainCompletedEvent), is(true));
   }
 
   @Test
@@ -867,8 +882,8 @@ class DomainStatusUpdaterTest {
     return DOMAIN_UNAVAILABLE_EVENT.equals(e.getReason());
   }
 
-  private boolean isDomainFailedEvent(CoreV1Event e) {
-    return DOMAIN_FAILED_EVENT.equals(e.getReason());
+  private boolean isDomainFailedReplicasTooHighEvent(CoreV1Event e) {
+    return DOMAIN_FAILED_EVENT.equals(e.getReason()) && e.getMessage().contains(REPLICAS_TOO_HIGH_ERROR);
   }
 
   @Test
@@ -1056,15 +1071,15 @@ class DomainStatusUpdaterTest {
   }
 
   @Test
-  void afterIntrospectionFailure_generateDomainProcessingAbortedEvent() {
+  void afterIntrospectionFailure_generateDomainAbortedEvent() {
     testSupport.runSteps(createIntrospectionFailureRelatedSteps(FATAL_INTROSPECTOR_ERROR,
         testSupport.getPacket().getValue(DOMAIN_INTROSPECTOR_JOB)));
 
-    assertThat(getEvents().stream().anyMatch(this::isDomainProcessingAbortedEvent), is(true));
+    assertThat(getEvents().stream().anyMatch(this::isDomainAbortedEvent), is(true));
   }
 
-  private boolean isDomainProcessingAbortedEvent(CoreV1Event e) {
-    return DOMAIN_FAILED_EVENT.equals(e.getReason());
+  private boolean isDomainAbortedEvent(CoreV1Event e) {
+    return DOMAIN_FAILED_EVENT.equals(e.getReason()) && e.getMessage().contains(ABORTED_ERROR);
   }
 
   @Test
@@ -1189,6 +1204,13 @@ class DomainStatusUpdaterTest {
       configSupport.addWlsCluster(new DynamicClusterConfigBuilder(clusterName)
             .withClusterLimits(1, maxServers)
             .withServerNames(generateServerNames(maxServers)));
+      return this;
+    }
+
+    ScenarioBuilder addDynamicCluster(String clusterName, int minServers, int maxServers) {
+      configSupport.addWlsCluster(new DynamicClusterConfigBuilder(clusterName)
+          .withClusterLimits(minServers, maxServers)
+          .withServerNames(generateServerNames(maxServers)));
       return this;
     }
 

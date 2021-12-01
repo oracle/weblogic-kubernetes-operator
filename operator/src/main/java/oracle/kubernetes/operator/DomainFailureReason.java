@@ -6,8 +6,6 @@ package oracle.kubernetes.operator;
 import java.util.Optional;
 
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
-import oracle.kubernetes.operator.logging.LoggingFacade;
-import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 
@@ -118,8 +116,6 @@ public enum DomainFailureReason {
         .map(DomainStatus::getMessage)
         .orElse("");
   }
-
-  private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   String getFailureRetryAdditionalMessage(DomainPresenceInfo info) {
     return DomainFailureReason.getAdditionalMessageFromStatus(info) + getRetryMessage();

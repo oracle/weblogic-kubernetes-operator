@@ -54,7 +54,6 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
@@ -86,7 +85,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
-import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 /**
@@ -621,20 +619,6 @@ class ManagedServersUpStepTest {
   }
 
   @Test
-  @Disabled
-  void whenReplicasLessThanDynClusterSize_addValidationWarning() {
-    startNoServers();
-    setCluster1Replicas(0);
-    addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
-    setCluster1AllowReplicasBelowMinDynClusterSize(false);
-
-    invokeStep();
-
-    assertThat(domainPresenceInfo.getValidationWarningsAsString(),
-        stringContainsInOrder("0", "less than",  "minimum dynamic server", "2", "cluster1"));
-  }
-
-  @Test
   void whenReplicasExceedsMaxDynClusterSize_logMessage() {
     List<LogRecord> messages = new ArrayList<>();
     consoleHandlerMemento.withLogLevel(Level.WARNING)
@@ -648,67 +632,6 @@ class ManagedServersUpStepTest {
     invokeStep();
 
     assertThat(messages, containsWarning(REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT));
-  }
-
-  @Test
-  @Disabled
-  void whenReplicasExceedsMaxDynClusterSize_createsEvent() {
-    startNoServers();
-    setCluster1Replicas(10);
-    addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
-
-    invokeStep();
-
-    assertContainsEventWithReplicasTooHighMessage(REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT, 10, 5, "cluster1");
-  }
-
-  @Test
-  void whenReplicasExceedsMaxDynClusterSize_addValidationWarning() {
-    startNoServers();
-    setCluster1Replicas(10);
-    addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
-
-    invokeStep();
-
-    assertThat(domainPresenceInfo.getValidationWarningsAsString(),
-        stringContainsInOrder("10", "exceeds",  "maximum dynamic server", "5", "cluster1"));
-  }
-
-  @Test
-  @Disabled
-  void whenReplicasExceedsMaxDynClusterSize_andStartNoServers_createsEvent() {
-    startNoServers();
-    setCluster1Replicas(10);
-    addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
-
-    invokeStep();
-
-    assertContainsEventWithReplicasTooHighMessage(REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT, 10, 5, "cluster1");
-  }
-
-  @Test
-  void withInvalidReplicasDuringExplicitRecheck_addValidationWarning() {
-    setExplicitRecheck();
-    setCluster1Replicas(10);
-    addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
-
-    invokeStep();
-
-    assertThat(domainPresenceInfo.getValidationWarningsAsString(),
-        stringContainsInOrder("10", "exceeds",  "maximum dynamic server", "5", "cluster1"));
-  }
-
-  @Test
-  @Disabled
-  void withInvalidReplicasDuringExplicitRecheck_createsNoEvent() {
-    setExplicitRecheck();
-    setCluster1Replicas(10);
-    addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
-
-    invokeStep();
-
-    //assertContainsEventWithReplicasTooHighMessage(REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT, 10, 5, "cluster1");
-    assertThat(getEvents(), empty());
   }
 
   @Test

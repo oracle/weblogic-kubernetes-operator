@@ -73,6 +73,7 @@ import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import org.jetbrains.annotations.NotNull;
 
+import static oracle.kubernetes.operator.DomainStatusUpdater.createAbortedFailureRelatedSteps;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createInternalFailureRelatedSteps;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createStatusUpdateStep;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
@@ -710,6 +711,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     private boolean willInterrupt;
     private boolean inspectionRun;
     private EventData eventData;
+    private boolean willThrow;
 
     /**
      * Create the operation.
@@ -786,6 +788,17 @@ public class DomainProcessorImpl implements DomainProcessor {
      */
     public MakeRightDomainOperation interrupt() {
       willInterrupt = true;
+      return this;
+    }
+
+    /**
+     * Modifies the factory to indicate that it should throw.
+     * For unit testing only.
+     *
+     * @return the updated factory
+     */
+    public MakeRightDomainOperation throwNPE() {
+      willThrow = true;
       return this;
     }
 
@@ -913,20 +926,12 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     private StepAndPacket createDomainPlanSteps(Packet packet) {
-      if (containsAbortedEventData()) {
-        return new StepAndPacket(Step.chain(createEventStep(eventData), new TailStep()), packet);
-      }
-
       return new StepAndPacket(
           getEventStep(Step.chain(createPopulatePacketServerMapsStep(),  createSteps())), packet);
     }
 
     private Step getEventStep(Step next) {
       return Optional.ofNullable(eventData).map(ed -> Step.chain(createEventStep(ed), next)).orElse(next);
-    }
-
-    private boolean containsAbortedEventData() {
-      return Optional.ofNullable(eventData).map(EventData::isProcessingAbortedEvent).orElse(false);
     }
 
     private Domain getDomain() {
@@ -945,10 +950,27 @@ public class DomainProcessorImpl implements DomainProcessor {
     public Step createSteps() {
       Step strategy =
             new StartPlanStep(liveInfo, deleting ? createDomainDownPlan(liveInfo) : createDomainUpPlan(liveInfo));
+      strategy = Step.chain(willThrow ? createThrowStep() : null, strategy);
       if (deleting || getDomain() == null) {
         return strategy;
       } else {
         return DomainValidationSteps.createDomainValidationSteps(getNamespace(), strategy);
+      }
+    }
+
+    // for unit testing only
+    private Step createThrowStep() {
+      return new ThrowStep();
+    }
+
+    // for unit testing only
+    private class ThrowStep extends Step {
+
+      @Override
+      public NextAction apply(Packet packet) {
+        String text = null;
+        text.toString();
+        return doNext(packet);
       }
     }
   }
@@ -1032,11 +1054,18 @@ public class DomainProcessorImpl implements DomainProcessor {
           @Override
           public void onThrowable(Packet packet, Throwable throwable) {
             logThrowable(throwable);
-
+            DomainPresenceInfo existing = getExistingDomainPresenceInfo(ns, domainUid);
+            Step failureSteps = createInternalFailureRelatedSteps(throwable, packet.getValue(DOMAIN_INTROSPECTOR_JOB));
+            if (existing != null) {
+              if (getCurrentIntrospectFailureRetryCount(existing)
+                  > DomainPresence.getDomainPresenceFailureRetryMaxCount()) {
+                failureSteps = createAbortedFailureRelatedSteps();
+              }
+            }
             gate.startFiberIfLastFiberMatches(
                 domainUid,
                 Fiber.getCurrentIfSet(),
-                Step.chain(createInternalFailureRelatedSteps(throwable, packet.getValue(DOMAIN_INTROSPECTOR_JOB))),
+                failureSteps,
                 plan.packet,
                 new CompletionCallback() {
                   @Override
@@ -1053,7 +1082,6 @@ public class DomainProcessorImpl implements DomainProcessor {
             gate.getExecutor()
                 .schedule(
                     () -> {
-                      DomainPresenceInfo existing = getExistingDomainPresenceInfo(ns, domainUid);
                       if (existing != null) {
                         try (LoggingContext ignored =
                                  LoggingContext.setThreadContext().namespace(ns).domainUid(domainUid)) {
