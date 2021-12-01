@@ -811,7 +811,7 @@ public class DbUtils {
     replaceStringInFile(dbYaml.toString(), "secretKey:", "secretKey: " + secretKey);
     replaceStringInFile(dbYaml.toString(), "pullFrom:", "pullFrom: " + DB_IMAGE_19C);
     replaceStringInFile(dbYaml.toString(), "pullSecrets:", "pullSecrets: " + OCR_SECRET_NAME);
-    replaceStringInFile(dbYaml.toString(), "storageClass: \"\"", "storageClass: standard");
+    replaceStringInFile(dbYaml.toString(), "storageClass: \"\"", "storageClass: dboperatorsc");
 
     logger.info("Creating Oracle database using yaml file\n {0}", Files.readString(dbYaml));
     params = new CommandParams().defaults();
@@ -999,7 +999,7 @@ public class DbUtils {
     V1StorageClass sc = new V1StorageClass();
     sc.apiVersion("storage.k8s.io/v1")
         .metadata(new V1ObjectMeta()
-            .name("standard")
+            .name("dboperatorsc")
             .annotations(annotations))
         .reclaimPolicy("Delete")
         .provisioner("example.com/hostpath");
@@ -1013,7 +1013,7 @@ public class DbUtils {
    */
   public static void deleteStorageclass() throws ApiException {
     //delete storageclass
-    TestActions.deleteStorageClass("standard");
+    TestActions.deleteStorageClass("dboperatorsc");
   }
 
 }
