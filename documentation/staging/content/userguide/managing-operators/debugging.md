@@ -171,14 +171,49 @@ Here are two approaches for restarting an operator:
 {{% notice warning %}}
 It should rarely be necessary to change the operator to use a finer-grained logging level,
 but, in rare situations, the operator support team may direct you to do so.
-If you change the logging level, then be aware that finer-grained logging levels
+If you change the logging level, then be aware that FINE or finer-grained logging levels
 can be extremely verbose and quickly use up gigabytes of disk space in the span of hours, or,
 at the finest levels, during heavy activity, in even minutes.
-Consequently, the logging level should _only_ be increased for as long as is needed to help get debugging data for a particular problem.
+Consequently, the logging level should _only_ be increased for as long as is needed
+to help get debugging data for a particular problem.
 {{% /notice %}}
 
-To change the Java logging level, see the
-operator [javaLoggingLevel]({{< relref "/userguide/managing-operators/using-helm#javalogginglevel" >}}) setting.
+To set the operator `javaLoggingLevel` to `FINE` (default is `INFO`) 
+assuming the operator Helm release is named `sample-weblogic-operator`
+its namespace is `sample-weblogic-operator-ns`,
+and you have locally downloaded the operator src to `/tmp/weblogic-kubernetes-operator`:
+
+```
+$ cd /tmp/weblogic-kubernetes-operator
+```
+
+TBD verify the following work with quick start operator
+
+```
+$ helm upgrade \
+  sample-weblogic-operator \
+  kubernetes/charts/weblogic-operator \
+  --namespace sample-weblogic-operator-ns \
+  --reuse-values \
+  --set "javaLoggingLevel=FINE" \
+  --wait
+```
+
+To set the operator `javaLoggingLevel` back to `INFO`:
+
+```
+$ helm upgrade \
+  sample-weblogic-operator \
+  kubernetes/charts/weblogic-operator \
+  --namespace sample-weblogic-operator-ns \
+  --reuse-values \
+  --set "javaLoggingLevel=INFO" \
+  --wait
+```
+
+For more information, see the
+[javaLoggingLevel]({{< relref "/userguide/managing-operators/using-helm#javalogginglevel" >}}) setting 
+in the operator Configuration chapter.
 
 ### See also
 

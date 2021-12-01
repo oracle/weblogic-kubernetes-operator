@@ -6,6 +6,13 @@ weight: 4
 description: "Dynamically change the namespaces that a running operator manages."
 ---
 
+### Contents
+
+TBD generate contents
+TBD check all relref into namespace-management to see if they reflect title changes
+
+### Overview
+
 An operator deployment must be configured to manage Kubernetes namespaces,
 and a number of Kubernetes resources
 must be present in a namespace before any WebLogic Server instances can be successfully
@@ -19,26 +26,93 @@ You can change the namespaces that an operator deployment manages while the oper
 You can also create and prepare a namespace for the operator to manage while the operator is still running.
 
 {{% notice note %}}
-There can be multiple operators in a Kubernetes cluster, and in that case, you must ensure that the namespaces managed by these operators do not overlap.
+There can be multiple operators in a Kubernetes cluster,
+and in that case,
+you must ensure that the namespaces managed by these operators do not overlap.
 _At most, a namespace can be managed by one operator._
 {{% /notice %}}
 
-This document describes some considerations to be aware of when you manage the namespaces while the operator is running. For example:
+This document describes considerations for configuring which namespaces that an operator manages,
+see [Choose a domain namespace selection strategy](#choose-a-namespace-selection-strategy),
+and this document describes some considerations to be aware of when
+you manage the namespaces while the operator is running,
+see [Altering namespaces for a running operator](#altering-namespaces-for-a-running-operator), 
 
-* [Check the namespaces that the operator manages](#check-the-namespaces-that-the-operator-manages)
-* [Add a namespace for the operator to manage](#add-a-kubernetes-namespace-to-the-operator)
-* [Delete a namespace from the operator's domain namespace list](#delete-a-kubernetes-namespace-from-the-operator)
-* [Delete and recreate a Kubernetes namespace that the operator manages](#recreate-a-previously-deleted-kubernetes-namespace)
+For namespace management information that is external to this document,
+see [WebLogic domain management]({{<relref "/userguide/managing-operators/using-helm.md#weblogic-domain-management">}}) 
+in the operator configuration guide,
+and [Common Mistakes and Solutions]({{< relref "/userguide/managing-operators/common-mistakes.md" >}}).
 
-For others, see [Common Mistakes and Solutions]({{< relref "/userguide/managing-operators/common-mistakes.md" >}}).
+### Choose a domain namespace selection strategy
+
+TBD this section needs review
+
+An operator can manage domain resources in multiple namespaces,
+including its own namespace,
+but two operators cannot manage domains that are in the same namespace.
+The operator install Helm chart
+[`domainNamespaceSelectionStrategy`]({{<relref "/userguide/managing-operators/using-helm#domainnamespaceselectionstrategy">}})
+configuration setting controls which namespaces that an operator manages:
+
+|Strategy|Description|Example|
+|-|-|-|
+|`Dedicated`|The operator will only manage domains that are in the same namespace as the operator.|If the operator is deployed to namespace `my-operator-ns` and it was installed using `--set "domainNamespaceSelectionStrategy=Dedicated"` in its Helm chart configuration, then the operator will only manage domains in the `my-operator-ns` namespace.|
+|`List`|This is the default. The operator will manage the namespaces included in the `domainNamespaces` operator install Helm chart configuration value which is a list that in defaults to "{default}".|If you want to manage namespaces `default` and `ns1`, then use `--set "domainNamespaceSelectionStrategy=List"` and `--set "domainNamespaces={default,ns1}"` in your operator install Helm chart configuration.|
+|`LabelSelector`|The operator will manage namespaces with Kubernetes labels that match the label selector defined by your Helm chart configuration `domainNamespaceLabelSelector` attribute.|If your operator Helm chart configuration has `--set "domainNamespaceSelectionStrategy=LabelSelector"` and you define the label selector in your operator install using `--set "domainNamespaceLabelSelector=weblogic-operator\=my-operator"`, then the operator will manage namespaces with label name `weblogic-operator` when this label has value `my-operator`, and you can label each such a namespace using the command `kubectl label namespace some-namespace-name weblogic-operator=my-operator`.|
+|`RegExp`|The operator will manage namespaces that match the regular expression set by your `domainNamespaceRegExp` Helm chart configuration attribute.|If you want an operator to manage namespaces that start with the string "prod", then use `--set "domainNamespaceSelectionStrategy=RegExp"` for your operator Helm configuration setting, and set the `domainNamespaceRegExp` Helm chart configuration attribute using `--set "domainNamespaceRegExp=^prod"`.|
+
+**Notes:**
+
+- Your security strategy may determine which namespace strategy you should choose,
+  see [Choose a security strategy]({{<relref "/userguide/managing-operators/installation.md#choose-a-security-strategy">}})
+  in the operator installation guide.
+- As has already been noted earlier,
+  two operators cannot manage domains that are in the same namespace.
+  If two operators are configured to manage the same namespace,
+  then behavior is undefined
+  but it is likely that the second operator install will
+  deploy a `FAILED` Helm release and generate an error similar to
+  `Error: release op2 failed: rolebindings.rbac.authorization.k8s.io "weblogic-operator-rolebinding-namespace" already exists`.
+- For a discussion about listing, adding, deleting, or recreating the namespaces
+  that an already running operator manages,
+  see [Altering namespaces for a running operator](#altering-namespaces-for-a-running-operator).
+- For a discussion about common namespace management issues,
+  see [Common Mistakes]({{<relref "/userguide/managing-operators/common-mistakes.md">}}).
+- For reference, see [WebLogic domain management]({{<relref "/userguide/managing-operators/using-helm.md#weblogic-domain-management">}})
+  in the operator configuration guide.
+- If the deprecated `dedicated` operator Helm chart configuration setting is set to `true`,
+  then the `domainNamespaceSelectionStrategy` setting will be ignored
+  and the operator will force the selection strategy to be `Dedicated`.A
+
+### Ensuring the operator has permission to manage a namespace
+
+If you did not choose to enable the value, `enableClusterRoleBinding`, 
+then the operator will not have the necessary
+permissions to manage a namespace unless the 
+operator has been deployed (installed) to the same namespace.
+
+You can change this value dynamically by performing
+a `helm upgrade` with the values used when installing the
+Helm release:
+
+```shell
+$ helm upgrade \
+    weblogic-operator \
+    kubernetes/charts/weblogic-operator \
+    --reuse-values
+```
+
+TBD This won't upgrade to a cluster-role, since enable defaults to false... Right?
 
 
-#### Check the namespaces that the operator manages
+### Altering namespaces for a running operator
+
+#### Check the namespaces that a running operator manages
 
 Prior to version 3.1.0, the operator supported specifying the namespaces that it would manage only through a list.
 Now, the operator supports a list of namespaces, a label selector, or a regular expression matching namespace names.
 
-##### When using a namespace list
+**When using a namespace list**
 
 For operators that specify namespaces by a list, you can find the list of the namespaces using the `helm get values` command.
 For example, the following command shows all the values of the operator release `weblogic-operator`; the `domainNamespaces` list contains `default` and `ns1`:
@@ -75,7 +149,7 @@ $ helm list --namespace <namespace>
 $ helm list --all-namespaces
 ```
 
-##### When using a label selector
+**When using a label selector**
 
 For operators that select namespaces with a selector, simply list namespaces using that selector:
 
@@ -83,7 +157,7 @@ For operators that select namespaces with a selector, simply list namespaces usi
 $ kubectl get ns --selector="weblogic-operator=enabled"
 ```
 
-##### When using regular expression matching
+**When using regular expression matching**
 
 For operators that select namespaces with a regular expression matching the name, you can use a combination of `kubectl`
 and any command-line tool that can process the regular expression, such as `grep`:
@@ -92,9 +166,9 @@ and any command-line tool that can process the regular expression, such as `grep
 $ kubectl get ns -o go-template='{{range .items}}{{.metadata.name}}{{"\n"}}{{end}}' | grep "^weblogic"
 ```
 
-#### Add a Kubernetes namespace to the operator
+#### Add a Kubernetes namespace to a running operator
 
-##### When using a namespace list
+**When using a namespace list**
 
 When the operator is configured to manage a list of namespaces and you want the operator to manage an additional namespace,
 you need to add the namespace to the operator's `domainNamespaces` list. Note that this namespace has to already exist, for example,
@@ -131,25 +205,12 @@ NAME                 DATA      AGE
 weblogic-scripts-cm   14        12m
 ```
 
-##### When using a label selector or regular expression
+**When using a label selector or regular expression**
 
 For operators configured to select managed namespaces through the use of a label selector or regular expression,
 you simply need to create a namespace with the appropriate labels or with a name that matches the expression, respectively.
 
-##### Ensuring the operator has permission to manage the namespace
-
-If you did not choose to enable the value, `enableClusterRoleBinding`, then the operator will not have the necessary
-permissions to manage the namespace. You can do this by performing a `helm upgrade` with the values used when installing the
-Helm release:
-
-```shell
-$ helm upgrade \
-    weblogic-operator \
-    kubernetes/charts/weblogic-operator \
-    --reuse-values
-```
-
-####  Delete a Kubernetes namespace from the operator
+####  Delete a Kubernetes namespace from a running operator
 
 ##### When using a namespace list
 
@@ -177,7 +238,7 @@ For operators configured to select managed namespaces through the use of a label
 you simply need to delete the namespace. For the label selector option, you can also adjust the labels on the namespace
 so that the namespace no longer matches the selector.
 
-#### Recreate a previously deleted Kubernetes namespace
+#### Recreate a previously deleted Kubernetes namespace with a running operator
 
 When the operator is configured to manage a list of namespaces and if you need to delete a namespace (and the resources in it) and then recreate it,
 remember to remove the namespace from the operator's `domainNamespaces` list
