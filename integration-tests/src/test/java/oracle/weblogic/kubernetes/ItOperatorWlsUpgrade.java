@@ -132,7 +132,7 @@ class ItOperatorWlsUpgrade {
   @ValueSource(strings = { "Image", "FromModel" })
   void testOperatorWlsUpgradeFrom304ToLatest(String domainType) {
     logger.info("Starting test testOperatorWlsUpgradeFrom304ToLatest with domain type {0}", domainType);
-    upgradeOperator(domainType, "3.0.4", "v8", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+    installAndUpgradeOperator(domainType, "3.0.4", "v8", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
@@ -143,7 +143,7 @@ class ItOperatorWlsUpgrade {
   @ValueSource(strings = { "Image", "FromModel" })
   void testOperatorWlsUpgradeFrom314ToLatest(String domainType) {
     logger.info("Starting test testOperatorWlsUpgradeFrom314ToLatest with domain type {0}", domainType);
-    upgradeOperator(domainType, "3.1.4", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+    installAndUpgradeOperator(domainType, "3.1.4", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
@@ -154,7 +154,7 @@ class ItOperatorWlsUpgrade {
   @ValueSource(strings = { "Image", "FromModel" })
   void testOperatorWlsUpgradeFrom325ToLatest(String domainType) {
     logger.info("Starting test testOperatorWlsUpgradeFrom325ToLatest with domain type {0}", domainType);
-    upgradeOperator(domainType, "3.2.5", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+    installAndUpgradeOperator(domainType, "3.2.5", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
@@ -165,7 +165,7 @@ class ItOperatorWlsUpgrade {
   @ValueSource(strings = { "Image", "FromModel" })
   void testOperatorWlsUpgradeFrom336ToLatest(String domainType) {
     logger.info("Starting test testOperatorWlsUpgradeFrom336ToLatest with domain type {0}", domainType);
-    upgradeOperator(domainType, "3.3.6", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+    installAndUpgradeOperator(domainType, "3.3.6", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
@@ -188,8 +188,9 @@ class ItOperatorWlsUpgrade {
   // Since Operator version 3.1.0 the service pod prefix has been changed 
   // from -external to -ext e.g.
   // domain1-adminserver-ext  NodePort    10.96.46.242   30001:30001/TCP 
-  private void upgradeOperator(String domainType, String operatorVersion, 
-       String domainVersion, String externalServiceNameSuffix) {
+  private void installAndUpgradeOperator(String domainType, 
+      String operatorVersion, String domainVersion, 
+      String externalServiceNameSuffix) {
 
     logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
