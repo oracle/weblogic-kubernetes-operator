@@ -3,16 +3,26 @@
 
 package oracle.weblogic.kubernetes.utils;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownManagedServerUsingServerStartPolicy;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.IstioUtils.createIstioDomainResource;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
+import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -112,6 +122,91 @@ public class SessionMigrationUtil {
     httpDataInfo.put(countAttr, countStr);
 
     return httpDataInfo;
+  }
+
+  /**
+   * Create a MII domain with Istio enabled and wait up to five minutes until the domain exists.
+   *
+   * @param miiImage image name to config
+   * @param domainNamespace namespace in which the domain will be created
+   * @param domainUid unique domain identifier
+   * @param managedServerPrefix prefix of managed server name
+   * @param clusterName cluster name
+   * @param configMapName WDT config map to create domain resource
+   * @param replicaCount fully qualified URL to the server on which the web app is running
+   */
+  public static void configIstioModelInImageDomain(String miiImage,
+                                                   String domainNamespace,
+                                                   String domainUid,
+                                                   String managedServerPrefix,
+                                                   String clusterName,
+                                                   String configMapName,
+                                                   int replicaCount) {
+    LoggingFacade logger = getLogger();
+
+    // Create the repo secret to pull the image
+    // this secret is used only for non-kind cluster
+    createOcirRepoSecret(domainNamespace);
+
+    // create secret for admin credentials
+    logger.info("Create secret for admin credentials");
+    String adminSecretName = "weblogic-credentials";
+    assertDoesNotThrow(() -> createSecretWithUsernamePassword(
+        adminSecretName,
+        domainNamespace,
+        "weblogic",
+        "welcome1"),
+        String.format("createSecret failed for %s", adminSecretName));
+
+    // create encryption secret
+    logger.info("Create encryption secret");
+    String encryptionSecretName = "encryptionsecret";
+    assertDoesNotThrow(() -> createSecretWithUsernamePassword(
+        encryptionSecretName,
+        domainNamespace,
+        "weblogicenc",
+        "weblogicenc"),
+        String.format("createSecret failed for %s", encryptionSecretName));
+
+    // create WDT config map without any files
+    createConfigMapAndVerify(configMapName, domainUid, domainNamespace, Collections.EMPTY_LIST);
+
+    // create the domain object
+    Domain domain = createIstioDomainResource(domainUid,
+        domainNamespace,
+        adminSecretName,
+        OCIR_SECRET_NAME,
+        encryptionSecretName,
+        replicaCount,
+        miiImage,
+        configMapName,
+        clusterName);
+
+    // create model in image domain
+    createDomainAndVerify(domain, domainNamespace);
+    String adminServerPodName = domainUid + "-admin-server";
+    logger.info("Check admin service {0} is created in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkServiceExists(adminServerPodName, domainNamespace);
+
+    // check admin server pod is ready
+    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
+        adminServerPodName, domainNamespace);
+    checkPodReady(adminServerPodName, domainUid, domainNamespace);
+
+    // check managed server services created
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Check managed service {0} is created in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkServiceExists(managedServerPrefix + i, domainNamespace);
+    }
+
+    // check managed server pods are ready
+    for (int i = 1; i <= replicaCount; i++) {
+      logger.info("Wait for managed pod {0} to be ready in namespace {1}",
+          managedServerPrefix + i, domainNamespace);
+      checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
+    }
   }
 
   private static Map<String, String> processHttpRequest(String domainNamespace,
