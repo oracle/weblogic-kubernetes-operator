@@ -262,20 +262,6 @@ class ItDBOperator {
   }
 
   /**
-   * Save the OPSS key wallet from a running JRF domain's introspector configmap to a file. Restore the OPSS key wallet
-   * file to a Kubernetes secret. Shutdown the domain. Using the same RCU schema to restart the same JRF domain with
-   * restored OPSS key wallet file secret. Verify Pod is ready and service exists for both admin server and managed
-   * servers. Verify EM console is accessible.
-   */
-  private void testReuseRCUschemaToRestartDomain() {
-    saveAndRestoreOpssWalletfileSecret(fmwDomainNamespace, fmwDomainUid, opsswalletfileSecretName);
-    shutdownDomain();
-    patchDomainWithWalletFileSecret(opsswalletfileSecretName);
-    startupDomain();
-    verifyDomainReady(fmwDomainNamespace, fmwDomainUid, replicaCount);
-  }
-
-  /**
    * Create WebLogic domain using model in image and Oracle database used for JMS and JTA migration and service logs.
    */
   @Test
@@ -345,6 +331,20 @@ class ItDBOperator {
 
     //Verify JMS/JTA Service migration with File(JDBC) Store
     testMiiJmsJtaServiceMigration();
+  }
+
+  /**
+   * Save the OPSS key wallet from a running JRF domain's introspector configmap to a file. Restore the OPSS key wallet
+   * file to a Kubernetes secret. Shutdown the domain. Using the same RCU schema to restart the same JRF domain with
+   * restored OPSS key wallet file secret. Verify Pod is ready and service exists for both admin server and managed
+   * servers. Verify EM console is accessible.
+   */
+  private void testReuseRCUschemaToRestartDomain() {
+    saveAndRestoreOpssWalletfileSecret(fmwDomainNamespace, fmwDomainUid, opsswalletfileSecretName);
+    shutdownDomain();
+    patchDomainWithWalletFileSecret(opsswalletfileSecretName);
+    startupDomain();
+    verifyDomainReady(fmwDomainNamespace, fmwDomainUid, replicaCount);
   }
 
   /**
@@ -459,7 +459,11 @@ class ItDBOperator {
    */
   @AfterAll
   public void tearDownAll() throws ApiException {
-    deleteStorageclass();
+    if (System.getenv("SKIP_CLEANUP") == null
+        || (System.getenv("SKIP_CLEANUP") != null
+        && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false"))) {
+      deleteStorageclass();
+    }
   }
 
   // Restart the managed-server
