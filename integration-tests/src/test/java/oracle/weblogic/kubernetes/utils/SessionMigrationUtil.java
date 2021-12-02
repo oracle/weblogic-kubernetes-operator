@@ -44,9 +44,9 @@ public class SessionMigrationUtil {
    * @param domainNamespace namespace in which the domain will be created
    * @param serverName name of the WebLogic server to shutdown
    */
-  public static void shutdownServerUsingServerStartPolicy(String domainUid,
-                                                          String domainNamespace,
-                                                          String serverName) {
+  public static void shutdownServerAndVerify(String domainUid,
+                                             String domainNamespace,
+                                             String serverName) {
     final String podName = domainUid + "-" + serverName;
     LoggingFacade logger = getLogger();
 

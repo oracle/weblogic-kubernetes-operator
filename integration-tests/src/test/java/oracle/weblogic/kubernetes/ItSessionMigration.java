@@ -47,7 +47,7 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.SessionMigrationUtil.getServerAndSessionInfoAndVerify;
-import static oracle.weblogic.kubernetes.utils.SessionMigrationUtil.shutdownServerUsingServerStartPolicy;
+import static oracle.weblogic.kubernetes.utils.SessionMigrationUtil.shutdownServerAndVerify;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -179,7 +179,7 @@ class ItSessionMigration {
 
     // stop the primary server by changing ServerStartPolicy to NEVER and patching domain
     logger.info("Shut down the primary server {0}", origPrimaryServerName);
-    shutdownServerUsingServerStartPolicy(domainUid, domainNamespace, origPrimaryServerName);
+    shutdownServerAndVerify(domainUid, domainNamespace, origPrimaryServerName);
 
     // send a HTTP request to get server and session info after shutting down the primary server
     serverName = domainUid + "-" + origSecondaryServerName;
