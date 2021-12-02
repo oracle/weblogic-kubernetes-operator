@@ -29,7 +29,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
@@ -176,7 +178,7 @@ class ItRemoteConsole {
     assertTrue(nginxNodePort != -1, "Could not get the default external service node port");
     logger.info("Found the NGINX service nodePort {0}", nginxNodePort);
     logger.info("The K8S_NODEPORT_HOST is {0}", K8S_NODEPORT_HOST);
-    
+
     verifyRemoteConsoleConnectionThroughLB(nginxNodePort);
     logger.info("WebLogic domain is accessible through remote console using NGINX");
   }
@@ -213,8 +215,9 @@ class ItRemoteConsole {
     logger.info("WebLogic console is accessible thru default-secure service");
 
     //verify remote console is accessible through default-secure nodeport
-    curlCmd = "curl -sk -v --show-error --noproxy '*' --user weblogic:welcome1 "
-        + "http://localhost:8012/api/providers/AdminServerConnection -H  "
+    curlCmd = "curl -sk -v --show-error --noproxy '*' --user "
+        + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
+        + " http://localhost:8012/api/providers/AdminServerConnection -H  "
         + "\"" + "Content-Type:application/json" + "\""
         + " --data "
         + "\"{\\" + "\"name\\" + "\"" + ": " + "\\" + "\"" + "asconn\\" + "\"" + ", "
@@ -326,8 +329,9 @@ class ItRemoteConsole {
     logger.info("admin svc host = {0}", adminSvcExtHost);
     String hostAndPort = getHostAndPort(adminSvcExtHost, nodePort);
 
-    String curlCmd = "curl -v --show-error --noproxy '*' --user weblogic:welcome1 "
-        + "http://localhost:8012/api/providers/AdminServerConnection -H  "
+    String curlCmd = "curl -v --show-error --noproxy '*' --user "
+        + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
+        + " http://localhost:8012/api/providers/AdminServerConnection -H "
         + "\"" + "Content-Type:application/json" + "\""
         + " --data "
         + "\"{\\" + "\"name\\" + "\"" + ": " + "\\" + "\"" + "asconn\\" + "\"" + ", "
@@ -343,7 +347,8 @@ class ItRemoteConsole {
     logger.info("LB nodePort is {0}", nodePortOfLB);
     logger.info("The K8S_NODEPORT_HOST is {0}", K8S_NODEPORT_HOST);
 
-    String curlCmd = "curl -v --user weblogic:welcome1 http://localhost:8012/api/providers/AdminServerConnection -H "
+    String curlCmd = "curl -v --user " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
+        + " http://localhost:8012/api/providers/AdminServerConnection -H "
         + "\"" + "Content-Type:application/json" + "\""
         + " --data "
         + "\"{ \\" + "\"name\\" + "\"" + ": " + "\\" + "\"" + "asconn\\" + "\"" + ", "
