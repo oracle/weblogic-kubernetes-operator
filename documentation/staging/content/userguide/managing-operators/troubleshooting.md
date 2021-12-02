@@ -1,5 +1,5 @@
 ---
-title: "Debugging"
+title: "Troubleshooting"
 date: 2019-02-23T16:47:21-05:00
 weight: 8
 description: "General advice for debugging and monitoring the operator."
@@ -7,19 +7,19 @@ description: "General advice for debugging and monitoring the operator."
 
 ### Contents
 
-- [Debugging a particular domain resource](#debugging-a-particular-domain-resource)
+- [Troubleshooting a particular domain resource](#troubleshooting-a-particular-domain-resource)
 - [Check Helm status](#check-helm-status)
 - [Ensure the operator CRD is installed](#ensure-the-operator-crd-is-installed)
 - [Check the operator deployment](#check-the-operator-deployment)
+- [Check common issues](#check-common-issues)
 - [Check for events](#check-for-events)
 - [Check the operator log](#check-the-operator-log)
 - [Operator ConfigMap](#operator-configmap)
-- [Check common issues](#check-common-issues)
 - [Force the operator to restart](#force-the-operator-to-restart)
 - [Operator logging level](#operator-logging-level)
 - [See also](#see-also)
 
-### Debugging a particular domain resource
+### Troubleshooting a particular domain resource
 
 After you have an installed and running operator, it is rarely but sometimes necessary to debug the operator itself.
 If you are having problems with a particular domain resource, then first see [Domain debugging]({{<relref "/userguide/managing-domains/model-in-image/debugging.md">}}).
@@ -27,7 +27,8 @@ If you are having problems with a particular domain resource, then first see [Do
 ### Check Helm status
 
 An operator runtime is installed into a Kubernetes cluster and maintained using a Helm release.
-For information about how to list your installed Helm releases and get each release's configuration, see [Useful Helm operations]({{<relref "/userguide/managing-operators/using-helm#useful-helm-operations">}}).
+For information about how to list your installed Helm releases and get each release's configuration,
+see [Useful Helm operations]({{<relref "/userguide/managing-operators/using-helm#useful-helm-operations">}}).
 
 ### Ensure the operator CRD is installed
 
@@ -87,6 +88,11 @@ $ kubectl -n OP_NAMESPACE describe pod weblogic-operator-UNIQUESUFFIX
 ```
 A pod describe usefully includes any events that might be associated with the operator.
 
+### Check common issues
+
+- See [Common Mistakes and Solutions]({{< relref "/userguide/managing-operators/common-mistakes.md" >}}).
+- Check the [FAQs]({{<relref "/faq/_index.md">}}).
+
 ### Check for events
 
 To check for Kubernetes events that may have been logged to the operator's namespace:
@@ -106,11 +112,6 @@ $ kubectl logs -n YOUR_OPERATOR_NS -c weblogic-operator deployments/weblogic-ope
 ### Operator ConfigMap
 
 An operator's settings are automatically maintained by Helm in a Kubernetes ConfigMap named `weblogic-operator-cm` in the same namespace as the operator. To view the contents of this ConfigMap, call `kubectl -n sample-weblogic-operator-ns get cm weblogic-operator-cm -o yaml`.
-
-### Check common issues
-
-- See [Common Mistakes and Solutions]({{< relref "/userguide/managing-operators/common-mistakes.md" >}}).
-- Check the [FAQs]({{<relref "/faq/_index.md">}}).
 
 ### Force the operator to restart
 
@@ -173,9 +174,9 @@ It should rarely be necessary to change the operator to use a finer-grained logg
 but, in rare situations, the operator support team may direct you to do so.
 If you change the logging level, then be aware that FINE or finer-grained logging levels
 can be extremely verbose and quickly use up gigabytes of disk space in the span of hours, or,
-at the finest levels, during heavy activity, in even minutes.
-Consequently, the logging level should _only_ be increased for as long as is needed
-to help get debugging data for a particular problem.
+at the finest levels, during heavy activity, in even minutes. 
+_Consequently, the logging level should only be increased for as long as is needed
+to help get debugging data for a particular problem._
 {{% /notice %}}
 
 To set the operator `javaLoggingLevel` to `FINE` (default is `INFO`) 
@@ -186,8 +187,6 @@ and you have locally downloaded the operator src to `/tmp/weblogic-kubernetes-op
 ```
 $ cd /tmp/weblogic-kubernetes-operator
 ```
-
-TBD verify the following work with quick start operator
 
 ```
 $ helm upgrade \
