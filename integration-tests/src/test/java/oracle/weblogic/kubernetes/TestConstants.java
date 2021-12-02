@@ -275,6 +275,9 @@ public interface TestConstants {
   public static final String ADMIN_USERNAME_PATCH = "weblogicnew";
   public static final String ADMIN_PASSWORD_PATCH = "welcome1new";
 
+  public static final String ENCRYPION_USERNAME_DEFAULT = "weblogicenc";
+  public static final String ENCRYPION_PASSWORD_DEFAULT = "weblogicenc";
+
   // REST API
   public static final String PROJECT_ROOT = System.getProperty("user.dir");
   public static final String GEN_EXTERNAL_REST_IDENTITY_FILE =

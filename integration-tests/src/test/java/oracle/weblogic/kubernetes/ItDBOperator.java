@@ -30,6 +30,8 @@ import org.junit.jupiter.api.TestMethodOrder;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
@@ -200,8 +202,8 @@ class ItDBOperator {
     logger.info("Create encryption secret");
     assertDoesNotThrow(() -> createSecretWithUsernamePassword(fmwEncryptionSecretName,
         fmwDomainNamespace,
-        "weblogicenc",
-        "weblogicenc"),
+        ENCRYPION_USERNAME_DEFAULT,
+        ENCRYPION_PASSWORD_DEFAULT),
         String.format("createSecret failed for %s", fmwEncryptionSecretName));
 
     // create RCU access secret
@@ -289,8 +291,8 @@ class ItDBOperator {
     // create encryption secret
     logger.info("Create encryption secret");
     String encryptionSecretName = "encryptionsecret";
-    assertDoesNotThrow(() -> createDomainSecret(encryptionSecretName, "weblogicenc",
-        "weblogicenc", wlsDomainNamespace),
+    assertDoesNotThrow(() -> createDomainSecret(encryptionSecretName, ENCRYPION_USERNAME_DEFAULT,
+        ENCRYPION_PASSWORD_DEFAULT, wlsDomainNamespace),
         String.format("createSecret failed for %s", encryptionSecretName));
 
     logger.info("Create database secret");
