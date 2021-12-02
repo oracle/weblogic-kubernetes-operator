@@ -107,8 +107,8 @@ If your operator Helm `enableClusterRoleBinding` configuration value is `false`,
   at the time the chart is installed or upgraded.
 - If you later create namespaces
   that match a `List`, `LabelSelector`, or `RegExp` selector 
-  then the operator will _not_ have privilege in these namespaces until you upgrade the Helm release.
-- You can resolve this issue by performing
+  _then the operator will not have privilege in these namespaces until you upgrade the Helm release_.
+  You can resolve this issue by performing
   a `helm upgrade` on an already installed operator Helm release, for example:
   ```shell
   $ helm upgrade \
@@ -264,12 +264,9 @@ $ helm upgrade \
     --reuse-values \
     --set "domainNamespaces={default}" \
     --wait \
-    --force \
     weblogic-operator \
     kubernetes/charts/weblogic-operator
 ```
-
-TBD Dongbo, why is `--force` included here and no-where else? Is this only needed when cluster role isn't enabled?
 
 **When using a label selector or regular expression**
 
@@ -279,7 +276,7 @@ so that the namespace no longer matches the selector.
 
 #### Recreate a previously deleted Kubernetes namespace with a running operator
 
-TBD Dongbo, why does this only talk about `List` mode? Does this only apply when cluster role enabled is false?
+**When using a namespace list**
 
 When the operator is configured to manage a list of namespaces
 and if you need to delete a namespace (and the resources in it) and then recreate it,
@@ -296,15 +293,18 @@ Events:
   Type     Reason                 Age               From               Message
   ----     ------                 ----              ----               -------
   Normal   Scheduled              1m                default-scheduler  Successfully assigned domain1-introspector-bz6rw to slc16ffk
-
   Normal   SuccessfulMountVolume  1m                kubelet, slc16ffk  MountVolume.SetUp succeeded for volume "weblogic-credentials-volume"
-
   Normal   SuccessfulMountVolume  1m                kubelet, slc16ffk  MountVolume.SetUp succeeded for volume "default-token-jzblm"
-
   Warning  FailedMount            27s (x8 over 1m)  kubelet, slc16ffk  MountVolume.SetUp failed for volume "weblogic-scripts-cm-volume" : configmaps "weblogic-scripts-cm" not found
-
 ```
 
 If you still run into problems after you perform the `helm upgrade` to re-initialize a namespace
 that is deleted and recreated, then you can
 try [forcing the operator to restart]({{< relref "/userguide/managing-operators/troubleshooting#force-the-operator-to-restart" >}}).
+
+**When using a label selector or regular expression**
+
+If your operator Helm `enableClusterRoleBinding` configuration value is `false`,
+then a running operator will _not_ have privilege to manage the newly recreated namespace until you upgrade
+the operator's Helm release.
+See [Ensuring the operator has permission to manage a namespace](#ensuring-the-operator-has-permission-to-manage-a-namespace).
