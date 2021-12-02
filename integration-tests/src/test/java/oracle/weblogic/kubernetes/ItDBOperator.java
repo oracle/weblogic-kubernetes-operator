@@ -26,7 +26,6 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -188,10 +187,9 @@ class ItDBOperator {
    * for it to complete rather than replacing a new introspector. Verify Pod is ready and service exists for both admin
    * server and managed servers. Verify EM console is accessible.
    */
-  @Order(1)
   @Test
   @DisplayName("Create FMW Domain model in image")
-  void testFmwModelInImage() {
+  void  testFmwModelInImageWithDbOperator() {
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
     createOcirRepoSecret(fmwDomainNamespace);
@@ -285,6 +283,10 @@ class ItDBOperator {
     // Expose the admin service external node port as  a route for OKD
     adminSvcExtHost = createRouteForOKD(getExternalServicePodName(fmwAdminServerPodName), fmwDomainNamespace);
     verifyEMconsoleAccess(fmwDomainNamespace, fmwDomainUid, adminSvcExtHost);
+
+    //"Reuse the same RCU schema to restart JRF domain"
+    testReuseRCUschemaToRestartDomain();
+
   }
 
   /**
@@ -293,10 +295,7 @@ class ItDBOperator {
    * restored OPSS key wallet file secret. Verify Pod is ready and service exists for both admin server and managed
    * servers. Verify EM console is accessible.
    */
-  @Order(2)
-  @Test
-  @DisplayName("Reuse the same RCU schema to restart JRF domain")
-  void testReuseRCUschemaToRestartDomain() {
+  private void testReuseRCUschemaToRestartDomain() {
     saveAndRestoreOpssWalletfileSecret(fmwDomainNamespace, fmwDomainUid, opsswalletfileSecretName);
     shutdownDomain();
     patchDomainWithWalletFileSecret(opsswalletfileSecretName);
@@ -307,9 +306,8 @@ class ItDBOperator {
   /**
    * Create WebLogic domain using model in image and Oracle database used for JMS and JTA migration and service logs.
    */
-  @Order(3)
   @Test
-  void testCreateWebLogicDomain() {
+  void  testWlsModelInImageWithDbOperator() {
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -372,15 +370,15 @@ class ItDBOperator {
           wlsDomainNamespace);
       checkPodReadyAndServiceExists(wlsManagedServerPrefix + i, wlsDomainUid, wlsDomainNamespace);
     }
+
+    //"Verify JMS/JTA Service migration with File(JDBC) Store"
+    testMiiJmsJtaServiceMigration();
   }
 
   /**
    * Verify JMS/JTA Service is migrated to an available active server.
    */
-  @Order(4)
-  @Test
-  @DisplayName("Verify JMS/JTA Service migration with File(JDBC) Store")
-  void testMiiJmsJtaServiceMigration() {
+  private void testMiiJmsJtaServiceMigration() {
 
     // build the standalone JMS Client on Admin pod
     String destLocation = "/u01/JmsSendReceiveClient.java";
