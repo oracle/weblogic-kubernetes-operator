@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -15,11 +15,9 @@ import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
-import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.DbUtils;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.FmwUtils;
 import org.junit.jupiter.api.AfterAll;
@@ -44,7 +42,6 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
-import static oracle.weblogic.kubernetes.actions.TestActions.getCurrentIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
@@ -60,8 +57,11 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runClientInsidePo
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runJavacInsidePod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
+import static oracle.weblogic.kubernetes.utils.DbUtils.createOracleDBUsingOperator;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuAccessSecret;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuSchema;
+import static oracle.weblogic.kubernetes.utils.DbUtils.deleteStorageclass;
+import static oracle.weblogic.kubernetes.utils.DbUtils.installDBOperator;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
@@ -71,22 +71,18 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerif
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
-import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.OperatorUtils.restartOperator;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResourceServerStartPolicy;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
-import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createOpsswalletpasswordSecret;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -157,7 +153,7 @@ class ItDBOperator {
     fmwDomainNamespace = namespaces.get(2);
 
     logger.info("Assign a unique namespace for WLS domain");
-    assertNotNull(namespaces.get(2), "Namespace is null");
+    assertNotNull(namespaces.get(3), "Namespace is null");
     wlsDomainNamespace = namespaces.get(3);
 
     // Create the repo secret to pull the image
@@ -166,10 +162,10 @@ class ItDBOperator {
     createSecretForBaseImages(wlsDomainNamespace);
 
     //install Oracle Database Operator
-    assertDoesNotThrow(() -> DbUtils.installDBOperator(dbNamespace), "Failed to install database operator");
+    assertDoesNotThrow(() -> installDBOperator(dbNamespace), "Failed to install database operator");
 
     logger.info("Create Oracle DB in namespace: {0} ", dbNamespace);
-    dbUrl = assertDoesNotThrow(() -> DbUtils.createOracleDBUsingOperator(dbName, RCUSYSPASSWORD,
+    dbUrl = assertDoesNotThrow(() -> createOracleDBUsingOperator(dbName, RCUSYSPASSWORD,
         dbNamespace, WORK_DIR + "/oracledatabase"));
 
     logger.info("Create RCU schema with fmwImage: {0}, rcuSchemaPrefix: {1}, dbUrl: {2}, "
@@ -182,10 +178,8 @@ class ItDBOperator {
   }
 
   /**
-   * Create a basic FMW model in image domain. Create the FMW domain with introspectVersion After domain is created and
-   * introspector exists restart the operator. Verify the restarted operator can find the existing introspector and wait
-   * for it to complete rather than replacing a new introspector. Verify Pod is ready and service exists for both admin
-   * server and managed servers. Verify EM console is accessible.
+   * Create a basic FMW model in image domain using the database created by DB Operator. Verify Pod is ready and service
+   * exists for both admin server and managed servers. Verify EM console is accessible.
    */
   @Test
   @DisplayName("Create FMW Domain model in image")
@@ -198,8 +192,8 @@ class ItDBOperator {
     logger.info("Create secret for admin credentials");
     assertDoesNotThrow(() -> createSecretWithUsernamePassword(fmwAminSecretName,
         fmwDomainNamespace,
-        "weblogic",
-        "welcome1"),
+        ADMIN_USERNAME_DEFAULT,
+        ADMIN_PASSWORD_DEFAULT),
         String.format("createSecret failed for %s", fmwAminSecretName));
 
     // create encryption secret
@@ -212,7 +206,7 @@ class ItDBOperator {
 
     // create RCU access secret
     logger.info("Creating RCU access secret: {0}, with prefix: {1}, dbUrl: {2}, schemapassword: {3})",
-        rcuaccessSecretName, RCUSCHEMAPREFIX, RCUSCHEMAPASSWORD, dbUrl);
+        rcuaccessSecretName, RCUSCHEMAPREFIX, dbUrl, RCUSCHEMAPASSWORD);
     assertDoesNotThrow(() -> createRcuAccessSecret(
         rcuaccessSecretName,
         fmwDomainNamespace,
@@ -255,42 +249,18 @@ class ItDBOperator {
 
     createDomainAndVerify(domain, fmwDomainNamespace);
 
-    //verify the introspector pod is created and runs
-    logger.info("Verifying introspector pod is created, runs");
-    String introspectPodNameBase = getIntrospectJobName(fmwDomainUid);
-    logger.info("Checking introspector pod exists and introspect version");
-    checkPodExists(introspectPodNameBase, fmwDomainUid, fmwDomainNamespace);
-    String introspectPodName = assertDoesNotThrow(() -> Kubernetes.listPods(fmwDomainNamespace, null)
-        .getItems().get(0).getMetadata().getName(),
-        String.format("Get intrspector pod name failed with ApiException in namespace %s", fmwDomainNamespace));
-    String introspectVersion1
-        = assertDoesNotThrow(() -> getCurrentIntrospectVersion(fmwDomainUid, fmwDomainNamespace));
-    logger.info("Before restarting operator introspector pod name is: {0}, introspectVersion is: {1}",
-        introspectPodName, introspectVersion1);
-
-    logger.info("Restarting operator in the namespace: " + opNamespace);
-    restartOperator(opNamespace);
-    //verify the exact same introspector pod exists and Version does not change
-    logger.info("Checking the exact same introspector pod {0} exists in the namespace {1}",
-        introspectPodName, fmwDomainNamespace);
-    checkPodExists(introspectPodName, fmwDomainUid, fmwDomainNamespace);
-    String introspectVersion2
-        = assertDoesNotThrow(() -> getCurrentIntrospectVersion(fmwDomainUid, fmwDomainNamespace));
-    logger.info("After operator restart introspectVersion is: " + introspectVersion2);
-    assertEquals(introspectVersion1, introspectVersion2, "introspectVersion changes after operator restart");
-
     verifyDomainReady(fmwDomainNamespace, fmwDomainUid, replicaCount);
     // Expose the admin service external node port as  a route for OKD
     adminSvcExtHost = createRouteForOKD(getExternalServicePodName(fmwAdminServerPodName), fmwDomainNamespace);
     verifyEMconsoleAccess(fmwDomainNamespace, fmwDomainUid, adminSvcExtHost);
 
-    //"Reuse the same RCU schema to restart JRF domain"
+    //Reuse the same RCU schema to restart JRF domain
     testReuseRCUschemaToRestartDomain();
 
   }
 
   /**
-   * Save the OPSS key wallet from a running JRF domain's introspector configmap to a file Restore the OPSS key wallet
+   * Save the OPSS key wallet from a running JRF domain's introspector configmap to a file. Restore the OPSS key wallet
    * file to a Kubernetes secret. Shutdown the domain. Using the same RCU schema to restart the same JRF domain with
    * restored OPSS key wallet file secret. Verify Pod is ready and service exists for both admin server and managed
    * servers. Verify EM console is accessible.
@@ -371,7 +341,7 @@ class ItDBOperator {
       checkPodReadyAndServiceExists(wlsManagedServerPrefix + i, wlsDomainUid, wlsDomainNamespace);
     }
 
-    //"Verify JMS/JTA Service migration with File(JDBC) Store"
+    //Verify JMS/JTA Service migration with File(JDBC) Store
     testMiiJmsJtaServiceMigration();
   }
 
@@ -487,10 +457,10 @@ class ItDBOperator {
    */
   @AfterAll
   public void tearDownAll() throws ApiException {
-    DbUtils.deleteStorageclass();
+    deleteStorageclass();
   }
 
-  // Start the managed-server2 by incrementing the repilica count to 2
+  // Restart the managed-server
   private void restartManagedServer(String serverName) {
     String commonParameters = " -d " + wlsDomainUid + " -n " + wlsDomainNamespace;
     boolean result;
