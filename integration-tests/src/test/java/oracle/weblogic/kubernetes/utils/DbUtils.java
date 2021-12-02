@@ -62,13 +62,15 @@ import static io.kubernetes.client.util.Yaml.dump;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.CERT_MANAGER;
+import static oracle.weblogic.kubernetes.TestConstants.DB_OPERATOR_YAML_URL;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_DB_19C_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_DB_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 //import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
-import static oracle.weblogic.kubernetes.TestConstants.ORACLE_DB_OPERATOR_RELEASE;
+import static oracle.weblogic.kubernetes.TestConstants.SIDB_YAML_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
@@ -697,7 +699,7 @@ public class DbUtils {
    */
   public static void installDBOperator(String namespace) throws IOException {
     String operatorYamlFile = DOWNLOAD_DIR + "/oracle-database-operator.yaml";
-    String certManager = "https://github.com/jetstack/cert-manager/releases/latest/download/cert-manager.yaml";
+    String certManager = CERT_MANAGER;
     CommandParams params = new CommandParams().defaults();
     params.command("kubectl apply -f " + certManager);
     boolean response = Command.withParams(params).execute();
@@ -705,8 +707,7 @@ public class DbUtils {
 
     assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(60));
 
-    String operatorYamlUrl = "https://raw.githubusercontent.com/"
-        + "oracle/oracle-database-operator/" + ORACLE_DB_OPERATOR_RELEASE + "/oracle-database-operator.yaml";
+    String operatorYamlUrl = DB_OPERATOR_YAML_URL;
 
     Files.createDirectories(Paths.get(DOWNLOAD_DIR));
     Files.deleteIfExists(Paths.get(DOWNLOAD_DIR, "oracle-database-operator.yaml"));
@@ -743,7 +744,7 @@ public class DbUtils {
    */
   public static void uninstallDBOperator(String namespace) {
     String operatorYamlFile = DOWNLOAD_DIR + "/oracle-database-operator.yaml";
-    String certManager = "https://github.com/jetstack/cert-manager/releases/latest/download/cert-manager.yaml";
+    String certManager = CERT_MANAGER;
 
     CommandParams params = new CommandParams().defaults();
 
@@ -795,8 +796,7 @@ public class DbUtils {
 
     createHostPathProvisioner(namespace, hostPath);
 
-    String dbYamlUrl = "https://raw.githubusercontent.com/oracle/oracle-database-operator/main/"
-        + "config/samples/sidb/singleinstancedatabase.yaml";
+    String dbYamlUrl = SIDB_YAML_URL;
 
     Path dbYaml = Paths.get(DOWNLOAD_DIR + "/oracledb.yaml");
     Files.deleteIfExists(dbYaml);

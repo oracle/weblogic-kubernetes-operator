@@ -309,7 +309,7 @@ class ItDBOperator {
    */
   @Order(3)
   @Test
-  void testCreateWebLoicDomain() {
+  void testCreateWebLogicDomain() {
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
