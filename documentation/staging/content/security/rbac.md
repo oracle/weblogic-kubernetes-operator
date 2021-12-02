@@ -5,4 +5,4 @@ weight: 5
 description: "Operator role-based authorization"
 ---
 
-**Note:** This page has moved to the operator user guide security [RBAC]({{< relref "/userguide/managing-operators/security/rbac.md" >}}) chapter.
+**Note:** This page has moved to the operator user guide [RBAC]({{< relref "/userguide/managing-operators/rbac.md" >}}) chapter.

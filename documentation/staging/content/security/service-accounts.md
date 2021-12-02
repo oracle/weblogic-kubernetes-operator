@@ -5,4 +5,4 @@ weight: 4
 description: "Kubernetes ServiceAccounts for the operator"
 ---
 
-**Note:** This page has been moved to the operator user guide security [Service Accounts]({{<relref "/userguide/managing-operators/security/service-accounts.md">}}) chapter.
+**Note:** This page has been moved to the operator user guide security [Service Accounts]({{<relref "/userguide/managing-operators/service-accounts.md">}}) chapter.
