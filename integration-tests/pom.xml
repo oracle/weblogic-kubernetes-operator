@@ -301,6 +301,7 @@
                 <includes-failsafe>
                   **/ItT3Channel,
                   **/ItDedicatedMode,
+                  **/ItDBOperator,
                   **/ItOperatorFmwUpgrade,
                   **/ItOperatorWlsUpgrade,
                   **/ItFmwDynamicDomainInPV,
