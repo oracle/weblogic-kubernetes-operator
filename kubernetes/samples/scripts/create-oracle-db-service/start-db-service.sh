@@ -78,7 +78,7 @@ fi
 sed -i -e '$d' ${dbYaml}
 echo '           - name: docker-store' >> ${dbYaml}
 sed -i -e "s?name: docker-store?name: ${pullsecret}?g" ${dbYaml}
-sed -i -e "s?image:.*?image: ${dbimage}?g" $dbYaml}
+sed -i -e "s?image:.*?image: ${dbimage}?g" ${dbYaml}
 sed -i -e "s?namespace:.*?namespace: ${namespace}?g" ${dbYaml}
 
 # Modify the NodePort based on input 
