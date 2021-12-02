@@ -219,6 +219,18 @@ class DomainStatusTest {
   }
 
   @Test
+  void whenConditionRemovedAndNoOtherHasMessage_setDomainStatusMessageNull() {
+    domainStatus.addCondition(new DomainCondition(Failed).withStatus("True").withMessage("m1").withReason(Internal));
+    domainStatus.addCondition(new DomainCondition(Completed).withStatus("True"));
+    domainStatus.addCondition(new DomainCondition(Available).withStatus("True"));
+
+    domainStatus.removeConditionWithType(Failed);
+
+    assertThat(domainStatus.getMessage(), nullValue());
+    assertThat(domainStatus.getReason(), nullValue());
+  }
+
+  @Test
   void whenClusterStatusAdded_statusHasClusterStatus() {
     domainStatus.addCluster(new ClusterStatus().withClusterName("cluster1").withReplicas(3));
 
