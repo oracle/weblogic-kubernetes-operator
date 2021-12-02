@@ -135,6 +135,8 @@ For more information, see [Operator Helm configuration values]({{<relref "/userg
 When using the [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/) (WIT),
 `create`, `rebase`, or `update` command, to create a
 [Domain in Image](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/choosing-a-model/) domain home,
+[Model in Image](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/choosing-a-model/) image,
+or [Model in Image](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/choosing-a-model/) auxiliary image,
 you can specify the `--target` parameter for the target Kubernetes environment.
 Its value can be either `Default` or `OpenShift`.
 The `OpenShift` option changes the domain directory files such that the group permissions

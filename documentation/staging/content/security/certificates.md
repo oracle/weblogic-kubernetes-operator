@@ -5,4 +5,4 @@ weight: 1
 description: "Operator SSL/TLS certificate handling"
 ---
 
-**Note:** This page has been moved to the operator user guide security [Certificates]({{<relref "/userguide/managing-operators/security/certificates#additional-reading">}}) chapter.
+**Note:** This page has been moved to the operator user guide security [Certificates]({{<relref "/userguide/managing-operators/the-rest-certificates.md">}}) chapter.
