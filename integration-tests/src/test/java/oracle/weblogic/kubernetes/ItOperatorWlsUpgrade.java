@@ -43,6 +43,9 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_COMPLETED_TYPE;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_STATUS_CONDITION_FAILED_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
@@ -64,6 +67,9 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotR
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeExists;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeHasExpectedStatus;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.verifyDomainStatusConditionTypeDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOperator;
@@ -232,6 +238,10 @@ class ItOperatorWlsUpgrade {
     for (int i = 1; i <= replicaCount; i++) {
       pods.put(managedServerPodNamePrefix + i, getPodCreationTime(domainNamespace, managedServerPodNamePrefix + i));
     }
+
+    // verify there is no status condition type Completed before upgrading to Latest
+    verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_COMPLETED_TYPE);
+
     // start a new thread to collect the availability data of 
     // the application while the main thread performs operator upgrade
     List<Integer> appAvailability = new ArrayList<Integer>();
@@ -296,6 +306,9 @@ class ItOperatorWlsUpgrade {
         checkCrdVersion(),
         logger,
         "the CRD version to be updated to latest");
+
+    // check domain status conditions
+    checkDomainStatus(domainNamespace);
 
     int externalRestHttpsPort = getServiceNodePort(
         opNamespace, "external-weblogic-operator-svc");
@@ -532,5 +545,21 @@ class ItOperatorWlsUpgrade {
          String.format("Create domain custom resource failed with ApiException "
              + "for %s in namespace %s", domainUid, domainNamespace));
     setPodAntiAffinity(domain);
+  }
+
+  void checkDomainStatus(String domainNamespace) {
+
+    // verify the condition type Completed exists
+    checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_COMPLETED_TYPE);
+    // verify the condition type Available exists
+    checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE);
+    // verify the condition Completed type has status True
+    checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
+        DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "True");
+    // verify the condition Available type has status True
+    checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
+        DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True");
+    // verify there is no status condition type Failed
+    verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
   }
 }
