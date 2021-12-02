@@ -6,4 +6,4 @@ weight: 2
 description: "Considerations for managing an operator's namespaces."
 ---
 
-This FAQ has moved to the operator documentation, see [Namespaces]({{<relref "/userguide/managing-operators/namespace-management.md">}}).
+This FAQ has moved to the operator user guide, see [Namespace management]({{<relref "/userguide/managing-operators/namespace-management.md">}}).
