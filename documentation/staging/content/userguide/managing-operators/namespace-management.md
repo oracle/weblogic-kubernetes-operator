@@ -125,7 +125,7 @@ If your operator Helm `enableClusterRoleBinding` configuration value is `false`,
 
 For a detailed discussion of the operator's security related resources,
 see the operator's role based access control (RBAC) requirements
-which are documented [here]({{< relref "/userguide/managing-operators/security/rbac.md" >}}).
+which are documented [here]({{< relref "/userguide/managing-operators/rbac.md" >}}).
 
 ### Check the namespaces that a running operator manages
 
