@@ -193,7 +193,7 @@ public class DomainUtils {
    */
   public static void deleteDomainResource(String domainNS, String domainUid) {
     //clean up domain resources in namespace and set namespace to label , managed by operator
-    getLogger().info("deleting domain custom resource {0}", domainUid);
+    getLogger().info("deleting domain custom resource {0} in namespace {1}", domainUid, domainNS);
     assertTrue(deleteDomainCustomResource(domainUid, domainNS));
 
     // wait until domain was deleted
