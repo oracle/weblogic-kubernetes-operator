@@ -16,7 +16,7 @@ Here are some suggestions for debugging problems with a domin after your Domain 
  - [Check the WebLogic Server pods](#check-the-weblogic-server-pods)
  - [Check the operator log](#check-the-operator-log)
  - [Check the FAQ](#check-the-faq)
-
+ - [Check the operator](#check-the-operator)
 
 ### Check the Domain status
 
@@ -136,5 +136,16 @@ Look for `SEVERE` and `ERROR` level messages in your operator logs. For example:
 ### Check the FAQ
 
 Common issues that have corresponding FAQ entries include:
-- When a Domain YAML file is deployed and no introspector or WebLogic Server pods start, plus the operator log contains no mention of the domain, then check to make sure that the Domain's namespace has been set up to be monitored by an operator. See the [Managing domain namespaces FAQ]({{<relref "userguide/managing-operators/namespace-management.md">}}).
-- If a `describe` of an introspector job or WebLogic Server pod reveals image access errors, see the [Cannot pull image FAQ]({{<relref "/faq/cannot-pull-image">}}).
+- When a Domain YAML file is deployed and no introspector or WebLogic Server pods start,
+  plus the operator log contains no mention of the domain,
+  then check to make sure that the Domain's namespace has been set up to be monitored by an operator.
+  See the operator [Namespace management]({{<relref "userguide/managing-operators/namespace-management.md">}})
+  and operator [Common mistakes]({{<relref "userguide/managing-operators/common-mistakes.md">}}) documentation.
+- If a `describe` of an introspector job or WebLogic Server pod reveals image access errors,
+  see the [Cannot pull image FAQ]({{<relref "/faq/cannot-pull-image">}}).
+
+### Check the operator
+
+If the problem is specific to the operator itself,
+or its namespace management,
+then consult the operator [Troubleshooting]({{<relref "userguide/managing-operators/troubleshooting.md">}}) documentation.

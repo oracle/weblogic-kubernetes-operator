@@ -11,15 +11,13 @@ A domain resource references WebLogic domain configuration,
 a WebLogic installation image,
 Kubernetes secrets,
 and anything else necessary to run a particular WebLogic domain.
+The operator requires Helm for its installation and tuning.
+
 A single operator instance is capable of managing multiple domains
 in multiple namespaces depending on how it is configured.
 A Kubernetes cluster can host multiple operators, but no more than one per namespace,
 and two operators cannot manage domains in the same namespace.
 You can deploy, delete, and manage domain resources while an operator is running.
-For a full overview of how an operator runtime and its domain resources work together, see the
-[terms]({{<relref "/userguide/introduction/terms.md">}}),
-[design philosophy]({{<relref "/userguide/introduction/terms.md">}}),
-and [architecture]({{<relref "/userguide/introduction/terms.md">}}) documentation.
 
 A completely installed and running WebLogic Kubernetes Operator environment includes:
 
@@ -27,15 +25,18 @@ A completely installed and running WebLogic Kubernetes Operator environment incl
 - A Kubernetes custom resource definition (CRD) that, when installed,
   enables the Kubernetes API server and the operator to monitor and manage domain resource instances.
 - One or more operator runtimes that monitor Kubernetes namespaces for domain resources.
+- Each operator is assocated with a local Kubernetes service account for security purposes.
 
-After an operator environment is setup, you can deploy domain resources.
-When an operator runtime detects a domain, it will generate and deploy the domain's pods, services, and potentially other resources.
-The operator will also monitor the domain for changes, such as a request to change the number of pods in a WebLogic cluster,
-will update status fields on the domain's domain resource, and will generate Kubernetes events for the domain in the domain's namespace.
-If an operator is shutdown, then its domains' pods, services, and such, will remain running but changes
+When an operator runtime detects a domain,
+it will generate and deploy the domain's pods, services, and potentially other resources.
+The operator will also monitor the domain for changes,
+such as a request to change the number of pods in a WebLogic cluster,
+will update status fields on the domain's domain resource,
+and will generate Kubernetes events for the domain in the domain's namespace.
+If an operator is shutdown,
+then its domains' pods, services, and such, will remain running but changes
 to a domain resource will not be detected and honored until the operator is restarted.
 
-A Helm chart is used for [installing]({{<relref "/userguide/managing-operators/installation.md#install-the-operator-helm-chart">}}) operator runtimes and their related resources (including the CRD), and for [configuring]({{<relref "/userguide/managing-operators/using-helm.md">}}) the operator. For a detailed discussion about configuring the namespaces which an operator manages, plus preparing a namespace for operator management, see [Namespaces]({{<relref "/userguide/managing-operators/namespace-management.md">}}).
 
 Optionally, you can monitor an operator and its log using an [Elastic Stack](https://www.elastic.co/what-is/)
 (previously referred to as the ELK Stack, after Elasticsearch, Logstash, and Kibana).
@@ -46,7 +47,27 @@ you can use as an alternate method for getting a list of WebLogic domains and cl
 and to initiate scaling operations (instead of directly performing such operations using the Kubernetes API or the Kubernetes command line).
 See the operator [REST services]({{<relref "/userguide/managing-operators/the-rest-api.md">}}).
 
-For an example of installing the operator, setting the namespace that it monitors, deploying a domain resource to its monitored namespace, and uninstalling the operator, see the [Quick Start]({{< relref "/quickstart/_index.md" >}}).
+References:
+- For a full overview of how an operator runtime and its domain resources work together, see the
+  [terms]({{<relref "/userguide/introduction/terms.md">}}),
+  [design philosophy]({{<relref "/userguide/introduction/terms.md">}}),
+  and [architecture]({{<relref "/userguide/introduction/terms.md">}}) documentation.
+- For information about using a Helm chart to install, update, or upgrade
+  the operator, its CRD, or its service account,
+  see the operator [Installation]({{<relref "/userguide/managing-operators/installation.md">}}) chapter
+- All operator Helm chart configuration options are
+  documented in the operator [Configuration reference]({{<relref "/userguide/managing-operators/using-helm.md">}}).
+- For a detailed discussion about configuring the namespaces which an operator manages,
+  plus preparing a namespace for operator management,
+  see [Namespace management]({{<relref "/userguide/managing-operators/namespace-management.md">}}).
+
+{{% notice tip %}}
+For an example of installing the operator,
+setting the namespace that it monitors,
+deploying a domain resource to its monitored namespace,
+and uninstalling the operator,
+see the [Quick Start]({{< relref "/quickstart/_index.md" >}}).
+{{% /notice %}}
 
 {{% notice note %}}
 There can be multiple operators in a Kubernetes cluster,

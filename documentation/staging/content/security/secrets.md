@@ -5,15 +5,11 @@ weight: 6
 description: "Kubernetes Secrets for the operator"
 ---
 
-TBD check if th Operator related secret material
-    already exists or is superceded by the operator 
-    doc - if so, then replace teh material with references...
-
 #### Contents
 * [Domain credentials secret](#domain-credentials-secret)
 * [Domain image pull secret](#domain-image-pull-secret)
+* [Domain configuration override or runtime update secrets](#operator-configuration-override-or-runtime-update-secrets)
 * [Operator image pull secret](#operator-image-pull-secret)
-* [Operator configuration override or runtime update secrets](#operator-configuration-override-or-runtime-update-secrets)
 * [Operator external REST interface secret](#operator-external-rest-interface-secret)
 * [Operator internal REST interface secret](#operator-internal-rest-interface-secret)
 
@@ -86,29 +82,7 @@ Kubernetes `Secret` that holds the registry credentials.
 For more information, see [Container Image Protection]({{<relref "/security/domain-security/image-protection#weblogic-domain-in-container-image-protection">}}).
 {{% /notice %}}
 
-#### Operator image pull secret
-
-The Helm chart for installing the operator has an option to specify the
-image pull secret used for the operator's image when using a private registry.
-The Kubernetes `Secret` of type `docker-registry` should be created in the namespace
-where the operator is deployed.
-
-Here is an example of using the `helm install` command to set the image name and image pull secret:
-
-```shell
-$ helm install my-weblogic-operator kubernetes/charts/weblogic-operator \
-  --set "image=my.io/my-operator-image:1.0" \
-  --set "imagePullSecrets[0].name=my-operator-image-pull-secret" \
-  --namespace weblogic-operator-ns \
-  --wait
-```
-
-{{% notice info %}}
-For more information, see
-[Install the operator Helm chart]({{<relref "/userguide/managing-operators/installation.md#install-the-operator-helm-chart">}}).
-{{% /notice %}}
-
-#### Operator configuration override or runtime update secrets
+#### Domain configuration override or runtime update secrets
 
 The operator supports embedding macros within configuration override templates
 and Model in Image model files that reference Kubernetes Secrets.
@@ -121,6 +95,18 @@ For more information, see
 [Configuration overrides]({{<relref "/userguide/managing-domains/configoverrides/_index.md#how-do-you-specify-overrides">}})
 and
 [Runtime updates]({{<relref "/userguide/managing-domains/model-in-image/runtime-updates.md">}}).
+{{% /notice %}}
+
+#### Operator image pull secret
+
+The Helm chart for installing the operator has an `imagePullSecrets` option to specify the
+image pull secret used for the operator's image when using a private registry;
+alternatively, the image pull secret can be specified on the operator's service account.
+
+{{% notice info %}}
+For more information, see
+[Customizing operator image name, pull secret, and private registry]({{<relref "/userguide/managing-operators/installation#customizing-operator-image-name-pull-secret-and-private-registry">}})
+in the operator installation guide.
 {{% /notice %}}
 
 #### Operator external REST interface secret
