@@ -5,8 +5,6 @@ weight: 2
 description: "How to install, upgrade, and uninstall the operator."
 ---
 
-### TBD This document is a work in progress
-
 ### Contents
 
 - [Introduction](#introduction)
@@ -32,10 +30,10 @@ A Kubernetes cluster can host multiple operators, but no more than one per names
 Ensure each of these prerequisites are in place before installing an operator:
 
 1. [Check environment](#check-environment)
-1. [Download operator source](#download-operator-source)
+1. [Download operator source, if needed](#download-operator-source-if-needed)
 1. [Set up operator Helm chart access](#set-up-operator-helm-chart-access)
 1. [Inspect the operator Helm chart](#inspect-the-operator-helm-chart)
-1. [Manually install the Domain resource custom resource definition (CRD), if need be](#manually-install-the-domain-resource-custom-resource-definition-crd-if-need-be)
+1. [Manually install the Domain resource custom resource definition (CRD), if needed](#manually-install-the-domain-resource-custom-resource-definition-crd-if-needed)
 1. [Prepare an operator namespace and service account](#prepare-an-operator-namespace-and-service-account)
 1. [Prepare operator image](#prepare-operator-image)
    - [Locating an operator image](#locating-an-operator-image)
@@ -44,8 +42,9 @@ Ensure each of these prerequisites are in place before installing an operator:
    - [Customizing operator image name, pull secret, and private registry](#customizing-operator-image-name-pull-secret-and-private-registry)
 1. [Determine the platform setting](#determine-the-platform-setting)
 1. [Choose a security strategy](#choose-a-security-strategy)
-   - [_Local namespace only_ security strategy](#_local-namespace-only_-security-strategy)
-   - [_Any namespace_ security strategy](#_any-namespace_-security-strategy)
+   - [_Any namespace security strategy with cluster role binding enabled_](#_any-namespace-security-strategy-with-cluster-role-binding-enabled_)
+   - [_Any namespace security strategy with cluster role binding disabled_](#_any-namespace-security-strategy-with-cluster-role-binding-disabled_)
+   - [_Local namespace only security strategy with cluster role binding disabled_](#_local-namespace-only-security-strategy-with-cluster-role-binding-disabled_)
 1. [Choose a domain namespace selection strategy](#choose-a-domain-namespace-selection-strategy)
 1. [Be aware of advanced operator configuration options](#be-aware-of-advanced-operator-configuration-options)
 
@@ -71,14 +70,14 @@ Ensure each of these prerequisites are in place before installing an operator:
 
 1. Optionally enable [Istio]({{< relref "/userguide/istio/istio.md" >}}).
 
-#### Download operator source
+#### Download operator source, if needed
 
 Downloading the operator source is required if:
 
 - You plan to provide local file based access to the operator Helm chart 
   (see [Set up operator Helm chart access](#set-up-operator-helm-chart-access)).
 - You need to manually install the CRD
-  (see [Manually install the Domain resource custom resource definition (CRD), if need be](#manually-install-the-domain-resource-custom-resource-definition-crd-if-need-be)).
+  (see [Manually install the Domain resource custom resource definition (CRD), if needed](#manually-install-the-domain-resource-custom-resource-definition-crd-if-needed)).
 
 Otherwise, you can skip this step.
 
@@ -106,25 +105,13 @@ The operator Helm chart includes:
 You can set up access to the operator Helm chart using either a _file based approach_
 or a _GitHub chart repository approach_:
 
-#### TBD questions for Ryan:
-
-- Charts should be equal to or newer than the operator image version, right? 
-- If so, we should document that the source should be newer than the operator image version.
-- I assume the repo approach will dereference to the public
-  repo that always has the latest?
-- On a related note, how can
-  we get information about the chart version from a local chart? From a repo version?
-  How about the CRD version of a CRD?
-- Should the CRD always be newer than the newest operator?
-- Does a cluster enabled operator automatically upgrade the CRD if needed?
-
 ##### _File based approach_
 
 - This approach uses the local file based version of the operator Helm chart
   that is located in the operator
   source `kubernetes/charts/weblogic-operator` directory.
 - To set up this option, get the operator source.
-  See [Download operator source](download-operator-source).
+  See [Download operator source, if needed](#download-operator-source-if-needed).
 - To use this option:
   - `cd /tmp/weblogic-kubernetes-operator` 
     (or `cd` to wherever you have downloaded the operator source).
@@ -187,7 +174,7 @@ Helm commands are explained in more detail in the
 [Useful Helm operations]({{<relref "/userguide/managing-operators/using-helm#useful-helm-operations">}})
 section of the operator Configuration reference.
 
-#### Manually install the Domain resource custom resource definition (CRD), if need be
+#### Manually install the Domain resource custom resource definition (CRD), if needed
 
 **What is a Domain CRD?**
 
@@ -210,7 +197,7 @@ See [Choose a security strategy](#choose-a-security-strategy).
 
 **How to manually install a Domain CRD.**
 
-To manually install the CRD, first [download operator source](#download-operator-source),
+To manually install the CRD, first [download the operator source](#download-operator-source-if-needed),
 and, assuming you have installed the operator source into the `/tmp` directory:
 
 ```text
@@ -376,16 +363,43 @@ see [kubernetesPlatform]({{<relref "/userguide/managing-operators/using-helm#kub
 
 #### Choose a security strategy
 
-There are two basic security strategies for deploying an operator:
-[__local namespace only__](#_local-namespace-only_-security-strategy)
-and 
-[__any namespace__](#_any-namespace_-security-strategy).
+There are three commonly used security strategies for deploying an operator:
+
+1. [_Any namespace security strategy with cluster role binding enabled_](#_any-namespace-security-strategy-with-cluster-role-binding-enabled_)
+1. [_Any namespace security strategy with cluster role binding disabled_](#_any-namespace-security-strategy-with-cluster-role-binding-disabled_)
+1. [_Local namespace only security strategy with cluster role binding disabled_](#_local-namespace-only-security-strategy-with-cluster-role-binding-disabled_)
 
 For a detailed discussion of the operator's security related resources,
 see the operator's role based access control (RBAC) requirements
 which are documented [here]({{< relref "/userguide/managing-operators/rbac.md" >}}).
 
-##### _Local namespace only_ security strategy
+##### _Any namespace security strategy with cluster role binding enabled_
+
+If you want to give the operator permission to access any namespace,
+then, for most use cases, set the `enableClusterRoleBinding` operator Helm chart
+configuration setting to `true` when installing the operator.
+
+For example `--set "enableClusterRoleBinding=true"`.
+The default for this setting is `false`.
+
+This is the most popular security strategy.
+
+##### _Any namespace security strategy with cluster role binding disabled_
+
+If your operator Helm `enableClusterRoleBinding` configuration value is `false` (the default),
+then an operator is still capable of managing multiple namespaces
+but a running operator will _not_ have privilege to manage a newly added namespace
+that matches its namespace selection criteria until you upgrade
+the operator's Helm release.
+See [Ensuring the operator has permission to manage a namespace]({{< relref "/userguide/managing-operators/namespace-management#ensuring-the-operator-has-permission-to-manage-a-namespace" >}})
+in the operator Namespace management chapter.
+
+**Note**: You will need to manually install the operator CRD
+because `enableClusterRoleBinding` is not set to `true`
+and installation of the CRD requires cluster role binding privileges.
+See [Manually install the Domain resource custom resource definition (CRD), if needed](#manually-install-the-domain-resource-custom-resource-definition-crd-if-needed).
+
+##### _Local namespace only security strategy with cluster role binding disabled_
 
 If you want to limit the operator so that it can
 only access resources in its local namespace, then:
@@ -398,32 +412,22 @@ only access resources in its local namespace, then:
 - You will need to manually install the operator CRD
   because `enableClusterRoleBinding` is not set to `true`
   and installing the CRD requires cluster role binding privileges.
-  See [Manually install the Domain resource custom resource definition (CRD), if need be](#manually-install-the-domain-resource-custom-resource-definition-crd-if-need-be).
+  See [Manually install the Domain resource custom resource definition (CRD), if needed](#manually-install-the-domain-resource-custom-resource-definition-crd-if-needed).
 
 This may be necessary in environments where the operator cannot have cluster-scoped privileges,
 such as may happen on OpenShift platforms when running the operator with a `Dedicated` namespace strategy. 
 
-##### _Any namespace_ security strategy
-
-If you want to give the operator permission to access any namespace,
-then, for most use cases, set the `enableClusterRoleBinding` operator Helm chart
-configuration setting to `true` when installing the operator. 
-For example `--set "enableClusterRoleBinding=true"`.
-The default for this setting is `false`.
-
-**Note**: If your operator Helm `enableClusterRoleBinding` configuration value is `false`,
-then an operator is still capable of managing multiple namespaces
-but a running operator will _not_ have privilege to manage a newly added namespace
-that matches its namespace selection criteria until you upgrade
-the operator's Helm release.
-See [Ensuring the operator has permission to manage a namespace]({{< relref "/userguide/managing-operators/namespace-management#ensuring-the-operator-has-permission-to-manage-a-namespace" >}})
-in the operator Namespace management chapter.
 
 #### Choose a domain namespace selection strategy
 
-Before installing your operator, choose the value for its `domainNamespaceSelectionStrategy` and its related setting (if any).
+Before installing your operator,
+choose the value for its `domainNamespaceSelectionStrategy` Helm chart configuration setting and its related setting (if any).
 See [Choose a domain namespace section strategy]({{<relref "/userguide/managing-operators/namespace-management#choose-a-domain-namespace-selection-strategy">}})
 in the operator Namespaces management chapter.
+
+Note that if you choose the `Dedicated` value for the `domainNamespaceSelectionStrategy`,
+then you should also set `enableClusterRoleBinding` to false.
+See [Choose a security strategy](#choose-a-security-strategy).
 
 For a discussion about common namespace management issues,
 see [Common Mistakes]({{<relref "/userguide/managing-operators/common-mistakes.md">}}).
@@ -433,8 +437,15 @@ in the Configuration chapter.
 #### Be aware of advanced operator configuration options
 
 Review the settings in the [Configuration reference]({{<relref "/userguide/managing-operators/using-helm.md">}}) for
-advanced or fine tuning options that might apply to your use case. These include node selectors, node affinity,
-Elastic Stack integration, the operator REST API, operator pod labels, operator pod annotations, and Istio.
+less commonly used advanced or fine tuning Helm chart configuration options
+that might apply to your particular use case.
+These include node selectors,
+node affinity,
+Elastic Stack integration,
+the operator REST API,
+setting operator pod labels,
+setting operator pod annotations,
+and Istio.
 
 ### Install the operator
 
@@ -528,7 +539,8 @@ $ helm install weblogic-operator kubernetes/charts/weblogic-operator \
 
 This creates a Helm release named `sample-weblogic-operator`
 in the `sample-weblogic-operator-ns` namespace,
-and configures a deployment and supporting resources for the operator.
+configures a deployment and supporting resources for the operator,
+and deploys the operator.
 
 You can verify the operator installation by examining the output from the `helm install` command.
 
@@ -605,9 +617,6 @@ When upgrading the operator:
 - Use the `helm upgrade` command with the `--reuse-values` parameter.
 - Supply a new `image` value.
 - Supply a new Helm chart the corresponds to the image.
-  - **Important**: Make sure that the
-    `weblogic-kubernetes-operator` source code repository on your local machine is at the
-    operator release to which you are upgrading. TBD verify with Ryan, ditto for CRD.
 
 For example:
 

@@ -30,8 +30,17 @@ A running operator assumes that these roles are created in the
 Kubernetes cluster, and will automatically attempt to verify that
 they are correct when it starts.
 
+Note that the operator install Helm chart
+creates ClusterRoles and ClusterRoleBindings
+when the [enableClusterRoleBinding]({{<relref "/userguide/managing-operators/using-helm#enableClusterRoleBinding">}}) Helm chart configuration setting
+is set to `true`, and the chart creates Roles and Rolebindings 
+when the setting is set to `false` (the default).
+
 **References**:
 - For more information about installing the operator, see [Installation]({{< relref "/userguide/managing-operators/installation.md" >}})
+- For more information on the `enableClusterRoleBinding` operator Helm chart setting, see 
+  [Choose a security strategy]({{<relref "/userguide/managing-operators/installation#choose-a-security-strategy">}})
+  in the operator Installation chapter.
 - For more information about the Kubernetes `ServiceAccount` used by the operator, see
   [Service Accounts]({{<relref "/userguide/managing-operators/service-accounts.md">}}).
 - For more information about Kubernetes Roles, see the
@@ -122,8 +131,6 @@ to a `Role` or `ClusterRole` granting permission to the operator.
 | | | **Create**: pods/exec | |
 
 #### ClusterRoleBindings
-
-TBD: Ryan/Dongbo Please confirm that these settings don't take effect unless `enableClusterRoleBinding` is set to `true` in the operator.
 
 Assuming that the operator was installed into the Kubernetes Namespace `weblogic-operator-ns`,
 the following `ClusterRoleBinding` entries are mapped to a `ClusterRole` granting permission to the operator.
