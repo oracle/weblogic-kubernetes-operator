@@ -2,7 +2,7 @@
 title: "Service accounts"
 date: 2019-02-23T17:36:12-05:00
 weight: 10
-description: "Kubernetes ServiceAccounts for the operator"
+description: "Kubernetes ServiceAccounts for the operator."
 ---
 
 
@@ -31,14 +31,12 @@ then consider using the same dedicated namespace for each operator
 and the domains that each operator manages.
 See the `Dedicated` option for the
 [domainNamespaceSelectionStrategy]({{< relref "/userguide/managing-operators/using-helm#domainNamespaceSelectionStrategy" >}})
-setting in the Operator Configuration reference.
+setting.
 {{% /notice %}}
 
 #### Additional reading
 
-* See [Prepare an operator namespace and service account]({{<relref "/userguide/managing-operators/installation#prepare-an-operator-namespace-and-service-account">}})
-  in the operator Installation user guide.
+* See [Prepare an operator namespace and service account]({{<relref "/userguide/managing-operators/installation#prepare-an-operator-namespace-and-service-account">}}).
 * See the Operator Helm chart [serviceAccount]({{<relref "/userguide/managing-operators/using-helm#serviceaccount">}})
-  setting in the operator Configuration reference.
-* For more information about access controls, see the operator user guide security
-  [RBAC]({{<relref "/userguide/managing-operators/rbac.md">}}) chapter.
+  setting.
+* For more information about access controls, see the [RBAC]({{<relref "/userguide/managing-operators/rbac.md">}}) documentation.

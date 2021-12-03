@@ -22,8 +22,8 @@ For the current production release {{< latestVersion >}}:
   based on both Oracle Linux 7 and 8, including Oracle WebLogic Server 14.1.1.0.0 images based on Java 8 and 11.
 * You must have the `cluster-admin` role to install the operator.  The operator does
   not need the `cluster-admin` role at runtime. For more information,
-  see the role-based access control,
-  [Operator RBAC]({{< relref "/userguide/managing-operators/rbac.md" >}}), documentation.
+  see the role-based access control, operator
+  [RBAC]({{< relref "/userguide/managing-operators/rbac.md" >}}) documentation.
 * We do not currently support running WebLogic in non-Linux containers.
 
 See also [Supported platforms]({{< relref "userguide/platforms/environments.md" >}}) for environment and licensing requirements.

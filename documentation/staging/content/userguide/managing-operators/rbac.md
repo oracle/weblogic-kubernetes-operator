@@ -2,7 +2,7 @@
 title: "RBAC"
 date: 2019-02-23T17:15:36-05:00
 weight: 11
-description: "Operator role-based authorization"
+description: "Operator role-based authorization."
 ---
 
 #### Contents
@@ -15,41 +15,42 @@ description: "Operator role-based authorization"
 
 #### Overview
 
-This chapter describes the Kubernetes Role-Based Access Control (RBAC)
-roles that an operator install Helm chart automatically creates for you.
+This document describes the Kubernetes Role-Based Access Control (RBAC)
+roles that an operator installation Helm chart automatically creates for you.
 
-The general design goal of the operator install is to
+The general design goal of the operator installation is to
 automatically provide the operator with the minimum amount of
 permissions that the operator requires and to favor built-in roles over custom roles
 where it makes sense to use the Kubernetes built-in roles.
 
-The operator install Helm chart automatically creates
+The operator installation Helm chart automatically creates
 RBAC ClusterRoles, ClusterRoleBindings, Roles, and RoleBindings
 for the `ServiceAccount` that is used by the operator.
 A running operator assumes that these roles are created in the
 Kubernetes cluster, and will automatically attempt to verify that
 they are correct when it starts.
 
-Note that the operator install Helm chart
+Note that the operator installation Helm chart
 creates ClusterRoles and ClusterRoleBindings
 when the [enableClusterRoleBinding]({{<relref "/userguide/managing-operators/using-helm#enableClusterRoleBinding">}}) Helm chart configuration setting
-is set to `true`, and the chart creates Roles and Rolebindings 
+is set to `true`, and the chart creates Roles and RoleBindings
 when the setting is set to `false` (the default).
 
-**References**:
-- For more information about installing the operator, see [Installation]({{< relref "/userguide/managing-operators/installation.md" >}})
-- For more information on the `enableClusterRoleBinding` operator Helm chart setting, see 
-  [Choose a security strategy]({{<relref "/userguide/managing-operators/installation#choose-a-security-strategy">}})
-  in the operator Installation chapter.
-- For more information about the Kubernetes `ServiceAccount` used by the operator, see
+**References**
+
+For more information about:
+- Installing the operator, see [Installation]({{< relref "/userguide/managing-operators/installation.md" >}}).
+- The `enableClusterRoleBinding` operator Helm chart setting, see
+  [Choose a security strategy]({{<relref "/userguide/managing-operators/installation#choose-a-security-strategy">}}).
+- The Kubernetes `ServiceAccount` used by the operator, see
   [Service Accounts]({{<relref "/userguide/managing-operators/service-accounts.md">}}).
-- For more information about Kubernetes Roles, see the
-  [Kubernetes RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) documentation.
+- Kubernetes Roles, see the Kubernetes
+  [RBAC](https://kubernetes.io/docs/reference/access-authn-authz/rbac/) documentation.
 
 #### Operator RBAC definitions
 
 To display the Kubernetes Roles and related Bindings used by
-the operator where the operator was installed using the
+the operator, where the operator was installed using the
 Helm release name `weblogic-operator`, look for the Kubernetes objects, `Role`, `RoleBinding`,
 `ClusterRole`, and `ClusterRoleBinding`, when using the Helm `status` command:
 
@@ -161,4 +162,4 @@ the following `ClusterRoleBinding` entries are mapped to a `ClusterRole` grantin
       then those resources will be created as `Roles` and `RoleBindings` in the namespace of the operator.
       See the `Dedicated` option for the
       [domainNamespaceSelectionStrategy]({{< relref "/userguide/managing-operators/using-helm#domainNamespaceSelectionStrategy" >}})
-      setting in the Operator Configuration reference.
+      setting.

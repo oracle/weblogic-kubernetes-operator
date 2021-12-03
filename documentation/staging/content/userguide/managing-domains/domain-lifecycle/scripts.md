@@ -1,9 +1,9 @@
 ---
-title: "Life cycle scripts"
+title: "Lifecycle scripts"
 date: 2019-02-23T17:04:41-05:00
 draft: false
 weight: 7
-description: "A collection of useful domain life cycle sample scripts."
+description: "A collection of useful domain lifecycle sample scripts."
 ---
 
 Beginning in version 3.1.0,
@@ -25,4 +25,3 @@ For more information,
 see the [README](https://github.com/oracle/weblogic-kubernetes-operator/tree/main/kubernetes/samples/scripts/domain-lifecycle/README.md).
 
 **Note**: Prior to running these scripts, you must have previously created and deployed the domain.
-
