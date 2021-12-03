@@ -12,6 +12,8 @@ import java.util.regex.Pattern;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownManagedServerUsingServerStartPolicy;
@@ -154,8 +156,8 @@ public class SessionMigrationUtil {
     assertDoesNotThrow(() -> createSecretWithUsernamePassword(
         adminSecretName,
         domainNamespace,
-        "weblogic",
-        "welcome1"),
+        ADMIN_USERNAME_DEFAULT,
+        ADMIN_PASSWORD_DEFAULT),
         String.format("createSecret failed for %s", adminSecretName));
 
     // create encryption secret

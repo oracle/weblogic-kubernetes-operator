@@ -52,7 +52,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Test WLS Session Migration via istio enabled using Istio gateway")
 @IntegrationTest
-class ItIstioSessionMigrIstioGateway {
+class ItIstioGatewaySessionMigration {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
