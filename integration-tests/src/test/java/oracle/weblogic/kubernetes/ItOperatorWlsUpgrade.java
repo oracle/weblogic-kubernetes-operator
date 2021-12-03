@@ -240,7 +240,8 @@ class ItOperatorWlsUpgrade {
     }
 
     // verify there is no status condition type Completed before upgrading to Latest
-    verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_COMPLETED_TYPE);
+    verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace,
+        DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "v8");
 
     // start a new thread to collect the availability data of 
     // the application while the main thread performs operator upgrade
@@ -550,16 +551,19 @@ class ItOperatorWlsUpgrade {
   void checkDomainStatus(String domainNamespace) {
 
     // verify the condition type Completed exists
-    checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_COMPLETED_TYPE);
+    checkDomainStatusConditionTypeExists(domainUid, domainNamespace,
+        DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "v8");
     // verify the condition type Available exists
-    checkDomainStatusConditionTypeExists(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE);
+    checkDomainStatusConditionTypeExists(domainUid, domainNamespace,
+        DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "v8");
     // verify the condition Completed type has status True
     checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
-        DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "True");
+        DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "True", "v8");
     // verify the condition Available type has status True
     checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
-        DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True");
+        DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True", "v8");
     // verify there is no status condition type Failed
-    verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
+    verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace,
+        DOMAIN_STATUS_CONDITION_FAILED_TYPE, "v8");
   }
 }

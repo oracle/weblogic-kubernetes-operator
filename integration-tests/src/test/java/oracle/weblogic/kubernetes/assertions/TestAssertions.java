@@ -36,6 +36,7 @@ import oracle.weblogic.kubernetes.assertions.impl.Voyager;
 import oracle.weblogic.kubernetes.assertions.impl.WitAssertion;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.listSecrets;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -440,10 +441,26 @@ public class TestAssertions {
   public static Callable<Boolean> domainStatusConditionTypeExists(String domainUid,
                                                                   String domainNamespace,
                                                                   String conditionType) {
+    return domainStatusConditionTypeExists(domainUid, domainNamespace, conditionType, DOMAIN_VERSION);
+  }
+
+  /**
+   * Check the domain status condition type exists.
+   * @param domainUid uid of the domain
+   * @param domainNamespace namespace of the domain
+   * @param conditionType the type name of condition, accepted value: Completed, Available, Failed and
+   *                      ConfigChangesPendingRestart
+   * @param domainVersion version of domain
+   * @return true if the condition type exists, false otherwise
+   */
+  public static Callable<Boolean> domainStatusConditionTypeExists(String domainUid,
+                                                                  String domainNamespace,
+                                                                  String conditionType,
+                                                                  String domainVersion) {
     LoggingFacade logger = getLogger();
     return () -> {
       oracle.weblogic.domain.Domain domain =
-          assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace));
+          assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace, domainVersion));
 
       if (domain != null && domain.getStatus() != null) {
         List<DomainCondition> domainConditionList = domain.getStatus().getConditions();
@@ -476,11 +493,30 @@ public class TestAssertions {
                                                                              String domainNamespace,
                                                                              String conditionType,
                                                                              String expectedStatus) {
+    return domainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
+        conditionType, expectedStatus, DOMAIN_VERSION);
+  }
+
+  /**
+   * Check the domain status condition type has expected status.
+   * @param domainUid uid of the domain
+   * @param domainNamespace namespace of the domain
+   * @param conditionType the type name of condition, accepted value: Completed, Available, Failed and
+   *                      ConfigChangesPendingRestart
+   * @param expectedStatus expected status value, either True or False
+   * @param domainVersion version of domain
+   * @return true if the condition type has the expected status, false otherwise
+   */
+  public static Callable<Boolean> domainStatusConditionTypeHasExpectedStatus(String domainUid,
+                                                                             String domainNamespace,
+                                                                             String conditionType,
+                                                                             String expectedStatus,
+                                                                             String domainVersion) {
     LoggingFacade logger = getLogger();
 
     return () -> {
       oracle.weblogic.domain.Domain domain =
-          assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace));
+          assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace, domainVersion));
 
       if (domain != null && domain.getStatus() != null) {
         List<DomainCondition> domainConditionList = domain.getStatus().getConditions();
