@@ -95,11 +95,10 @@ kubectl apply -f ${dbYaml}
 
 dbpod=$(detectPod ${namespace})
 
-echo " DEBUG1 ${dbpod} running in ${namespace}" 
 echo "Is going to check dbpod: ${dbpod} in the namespace: ${namespace} "
-
 checkPod ${dbpod} ${namespace}
-echo " DEBUG2 ${dbpod} running in ${namespace}" 
+
+echo " checking pod state for pod ${dbpod} running in ${namespace}"
 checkPodState ${dbpod} ${namespace} "1/1"
 checkService oracle-db ${namespace}
 
