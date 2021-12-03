@@ -1,13 +1,13 @@
-### Domain life cycle sample scripts
+### Domain lifecycle sample scripts
 
 The operator provides sample scripts to start up or shut down a specific Managed Server or cluster in a deployed domain, or the entire deployed domain.
 
-**Note**: Prior to running these scripts, you must have previously created and deployed the domain. These scripts make use of [jq](https://stedolan.github.io/jq/) for processing JSON. You must have `jq 1.5 or higher` installed in order to run these scripts. See the installation options on the [jq downlod](https://stedolan.github.io/jq/download/) page.
+**Note**: Prior to running these scripts, you must have previously created and deployed the domain. These scripts make use of [jq](https://stedolan.github.io/jq/) for processing JSON. You must have `jq 1.5 or higher` installed in order to run these scripts. See the installation options on the [jq download](https://stedolan.github.io/jq/download/) page.
 
 These scripts can be helpful when scripting the life cycle of a WebLogic Server domain. For information on how to start, stop, restart, and scale WebLogic Server instances in your domain, see [Domain Life Cycle](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle).
 
-#### Scripts to start and stop a WebLogic Server
-The `startServer.sh` script starts a WebLogic Server in a domain. For clustered Managed Servers, either it increases the `spec.clusters[<cluster-name>].replicas` value for the Managed Server's cluster by `1` or updates the `spec.managedServers[<server-name>].serverStartPolicy` attribute of the domain resource or both as necessary. For the Administration Server, it updates the value of the `spec.adminServer.serverStartPolicy` attribute of the domain resource. For non-clustered Managed Servers, it updates the `spec.managedServers[<server-name>].serverStartPolicy` attribute of the domain resource. The script provides an option to keep the `spec.clusters[<cluster-name>].replicas` value constant for clustered servers. See the script `usage` information by using the `-h` option.
+#### Scripts to start and stop a WebLogic Server instance
+The `startServer.sh` script starts a WebLogic Server instance in a domain. For clustered Managed Servers, either it increases the `spec.clusters[<cluster-name>].replicas` value for the Managed Server's cluster by `1` or updates the `spec.managedServers[<server-name>].serverStartPolicy` attribute of the domain resource or both as necessary. For the Administration Server, it updates the value of the `spec.adminServer.serverStartPolicy` attribute of the domain resource. For non-clustered Managed Servers, it updates the `spec.managedServers[<server-name>].serverStartPolicy` attribute of the domain resource. The script provides an option to keep the `spec.clusters[<cluster-name>].replicas` value constant for clustered servers. See the script `usage` information by using the `-h` option.
 
 Use the following command to start the server either by increasing the replica count or by updating the server start policy:
 ```
@@ -25,7 +25,7 @@ domain.weblogic.oracle/domain1 patched
 [INFO] Successfully patched server 'managed-server2' with 'ALWAYS' start policy.
 ```
 
-The `stopServer.sh` script shuts down a running WebLogic Server in a domain. For clustered Managed Servers, either it decreases the `spec.clusters[<cluster-name>].replicas` value for the Managed Server's cluster by `1` or updates the `spec.managedServers[<server-name>].serverStartPolicy` attribute of the domain resource or both as necessary. For the Administration Server, it updates the value of the `spec.adminServer.serverStartPolicy` attribute of the domain resource. For non-clustered Managed Servers, it updates the `spec.managedServers[<server-name>].serverStartPolicy` attribute of the domain resource. The script provides an option to keep the `spec.clusters[<cluster-name>].replicas` value constant for clustered servers. See the script `usage` information by using the `-h` option.
+The `stopServer.sh` script shuts down a running WebLogic Server instance in a domain. For clustered Managed Servers, either it decreases the `spec.clusters[<cluster-name>].replicas` value for the Managed Server's cluster by `1` or updates the `spec.managedServers[<server-name>].serverStartPolicy` attribute of the domain resource or both as necessary. For the Administration Server, it updates the value of the `spec.adminServer.serverStartPolicy` attribute of the domain resource. For non-clustered Managed Servers, it updates the `spec.managedServers[<server-name>].serverStartPolicy` attribute of the domain resource. The script provides an option to keep the `spec.clusters[<cluster-name>].replicas` value constant for clustered servers. See the script `usage` information by using the `-h` option.
 
 Use the following command to stop the server either by decreasing the replica count or by updating the server start policy:
 ```
@@ -88,7 +88,7 @@ domain.weblogic.oracle/domain1 patched
 
 ### Script to view the status of a WebLogic cluster
 
-The `clusterStatus.sh` script can be used to view the status of a WebLogic cluster in the WebLogic domain managed by the operator. The WebLogic Cluster Status contains information about the minimum, maximum, goal, current, and ready replica count for a WebLogic cluster. This script displays a table containing the status for WebLogic clusters in one or more domains across one or more namespaces. See the script `usage` information by using the `-h` option.
+Use the `clusterStatus.sh` script to view the status of a WebLogic cluster in the WebLogic domain managed by the operator. The `WebLogic Cluster Status` contains information about the minimum, maximum, goal, current, and ready replica count for a WebLogic cluster. This script displays a table containing the status for WebLogic clusters in one or more domains across one or more namespaces. See the script `usage` information by using the `-h` option.
 
 Use the following command to view the status of all WebLogic clusters in all domains across all namespaces.
 ```shell
@@ -103,7 +103,7 @@ weblogic-domain-1  domain1           cluster-1  0    4    2     2        2
 weblogic-domain-1  domain1           cluster-2  0    4    0     0        0
 ```
 
-Use the following command to view the status of all WebLogic clusters in 'domain1' in 'weblogic-domain-1' namespace.
+Use the following command to view the status of all WebLogic clusters in `domain1` in `weblogic-domain-1` namespace.
 ```
 $ clusterStatus.sh -d domain1 -n weblogic-domain-1
 
@@ -117,7 +117,7 @@ weblogic-domain-1  domain1  cluster-2  0    4    0     0        0
 
 ### Scripts to initiate a rolling restart of a WebLogic domain or cluster
 
-The `rollDomain.sh` script can be used to initiate a rolling restart of the WebLogic Server Pods in a domain managed by the operator. Similarly, the `rollCluster.sh` script can be used to initiate a rolling restart of the WebLogic Server Pods belonging to a WebLogic cluster in a domain managed by the operator.
+Use the `rollDomain.sh` script to initiate a rolling restart of the WebLogic Server Pods in a domain managed by the operator. Similarly, use the `rollCluster.sh` script to initiate a rolling restart of the WebLogic Server Pods belonging to a WebLogic cluster in a domain managed by the operator.
 
 The `rollDomain.sh` script updates the value of the `spec.restartVersion` attribute of the domain resource.  Then, the operator will do a rolling restart of the Server Pods in the WebLogic domain after the value of the `spec.restartVersion` is updated. You can provide the new value for `spec.restartVersion` as a parameter to the script or the script will automatically generate a new value to trigger the rolling restart. See the script `usage` information by using the `-h` option.
 
@@ -154,7 +154,7 @@ domain.weblogic.oracle/domain1 patched
 ```
 
 ### Scripts to restart a WebLogic Server in a domain
-The `restartServer.sh` script can be used to restart a WebLogic Server in a domain. This script restarts the Server by deleting the Server Pod for the WebLogic Server instance.
+Use the `restartServer.sh` script to restart a WebLogic Server in a domain. This script restarts the server by deleting the Server Pod for the WebLogic Server instance.
 ```
 $ restartServer.sh -s managed-server1 -d domain1 -n weblogic-domain-1
 [2021-03-24T22:20:22.498000Z][INFO] Initiating restart of 'managed-server1' by deleting server pod 'domain1-managed-server1'.
@@ -163,7 +163,7 @@ $ restartServer.sh -s managed-server1 -d domain1 -n weblogic-domain-1
 
 ### Scripts to explicitly initiate introspection of a WebLogic domain
 
-The `introspectDomain.sh` script can be used to rerun a WebLogic domain's introspect job by explicitly initiating the introspection. This script updates the value of the `spec.introspectVersion` attribute of the domain resource. The resulting behavior depends on your domain home source type and other factors, see [Initiating introspection](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/introspection/#initiating-introspection) for details. You can provide the new value of the `introspectVersion` as a parameter to the script or the script will automatically generate a new value to trigger the introspection. See the script `usage` information by using the `-h` option.
+Use the `introspectDomain.sh` script to rerun a WebLogic domain's introspect job by explicitly initiating the introspection. This script updates the value of the `spec.introspectVersion` attribute of the domain resource. The resulting behavior depends on your domain home source type and other factors, see [Initiating introspection](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/introspection/#initiating-introspection) for details. You can provide the new value of the `introspectVersion` as a parameter to the script or the script will automatically generate a new value to trigger the introspection. See the script `usage` information by using the `-h` option.
 
 Use the following command to rerun a domain's introspect job with the `introspectVersion` value generated by the script.
 ```
@@ -183,4 +183,4 @@ domain.weblogic.oracle/domain1 patched
 
 ### Watching the Pods after executing life cycle scripts
 
-After executing the lifecycle scripts described above for a domain or a cluster or a Server, you can manually run the `kubectl -n MYNS get pods --watch=true --show-labels` command to watch the effect of running the scripts and monitor the status and labels of various Pods. You will need to do 'Ctrl-C' to stop watching the Pods and exit.
+After executing the lifecycle scripts described above for a domain or a cluster or a Server, you can manually run the `kubectl -n MYNS get pods --watch=true --show-labels` command to watch the effect of running the scripts and monitor the status and labels of various Pods. You will need to use `Ctrl-C` to stop watching the Pods and exit.

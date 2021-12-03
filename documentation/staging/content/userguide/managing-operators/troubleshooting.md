@@ -33,7 +33,7 @@ see [Useful Helm operations]({{<relref "/userguide/managing-operators/using-helm
 ### Ensure the operator CRD is installed
 
 When you install and run an operator, the installation should have deployed a domain custom resource to the cluster.
-To check, verify that the following command lists a CRD with name `domains.weblogic.oracle`:
+To check, verify that the following command lists a CRD with the name `domains.weblogic.oracle`:
 
 ```text
 $ kubectl get crd
@@ -74,7 +74,7 @@ Each operator deployment will have a corresponding Kubernetes pod
 with a name that has a prefix that matches the deployment name
 plus a unique suffix that changes every time the deployment restarts.
 
-To find operator pods and check their high level status:
+To find operator pods and check their high-level status:
 
 ```text
 $ kubectl get pods --all-namespaces=true -l weblogic.operatorName
@@ -86,7 +86,7 @@ To check the details for a given pod:
 $ kubectl -n OP_NAMESPACE get pod weblogic-operator-UNIQUESUFFIX -o yaml
 $ kubectl -n OP_NAMESPACE describe pod weblogic-operator-UNIQUESUFFIX
 ```
-A pod describe usefully includes any events that might be associated with the operator.
+A pod `describe` usefully includes any events that might be associated with the operator.
 
 ### Check common issues
 
@@ -174,12 +174,12 @@ It should rarely be necessary to change the operator to use a finer-grained logg
 but, in rare situations, the operator support team may direct you to do so.
 If you change the logging level, then be aware that FINE or finer-grained logging levels
 can be extremely verbose and quickly use up gigabytes of disk space in the span of hours, or,
-at the finest levels, during heavy activity, in even minutes. 
+at the finest levels, during heavy activity, in even minutes.
 _Consequently, the logging level should only be increased for as long as is needed
 to help get debugging data for a particular problem._
 {{% /notice %}}
 
-To set the operator `javaLoggingLevel` to `FINE` (default is `INFO`) 
+To set the operator `javaLoggingLevel` to `FINE` (default is `INFO`)
 assuming the operator Helm release is named `sample-weblogic-operator`
 its namespace is `sample-weblogic-operator-ns`,
 and you have locally downloaded the operator src to `/tmp/weblogic-kubernetes-operator`:
@@ -211,11 +211,10 @@ $ helm upgrade \
 ```
 
 For more information, see the
-[javaLoggingLevel]({{< relref "/userguide/managing-operators/using-helm#javalogginglevel" >}}) setting 
-in the operator Configuration chapter.
+[javaLoggingLevel]({{< relref "/userguide/managing-operators/using-helm#javalogginglevel" >}}) documentation.
 
 ### See also
 
-If you have set up either of the following, then these sections may be helpful in debugging:
+If you have set up either of the following, then these documents may be helpful in debugging:
 - [Operator REST HTTPS interface]({{<relref "/userguide/managing-operators/the-rest-api#configure-the-operators-external-rest-https-interface">}})
 - [Elastic Stack (Elasticsearch, Logstash, and Kibana) integration]({{<relref "/samples/elastic-stack/operator/_index.md#elastic-stack-per-operator-configuration">}})

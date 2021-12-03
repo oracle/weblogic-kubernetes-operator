@@ -2,13 +2,13 @@
 title: "Secrets"
 date: 2019-02-23T17:36:33-05:00
 weight: 6
-description: "Kubernetes Secrets for the operator"
+description: "Kubernetes Secrets for the operator."
 ---
 
 #### Contents
 * [Domain credentials secret](#domain-credentials-secret)
 * [Domain image pull secret](#domain-image-pull-secret)
-* [Domain configuration override or runtime update secrets](#operator-configuration-override-or-runtime-update-secrets)
+* [Domain configuration override or runtime update secrets](#domain-configuration-override-or-runtime-update-secrets)
 * [Operator image pull secret](#operator-image-pull-secret)
 * [Operator external REST interface secret](#operator-external-rest-interface-secret)
 * [Operator internal REST interface secret](#operator-internal-rest-interface-secret)
@@ -116,7 +116,7 @@ accessed from outside the Kubernetes cluster. A Kubernetes `tls secret`
 is used to hold the certificates and private key.
 
 {{% notice info %}}
-For more information, see the operator user guide security [Certificates]({{<relref "/userguide/managing-operators/the-rest-certificates#additional-reading">}}) chapter.
+For more information, see [REST Certificates]({{<relref "/userguide/managing-operators/the-rest-certificates#additional-reading">}}) in the operator user guide.
 {{% /notice %}}
 
 #### Operator internal REST interface secret

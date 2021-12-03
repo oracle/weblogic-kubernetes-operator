@@ -1,8 +1,8 @@
 ---
-title: "REST Certificates"
+title: "REST certificates"
 date: 2019-03-06T21:14:18-05:00
 weight: 6
-description: "Operator REST SSL/TLS certificate handling"
+description: "Operator REST SSL/TLS certificate handling."
 ---
 
 #### Updating operator external certificates

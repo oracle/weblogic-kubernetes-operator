@@ -2,7 +2,7 @@
 title: "Overview"
 date: 2019-02-23T16:47:21-05:00
 weight: 1
-description: "A quick introduction to the operator runtime."
+description: "An introduction to the operator runtime."
 ---
 
 An operator runtime is a process that runs in a container deployed into a Kubernetes Pod and that automatically manages
@@ -25,7 +25,7 @@ A completely installed and running WebLogic Kubernetes Operator environment incl
 - A Kubernetes custom resource definition (CRD) that, when installed,
   enables the Kubernetes API server and the operator to monitor and manage domain resource instances.
 - One or more operator runtimes that monitor Kubernetes namespaces for domain resources.
-- Each operator is assocated with a local Kubernetes service account for security purposes.
+- Each operator is associated with a local Kubernetes service account for security purposes.
 
 When an operator runtime detects a domain,
 it will generate and deploy the domain's pods, services, and potentially other resources.
@@ -33,14 +33,14 @@ The operator will also monitor the domain for changes,
 such as a request to change the number of pods in a WebLogic cluster,
 will update status fields on the domain's domain resource,
 and will generate Kubernetes events for the domain in the domain's namespace.
-If an operator is shutdown,
+If an operator is shut down,
 then its domains' pods, services, and such, will remain running but changes
 to a domain resource will not be detected and honored until the operator is restarted.
 
 
 Optionally, you can monitor an operator and its log using an [Elastic Stack](https://www.elastic.co/what-is/)
 (previously referred to as the ELK Stack, after Elasticsearch, Logstash, and Kibana).
-For an example, see the [operator Elastic Stack sample]({{<relref "/samples/elastic-stack/operator/_index.md#elastic-stack-per-operator-configuration">}}).
+For an example, see the operator [Elastic Stack]({{<relref "/samples/elastic-stack/operator/_index.md#elastic-stack-per-operator-configuration">}}) sample.
 
 For advanced users, the operator provides an optional REST server that
 you can use as an alternate method for getting a list of WebLogic domains and clusters that an operator manages,
@@ -54,10 +54,10 @@ References:
   and [architecture]({{<relref "/userguide/introduction/terms.md">}}) documentation.
 - For information about using a Helm chart to install, update, or upgrade
   the operator, its CRD, or its service account,
-  see the operator [Installation]({{<relref "/userguide/managing-operators/installation.md">}}) chapter
+  see the operator [Installation]({{<relref "/userguide/managing-operators/installation.md">}}).
 - All operator Helm chart configuration options are
-  documented in the operator [Configuration reference]({{<relref "/userguide/managing-operators/using-helm.md">}}).
-- For a detailed discussion about configuring the namespaces which an operator manages,
+  documented in the operator [Configuration Reference]({{<relref "/userguide/managing-operators/using-helm.md">}}).
+- For a detailed description of configuring the namespaces which an operator manages,
   plus preparing a namespace for operator management,
   see [Namespace management]({{<relref "/userguide/managing-operators/namespace-management.md">}}).
 
