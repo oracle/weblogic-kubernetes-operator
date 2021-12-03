@@ -12,39 +12,66 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
+import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLProtocolException;
 
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1ClusterRole;
+import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1DeploymentSpec;
 import io.kubernetes.client.openapi.models.V1DeploymentStrategy;
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1EnvVarSource;
+import io.kubernetes.client.openapi.models.V1HostPathVolumeSource;
 import io.kubernetes.client.openapi.models.V1LabelSelector;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
+import io.kubernetes.client.openapi.models.V1ObjectFieldSelector;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
+import io.kubernetes.client.openapi.models.V1PolicyRule;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
+import io.kubernetes.client.openapi.models.V1Role;
+import io.kubernetes.client.openapi.models.V1RoleBinding;
+import io.kubernetes.client.openapi.models.V1RoleRef;
 import io.kubernetes.client.openapi.models.V1RollingUpdateDeployment;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
+import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
+import io.kubernetes.client.openapi.models.V1StorageClass;
+import io.kubernetes.client.openapi.models.V1Subject;
+import io.kubernetes.client.openapi.models.V1Volume;
+import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import org.awaitility.core.ConditionFactory;
 
 import static io.kubernetes.client.util.Yaml.dump;
+import static java.util.concurrent.TimeUnit.MINUTES;
+import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.CERT_MANAGER;
+import static oracle.weblogic.kubernetes.TestConstants.DB_OPERATOR_YAML_URL;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_DB_19C_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_DB_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
+import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 //import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.SIDB_YAML_URL;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
@@ -53,11 +80,16 @@ import static oracle.weblogic.kubernetes.actions.TestActions.listServices;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.getPod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.addSccToDBSvcAccount;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
+import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcrRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -103,6 +135,7 @@ public class DbUtils {
     logger.info("Start Oracle DB with dbImage: {0}, dbPort: {1}, dbNamespace: {2}, dbListenerPort:{3}",
         dbImage, dbPort, dbNamespace, dbListenerPort);
     startOracleDB(dbImage, dbPort, dbNamespace, dbListenerPort);
+
     logger.info("Create RCU schema with fmwImage: {0}, rcuSchemaPrefix: {1}, dbUrl: {2}, "
         + " dbNamespace: {3}:", fmwImage, rcuSchemaPrefix, dbUrl, dbNamespace);
     createRcuSchema(fmwImage, rcuSchemaPrefix, dbUrl, dbNamespace);
@@ -520,67 +553,6 @@ public class DbUtils {
   }
 
   /**
-   * Create leasing Table (ACTIVE) on an Oracle DB Instance.
-   * Uses the WebLogic utility utils.Schema to add the table
-   * So the command MUST be run inside a Weblogic Server pod
-   *
-   * @param podName the pod name
-   * @param namespace where pod exists
-   * @param dbNodePort NodePort for the Oracle DB service
-   */
-  public static void createLeasingTable(String podName, String namespace, int dbNodePort) {
-    createLeasingTable(podName, namespace, dbNodePort, null);
-  }
-
-  /**
-   * Create leasing Table (ACTIVE) on an Oracle DB Instance.
-   * Uses the WebLogic utility utils.Schema to add the table
-   * So the command MUST be run inside a Weblogic Server pod
-   *
-   * @param podName the pod name
-   * @param namespace where pod exists
-   * @param dbNodePort NodePort for the Oracle DB service
-   * @param dbPodIP NodePort for the Oracle DB service
-   */
-  public static void createLeasingTable(String podName, String namespace, int dbNodePort, String dbPodIP) {
-    Path ddlFile = Paths.get(WORK_DIR + "/leasing.ddl");
-    String ddlString = "DROP TABLE ACTIVE;\n"
-        + "CREATE TABLE ACTIVE (\n"
-        + "  SERVER VARCHAR2(255) NOT NULL,\n"
-        + "  INSTANCE VARCHAR2(255) NOT NULL,\n"
-        + "  DOMAINNAME VARCHAR2(255) NOT NULL,\n"
-        + "  CLUSTERNAME VARCHAR2(255) NOT NULL,\n"
-        + "  TIMEOUT DATE,\n"
-        + "  PRIMARY KEY (SERVER, DOMAINNAME, CLUSTERNAME)\n"
-        + ");\n";
-
-    assertDoesNotThrow(() -> Files.write(ddlFile, ddlString.getBytes()));
-    String destLocation = "/u01/leasing.ddl";
-    assertDoesNotThrow(() -> copyFileToPod(namespace,
-             podName, "",
-             Paths.get(WORK_DIR, "leasing.ddl"),
-             Paths.get(destLocation)));
-
-    //String cpUrl = "jdbc:oracle:thin:@//" + K8S_NODEPORT_HOST + ":"
-    String cpUrl = "jdbc:oracle:thin:@//" + dbPodIP + ":"
-                         + dbNodePort + "/devpdb.k8s";
-    String jarLocation = "/u01/oracle/wlserver/server/lib/weblogic.jar";
-    StringBuffer ecmd = new StringBuffer("java -cp ");
-    ecmd.append(jarLocation);
-    ecmd.append(" utils.Schema ");
-    ecmd.append(cpUrl);
-    ecmd.append(" oracle.jdbc.OracleDriver");
-    ecmd.append(" -verbose ");
-    ecmd.append(" -u \"sys as sysdba\"");
-    ecmd.append(" -p Oradoc_db1");
-    ecmd.append(" /u01/leasing.ddl");
-    ExecResult execResult = assertDoesNotThrow(
-        () -> execCommand(namespace, podName,
-            null, true, "/bin/sh", "-c", ecmd.toString()));
-    assertTrue(execResult.exitValue() == 0, "Could not create the Leasing Table");
-  }
-
-  /**
    * Update RCU schema password on an Oracle DB instance.
    *
    * @param dbNamespace namespace where DB instance started
@@ -717,6 +689,331 @@ public class DbUtils {
         String.format("create secret failed for %s", secretName));
     createRcuAccessSecret(secretName, namespace, rcuPrefix, password, rcuDbConnString);
 
+  }
+
+  /**
+   * Install Oracle Database Operator.
+   *
+   * @param namespace name of the namespace
+   * @throws IOException when fails to modify operator yaml file
+   */
+  public static void installDBOperator(String namespace) throws IOException {
+    String operatorYamlFile = DOWNLOAD_DIR + "/oracle-database-operator.yaml";
+    String certManager = CERT_MANAGER;
+    CommandParams params = new CommandParams().defaults();
+    params.command("kubectl apply -f " + certManager);
+    boolean response = Command.withParams(params).execute();
+    assertTrue(response, "Failed to install cert manager");
+
+    assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(60));
+
+    String operatorYamlUrl = DB_OPERATOR_YAML_URL;
+
+    Files.createDirectories(Paths.get(DOWNLOAD_DIR));
+    Files.deleteIfExists(Paths.get(DOWNLOAD_DIR, "oracle-database-operator.yaml"));
+    params = new CommandParams().defaults();
+    params.command("curl -fL " + operatorYamlUrl + " -o " + operatorYamlFile);
+    response = Command.withParams(params).execute();
+    assertTrue(response, "Failed to download Oracle operator yaml file");
+    replaceStringInFile(Paths.get(operatorYamlFile).toString(),
+        "replicas: 3", "replicas: 1");
+    replaceStringInFile(Paths.get(operatorYamlFile).toString(),
+        "oracle-database-operator-system", namespace);
+
+    params = new CommandParams().defaults();
+    params.command("kubectl apply -f " + operatorYamlFile);
+    response = Command.withParams(params).execute();
+    assertTrue(response, "Failed to install Oracle database operator");
+
+    String dbOpPodName = "oracle-database-operator-controller-manager";
+
+    // wait for the pod to be ready
+    getLogger().info("Wait for the database operator {0} pod to be ready in namespace {1}",
+        dbOpPodName, namespace);
+    testUntil(
+        assertDoesNotThrow(()
+            -> podIsReady(namespace, null, dbOpPodName), "Checking for database pod ready threw exception"),
+        getLogger(), "Waiting for database operator {0} to be ready in namespace {1}", dbOpPodName, namespace);
+
+  }
+
+  /**
+   * Uninstall DB operator.
+   *
+   * @param namespace namespace in which DB is operator running
+   */
+  public static void uninstallDBOperator(String namespace) {
+    String operatorYamlFile = DOWNLOAD_DIR + "/oracle-database-operator.yaml";
+    String certManager = CERT_MANAGER;
+
+    CommandParams params = new CommandParams().defaults();
+
+    // delete operator
+    params.command("kubectl delete -f " + operatorYamlFile);
+    boolean response = Command.withParams(params).execute();
+    assertTrue(response, "Failed to uninstall Oracle database operator");
+
+    String dbOpPodName = "oracle-database-operator-controller-manager";
+
+    // wait for the pod to be deleted
+    getLogger().info("Wait for the database operator {0} pod to be ready in namespace {1}",
+        dbOpPodName, namespace);
+    PodUtils.checkPodDoesNotExist(dbOpPodName, null, namespace);
+
+    //delete the cert manager
+    params.command("kubectl delete -f " + certManager);
+    response = Command.withParams(params).execute();
+    assertTrue(response, "Failed to uninstall cert manager");
+  }
+
+  /**
+   * Create Oracle database using Oracle Database Operator.
+   * @param dbName name of the database
+   * @param sysPassword Oracle database admin password
+   * @param namespace namespace in which to create Oracle Database
+   * @param hostPath Persistent volume mount path for database files
+   * @return database url
+   * @throws ApiException when fails to create various database artifacts
+   * @throws IOException when fails to open database yaml file
+   */
+  public static String createOracleDBUsingOperator(String dbName, String sysPassword,
+      String namespace, String hostPath) throws ApiException, IOException {
+
+    LoggingFacade logger = getLogger();
+    final String DB_IMAGE_19C = OCR_REGISTRY + "/" + OCR_DB_IMAGE_NAME + ":" + OCR_DB_19C_IMAGE_TAG;
+    String secretName = "db-password";
+    String secretKey = "password";
+    Map<String, String> secretMap = new HashMap<>();
+    secretMap.put(secretKey, sysPassword);
+    boolean secretCreated = assertDoesNotThrow(() -> createSecret(new V1Secret()
+        .metadata(new V1ObjectMeta()
+            .name(secretName)
+            .namespace(namespace))
+        .stringData(secretMap)), "Create secret failed with ApiException");
+    assertTrue(secretCreated, String.format("create secret failed for %s", secretName));
+
+    createOcrRepoSecret(namespace);
+
+    createHostPathProvisioner(namespace, hostPath);
+
+    String dbYamlUrl = SIDB_YAML_URL;
+
+    Path dbYaml = Paths.get(DOWNLOAD_DIR + "/oracledb.yaml");
+    Files.deleteIfExists(dbYaml);
+    CommandParams params = new CommandParams().defaults();
+    params.command("curl -fL " + dbYamlUrl + " -o " + dbYaml.toString());
+    boolean response = Command.withParams(params).execute();
+    assertTrue(response, "Failed to download Oracle database yaml file");
+
+    replaceStringInFile(dbYaml.toString(), "name: singleinstancedatabase-sample", "name: " + dbName);
+    replaceStringInFile(dbYaml.toString(), "namespace: default", "namespace: " + namespace);
+    replaceStringInFile(dbYaml.toString(), "secretName:", "secretName: " + secretName);
+    replaceStringInFile(dbYaml.toString(), "secretKey:", "secretKey: " + secretKey);
+    replaceStringInFile(dbYaml.toString(), "pullFrom:", "pullFrom: " + DB_IMAGE_19C);
+    replaceStringInFile(dbYaml.toString(), "pullSecrets:", "pullSecrets: " + OCR_SECRET_NAME);
+    replaceStringInFile(dbYaml.toString(), "storageClass: \"\"", "storageClass: dboperatorsc");
+
+    logger.info("Creating Oracle database using yaml file\n {0}", Files.readString(dbYaml));
+    params = new CommandParams().defaults();
+    params.command("kubectl create -f " + dbYaml.toString());
+    response = Command.withParams(params).execute();
+    assertTrue(response, "Failed to create Oracle database");
+
+    checkServiceExists(dbName, namespace);
+
+    ConditionFactory withLongRetryPolicy = with().pollDelay(2, SECONDS)
+        .and().with().pollInterval(10, SECONDS)
+        .atMost(25, MINUTES).await();
+
+    // wait for the pod to be ready
+    logger.info("Wait for the database {0} pod to be ready in namespace {1}", dbName, namespace);
+    testUntil(withLongRetryPolicy,
+        assertDoesNotThrow(()
+            -> podIsReady(namespace, null, dbName), "Checking for database pod ready threw exception"),
+        logger, "Waiting for database {0} to be ready in namespace {1}", dbName, namespace);
+
+    String command = "kubectl get singleinstancedatabase -n "
+        + namespace + " " + dbName + " -o=jsonpath='{.status.pdbConnectString}'";
+
+    getLogger().info("Running {0}", command);
+    String dbUrl;
+    try {
+      ExecResult result = ExecCommand.exec(command, true);
+      dbUrl = result.stdout().trim();
+      logger.info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
+          result.exitValue(), response, result.stderr());
+      assertEquals(0, result.exitValue(), "Command didn't succeed");
+    } catch (IOException | InterruptedException ex) {
+      logger.severe(ex.getMessage());
+      return null;
+    }
+    return dbUrl;
+  }
+
+  private static void createHostPathProvisioner(String namespace, String hostPath) throws ApiException {
+
+    String name = "hostpath-provisioner";
+    getLogger().info("Creating service account {0}", name);
+    V1ServiceAccount sa = new V1ServiceAccount();
+    sa.metadata(new V1ObjectMeta()
+        .namespace(namespace)
+        .name(name));
+    assertTrue(TestActions.createServiceAccount(sa), "Failed to create service account");
+
+    getLogger().info("Creating cluster role {0}", name);
+    V1ClusterRole clusterRole = new V1ClusterRole();
+    clusterRole.apiVersion("rbac.authorization.k8s.io/v1")
+        .metadata(new V1ObjectMeta()
+            .name(name))
+        .rules(Arrays.asList(
+            new V1PolicyRule()
+                .addApiGroupsItem("")
+                .resources(Arrays.asList("persistentvolumes"))
+                .verbs(Arrays.asList("get", "list", "watch", "create", "delete")),
+            new V1PolicyRule()
+                .addApiGroupsItem("")
+                .resources(Arrays.asList("persistentvolumeclaims"))
+                .verbs(Arrays.asList("get", "list", "watch")),
+            new V1PolicyRule()
+                .addApiGroupsItem("storage.k8s.io")
+                .resources(Arrays.asList("storageclasses"))
+                .verbs(Arrays.asList("get", "list", "watch")),
+            new V1PolicyRule()
+                .addApiGroupsItem("")
+                .resources(Arrays.asList("events"))
+                .verbs(Arrays.asList("create", "update", "patch"))
+        ));
+    try {
+      TestActions.createClusterRole(clusterRole);
+    } catch (ApiException apiEx) {
+      if (!apiEx.getResponseBody().contains("AlreadyExists")) {
+        throw apiEx;
+      }
+    }
+
+    getLogger().info("Creating cluster role binding {0}", name);
+    V1ClusterRoleBinding clusterRoleBinding = new V1ClusterRoleBinding();
+    clusterRoleBinding.apiVersion("rbac.authorization.k8s.io/v1")
+        .metadata(new V1ObjectMeta()
+            .name(name))
+        .subjects(Arrays.asList(
+            new V1Subject()
+                .kind("ServiceAccount")
+                .name(name)
+                .namespace(namespace)))
+        .roleRef(new V1RoleRef()
+            .kind("ClusterRole")
+            .name(name)
+            .apiGroup("rbac.authorization.k8s.io"));
+    try {
+      TestActions.createClusterRoleBinding(clusterRoleBinding);
+    } catch (ApiException apiEx) {
+      if (!apiEx.getResponseBody().contains("AlreadyExists")) {
+        throw apiEx;
+      }
+    }
+
+    getLogger().info("Creating role {0}", name);
+    V1Role role = new V1Role();
+    role.apiVersion("rbac.authorization.k8s.io/v1")
+        .metadata(new V1ObjectMeta()
+            .name("leader-locking-hostpath-provisioner")
+            .namespace(namespace))
+        .rules(Arrays.asList(
+            new V1PolicyRule()
+                .addApiGroupsItem("")
+                .resources(Arrays.asList("endpoints"))
+                .verbs(Arrays.asList("get", "update", "patch")),
+            new V1PolicyRule()
+                .addApiGroupsItem("")
+                .resources(Arrays.asList("endpoints"))
+                .verbs(Arrays.asList("create", "list", "watch"))
+        ));
+    assertTrue(TestActions.createRole(namespace, role), "Failed to create role");
+
+    getLogger().info("Creating role binding {0}", name);
+    V1RoleBinding roleBinding = new V1RoleBinding();
+    roleBinding.apiVersion("rbac.authorization.k8s.io/v1")
+        .metadata(new V1ObjectMeta()
+            .name("leader-locking-hostpath-provisioner")
+            .namespace(namespace))
+        .subjects(Arrays.asList(
+            new V1Subject()
+                .kind("ServiceAccount")
+                .name(name)
+                .namespace(namespace)))
+        .roleRef(new V1RoleRef()
+            .kind("Role")
+            .name("leader-locking-hostpath-provisioner")
+            .apiGroup("rbac.authorization.k8s.io"));
+    assertTrue(TestActions.createRoleBinding(namespace, roleBinding), "Failed to create cluster role binding");
+
+    Map labels = new HashMap<String, String>();
+    labels.put("app", name);
+
+    //create V1Deployment for Oracle DB
+    getLogger().info("Configure V1Deployment in namespace {0} with name {1}", namespace, name);
+    V1Deployment hp = new V1Deployment()
+        .apiVersion("apps/v1")
+        .kind("Deployment")
+        .metadata(new V1ObjectMeta()
+            .name(name)
+            .namespace(namespace)
+            .labels(labels))
+        .spec(new V1DeploymentSpec()
+            .replicas(1)
+            .selector(new V1LabelSelector()
+                .matchLabels(labels))
+            .template(new V1PodTemplateSpec()
+                .metadata(new V1ObjectMeta()
+                    .labels(labels))
+                .spec(new V1PodSpec()
+                    .containers(Arrays.asList(new V1Container()
+                        .name(name)
+                        .image("mauilion/hostpath-provisioner:dev")
+                        .imagePullPolicy("IfNotPresent")
+                        .addEnvItem(new V1EnvVar()
+                            .name("NODE_NAME")
+                            .valueFrom(new V1EnvVarSource()
+                                .fieldRef(new V1ObjectFieldSelector()
+                                    .fieldPath("spec.nodeName"))))
+                        .volumeMounts(Arrays.asList(new V1VolumeMount()
+                            .name("pv-volume")
+                            .mountPath("/home/pvvolume")))))
+                    .serviceAccountName(name)
+                    .volumes(Arrays.asList(new V1Volume()
+                        .name("pv-volume")
+                        .hostPath(new V1HostPathVolumeSource()
+                            .path(hostPath)))))));
+
+    getLogger().info("Create deployment for {0} in namespace {1}", name, namespace);
+    assertTrue(assertDoesNotThrow(() -> Kubernetes.createDeployment(hp),
+        String.format("Create deployment failed with ApiException for hostpath provisioner in namespace %s",
+            namespace)),
+        String.format("Create deployment failed for hostpath provisioner in namespace %s",
+            namespace));
+
+    getLogger().info("Creating Storageclass with name {0}", name);
+    Map<String, String> annotations = new HashMap<>();
+    annotations.put("storageclass.kubernetes.io/is-default-class", "true");
+    V1StorageClass sc = new V1StorageClass();
+    sc.apiVersion("storage.k8s.io/v1")
+        .metadata(new V1ObjectMeta()
+            .name("dboperatorsc")
+            .annotations(annotations))
+        .reclaimPolicy("Delete")
+        .provisioner("example.com/hostpath");
+    assertTrue(TestActions.createStorageClass(sc), "Failed to create storage class");
+
+  }
+
+  /**
+   * Delete storage class.
+   * @throws ApiException when delete fails
+   */
+  public static void deleteStorageclass() throws ApiException {
+    //delete storageclass
+    TestActions.deleteStorageClass("dboperatorsc");
   }
 
 }
