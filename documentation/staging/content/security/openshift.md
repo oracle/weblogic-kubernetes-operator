@@ -2,7 +2,7 @@
 title: "OpenShift"
 date: 2019-10-04T08:08:08-05:00
 weight: 7
-description: "OpenShift information for the operator"
+description: "OpenShift information for the operator."
 ---
 
 #### Security requirements to run WebLogic in OpenShift
@@ -116,14 +116,14 @@ see [OpenShift]({{<relref  "/userguide/platforms/environments#openshift">}}).
 #### Use a dedicated namespace
 
 When the user that installs an individual instance of the operator
-does not have the required privileges to create resources at the Kubernetes cluster level,
-a `Dedicated` namespace selection strategy can be used for the operator instance to limit
-it to managing domain resources in its local namespace
-(see [Operator namespace management]({{< relref "/userguide/managing-operators/namespace-management.md" >}})),
-and you may need to manually install the Domain Custom Resource (CRD)
+does _not_ have the required privileges to create resources at the Kubernetes cluster level,
+they can use a `Dedicated` namespace selection strategy for the operator instance to limit
+it to managing domain resources in its local namespace only
+(see [Operator namespace management]({{< relref "/userguide/managing-operators/namespace-management#choose-a-domain-namespace-selection-strategy" >}})),
+and they may need to manually install the Domain Custom Resource (CRD)
 (see [Operator installation]({{< relref "/userguide/managing-operators/installation.md" >}})).
 
-#### Set the Helm chart property `kubernetesPlatorm` to `OpenShift`
+#### Set the Helm chart property `kubernetesPlatform` to `OpenShift`
 
 Beginning with operator version 3.3.2,
 set the operator `kubernetesPlatform` Helm chart property to `OpenShift`.

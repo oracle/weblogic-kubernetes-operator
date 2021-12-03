@@ -2,6 +2,7 @@
 title: "Branching"
 date: 2019-02-23T17:19:29-05:00
 draft: false
+description: "Understand the operator repository branching strategy."
 weight: 4
 ---
 

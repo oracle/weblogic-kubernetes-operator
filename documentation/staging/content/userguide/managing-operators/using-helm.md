@@ -1,5 +1,5 @@
 ---
-title: "Configuration reference"
+title: "Configuration Reference"
 date: 2019-02-23T17:08:43-05:00
 weight: 3
 description: "An operator runtime is installed and configured using Helm. Here are useful Helm operations and operator configuration values."
@@ -53,9 +53,9 @@ description: "An operator runtime is installed and configured using Helm. Here a
 ### Introduction
 
 The operator requires Helm for its installation and tuning,
-and this chapter is a reference guide for useful Helm commands and operator configuration values.
+and this document is a reference guide for useful Helm commands and operator configuration values.
 
-This chapter assumes that the operator has been installed using an operator Helm chart.
+This document assumes that the operator has been installed using an operator Helm chart.
 An operator Helm chart can be obtained from the GitHub chart repository or can be found in the operator source.
 For information about operator Helm chart access, installation, and upgrade,
 see [Installation and upgrade]({{< relref "/userguide/managing-operators/installation.md" >}}).
@@ -66,7 +66,7 @@ see [Installation and upgrade]({{< relref "/userguide/managing-operators/install
   as well as the default values, using the `helm inspect` command.
   - Here's an example of using `helm inspect`
     with the local file based operator Helm chart
-    assuming the operator source code is in 
+    assuming the operator source code is in
     `/tmp/weblogic-kubernetes-operator`.
     ```text
     $ cd /tmp/weblogic-kubernetes-operator
@@ -158,7 +158,7 @@ Specify the Kubernetes platform on which the operator is running. This setting h
 - Sets the domain home file permissions in each WebLogic Server pod to work correctly in OpenShift for [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}), and [Domain home in Image]({{< relref "/samples/domains/domain-home-in-image/_index.md" >}}) domains. Specifically, it sets file group permissions so that they match file user permissions.
 - Sets the `weblogic.SecureMode.WarnOnInsecureFileSystem` Java system property to `false` on the command line of each WebLogic Server. This flag suppresses insecure file system warnings reported in the WebLogic Server console when the WebLogic Server is in production mode. These warnings result from setting the file permissions necessary to work with restricted security context constraints on OpenShift.
 
-For more information about the security requirements for running WebLogic in OpenShift, see the [OpenShift chapter]({{<relref "/security/openshift.md">}}) in the Security section.
+For more information about the security requirements for running WebLogic in OpenShift, see the [OpenShift]({{<relref "/security/openshift.md">}}) documentation.
 
 Example:
 ```yaml
@@ -181,13 +181,12 @@ not want to use this option.
 then a running operator will _not_ have privilege to manage a newly added namespace
 that matches its namespace selection criteria until you upgrade
 the operator's Helm release.
-See [Ensuring the operator has permission to manage a namespace]({{< relref "/userguide/managing-operators/namespace-management#ensuring-the-operator-has-permission-to-manage-a-namespace" >}})
-in the operator Namespace management chapter.
+See [Ensuring the operator has permission to manage a namespace]({{< relref "/userguide/managing-operators/namespace-management#ensuring-the-operator-has-permission-to-manage-a-namespace" >}}).
 
 #### WebLogic domain management
 
 The settings in this section determine the namespaces that an operator
-monitors for domain resources. For usage, 
+monitors for domain resources. For usage,
 also see [Namespace management]({{< relref "/userguide/managing-operators/namespace-management.md" >}}).
 
 #### Creating the operator pod
@@ -196,7 +195,7 @@ also see [Namespace management]({{< relref "/userguide/managing-operators/namesp
 Specifies the container image containing the operator code.
 
 Defaults to `ghcr.io/oracle/weblogic-kubernetes-operator:{{< latestVersion >}}`
-or similar (based on the default in your Helm chart, see `helm inspect` 
+or similar (based on the default in your Helm chart, see `helm inspect`
 in [Useful Helm operations](#useful-helm-operations)).
 
 Example:
@@ -311,7 +310,7 @@ Legal values are: `List`, `LabelSelector`, `RegExp`, and `Dedicated`:
 **Notes:**
 - Defaults to `List`.
 - If the deprecated `dedicated` setting is set to `true`,
-  then this value is ignored and 
+  then this value is ignored and
   the operator will manage only domains in its own namespace.
 
 ##### `domainNamespaces`
@@ -342,10 +341,10 @@ Examples:
 - Defaults to the `default` namespace.
 - You must include the `default` namespace in the list if you want the operator to monitor both the `default` namespace and some other namespaces.
 - If you change `domainNamespaces` using a `helm upgrade`,
-  then the new list completely replaces the original list 
+  then the new list completely replaces the original list
   (they are not merged).
 - If the deprecated `dedicated` setting is set to `true`,
-  then this value is ignored and 
+  then this value is ignored and
   the operator will manage only domains in its own namespace.
 
 ##### `domainNamespaceLabelSelector`
@@ -366,7 +365,7 @@ Examples:
   ```
 
 **Notes**:
-- To specify the above sample on the Helm command line, escape the equal sign, spaces and commas as follows:
+- To specify the previous sample on the Helm command line, escape the equal sign, spaces and commas as follows:
   ```
   --set "domainNamespaceLabelSelector\=environment\\ notin\\ (production\\,systemtest)"
   ```
@@ -374,10 +373,9 @@ Examples:
   then a running operator will _not_ have privilege to manage a newly added namespace
   that matches its label selector until you upgrade
   the operator's Helm release.
-  See [Ensuring the operator has permission to manage a namespace]({{< relref "/userguide/managing-operators/namespace-management#ensuring-the-operator-has-permission-to-manage-a-namespace" >}})
-  in the operator Namespace management chapter.
+  See [Ensuring the operator has permission to manage a namespace]({{< relref "/userguide/managing-operators/namespace-management#ensuring-the-operator-has-permission-to-manage-a-namespace" >}}).
 - If the deprecated `dedicated` setting is set to `true`,
-  then this value is ignored and 
+  then this value is ignored and
   the operator will manage only domains in its own namespace.
 
 ##### `domainNamespaceRegExp`
@@ -395,10 +393,9 @@ This value is required if `domainNamespaceSelectionStrategy` is `RegExp` and ign
   then a running operator will _not_ have privilege to manage a newly added namespace
   that matches its regular expression until you upgrade
   the operator's Helm release.
-  See [Ensuring the operator has permission to manage a namespace]({{< relref "/userguide/managing-operators/namespace-management#ensuring-the-operator-has-permission-to-manage-a-namespace" >}})
-  in the operator Namespace management chapter.
+  See [Ensuring the operator has permission to manage a namespace]({{< relref "/userguide/managing-operators/namespace-management#ensuring-the-operator-has-permission-to-manage-a-namespace" >}}).
 - If the deprecated `dedicated` setting is set to `true`,
-  then this value is ignored and 
+  then this value is ignored and
   the operator will manage only domains in its own namespace.
 
 ##### `dedicated` ***(Deprecated)***
@@ -458,7 +455,7 @@ For more information, see [_Configuring the domain resource_ in the Istio user g
 
 #### Elastic Stack integration
 
-The following settings are related to integrating the Elastic Stack with the operator pod. 
+The following settings are related to integrating the Elastic Stack with the operator pod.
 
 For example usage, see the [Operator Elastic Stack (Elasticsearch, Logstash, and Kibana) integration sample]({{<relref "/samples/elastic-stack/operator/_index.md#elastic-stack-per-operator-configuration">}}).
 
@@ -506,8 +503,7 @@ elasticSearchPort: 9201
 
 The REST interface configuration options are advanced settings for configuring the operator's external REST interface.
 
-For usage information, see the [Operator REST Services]({{<relref "/userguide/managing-operators/the-rest-api.md">}})
-chapter of the Operator user guide.
+For usage information, see the operator [REST Services]({{<relref "/userguide/managing-operators/the-rest-api.md">}}).
 
 ##### `externalRestEnabled`
 Determines whether the operator's REST interface will be exposed outside the Kubernetes cluster using a node port.

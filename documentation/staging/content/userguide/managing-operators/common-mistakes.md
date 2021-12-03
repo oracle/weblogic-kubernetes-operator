@@ -24,7 +24,7 @@ description: "Help for common installing and upgrading mistakes."
 
 #### Namespace related
 
-Common namespace related mistakes.
+Common namespace-related mistakes.
 
 ##### Deleting and recreating a namespace that an operator manages without informing the operator
 
@@ -122,7 +122,7 @@ To recover:
 
 #### REST port conflict
 
-REST port conflict related.
+REST port conflict-related mistakes.
 
 ##### Installing an operator and assigning it the same external REST port number as another operator
 
@@ -154,7 +154,7 @@ Error: UPGRADE FAILED: Service "external-weblogic-operator-svc" is invalid: spec
 
 #### Missing service account
 
-Missing service account related.
+Missing service account-related mistakes.
 
 ##### Installing an operator and assigning it a service account that doesn't exist
 

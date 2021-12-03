@@ -15,7 +15,7 @@ Here are some suggestions for debugging problems with a domin after your Domain 
  - [Check the introspector job](#check-the-introspector-job)
  - [Check the WebLogic Server pods](#check-the-weblogic-server-pods)
  - [Check the operator log](#check-the-operator-log)
- - [Check the FAQ](#check-the-faq)
+ - [Check the docs](#check-the-docs)
  - [Check the operator](#check-the-operator)
 
 ### Check the Domain status
@@ -133,16 +133,16 @@ Look for `SEVERE` and `ERROR` level messages in your operator logs. For example:
     | grep "domainUID...sample-domain1"
   ```
 
-### Check the FAQ
+### Check the docs
 
-Common issues that have corresponding FAQ entries include:
+Common issues that have corresponding documentation include:
 - When a Domain YAML file is deployed and no introspector or WebLogic Server pods start,
   plus the operator log contains no mention of the domain,
   then check to make sure that the Domain's namespace has been set up to be monitored by an operator.
   See the operator [Namespace management]({{<relref "userguide/managing-operators/namespace-management.md">}})
   and operator [Common mistakes]({{<relref "userguide/managing-operators/common-mistakes.md">}}) documentation.
 - If a `describe` of an introspector job or WebLogic Server pod reveals image access errors,
-  see the [Cannot pull image FAQ]({{<relref "/faq/cannot-pull-image">}}).
+  see the [Cannot pull image]({{<relref "/faq/cannot-pull-image">}}) FAQ.
 
 ### Check the operator
 

@@ -35,7 +35,7 @@ To enable the external REST interface, configure these values in a custom config
   For more information about the REST identity secret, see [Updating REST certificates]({{< relref "/userguide/managing-operators/the-rest-certificates.md" >}}).
 * Optionally, set `externalRestHttpsPort` to the external port number for the operator REST interface (defaults to `31001`).
 
-**Note**: A node port is a security risk because the port may be publicly exposed to the internet in some environments. If you need external access to the REST port, then consider alternatives such as providing access through your load balancer, or using Kubernetes port forwarding.
+**Note**: A node port is a security risk because the port may be publicly exposed to the Internet in some environments. If you need external access to the REST port, then consider alternatives, such as providing access through your load balancer or using Kubernetes port forwarding.
 
 
 #### Use the operator's REST services
@@ -116,7 +116,7 @@ the [REST APIs]({{<relref "/samples/rest/_index.md#sample-to-create-certificate-
 #### Sample operator REST client script
 
 Here is a small, sample BASH script that may help to prepare the necessary token, certificates, and such, to call the
-operator's REST services.  Please read the important caveats above before using this script:
+operator's REST services.  Please read the preceding important caveats before using this script:
 
 ```bash
 #!/bin/bash
