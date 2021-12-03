@@ -198,6 +198,7 @@ public class DomainUtils {
 
     // wait until domain was deleted
     testUntil(
+        withLongRetryPolicy,
         domainDoesNotExist(domainUid, DOMAIN_VERSION, domainNS),
         getLogger(),
         "domain {0} to be deleted in namespace {1}",
