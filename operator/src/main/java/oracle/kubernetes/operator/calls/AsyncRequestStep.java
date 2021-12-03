@@ -32,7 +32,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 
-import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
+import static oracle.kubernetes.operator.DomainFailureReason.KubernetesAPI;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_CONFLICT;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_GATEWAY_TIMEOUT;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
@@ -241,7 +241,8 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
     }
 
     private void updateFailureStatus(@Nonnull Domain domain, ApiException apiException) {
-      final var condition = new DomainCondition(Failed).withReason(Kubernetes).withMessage(createMessage(apiException));
+      final var condition
+          = new DomainCondition(Failed).withReason(KubernetesAPI).withMessage(createMessage(apiException));
       if (recordedFailure == null) {
         addFailureStatus(domain, condition);
       } else if (!recordedFailure.equals(condition)) {

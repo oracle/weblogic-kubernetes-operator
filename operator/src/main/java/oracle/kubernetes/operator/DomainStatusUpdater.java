@@ -57,6 +57,7 @@ import oracle.kubernetes.weblogic.domain.model.Model;
 import oracle.kubernetes.weblogic.domain.model.OnlineUpdate;
 import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
+import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import static oracle.kubernetes.operator.DomainFailureReason.Aborted;
@@ -64,6 +65,7 @@ import static oracle.kubernetes.operator.DomainFailureReason.DomainInvalid;
 import static oracle.kubernetes.operator.DomainFailureReason.Internal;
 import static oracle.kubernetes.operator.DomainFailureReason.Introspection;
 import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
+import static oracle.kubernetes.operator.DomainFailureReason.KubernetesAPI;
 import static oracle.kubernetes.operator.DomainFailureReason.ReplicasTooHigh;
 import static oracle.kubernetes.operator.DomainFailureReason.ServerPod;
 import static oracle.kubernetes.operator.DomainFailureReason.TopologyMismatch;
@@ -495,7 +497,6 @@ public class DomainStatusUpdater {
     private Step createEventSteps(List<EventData> eventDataList) {
       return Step.chain(
           eventDataList.stream()
-              .sorted(Comparator.comparing(EventData::getItem))
               .map(EventHelper::createEventStep)
               .toArray(Step[]::new)
       );
@@ -593,12 +594,20 @@ public class DomainStatusUpdater {
       @Nonnull
       @Override
       List<EventData> createDomainEvents() {
-        List<EventData> list = new Conditions().getNewConditions(getStatus()).stream()
+        List<EventData> list = getRemovedConditionEvents();
+        list.sort(Comparator.comparing(EventData::getItem));
+        List<EventData> list2 = getNewConditionEvents();
+        list2.sort(Comparator.comparing(EventData::getItem));
+        list.addAll(list2);
+        return list;
+      }
+
+      @NotNull
+      private List<EventData> getNewConditionEvents() {
+        return new Conditions(getNewStatus()).getNewConditions(getStatus()).stream()
               .map(this::toEvent)
               .filter(Objects::nonNull)
               .collect(Collectors.toList());
-        list.addAll(getRemovedConditionEvents());
-        return list;
       }
 
       private List<EventData> getRemovedConditionEvents() {
@@ -615,10 +624,14 @@ public class DomainStatusUpdater {
           case Available:
             return new EventData(DOMAIN_AVAILABLE);
           case Failed:
-            return ReplicasTooHigh.name().equals(newCondition.getReason())
-                ? new EventData(DOMAIN_FAILED).failureReason(ReplicasTooHigh) : null;
-          default:
+            if (ReplicasTooHigh.name().equals(newCondition.getReason())) {
+              return new EventData(DOMAIN_FAILED).failureReason(ReplicasTooHigh);
+            }
+            if (KubernetesAPI.name().equals(newCondition.getReason())) {
+              return new EventData(DOMAIN_FAILED).failureReason(KubernetesAPI);
+            }
             return null;
+          default: return null;
         }
       }
 
@@ -705,21 +718,16 @@ public class DomainStatusUpdater {
         }
 
         private boolean matchWithStatusFalse(DomainCondition c1, DomainCondition c2) {
-          return c1.getType().equals(c2.getType()) 
-              && (!c1.getStatus().equals(c2.getStatus())) 
-              && failureReasonMatch(c1, c2);
+          return c1.getType().equals(c2.getType()) && (c1.getStatus().equals("False"));
         }
 
         private boolean matchingConditionType(DomainCondition c1, DomainCondition c2) {
-          return c1.getType().equals(c2.getType())
-              && failureReasonMatch(c1, c2);
+          return c1.getType().equals(c2.getType()) && failureReasonMatch(c1, c2);
         }
 
         private boolean failureReasonMatch(DomainCondition c1, DomainCondition c2) {
-          if (c1.getType() == Failed) {
-            return getReasonString(c1).equals(getReasonString(c2)) && getMessage(c1).equals(getMessage(c2));
-          }
-          return true;
+          return !c1.getType().equals(Failed)
+              || (getReasonString(c1).equals(getReasonString(c2)) && getMessage(c1).equals(getMessage(c2)));
         }
 
         private String getReasonString(DomainCondition condition) {
@@ -732,8 +740,7 @@ public class DomainStatusUpdater {
 
         Predicate<DomainCondition> matchFor(DomainCondition condition) {
           return c -> c.getType().equals(condition.getType()) 
-              && failureReasonMatch(c, condition) && "True".equals(c.getStatus())
-              && (!c.getType().equals(Failed) || getReasonString(c).equals(getReasonString(condition)));
+              && failureReasonMatch(c, condition) && "True".equals(c.getStatus());
         }
 
         @Nonnull
