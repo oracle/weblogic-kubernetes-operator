@@ -221,7 +221,7 @@ spec:
     - image: domain-image-B:v1
       volume: aivolume
       # the following command replaces 'mydir' instead of merging it:
-      command: 'rm -fr $AUXILIARY_IMAGE_TARGET_PATH/mydir; cp -R $COMMON_MOUNT_PATH/* $AUXILIARY_IMAGE_TARGET_PATH'
+      command: 'rm -fr $AUXILIARY_IMAGE_TARGET_PATH/mydir; cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH'
 ```
 
 #### Merge ordering example

@@ -13023,10 +13023,10 @@ spec:
                                 to the auxiliary image emptyDir volume. Use the `$AUXILIARY_IMAGE_PATH`
                                 environment variable to reference the value configured
                                 in `spec.auxiliaryImageVolumes.mountPath`, which defaults
-                                to "/auxiliary". Use '$AUXILIARY_IMAGE_TARGET_PATH' to refer
-                                to the temporary directory created by the operator
-                                that resolves to the auxiliary image's internal emptyDir
-                                volume.
+                                to "/auxiliary". Use '$AUXILIARY_IMAGE_TARGET_PATH'
+                                to refer to the temporary directory created by the
+                                operator that resolves to the auxiliary image's internal
+                                emptyDir volume.
                               type: string
                         type: array
                       containers:
@@ -18622,9 +18622,10 @@ spec:
                             the auxiliary image emptyDir volume. Use the `$AUXILIARY_IMAGE_PATH`
                             environment variable to reference the value configured
                             in `spec.auxiliaryImageVolumes.mountPath`, which defaults
-                            to "/auxiliary". Use '$AUXILIARY_IMAGE_TARGET_PATH' to refer to
-                            the temporary directory created by the operator that resolves
-                            to the auxiliary image's internal emptyDir volume.
+                            to "/auxiliary". Use '$AUXILIARY_IMAGE_TARGET_PATH' to
+                            refer to the temporary directory created by the operator
+                            that resolves to the auxiliary image's internal emptyDir
+                            volume.
                           type: string
                     type: array
                   containers:
