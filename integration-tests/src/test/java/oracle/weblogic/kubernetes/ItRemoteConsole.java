@@ -215,6 +215,10 @@ class ItRemoteConsole {
     logger.info("WebLogic console is accessible thru default-secure service");
 
     //verify remote console is accessible through default-secure nodeport
+    //The final complete curl command to run is like:
+    //curl -sk -v --show-error --user username:password http://localhost:8012/api/providers/AdminServerConnection -H
+    //"Content-Type:application/json" --data "{ \"name\": \"asconn\", \"domainUrl\": \"https://myhost://nodeport\"}"
+    //--write-out %{http_code} -o /dev/null
     curlCmd = "curl -sk -v --show-error --noproxy '*' --user "
         + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
         + " http://localhost:8012/api/providers/AdminServerConnection -H  "
@@ -329,6 +333,10 @@ class ItRemoteConsole {
     logger.info("admin svc host = {0}", adminSvcExtHost);
     String hostAndPort = getHostAndPort(adminSvcExtHost, nodePort);
 
+    //The final complete curl command to run is like:
+    //curl -v --show-error --user username:password http://localhost:8012/api/providers/AdminServerConnection -H
+    //"Content-Type:application/json" --data "{ \"name\": \"asconn\", \"domainUrl\": \"http://myhost://nodeport\"}"
+    //--write-out %{http_code} -o /dev/null
     String curlCmd = "curl -v --show-error --noproxy '*' --user "
         + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
         + " http://localhost:8012/api/providers/AdminServerConnection -H "
@@ -347,6 +355,10 @@ class ItRemoteConsole {
     logger.info("LB nodePort is {0}", nodePortOfLB);
     logger.info("The K8S_NODEPORT_HOST is {0}", K8S_NODEPORT_HOST);
 
+    //The final complete curl command to run is like:
+    //curl -v --user username:password http://localhost:8012/api/providers/AdminServerConnection -H
+    //"Content-Type:application/json" --data "{ \"name\": \"asconn\", \"domainUrl\": \"http://myhost://nodeport\"}"
+    //--write-out %{http_code} -o /dev/null
     String curlCmd = "curl -v --user " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
         + " http://localhost:8012/api/providers/AdminServerConnection -H "
         + "\"" + "Content-Type:application/json" + "\""
