@@ -82,6 +82,7 @@ public interface TestConstants {
   public static final String OCR_FMWINFRA_IMAGE_TAG = "12.2.1.4";
   public static final String OCR_DB_IMAGE_NAME = "database/enterprise";
   public static final String OCR_DB_IMAGE_TAG = "12.2.0.1-slim";
+  public static final String OCR_DB_19C_IMAGE_TAG = "19.3.0.0";
 
   // ----------------------------- base images constants ---------------------
   // Get BASE_IMAGES_REPO from env var, if its not provided use OCIR as default to pull base images
@@ -242,7 +243,7 @@ public interface TestConstants {
   public static final String WDT_BASIC_MODEL_PROPERTIES_FILE = "wdt-singleclusterdomain-sampleapp-wls.properties";
   public static final String WDT_BASIC_IMAGE_NAME = DOMAIN_IMAGES_REPO + "wdt-basic-image";
   // Skip the mii/wdt basic image build locally if needed
-  public static final String WDT_BASIC_IMAGE_TAG = 
+  public static final String WDT_BASIC_IMAGE_TAG =
       Boolean.valueOf(SKIP_BUILD_IMAGES_IF_EXISTS) ? "local" : getDateAndTimeStamp();
   public static final String WDT_BASIC_IMAGE_DOMAINHOME = "/u01/oracle/user_projects/domains/domain1";
   public static final String WDT_IMAGE_DOMAINHOME_BASE_DIR = "/u01/oracle/user_projects/domains";
@@ -273,6 +274,9 @@ public interface TestConstants {
   public static final String ADMIN_PASSWORD_DEFAULT = "welcome1";
   public static final String ADMIN_USERNAME_PATCH = "weblogicnew";
   public static final String ADMIN_PASSWORD_PATCH = "welcome1new";
+
+  public static final String ENCRYPION_USERNAME_DEFAULT = "weblogicenc";
+  public static final String ENCRYPION_PASSWORD_DEFAULT = "weblogicenc";
 
   // REST API
   public static final String PROJECT_ROOT = System.getProperty("user.dir");
@@ -321,4 +325,15 @@ public interface TestConstants {
   public static final String DOMAIN_STATUS_CONDITION_COMPLETED_TYPE = "Completed";
   public static final String DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE = "Available";
   public static final String DOMAIN_STATUS_CONDITION_FAILED_TYPE = "Failed";
+
+  //Oracle database operator constants
+  public static final String ORACLE_DB_OPERATOR_RELEASE_LATEST = "release/0.1.0";
+  public static final String ORACLE_DB_OPERATOR_RELEASE = Optional.ofNullable(
+      System.getenv("ORACLE_DB_OPERATOR_RELEASE")).orElse(ORACLE_DB_OPERATOR_RELEASE_LATEST);
+  public static final String CERT_MANAGER
+      = "https://github.com/jetstack/cert-manager/releases/latest/download/cert-manager.yaml";
+  public static final String DB_OPERATOR_YAML_URL = "https://raw.githubusercontent.com/"
+      + "oracle/oracle-database-operator/" + ORACLE_DB_OPERATOR_RELEASE + "/oracle-database-operator.yaml";
+  public static final String SIDB_YAML_URL = "https://raw.githubusercontent.com/oracle/oracle-database-operator/main/"
+      + "config/samples/sidb/singleinstancedatabase.yaml";
 }
