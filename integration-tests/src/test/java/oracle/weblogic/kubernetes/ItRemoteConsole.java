@@ -29,7 +29,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
@@ -161,12 +163,7 @@ class ItRemoteConsole {
         "Could not get the default external service node port");
     logger.info("Found the Traefik service nodePort {0}", traefikNodePort);
     logger.info("The K8S_NODEPORT_HOST is {0}", K8S_NODEPORT_HOST);
-    String curlCmd = "curl -v --user weblogic:welcome1 -H Content-Type:application/json -d "
-        + "\"{ \\" + "\"domainUrl\\" + "\"" + ": " + "\\" + "\"" + "http://"
-        + K8S_NODEPORT_HOST + ":" + traefikNodePort + "\\" + "\" }" + "\""
-        + " http://localhost:8012/api/connection  --write-out %{http_code} -o /dev/null";
-    logger.info("Executing Traefik nodeport curl command {0}", curlCmd);
-    assertTrue(callWebAppAndWaitTillReturnedCode(curlCmd, "201", 10), "Calling web app failed");
+    verifyRemoteConsoleConnectionThroughLB(traefikNodePort);
     logger.info("WebLogic domain is accessible through remote console using Traefik");
   }
 
@@ -182,12 +179,7 @@ class ItRemoteConsole {
     logger.info("Found the NGINX service nodePort {0}", nginxNodePort);
     logger.info("The K8S_NODEPORT_HOST is {0}", K8S_NODEPORT_HOST);
 
-    String curlCmd = "curl -v --user weblogic:welcome1 -H Content-Type:application/json -d "
-        + "\"{ \\" + "\"domainUrl\\" + "\"" + ": " + "\\" + "\"" + "http://"
-        + K8S_NODEPORT_HOST + ":" + nginxNodePort + "\\" + "\" }" + "\""
-        + " http://localhost:8012/api/connection  --write-out %{http_code} -o /dev/null";
-    logger.info("Executing NGINX nodeport curl command {0}", curlCmd);
-    assertTrue(callWebAppAndWaitTillReturnedCode(curlCmd, "201", 10), "Calling web app failed");
+    verifyRemoteConsoleConnectionThroughLB(nginxNodePort);
     logger.info("WebLogic domain is accessible through remote console using NGINX");
   }
 
@@ -223,11 +215,19 @@ class ItRemoteConsole {
     logger.info("WebLogic console is accessible thru default-secure service");
 
     //verify remote console is accessible through default-secure nodeport
-    curlCmd = "curl -sk -v --show-error --noproxy '*' --user weblogic:welcome1 -H "
-        + "Content-Type:application/json -d "
-        + "\"{ \\" + "\"domainUrl\\" + "\"" + ": " + "\\" + "\"" + "https://"
-        + hostAndPort + "\\" + "\" }" + "\""
-        + " http://localhost:8012/api/connection  --write-out %{http_code} -o /dev/null";
+    //The final complete curl command to run is like:
+    //curl -sk -v --show-error --user username:password http://localhost:8012/api/providers/AdminServerConnection -H
+    //"Content-Type:application/json" --data "{ \"name\": \"asconn\", \"domainUrl\": \"https://myhost://nodeport\"}"
+    //--write-out %{http_code} -o /dev/null
+    curlCmd = "curl -sk -v --show-error --noproxy '*' --user "
+        + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
+        + " http://localhost:8012/api/providers/AdminServerConnection -H  "
+        + "\"" + "Content-Type:application/json" + "\""
+        + " --data "
+        + "\"{\\" + "\"name\\" + "\"" + ": " + "\\" + "\"" + "asconn\\" + "\"" + ", "
+        + "\\" + "\"domainUrl\\" + "\"" + ": " + "\\" + "\"" + "https://"
+        + hostAndPort + "\\" + "\"}" + "\""
+        + " --write-out %{http_code} -o /dev/null";
     logger.info("Executing remote console default-secure nodeport curl command {0}", curlCmd);
     assertTrue(callWebAppAndWaitTillReturnedCode(curlCmd, "201", 10), "Calling web app failed");
     logger.info("Remote console is accessible through default-secure service");
@@ -333,13 +333,43 @@ class ItRemoteConsole {
     logger.info("admin svc host = {0}", adminSvcExtHost);
     String hostAndPort = getHostAndPort(adminSvcExtHost, nodePort);
 
-    String curlCmd = "curl -v --show-error --noproxy '*' --user weblogic:welcome1 -H Content-Type:application/json -d "
-        + "\"{ \\" + "\"domainUrl\\" + "\"" + ": " + "\\" + "\"" + "http://"
-        + hostAndPort + "\\" + "\" }" + "\""
-        + " http://localhost:8012/api/connection  --write-out %{http_code} -o /dev/null";
+    //The final complete curl command to run is like:
+    //curl -v --show-error --user username:password http://localhost:8012/api/providers/AdminServerConnection -H
+    //"Content-Type:application/json" --data "{ \"name\": \"asconn\", \"domainUrl\": \"http://myhost://nodeport\"}"
+    //--write-out %{http_code} -o /dev/null
+    String curlCmd = "curl -v --show-error --noproxy '*' --user "
+        + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
+        + " http://localhost:8012/api/providers/AdminServerConnection -H "
+        + "\"" + "Content-Type:application/json" + "\""
+        + " --data "
+        + "\"{\\" + "\"name\\" + "\"" + ": " + "\\" + "\"" + "asconn\\" + "\"" + ", "
+        + "\\" + "\"domainUrl\\" + "\"" + ": " + "\\" + "\"" + "http://"
+        + hostAndPort + "\\" + "\"}" + "\""
+        + " --write-out %{http_code} -o /dev/null";
     logger.info("Executing default nodeport curl command {0}", curlCmd);
     assertTrue(callWebAppAndWaitTillReturnedCode(curlCmd, "201", 10), "Calling web app failed");
     logger.info("WebLogic domain is accessible through remote console");
+  }
+
+  private static void verifyRemoteConsoleConnectionThroughLB(int nodePortOfLB) {
+    logger.info("LB nodePort is {0}", nodePortOfLB);
+    logger.info("The K8S_NODEPORT_HOST is {0}", K8S_NODEPORT_HOST);
+
+    //The final complete curl command to run is like:
+    //curl -v --user username:password http://localhost:8012/api/providers/AdminServerConnection -H
+    //"Content-Type:application/json" --data "{ \"name\": \"asconn\", \"domainUrl\": \"http://myhost://nodeport\"}"
+    //--write-out %{http_code} -o /dev/null
+    String curlCmd = "curl -v --user " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
+        + " http://localhost:8012/api/providers/AdminServerConnection -H "
+        + "\"" + "Content-Type:application/json" + "\""
+        + " --data "
+        + "\"{ \\" + "\"name\\" + "\"" + ": " + "\\" + "\"" + "asconn\\" + "\"" + ", "
+        + "\\" + "\"" + "domainUrl\\" + "\"" + ": " + "\\" + "\"" + "http://"
+        + K8S_NODEPORT_HOST + ":" + nodePortOfLB + "\\" + "\" }" + "\""
+        + "  --write-out %{http_code} -o /dev/null";
+    logger.info("Executing LB nodeport curl command {0}", curlCmd);
+    assertTrue(callWebAppAndWaitTillReturnedCode(curlCmd, "201", 10),
+        "Calling web app failed");
   }
 
 }
