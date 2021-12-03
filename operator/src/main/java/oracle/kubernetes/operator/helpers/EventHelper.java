@@ -414,6 +414,17 @@ public class EventHelper {
         return getMessageFromFailedEventData(eventData);
       }
     },
+    DOMAIN_FAILURE_RESOLVED {
+      @Override
+      public String getReason() {
+        return DOMAIN_FAILURE_RESOLVED_EVENT;
+      }
+
+      @Override
+      public String getPattern() {
+        return DOMAIN_FAILURE_RESOLVED_PATTERN;
+      }
+    },
     DOMAIN_UNAVAILABLE {
       @Override
       protected String getType() {
@@ -444,17 +455,6 @@ public class EventHelper {
       @Override
       public String getPattern() {
         return DOMAIN_INCOMPLETE_PATTERN;
-      }
-    },
-    DOMAIN_FAILURE_RESOLVED {
-      @Override
-      public String getReason() {
-        return DOMAIN_FAILURE_RESOLVED_EVENT;
-      }
-
-      @Override
-      public String getPattern() {
-        return DOMAIN_FAILURE_RESOLVED_PATTERN;
       }
     },
     DOMAIN_ROLL_STARTING {

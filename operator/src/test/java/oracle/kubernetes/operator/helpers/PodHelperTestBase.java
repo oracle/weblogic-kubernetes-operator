@@ -2372,7 +2372,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
         .orElse("Event not found");
   }
 
-  private List<CoreV1Event> getEvents() {
+  List<CoreV1Event> getEvents() {
     return testSupport.getResources(KubernetesTestSupport.EVENT);
   }
 

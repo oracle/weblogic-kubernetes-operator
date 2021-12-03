@@ -187,7 +187,7 @@ public class K8sEvents {
       String type, OffsetDateTime timestamp) {
 
     try {
-      List<CoreV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
+      List<CoreV1Event> events = Kubernetes.listOpGeneratedNamespacedEvents(domainNamespace);
       for (CoreV1Event event : events) {
         if (DOMAIN_FAILED.equals(event.getReason()) && (isEqualOrAfter(timestamp, event))
             && event.getMessage().contains(failureReason)) {
@@ -220,7 +220,7 @@ public class K8sEvents {
       String type, OffsetDateTime timestamp) {
 
     try {
-      List<CoreV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
+      List<CoreV1Event> events = Kubernetes.listOpGeneratedNamespacedEvents(domainNamespace);
       for (CoreV1Event event : events) {
         if (reason.equals(event.getReason()) && (isEqualOrAfter(timestamp, event))) {
           logger.info(Yaml.dump(event));
@@ -238,20 +238,18 @@ public class K8sEvents {
   }
 
   /**
-   * Get matching event object.
-   * @param opNamespace namespace in which the operator is running
+   * Get matching operator generated event object.
    * @param domainNamespace namespace in which the event is logged
-   * @param domainUid UID of the domain
    * @param reason event to check for Created, Changed, deleted, processing etc
    * @param type type of event, Normal or Warning
    * @param timestamp the timestamp after which to see events
    * @return CoreV1Event matching event object
    */
-  public static CoreV1Event getEvent(String opNamespace, String domainNamespace, String domainUid, String reason,
-      String type, OffsetDateTime timestamp) {
+  public static CoreV1Event getOpGeneratedEvent(
+      String domainNamespace, String reason, String type, OffsetDateTime timestamp) {
 
     try {
-      List<CoreV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
+      List<CoreV1Event> events = Kubernetes.listOpGeneratedNamespacedEvents(domainNamespace);
       for (CoreV1Event event : events) {
         if (event.getReason().equals(reason) && (isEqualOrAfter(timestamp, event))) {
           logger.info(Yaml.dump(event));
@@ -283,7 +281,7 @@ public class K8sEvents {
     return () -> {
       logger.info("Verifying {0} event is logged by the operator in domain namespace {1}", reason, domainNamespace);
       try {
-        List<CoreV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
+        List<CoreV1Event> events = Kubernetes.listOpGeneratedNamespacedEvents(domainNamespace);
         for (CoreV1Event event : events) {
           if (event.getReason().equals(reason) && (isEqualOrAfter(timestamp, event))) {
             logger.info(Yaml.dump(event));
@@ -314,12 +312,11 @@ public class K8sEvents {
   public static int getDomainEventCount(
           String domainNamespace, String domainUid, String reason, String type) {
     try {
-      List<CoreV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
+      List<CoreV1Event> events = Kubernetes.listOpGeneratedNamespacedEvents(domainNamespace);
       for (CoreV1Event event : events) {
         Map<String, String> labels = event.getMetadata().getLabels();
         if (event.getReason().equals(reason)
                 && event.getType().equals(type)
-                && labels.containsKey("weblogic.createdByOperator")
                 && labels.get("weblogic.domainUID").equals(domainUid)) {
           return event.getCount();
         }
@@ -339,13 +336,15 @@ public class K8sEvents {
    * @param timestamp the timestamp after which to see events
    * @return count number of events count
    */
-  public static int getEventCount(
+  public static int getOpGeneratedEventCount(
       String domainNamespace, String domainUid, String reason, OffsetDateTime timestamp) {
     int count = 0;
     try {
-      List<CoreV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
+      List<CoreV1Event> events = Kubernetes.listOpGeneratedNamespacedEvents(domainNamespace);
       for (CoreV1Event event : events) {
+        Map<String, String> labels = event.getMetadata().getLabels();
         if (event.getReason().contains(reason)
+            && labels.get("weblogic.domainUID").equals(domainUid)
             && (isEqualOrAfter(timestamp, event))) {
           logger.info(Yaml.dump(event));
           count++;
@@ -402,8 +401,7 @@ public class K8sEvents {
                                                          OffsetDateTime timestamp,
                                                          String expectedMsg) {
     checkEvent(opNamespace, domainNamespace, domainUid, reason, type, timestamp);
-    CoreV1Event event =
-        getEvent(opNamespace, domainNamespace, domainUid, reason, type, timestamp);
+    CoreV1Event event = getOpGeneratedEvent(domainNamespace, reason, type, timestamp);
     if (event != null && event.getMessage() != null) {
       assertTrue(event.getMessage().contains(expectedMsg),
           String.format("The event message does not contain the expected msg %s", expectedMsg));

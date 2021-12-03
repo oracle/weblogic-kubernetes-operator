@@ -96,8 +96,8 @@ import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainEventWithCou
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkDomainFailedEventWithReason;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.domainEventExists;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.getDomainEventCount;
-import static oracle.weblogic.kubernetes.utils.K8sEvents.getEvent;
-import static oracle.weblogic.kubernetes.utils.K8sEvents.getEventCount;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.getOpGeneratedEvent;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.getOpGeneratedEventCount;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
@@ -397,7 +397,7 @@ class ItKubernetesEvents {
     logger.info("verify the DomainCompleted event is generated");
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_COMPLETED, "Normal", timestamp);
     logger.info("verify the only 1 DomainCompleted event is generated");
-    assertEquals(1, getEventCount(domainNamespace1, domainUid, DOMAIN_COMPLETED, timestamp));
+    assertEquals(1, getOpGeneratedEventCount(domainNamespace1, domainUid, DOMAIN_COMPLETED, timestamp));
   }
 
   /**
@@ -595,14 +595,14 @@ class ItKubernetesEvents {
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     checkEvent(opNamespace, domainNamespace1, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
 
-    CoreV1Event event = getEvent(opNamespace, domainNamespace1,
-        domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+    CoreV1Event event = getOpGeneratedEvent(domainNamespace1,
+        DOMAIN_ROLL_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     logger.info("verify the event message contains the logHome changed messages is logged");
     assertTrue(event.getMessage().contains("logHome"));
 
-    event = getEvent(opNamespace, domainNamespace1,
-        domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+    event = getOpGeneratedEvent(domainNamespace1,
+        POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     logger.info("verify the event message contains the LOG_HOME changed messages is logged");
     assertTrue(event.getMessage().contains("LOG_HOME"));
@@ -673,13 +673,13 @@ class ItKubernetesEvents {
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
     checkEvent(opNamespace, domainNamespace1, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
 
-    CoreV1Event event = getEvent(opNamespace, domainNamespace1,
-        domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+    CoreV1Event event = getOpGeneratedEvent(domainNamespace1,
+        DOMAIN_ROLL_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     logger.info("verify the event message contains the includeServerOutInPodLog changed messages is logged");
     assertTrue(event.getMessage().contains("isIncludeServerOutInPodLog"));
 
-    event = getEvent(opNamespace, domainNamespace1, domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+    event = getOpGeneratedEvent(domainNamespace1, POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     logger.info("verify the event message contains the SERVER_OUT_IN_POD_LOG changed messages is logged");
     assertTrue(event.getMessage().contains("SERVER_OUT_IN_POD_LOG"));

@@ -23,7 +23,6 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1PodStatus;
-import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.JobWatcher;
 import oracle.kubernetes.operator.LabelConstants;
@@ -50,6 +49,7 @@ import oracle.kubernetes.weblogic.domain.model.Server;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static oracle.kubernetes.operator.DomainFailureReason.Introspection;
 import static oracle.kubernetes.operator.DomainSourceType.FromModel;
+import static oracle.kubernetes.operator.DomainStatusUpdater.createIntrospectionFailureRelatedSteps;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
@@ -411,16 +411,26 @@ public class JobHelper {
 
         if (!severeStatuses.isEmpty()) {
           return doNext(Step.chain(
-              DomainStatusUpdater.createIntrospectionFailureRelatedSteps(
+              createIntrospectionFailureRelatedSteps(
                   onSeparateLines(severeStatuses), domainIntrospectorJob),
               getNextStep(packet, domainIntrospectorJob), null), packet);
         } else {
           return doNext(Step.chain(
-              DomainStatusUpdater.createIntrospectionFailureRelatedSteps(onSeparateLines(severeStatuses)),
+              createIntrospectionFailureRelatedSteps(
+                  createFailureMessage(packet, domainIntrospectorJob)),
               getNextStep(packet, domainIntrospectorJob), null), packet);
         }
       }
 
+      private String createFailureMessage(Packet packet, V1Job job) {
+        String jobName = Optional.ofNullable(job).map(V1Job::getMetadata).map(V1ObjectMeta::getName).orElse("");
+        String jobPodName = (String) packet.get(ProcessingConstants.JOB_POD_NAME);
+        return LOGGER.formatMessage(INTROSPECTOR_JOB_FAILED,
+            Objects.requireNonNull(jobName),
+            job.getMetadata().getNamespace(),
+            job.getStatus(),
+            jobPodName);
+      }
 
       @Nullable
       private Step getNextStep(Packet packet, V1Job domainIntrospectorJob) {
