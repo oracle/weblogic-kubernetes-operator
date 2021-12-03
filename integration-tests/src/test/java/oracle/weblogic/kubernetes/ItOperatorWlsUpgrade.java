@@ -60,9 +60,12 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.collectAppAvailability;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.deployAndAccessApplication;
+import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminConsoleAccessible;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.startPortForwardProcess;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.stopPortForwardProcess;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
@@ -209,9 +212,15 @@ class ItOperatorWlsUpgrade {
     createWlsDomainAndVerify(domainType, domainNamespace, domainVersion, 
            externalServiceNameSuffix);
 
+    logger.info("Checking Port Forwarding before Operator Upgrade");
+    checkAdminPortForwarding(domainNamespace,false);
+
     // upgrade to latest operator
     upgradeOperatorAndVerify(externalServiceNameSuffix, 
           opNamespace, domainNamespace);
+
+    logger.info("Checking Port Forwarding after Operator Upgrade");
+    checkAdminPortForwarding(domainNamespace,true);
   }
 
   private void upgradeOperatorAndVerify(String externalServiceNameSuffix,
@@ -351,7 +360,6 @@ class ItOperatorWlsUpgrade {
           return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
         }, "Access to admin server node port failed"),
         logger, "Console login validation");
-
   }
 
   private HelmParams installOperator(String operatorVersion, 
@@ -532,5 +540,49 @@ class ItOperatorWlsUpgrade {
          String.format("Create domain custom resource failed with ApiException "
              + "for %s in namespace %s", domainUid, domainNamespace));
     setPodAntiAffinity(domain);
+    removePortForwardingAttribute(domainNamespace,domainUid);
   }
+
+  private void removePortForwardingAttribute(
+      String domainNamespace, String  domainUid) {
+
+    StringBuffer patchStr = new StringBuffer("[{");
+    patchStr.append("\"op\": \"remove\",")
+        .append(" \"path\": \"/spec/adminServer/adminChannelPortForwardingEnabled\"")
+        .append("}]");
+    logger.info("The patch String {0}", patchStr);
+    StringBuffer commandStr = new StringBuffer("kubectl patch domain ");
+    commandStr.append(domainUid)
+              .append(" -n " + domainNamespace)
+              .append(" --type 'json' -p='") 
+              .append(patchStr)
+              .append("'");
+    logger.info("The Command String: {0}", commandStr);
+    CommandParams params = new CommandParams().defaults();
+
+    params.command(new String(commandStr));
+    boolean result = Command.withParams(params).execute();
+    assertTrue(result, "Failed to remove PortForwardingAttribute");
+  }
+
+  private void checkAdminPortForwarding(String domainNamespace, boolean successExpected) {
+
+    logger.info("Checking port forwarding [{0}]", successExpected);
+    String forwardPort =
+           startPortForwardProcess("localhost", domainNamespace,
+           domainUid, 7001);
+    assertNotNull(forwardPort, "port-forward fails to assign local port");
+    logger.info("Forwarded admin-port is {0}", forwardPort);
+    if (successExpected) {
+      verifyAdminConsoleAccessible(domainNamespace, "localhost", 
+           forwardPort, false);
+      logger.info("WebLogic console is accessible thru port forwarding");
+    } else {
+      verifyAdminConsoleAccessible(domainNamespace, "localhost", 
+           forwardPort, false, false);
+      logger.info("WebLogic console shouldn't accessible thru port forwarding");
+    }
+    stopPortForwardProcess(domainNamespace);
+  }
+
 }
