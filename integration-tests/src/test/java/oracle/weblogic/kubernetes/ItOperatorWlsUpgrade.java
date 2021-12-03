@@ -212,6 +212,7 @@ class ItOperatorWlsUpgrade {
     createWlsDomainAndVerify(domainType, domainNamespace, domainVersion, 
            externalServiceNameSuffix);
 
+    // Make sure AdminPortForwarding is disabled by default
     logger.info("Checking Port Forwarding before Operator Upgrade");
     checkAdminPortForwarding(domainNamespace,false);
 
@@ -219,7 +220,8 @@ class ItOperatorWlsUpgrade {
     upgradeOperatorAndVerify(externalServiceNameSuffix, 
           opNamespace, domainNamespace);
 
-    logger.info("Checking Port Forwarding after Operator Upgrade");
+    // Make sure AdminPortForwarding is enabled by default after domain restart
+    logger.info("Checking Port Forwarding after Operator Upgrade to Release 4.x");
     checkAdminPortForwarding(domainNamespace,true);
   }
 
@@ -543,6 +545,13 @@ class ItOperatorWlsUpgrade {
     removePortForwardingAttribute(domainNamespace,domainUid);
   }
 
+  // Remove the artifact adminChannelPortForwardingEnabled from domain resource
+  // if exist, so that the Operator release default will be effective.
+  // e.g. in Release 3.3.x the default is false, but 4.x.x onward it is true
+  // However in release(s) lower to 3.3.x, the CRD does not contain this attribute
+  // so the patch command to remove this attribute fails. So we do not assert 
+  // the result of patch command 
+  // assertTrue(result, "Failed to remove PortForwardingAttribute");
   private void removePortForwardingAttribute(
       String domainNamespace, String  domainUid) {
 
@@ -562,7 +571,6 @@ class ItOperatorWlsUpgrade {
 
     params.command(new String(commandStr));
     boolean result = Command.withParams(params).execute();
-    assertTrue(result, "Failed to remove PortForwardingAttribute");
   }
 
   private void checkAdminPortForwarding(String domainNamespace, boolean successExpected) {
