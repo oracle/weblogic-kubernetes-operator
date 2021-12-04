@@ -114,7 +114,7 @@ public class DomainValidationSteps {
       List<String> validationFailures = domain.getValidationFailures(new KubernetesResourceLookupImpl(packet));
 
       if (validationFailures.isEmpty()) {
-        return doNext(packet);
+        return doNext(packet).withDebugComment(packet, this::domainValidated);
       }
 
       LOGGER.severe(DOMAIN_VALIDATION_FAILED, domain.getDomainUid(), perLine(validationFailures));
@@ -124,6 +124,10 @@ public class DomainValidationSteps {
 
     private String perLine(List<String> validationFailures) {
       return String.join(lineSeparator(), validationFailures);
+    }
+
+    private String domainValidated(Packet packet) {
+      return "Validated " + DomainPresenceInfo.fromPacket(packet).orElse(null);
     }
     
   }

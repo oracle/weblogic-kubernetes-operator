@@ -164,7 +164,6 @@ public class MonitoringUtils {
 
     String command = String.format("cd %s && mvn clean install -Dmaven.test.skip=true -Dconfiguration=%s",
         monitoringExporterSrcDir,
-        RESOURCE_DIR,
         configFile);
     LoggingFacade logger = getLogger();
     logger.info("Executing command " + command);
@@ -541,9 +540,9 @@ public class MonitoringUtils {
     assertDoesNotThrow(() -> Files.createDirectories(monitoringAppNoRestPort));
 
     String monitoringExporterBranch = Optional.ofNullable(System.getenv("MONITORING_EXPORTER_BRANCH"))
-        .orElse("master");
-    //adding ability to build monitoring exporter if branch is not master
-    boolean toBuildMonitoringExporter = (!monitoringExporterBranch.equalsIgnoreCase(("master")));
+        .orElse("main");
+    //adding ability to build monitoring exporter if branch is not main
+    boolean toBuildMonitoringExporter = (!monitoringExporterBranch.equalsIgnoreCase(("main")));
     monitoringExporterAppDir = monitoringApp.toString();
     String monitoringExporterAppNoRestPortDir = monitoringAppNoRestPort.toString();
 
