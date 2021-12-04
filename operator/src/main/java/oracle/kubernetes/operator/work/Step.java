@@ -113,7 +113,7 @@ public abstract class Step {
    * The name of the step. This will default to the class name minus "Step".
    * @return The name of the step
    */
-  public String getName() {
+  public String getResourceName() {
     return getBaseName() + getNameSuffix();
   }
 
@@ -140,9 +140,9 @@ public abstract class Step {
   @Override
   public String toString() {
     if (next == null) {
-      return getName();
+      return getResourceName();
     }
-    return getName() + "[" + next.toString() + "]";
+    return getResourceName() + "[" + next.toString() + "]";
   }
 
   /**
@@ -212,6 +212,7 @@ public abstract class Step {
    * @param unit Delay time unit
    * @return The next action
    */
+  @SuppressWarnings("SameParameterValue")
   protected NextAction doRetry(Packet packet, long delay, TimeUnit unit) {
     NextAction na = new NextAction();
     na.delay(this, packet, delay, unit);
@@ -306,7 +307,6 @@ public abstract class Step {
   }
 
   /** Multi-exception. */
-  @SuppressWarnings("serial")
   public static class MultiThrowable extends RuntimeException {
     private final List<Throwable> throwables;
 
