@@ -1175,6 +1175,11 @@ public class DomainStatusUpdater {
     }
 
     @Override
+    protected String getDetail() {
+      return reason.name();
+    }
+
+    @Override
     void modifyStatus(DomainStatus s) {
       s.addCondition(new DomainCondition(Failed).withStatus(TRUE).withReason(reason).withMessage(message));
     }

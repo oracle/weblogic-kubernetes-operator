@@ -56,7 +56,6 @@ import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorContainerImageName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorImageName;
-import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Docker.getImageEnvVar;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.collectAppAvailability;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.deployAndAccessApplication;
@@ -94,8 +93,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 class ItOperatorFmwUpgrade {
 
-  private static String opNamespace1 = null;
-  private static String opNamespace2 = null;
+  private static String opNamespace = null;
   private static String domainNamespace = null;
   private static String dbNamespace = null;
   private static String oracle_home = null;
@@ -157,15 +155,11 @@ class ItOperatorFmwUpgrade {
 
     logger.info("Assign a unique namespace for operator1");
     assertNotNull(namespaces.get(1), "Namespace is null");
-    opNamespace1 = namespaces.get(1);
-
-    logger.info("Assign a unique namespace for operator2");
-    assertNotNull(namespaces.get(2), "Namespace is null");
-    opNamespace2 = namespaces.get(2);
+    opNamespace = namespaces.get(1);
 
     logger.info("Assign a unique namespace for FMW domain");
-    assertNotNull(namespaces.get(3), "Namespace is null");
-    domainNamespace = namespaces.get(3);
+    assertNotNull(namespaces.get(2), "Namespace is null");
+    domainNamespace = namespaces.get(2);
 
     logger.info("Start DB and create RCU schema for namespace: {0}, dbListenerPort: {1}, RCU prefix: {2}, "
          + "dbUrl: {3}, dbImage: {4},  fmwImage: {5} ", dbNamespace, dbListenerPort, RCUSCHEMAPREFIX, dbUrl,
@@ -204,57 +198,55 @@ class ItOperatorFmwUpgrade {
    * Operator upgrade from 3.0.4 to latest with a FMW Domain.
    */
   @Test
-  @DisplayName("Upgrade Operator from 3.0.4 to main")
-  void testOperatorFmwUpgradeFrom304ToMain() {
+  @DisplayName("Upgrade Operator from 3.0.4 to latest")
+  void testOperatorFmwUpgradeFrom304ToLatest() {
     this.namespaces = namespaces;
-    installAndUpgradeOperator("3.0.4", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+    installAndUpgradeOperator("3.0.4", "v8", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
    * Operator upgrade from 3.1.4 to latest with a FMW Domain.
    */
   @Test
-  @DisplayName("Upgrade Operator from 3.1.4 to main")
-  void testOperatorFmwUpgradeFrom314ToMain() {
-    installAndUpgradeOperator("3.1.4", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+  @DisplayName("Upgrade Operator from 3.1.4 to latest")
+  void testOperatorFmwUpgradeFrom314ToLatest() {
+    installAndUpgradeOperator("3.1.4", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
    * Operator upgrade from 3.2.5 to latest with a FMW Domain.
    */
   @Test
-  @DisplayName("Upgrade Operator from 3.2.5 to main")
-  void testOperatorFmwUpgradeFrom325ToMain() {
-    installAndUpgradeOperator("3.2.5", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+  @DisplayName("Upgrade Operator from 3.2.5 to latest")
+  void testOperatorFmwUpgradeFrom325ToLatest() {
+    installAndUpgradeOperator("3.2.5", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
-   * Operator upgrade from 3.3.3 to latest with a FMW Domain.
+   * Operator upgrade from 3.3.6 to latest with a FMW Domain.
    */
   @Test
-  @DisplayName("Upgrade Operator from 3.3.3 to main")
-  void testOperatorFmwUpgradeFrom333ToMain() {
-    installAndUpgradeOperator("3.3.3", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX, true);
+  @DisplayName("Upgrade Operator from 3.3.6 to latest")
+  void testOperatorFmwUpgradeFrom336ToLatest() {
+    installAndUpgradeOperator("3.3.6", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
-  private void installAndUpgradeOperator(String operatorVersion,
-                                         String externalServiceNameSuffix,
-                                         boolean useHelmUpgrade) {
-    String domainVersion = getApiVersion(operatorVersion);
+  private void installAndUpgradeOperator(
+         String operatorVersion, String domainVersion, 
+         String externalServiceNameSuffix) {
 
-    // install operator with passed version and verify its running in ready state
-    HelmParams opHelmParams =
-        installAndVerifyOperaotByVersion(operatorVersion);
+    // install operator with older release 
+    HelmParams opHelmParams = installOperator(operatorVersion);
 
     // create FMW domain and verify
     createFmwDomainAndVerify(domainVersion);
 
     // upgrade to latest operator
-    upgradeOperatorAndVerify(externalServiceNameSuffix, opHelmParams, useHelmUpgrade);
+    upgradeOperatorAndVerify(externalServiceNameSuffix);
   }
 
-  private HelmParams installAndVerifyOperaotByVersion(String operatorVersion) {
-    // delete existing CRD
+  private HelmParams installOperator(String operatorVersion) {
+    // delete existing CRD if any
     new Command()
         .withParams(new CommandParams()
             .command("kubectl delete crd domains.weblogic.oracle --ignore-not-found"))
@@ -263,29 +255,27 @@ class ItOperatorFmwUpgrade {
     // build Helm params to install the Operator
     HelmParams opHelmParams =
         new HelmParams().releaseName("weblogic-operator")
-            .namespace(opNamespace1)
+            .namespace(opNamespace)
             .repoUrl(OPERATOR_GITHUB_CHART_REPO_URL)
             .repoName("weblogic-operator")
             .chartName("weblogic-operator")
             .chartVersion(operatorVersion);
 
     // install operator with passed version
-    String opServiceAccount = opNamespace1 + "-sa";
-    installAndVerifyOperator(opNamespace1, opServiceAccount, true,
+    String opServiceAccount = opNamespace + "-sa";
+    installAndVerifyOperator(opNamespace, opServiceAccount, true,
         0, opHelmParams, domainNamespace);
 
     return opHelmParams;
   }
 
-  private void upgradeOperatorAndVerify(String externalServiceNameSuffix,
-                                        HelmParams opHelmParams,
-                                        boolean useHelmUpgrade) {
-    String opServiceAccount = opNamespace1 + "-sa";
+  private void upgradeOperatorAndVerify(String externalServiceNameSuffix) {
+    String opServiceAccount = opNamespace + "-sa";
     String appName = "testwebapp.war";
 
-    if (useHelmUpgrade) {
-      // deploy application and access the application once to make sure the app is accessible
-      deployAndAccessApplication(domainNamespace,
+    // deploy application and access the application once 
+    // to make sure the app is accessible
+    deployAndAccessApplication(domainNamespace,
                                  domainUid,
                                  clusterName,
                                  adminServerName,
@@ -295,16 +285,16 @@ class ItOperatorFmwUpgrade {
                                  "7001",
                                  "8001");
 
-      // start a new thread to collect the availability data of the application while the
-      // main thread performs operator upgrade
-      List<Integer> appAvailability = new ArrayList<Integer>();
-      logger.info("Start a thread to keep track of the application's availability");
-      Thread accountingThread =
+    // start a new thread to collect the availability data of 
+    // the application while the main thread performs operator upgrade
+    List<Integer> appAvailability = new ArrayList<Integer>();
+    logger.info("Start a thread to keep track of the application's availability");
+    Thread accountingThread =
           new Thread(
               () -> {
                 collectAppAvailability(
                     domainNamespace,
-                    opNamespace1,
+                    opNamespace,
                     appAvailability,
                     adminServerPodName,
                     managedServerPodNamePrefix,
@@ -313,58 +303,49 @@ class ItOperatorFmwUpgrade {
                     "8001",
                     "testwebapp/index.jsp");
               });
-      accountingThread.start();
+    accountingThread.start();
 
-      try {
-        // upgrade to latest operator
-        HelmParams upgradeHelmParams = new HelmParams()
+    try {
+      // upgrade to latest operator
+      HelmParams upgradeHelmParams = new HelmParams()
             .releaseName(OPERATOR_RELEASE_NAME)
-            .namespace(opNamespace1)
+            .namespace(opNamespace)
             .chartDir(OPERATOR_CHART_DIR)
             .repoUrl(null)
             .chartVersion(null)
             .chartName(null);
 
-        // build operator chart values
-        OperatorParams opParams = new OperatorParams()
+      // build operator chart values
+      OperatorParams opParams = new OperatorParams()
             .helmParams(upgradeHelmParams)
             .image(latestOperatorImageName)
             .externalRestEnabled(true);
 
-        assertTrue(upgradeAndVerifyOperator(opNamespace1, opParams),
-            String.format("Failed to upgrade operator in namespace %s", opNamespace1));
+      assertTrue(upgradeAndVerifyOperator(opNamespace, opParams),
+            String.format("Failed to upgrade operator in namespace %s", opNamespace));
 
-        // check operator image name after upgrade
-        logger.info("Checking image name in operator container ");
-        testUntil(
+      // check operator image name after upgrade
+      logger.info("Checking image name in operator container ");
+      testUntil(
             assertDoesNotThrow(() -> getOpContainerImageName(),
               "Exception while getting the operator image name"),
             logger,
             "Checking operator image name in namespace {0} after upgrade",
-            opNamespace1);
-      } finally {
-        if (accountingThread != null) {
-          try {
-            accountingThread.join();
-          } catch (InterruptedException ie) {
-            // do nothing
-          }
-          // check the application availability data that we have collected, and see if
-          // the application has been available all the time during the upgrade
-          logger.info("Verify that the application was available when the operator was being upgraded");
-          assertTrue(appAlwaysAvailable(appAvailability),
-              "Application was not always available when the operator was getting upgraded");
+            opNamespace);
+    } finally {
+      if (accountingThread != null) {
+        try {
+          accountingThread.join();
+        } catch (InterruptedException ie) {
+          // do nothing
         }
+        // check the application availability data that we have collected, 
+        // and see if the application has been available all the time 
+        // during the upgrade
+        logger.info("Verify that the application was available when the operator was being upgraded");
+        assertTrue(appAlwaysAvailable(appAvailability),
+              "Application was not always available when the operator was getting upgraded");
       }
-    } else {
-      opServiceAccount = opNamespace2 + "-sa";
-
-      // uninstall operator 2.6.0
-      assertTrue(uninstallOperator(opHelmParams),
-          String.format("Uninstall operator failed in namespace %s", opNamespace1));
-
-      // install latest operator
-      installAndVerifyOperator(opNamespace2, opServiceAccount, true, 0);
     }
   }
 
@@ -373,8 +354,8 @@ class ItOperatorFmwUpgrade {
     final String pvcName = domainUid + "-" + domainNamespace + "-pvc";
     final int t3ChannelPort = getNextFreePort();
 
-    // create pull secrets for domainNamespace when running in non Kind Kubernetes cluster
-    // this secret is used only for non-kind cluster
+    // create pull secrets for domainNamespace when running in non-kind 
+    // Kubernetes cluster this secret is used only for non-kind cluster
     createSecretForBaseImages(domainNamespace);
 
     // create FMW domain credential secret
@@ -432,8 +413,8 @@ class ItOperatorFmwUpgrade {
             .namespace(domainNamespace))
         .spec(new DomainSpec()
             .domainUid(domainUid)
-            .domainHome("/shared/domains/" + domainUid)  // point to domain home in pv
-            .domainHomeSourceType("PersistentVolume") // set the domain home source type as pv
+            .domainHome("/shared/domains/" + domainUid) 
+            .domainHomeSourceType("PersistentVolume") 
             .image(FMWINFRA_IMAGE_TO_USE_IN_SPEC)
             .imagePullPolicy("IfNotPresent")
             .imagePullSecrets(Arrays.asList(
@@ -561,7 +542,7 @@ class ItOperatorFmwUpgrade {
 
   private Callable<Boolean> getOpContainerImageName() {
     return () -> {
-      String imageName = getOperatorContainerImageName(opNamespace1);
+      String imageName = getOperatorContainerImageName(opNamespace);
       if (imageName != null) {
         if (!imageName.equals(latestOperatorImageName)) {
           logger.info("Operator image name {0} doesn't match with latest image {1}",
@@ -584,19 +565,6 @@ class ItOperatorFmwUpgrade {
       }
     }
     return true;
-  }
-
-  private String getApiVersion(String operatorVersion) {
-    String apiVersion = null;
-    switch (operatorVersion) {
-      case "2.6.0":
-        apiVersion = "v7";
-        break;
-      default:
-        apiVersion = TestConstants.DOMAIN_VERSION;
-    }
-
-    return apiVersion;
   }
 
   private static void verifyPodNotRunning(String domainNamespace) {
