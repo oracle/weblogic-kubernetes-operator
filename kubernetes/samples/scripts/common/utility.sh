@@ -929,14 +929,12 @@ function checkService(){
 
 # Checks if a pod is available in a given namespace
 function detectPod(){
- #ns=$1
- ns=marina
+ ns=$1
  startSecs=$SECONDS
  maxWaitSecs=10
  while [ -z "`kubectl get pod -n ${ns} -o jsonpath={.items[0].metadata.name}`" ]; do
    if [ $((SECONDS - startSecs)) -lt $maxWaitSecs ]; then
      echo "Pod not found after $((SECONDS - startSecs)) seconds, retrying ..."
-     ns=$1
      sleep 2
    else
      echo "[Error] Could not find Pod after $((SECONDS - startSecs)) seconds"
