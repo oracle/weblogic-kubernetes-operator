@@ -5,7 +5,7 @@
 # Description:
 #
 #  This script install a given version of istio using Helm v3.x
-#  Default istio version is 1.7.3 
+#  Default istio version is 1.10.4
 #  https://istio.io/docs/setup/install/istioctl/
 #  https://istio.io/latest/docs/setup/install/standalone-operator/
 #  https://github.com/istio/istio/releases
@@ -43,7 +43,7 @@ kubectl delete namespace istio-system --ignore-not-found
 }
 
 # MAIN
-version=${1:-1.7.3}
+version=${1:-1.10.4}
 workdir=${2:-`pwd`}
 
 if [ ! -d ${workdir} ]; then 
