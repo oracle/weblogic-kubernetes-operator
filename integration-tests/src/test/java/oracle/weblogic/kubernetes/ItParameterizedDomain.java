@@ -389,20 +389,7 @@ class ItParameterizedDomain {
     verifyAdminConsoleAccessible(domainNamespace, hostName, forwardedPortNo, true);
 
     stopPortForwardProcess(domainNamespace);
-
-    /*if (!OKD) {
-      // Test that `kubectl port-foward` is able to forward a local port to default channel port (7001 in this test)
-      // and default secure channel port (7002 in this test)
-      // Verify that the WLS admin console can be accessed using http://localhost:localPort/console/login/LoginForm.jsp
-      final String hostName = "localhost";
-      String forwardedPortNo = startPortForwardProcess(hostName, domainNamespace, domainUid, ADMIN_SERVER_PORT);
-      verifyAdminConsoleAccessible(domainNamespace, hostName, forwardedPortNo, false);
-
-      forwardedPortNo = startPortForwardProcess(hostName, domainNamespace, domainUid, ADMIN_SERVER_SECURE_PORT);
-      verifyAdminConsoleAccessible(domainNamespace, hostName, forwardedPortNo, true);
-
-      stopPortForwardProcess(domainNamespace);
-    }*/
+    
   }
 
   /**
