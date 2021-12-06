@@ -548,9 +548,9 @@ see [Troubleshooting]({{<relref "/userguide/managing-operators/troubleshooting.m
 - For information about referencing a operator Helm chart in a remote Helm repository instead
   of referencing a locally downloaded version in your local file system,
   see [Set up operator Helm chart access](#set-up-operator-helm-chart-access).
-- Do not include a slash (`\`) before the equals sign (`=`) in a domain namespace label selector
+- Do not include a backslash (`\`) before the equals sign (`=`) in a domain namespace label selector
   when specifying the selector in YAML.
-  A slash (`\`) is only required when specifying the selector on the command line using `--set`,
+  A backslash (`\`) is only required when specifying the selector on the command line using `--set`,
   as in the previous example.
 
 ### Set up domain namespaces
