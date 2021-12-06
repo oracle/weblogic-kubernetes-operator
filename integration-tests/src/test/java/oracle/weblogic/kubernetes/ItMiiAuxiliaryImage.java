@@ -703,7 +703,7 @@ class ItMiiAuxiliaryImage {
   /**
    * Negative Test to patch the existing domain using a custom mount command that's guaranteed to fail.
    * Specify domain.spec.serverPod.auxiliaryImages.command to a custom mount command instead of the default one, which
-   * defaults to "cp -R $AUXILIARY_IMAGE_PATH/* $TARGET_MOUNT_PATH"
+   * defaults to "cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH"
    * Check the error message in introspector pod log, domain events and operator pod log.
    * Restore the domain by removing the custom mount command.
    */

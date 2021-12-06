@@ -63,9 +63,12 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.adminNodePortAccessible;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.collectAppAvailability;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.deployAndAccessApplication;
+import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminConsoleAccessible;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.startPortForwardProcess;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.stopPortForwardProcess;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeExists;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.checkDomainStatusConditionTypeHasExpectedStatus;
@@ -100,6 +103,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 class ItOperatorWlsUpgrade {
 
+  public static final String OLD_DOMAIN_VERSION = "v8";
   private static LoggingFacade logger = null;
   private String domainUid = "domain1";
   private String adminServerPodName = domainUid + "-admin-server";
@@ -138,7 +142,7 @@ class ItOperatorWlsUpgrade {
   @ValueSource(strings = { "Image", "FromModel" })
   void testOperatorWlsUpgradeFrom304ToLatest(String domainType) {
     logger.info("Starting test testOperatorWlsUpgradeFrom304ToLatest with domain type {0}", domainType);
-    installAndUpgradeOperator(domainType, "3.0.4", "v8", OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+    installAndUpgradeOperator(domainType, "3.0.4", OLD_DOMAIN_VERSION, OLD_DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
@@ -149,7 +153,7 @@ class ItOperatorWlsUpgrade {
   @ValueSource(strings = { "Image", "FromModel" })
   void testOperatorWlsUpgradeFrom314ToLatest(String domainType) {
     logger.info("Starting test testOperatorWlsUpgradeFrom314ToLatest with domain type {0}", domainType);
-    installAndUpgradeOperator(domainType, "3.1.4", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+    installAndUpgradeOperator(domainType, "3.1.4", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
@@ -160,7 +164,7 @@ class ItOperatorWlsUpgrade {
   @ValueSource(strings = { "Image", "FromModel" })
   void testOperatorWlsUpgradeFrom325ToLatest(String domainType) {
     logger.info("Starting test testOperatorWlsUpgradeFrom325ToLatest with domain type {0}", domainType);
-    installAndUpgradeOperator(domainType, "3.2.5", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+    installAndUpgradeOperator(domainType, "3.2.5", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
@@ -171,7 +175,7 @@ class ItOperatorWlsUpgrade {
   @ValueSource(strings = { "Image", "FromModel" })
   void testOperatorWlsUpgradeFrom336ToLatest(String domainType) {
     logger.info("Starting test testOperatorWlsUpgradeFrom336ToLatest with domain type {0}", domainType);
-    installAndUpgradeOperator(domainType, "3.3.6", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+    installAndUpgradeOperator(domainType, "3.3.6", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
@@ -215,9 +219,17 @@ class ItOperatorWlsUpgrade {
     createWlsDomainAndVerify(domainType, domainNamespace, domainVersion, 
            externalServiceNameSuffix);
 
+    // Make sure AdminPortForwarding is disabled by default
+    logger.info("Checking Port Forwarding before Operator Upgrade");
+    checkAdminPortForwarding(domainNamespace,false);
+
     // upgrade to latest operator
     upgradeOperatorAndVerify(externalServiceNameSuffix, 
           opNamespace, domainNamespace);
+
+    // Make sure AdminPortForwarding is enabled by default after domain restart
+    logger.info("Checking Port Forwarding after Operator Upgrade to Release 4.x");
+    checkAdminPortForwarding(domainNamespace,true);
   }
 
   private void upgradeOperatorAndVerify(String externalServiceNameSuffix,
@@ -241,7 +253,7 @@ class ItOperatorWlsUpgrade {
 
     // verify there is no status condition type Completed before upgrading to Latest
     verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace,
-        DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "v8");
+        DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, OLD_DOMAIN_VERSION);
 
     // start a new thread to collect the availability data of 
     // the application while the main thread performs operator upgrade
@@ -365,7 +377,6 @@ class ItOperatorWlsUpgrade {
           return adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
         }, "Access to admin server node port failed"),
         logger, "Console login validation");
-
   }
 
   private HelmParams installOperator(String operatorVersion, 
@@ -546,24 +557,74 @@ class ItOperatorWlsUpgrade {
          String.format("Create domain custom resource failed with ApiException "
              + "for %s in namespace %s", domainUid, domainNamespace));
     setPodAntiAffinity(domain);
+    removePortForwardingAttribute(domainNamespace,domainUid);
   }
 
+  // Remove the artifact adminChannelPortForwardingEnabled from domain resource
+  // if exist, so that the Operator release default will be effective.
+  // e.g. in Release 3.3.x the default is false, but 4.x.x onward it is true
+  // However in release(s) lower to 3.3.x, the CRD does not contain this attribute
+  // so the patch command to remove this attribute fails. So we do not assert 
+  // the result of patch command 
+  // assertTrue(result, "Failed to remove PortForwardingAttribute");
+  private void removePortForwardingAttribute(
+      String domainNamespace, String  domainUid) {
+
+    StringBuffer patchStr = new StringBuffer("[{");
+    patchStr.append("\"op\": \"remove\",")
+        .append(" \"path\": \"/spec/adminServer/adminChannelPortForwardingEnabled\"")
+        .append("}]");
+    logger.info("The patch String {0}", patchStr);
+    StringBuffer commandStr = new StringBuffer("kubectl patch domain ");
+    commandStr.append(domainUid)
+              .append(" -n " + domainNamespace)
+              .append(" --type 'json' -p='") 
+              .append(patchStr)
+              .append("'");
+    logger.info("The Command String: {0}", commandStr);
+    CommandParams params = new CommandParams().defaults();
+
+    params.command(new String(commandStr));
+    boolean result = Command.withParams(params).execute();
+  }
+  
   void checkDomainStatus(String domainNamespace) {
 
     // verify the condition type Completed exists
     checkDomainStatusConditionTypeExists(domainUid, domainNamespace,
-        DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "v8");
+        DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, OLD_DOMAIN_VERSION);
     // verify the condition type Available exists
     checkDomainStatusConditionTypeExists(domainUid, domainNamespace,
-        DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "v8");
+        DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, OLD_DOMAIN_VERSION);
     // verify the condition Completed type has status True
     checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
-        DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "True", "v8");
+        DOMAIN_STATUS_CONDITION_COMPLETED_TYPE, "True", OLD_DOMAIN_VERSION);
     // verify the condition Available type has status True
     checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
-        DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True", "v8");
+        DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True", OLD_DOMAIN_VERSION);
     // verify there is no status condition type Failed
     verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace,
-        DOMAIN_STATUS_CONDITION_FAILED_TYPE, "v8");
+        DOMAIN_STATUS_CONDITION_FAILED_TYPE, OLD_DOMAIN_VERSION);
   }
+
+  private void checkAdminPortForwarding(String domainNamespace, boolean successExpected) {
+
+    logger.info("Checking port forwarding [{0}]", successExpected);
+    String forwardPort =
+           startPortForwardProcess("localhost", domainNamespace,
+           domainUid, 7001);
+    assertNotNull(forwardPort, "port-forward fails to assign local port");
+    logger.info("Forwarded admin-port is {0}", forwardPort);
+    if (successExpected) {
+      verifyAdminConsoleAccessible(domainNamespace, "localhost", 
+           forwardPort, false);
+      logger.info("WebLogic console is accessible thru port forwarding");
+    } else {
+      verifyAdminConsoleAccessible(domainNamespace, "localhost", 
+           forwardPort, false, false);
+      logger.info("WebLogic console shouldn't accessible thru port forwarding");
+    }
+    stopPortForwardProcess(domainNamespace);
+  }
+
 }
