@@ -930,7 +930,7 @@ function checkService(){
 # Checks if a pod is available in a given namespace
 function detectPod(){
  #ns=$1
- ns=default
+ ns=marina
  startSecs=$SECONDS
  maxWaitSecs=10
  while [ -z "`kubectl get pod -n ${ns} -o jsonpath={.items[0].metadata.name}`" ]; do
