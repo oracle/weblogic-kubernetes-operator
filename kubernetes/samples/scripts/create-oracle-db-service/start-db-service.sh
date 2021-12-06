@@ -93,8 +93,6 @@ fi
 kubectl delete service oracle-db -n ${namespace} --ignore-not-found
 kubectl apply -f ${dbYaml}
 
-#dbpod=$(detectPod ${namespace})
-dbpod=none
 detectPod ${namespace}
 dbpod=${retVal}
 
