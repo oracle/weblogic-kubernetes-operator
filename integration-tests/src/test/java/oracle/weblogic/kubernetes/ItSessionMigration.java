@@ -3,6 +3,8 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -46,6 +48,7 @@ import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOpe
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.SessionMigrationUtil.generateSessionMigrYaml;
 import static oracle.weblogic.kubernetes.utils.SessionMigrationUtil.getServerAndSessionInfoAndVerify;
 import static oracle.weblogic.kubernetes.utils.SessionMigrationUtil.shutdownServerAndVerify;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -70,8 +73,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 class ItSessionMigration {
 
   // constants for creating domain image using model in image
-  private static final String SESSMIGR_MODEL_FILE = "model.sessmigr.yaml";
-  private static final String SESSMIGR_IMAGE_NAME = "mii-image";
+  private static final String SESSMIGR_IMAGE_NAME = "sessmigr-mii-image";
 
   // constants for web service
   private static final String SESSMIGR_APP_NAME = "sessmigr-app";
@@ -253,8 +255,20 @@ class ItSessionMigration {
   private static String createAndVerifyDomainImage() {
     // create image with model files
     logger.info("Create image with model file and verify");
-    String miiImage =
-        createMiiImageAndVerify(SESSMIGR_IMAGE_NAME, SESSMIGR_MODEL_FILE, SESSMIGR_APP_NAME);
+
+    // Generate the model.sessmigr.yaml file at RESULTS_ROOT
+    String destSessionMigrYamlFile =
+        generateSessionMigrYaml("ItSessionMigration", domainUid);
+
+    List<String> appList = new ArrayList();
+    appList.add(SESSMIGR_APP_NAME);
+
+    // build the model file list
+    final List<String> modelList = Collections.singletonList(destSessionMigrYamlFile);
+
+    // create image with model files
+    logger.info("Create image with model file and verify");
+    String miiImage = createMiiImageAndVerify(SESSMIGR_IMAGE_NAME, modelList, appList);
 
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(miiImage);

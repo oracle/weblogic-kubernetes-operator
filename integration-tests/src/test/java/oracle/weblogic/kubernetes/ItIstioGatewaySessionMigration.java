@@ -27,10 +27,10 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.configIstioModelInImageDomain;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployToClusterUsingRest;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
@@ -39,7 +39,7 @@ import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGateway
 import static oracle.weblogic.kubernetes.utils.IstioUtils.deployIstioDestinationRule;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.getIstioHttpIngressPort;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.SessionMigrationUtil.configIstioModelInImageDomain;
+import static oracle.weblogic.kubernetes.utils.SessionMigrationUtil.generateSessionMigrYaml;
 import static oracle.weblogic.kubernetes.utils.SessionMigrationUtil.getServerAndSessionInfoAndVerify;
 import static oracle.weblogic.kubernetes.utils.SessionMigrationUtil.shutdownServerAndVerify;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -58,8 +58,7 @@ class ItIstioGatewaySessionMigration {
   private static String domainNamespace = null;
 
   // constants for creating domain image using model in image
-  private static final String SESSMIGR_MODEL_FILE = "model.sessmigr.yaml";
-  private static final String SESSMIGR_IMAGE_NAME = "mii-image";
+  private static final String SESSMIGR_IMAGE_NAME = "istiogateway-sessmigr-mii-image";
 
   // constants for web service
   private static final String SESSMIGR_APP_NAME = "sessmigr-app";
@@ -68,7 +67,7 @@ class ItIstioGatewaySessionMigration {
   private static Map<String, String> httpAttrMap;
 
   // constants for operator and WebLogic domain
-  private static String domainUid = "sessmigr-domain-1";
+  private static String domainUid = "istiogateway-sessmigr-domain";
   private static String clusterName = "cluster-1";
   private static String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
   private static String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
@@ -109,11 +108,15 @@ class ItIstioGatewaySessionMigration {
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
 
+    // Generate the model.sessmigr.yaml file at RESULTS_ROOT
+    String destSessionMigrYamlFile =
+        generateSessionMigrYaml("ItIstioGatewaySessionMigration", domainUid);
+
     List<String> appList = new ArrayList();
     appList.add(SESSMIGR_APP_NAME);
 
     // build the model file list
-    final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + SESSMIGR_MODEL_FILE);
+    final List<String> modelList = Collections.singletonList(destSessionMigrYamlFile);
 
     // create image with model files
     logger.info("Create image with model file and verify");

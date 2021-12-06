@@ -3,28 +3,23 @@
 
 package oracle.weblogic.kubernetes.utils;
 
-import java.util.Collections;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownManagedServerUsingServerStartPolicy;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
-import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
-import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
-import static oracle.weblogic.kubernetes.utils.IstioUtils.createIstioDomainResource;
+import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
-import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
-import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -127,88 +122,35 @@ public class SessionMigrationUtil {
   }
 
   /**
-   * Create a MII domain with Istio enabled and wait up to five minutes until the domain exists.
+   * Generate the model.sessmigr.yaml for a given test class
    *
-   * @param miiImage image name to config
-   * @param domainNamespace namespace in which the domain will be created
+   * @param className test class name
    * @param domainUid unique domain identifier
-   * @param managedServerPrefix prefix of managed server name
-   * @param clusterName cluster name
-   * @param configMapName WDT config map to create domain resource
-   * @param replicaCount fully qualified URL to the server on which the web app is running
+   *
+   * @return path of generated yaml file for a session migration test
    */
-  public static void configIstioModelInImageDomain(String miiImage,
-                                                   String domainNamespace,
-                                                   String domainUid,
-                                                   String managedServerPrefix,
-                                                   String clusterName,
-                                                   String configMapName,
-                                                   int replicaCount) {
-    LoggingFacade logger = getLogger();
+  public static String generateSessionMigrYaml(String className, String domainUid) {
+    final String SESSMIGR_MODEL_FILE = "model.sessmigr.yaml";
+    final String srcSessionMigrYamlFile =  MODEL_DIR + "/" + SESSMIGR_MODEL_FILE;
+    final String destSessionMigrYamlFile = RESULTS_ROOT + "/" + className + "/" + SESSMIGR_MODEL_FILE;
+    Path srcSessionMigrYamlPath = Paths.get(srcSessionMigrYamlFile);
+    Path destSessionMigrYamlPath = Paths.get(destSessionMigrYamlFile);
 
-    // Create the repo secret to pull the image
-    // this secret is used only for non-kind cluster
-    createOcirRepoSecret(domainNamespace);
+    // create dest dir
+    assertDoesNotThrow(() -> Files.createDirectories(
+        Paths.get(RESULTS_ROOT + "/" + className)),
+        String.format("Could not create directory under %s", RESULTS_ROOT + "/" + className + ""));
 
-    // create secret for admin credentials
-    logger.info("Create secret for admin credentials");
-    String adminSecretName = "weblogic-credentials";
-    assertDoesNotThrow(() -> createSecretWithUsernamePassword(
-        adminSecretName,
-        domainNamespace,
-        ADMIN_USERNAME_DEFAULT,
-        ADMIN_PASSWORD_DEFAULT),
-        String.format("createSecret failed for %s", adminSecretName));
+    // copy model.sessmigr.yamlto results dir
+    assertDoesNotThrow(() -> Files.copy(srcSessionMigrYamlPath, destSessionMigrYamlPath, REPLACE_EXISTING),
+        "Failed to copy " + srcSessionMigrYamlFile + " to " + destSessionMigrYamlFile);
 
-    // create encryption secret
-    logger.info("Create encryption secret");
-    String encryptionSecretName = "encryptionsecret";
-    assertDoesNotThrow(() -> createSecretWithUsernamePassword(
-        encryptionSecretName,
-        domainNamespace,
-        "weblogicenc",
-        "weblogicenc"),
-        String.format("createSecret failed for %s", encryptionSecretName));
+    // DOMAIN_NAME in model.sessmigr.yaml
+    assertDoesNotThrow(() -> replaceStringInFile(
+        destSessionMigrYamlFile.toString(), "DOMAIN_NAME", domainUid),
+        "Could not modify DOMAIN_NAME in " + destSessionMigrYamlFile);
 
-    // create WDT config map without any files
-    createConfigMapAndVerify(configMapName, domainUid, domainNamespace, Collections.EMPTY_LIST);
-
-    // create the domain object
-    Domain domain = createIstioDomainResource(domainUid,
-        domainNamespace,
-        adminSecretName,
-        OCIR_SECRET_NAME,
-        encryptionSecretName,
-        replicaCount,
-        miiImage,
-        configMapName,
-        clusterName);
-
-    // create model in image domain
-    createDomainAndVerify(domain, domainNamespace);
-    String adminServerPodName = domainUid + "-admin-server";
-    logger.info("Check admin service {0} is created in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkServiceExists(adminServerPodName, domainNamespace);
-
-    // check admin server pod is ready
-    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
-
-    // check managed server services created
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Check managed service {0} is created in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkServiceExists(managedServerPrefix + i, domainNamespace);
-    }
-
-    // check managed server pods are ready
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Wait for managed pod {0} to be ready in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
-    }
+    return destSessionMigrYamlFile;
   }
 
   private static Map<String, String> processHttpRequest(String domainNamespace,
