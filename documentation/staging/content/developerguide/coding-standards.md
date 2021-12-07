@@ -9,7 +9,7 @@ weight: 5
 
 This project has adopted the following coding standards:
 
-* Code will be formatted using Oracle / WebLogic standards, which are identical to the [Google Java Style](https://google.github.io/styleguide/javaguide.html).
+* Code should be formatted using Oracle / WebLogic standards, which are identical to the [Google Java Style](https://google.github.io/styleguide/javaguide.html).
 * Javadoc must be provided for all public packages, classes, and methods, and must include all parameters and returns.  Javadoc is not required for methods that override or implement methods that are already documented.
 * All non-trivial methods should include `LOGGER.entering()` and `LOGGER.exiting()` calls.
 * The `LOGGER.exiting()` call should include the value that is going to be returned from the method, unless that value includes a credential or other sensitive information.
