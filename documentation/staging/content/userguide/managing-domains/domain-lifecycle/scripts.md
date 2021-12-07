@@ -1,6 +1,6 @@
 ---
 title: "Lifecycle scripts"
-date: 2019-02-23T17:04:41-05:00
+date: 2021-12-05T17:04:41-05:00
 draft: false
 weight: 7
 description: "A collection of useful domain lifecycle sample scripts."
