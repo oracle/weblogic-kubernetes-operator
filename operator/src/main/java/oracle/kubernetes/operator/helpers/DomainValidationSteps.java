@@ -46,9 +46,15 @@ public class DomainValidationSteps {
   private static final String SECRETS = "secrets";
   private static final String CONFIGMAPS = "configmaps";
 
-  public static Step createDomainValidationSteps(String namespace, Step next) {
-    return Step.chain(createListSecretsStep(namespace), createListConfigMapsStep(namespace),
-              new DomainValidationStep(next));
+  /**
+   * Returns a chain of steps to validate the domain in the current packet.
+   * @param namespace the namespace for the domain
+   */
+  public static Step createDomainValidationSteps(String namespace) {
+    return Step.chain(
+          createListSecretsStep(namespace),
+          createListConfigMapsStep(namespace),
+          new DomainValidationStep());
   }
 
   static Step createAdditionalDomainValidationSteps(V1PodSpec podSpec) {
@@ -104,10 +110,6 @@ public class DomainValidationSteps {
   }
 
   static class DomainValidationStep extends Step {
-
-    DomainValidationStep(Step next) {
-      super(next);
-    }
 
     @Override
     public NextAction apply(Packet packet) {
