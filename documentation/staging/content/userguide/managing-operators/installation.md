@@ -42,9 +42,9 @@ Before installing an operator, ensure that each of these prerequisite requiremen
    - [Customizing operator image name, pull secret, and private registry](#customizing-operator-image-name-pull-secret-and-private-registry)
 1. [Determine the platform setting](#determine-the-platform-setting)
 1. [Choose a security strategy](#choose-a-security-strategy)
-   - [_Any namespace security strategy with cluster role binding enabled_](#_any-namespace-security-strategy-with-cluster-role-binding-enabled_)
-   - [_Any namespace security strategy with cluster role binding disabled_](#_any-namespace-security-strategy-with-cluster-role-binding-disabled_)
-   - [_Local namespace only security strategy with cluster role binding disabled_](#_local-namespace-only-security-strategy-with-cluster-role-binding-disabled_)
+   - [_Any namespace with cluster role binding enabled_](#_any-namespace-with-cluster-role-binding-enabled_)
+   - [_Any namespace with cluster role binding disabled_](#_any-namespace-with-cluster-role-binding-disabled_)
+   - [_Local namespace only with cluster role binding disabled_](#_local-namespace-only-with-cluster-role-binding-disabled_)
 1. [Choose a domain namespace selection strategy](#choose-a-domain-namespace-selection-strategy)
 1. [Be aware of advanced operator configuration options](#be-aware-of-advanced-operator-configuration-options)
 
@@ -74,7 +74,7 @@ Before installing an operator, ensure that each of these prerequisite requiremen
 
 Downloading the operator source is required if:
 
-- You plan to provide local file -based access to the operator Helm chart
+- You plan to provide local file-based access to the operator Helm chart
   (see [Set up operator Helm chart access](#set-up-operator-helm-chart-access)).
 - You need to manually install the CRD
   (see [Manually install the Domain resource custom resource definition (CRD), if needed](#manually-install-the-domain-resource-custom-resource-definition-crd-if-needed)).
@@ -362,15 +362,15 @@ see [kubernetesPlatform]({{<relref "/userguide/managing-operators/using-helm#kub
 
 There are three commonly used security strategies for deploying an operator:
 
-1. [_Any namespace security strategy with cluster role binding enabled_](#_any-namespace-security-strategy-with-cluster-role-binding-enabled_)
-1. [_Any namespace security strategy with cluster role binding disabled_](#_any-namespace-security-strategy-with-cluster-role-binding-disabled_)
-1. [_Local namespace only security strategy with cluster role binding disabled_](#_local-namespace-only-security-strategy-with-cluster-role-binding-disabled_)
+1. [_Any namespace with cluster role binding enabled_](#_any-namespace-with-cluster-role-binding-enabled_)
+1. [_Any namespace with cluster role binding disabled_](#_any-namespace-with-cluster-role-binding-disabled_)
+1. [_Local namespace only with cluster role binding disabled_](#_local-namespace-only-with-cluster-role-binding-disabled_)
 
 For a detailed discussion of the operator's security-related resources,
 see the operator's role based access control (RBAC) requirements,
 which are documented [here]({{< relref "/userguide/managing-operators/rbac.md" >}}).
 
-##### _Any namespace security strategy with cluster role binding enabled_
+##### _Any namespace with cluster role binding enabled_
 
 If you want to give the operator permission to access any namespace,
 then, for most use cases, set the `enableClusterRoleBinding` operator Helm chart
@@ -381,7 +381,7 @@ The default for this setting is `false`.
 
 This is the most popular security strategy.
 
-##### _Any namespace security strategy with cluster role binding disabled_
+##### _Any namespace with cluster role binding disabled_
 
 If your operator Helm `enableClusterRoleBinding` configuration value is `false` (the default),
 then an operator is still capable of managing multiple namespaces
@@ -395,7 +395,7 @@ because `enableClusterRoleBinding` is not set to `true`
 and installation of the CRD requires cluster role binding privileges.
 See [Manually install the Domain resource custom resource definition (CRD), if needed](#manually-install-the-domain-resource-custom-resource-definition-crd-if-needed).
 
-##### _Local namespace only security strategy with cluster role binding disabled_
+##### _Local namespace only with cluster role binding disabled_
 
 If you want to limit the operator so that it can access only resources in its local namespace, then:
 
