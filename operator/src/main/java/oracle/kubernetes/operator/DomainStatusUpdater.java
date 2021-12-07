@@ -959,8 +959,8 @@ public class DomainStatusUpdater {
 
       private List<String> getStartedServersInCluster(String clusterName) {
         return expectedRunningServers.stream()
-            .filter(server -> clusterName.equals(getClusterName(server)))
-            .collect(Collectors.toList());
+              .filter(server -> clusterName.equals(getClusterName(server)))
+              .collect(Collectors.toList());
       }
 
       private Set<String> serversMarkedForRoll() {
