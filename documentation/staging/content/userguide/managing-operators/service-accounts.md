@@ -6,7 +6,7 @@ description: "Kubernetes ServiceAccounts for the operator."
 ---
 
 
-#### WebLogic Kubernetes Operator ServiceAccounts
+### WebLogic Kubernetes Operator ServiceAccounts
 
 When the operator is installed, the Helm chart property, `serviceAccount`, can
 be specified where the value contains the name of the Kubernetes `ServiceAccount`
@@ -34,7 +34,7 @@ See the `Dedicated` option for the
 setting.
 {{% /notice %}}
 
-#### Additional reading
+### Additional reading
 
 * See [Prepare an operator namespace and service account]({{<relref "/userguide/managing-operators/installation#prepare-an-operator-namespace-and-service-account">}}).
 * See the Operator Helm chart [serviceAccount]({{<relref "/userguide/managing-operators/using-helm#serviceaccount">}})
