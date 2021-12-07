@@ -1,6 +1,6 @@
 ---
 title: "Overview"
-date: 2019-02-23T16:47:21-05:00
+date: 2021-12-05T16:47:21-05:00
 weight: 1
 description: "An introduction to the operator runtime."
 ---
@@ -24,19 +24,23 @@ A completely installed and running WebLogic Kubernetes Operator environment incl
 - A Kubernetes cluster.
 - A Kubernetes custom resource definition (CRD) that, when installed,
   enables the Kubernetes API server and the operator to monitor and manage domain resource instances.
-- One or more operator runtimes that monitor Kubernetes namespaces for domain resources.
-- Each operator is associated with a local Kubernetes service account for security purposes.
+- One or more operator runtimes, each deployed to a different namespace, that monitor Kubernetes namespaces for domain resources.
+- Each operator is associated with a local Kubernetes service account for security purposes. The service account is deployed to the same namespace as the operator.
 
 When an operator runtime detects a domain,
-it will generate and deploy the domain's pods, services, and potentially other resources.
+it will first run a short lived Kubernetes job (the "introspector job")
+that reads and checks the domain's WebLogic configuration,
+and then it will generate and deploy the domain's pods, services, and potentially other resources.
 The operator will also monitor the domain for changes,
 such as a request to change the number of pods in a WebLogic cluster,
 will update status fields on the domain's domain resource,
 and will generate Kubernetes events for the domain in the domain's namespace.
+If the operator detects that a domain is deleted, then
+it will shutdown any running pods associated with the domain
+and delete the resources that it has deployed for the domain.
 If an operator is shut down,
 then its domains' pods, services, and such, will remain running but changes
 to a domain resource will not be detected and honored until the operator is restarted.
-
 
 Optionally, you can monitor an operator and its log using an [Elastic Stack](https://www.elastic.co/what-is/)
 (previously referred to as the ELK Stack, after Elasticsearch, Logstash, and Kibana).
@@ -50,8 +54,8 @@ See the operator [REST services]({{<relref "/userguide/managing-operators/the-re
 References:
 - For a full overview of how an operator runtime and its domain resources work together, see the
   [terms]({{<relref "/userguide/introduction/terms.md">}}),
-  [design philosophy]({{<relref "/userguide/introduction/terms.md">}}),
-  and [architecture]({{<relref "/userguide/introduction/terms.md">}}) documentation.
+  [design philosophy]({{<relref "/userguide/introduction/design.md">}}),
+  and [architecture]({{<relref "/userguide/introduction/architecture.md">}}) documentation.
 - For information about using a Helm chart to install, update, or upgrade
   the operator, its CRD, or its service account,
   see the operator [Installation]({{<relref "/userguide/managing-operators/installation.md">}}).
@@ -74,4 +78,5 @@ There can be multiple operators in a Kubernetes cluster,
 and in that case, you must ensure that the namespaces managed by these operators do not overlap.
 _At most, a namespace can be managed by one operator._
 In addition, you cannot deploy more than operator to a particular namespace.
+See [Common Mistakes]({{<relref "/userguide/managing-operators/common-mistakes.md">}}).
 {{% /notice %}}
