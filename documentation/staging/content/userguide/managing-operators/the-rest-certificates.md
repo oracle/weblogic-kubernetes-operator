@@ -5,7 +5,7 @@ weight: 6
 description: "Operator REST SSL/TLS certificate handling."
 ---
 
-#### Updating operator external certificates
+### Updating operator external certificates
 
 If the operator needs to update the external certificate and key currently
 being used or was installed without an external REST API SSL/TLS identity,
@@ -37,8 +37,7 @@ $ helm -n weblogic-operator-ns upgrade weblogic-operator kubernetes/charts/weblo
   --set externalRestIdentitySecret=weblogic-operator-cert
 ```
 
-
-#### Additional reading
+### Additional reading
 * [Configure the external REST interface SSL/TLS identity]({{<relref "/userguide/managing-operators/the-rest-api#configure-the-operators-external-rest-https-interface">}})
 * [REST interface configuration settings]({{<relref "/userguide/managing-operators/using-helm#rest-interface-configuration">}})
 * [Sample to create external certificate and key]({{<relref "/samples/rest/_index.md#sample-to-create-certificate-and-key">}})
