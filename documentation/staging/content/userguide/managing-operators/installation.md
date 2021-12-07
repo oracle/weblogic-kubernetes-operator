@@ -27,7 +27,7 @@ A Kubernetes cluster can host multiple operators, but no more than one per names
 
 ### Prerequisites
 
-Before installing an operator, ensure that each of these prerequisite requirements are met:
+Before installing an operator, ensure that each of these prerequisite requirements is met:
 
 1. [Check environment](#check-environment)
 1. [Download the operator source, if needed](#download-the-operator-source-if-needed)
