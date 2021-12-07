@@ -154,14 +154,14 @@ function waitForIngressPod() {
   type=$1
   ns=$2
 
-  printInfo "Wait (max 2min) until ${type} ingress controller pod to be ready."
+  printInfo "Wait (max 5min) until ${type} ingress controller pod to be ready."
   ${kubernetesCli} wait --namespace ${ns} \
   --for=condition=ready pod \
   --selector=app.kubernetes.io/instance=${type}-release \
-  --timeout=120s
+  --timeout=300s
 
   if [ $? != 0 ]; then
-   printError "${type} ingress controller pod not READY in state in 2 min"
+   printError "${type} ingress controller pod not READY in state in 5 min"
    exit -1;
   else 
    ipod=$(${kubernetesCli} get pod -n ${ns} -l app.kubernetes.io/instance=${type}-release -o jsonpath="{.items[0].metadata.name}")

@@ -104,7 +104,7 @@ class StepChainTest {
     List<String> stepNames = new ArrayList<>(maxNumSteps);
     Step s = steps;
     while (s != null && stepNames.size() < maxNumSteps) {
-      stepNames.add(s.getName());
+      stepNames.add(s.getResourceName());
       s = s.getNext();
     }
     return stepNames;
@@ -123,7 +123,7 @@ class StepChainTest {
       this.name = name;
     }
 
-    public String getName() {
+    public String getResourceName() {
       return name;
     }
 

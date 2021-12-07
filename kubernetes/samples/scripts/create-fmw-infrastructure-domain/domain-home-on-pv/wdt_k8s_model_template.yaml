@@ -6,7 +6,7 @@
 # extractDomainResource script to generate a domain.yaml
 #
 kubernetes:
-  apiVersion: "weblogic.oracle/v8"
+  apiVersion: "weblogic.oracle/v9"
   kind: Domain
   metadata:
     name: %DOMAIN_UID%

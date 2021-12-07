@@ -50,6 +50,16 @@ public abstract class Step {
     return stepGroups[start];
   }
 
+  /**
+   * Chain the specified step groups into a single chain of steps.
+   *
+   * @param stepGroups multiple groups of steps
+   * @return the first step of the resultant chain
+   */
+  public static Step chain(List<Step> stepGroups) {
+    return chain(stepGroups.toArray(new Step[0]));
+  }
+
   private static int getFirstNonNullIndex(Step[] stepGroups) {
     for (int i = 0; i < stepGroups.length; i++) {
       if (stepGroups[i] != null) {
@@ -103,7 +113,7 @@ public abstract class Step {
    * The name of the step. This will default to the class name minus "Step".
    * @return The name of the step
    */
-  public String getName() {
+  public String getResourceName() {
     return getBaseName() + getNameSuffix();
   }
 
@@ -130,9 +140,9 @@ public abstract class Step {
   @Override
   public String toString() {
     if (next == null) {
-      return getName();
+      return getResourceName();
     }
-    return getName() + "[" + next.toString() + "]";
+    return getResourceName() + "[" + next.toString() + "]";
   }
 
   /**
@@ -202,6 +212,7 @@ public abstract class Step {
    * @param unit Delay time unit
    * @return The next action
    */
+  @SuppressWarnings("SameParameterValue")
   protected NextAction doRetry(Packet packet, long delay, TimeUnit unit) {
     NextAction na = new NextAction();
     na.delay(this, packet, delay, unit);
@@ -296,7 +307,6 @@ public abstract class Step {
   }
 
   /** Multi-exception. */
-  @SuppressWarnings("serial")
   public static class MultiThrowable extends RuntimeException {
     private final List<Throwable> throwables;
 

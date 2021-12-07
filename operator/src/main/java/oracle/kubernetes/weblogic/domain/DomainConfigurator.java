@@ -11,6 +11,7 @@ import javax.annotation.Nonnull;
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1HostAlias;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1PodReadinessGate;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
@@ -133,6 +134,18 @@ public abstract class DomainConfigurator {
   public DomainConfigurator withDefaultImagePullSecrets(
       V1LocalObjectReference... secretReferences) {
     getDomainSpec().setImagePullSecrets(Arrays.asList(secretReferences));
+    return this;
+  }
+
+  /**
+   * Sets the host aliases in the server pod for the domain.
+   *
+   * @param hostAliases a list of host aliases
+   * @return this object
+   */
+  public DomainConfigurator withHostAliases(
+      V1HostAlias... hostAliases) {
+    getDomainSpec().setHostAliases(Arrays.asList(hostAliases));
     return this;
   }
 

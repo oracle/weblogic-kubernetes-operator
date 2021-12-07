@@ -3,7 +3,9 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
-public enum DomainConditionType {
+import oracle.kubernetes.json.Obsoleteable;
+
+public enum DomainConditionType implements Obsoleteable {
   Failed {
     @Override
     boolean allowMultipleConditionsWithThisType() {
@@ -21,7 +23,7 @@ public enum DomainConditionType {
 
   Progressing {
     @Override
-    boolean isObsolete() {
+    public boolean isObsolete() {
       return true;
     }
   };
@@ -31,10 +33,6 @@ public enum DomainConditionType {
   }
 
   boolean statusMustBeTrue() {
-    return false;
-  }
-
-  boolean isObsolete() {
     return false;
   }
 

@@ -219,6 +219,18 @@ class DomainStatusTest {
   }
 
   @Test
+  void whenConditionRemovedAndNoOtherHasMessage_setDomainStatusMessageNull() {
+    domainStatus.addCondition(new DomainCondition(Failed).withStatus("True").withMessage("m1").withReason(Internal));
+    domainStatus.addCondition(new DomainCondition(Completed).withStatus("True"));
+    domainStatus.addCondition(new DomainCondition(Available).withStatus("True"));
+
+    domainStatus.removeConditionWithType(Failed);
+
+    assertThat(domainStatus.getMessage(), nullValue());
+    assertThat(domainStatus.getReason(), nullValue());
+  }
+
+  @Test
   void whenClusterStatusAdded_statusHasClusterStatus() {
     domainStatus.addCluster(new ClusterStatus().withClusterName("cluster1").withReplicas(3));
 
@@ -447,6 +459,18 @@ class DomainStatusTest {
     domainStatus.addCluster(cluster2);
 
     assertThat(clusterStatuses.size(), is(equalTo(1)));
+  }
+
+  @Test
+  void whenUpgraded_progressingConditionRemoved() {
+    // Insert conditions directly bypassing the addCondition() logic similarly to if this
+    // Domain had been read from K8s
+    domainStatus.getConditions().add(new DomainCondition(Progressing));
+    domainStatus.getConditions().add(new DomainCondition(Available));
+
+    domainStatus.upgrade();
+
+    assertThat(domainStatus, not(hasCondition(Progressing)));
   }
 
   @SuppressWarnings("unused")

@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator.work;
 
+import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
@@ -12,6 +13,7 @@ import java.util.concurrent.atomic.AtomicReference;
 
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
+import oracle.kubernetes.utils.SystemClock;
 
 /**
  * Allows at most one running Fiber per key value. However, rather than queue later arriving Fibers
@@ -57,6 +59,7 @@ public class FiberGate {
    * @param callback Completion callback
    * @return started Fiber
    */
+  @SuppressWarnings("UnusedReturnValue")
   public Fiber startFiber(String key, Step strategy, Packet packet, CompletionCallback callback) {
     return startFiberIfLastFiberMatches(key, null, strategy, packet, callback);
   }
@@ -71,6 +74,7 @@ public class FiberGate {
    * @param callback Completion callback
    * @return started Fiber
    */
+  @SuppressWarnings("UnusedReturnValue")
   public Fiber startFiberIfNoCurrentFiber(
       String key, Step strategy, Packet packet, CompletionCallback callback) {
     return startFiberIfLastFiberMatches(key, placeholder, strategy, packet, callback);
@@ -143,7 +147,7 @@ public class FiberGate {
       WaitForOldFiberStep c = current.get();
       Fiber o = c != null ? c.old.getAndSet(null) : null;
       if (o == null) {
-        return doNext(packet);
+        return doNext(packet).withDebugComment(this::getProceedTime);
       }
 
       return doSuspend(
@@ -162,6 +166,10 @@ public class FiberGate {
               fiber.resume(packet);
             }
           });
+    }
+
+    private String getProceedTime() {
+      return "starting fiber at " + SystemClock.now().format(DateTimeFormatter.ISO_LOCAL_TIME);
     }
   }
 }

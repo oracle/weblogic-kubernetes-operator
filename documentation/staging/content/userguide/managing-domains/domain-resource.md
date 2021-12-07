@@ -107,7 +107,7 @@ $ kubectl explain domain.spec.domainUID
 ```
 ```
 KIND:     Domain
-VERSION:  weblogic.oracle/v8
+VERSION:  weblogic.oracle/v9
 
 FIELD:    domainUID <string>
 
@@ -275,7 +275,7 @@ This example snippet illustrates how to add some of the above environment variab
 # Copyright (c) 2017, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
-apiVersion: "weblogic.oracle/v8"
+apiVersion: "weblogic.oracle/v9"
 kind: Domain
 metadata:
   name: domain1
@@ -329,7 +329,7 @@ This example domain YAML file specifies that Pods for WebLogic Server instances 
 # Copyright (c) 2019, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
-apiVersion: "weblogic.oracle/v8"
+apiVersion: "weblogic.oracle/v9"
 kind: Domain
 metadata:
   name: domain1

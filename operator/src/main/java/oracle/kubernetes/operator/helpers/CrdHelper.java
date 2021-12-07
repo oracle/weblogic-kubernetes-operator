@@ -206,8 +206,9 @@ public class CrdHelper {
     }
 
     static V1CustomResourceValidation getValidationFromCrdSchemaFile(String fileContents) {
-      return getSnakeYaml(V1CustomResourceValidation.class)
-          .loadAs(new StringReader(fileContents), V1CustomResourceValidation.class);
+      Map<String, Object> data = getSnakeYaml(null).load(new StringReader(fileContents));
+      final Gson gson = new Gson();
+      return gson.fromJson(gson.toJsonTree(data), V1CustomResourceValidation.class);
     }
 
     private static org.yaml.snakeyaml.Yaml getSnakeYaml(Class<?> type) {

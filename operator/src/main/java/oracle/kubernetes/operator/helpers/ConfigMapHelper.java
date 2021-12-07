@@ -348,7 +348,7 @@ public class ConfigMapHelper {
       }
 
       private void logConfigMapExists() {
-        LOGGER.fine(MessageKeys.CM_EXISTS, getName(), namespace);
+        LOGGER.fine(MessageKeys.CM_EXISTS, getResourceName(), namespace);
       }
 
       private Step replaceConfigMap(Step next) {
@@ -418,7 +418,7 @@ public class ConfigMapHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
-        LOGGER.info(MessageKeys.CM_CREATED, getName(), namespace);
+        LOGGER.info(MessageKeys.CM_CREATED, getResourceName(), namespace);
         recordCurrentMap(packet, callResponse.getResult());
         return doNext(packet);
       }
@@ -440,7 +440,7 @@ public class ConfigMapHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
-        LOGGER.info(MessageKeys.CM_REPLACED, getName(), namespace);
+        LOGGER.info(MessageKeys.CM_REPLACED, getResourceName(), namespace);
         recordCurrentMap(packet, callResponse.getResult());
         return doNext(packet);
       }
@@ -459,7 +459,7 @@ public class ConfigMapHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<V1ConfigMap> callResponse) {
-        LOGGER.info(MessageKeys.CM_PATCHED, getName(), namespace);
+        LOGGER.info(MessageKeys.CM_PATCHED, getResourceName(), namespace);
         return doNext(packet);
       }
     }

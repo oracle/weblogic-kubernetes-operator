@@ -7,7 +7,7 @@ domainInfo:
     ServerStartMode: 'prod'
 
 topology:
-    Name: "wls-sessmigr-domain-1"
+    Name: 'DOMAIN_NAME'
     AdminServerName: "admin-server"
     Cluster:
         "cluster-1":
@@ -28,6 +28,7 @@ topology:
                     ListenPort: 30012
                     PublicAddress: kubernetes
             Cluster: "cluster-1"
+            ListenPort: 7100
 
 appDeployments:
     Application:
