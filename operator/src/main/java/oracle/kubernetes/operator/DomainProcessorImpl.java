@@ -19,6 +19,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
@@ -73,6 +74,7 @@ import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import org.jetbrains.annotations.NotNull;
 
+import static oracle.kubernetes.operator.DomainStatusUpdater.createStatusInitializationStep;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createStatusUpdateStep;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
@@ -948,13 +950,21 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     @Override
     public Step createSteps() {
-      Step strategy =
-            new StartPlanStep(liveInfo, deleting ? createDomainDownPlan(liveInfo) : createDomainUpPlan(liveInfo));
-      if (deleting || getDomain() == null) {
-        return strategy;
+      final List<Step> result = new ArrayList<>();
+
+      result.add(createStatusInitializationStep());
+      if (deleting) {
+        result.add(new StartPlanStep(liveInfo, createDomainDownPlan(liveInfo)));
       } else {
-        return DomainValidationSteps.createDomainValidationSteps(getNamespace(), strategy);
+        result.add(createDomainValidationStep(getDomain()));
+        result.add(new StartPlanStep(liveInfo, createDomainUpPlan(liveInfo)));
       }
+
+      return Step.chain(result);
+    }
+
+    private Step createDomainValidationStep(@Nullable Domain domain) {
+      return domain == null ? null : DomainValidationSteps.createDomainValidationSteps(getNamespace());
     }
   }
 
@@ -1112,7 +1122,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     Step managedServerStrategy = Step.chain(
         bringManagedServersUp(null),
         MonitoringExporterSteps.updateExporterSidecars(),
-        new TailStep());
+        createStatusUpdateStep(new TailStep()));
 
     Step domainUpStrategy =
         Step.chain(
@@ -1194,7 +1204,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     private Step getNextSteps() {
       if (lookForPodsAndServices()) {
-        return Step.chain(createStatusUpdateStep(null), getRecordExistingResourcesSteps(), getNext());
+        return Step.chain(getRecordExistingResourcesSteps(), getNext());
       } else {
         return getNext();
       }
