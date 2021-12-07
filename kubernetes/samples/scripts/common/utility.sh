@@ -941,6 +941,6 @@ function detectPod(){
      exit 1
    fi
  done
- local retVal=`kubectl get pod -n ${ns} -o jsonpath={.items[0].metadata.name}`
+ retVal=`kubectl get pod -n ${ns} -o jsonpath={.items[0].metadata.name}`
  echo "$retVal"
 }

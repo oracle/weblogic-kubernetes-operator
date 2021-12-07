@@ -34,7 +34,8 @@ fi
 
 
 dbpod=`kubectl get po -n ${namespace}  | grep oracle-db | cut -f1 -d " " `
-kubectl delete -f ${scriptDir}/common/oracle.db.yaml  --ignore-not-found
+kubectl delete -f ${scriptDir}/common/oracle.db.${namespace}.yaml  --ignore-not-found
+rm ${scriptDir}/common/oracle.db.${namespace}.yaml  --force
 
 if [ -z ${dbpod} ]; then
   echo "Couldn't find oracle-db pod in [${namespace}] namesapce"
