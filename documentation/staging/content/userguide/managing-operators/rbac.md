@@ -1,7 +1,7 @@
 ---
 title: "RBAC"
 date: 2019-02-23T17:15:36-05:00
-weight: 11
+weight: 110
 description: "Operator role-based authorization."
 ---
 
@@ -39,9 +39,11 @@ when the setting is set to `false` (the default).
 **References**
 
 For more information about:
-- Installing the operator, see [Installation]({{< relref "/userguide/managing-operators/installation.md" >}}).
+- Installing the operator, see
+  [Prepare for installation]({{< relref "/userguide/managing-operators/preparation.md" >}})
+  and [Installation]({{< relref "/userguide/managing-operators/installation.md" >}}).
 - The `enableClusterRoleBinding` operator Helm chart setting, see
-  [Choose a security strategy]({{<relref "/userguide/managing-operators/installation#choose-a-security-strategy">}}).
+  [Choose a security strategy]({{<relref "/userguide/managing-operators/preparation#choose-a-security-strategy">}}).
 - The Kubernetes `ServiceAccount` used by the operator, see
   [Service Accounts]({{<relref "/userguide/managing-operators/service-accounts.md">}}).
 - Kubernetes Roles, see the Kubernetes
