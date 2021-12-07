@@ -2,7 +2,7 @@
 title: "Namespace management"
 date: 2019-09-19T10:41:32-05:00
 draft: false
-weight: 4
+weight: 40
 description: "Configure or dynamically change the namespaces that a running operator manages."
 ---
 
@@ -69,7 +69,7 @@ see [WebLogic domain management]({{<relref "/userguide/managing-operators/using-
 **Notes:**
 
 - Your security strategy may determine which namespace strategy you should choose,
-  see [Choose a security strategy]({{<relref "/userguide/managing-operators/installation#choose-a-security-strategy">}}).
+  see [Choose a security strategy]({{<relref "/userguide/managing-operators/preparation#choose-a-security-strategy">}}).
 - As has already been noted previously,
   two operators cannot manage domains that are in the same namespace.
   If two operators are configured to manage the same namespace,

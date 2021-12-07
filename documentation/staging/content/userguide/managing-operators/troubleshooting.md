@@ -1,7 +1,7 @@
 ---
 title: "Troubleshooting"
 date: 2019-02-23T16:47:21-05:00
-weight: 18
+weight: 180
 description: "General advice for debugging and monitoring the operator."
 ---
 
@@ -48,7 +48,7 @@ domains.weblogic.oracle                2021-09-27T18:46:38Z
 
 When the domain CRD is not installed, the operator runtimes will not be able to monitor domains, and commands like `kubectl get domains` will fail.
 
-If the domain CRD is not installed, then refer to the operator [Installation]({{< relref "/userguide/managing-operators/installation.md" >}}) documentation.
+If the domain CRD is not installed, then refer to the operator [Prepare for installation]({{< relref "/userguide/managing-operators/preparation#manually-install-the-domain-resource-custom-resource-definition-crd-if-needed" >}}) documentation.
 
 ### Check the operator deployment
 

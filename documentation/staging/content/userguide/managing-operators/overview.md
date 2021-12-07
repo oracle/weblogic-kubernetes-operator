@@ -1,7 +1,7 @@
 ---
 title: "Overview"
 date: 2021-12-05T16:47:21-05:00
-weight: 1
+weight: 8
 description: "An introduction to the operator runtime."
 ---
 
@@ -58,7 +58,9 @@ References:
   and [architecture]({{<relref "/userguide/introduction/architecture.md">}}) documentation.
 - For information about using a Helm chart to install, update, or upgrade
   the operator, its CRD, or its service account,
-  see the operator [Installation]({{<relref "/userguide/managing-operators/installation.md">}}).
+  see the operator
+  [Prepare for installation]({{<relref "/userguide/managing-operators/preparation.md">}})
+  and [Installation]({{<relref "/userguide/managing-operators/installation.md">}}) guides.
 - All operator Helm chart configuration options are
   documented in the operator [Configuration Reference]({{<relref "/userguide/managing-operators/using-helm.md">}}).
 - For a detailed description of configuring the namespaces which an operator manages,

@@ -121,7 +121,7 @@ they can use a `Dedicated` namespace selection strategy for the operator instanc
 it to managing domain resources in its local namespace only
 (see [Operator namespace management]({{< relref "/userguide/managing-operators/namespace-management#choose-a-domain-namespace-selection-strategy" >}})),
 and they may need to manually install the Domain Custom Resource (CRD)
-(see [Operator installation]({{< relref "/userguide/managing-operators/installation.md" >}})).
+(see [Operator prepare for installation]({{< relref "/userguide/managing-operators/preparation.md" >}})).
 
 #### Set the Helm chart property `kubernetesPlatform` to `OpenShift`
 

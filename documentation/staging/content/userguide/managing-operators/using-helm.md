@@ -1,7 +1,7 @@
 ---
-title: "Configuration Reference"
+title: "Configuration reference"
 date: 2019-02-23T17:08:43-05:00
-weight: 3
+weight: 30
 description: "An operator runtime is installed and configured using Helm. Here are useful Helm operations and operator configuration values."
 ---
 
@@ -58,7 +58,8 @@ and this document is a reference guide for useful Helm commands and operator con
 This document assumes that the operator has been installed using an operator Helm chart.
 An operator Helm chart can be obtained from the GitHub chart repository or can be found in the operator source.
 For information about operator Helm chart access, installation, and upgrade,
-see [Installation and upgrade]({{< relref "/userguide/managing-operators/installation.md" >}}).
+see [Prepare for installation]({{< relref "/userguide/managing-operators/preparation.md" >}})
+and [Installation and upgrade]({{< relref "/userguide/managing-operators/installation.md" >}}).
 
 ### Useful Helm operations
 
@@ -183,12 +184,6 @@ that matches its namespace selection criteria until you upgrade
 the operator's Helm release.
 See [Ensuring the operator has permission to manage a namespace]({{< relref "/userguide/managing-operators/namespace-management#ensuring-the-operator-has-permission-to-manage-a-namespace" >}}).
 
-#### WebLogic domain management
-
-The settings in this section determine the namespaces that an operator
-monitors for domain resources. For usage,
-also see [Namespace management]({{< relref "/userguide/managing-operators/namespace-management.md" >}}).
-
 #### Creating the operator pod
 
 ##### `image`
@@ -293,6 +288,12 @@ affinity:
           - another-node-label-value
 ```
 
+#### WebLogic domain management
+
+The settings in this section determine the namespaces that an operator
+monitors for domain resources. For usage,
+also see [Namespace management]({{< relref "/userguide/managing-operators/namespace-management.md" >}}).
+
 ##### `domainNamespaceSelectionStrategy`
 
 Specifies how the operator will select the set of namespaces that it will manage.
@@ -312,6 +313,10 @@ Legal values are: `List`, `LabelSelector`, `RegExp`, and `Dedicated`:
 - If the deprecated `dedicated` setting is set to `true`,
   then this value is ignored and
   the operator will manage only domains in its own namespace.
+
+For more information,
+see [Choose a domain namespace section strategy]({{<relref "/userguide/managing-operators/namespace-management#choose-a-domain-namespace-selection-strategy">}})
+in the operator _Namespace management_ guide.
 
 ##### `domainNamespaces`
 
