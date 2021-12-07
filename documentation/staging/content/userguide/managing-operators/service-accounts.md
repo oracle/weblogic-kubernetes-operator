@@ -1,7 +1,7 @@
 ---
 title: "Service accounts"
 date: 2019-02-23T17:36:12-05:00
-weight: 10
+weight: 100
 description: "Kubernetes ServiceAccounts for the operator."
 ---
 
@@ -36,7 +36,7 @@ setting.
 
 ### Additional reading
 
-* See [Prepare an operator namespace and service account]({{<relref "/userguide/managing-operators/installation#prepare-an-operator-namespace-and-service-account">}}).
+* See [Prepare an operator namespace and service account]({{<relref "/userguide/managing-operators/preparation#prepare-an-operator-namespace-and-service-account">}}).
 * See the Operator Helm chart [serviceAccount]({{<relref "/userguide/managing-operators/using-helm#serviceaccount">}})
   setting.
 * For more information about access controls, see the [RBAC]({{<relref "/userguide/managing-operators/rbac.md">}}) documentation.

@@ -105,7 +105,7 @@ alternatively, the image pull secret can be specified on the operator's service 
 
 {{% notice info %}}
 For more information, see
-[Customizing operator image name, pull secret, and private registry]({{<relref "/userguide/managing-operators/installation#customizing-operator-image-name-pull-secret-and-private-registry">}})
+[Customizing operator image name, pull secret, and private registry]({{<relref "/userguide/managing-operators/preparation#customizing-operator-image-name-pull-secret-and-private-registry">}})
 in the operator installation guide.
 {{% /notice %}}
 

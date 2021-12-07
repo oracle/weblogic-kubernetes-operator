@@ -11,7 +11,7 @@ description: "Follow these steps to set up your environment."
 
 1. Optional. Enable [Istio]({{< relref "/userguide/istio/istio.md" >}}).
 
-1. [Install the operator]({{< relref "/userguide/managing-operators/installation.md" >}}).
+1. Follow the steps to [Prepare for operator installation]({{< relref "/userguide/managing-operators/preparation.md" >}}) and then [Install the operator]({{< relref "/userguide/managing-operators/installation.md" >}}).
 
 1. Optional. Run a database. For example, run an [Oracle database]({{< relref "/samples/database/#run-the-oracle-database-in-kubernetes" >}}) inside Kubernetes.
 
