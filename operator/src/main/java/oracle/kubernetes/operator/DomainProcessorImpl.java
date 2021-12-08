@@ -903,7 +903,6 @@ public class DomainProcessorImpl implements DomainProcessor {
 
       Packet packet = new Packet();
       packet.put(MAKE_RIGHT_DOMAIN_OPERATION, this);
-      packet.put(Fiber.DEBUG_FIBER, "REG->");
       packet
           .getComponents()
           .put(
@@ -1357,7 +1356,6 @@ public class DomainProcessorImpl implements DomainProcessor {
               ProcessingConstants.DOMAIN_COMPONENT_NAME,
               Component.createFor(delegate.getKubernetesVersion()));
       packet.put(LoggingFilter.LOGGING_FILTER_PACKET_KEY, loggingFilter);
-      packet.put(Fiber.DEBUG_FIBER, "SCHED->");
       return packet;
     }
 
