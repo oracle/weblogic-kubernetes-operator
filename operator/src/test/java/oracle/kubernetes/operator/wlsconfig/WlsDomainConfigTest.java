@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+import java.util.stream.Collectors;
 
 import com.meterware.simplestub.Memento;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
@@ -26,13 +27,14 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.arrayContaining;
 import static org.hamcrest.Matchers.arrayContainingInAnyOrder;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInAnyOrder;
 import static org.hamcrest.Matchers.emptyArray;
 import static org.hamcrest.Matchers.equalTo;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class WlsDomainConfigTest {
 
@@ -482,14 +484,10 @@ class WlsDomainConfigTest {
             expectedProtocol = "t3s";
             expectedListenPort = "dynamic-1".equals(serverName) ? 9021 : 9022;
           }
-          assertEquals(
-              "protocol for " + networkAccessPoint.getName() + " not loaded properly",
-              expectedProtocol,
-              networkAccessPoint.getProtocol());
-          assertEquals(
-              "listen port for " + networkAccessPoint.getName() + " not loaded properly",
-              expectedListenPort,
-              networkAccessPoint.getListenPort());
+          assertEquals(expectedProtocol, networkAccessPoint.getProtocol(),
+                       "protocol for " + networkAccessPoint.getName() + " not loaded properly");
+          assertEquals(expectedListenPort, networkAccessPoint.getListenPort(),
+                       "listen port for " + networkAccessPoint.getName() + " not loaded properly");
         }
       }
     }
@@ -526,14 +524,10 @@ class WlsDomainConfigTest {
         expectedProtocol = "t3s";
         expectedListenPort = 8014;
       }
-      assertEquals(
-          "protocol for " + networkAccessPoint.getName() + " not loaded properly",
-          expectedProtocol,
-          networkAccessPoint.getProtocol());
-      assertEquals(
-          "listen port for " + networkAccessPoint.getName() + " not loaded properly",
-          expectedListenPort,
-          networkAccessPoint.getListenPort());
+      assertEquals(expectedProtocol, networkAccessPoint.getProtocol(),
+                   "protocol for " + networkAccessPoint.getName() + " not loaded properly");
+      assertEquals(expectedListenPort, networkAccessPoint.getListenPort(),
+                   "listen port for " + networkAccessPoint.getName() + " not loaded properly");
     }
   }
 
@@ -573,10 +567,8 @@ class WlsDomainConfigTest {
     WlsClusterConfig wlsClusterConfig = wlsDomainConfig.getClusterConfig("DockerCluster");
     assertNotNull(wlsClusterConfig);
     assertEquals(0, wlsClusterConfig.getClusterSize());
-    assertEquals(
-        "newly created empty WlsClusterConfig should not added to the clusterConfigs list",
-        0,
-        wlsDomainConfig.getClusterConfigs().size());
+    assertEquals(0, wlsDomainConfig.getClusterConfigs().size(),
+          "newly created empty WlsClusterConfig should not added to the clusterConfigs list");
   }
 
   @Test
@@ -627,6 +619,19 @@ class WlsDomainConfigTest {
   @Test
   void whenUnknownClusterName_returnZeroReplicaLimit() {
     assertThat(support.createDomainConfig().getReplicaLimit("cluster3"), equalTo(0));
+  }
+
+  @Test
+  void whenStandaloneAndClusteredServersDefined_returnThemAll() {
+    support.addWlsServer("standalone");
+    support.addWlsCluster("static", "st1", "st2");
+    support.addDynamicWlsCluster("dynamic", "ds1", "ds2", "ds3");
+
+    assertThat(
+          support.createDomainConfig().getAllServers().stream()
+                .map(WlsServerConfig::getName)
+                .collect(Collectors.toList()),
+          containsInAnyOrder("standalone", "st1", "st2", "ds1", "ds2", "ds3"));
   }
 
   private boolean containsServer(WlsClusterConfig wlsClusterConfig, String serverName) {
