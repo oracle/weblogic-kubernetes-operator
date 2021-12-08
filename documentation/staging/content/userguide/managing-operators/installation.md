@@ -69,7 +69,7 @@ If not specified, then it defaults to `default` (the namespace's default service
 If you want to use a different service account (recommended),
 then you must create the operator's namespace
 and the service account before installing the operator Helm chart
-(see [Prepare for installation]({{<relref "/userguide/managing-operators/preparation.md">}}) for instructions).
+(for instructions, see [Prepare for installation]({{<relref "/userguide/managing-operators/preparation.md">}})).
 
 For example, using Helm 3.x, with the following settings:
 
