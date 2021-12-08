@@ -77,7 +77,7 @@ class PodCompatibility extends CollectiveCompatibility {
     }
 
     @Override
-    public String getIncompatibility() {
+    public String getIncompatibility() {    // todo REG-> swap actual, expected, move to messages
       if (!isLabelSame(DOMAINRESTARTVERSION_LABEL)) {
         return "domain restart version changed from '" + getLabel(actual, DOMAINRESTARTVERSION_LABEL)
             + "' to '" + getLabel(expected, DOMAINRESTARTVERSION_LABEL) + "'";

@@ -14,7 +14,6 @@ import oracle.kubernetes.operator.DomainFailureReason;
 import oracle.kubernetes.utils.SystemClock;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static oracle.kubernetes.weblogic.domain.model.ObjectPatch.createObjectPatch;
 
@@ -228,14 +227,12 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
 
   @Override
   public String toString() {
-    return new ToStringBuilder(this)
-        .append("lastProbeTime", lastProbeTime)
-        .append("lastTransitionTime", lastTransitionTime)
-        .append("message", message)
-        .append("reason", reason)
-        .append("status", status)
-        .append("type", type)
-        .toString();
+    StringBuilder sb = new StringBuilder("at ").append(lastTransitionTime).append(" ");
+    Optional.ofNullable(type).ifPresent(sb::append);
+    Optional.ofNullable(status).ifPresent(s -> sb.append("/").append(s));
+    Optional.ofNullable(reason).ifPresent(r -> sb.append(" reason: ").append(r));
+    Optional.ofNullable(message).ifPresent(m -> sb.append(" message: ").append(m));
+    return sb.toString();
   }
 
   @Override
