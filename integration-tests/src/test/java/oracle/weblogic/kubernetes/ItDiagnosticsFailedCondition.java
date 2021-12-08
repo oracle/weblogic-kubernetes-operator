@@ -38,6 +38,7 @@ import oracle.weblogic.kubernetes.utils.FmwUtils;
 import oracle.weblogic.kubernetes.utils.LoggingUtil;
 import oracle.weblogic.kubernetes.utils.PodUtils;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -525,12 +526,14 @@ class ItDiagnosticsFailedCondition {
 
   /**
    * Test domain status condition with managed server boot failure.
+   * Test is disabled due to unavailability of operator support to detect boot failures.
    * Verify the following conditions are generated
    * type: Failed, status: true
    * type: Available, status: false
    * type: Completed, status: false
    */
   @Test
+  @Disabled
   @DisplayName("Test domain status condition with managed server boot failure.")
   void testMSBootFailureStatus() {
     boolean testPassed = false;
