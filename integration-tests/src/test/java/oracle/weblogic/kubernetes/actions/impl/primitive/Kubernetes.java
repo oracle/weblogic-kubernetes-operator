@@ -432,6 +432,13 @@ public class Kubernetes {
                                  Integer sinceSeconds)
       throws ApiException {
     String log = null;
+    testUntil(
+        assertDoesNotThrow(() -> containerReady(namespace, null, name, container),
+            String.format("namespaceExists failed with ApiException for namespace %s", name)),
+        getLogger(),
+        "namespace {0} to be deleted",
+        name);
+
     try {
       log = coreV1Api.readNamespacedPodLog(
           name, // name of the Pod
@@ -604,6 +611,46 @@ public class Kubernetes {
           podName, namespace);
     }
     return 0;
+  }
+
+  /**
+   * Check if the container is ready in the pod.
+   * @param namespace name of the pod's namespace
+   * @param labelSelector in the format "weblogic.domainUID in (%s)"
+   * @param podName name of the pod
+   * @param containerName name of the container, null if there is only one container
+   * @return true or false if constainer is ready
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static Boolean isContainerReady(
+      String namespace, String labelSelector, String podName, String containerName)
+      throws ApiException {
+
+    V1Pod pod = getPod(namespace, labelSelector, podName);
+    if (pod != null && pod.getStatus() != null) {
+      List<V1ContainerStatus> containerStatuses = pod.getStatus().getContainerStatuses();
+      // if containerName is null, get first container
+      if (containerName == null && containerStatuses.size() >= 1) {
+        return containerStatuses.get(0).getReady();
+      } else {
+        for (V1ContainerStatus containerStatus : containerStatuses) {
+          if (containerName.equals(containerStatus.getName())) {
+            return containerStatus.getReady();
+          }
+        }
+        getLogger().severe("Container {0} status doesn't exist or pod's container statuses is empty in namespace {1}",
+            containerName, namespace);
+      }
+    } else {
+      getLogger().severe("Pod {0} doesn't exist or pod status is null in namespace {1}",
+          podName, namespace);
+    }
+    return false;
+  }
+
+  private static Callable<Boolean> containerReady(String namespace, String labelSelector,
+                                                    String podName, String containerName) throws ApiException {
+    return () -> isContainerReady(namespace, labelSelector,podName, containerName);
   }
 
   /**
