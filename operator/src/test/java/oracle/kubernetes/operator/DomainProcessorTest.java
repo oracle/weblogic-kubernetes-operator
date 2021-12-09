@@ -83,6 +83,7 @@ import org.junit.jupiter.api.Test;
 import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.operator.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.operator.DomainFailureReason.Internal;
+import static oracle.kubernetes.operator.DomainFailureReason.KubernetesAPI;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.SECRET_NAME;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
@@ -1584,6 +1585,10 @@ class DomainProcessorTest {
     }
 
     assertThat(getEvents().stream().anyMatch(this::isDomainFailedAbortedEvent), is(false));
+  }
+
+  private void addFailedCondition(DomainStatus status) {
+    status.addCondition(new DomainCondition(Failed).withStatus("True").withReason(KubernetesAPI));
   }
 
   private List<CoreV1Event> getEvents() {

@@ -19,7 +19,9 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.DomainFailureReason.Internal;
 import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
+import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
+import static oracle.kubernetes.operator.WebLogicConstants.STARTING_STATE;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Completed;
@@ -212,7 +214,7 @@ class DomainStatusTest {
     domainStatus.addCondition(new DomainCondition(Completed).withStatus("True").withMessage("Got 'em all"));
     domainStatus.addCondition(new DomainCondition(Available).withStatus("True"));
 
-    domainStatus.removeConditionWithType(Failed);
+    domainStatus.removeConditionsWithType(Failed);
 
     assertThat(domainStatus.getMessage(), equalTo("Got 'em all"));
     assertThat(domainStatus.getReason(), nullValue());
@@ -224,7 +226,7 @@ class DomainStatusTest {
     domainStatus.addCondition(new DomainCondition(Completed).withStatus("True"));
     domainStatus.addCondition(new DomainCondition(Available).withStatus("True"));
 
-    domainStatus.removeConditionWithType(Failed);
+    domainStatus.removeConditionsWithType(Failed);
 
     assertThat(domainStatus.getMessage(), nullValue());
     assertThat(domainStatus.getReason(), nullValue());
@@ -379,6 +381,33 @@ class DomainStatusTest {
           .filter(s -> Objects.equals(serverName, s.getServerName()))
           .findFirst()
           .orElse(null);
+  }
+
+  @Test
+  void whenSetServerStateNonNull_isSet() {
+    final ServerStatus status = new ServerStatus().withState(SHUTDOWN_STATE).withHealth(new ServerHealth());
+
+    status.setState(RUNNING_STATE);
+
+    assertThat(status.getState(), equalTo(RUNNING_STATE));
+  }
+
+  @Test
+  void whenServerStatusHasHealth_setStateNullKeepsOldState() {
+    final ServerStatus status = new ServerStatus().withState(STARTING_STATE).withHealth(new ServerHealth());
+
+    status.setState(null);
+
+    assertThat(status.getState(), equalTo(STARTING_STATE));
+  }
+
+  @Test
+  void whenServerStatusLacksHealth_setStateNullKeepsDefaultsToSHUTDOWN() {
+    final ServerStatus status = new ServerStatus().withState(STARTING_STATE);
+
+    status.setState(null);
+
+    assertThat(status.getState(), equalTo(SHUTDOWN_STATE));
   }
 
   @Test
