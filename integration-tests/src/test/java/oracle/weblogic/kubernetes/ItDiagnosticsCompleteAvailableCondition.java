@@ -150,7 +150,6 @@ class ItDiagnosticsCompleteAvailableCondition {
    * type: Completed, status: true
    * type: Available, status: true
    * Verify no Failed type condition generated.
-   * Disabled due to bug.
    */
   @Test
   @DisplayName("Test domain events for various successful domain life cycle changes")
@@ -198,7 +197,6 @@ class ItDiagnosticsCompleteAvailableCondition {
    * type: Completed, status: true
    * type: Available, status: False
    * Verify no Failed type condition generated.
-   * Disabled due to bug.
    */
   @Test
   @DisplayName("Test domain status condition with serverStartPolicy set to NEVER")
@@ -245,7 +243,6 @@ class ItDiagnosticsCompleteAvailableCondition {
    * type: Completed, status: true
    * type: Available, status: False
    * Verify no Failed type condition generated.
-   * Disabled due to bug.
    */
   @Test
   @DisplayName("Test domain status condition with cluster replica set to zero and min-replicas set to zero")
@@ -293,7 +290,6 @@ class ItDiagnosticsCompleteAvailableCondition {
    * type: Completed, status: true
    * type: Available, status: False
    * Verify no Failed type condition generated.
-   * Disabled due to bug.
    */
   @Test
   @DisplayName("Test domain status condition with cluster serverStartPolicy to NEVER")
