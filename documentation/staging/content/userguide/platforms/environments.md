@@ -82,27 +82,78 @@ For more information, see the [Fusion Middleware Licensing Information User Manu
 
 #### Oracle Linux and WebLogic Server images
 
+{{% notice warning %}}
+Oracle strongly recommends using dated Critical Patch Update (CPU) images from the Oracle Container Registry (OCR), 
+or fully patched images that you generate yourself using the WebLogic Image Tool,
+for production deployments.
+General Availabity (GA) images are not licensable or suitable for production use.
+{{% /notice %}}
+
 Oracle Linux is under open source license
 and is completely free to download and use.
 
 In addition, with WebLogic Server licenses and support,
 customers have access to:
-- The latest WebLogic Server images
-  which bundle Java SE and the latest slim Oracle Linux images.
-- Oracle Linux support.
-Note that WebLogic Server licenses and support do not include customer entitlements
+- The latest WebLogic Server images which bundle Java SE and the latest slim Oracle Linux images.
+- Oracle support for Linux.
+- Oracle support for WebLogic Server images.
+
+Note that WebLogic Server licenses and support do _not_ include customer entitlements
 for direct access to Oracle Linux support or Unbreakable Linux Network
-(to access the standalone Oracle Linux patches).
+(to directly access the standalone Oracle Linux patches). The
+latest Oracle Linux patches are included the latest WebLogic Server images.
 
-Oracle supplies two types of WebLogic Server images, patched (CPU) and unpatched.
-New WebLogic Server images are released when security fixes
-are released for Oracle Linux, WebLogic Server, or Java. In addition,
-patched images are rebuilt every CPU cycle, which is quarterly.
-Customer support for WebLogic Server images is handled by Oracle support.
+The [Oracle Container Registry](https://container-registry.oracle.com/) (OCR)
+supplies two types of WebLogic Server or Fusion Middleware Infrastructure images:
 
-Using the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool)
-customers can also build their own WebLogic Server images with 
-the latest Oracle Linux images, Java updates, and WebLogic Server patches.
+- Critical Patch Updates (CPU) images.
+  - Located in OCR repositories "middleware/weblogic_cpu" and "middleware/fmw-infrastructure_cpu".
+  - Updated quarterly (every CPU cycle).
+  - Includes critical security fixes for Oracle Linux, Java, and Oracle WebLogic Server.
+  - Suitable for production use.
+
+- General Availability (GA) images.
+  - Located in OCR repositories "middleware/weblogic" and "middleware/fmw-infrastructure".
+  - Updated quarterly.
+  - Includes latest updates for Oracle Linux, and Java, but _not_ for Oracle WebLogic Server.
+  - GA images are subject to [Oracle Technology Network (OTN) Developer License Terms](https://www.oracle.com/downloads/licenses/standard-license.html), 
+    which include, but are not limited to:
+     - Must only be used for the purpose of developing, testing, prototyping, and demonstrating applications.
+     - Application must _not_ be used for any data processing, business, commercial, or production purposes.
+
+OCR image name tags that do not include an embedded date
+stamp represent the latest version,
+and image names with an embedded datestamp represent a specific version.
+
+**Note:** All of these OCR images are built using
+the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) (WIT).
+Customers can use WIT to build their own WebLogic Server images
+(with the latest Oracle Linux images, Java updates, and WebLogic Server patches),
+apply one-off patches to existing OCR images,
+or overlay their own files and applications on top of an OCR image.
+
+Example GA images:
+
+| Sample GA image name | Description |
+|-|-|
+| container-registry.oracle.com/middleware/weblogic:12.2.1.4-generic-jdk8-ol7-NNNNNNTBD | JDK 8u311, Oracle Linux 7u9, and GA Oracle WebLogic Server 12.2.1.4 generic distribution for the given date |
+| 12.2.1.4-generic-jdk8-ol7 | Represents latest JDK 8, latest Oracle Linux 7, and GA Oracle WebLogic Server 12.2.1.4 generic distribution |
+
+Example CPU images:
+
+| Sample CPU image name | Description |
+|-|-|
+| container-registry.oracle.com/middleware/weblogic_cpu:12.2.1.4-generic-jdk8-ol7-211124 | JDK 8u311, Oracle Linux 7u9, and Oracle WebLogic Server 12.2.1.4 generic distribution October 2021 CPU |
+| container-registry.oracle.com/middleware/weblogic_cpu:12.2.1.4-generic-jdk8-ol7 | Represents latest JDK 8, latest Oracle Linux 7, and GA Oracle WebLogic Server 12.2.1.4 generic distribution CPU |
+
+TBD 
+- link to domain images doc and/or combine this material with same
+- discuss difference between '-generic' and '-slim' WebLogic images
+- determine what is included in vanilla :12.2.1.3/12.2.1.4/14.1.1.0 images
+  (is it same as GA latest -generic ?)
+  - document this information here?
+- Monica will update 14.1.1.0 images, and continue to update them
+- update GA image table above to have exact correct image names
 
 #### Reference
 
