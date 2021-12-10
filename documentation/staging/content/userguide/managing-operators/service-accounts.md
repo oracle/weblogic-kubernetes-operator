@@ -30,7 +30,7 @@ such as `CustomResourceDefinitions`, `Namespaces`, and `PersistentVolumes`,
 then consider using the same dedicated namespace for each operator
 and the domains that each operator manages.
 See the `Dedicated` option for the
-[domainNamespaceSelectionStrategy]({{< relref "/userguide/managing-operators/using-helm#domainNamespaceSelectionStrategy" >}})
+[domainNamespaceSelectionStrategy]({{< relref "/userguide/managing-operators/using-helm#domainnamespaceselectionstrategy" >}})
 setting.
 {{% /notice %}}
 

@@ -32,7 +32,7 @@ they are correct when it starts.
 
 Note that the operator installation Helm chart
 creates ClusterRoles and ClusterRoleBindings
-when the [enableClusterRoleBinding]({{<relref "/userguide/managing-operators/using-helm#enableClusterRoleBinding">}}) Helm chart configuration setting
+when the [enableClusterRoleBinding]({{<relref "/userguide/managing-operators/using-helm#enableclusterrolebinding">}}) Helm chart configuration setting
 is set to `true`, and the chart creates Roles and RoleBindings
 when the setting is set to `false` (the default).
 
@@ -138,7 +138,7 @@ to a `Role` or `ClusterRole` granting permission to the operator.
 Assuming that the operator was installed into the Kubernetes Namespace `weblogic-operator-ns`,
 the following `ClusterRoleBinding` entries are mapped to a `ClusterRole` granting permission to the operator.
 
-**Note**: The operator names in table below represent the `<role-name>` from the [cluster names](#kubernetes-cluster-role-and-cluster-role-binding-naming-convention) section.
+**Note**: The operator names in table below represent the `<role-name>` from the [cluster names](#kubernetes-clusterrole-and-clusterrolebinding-naming-conventions) section.
 
 | ClusterRoleBinding | Mapped to Cluster Role | Resource Access | Notes |
 | --- | --- | --- | --- |
@@ -163,5 +163,5 @@ the following `ClusterRoleBinding` entries are mapped to a `ClusterRole` grantin
       If the operator is running in dedicated mode,
       then those resources will be created as `Roles` and `RoleBindings` in the namespace of the operator.
       See the `Dedicated` option for the
-      [domainNamespaceSelectionStrategy]({{< relref "/userguide/managing-operators/using-helm#domainNamespaceSelectionStrategy" >}})
+      [domainNamespaceSelectionStrategy]({{< relref "/userguide/managing-operators/using-helm#domainnamespaceselectionstrategy" >}})
       setting.
