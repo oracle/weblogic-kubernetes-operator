@@ -13,7 +13,7 @@ description: "Follow these steps to set up your environment."
 
 1. Follow the steps to [Prepare for operator installation]({{< relref "/userguide/managing-operators/preparation.md" >}}) and then [Install the operator]({{< relref "/userguide/managing-operators/installation.md" >}}).
 
-1. Optional. Run a database. For example, run an [Oracle database]({{< relref "/samples/database/#run-the-oracle-database-in-kubernetes" >}}) inside Kubernetes.
+1. Optional. Run a database. For example, run an [Oracle database]({{< relref "/samples/database#oracle-database-in-kubernetes" >}}) inside Kubernetes.
 
 1. Optional. Load balance with an ingress controller or a web server. For information about the current capabilities and setup instructions for each of the supported load balancers, see the [WebLogic Operator Load Balancer Samples](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/kubernetes/samples/charts/README.md).
 
