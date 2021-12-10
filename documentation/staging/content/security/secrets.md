@@ -79,7 +79,7 @@ in the registry. The `imagePullSecrets` setting on the `Domain` can be used to s
 Kubernetes `Secret` that holds the registry credentials.
 
 {{% notice info %}}
-For more information, see [Container Image Protection]({{<relref "/security/domain-security/image-protection#weblogic-domain-in-container-image-protection">}}).
+For more information, see [Container Image Protection]({{<relref "/security/domain-security/image-protection#weblogic-domain-in-image-protection">}}).
 {{% /notice %}}
 
 #### Domain configuration override or runtime update secrets
