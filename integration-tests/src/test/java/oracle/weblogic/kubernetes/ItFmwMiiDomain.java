@@ -215,8 +215,7 @@ class ItFmwMiiDomain {
         rcuaccessSecretName,
         opsswalletpassSecretName,
         replicaCount,
-        fmwMiiImage,
-        false);
+        fmwMiiImage);
 
     createDomainAndVerify(domain, fmwDomainNamespace);
 

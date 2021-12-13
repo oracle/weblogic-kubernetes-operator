@@ -263,7 +263,7 @@ class ItIstioDBOperator {
     dockerLoginAndPushImageToRegistry(fmwMiiImage);
 
     // create the domain object
-    Domain domain = FmwUtils.createDomainResource(fmwDomainUid,
+    Domain domain = FmwUtils.createIstioDomainResource(fmwDomainUid,
         fmwDomainNamespace,
         fmwAminSecretName,
         OCIR_SECRET_NAME,
@@ -271,8 +271,8 @@ class ItIstioDBOperator {
         rcuaccessSecretName,
         opsswalletpassSecretName,
         replicaCount,
-        fmwMiiImage,
-        true);
+        fmwMiiImage
+        );
 
     createDomainAndVerify(domain, fmwDomainNamespace);
 
