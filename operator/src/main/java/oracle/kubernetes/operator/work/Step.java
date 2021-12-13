@@ -50,6 +50,16 @@ public abstract class Step {
     return stepGroups[start];
   }
 
+  /**
+   * Chain the specified step groups into a single chain of steps.
+   *
+   * @param stepGroups multiple groups of steps
+   * @return the first step of the resultant chain
+   */
+  public static Step chain(List<Step> stepGroups) {
+    return chain(stepGroups.toArray(new Step[0]));
+  }
+
   private static int getFirstNonNullIndex(Step[] stepGroups) {
     for (int i = 0; i < stepGroups.length; i++) {
       if (stepGroups[i] != null) {

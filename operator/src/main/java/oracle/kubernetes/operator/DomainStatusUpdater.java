@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
@@ -14,6 +15,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
@@ -84,6 +86,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_FATAL_ERROR;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_MAX_ERRORS_EXCEEDED;
 import static oracle.kubernetes.operator.logging.MessageKeys.TOO_MANY_REPLICAS_FAILURE;
 import static oracle.kubernetes.utils.OperatorUtils.onSeparateLines;
+import static oracle.kubernetes.weblogic.domain.model.DomainCondition.TRUE;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Available;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Completed;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.ConfigChangesPendingRestart;
@@ -98,8 +101,6 @@ import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed
 public class DomainStatusUpdater {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private static final String TRUE = "True";
-  private static final String FALSE = "False";
 
   private DomainStatusUpdater() {
   }
@@ -111,6 +112,14 @@ public class DomainStatusUpdater {
    */
   public static Step createStatusUpdateStep(Step next) {
     return new StatusUpdateStep(next);
+  }
+
+  /**
+   * Creates an asynchronous step to initialize the domain status, if needed, to indicate that the operator has
+   * seen the domain and is now working on it.
+   */
+  public static Step createStatusInitializationStep() {
+    return new StatusInitializationStep();
   }
 
   /**
@@ -460,6 +469,17 @@ public class DomainStatusUpdater {
 
   }
 
+  public static class StatusInitializationStep extends DomainStatusUpdaterStep {
+
+    @Override
+    void modifyStatus(DomainStatus status) {
+      if (status.getConditions().isEmpty()) {
+        status.addCondition(new DomainCondition(Completed).withStatus(false));
+        status.addCondition(new DomainCondition(Available).withStatus(false));
+      }
+    }
+  }
+
   /**
    * A step which updates the domain status from the domain topology in the current packet.
    */
@@ -508,53 +528,32 @@ public class DomainStatusUpdater {
       @Nonnull
       @Override
       List<EventData> createDomainEvents() {
-        List<EventData> list = new ArrayList<>();
-        if (domainJustAvailable()) {
-          list.add(new EventData(DOMAIN_AVAILABLE));
+        return new Conditions().getNewConditions(getStatus()).stream()
+              .map(this::toEvent)
+              .filter(Objects::nonNull)
+              .collect(Collectors.toList());
+      }
+
+      private EventData toEvent(DomainCondition newCondition) {
+        switch (newCondition.getType()) {
+          case Completed:
+            return new EventData(DOMAIN_COMPLETE);
+          case Available:
+            return new EventData(DOMAIN_AVAILABLE);
+          default:
+            return null;
         }
-        if (processingJustCompleted()) {
-          list.add(new EventData(DOMAIN_COMPLETE));
-        }
-        return list;
-      }
-
-      private boolean processingJustCompleted() {
-        return allIntendedServersRunning() && !oldStatusWasCompleted();
-      }
-
-      private boolean oldStatusWasCompleted() {
-        return getStatus() != null && getStatus().hasConditionWith(this::isDomainCompleted);
-      }
-
-      private boolean oldStatusWasAvailable() {
-        return getStatus() != null && getStatus().hasConditionWith(this::isDomainAvailable);
-      }
-
-      private boolean domainJustAvailable() {
-        return sufficientServersRunning() && !oldStatusWasAvailable();
       }
 
       private void setStatusConditions(DomainStatus status) {
-        if (allIntendedServersRunning()) {
-          status.removeConditionWithType(Failed);
-          status.addCondition(new DomainCondition(Completed).withStatus(TRUE));
-          status.addCondition(new DomainCondition(Available).withStatus(TRUE));
-        } else {
-          status.addCondition(new DomainCondition(Completed).withStatus(FALSE));
-          if (sufficientServersRunning()) {
-            status.addCondition(new DomainCondition(Available).withStatus(TRUE));
-          } else if (status.hasConditionWithType(Available)) {
-            status.addCondition(new DomainCondition(Available).withStatus(FALSE));
-          }
-
-          addTooManyReplicasFailures(status);
-        }
+        Conditions newConditions = new Conditions();
+        newConditions.apply(status);
 
         if (isHasFailedPod()) {
-          status.addCondition(new DomainCondition(Failed).withStatus(TRUE).withReason(ServerPod));
-        } else if (allIntendedServersRunning()) {
-          if (!stillHasPodPendingRestart(status)
-              && status.hasConditionWithType(ConfigChangesPendingRestart)) {
+          status.addCondition(new DomainCondition(Failed).withStatus(true).withReason(ServerPod));
+        } else {
+          status.removeConditionsMatching(c -> c.hasType(Failed) && ServerPod.name().equals(c.getReason()));
+          if (newConditions.allIntendedServersRunning() && !stillHasPodPendingRestart(status)) {
             status.removeConditionWithType(ConfigChangesPendingRestart);
           }
         }
@@ -564,47 +563,143 @@ public class DomainStatusUpdater {
         }
       }
 
-      private void addTooManyReplicasFailures(DomainStatus status) {
-        getConfiguredClusters().stream()
-              .map(TooManyReplicasCheck::new)
-              .filter(TooManyReplicasCheck::isFailure)
-              .forEach(check -> status.addCondition(check.createFailureCondition()));
+      private boolean haveServerData() {
+        return this.serverState != null;
       }
 
-      private List<WlsClusterConfig> getConfiguredClusters() {
-        return Optional.ofNullable(config).map(WlsDomainConfig::getConfiguredClusters).orElse(Collections.emptyList());
-      }
+      class Conditions {
 
-      private class TooManyReplicasCheck {
-        private final String clusterName;
-        private final int maxReplicaCount;
-        private final int specifiedReplicaCount;
+        private final ClusterCheck[] clusterChecks = createClusterChecks();
+        private final List<DomainCondition> conditions = new ArrayList<>();
 
-        TooManyReplicasCheck(WlsClusterConfig cluster) {
-          clusterName = cluster.getClusterName();
-          maxReplicaCount = cluster.getMaxDynamicClusterSize();
-          specifiedReplicaCount = getDomain().getReplicaCount(clusterName);
+        void apply(DomainStatus status) {
+          status.removeConditionsMatching(c -> c.hasType(Failed) && ReplicasTooHigh.name().equals(c.getReason()));
+          conditions.forEach(status::addCondition);
         }
 
-        private boolean isFailure() {
+        List<DomainCondition> getNewConditions(DomainStatus status) {
+          return conditions.stream()
+                .filter(c -> "True".equals(c.getStatus()))
+                .filter(c -> status == null || !status.hasConditionWith(matchFor(c)))
+                .collect(Collectors.toList());
+        }
+
+        Predicate<DomainCondition> matchFor(DomainCondition condition) {
+          return c -> c.getType().equals(condition.getType()) && "True".equals(c.getStatus());
+        }
+
+        @Nonnull
+        private ClusterCheck[] createClusterChecks() {
+          return getConfiguredClusters().stream().map(ClusterCheck::new).toArray(ClusterCheck[]::new);
+        }
+
+        private List<WlsClusterConfig> getConfiguredClusters() {
+          return Optional.ofNullable(config)
+                .map(WlsDomainConfig::getConfiguredClusters)
+                .orElse(Collections.emptyList());
+        }
+
+        public Conditions() {
+          conditions.add(new DomainCondition(Completed).withStatus(isProcessingCompleted()));
+          conditions.add(new DomainCondition(Available).withStatus(sufficientServersRunning()));
+          computeTooManyReplicasFailures();
+        }
+
+        private boolean isProcessingCompleted() {
+          return !haveTooManyReplicas() && allIntendedServersRunning();
+        }
+
+        private boolean haveTooManyReplicas() {
+          return Arrays.stream(clusterChecks).anyMatch(ClusterCheck::hasTooManyReplicas);
+        }
+
+        private boolean allIntendedServersRunning() {
+          return haveServerData()
+                && allStartedServersAreRunning()
+                && allNonStartedServersAreShutdown()
+                && serversMarkedForRoll().isEmpty();
+        }
+
+        private boolean sufficientServersRunning() {
+          return atLeastOneApplicationServerStarted() && allNonClusteredServersRunning() && allClustersAvailable();
+        }
+
+        private boolean allClustersAvailable() {
+          return Arrays.stream(clusterChecks).allMatch(ClusterCheck::isAvailable);
+        }
+
+        private void computeTooManyReplicasFailures() {
+          Arrays.stream(clusterChecks)
+                .filter(ClusterCheck::hasTooManyReplicas)
+                .forEach(check -> conditions.add(check.createFailureCondition()));
+        }
+      }
+
+      private class ClusterCheck {
+        private final String clusterName;
+        private final int minReplicaCount;
+        private final int maxReplicaCount;
+        private final int specifiedReplicaCount;
+        private final List<String> startedServers;
+
+        ClusterCheck(WlsClusterConfig cluster) {
+          clusterName = cluster.getClusterName();
+          minReplicaCount = cluster.getMinClusterSize();
+          maxReplicaCount = cluster.getMaxClusterSize();
+          specifiedReplicaCount = getDomain().getReplicaCount(clusterName);
+          startedServers = getStartedServersInCluster(clusterName);
+        }
+
+        boolean isAvailable() {
+          return isClusterIntentionallyShutDown() || sufficientServersRunning();
+        }
+
+        boolean hasTooManyReplicas() {
           return maxReplicaCount > 0 && specifiedReplicaCount > maxReplicaCount;
         }
 
-        private DomainCondition createFailureCondition() {
+        DomainCondition createFailureCondition() {
           return new DomainCondition(Failed).withReason(ReplicasTooHigh).withMessage(createFailureMessage());
+        }
+
+        private boolean isClusterIntentionallyShutDown() {
+          return startedServers.isEmpty();
+        }
+
+        private boolean sufficientServersRunning() {
+          return numServersReady() >= getSufficientServerCount();
+        }
+
+        private long getSufficientServerCount() {
+          return max(1, minReplicas(), specifiedReplicaCount - maxUnavailable());
+        }
+
+        private int max(Integer... inputs) {
+          return Arrays.stream(inputs).reduce(0, Math::max);
+        }
+
+        private int minReplicas() {
+          return getDomain().isAllowReplicasBelowMinDynClusterSize(clusterName) ? 0 : minReplicaCount;
+        }
+
+        private long numServersReady() {
+          return startedServers.stream()
+                .map(StatusUpdateContext.this::getRunningState)
+                .filter(this::isRunning)
+                .count();
+        }
+
+        private int maxUnavailable() {
+          return getDomain().getMaxUnavailable(clusterName);
+        }
+
+        private boolean isRunning(String serverState) {
+          return RUNNING_STATE.equals(serverState);
         }
 
         private String createFailureMessage() {
           return LOGGER.formatMessage(TOO_MANY_REPLICAS_FAILURE, specifiedReplicaCount, clusterName, maxReplicaCount);
         }
-      }
-
-      private boolean isDomainCompleted(DomainCondition condition) {
-        return condition.hasType(Completed) && condition.getStatus().equals("True");
-      }
-
-      private boolean isDomainAvailable(DomainCondition condition) {
-        return condition.hasType(Available) && condition.getStatus().equals("True");
       }
 
       private void setStatusDetails(DomainStatus status) {
@@ -647,9 +742,8 @@ public class DomainStatusUpdater {
       }
 
       private void updateDomainConditions(DomainStatus status, String message) {
-        DomainCondition onlineUpdateCondition = new DomainCondition(ConfigChangesPendingRestart)
-            .withMessage(message)
-            .withStatus("True");
+        DomainCondition onlineUpdateCondition
+              = new DomainCondition(ConfigChangesPendingRestart).withMessage(message).withStatus(true);
 
         status.removeConditionWithType(ConfigChangesPendingRestart);
         status.addCondition(onlineUpdateCondition);
@@ -673,19 +767,24 @@ public class DomainStatusUpdater {
             .orElse(Collections.emptyMap());
       }
 
-      private boolean allIntendedServersRunning() {
-        return atLeastOneApplicationServerStarted()
-              && expectedRunningServers.stream().noneMatch(this::isNotRunning)
-              && expectedRunningServers.containsAll(serverState.keySet())
-              && serversMarkedForRoll().isEmpty();
+      private boolean allStartedServersAreRunning() {
+        return expectedRunningServers.stream().allMatch(this::isRunning);
+      }
+
+      private boolean allNonStartedServersAreShutdown() {
+        return getNonStartedServersWithState().stream().allMatch(this::isShutDown);
+      }
+
+      private List<String> getNonStartedServersWithState() {
+        return serverState.keySet().stream().filter(this::isNonStartedServer).collect(Collectors.toList());
+      }
+
+      private boolean isNonStartedServer(String serverName) {
+        return !expectedRunningServers.contains(serverName);
       }
 
       private boolean atLeastOneApplicationServerStarted() {
         return getInfo().getServerStartupInfo().size() > 0;
-      }
-
-      private boolean sufficientServersRunning() {
-        return atLeastOneApplicationServerStarted() && allNonClusteredServersRunning() && allClustersAvailable();
       }
 
       private @Nonnull List<String> getNonClusteredServers() {
@@ -696,39 +795,10 @@ public class DomainStatusUpdater {
         return getNonClusteredServers().stream().noneMatch(this::isNotRunning);
       }
 
-      private boolean allClustersAvailable() {
-        return getClusterNames().stream().allMatch(this::isAvailable);
-      }
-
-      private boolean isAvailable(String clusterName) {
-        return isClusterIntentionallyShutDown(clusterName) || sufficientServersInClusterRunning(clusterName);
-      }
-
-      private boolean sufficientServersInClusterRunning(String clusterName) {
-        return clusterHasRunningServer(clusterName)
-             && numServersInClusterNotReady(clusterName) <= maxUnavailable(clusterName);
-      }
-
-      private boolean isClusterIntentionallyShutDown(String clusterName) {
-        return getStartedServersInCluster(clusterName).isEmpty();
-      }
-
-      private boolean clusterHasRunningServer(String clusterName) {
-        return getStartedServersInCluster(clusterName).stream().anyMatch(this::isRunning);
-      }
-
-      private long numServersInClusterNotReady(String clusterName) {
-        return getStartedServersInCluster(clusterName).stream().filter(this::isNotRunning).count();
-      }
-
       private List<String> getStartedServersInCluster(String clusterName) {
         return expectedRunningServers.stream()
               .filter(server -> clusterName.equals(getClusterName(server)))
               .collect(Collectors.toList());
-      }
-
-      private int maxUnavailable(String clusterName) {
-        return getDomain().getMaxUnavailable(clusterName);
       }
 
       private Set<String> serversMarkedForRoll() {
@@ -758,6 +828,10 @@ public class DomainStatusUpdater {
 
       private boolean isNotRunning(@Nonnull String serverName) {
         return !RUNNING_STATE.equals(getRunningState(serverName));
+      }
+
+      private boolean isShutDown(@Nonnull String serverName) {
+        return SHUTDOWN_STATE.equals(getRunningState(serverName));
       }
 
       private boolean isHasFailedPod() {
