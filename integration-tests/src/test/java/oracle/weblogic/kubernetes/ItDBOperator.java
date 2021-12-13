@@ -247,7 +247,8 @@ class ItDBOperator {
         rcuaccessSecretName,
         opsswalletpassSecretName,
         replicaCount,
-        fmwMiiImage);
+        fmwMiiImage,
+        false);
 
     createDomainAndVerify(domain, fmwDomainNamespace);
 

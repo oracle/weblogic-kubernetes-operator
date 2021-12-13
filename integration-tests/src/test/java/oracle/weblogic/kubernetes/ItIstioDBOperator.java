@@ -271,7 +271,8 @@ class ItIstioDBOperator {
         rcuaccessSecretName,
         opsswalletpassSecretName,
         replicaCount,
-        fmwMiiImage);
+        fmwMiiImage,
+        true);
 
     createDomainAndVerify(domain, fmwDomainNamespace);
 
