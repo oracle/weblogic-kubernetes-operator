@@ -215,7 +215,8 @@ class ItFmwMiiDomain {
         rcuaccessSecretName,
         opsswalletpassSecretName,
         replicaCount,
-        fmwMiiImage);
+        fmwMiiImage,
+        false);
 
     createDomainAndVerify(domain, fmwDomainNamespace);
 
@@ -391,5 +392,5 @@ class ItFmwMiiDomain {
 
     return patchDomainCustomResource(domainUid, fmwDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
   }
-  
+
 }
