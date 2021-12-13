@@ -366,7 +366,7 @@ public class ItMiiDomainModelInPV {
                     .name(pvName) // the persistent volume that needs to be archived
                     .persistentVolumeClaim(
                         new V1PersistentVolumeClaimVolumeSource()
-                            .claimName(pvcName)))); 
+                            .claimName(pvcName))));
     if (!OKD) {
       podSpec.initContainers(Arrays.asList(createfixPVCOwnerContainer(pvName, modelMountPath)));
     }
@@ -389,9 +389,15 @@ public class ItMiiDomainModelInPV {
     return wlsPod;
   }
 
-  // create a model in image with no domain and custom wdtModelHome
-  // push the image to repo
-  private static void buildMIIandPushToRepo(String imageName, String imageTag, String customWDTHome) {
+  /**
+   * create a model in image with no domain and custom wdtModelHome push the image to repo.
+   *
+   * @param imageName name of the image
+   * @param imageTag tag of the image
+   * @param customWDTHome WDT home location to put the model file
+   */
+  public static void buildMIIandPushToRepo(String imageName, String imageTag, String customWDTHome) {
+    logger = getLogger();
     final String image = imageName + ":" + imageTag;
     logger.info("Building image {0}", image);
     Path emptyModelFile = Paths.get(TestConstants.RESULTS_ROOT, "miitemp", "empty-wdt-model.yaml");
@@ -422,7 +428,13 @@ public class ItMiiDomainModelInPV {
     dockerLoginAndPushImage(image);
   }
 
-  private static void dockerLoginAndPushImage(String image) {
+  /**
+   * Login to docker repo and push image.
+   *
+   * @param image image to push to repo
+   */
+  public static void dockerLoginAndPushImage(String image) {
+    logger = getLogger();
     // login to docker
     if (!OCIR_USERNAME.equals(REPO_DUMMY_VALUE)) {
       logger.info("docker login");
