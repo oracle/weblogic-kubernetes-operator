@@ -67,18 +67,18 @@ public class IstioUtils {
             .command(command)
             .redirect(false))
         .execute());
-    
+
     // Copy the istio (un)intsall scripts to RESULTS_ROOT, so that istio
     // can be (un)installed manually when SKIP_CLEANUP is set to true
     assertDoesNotThrow(() -> Files.copy(
         Paths.get(RESOURCE_DIR, "bash-scripts", "install-istio.sh"),
-        Paths.get(RESULTS_ROOT, "install-istio.sh"), 
+        Paths.get(RESULTS_ROOT, "install-istio.sh"),
         StandardCopyOption.REPLACE_EXISTING),
         "Copy install-istio.sh to RESULTS_ROOT failed");
 
     assertDoesNotThrow(() -> Files.copy(
         Paths.get(RESOURCE_DIR, "bash-scripts", "uninstall-istio.sh"),
-        Paths.get(RESULTS_ROOT, "uninstall-istio.sh"), 
+        Paths.get(RESULTS_ROOT, "uninstall-istio.sh"),
         StandardCopyOption.REPLACE_EXISTING),
         "Copy uninstall-istio.sh to RESULTS_ROOT failed");
   }
@@ -88,7 +88,7 @@ public class IstioUtils {
    */
   public static void uninstallIstio() {
     LoggingFacade logger = getLogger();
-    Path istioInstallPath = 
+    Path istioInstallPath =
         Paths.get(RESOURCE_DIR, "bash-scripts", "uninstall-istio.sh");
     String installScript = istioInstallPath.toString();
     String command =
@@ -192,6 +192,7 @@ public class IstioUtils {
     deployIstioGateway = new StringBuffer("kubectl apply -f ");
     deployIstioGateway.append(configPath);
     logger.info("deployIstioGateway: kubectl command {0}", new String(deployIstioGateway));
+    assertDoesNotThrow(() -> logger.info(Files.readString(configPath)));
     try {
       result = exec(new String(deployIstioGateway), true);
     } catch (Exception ex) {
@@ -240,6 +241,7 @@ public class IstioUtils {
     deployIstioGateway = new StringBuffer("kubectl apply -f ");
     deployIstioGateway.append(configPath);
     logger.info("deployIstioDestinationRule: kubectl command {0}", new String(deployIstioGateway));
+    assertDoesNotThrow(() -> logger.info(Files.readString(configPath)));
     try {
       result = exec(new String(deployIstioGateway), true);
     } catch (Exception ex) {
