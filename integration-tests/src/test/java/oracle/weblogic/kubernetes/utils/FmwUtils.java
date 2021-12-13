@@ -58,7 +58,7 @@ public class FmwUtils {
   public static Domain createDomainResource(
       String domainUid, String domNamespace, String adminSecretName,
       String repoSecretName, String encryptionSecretName, String rcuAccessSecretName,
-      String opssWalletPasswordSecretName, int replicaCount, String miiImage, boolean istioEnabled) {
+      String opssWalletPasswordSecretName, int replicaCount, String miiImage) {
     // create the domain CR
     Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
@@ -97,8 +97,71 @@ public class FmwUtils {
                 .replicas(replicaCount)
                 .serverStartState("RUNNING"))
             .configuration(new Configuration()
+                .opss(new Opss()
+                    .walletPasswordSecret(opssWalletPasswordSecretName))
+                .model(new Model()
+                    .domainType("JRF")
+                    .runtimeEncryptionSecret(encryptionSecretName))
+                .addSecretsItem(rcuAccessSecretName)
+                .introspectorJobActiveDeadlineSeconds(600L)));
+
+    return domain;
+  }
+
+
+  /**
+   * Construct a domain object with the given parameters that can be used to create a domain resource.
+   * @param domainUid unique Uid of the domain
+   * @param domNamespace  namespace where the domain exists
+   * @param adminSecretName  name of admin secret
+   * @param repoSecretName name of repository secret
+   * @param encryptionSecretName name of encryption secret
+   * @param rcuAccessSecretName name of RCU access secret
+   * @param opssWalletPasswordSecretName name of opss wallet password secret
+   * @param replicaCount count of replicas
+   * @param miiImage name of model in image
+   * @return Domain WebLogic domain
+   */
+  public static Domain createIstioDomainResource(
+      String domainUid, String domNamespace, String adminSecretName,
+      String repoSecretName, String encryptionSecretName, String rcuAccessSecretName,
+      String opssWalletPasswordSecretName, int replicaCount, String miiImage) {
+    // create the domain CR
+    Domain domain = new Domain()
+        .apiVersion(DOMAIN_API_VERSION)
+        .kind("Domain")
+        .metadata(new V1ObjectMeta()
+            .name(domainUid)
+            .namespace(domNamespace))
+        .spec(new DomainSpec()
+            .domainUid(domainUid)
+            .domainHomeSourceType("FromModel")
+            .image(miiImage)
+            .imagePullPolicy("IfNotPresent")
+            .addImagePullSecretsItem(new V1LocalObjectReference()
+                .name(repoSecretName))
+            .webLogicCredentialsSecret(new V1SecretReference()
+                .name(adminSecretName)
+                .namespace(domNamespace))
+            .includeServerOutInPodLog(true)
+            .serverStartPolicy("IF_NEEDED")
+            .introspectVersion("1")
+            .serverPod(new ServerPod()
+                .addEnvItem(new V1EnvVar()
+                    .name("JAVA_OPTIONS")
+                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                .addEnvItem(new V1EnvVar()
+                    .name("USER_MEM_ARGS")
+                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+            .adminServer(new AdminServer()
+                .serverStartState("RUNNING"))
+            .addClustersItem(new Cluster()
+                .clusterName("cluster-1")
+                .replicas(replicaCount)
+                .serverStartState("RUNNING"))
+            .configuration(new Configuration()
                 .istio(new Istio()
-                    .enabled(istioEnabled)
+                    .enabled(Boolean.TRUE)
                     .readinessPort(8888)
                     .localhostBindingsEnabled(isLocalHostBindingsEnabled()))
                 .opss(new Opss()
