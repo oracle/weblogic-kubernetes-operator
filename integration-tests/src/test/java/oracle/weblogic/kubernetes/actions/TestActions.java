@@ -701,6 +701,30 @@ public class TestActions {
             .updateImage();
   }
 
+  /**
+   * Create an auxiliary image using WebLogic Image Tool.
+   *
+   * @param params - the parameters for creating a model-in-image Docker image
+   * @return true if the operation succeeds
+   */
+  public static boolean createAuxImage(WitParams params) {
+    return WebLogicImageTool
+            .withParams(params)
+            .createAuxImage();
+  }
+
+  /**
+   * Create an auxiliary image using WebLogic Image Tool and return result output.
+   *
+   * @param params - the parameters for creating a model-in-image Docker image
+   * @return true if the operation succeeds
+   */
+  public static ExecResult createAuxImageAndReturnResult(WitParams params) {
+    return WebLogicImageTool
+            .withParams(params)
+            .createAuxImageAndReturnResult();
+  }
+
   // -------------------------   pv/pvc  ---------------------------------
   /**
    * Get the V1PersistentVolume object in the Kubernetes cluster with specified Persistent Volume name.
