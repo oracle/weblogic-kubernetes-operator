@@ -204,6 +204,21 @@ public class TestActions {
   }
 
   /**
+   * Get the Domain Custom Resource.
+   *
+   * @param domainUid unique domain identifier
+   * @param namespace name of namespace
+   * @param domainVersion version of domain
+   * @return Domain Custom Resource or null if Domain does not exist
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static oracle.weblogic.domain.Domain getDomainCustomResource(String domainUid,
+                                                                      String namespace,
+                                                                      String domainVersion) throws ApiException {
+    return Domain.getDomainCustomResource(domainUid, namespace, domainVersion);
+  }
+
+  /**
    * Shutdown the domain.
    *
    * @param domainUid unique domain identifier

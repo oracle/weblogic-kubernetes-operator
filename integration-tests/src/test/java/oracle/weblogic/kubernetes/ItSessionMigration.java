@@ -3,12 +3,12 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
@@ -28,7 +28,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -40,23 +39,22 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
-import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
-import static oracle.weblogic.kubernetes.actions.TestActions.shutdownManagedServerUsingServerStartPolicy;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.SessionMigrationUtil.generateSessionMigrYaml;
+import static oracle.weblogic.kubernetes.utils.SessionMigrationUtil.getServerAndSessionInfoAndVerify;
+import static oracle.weblogic.kubernetes.utils.SessionMigrationUtil.shutdownServerAndVerify;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -75,8 +73,7 @@ import static org.junit.jupiter.api.Assertions.fail;
 class ItSessionMigration {
 
   // constants for creating domain image using model in image
-  private static final String SESSMIGR_MODEL_FILE = "model.sessmigr.yaml";
-  private static final String SESSMIGR_IMAGE_NAME = "mii-image";
+  private static final String SESSMIGR_IMAGE_NAME = "sessmigr-mii-image";
 
   // constants for web service
   private static final String SESSMIGR_APP_NAME = "sessmigr-app";
@@ -166,12 +163,14 @@ class ItSessionMigration {
     final String countAttr = "count";
     final String webServiceSetUrl = SESSMIGR_APP_WAR_NAME + "/?setCounter=" + SESSION_STATE;
     final String webServiceGetUrl = SESSMIGR_APP_WAR_NAME + "/?getCounter";
+    final String clusterAddress = domainUid + "-cluster-" + clusterName;
     String serverName = managedServerPrefix + "1";
 
     // send a HTTP request to set http session state(count number) and save HTTP session info
     // before shutting down the primary server
-    Map<String, String> httpDataInfo =
-        getServerAndSessionInfoAndVerify(serverName, webServiceSetUrl, " -c ");
+    Map<String, String> httpDataInfo = getServerAndSessionInfoAndVerify(domainNamespace, adminServerPodName,
+        serverName, clusterAddress, managedServerPort, webServiceSetUrl, " -c ");
+
     // get server and session info from web service deployed on the cluster
     String origPrimaryServerName = httpDataInfo.get(primaryServerAttr);
     String origSecondaryServerName = httpDataInfo.get(secondaryServerAttr);
@@ -182,12 +181,12 @@ class ItSessionMigration {
 
     // stop the primary server by changing ServerStartPolicy to NEVER and patching domain
     logger.info("Shut down the primary server {0}", origPrimaryServerName);
-    shutdownServerUsingServerStartPolicy(origPrimaryServerName);
+    shutdownServerAndVerify(domainUid, domainNamespace, origPrimaryServerName);
 
     // send a HTTP request to get server and session info after shutting down the primary server
     serverName = domainUid + "-" + origSecondaryServerName;
-    httpDataInfo =
-        getServerAndSessionInfoAndVerify(serverName, webServiceGetUrl, " -b ");
+    httpDataInfo = getServerAndSessionInfoAndVerify(domainNamespace, adminServerPodName,
+        serverName, clusterAddress, managedServerPort, webServiceGetUrl, " -b ");
     // get server and session info from web service deployed on the cluster
     String primaryServerName = httpDataInfo.get(primaryServerAttr);
     String sessionCreateTime = httpDataInfo.get(sessionCreateTimeAttr);
@@ -253,60 +252,23 @@ class ItSessionMigration {
         String.format("Failed to propagate annotation %s to the server pod", annotationValue3));
   }
 
-  /**
-   * An util method referred by the test method testSessionMigration. It sends a HTTP request
-   * to set or get http session state (count number) and return the primary server,
-   * the secondary server, session create time and session state(count number).
-   *
-   * @param serverName server name in the cluster on which the web app is running
-   * @param webServiceUrl fully qualified URL to the server on which the web app is running
-   * @param headerOption option to save or use HTTP session info
-   *
-   * @return map that contains primary and secondary server names, session create time and session state
-   */
-  private Map<String, String> getServerAndSessionInfoAndVerify(String serverName,
-                                                               String webServiceUrl,
-                                                               String headerOption) {
-    final String primaryServerAttr = "primary";
-    final String secondaryServerAttr = "secondary";
-    final String sessionCreateTimeAttr = "sessioncreatetime";
-    final String countAttr = "count";
-
-    // send a HTTP request to set http session state(count number) and save HTTP session info
-    logger.info("Process HTTP request with web service URL {0} in the pod {1} ",
-        webServiceUrl, serverName);
-    Map<String, String> httpAttrInfo =
-        processHttpRequest(serverName, webServiceUrl, headerOption);
-
-    // get HTTP response data
-    String primaryServerName = httpAttrInfo.get(primaryServerAttr);
-    String secondaryServerName = httpAttrInfo.get(secondaryServerAttr);
-    String sessionCreateTime = httpAttrInfo.get(sessionCreateTimeAttr);
-    String countStr = httpAttrInfo.get(countAttr);
-
-    // verify that the HTTP response data are not null
-    assertAll("Check that WebLogic server and session vars is not null or empty",
-        () -> assertNotNull(primaryServerName,"Primary server name shouldn’t be null"),
-        () -> assertNotNull(secondaryServerName,"Second server name shouldn’t be null"),
-        () -> assertNotNull(sessionCreateTime,"Session create time shouldn’t be null"),
-        () -> assertNotNull(countStr,"Session state shouldn’t be null")
-    );
-
-    // map to save server and session info
-    Map<String, String> httpDataInfo = new HashMap<String, String>();
-    httpDataInfo.put(primaryServerAttr, primaryServerName);
-    httpDataInfo.put(secondaryServerAttr, secondaryServerName);
-    httpDataInfo.put(sessionCreateTimeAttr, sessionCreateTime);
-    httpDataInfo.put(countAttr, countStr);
-
-    return httpDataInfo;
-  }
-
   private static String createAndVerifyDomainImage() {
     // create image with model files
     logger.info("Create image with model file and verify");
-    String miiImage =
-        createMiiImageAndVerify(SESSMIGR_IMAGE_NAME, SESSMIGR_MODEL_FILE, SESSMIGR_APP_NAME);
+
+    // Generate the model.sessmigr.yaml file at RESULTS_ROOT
+    String destSessionMigrYamlFile =
+        generateSessionMigrYaml("ItSessionMigration", domainUid);
+
+    List<String> appList = new ArrayList();
+    appList.add(SESSMIGR_APP_NAME);
+
+    // build the model file list
+    final List<String> modelList = Collections.singletonList(destSessionMigrYamlFile);
+
+    // create image with model files
+    logger.info("Create image with model file and verify");
+    String miiImage = createMiiImageAndVerify(SESSMIGR_IMAGE_NAME, modelList, appList);
 
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(miiImage);
@@ -416,92 +378,5 @@ class ItSessionMigration {
     logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
         domainUid, domainNamespace, miiImage);
     createDomainAndVerify(domain, domainNamespace);
-  }
-
-  private void shutdownServerUsingServerStartPolicy(String msName) {
-    final String podName = domainUid + "-" + msName;
-
-    // shutdown a server by changing the it's serverStartPolicy property.
-    logger.info("Shutdown the server {0}", msName);
-    boolean serverStopped = assertDoesNotThrow(() ->
-        shutdownManagedServerUsingServerStartPolicy(domainUid, domainNamespace, msName));
-    assertTrue(serverStopped,
-        String.format("Failed to shutdown server %s ", msName));
-
-    // check that the managed server pod shutdown successfylly
-    logger.info("Check that managed server pod {0} stopped in namespace {1}",
-        podName, domainNamespace);
-    checkPodDoesNotExist(podName, domainUid, domainNamespace);
-  }
-
-  private static String buildCurlCommand(String curlUrlPath,
-                                         String headerOption) {
-    final String httpHeaderFile = "/u01/domains/header";
-    final String clusterAddress = domainUid + "-cluster-" + clusterName;
-    logger.info("Build a curl command with pod name {0}, curl URL path {1} and HTTP header option {2}",
-        clusterAddress, curlUrlPath, headerOption);
-
-    int waittime = 5;
-    return new StringBuilder()
-        .append("curl --silent --show-error")
-        .append(" --connect-timeout ").append(waittime).append(" --max-time ").append(waittime)
-        .append(" http://")
-        .append(clusterAddress)
-        .append(":")
-        .append(managedServerPort)
-        .append("/")
-        .append(curlUrlPath)
-        .append(headerOption)
-        .append(httpHeaderFile).toString();
-  }
-
-  private static Map<String, String> processHttpRequest(String serverName,
-                                                        String curlUrlPath,
-                                                        String headerOption) {
-    String[] httpAttrArray =
-        {"sessioncreatetime", "sessionid", "primary", "secondary", "count"};
-    Map<String, String> httpAttrInfo = new HashMap<String, String>();
-
-    // build curl command
-    String curlCmd = buildCurlCommand(curlUrlPath, headerOption);
-    logger.info("Command to set HTTP request and get HTTP response {0} ", curlCmd);
-
-    // set HTTP request and get HTTP response
-    ExecResult execResult = assertDoesNotThrow(
-        () -> execCommand(domainNamespace, adminServerPodName,
-            null, true, "/bin/sh", "-c", curlCmd));
-    if (execResult.exitValue() == 0) {
-      logger.info("\n HTTP response is \n " + execResult.stdout());
-      assertAll("Check that primary server name is not null or empty",
-          () -> assertNotNull(execResult.stdout(), "Primary server name shouldn’t be null"),
-          () -> assertFalse(execResult.stdout().isEmpty(), "Primary server name shouldn’t be  empty")
-      );
-
-      for (String httpAttrKey : httpAttrArray) {
-        String httpAttrValue = getHttpResponseAttribute(execResult.stdout(), httpAttrKey);
-        httpAttrInfo.put(httpAttrKey, httpAttrValue);
-      }
-    } else {
-      fail("Failed to process HTTP request " + execResult.stderr());
-    }
-
-    return httpAttrInfo;
-  }
-
-  private static String getHttpResponseAttribute(String httpResponseString, String attribute) {
-    // retrieve the search pattern that matches the given HTTP data attribute
-    String attrPatn = httpAttrMap.get(attribute);
-    assertNotNull(attrPatn,"HTTP Attribute key shouldn’t be null");
-
-    // search the value of given HTTP data attribute
-    Pattern pattern = Pattern.compile(attrPatn);
-    Matcher matcher = pattern.matcher(httpResponseString);
-    String httpAttribute = null;
-
-    if (matcher.find()) {
-      httpAttribute = matcher.group(2);
-    }
-
-    return httpAttribute;
   }
 }

@@ -137,9 +137,28 @@ public class DomainUtils {
                                                                      String namespace,
                                                                      String conditionType,
                                                                      String expectedStatus) {
+    checkDomainStatusConditionTypeHasExpectedStatus(domainUid, namespace,
+        conditionType, expectedStatus, DOMAIN_VERSION);
+  }
+
+
+  /**
+   * Check the domain status condition has expected status value.
+   * @param domainUid Uid of the domain
+   * @param namespace namespace of the domain
+   * @param conditionType the type name of condition, accepted value: Completed, Available, Failed and
+   *                      ConfigChangesPendingRestart
+   * @param expectedStatus the expected value of the status, either True or False
+   * @param domainVersion version of domain
+   */
+  public static void checkDomainStatusConditionTypeHasExpectedStatus(String domainUid,
+                                                                     String namespace,
+                                                                     String conditionType,
+                                                                     String expectedStatus,
+                                                                     String domainVersion) {
     testUntil(
         withLongRetryPolicy,
-        domainStatusConditionTypeHasExpectedStatus(domainUid, namespace, conditionType, expectedStatus),
+        domainStatusConditionTypeHasExpectedStatus(domainUid, namespace, conditionType, expectedStatus, domainVersion),
         getLogger(),
         "domain status condition type {0} has expected status {1}",
         conditionType,
@@ -156,8 +175,23 @@ public class DomainUtils {
   public static void checkDomainStatusConditionTypeExists(String domainUid,
                                                           String namespace,
                                                           String conditionType) {
+    checkDomainStatusConditionTypeExists(domainUid, namespace, conditionType, DOMAIN_VERSION);
+  }
+
+  /**
+   * Check the domain status condition type exists.
+   * @param domainUid uid of the domain
+   * @param namespace namespace of the domain
+   * @param conditionType the type name of condition, accepted value: Completed, Available, Failed and
+   *                      ConfigChangesPendingRestart
+   * @param domainVersion   version of domain
+   */
+  public static void checkDomainStatusConditionTypeExists(String domainUid,
+                                                          String namespace,
+                                                          String conditionType,
+                                                          String domainVersion) {
     testUntil(
-        domainStatusConditionTypeExists(domainUid, namespace, conditionType),
+        domainStatusConditionTypeExists(domainUid, namespace, conditionType, domainVersion),
         getLogger(),
         "waiting for domain status condition type {0} exists",
         conditionType
@@ -175,7 +209,25 @@ public class DomainUtils {
   public static boolean verifyDomainStatusConditionTypeDoesNotExist(String domainUid,
                                                                     String domainNamespace,
                                                                     String conditionType) {
-    Domain domain = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace));
+    return verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace,
+        conditionType, DOMAIN_VERSION);
+  }
+
+  /**
+   * Check the domain status condition type does not exist.
+   * @param domainUid uid of the domain
+   * @param domainNamespace namespace of the domain
+   * @param conditionType the type name of condition, accepted value: Completed, Available, Failed and
+   *                      ConfigChangesPendingRestart
+   * @param domainVersion version of domain
+   * @return true if the condition type does not exist, false otherwise
+   */
+  public static boolean verifyDomainStatusConditionTypeDoesNotExist(String domainUid,
+                                                                    String domainNamespace,
+                                                                    String conditionType,
+                                                                    String domainVersion) {
+    Domain domain = assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace,
+              domainVersion));
 
     if (domain != null && domain.getStatus() != null) {
       List<DomainCondition> domainConditionList = domain.getStatus().getConditions();
