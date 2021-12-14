@@ -323,7 +323,7 @@ Specifying a `maxUnavailable` property value of `1` protects against inadvertent
 servers are shut down at the same time during the rolling restart process.
 
 {{% notice note %}}
-If you are supplying updated models or secrets for a running Model in Image domain, and you want the configuration updates to take effect using a rolling restart, consult [Modifying WebLogic Configuration]({{< relref "/userguide/managing-domains/domain-lifecycle/restarting/_index.md#modifying-the-weblogic-configuration" >}}) and [Runtime updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) before consulting this chapter.
+If you are supplying updated models or secrets for a running Model in Image domain, and you want the configuration updates to take effect using a rolling restart, consult [Modifying WebLogic Configuration]({{< relref "/userguide/managing-domains/domain-lifecycle/restarting/_index.md#modifying-the-weblogic-domain-configuration" >}}) and [Runtime updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates.md" >}}) before consulting this document.
 {{% /notice %}}
 
 ### Draining a node and PodDisruptionBudget
@@ -442,8 +442,6 @@ have to specify the `serverStartPolicy` as the default value is `IF_NEEDED`.
 4. The operator will restart all the servers in the domain.
 
 ### Domain lifecycle sample scripts
-Beginning in version 3.1.0, the operator provides sample scripts to start up or shut down a specific Managed Server or cluster in a deployed domain, or the entire deployed domain.
 
-**Note**: Prior to running these scripts, you must have previously created and deployed the domain.
-
-The scripts are located in the `kubernetes/samples/scripts/domain-lifecycle` directory. They are helpful when scripting the life cycle of a WebLogic Server domain. For more information, see the [README](https://github.com/oracle/weblogic-kubernetes-operator/tree/main/kubernetes/samples/scripts/domain-lifecycle/README.md).
+See the [Life cycle sample scripts]({{< relref "/userguide/managing-domains/domain-lifecycle/scripts.md" >}})
+for scripts that help with initiating domain life cycle operations.

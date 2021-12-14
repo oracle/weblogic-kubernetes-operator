@@ -20,7 +20,7 @@ description: "You can use port forwarding to access WebLogic Server Administrati
 
 Beginning with WebLogic Kubernetes Operator version 3.3.2,
 or earlier if you are using an
-[Istio-enabled]({{< relref "/userguide/istio/istio#how-istio-enabled-domains-differ-from-regular-domains" >}}) domain,
+[Istio-enabled]({{< relref "/userguide/istio/istio.md" >}}) domain,
 you can use the `kubectl port-forward` command to set up external access for
 the WebLogic Server Administration Console, the Remote Console, and WLST.
 This approach is particularly useful for managing WebLogic
@@ -74,7 +74,7 @@ This behavior depends on your version and domain resource configuration:
   network channel with a `localhost` listen address for each
   existing port. This means that no additional configuration is required
   to enable port forwarding when Istio is enabled.
-  For more details, see [How Istio-enabled domains differ from regular domains]({{< relref "/userguide/istio/istio#how-istio-enabled-domains-differ-from-regular-domains" >}}).
+  For more details, see [How Istio-enabled domains differ from regular domains]({{< relref "/userguide/istio/istio.md" >}}).
 
 {{% notice note %}}
 If your domain is already running, and you have made configuration changes,
