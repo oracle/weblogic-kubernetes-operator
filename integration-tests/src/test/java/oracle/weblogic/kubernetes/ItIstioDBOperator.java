@@ -148,6 +148,7 @@ class ItIstioDBOperator {
   private static final String wlsAdminServerPodName = wlsDomainUid + "-admin-server";
   private static final String wlsManagedServerPrefix = wlsDomainUid + "-managed-server";
   private static int wlDomainIstioIngressPort;
+  private String configMapName = "dynamicupdate-istio-configmap";
   private static String cpUrl;
   private static String adminSvcExtRouteHost = null;
 
@@ -261,6 +262,9 @@ class ItIstioDBOperator {
     // push the image to a registry to make it accessible in multi-node cluster
     dockerLoginAndPushImageToRegistry(fmwMiiImage);
 
+    // create WDT config map without any files
+    createConfigMapAndVerify(configMapName, fmwDomainUid, fmwDomainNamespace, Collections.EMPTY_LIST);
+
     // create the domain object
     Domain domain = FmwUtils.createIstioDomainResource(fmwDomainUid,
         fmwDomainNamespace,
@@ -270,7 +274,8 @@ class ItIstioDBOperator {
         rcuaccessSecretName,
         opsswalletpassSecretName,
         replicaCount,
-        fmwMiiImage
+        fmwMiiImage,
+        configMapName
         );
 
     createDomainAndVerify(domain, fmwDomainNamespace);
@@ -350,17 +355,12 @@ class ItIstioDBOperator {
     //Verify the dynamic configuration update
     LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
     // get the creation time of the admin server pod before patching
-    OffsetDateTime adminPodCreationTime = getPodCreationTime(fmwDomainNamespace, fmwAdminServerPodName);
     pods.put(fmwAdminServerPodName, getPodCreationTime(fmwDomainNamespace, fmwAdminServerPodName));
     // get the creation time of the managed server pods before patching
     for (int i = 1; i <= replicaCount; i++) {
       pods.put(fmwManagedServerPrefix + i, getPodCreationTime(fmwDomainNamespace, fmwManagedServerPrefix + i));
     }
-    for (int i = 1; i <= replicaCount; i++) {
-      pods.put(fmwManagedServerPrefix + i, getPodCreationTime(fmwDomainNamespace, fmwManagedServerPrefix + i));
-    }
 
-    String configMapName = "dynamicupdate-istio-configmap";
     replaceConfigMapWithModelFiles(configMapName, fmwDomainUid, fmwDomainNamespace,
         Arrays.asList(MODEL_DIR + "/model.config.wm.yaml"), withStandardRetryPolicy);
 
@@ -381,11 +381,6 @@ class ItIstioDBOperator {
 
     verifyPodsNotRolled(fmwDomainNamespace, pods);
     verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, fmwDomainNamespace);
-    try {
-      Thread.sleep(1000 * 60 * 60);
-    } catch (Exception e) {
-      ;
-    }
   }
 
   /**
