@@ -2,6 +2,7 @@
 title: "Building"
 date: 2019-02-23T17:19:24-05:00
 draft: false
+description: "Learn about the operator build process."
 weight: 3
 ---
 

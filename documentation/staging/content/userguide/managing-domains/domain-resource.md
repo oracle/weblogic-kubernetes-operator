@@ -10,7 +10,6 @@ pre = "<b> </b>"
 - [Overview](#overview)
 - [Prerequisites](#prerequisites)
 - [Deploying domain resource YAML files](#deploying-domain-resource-yaml-files)
-- [Domain resource custom resource definition (CRD)](#domain-resource-custom-resource-definition-crd)
 - [Domain resource attribute references](#domain-resource-attribute-references)
 - [Using `kubectl explain`](#using-kubectl-explain)
 - [Domain spec elements](#domain-spec-elements)
@@ -67,22 +66,6 @@ Or this command:
 $ kubectl get domain [domain name] -n [namespace] -o yaml
 ```
 
-#### Domain resource custom resource definition (CRD)
-
-The Domain type is defined by a Kubernetes CustomResourceDefinition (CRD) and, like all [Kubernetes objects](https://kubernetes.io/docs/concepts/overview/working-with-objects/kubernetes-objects/), is described by three sections: `metadata`, `spec`, and `status`.
-
-The operator installs the CRD for the Domain type when the operator first starts. Customers may also choose to install the CRD in advance by using one of the provided YAML files. Installing the CRD in advance allows you to run the operator without giving it privilege (through Kubernetes roles and bindings) to access or update the CRD or other cluster-scoped resources. This may be necessary in environments where the operator cannot have cluster-scoped privileges, such as OpenShift Dedicated. The operator's role based access control (RBAC) requirements are documented [here]({{< relref "/security/rbac.md" >}}).
-
-```shell
-$ kubectl create -f kubernetes/crd/domain-crd.yaml
-```
-
-After the CustomResourceDefinition is installed, either by the operator or using one of the `create` commands above, you can verify that the CRD is installed correctly using:
-
-```shell
-$ kubectl get crd domains.weblogic.oracle
-```
-
 #### Domain resource attribute references
 
 The domain resource `metadata` section names the Domain and its namespace.  The name of the Domain is the default value for the `domainUID` which is used by the operator to distinguish domains running in the Kubernetes cluster that may have the same domain name. The Domain name must be unique in the namespace and the `domainUID` should be unique across the cluster.  The `domainUID`, Domain resource name, and domain name (from the WebLogic domain configuration) may all be different.
@@ -96,7 +79,7 @@ Here are some references you can use for the fields in these sections:
 - See [Domain spec elements](#domain-spec-elements), [Pod Generation](#pod-generation), and [JVM memory and Java option environment variables](#jvm-memory-and-java-option-environment-variables) in this doc.
 - See [Domain resource](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md).
 - Swagger documentation is available [here](https://oracle.github.io/weblogic-kubernetes-operator/swagger/index.html).
-- Use [kubectl explain](#leveraging--kubectl-explain-) from the command line.
+- Use [kubectl explain](#using-kubectl-explain) from the command line.
 
 #### Using `kubectl explain`
 

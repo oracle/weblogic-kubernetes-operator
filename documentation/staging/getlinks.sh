@@ -26,7 +26,7 @@ cat << EOF
    ./getlinks.sh all > links.txt
 
  Notes:
-   - The script must be run within the 'content' directory.
+   - The script must be run just above the 'content' directory.
 
    - The script is 'best effort'. For example, it may mistakenly
      assume certain text is a title, etc. 
@@ -44,12 +44,18 @@ function internalRef() {
   # Ignore "^# " as a heuristic - we tend not to use the
   # largest heading style, and "^#" might be a comment in
   # a ``` block instead of a heading.
-  grep "^##" $1 | while read contents; do
+  local mode="$1"
+  local fil_md="$2"
+  local fil_nomd=$(echo "$fil_md" | sed 's/\.md$//')
+  grep "^##" $fil_md | while read contents; do
     line="$(echo $contents | sed 's/^#*//g' | sed 's/^ *//' | sed 's/ *$//')"
     spaces="$(echo $contents | sed 's/\(^#*\).*/\1/g' | sed 's/#/  /g')"
     ref=$(echo $line | tr '[:upper:]' '[:lower:]' | sed 's/ /-/g' | sed "s/[(),!?'\.\`\"]//g")
-    # echo "$spaces - [$line](#$ref) or `relRef $1 \"$line\" \"$ref\"`"
-    echo "$spaces - [$line](#$ref)"
+    case $mode in
+      local)     echo "$spaces - [$line](#$ref)" ;;
+      full_md)   echo "$spaces - `relRef $fil_md $fil_md \"$line\" \"$ref\"`" ;;
+      full_nomd) echo "$spaces - `relRef $fil_md $fil_nomd \"$line\" \"$ref\"`" ;;
+    esac
   done
 }
 
@@ -57,28 +63,41 @@ function internalRef() {
 # For example, this can generate: [Prepare for a domain]({{< relref "/quickstart/prepare.md" >}})
 function relRef() {
   title=$(grep "^title *[:=]" $1 | sed 's/^[^"]*"\(.*\)"/\1/g' | sed 's/^ *//' | sed 's/ *$//')
-  ref=$(echo $1 | sed 's/^\.//')
-  if [ "$2$3" = "" ]; then
+  ref=$(echo $2 | sed 's/^\.//')
+  if [ "$3$4" = "" ]; then
     echo "[$title]({{< relref \"$ref\" >}})"
   else
-    echo "[$2]({{< relref \"$ref#$3\" >}})"
+    echo "[$3]({{< relref \"$ref#$4\" >}})"
   fi
 }
 
 if [ "$1" = "all" ]; then
-  cd ../content
+  cd content || exit 1
 
   find . -name "*.md" | while read line; do
     echo
-    relRef $line
-    internalRef $line
+    relRef $line $line
+    echo
+    internalRef local $line
+    echo
+    #internalRef full_nomd $line
+    #echo
+    internalRef full_md $line
+    echo
   done
 
-elif [ -f ../content/$1 ]; then
-  cd ../content
+elif [ -f content/$1 ]; then
+  cd content || exit 1
 
-  relRef $1
-  internalRef $1
+  echo
+  relRef $1 $1
+  echo
+  internalRef local $1
+  echo
+  internalRef full_nomd $1
+  echo
+  internalRef full_md $1
+  echo
 
 elif [ "$1" = "-help" ] || [ "$1" = "-?" ] || [ -z "$1" ]; then
 
@@ -86,6 +105,6 @@ elif [ "$1" = "-help" ] || [ "$1" = "-?" ] || [ -z "$1" ]; then
 
 else
 
-  echo "Error: File '../content/$1' not found.  Pass -? for usage."
+  echo "Error: File 'content/$1' not found.  Pass -? for usage."
 
 fi
