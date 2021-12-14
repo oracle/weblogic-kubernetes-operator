@@ -37,7 +37,7 @@ import org.junit.jupiter.api.Test;
 import static java.net.HttpURLConnection.HTTP_GATEWAY_TIMEOUT;
 import static oracle.kubernetes.operator.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.operator.DomainFailureReason.Introspection;
-import static oracle.kubernetes.operator.DomainFailureReason.KubernetesAPI;
+import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.calls.AsyncRequestStep.RESPONSE_COMPONENT_NAME;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
@@ -182,7 +182,7 @@ class AsyncRequestStepTest {
     sendFailedCallback(HttpURLConnection.HTTP_INTERNAL_ERROR);
 
     assertThat(domain.getStatus().hasConditionWithType(Failed), is(true));
-    assertThat(domain.getStatus().getReason(), equalTo(KubernetesAPI.name()));
+    assertThat(domain.getStatus().getReason(), equalTo(Kubernetes.name()));
     assertThat(domain.getStatus().getMessage(), allOf(
           containsString(OP_NAME), containsString(RESOURCE_TYPE),
           containsString(RESOURCE_NAME), containsString(NS), containsString(EXPLANATION)
@@ -262,7 +262,7 @@ class AsyncRequestStepTest {
     testSupport.schedule(() -> callFactory.sendSuccessfulCallback(smallList));
 
     assertThat(domain, hasCondition(Failed).withReason(Introspection));
-    assertThat(domain, not(hasCondition(Failed).withReason(KubernetesAPI)));
+    assertThat(domain, not(hasCondition(Failed).withReason(Kubernetes)));
   }
 
   @Test

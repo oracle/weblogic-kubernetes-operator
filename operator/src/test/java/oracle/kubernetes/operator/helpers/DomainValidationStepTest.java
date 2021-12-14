@@ -371,6 +371,7 @@ class DomainValidationStepTest {
     assertThat(logRecords, containsWarning(MessageKeys.NO_CLUSTER_IN_DOMAIN));
     assertThat(info.getValidationWarningsAsString(),
         stringContainsInOrder("Cluster", "no-such-cluster", "does not exist"));
+    assertThat(getEvents().stream().anyMatch(this::isTopologyMistachFailedEvent), is(true));
   }
 
   @Test
@@ -381,6 +382,7 @@ class DomainValidationStepTest {
     testSupport.runSteps(topologyValidationStep);
 
     assertThat(logRecords, containsWarning(MessageKeys.NO_MANAGED_SERVER_IN_DOMAIN));
+    assertThat(getEvents().stream().anyMatch(this::isTopologyMistachFailedEvent), is(true));
     assertThat(info.getValidationWarningsAsString(),
         stringContainsInOrder("Managed Server", "no-such-server", "does not exist"));
   }
@@ -400,6 +402,7 @@ class DomainValidationStepTest {
     assertThat(info.getValidationWarningsAsString(),
         stringContainsInOrder(Integer.toString(7001), ADMIN_SERVER, Integer.toString(ADMIN_SERVER_PORT_NUM)));
 
+    assertThat(getEvents().stream().anyMatch(this::isTopologyMistachFailedEvent), is(true));
     assertContainsEventWithFormattedMessage(
         getFormattedMessage(MONITORING_EXPORTER_CONFLICT_SERVER,
             Integer.toString(7001), ADMIN_SERVER, Integer.toString(ADMIN_SERVER_PORT_NUM)));
@@ -416,6 +419,7 @@ class DomainValidationStepTest {
     assertThat(info.getValidationWarningsAsString(),
         stringContainsInOrder(Integer.toString(8001), MANAGED_SERVER1, Integer.toString(MANAGED_SERVER1_PORT_NUM)));
 
+    assertThat(getEvents().stream().anyMatch(this::isTopologyMistachFailedEvent), is(true));
     assertContainsEventWithFormattedMessage(
         getFormattedMessage(MONITORING_EXPORTER_CONFLICT_SERVER,
             Integer.toString(8001), MANAGED_SERVER1, Integer.toString(MANAGED_SERVER1_PORT_NUM)));
@@ -433,6 +437,7 @@ class DomainValidationStepTest {
         stringContainsInOrder(Integer.toString(9001), DYNAMIC_CLUSTER_NAME,
             Integer.toString(SERVER_TEMPLATE_PORT_NUM)));
 
+    assertThat(getEvents().stream().anyMatch(this::isTopologyMistachFailedEvent), is(true));
     assertContainsEventWithFormattedMessage(
         getFormattedMessage(MONITORING_EXPORTER_CONFLICT_DYNAMIC_CLUSTER,
             Integer.toString(9001), DYNAMIC_CLUSTER_NAME, Integer.toString(SERVER_TEMPLATE_PORT_NUM)));
@@ -446,7 +451,12 @@ class DomainValidationStepTest {
 
     testSupport.runSteps(topologyValidationStep);
 
+    assertThat(getEvents().stream().anyMatch(this::isTopologyMistachFailedEvent), is(true));
     assertContainsEventWithMessage(NO_MANAGED_SERVER_IN_DOMAIN, "no-such-server");
+  }
+
+  private boolean isTopologyMistachFailedEvent(CoreV1Event e) {
+    return DOMAIN_FAILED_EVENT.equals(e.getReason()) && e.getMessage().contains(TOPOLOGY_MISMATCH_ERROR);
   }
 
   @Test
@@ -457,6 +467,7 @@ class DomainValidationStepTest {
 
     testSupport.runSteps(topologyValidationStep);
 
+    assertThat(getEvents().stream().anyMatch(this::isTopologyMistachFailedEvent), is(true));
     assertContainsEventWithMessage(NO_CLUSTER_IN_DOMAIN, "no-such-cluster");
   }
 
@@ -470,6 +481,7 @@ class DomainValidationStepTest {
 
     testSupport.runSteps(topologyValidationStep);
 
+    assertThat(getEvents().stream().anyMatch(this::isTopologyMistachFailedEvent), is(true));
     assertContainsEventWithFormattedMessage(getFormattedMessage(NO_CLUSTER_IN_DOMAIN, "no-such-cluster")
         + "\n" + getFormattedMessage(NO_MANAGED_SERVER_IN_DOMAIN, "no-such-server"));
   }

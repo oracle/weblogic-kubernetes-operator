@@ -739,7 +739,7 @@ public class DomainPresenceInfo implements PacketComponent {
     public ServerInfo(
         @Nonnull WlsServerConfig serverConfig,
         @Nullable String clusterName,
-        @Nonnull ServerSpec serverSpec,
+        ServerSpec serverSpec,
         boolean isServiceOnly) {
       this.serverConfig = serverConfig;
       this.clusterName = clusterName;
