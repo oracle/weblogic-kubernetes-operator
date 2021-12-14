@@ -587,10 +587,10 @@ public class ServiceHelper {
               .withLabelSelectors(forDomainUidSelector(info.getDomainUid()), getCreatedByOperatorSelector())
               .listServiceAsync(
                       getNamespace(),
-                      new ActionResponseStep<V1ServiceList>() {
+                      new ActionResponseStep<>() {
                       public Step createSuccessStep(V1ServiceList result, Step next) {
                         Collection<V1Service> c = Optional.ofNullable(result).map(list -> list.getItems().stream()
-                                  .filter(s -> isNodePortType(s))
+                                  .filter(ServiceHelper::isNodePortType)
                                   .collect(Collectors.toList())).orElse(new ArrayList<>());
                         return new DeleteServiceListStep(c, createReplacementService(next));
                       }
@@ -690,7 +690,9 @@ public class ServiceHelper {
         if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
           return updateDomainStatus(packet, callResponse);
         } else {
-          return onFailure(getConflictStep(), packet, callResponse);
+          return doNext(Step.chain(DomainStatusUpdater.createKubernetesFailureRelatedSteps(callResponse),
+                  createFailureRelatedAndConflictSteps(conflictStep, callResponse)),
+              packet);
         }
       }
 

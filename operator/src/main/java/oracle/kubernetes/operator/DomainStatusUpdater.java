@@ -64,7 +64,6 @@ import static oracle.kubernetes.operator.DomainFailureReason.DomainInvalid;
 import static oracle.kubernetes.operator.DomainFailureReason.Internal;
 import static oracle.kubernetes.operator.DomainFailureReason.Introspection;
 import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
-import static oracle.kubernetes.operator.DomainFailureReason.KubernetesAPI;
 import static oracle.kubernetes.operator.DomainFailureReason.ReplicasTooHigh;
 import static oracle.kubernetes.operator.DomainFailureReason.ServerPod;
 import static oracle.kubernetes.operator.DomainFailureReason.TopologyMismatch;
@@ -404,20 +403,24 @@ public class DomainStatusUpdater {
     @Nonnull
     private final DomainPresenceInfo info;
     private final DomainStatusUpdaterStep domainStatusUpdaterStep;
+    private DomainStatus newStatus;
 
     DomainStatusUpdaterContext(Packet packet, DomainStatusUpdaterStep domainStatusUpdaterStep) {
       info = DomainPresenceInfo.fromPacket(packet).orElseThrow();
       this.domainStatusUpdaterStep = domainStatusUpdaterStep;
     }
 
+    DomainStatus getCachedNewStatus() {
+      return newStatus;
+    }
+
     DomainStatus getNewStatus() {
-      DomainStatus newStatus = cloneStatus();
+      newStatus = cloneStatus();
       modifyStatus(newStatus);
 
       if (newStatus.getMessage() == null) {
         newStatus.setMessage(info.getValidationWarningsAsString());
       }
-
       return newStatus;
     }
 
@@ -463,7 +466,7 @@ public class DomainStatusUpdater {
     }
 
     private Step createDomainStatusReplaceStep() {
-      LOGGER.fine(MessageKeys.DOMAIN_STATUS, getDomainUid(), getNewStatus());
+      LOGGER.fine(MessageKeys.DOMAIN_STATUS, getDomainUid(), getCachedNewStatus());
       if (LOGGER.isFinerEnabled()) {
         LOGGER.finer("status change: " + createPatchString());
       }
@@ -484,7 +487,7 @@ public class DomainStatusUpdater {
 
     private String createPatchString() {
       JsonPatchBuilder builder = Json.createPatchBuilder();
-      getNewStatus().createPatchFrom(builder, getStatus());
+      getCachedNewStatus().createPatchFrom(builder, getStatus());
       return builder.build().toString();
     }
 
@@ -513,7 +516,7 @@ public class DomainStatusUpdater {
       } else if (hasJustGotFatalIntrospectorError()) {
         list.add(new EventData(EventHelper.EventItem.DOMAIN_FAILED)
             .failureReason(Aborted)
-            .message(FATAL_INTROSPECTOR_ERROR_MSG + getNewStatus().getMessage()));
+            .message(FATAL_INTROSPECTOR_ERROR_MSG + getCachedNewStatus().getMessage()));
       }
       return list;
     }
@@ -528,9 +531,10 @@ public class DomainStatusUpdater {
     }
 
     private boolean hasJustExceededMaxRetryCount() {
+      int jobFailureCount = getNewStatus().getIntrospectJobFailureCount();
       return getStatus() != null
-          && getNewStatus().getIntrospectJobFailureCount() == (getStatus().getIntrospectJobFailureCount() + 1)
-          && getNewStatus().getIntrospectJobFailureCount() >= getFailureRetryMaxCount();
+          && jobFailureCount == (getStatus().getIntrospectJobFailureCount() + 1)
+          && jobFailureCount >= getFailureRetryMaxCount();
     }
 
   }
@@ -595,24 +599,25 @@ public class DomainStatusUpdater {
       @Nonnull
       @Override
       List<EventData> createDomainEvents() {
-        List<EventData> list = getRemovedConditionEvents();
+        Conditions conditions = new Conditions(getCachedNewStatus());
+        List<EventData> list = getRemovedConditionEvents(conditions);
         list.sort(Comparator.comparing(EventData::getItem));
-        List<EventData> list2 = getNewConditionEvents();
+        List<EventData> list2 = getNewConditionEvents(conditions);
         list2.sort(Comparator.comparing(EventData::getItem));
         list.addAll(list2);
         return list;
       }
 
       @NotNull
-      private List<EventData> getNewConditionEvents() {
-        return new Conditions(getStatus()).getNewConditions().stream()
+      private List<EventData> getNewConditionEvents(@Nonnull  Conditions conditions) {
+        return conditions.getNewConditions().stream()
             .map(this::toEvent)
             .filter(Objects::nonNull)
             .collect(Collectors.toList());
       }
 
-      private List<EventData> getRemovedConditionEvents() {
-        return new Conditions(getNewStatus()).getRemovedConditions(getStatus()).stream()
+      private List<EventData> getRemovedConditionEvents(@Nonnull  Conditions conditions) {
+        return conditions.getRemovedConditions().stream()
             .map(this::toRemovedEvent)
             .filter(Objects::nonNull)
             .collect(Collectors.toList());
@@ -628,8 +633,8 @@ public class DomainStatusUpdater {
             if (ReplicasTooHigh.name().equals(newCondition.getReason())) {
               return new EventData(DOMAIN_FAILED).failureReason(ReplicasTooHigh);
             }
-            if (KubernetesAPI.name().equals(newCondition.getReason())) {
-              return new EventData(DOMAIN_FAILED).failureReason(KubernetesAPI);
+            if (ServerPod.name().equals(newCondition.getReason())) {
+              return new EventData(DOMAIN_FAILED).failureReason(ServerPod);
             }
             return null;
           default:
@@ -677,25 +682,20 @@ public class DomainStatusUpdater {
         private final DomainStatus status;
         private final ClusterCheck[] clusterChecks;
         private final List<DomainCondition> conditions = new ArrayList<>();
+        private final DomainStatus oldStatus;
+
+        public Conditions(DomainStatus status) {
+          this.status = status != null ? status : new DomainStatus();
+          this.clusterChecks = createClusterChecks();
+          conditions.add(new DomainCondition(Completed).withStatus(isProcessingCompleted()));
+          conditions.add(new DomainCondition(Available).withStatus(sufficientServersRunning()));
+          computeTooManyReplicasFailures();
+          this.oldStatus = getStatus();
+        }
 
         void apply() {
           status.removeConditionsMatching(c -> c.hasType(Failed) && ReplicasTooHigh.name().equals(c.getReason()));
           conditions.forEach(newCondition -> addCondition(status, newCondition));
-        }
-
-        void addFailedConditions(DomainStatus status) {
-          if (!isCompleteTrue()) {
-            status.getConditions().stream()
-                .filter(c -> Failed.equals(c.getType()))
-                .filter(c -> "True".equals(c.getStatus()))
-                .filter(c -> !ReplicasTooHigh.name().equals(c.getReason()))
-                .forEach(conditions::add);
-          }
-        }
-
-        private boolean isCompleteTrue() {
-          return conditions.stream()
-              .anyMatch(c -> "True".equals(c.getStatus()) && Completed.equals(c.getType()));
         }
 
         private void addCondition(DomainStatus status, DomainCondition newCondition) {
@@ -703,33 +703,20 @@ public class DomainStatusUpdater {
         }
 
         List<DomainCondition> getNewConditions() {
-          return conditions.stream()
+          return Optional.ofNullable(status).map(DomainStatus::getConditions).orElse(Collections.emptyList())
+              .stream()
+              .filter(c -> "True".equals(c.getStatus()))
+              .filter(c -> oldStatus == null || !oldStatus.hasConditionWith(matchFor(c)))
+              .collect(Collectors.toList());
+        }
+
+        List<DomainCondition> getRemovedConditions() {
+          return Optional.ofNullable(oldStatus)
+              .map(DomainStatus::getConditions).orElse(Collections.emptyList())
+              .stream()
               .filter(c -> "True".equals(c.getStatus()))
               .filter(c -> status == null || !status.hasConditionWith(matchFor(c)))
               .collect(Collectors.toList());
-        }
-
-        List<DomainCondition> getRemovedConditions(DomainStatus status) {
-          return Optional.ofNullable(status).map(DomainStatus::getConditions).orElse(Collections.emptyList()).stream()
-              .filter(c -> "True".equals(c.getStatus()))
-              .filter(c -> noMatchingCondition(c) || matchingConditionWithFalseStatus(c))
-              .collect(Collectors.toList());
-        }
-
-        private boolean noMatchingCondition(DomainCondition condition) {
-          return conditions.stream().filter(c -> matchingConditionType(c, condition)).findAny().isEmpty();
-        }
-
-        private boolean matchingConditionWithFalseStatus(DomainCondition condition) {
-          return conditions.stream().anyMatch(c -> matchWithStatusFalse(c, condition));
-        }
-
-        private boolean matchWithStatusFalse(DomainCondition c1, DomainCondition c2) {
-          return c1.getType().equals(c2.getType()) && (c1.getStatus().equals("False"));
-        }
-
-        private boolean matchingConditionType(DomainCondition c1, DomainCondition c2) {
-          return c1.getType().equals(c2.getType()) && failureReasonMatch(c1, c2);
         }
 
         private boolean failureReasonMatch(DomainCondition c1, DomainCondition c2) {
@@ -758,21 +745,6 @@ public class DomainStatusUpdater {
         private ClusterCheck createFrom(ClusterStatus clusterStatus) {
           return new ClusterCheck(status, clusterStatus);
         }
-
-        public Conditions(DomainStatus status) {
-          this.status = status != null ? status : new DomainStatus();
-          this.clusterChecks = createClusterChecks();
-          conditions.add(new DomainCondition(Completed).withStatus(isProcessingCompleted()));
-          conditions.add(new DomainCondition(Available).withStatus(sufficientServersRunning()));
-          computeTooManyReplicasFailures();
-        }
-
-        /*public Conditions(DomainStatus status) {
-          conditions.add(new DomainCondition(Completed).withStatus(isProcessingCompleted()));
-          conditions.add(new DomainCondition(Available).withStatus(sufficientServersRunning()));
-          addFailedConditions(status);
-          computeTooManyReplicasFailures();
-        }*/
 
         private boolean isProcessingCompleted() {
           return !haveTooManyReplicas() && allIntendedServersRunning();

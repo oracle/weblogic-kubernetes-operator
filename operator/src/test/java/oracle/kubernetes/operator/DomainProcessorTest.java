@@ -83,16 +83,13 @@ import org.junit.jupiter.api.Test;
 import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.operator.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.operator.DomainFailureReason.Internal;
-import static oracle.kubernetes.operator.DomainFailureReason.KubernetesAPI;
+import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.SECRET_NAME;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainSourceType.FromModel;
 import static oracle.kubernetes.operator.DomainSourceType.Image;
 import static oracle.kubernetes.operator.DomainSourceType.PersistentVolume;
-import static oracle.kubernetes.operator.EventConstants.ABORTED_ERROR;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
-import static oracle.kubernetes.operator.EventConstants.INTERNAL_ERROR;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.INTROSPECTOR_CONFIG_MAP_NAME_SUFFIX;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_OK;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
@@ -893,7 +890,7 @@ class DomainProcessorTest {
 
     executeScheduledRetry();
 
-    assertThat(getEvents().stream().anyMatch(this::isDomainFailedAbortedEvent), is(true));
+    assertThat(getEvents().stream().anyMatch(EventTestUtils::isDomainFailedAbortedEvent), is(true));
   }
 
   @Test
@@ -1563,7 +1560,7 @@ class DomainProcessorTest {
     testSupport.setTime(DomainPresence.getDomainPresenceFailureRetrySeconds(), TimeUnit.SECONDS);
     processor.createMakeRightOperation(info).withExplicitRecheck().throwNPE().execute();
 
-    assertThat(getEvents().stream().anyMatch(this::isDomainInternalFailedEvent), is(true));
+    assertThat(getEvents().stream().anyMatch(EventTestUtils::isDomainInternalFailedEvent), is(true));
   }
 
   private void forceExceptionDuringProcessing() {
@@ -1584,22 +1581,15 @@ class DomainProcessorTest {
       testSupport.setTime(time, TimeUnit.SECONDS);
     }
 
-    assertThat(getEvents().stream().anyMatch(this::isDomainFailedAbortedEvent), is(false));
+    assertThat(getEvents().stream().anyMatch(EventTestUtils::isDomainFailedAbortedEvent), is(false));
   }
 
   private void addFailedCondition(DomainStatus status) {
-    status.addCondition(new DomainCondition(Failed).withStatus("True").withReason(KubernetesAPI));
+    status.addCondition(new DomainCondition(Failed).withStatus("True").withReason(Kubernetes));
   }
 
   private List<CoreV1Event> getEvents() {
     return testSupport.getResources(KubernetesTestSupport.EVENT);
   }
 
-  private boolean isDomainFailedAbortedEvent(CoreV1Event e) {
-    return DOMAIN_FAILED_EVENT.equals(e.getReason()) && e.getMessage().contains(ABORTED_ERROR);
-  }
-
-  private boolean isDomainInternalFailedEvent(CoreV1Event e) {
-    return DOMAIN_FAILED_EVENT.equals(e.getReason()) && e.getMessage().contains(INTERNAL_ERROR);
-  }
 }
