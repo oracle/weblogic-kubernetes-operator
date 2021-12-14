@@ -50,7 +50,7 @@ import oracle.kubernetes.weblogic.domain.model.Server;
 import static java.time.temporal.ChronoUnit.SECONDS;
 import static oracle.kubernetes.operator.DomainFailureReason.Introspection;
 import static oracle.kubernetes.operator.DomainSourceType.FromModel;
-import static oracle.kubernetes.operator.DomainStatusUpdater.createIntrospectionFailureRelatedSteps;
+import static oracle.kubernetes.operator.DomainStatusUpdater.createIntrospectionFailureSteps;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
@@ -448,12 +448,12 @@ public class JobHelper {
 
         if (!severeStatuses.isEmpty()) {
           return doNext(Step.chain(
-              createIntrospectionFailureRelatedSteps(
+              createIntrospectionFailureSteps(
                   onSeparateLines(severeStatuses), domainIntrospectorJob),
               getNextStep(packet, domainIntrospectorJob), null), packet);
         } else {
           return doNext(Step.chain(
-              createIntrospectionFailureRelatedSteps(
+              createIntrospectionFailureSteps(
                   createFailureMessage(packet, domainIntrospectorJob)),
               getNextStep(packet, domainIntrospectorJob), null), packet);
         }

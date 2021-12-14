@@ -661,7 +661,7 @@ public class ConfigMapHelper {
     @Override
     public NextAction apply(Packet packet) {
       List<String> errors = getErrors(packet);
-      Step step = DomainStatusUpdater.createDomainInvalidFailureRelatedSteps(perLine(errors));
+      Step step = DomainStatusUpdater.createDomainInvalidFailureSteps(perLine(errors));
       return doNext(step, packet);
     }
 
