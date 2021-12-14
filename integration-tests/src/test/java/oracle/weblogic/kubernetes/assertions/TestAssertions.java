@@ -329,8 +329,8 @@ public class TestAssertions {
    * @param namespace in which the pod is initializing
    * @return true if the pod is initializing otherwise false
    */
-  public static Callable<Boolean> podInitializing(String podName, String domainUid, String namespace) {
-    return Pod.podInitializing(namespace, domainUid, podName);
+  public static Callable<Boolean> podInitialized(String podName, String domainUid, String namespace) {
+    return Pod.podInitialized(namespace, domainUid, podName);
   }
 
   /**
