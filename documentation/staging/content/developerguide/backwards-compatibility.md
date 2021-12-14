@@ -2,6 +2,7 @@
 title: "Backward compatibility"
 date: 2019-02-23T17:26:09-05:00
 draft: false
+description: "Review the operator's backward compatibility and maintenance."
 weight: 9
 ---
 

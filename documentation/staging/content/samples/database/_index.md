@@ -53,7 +53,7 @@ The following example shows how to set up an ephemeral Oracle database with the 
    $ cd /tmp
    ```
    ```shell
-   $ git clone --branch v3.2.3 https://github.com/oracle/weblogic-kubernetes-operator.git
+   $ git clone --branch v{{< latestVersion >}} https://github.com/oracle/weblogic-kubernetes-operator.git
    ```
 
    > **Note**: We will refer to the top directory of the operator source tree as `/tmp/weblogic-kubernetes-operator`; however, you can use a different location.

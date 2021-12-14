@@ -24,7 +24,7 @@ description: "This FAQ describes approaches for giving WebLogic applications acc
 - [Enabling unknown host access](#enabling-unknown-host-access)
    - [When is it necessary to enable unknown host access?](#when-is-it-necessary-to-enable-unknown-host-access)
    - [How to enable unknown host access](#how-to-enable-unknown-host-access)
-- [Configuring WebLogic Server affinity load balancing algorithms](#configuring-a-weblogic-server-affinity-load-balancing-algorithms)
+- [Configuring WebLogic Server affinity load balancing algorithms](#configuring-weblogic-server-affinity-load-balancing-algorithms)
 - [Configuring external listen addresses for WebLogic default channels](#configuring-external-listen-addresses-for-weblogic-default-channels)
 - [Security notes](#security-notes)
 - [Optional reading](#optional-reading)
