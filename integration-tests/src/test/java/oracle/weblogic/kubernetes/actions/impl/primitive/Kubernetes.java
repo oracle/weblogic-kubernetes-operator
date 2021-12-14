@@ -90,8 +90,8 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
-import static oracle.weblogic.kubernetes.assertions.impl.Pod.podInitialized;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodInitialized;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -433,12 +433,7 @@ public class Kubernetes {
                                  Integer sinceSeconds)
       throws ApiException {
     String log = null;
-    testUntil(
-        assertDoesNotThrow(() -> podInitialized(name, null, namespace),
-            String.format("check pod %s conditions failed with ApiException for namespace %s", name, namespace)),
-        getLogger(),
-        "Pod {0} is Initialized in namespace {1}", name, namespace);
-
+    checkPodInitialized(name,null,namespace);
     try {
       log = coreV1Api.readNamespacedPodLog(
           name, // name of the Pod

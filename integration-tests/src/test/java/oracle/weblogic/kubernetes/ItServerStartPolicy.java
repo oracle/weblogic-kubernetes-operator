@@ -26,7 +26,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndS
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchServerStartPolicy;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
-import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodInitializing;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodInitialized;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.CLUSTER_LIFECYCLE;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.DOMAIN;
@@ -565,7 +565,7 @@ class ItServerStartPolicy {
 
       // Check if pod in init state
       // Here the server pd is created but does not goes into 1/1 state
-      checkPodInitializing(serverPodName, domainUid, domainNamespace);
+      checkPodInitialized(serverPodName, domainUid, domainNamespace);
       logger.info("Server[" + serverName + "] pod is initialized");
 
       // (re)Start the admin
