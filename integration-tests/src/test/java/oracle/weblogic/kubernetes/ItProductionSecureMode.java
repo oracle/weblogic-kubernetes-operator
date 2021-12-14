@@ -107,6 +107,7 @@ class ItProductionSecureMode {
 
   private static Path pathToEnableSSLYaml;
   private static LoggingFacade logger = null;
+  private static String adminSvcSslPortExtHost = null;
 
   /**
    * Install Operator.
@@ -232,7 +233,7 @@ class ItProductionSecureMode {
 
     //expose the admin server external service to access the console in OKD cluster
     //set the sslPort as the target port
-    String adminSvcSslPortExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName),
+    adminSvcSslPortExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName),
                     domainNamespace, "admin-server-sslport-ext");
     setTlsTerminationForRoute("admin-server-sslport-ext", domainNamespace);
     setTargetPortForRoute("admin-server-sslport-ext", domainNamespace, defaultAdminSecurePort);
@@ -334,6 +335,7 @@ class ItProductionSecureMode {
 
     testUntil(
         () -> checkWeblogicMBean(
+            adminSvcSslPortExtHost,
             domainNamespace,
             adminServerPodName,
             "/management/weblogic/latest/domainRuntime/serverRuntimes/"
