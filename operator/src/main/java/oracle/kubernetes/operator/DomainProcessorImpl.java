@@ -74,8 +74,8 @@ import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import org.jetbrains.annotations.NotNull;
 
-import static oracle.kubernetes.operator.DomainStatusUpdater.createAbortedFailureRelatedSteps;
-import static oracle.kubernetes.operator.DomainStatusUpdater.createInternalFailureRelatedSteps;
+import static oracle.kubernetes.operator.DomainStatusUpdater.createAbortedFailureSteps;
+import static oracle.kubernetes.operator.DomainStatusUpdater.createInternalFailureSteps;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createStatusInitializationStep;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createStatusUpdateStep;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
@@ -1065,11 +1065,11 @@ public class DomainProcessorImpl implements DomainProcessor {
           public void onThrowable(Packet packet, Throwable throwable) {
             logThrowable(throwable);
             DomainPresenceInfo existing = getExistingDomainPresenceInfo(ns, domainUid);
-            Step failureSteps = createInternalFailureRelatedSteps(throwable, packet.getValue(DOMAIN_INTROSPECTOR_JOB));
+            Step failureSteps = createInternalFailureSteps(throwable, packet.getValue(DOMAIN_INTROSPECTOR_JOB));
             if (existing != null) {
               if (getCurrentIntrospectFailureRetryCount(existing)
                   > DomainPresence.getDomainPresenceFailureRetryMaxCount()) {
-                failureSteps = createAbortedFailureRelatedSteps();
+                failureSteps = createAbortedFailureSteps();
               }
             }
             gate.startFiberIfLastFiberMatches(

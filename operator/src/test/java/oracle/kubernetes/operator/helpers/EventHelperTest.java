@@ -39,8 +39,8 @@ import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
 import static java.net.HttpURLConnection.HTTP_UNAVAILABLE;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
-import static oracle.kubernetes.operator.DomainStatusUpdater.createDomainInvalidFailureRelatedSteps;
-import static oracle.kubernetes.operator.DomainStatusUpdater.createTopologyMismatchFailureRelatedSteps;
+import static oracle.kubernetes.operator.DomainStatusUpdater.createDomainInvalidFailureSteps;
+import static oracle.kubernetes.operator.DomainStatusUpdater.createTopologyMismatchFailureSteps;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_AVAILABLE_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_AVAILABLE_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CHANGED_PATTERN;
@@ -160,7 +160,7 @@ class EventHelperTest {
 
   @Test
   void whenCreateEventStepCalledWithFailedReasonTopologyMismatch_domainFailedEventCreated() {
-    testSupport.runSteps(createTopologyMismatchFailureRelatedSteps("Test failure"));
+    testSupport.runSteps(createTopologyMismatchFailureSteps("Test failure"));
 
     assertThat("Found DOMAIN_FAILED event",
         containsEvent(getEvents(testSupport), DOMAIN_FAILED_EVENT), is(true));
@@ -168,7 +168,7 @@ class EventHelperTest {
 
   @Test
   void whenCreateEventStepCalledWithFailedReasonTopologyMismatch_domainFailedEventCreatedWithExpectedMessage() {
-    testSupport.runSteps(createTopologyMismatchFailureRelatedSteps("Test this failure"));
+    testSupport.runSteps(createTopologyMismatchFailureSteps("Test this failure"));
 
     assertThat("Found DOMAIN_FAILED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
@@ -180,9 +180,9 @@ class EventHelperTest {
 
   @Test
   void whenCreateEventStepCalledWithFailedReasonDTopologyMismatchTwice_domainFailedEventCreatedOnceWithExpectedCount() {
-    testSupport.runSteps(createTopologyMismatchFailureRelatedSteps("Test failure"));
+    testSupport.runSteps(createTopologyMismatchFailureSteps("Test failure"));
     dispatchAddedEventWatches();
-    testSupport.runSteps(createTopologyMismatchFailureRelatedSteps("Test failure"));
+    testSupport.runSteps(createTopologyMismatchFailureSteps("Test failure"));
 
     assertThat("Found DOMAIN_FAILED event",
         containsOneEventWithCount(getEvents(testSupport), DOMAIN_FAILED_EVENT, 2), is(true));
@@ -190,7 +190,7 @@ class EventHelperTest {
 
   @Test
   void whenCreateEventStepCalledWithFailedReasonDomainInvalid_domainFailedEventCreated() {
-    testSupport.runSteps(createDomainInvalidFailureRelatedSteps("Test failure"));
+    testSupport.runSteps(createDomainInvalidFailureSteps("Test failure"));
 
     assertThat("Found DOMAIN_FAILED event",
         containsEvent(getEvents(testSupport), DOMAIN_FAILED_EVENT), is(true));
@@ -198,7 +198,7 @@ class EventHelperTest {
 
   @Test
   void whenCreateEventStepCalledWithFailedReasonDomainInvalid_domainFailedEventCreatedWithExpectedMessage() {
-    testSupport.runSteps(createDomainInvalidFailureRelatedSteps("Test this failure"));
+    testSupport.runSteps(createDomainInvalidFailureSteps("Test this failure"));
 
     assertThat("Found DOMAIN_FAILED event with expected message",
         containsEventWithMessage(getEvents(testSupport),
@@ -210,9 +210,9 @@ class EventHelperTest {
 
   @Test
   void whenCreateEventStepCalledWithFailedReasonDomainInvalidTwice_domainFailedEventCreatedOnceWithExpectedCount() {
-    testSupport.runSteps(createDomainInvalidFailureRelatedSteps("Test failure"));
+    testSupport.runSteps(createDomainInvalidFailureSteps("Test failure"));
     dispatchAddedEventWatches();
-    testSupport.runSteps(createDomainInvalidFailureRelatedSteps("Test failure"));
+    testSupport.runSteps(createDomainInvalidFailureSteps("Test failure"));
 
     assertThat("Found DOMAIN_FAILED event",
         containsOneEventWithCount(getEvents(testSupport), DOMAIN_FAILED_EVENT, 2), is(true));
