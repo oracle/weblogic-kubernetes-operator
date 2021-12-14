@@ -11,6 +11,8 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 
+import oracle.weblogic.domain.AuxiliaryImage;
+import oracle.weblogic.domain.AuxiliaryImageVolume;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
@@ -22,7 +24,6 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
-import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
@@ -88,8 +89,10 @@ class ItMiiNewCreateAuxImage {
   private static LoggingFacade logger = null;
   private String domain1Uid = "domain1";
   private String domain2Uid = "domain2";
+  private String domain3Uid = "domain3";
   private static String miiAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + "-new1";
   private static String miiAuxiliaryImage2 = MII_AUXILIARY_IMAGE_NAME + "-new2";
+  private static String miiAuxiliaryImage3 = MII_AUXILIARY_IMAGE_NAME + "-new3";
   private final int replicaCount = 2;
   private static String adminSecretName;
   private static String encryptionSecretName;
@@ -147,7 +150,6 @@ class ItMiiNewCreateAuxImage {
    * Verify the domain is running and JMS resource is added.
    */
   @Test
-  @Order(1)
   @DisplayName("Test to create domain using auxiliary image with default options")
   void testCreateDomainUsingAuxImageDefaultOptions() {
 
@@ -218,11 +220,10 @@ class ItMiiNewCreateAuxImage {
   }
 
   /**
-   * Create a domain with auxiliary image. Create the auxilary image using customized options.
+   * Create a domain with auxiliary image. Create the auxiliary image using customized options.
    * Verify the domain is up and running.
    */
   @Test
-  @Order(2)
   @DisplayName("Test to create domain using auxiliary image with customized options")
   void testCreateDomainUsingAuxImageCustomizedOptions() {
     // admin/managed server name here should match with model yaml
@@ -293,6 +294,89 @@ class ItMiiNewCreateAuxImage {
         assertDoesNotThrow(() -> checkWDTVersion(domainNamespace, adminServerPodName, witParams.wdtHome()));
     assertEquals("WebLogic Deploy Tooling " + WDT_TEST_VERSION, wdtVersion,
           " Used WDT in the auxiliary image was not updated");
+  }
+
+  /**
+   * Create a domain with auxiliary image. Create the auxilary image using customized wdtModelHome.
+   * Verify the domain is up and running.
+   */
+  @Test
+  @DisplayName("Test to create domain using auxiliary image with customized wdtModelHome")
+  void testCreateDomainUsingAuxImageCustomizedWdtmodelhome() {
+    // admin/managed server name here should match with model yaml
+    final String auxiliaryImageVolumeName3 = "auxiliaryImageVolume3";
+    final String auxiliaryImagePath3 = "/auxiliary3";
+
+    // create a new auxiliary image with Alpine base image instead of busybox
+    List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
+
+    List<String> modelList = new ArrayList<>();
+    modelList.add(MODEL_DIR + "/" + MII_BASIC_WDT_MODEL_FILE);
+    modelList.add(MODEL_DIR + "/multi-model-one-ds.20.yaml");
+
+    String customWdtHome = "/customwdthome";
+    String customWdtModelHome = "/customwdtmodelhome/models";
+    WitParams witParams =
+        new WitParams()
+            .modelImageName(miiAuxiliaryImage3)
+            .modelImageTag(MII_BASIC_IMAGE_TAG)
+            .wdtHome(customWdtHome)
+            .wdtModelHome(customWdtModelHome)
+            .modelArchiveFiles(archiveList)
+            .modelFiles(modelList);
+
+    // create auxiliary image using imagetool command if does not exists
+    if (! dockerImageExists(miiAuxiliaryImage3, MII_BASIC_IMAGE_TAG)) {
+      logger.info("creating auxiliary image {0}:{1} using imagetool.sh ", miiAuxiliaryImage3, MII_BASIC_IMAGE_TAG);
+      testUntil(
+          withStandardRetryPolicy,
+          createAuxiliaryImage(witParams),
+          logger,
+          "createAuxImage to be successful");
+    } else {
+      logger.info("!!!! auxiliary image {0}:{1} exists !!!!", miiAuxiliaryImage3, MII_BASIC_IMAGE_TAG);
+    }
+
+    // push image1 to repo for multi node cluster
+    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
+      logger.info("docker push image {0}:{1} to registry {2}", miiAuxiliaryImage3, MII_BASIC_IMAGE_TAG,
+          DOMAIN_IMAGES_REPO);
+      dockerLoginAndPushImageToRegistry(miiAuxiliaryImage3 + ":" + MII_BASIC_IMAGE_TAG);
+    }
+
+    // create domain custom resource using auxiliary image
+    logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
+        domain3Uid, miiAuxiliaryImage3);
+    Domain domainCR = createDomainResource(domain3Uid, domainNamespace,
+        WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
+        encryptionSecretName, replicaCount, "cluster-1");
+    domainCR.spec().addAuxiliaryImageVolumesItem(new AuxiliaryImageVolume()
+        .mountPath(auxiliaryImagePath3)
+        .name(auxiliaryImageVolumeName3));
+    domainCR.spec().configuration().model()
+        .withModelHome(auxiliaryImagePath3 + "/models")
+        .withWdtInstallHome(auxiliaryImagePath3 + "/weblogic-deploy");
+    domainCR.spec().serverPod()
+        .addAuxiliaryImagesItem(new AuxiliaryImage()
+            .image(miiAuxiliaryImage3 + ":" + MII_BASIC_IMAGE_TAG)
+            .command("cp -R " + customWdtHome + "/weblogic-deploy $AUXILIARY_IMAGE_TARGET_PATH; "
+                + "cp -R " + customWdtModelHome + " $AUXILIARY_IMAGE_TARGET_PATH")
+            .volume(auxiliaryImageVolumeName3)
+            .imagePullPolicy("IfNotPresent"));
+
+    String adminServerPodName = domain3Uid + "-admin-server";
+    String managedServerPrefix = domain3Uid + "-managed-server";
+
+    // create domain and verify its running
+    logger.info("Creating domain {0} with auxiliary images {1} in namespace {2}",
+        domain3Uid, miiAuxiliaryImage1, domainNamespace);
+    createDomainAndVerify(domain3Uid, domainCR, domainNamespace, adminServerPodName, managedServerPrefix, replicaCount);
+
+    //create router for admin service on OKD
+    String adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
+    logger.info("admin svc host = {0}", adminSvcExtHost);
+
+    checkConfiguredJDBCresouce(domainNamespace, adminServerPodName, adminSvcExtHost);
   }
 
   /**
