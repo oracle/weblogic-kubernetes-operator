@@ -125,7 +125,7 @@ public class FmwUtils {
   public static Domain createIstioDomainResource(
       String domainUid, String domNamespace, String adminSecretName,
       String repoSecretName, String encryptionSecretName, String rcuAccessSecretName,
-      String opssWalletPasswordSecretName, int replicaCount, String miiImage) {
+      String opssWalletPasswordSecretName, int replicaCount, String miiImage, String configmapName) {
     // create the domain CR
     Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
@@ -168,6 +168,7 @@ public class FmwUtils {
                     .walletPasswordSecret(opssWalletPasswordSecretName))
                 .model(new Model()
                     .domainType("JRF")
+                    .configMap(configmapName)
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .addSecretsItem(rcuAccessSecretName)
                 .introspectorJobActiveDeadlineSeconds(600L)));
