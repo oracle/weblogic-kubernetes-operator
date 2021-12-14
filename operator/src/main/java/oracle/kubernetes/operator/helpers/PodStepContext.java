@@ -41,7 +41,6 @@ import io.kubernetes.client.util.Yaml;
 import jakarta.json.Json;
 import jakarta.json.JsonPatchBuilder;
 import oracle.kubernetes.operator.DomainSourceType;
-import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
@@ -75,6 +74,7 @@ import oracle.kubernetes.weblogic.domain.model.Shutdown;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.jetbrains.annotations.NotNull;
 
+import static oracle.kubernetes.operator.DomainStatusUpdater.createKubernetesFailureSteps;
 import static oracle.kubernetes.operator.EventConstants.ROLL_REASON_DOMAIN_RESOURCE_CHANGED;
 import static oracle.kubernetes.operator.EventConstants.ROLL_REASON_WEBLOGIC_CONFIGURATION_CHANGED;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.NUM_CONFIG_MAPS;
@@ -1215,14 +1215,14 @@ public abstract class PodStepContext extends BasePodStepContext {
       if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
         return updateDomainStatus(packet, callResponse);
       } else {
-        return doNext(Step.chain(DomainStatusUpdater.createKubernetesFailureRelatedSteps(callResponse),
+        return doNext(Step.chain(createKubernetesFailureSteps(callResponse),
                 createFailureRelatedAndConflictSteps(conflictStep, callResponse)),
             packet);
       }
     }
 
     private NextAction updateDomainStatus(Packet packet, CallResponse<V1Pod> callResponse) {
-      return doNext(DomainStatusUpdater.createKubernetesFailureRelatedSteps(callResponse), packet);
+      return doNext(createKubernetesFailureSteps(callResponse), packet);
     }
   }
 

@@ -148,7 +148,7 @@ public class DomainStatusUpdater {
    *
    * @param callResponse the response from an unrecoverable call
    */
-  public static Step createKubernetesFailureRelatedSteps(CallResponse<?> callResponse) {
+  public static Step createKubernetesFailureSteps(CallResponse<?> callResponse) {
     FailureStatusSource failure = UnrecoverableErrorBuilder.fromFailedCall(callResponse);
 
     LOGGER.severe(MessageKeys.CALL_FAILED, failure.getMessage(), failure.getReason());
@@ -157,7 +157,7 @@ public class DomainStatusUpdater {
       LOGGER.fine(MessageKeys.EXCEPTION, apiException);
     }
 
-    return createFailureRelatedSteps(Kubernetes, failure.getMessage());
+    return createFailureSteps(Kubernetes, failure.getMessage());
   }
 
   /**
@@ -165,7 +165,7 @@ public class DomainStatusUpdater {
    *
    * @param throwable Throwable that caused failure
    */
-  static Step createInternalFailureRelatedSteps(Throwable throwable, V1Job domainIntrospectorJob) {
+  static Step createInternalFailureSteps(Throwable throwable, V1Job domainIntrospectorJob) {
     String message = throwable.getMessage() == null ? throwable.toString() : throwable.getMessage();
 
     return Step.chain(
@@ -179,8 +179,8 @@ public class DomainStatusUpdater {
    *
    * @param message a fuller description of the problem
    */
-  public static Step createServerPodFailureRelatedSteps(String message) {
-    return createFailureRelatedSteps(ServerPod, message);
+  public static Step createServerPodFailureSteps(String message) {
+    return createFailureSteps(ServerPod, message);
   }
 
   /**
@@ -188,15 +188,15 @@ public class DomainStatusUpdater {
    *
    * @param message a fuller description of the problem
    */
-  public static Step createDomainInvalidFailureRelatedSteps(String message) {
-    return createFailureRelatedSteps(DomainInvalid, message);
+  public static Step createDomainInvalidFailureSteps(String message) {
+    return createFailureSteps(DomainInvalid, message);
   }
 
   /**
    * Asynchronous steps to set Domain condition to Failed and to generate DOMAIN_FAILED event.
    *
    */
-  public static Step createAbortedFailureRelatedSteps() {
+  public static Step createAbortedFailureSteps() {
     return createEventStep(new EventData(DOMAIN_FAILED, INTROSPECTOR_MAX_ERRORS_EXCEEDED).failureReason(Aborted));
   }
 
@@ -206,8 +206,8 @@ public class DomainStatusUpdater {
    *
    * @param message a fuller description of the problem
    */
-  public static Step createTopologyMismatchFailureRelatedSteps(String message) {
-    return createFailureRelatedSteps(TopologyMismatch, message);
+  public static Step createTopologyMismatchFailureSteps(String message) {
+    return createFailureSteps(TopologyMismatch, message);
   }
 
   /**
@@ -216,7 +216,7 @@ public class DomainStatusUpdater {
    * @param reason the failure category
    * @param message a fuller description of the problem
    */
-  public static Step createFailureRelatedSteps(
+  public static Step createFailureSteps(
       @Nonnull DomainFailureReason reason, String message) {
     return Step.chain(
         createFailedStep(reason, message),
@@ -230,8 +230,8 @@ public class DomainStatusUpdater {
    * @param message               a fuller description of the problem
    * @param domainIntrospectorJob Domain introspector job
    */
-  public static Step createIntrospectionFailureRelatedSteps(String message,
-                                                            V1Job domainIntrospectorJob) {
+  public static Step createIntrospectionFailureSteps(String message,
+                                                     V1Job domainIntrospectorJob) {
     return Step.chain(new FailedStep(Introspection, message),
         createFailureCountStep(domainIntrospectorJob),
         createEventStep(new EventData(DOMAIN_FAILED, message).failureReason(Introspection)));
@@ -243,7 +243,7 @@ public class DomainStatusUpdater {
    *
    * @param message a fuller description of the problem
    */
-  public static Step createIntrospectionFailureRelatedSteps(String message) {
+  public static Step createIntrospectionFailureSteps(String message) {
     return
         Step.chain(
             new FailedStep(Introspection, message),
@@ -600,11 +600,9 @@ public class DomainStatusUpdater {
       @Override
       List<EventData> createDomainEvents() {
         Conditions conditions = new Conditions(getCachedNewStatus());
+        conditions.apply();
         List<EventData> list = getRemovedConditionEvents(conditions);
-        list.sort(Comparator.comparing(EventData::getItem));
-        List<EventData> list2 = getNewConditionEvents(conditions);
-        list2.sort(Comparator.comparing(EventData::getItem));
-        list.addAll(list2);
+        list.addAll(getNewConditionEvents(conditions));
         return list;
       }
 
@@ -613,6 +611,7 @@ public class DomainStatusUpdater {
         return conditions.getNewConditions().stream()
             .map(this::toEvent)
             .filter(Objects::nonNull)
+            .sorted(Comparator.comparing(EventData::getItem))
             .collect(Collectors.toList());
       }
 
@@ -620,6 +619,7 @@ public class DomainStatusUpdater {
         return conditions.getRemovedConditions().stream()
             .map(this::toRemovedEvent)
             .filter(Objects::nonNull)
+            .sorted(Comparator.comparing(EventData::getItem))
             .collect(Collectors.toList());
       }
 
