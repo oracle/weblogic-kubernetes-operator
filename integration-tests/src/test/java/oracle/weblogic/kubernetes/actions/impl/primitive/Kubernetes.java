@@ -90,7 +90,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
+import static oracle.weblogic.kubernetes.assertions.impl.Pod.podInitialized;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -434,11 +434,10 @@ public class Kubernetes {
       throws ApiException {
     String log = null;
     testUntil(
-        assertDoesNotThrow(() -> podReady(name, null, namespace),
-            String.format("namespaceExists failed with ApiException for namespace %s", name)),
+        assertDoesNotThrow(() -> podInitialized(name, null, namespace),
+            String.format("check pod %s conditions failed with ApiException for namespace %s", name, namespace)),
         getLogger(),
-        "namespace {0} to be deleted",
-        name);
+        "Pod {0} is Initialized in namespace {1}", name, namespace);
 
     try {
       log = coreV1Api.readNamespacedPodLog(
