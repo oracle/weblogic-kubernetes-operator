@@ -8,6 +8,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -77,10 +78,8 @@ public class WlsDomainConfig implements WlsDomain {
     this.name = name;
     this.adminServerName = adminServerName;
     // set domainConfig for each WlsClusterConfig
-    if (wlsClusterConfigs != null) {
-      for (WlsClusterConfig wlsClusterConfig : this.configuredClusters) {
-        wlsClusterConfig.setWlsDomainConfig(this);
-      }
+    for (WlsClusterConfig wlsClusterConfig : this.configuredClusters) {
+      wlsClusterConfig.setWlsDomainConfig(this);
     }
   }
 
@@ -158,10 +157,6 @@ public class WlsDomainConfig implements WlsDomain {
         wlsMachineConfigs);
   }
 
-  private static String getSearchFields() {
-    return "'name' ";
-  }
-
   /**
    * Parse the json string containing WLS configuration and return a list containing a map of
    * (server attribute name, attribute value).
@@ -175,22 +170,22 @@ public class WlsDomainConfig implements WlsDomain {
     ObjectMapper mapper = new ObjectMapper();
     try {
       ParsedJson parsedJson = new ParsedJson();
-      Map result = mapper.readValue(jsonString, Map.class);
+      Map<String,Object> result = mapper.readValue(jsonString, Map.class);
       parsedJson.domainName = (String) result.get("name");
       parsedJson.adminServerName = (String) result.get("adminServerName");
-      Map servers = (Map<String, Object>) result.get("servers");
+      Map<String,Object> servers = (Map<String, Object>) result.get("servers");
       if (servers != null) {
         parsedJson.servers = (List<Map<String, Object>>) servers.get("items");
       }
-      Map serverTemplates = (Map<String, Object>) result.get("serverTemplates");
+      Map<String,Object> serverTemplates = (Map<String, Object>) result.get("serverTemplates");
       if (serverTemplates != null) {
         parsedJson.serverTemplates = (List<Map<String, Object>>) serverTemplates.get("items");
       }
-      Map clusters = (Map<String, Object>) result.get("clusters");
+      Map<String,Object> clusters = (Map<String, Object>) result.get("clusters");
       if (clusters != null) {
         parsedJson.clusters = (List<Map<String, Object>>) clusters.get("items");
       }
-      Map machines = (Map<String, Object>) result.get("machines");
+      Map<String,Object> machines = (Map<String, Object>) result.get("machines");
       if (machines != null) {
         parsedJson.machines = (List<Map<String, Object>>) machines.get("items");
       }
@@ -255,11 +250,10 @@ public class WlsDomainConfig implements WlsDomain {
   }
 
   /**
-   * Returns configuration of servers found in the WLS domain, including admin server, standalone
-   * managed servers that do not belong to any cluster, and statically configured managed servers
-   * that belong to a cluster. It does not include dynamic servers configured in dynamic clusters.
+   * Returns a map of server names found in the WLS domain to their configurations, including the admin server
+   * and standalone managed servers that do not belong to any cluster. It does not include servers in clusters.
    *
-   * @return A Map of WlsServerConfig, keyed by name, for each server configured the WLS domain
+   * @return A Map of WlsServerConfig, keyed by name, for each server statically configured the WLS domain
    */
   public synchronized Map<String, WlsServerConfig> getServerConfigs() {
     Map<String, WlsServerConfig> serverConfigs = new HashMap<>();
@@ -269,8 +263,27 @@ public class WlsDomainConfig implements WlsDomain {
     return serverConfigs;
   }
 
+  /**
+   * Returns a list of server configurations found in the WLS domain, including the admin server
+   * and standalone managed servers that do not belong to any cluster. It does not include servers in clusters.
+   *
+   * @return A List of WlsServerConfig for each server statically configured the WLS domain
+   */
   public List<WlsServerConfig> getServers() {
     return this.servers;
+  }
+
+  /**
+   * Returns a list of all the server configurations found in the WLS domain, including the admin server
+   * and standalone managed servers, plus servers in clusters.
+   *
+   * @return A List of WlsServerConfig for each server statically configured the WLS domain
+   */
+  public List<WlsServerConfig> getAllServers() {
+    return Stream.concat(
+          servers.stream(),
+          configuredClusters.stream().flatMap(c -> c.getServerConfigs().stream()))
+      .collect(Collectors.toList());
   }
 
   public List<WlsServerConfig> getServerTemplates() {
