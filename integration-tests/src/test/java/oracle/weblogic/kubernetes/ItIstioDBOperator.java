@@ -155,6 +155,8 @@ class ItIstioDBOperator {
   private final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
   private final Path domainLifecycleSamplePath = Paths.get(samplePath + "/scripts/domain-lifecycle");
 
+  private static String hostHeader;
+
   /**
    * Start DB service and create RCU schema.
    * Assigns unique namespaces for operator and domains.
@@ -349,7 +351,8 @@ class ItIstioDBOperator {
 
     String url = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/testwebapp/index.jsp";
     logger.info("Application Access URL {0}", url);
-    boolean checkApp = checkAppUsingHostHeader(url, fmwDomainNamespace + ".org");
+    hostHeader = fmwDomainNamespace + ".org";
+    boolean checkApp = checkAppUsingHostHeader(url, hostHeader);
     assertTrue(checkApp, "Failed to access WebLogic application");
 
     //Verify the dynamic configuration update
@@ -454,6 +457,8 @@ class ItIstioDBOperator {
 
     wlDomainIstioIngressPort = enableIstio("cluster-1", wlsDomainUid, wlsDomainNamespace, wlsAdminServerPodName);
     logger.info("Istio Ingress Port is {0}", wlDomainIstioIngressPort);
+
+    hostHeader = wlsDomainNamespace + ".org";
 
     //Verify JMS/JTA Service migration with File(JDBC) Store
     testMiiJmsJtaServiceMigration();
@@ -625,10 +630,10 @@ class ItIstioDBOperator {
    * @returns true if MBean is found otherwise false
    **/
   private boolean checkJmsServerRuntime(String jmsServer, String managedServer) {
-    ExecResult result = null;
     String hostAndPort = getHostAndPort(adminSvcExtRouteHost, wlDomainIstioIngressPort);
     StringBuffer curlString = new StringBuffer("status=$(curl --user "
-        + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT + " ");
+        + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
+        + " -H 'host: " + hostHeader + " ' ");
     curlString.append("http://" + hostAndPort)
         .append("/management/weblogic/latest/domainRuntime/serverRuntimes/")
         .append(managedServer)
@@ -654,10 +659,10 @@ class ItIstioDBOperator {
    * @returns true if MBean is found otherwise false
    **/
   private boolean checkStoreRuntime(String storeName, String managedServer) {
-    ExecResult result = null;
     String hostAndPort = getHostAndPort(adminSvcExtRouteHost, wlDomainIstioIngressPort);
     StringBuffer curlString = new StringBuffer("status=$(curl --user "
-        + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT + " ");
+        + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT + " "
+        + " -H 'host: " + hostHeader + " ' ");
     curlString.append("http://" + hostAndPort)
         .append("/management/weblogic/latest/domainRuntime/serverRuntimes/")
         .append(managedServer)
@@ -685,10 +690,10 @@ class ItIstioDBOperator {
    * @returns true if MBean is found otherwise false
    **/
   private boolean checkJtaRecoveryServiceRuntime(String managedServer, String recoveryService, String active) {
-    ExecResult result = null;
     String hostAndPort = getHostAndPort(adminSvcExtRouteHost, wlDomainIstioIngressPort);
     StringBuffer curlString = new StringBuffer("curl --user "
-        + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT + " ");
+        + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
+        + " -H 'host: " + hostHeader + " ' ");
     curlString.append("\"http://" + hostAndPort)
         .append("/management/weblogic/latest/domainRuntime/serverRuntimes/")
         .append(managedServer)
