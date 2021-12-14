@@ -235,7 +235,7 @@ class ItProductionSecureMode {
     String adminSvcSslPortExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName),
                     domainNamespace, "admin-server-sslport-ext");
     setTlsTerminationForRoute("admin-server-sslport-ext", domainNamespace);
-    setTargetPortForRoute("domain1-admin-server-sslport-ext", domainNamespace, defaultAdminSecurePort);
+    setTargetPortForRoute("admin-server-sslport-ext", domainNamespace, defaultAdminSecurePort);
     String hostAndPort = getHostAndPort(adminSvcSslPortExtHost, defaultAdminPort);
     logger.info("The hostAndPort is {0}", hostAndPort);
 
