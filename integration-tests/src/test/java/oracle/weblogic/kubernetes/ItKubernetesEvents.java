@@ -389,8 +389,8 @@ class ItKubernetesEvents {
   @Order(5)
   @Test
   void testK8SEventsMultiClusterEvents() {
-    createNewCluster();
     OffsetDateTime timestamp = now();
+    createNewCluster();
     scaleClusterWithRestApi(domainUid, cluster2Name, 1,
         externalRestHttpsPort, opNamespace, opServiceAccount);
     logger.info("verify the Domain_Available event is generated");
