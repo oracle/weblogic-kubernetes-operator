@@ -722,7 +722,7 @@ function checkAuxiliaryImage() {
     rm -f ${AUXILIARY_IMAGE_PATH}/testaccess.tmp || return 1
 
     # The container .out files embed their container name, the names will sort in the same order in which the containers ran
-    out_files=$(set -o pipefail ; ls -1 $AUXILIARY_IMAGE_PATH/auxiliaryImageLogs/*.out 2>&1 | sort --version-sort) \
+    out_files=$(set -o pipefail ; ls -1 $AUXILIARY_IMAGE_PATH/auxiliaryImageLogs/*.out > /dev/null 2>&1 | sort --version-sort) \
       || (trace SEVERE "Auxiliary Image: Assertion failure. No files found in '$AUXILIARY_IMAGE_PATH/auxiliaryImageLogs/*.out" \
       && return 1)
     severe_found=false
@@ -742,7 +742,6 @@ function checkAuxiliaryImage() {
       trace "Auxiliary Image: End of '${out_file}' contents"
     done
     [ "${severe_found}" = "true" ] && return 1
-    rm -fr $AUXILIARY_IMAGE_PATH/auxiliaryImageLogs
     [ -z "$(ls -A $AUXILIARY_IMAGE_PATH)" ] \
       && trace SEVERE "Auxiliary Image: No files found in '$AUXILIARY_IMAGE_PATH'. " \
        "Do your auxiliary images have files in their '$AUXILIARY_IMAGE_PATH' directories? " \
