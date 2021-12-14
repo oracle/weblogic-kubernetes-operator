@@ -859,7 +859,7 @@ public class DomainStatusUpdater {
       }
 
       private void updateStatusDetails(DomainStatus status) {
-        new StatusDetailsUpdate(status).updateStatusDetails(status);
+        new StatusDetailsUpdate(status).updateStatusDetails();
       }
 
       private class StatusDetailsUpdate {
@@ -923,7 +923,7 @@ public class DomainStatusUpdater {
               .orElse(null);
         }
 
-        private void updateStatusDetails(DomainStatus status) {
+        private void updateStatusDetails() {
           status.getServers().forEach(this::updateServerStatus);
           status.getClusters().forEach(this::updateClusterStatus);
           status.setReplicas(getReplicaSetting());
