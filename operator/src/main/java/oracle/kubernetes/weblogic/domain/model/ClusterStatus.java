@@ -113,7 +113,7 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
     return this;
   }
 
-  Integer getMaximumReplicas() {
+  public Integer getMaximumReplicas() {
     return maximumReplicas;
   }
 
@@ -122,7 +122,7 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
     return this;
   }
 
-  Integer getMinimumReplicas() {
+  public Integer getMinimumReplicas() {
     return minimumReplicas;
   }
 
@@ -131,7 +131,7 @@ public class ClusterStatus implements Comparable<ClusterStatus>, PatchableCompon
     return this;
   }
 
-  Integer getReplicasGoal() {
+  public Integer getReplicasGoal() {
     return replicasGoal;
   }
 
