@@ -51,7 +51,6 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
-import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
@@ -87,7 +86,6 @@ import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyDomainReady;
-import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyEMconsoleAccess;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
@@ -149,6 +147,7 @@ class ItIstioDBOperator {
   private static String pvcName = wlsDomainUid + "-pvc";
   private static final String wlsAdminServerPodName = wlsDomainUid + "-admin-server";
   private static final String wlsManagedServerPrefix = wlsDomainUid + "-managed-server";
+  private static int wlDomainIstioIngressPort;
   private static String cpUrl;
   private static String adminSvcExtRouteHost = null;
 
@@ -277,38 +276,9 @@ class ItIstioDBOperator {
     createDomainAndVerify(domain, fmwDomainNamespace);
 
     verifyDomainReady(fmwDomainNamespace, fmwDomainUid, replicaCount);
-    // Expose the admin service external node port as  a route for OKD
-    adminSvcExtHost = createRouteForOKD(getExternalServicePodName(fmwAdminServerPodName), fmwDomainNamespace);
-    verifyEMconsoleAccess(fmwDomainNamespace, fmwDomainUid, adminSvcExtHost);
 
     String clusterName = "cluster-1";
-    String clusterService = fmwDomainUid + "-cluster-" + clusterName + "." + fmwDomainNamespace + ".svc.cluster.local";
-
-    Map<String, String> templateMap  = new HashMap();
-    templateMap.put("NAMESPACE", fmwDomainNamespace);
-    templateMap.put("DUID", fmwDomainUid);
-    templateMap.put("ADMIN_SERVICE",fmwAdminServerPodName);
-    templateMap.put("CLUSTER_SERVICE", clusterService);
-
-    Path srcHttpFile = Paths.get(RESOURCE_DIR, "istio", "istio-http-template.yaml");
-    Path targetHttpFile = assertDoesNotThrow(
-        () -> generateFileFromTemplate(srcHttpFile.toString(), "istio-http.yaml", templateMap));
-    logger.info("Generated Http VS/Gateway file path is {0}", targetHttpFile);
-
-    boolean deployRes = assertDoesNotThrow(
-        () -> deployHttpIstioGatewayAndVirtualservice(targetHttpFile));
-    assertTrue(deployRes, "Failed to deploy Http Istio Gateway/VirtualService");
-
-    Path srcDrFile = Paths.get(RESOURCE_DIR, "istio", "istio-dr-template.yaml");
-    Path targetDrFile = assertDoesNotThrow(
-        () -> generateFileFromTemplate(srcDrFile.toString(), "istio-dr.yaml", templateMap));
-    logger.info("Generated DestinationRule file path is {0}", targetDrFile);
-
-    deployRes = assertDoesNotThrow(
-        () -> deployIstioDestinationRule(targetDrFile));
-    assertTrue(deployRes, "Failed to deploy Istio DestinationRule");
-
-    int istioIngressPort = getIstioHttpIngressPort();
+    int istioIngressPort = enableIstio(clusterName, fmwDomainUid, fmwDomainNamespace, fmwAdminServerPodName);
     logger.info("Istio Ingress Port is {0}", istioIngressPort);
 
     // We can not verify Rest Management console thru Adminstration NodePort
@@ -476,6 +446,7 @@ class ItIstioDBOperator {
     logger.info("Check admin service and pod {0} is created in namespace {1}",
         wlsAdminServerPodName, wlsDomainNamespace);
     checkPodReadyAndServiceExists(wlsAdminServerPodName, wlsDomainUid, wlsDomainNamespace);
+
     adminSvcExtRouteHost = createRouteForOKD(getExternalServicePodName(wlsAdminServerPodName), wlsDomainNamespace);
     // create the required leasing table 'ACTIVE' before we start the cluster
     createLeasingTable(wlsAdminServerPodName, wlsDomainNamespace, dbUrl);
@@ -485,6 +456,9 @@ class ItIstioDBOperator {
           wlsDomainNamespace);
       checkPodReadyAndServiceExists(wlsManagedServerPrefix + i, wlsDomainUid, wlsDomainNamespace);
     }
+
+    wlDomainIstioIngressPort = enableIstio("cluster-1", wlsDomainUid, wlsDomainNamespace, wlsAdminServerPodName);
+    logger.info("Istio Ingress Port is {0}", wlDomainIstioIngressPort);
 
     //Verify JMS/JTA Service migration with File(JDBC) Store
     testMiiJmsJtaServiceMigration();
@@ -657,9 +631,7 @@ class ItIstioDBOperator {
    **/
   private boolean checkJmsServerRuntime(String jmsServer, String managedServer) {
     ExecResult result = null;
-    int adminServiceNodePort
-        = getServiceNodePort(wlsDomainNamespace, getExternalServicePodName(wlsAdminServerPodName), "default");
-    String hostAndPort = getHostAndPort(adminSvcExtRouteHost, adminServiceNodePort);
+    String hostAndPort = getHostAndPort(adminSvcExtRouteHost, wlDomainIstioIngressPort);
     StringBuffer curlString = new StringBuffer("status=$(curl --user "
         + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT + " ");
     curlString.append("http://" + hostAndPort)
@@ -688,9 +660,7 @@ class ItIstioDBOperator {
    **/
   private boolean checkStoreRuntime(String storeName, String managedServer) {
     ExecResult result = null;
-    int adminServiceNodePort
-        = getServiceNodePort(wlsDomainNamespace, getExternalServicePodName(wlsAdminServerPodName), "default");
-    String hostAndPort = getHostAndPort(adminSvcExtRouteHost, adminServiceNodePort);
+    String hostAndPort = getHostAndPort(adminSvcExtRouteHost, wlDomainIstioIngressPort);
     StringBuffer curlString = new StringBuffer("status=$(curl --user "
         + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT + " ");
     curlString.append("http://" + hostAndPort)
@@ -721,9 +691,7 @@ class ItIstioDBOperator {
    **/
   private boolean checkJtaRecoveryServiceRuntime(String managedServer, String recoveryService, String active) {
     ExecResult result = null;
-    int adminServiceNodePort
-        = getServiceNodePort(wlsDomainNamespace, getExternalServicePodName(wlsAdminServerPodName), "default");
-    String hostAndPort = getHostAndPort(adminSvcExtRouteHost, adminServiceNodePort);
+    String hostAndPort = getHostAndPort(adminSvcExtRouteHost, wlDomainIstioIngressPort);
     StringBuffer curlString = new StringBuffer("curl --user "
         + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT + " ");
     curlString.append("\"http://" + hostAndPort)
@@ -870,4 +838,37 @@ class ItIstioDBOperator {
     return patchDomainCustomResource(fmwDomainUid, fmwDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
   }
 
+  private int enableIstio(String clusterName, String domainUid, String namespace, String adminServerPodName) {
+
+    String clusterService = domainUid + "-cluster-" + clusterName + "." + namespace + ".svc.cluster.local";
+
+    Map<String, String> templateMap = new HashMap();
+    templateMap.put("NAMESPACE", namespace);
+    templateMap.put("DUID", domainUid);
+    templateMap.put("ADMIN_SERVICE", adminServerPodName);
+    templateMap.put("CLUSTER_SERVICE", clusterService);
+
+    Path srcHttpFile = Paths.get(RESOURCE_DIR, "istio", "istio-http-template.yaml");
+    Path targetHttpFile = assertDoesNotThrow(
+        () -> generateFileFromTemplate(srcHttpFile.toString(), "istio-http.yaml", templateMap));
+    logger.info("Generated Http VS/Gateway file path is {0}", targetHttpFile);
+
+    boolean deployRes = assertDoesNotThrow(
+        () -> deployHttpIstioGatewayAndVirtualservice(targetHttpFile));
+    assertTrue(deployRes, "Failed to deploy Http Istio Gateway/VirtualService");
+
+    Path srcDrFile = Paths.get(RESOURCE_DIR, "istio", "istio-dr-template.yaml");
+    Path targetDrFile = assertDoesNotThrow(
+        () -> generateFileFromTemplate(srcDrFile.toString(), "istio-dr.yaml", templateMap));
+    logger.info("Generated DestinationRule file path is {0}", targetDrFile);
+
+    deployRes = assertDoesNotThrow(
+        () -> deployIstioDestinationRule(targetDrFile));
+    assertTrue(deployRes, "Failed to deploy Istio DestinationRule");
+
+    int istioIngressPort = getIstioHttpIngressPort();
+    logger.info("Istio Ingress Port is {0}", istioIngressPort);
+    return istioIngressPort;
+
+  }
 }
