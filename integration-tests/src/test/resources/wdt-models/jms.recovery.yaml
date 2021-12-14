@@ -9,6 +9,10 @@ topology:
     ServerTemplate:
         "cluster-1-template":
             Cluster: 'cluster-1'
+            TransactionLogJDBCStore:
+               DataSource: "TlogDataSource"
+               PrefixName: "TLOG${id}"
+               Enabled: true
             JTAMigratableTarget:
                 Cluster: 'cluster-1'
                 MigrationPolicy: 'shutdown-recovery'
@@ -86,6 +90,24 @@ resources:
                     GlobalTransactionsProtocol: OnePhaseCommit
                     RowPrefetchSize: 200
                     JNDIName: jdbc/StoreDataSource
+                JDBCDriverParams:
+                    URL: '@@SECRET:@@ENV:DOMAIN_UID@@-db-secret:url@@'
+                    PasswordEncrypted: '@@SECRET:@@ENV:DOMAIN_UID@@-db-secret:password@@'
+                    DriverName: oracle.jdbc.OracleDriver
+                    Properties:
+                        user:
+                            Value: '@@SECRET:@@ENV:DOMAIN_UID@@-db-secret:username@@'
+        TlogDataSource:
+            Target: 'cluster-1'
+            JdbcResource:
+                JDBCConnectionPoolParams:
+                    InitialCapacity: 0
+                    MinCapacity: 0
+                    MaxCapacity: 15
+                JDBCDataSourceParams:
+                    GlobalTransactionsProtocol: OnePhaseCommit
+                    RowPrefetchSize: 200
+                    JNDIName: jdbc/TlogDataSource
                 JDBCDriverParams:
                     URL: '@@SECRET:@@ENV:DOMAIN_UID@@-db-secret:url@@'
                     PasswordEncrypted: '@@SECRET:@@ENV:DOMAIN_UID@@-db-secret:password@@'
