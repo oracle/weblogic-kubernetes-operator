@@ -240,4 +240,24 @@ public abstract class ResponseStep<T> extends Step {
   public NextAction onSuccess(Packet packet, CallResponse<T> callResponse) {
     throw new IllegalStateException("Must be overridden, if called");
   }
+
+  protected Step createFailureRelatedAndConflictSteps(
+      Step conflictStep, CallResponse<T> callResponse) {
+    return new CreateFailureRelatedAndConflictSteps(conflictStep, callResponse);
+  }
+
+  private class CreateFailureRelatedAndConflictSteps extends Step {
+    private final Step conflictStep;
+    private final CallResponse<T> callResponse;
+
+    public CreateFailureRelatedAndConflictSteps(Step conflictStep, CallResponse<T> callResponse) {
+      this.conflictStep = conflictStep;
+      this.callResponse = callResponse;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      return onFailure(conflictStep, packet, callResponse);
+    }
+  }
 }

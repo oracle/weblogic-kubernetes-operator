@@ -28,6 +28,7 @@ import static oracle.kubernetes.operator.DomainStatusUpdater.createInternalFailu
 import static oracle.kubernetes.operator.DomainStatusUpdater.createIntrospectionFailureRelatedSteps;
 import static oracle.kubernetes.operator.EventConstants.ABORTED_ERROR;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.INTERNAL_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.EVENT;
@@ -99,6 +100,20 @@ class DomainStatusUpdaterTest {
   }
 
   @Test
+  void whenDomainLacksStatus_generateFailedEvent() {
+    domain.setStatus(null);
+
+    testSupport.runSteps(createInternalFailureRelatedSteps(failure,
+        testSupport.getPacket().getValue(DOMAIN_INTROSPECTOR_JOB)));
+
+    assertThat(getEvents().stream().anyMatch(this::isInternalFailedEvent), is(true));
+  }
+
+  private boolean isInternalFailedEvent(CoreV1Event e) {
+    return DOMAIN_FAILED_EVENT.equals(e.getReason()) && e.getMessage().contains(INTERNAL_ERROR);
+  }
+
+  @Test
   void whenDomainStatusIsNull_removeFailuresStepDoesNothing() {
     domain.setStatus(null);
 
@@ -121,9 +136,7 @@ class DomainStatusUpdaterTest {
     testSupport.runSteps(createInternalFailureRelatedSteps(failure,
         testSupport.getPacket().getValue(DOMAIN_INTROSPECTOR_JOB)));
 
-    assertThat(
-          getRecordedDomain(),
-        hasCondition(Failed).withStatus(TRUE).withReason(Internal).withMessageContaining(message));
+    assertThat(getEvents().stream().anyMatch(this::isInternalFailedEvent), is(true));
   }
 
   @Test

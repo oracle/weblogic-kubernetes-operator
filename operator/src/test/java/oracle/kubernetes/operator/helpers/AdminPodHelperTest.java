@@ -30,6 +30,7 @@ import static oracle.kubernetes.operator.DomainFailureReason.DomainInvalid;
 import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
 import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_INVALID_ERROR;
+import static oracle.kubernetes.operator.EventConstants.KUBERNETES_ERROR;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAUTHORIZED;
@@ -220,6 +221,22 @@ class AdminPodHelperTest extends PodHelperTestBase {
 
     assertThat(getDomain(),
           hasStatus().withReason(Kubernetes).withMessageContaining("create", "pod", NS));
+  }
+
+  @Test
+  void whenAdminPodReplacementFails_generateFailedEvent() {
+    testSupport.addRetryStrategy(retryStrategy);
+    initializeExistingPod(getIncompatiblePod());
+    testSupport.failOnCreate(KubernetesTestSupport.POD, NS, HTTP_INTERNAL_ERROR);
+
+    FiberTestSupport.StepFactory stepFactory = getStepFactory();
+    Step initialStep = stepFactory.createStepList(terminalStep);
+    testSupport.runSteps(initialStep);
+
+    assertThat(
+        "Expected Event " + DOMAIN_FAILED + " expected with message not found",
+        getExpectedEventMessage(DOMAIN_FAILED),
+        stringContainsInOrder("Domain", UID, "failed due to", KUBERNETES_ERROR));
   }
 
   @Test

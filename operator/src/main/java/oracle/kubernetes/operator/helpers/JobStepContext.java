@@ -44,6 +44,7 @@ import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImageEnvVars;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
 import oracle.kubernetes.weblogic.domain.model.Istio;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
@@ -316,7 +317,7 @@ public class JobStepContext extends BasePodStepContext {
 
   private Integer getIntrospectJobFailureCount() {
     return Optional.ofNullable(info.getDomain().getStatus())
-            .map(s -> s.getIntrospectJobFailureCount()).orElse(0);
+            .map(DomainStatus::getIntrospectJobFailureCount).orElse(0);
   }
 
   V1JobSpec createJobSpec(TuningParameters tuningParameters) {
@@ -719,7 +720,9 @@ public class JobStepContext extends BasePodStepContext {
       if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
         return updateDomainStatus(packet, callResponse);
       } else {
-        return onFailure(conflictStep, packet, callResponse);
+        return doNext(Step.chain(DomainStatusUpdater.createKubernetesFailureRelatedSteps(callResponse),
+            createFailureRelatedAndConflictSteps(conflictStep, callResponse)),
+            packet);
       }
     }
 
@@ -736,6 +739,7 @@ public class JobStepContext extends BasePodStepContext {
       }
       return doNext(packet);
     }
+
   }
 
   private V1ConfigMapVolumeSource getWdtConfigMapVolumeSource(String name) {

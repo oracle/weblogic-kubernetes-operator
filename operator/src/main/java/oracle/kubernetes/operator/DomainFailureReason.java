@@ -45,17 +45,6 @@ public enum DomainFailureReason {
       return EventConstants.KUBERNETES_ERROR_SUGGESTION;
     }
   },
-  KubernetesAPI {
-    @Override
-    public String getEventError() {
-      return EventConstants.KUBERNETES_ERROR;
-    }
-
-    @Override
-    public String getEventSuggestion(DomainPresenceInfo info) {
-      return EventConstants.KUBERNETES_ERROR_SUGGESTION;
-    }
-  },
   ServerPod {
     @Override
     public String getEventError() {

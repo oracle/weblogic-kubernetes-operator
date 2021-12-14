@@ -16,6 +16,9 @@ import oracle.kubernetes.operator.helpers.EventHelper;
 import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 
+import static oracle.kubernetes.operator.EventConstants.ABORTED_ERROR;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.INTERNAL_ERROR;
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
 
 public class EventTestUtils {
@@ -167,6 +170,22 @@ public class EventTestUtils {
     return eventsMatchReason.stream().allMatch(e -> countMatches(e, 1)) && eventsMatchReason.size() == eventsCount;
   }
 
+  /**
+   * Get the message of an expected event.
+   *
+   * @param testSupport the instance of KubernetesTestSupport
+   * @param event  expected event
+   * @return message 
+   */
+  public static String getExpectedEventMessage(KubernetesTestSupport testSupport, EventHelper.EventItem event) {
+    List<CoreV1Event> events = getEventsWithReason(getEvents(testSupport), event.getReason());
+    return Optional.ofNullable(events)
+        .filter(list -> list.size() != 0)
+        .map(n -> n.get(0))
+        .map(CoreV1Event::getMessage)
+        .orElse("Event not found");
+  }
+
   public static List<CoreV1Event> getEvents(KubernetesTestSupport testSupport) {
     return testSupport.getResources(KubernetesTestSupport.EVENT);
   }
@@ -268,5 +287,13 @@ public class EventTestUtils {
 
   public static int getNumberOfEvents(List<CoreV1Event> events, String reason) {
     return getEventsWithReason(events, reason).size();
+  }
+
+  public static boolean isDomainFailedAbortedEvent(CoreV1Event e) {
+    return DOMAIN_FAILED_EVENT.equals(e.getReason()) && e.getMessage().contains(ABORTED_ERROR);
+  }
+
+  public static boolean isDomainInternalFailedEvent(CoreV1Event e) {
+    return DOMAIN_FAILED_EVENT.equals(e.getReason()) && e.getMessage().contains(INTERNAL_ERROR);
   }
 }
