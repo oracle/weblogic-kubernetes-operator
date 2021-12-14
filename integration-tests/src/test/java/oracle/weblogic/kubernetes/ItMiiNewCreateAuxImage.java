@@ -23,9 +23,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.nio.file.Files.readAllLines;
 import static java.nio.file.Paths.get;
@@ -79,7 +77,6 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Test to create model in image domain using auxiliary image with new createAuxImage command")
-@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @IntegrationTest
 class ItMiiNewCreateAuxImage {
 
@@ -114,7 +111,7 @@ class ItMiiNewCreateAuxImage {
     assertNotNull(namespaces.get(0), "Namespace list is null");
     opNamespace = namespaces.get(0);
 
-    logger.info("Creating unique namespace for Domain1");
+    logger.info("Creating unique namespace for domain");
     assertNotNull(namespaces.get(1), "Namespace list is null");
     domainNamespace = namespaces.get(1);
 
@@ -128,8 +125,7 @@ class ItMiiNewCreateAuxImage {
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
     adminSecretName = "weblogic-credentials";
-    createSecretWithUsernamePassword(adminSecretName, domainNamespace,
-        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+    createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create encryption secret
     logger.info("Create encryption secret");
@@ -144,13 +140,12 @@ class ItMiiNewCreateAuxImage {
         String.format("Failed to create app archive for %s", MII_BASIC_APP_NAME));
   }
 
-
   /**
-   * Create a domain using auxiliary images. Use the default options when createAuxImage.
+   * Create a domain using auxiliary images. Create auxiliary image using default options.
    * Verify the domain is running and JMS resource is added.
    */
   @Test
-  @DisplayName("Test to create domain using auxiliary image with default options")
+  @DisplayName("Test to create domain using createAuxImage with default options")
   void testCreateDomainUsingAuxImageDefaultOptions() {
 
     // admin/managed server name here should match with model yaml
@@ -174,7 +169,7 @@ class ItMiiNewCreateAuxImage {
       logger.info("!!!! auxiliary image {0}:{1} exists !!!!", miiAuxiliaryImage1, MII_BASIC_IMAGE_TAG);
     }
 
-    // push image1 to repo for multi node cluster
+    // push auximage1 to repo for multi node cluster
     if (!DOMAIN_IMAGES_REPO.isEmpty()) {
       logger.info("docker push image {0}:{1} to registry {2}", miiAuxiliaryImage1, MII_BASIC_IMAGE_TAG,
           DOMAIN_IMAGES_REPO);
@@ -221,7 +216,7 @@ class ItMiiNewCreateAuxImage {
 
   /**
    * Create a domain with auxiliary image. Create the auxiliary image using customized options.
-   * Verify the domain is up and running.
+   * Verify the domain is up and running. Also check JDBC resources and WDT version.
    */
   @Test
   @DisplayName("Test to create domain using auxiliary image with customized options")
@@ -506,6 +501,10 @@ class ItMiiNewCreateAuxImage {
 
       if (miiAuxiliaryImage2 != null) {
         deleteImage(miiAuxiliaryImage2);
+      }
+
+      if (miiAuxiliaryImage3 != null) {
+        deleteImage(miiAuxiliaryImage3);
       }
     }
   }
