@@ -6,11 +6,9 @@ package oracle.weblogic.kubernetes;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.time.OffsetDateTime;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -52,7 +50,6 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
-import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
@@ -61,10 +58,6 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDatabase
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResourceWithLogHome;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainSecret;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createJobToChangePermissionsOnPvHostPath;
-import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.replaceConfigMapWithModelFiles;
-import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyIntrospectorRuns;
-import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodIntrospectVersionUpdated;
-import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.isWebLogicPsuPatchApplied;
@@ -73,7 +66,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runJavacInsidePod
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.startPortForwardProcess;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.stopPortForwardProcess;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createOracleDBUsingOperator;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuAccessSecret;
@@ -101,7 +93,6 @@ import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
-import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createOpsswalletpasswordSecret;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -354,36 +345,6 @@ class ItIstioDBOperator {
     hostHeader = fmwDomainNamespace + ".org";
     boolean checkApp = checkAppUsingHostHeader(url, hostHeader);
     assertTrue(checkApp, "Failed to access WebLogic application");
-
-    //Verify the dynamic configuration update
-    LinkedHashMap<String, OffsetDateTime> pods = new LinkedHashMap<>();
-    // get the creation time of the admin server pod before patching
-    pods.put(fmwAdminServerPodName, getPodCreationTime(fmwDomainNamespace, fmwAdminServerPodName));
-    // get the creation time of the managed server pods before patching
-    for (int i = 1; i <= replicaCount; i++) {
-      pods.put(fmwManagedServerPrefix + i, getPodCreationTime(fmwDomainNamespace, fmwManagedServerPrefix + i));
-    }
-
-    replaceConfigMapWithModelFiles(configMapName, fmwDomainUid, fmwDomainNamespace,
-        Arrays.asList(MODEL_DIR + "/model.config.wm.yaml"), withStandardRetryPolicy);
-
-    String introspectVersion = patchDomainResourceWithNewIntrospectVersion(fmwDomainUid, fmwDomainNamespace);
-
-    verifyIntrospectorRuns(fmwDomainUid, fmwDomainNamespace);
-
-    String wmRuntimeUrl  = "http://" + K8S_NODEPORT_HOST + ":"
-           + istioIngressPort + "/management/weblogic/latest/domainRuntime"
-           + "/serverRuntimes/managed-server1/applicationRuntimes"
-           + "/testwebapp/workManagerRuntimes/newWM/"
-           + "maxThreadsConstraintRuntime ";
-
-    boolean checkWm =
-          checkAppUsingHostHeader(wmRuntimeUrl, fmwDomainNamespace + ".org");
-    assertTrue(checkWm, "Failed to access WorkManagerRuntime");
-    logger.info("Found new work manager runtime");
-
-    verifyPodsNotRolled(fmwDomainNamespace, pods);
-    verifyPodIntrospectVersionUpdated(pods.keySet(), introspectVersion, fmwDomainNamespace);
   }
 
   /**
