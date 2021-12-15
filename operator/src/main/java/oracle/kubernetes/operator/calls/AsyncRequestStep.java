@@ -241,8 +241,7 @@ public class AsyncRequestStep<T> extends Step implements RetryStrategyListener {
     }
 
     private void updateFailureStatus(@Nonnull Domain domain, ApiException apiException) {
-      final var condition
-          = new DomainCondition(Failed).withReason(Kubernetes).withMessage(createMessage(apiException));
+      final var condition = new DomainCondition(Failed).withReason(Kubernetes).withMessage(createMessage(apiException));
       if (recordedFailure == null) {
         addFailureStatus(domain, condition);
       } else if (!recordedFailure.equals(condition)) {

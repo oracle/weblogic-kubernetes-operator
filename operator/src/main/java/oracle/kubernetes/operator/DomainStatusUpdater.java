@@ -238,7 +238,7 @@ public class DomainStatusUpdater {
   }
 
   /**
-   * Asynchronous steps to set Domain condition to Failed, increment the introspector failure count if needed
+   * Asynchronous steps to set Domain condition to Failed, will not increment the introspector failure count
    * and to generate DOMAIN_FAILED event.
    *
    * @param message a fuller description of the problem
@@ -1115,8 +1115,8 @@ public class DomainStatusUpdater {
     /**
      * Creates a factory to create a DomainStatus object, initialized with state from the configuration.
      *
-     * @param domain                  an operator domain resource
-     * @param domainConfig            a WebLogic domain configuration
+     * @param domain an operator domain resource
+     * @param domainConfig a WebLogic domain configuration
      * @param isServerConfiguredToRun returns true if the named server is configured to start
      */
     public DomainStatusFactory(@Nonnull Domain domain,
