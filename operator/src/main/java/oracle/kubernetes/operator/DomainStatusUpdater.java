@@ -411,6 +411,9 @@ public class DomainStatusUpdater {
     }
 
     DomainStatus getCachedNewStatus() {
+      if (newStatus == null) {
+        return getNewStatus();
+      }
       return newStatus;
     }
 
