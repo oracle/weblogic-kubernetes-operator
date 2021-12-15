@@ -1215,7 +1215,7 @@ public abstract class PodStepContext extends BasePodStepContext {
       if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
         return updateDomainStatus(packet, callResponse);
       } else {
-        return getNextFailureAction(conflictStep, packet, callResponse);
+        return onFailure(conflictStep, packet, callResponse);
       }
     }
 
