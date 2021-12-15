@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
@@ -36,6 +37,8 @@ public class IntrospectionStatus {
   private static final String K8S_POD_UNSCHEDULABLE = "Unschedulable";
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
+  public static final String ERR_IMAGE_PULL = "ErrImagePull";
+  public static final String IMAGE_PULL_BACK_OFF = "ImagePullBackOff";
 
   static V1ContainerStatus getIntrospectorStatus(@Nonnull V1Pod pod) {
     final String introspectorName = toJobIntrospectorName(getPodDomainUid(pod));
@@ -51,7 +54,8 @@ public class IntrospectionStatus {
   @Nullable
   static Step createStatusUpdateSteps(@Nonnull V1Pod pod) {
     final String terminatedErrorMessage = getTerminatedMessage(pod);
-    final String waitingMessage = getWaitingMessage(pod);
+    final String waitingMessage = getWaitingMessageFromStatus(pod);
+    final String initContainerWaitingMessages = getInitContainerWaitingMessages(pod);
 
     if (FailedPhase.inFailedPhase(pod)) {
       return new FailedPhase(pod).createStatusUpdateSteps();
@@ -63,6 +67,8 @@ public class IntrospectionStatus {
       return new SelectedMessage(pod, terminatedErrorMessage, true).createStatusUpdateSteps();
     } else if (waitingMessage != null) {
       return new SelectedMessage(pod, waitingMessage, false).createStatusUpdateSteps();
+    } else if (initContainerWaitingMessages != null) {
+      return new SelectedMessage(pod, initContainerWaitingMessages, false).createStatusUpdateSteps();
     } else {
       return DomainStatusUpdater.createRemoveFailuresStep();
     }
@@ -76,12 +82,43 @@ public class IntrospectionStatus {
           .orElse(null);
   }
 
-  private static String getWaitingMessage(@Nonnull V1Pod pod) {
-    return Optional.ofNullable(getIntrospectorStatus(pod))
-          .map(V1ContainerStatus::getState)
-          .map(V1ContainerState::getWaiting)
-          .map(V1ContainerStateWaiting::getMessage)
+  private static String getWaitingMessageFromStatus(@Nonnull V1Pod pod) {
+    return Optional.ofNullable(getWaitingMessageFromStatus(getIntrospectorStatus(pod)))
           .orElse(null);
+  }
+
+  private static String getWaitingMessageFromStatus(V1ContainerStatus status) {
+    return Optional.ofNullable(status)
+            .map(V1ContainerStatus::getState)
+            .map(V1ContainerState::getWaiting)
+            .map(V1ContainerStateWaiting::getMessage)
+            .orElse(null);
+  }
+
+  private static String getInitContainerWaitingMessages(@Nonnull V1Pod pod) {
+    List<String> waitingMessages = new ArrayList<>();
+
+    Optional.ofNullable(getInitContainerStatuses(pod)).orElse(emptyList()).stream()
+            .filter(status -> isImagePullError(getWaitingReason(status)))
+            .forEach(status -> waitingMessages.add(getWaitingMessageFromStatus(status)));
+
+    return waitingMessages.isEmpty() ? null : String.join(System.lineSeparator(), waitingMessages);
+  }
+
+  private static List<V1ContainerStatus> getInitContainerStatuses(@Nonnull V1Pod pod) {
+    return Optional.ofNullable(pod.getStatus()).map(V1PodStatus::getInitContainerStatuses).orElse(null);
+  }
+
+  public static boolean isImagePullError(String reason) {
+    return ERR_IMAGE_PULL.equals(reason) || IMAGE_PULL_BACK_OFF.equals(reason);
+  }
+
+  private static String getWaitingReason(V1ContainerStatus status) {
+    return Optional.ofNullable(status)
+            .map(V1ContainerStatus::getState)
+            .map(V1ContainerState::getWaiting)
+            .map(V1ContainerStateWaiting::getReason)
+            .orElse(null);
   }
 
   private static boolean isReady(@Nonnull V1Pod pod) {

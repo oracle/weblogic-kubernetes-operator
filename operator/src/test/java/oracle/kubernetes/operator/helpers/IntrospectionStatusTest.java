@@ -184,6 +184,14 @@ class IntrospectionStatusTest {
   }
 
   @Test
+  void whenPodHasInitContainerImagePullErrorWaitingMessage_updateDomainStatus() {
+    final String message = getMessage();
+    createPodAddedEvent().withInitContainerWaitingState(IMAGE_PULL_FAILURE, message).dispatch(processor);
+
+    assertThat(getDomain(), hasStatus().withReason("ServerPod").withMessageContaining(JOB_NAME, NS, message));
+  }
+
+  @Test
   void whenNewIntrospectorJobPodCreatedWithNullWaitingMessage_dontUpdateDomainStatus() {
     createPodAddedEvent().withWaitingState(IMAGE_PULL_BACKOFF, null).dispatch(processor);
 
@@ -327,6 +335,10 @@ class IntrospectionStatusTest {
       return withContainerState(false, createWaitingState(reason, message));
     }
 
+    IntrospectorJobPodBuilder withInitContainerWaitingState(String reason, String message) {
+      return withInitContainerState(false, createWaitingState(reason, message));
+    }
+
     IntrospectorJobPodBuilder withTerminatedState(String message) {
       return withContainerState(false, createTerminatedState("Error", message));
     }
@@ -343,6 +355,16 @@ class IntrospectionStatusTest {
             .withReady(ready)
             .withState(containerState)
             .endContainerStatus();
+      return this;
+    }
+
+    private IntrospectorJobPodBuilder withInitContainerState(boolean ready, V1ContainerState containerState) {
+      builder.addNewInitContainerStatus()
+              .withImage(IMAGE_NAME)
+              .withName(JOB_NAME)
+              .withReady(ready)
+              .withState(containerState)
+              .endInitContainerStatus();
       return this;
     }
 

@@ -9,7 +9,7 @@ import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 
-import static oracle.kubernetes.operator.EventConstants.WILL_RETRY_SECONDS;
+import static oracle.kubernetes.operator.EventConstants.WILL_RETRY;
 
 public enum DomainFailureReason {
   DomainInvalid {
@@ -106,7 +106,7 @@ public enum DomainFailureReason {
   public abstract String getEventSuggestion(DomainPresenceInfo info);
 
   private static String getRetryMessage() {
-    return String.format(WILL_RETRY_SECONDS, DomainPresence.getDomainPresenceFailureRetrySeconds());
+    return WILL_RETRY;
   }
 
   private static String getAdditionalMessageFromStatus(DomainPresenceInfo info) {
