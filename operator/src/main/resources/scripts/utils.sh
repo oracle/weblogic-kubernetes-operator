@@ -722,9 +722,11 @@ function checkAuxiliaryImage() {
     rm -f ${AUXILIARY_IMAGE_PATH}/testaccess.tmp || return 1
 
     # The container .out files embed their container name, the names will sort in the same order in which the containers ran
-    out_files=$(set -o pipefail ; ls -1 $AUXILIARY_IMAGE_PATH/auxiliaryImageLogs/*.out 2>&1 | sort --version-sort) \
-      || (trace SEVERE "Auxiliary Image: Assertion failure. No files found in '$AUXILIARY_IMAGE_PATH/auxiliaryImageLogs/*.out" \
-      && return 1)
+    out_files=$(ls -1 $AUXILIARY_IMAGE_PATH/auxiliaryImageLogs/*.out 2>/dev/null | sort --version-sort)
+    if [ -z "${out_files}" ]; then
+      trace SEVERE "Auxiliary Image: Assertion failure. No files found in '$AUXILIARY_IMAGE_PATH/auxiliaryImageLogs/*.out'"
+      return 1
+    fi
     severe_found=false
     for out_file in $out_files; do
       if [ "$(grep -c SEVERE $out_file)" != "0" ]; then
@@ -742,8 +744,7 @@ function checkAuxiliaryImage() {
       trace "Auxiliary Image: End of '${out_file}' contents"
     done
     [ "${severe_found}" = "true" ] && return 1
-    rm -fr $AUXILIARY_IMAGE_PATH/auxiliaryImageLogs
-    [ -z "$(ls -A $AUXILIARY_IMAGE_PATH)" ] \
+    [ -z "$(ls -A $AUXILIARY_IMAGE_PATH 2>/dev/null | grep -v auxiliaryImageLogs)" ] \
       && trace SEVERE "Auxiliary Image: No files found in '$AUXILIARY_IMAGE_PATH'. " \
        "Do your auxiliary images have files in their '$AUXILIARY_IMAGE_PATH' directories? " \
        "This path is configurable using the domain resource 'spec.auxiliaryImageVolumes.mountPath' attribute." \
