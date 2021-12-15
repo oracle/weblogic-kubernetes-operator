@@ -75,9 +75,6 @@ public class ItMiiSampleHelper {
   private String getModelImageName(String suffix) {
     return new StringBuffer(DOMAIN_IMAGES_REPO)
         .append("mii-")
-        .append(currentDateTime)
-        .append("-")
-        .append(domainNamespace)
         .append(suffix).toString();
   }
 
@@ -250,10 +247,11 @@ public class ItMiiSampleHelper {
 
   /**
    * Test MII sample WLS or JRF initial use case.
+   * @param testClassName the test class name
    */
-  public void callInitialUseCase() {
+  public void callInitialUseCase(String testClassName) {
     String imageName = (domainType.equals(DomainType.WLS))
-        ? getModelImageName("-wlsv1") : getModelImageName("-jrfv1");
+        ? getModelImageName(testClassName + "-wlsv1") : getModelImageName(testClassName + "-jrfv1");
     previousTestSuccessful = true;
     envMap.put("MODEL_IMAGE_NAME", imageName);
 
@@ -288,12 +286,14 @@ public class ItMiiSampleHelper {
 
   /**
    * Test MII sample WLS or JRF update1 use case.
+   * @param args test arguments
+   * @param errString a string of detailed error
+   * @param testClassName the test class name which will call this method
    */
-  public void callUpdateUseCase(String args,
-                                       String errString) {
+  public void callUpdateUseCase(String args, String errString, String testClassName) {
     if (args.contains("update3")) {
       String imageName = (domainType.equals(DomainType.WLS))
-          ? getModelImageName("-wlsv2") : getModelImageName("-jrfv2");
+          ? getModelImageName(testClassName + "-wlsv2") : getModelImageName(testClassName + "-jrfv2");
       envMap.put("MODEL_IMAGE_NAME", imageName);
     }
 
