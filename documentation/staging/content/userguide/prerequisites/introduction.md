@@ -10,7 +10,7 @@ For the current production release {{< latestVersion >}}:
 * Kubernetes 1.16.15+, 1.17.13+, 1.18.10+, 1.19.7+, and 1.20.6+  (check with `kubectl version`).
 * Flannel networking v0.9.1-amd64 or later (check with `docker images | grep flannel`), Calico networking v3.16.1 or later,
  *or* OpenShift SDN on OpenShift 4.3 systems.
-* Docker 18.9.1 or 19.03.1+ (check with `docker version`) *or* CRI-O 1.20.2+ (check with `crictl version | grep RuntimeVersion`).
+* Docker 19.03.1+ (check with `docker version`) *or* CRI-O 1.20.2+ (check with `crictl version | grep RuntimeVersion`).
 * Helm 3.3.4+ (check with `helm version --client --short`).
 * For domain home source type `Model in Image`, WebLogic Deploy Tooling 1.9.11.
 * Either Oracle WebLogic Server 12.2.1.3.0 with patch 29135930, Oracle WebLogic Server 12.2.1.4.0, or Oracle WebLogic Server 14.1.1.0.0.
