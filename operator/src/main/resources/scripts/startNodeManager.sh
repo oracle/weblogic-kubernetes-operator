@@ -113,7 +113,7 @@ fi
 
 export NODEMGR_HOME=${NODEMGR_HOME}/${DOMAIN_UID}/${SERVER_NAME}
 
-createFolder ${NODEMGR_HOME} "This is the internal NODEMGR_HOME folder for the node manager for server '$SERVER_NAME' and domain UID '${DOMAIN_UID}'." || exit 1
+createFolder "${NODEMGR_HOME}" "This is the internal NODEMGR_HOME folder for the node manager for server '$SERVER_NAME' and domain UID '${DOMAIN_UID}'." || exit 1
 
 NODEMGR_LOG_HOME=${NODEMGR_LOG_HOME:-${LOG_HOME:-${NODEMGR_HOME}/${DOMAIN_UID}}}
 FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR=${FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR:-true}
@@ -125,7 +125,7 @@ trace "DOMAIN_UID='${DOMAIN_UID}'"
 trace "NODEMGR_LOG_HOME='${NODEMGR_LOG_HOME}'"
 trace "FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR='${FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR}'"
 
-createFolder ${NODEMGR_LOG_HOME} "This directory is used to hold node manager logs for server '$SERVER_NAME'. If 'domain.spec.logHomeEnabled' is 'true', then it is located within the 'domain.spec.logHome' directory, otherwise it is located within within the NODEMGR_HOME '${NODEMGR_HOME}' directory." || exit 1
+createFolder "${NODEMGR_LOG_HOME}" "This directory is used to hold node manager logs for server '$SERVER_NAME'. If 'domain.spec.logHomeEnabled' is 'true', then it is located within the 'domain.spec.logHome' directory, otherwise it is located within within the NODEMGR_HOME '${NODEMGR_HOME}' directory." || exit 1
 
 nodemgr_log_file=${NODEMGR_LOG_HOME}/${SERVER_NAME}_nodemanager.log
 nodemgr_out_file=${NODEMGR_LOG_HOME}/${SERVER_NAME}_nodemanager.out
@@ -215,7 +215,7 @@ if [ ! "${SERVER_NAME}" = "introspector" ]; then
   wl_state_file=${wl_data_dir}/${SERVER_NAME}.state
   wl_props_file=${wl_data_dir}/startup.properties
 
-  createFolder ${wl_data_dir} "This is a directory the server '$SERVER_NAME' node manager uses to track its state. It is located within the 'domain.spec.domainHome' directory." || exit 1
+  createFolder "${wl_data_dir}" "This is a directory the server '$SERVER_NAME' node manager uses to track its state. It is located within the 'domain.spec.domainHome' directory." || exit 1
 
   # Remove state file, because:
   #   1 - The liveness probe checks this file

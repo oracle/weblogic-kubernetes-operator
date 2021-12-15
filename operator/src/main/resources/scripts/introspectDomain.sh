@@ -77,7 +77,7 @@ traceDirs before LOG_HOME
 
 if [ ! -z "${LOG_HOME}" ] && [ ! -d "${LOG_HOME}" ]; then
   trace "Creating log home directory: '${LOG_HOME}'"
-  createFolder ${LOG_HOME} "This is the 'domain.spec.logHome' LOG_HOME directory that is used when 'domain.spec.logHomeEnabled' is set to 'true'." || exit 1
+  createFolder "${LOG_HOME}" "This is the 'domain.spec.logHome' LOG_HOME directory that is used when 'domain.spec.logHomeEnabled' is set to 'true'." || exit 1
 fi
 
 ilog_dir="${LOG_HOME:-/tmp}"
@@ -141,7 +141,7 @@ function doIntrospect() {
   #
   if [ ! -z "${DATA_HOME}" ] && [ ! -d "${DATA_HOME}" ]; then
     trace "Creating data home directory: '${DATA_HOME}'"
-    createFolder ${DATA_HOME} "This is the 'domain.spec.dataHome' DATA_HOME directory." || exit 1
+    createFolder "${DATA_HOME}" "This is the 'domain.spec.dataHome' DATA_HOME directory." || exit 1
   fi
 
   traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII CREATE DOMAIN START"
