@@ -639,12 +639,10 @@ public class EventHelper {
           getAdditionalMessage(eventData));
     }
 
-    @org.jetbrains.annotations.NotNull
     private static String getAdditionalMessage(EventData eventData) {
       return Optional.ofNullable(eventData.additionalMessage).orElse("");
     }
 
-    @org.jetbrains.annotations.NotNull
     private static String getEffectiveMessage(EventData eventData) {
       return Optional.ofNullable(eventData.message).orElse(getFailureReason(eventData));
     }
@@ -652,8 +650,7 @@ public class EventHelper {
     private static String getFailureReason(EventData eventData) {
       return Optional.ofNullable(eventData.failureReason).map(DomainFailureReason::getEventError).orElse("");
     }
-
-    @org.jetbrains.annotations.NotNull
+    
     private static String getEffectiveReasonDetail(EventData eventData) {
       return eventData.message == null ? "" : getFailureReason(eventData);
     }
