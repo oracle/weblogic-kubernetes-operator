@@ -63,7 +63,7 @@ public interface EventConstants {
   String ABORTED_ERROR = "Domain processing is aborted";
   String ABORTED_ERROR_SUGGESTION = "The domain will not be retried unless it is corrected.";
   String WILL_NOT_RETRY = ABORTED_ERROR_SUGGESTION;
-  String WILL_RETRY_SECONDS = " Will retry in %s seconds.";
+  String WILL_RETRY = " Will retry.";
   String DOMAIN_INVALID_ERROR_SUGGESTION = "Update the domain resource to correct the validation error.";
   String TOPOLOGY_MISMATCH_ERROR_SUGGESTION
       = "Update the domain resource or change the WebLogic domain configuration to correct the error.";

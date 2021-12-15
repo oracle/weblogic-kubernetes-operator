@@ -2,7 +2,7 @@
 title: "Container image protection"
 date: 2019-03-08T19:00:49-05:00
 weight: 1
-description: "WebLogic domain in image protection"
+description: "WebLogic domain in image protection."
 ---
 
 #### WebLogic domain in image protection

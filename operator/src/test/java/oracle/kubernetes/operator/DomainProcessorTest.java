@@ -27,6 +27,9 @@ import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1ContainerState;
+import io.kubernetes.client.openapi.models.V1ContainerStateWaiting;
+import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobStatus;
@@ -963,7 +966,7 @@ class DomainProcessorTest {
   }
 
   private void defineTimedoutIntrospection() {
-    V1Job job = asTimedoutJob(createIntrospectorJob("TIMEDOUT_JOB"));
+    V1Job job = asFailedJob(createIntrospectorJob("TIMEDOUT_JOB"));
     testSupport.defineResources(job);
     testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, job);
     setJobPodStatusReasonDeadlineExceeded();
@@ -973,10 +976,38 @@ class DomainProcessorTest {
     testSupport.<V1Pod>getResourceWithName(POD, getJobName()).status(new V1PodStatus().reason("DeadlineExceeded"));
   }
 
-  private V1Job asTimedoutJob(V1Job job) {
+  private V1Job asFailedJob(V1Job job) {
     job.setStatus(new V1JobStatus().addConditionsItem(new V1JobCondition().status("True").type("Failed")
             .reason("BackoffLimitExceeded")));
     return job;
+  }
+
+  @Test
+  void whenIntrospectionJobInitContainerHasImagePullFailure_jobRecreatedAndFailedConditionCleared() throws Exception {
+    consoleHandlerMemento.ignoringLoggedExceptions(RuntimeException.class);
+    consoleHandlerMemento.ignoreMessage(MessageKeys.NOT_STARTING_DOMAINUID_THREAD);
+    jobStatus = createBackoffStatus();
+    establishPreviousIntrospection(null);
+    defineIntrospectionWithInitContainerImagePullError();
+    testSupport.doOnDelete(JOB, j -> deletePod());
+    testSupport.doOnCreate(JOB, j -> createJobPodAndSetCompletedStatus(job));
+    domainConfigurator.withIntrospectVersion(NEW_INTROSPECTION_STATE);
+    processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).interrupt().execute();
+
+    assertThat(isDomainConditionFailed(), is(false));
+  }
+
+  private void defineIntrospectionWithInitContainerImagePullError() {
+    V1Job job = asFailedJob(createIntrospectorJob("IMAGE_PULL_FAILURE_JOB"));
+    testSupport.defineResources(job);
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, job);
+    setJobPodInitContainerStatusImagePullError();
+  }
+
+  private void setJobPodInitContainerStatusImagePullError() {
+    testSupport.<V1Pod>getResourceWithName(POD, getJobName()).status(new V1PodStatus().initContainerStatuses(
+            Arrays.asList(new V1ContainerStatus().state(new V1ContainerState().waiting(
+                    new V1ContainerStateWaiting().reason("ImagePullBackOff").message("Back-off pulling image"))))));
   }
 
   private V1Job createIntrospectorJob(String uid) {
