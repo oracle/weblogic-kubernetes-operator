@@ -594,8 +594,7 @@ function createFolder {
   [ ! -z "$touchOutput" ] && echo "$touchOutput"
 
   if [ ! -f "$touchFile" ] ; then
-    echo "$touchOutput"
-    trace SEVERE "Cannot write to directory '${targetDir}' using command '${touchCommand}', error='${touchOutput}'. ${folderDescription}"
+    trace SEVERE "Cannot write a file to directory '${targetDir}' using command '${touchCommand}', error='${touchOutput}'. ${folderDescription}"
     return 1
   fi
 
@@ -637,7 +636,7 @@ function linkServerDefaultDir() {
     # Create the server's directory in $DOMAIN_HOME/servers
     if [ ! -d ${DOMAIN_HOME}/servers/${SERVER_NAME} ]; then
       trace "Creating directory '${DOMAIN_HOME}/servers/${SERVER_NAME}'"
-      createFolder ${DOMAIN_HOME}/servers/${SERVER_NAME} "This is the server '${SERVER_NAME}' directory within 'spec.domain.domainHome'." || exitOrLoop 
+      createFolder "${DOMAIN_HOME}/servers/${SERVER_NAME}" "This is the server '${SERVER_NAME}' directory within 'spec.domain.domainHome'." || exitOrLoop 
     else
       trace "'${DOMAIN_HOME}/servers/${SERVER_NAME}' already exists as a directory"
     fi
