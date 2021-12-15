@@ -198,9 +198,7 @@ class ItDiagnosticsFailedCondition {
    * type: Failed, status: true
    * type: Available, status: false
    * type: Completed, status: false
-   * Disabled due to bug.
    */
-  @Disabled
   @Test
   @DisplayName("Test domain status condition with replicas set to more than available in cluster")
   void testReplicasTooHigh() {
