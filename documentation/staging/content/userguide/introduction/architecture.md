@@ -65,7 +65,7 @@ The Kubernetes cluster has several namespaces. Components may be deployed into n
     then a Logstash pod will also be deployed in the operator’s namespace.
 * WebLogic domain resources deployed into various namespaces. 
   * There can be more than one domain in a namespace, if desired.
-  * Every domain resource must be configured with a [domain unique identifier](domain-uid).
+  * Every domain resource must be configured with a [domain unique identifier](#domain-uid).
 * Customers are responsible for load balancer configuration, which will typically be in the same namespace with domains or in a shared namespace.
 * Customers are responsible for Elasticsearch and Kibana deployments that may be used to monitor WebLogic server and pod logs.
 

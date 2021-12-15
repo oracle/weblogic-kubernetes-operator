@@ -498,7 +498,7 @@ class ItMiiAuxiliaryImage {
     assertDoesNotThrow(() -> createDomainCustomResource(domainCR), "createDomainCustomResource throws Exception");
 
     // check the introspector pod log contains the expected error message
-    String expectedErrorMsg = "Auxiliary Image: Dir '/errorpath' doesn't exist or is empty. Exiting.";
+    String expectedErrorMsg = "cp: can't stat '/errorpath/*': No such file or directory";
     verifyIntrospectorPodLogContainsExpectedErrorMsg(domainUid, errorpathDomainNamespace, expectedErrorMsg);
 
     // check the domain event contains the expected error message
