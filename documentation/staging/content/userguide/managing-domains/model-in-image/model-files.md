@@ -104,7 +104,7 @@ The loading order within each of these locations is first determined using the c
 > Note: If `configuration.models.modelHome` files are supplied by combining multiple
 [Auxiliary images]({{< relref "/userguide/managing-domains/model-in-image/auxiliary-images.md" >}}),
 then the files in this directory are populated according to their
-[Auxiliary image merge order]({{< relref "/userguide/managing-domains/model-in-image/auxiliary-images#file-merge-order" >}})
+[Auxiliary image merge order]({{< relref "/userguide/managing-domains/model-in-image/auxiliary-images#merge-order" >}})
 before the loading order is determined.
 
 For example, if you have these files in the model home directory `/u01/wdt/models`:

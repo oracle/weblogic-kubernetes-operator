@@ -170,7 +170,7 @@ public class DomainStatus {
    *
    * @param type the type of the condition
    */
-  public void removeConditionWithType(DomainConditionType type) {
+  public void removeConditionsWithType(DomainConditionType type) {
     removeConditionsMatching(c -> c.hasType(type));
   }
 

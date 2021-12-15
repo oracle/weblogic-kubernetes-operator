@@ -2,6 +2,7 @@
 title: "Code structure"
 date: 2019-02-23T17:25:04-05:00
 draft: false
+description: "Review the project directory structure."
 weight: 6
 ---
 
@@ -11,7 +12,7 @@ This project has the following directory structure:
 * `documentation/<numbered directory>`: The archived documentation for a previous release
 * `documentation/charts`: Helm chart repository
 * `documentation/swagger`: The operator REST API swagger
-* `documentation/domains`: Reference for Domain resource schema 
+* `documentation/domains`: Reference for Domain resource schema
 * `json-schema-generator`: Java model to JSON schema generator
 * `json-schema-maven-plugin`: Maven plugin for schema generator
 * `kubernetes/charts`: Helm charts

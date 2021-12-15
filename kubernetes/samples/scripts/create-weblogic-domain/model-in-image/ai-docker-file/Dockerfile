@@ -23,6 +23,7 @@ ARG USERID=1000
 ARG GROUP=root
 ENV AUXILIARY_IMAGE_PATH=${AUXILIARY_IMAGE_PATH}
 RUN adduser -D -u ${USERID} -G $GROUP $USER
-COPY ./ ${AUXILIARY_IMAGE_PATH}/
-RUN chown -R $USER:$GROUP ${AUXILIARY_IMAGE_PATH}/
+# ARG expansion in COPY command's --chown is available in docker version 19.03.1+.
+# For older docker versions, change the Dockerfile to use separate COPY and 'RUN chown' commands.
+COPY --chown=$USER:$GROUP ./ ${AUXILIARY_IMAGE_PATH}/
 USER $USER
