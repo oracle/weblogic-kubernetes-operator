@@ -62,19 +62,6 @@ traceTiming "INTROSPECTOR '${DOMAIN_UID}' MAIN START"
 checkAuxiliaryImage || exit 1
 
 #
-# Local createFolder method which does an 'exit 1' instead of exitOrLoop for
-# immediate failure during introspection
-#
-
-function createFolder {
-  mkdir -m 750 -p $1
-  if [ ! -d $1 ]; then
-    trace SEVERE "Unable to create folder $1"
-    exit 1
-  fi
-}
-
-#
 # setup MII functions in case this is a MII domain
 #
 
@@ -90,7 +77,7 @@ traceDirs before LOG_HOME
 
 if [ ! -z "${LOG_HOME}" ] && [ ! -d "${LOG_HOME}" ]; then
   trace "Creating log home directory: '${LOG_HOME}'"
-  createFolder ${LOG_HOME}
+  createFolder "${LOG_HOME}" "This is the 'domain.spec.logHome' LOG_HOME directory that is used when 'domain.spec.logHomeEnabled' is set to 'true'." || exit 1
 fi
 
 ilog_dir="${LOG_HOME:-/tmp}"
@@ -98,7 +85,7 @@ ilog_file="${ilog_dir}/introspector_script.out"
 
 if [ ! -d "${ilog_dir}" ]; then
   trace "Creating introspector log directory: '${ilog_dir}'"
-  createFolder "${ilog_dir}"
+  createFolder "${ilog_dir}" "This is the directory for holding introspector output." || exit 1
 fi
 
 testLogFileRotate "${ilog_file}"
@@ -154,7 +141,7 @@ function doIntrospect() {
   #
   if [ ! -z "${DATA_HOME}" ] && [ ! -d "${DATA_HOME}" ]; then
     trace "Creating data home directory: '${DATA_HOME}'"
-    createFolder ${DATA_HOME}
+    createFolder "${DATA_HOME}" "This is the 'domain.spec.dataHome' DATA_HOME directory." || exit 1
   fi
 
   traceTiming "INTROSPECTOR '${DOMAIN_UID}' MII CREATE DOMAIN START"
@@ -177,15 +164,7 @@ function doIntrospect() {
     if [ $? -ne 0 ] ; then
       trace SEVERE "DomainSourceType is 'FromModel', 'unzip' is missing in the image. Please use an image with 'unzip' installed" && exit 1
     fi
-    mkdir -p ${DOMAIN_HOME}
-    if [ $? -ne 0 ] ; then
-      trace SEVERE "DomainSourceType is 'FromModel', cannot create domain home directory '${DOMAIN_HOME}'" && exit 1
-    fi
-    touch ${DOMAIN_HOME}/testaccess.tmp
-    if [ $? -ne 0 ]; then
-      trace SEVERE "DomainSourceType is 'FromModel', cannot write to domain home directory '${DOMAIN_HOME}'" && exit 1
-    fi
-    rm -f ${DOMAIN_HOME}/testaccess.tmp
+    createFolder "${DOMAIN_HOME}" "DomainSourceType is 'FromModel' and this is the DOMAIN_HOME directory specified by 'domain.spec.domainHome'." || exit 1
     createWLDomain || exit 1
     created_domain=$DOMAIN_CREATED
     trace "Create domain return code = " ${created_domain}
