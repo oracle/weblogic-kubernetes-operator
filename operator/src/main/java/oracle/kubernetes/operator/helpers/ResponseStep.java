@@ -10,6 +10,7 @@ import javax.annotation.Nonnull;
 
 import io.kubernetes.client.common.KubernetesListObject;
 import io.kubernetes.client.common.KubernetesObject;
+import oracle.kubernetes.operator.EventConstants;
 import oracle.kubernetes.operator.calls.AsyncRequestStep;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.RetryStrategy;
@@ -20,7 +21,11 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import oracle.kubernetes.weblogic.domain.model.Domain;
+import oracle.kubernetes.weblogic.domain.model.DomainConditionType;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 
+import static oracle.kubernetes.operator.DomainStatusUpdater.createKubernetesFailureSteps;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_FORBIDDEN;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAUTHORIZED;
 import static oracle.kubernetes.operator.calls.AsyncRequestStep.CONTINUE;
@@ -239,6 +244,29 @@ public abstract class ResponseStep<T> extends Step {
    */
   public NextAction onSuccess(Packet packet, CallResponse<T> callResponse) {
     throw new IllegalStateException("Must be overridden, if called");
+  }
+
+  protected NextAction getNextFailureAction(Step conflictStep, Packet packet, CallResponse<T> callResponse) {
+    if (containsKubernetesFailedCondition(packet)) {
+      return doNext(Step.chain(createKubernetesFailureSteps(callResponse),
+              createFailureRelatedAndConflictSteps(conflictStep, callResponse)),
+          packet);
+    } else {
+      return onFailure(conflictStep, packet, callResponse);
+    }
+  }
+
+  private boolean containsKubernetesFailedCondition(Packet packet) {
+    DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
+    DomainStatus status =
+        Optional.ofNullable(info).map(DomainPresenceInfo::getDomain).map(Domain::getStatus).orElse(null);
+    return Optional.ofNullable(status).map(this::hasKubernetesFailedCondition).orElse(false);
+
+  }
+
+  private boolean hasKubernetesFailedCondition(DomainStatus status) {
+    return status.hasConditionWith(c -> c.getType().equals(DomainConditionType.Failed)
+        && c.getMessage().contains(EventConstants.KUBERNETES_ERROR));
   }
 
   protected Step createFailureRelatedAndConflictSteps(
