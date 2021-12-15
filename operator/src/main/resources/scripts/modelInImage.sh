@@ -262,7 +262,7 @@ function buildWDTParams_MD5() {
   opss_wallet=$(get_opss_key_wallet)
   if [ -f "${opss_wallet}" ] ; then
     trace "A wallet file was passed in using walletFileSecret, so we're using an existing rcu schema."
-    createFolder /tmp/opsswallet "This folder is used to hold a generated OPSS wallet file." || exitOrLoop
+    createFolder "/tmp/opsswallet" "This folder is used to hold a generated OPSS wallet file." || exitOrLoop
     base64 -d  ${opss_wallet} > /tmp/opsswallet/ewallet.p12
     OPSS_FLAGS="-opss_wallet /tmp/opsswallet"
   else
@@ -559,7 +559,7 @@ function createModelDomain() {
       trace "Using existing primordial domain"
       cd / && base64 -d ${PRIMORDIAL_DOMAIN_ZIPPED} > ${LOCAL_PRIM_DOMAIN_ZIP} && tar -pxzf ${LOCAL_PRIM_DOMAIN_ZIP}
       # create empty lib since we don't archive it in primordial zip and WDT will fail without it
-      createFolder ${DOMAIN_HOME}/lib "This is the './lib' directory within directory 'domain.spec.domainHome'." || exitOrLoop
+      createFolder "${DOMAIN_HOME}/lib" "This is the './lib' directory within directory 'domain.spec.domainHome'." || exitOrLoop
       # Since the SerializedSystem ini is encrypted, restore it first
       local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
       encrypt_decrypt_domain_secret "decrypt" ${DOMAIN_HOME} ${MII_PASSPHRASE}
@@ -1051,7 +1051,7 @@ function wdtHandleOnlineUpdate() {
   # We need to extract all the archives, WDT online checks for file existence
   # even for delete
   #
-  createFolder ${DOMAIN_HOME}/lib "This is the './lib' directory within directory 'domain.spec.domainHome'." || exitOrLoop
+  createFolder "${DOMAIN_HOME}/lib" "This is the './lib' directory within directory 'domain.spec.domainHome'." || exitOrLoop
   for file in $(sort_files ${IMG_ARCHIVES_ROOTDIR} "*.zip")
     do
         # expand the archive domain libraries to the domain lib
@@ -1281,7 +1281,7 @@ function prepareMIIServer() {
   #
   trace "Model-in-Image: Restoring apps and libraries"
 
-  createFolder ${DOMAIN_HOME}/lib "This is the './lib' directory within DOMAIN_HOME directory 'domain.spec.domainHome'." || return 1
+  createFolder "${DOMAIN_HOME}/lib" "This is the './lib' directory within DOMAIN_HOME directory 'domain.spec.domainHome'." || return 1
   local WLSDEPLOY_DOMAINLIB="wlsdeploy/domainLibraries"
 
   for file in $(sort_files ${IMG_ARCHIVES_ROOTDIR} "*.zip")

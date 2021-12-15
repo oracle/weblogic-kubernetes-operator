@@ -123,7 +123,7 @@ function mockWLS() {
   STATEFILE_DIR=${DOMAIN_HOME}/servers/${SERVER_NAME}/data/nodemanager
   STATEFILE=${STATEFILE_DIR}/${SERVER_NAME}.state
 
-  createFolder $STATEFILE_DIR "This is the directory for holding '${SERVER_NAME}.state' in mock mode for 'server '${SERVER_NAME}' within the 'domain.spec.domainHome' directory." || exitOrLoop
+  createFolder "$STATEFILE_DIR" "This is the directory for holding '${SERVER_NAME}.state' in mock mode for 'server '${SERVER_NAME}' within the 'domain.spec.domainHome' directory." || exitOrLoop
 
   echo "RUNNING:Y:N" > $STATEFILE
 }
@@ -153,7 +153,7 @@ function copySitCfgWhileBooting() {
 
   trace "Copying files starting with '$src_dir/$fil_prefix' to '$tgt_dir' without the prefix."
 
-  createFolder $tgt_dir "This is a directory within directory 'domain.spec.domainHome' that the operator uses for supplying internal or user specified configuration overrides." || exitOrLoop
+  createFolder "$tgt_dir" "This is a directory within directory 'domain.spec.domainHome' that the operator uses for supplying internal or user specified configuration overrides." || exitOrLoop
 
   ls ${src_dir}/${fil_prefix}*.xml > /dev/null 2>&1
   if [ $? = 0 ]; then
@@ -226,7 +226,7 @@ if [ ! -z ${DATA_HOME} ]; then
   # Create $DATA_HOME directory for server if doesn't exist
   if [ ! -d ${DATA_HOME}/${SERVER_NAME}/data ]; then
     trace "Creating directory '${DATA_HOME}/${SERVER_NAME}/data'"
-    createFolder ${DATA_HOME}/${SERVER_NAME}/data "This is the server '$SERVER_NAME' data directory within directory DATA_HOME 'domain.spec.dataHome'." || exitOrLoop
+    createFolder "${DATA_HOME}/${SERVER_NAME}/data" "This is the server '$SERVER_NAME' data directory within directory DATA_HOME 'domain.spec.dataHome'." || exitOrLoop
   else
     trace "Directory '${DATA_HOME}/${SERVER_NAME}/data' exists"
   fi
@@ -287,7 +287,7 @@ fi
 #          trigger unnecessary situational config overhead.
 #
 
-createFolder ${DOMAIN_HOME}/servers/${SERVER_NAME}/security "This is the server '${SERVER_NAME}' security directory within directory DOMAIN_HOME 'domain.spec.domainHome'." || exitOrLoop
+createFolder "${DOMAIN_HOME}/servers/${SERVER_NAME}/security" "This is the server '${SERVER_NAME}' security directory within directory DOMAIN_HOME 'domain.spec.domainHome'." || exitOrLoop
 
 copyIfChanged /weblogic-operator/introspector/boot.properties \
               ${DOMAIN_HOME}/servers/${SERVER_NAME}/security/boot.properties
