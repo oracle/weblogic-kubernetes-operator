@@ -15,6 +15,7 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
+import static oracle.kubernetes.operator.WebLogicConstants.SHUTDOWN_STATE;
 import static oracle.kubernetes.weblogic.domain.model.ObjectPatch.createObjectPatch;
 
 /** ServerStatus describes the current status of a specific WebLogic Server. */
@@ -108,20 +109,25 @@ public class ServerStatus implements Comparable<ServerStatus>, PatchableComponen
   /**
    * Current state of this WebLogic Server. Required.
    *
-   * @param state state
+   * @param state the new state. If null, will preserve previous value if this server already has a health setting,
+   *              or will set the value as SHUTDOWN if not.
    */
   public void setState(String state) {
-    this.state = state;
+    if (state != null) {
+      this.state = state;
+    } else if (health == null) {
+      this.state = SHUTDOWN_STATE;
+    }
   }
 
   /**
    * Current state of this WebLogic Server. Required.
    *
-   * @param state state
+   * @param state the new state.
    * @return this
    */
   public ServerStatus withState(String state) {
-    this.state = state;
+    setState(state);
     return this;
   }
 

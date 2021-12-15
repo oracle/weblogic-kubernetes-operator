@@ -135,7 +135,7 @@ Status:
 
 #### Domain debugging
 
-For some suggestions for debugging problems with Model in Image after your Domain YAML file is deployed, see [Debugging](/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/debugging/).
+For some suggestions for debugging problems with Model in Image after your Domain YAML file is deployed, see [Debugging]({{< relref "/userguide/managing-domains/model-in-image/debugging.md" >}}).
 
 #### WSL2 bad timestamp
 
