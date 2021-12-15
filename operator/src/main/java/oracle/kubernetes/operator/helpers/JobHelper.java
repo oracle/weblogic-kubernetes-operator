@@ -52,6 +52,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 import static oracle.kubernetes.operator.DomainFailureReason.Introspection;
 import static oracle.kubernetes.operator.DomainSourceType.FromModel;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createFailureRelatedSteps;
+import static oracle.kubernetes.operator.IntrospectionStatus.isImagePullError;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_DOMAIN_SPEC_GENERATION;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
@@ -614,7 +615,7 @@ public class JobHelper {
 
         if (jobPod == null) {
           return doContinueListOrNext(callResponse, packet, processIntrospectorPodLog(getNext()));
-        } else if (hasImagePullFailure(jobPod) || isJobPodTimedOut(jobPod)) {
+        } else if (hasImagePullError(jobPod) || initContainersHaveImagePullError(jobPod) || isJobPodTimedOut(jobPod)) {
           return doNext(cleanUpAndReintrospect(getNext()), packet);
         } else {
           recordJobPodName(packet, getName(jobPod));
@@ -643,9 +644,9 @@ public class JobHelper {
         return getName(pod).startsWith(getJobName());
       }
 
-      private boolean hasImagePullFailure(V1Pod pod) {
+      private boolean hasImagePullError(V1Pod pod) {
         return Optional.ofNullable(getJobPodContainerWaitingReason(pod))
-              .map(s -> s.contains("ErrImagePull") || s.contains("ImagePullBackOff"))
+              .map(reason -> isImagePullError(reason))
               .orElse(false);
       }
 
@@ -654,6 +655,21 @@ public class JobHelper {
               .map(V1PodStatus::getContainerStatuses).map(statuses -> statuses.get(0))
               .map(V1ContainerStatus::getState).map(V1ContainerState::getWaiting)
               .map(V1ContainerStateWaiting::getReason).orElse(null);
+      }
+
+      private boolean initContainersHaveImagePullError(V1Pod pod) {
+        return Optional.ofNullable(getInitContainerStatuses(pod))
+                .map(statuses -> statuses.stream()
+                        .map(V1ContainerStatus::getState)
+                        .map(V1ContainerState::getWaiting).filter(Objects::nonNull)
+                        .map(V1ContainerStateWaiting::getReason)
+                        .anyMatch(reason -> isImagePullError(reason)))
+                .orElse(false);
+
+      }
+
+      private List<V1ContainerStatus> getInitContainerStatuses(V1Pod pod) {
+        return Optional.ofNullable(pod.getStatus()).map(V1PodStatus::getInitContainerStatuses).orElse(null);
       }
 
       private void recordJobPodName(Packet packet, String podName) {
