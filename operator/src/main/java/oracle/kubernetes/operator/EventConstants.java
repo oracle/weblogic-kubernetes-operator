@@ -61,7 +61,7 @@ public interface EventConstants {
   String REPLICAS_TOO_HIGH_ERROR = "Replicas too high";
   String INTERNAL_ERROR = "Internal error";
   String ABORTED_ERROR = "Domain processing is aborted";
-  String ABORTED_ERROR_SUGGESTION = "The domain will not be retried unless it is corrected.";
+  String ABORTED_ERROR_SUGGESTION = "The domain will not be retried unless the problem is corrected.";
   String WILL_NOT_RETRY = ABORTED_ERROR_SUGGESTION;
   String WILL_RETRY = " Will retry.";
   String DOMAIN_INVALID_ERROR_SUGGESTION = "Update the domain resource to correct the validation error.";
