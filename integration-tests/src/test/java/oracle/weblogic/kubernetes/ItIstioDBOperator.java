@@ -102,7 +102,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test to a create FMW model in image domain and WebLogic domain using Oracle "
+@DisplayName("Test to a create Istio enabled FMW model in image domain and WebLogic domain using Oracle "
     + "database created using Oracle Database Operator")
 @IntegrationTest
 class ItIstioDBOperator {
@@ -201,8 +201,8 @@ class ItIstioDBOperator {
    * exists for both admin server and managed servers. Verify EM console is accessible.
    */
   @Test
-  @DisplayName("Create FMW Domain model in image")
-  void  testFmwModelInImageWithDbOperator() {
+  @DisplayName("Create FMW Domain model in image with Istio")
+  void  testIstioEnabledFmwModelInImageWithDbOperator() {
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
     createOcirRepoSecret(fmwDomainNamespace);
@@ -348,10 +348,11 @@ class ItIstioDBOperator {
   }
 
   /**
-   * Create WebLogic domain using model in image and Oracle database used for JMS and JTA migration and service logs.
+   * Create Istio enabled WebLogic domain using model in image and Oracle database used for JMS and JTA
+   * migration and service logs.
    */
   @Test
-  void  testWlsModelInImageWithDbOperator() {
+  void  testIstioWlsModelInImageWithDbOperator() {
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
