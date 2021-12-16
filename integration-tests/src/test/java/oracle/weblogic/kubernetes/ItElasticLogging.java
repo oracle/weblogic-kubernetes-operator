@@ -153,7 +153,7 @@ class ItElasticLogging {
     installAndVerifyOperator(opNamespace, opNamespace + "-sa",
         false, 0, true, domainNamespace);
 
-    // install WebLogic Logging Exporter
+    // install WebLogic Logging Exporter if in non-OKD env
     if (!OKD) {
       installAndVerifyWlsLoggingExporter(managedServerFilter, wlsLoggingExporterYamlFileLoc);
     }
@@ -338,9 +338,6 @@ class ItElasticLogging {
       // create image with model files
       logger.info("Create image with model file and verify");
       miiImage = createMiiImageAndVerify(WLS_LOGGING_IMAGE_NAME, modelList, appList);
-      /*
-      miiImage = createMiiImageAndVerify(WLS_LOGGING_IMAGE_NAME,
-          MODEL_DIR + "/" + WLS_LOGGING_MODEL_FILE, MII_BASIC_APP_NAME);*/
     }
 
     // docker login and push image to docker registry if necessary
