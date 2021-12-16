@@ -53,12 +53,16 @@ For Domain in Image, you may only perform a rolling restart if both the WebLogic
 
 Otherwise, use of a new image that does not have compatible encryption keys or any non-dynamic configuration changes require a full domain restart.
 
-* If you create a new image with a new name, then you must avoid a rolling restart, which can cause unexpected behavior for the running domain due to configuration inconsistencies as seen by the various servers, by following the steps in [Avoiding a rolling restart when changing image field on a Domain](#avoiding-a-rolling-restart-when-changing-image-field-on-a-domain).
+* If you create a new image with a new name, then you must avoid a rolling restart, which can cause unexpected behavior for the running domain due to configuration inconsistencies as seen by the various servers, by following the steps in [Avoiding a rolling restart when changing image field on a Domain](#avoiding-a-rolling-restart-when-changing-the-image-field-on-a-domain).
 * If you create a new image with the same name, then you must manually initiate a full domain restart. See [Full domain restarts]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#full-domain-restarts">}}).
 
 ##### Model in Image
 
-* Any image that supplies configuration changes that are incompatible with the current running domain require a full shut down before changing the Domain `image` field, instead of a rolling restart. For changes that support a rolling restart, see [Supported and unsupported updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates/_index.md#supported-and-unsupported-updates" >}}).
+* Any image that supplies configuration changes that are incompatible with the current running domain require a full shut down before changing the Domain `image` field, instead of a rolling restart. For changes that support a rolling restart, see
+[Supported updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates/_index.md#supported-updates" >}})
+and
+[Unsupported updates]({{< relref "/userguide/managing-domains/model-in-image/runtime-updates/_index.md#unsupported-updates" >}})
+.
 
 * If you create a new image with a new name, and you want to avoid a rolling restart, see [Avoiding a rolling restart when changing the image field on a Domain](#avoiding-a-rolling-restart-when-changing-the-image-field-on-a-domain).
 
