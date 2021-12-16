@@ -83,19 +83,6 @@ fi
 [ ! -d "${WL_HOME}" ]                       && trace SEVERE "WL_HOME '${WL_HOME}' not found."                         && exit 1 
 [ ! -f "${stm_script}" ]                    && trace SEVERE "Missing script '${stm_script}' in WL_HOME '${WL_HOME}'." && exit 1 
 
-#
-# Helper fn to create a folder
-# Arg $1 - path of folder to create
-#
-function createFolder {
-  mkdir -m 750 -p "$1"
-  if [ ! -d "$1" ]; then
-    trace SEVERE "Unable to create folder '$1'."
-    exit 1
-  fi
-}
-
-
 ###############################################################################
 #
 # Determine WebLogic server log and out files locations
@@ -114,7 +101,7 @@ else
   export SERVER_PID_FILE="${serverLogHome}/${SERVER_NAME}.pid"
   export SHUTDOWN_MARKER_FILE="${serverLogHome}/${SERVER_NAME}.shutdown"
   serverOutOption="-Dweblogic.Stdout=${SERVER_OUT_FILE}"
-  createFolder "${serverLogHome}"
+  createFolder "${serverLogHome}" "This folder is used to hold server output for server '$SERVER_NAME'. If 'server.spec.logHomeEnabled' is set to true, then it is the 'domain.spec.logHome' directory, otherwise it is located within the 'domain.spec.domainHome' directory." || exit 1
   rm -f ${SHUTDOWN_MARKER_FILE}
 fi
 
@@ -126,7 +113,7 @@ fi
 
 export NODEMGR_HOME=${NODEMGR_HOME}/${DOMAIN_UID}/${SERVER_NAME}
 
-createFolder ${NODEMGR_HOME} 
+createFolder "${NODEMGR_HOME}" "This is the internal NODEMGR_HOME folder for the node manager for server '$SERVER_NAME' and domain UID '${DOMAIN_UID}'." || exit 1
 
 NODEMGR_LOG_HOME=${NODEMGR_LOG_HOME:-${LOG_HOME:-${NODEMGR_HOME}/${DOMAIN_UID}}}
 FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR=${FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR:-true}
@@ -138,7 +125,7 @@ trace "DOMAIN_UID='${DOMAIN_UID}'"
 trace "NODEMGR_LOG_HOME='${NODEMGR_LOG_HOME}'"
 trace "FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR='${FAIL_BOOT_ON_SITUATIONAL_CONFIG_ERROR}'"
 
-createFolder ${NODEMGR_LOG_HOME}
+createFolder "${NODEMGR_LOG_HOME}" "This directory is used to hold node manager logs for server '$SERVER_NAME'. If 'domain.spec.logHomeEnabled' is 'true', then it is located within the 'domain.spec.logHome' directory, otherwise it is located within within the NODEMGR_HOME '${NODEMGR_HOME}' directory." || exit 1
 
 nodemgr_log_file=${NODEMGR_LOG_HOME}/${SERVER_NAME}_nodemanager.log
 nodemgr_out_file=${NODEMGR_LOG_HOME}/${SERVER_NAME}_nodemanager.out
@@ -228,7 +215,7 @@ if [ ! "${SERVER_NAME}" = "introspector" ]; then
   wl_state_file=${wl_data_dir}/${SERVER_NAME}.state
   wl_props_file=${wl_data_dir}/startup.properties
 
-  createFolder ${wl_data_dir}
+  createFolder "${wl_data_dir}" "This is a directory the server '$SERVER_NAME' node manager uses to track its state. It is located within the 'domain.spec.domainHome' directory." || exit 1
 
   # Remove state file, because:
   #   1 - The liveness probe checks this file
