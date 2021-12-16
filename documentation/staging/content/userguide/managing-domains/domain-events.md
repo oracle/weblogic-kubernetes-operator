@@ -26,14 +26,14 @@ The operator generates these event types in a domain namespace, which indicate t
  * `Changed`: A change has been made to an existing domain.
  * `Deleted`: An existing domain has been deleted.
  * `Available`: An existing domain has become available, which means a sufficient number of servers are ready such that the customer's applications are available.
- * `Failed`: The domain resource encountered a problem which prevented it to become fully up. The possible failure could be one or multiple of the following conditions:
-   * Invalid configurations in domain resource;
-   * A Kubernetes API call error;
-   * Introspection failures;
-   * An unexpected error in a server pod;
-   * A topology mismatch between the domain resource configuration and the WebLogic domain configuration;
-   * The replicas of a cluster in the domain resource exceeds the MaxDynamicServers setting of a dynamic WebLogic cluster;
-   * An internal error
+ * `Failed`: The domain resource encountered a problem which prevented it from becoming fully up. The possible failure could be one or multiple of the following conditions:
+   * Invalid configurations in domain resource.
+   * A Kubernetes API call error.
+   * Introspection failures.
+   * An unexpected error in a server pod.
+   * A topology mismatch between the domain resource configuration and the WebLogic domain configuration.
+   * The replicas of a cluster in the domain resource exceeds the maximum number of servers configured for the WebLogic cluster.
+   * An internal error.
    * A failure that retries will not help, or has been retried and has exceeded the pre-defined maximum number of retry attempts.
  * `Completed`:  The domain resource has reached the expected state; all servers that are supposed to be started are up running.
  * `Unavailable`: The domain resource became unavailable, which means the domain does not have the required minimum number of servers active.
