@@ -29,7 +29,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimes
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodRestarted;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podExists;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.podInitializing;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.podInitialized;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.JobUtils.getIntrospectJobName;
@@ -125,20 +125,20 @@ public class PodUtils {
   }
 
   /**
-   * Checks that pod is initializing.
+   * Checks that pod is initialized.
    *
    * @param podName pod name to check
    * @param domainUid the label the pod is decorated with
    * @param domainNamespace the domain namespace in which the domain exists
    */
-  public static void checkPodInitializing(String podName, String domainUid, String domainNamespace) {
+  public static void checkPodInitialized(String podName, String domainUid, String domainNamespace) {
     LoggingFacade logger = getLogger();
     testUntil(
-        assertDoesNotThrow(() -> podInitializing(podName, domainUid, domainNamespace),
-          String.format("podReady failed with ApiException for pod %s in namespace %s",
+        assertDoesNotThrow(() -> podInitialized(podName, domainUid, domainNamespace),
+          String.format("podInitialized failed with ApiException for pod %s in namespace %s",
             podName, domainNamespace)),
         logger,
-        "pod {0} to be initializing in namespace {1}",
+        "pod {0} to be initialized in namespace {1}",
         podName,
         domainNamespace);
   }
