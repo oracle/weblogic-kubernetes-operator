@@ -403,22 +403,14 @@ public class DomainStatusUpdater {
     @Nonnull
     private final DomainPresenceInfo info;
     private final DomainStatusUpdaterStep domainStatusUpdaterStep;
-    private DomainStatus newStatus;
 
     DomainStatusUpdaterContext(Packet packet, DomainStatusUpdaterStep domainStatusUpdaterStep) {
       info = DomainPresenceInfo.fromPacket(packet).orElseThrow();
       this.domainStatusUpdaterStep = domainStatusUpdaterStep;
     }
 
-    DomainStatus getCachedNewStatus() {
-      if (newStatus == null) {
-        return getNewStatus();
-      }
-      return newStatus;
-    }
-
     DomainStatus getNewStatus() {
-      newStatus = cloneStatus();
+      DomainStatus newStatus = cloneStatus();
       modifyStatus(newStatus);
 
       if (newStatus.getMessage() == null) {
@@ -469,7 +461,7 @@ public class DomainStatusUpdater {
     }
 
     private Step createDomainStatusReplaceStep() {
-      LOGGER.fine(MessageKeys.DOMAIN_STATUS, getDomainUid(), getCachedNewStatus());
+      LOGGER.fine(MessageKeys.DOMAIN_STATUS, getDomainUid(), getNewStatus());
       if (LOGGER.isFinerEnabled()) {
         LOGGER.finer("status change: " + createPatchString());
       }
@@ -490,7 +482,7 @@ public class DomainStatusUpdater {
 
     private String createPatchString() {
       JsonPatchBuilder builder = Json.createPatchBuilder();
-      getCachedNewStatus().createPatchFrom(builder, getStatus());
+      getNewStatus().createPatchFrom(builder, getStatus());
       return builder.build().toString();
     }
 
@@ -519,7 +511,7 @@ public class DomainStatusUpdater {
       } else if (hasJustGotFatalIntrospectorError()) {
         list.add(new EventData(EventHelper.EventItem.DOMAIN_FAILED)
             .failureReason(Aborted)
-            .message(FATAL_INTROSPECTOR_ERROR_MSG + getCachedNewStatus().getMessage()));
+            .message(FATAL_INTROSPECTOR_ERROR_MSG + getNewStatus().getMessage()));
       }
       return list;
     }
@@ -602,7 +594,7 @@ public class DomainStatusUpdater {
       @Nonnull
       @Override
       List<EventData> createDomainEvents() {
-        Conditions conditions = new Conditions(getCachedNewStatus());
+        Conditions conditions = new Conditions(getNewStatus());
         conditions.apply();
         List<EventData> list = getRemovedConditionEvents(conditions);
         list.addAll(getNewConditionEvents(conditions));
