@@ -25,23 +25,28 @@ weight: 4
 
 ### Supported environments
 
-WebLogic Server and the operator are supported on Oracle Cloud offerings, such as:
-- Oracle Cloud Infrastructure (OCI)
-- Oracle Container Engine for Kubernetes (OKE)
-- Oracle Linux Cloud Native Environment (OLCNE)
-- Oracle Private Cloud Appliance (PCA)
-- Oracle Private Cloud at Customer (OPCC)
+The operator supports a wide range of on-premises and cloud Kubernetes
+offerings where Kubernetes is supplied for you or you set up Kubernetes
+yourself. These include, but are not limited to:
 
-WebLogic Server and the operator are certified on offerings, such as:
-- Amazon Elastic Compute Cloud (EC2)
-- Microsoft Azure Platform
-- Microsoft Azure Kubernetes Service (AKS)
-- OpenShift Container Platform
-- VMWare Tanzu
-- VMware Tanzu Kubernetes Grid (TKG)
+- WebLogic Server and the operator are supported on Oracle Cloud offerings, such as:
+  - Oracle Cloud Infrastructure (OCI)
+  - Oracle Container Engine for Kubernetes (OKE)
+  - Oracle Linux Cloud Native Environment (OLCNE)
+  - Oracle Private Cloud Appliance (PCA)
+  - Oracle Private Cloud at Customer (OPCC)
+
+- WebLogic Server and the operator are certified on offerings, such as:
+  - Amazon Elastic Compute Cloud (EC2)
+  - Microsoft Azure Platform
+  - Microsoft Azure Kubernetes Service (AKS)
+  - OpenShift Container Platform
+  - VMWare Tanzu
+  - VMware Tanzu Kubernetes Grid (TKG)
 
 WebLogic Server and the operator are also supported on service offerings which 
 deploy the WebLogic Server and the operator for you. These include:
+
 - [Oracle WebLogic Server for OKE (WLS for OKE)](https://docs.oracle.com/en/cloud/paas/weblogic-container/)
 - [Oracle WebLogic Server on AKS from the Azure Marketplace (WLS on AKS Marketplace)](#oracle-weblogic-server-on-aks-from-the-azure-marketplace-wls-on-aks-marketplace)
 
@@ -89,6 +94,16 @@ for production deployments.
 General Availabity (GA) images are not licensable or suitable for production use.
 {{% /notice %}}
 
+{{% notice note %}}
+All of the OCR images that are discussed in this section are built using
+the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) (WIT).
+Customers can use WIT to build their own WebLogic Server images
+(with the latest Oracle Linux images, Java updates, and WebLogic Server patches),
+apply one-off patches to existing OCR images,
+or overlay their own files and applications on top of an OCR image. See TBD
+{{% /notice %}}
+
+
 Oracle Linux is under open source license
 and is completely free to download and use.
 
@@ -119,18 +134,7 @@ supplies two types of WebLogic Server or Fusion Middleware Infrastructure images
   - GA images are subject to [Oracle Technology Network (OTN) Developer License Terms](https://www.oracle.com/downloads/licenses/standard-license.html), 
     which include, but are not limited to:
      - Must only be used for the purpose of developing, testing, prototyping, and demonstrating applications.
-     - Application must _not_ be used for any data processing, business, commercial, or production purposes.
-
-OCR image name tags that do not include an embedded date
-stamp represent the latest version,
-and image names with an embedded datestamp represent a specific version.
-
-**Note:** All of these OCR images are built using
-the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) (WIT).
-Customers can use WIT to build their own WebLogic Server images
-(with the latest Oracle Linux images, Java updates, and WebLogic Server patches),
-apply one-off patches to existing OCR images,
-or overlay their own files and applications on top of an OCR image.
+     - Must _not_ be used for any data processing, business, commercial, or production purposes.
 
 Example GA images:
 
@@ -146,14 +150,76 @@ Example CPU images:
 | container-registry.oracle.com/middleware/weblogic_cpu:12.2.1.4-generic-jdk8-ol7-211124 | JDK 8u311, Oracle Linux 7u9, and Oracle WebLogic Server 12.2.1.4 generic distribution October 2021 CPU |
 | container-registry.oracle.com/middleware/weblogic_cpu:12.2.1.4-generic-jdk8-ol7 | Represents latest JDK 8, latest Oracle Linux 7, and GA Oracle WebLogic Server 12.2.1.4 generic distribution CPU |
 
+You may have noticed that the image tags may include keywords like `generic`, `slim`, etc.
+This reflects the type of WebLogic install in the image. There are multiple types,
+and the type usually can be determined by examining the image name and tag:
+- `.../weblogic...:...generic...`:
+  - The WebLogic generic image is supported for development and production deployment
+    of WebLogic configurations using Docker.
+  - Contains the same binaries as those installed by the WebLogic generic installer.
+- `.../weblogic...:...slim...`:
+  - The WebLogic slim image is supported for development and production deployment
+    of WebLogic configurations using Docker.
+  - In order to reduce image size,
+    it contains a subset of the binaries included in the WebLogic generic image:
+    - The WebLogic Console, WebLogic examples, WebLogic clients, Maven plug-ins,
+      and Java DB have been removed.
+    - All binaries that remain included are
+      the same as those in the WebLogic generic image.
+  - If there are requirements to monitor the WebLogic configuration,
+    they should be addressed using Prometheus and Grafana, or other alternatives.
+- `.../weblogic...:...dev...`:
+  - The WebLogic developer image is supported for development 
+    of WebLogic applications in Docker containers.
+  - In order to reduce image size, it contains a subset
+    of the binaries included in the WebLogic generic image:
+    - WebLogic examples and Console help files have been removed.
+    - All binaries that remain included are the same as those in the WebLogic generic image.
+  - This image type is primarily intended to provide a Docker image
+    that is consistent with the WebLogic "quick installers" intended for development only.
+    Production WebLogic domains should use the WebLogic generic or WebLogic slim images.
+- `.../fmw-infrastructure...:...`:
+  - The Fusion Middleware (FMW) Infrastructure image is supported for
+    development and production deployment of FMW configurations using Docker.
+  - It contains the same binaries as those installed by the WebLogic generic installer
+    and adds Fusion Middleware Control and Java Required Files (JRF)
+
+Notes about "undated" OCR images with name tags that do _not_ include an embedded date stamp:
+- They represent a GA version. 
+  _Therefore they may be used in samples and development, but are
+  not recommended for production use._
+- Unlike images with an embedded datastamp,
+  which represent a specific version,
+  undated images are periodically updated to 
+  the latest available versions of their GA equivalents.
+  _Therefore they change over time in the repository
+  even though their name and tag remain the same._
+- Examples of undated images include
+  `registry.oracle.com/middleware/weblogic:TAG` images
+  where `TAG` is one of `12.2.1.3`, `12.2.1.4`, `14.1.1.0-11`, or `14.1.1.0-8`.
+  These are created with the generic installer, 
+  Oracle Linux 7-slim, and JDK8 
+  except for `14.1.1.0-11` (which has JDK11).
+- The tag for an undated image may not 
+  specify its WebLogic installer type, 
+  in which case you can assume it is `generic`.
+  Otherwise, such images may have
+  a tag that includes the string `slim` or `dev`
+  string, in which case they have the 
+  related installer type and are _not_ `generic` images.
+
 TBD 
-- link to domain images doc and/or combine this material with same
-- discuss difference between '-generic' and '-slim' WebLogic images
-- determine what is included in vanilla :12.2.1.3/12.2.1.4/14.1.1.0 images
-  (is it same as GA latest -generic ?)
-  - document this information here?
-- Monica will update 14.1.1.0 images, and continue to update them
-- update GA image table above to have exact correct image names
+- Monica:
+  - A Monica will update 14.1.1.0 images, and continue to update them
+  - B Provide exact names for image table above
+  - F Monica plans to create a a table 
+      in the landing page for OCR with all variations.
+      When ready, we can add a link.
+- Tom:
+  - C Update GA image table above to have exact correct image names
+      when A & B are available.
+  - D Link to this new information from the domain images doc in key places.
+  - Link to F when avaialble.
 
 #### Reference
 
