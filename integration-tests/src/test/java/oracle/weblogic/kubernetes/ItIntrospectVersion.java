@@ -170,7 +170,7 @@ class ItIntrospectVersion {
       = with().pollDelay(2, SECONDS)
       .and().with().pollInterval(10, SECONDS)
       .atMost(10, MINUTES).await();
-  
+
   private static Path clusterViewAppPath;
   private static LoggingFacade logger = null;
 
