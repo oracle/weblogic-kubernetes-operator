@@ -25,6 +25,7 @@ import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
@@ -109,7 +110,7 @@ public class ItMiiSampleHelper {
         RESULTS_ROOT + "/" + domainNamespace + "/model-in-image-sample-work-dir";
 
     // env variables to override default values in sample scripts
-    envMap = new HashMap<String, String>();
+    envMap = new HashMap<>();
     envMap.put("DOMAIN_NAMESPACE", domainNamespace);
     envMap.put("TRAEFIK_NAMESPACE", traefikNamespace);
     envMap.put("TRAEFIK_HTTP_NODEPORT", "0"); // 0-->dynamically choose the np
@@ -175,16 +176,16 @@ public class ItMiiSampleHelper {
     String decoration = (envMap.get("DO_AI") != null && envMap.get("DO_AI").equalsIgnoreCase("true"))  ? "AI-" : "";
 
     if (imageName.contains("-wlsv1")) {
-      imageVer = "WLS-" + decoration + "v1";
+      imageVer = MII_BASIC_IMAGE_TAG + "-WLS-" + decoration + "v1";
     }
     if (imageName.contains("-wlsv2")) {
-      imageVer = "WLS-" + decoration + "v2";
+      imageVer = MII_BASIC_IMAGE_TAG + "-WLS-" + decoration + "v2";
     }
     if (imageName.contains("-jrfv1")) {
-      imageVer = "JRF-" + decoration + "v1";
+      imageVer = MII_BASIC_IMAGE_TAG + "-JRF-" + decoration + "v1";
     }
     if (imageName.contains("-jrfv2")) {
-      imageVer = "JRF-" + decoration + "v2";
+      imageVer = MII_BASIC_IMAGE_TAG + "-JRF-" + decoration + "v2";
     }
 
     String image = imageName + ":" + imageVer;
@@ -254,6 +255,7 @@ public class ItMiiSampleHelper {
         ? getModelImageName(testClassName + "-wlsv1") : getModelImageName(testClassName + "-jrfv1");
     previousTestSuccessful = true;
     envMap.put("MODEL_IMAGE_NAME", imageName);
+    envMap.put("MODEL_IMAGE_TAG", MII_BASIC_IMAGE_TAG + "-" + domainType + "-v1");
 
     if (domainType.equals(DomainType.JRF)) {
       String dbImageName = (KIND_REPO != null
@@ -295,6 +297,7 @@ public class ItMiiSampleHelper {
       String imageName = (domainType.equals(DomainType.WLS))
           ? getModelImageName(testClassName + "-wlsv2") : getModelImageName(testClassName + "-jrfv2");
       envMap.put("MODEL_IMAGE_NAME", imageName);
+      envMap.put("MODEL_IMAGE_TAG", MII_BASIC_IMAGE_TAG + "-" + domainType + "-v2");
     }
 
     execTestScriptAndAssertSuccess(domainType, args, errString);
