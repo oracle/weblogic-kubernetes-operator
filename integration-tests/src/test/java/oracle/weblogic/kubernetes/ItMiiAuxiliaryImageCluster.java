@@ -73,7 +73,7 @@ class ItMiiAuxiliaryImageCluster {
   private final String clusterName = "cluster-1";
   private final int replicaCount = 2;
   private final int clusterIndex = 0;
-  private final String miiAuxiliaryImagePrefix = MII_AUXILIARY_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG;
+  private final String miiAuxiliaryImagePrefix = MII_AUXILIARY_IMAGE_NAME + "-cluster:" + MII_BASIC_IMAGE_TAG;
   private final String auxiliaryImageVolumeName = "auxiliaryImageVolumeCluster";
   private final String auxiliaryImagePath = "/auxiliary";
   private final String customDir = "customdir";
