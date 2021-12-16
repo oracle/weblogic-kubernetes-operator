@@ -356,7 +356,7 @@ class ItServerStartPolicyDynamicCluster {
       logger.info("Replica count increased without admin server");
 
       // Check if pod in init state
-      // Here the server pd is created but does not goes into 1/1 state
+      // Here the server pod is created but does not goes into 1/1 state
       checkPodInitialized(serverPodName, domainUid, domainNamespace);
       logger.info("Server[" + serverName + "] pod is initialized");
 
