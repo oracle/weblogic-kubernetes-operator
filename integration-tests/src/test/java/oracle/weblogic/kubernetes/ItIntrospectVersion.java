@@ -92,6 +92,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.Pod.getPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
+import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvNotExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
@@ -169,7 +170,7 @@ class ItIntrospectVersion {
       = with().pollDelay(2, SECONDS)
       .and().with().pollInterval(10, SECONDS)
       .atMost(10, MINUTES).await();
-
+  
   private static Path clusterViewAppPath;
   private static LoggingFacade logger = null;
 
@@ -256,8 +257,21 @@ class ItIntrospectVersion {
 
     // create persistent volume and persistent volume claim for domain
     // these resources should be labeled with domainUid for cleanup after testing
+    // delete the PV first in case it exists
+    String labelSelector = String.format("weblogic.domainUID in (%s)", domainUid);
     deletePersistentVolumeClaim(pvcName, introDomainNamespace);
     deletePersistentVolume(pvName);
+    // wait until the pv is deleted
+    withStandardRetryPolicy
+        .conditionEvaluationListener(
+            condition -> logger.info("Waiting for persistent volume {0} deleted "
+                    + "(elapsed time {1}ms, remaining time {2}ms)",
+                pvName,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(assertDoesNotThrow(() -> pvNotExists(pvName, labelSelector),
+            String.format("pvNotExists failed with ApiException when checking pv %s", pvName)));
+
     createPV(pvName, domainUid, this.getClass().getSimpleName());
     createPVC(pvName, pvcName, domainUid, introDomainNamespace);
 
