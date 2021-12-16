@@ -423,6 +423,7 @@ public class Kubernetes {
    * @param namespace name of the Namespace
    * @param container name of container for which to stream logs
    * @param previous whether return previous terminated container logs
+   * @param sinceSeconds relative time in seconds before the current time from which to show logs
    * @return log as a String or NULL when there is an error
    * @throws ApiException if Kubernetes client API call fails
    */
