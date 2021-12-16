@@ -97,7 +97,7 @@ public class PodDisruptionBudgetHelper {
         if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
           return updateDomainStatus(packet, callResponse);
         } else {
-          return onFailure(conflictStep, packet, callResponse);
+          return onFailure(getConflictStep(), packet, callResponse);
         }
       }
 
