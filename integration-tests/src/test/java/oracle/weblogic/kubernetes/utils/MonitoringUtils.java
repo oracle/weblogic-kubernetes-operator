@@ -142,7 +142,7 @@ public class MonitoringUtils {
     assertDoesNotThrow(() -> Files.createDirectories(monitoringTemp));
 
     String monitoringExporterBranch = Optional.ofNullable(System.getenv("MONITORING_EXPORTER_BRANCH"))
-        .orElse("master");
+        .orElse("main");
     CommandParams params = Command.defaultCommandParams()
         .command("git clone -b "
             + monitoringExporterBranch
