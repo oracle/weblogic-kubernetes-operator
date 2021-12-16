@@ -32,7 +32,7 @@ Be aware of the following important considerations for WebLogic domains running 
   A container image that contains a WebLogic domain has sensitive information including
   keys and credentials that are used to access external resources (for example, the data source password).
   For more information, see
-  [WebLogic domain in container image protection]({{<relref "/security/domain-security/image-protection#weblogic-domain-in-container-image-protection">}}).
+  [WebLogic domain in container image protection]({{<relref "/security/domain-security/image-protection#weblogic-domain-in-image-protection">}}).
   {{% /notice %}}
 
 * _Log File Locations:_ The operator can automatically override WebLogic Server, domain, and introspector log locations.
@@ -59,7 +59,7 @@ Be aware of the following important considerations for WebLogic domains running 
   Exposing administrative, RMI, or T3 capable channels using a Kubernetes `NodePort`
   can create an insecure configuration. In general, only HTTP protocols should be made available externally and this exposure
   is usually accomplished by setting up an external load balancer that can access internal (non-`NodePort`) services.
-  For more information, see [T3 channels]({{<relref "/security/domain-security/weblogic-channels#weblogic-t3-channels">}}).
+  For more information, see [WebLogic T3 and administrative channels]({{<relref "/security/domain-security/weblogic-channels#weblogic-t3-and-administrative-channels">}}).
   {{% /notice %}}
 
 * _Host Path Persistent Volumes:_ If using a `hostPath` persistent volume, then it must be available on all worker nodes in the cluster and have read/write/many permissions for all container/pods in the WebLogic Server deployment.  Be aware
