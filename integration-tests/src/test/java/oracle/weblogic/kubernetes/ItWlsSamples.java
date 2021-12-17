@@ -32,9 +32,11 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
@@ -47,6 +49,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkClusterReplicaCountMatches;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
@@ -88,7 +91,7 @@ class ItWlsSamples {
   private static String domainNamespace = null;
   private static final String domainName = "domain1";
   private static final String diiImageNameBase = "domain-home-in-image";
-  private static final String diiImageTag = "12.2.1.4";
+  private static final String diiImageTag = getDateAndTimeStamp();
   private final int replicaCount = 2;
   private final String clusterName = "cluster-1";
   private final String managedServerNameBase = "managed-server";
@@ -157,9 +160,7 @@ class ItWlsSamples {
   void testSampleDomainInImage(String model) {
     String domainName = model.split(":")[1];
     String script = model.split(":")[0];
-    String imageName = (KIND_REPO != null
-            ? KIND_REPO + diiImageNameBase + "_" + script + ":" + diiImageTag
-            : diiImageNameBase + "_" + script + ":" + diiImageTag);
+    String imageName = DOMAIN_IMAGES_REPO + diiImageNameBase + "-" + script + ":" + diiImageTag;
 
     //copy the samples directory to a temporary location
     setupSample();
@@ -174,7 +175,7 @@ class ItWlsSamples {
     // update domainHomeImageBase with right values in create-domain-inputs.yaml
     assertDoesNotThrow(() -> {
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-              "domainHomeImageBase: container-registry.oracle.com/middleware/weblogic:" + diiImageTag,
+              "domainHomeImageBase: container-registry.oracle.com/middleware/weblogic:" + OCIR_WEBLOGIC_IMAGE_TAG,
               "domainHomeImageBase: " + WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "#image:",
@@ -247,7 +248,7 @@ class ItWlsSamples {
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "createDomainFilesDir: wlst", "createDomainFilesDir: " + script);
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-              "image: container-registry.oracle.com/middleware/weblogic:12.2.1.4",
+              "image: container-registry.oracle.com/middleware/weblogic:" + OCIR_WEBLOGIC_IMAGE_TAG,
               "image: " + WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
     });
 
@@ -550,6 +551,10 @@ class ItWlsSamples {
               "#t3PublicAddress:", "t3PublicAddress: " + K8S_NODEPORT_HOST);
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "#imagePullSecretName:", "imagePullSecretName: " + BASE_IMAGES_REPO_SECRET);
+      if (KIND_REPO == null) {
+        replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+            "imagePullPolicy: IfNotPresent", "imagePullPolicy: Always");
+      }
     });
   }
 
