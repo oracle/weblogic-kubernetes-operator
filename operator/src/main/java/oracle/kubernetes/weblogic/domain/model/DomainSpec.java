@@ -61,7 +61,7 @@ public class DomainSpec extends BaseConfiguration {
    */
   @Description(
       "The directory containing the WebLogic domain configuration inside the container."
-          + " Defaults to /shared/domains/domains/<domainUID> if `domainHomeSourceType` is PersistentVolume."
+          + " Defaults to /shared/domains/<domainUID> if `domainHomeSourceType` is PersistentVolume."
           + " Defaults to /u01/oracle/user_projects/domains/ if `domainHomeSourceType` is Image."
           + " Defaults to /u01/domains/<domainUID> if `domainHomeSourceType` is FromModel.")
   private String domainHome;
