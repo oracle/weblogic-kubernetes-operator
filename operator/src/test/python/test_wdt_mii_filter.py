@@ -415,7 +415,7 @@ class WdtUpdateFilterCase(unittest.TestCase):
 
       isSecureModeEnabled = model_wdt_mii_filter.isSecureModeEnabledForDomain(topology)
       self.fail("Expected import error for LegalHelper")
-    except ImportError, ie:
+    except ImportError as ie:
       self.assertTrue(ie is not None)
 
 
