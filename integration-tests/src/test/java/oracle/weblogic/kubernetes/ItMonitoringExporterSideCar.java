@@ -214,7 +214,7 @@ class ItMonitoringExporterSideCar {
     try {
       // create and verify one cluster mii domain
       logger.info("Create domain and verify that it's running");
-      String modelFile = SessionMigrationUtil.generateSessionMigrYaml("ItMonitoringExporterSide", domain3Uid);
+      String modelFile = SessionMigrationUtil.generateSessionMigrYaml("ItMonitoringExporterSideCar", domain3Uid);
       String miiImage1 = createAndVerifyMiiImage(modelFile);
       String yaml = RESOURCE_DIR + "/exporter/rest_webapp.yaml";
       createAndVerifyDomain(miiImage1, domain3Uid, domain3Namespace, "FromModel", 2, false, yaml, exporterImage);
