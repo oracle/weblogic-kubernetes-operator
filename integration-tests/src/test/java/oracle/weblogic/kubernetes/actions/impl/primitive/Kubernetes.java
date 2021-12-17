@@ -91,6 +91,7 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodInitialized;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -422,6 +423,7 @@ public class Kubernetes {
    * @param namespace name of the Namespace
    * @param container name of container for which to stream logs
    * @param previous whether return previous terminated container logs
+   * @param sinceSeconds relative time in seconds before the current time from which to show logs
    * @return log as a String or NULL when there is an error
    * @throws ApiException if Kubernetes client API call fails
    */
@@ -432,6 +434,7 @@ public class Kubernetes {
                                  Integer sinceSeconds)
       throws ApiException {
     String log = null;
+    checkPodInitialized(name,null,namespace);
     try {
       log = coreV1Api.readNamespacedPodLog(
           name, // name of the Pod
