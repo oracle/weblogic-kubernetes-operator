@@ -22,16 +22,22 @@ public interface EventConstants {
   String EVENT_WARNING = "Warning";
   String WEBLOGIC_OPERATOR_COMPONENT = "weblogic.operator";
 
-  String DOMAIN_AVAILABLE_PATTERN = "Domain %s became available";
-  String DOMAIN_CREATED_PATTERN = "Domain %s was created";
-  String DOMAIN_CHANGED_PATTERN = "Domain %s was changed";
-  String DOMAIN_COMPLETED_PATTERN = "Domain %s is completely ready";
-  String DOMAIN_DELETED_PATTERN = "Domain %s was deleted";
+  String DOMAIN_AVAILABLE_PATTERN
+      = "Domain %s is available: a sufficient number of its servers have reached the ready state.";
+  String DOMAIN_CREATED_PATTERN = "Domain %s was created.";
+  String DOMAIN_CHANGED_PATTERN = "Domain %s was changed.";
+  String DOMAIN_COMPLETED_PATTERN = "Domain %s is complete because all of the following are true: "
+      + "there is no failure detected, "
+      + "there are no pending server shutdowns, and all servers expected to be running are ready "
+      + "and at their target image, auxiliary images, restart version, and introspect version.";
+  String DOMAIN_DELETED_PATTERN = "Domain %s was deleted.";
   String DOMAIN_FAILED_PATTERN = "Domain %s failed due to '%s': %s. %s";
   String DOMAIN_UNAVAILABLE_PATTERN
-      = "Domain %s became unavailable because none of the servers is up although some of them are supposed to be up";
+      = "Domain %s is unavailable: an insufficient number of its servers that are expected to be running are ready.";
   String DOMAIN_INCOMPLETE_PATTERN
-      = "Domain %s became incomplete because some of the servers is not up although they are supposed to be up";
+      = "Domain %s is incomplete for one or more of the following reasons: there are failures detected, "
+      + "there are pending server shutdowns, or not all servers expected to be running are ready "
+      + "and at their target image, auxiliary images, restart version, and introspect version.";
   String DOMAIN_FAILURE_RESOLVED_PATTERN
       = "Domain %s encountered some failures before, and those failures have been resolved";
   String POD_CYCLE_STARTING_PATTERN = "Replacing pod %s because: %s";
@@ -61,7 +67,8 @@ public interface EventConstants {
   String REPLICAS_TOO_HIGH_ERROR = "Replicas too high";
   String INTERNAL_ERROR = "Internal error";
   String ABORTED_ERROR = "Domain processing is aborted";
-  String ABORTED_ERROR_SUGGESTION = "The domain will not be retried unless the problem is corrected.";
+  String ABORTED_ERROR_SUGGESTION = "The reported problem should be corrected, and the domain will not be retried "
+      + "until the domain resource is updated.";
   String WILL_NOT_RETRY = ABORTED_ERROR_SUGGESTION;
   String WILL_RETRY = " Will retry.";
   String DOMAIN_INVALID_ERROR_SUGGESTION = "Update the domain resource to correct the validation error.";
@@ -69,6 +76,6 @@ public interface EventConstants {
       = "Update the domain resource or change the WebLogic domain configuration to correct the error.";
   String KUBERNETES_ERROR_SUGGESTION = "";
   String SERVER_POD_ERROR_SUGGESTION = "";
-  String REPLICAS_TOO_HIGH_ERROR_SUGGESTION
-      = "Lower replicas in domain resource or increase MaxDynamicClusterSize in WebLogic domain configuration";
+  String REPLICAS_TOO_HIGH_ERROR_SUGGESTION = "Lower replicas in the domain resource, or increase DynamicClusterSize "
+      + "and MaxDynamicClusterSize in the WebLogic domain configuration.";
 }

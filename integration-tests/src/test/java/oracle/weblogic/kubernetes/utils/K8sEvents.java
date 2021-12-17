@@ -226,13 +226,16 @@ public class K8sEvents {
           logger.info(Yaml.dump(event));
           verifyOperatorDetails(event, opNamespace, domainUid);
           //verify type
-          logger.info("Verifying domain event type {0}", type);
+          logger.info("Verifying domain event type {0} with reason {1} for domain {2} in namespace {3}",
+              type, reason, domainUid, domainNamespace);
           assertEquals(event.getType(), type);
           return true;
         }
       }
     } catch (ApiException ex) {
-      logger.log(Level.SEVERE, null, ex);
+      logger.log(Level.SEVERE,
+          String.format("Failed to verify domain event type %s with reason %s for domain %s in namespace %s",
+              type, reason, domainUid, domainNamespace), ex);
     }
     return false;
   }

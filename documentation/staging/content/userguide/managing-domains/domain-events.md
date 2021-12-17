@@ -45,7 +45,7 @@ The operator generates these event types in a domain namespace, which indicate t
  * `Created`: A new domain is created.
  * `Changed`: A change has been made to an existing domain.
  * `Deleted`: An existing domain has been deleted.
- * `Available`: An existing domain has become available, which means a sufficient number of servers are ready such that the customer's applications are available.
+ * `Available`: An existing domain is available, which means a sufficient number of servers are ready such that the customer's applications are available.
  * `Failed`: The domain resource encountered a problem which prevented it from becoming fully up. The possible failure could be one or multiple of the following conditions:
    * Invalid configurations in domain resource.
    * A Kubernetes API call error.
@@ -55,9 +55,9 @@ The operator generates these event types in a domain namespace, which indicate t
    * The replicas of a cluster in the domain resource exceeds the maximum number of servers configured for the WebLogic cluster.
    * An internal error.
    * A failure that retries will not help, or has been retried and has exceeded the pre-defined maximum number of retry attempts.
- * `Completed`:  The domain resource has reached the expected state; all servers that are supposed to be started are up running.
- * `Unavailable`: The domain resource became unavailable, which means the domain does not have the required minimum number of servers active.
- * `Uncompleted`: The domain resource became incomplete; some servers that are supposed to be running are not.
+ * `Completed`:  The domain resource is complete because all of the following are true: there is no failure detected, there are no pending server shutdowns, and all servers expected to be running are ready and at their target image, auxiliary images, restart version, and introspect version.all servers that are supposed to be started are up running.
+ * `Unavailable`: The domain resource is unavailable, which means the domain does not have a sufficient number of servers active.
+ * `Incomplete`: The domain resource is incomplete for one or more of the following reasons: there are failures detected, there are pending server shutdowns, or not all servers expected to be running are ready and at their target image, auxiliary images, restart version, and introspect version.
  * `FailureRessolved`: The failure condition that the domain was in has been resolved.
  * `RollStarting`:  The operator has detected domain resource or Model in Image model
     updates that require it to perform a rolling restart of the domain.
@@ -152,7 +152,7 @@ Involved Object:
   UID:           358f9335-61b2-499a-9d2a-61ae625db2ea
 Kind:            Event
 Last Timestamp:  2021-12-14T16:23:53Z
-Message:         Domain sample-domain1 became available
+Message:         Domain sample-domain1 is available: a sufficient number of its servers have reached the ready state.
 Metadata:
   Creation Timestamp:  2021-12-14T16:23:49Z
   Resource Version:   5366831
@@ -187,7 +187,7 @@ Involved Object:
   UID:           358f9335-61b2-499a-9d2a-61ae625db2ea
 Kind:            Event
 Last Timestamp:  2021-12-14T16:23:49Z
-Message:         Domain sample-domain1 became incomplete because some of the servers is not up although they are supposed to be up
+Message:         Domain sample-domain1 is incomplete for one or more of the following reasons: there are failures detected, there are pending server shutdowns, or not all servers expected to be running are ready and at their target image, auxiliary images, restart version, and introspect version.
 Metadata:
   Creation Timestamp:  2021-12-14T16:23:49Z
   Resource Version:   5366820
@@ -245,7 +245,7 @@ The output of command `kubectl get events -n sample-domain1-ns --sort-by=lastTim
 
 ```
 LAST SEEN   TYPE      REASON             OBJECT                                         MESSAGE
-7m51s       Normal    Created            domain/sample-domain1                          Domain sample-domain1 was created
+7m51s       Normal    Created            domain/sample-domain1                          Domain sample-domain1 was created.
 7m51s       Normal    SuccessfulCreate   job/sample-domain1-introspector                Created pod: sample-domain1-introspector-5ggh6
 7m50s       Normal    Pulled             pod/sample-domain1-introspector-5ggh6          Container image "model-in-image:WLS-v1" already present on machine
 7m50s       Normal    Created            pod/sample-domain1-introspector-5ggh6          Created container sample-domain1-introspector
@@ -268,14 +268,14 @@ LAST SEEN   TYPE      REASON             OBJECT                                 
 6m2s        Normal    Created            pod/sample-domain1-managed-server1             Created container weblogic-server
 5m28s       Warning   Unhealthy          pod/sample-domain1-managed-server2             Readiness probe failed: Get "http://192.168.0.162:8001/weblogic/ready": dial tcp 192.168.0.162:8001: connect: connection refused
 5m24s       Warning   Unhealthy          pod/sample-domain1-managed-server1             Readiness probe failed: Get "http://192.168.0.161:8001/weblogic/ready": dial tcp 192.168.0.161:8001: connect: connection refused
-4m30s       Warning   Unavailable        domain/sample-domain1                          Domain sample-domain1 became unavailable because none of the servers is up although some of them are supposed to be up
+4m30s       Warning   Unavailable        domain/sample-domain1                          Domain sample-domain1 is unavailable: an insufficient number of its servers that are expected to be running are ready.
 4m30s       Normal    SuccessfulCreate   job/sample-domain1-introspector                Created pod: sample-domain1-introspector-845w9
-4m30s       Warning   Incomplete         domain/sample-domain1                          Domain sample-domain1 became incomplete because some of the servers is not up although they are supposed to be up
+4m30s       Warning   Incomplete         domain/sample-domain1                          Domain sample-domain1 is incomplete for one or more of the following reasons: there are failures detected, there are pending server shutdowns, or not all servers expected to be running are ready and at their target image, auxiliary images, restart version, and introspect version.
 4m30s       Normal    Scheduled          pod/sample-domain1-introspector-845w9          Successfully assigned sample-domain1-ns/sample-domain1-introspector-845w9 to doxiao-1
 3m44s       Normal    Pulling            pod/sample-domain1-introspector-845w9          Pulling image "model-in-image:WLS-v2"
 3m43s       Warning   Failed             pod/sample-domain1-introspector-845w9          Failed to pull image "model-in-image:WLS-v2": rpc error: code = Unknown desc = pull access denied for model-in-image, repository does not exist or may require 'docker login'
 3m43s       Warning   Failed             pod/sample-domain1-introspector-845w9          Error: ErrImagePull
-3m36s       Normal    Changed            domain/sample-domain1                          Domain sample-domain1 was changed
+3m36s       Normal    Changed            domain/sample-domain1                          Domain sample-domain1 was changed.
 3m16s       Normal    BackOff            pod/sample-domain1-introspector-845w9          Back-off pulling image "model-in-image:WLS-v2"
 3m16s       Warning   DNSConfigForming   pod/sample-domain1-introspector-845w9          Search Line limits were exceeded, some search paths have been omitted, the applied search line is: sample-domain1-ns.svc.cluster.local svc.cluster.local cluster.local subnet1ad3phx.devweblogicphx.oraclevcn.com us.oracle.com oracle.com
 3m16s       Warning   Failed             pod/sample-domain1-introspector-845w9          Error: ImagePullBackOff
@@ -291,8 +291,8 @@ Job sample-domain1-introspector failed due to reason: DeadlineExceeded. ActiveDe
 2m19s       Warning   Failed             domain/sample-domain1                          Domain sample-domain1 failed due to 'Internal error': io.kubernetes.client.openapi.ApiException: . Introspection failed on try 2 of 5.
 Introspection Error:
 io.kubernetes.client.openapi.ApiException:  Will retry.
-2m9s        Normal    Available          domain/sample-domain1                          Domain sample-domain1 became available
-2m8s        Normal    Completed          domain/sample-domain1                          Domain sample-domain1 is completely ready
+2m9s        Normal    Available          domain/sample-domain1                          Domain sample-domain1 is available: a sufficient number of its servers have reached the ready state.
+2m8s        Normal    Completed          domain/sample-domain1                          Domain sample-domain1 is complete because all of the following are true: there is no failure detected, there are no pending server shutdowns, and all servers expected to be running are ready and at their target image, auxiliary images, restart version, and introspect version.
 
 ```
 
@@ -333,9 +333,9 @@ Example of the sequence of operator generated events in a domain rolling restart
 
 ```
 LAST SEEN   TYPE      REASON             OBJECT                                         MESSAGE
-4m31s       Normal    Changed            domain/sample-domain1                          Domain sample-domain1 was changed
-4m28s       Warning   Incomplete         domain/sample-domain1                          Domain sample-domain1 became incomplete because some of the servers is not up although they are supposed to be up
-4m28s       Warning   Unavailable        domain/sample-domain1                          Domain sample-domain1 became unavailable because none of the servers is up although some of them are supposed to be up
+4m31s       Normal    Changed            domain/sample-domain1                          Domain sample-domain1 was changed.
+4m28s       Warning   Incomplete         domain/sample-domain1                          Domain sample-domain1 is incomplete for one or more of the following reasons: there are failures detected, there are pending server shutdowns, or not all servers expected to be running are ready and at their target image, auxiliary images, restart version, and introspect version.
+4m28s       Warning   Unavailable        domain/sample-domain1                          Domain sample-domain1 is unavailable: an insufficient number of its servers that are expected to be running are ready.
 4m27s       Normal    PodCycleStarting   domain/sample-domain1                          Replacing pod sample-domain1-admin-server because: In container 'weblogic-server':
   'image' changed from 'model-in-image:WLS-v1' to 'mii-image:v2'
 4m27s       Normal    RollStarting       domain/sample-domain1                          Rolling restart WebLogic server pods in domain sample-domain1 because: 'image' changed from 'model-in-image:WLS-v1' to 'mii-image:v2'
@@ -345,7 +345,7 @@ LAST SEEN   TYPE      REASON             OBJECT                                 
 22m         Normal    PodCycleStarting   domain/sample-domain1                          Replacing pod sample-domain1-managed-server2 because: In container 'weblogic-server':
   'image' changed from 'model-in-image:WLS-v1' to 'mii-image:v2'
 64s         Normal    RollCompleted      domain/sample-domain1                          Rolling restart of domain sample-domain1 completed
-12s         Normal    Completed          domain/sample-domain1                          Domain sample-domain1 is completely ready
+12s         Normal    Completed          domain/sample-domain1                          Domain sample-domain1 is complete because all of the following are true: there is no failure detected, there are no pending server shutdowns, and all servers expected to be running are ready and at their target image, auxiliary images, restart version, and introspect version.
 ```
 
 Example of a `RollStarting` event:
