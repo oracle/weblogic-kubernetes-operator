@@ -271,7 +271,7 @@ public class ManagedServersUpStep extends Step {
     private void logIfReplicasExceedsClusterServersMax(WlsClusterConfig clusterConfig) {
       if (exceedsMaxConfiguredClusterSize(clusterConfig)) {
         String clusterName = clusterConfig.getClusterName();
-        addReplicasTooHighValidationErrorEventAndWarning(
+        addReplicasTooHighValidationErrorWarning(
             domain.getReplicaCount(clusterName),
             clusterConfig.getMaxDynamicClusterSize(),
             clusterName);
@@ -292,7 +292,7 @@ public class ManagedServersUpStep extends Step {
       }
     }
 
-    private void addReplicasTooHighValidationErrorEventAndWarning(Object... messageParams) {
+    private void addReplicasTooHighValidationErrorWarning(Object... messageParams) {
       LOGGER.warning(MessageKeys.REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT, messageParams);
     }
 
