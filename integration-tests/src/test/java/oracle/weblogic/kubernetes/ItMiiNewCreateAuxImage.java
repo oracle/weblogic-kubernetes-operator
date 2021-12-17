@@ -254,11 +254,9 @@ class ItMiiNewCreateAuxImage {
     }
 
     // push image1 to repo for multi node cluster
-    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      logger.info("docker push image {0}:{1} to registry {2}", miiAuxiliaryImage2, MII_BASIC_IMAGE_TAG,
-          DOMAIN_IMAGES_REPO);
-      dockerLoginAndPushImageToRegistry(miiAuxiliaryImage2 + ":" + MII_BASIC_IMAGE_TAG);
-    }
+    logger.info("docker push image {0}:{1} to registry {2}", miiAuxiliaryImage2, MII_BASIC_IMAGE_TAG,
+        DOMAIN_IMAGES_REPO);
+    dockerLoginAndPushImageToRegistry(miiAuxiliaryImage2 + ":" + MII_BASIC_IMAGE_TAG);
 
     // create domain custom resource using auxiliary image
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
@@ -331,11 +329,9 @@ class ItMiiNewCreateAuxImage {
     }
 
     // push image1 to repo for multi node cluster
-    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      logger.info("docker push image {0}:{1} to registry {2}", miiAuxiliaryImage3, MII_BASIC_IMAGE_TAG,
-          DOMAIN_IMAGES_REPO);
-      dockerLoginAndPushImageToRegistry(miiAuxiliaryImage3 + ":" + MII_BASIC_IMAGE_TAG);
-    }
+    logger.info("docker push image {0}:{1} to registry {2}", miiAuxiliaryImage3, MII_BASIC_IMAGE_TAG,
+        DOMAIN_IMAGES_REPO);
+    dockerLoginAndPushImageToRegistry(miiAuxiliaryImage3 + ":" + MII_BASIC_IMAGE_TAG);
 
     // create domain custom resource using auxiliary image
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
