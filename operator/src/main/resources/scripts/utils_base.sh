@@ -234,6 +234,17 @@ function initAuxiliaryImage() {
     return
   fi
 
+  if [[ "$AUXILIARY_IMAGE_COMMAND" == "cp -R \$AUXILIARY_IMAGE_PATH/* \$AUXILIARY_IMAGE_TARGET_PATH" ]]; then
+    # Auxiliary image command is default, validate that AUXILIARY_IMAGE_PATH exists and is not empty.
+    if [ ! -d ${AUXILIARY_IMAGE_PATH} ]; then
+      trace SEVERE "Auxiliary Image: Dir '${AUXILIARY_IMAGE_PATH}' doesn't exist. Exiting."
+      return
+    elif [ -z "$(ls -A ${AUXILIARY_IMAGE_PATH})" ]; then
+      trace SEVERE "Auxiliary Image: Dir '${AUXILIARY_IMAGE_PATH}' is empty. Exiting."
+      return
+    fi
+  fi
+
   trace FINE "Auxiliary Image: About to execute command '$AUXILIARY_IMAGE_COMMAND' in container image='$AUXILIARY_IMAGE_CONTAINER_IMAGE'. " \
              "AUXILIARY_IMAGE_PATH is '$AUXILIARY_IMAGE_PATH' and AUXILIARY_IMAGE_TARGET_PATH is '${AUXILIARY_IMAGE_TARGET_PATH}'."
   traceDirs before AUXILIARY_IMAGE_PATH
