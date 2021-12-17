@@ -169,12 +169,10 @@ class ItMiiNewCreateAuxImage {
       logger.info("!!!! auxiliary image {0}:{1} exists !!!!", miiAuxiliaryImage1, MII_BASIC_IMAGE_TAG);
     }
 
-    // push auximage1 to repo for multi node cluster
-    if (!DOMAIN_IMAGES_REPO.isEmpty()) {
-      logger.info("docker push image {0}:{1} to registry {2}", miiAuxiliaryImage1, MII_BASIC_IMAGE_TAG,
-          DOMAIN_IMAGES_REPO);
-      dockerLoginAndPushImageToRegistry(miiAuxiliaryImage1 + ":" + MII_BASIC_IMAGE_TAG);
-    }
+    // push auxiliary image to repo for multi node cluster
+    logger.info("docker push image {0}:{1} to registry {2}", miiAuxiliaryImage1, MII_BASIC_IMAGE_TAG,
+        DOMAIN_IMAGES_REPO);
+    dockerLoginAndPushImageToRegistry(miiAuxiliaryImage1 + ":" + MII_BASIC_IMAGE_TAG);
 
     // create domain custom resource using auxiliary image
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
@@ -185,7 +183,7 @@ class ItMiiNewCreateAuxImage {
         auxiliaryImageVolumeName, miiAuxiliaryImage1 + ":" + MII_BASIC_IMAGE_TAG);
 
     // create domain and verify its running
-    logger.info("Creating domain {0} with auxiliary images {1} in namespace {2}",
+    logger.info("Creating domain {0} with auxiliary image {1} in namespace {2}",
         domain1Uid, miiAuxiliaryImage1, domainNamespace);
     String adminServerPodName = domain1Uid + "-admin-server";
     String managedServerPrefix = domain1Uid + "-managed-server";

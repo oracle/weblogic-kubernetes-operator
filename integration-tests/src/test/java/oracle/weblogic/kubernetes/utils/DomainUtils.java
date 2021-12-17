@@ -267,7 +267,7 @@ public class DomainUtils {
   }
 
   /**
-   * Patch a domain with auxiliary image.
+   * Patch a domain with auxiliary image and verify pods are rolling restarted.
    * @param oldImageName old auxiliary image name
    * @param newImageName new auxiliary image name
    * @param domainUid uid of the domain
@@ -319,7 +319,7 @@ public class DomainUtils {
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
     assertNotNull(domain1, "Got null domain resource after patching");
-    assertNotNull(domain1.getSpec(), domain1 + " /spec/serverPod is null");
+    assertNotNull(domain1.getSpec(), domain1 + " /spec is null");
     assertNotNull(domain1.getSpec().getServerPod(), domain1 + " /spec/serverPod is null");
     assertNotNull(domain1.getSpec().getServerPod().getAuxiliaryImages(),
         domain1 + "/spec/serverPod/auxiliaryImages is null");
@@ -328,7 +328,7 @@ public class DomainUtils {
     auxiliaryImageList = domain1.getSpec().getServerPod().getAuxiliaryImages();
 
     String auxiliaryImage = auxiliaryImageList.get(index).getImage();
-    getLogger().info("In the new patched domain imageValue is: {0}", auxiliaryImage);
+    getLogger().info("In the new patched domain, imageValue is: {0}", auxiliaryImage);
     assertTrue(auxiliaryImage.equalsIgnoreCase(newImageName), "auxiliary image was not updated"
         + " in the new patched domain");
 
