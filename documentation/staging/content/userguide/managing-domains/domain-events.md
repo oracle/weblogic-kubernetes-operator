@@ -8,7 +8,7 @@ pre = "<b> </b>"
 ### Contents
 
 - [Overview](#overview)
-- [What's changed in 4.0](#what's-changed-in-4.0)
+- [What changed in 4.0](#what-changed-in-4.0)
 - [Operator-generated event types](#operator-generated-event-types)
 - [Operator-generated event details](#operator-generated-event-details)
 - [How to access the events](#how-to-access-the-events)
@@ -18,7 +18,7 @@ pre = "<b> </b>"
 
 This document describes Kubernetes events that the operator generates about resources that it manages, during key points of its processing workflow. These events provide an additional way of monitoring your domain resources. Most of the operator-generated events are associated with a domain resource, and those events are included in the domain resource object as well. Note that the Kubernetes server also generates events for standard Kubernetes resources, such as pods, services, and jobs that the operator generates on behalf of deployed domain custom resources.
 
-### What's changed in 4.0
+### What changed in 4.0
 
 The domain events have been enhanced in 4.0. Here is a summary of the changes in this area:
 * Removed two event types: `DomainProcessingStarting` and `DomainProcessingRetrying`.
