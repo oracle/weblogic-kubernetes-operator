@@ -382,7 +382,7 @@
                   **/ItPodTemplates,
                   **/ItRemoteConsole,
                   **/ItServerStartPolicy,
-		          **/ItServiceStartPolicyDynamicCluster,
+		  **/ItServiceStartPolicyDynamicCluster,
                   **/ItServerStartPolicyConfigCluster,
                   **/ItSessionMigration,
                   **/ItStickySession,
