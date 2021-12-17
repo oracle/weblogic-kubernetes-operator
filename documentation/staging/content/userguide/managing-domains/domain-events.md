@@ -8,7 +8,7 @@ pre = "<b> </b>"
 ### Contents
 
 - [Overview](#overview)
-- [What's changed in 4.0](#what's-changed-in 4.0)
+- [What's changed in 4.0](#what's-changed-in-4.0)
 - [Operator-generated event types](#operator-generated-event-types)
 - [Operator-generated event details](#operator-generated-event-details)
 - [How to access the events](#how-to-access-the-events)
