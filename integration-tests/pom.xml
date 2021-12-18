@@ -379,6 +379,7 @@
                   **/ItPodsRestart,
                   **/ItPodsShutdownOption,
                   **/ItPodTemplates,
+                  **/ItProductionSecureMode,
                   **/ItRemoteConsole,
                   **/ItServerStartPolicy,
 		  **/ItServiceStartPolicyDynamicCluster,
