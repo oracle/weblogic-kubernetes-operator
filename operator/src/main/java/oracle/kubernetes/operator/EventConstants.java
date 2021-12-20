@@ -76,6 +76,6 @@ public interface EventConstants {
       = "Update the domain resource or change the WebLogic domain configuration to correct the error.";
   String KUBERNETES_ERROR_SUGGESTION = "";
   String SERVER_POD_ERROR_SUGGESTION = "";
-  String REPLICAS_TOO_HIGH_ERROR_SUGGESTION = "Lower replicas in the domain resource, or increase DynamicClusterSize "
-      + "and MaxDynamicClusterSize in the WebLogic domain configuration.";
+  String REPLICAS_TOO_HIGH_ERROR_SUGGESTION = "Lower replicas in the domain resource, or increase the number "
+      + "of WebLogic servers in the WebLogic domain configuration for the cluster.";
 }
