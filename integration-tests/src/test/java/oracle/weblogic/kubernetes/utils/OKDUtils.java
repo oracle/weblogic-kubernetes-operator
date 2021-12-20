@@ -39,6 +39,7 @@ public class OKDUtils {
     boolean routeExists = false;
     String command = "oc -n " + namespace + " expose service " + serviceName;
     if (OKD) {
+      getLogger().info("Going to create route for OKD");
       if (routeName.length == 0) {
         routeExists = doesRouteExist(serviceName, namespace);
       } else {
@@ -54,6 +55,7 @@ public class OKDUtils {
       }
       return getRouteHost(namespace, serviceName);
     } else {
+      getLogger().info("This is non OKD env. No route is needed");
       return null;
     }
   }
