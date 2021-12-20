@@ -59,7 +59,7 @@ import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_COMPLETED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_STARTING;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.POD_CYCLE_STARTING;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkEvent;
-import static oracle.weblogic.kubernetes.utils.K8sEvents.getEvent;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.getOpGeneratedEvent;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
@@ -244,13 +244,13 @@ class ItPodsRestart {
     checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING,
         "Normal", timestamp, withStandardRetryPolicy);
 
-    CoreV1Event event = getEvent(opNamespace, domainNamespace,
-        domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+    CoreV1Event event = getOpGeneratedEvent(domainNamespace,
+        DOMAIN_ROLL_STARTING, "Normal", timestamp);
     logger.info("verify the event message contains the domain resource changed messages is logged");
     assertTrue(event.getMessage().contains("domain resource changed"));
 
-    event = getEvent(opNamespace, domainNamespace,
-        domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+    event = getOpGeneratedEvent(domainNamespace,
+        POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     assertTrue(event.getMessage().contains("cpu=Quantity"));
 
@@ -323,13 +323,13 @@ class ItPodsRestart {
     checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING,
         "Normal", timestamp, withStandardRetryPolicy);
 
-    CoreV1Event event = getEvent(opNamespace, domainNamespace,
-        domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+    CoreV1Event event = getOpGeneratedEvent(domainNamespace,
+        DOMAIN_ROLL_STARTING, "Normal", timestamp);
     logger.info("verify the event message contains the resource changed messages is logged");
     assertTrue(event.getMessage().contains("isIncludeServerOutInPodLog"));
 
-    event = getEvent(opNamespace, domainNamespace,
-        domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+    event = getOpGeneratedEvent(domainNamespace,
+        POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     assertTrue(event.getMessage().contains("SERVER_OUT_IN_POD_LOG"));
 
@@ -411,14 +411,14 @@ class ItPodsRestart {
     checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING,
         "Normal", timestamp, withStandardRetryPolicy);
 
-    CoreV1Event event = getEvent(opNamespace, domainNamespace,
-        domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+    CoreV1Event event = getOpGeneratedEvent(domainNamespace,
+        DOMAIN_ROLL_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     logger.info("verify the event message contains the env changed messages is logged");
     assertTrue(event.getMessage().contains("domain resource changed"));
 
-    event = getEvent(opNamespace, domainNamespace,
-        domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+    event = getOpGeneratedEvent(domainNamespace,
+        POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     logger.info("verify the event message contains the JAVA_OPTIONS changed message is logged");
     assertTrue(event.getMessage().contains("JAVA_OPTIONS"));
@@ -587,14 +587,14 @@ class ItPodsRestart {
     checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING,
         "Normal", timestamp, withStandardRetryPolicy);
 
-    CoreV1Event event = getEvent(opNamespace, domainNamespace,
-        domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+    CoreV1Event event = getOpGeneratedEvent(domainNamespace,
+        DOMAIN_ROLL_STARTING, "Normal", timestamp);
     logger.info("verify the event message contains the 'imagePullPolicy' "
         + "changed from 'IfNotPresent' to 'Never' message is logged");
     assertTrue(event.getMessage().contains("Never"));
 
-    event = getEvent(opNamespace, domainNamespace,
-        domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+    event = getOpGeneratedEvent(domainNamespace,
+        POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     logger.info("verify the event message contains the 'imagePullPolicy' "
         + "changed from 'IfNotPresent' to 'Never' message is logged");
@@ -653,14 +653,14 @@ class ItPodsRestart {
     checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING,
         "Normal", timestamp, withStandardRetryPolicy);
 
-    CoreV1Event event = getEvent(opNamespace, domainNamespace,
-        domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+    CoreV1Event event = getOpGeneratedEvent(domainNamespace,
+        DOMAIN_ROLL_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     logger.info("verify the event message contains the restartVersion changed message is logged");
     assertTrue(event.getMessage().contains("restart version"));
 
-    event = getEvent(opNamespace, domainNamespace,
-        domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+    event = getOpGeneratedEvent(domainNamespace,
+        POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     logger.info("verify the event message contains the restartVersion changed message is logged");
     assertTrue(event.getMessage().contains("restart version"));
@@ -720,13 +720,13 @@ class ItPodsRestart {
     checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING,
         "Normal", timestamp, withStandardRetryPolicy);
 
-    CoreV1Event event = getEvent(opNamespace, domainNamespace,
-        domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+    CoreV1Event event = getOpGeneratedEvent(domainNamespace,
+        DOMAIN_ROLL_STARTING, "Normal", timestamp);
     logger.info("verify the event message contains the image changed from mii-basic-image message is logged");
     assertTrue(event.getMessage().contains(tag));
 
-    event = getEvent(opNamespace, domainNamespace,
-        domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+    event = getOpGeneratedEvent(domainNamespace,
+        POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     assertTrue(event.getMessage().contains(tag));
 

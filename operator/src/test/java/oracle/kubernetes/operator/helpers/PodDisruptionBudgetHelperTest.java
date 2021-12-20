@@ -39,9 +39,12 @@ import org.junit.jupiter.api.Test;
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
 import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
+import static oracle.kubernetes.operator.EventConstants.KUBERNETES_ERROR;
+import static oracle.kubernetes.operator.EventTestUtils.getExpectedEventMessage;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.CLUSTER_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.PODDISRUPTIONBUDGET;
 import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_PDB_CREATED;
 import static oracle.kubernetes.operator.logging.MessageKeys.CLUSTER_PDB_EXISTS;
@@ -52,6 +55,7 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings("ConstantConditions")
@@ -216,6 +220,22 @@ class PodDisruptionBudgetHelperTest {
 
     assertThat(getDomain(), hasStatus().withReason(Kubernetes)
             .withMessageContaining("create", PODDISRUPTIONBUDGET.toLowerCase(), NS, "Test this failure"));
+  }
+
+  @Test
+  void whenPodDisruptionBudgetCreationFailsDueToUnprocessableEntityFailure_generateFailedEvent() {
+    testSupport.defineResources(domainPresenceInfo.getDomain());
+    testSupport.failOnCreate(PODDISRUPTIONBUDGET, NS, new UnrecoverableErrorBuilderImpl()
+        .withReason("FieldValueNotFound")
+        .withMessage("Test this failure")
+        .build());
+
+    runPodDisruptionBudgetHelper();
+
+    assertThat(
+        "Expected Event " + DOMAIN_FAILED + " expected with message not found",
+        getExpectedEventMessage(testSupport, DOMAIN_FAILED),
+        stringContainsInOrder("Domain", UID, "failed due to", KUBERNETES_ERROR));
   }
 
   @Test

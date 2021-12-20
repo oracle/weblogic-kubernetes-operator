@@ -5,32 +5,61 @@ weight = 10
 pre = "<b> </b>"
 +++
 
-#### Contents
+### Contents
 
 - [Overview](#overview)
+- [What's new](#whats-new)
 - [Operator-generated event types](#operator-generated-event-types)
 - [Operator-generated event details](#operator-generated-event-details)
 - [How to access the events](#how-to-access-the-events)
 - [Examples of generated events](#examples-of-generated-events)
 
+### Overview
 
-#### Overview
+This document describes Kubernetes events that the operator generates about resources that it manages, during key points of its processing workflow. These events provide an additional way of monitoring your domain resources. Most of the operator-generated events are associated with a domain resource, and those events are included in the domain resource object as well. Note that the Kubernetes server also generates events for standard Kubernetes resources, such as pods, services, and jobs that the operator generates on behalf of deployed domain custom resources.
 
-This document describes Kubernetes events that the operator generates about resources that it manages, during key points of its processing workflow. These events provide an additional way of monitoring your domain resources. Note that the Kubernetes server also generates events for standard Kubernetes resources, such as pods, services, and jobs that the operator generates on behalf of deployed domain custom resources.
+### What's new
 
-#### Operator-generated event types
+The domain events have been enhanced in 4.0. Here is a summary of the changes in this area:
+* Removed two event types: `DomainProcessingStarting` and `DomainProcessingRetrying`.
+* Simplified the event type names with the following changes: 
+  * `DomainProcessingFailed` to `Failed`.
+  * `DomainProcessingCompleted` to `Completed`.
+  * `DomainCreated` to `Created`.
+  * `DomainChanged` to `Changed`.
+  * `DomainDeleted` to `Deleted`.
+  * `DomainRollStarting` to `RollStarting`.
+  * `DomainRollCompleted` to `RollCompleted`.
+* Changed `DomainProcessingAborted` event to `Failed` event with an explicit message indicating that no retry will occur.
+* Changed `DomainValidationError` event to `Failed` event.
+* Enhanced `Failed` event to:
+    * Have a better failure categorization (see [Operator-generated event types](#operator-generated-event-types) for more details).
+    * Include the categorization information in the event message.
+    * Provide more information in the event message to indicate what has been wrong, what you need to do to resolve the problem, and if the operator will retry the failed operation.
+* Added three event types, `Unavailable`, `Incomplete`, and `FailureResolved`, to record the transition of domain condition `Available/Completed/Failed` from `True` to `False`, and vice versa.
+
+### Operator-generated event types
 
 The operator generates these event types in a domain namespace, which indicate the following:
 
- *  `DomainCreated`: A new domain is created.
- *  `DomainChanged`: A change has been made to an existing domain.
- *  `DomainDeleted`: An existing domain has been deleted.
- *  `DomainProcessingStarting`: The operator has started to process a new domain or to update an existing domain. This event may be a result of a `DomainCreate`, `DomainChanged`, or `DomainDeleted` event, or a result of a retry after a failed attempt.
- *  `DomainProcessingFailed`: The operator has encountered a problem while it was processing the domain resource. The failure either could be a configuration error or a Kubernetes API error.
- *  `DomainProcessingRetrying`: The operator is going to retry the processing of a domain after it encountered a failure.
- *  `DomainProcessingCompleted`:  The operator successfully completed the processing of a domain resource.
- *  `DomainProcessingAborted`:  The operator stopped processing a domain when the operator encountered a fatal error or a failure that persisted after the specified maximum number of retries.
- *  `DomainRollStarting`:  The operator has detected domain resource or Model in Image model
+ * `Created`: A new domain is created.
+ * `Changed`: A change has been made to an existing domain.
+ * `Deleted`: An existing domain has been deleted.
+ * `Available`: An existing domain is available, which means a sufficient number of servers are ready such that the customer's applications are available.
+ * `Failed`: The domain resource encountered a problem which prevented it from becoming fully up. The possible failure could be one or multiple of the following conditions:
+   * Invalid configurations in domain resource.
+   * A Kubernetes API call error.
+   * Introspection failures.
+   * An unexpected error in a server pod.
+   * A topology mismatch between the domain resource configuration and the WebLogic domain configuration.
+   * The replicas of a cluster in the domain resource exceeds the maximum number of servers configured for the WebLogic cluster.
+   * An internal error.
+   * A failure that retries will not help, or has been retried and has exceeded the pre-defined maximum number of retry attempts.
+ * `Completed`:  The domain resource is complete because all of the following are true: there is no failure detected, there are no pending server shutdowns, and all servers expected to be running are ready and at their target image, auxiliary images, restart version, and introspect version.all servers that are supposed to be started are up running.
+ * `Unavailable`: The domain resource is unavailable, which means the domain does not have a sufficient number of servers active.
+ * `Incomplete`: The domain resource is incomplete for one or more of the following reasons: there are failures detected, there are pending server shutdowns, or not all servers expected to be running are ready and at their target image, auxiliary images, restart version, and introspect version.
+ * `FailureRessolved`: The failure condition that the domain was in has been resolved.
+ * `RollStarting`:  The operator has detected domain resource or Model in Image model
     updates that require it to perform a rolling restart of the domain.
     If the domain roll is due to a change to domain resource fields
     `image`, `imagePullPolicy`, `livenessProbe`, `readinessProbe`, `restartVersion`,
@@ -41,11 +70,10 @@ The operator generates these event types in a domain namespace, which indicate t
     then the event message simply reports that the domain resource has changed.
     If the domain roll is due to a Model in Image model update,
     then the event message reports there has been a change in the WebLogic domain configuration without the details.
- *  `DomainRollCompleted`:  The operator has successfully completed a rolling restart of a domain.
- *  `PodCycleStarting`:  The operator has started to replace a server pod after it detects that the current pod does not conform to the current domain resource or WebLogic domain configuration.
- *  `DomainValidationError`:  A validation error or warning is found in a domain resource. Please refer to the event message for details.
- *  `NamespaceWatchingStarted`: The operator has started watching for domains in a namespace.
- *  `NamespaceWatchingStopped`: The operator has stopped watching for domains in a namespace. Note that the creation of this event in a domain namespace is the operator's best effort only; the event will not be generated if the required Kubernetes privilege is removed when a namespace is no longer managed by the operator.
+ * `RollCompleted`:  The operator has successfully completed a rolling restart of a domain.
+ * `PodCycleStarting`:  The operator has started to replace a server pod after it detects that the current pod does not conform to the current domain resource or WebLogic domain configuration.
+ * `NamespaceWatchingStarted`: The operator has started watching for domains in a namespace.
+ * `NamespaceWatchingStopped`: The operator has stopped watching for domains in a namespace. Note that the creation of this event in a domain namespace is the operator's best effort only; the event will not be generated if the required Kubernetes privilege is removed when a namespace is no longer managed by the operator.
 
 The operator also generates these event types in the operator's namespace, which indicate the following:
 
@@ -54,7 +82,7 @@ The operator also generates these event types in the operator's namespace, which
 *  `StartManagingNamespaceFailed`: The operator failed to start managing domains in a namespace because it does not have the required privileges.
 
 
-#### Operator-generated event details
+### Operator-generated event details
 
 Each operator-generated event contains the following fields:
  *  `metadata`
@@ -75,7 +103,7 @@ Each operator-generated event contains the following fields:
     *  `apiVersion`:  String that describes the `apiVersion` of the involved object, which is the `apiVersion` of the domain resource, for example, `weblogic.oracle/v9`, for a domain event or unset for a namespace event.
     *  `UID`: String that describes the unique identifier of the object that is generated by the Kubernetes server.
 
-#### How to access the events
+### How to access the events
 
 To access the events that are associated with all resources in a particular namespace, run:
 
@@ -101,81 +129,48 @@ To get all the events that are generated by the operator for a particular domain
 $ kubectl get events -n [namespace] --selector=weblogic.domainUID=sample-domain1,weblogic.createdByOperator=true --sort-by=lastTimestamp
 ```
 
-#### Examples of generated events
+### Examples of generated events
 
 Here are some examples of operator-generated events from the output of the `kubectl describe event` or `kubectl get events` commands for `sample-domain1` in namespace `sample-domain1-ns`.
 
-Example of a `DomainProcessingStarting` event:
+Example of a `Available` event:
 ```
-Name:             sample-domain1.DomainProcessingStarting.1c415c9cf54c0f2
+Name:             sample-domain1.Available.b9c1ddf08e489867
 Namespace:        sample-domain1-ns
 Labels:           weblogic.createdByOperator=true
                   weblogic.domainUID=sample-domain1
 Annotations:      <none>
 API Version:      v1
-Count:            4
+Count:            2
 Event Time:       <nil>
-First Timestamp:  2021-01-19T20:06:21Z
+First Timestamp:  2021-12-14T16:23:49Z
 Involved Object:
   API Version:   weblogic.oracle/v9
   Kind:          Domain
   Name:          sample-domain1
   Namespace:     sample-domain1-ns
-  UID:           9dc647fb-b9d2-43f8-bac7-69258560a99a
+  UID:           358f9335-61b2-499a-9d2a-61ae625db2ea
 Kind:            Event
-Last Timestamp:  2021-01-19T20:12:29Z
-Message:         Creating or updating Kubernetes presence for WebLogic Domain with UID sample-domain1
+Last Timestamp:  2021-12-14T16:23:53Z
+Message:         Domain sample-domain1 is available: a sufficient number of its servers have reached the ready state.
 Metadata:
-  Creation Timestamp:  2021-01-19T20:06:21Z
-  Resource Version:   2635264
-  Self Link:          /api/v1/namespaces/sample-domain1-ns/events/sample-domain1.DomainProcessingStarting.1c415c9cf54c0f2
-  UID:                093383eb-6fc6-46c7-aaa4-c4ca8399bfab
-Reason:               DomainProcessingStarting
+  Creation Timestamp:  2021-12-14T16:23:49Z
+  Resource Version:   5366831
+  Self Link:          /api/v1/namespaces/sample-domain1-ns/events/sample-domain1.Available.b9c1ddf08e489867
+  UID:                5240d6c6-bfbe-4f06-8ffa-c62cd776cd28
+Reason:               Available
 Reporting Component:  weblogic.operator
-Reporting Instance:   weblogic-operator-67c9999d99-rff62
+Reporting Instance:   weblogic-operator-588b9794f5-757b9
 Source:
 Type:    Normal
 Events:  <none>
-```
-
-Example of a `DomainProcessingFailed` event:
 
 ```
-Name:             sample-domain1.DomainProcessingFailed.1c416683eb212c63
-Namespace:        sample-domain1-ns
-Labels:           weblogic.createdByOperator=true
-                  weblogic.domainUID=sample-domain1
-Annotations:      <none>
-API Version:      v1
-Count:            12
-Event Time:       <nil>
-First Timestamp:  2021-01-19T20:06:24Z
-Involved Object:
-  API Version:   weblogic.oracle/v9
-  Kind:          Domain
-  Name:          sample-domain1
-  Namespace:     sample-domain1-ns
-  UID:           9dc647fb-b9d2-43f8-bac7-69258560a99a
-Kind:            Event
-Last Timestamp:  2021-01-19T20:12:11Z
-Message:         Failed to complete processing domain resource sample-domain1 due to: rpc error: code = Unknown desc = pull access denied for domain-home-in-image, repository does not exist or may require 'docker login', the processing will be retried if needed
-Metadata:
-  Creation Timestamp:  2021-01-19T20:06:24Z
-  Resource Version:   2635213
-  Self Link:          /api/v1/namespaces/sample-domain1-ns/events/sample-domain1.DomainProcessingFailed.1c416683eb212c63
-  UID:                f3e017ea-1b38-4ba3-bd58-0ee731f3ae4e
-Reason:               DomainProcessingFailed
-Reporting Component:  weblogic.operator
-Reporting Instance:   weblogic-operator-67c9999d99-rff62
-Source:
-Type:    Warning
-Events:  <none>
-```
 
-Example of a `DomainProcessingCompleted` event:
+Example of a `Incomplete` event:
 
 ```
-Name:             sample-domain1.DomainProcessingCompleted.1c478d91fdada118
+Name:             sample-domain1.Incomplete.b9c1dc2a2977cd95
 Namespace:        sample-domain1-ns
 Labels:           weblogic.createdByOperator=true
                   weblogic.domainUID=sample-domain1
@@ -183,27 +178,62 @@ Annotations:      <none>
 API Version:      v1
 Count:            1
 Event Time:       <nil>
-First Timestamp:  2021-01-19T20:13:07Z
+First Timestamp:  2021-12-14T16:23:49Z
 Involved Object:
   API Version:   weblogic.oracle/v9
   Kind:          Domain
   Name:          sample-domain1
   Namespace:     sample-domain1-ns
-  UID:           9dc647fb-b9d2-43f8-bac7-69258560a99a
+  UID:           358f9335-61b2-499a-9d2a-61ae625db2ea
 Kind:            Event
-Last Timestamp:  2021-01-19T20:13:07Z
-Message:         Successfully completed processing domain resource sample-domain1
+Last Timestamp:  2021-12-14T16:23:49Z
+Message:         Domain sample-domain1 is incomplete for one or more of the following reasons: there are failures detected, there are pending server shutdowns, or not all servers expected to be running are ready and at their target image, auxiliary images, restart version, and introspect version.
 Metadata:
-  Creation Timestamp:  2021-01-19T20:13:07Z
-  Resource Version:   2635401
-  Self Link:          /api/v1/namespaces/sample-domain1-ns/events/sample-domain1.DomainProcessingCompleted.1c478d91fdada118
-  UID:                ea7734af-31bc-4f8e-b02b-5ef6b240749e
-Reason:               DomainProcessingCompleted
+  Creation Timestamp:  2021-12-14T16:23:49Z
+  Resource Version:   5366820
+  Self Link:          /api/v1/namespaces/sample-domain1-ns/events/sample-domain1.Incomplete.b9c1dc2a2977cd95
+  UID:                97a425b9-175c-43ac-81b0-86edff04fd2b
+Reason:               Incomplete
 Reporting Component:  weblogic.operator
-Reporting Instance:   weblogic-operator-67c9999d99-rff62
+Reporting Instance:   weblogic-operator-588b9794f5-757b9
 Source:
-Type:    Normal
+Type:    Warning
 Events:  <none>
+```
+
+Example of a `Failed` event:
+
+```
+Name:             sample-domain1.Failed.b9431b0717a5fc57
+Namespace:        sample-domain1-ns
+Labels:           weblogic.createdByOperator=true
+                  weblogic.domainUID=sample-domain1
+Annotations:      <none>
+API Version:      v1
+Count:            42
+Event Time:       <nil>
+First Timestamp:  2021-12-14T14:05:22Z
+Involved Object:
+  API Version:   weblogic.oracle/v9
+  Kind:          Domain
+  Name:          sample-domain1
+  Namespace:     sample-domain1-ns
+  UID:           c64d95c5-a8b9-4236-a2ab-43879192972b
+Kind:            Event
+Last Timestamp:  2021-12-14T15:26:56Z
+Message:         Domain sample-domain1 failed due to 'Domain validation error': WebLogicCredentials secret 'sample-domain1-weblogic-credentials2' not found in namespace 'sample-domain1-ns'. Update the domain resource to correct the validation error.
+Metadata:
+  Creation Timestamp:  2021-12-14T14:05:22Z
+  Resource Version:   5358407
+  Self Link:          /api/v1/namespaces/sample-domain1-ns/events/sample-domain1.Failed.b9431b0717a5fc57
+  UID:                6e7e877c-6440-4c0b-888b-bb47ea618400
+Reason:               Failed
+Reporting Component:  weblogic.operator
+Reporting Instance:   weblogic-operator-588b9794f5-lff29
+Source:
+Type:    Warning
+Events:  <none>
+
 ```
 
 Example of domain processing completed after failure and retries:
@@ -214,117 +244,114 @@ Note that this is not a full list of events; some of the events that are generat
 The output of command `kubectl get events -n sample-domain1-ns --sort-by=lastTimestamp`
 
 ```
-LAST SEEN   TYPE      REASON                      OBJECT                                  MESSAGE
-7m54s       Normal    NamespaceWatchingStarted    namespace/sample-domain1-ns             Started watching namespace sample-domain1-ns
-7m44s       Normal    DomainCreated               domain/sample-domain1                   Domain resource sample-domain1 was created
-7m43s       Normal    SuccessfulCreate            job/sample-domain1-introspector         Created pod: sample-domain1-introspector-d42rf
-7m43s       Normal    Scheduled                   pod/sample-domain1-introspector-d42rf   Successfully assigned sample-domain1-ns/sample-domain1-introspector-d42rf to doxiao-1
-7m4s        Normal    Pulling                     pod/sample-domain1-introspector-d42rf   Pulling image "domain-home-in-image:12.2.1.4"
-7m2s        Warning   Failed                      pod/sample-domain1-introspector-d42rf   Error: ErrImagePull
-7m2s        Warning   Failed                      pod/sample-domain1-introspector-d42rf   Failed to pull image "domain-home-in-image:12.2.1.4": rpc error: code = Unknown desc = pull access denied for domain-home-in-image, repository does not exist or may require 'docker login'
-6m38s       Warning   Failed                      pod/sample-domain1-introspector-d42rf   Error: ImagePullBackOff
-6m38s       Normal    BackOff                     pod/sample-domain1-introspector-d42rf   Back-off pulling image "domain-home-in-image:12.2.1.4"
-5m43s       Warning   DeadlineExceeded            job/sample-domain1-introspector         Job was active longer than specified deadline
-5m43s       Warning   DomainProcessingFailed      domain/sample-domain1                   Failed to complete processing domain resource sample-domain1 due to: Job sample-domain1-introspector failed due to reason: DeadlineExceeded. ActiveDeadlineSeconds of the job is configured with 120 seconds. The job was started 120 seconds ago. Ensure all domain dependencies have been deployed (any secrets, config-maps, PVs, and PVCs that the domain resource references). Use kubectl describe for the job and its pod for more job failure information. The job may be retried by the operator up to 5 times with longer ActiveDeadlineSeconds value in each subsequent retry. Use tuning parameter domainPresenceFailureRetryMaxCount to configure max retries., the processing will be retried if needed
-5m43s       Normal    SuccessfulDelete            job/sample-domain1-introspector         Deleted pod: sample-domain1-introspector-d42rf
-5m32s       Normal    Scheduled                   pod/sample-domain1-introspector-cmxjs   Successfully assigned sample-domain1-ns/sample-domain1-introspector-cmxjs to doxiao-1
-5m32s       Normal    SuccessfulCreate            job/sample-domain1-introspector         Created pod: sample-domain1-introspector-cmxjs
-4m52s       Normal    Pulling                     pod/sample-domain1-introspector-cmxjs   Pulling image "domain-home-in-image:12.2.1.4"
-4m50s       Warning   Failed                      pod/sample-domain1-introspector-cmxjs   Failed to pull image "domain-home-in-image:12.2.1.4": rpc error: code = Unknown desc = pull access denied for domain-home-in-image, repository does not exist or may require 'docker login'
-4m50s       Warning   Failed                      pod/sample-domain1-introspector-cmxjs   Error: ErrImagePull
-4m27s       Warning   Failed                      pod/sample-domain1-introspector-cmxjs   Error: ImagePullBackOff
-4m27s       Normal    BackOff                     pod/sample-domain1-introspector-cmxjs   Back-off pulling image "domain-home-in-image:12.2.1.4"
-2m32s       Warning   DomainProcessingFailed      domain/sample-domain1                   Failed to complete processing domain resource sample-domain1 due to: Job sample-domain1-introspector failed due to reason: DeadlineExceeded. ActiveDeadlineSeconds of the job is configured with 180 seconds. The job was started 180 seconds ago. Ensure all domain dependencies have been deployed (any secrets, config-maps, PVs, and PVCs that the domain resource references). Use kubectl describe for the job and its pod for more job failure information. The job may be retried by the operator up to 5 times with longer ActiveDeadlineSeconds value in each subsequent retry. Use tuning parameter domainPresenceFailureRetryMaxCount to configure max retries., the processing will be retried if needed
-2m32s       Normal    SuccessfulDelete            job/sample-domain1-introspector         Deleted pod: sample-domain1-introspector-cmxjs
-2m32s       Warning   DeadlineExceeded            job/sample-domain1-introspector         Job was active longer than specified deadline
-2m22s       Normal    DomainProcessingRetrying    domain/sample-domain1                   Retrying the processing of domain resource sample-domain1 after one or more failed attempts
-2m20s       Normal    SuccessfulCreate            job/sample-domain1-introspector         Created pod: sample-domain1-introspector-ght6p
-2m20s       Normal    Scheduled                   pod/sample-domain1-introspector-ght6p   Successfully assigned sample-domain1-ns/sample-domain1-introspector-ght6p to doxiao-1
-2m17s       Normal    BackOff                     pod/sample-domain1-introspector-ght6p   Back-off pulling image "domain-home-in-image:12.2.1.4"
-2m17s       Warning   Failed                      pod/sample-domain1-introspector-ght6p   Error: ImagePullBackOff
-2m7s        Warning   DomainProcessingFailed      domain/sample-domain1                   Failed to complete processing domain resource sample-domain1 due to: Back-off pulling image "domain-home-in-image:12.2.1.4", the processing will be retried if needed
-2m7s        Normal    Pulling                     pod/sample-domain1-introspector-ght6p   Pulling image "domain-home-in-image:12.2.1.4"
-2m5s        Warning   Failed                      pod/sample-domain1-introspector-ght6p   Error: ErrImagePull
-2m5s        Warning   Failed                      pod/sample-domain1-introspector-ght6p   Failed to pull image "domain-home-in-image:12.2.1.4": rpc error: code = Unknown desc = pull access denied for domain-home-in-image, repository does not exist or may require 'docker login'
-114s        Normal    Created                     pod/sample-domain1-introspector-ght6p   Created container sample-domain1-introspector
-114s        Normal    Pulled                      pod/sample-domain1-introspector-ght6p   Container image "domain-home-in-image:12.2.1.4" already present on machine
-114s        Normal    Started                     pod/sample-domain1-introspector-ght6p   Started container sample-domain1-introspector
-114s        Warning   DomainProcessingFailed      domain/sample-domain1                   Failed to complete processing domain resource sample-domain1 due to: rpc error: code = Unknown desc = pull access denied for domain-home-in-image, repository does not exist or may require 'docker login', the processing will be retried if needed
-98s         Normal    Completed                   job/sample-domain1-introspector         Job completed
-97s         Normal    Killing                     pod/sample-domain1-introspector-ght6p   Stopping container sample-domain1-introspector
-96s         Normal    Scheduled                   pod/sample-domain1-admin-server         Successfully assigned sample-domain1-ns/sample-domain1-admin-server to doxiao-1
-96s         Normal    DomainProcessingStarting    domain/sample-domain1                   Creating or updating Kubernetes presence for WebLogic Domain with UID sample-domain1
-95s         Normal    Pulled                      pod/sample-domain1-admin-server         Container image "domain-home-in-image:12.2.1.4" already present on machine
-95s         Normal    Started                     pod/sample-domain1-admin-server         Started container weblogic-server
-95s         Normal    Created                     pod/sample-domain1-admin-server         Created container weblogic-server
-59s         Normal    Scheduled                   pod/sample-domain1-managed-server1      Successfully assigned sample-domain1-ns/sample-domain1-managed-server1 to doxiao-1
-58s         Normal    Scheduled                   pod/sample-domain1-managed-server2      Successfully assigned sample-domain1-ns/sample-domain1-managed-server2 to doxiao-1
-58s         Normal    DomainProcessingCompleted   domain/sample-domain1                   Successfully completed processing domain resource sample-domain1
-57s         Normal    Pulled                      pod/sample-domain1-managed-server1      Container image "domain-home-in-image:12.2.1.4" already present on machine
-57s         Normal    Started                     pod/sample-domain1-managed-server1      Started container weblogic-server
-57s         Normal    Created                     pod/sample-domain1-managed-server1      Created container weblogic-server
-57s         Normal    Pulled                      pod/sample-domain1-managed-server2      Container image "domain-home-in-image:12.2.1.4" already present on machine
-57s         Normal    Created                     pod/sample-domain1-managed-server2      Created container weblogic-server
-57s         Normal    Started                     pod/sample-domain1-managed-server2      Started container weblogic-server
+LAST SEEN   TYPE      REASON             OBJECT                                         MESSAGE
+7m51s       Normal    Created            domain/sample-domain1                          Domain sample-domain1 was created.
+7m51s       Normal    SuccessfulCreate   job/sample-domain1-introspector                Created pod: sample-domain1-introspector-5ggh6
+7m50s       Normal    Pulled             pod/sample-domain1-introspector-5ggh6          Container image "model-in-image:WLS-v1" already present on machine
+7m50s       Normal    Created            pod/sample-domain1-introspector-5ggh6          Created container sample-domain1-introspector
+7m50s       Normal    Scheduled          pod/sample-domain1-introspector-5ggh6          Successfully assigned sample-domain1-ns/sample-domain1-introspector-5ggh6 to doxiao-1
+7m49s       Normal    Started            pod/sample-domain1-introspector-5ggh6          Started container sample-domain1-introspector
+6m36s       Warning   DNSConfigForming   pod/sample-domain1-introspector-5ggh6          Search Line limits were exceeded, some search paths have been omitted, the applied search line is: sample-domain1-ns.svc.cluster.local svc.cluster.local cluster.local subnet1ad3phx.devweblogicphx.oraclevcn.com us.oracle.com oracle.com
+6m36s       Normal    Completed          job/sample-domain1-introspector                Job completed
+6m35s       Normal    Scheduled          pod/sample-domain1-admin-server                Successfully assigned sample-domain1-ns/sample-domain1-admin-server to doxiao-1
+6m35s       Normal    Created            pod/sample-domain1-admin-server                Created container weblogic-server
+6m35s       Normal    Pulled             pod/sample-domain1-admin-server                Container image "model-in-image:WLS-v1" already present on machine
+6m34s       Normal    Started            pod/sample-domain1-admin-server                Started container weblogic-server
+6m3s        Normal    Scheduled          pod/sample-domain1-managed-server2             Successfully assigned sample-domain1-ns/sample-domain1-managed-server2 to doxiao-1
+6m3s        Normal    Scheduled          pod/sample-domain1-managed-server1             Successfully assigned sample-domain1-ns/sample-domain1-managed-server1 to doxiao-1
+6m3s        Normal    NoPods             poddisruptionbudget/sample-domain1-cluster-1   No matching pods found
+6m2s        Normal    Started            pod/sample-domain1-managed-server1             Started container weblogic-server
+6m2s        Normal    Pulled             pod/sample-domain1-managed-server1             Container image "model-in-image:WLS-v1" already present on machine
+6m2s        Normal    Started            pod/sample-domain1-managed-server2             Started container weblogic-server
+6m2s        Normal    Pulled             pod/sample-domain1-managed-server2             Container image "model-in-image:WLS-v1" already present on machine
+6m2s        Normal    Created            pod/sample-domain1-managed-server2             Created container weblogic-server
+6m2s        Normal    Created            pod/sample-domain1-managed-server1             Created container weblogic-server
+5m28s       Warning   Unhealthy          pod/sample-domain1-managed-server2             Readiness probe failed: Get "http://192.168.0.162:8001/weblogic/ready": dial tcp 192.168.0.162:8001: connect: connection refused
+5m24s       Warning   Unhealthy          pod/sample-domain1-managed-server1             Readiness probe failed: Get "http://192.168.0.161:8001/weblogic/ready": dial tcp 192.168.0.161:8001: connect: connection refused
+4m30s       Warning   Unavailable        domain/sample-domain1                          Domain sample-domain1 is unavailable: an insufficient number of its servers that are expected to be running are ready.
+4m30s       Normal    SuccessfulCreate   job/sample-domain1-introspector                Created pod: sample-domain1-introspector-845w9
+4m30s       Warning   Incomplete         domain/sample-domain1                          Domain sample-domain1 is incomplete for one or more of the following reasons: there are failures detected, there are pending server shutdowns, or not all servers expected to be running are ready and at their target image, auxiliary images, restart version, and introspect version.
+4m30s       Normal    Scheduled          pod/sample-domain1-introspector-845w9          Successfully assigned sample-domain1-ns/sample-domain1-introspector-845w9 to doxiao-1
+3m44s       Normal    Pulling            pod/sample-domain1-introspector-845w9          Pulling image "model-in-image:WLS-v2"
+3m43s       Warning   Failed             pod/sample-domain1-introspector-845w9          Failed to pull image "model-in-image:WLS-v2": rpc error: code = Unknown desc = pull access denied for model-in-image, repository does not exist or may require 'docker login'
+3m43s       Warning   Failed             pod/sample-domain1-introspector-845w9          Error: ErrImagePull
+3m36s       Normal    Changed            domain/sample-domain1                          Domain sample-domain1 was changed.
+3m16s       Normal    BackOff            pod/sample-domain1-introspector-845w9          Back-off pulling image "model-in-image:WLS-v2"
+3m16s       Warning   DNSConfigForming   pod/sample-domain1-introspector-845w9          Search Line limits were exceeded, some search paths have been omitted, the applied search line is: sample-domain1-ns.svc.cluster.local svc.cluster.local cluster.local subnet1ad3phx.devweblogicphx.oraclevcn.com us.oracle.com oracle.com
+3m16s       Warning   Failed             pod/sample-domain1-introspector-845w9          Error: ImagePullBackOff
+3m16s       Warning   Failed             domain/sample-domain1                          Domain sample-domain1 failed due to 'Server pod error': Failure on pod 'sample-domain1-introspector-845w9' in namespace 'sample-domain1-ns': Back-off pulling image "model-in-image:WLS-v2".
+2m30s       Warning   Failed             domain/sample-domain1                          Domain sample-domain1 failed due to 'Internal error': Job sample-domain1-introspector failed due to reason: DeadlineExceeded. ActiveDeadlineSeconds of the job is configured with 120 seconds. The job was started 120 seconds ago. Ensure all domain dependencies have been deployed (any secrets, config-maps, PVs, and PVCs that the domain resource references). Use kubectl describe for the job and its pod for more job failure information. The job may be retried by the operator up to 5 times with longer ActiveDeadlineSeconds value in each subsequent retry. Use tuning parameter domainPresenceFailureRetryMaxCount to configure max retries. Use spec.configuration.introspectorJobActiveDeadlineSeconds to increase the job timeout interval if the job still fails after the retries are exhausted.. Introspection failed on try 1 of 5.
+Introspection Error:
+Job sample-domain1-introspector failed due to reason: DeadlineExceeded. ActiveDeadlineSeconds of the job is configured with 120 seconds. The job was started 120 seconds ago. Ensure all domain dependencies have been deployed (any secrets, config-maps, PVs, and PVCs that the domain resource references). Use kubectl describe for the job and its pod for more job failure information. The job may be retried by the operator up to 5 times with longer ActiveDeadlineSeconds value in each subsequent retry. Use tuning parameter domainPresenceFailureRetryMaxCount to configure max retries. Use spec.configuration.introspectorJobActiveDeadlineSeconds to increase the job timeout interval if the job still fails after the retries are exhausted. Will retry.
+2m30s       Warning   DeadlineExceeded   job/sample-domain1-introspector                Job was active longer than specified deadline
+2m30s       Normal    SuccessfulDelete   job/sample-domain1-introspector                Deleted pod: sample-domain1-introspector-845w9
+2m29s       Warning   Failed             domain/sample-domain1                          Domain sample-domain1 failed due to 'Server pod error': Failure on pod 'sample-domain1-introspector-845w9' in namespace 'sample-domain1-ns': rpc error: code = Unknown desc = pull access denied for model-in-image, repository does not exist or may require 'docker login'.
+2m25s       Normal    FailureResolved    domain/sample-domain1                          Domain sample-domain1 encountered some failures before, and those failures have been resolved
+2m20s       Warning   Failed             domain/sample-domain1                          Domain sample-domain1 failed due to 'Kubernetes Api call error': Failure invoking 'create' on job  in namespace sample-domain1-ns: : object is being deleted: jobs.batch "sample-domain1-introspector" already exists.
+2m19s       Warning   Failed             domain/sample-domain1                          Domain sample-domain1 failed due to 'Internal error': io.kubernetes.client.openapi.ApiException: . Introspection failed on try 2 of 5.
+Introspection Error:
+io.kubernetes.client.openapi.ApiException:  Will retry.
+2m9s        Normal    Available          domain/sample-domain1                          Domain sample-domain1 is available: a sufficient number of its servers have reached the ready state.
+2m8s        Normal    Completed          domain/sample-domain1                          Domain sample-domain1 is complete because all of the following are true: there is no failure detected, there are no pending server shutdowns, and all servers expected to be running are ready and at their target image, auxiliary images, restart version, and introspect version.
+
 ```
 
 Example of a `StartManagingNamespace` event in the operator's namespace:
 
 ```
-Name:             weblogic-operator-67c9999d99-clgpw.StartManagingNamespace.sample-domain1-ns.5f68d728281fcbaf
+Name:             weblogic-operator-588b9794f5-fwstz.StartManagingNamespace.sample-domain1-ns.ba7fca932263194
 Namespace:        sample-weblogic-operator-ns
 Labels:           weblogic.createdByOperator=true
 Annotations:      <none>
 API Version:      v1
 Count:            1
 Event Time:       <nil>
-First Timestamp:  2021-02-01T21:04:02Z
+First Timestamp:  2021-12-14T19:51:17Z
 Involved Object:
   Kind:          Pod
-  Name:          weblogic-operator-67c9999d99-clgpw
+  Name:          weblogic-operator-588b9794f5-fwstz
   Namespace:     sample-weblogic-operator-ns
+  UID:           dd454033-f334-49de-8013-2955cf00449e
 Kind:            Event
-Last Timestamp:  2021-02-01T21:04:02Z
+Last Timestamp:  2021-12-14T19:51:17Z
 Message:         Start managing namespace sample-domain1-ns
 Metadata:
-  Creation Timestamp:  2021-02-01T21:04:02Z
-  Resource Version:   5119747
-  Self Link:          /api/v1/namespaces/sample-weblogic-operator-ns/events/weblogic-operator-67c9999d99-clgpw.StartManagingNamespace.sample-domain1-ns.5f68d728281fcbaf
-  UID:                6d01f382-d36e-47fa-9222-6f26e90c5be2
+  Creation Timestamp:  2021-12-14T19:51:17Z
+  Resource Version:   5395096
+  Self Link:          /api/v1/namespaces/sample-weblogic-operator-ns/events/weblogic-operator-588b9794f5-fwstz.StartManagingNamespace.sample-domain1-ns.ba7fca932263194
+  UID:                a19800f5-12d5-43bc-a694-2f25710da8d4
 Reason:               StartManagingNamespace
 Reporting Component:  weblogic.operator
-Reporting Instance:   weblogic-operator-67c9999d99-clgpw
+Reporting Instance:   weblogic-operator-588b9794f5-fwstz
 Source:
 Type:    Normal
 Events:  <none>
-```
-
-Example of the sequence of operator generated events in a domain rolling restart after the domain resource's `image` and `logHomeEnabled` changed, which is the output of the command `kubectl get events -n sample-domain1-ns --selector=weblogic.domainUID=sample-domain1,weblogic.createdByOperator=true --sort-by=lastTimestamp'.
-
-```
-LAST SEEN   TYPE     REASON                     OBJECT           MESSAGE
-2m58s       Normal   DomainChanged              domain/sample-domain1   Domain resource sample-domain1 was changed
-2m58s       Normal   DomainProcessingStarting   domain/sample-domain1   Creating or updating Kubernetes presence for WebLogic Domain with UID sample-domain1
-2m58s       Normal   DomainRollStarting         domain/sample-domain1   Rolling restart WebLogic server pods in domain sample-domain1 because: 'image' changed from 'oracle/weblogic' to 'oracle/weblogic:14.1.1.0',
-  'logHome' changed from 'null' to '/shared/logs/sample-domain1'
-2m58s       Normal   PodCycleStarting           domain/sample-domain1   Replacing pod sample-domain1-adminserver because: In container 'weblogic-server':
-  'image' changed from 'oracle/weblogic' to 'oracle/weblogic:14.1.1.0',
-  env 'LOG_HOME' changed from 'null' to '/shared/logs/sample-domain1'
-2m7s        Normal   PodCycleStarting           domain/sample-domain1   Replacing pod sample-domain1-managed-server1 because: In container 'weblogic-server':
-  'image' changed from 'oracle/weblogic' to 'oracle/weblogic:14.1.1.0',
-  env 'LOG_HOME' changed from 'null' to '/shared/logs/sample-domain1'
-71s         Normal   PodCycleStarting           domain/sample-domain1   Replacing pod sample-domain1-managed-server2 because: In container 'weblogic-server':
-  'image' changed from 'oracle/weblogic' to 'oracle/weblogic:14.1.1.0',
-  env 'LOG_HOME' changed from 'null' to '/shared/logs/sample-domain1'
-19s         Normal   DomainRollCompleted         domain/sample-domain1   Rolling restart of domain sample-domain1 completed
-19s         Normal   DomainProcessingCompleted   domain/sample-domain1   Successfully completed processing domain resource sample-domain1
 
 ```
 
-Example of a `DomainRollStarting` event:
+Example of the sequence of operator generated events in a domain rolling restart after the domain resource's `image` changed, which is the output of the command `kubectl get events -n sample-domain1-ns --selector=weblogic.domainUID=sample-domain1,weblogic.createdByOperator=true --sort-by=lastTimestamp'.
 
 ```
-Name:             sample-domain1.DomainRollStarting.7d33e9b787e9c318
+LAST SEEN   TYPE      REASON             OBJECT                                         MESSAGE
+4m31s       Normal    Changed            domain/sample-domain1                          Domain sample-domain1 was changed.
+4m28s       Warning   Incomplete         domain/sample-domain1                          Domain sample-domain1 is incomplete for one or more of the following reasons: there are failures detected, there are pending server shutdowns, or not all servers expected to be running are ready and at their target image, auxiliary images, restart version, and introspect version.
+4m28s       Warning   Unavailable        domain/sample-domain1                          Domain sample-domain1 is unavailable: an insufficient number of its servers that are expected to be running are ready.
+4m27s       Normal    PodCycleStarting   domain/sample-domain1                          Replacing pod sample-domain1-admin-server because: In container 'weblogic-server':
+  'image' changed from 'model-in-image:WLS-v1' to 'mii-image:v2'
+4m27s       Normal    RollStarting       domain/sample-domain1                          Rolling restart WebLogic server pods in domain sample-domain1 because: 'image' changed from 'model-in-image:WLS-v1' to 'mii-image:v2'
+3m28s       Normal    Available          domain/sample-domain1                          Domain sample-domain1 became available
+3m27s       Normal    PodCycleStarting   domain/sample-domain1                          Replacing pod sample-domain1-managed-server1 because: In container 'weblogic-server':
+  'image' changed from 'model-in-image:WLS-v1' to 'mii-image:v2'
+22m         Normal    PodCycleStarting   domain/sample-domain1                          Replacing pod sample-domain1-managed-server2 because: In container 'weblogic-server':
+  'image' changed from 'model-in-image:WLS-v1' to 'mii-image:v2'
+64s         Normal    RollCompleted      domain/sample-domain1                          Rolling restart of domain sample-domain1 completed
+12s         Normal    Completed          domain/sample-domain1                          Domain sample-domain1 is complete because all of the following are true: there is no failure detected, there are no pending server shutdowns, and all servers expected to be running are ready and at their target image, auxiliary images, restart version, and introspect version.
+```
+
+Example of a `RollStarting` event:
+
+```
+Name:             sample-domain1.RollStarting.ba923815e652c0c9
 Namespace:        sample-domain1-ns
 Labels:           weblogic.createdByOperator=true
                   weblogic.domainUID=sample-domain1
@@ -332,28 +359,29 @@ Annotations:      <none>
 API Version:      v1
 Count:            1
 Event Time:       <nil>
-First Timestamp:  2021-05-18T02:00:24Z
+First Timestamp:  2021-12-14T20:11:24Z
 Involved Object:
   API Version:   weblogic.oracle/v9
   Kind:          Domain
   Name:          sample-domain1
   Namespace:     sample-domain1-ns
-  UID:           5df7dcda-d606-4509-9a06-32f25e16e166
+  UID:           86e65656-39cc-4cd5-af61-a7cbaef51b83
 Kind:            Event
-Last Timestamp:  2021-05-18T02:00:24Z
-Message:         Rolling restart WebLogic server pods in domain sample-domain1 because: 'image' changed from 'oracle/weblogic' to 'oracle/weblogic:14.1.1.0',
-  'logHome' changed from 'null' to '/shared/logs/sample-domain1'
+Last Timestamp:  2021-12-14T20:11:24Z
+Message:         Rolling restart WebLogic server pods in domain sample-domain1 because: 'image' changed from 'model-in-image:WLS-v1' to 'mii-image:v2'
 Metadata:
-  Creation Timestamp:  2021-05-18T02:00:24Z
-  Resource Version:   12842363
-  Self Link:          /api/v1/namespaces/sample-domain1-ns/events/sample-domain1.DomainRollStarting.7d33e9b787e9c318
-  UID:                6ec92655-9d06-43b1-8b26-c01ebccadecf
-Reason:               DomainRollStarting
+  Creation Timestamp:  2021-12-14T20:11:24Z
+
+  Resource Version:   5398296
+  Self Link:          /api/v1/namespaces/sample-domain1-ns/events/sample-domain1.RollStarting.ba923815e652c0c9
+  UID:                394d6cab-86d8-4686-bd6b-2d906bc4eac7
+Reason:               RollStarting
 Reporting Component:  weblogic.operator
-Reporting Instance:   weblogic-operator-fc4ccc8b5-rh4v6
+Reporting Instance:   weblogic-operator-588b9794f5-fwstz
 Source:
 Type:    Normal
 Events:  <none>
+
 
 ```
 
