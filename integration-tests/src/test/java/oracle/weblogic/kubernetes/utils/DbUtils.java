@@ -805,7 +805,7 @@ public class DbUtils {
     boolean response = Command.withParams(params).execute();
     assertTrue(response, "Failed to download Oracle database yaml file");
 
-    replaceStringInFile(dbYaml.toString(), "name: singleinstancedatabase-sample", "name: " + dbName);
+    replaceStringInFile(dbYaml.toString(), "name: sidb-sample", "name: " + dbName);
     replaceStringInFile(dbYaml.toString(), "namespace: default", "namespace: " + namespace);
     replaceStringInFile(dbYaml.toString(), "secretName:", "secretName: " + secretName);
     replaceStringInFile(dbYaml.toString(), "secretKey:", "secretKey: " + secretKey);
