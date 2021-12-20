@@ -122,7 +122,7 @@ class ItIstioDBOperator {
   private static String dbName = "my-oracle-sidb";
   private static LoggingFacade logger = null;
 
-  private String fmwDomainUid = "fmwdomain-mii-db";
+  private String fmwDomainUid = "fmwdomain-mii-istio-db";
   private String fmwAdminServerPodName = fmwDomainUid + "-admin-server";
   private String fmwManagedServerPrefix = fmwDomainUid + "-managed-server";
   private int replicaCount = 2;
@@ -133,7 +133,7 @@ class ItIstioDBOperator {
   private String opsswalletfileSecretName = fmwDomainUid + "opss-wallet-file-secret";
   private String adminSvcExtHost = null;
 
-  private static final String wlsDomainUid = "mii-jms-recovery-db";
+  private static final String wlsDomainUid = "mii-jms-istio-db";
   private static String pvName = wlsDomainUid + "-pv";
   private static String pvcName = wlsDomainUid + "-pvc";
   private static final String wlsAdminServerPodName = wlsDomainUid + "-admin-server";
