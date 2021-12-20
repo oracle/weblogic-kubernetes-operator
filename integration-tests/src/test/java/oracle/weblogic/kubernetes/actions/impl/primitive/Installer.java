@@ -73,6 +73,21 @@ public class Installer {
   }
 
   /**
+   * Create an InstallParams with the default values for WDT.
+   * @param version wdt version
+   * @param wdtDownloadURLBase wdt download url base
+   * @return an InstallParams instance
+   */
+  public static InstallParams installWdtParams(String version, String wdtDownloadURLBase) {
+    return new InstallParams()
+        .defaults()
+        .type(WDT)
+        .location(wdtDownloadURLBase + version + "/" + WDT_DOWNLOAD_FILENAME_DEFAULT)
+        .verify(true)
+        .unzip(false);
+  }
+
+  /**
    * Create an InstallParams with the default values for WIT.
    * @return an InstallParams instance 
    */
