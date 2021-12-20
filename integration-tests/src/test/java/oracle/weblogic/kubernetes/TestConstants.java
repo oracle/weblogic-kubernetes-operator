@@ -249,9 +249,8 @@ public interface TestConstants {
   public static final String WDT_IMAGE_DOMAINHOME_BASE_DIR = "/u01/oracle/user_projects/domains";
   public static final String WDT_BASIC_IMAGE_DOMAINTYPE = "wdt";
   public static final String WDT_BASIC_APP_NAME = "sample-app";
-  public static final String WDT_TEST_VERSION = Optional.ofNullable(System.getenv(
-      "WDT_TEST_VERSION"))
-      .orElse("1.9.15");
+  public static final String WDT_TEST_VERSION =
+      Optional.ofNullable(System.getenv("WDT_TEST_VERSION")).orElse("1.9.15");
 
   //monitoring constants
   public static final String MONITORING_EXPORTER_WEBAPP_VERSION = Optional.ofNullable(System.getenv(
