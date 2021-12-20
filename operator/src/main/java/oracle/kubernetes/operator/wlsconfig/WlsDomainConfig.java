@@ -36,8 +36,6 @@ public class WlsDomainConfig implements WlsDomain {
   private List<WlsServerConfig> servers = new ArrayList<>();
   // Contains all configured server templates in the WLS domain
   private List<WlsServerConfig> serverTemplates = new ArrayList<>();
-  // Contains all configured machines in the WLS domain
-  private Map<String, WlsMachineConfig> wlsMachineConfigs = new HashMap<>();
 
   public WlsDomainConfig() {
   }
@@ -59,21 +57,18 @@ public class WlsDomainConfig implements WlsDomain {
    * @param wlsClusterConfigs A Map containing clusters configured in this WLS domain
    * @param wlsServerConfigs A Map containing servers configured in the WLS domain
    * @param wlsServerTemplates A Map containing server templates configured in this WLS domain
-   * @param wlsMachineConfigs A Map containing machines configured in the WLS domain
    */
   public WlsDomainConfig(
       String name,
       String adminServerName,
       Map<String, WlsClusterConfig> wlsClusterConfigs,
       Map<String, WlsServerConfig> wlsServerConfigs,
-      Map<String, WlsServerConfig> wlsServerTemplates,
-      Map<String, WlsMachineConfig> wlsMachineConfigs) {
+      Map<String, WlsServerConfig> wlsServerTemplates) {
     this.configuredClusters = new ArrayList<>(wlsClusterConfigs.values());
     this.servers =
         wlsServerConfigs != null ? new ArrayList<>(wlsServerConfigs.values()) : new ArrayList<>();
     this.serverTemplates =
         wlsServerTemplates != null ? new ArrayList<>(wlsServerTemplates.values()) : null;
-    this.wlsMachineConfigs = wlsMachineConfigs;
     this.name = name;
     this.adminServerName = adminServerName;
     // set domainConfig for each WlsClusterConfig
@@ -177,15 +172,6 @@ public class WlsDomainConfig implements WlsDomain {
   }
 
   /**
-   * Returns configuration of machines found in the WLS domain.
-   *
-   * @return A Map of WlsMachineConfig, keyed by name, for each machine configured the WLS domain
-   */
-  public synchronized Map<String, WlsMachineConfig> getMachineConfigs() {
-    return wlsMachineConfigs;
-  }
-
-  /**
    * Returns the configuration for the WLS cluster with the given name.
    *
    * @param clusterName name of the WLS cluster
@@ -262,21 +248,6 @@ public class WlsDomainConfig implements WlsDomain {
           || getConfiguredClusters().stream().anyMatch(c -> c.containsServer(serverName));
     }
     return false;
-  }
-
-  /**
-   * Returns the configuration for the WLS machine with the given name.
-   *
-   * @param machineName name of the WLS machine
-   * @return The WlsMachineConfig object containing configuration of the WLS machine with the given
-   *     name. This methods return null if no WLS machine is configured with the given name.
-   */
-  public synchronized WlsMachineConfig getMachineConfig(String machineName) {
-    WlsMachineConfig result = null;
-    if (machineName != null && wlsMachineConfigs != null) {
-      result = wlsMachineConfigs.get(machineName);
-    }
-    return result;
   }
 
   @Nonnull
@@ -383,7 +354,6 @@ public class WlsDomainConfig implements WlsDomain {
         .append("configuredClusters", configuredClusters)
         .append("servers", servers)
         .append("serverTemplates", serverTemplates)
-        .append("wlsMachineConfigs", wlsMachineConfigs)
         .toString();
   }
 
@@ -395,8 +365,7 @@ public class WlsDomainConfig implements WlsDomain {
             .append(adminServerName)
             .append(configuredClusters)
             .append(servers)
-            .append(serverTemplates)
-            .append(wlsMachineConfigs);
+            .append(serverTemplates);
     return builder.toHashCode();
   }
 
@@ -416,8 +385,7 @@ public class WlsDomainConfig implements WlsDomain {
             .append(adminServerName, rhs.adminServerName)
             .append(configuredClusters, rhs.configuredClusters)
             .append(servers, rhs.servers)
-            .append(serverTemplates, rhs.serverTemplates)
-            .append(wlsMachineConfigs, rhs.wlsMachineConfigs);
+            .append(serverTemplates, rhs.serverTemplates);
     return builder.isEquals();
   }
 
