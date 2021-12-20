@@ -50,23 +50,6 @@ public class WlsClusterConfig {
   }
 
   /**
-   * Checks the JSON result from the dynamic cluster size update REST request.
-   *
-   * @param jsonResult The JSON String result from the dynamic server cluster size update REST
-   *     request
-   * @return true if the result means the update was successful, false otherwise
-   */
-  static boolean checkUpdateDynamicClusterSizeJsonResult(String jsonResult) {
-    final String expectedResult = "{}";
-
-    boolean result = false;
-    if (expectedResult.equals(jsonResult)) {
-      result = true;
-    }
-    return result;
-  }
-
-  /**
    * Returns true if one of the servers in the cluster has the specified name.
    *
    * @param serverName the name to look for
@@ -219,27 +202,6 @@ public class WlsClusterConfig {
    */
   public int getMinDynamicClusterSize() {
     return dynamicServersConfig != null ? dynamicServersConfig.getMinDynamicClusterSize() : -1;
-  }
-
-  /**
-   * Return the URL path of REST request for updating dynamic cluster size.
-   *
-   * @return The REST URL path for updating cluster size of dynamic servers for this cluster
-   */
-  public String getUpdateDynamicClusterSizeUrl() {
-    return "/management/weblogic/latest/edit/clusters/" + name + "/dynamicServers";
-  }
-
-  /**
-   * Return the payload used in the REST request for updating the dynamic cluster size. It will be
-   * used to update the cluster size of the dynamic servers of this cluster.
-   *
-   * @param clusterSize Desired dynamic cluster size
-   * @return A string containing the payload to be used in the REST request for updating the dynamic
-   *     cluster size to the specified value.
-   */
-  public String getUpdateDynamicClusterSizePayload(final int clusterSize) {
-    return "{ dynamicClusterSize: " + clusterSize + " }";
   }
 
   /**
