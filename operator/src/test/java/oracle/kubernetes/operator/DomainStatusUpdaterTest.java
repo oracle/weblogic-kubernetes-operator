@@ -88,7 +88,7 @@ class DomainStatusUpdaterTest {
   }
 
   @Test
-  void failedStepWithFailureMessage_andNoJobName_doesNotContainValidationWarnings() {
+  void failedStepWithFailureMessage_andNoJob_doesNotContainValidationWarnings() {
     info.addValidationWarning(validationWarning);
 
     testSupport.runSteps(createInternalFailureSteps(failure, null));
@@ -97,7 +97,7 @@ class DomainStatusUpdaterTest {
   }
 
   @Test
-  void whenDomainLacksStatus_andNoJobName_failedStepUpdatesDomainWithFailedTrueAndException() {
+  void whenDomainLacksStatus_andNoJob_failedStepUpdatesDomainWithFailedTrueAndException() {
     domain.setStatus(null);
 
     testSupport.runSteps(createInternalFailureSteps(failure, null));
@@ -108,7 +108,7 @@ class DomainStatusUpdaterTest {
   }
 
   @Test
-  void whenDomainLacksStatus_andNoJobName_generateFailedEvent() {
+  void whenDomainLacksStatus_andNoJob_generateFailedEvent() {
     domain.setStatus(null);
 
     testSupport.runSteps(createInternalFailureSteps(failure, null));
