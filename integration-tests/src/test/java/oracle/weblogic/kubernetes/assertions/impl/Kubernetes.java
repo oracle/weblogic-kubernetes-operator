@@ -145,7 +145,7 @@ public class Kubernetes {
    * @return true if pod exists and running otherwise false
    * @throws ApiException when there is error in querying the cluster
    */
-  public static boolean isPodInitializing(String namespace, String domainUid, String podName) throws ApiException {
+  public static boolean isPodInitialized(String namespace, String domainUid, String podName) throws ApiException {
     final LoggingFacade logger = getLogger();
     boolean status = false;
     V1Pod pod = getPod(namespace, null, podName);
