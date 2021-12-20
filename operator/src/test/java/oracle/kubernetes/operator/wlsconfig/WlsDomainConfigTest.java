@@ -76,11 +76,6 @@ class WlsDomainConfigTest {
   }
 
   @Test
-  void verifyGetMachineConfigsReturnNullIfNotFound() {
-    assertNull(wlsDomainConfig.getMachineConfig("noSuchMachine"));
-  }
-
-  @Test
   void whenNoClustersDefined_returnEmptyArray() {
     support.addWlsServer("server1");
     support.addWlsServer("server2");
