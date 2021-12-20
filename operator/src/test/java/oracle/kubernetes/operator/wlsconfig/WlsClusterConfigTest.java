@@ -255,40 +255,6 @@ class WlsClusterConfigTest {
     assertThat(wlsClusterConfig.getMaxClusterSize(), equalTo(2));
   }
 
-  @Test
-  void verifyGetUpdateDynamicClusterSizeUrlIncludesClusterName() {
-    WlsDynamicServersConfig wlsDynamicServersConfig =
-        createDynamicServersConfig(1, 1, 1, "ms-", "cluster1");
-    WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
-    assertEquals(
-        wlsClusterConfig.getUpdateDynamicClusterSizeUrl(),
-        "/management/weblogic/latest/edit/clusters/cluster1/dynamicServers");
-  }
-
-  @Test
-  void verifyGetUpdateDynamicClusterSizePayload() {
-    WlsDynamicServersConfig wlsDynamicServersConfig =
-        createDynamicServersConfig(1, 5, 1, "ms-", "cluster1");
-    WlsClusterConfig wlsClusterConfig = new WlsClusterConfig("cluster1", wlsDynamicServersConfig);
-    assertEquals(
-        wlsClusterConfig.getUpdateDynamicClusterSizePayload(2), "{ dynamicClusterSize: 2 }");
-  }
-
-  @Test
-  void checkDynamicClusterSizeJsonResultReturnsFalseOnNull() {
-    assertFalse(WlsClusterConfig.checkUpdateDynamicClusterSizeJsonResult(null));
-  }
-
-  @Test
-  void checkDynamicClusterSizeJsonResultReturnsFalseOnUnexpectedString() {
-    assertFalse(WlsClusterConfig.checkUpdateDynamicClusterSizeJsonResult("{ xyz }"));
-  }
-
-  @Test
-  void checkDynamicClusterSizeJsonResultReturnsTrueWithExpectedString() {
-    assertTrue(WlsClusterConfig.checkUpdateDynamicClusterSizeJsonResult("{}"));
-  }
-
   private WlsServerConfig createWlsServerConfig(
       String serverName, Integer listenPort, String listenAddress) {
     Map<String, Object> serverConfigMap = new HashMap<>();
