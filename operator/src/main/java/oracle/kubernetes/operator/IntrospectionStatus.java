@@ -147,8 +147,8 @@ public class IntrospectionStatus {
       }
 
       return Optional.ofNullable(getErrorMessage(pod))
-            .map(m -> createFailureMessage(pod, m))
-            .map(f -> DomainStatusUpdater.createServerPodFailureSteps(f)).orElse(null);
+            .map(m -> DomainStatusUpdater.createServerPodFailureSteps(createFailureMessage(pod, m)))
+            .orElse(null);
     }
 
     private String createFailureMessage(V1Pod pod, String message) {

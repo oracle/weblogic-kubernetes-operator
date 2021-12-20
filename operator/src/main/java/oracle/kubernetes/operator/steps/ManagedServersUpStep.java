@@ -163,7 +163,6 @@ public class ManagedServersUpStep extends Step {
     final Collection<String> servers = new ArrayList<>();
     final Collection<String> preCreateServers = new ArrayList<>();
     final Map<String, Integer> replicas = new HashMap<>();
-    private Step failureStep;
 
     ServersUpStepFactory(WlsDomainConfig domainTopology,
                          DomainPresenceInfo info, boolean skipEventCreation) {
@@ -228,8 +227,7 @@ public class ManagedServersUpStep extends Step {
     }
 
     private Step createNextStep(Step next) {
-      Step nextStep = (servers.isEmpty()) ? next : new ManagedServerUpIteratorStep(getStartupInfos(), next);
-      return failureStep != null ?  Step.chain(failureStep, nextStep) : nextStep;
+      return  (servers.isEmpty()) ? next : new ManagedServerUpIteratorStep(getStartupInfos(), next);
     }
 
     Collection<ServerStartupInfo> getStartupInfos() {
