@@ -182,7 +182,7 @@ class AsyncRequestStepTest {
     sendFailedCallback(HttpURLConnection.HTTP_INTERNAL_ERROR);
 
     assertThat(domain.getStatus().hasConditionWithType(Failed), is(true));
-    assertThat(domain.getStatus().getReason(), equalTo(Kubernetes.toString()));
+    assertThat(domain.getStatus().getReason(), equalTo(Kubernetes.name()));
     assertThat(domain.getStatus().getMessage(), allOf(
           containsString(OP_NAME), containsString(RESOURCE_TYPE),
           containsString(RESOURCE_NAME), containsString(NS), containsString(EXPLANATION)

@@ -42,6 +42,8 @@ public interface ActionConstants {
       = System.getProperty("wit.download.url", WIT_DOWNLOAD_URL_DEFAULT);
   public static final String WIT_DOWNLOAD_FILENAME_DEFAULT = "imagetool.zip";
 
+  public static final String WDT_DOWNLOAD_URL_BASE
+      = "https://github.com/oracle/weblogic-deploy-tooling/releases/download/release-";
   public static final String WDT_DOWNLOAD_URL_DEFAULT
       = "https://github.com/oracle/weblogic-deploy-tooling/releases/latest";
   public static final String WDT_DOWNLOAD_URL
