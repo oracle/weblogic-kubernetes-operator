@@ -1382,10 +1382,15 @@ public class DomainProcessorImpl implements DomainProcessor {
                                     info, waiting.getReason(), waiting.getMessage(), null)));
           break;
         case INIT_CONTAINERS_NOT_READY:
-          List<String> waitingMessages = new ArrayList<>();
           List<String> waitingReasons = new ArrayList<>();
+          List<String> waitingMessages = new ArrayList<>();
 
-          getInitContainersWaitingReasonsAndMessages(introspectorPod, waitingReasons, waitingMessages);
+          Optional.ofNullable(getInitContainerStatuses(introspectorPod))
+                  .orElseGet(Collections::emptyList).stream()
+                  .forEach(status -> {
+                    waitingMessages.add(getWaitingMessageFromStatus(status));
+                    waitingReasons.add(getWaitingReason(status));
+                  });
           if (!waitingReasons.isEmpty()) {
             delegate.runSteps(DomainStatusUpdater.createFailureRelatedSteps(
                     info, onSeparateLines(waitingReasons), onSeparateLines(waitingMessages), null));
@@ -1417,14 +1422,6 @@ public class DomainProcessorImpl implements DomainProcessor {
           break;
         default:
       }
-    }
-
-    private void getInitContainersWaitingReasonsAndMessages(V1Pod pod, List waitingReasons, List waitingMessages) {
-      Optional.ofNullable(getInitContainerStatuses(pod)).orElseGet(Collections::emptyList).stream()
-              .forEach(status -> {
-                waitingMessages.add(getWaitingMessageFromStatus(status));
-                waitingReasons.add(getWaitingReason(status));
-              });
     }
 
     private String getWaitingReason(V1ContainerStatus status) {

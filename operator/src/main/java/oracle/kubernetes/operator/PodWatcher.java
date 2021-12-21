@@ -265,9 +265,9 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
     return Optional.ofNullable(podCondition).map(V1PodCondition::getReason).orElse("");
   }
 
-  private static boolean notReady(List<V1ContainerStatus> initContainerStatus) {
-    return Optional.ofNullable(initContainerStatus)
-            .orElseGet(Collections::emptyList).stream().anyMatch(statuses -> notReady(statuses));
+  private static boolean notReady(List<V1ContainerStatus> initContainerStatuses) {
+    return Optional.ofNullable(initContainerStatuses)
+            .orElseGet(Collections::emptyList).stream().anyMatch(status -> notReady(status));
   }
 
   private static boolean notReady(V1ContainerStatus conStatus) {
