@@ -48,6 +48,7 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
@@ -179,6 +180,13 @@ class ItIstioDBOperator {
     // this secret is used only for non-kind cluster
     createSecretForBaseImages(fmwDomainNamespace);
     createSecretForBaseImages(wlsDomainNamespace);
+
+    // Label the domain/operator namespace with istio-injection=enabled
+    Map<String, String> labelMap = new HashMap();
+    labelMap.put("istio-injection", "enabled");
+    assertDoesNotThrow(() -> addLabelsToNamespace(fmwDomainNamespace, labelMap));
+    assertDoesNotThrow(() -> addLabelsToNamespace(wlsDomainNamespace, labelMap));
+    assertDoesNotThrow(() -> addLabelsToNamespace(opNamespace, labelMap));
 
     //install Oracle Database Operator
     assertDoesNotThrow(() -> installDBOperator(dbNamespace), "Failed to install database operator");
