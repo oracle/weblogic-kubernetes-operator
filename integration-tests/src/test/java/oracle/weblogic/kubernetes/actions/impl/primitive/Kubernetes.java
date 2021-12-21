@@ -91,6 +91,7 @@ import oracle.weblogic.kubernetes.utils.ExecResult;
 
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodInitialized;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
@@ -422,6 +423,7 @@ public class Kubernetes {
    * @param namespace name of the Namespace
    * @param container name of container for which to stream logs
    * @param previous whether return previous terminated container logs
+   * @param sinceSeconds relative time in seconds before the current time from which to show logs
    * @return log as a String or NULL when there is an error
    * @throws ApiException if Kubernetes client API call fails
    */
@@ -432,6 +434,7 @@ public class Kubernetes {
                                  Integer sinceSeconds)
       throws ApiException {
     String log = null;
+    checkPodInitialized(name,null,namespace);
     try {
       log = coreV1Api.readNamespacedPodLog(
           name, // name of the Pod
@@ -1091,6 +1094,40 @@ public class Kubernetes {
           null, // String | The continue option should be set when retrieving more results from the server.
           null, // String | A selector to restrict the list of returned objects by their fields.
           null, // String | A selector to restrict the list of returned objects by their labels.
+          null, // Integer | limit is a maximum number of responses to return for a list call.
+          RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
+          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
+          TIMEOUT_SECONDS, // Integer | Timeout for the list call.
+          Boolean.FALSE // Boolean | Watch for changes to the described resources.
+      );
+      events = Optional.ofNullable(list).map(CoreV1EventList::getItems).orElse(Collections.EMPTY_LIST);
+      events.sort(Comparator.comparing(CoreV1Event::getLastTimestamp,
+          Comparator.nullsFirst(Comparator.naturalOrder())));
+      Collections.reverse(events);
+    } catch (ApiException apex) {
+      getLogger().warning(apex.getResponseBody());
+      throw apex;
+    }
+    return events;
+  }
+
+  /**
+   * List operator generated events in a namespace.
+   *
+   * @param namespace name of the namespace in which to list events
+   * @return List of {@link CoreV1Event} objects
+   * @throws ApiException when listing events fails
+   */
+  public static List<CoreV1Event> listOpGeneratedNamespacedEvents(String namespace) throws ApiException {
+    List<CoreV1Event> events = null;
+    try {
+      CoreV1EventList list = coreV1Api.listNamespacedEvent(
+          namespace, // String | namespace.
+          PRETTY, // String | If 'true', then the output is pretty printed.
+          ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
+          null, // String | The continue option should be set when retrieving more results from the server.
+          null, // String | A selector to restrict the list of returned objects by their fields.
+          "weblogic.createdByOperator", // String | A selector to restrict the list of returned objects by their labels.
           null, // Integer | limit is a maximum number of responses to return for a list call.
           RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
           RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset

@@ -27,7 +27,7 @@ import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchServerStart
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkIsPodRestarted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
-import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodInitializing;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodInitialized;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodRestarted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.ServerStartPolicyUtils.CLUSTER_LIFECYCLE;
@@ -356,8 +356,8 @@ class ItServerStartPolicyDynamicCluster {
       logger.info("Replica count increased without admin server");
 
       // Check if pod in init state
-      // Here the server pd is created but does not goes into 1/1 state
-      checkPodInitializing(serverPodName, domainUid, domainNamespace);
+      // Here the server pod is created but does not goes into 1/1 state
+      checkPodInitialized(serverPodName, domainUid, domainNamespace);
       logger.info("Server[" + serverName + "] pod is initialized");
 
       // (re)Start Start the admin

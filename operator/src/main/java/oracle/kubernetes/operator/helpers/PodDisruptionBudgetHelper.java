@@ -16,7 +16,6 @@ import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
 import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudgetSpec;
 import jakarta.json.Json;
 import jakarta.json.JsonPatchBuilder;
-import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
@@ -30,6 +29,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
+import static oracle.kubernetes.operator.DomainStatusUpdater.createKubernetesFailureSteps;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
@@ -102,7 +102,7 @@ public class PodDisruptionBudgetHelper {
       }
 
       private NextAction updateDomainStatus(Packet packet, CallResponse<V1beta1PodDisruptionBudget> callResponse) {
-        return doNext(DomainStatusUpdater.createFailureRelatedSteps(callResponse), packet);
+        return doNext(createKubernetesFailureSteps(callResponse), packet);
       }
 
       @Override

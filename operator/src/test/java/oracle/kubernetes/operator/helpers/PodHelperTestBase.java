@@ -98,7 +98,9 @@ import static com.meterware.simplestub.Stub.createStrictStub;
 import static com.meterware.simplestub.Stub.createStub;
 import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
 import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_ROLL_STARTING_EVENT;
+import static oracle.kubernetes.operator.EventConstants.KUBERNETES_ERROR;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventWithNamespace;
 import static oracle.kubernetes.operator.EventTestUtils.getEventsWithReason;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.DOMAINZIP_HASH;
@@ -125,6 +127,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.SERVER_SCAN;
 import static oracle.kubernetes.operator.helpers.AnnotationHelper.SHA256_ANNOTATION;
 import static oracle.kubernetes.operator.helpers.BasePodStepContext.KUBERNETES_PLATFORM_HELM_VARIABLE;
 import static oracle.kubernetes.operator.helpers.DomainIntrospectorJobTest.TEST_VOLUME_NAME;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_STARTING;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
@@ -1000,6 +1003,21 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
+  public void whenPodCreationFailsDueToUnprocessableEntityFailure_createFailedKubernetesEvent() {
+    testSupport.failOnCreate(POD, NS, new UnrecoverableErrorBuilderImpl()
+        .withReason("FieldValueNotFound")
+        .withMessage("Test this failure")
+        .build());
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    assertThat(
+        "Expected Event " + DOMAIN_FAILED + " expected with message not found",
+        getExpectedEventMessage(DOMAIN_FAILED),
+        stringContainsInOrder("Domain", UID, "failed due to", KUBERNETES_ERROR));
+  }
+
+  @Test
   void whenPodCreationFailsDueToUnprocessableEntityFailure_abortFiber() {
     testSupport.failOnCreate(POD, NS, new UnrecoverableErrorBuilderImpl()
         .withReason("FieldValueNotFound")
@@ -1019,6 +1037,18 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
 
     assertThat(getDomain(), hasStatus().withReason(Kubernetes)
           .withMessageContaining("create", "pod", NS, getQuotaExceededMessage()));
+  }
+
+  @Test
+  void whenPodCreationFailsDueToQuotaExceeded_generateFailedEvent() {
+    testSupport.failOnCreate(POD, NS, createQuotaExceededException());
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    assertThat(
+        "Expected Event " + DOMAIN_FAILED + " expected with message not found",
+        getExpectedEventMessage(DOMAIN_FAILED),
+        stringContainsInOrder("Domain", UID, "failed due to", KUBERNETES_ERROR));
   }
 
   private ApiException createQuotaExceededException() {
@@ -1656,6 +1686,22 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     testSupport.runSteps(initialStep);
 
     assertThat(getDomain(), hasStatus().withReason(Kubernetes).withMessageContaining("create", "pod", NS));
+  }
+
+  @Test
+  void whenNoPod_generateFailedEvent() {
+    testSupport.addRetryStrategy(retryStrategy);
+    testSupport.failOnCreate(KubernetesTestSupport.POD, NS, HTTP_INTERNAL_ERROR);
+
+    FiberTestSupport.StepFactory stepFactory = getStepFactory();
+    Step initialStep = stepFactory.createStepList(terminalStep);
+    testSupport.runSteps(initialStep);
+
+    assertThat(getEvents().stream().anyMatch(this::isKubernetesFailedEvent), is(true));
+  }
+
+  private boolean isKubernetesFailedEvent(CoreV1Event e) {
+    return DOMAIN_FAILED_EVENT.equals(e.getReason()) && e.getMessage().contains(KUBERNETES_ERROR);
   }
 
   @Test
@@ -2355,7 +2401,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
         .orElse("Event not found");
   }
 
-  private List<CoreV1Event> getEvents() {
+  List<CoreV1Event> getEvents() {
     return testSupport.getResources(KubernetesTestSupport.EVENT);
   }
 
