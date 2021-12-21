@@ -23,6 +23,7 @@ import java.util.stream.Stream;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ContainerState;
+import io.kubernetes.client.openapi.models.V1ContainerStateWaiting;
 import io.kubernetes.client.openapi.models.V1ContainerStatus;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
@@ -1380,6 +1381,16 @@ public class DomainProcessorImpl implements DomainProcessor {
                             DomainStatusUpdater.createFailureRelatedSteps(
                                     info, waiting.getReason(), waiting.getMessage(), null)));
           break;
+        case INIT_CONTAINERS_NOT_READY:
+          List<String> waitingMessages = new ArrayList<>();
+          List<String> waitingReasons = new ArrayList<>();
+
+          getInitContainersWaitingReasonsAndMessages(introspectorPod, waitingReasons, waitingMessages);
+          if (!waitingReasons.isEmpty()) {
+            delegate.runSteps(DomainStatusUpdater.createFailureRelatedSteps(
+                    info, onSeparateLines(waitingReasons), onSeparateLines(waitingMessages), null));
+          }
+          break;
         case TERMINATED_ERROR_REASON:
           Optional.ofNullable(getMatchingContainerStatus())
                   .map(V1ContainerStatus::getState)
@@ -1406,6 +1417,38 @@ public class DomainProcessorImpl implements DomainProcessor {
           break;
         default:
       }
+    }
+
+    private void getInitContainersWaitingReasonsAndMessages(V1Pod pod, List waitingReasons, List waitingMessages) {
+      Optional.ofNullable(getInitContainerStatuses(pod)).orElseGet(Collections::emptyList).stream()
+              .forEach(status -> {
+                waitingMessages.add(getWaitingMessageFromStatus(status));
+                waitingReasons.add(getWaitingReason(status));
+              });
+    }
+
+    private String getWaitingReason(V1ContainerStatus status) {
+      return Optional.ofNullable(status)
+              .map(V1ContainerStatus::getState)
+              .map(V1ContainerState::getWaiting)
+              .map(V1ContainerStateWaiting::getReason)
+              .orElse(null);
+    }
+
+    private String getWaitingMessageFromStatus(V1ContainerStatus status) {
+      return Optional.ofNullable(status)
+              .map(V1ContainerStatus::getState)
+              .map(V1ContainerState::getWaiting)
+              .map(V1ContainerStateWaiting::getMessage)
+              .orElse(null);
+    }
+
+    private List<V1ContainerStatus> getInitContainerStatuses(V1Pod pod) {
+      return Optional.ofNullable(pod.getStatus()).map(V1PodStatus::getInitContainerStatuses).orElse(null);
+    }
+
+    private String onSeparateLines(List<String> waitingReasons) {
+      return String.join(System.lineSeparator(), waitingReasons);
     }
 
     private boolean isNotTerminatedByOperator() {

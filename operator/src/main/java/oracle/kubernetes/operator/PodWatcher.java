@@ -60,6 +60,7 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
   public enum PodStatus {
     PHASE_FAILED,
     WAITING_NON_NULL_MESSAGE,
+    INIT_CONTAINERS_NOT_READY,
     TERMINATED_ERROR_REASON,
     UNSCHEDULABLE,
     SUCCESS
@@ -214,12 +215,19 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
       return PodStatus.PHASE_FAILED;
     } else if (notReady(conStatus) && getContainerStateWaitingMessage(conStatus) != null) {
       return PodStatus.WAITING_NON_NULL_MESSAGE;
+    } else if (initContainersNotReady(pod)) {
+      return PodStatus.INIT_CONTAINERS_NOT_READY;
     } else if (notReady(conStatus) && getContainerStateTerminatedReason(conStatus).contains("Error")) {
       return PodStatus.TERMINATED_ERROR_REASON;
     } else if (isUnschedulable(pod)) {
       return PodStatus.UNSCHEDULABLE;
     }
     return PodStatus.SUCCESS;
+  }
+
+  private static boolean initContainersNotReady(@Nonnull V1Pod pod) {
+    return notReady(Optional.ofNullable(pod.getStatus()).map(s -> s.getInitContainerStatuses())
+            .orElseGet(Collections::emptyList));
   }
 
   static V1ContainerStatus getContainerStatus(@Nonnull V1Pod pod) {
@@ -255,6 +263,11 @@ public class PodWatcher extends Watcher<V1Pod> implements WatchListener<V1Pod>, 
 
   private static String getReason(V1PodCondition podCondition) {
     return Optional.ofNullable(podCondition).map(V1PodCondition::getReason).orElse("");
+  }
+
+  private static boolean notReady(List<V1ContainerStatus> initContainerStatus) {
+    return Optional.ofNullable(initContainerStatus)
+            .orElseGet(Collections::emptyList).stream().anyMatch(statuses -> notReady(statuses));
   }
 
   private static boolean notReady(V1ContainerStatus conStatus) {
