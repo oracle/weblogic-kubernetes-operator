@@ -50,6 +50,7 @@ class IntrospectionStatusTest {
   private static final String UNSCHEDULABLE = "Unschedulable";
   private static final String IMAGE_PULL_BACKOFF = "ImagePullBackoff";
   private static final String DEADLINE_EXCEEDED = "DeadlineExceeded";
+  private static final int MESSAGE_LENGTH = 10;
   private final List<Memento> mementos = new ArrayList<>();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final Map<String, Map<String, DomainPresenceInfo>> presenceInfoMap = new HashMap<>();
@@ -208,6 +209,21 @@ class IntrospectionStatusTest {
     assertThat(updatedDomain.getStatus().getMessage(), emptyOrNullString());
   }
 
+  @Test
+  void whenPodHasInitContainerImagePullErrorWaitingMessage_updateDomainStatus() {
+    processor.dispatchPodWatch(
+            WatchEvent.createAddedEvent(
+                    createIntrospectorJobPodWithInitContainerStatus(createWaitingState(IMAGE_PULL_FAILURE, MESSAGE)))
+                    .toWatchResponse());
+
+    assertThat(getDomain().getStatus().getReason(), equalTo("ErrImagePull"));
+    assertThat(getDomain().getStatus().getMessage(), equalTo(MESSAGE));
+  }
+
+  private Domain getDomain() {
+    return testSupport.getResourceWithName(KubernetesTestSupport.DOMAIN, UID);
+  }
+
   private V1Pod createIntrospectorJobPod(V1ContainerState waitingState) {
     return createIntrospectorJobPod(UID)
         .status(
@@ -224,14 +240,27 @@ class IntrospectionStatusTest {
   @SuppressWarnings("SameParameterValue")
   private V1Pod createIntrospectorJobPod(String domainUid) {
     return AnnotationHelper.withSha256Hash(
-        new V1Pod()
-            .metadata(
-                withIntrospectorJobLabels(
-                    new V1ObjectMeta()
-                        .name(toJobIntrospectorName(domainUid) + getPodSuffix())
-                        .namespace(NS),
-                    domainUid))
-            .spec(new V1PodSpec()));
+            new V1Pod()
+                    .metadata(
+                            withIntrospectorJobLabels(
+                                    new V1ObjectMeta()
+                                            .name(toJobIntrospectorName(domainUid) + getPodSuffix())
+                                            .namespace(NS),
+                                    domainUid))
+                    .spec(new V1PodSpec()));
+  }
+
+  private V1Pod createIntrospectorJobPodWithInitContainerStatus(V1ContainerState waitingState) {
+    return createIntrospectorJobPod(UID)
+            .status(
+                    new V1PodStatusBuilder()
+                            .addNewInitContainerStatus()
+                            .withImage(IMAGE_NAME)
+                            .withName(toJobIntrospectorName(UID))
+                            .withReady(false)
+                            .withState(waitingState)
+                            .endInitContainerStatus()
+                            .build());
   }
 
   private V1Pod createIntrospectorJobPodWithConditions(V1PodCondition condition) {

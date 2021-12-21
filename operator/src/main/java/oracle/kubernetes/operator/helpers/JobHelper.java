@@ -496,6 +496,10 @@ public class JobHelper {
               .orElse(false);
     }
 
+    private List<V1ContainerStatus> getInitContainerStatuses(V1Pod pod) {
+      return Optional.ofNullable(pod.getStatus()).map(V1PodStatus::getInitContainerStatuses).orElse(null);
+    }
+
     private static boolean isJobTimedout(DomainPresenceInfo info) {
       return Objects.equals(getReason(info), "DeadlineExceeded") || getMessage(info).contains("DeadlineExceeded");
     }
@@ -565,6 +569,21 @@ public class JobHelper {
                   .map(V1ContainerStatus::getState).map(V1ContainerState::getWaiting)
                   .map(V1ContainerStateWaiting::getReason).orElse(null));
         }
+
+        packet.put(ProcessingConstants.JOB_POD_INIT_CONTAINER_WAITING_REASON, getInitContainerWaitingMessages(pod));
+      }
+
+      private Boolean getInitContainerWaitingMessages(V1Pod pod) {
+        return Optional.ofNullable(getInitContainerStatuses(pod)).orElseGet(Collections::emptyList).stream()
+                .anyMatch(status -> isImagePullError(getWaitingReason(status)));
+      }
+
+      private String getWaitingReason(V1ContainerStatus status) {
+        return Optional.ofNullable(status)
+                .map(V1ContainerStatus::getState)
+                .map(V1ContainerState::getWaiting)
+                .map(V1ContainerStateWaiting::getReason)
+                .orElse(null);
       }
     }
 
@@ -572,14 +591,15 @@ public class JobHelper {
       OffsetDateTime jobStartTime;
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       String namespace = info.getNamespace();
-      String jobPodContainerWaitingReason = (String) packet.get(ProcessingConstants.JOB_POD_CONTAINER_WAITING_REASON);
+      String jobPodContainerWaitingReason = packet.getValue(ProcessingConstants.JOB_POD_CONTAINER_WAITING_REASON);
+      Boolean jobInitContainerImagePullError = getjobInitContainerImagePullError(packet);
 
       if (job != null) {
         jobStartTime = Optional.ofNullable(job.getMetadata())
                 .map(V1ObjectMeta::getCreationTimestamp).orElse(OffsetDateTime.now());
         String lastIntrospectJobProcessedId = getLastIntrospectJobProcessedId(info);
 
-        if (isJobTimedout(info) || (isImagePullError(jobPodContainerWaitingReason))) {
+        if (isJobTimedout(info) || (isImagePullError(jobPodContainerWaitingReason)) || jobInitContainerImagePullError) {
           jobStartTime = OffsetDateTime.now();
           packet.put(DOMAIN_INTROSPECT_REQUESTED, ReadDomainIntrospectorPodLogResponseStep.INTROSPECTION_FAILED);
           nextSteps.add(Step.chain(deleteDomainIntrospectorJobStep(null),
@@ -601,6 +621,15 @@ public class JobHelper {
                 createDomainIntrospectorJobStep(next)));
       }
       return jobStartTime;
+    }
+
+    private static Boolean getjobInitContainerImagePullError(Packet packet) {
+      Boolean containerWaitingReason = packet.getValue(ProcessingConstants.JOB_POD_INIT_CONTAINER_WAITING_REASON);
+      return Optional.ofNullable(containerWaitingReason).orElse(Boolean.FALSE);
+    }
+
+    private static Boolean isNotNull(Boolean jobInitContainerImagePullError) {
+      return Optional.ofNullable(jobInitContainerImagePullError).orElse(false);
     }
   }
 
