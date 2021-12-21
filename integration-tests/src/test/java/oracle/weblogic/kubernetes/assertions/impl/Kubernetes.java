@@ -36,7 +36,6 @@ import io.kubernetes.client.openapi.models.V1PodList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.util.ClientBuilder;
-import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
 import static io.kubernetes.client.util.Yaml.dump;
@@ -196,7 +195,6 @@ public class Kubernetes {
           .collect(Collectors.joining(","));
     }
     V1Pod pod = getPod(namespace, labelSelector, podName);
-    logger.info(Yaml.dump(pod));
     if (pod != null) {
       if (pod.getStatus() != null
           && pod.getStatus().getConditions() != null
