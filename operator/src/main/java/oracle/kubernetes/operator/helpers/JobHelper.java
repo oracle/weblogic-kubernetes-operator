@@ -568,9 +568,8 @@ public class JobHelper {
                   .map(V1PodStatus::getContainerStatuses).map(statuses -> statuses.get(0))
                   .map(V1ContainerStatus::getState).map(V1ContainerState::getWaiting)
                   .map(V1ContainerStateWaiting::getReason).orElse(null));
+          packet.put(ProcessingConstants.JOB_POD_INIT_CONTAINER_WAITING_REASON, getInitContainerWaitingMessages(pod));
         }
-
-        packet.put(ProcessingConstants.JOB_POD_INIT_CONTAINER_WAITING_REASON, getInitContainerWaitingMessages(pod));
       }
 
       private Boolean getInitContainerWaitingMessages(V1Pod pod) {
@@ -624,12 +623,8 @@ public class JobHelper {
     }
 
     private static Boolean getjobInitContainerImagePullError(Packet packet) {
-      Boolean containerWaitingReason = packet.getValue(ProcessingConstants.JOB_POD_INIT_CONTAINER_WAITING_REASON);
-      return Optional.ofNullable(containerWaitingReason).orElse(Boolean.FALSE);
-    }
-
-    private static Boolean isNotNull(Boolean jobInitContainerImagePullError) {
-      return Optional.ofNullable(jobInitContainerImagePullError).orElse(false);
+      return Optional.ofNullable(packet.<Boolean>getValue(ProcessingConstants.JOB_POD_INIT_CONTAINER_WAITING_REASON))
+              .orElse(Boolean.FALSE);
     }
   }
 
