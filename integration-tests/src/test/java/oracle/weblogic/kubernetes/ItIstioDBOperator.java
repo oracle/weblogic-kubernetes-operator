@@ -122,7 +122,7 @@ class ItIstioDBOperator {
   private static String dbName = "my-oracle-sidb";
   private static LoggingFacade logger = null;
 
-  private String fmwDomainUid = "fmwdomain-mii-istio-db";
+  private String fmwDomainUid = "jrf-istio-db";
   private String fmwAdminServerPodName = fmwDomainUid + "-admin-server";
   private String fmwManagedServerPrefix = fmwDomainUid + "-managed-server";
   private int replicaCount = 2;
