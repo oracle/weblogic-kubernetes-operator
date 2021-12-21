@@ -32,6 +32,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.isLocalHostBindingsEnabled;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
@@ -267,13 +268,13 @@ public class FmwUtils {
     String adminServerPodName = domainUid + "-admin-server";
     String managedServerPrefix = domainUid + "-managed-server";
 
-    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+    checkPodReadyAndServiceExists(withLongRetryPolicy, adminServerPodName, domainUid, domainNamespace);
 
     for (int i = 1; i <= replicaCount; i++) {
       String managedServerName = (args.length == 0) ? managedServerPrefix + i + "-c1" : managedServerPrefix + i;
       logger.info("Checking managed server service {0} is created in namespace {1}",
           managedServerName, domainNamespace);
-      checkPodReadyAndServiceExists(managedServerName, domainUid, domainNamespace);
+      checkPodReadyAndServiceExists(withLongRetryPolicy, managedServerName, domainUid, domainNamespace);
     }
   }
 
