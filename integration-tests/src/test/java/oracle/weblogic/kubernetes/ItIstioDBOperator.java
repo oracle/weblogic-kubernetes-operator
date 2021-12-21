@@ -181,6 +181,13 @@ class ItIstioDBOperator {
     createSecretForBaseImages(fmwDomainNamespace);
     createSecretForBaseImages(wlsDomainNamespace);
 
+    // create PV, PVC for logs/data
+    createPV(pvName, wlsDomainUid, ItIstioDBOperator.class.getSimpleName());
+    createPVC(pvName, pvcName, wlsDomainUid, wlsDomainNamespace);
+
+    // create job to change permissions on PV hostPath
+    createJobToChangePermissionsOnPvHostPath(pvName, pvcName, wlsDomainNamespace);
+
     // Label the domain/operator namespace with istio-injection=enabled
     Map<String, String> labelMap = new HashMap();
     labelMap.put("istio-injection", "enabled");
@@ -388,13 +395,6 @@ class ItIstioDBOperator {
 
     createConfigMapAndVerify(configMapName, wlsDomainUid, wlsDomainNamespace,
         Arrays.asList(MODEL_DIR + "/jms.recovery.yaml"));
-
-    // create PV, PVC for logs/data
-    createPV(pvName, wlsDomainUid, ItIstioDBOperator.class.getSimpleName());
-    createPVC(pvName, pvcName, wlsDomainUid, wlsDomainNamespace);
-
-    // create job to change permissions on PV hostPath
-    createJobToChangePermissionsOnPvHostPath(pvName, pvcName, wlsDomainNamespace);
 
     // create the domain CR with a pre-defined configmap
     createDomainResourceWithLogHome(wlsDomainUid, wlsDomainNamespace,
