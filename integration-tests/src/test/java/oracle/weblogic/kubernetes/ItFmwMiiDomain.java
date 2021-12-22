@@ -391,5 +391,5 @@ class ItFmwMiiDomain {
 
     return patchDomainCustomResource(domainUid, fmwDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
   }
-
+  
 }
