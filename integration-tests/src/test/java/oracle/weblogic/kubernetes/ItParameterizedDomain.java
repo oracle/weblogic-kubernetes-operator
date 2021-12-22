@@ -807,7 +807,7 @@ class ItParameterizedDomain {
         "domain event {0} to be logged",
         DOMAIN_CHANGED);
 
-    // wait for longer time for DomainProcessingCompleted event
+    // wait for longer time for DomainCompleted event
     testUntil(
         withLongRetryPolicy,
         checkDomainEvent(opNamespace, miiDomainNamespace, miiDomainUid, DOMAIN_COMPLETED, "Normal", timestamp),

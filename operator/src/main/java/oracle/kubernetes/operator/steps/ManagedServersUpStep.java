@@ -20,8 +20,6 @@ import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerShutdownInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
-import oracle.kubernetes.operator.helpers.EventHelper.EventData;
-import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -37,7 +35,6 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 
 import static java.util.Comparator.comparing;
-import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
 
 public class ManagedServersUpStep extends Step {
   static final String SERVERS_UP_MSG =
@@ -110,6 +107,7 @@ public class ManagedServersUpStep extends Step {
 
     info.setServerStartupInfo(factory.getStartupInfos());
     info.setServerShutdownInfo(factory.getShutdownInfos());
+
     LOGGER.exiting();
 
     return doNext(
@@ -165,7 +163,6 @@ public class ManagedServersUpStep extends Step {
     final Collection<String> servers = new ArrayList<>();
     final Collection<String> preCreateServers = new ArrayList<>();
     final Map<String, Integer> replicas = new HashMap<>();
-    private Step eventStep;
 
     ServersUpStepFactory(WlsDomainConfig domainTopology,
                          DomainPresenceInfo info, boolean skipEventCreation) {
@@ -230,8 +227,7 @@ public class ManagedServersUpStep extends Step {
     }
 
     private Step createNextStep(Step next) {
-      Step nextStep = (servers.isEmpty()) ? next : new ManagedServerUpIteratorStep(getStartupInfos(), next);
-      return Optional.ofNullable(eventStep).map(s -> Step.chain(s, nextStep)).orElse(nextStep);
+      return  (servers.isEmpty()) ? next : new ManagedServerUpIteratorStep(getStartupInfos(), next);
     }
 
     Collection<ServerStartupInfo> getStartupInfos() {
@@ -273,7 +269,7 @@ public class ManagedServersUpStep extends Step {
     private void logIfReplicasExceedsClusterServersMax(WlsClusterConfig clusterConfig) {
       if (exceedsMaxConfiguredClusterSize(clusterConfig)) {
         String clusterName = clusterConfig.getClusterName();
-        addValidationErrorEventAndWarning(MessageKeys.REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT,
+        addReplicasTooHighValidationErrorWarning(
             domain.getReplicaCount(clusterName),
             clusterConfig.getMaxDynamicClusterSize(),
             clusterName);
@@ -283,7 +279,7 @@ public class ManagedServersUpStep extends Step {
     private void logIfReplicasLessThanClusterServersMin(WlsClusterConfig clusterConfig) {
       if (lessThanMinConfiguredClusterSize(clusterConfig)) {
         String clusterName = clusterConfig.getClusterName();
-        addValidationErrorEventAndWarning(MessageKeys.REPLICAS_LESS_THAN_TOTAL_CLUSTER_SERVER_COUNT,
+        LOGGER.warning(MessageKeys.REPLICAS_LESS_THAN_TOTAL_CLUSTER_SERVER_COUNT,
             domain.getReplicaCount(clusterName),
             clusterConfig.getMinDynamicClusterSize(),
             clusterName);
@@ -294,13 +290,8 @@ public class ManagedServersUpStep extends Step {
       }
     }
 
-    private void addValidationErrorEventAndWarning(String msgId, Object... messageParams) {
-      LOGGER.warning(msgId, messageParams);
-      String message = LOGGER.formatMessage(msgId, messageParams);
-      if (!skipEventCreation) {
-        eventStep = createEventStep(new EventData(EventItem.DOMAIN_VALIDATION_ERROR, message));
-      }
-      info.addValidationWarning(message);
+    private void addReplicasTooHighValidationErrorWarning(Object... messageParams) {
+      LOGGER.warning(MessageKeys.REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT, messageParams);
     }
 
     private boolean lessThanMinConfiguredClusterSize(WlsClusterConfig clusterConfig) {
