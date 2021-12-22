@@ -141,12 +141,7 @@ public class ManagedServerUpIteratorStep extends Step {
   }
 
   private Packet createPacketForServer(Packet packet, ServerStartupInfo ssi) {
-    Packet p = packet.copy();
-    p.put(ProcessingConstants.CLUSTER_NAME, ssi.getClusterName());
-    p.put(ProcessingConstants.SERVER_NAME, ssi.getName());
-    p.put(ProcessingConstants.SERVER_SCAN, ssi.serverConfig);
-    p.put(ProcessingConstants.ENVVARS, ssi.getEnvironment());
-    return p;
+    return ssi.createPacket(packet);
   }
 
   private Map<String, StartClusteredServersStepFactory> getStartClusteredServersStepFactories(
