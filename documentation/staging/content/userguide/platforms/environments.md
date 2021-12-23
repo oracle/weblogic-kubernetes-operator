@@ -83,33 +83,27 @@ WebLogic Server is not open source.
 Licensing is required for each running WebLogic Server instance in Kubernetes,
 just as with any deployment of WebLogic Server.
 Licensing is free for a single developer desktop development environment.
-For more information, see the [Fusion Middleware Licensing Information User Manual - Application Server Products](https://docs.oracle.com/en/middleware/fusion-middleware/fmwlc/application-server-products-new-structure.html).
+For more information, see the [Fusion Middleware Licensing Information User Manual - Application Server Products](https://docs.oracle.com/en/middleware/fusion-middleware/fmwlc/application-server-products-new-structure.html) and the following section.
 
 #### Oracle Linux and WebLogic Server images
 
 {{% notice warning %}}
-Oracle strongly recommends using dated Critical Patch Update (CPU) images from the Oracle Container Registry (OCR), 
-or fully patched images that you generate yourself using the WebLogic Image Tool,
-for production deployments.
+For production deployments,
+Oracle requires using dated Critical Patch Update (CPU) images from the
+[Oracle Container Registry](https://container-registry.oracle.com/) (OCR)
+(such images contain `_cpu` and an embedded date stamp in their image name),
+or fully patched custom images that you generate yourself.
 General Availabity (GA) images are not licensable or suitable for production use.
 {{% /notice %}}
 
-{{% notice note %}}
-All of the OCR images that are discussed in this section are built using
-the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) (WIT).
-Customers can use WIT to build their own WebLogic Server images
-(with the latest Oracle Linux images, Java updates, and WebLogic Server patches),
-apply one-off patches to existing OCR images,
-or overlay their own files and applications on top of an OCR image. See TBD
-{{% /notice %}}
+Oracle Linux is under open source license and is completely free to download and use.
 
+TBD this could use rewording to distinguish the case where the only license is a developer license.
 
-Oracle Linux is under open source license
-and is completely free to download and use.
+In addition, with WebLogic Server licenses and support, customers have access to:
 
-In addition, with WebLogic Server licenses and support,
-customers have access to:
 - The latest WebLogic Server images which bundle Java SE and the latest slim Oracle Linux images.
+- Tooling for creating custom WebLogic Server images.
 - Oracle support for Linux.
 - Oracle support for WebLogic Server images.
 
@@ -118,108 +112,12 @@ for direct access to Oracle Linux support or Unbreakable Linux Network
 (to directly access the standalone Oracle Linux patches). The
 latest Oracle Linux patches are included the latest WebLogic Server images.
 
-The [Oracle Container Registry](https://container-registry.oracle.com/) (OCR)
-supplies two types of WebLogic Server or Fusion Middleware Infrastructure images:
-
-- Critical Patch Updates (CPU) images.
-  - Located in OCR repositories "middleware/weblogic_cpu" and "middleware/fmw-infrastructure_cpu".
-  - Updated quarterly (every CPU cycle).
-  - Includes critical security fixes for Oracle Linux, Java, and Oracle WebLogic Server.
-  - Suitable for production use.
-
-- General Availability (GA) images.
-  - Located in OCR repositories "middleware/weblogic" and "middleware/fmw-infrastructure".
-  - Updated quarterly.
-  - Includes latest updates for Oracle Linux, and Java, but _not_ for Oracle WebLogic Server.
-  - GA images are subject to [Oracle Technology Network (OTN) Developer License Terms](https://www.oracle.com/downloads/licenses/standard-license.html), 
-    which include, but are not limited to:
-     - Must only be used for the purpose of developing, testing, prototyping, and demonstrating applications.
-     - Must _not_ be used for any data processing, business, commercial, or production purposes.
-
-Example GA images:
-
-| Sample GA image name | Description |
-|-|-|
-| container-registry.oracle.com/middleware/weblogic:12.2.1.4-generic-jdk8-ol7-NNNNNNTBD | JDK 8u311, Oracle Linux 7u9, and GA Oracle WebLogic Server 12.2.1.4 generic distribution for the given date |
-| 12.2.1.4-generic-jdk8-ol7 | Represents latest JDK 8, latest Oracle Linux 7, and GA Oracle WebLogic Server 12.2.1.4 generic distribution |
-
-Example CPU images:
-
-| Sample CPU image name | Description |
-|-|-|
-| container-registry.oracle.com/middleware/weblogic_cpu:12.2.1.4-generic-jdk8-ol7-211124 | JDK 8u311, Oracle Linux 7u9, and Oracle WebLogic Server 12.2.1.4 generic distribution October 2021 CPU |
-| container-registry.oracle.com/middleware/weblogic_cpu:12.2.1.4-generic-jdk8-ol7 | Represents latest JDK 8, latest Oracle Linux 7, and GA Oracle WebLogic Server 12.2.1.4 generic distribution CPU |
-
-You may have noticed that the image tags may include keywords like `generic`, `slim`, etc.
-This reflects the type of WebLogic install in the image. There are multiple types,
-and the type usually can be determined by examining the image name and tag:
-- `.../weblogic...:...generic...`:
-  - The WebLogic generic image is supported for development and production deployment
-    of WebLogic configurations using Docker.
-  - Contains the same binaries as those installed by the WebLogic generic installer.
-- `.../weblogic...:...slim...`:
-  - The WebLogic slim image is supported for development and production deployment
-    of WebLogic configurations using Docker.
-  - In order to reduce image size,
-    it contains a subset of the binaries included in the WebLogic generic image:
-    - The WebLogic Console, WebLogic examples, WebLogic clients, Maven plug-ins,
-      and Java DB have been removed.
-    - All binaries that remain included are
-      the same as those in the WebLogic generic image.
-  - If there are requirements to monitor the WebLogic configuration,
-    they should be addressed using Prometheus and Grafana, or other alternatives.
-- `.../weblogic...:...dev...`:
-  - The WebLogic developer image is supported for development 
-    of WebLogic applications in Docker containers.
-  - In order to reduce image size, it contains a subset
-    of the binaries included in the WebLogic generic image:
-    - WebLogic examples and Console help files have been removed.
-    - All binaries that remain included are the same as those in the WebLogic generic image.
-  - This image type is primarily intended to provide a Docker image
-    that is consistent with the WebLogic "quick installers" intended for development only.
-    Production WebLogic domains should use the WebLogic generic or WebLogic slim images.
-- `.../fmw-infrastructure...:...`:
-  - The Fusion Middleware (FMW) Infrastructure image is supported for
-    development and production deployment of FMW configurations using Docker.
-  - It contains the same binaries as those installed by the WebLogic generic installer
-    and adds Fusion Middleware Control and Java Required Files (JRF)
-
-Notes about "undated" OCR images with name tags that do _not_ include an embedded date stamp:
-- They represent a GA version. 
-  _Therefore they may be used in samples and development, but are
-  not recommended for production use._
-- Unlike images with an embedded datastamp,
-  which represent a specific version,
-  undated images are periodically updated to 
-  the latest available versions of their GA equivalents.
-  _Therefore they change over time in the repository
-  even though their name and tag remain the same._
-- Examples of undated images include
-  `registry.oracle.com/middleware/weblogic:TAG` images
-  where `TAG` is one of `12.2.1.3`, `12.2.1.4`, `14.1.1.0-11`, or `14.1.1.0-8`.
-  These are created with the generic installer, 
-  Oracle Linux 7-slim, and JDK8 
-  except for `14.1.1.0-11` (which has JDK11).
-- The tag for an undated image may not 
-  specify its WebLogic installer type, 
-  in which case you can assume it is `generic`.
-  Otherwise, such images may have
-  a tag that includes the string `slim` or `dev`
-  string, in which case they have the 
-  related installer type and are _not_ `generic` images.
-
-TBD 
-- Monica:
-  - A Monica will update 14.1.1.0 images, and continue to update them
-  - B Provide exact names for image table above
-  - F Monica plans to create a a table 
-      in the landing page for OCR with all variations.
-      When ready, we can add a link.
-- Tom:
-  - C Update GA image table above to have exact correct image names
-      when A & B are available.
-  - D Link to this new information from the domain images doc in key places.
-  - Link to F when avaialble.
+See [WebLogic Server images]({{< relref "/userguide/base-images/_index.md" >}})
+for information about obtaining WebLogic Server images,
+developer and production licensing details,
+the different types of images,
+creating custom images,
+and patching images.
 
 #### Reference
 
