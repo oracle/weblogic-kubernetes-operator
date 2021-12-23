@@ -37,7 +37,6 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.FmwUtils;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -558,7 +557,7 @@ class ItIstioDBOperator {
    * The cleanup framework does not uninstall storageclass.
    * Do it here for now.
    */
-  @AfterAll
+  //@AfterAll
   public void tearDownAll() throws ApiException {
     if (System.getenv("SKIP_CLEANUP") == null
         || (System.getenv("SKIP_CLEANUP") != null
