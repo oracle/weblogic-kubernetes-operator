@@ -548,7 +548,9 @@ function waitForShutdownMarker() {
     if [ -e ${SHUTDOWN_MARKER_FILE} ] ; then
       exit 0
     fi
-    sleep 0.1
+    # Set the SERVER_SLEEP_INTERVAL_SECONDS environment variable in the domain specs in
+    # `spec.serverPod.env` stanza to override the default sleep interval value of 1 second.
+    sleep ${SERVER_SLEEP_INTERVAL_SECONDS:-1}
   done
 }
 
