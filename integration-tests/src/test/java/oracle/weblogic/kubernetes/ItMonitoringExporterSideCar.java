@@ -23,6 +23,7 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.SessionMigrationUtil;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
@@ -213,7 +214,8 @@ class ItMonitoringExporterSideCar {
     try {
       // create and verify one cluster mii domain
       logger.info("Create domain and verify that it's running");
-      String miiImage1 = createAndVerifyMiiImage(MODEL_DIR + "/model.sessmigr.yaml");
+      String modelFile = SessionMigrationUtil.generateSessionMigrYaml("ItMonitoringExporterSideCar", domain3Uid);
+      String miiImage1 = createAndVerifyMiiImage(modelFile);
       String yaml = RESOURCE_DIR + "/exporter/rest_webapp.yaml";
       createAndVerifyDomain(miiImage1, domain3Uid, domain3Namespace, "FromModel", 2, false, yaml, exporterImage);
       installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
@@ -235,7 +237,7 @@ class ItMonitoringExporterSideCar {
       changeMonitoringExporterSideCarConfig(RESOURCE_DIR + "/exporter/rest_domainqualtrue.yaml",
           domain3Uid, domain3Namespace,
           "domainQualifier", "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D",
-          "\"domain\":\"wls-sessmigr-domain-1\"");
+          "\"domain\":\"" + domain3Uid + "\"");
 
       logger.info("replace monitoring exporter configuration with configuration file with metricsNameSnakeCase=false.");
       changeMonitoringExporterSideCarConfig(RESOURCE_DIR + "/exporter/rest_snakecasefalse.yaml",
