@@ -133,7 +133,7 @@ class ItIstioDBOperator {
   private static final String modelFile = "model-singleclusterdomain-sampleapp-jrf.yaml";
 
   private static String dbUrl = null;
-  private static String dbName = "my-oracle-sidb";
+  private static String dbName = "istio-oracle-sidb";
   private static LoggingFacade logger = null;
 
   private String fmwDomainUid = "jrf-istio-db";
