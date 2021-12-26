@@ -30,6 +30,9 @@ public interface MakeRightDomainOperation {
 
   MakeRightDomainOperation interrupt();
 
+  // for unit testing only
+  MakeRightDomainOperation throwNPE();
+
   void execute();
 
   Step createSteps();

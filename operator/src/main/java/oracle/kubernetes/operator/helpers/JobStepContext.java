@@ -24,7 +24,6 @@ import io.kubernetes.client.openapi.models.V1SecretVolumeSource;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.kubernetes.operator.DomainSourceType;
-import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
@@ -44,12 +43,14 @@ import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImageEnvVars;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
 import oracle.kubernetes.weblogic.domain.model.Istio;
 import oracle.kubernetes.weblogic.domain.model.ServerEnvVars;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.jetbrains.annotations.Nullable;
 
+import static oracle.kubernetes.operator.DomainStatusUpdater.createKubernetesFailureSteps;
 import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_USE_ONLINE_UPDATE;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_ACTIVATE_TIMEOUT;
@@ -316,7 +317,7 @@ public class JobStepContext extends BasePodStepContext {
 
   private Integer getIntrospectJobFailureCount() {
     return Optional.ofNullable(info.getDomain().getStatus())
-            .map(s -> s.getIntrospectJobFailureCount()).orElse(0);
+            .map(DomainStatus::getIntrospectJobFailureCount).orElse(0);
   }
 
   V1JobSpec createJobSpec(TuningParameters tuningParameters) {
@@ -724,7 +725,7 @@ public class JobStepContext extends BasePodStepContext {
     }
 
     private NextAction updateDomainStatus(Packet packet, CallResponse<V1Job> callResponse) {
-      return doNext(DomainStatusUpdater.createFailureRelatedSteps(callResponse), packet);
+      return doNext(createKubernetesFailureSteps(callResponse), packet);
     }
 
     @Override
@@ -736,6 +737,7 @@ public class JobStepContext extends BasePodStepContext {
       }
       return doNext(packet);
     }
+
   }
 
   private V1ConfigMapVolumeSource getWdtConfigMapVolumeSource(String name) {

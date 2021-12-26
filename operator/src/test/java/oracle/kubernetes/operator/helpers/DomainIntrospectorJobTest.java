@@ -74,6 +74,8 @@ import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
+import static oracle.kubernetes.operator.EventConstants.KUBERNETES_ERROR;
+import static oracle.kubernetes.operator.EventTestUtils.getExpectedEventMessage;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_FORBIDDEN;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
@@ -81,6 +83,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.INTROSPECTION_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.JOBWATCHER_COMPONENT_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.JOB;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
@@ -309,7 +312,20 @@ class DomainIntrospectorJobTest {
     testSupport.runSteps(getStepFactory(), terminalStep);
 
     assertThat(getDomain(), hasStatus().withReason(Kubernetes)
-          .withMessageContaining("create", "job", NS, "failure reported in test"));
+        .withMessageContaining("create", "job", NS, "failure reported in test"));
+  }
+
+  @Test
+  void whenNoJob_generateFailedEvent() {
+    testSupport.addRetryStrategy(retryStrategy);
+    testSupport.failOnCreate(KubernetesTestSupport.JOB, NS, HTTP_INTERNAL_ERROR);
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    assertThat(
+        "Expected Event " + DOMAIN_FAILED + " expected with message not found",
+        getExpectedEventMessage(testSupport, DOMAIN_FAILED),
+        stringContainsInOrder("Domain", UID, "failed due to", KUBERNETES_ERROR));
   }
 
   @Test
@@ -696,6 +712,21 @@ class DomainIntrospectorJobTest {
 
     assertThat(getDomain(), hasStatus().withReason(Kubernetes)
           .withMessageContaining("create", "job", NS, "Test this failure"));
+  }
+
+  @Test
+  void whenPodCreationFailsDueToUnprocessableEntityFailure_generateFailedEvent() {
+    testSupport.failOnCreate(JOB, NS, new UnrecoverableErrorBuilderImpl()
+        .withReason("FieldValueNotFound")
+        .withMessage("Test this failure")
+        .build());
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    assertThat(
+        "Expected Event " + DOMAIN_FAILED + " expected with message not found",
+        getExpectedEventMessage(testSupport, DOMAIN_FAILED),
+        stringContainsInOrder("Domain", UID, "failed due to", KUBERNETES_ERROR));
   }
 
   Domain getDomain() {
