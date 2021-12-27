@@ -568,6 +568,7 @@ class ItIstioDBOperator {
         || (System.getenv("SKIP_CLEANUP") != null
         && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false"))) {
       var pvs = listPersistentVolumes();
+      logger.info("Deleting persistent volumes in after all");
       logger.info(Yaml.dump(pvs.getItems()));
       for (var pv : pvs.getItems()) {
         if (pv.getSpec().getClaimRef() != null) {
