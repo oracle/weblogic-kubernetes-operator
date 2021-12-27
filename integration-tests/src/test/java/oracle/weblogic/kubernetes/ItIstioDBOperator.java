@@ -21,6 +21,7 @@ import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
+import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.domain.AdminServer;
 import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
@@ -567,6 +568,7 @@ class ItIstioDBOperator {
         || (System.getenv("SKIP_CLEANUP") != null
         && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false"))) {
       var pvs = listPersistentVolumes();
+      logger.info(Yaml.dump(pvs.getItems()));
       for (var pv : pvs.getItems()) {
         if (pv.getSpec().getClaimRef() != null) {
           if (pv.getSpec().getClaimRef().getName().equals(dbName)
