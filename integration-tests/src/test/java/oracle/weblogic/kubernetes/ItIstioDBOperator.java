@@ -37,6 +37,7 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.FmwUtils;
+import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -65,8 +66,11 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
+import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listPersistentVolumes;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDatabaseSecret;
@@ -554,14 +558,24 @@ class ItIstioDBOperator {
 
   /**
    * Uninstall DB operator.
-   * The cleanup framework does not uninstall storageclass.
+   * The cleanup framework does not uninstall storageclass and delete pv.
    * Do it here for now.
    */
-  //@AfterAll
+  @AfterAll
   public void tearDownAll() throws ApiException {
     if (System.getenv("SKIP_CLEANUP") == null
         || (System.getenv("SKIP_CLEANUP") != null
         && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false"))) {
+      var pvs = listPersistentVolumes();
+      for (var pv : pvs.getItems()) {
+        if (pv.getSpec().getClaimRef() != null) {
+          if (pv.getSpec().getClaimRef().getName().equals(dbName)
+              && pv.getSpec().getClaimRef().getNamespace().equals(dbNamespace)) {
+            deletePersistentVolumeClaim(dbName, dbNamespace);
+            deletePersistentVolume(pv.getMetadata().getName());
+          }
+        }
+      }
       deleteStorageclass();
     }
   }
