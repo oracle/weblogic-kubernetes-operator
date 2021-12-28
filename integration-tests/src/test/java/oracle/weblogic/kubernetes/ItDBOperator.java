@@ -12,6 +12,7 @@ import java.util.List;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
@@ -43,11 +44,14 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
+import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listPersistentVolumes;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDatabaseSecret;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResourceWithLogHome;
@@ -457,11 +461,28 @@ class ItDBOperator {
    * The cleanup framework does not uninstall storageclass.
    * Do it here for now.
    */
+  /**
+   * Uninstall DB operator.
+   * The cleanup framework does not uninstall storageclass and delete pv.
+   * Do it here for now.
+   */
   @AfterAll
   public void tearDownAll() throws ApiException {
     if (System.getenv("SKIP_CLEANUP") == null
         || (System.getenv("SKIP_CLEANUP") != null
         && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false"))) {
+      var pvs = listPersistentVolumes();
+      logger.info("Deleting persistent volumes in after all");
+      logger.info(Yaml.dump(pvs.getItems()));
+      for (var pv : pvs.getItems()) {
+        if (pv.getSpec().getClaimRef() != null) {
+          if (pv.getSpec().getClaimRef().getName().equals(dbName)
+              && pv.getSpec().getClaimRef().getNamespace().equals(dbNamespace)) {
+            deletePersistentVolumeClaim(dbName, dbNamespace);
+            deletePersistentVolume(pv.getMetadata().getName());
+          }
+        }
+      }
       deleteStorageclass();
     }
   }
