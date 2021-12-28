@@ -354,6 +354,7 @@
                   **/ItCoherenceTests,
                   **/ItConfigDistributionStrategy,
                   **/ItDedicatedMode,
+                  **/ItElasticLogging,
                   **/ItExternalLbTunneling,
                   **/ItExternalNodePortService,
                   **/ItInitContainers,
