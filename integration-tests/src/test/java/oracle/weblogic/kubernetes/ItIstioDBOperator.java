@@ -218,7 +218,7 @@ class ItIstioDBOperator {
 
     logger.info("Create Oracle DB in namespace: {0} ", dbNamespace);
     dbUrl = assertDoesNotThrow(() -> createOracleDBUsingOperator(dbName, RCUSYSPASSWORD,
-        dbNamespace, WORK_DIR + "/oracledatabase"));
+        dbNamespace, Paths.get(WORK_DIR, dbNamespace, "oracledatabase").toString()));
 
     logger.info("Create RCU schema with fmwImage: {0}, rcuSchemaPrefix: {1}, dbUrl: {2}, "
         + " dbNamespace: {3}", FMWINFRA_IMAGE_TO_USE_IN_SPEC, RCUSCHEMAPREFIX, dbUrl, dbNamespace);
