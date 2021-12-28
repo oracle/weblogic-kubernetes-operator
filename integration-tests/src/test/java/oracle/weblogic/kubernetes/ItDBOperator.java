@@ -458,11 +458,6 @@ class ItDBOperator {
 
   /**
    * Uninstall DB operator.
-   * The cleanup framework does not uninstall storageclass.
-   * Do it here for now.
-   */
-  /**
-   * Uninstall DB operator.
    * The cleanup framework does not uninstall storageclass and delete pv.
    * Do it here for now.
    */
