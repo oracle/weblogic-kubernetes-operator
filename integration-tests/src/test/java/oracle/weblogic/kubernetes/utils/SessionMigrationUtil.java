@@ -58,7 +58,7 @@ public class SessionMigrationUtil {
     checkPodDoesNotExist(podName, domainUid, domainNamespace);
 
     try {
-      Thread.sleep(10000);
+      Thread.sleep(20000);
     } catch (Exception ex) {
       //ignore
     }
@@ -165,7 +165,7 @@ public class SessionMigrationUtil {
 
     // build curl command
     String curlCmd = buildCurlCommand(curlUrlPath, headerOption, hostName, port);
-    logger.info("==== Command to set HTTP request and get HTTP response {0} ", curlCmd);
+    logger.info("Command to set HTTP request and get HTTP response {0} ", curlCmd);
 
     // set HTTP request and get HTTP response
     ExecResult execResult = assertDoesNotThrow(
@@ -196,7 +196,9 @@ public class SessionMigrationUtil {
     final String httpHeaderFile = "/u01/domains/header";
     LoggingFacade logger = getLogger();
 
-    int waittime = 5;
+    // --connect-timeout - Maximum time in seconds that you allow curl's connection to take
+    // --max-time - Maximum time in seconds that you allow the whole operation to take
+    int waittime = 10;
     String curlCommand =  new StringBuilder()
         .append("curl --silent --show-error")
         .append(" --connect-timeout ").append(waittime).append(" --max-time ").append(waittime)
