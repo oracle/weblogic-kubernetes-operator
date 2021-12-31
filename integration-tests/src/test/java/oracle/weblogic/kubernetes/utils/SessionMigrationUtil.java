@@ -58,7 +58,7 @@ public class SessionMigrationUtil {
     checkPodDoesNotExist(podName, domainUid, domainNamespace);
 
     try {
-      Thread.sleep(20000);
+      Thread.sleep(30000);
     } catch (Exception ex) {
       //ignore
     }
