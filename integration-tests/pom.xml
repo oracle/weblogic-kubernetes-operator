@@ -355,6 +355,7 @@
                   **/ItConfigDistributionStrategy,
                   **/ItDedicatedMode,
                   **/ItElasticLogging,
+                  **/ItElasticLoggingFluentd,
                   **/ItExternalLbTunneling,
                   **/ItExternalNodePortService,
                   **/ItInitContainers,
