@@ -212,9 +212,9 @@ function createDomainHome {
   # domain resource is created by exec'ing into the pod to look for the presence of domainCreate.yaml file.
 
   if [ "$useWdt" = true ]; then
-    POD_NAME=`kubectl get pods -n ${namespace} | grep ${JOB_NAME} | awk ' { print $1; } '`
+    POD_NAME=$(getPodName "${JOB_NAME}" "${namespace}")
     echo "Waiting for results to be available from $POD_NAME"
-    kubectl wait --timeout=600s --for=condition=ContainersReady pod $POD_NAME
+    kubectl wait --timeout=600s --for=condition=ContainersReady pod $POD_NAME -n ${namespace}
     #echo "Fetching results"
     sleep 30
     max=30
