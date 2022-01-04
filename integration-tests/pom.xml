@@ -272,7 +272,6 @@
                 <skipITs>false</skipITs>
                 <includes-failsafe>
                     **/ItConfigDistributionStrategy,
-                    **/ItCrossDomainTransaction,
                     **/ItIntrospectVersion,
                     **/ItIstioDomainInPV,
                     **/ItIstioMiiDomain,
@@ -285,7 +284,6 @@
                     **/ItMiiSampleWlsMain,
                     **/ItMiiUpdateDomainConfig,
                     **/ItMonitoringExporter*,
-                    **/ItParameterizedDomain,
                     **/ItPodsShutdownOption,
                     **/ItProductionSecureMode,
                     **/ItWlsSamples,
