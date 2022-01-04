@@ -310,9 +310,12 @@ public class FileUtils {
     logger.info("Replacing {0}", src.toString());
     Charset charset = StandardCharsets.UTF_8;
     String content = new String(Files.readAllBytes(src), charset);
-    content = content.replaceAll(regex, replacement);
+    String newcontent = content.replaceAll(regex, replacement);
     logger.info("with {0}", replacement);
-    Files.write(src, content.getBytes(charset));
+    if (content.equals(newcontent)) {
+      logger.info("search string {0} not found to replace with {1}", regex, replacement);
+    }
+    Files.write(src, newcontent.getBytes(charset));
   }
 
   /**
@@ -402,7 +405,7 @@ public class FileUtils {
     return targetFile;
   }
 
-  
+
   /**
    * Check if the required file ls empty.
    *
