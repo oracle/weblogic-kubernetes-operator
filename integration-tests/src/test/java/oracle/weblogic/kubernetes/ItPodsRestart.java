@@ -496,31 +496,25 @@ class ItPodsRestart {
     assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
         String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
 
-    /* commented due to bug  - OWLS-89857
     logger.info("verify domain roll starting/pod cycle starting events are logged");
-    //************* I don't see this event logged****************************************
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_STARTING,
         "Normal", timestamp, withStandardRetryPolicy);
     checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING,
         "Normal", timestamp, withStandardRetryPolicy);
 
-    CoreV1Event event = getEvent(opNamespace, domainNamespace,
-        domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+    CoreV1Event event = getOpGeneratedEvent(domainNamespace, DOMAIN_ROLL_STARTING, "Normal",  timestamp);
     logger.info("verify the event message contains the domain resource changed messages is logged");
     assertTrue(event.getMessage().contains("domain resource changed"));
 
-    event = getEvent(opNamespace, domainNamespace,
-        domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+    event = getOpGeneratedEvent(domainNamespace, POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     logger.info("verify the event message contains the security context changed messages is logged");
     assertTrue(event.getMessage().contains("securityContext"));
     assertTrue(event.getMessage().contains("runAsUser: 1000"));
 
-    //************* I don't see this event logged****************************************
     logger.info("verify domain roll completed event is logged");
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED,
         "Normal", timestamp, withStandardRetryPolicy);
-    */
 
   }
 
