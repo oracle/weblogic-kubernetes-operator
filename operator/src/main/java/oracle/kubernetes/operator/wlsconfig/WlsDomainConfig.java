@@ -11,7 +11,6 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -37,8 +36,6 @@ public class WlsDomainConfig implements WlsDomain {
   private List<WlsServerConfig> servers = new ArrayList<>();
   // Contains all configured server templates in the WLS domain
   private List<WlsServerConfig> serverTemplates = new ArrayList<>();
-  // Contains all configured machines in the WLS domain
-  private Map<String, WlsMachineConfig> wlsMachineConfigs = new HashMap<>();
 
   public WlsDomainConfig() {
   }
@@ -60,140 +57,24 @@ public class WlsDomainConfig implements WlsDomain {
    * @param wlsClusterConfigs A Map containing clusters configured in this WLS domain
    * @param wlsServerConfigs A Map containing servers configured in the WLS domain
    * @param wlsServerTemplates A Map containing server templates configured in this WLS domain
-   * @param wlsMachineConfigs A Map containing machines configured in the WLS domain
    */
   public WlsDomainConfig(
       String name,
       String adminServerName,
       Map<String, WlsClusterConfig> wlsClusterConfigs,
       Map<String, WlsServerConfig> wlsServerConfigs,
-      Map<String, WlsServerConfig> wlsServerTemplates,
-      Map<String, WlsMachineConfig> wlsMachineConfigs) {
+      Map<String, WlsServerConfig> wlsServerTemplates) {
     this.configuredClusters = new ArrayList<>(wlsClusterConfigs.values());
     this.servers =
         wlsServerConfigs != null ? new ArrayList<>(wlsServerConfigs.values()) : new ArrayList<>();
     this.serverTemplates =
         wlsServerTemplates != null ? new ArrayList<>(wlsServerTemplates.values()) : null;
-    this.wlsMachineConfigs = wlsMachineConfigs;
     this.name = name;
     this.adminServerName = adminServerName;
     // set domainConfig for each WlsClusterConfig
     for (WlsClusterConfig wlsClusterConfig : this.configuredClusters) {
       wlsClusterConfig.setWlsDomainConfig(this);
     }
-  }
-
-  /**
-   * Create a new WlsDomainConfig object using the json result from the WLS REST call.
-   *
-   * @param jsonResult A String containing the JSON response from the WLS REST call
-   * @return A new WlsDomainConfig object created with information from the JSON response
-   */
-  public static WlsDomainConfig create(String jsonResult) {
-    ParsedJson parsedResult = parseJson(jsonResult);
-    return WlsDomainConfig.create(parsedResult);
-  }
-
-  /**
-   * Create a new WlsDomainConfig object based on the parsed JSON result from WLS admin server.
-   *
-   * @param parsedResult ParsedJson object containing the parsed JSON result
-   * @return A new WlsDomainConfig object based on the provided parsed JSON result
-   */
-  private static WlsDomainConfig create(ParsedJson parsedResult) {
-    if (parsedResult == null) {
-      // return empty WlsDomainConfig if no parsedResult is provided
-      return new WlsDomainConfig(null);
-    }
-
-    final String name = parsedResult.domainName;
-    final String adminServerName = parsedResult.adminServerName;
-    Map<String, WlsClusterConfig> wlsClusterConfigs = new HashMap<>();
-    Map<String, WlsServerConfig> wlsServerConfigs = new HashMap<>();
-    Map<String, WlsServerConfig> wlsServerTemplates = new HashMap<>();
-    Map<String, WlsMachineConfig> wlsMachineConfigs = new HashMap<>();
-
-    // process list of server templates
-    if (parsedResult.serverTemplates != null) {
-      for (Map<String, Object> thisServerTemplate : parsedResult.serverTemplates) {
-        WlsServerConfig wlsServerTemplate = WlsServerConfig.create(thisServerTemplate);
-        wlsServerTemplates.put(wlsServerTemplate.getName(), wlsServerTemplate);
-      }
-    }
-    // process list of clusters (Note: must process server templates before processing clusters)
-    if (parsedResult.clusters != null) {
-      for (Map<String, Object> clusterConfig : parsedResult.clusters) {
-        WlsClusterConfig wlsClusterConfig =
-            WlsClusterConfig.create(clusterConfig, wlsServerTemplates, name);
-        wlsClusterConfigs.put(wlsClusterConfig.getClusterName(), wlsClusterConfig);
-      }
-    }
-    // process list of statically configured servers
-    if (parsedResult.servers != null) {
-      for (Map<String, Object> thisServer : parsedResult.servers) {
-        WlsServerConfig wlsServerConfig = WlsServerConfig.create(thisServer);
-        wlsServerConfigs.put(wlsServerConfig.getName(), wlsServerConfig);
-        String clusterName = WlsServerConfig.getClusterNameFromJsonMap(thisServer);
-        if (clusterName != null) {
-          WlsClusterConfig wlsClusterConfig =
-              wlsClusterConfigs.computeIfAbsent(clusterName, WlsClusterConfig::new);
-          wlsClusterConfig.addServerConfig(wlsServerConfig);
-        }
-      }
-    }
-    // process list of machines
-    if (parsedResult.machines != null) {
-      for (Map<String, Object> machineConfig : parsedResult.machines) {
-        WlsMachineConfig wlsMachineConfig = WlsMachineConfig.create(machineConfig);
-        wlsMachineConfigs.put(wlsMachineConfig.getName(), wlsMachineConfig);
-      }
-    }
-    return new WlsDomainConfig(
-        name,
-        adminServerName,
-        wlsClusterConfigs,
-        wlsServerConfigs,
-        wlsServerTemplates,
-        wlsMachineConfigs);
-  }
-
-  /**
-   * Parse the json string containing WLS configuration and return a list containing a map of
-   * (server attribute name, attribute value).
-   *
-   * @param jsonString JSON string containing WLS configuration to be parsed
-   * @return a ParsedJson object containing WebLogic domain configuration by parsing the given JSON
-   *     string
-   */
-  @SuppressWarnings("unchecked")
-  private static ParsedJson parseJson(String jsonString) {
-    ObjectMapper mapper = new ObjectMapper();
-    try {
-      ParsedJson parsedJson = new ParsedJson();
-      Map<String,Object> result = mapper.readValue(jsonString, Map.class);
-      parsedJson.domainName = (String) result.get("name");
-      parsedJson.adminServerName = (String) result.get("adminServerName");
-      Map<String,Object> servers = (Map<String, Object>) result.get("servers");
-      if (servers != null) {
-        parsedJson.servers = (List<Map<String, Object>>) servers.get("items");
-      }
-      Map<String,Object> serverTemplates = (Map<String, Object>) result.get("serverTemplates");
-      if (serverTemplates != null) {
-        parsedJson.serverTemplates = (List<Map<String, Object>>) serverTemplates.get("items");
-      }
-      Map<String,Object> clusters = (Map<String, Object>) result.get("clusters");
-      if (clusters != null) {
-        parsedJson.clusters = (List<Map<String, Object>>) clusters.get("items");
-      }
-      Map<String,Object> machines = (Map<String, Object>) result.get("machines");
-      if (machines != null) {
-        parsedJson.machines = (List<Map<String, Object>>) machines.get("items");
-      }
-      return parsedJson;
-    } catch (Exception e) {
-      LOGGER.warning(MessageKeys.JSON_PARSING_FAILED, jsonString, e.getMessage());
-    }
-    return null;
   }
 
   /**
@@ -291,15 +172,6 @@ public class WlsDomainConfig implements WlsDomain {
   }
 
   /**
-   * Returns configuration of machines found in the WLS domain.
-   *
-   * @return A Map of WlsMachineConfig, keyed by name, for each machine configured the WLS domain
-   */
-  public synchronized Map<String, WlsMachineConfig> getMachineConfigs() {
-    return wlsMachineConfigs;
-  }
-
-  /**
    * Returns the configuration for the WLS cluster with the given name.
    *
    * @param clusterName name of the WLS cluster
@@ -376,21 +248,6 @@ public class WlsDomainConfig implements WlsDomain {
           || getConfiguredClusters().stream().anyMatch(c -> c.containsServer(serverName));
     }
     return false;
-  }
-
-  /**
-   * Returns the configuration for the WLS machine with the given name.
-   *
-   * @param machineName name of the WLS machine
-   * @return The WlsMachineConfig object containing configuration of the WLS machine with the given
-   *     name. This methods return null if no WLS machine is configured with the given name.
-   */
-  public synchronized WlsMachineConfig getMachineConfig(String machineName) {
-    WlsMachineConfig result = null;
-    if (machineName != null && wlsMachineConfigs != null) {
-      result = wlsMachineConfigs.get(machineName);
-    }
-    return result;
   }
 
   @Nonnull
@@ -497,7 +354,6 @@ public class WlsDomainConfig implements WlsDomain {
         .append("configuredClusters", configuredClusters)
         .append("servers", servers)
         .append("serverTemplates", serverTemplates)
-        .append("wlsMachineConfigs", wlsMachineConfigs)
         .toString();
   }
 
@@ -509,8 +365,7 @@ public class WlsDomainConfig implements WlsDomain {
             .append(adminServerName)
             .append(configuredClusters)
             .append(servers)
-            .append(serverTemplates)
-            .append(wlsMachineConfigs);
+            .append(serverTemplates);
     return builder.toHashCode();
   }
 
@@ -530,8 +385,7 @@ public class WlsDomainConfig implements WlsDomain {
             .append(adminServerName, rhs.adminServerName)
             .append(configuredClusters, rhs.configuredClusters)
             .append(servers, rhs.servers)
-            .append(serverTemplates, rhs.serverTemplates)
-            .append(wlsMachineConfigs, rhs.wlsMachineConfigs);
+            .append(serverTemplates, rhs.serverTemplates);
     return builder.isEquals();
   }
 
@@ -566,17 +420,5 @@ public class WlsDomainConfig implements WlsDomain {
       }
     }
     return null;
-  }
-
-  /**
-   * Object used by the {@link #parseJson(String)} method to return multiple parsed objects.
-   */
-  static class ParsedJson {
-    String domainName;
-    String adminServerName;
-    List<Map<String, Object>> servers;
-    List<Map<String, Object>> serverTemplates;
-    List<Map<String, Object>> clusters;
-    List<Map<String, Object>> machines;
   }
 }
