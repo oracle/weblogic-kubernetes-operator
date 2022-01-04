@@ -926,3 +926,27 @@ function checkService(){
  done
  echo "Service [$svc] found"
 }
+
+# Get pod name when pod available in a given namespace
+function getPodName(){
+
+ max=120
+ count=1
+
+ pod=$1
+ ns=$2
+
+ pname=`kubectl get po -n ${ns} | grep -w ${pod} | awk '{print $1}'`
+ while [ -z ${pname} -a $count -le $max ] ; do
+   sleep 1
+   count=`expr $count + 1`
+   pname=`kubectl get po -n ${ns} | grep -w ${pod} | awk '{print $1}'`
+ done
+
+ if [ -z ${pname} ] ; then
+  echo "[ERROR] Could not find Pod [$pod] after 120s";
+  exit 1
+ fi
+
+ echo "${pname}"
+}
