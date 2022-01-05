@@ -3,25 +3,14 @@
 
 package oracle.weblogic.kubernetes;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import io.kubernetes.client.openapi.models.V1EnvVar;
-import io.kubernetes.client.openapi.models.V1LocalObjectReference;
-import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1SecretReference;
-import oracle.weblogic.domain.AdminServer;
-import oracle.weblogic.domain.AdminService;
-import oracle.weblogic.domain.Channel;
-import oracle.weblogic.domain.Cluster;
-import oracle.weblogic.domain.Configuration;
-import oracle.weblogic.domain.Domain;
-import oracle.weblogic.domain.DomainSpec;
-import oracle.weblogic.domain.Model;
-import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.LoggingExporterParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -32,9 +21,9 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
 import static oracle.weblogic.kubernetes.TestConstants.COPY_WLS_LOGGING_EXPORTER_FILE_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTPS_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
@@ -48,20 +37,20 @@ import static oracle.weblogic.kubernetes.TestConstants.KIBANA_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.LOGSTASH_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_INDEX_KEY;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_LOGGING_EXPORTER_YAML_FILE_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.SNAKE_DOWNLOADED_FILENAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WLE_DOWNLOAD_FILENAME_DEFAULT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
-import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
@@ -72,9 +61,6 @@ import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.uninstallAnd
 import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.uninstallAndVerifyKibana;
 import static oracle.weblogic.kubernetes.utils.LoggingExporterUtils.verifyLoggingExporterReady;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
-import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
-import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -167,9 +153,10 @@ class ItElasticLogging {
     installAndVerifyOperator(opNamespace, opNamespace + "-sa",
         false, 0, true, domainNamespace);
 
-    // install WebLogic Logging Exporter
-    installAndVerifyWlsLoggingExporter(managedServerFilter,
-        wlsLoggingExporterYamlFileLoc);
+    // install WebLogic Logging Exporter if in non-OKD env
+    if (!OKD) {
+      installAndVerifyWlsLoggingExporter(managedServerFilter, wlsLoggingExporterYamlFileLoc);
+    }
 
     // create and verify WebLogic domain image using model in image with model files
     String imageName = createAndVerifyDomainImage();
@@ -233,7 +220,6 @@ class ItElasticLogging {
   /**
    * Use Elasticsearch Count API to query logs of level=INFO. Verify that total number of logs
    * for level=INFO is not zero and failed count is zero.
-   *
    */
   @Test
   @DisplayName("Use Elasticsearch Count API to query logs of level=INFO and verify")
@@ -286,6 +272,7 @@ class ItElasticLogging {
    */
   @Test
   @DisplayName("Use Elasticsearch Search APIs to query WebLogic log info in WLS server pod and verify")
+  @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   void testWlsLoggingExporter() throws Exception {
     Map<String, String> wlsMap = verifyLoggingExporterReady(opNamespace, null, WEBLOGIC_INDEX_KEY);
     // merge testVarMap and wlsMap
@@ -320,26 +307,38 @@ class ItElasticLogging {
   }
 
   private static String createAndVerifyDomainImage() {
+    String miiImage = null;
+
     // create image with model files
-    String additionalBuildCommands = WORK_DIR + "/" + COPY_WLS_LOGGING_EXPORTER_FILE_NAME;
+    if (!OKD) {
+      String additionalBuildCommands = WORK_DIR + "/" + COPY_WLS_LOGGING_EXPORTER_FILE_NAME;
+      StringBuffer additionalBuildFilesVarargsBuff = new StringBuffer()
+          .append(WORK_DIR)
+          .append("/")
+          .append(WLS_LOGGING_EXPORTER_YAML_FILE_NAME)
+          .append(",")
+          .append(DOWNLOAD_DIR)
+          .append("/")
+          .append(WLE_DOWNLOAD_FILENAME_DEFAULT)
+          .append(",")
+          .append(DOWNLOAD_DIR)
+          .append("/")
+          .append(SNAKE_DOWNLOADED_FILENAME);
 
-    StringBuffer additionalBuildFilesVarargsBuff = new StringBuffer()
-        .append(WORK_DIR)
-        .append("/")
-        .append(WLS_LOGGING_EXPORTER_YAML_FILE_NAME)
-        .append(",")
-        .append(DOWNLOAD_DIR)
-        .append("/")
-        .append(WLE_DOWNLOAD_FILENAME_DEFAULT)
-        .append(",")
-        .append(DOWNLOAD_DIR)
-        .append("/")
-        .append(SNAKE_DOWNLOADED_FILENAME);
+      logger.info("Create image with model file and verify");
+      miiImage = createMiiImageAndVerify(WLS_LOGGING_IMAGE_NAME, WLS_LOGGING_MODEL_FILE,
+          MII_BASIC_APP_NAME, additionalBuildCommands, additionalBuildFilesVarargsBuff.toString());
+    } else {
+      List<String> appList = new ArrayList();
+      appList.add(MII_BASIC_APP_NAME);
 
-    logger.info("Create image with model file and verify");
-    String miiImage =
-        createMiiImageAndVerify(WLS_LOGGING_IMAGE_NAME, WLS_LOGGING_MODEL_FILE, MII_BASIC_APP_NAME,
-            additionalBuildCommands, additionalBuildFilesVarargsBuff.toString());
+      // build the model file list
+      final List<String> modelList = Collections.singletonList(MODEL_DIR + "/" + WLS_LOGGING_MODEL_FILE);
+
+      // create image with model files
+      logger.info("Create image with model file and verify");
+      miiImage = createMiiImageAndVerify(WLS_LOGGING_IMAGE_NAME, modelList, appList);
+    }
 
     // docker login and push image to docker registry if necessary
     dockerLoginAndPushImageToRegistry(miiImage);
@@ -352,101 +351,17 @@ class ItElasticLogging {
     return miiImage;
   }
 
-  private static void createAndVerifyDomain(String miiImage) {
-    // create secret for admin credentials
-    logger.info("Create secret for admin credentials");
-    String adminSecretName = "weblogic-credentials";
-    assertDoesNotThrow(() -> createSecretWithUsernamePassword(adminSecretName, domainNamespace,
-        "weblogic", "welcome1"),
-        String.format("create secret for admin credentials failed for %s", adminSecretName));
-
-    // create encryption secret
-    logger.info("Create encryption secret");
-    String encryptionSecretName = "encryptionsecret";
-    assertDoesNotThrow(() -> createSecretWithUsernamePassword(encryptionSecretName, domainNamespace,
-        "weblogicenc", "weblogicenc"),
-        String.format("create encryption secret failed for %s", encryptionSecretName));
-
-    // create domain and verify
-    logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
-        domainUid, domainNamespace, miiImage);
-    createDomainCrAndVerify(adminSecretName, OCIR_SECRET_NAME, encryptionSecretName, miiImage);
-
-    // check that admin service exists in the domain namespace
-    logger.info("Checking that admin service {0} exists in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkServiceExists(adminServerPodName, domainNamespace);
-
-    // check that admin server pod is ready
-    logger.info("Checking that admin server pod {0} is ready in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
-
-    // check for managed server pods existence in the domain namespace
-    for (int i = 1; i <= replicaCount; i++) {
-      String managedServerPodName = managedServerPodPrefix + i;
-
-      // check that the managed server service exists in the domain namespace
-      logger.info("Checking that managed server service {0} exists in namespace {1}",
-          managedServerPodName, domainNamespace);
-      checkServiceExists(managedServerPodName, domainNamespace);
-
-      // check that the managed server pod is ready
-      logger.info("Checking that managed server pod {0} is ready in namespace {1}",
-          managedServerPodName, domainNamespace);
-      checkPodReady(managedServerPodName, domainUid, domainNamespace);
-    }
-  }
-
-  private static void createDomainCrAndVerify(String adminSecretName,
-                                              String repoSecretName,
-                                              String encryptionSecretName,
-                                              String miiImage) {
-    // create the domain CR
-    Domain domain = new Domain()
-        .apiVersion(DOMAIN_API_VERSION)
-        .kind("Domain")
-        .metadata(new V1ObjectMeta()
-            .name(domainUid)
-            .namespace(domainNamespace))
-        .spec(new DomainSpec()
-            .domainUid(domainUid)
-            .domainHomeSourceType("FromModel")
-            .image(miiImage)
-            .addImagePullSecretsItem(new V1LocalObjectReference()
-                .name(repoSecretName))
-            .webLogicCredentialsSecret(new V1SecretReference()
-                .name(adminSecretName)
-                .namespace(domainNamespace))
-            .includeServerOutInPodLog(true)
-            .serverStartPolicy("IF_NEEDED")
-            .serverPod(new ServerPod()
-                .addEnvItem(new V1EnvVar()
-                    .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false"))
-                .addEnvItem(new V1EnvVar()
-                    .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom ")))
-            .adminServer(new AdminServer()
-                .serverStartState("RUNNING")
-                    .adminService(new AdminService()
-                        .addChannelsItem(new Channel()
-                            .channelName("default")
-                            .nodePort(0))))
-            .addClustersItem(new Cluster()
-                .clusterName(clusterName)
-                .replicas(replicaCount)
-                .serverStartState("RUNNING"))
-            .configuration(new Configuration()
-                .model(new Model()
-                    .domainType("WLS")
-                    .runtimeEncryptionSecret(encryptionSecretName))
-                .introspectorJobActiveDeadlineSeconds(600L)));
-    setPodAntiAffinity(domain);
-    // create domain using model in image
-    logger.info("Create model in image domain {0} in namespace {1} using docker image {2}",
-        domainUid, domainNamespace, miiImage);
-    createDomainAndVerify(domain, domainNamespace);
+  private static  void createAndVerifyDomain(String miiImage) {
+    // create a domain resource
+    logger.info("Create model-in-image domain {0} in namespace {1}, and wait until it comes up",
+        domainUid, domainNamespace);
+    createMiiDomainAndVerify(
+        domainNamespace,
+        domainUid,
+        miiImage,
+        adminServerPodName,
+        managedServerPodPrefix,
+        replicaCount);
   }
 
   private void verifyServerRunningInSearchResults(String serverName) {

@@ -60,6 +60,9 @@ import static oracle.kubernetes.operator.DomainStatusUpdateTestBase.EventMatcher
 import static oracle.kubernetes.operator.DomainStatusUpdateTestBase.ServerStatusMatcher.hasStatusForServer;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_AVAILABLE_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_COMPLETED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.REPLICAS_TOO_HIGH_ERROR;
+import static oracle.kubernetes.operator.EventConstants.SERVER_POD_ERROR;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
@@ -83,6 +86,7 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.greaterThan;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
@@ -631,6 +635,17 @@ abstract class DomainStatusUpdateTestBase {
     assertThat(getRecordedDomain(), hasCondition(Failed));
   }
 
+  @Test
+  void whenAtLeastOnePodFailed_generateFailedEvent() {
+    failPod("server1");
+    failPod("server2");
+
+    updateDomainStatus();
+
+    assertThat(getEvents().size(), greaterThan(0));
+    assertThat(getEvents().stream().anyMatch(this::isServerPodFailedEvent), is(true));
+  }
+
   private void failPod(String serverName) {
     getPod(serverName).setStatus(new V1PodStatus().phase("Failed"));
     getServerStateMap().put(serverName, UNKNOWN_STATE);
@@ -710,6 +725,16 @@ abstract class DomainStatusUpdateTestBase {
     updateDomainStatus();
 
     assertThat(getRecordedDomain(), hasCondition(Failed).withReason(ReplicasTooHigh).withMessageContaining("cluster1"));
+  }
+
+  @Test
+  void whenReplicaCountExceedsMaxReplicasForDynamicCluster_generateFailedEvent() {
+    domain.setReplicaCount("cluster1", 5);
+    defineScenario().withDynamicCluster("cluster1", 0, 4).build();
+
+    updateDomainStatus();
+
+    assertThat(getEvents().stream().anyMatch(this::isReplicasTooHighEvent), is(true));
   }
 
   @Test
@@ -934,6 +959,14 @@ abstract class DomainStatusUpdateTestBase {
 
   private boolean isDomainAvailableEvent(CoreV1Event e) {
     return DOMAIN_AVAILABLE_EVENT.equals(e.getReason());
+  }
+
+  private boolean isReplicasTooHighEvent(CoreV1Event e) {
+    return DOMAIN_FAILED_EVENT.equals(e.getReason()) && e.getMessage().contains(REPLICAS_TOO_HIGH_ERROR);
+  }
+
+  private boolean isServerPodFailedEvent(CoreV1Event e) {
+    return DOMAIN_FAILED_EVENT.equals(e.getReason()) && e.getMessage().contains(SERVER_POD_ERROR);
   }
 
   @Test

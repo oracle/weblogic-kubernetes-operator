@@ -37,7 +37,6 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_DEPLOYMENT_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
@@ -59,12 +58,16 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyIntrospe
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodIntrospectVersionUpdated;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyPodsNotRolled;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.startPortForwardProcess;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.stopPortForwardProcess;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.setTargetPortForRoute;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
@@ -103,6 +106,7 @@ class ItProductionSecureMode {
 
   private static Path pathToEnableSSLYaml;
   private static LoggingFacade logger = null;
+  private static String adminSvcSslPortExtHost = null;
 
   /**
    * Install Operator.
@@ -226,10 +230,20 @@ class ItProductionSecureMode {
               "Getting Default Admin Cluster Service port failed");
     assertEquals(9002, defaultAdminSecurePort, "Default Admin Cluster port is not set to 9002");
 
+    //expose the admin server external service to access the console in OKD cluster
+    //set the sslPort as the target port
+    adminSvcSslPortExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName),
+                    domainNamespace, "admin-server-sslport-ext");
+    setTlsTerminationForRoute("admin-server-sslport-ext", domainNamespace);
+    setTargetPortForRoute("admin-server-sslport-ext", domainNamespace, defaultAdminSecurePort);
+    String hostAndPort = getHostAndPort(adminSvcSslPortExtHost, defaultAdminPort);
+    logger.info("The hostAndPort is {0}", hostAndPort);
+
+
     if (!WEBLOGIC_SLIM) {
       String curlCmd = "curl -sk --show-error --noproxy '*' "
-          + " https://" + K8S_NODEPORT_HOST + ":" + defaultAdminPort
-          + "/console/login/LoginForm.jsp --write-out %{http_code} " 
+          + " https://" + hostAndPort
+          + "/console/login/LoginForm.jsp --write-out %{http_code} "
           + " -o /dev/null";
       logger.info("Executing default-admin nodeport curl command {0}", curlCmd);
       assertTrue(callWebAppAndWaitTillReady(curlCmd, 10));
@@ -316,6 +330,7 @@ class ItProductionSecureMode {
 
     testUntil(
         () -> checkWeblogicMBean(
+            adminSvcSslPortExtHost,
             domainNamespace,
             adminServerPodName,
             "/management/weblogic/latest/domainRuntime/serverRuntimes/"
