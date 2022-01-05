@@ -371,6 +371,7 @@
                   **/ItMiiDomainModelInPV,
                   **/ItMiiDynamicUpdate*,
                   **/ItMiiMultiModel,
+                  **/ItMiiNewCreateAuxImage,
                   **/ItMiiSampleWlsAux,
                   **/ItMiiSampleWlsMain,
                   **/ItMiiServiceMigration,
