@@ -589,7 +589,7 @@ class DomainProcessorTest {
     establishPreviousIntrospection(null, Arrays.asList(1, 3, 4));
 
     for (Integer i : Arrays.asList(3,4)) {
-      domainConfigurator.configureServer(MS_PREFIX + i).withServerStartPolicy(START_ALWAYS);
+      domainConfigurator.configureServer(getManagedServerName(i)).withServerStartPolicy(START_ALWAYS);
     }
 
     domainConfigurator.configureCluster(CLUSTER).withReplicas(4);
@@ -604,7 +604,7 @@ class DomainProcessorTest {
 
     assertServerPodAndServicePresent(info, ADMIN_NAME);
     for (Integer i : Arrays.asList(1,2,3,4)) {
-      assertServerPodAndServicePresent(info, MS_PREFIX + i);
+      assertServerPodAndServicePresent(info, getManagedServerName(i));
     }
 
     assertThat(info.getClusterService(CLUSTER), notNullValue());
