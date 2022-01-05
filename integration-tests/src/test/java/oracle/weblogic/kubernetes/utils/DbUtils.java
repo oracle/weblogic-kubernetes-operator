@@ -12,7 +12,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
-import java.util.concurrent.TimeUnit;
 import javax.net.ssl.SSLProtocolException;
 
 import io.kubernetes.client.custom.IntOrString;
@@ -699,21 +698,13 @@ public class DbUtils {
    */
   public static void installDBOperator(String namespace) throws IOException {
     String operatorYamlFile = DOWNLOAD_DIR + "/oracle-database-operator.yaml";
-    String certManager = CERT_MANAGER;
-    CommandParams params = new CommandParams().defaults();
-    params.command("kubectl apply -f " + certManager);
-    boolean response = Command.withParams(params).execute();
-    assertTrue(response, "Failed to install cert manager");
-
-    assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(60));
-
     String operatorYamlUrl = DB_OPERATOR_YAML_URL;
 
     Files.createDirectories(Paths.get(DOWNLOAD_DIR));
     Files.deleteIfExists(Paths.get(DOWNLOAD_DIR, "oracle-database-operator.yaml"));
-    params = new CommandParams().defaults();
+    CommandParams params = new CommandParams().defaults();
     params.command("curl -fL " + operatorYamlUrl + " -o " + operatorYamlFile);
-    response = Command.withParams(params).execute();
+    boolean response = Command.withParams(params).execute();
     assertTrue(response, "Failed to download Oracle operator yaml file");
     replaceStringInFile(Paths.get(operatorYamlFile).toString(),
         "replicas: 3", "replicas: 1");

@@ -36,6 +36,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.CERT_MANAGER;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
@@ -193,7 +194,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
 
         // build MII basic image if does not exits
         logger.info("Build/Check mii-basic image with tag {0}", MII_BASIC_IMAGE_TAG);
-        if (! dockerImageExists(MII_BASIC_IMAGE_NAME, MII_BASIC_IMAGE_TAG)) { 
+        if (! dockerImageExists(MII_BASIC_IMAGE_NAME, MII_BASIC_IMAGE_TAG)) {
           logger.info("Building mii-basic image {0}", miiBasicImage);
           testUntil(
                 withVeryLongRetryPolicy,
@@ -275,6 +276,18 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
                 .execute();
           }
         }
+
+        //Install cert-manager for Database installation through DB operator
+        try {
+          Files.createDirectories(Paths.get(DOWNLOAD_DIR));
+        } catch (IOException ex) {
+          logger.info(ex.getLocalizedMessage());
+        }
+        String certManager = CERT_MANAGER;
+        CommandParams params = new CommandParams().defaults();
+        params.command("kubectl apply -f " + certManager);
+        boolean response = Command.withParams(params).execute();
+        assertTrue(response, "Failed to install cert manager");
 
         // set initialization success to true, not counting the istio installation as not all tests use istio
         isInitializationSuccessful = true;
