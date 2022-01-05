@@ -5,13 +5,19 @@ package oracle.kubernetes.operator;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1JobStatus;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
+import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.utils.RandomStringGenerator;
+import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.utils.SystemClockTestSupport;
 import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.model.Domain;
@@ -23,9 +29,13 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.DomainConditionMatcher.hasCondition;
 import static oracle.kubernetes.operator.DomainFailureReason.Internal;
-import static oracle.kubernetes.operator.DomainFailureReason.Introspection;
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_ABORTED_EVENT;
+import static oracle.kubernetes.operator.DomainStatusUpdater.createInternalFailureSteps;
+import static oracle.kubernetes.operator.EventConstants.ABORTED_ERROR;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.INTERNAL_ERROR;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.EVENT;
 import static oracle.kubernetes.weblogic.domain.model.DomainCondition.TRUE;
@@ -51,6 +61,7 @@ class DomainStatusUpdaterTest {
   private final String message = generator.getUniqueString();
   private final RuntimeException failure = new RuntimeException(message);
   private final String validationWarning = generator.getUniqueString();
+  private final V1Job job = createIntrospectorJob("JOB");
 
   @BeforeEach
   void setUp() throws NoSuchFieldException {
@@ -64,6 +75,9 @@ class DomainStatusUpdaterTest {
 
     testSupport.addDomainPresenceInfo(info);
     testSupport.defineResources(domain);
+
+    testSupport.defineResources(job);
+    testSupport.addToPacket(DOMAIN_INTROSPECTOR_JOB, job);
   }
 
   @AfterEach
@@ -74,10 +88,40 @@ class DomainStatusUpdaterTest {
   }
 
   @Test
+  void failedStepWithFailureMessage_andNoJob_doesNotContainValidationWarnings() {
+    info.addValidationWarning(validationWarning);
+
+    testSupport.runSteps(createInternalFailureSteps(failure, null));
+
+    assertThat(getRecordedDomain().getStatus().getMessage(), not(containsString(validationWarning)));
+  }
+
+  @Test
+  void whenDomainLacksStatus_andNoJob_failedStepUpdatesDomainWithFailedTrueAndException() {
+    domain.setStatus(null);
+
+    testSupport.runSteps(createInternalFailureSteps(failure, null));
+
+    assertThat(
+        getRecordedDomain(),
+        hasCondition(Failed).withStatus(TRUE).withReason(Internal).withMessageContaining(message));
+  }
+
+  @Test
+  void whenDomainLacksStatus_andNoJob_generateFailedEvent() {
+    domain.setStatus(null);
+
+    testSupport.runSteps(createInternalFailureSteps(failure, null));
+
+    assertThat(getEvents().stream().anyMatch(this::isInternalFailedEvent), is(true));
+  }
+
+  @Test
   void failedStepWithFailureMessage_doesNotContainValidationWarnings() {
     info.addValidationWarning(validationWarning);
 
-    testSupport.runSteps(DomainStatusUpdater.createFailureRelatedSteps(failure));
+    testSupport.runSteps(createInternalFailureSteps(failure,
+        testSupport.getPacket().getValue(DOMAIN_INTROSPECTOR_JOB)));
 
     assertThat(getRecordedDomain().getStatus().getMessage(), not(containsString(validationWarning)));
   }
@@ -86,11 +130,26 @@ class DomainStatusUpdaterTest {
   void whenDomainLacksStatus_failedStepUpdatesDomainWithFailedTrueAndException() {
     domain.setStatus(null);
 
-    testSupport.runSteps(DomainStatusUpdater.createFailureRelatedSteps(failure));
+    testSupport.runSteps(createInternalFailureSteps(failure,
+        testSupport.getPacket().getValue(DOMAIN_INTROSPECTOR_JOB)));
 
     assertThat(
         getRecordedDomain(),
         hasCondition(Failed).withStatus(TRUE).withReason(Internal).withMessageContaining(message));
+  }
+
+  @Test
+  void whenDomainLacksStatus_generateFailedEvent() {
+    domain.setStatus(null);
+
+    testSupport.runSteps(createInternalFailureSteps(failure,
+        testSupport.getPacket().getValue(DOMAIN_INTROSPECTOR_JOB)));
+
+    assertThat(getEvents().stream().anyMatch(this::isInternalFailedEvent), is(true));
+  }
+
+  private boolean isInternalFailedEvent(CoreV1Event e) {
+    return DOMAIN_FAILED_EVENT.equals(e.getReason()) && getMessage(e).contains(INTERNAL_ERROR);
   }
 
   @Test
@@ -113,26 +172,42 @@ class DomainStatusUpdaterTest {
 
   @Test
   void whenDomainLacksFailedCondition_failedStepUpdatesDomainWithFailedTrueAndException() {
-    testSupport.runSteps(DomainStatusUpdater.createFailureRelatedSteps(failure));
+    testSupport.runSteps(createInternalFailureSteps(failure,
+        testSupport.getPacket().getValue(DOMAIN_INTROSPECTOR_JOB)));
 
-    assertThat(
-          getRecordedDomain(),
-        hasCondition(Failed).withStatus(TRUE).withReason(Internal).withMessageContaining(message));
+    assertThat(getEvents().stream().anyMatch(this::isInternalFailedEvent), is(true));
   }
 
   @Test
-  void afterIntrospectionFailure_generateDomainProcessingAbortedEvent() {
-    testSupport.runSteps(DomainStatusUpdater.createFailureRelatedSteps(Introspection, FATAL_INTROSPECTOR_ERROR));
+  void afterIntrospectionFailure_generateDomainAbortedEvent() {
+    testSupport.runSteps(DomainStatusUpdater.createIntrospectionFailureSteps(FATAL_INTROSPECTOR_ERROR,
+        testSupport.getPacket().getValue(DOMAIN_INTROSPECTOR_JOB)));
 
-    assertThat(getEvents().stream().anyMatch(this::isDomainProcessingAbortedEvent), is(true));
+    assertThat(getEvents().stream().anyMatch(this::isDomainAbortedEvent), is(true));
+  }
+
+  private V1Job createIntrospectorJob(String uid) {
+    return new V1Job().metadata(createJobMetadata(uid)).status(new V1JobStatus());
+  }
+
+  private V1ObjectMeta createJobMetadata(String uid) {
+    return new V1ObjectMeta().name(getJobName()).namespace(NS).creationTimestamp(SystemClock.now()).uid(uid);
+  }
+
+  private static String getJobName() {
+    return LegalNames.toJobIntrospectorName(UID);
   }
 
   private List<CoreV1Event> getEvents() {
     return testSupport.getResources(EVENT);
   }
 
-  private boolean isDomainProcessingAbortedEvent(CoreV1Event e) {
-    return DOMAIN_PROCESSING_ABORTED_EVENT.equals(e.getReason());
+  private boolean isDomainAbortedEvent(CoreV1Event e) {
+    return DOMAIN_FAILED_EVENT.equals(e.getReason()) && getMessage(e).contains(ABORTED_ERROR);
+  }
+
+  private String getMessage(CoreV1Event e) {
+    return Optional.ofNullable(e.getMessage()).orElse("");
   }
 
   private Domain getRecordedDomain() {
@@ -140,5 +215,6 @@ class DomainStatusUpdaterTest {
   }
 
   // todo when new failures match old ones, leave the old matches
+
 
 }

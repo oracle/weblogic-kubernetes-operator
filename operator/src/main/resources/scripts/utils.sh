@@ -548,7 +548,9 @@ function waitForShutdownMarker() {
     if [ -e ${SHUTDOWN_MARKER_FILE} ] ; then
       exit 0
     fi
-    sleep 0.1
+    # Set the SERVER_SLEEP_INTERVAL_SECONDS environment variable in the domain specs in
+    # `spec.serverPod.env` stanza to override the default sleep interval value of 1 second.
+    sleep ${SERVER_SLEEP_INTERVAL_SECONDS:-1}
   done
 }
 
@@ -568,16 +570,38 @@ function exitOrLoop {
   fi
 }
 
-#
-# Define helper fn to create a folder
-#
-
+# Create a folder and test access to it
+#   Arg $1 - path of folder to create
+#   Arg $2 - optional wording to append to the FINE and SEVERE traces
 function createFolder {
-  mkdir -m 750 -p $1
-  if [ ! -d $1 ]; then
-    trace SEVERE "Unable to create folder $1"
-    exitOrLoop
+  local targetDir="${1}"
+  local folderDescription="${2:-}"
+  local mkdirCommand="mkdir -m 750 -p $targetDir"
+
+  trace FINE "Creating folder '${targetDir}' using command '${mkdirCommand}'. ${folderDescription}"
+
+  local mkdirOutput="$($mkdirCommand 2>&1)"
+  [ ! -z "$mkdirOutput" ] && echo "$mkdirOutput"
+
+  if [ ! -d "$targetDir" ]; then
+    trace SEVERE "Unable to create folder '${targetDir}' using command '${mkdirCommand}', error='${mkdirOutput}'. ${folderDescription}"
+    return 1
   fi
+
+  local touchFile="${targetDir}/testaccess.tmp"
+  local touchCommand="touch $touchFile"
+
+  rm -f "${touchFile}"
+  local touchOutput="$($touchCommand 2>&1)"
+  [ ! -z "$touchOutput" ] && echo "$touchOutput"
+
+  if [ ! -f "$touchFile" ] ; then
+    trace SEVERE "Cannot write a file to directory '${targetDir}' using command '${touchCommand}', error='${touchOutput}'. ${folderDescription}"
+    return 1
+  fi
+
+  rm -f "${touchFile}"
+  return 0
 }
 
 # Returns the count of the number of files in the specified directory
@@ -603,6 +627,8 @@ function createSymbolicLink() {
 # 'dataHome' attribute of the CRD ($DATA_HOME/${SERVER_NAME}/data).  If both the ${DOMAIN_HOME}/servers/${SERVER_NAME}/data
 # and $DATA_HOME/${SERVER_NAME}/data directories contain persistent files that the Operator can't resolve
 # than an error message is logged asking the user to manually resolve the files and then exit.
+# Note: This function is experimental, it is only called when
+#       [ ! -z ${EXPERIMENTAL_LINK_SERVER_DEFAULT_DATA_DIR} ] && [ -z ${KEEP_DEFAULT_DATA_HOME} ]
 function linkServerDefaultDir() {
   # if server's default 'data' directory (${DOMAIN_HOME}/servers/${SERVER_NAME}/data) does not exist than create
   # symbolic link to location specified by $DATA_HOME/${SERVER_NAME}/data
@@ -612,7 +638,7 @@ function linkServerDefaultDir() {
     # Create the server's directory in $DOMAIN_HOME/servers
     if [ ! -d ${DOMAIN_HOME}/servers/${SERVER_NAME} ]; then
       trace "Creating directory '${DOMAIN_HOME}/servers/${SERVER_NAME}'"
-      createFolder ${DOMAIN_HOME}/servers/${SERVER_NAME}
+      createFolder "${DOMAIN_HOME}/servers/${SERVER_NAME}" "This is the server '${SERVER_NAME}' directory within 'spec.domain.domainHome'." || exitOrLoop 
     else
       trace "'${DOMAIN_HOME}/servers/${SERVER_NAME}' already exists as a directory"
     fi
