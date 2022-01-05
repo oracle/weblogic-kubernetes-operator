@@ -6,7 +6,6 @@ package oracle.kubernetes.operator.wlsconfig;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 
@@ -48,88 +47,6 @@ public class WlsClusterConfig {
   public WlsClusterConfig(String clusterName, WlsDynamicServersConfig dynamicServersConfig) {
     this.name = clusterName;
     this.dynamicServersConfig = dynamicServersConfig;
-  }
-
-  /**
-   * Creates a WlsClusterConfig object using an "clusters" item parsed from JSON result from WLS
-   * REST call.
-   *
-   * @param clusterConfigMap Map containing "cluster" item parsed from JSON result from WLS REST
-   *     call
-   * @param serverTemplates Map containing all server templates configuration read from the WLS
-   *     domain
-   * @param domainName Name of the WLS domain that this WLS cluster belongs to
-   * @return A new WlsClusterConfig object created based on the JSON result
-   */
-  @SuppressWarnings("unchecked")
-  static WlsClusterConfig create(
-      Map<String, Object> clusterConfigMap,
-      Map<String, WlsServerConfig> serverTemplates,
-      String domainName) {
-    String clusterName = (String) clusterConfigMap.get("name");
-    WlsDynamicServersConfig dynamicServersConfig =
-        WlsDynamicServersConfig.create(
-            (Map<String, Object>) clusterConfigMap.get("dynamicServers"),
-            serverTemplates,
-            clusterName,
-            domainName);
-    // set dynamicServersConfig only if the cluster contains dynamic servers, i.e., its dynamic
-    // servers configuration
-    // contains non-null server template name
-    if (dynamicServersConfig.getServerTemplate() == null) {
-      dynamicServersConfig = null;
-    }
-    return new WlsClusterConfig(clusterName, dynamicServersConfig);
-  }
-
-  /**
-   * Return the list of configuration attributes to be retrieved from the REST search request to the
-   * WLS admin server. The value would be used for constructing the REST POST request.
-   *
-   * @return The list of configuration attributes to be retrieved from the REST search request to
-   *     the WLS admin server. The value would be used for constructing the REST POST request.
-   */
-  static String getSearchPayload() {
-    return "   fields: [ "
-        + getSearchFields()
-        + " ], "
-        + "   links: [], "
-        + "   children: { "
-        + "      dynamicServers: { "
-        + "      fields: [ "
-        + WlsDynamicServersConfig.getSearchFields()
-        + " ], "
-        + "      links: [] "
-        + "        }"
-        + "    } ";
-  }
-
-  /**
-   * Return the fields from cluster WLS configuration that should be retrieved from the WLS REST
-   * request.
-   *
-   * @return A string containing cluster configuration fields that should be retrieved from the WLS
-   *     REST request, in a format that can be used in the REST request payload
-   */
-  private static String getSearchFields() {
-    return "'name' ";
-  }
-
-  /**
-   * Checks the JSON result from the dynamic cluster size update REST request.
-   *
-   * @param jsonResult The JSON String result from the dynamic server cluster size update REST
-   *     request
-   * @return true if the result means the update was successful, false otherwise
-   */
-  static boolean checkUpdateDynamicClusterSizeJsonResult(String jsonResult) {
-    final String expectedResult = "{}";
-
-    boolean result = false;
-    if (expectedResult.equals(jsonResult)) {
-      result = true;
-    }
-    return result;
   }
 
   /**
@@ -285,81 +202,6 @@ public class WlsClusterConfig {
    */
   public int getMinDynamicClusterSize() {
     return dynamicServersConfig != null ? dynamicServersConfig.getMinDynamicClusterSize() : -1;
-  }
-
-  /**
-   * Verify whether the WebLogic domain already has all the machines configured for use by the
-   * dynamic cluster. For example, if machineNamePrefix is "domain1-cluster1-machine" and
-   * numMachinesNeeded is 2, this method return true if machines named "domain1-cluster1-machine1"
-   * and "domain1-cluster1-machine2" are configured in the WebLogic domain.
-   *
-   * @param machineNamePrefix Prefix of the names of the machines
-   * @param numMachinesNeeded Number of machines needed for this dynamic cluster
-   * @return True if the WebLogic domain already has all the machines configured, or if there is no
-   *     WlsDomainConfig object associated with this cluster, in which case we cannot perform the
-   *     verification, or if machineNamePrefix is null, false otherwise
-   */
-  boolean verifyMachinesConfigured(String machineNamePrefix, int numMachinesNeeded) {
-    if (wlsDomainConfig != null && machineNamePrefix != null) {
-      for (int suffix = 1; suffix <= numMachinesNeeded; suffix++) {
-        if (wlsDomainConfig.getMachineConfig(machineNamePrefix + suffix) == null) {
-          return false;
-        }
-      }
-    }
-    return true;
-  }
-
-  /**
-   * Finds the names of a machine to be created for all dynamic servers in this dynamic cluster.
-   *
-   * @param machineNamePrefix Prefix for the new machine names (should match
-   *     machineNameMatchExpression in dynamic servers config)
-   * @param targetClusterSize the target dynamic cluster size
-   * @return A String array containing names of new machines to be created in the WebLogic domain
-   *     for use by dynamic servers in this cluster
-   */
-  String[] getMachineNamesForDynamicServers(String machineNamePrefix, int targetClusterSize) {
-    if (targetClusterSize < 1 || !hasDynamicServers() || wlsDomainConfig == null) {
-      return new String[0];
-    }
-    // machine names needed are [machineNamePrefix] appended by id of the dynamic servers
-    // for example, if prefix is "domain1-cluster1-machine" and targetClusterSize is 3, and machine
-    // with name
-    // "domain1-cluster1-machine1" already exists, the names of machines to be created should be
-    // {"domain1-cluster1-machine2", "domain1-cluster1-machine3"}
-    ArrayList<String> names = new ArrayList<>();
-    for (int suffix = 1; suffix <= targetClusterSize; suffix++) {
-      String newMachineName = machineNamePrefix == null ? "" + suffix : machineNamePrefix + suffix;
-      if (wlsDomainConfig.getMachineConfig(newMachineName) == null) {
-        // only need to create machine if it does not already exist
-        names.add(newMachineName);
-      }
-    }
-    String[] machineNameArray = new String[names.size()];
-    names.toArray(machineNameArray);
-    return machineNameArray;
-  }
-
-  /**
-   * Return the URL path of REST request for updating dynamic cluster size.
-   *
-   * @return The REST URL path for updating cluster size of dynamic servers for this cluster
-   */
-  public String getUpdateDynamicClusterSizeUrl() {
-    return "/management/weblogic/latest/edit/clusters/" + name + "/dynamicServers";
-  }
-
-  /**
-   * Return the payload used in the REST request for updating the dynamic cluster size. It will be
-   * used to update the cluster size of the dynamic servers of this cluster.
-   *
-   * @param clusterSize Desired dynamic cluster size
-   * @return A string containing the payload to be used in the REST request for updating the dynamic
-   *     cluster size to the specified value.
-   */
-  public String getUpdateDynamicClusterSizePayload(final int clusterSize) {
-    return "{ dynamicClusterSize: " + clusterSize + " }";
   }
 
   /**
