@@ -307,7 +307,7 @@ public class FileUtils {
       throws IOException {
     LoggingFacade logger = getLogger();
     Path src = Paths.get(filePath);
-    logger.info("Replacing {0}", src.toString());
+    logger.info("Replacing {0} in {1}", regex, src.toString());
     Charset charset = StandardCharsets.UTF_8;
     String content = new String(Files.readAllBytes(src), charset);
     String newcontent = content.replaceAll(regex, replacement);
