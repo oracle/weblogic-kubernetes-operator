@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -6,6 +6,7 @@ package oracle.kubernetes.operator;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -120,19 +121,29 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 class DomainProcessorTest {
   private static final String ADMIN_NAME = "admin";
   private static final String CLUSTER = "cluster";
-  private static final int MAX_SERVERS = 60;
+  private static final String CLUSTER2 = "cluster-2";
+  private static final int MAX_SERVERS = 5;
   private static final String MS_PREFIX = "managed-server";
   private static final int MIN_REPLICAS = 2;
   private static final int NUM_ADMIN_SERVERS = 1;
   private static final int NUM_JOB_PODS = 1;
-  private static final String[] MANAGED_SERVER_NAMES =
-      IntStream.rangeClosed(1, MAX_SERVERS).mapToObj(DomainProcessorTest::getManagedServerName).toArray(String[]::new);
+  private static final String[] MANAGED_SERVER_NAMES = getManagedServerNames(CLUSTER);
   public static final String DOMAIN_NAME = "base_domain";
   private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
 
+  private static String[] getManagedServerNames(String clusterName) {
+    return IntStream.rangeClosed(1, MAX_SERVERS)
+            .mapToObj(n -> getManagedServerName(n, clusterName)).toArray(String[]::new);
+  }
+
   @Nonnull
   private static String getManagedServerName(int n) {
-    return MS_PREFIX + n;
+    return getManagedServerName(n, CLUSTER);
+  }
+
+  @Nonnull
+  private static String getManagedServerName(int n, String clusterName) {
+    return clusterName + "-" + MS_PREFIX + n;
   }
 
   private final List<Memento> mementos = new ArrayList<>();
@@ -163,13 +174,25 @@ class DomainProcessorTest {
   }
 
   private static WlsDomainConfig createDomainConfig() {
-    WlsClusterConfig clusterConfig = new WlsClusterConfig(CLUSTER);
-    for (String serverName : MANAGED_SERVER_NAMES) {
-      clusterConfig.addServerConfig(new WlsServerConfig(serverName, "domain1-" + serverName, 8001));
+    return createDomainConfig(Collections.singletonList(CLUSTER), new ArrayList<>());
+  }
+
+  private static WlsDomainConfig createDomainConfig(List<String> clusterNames, List<String> independentServerNames) {
+
+    WlsDomainConfig wlsDomainConfig = new WlsDomainConfig(DOMAIN_NAME)
+            .withAdminServer(ADMIN_NAME, "domain1-admin-server", 7001);
+    for (String serverName : independentServerNames) {
+      wlsDomainConfig.addWlsServer(serverName, "domain-" + serverName, 8001);
     }
-    return new WlsDomainConfig(DOMAIN_NAME)
-        .withAdminServer(ADMIN_NAME, "domain1-admin-server", 7001)
-        .withCluster(clusterConfig);
+    for (String clusterName : clusterNames) {
+      WlsClusterConfig clusterConfig = new WlsClusterConfig(clusterName);
+      for (String serverName : getManagedServerNames(clusterName)) {
+        clusterConfig.addServerConfig(new WlsServerConfig(serverName,
+                "domain1-" + serverName, 8001));
+      }
+      wlsDomainConfig.withCluster(clusterConfig);
+    }
+    return wlsDomainConfig;
   }
 
   @BeforeEach
@@ -394,7 +417,7 @@ class DomainProcessorTest {
   @Test
   void whenClusterReplicas2_server3WithAlwaysPolicy_establishMatchingPresence() {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(2);
-    domainConfigurator.configureServer(MS_PREFIX + 3).withServerStartPolicy(START_ALWAYS);
+    domainConfigurator.configureServer(getManagedServerName(3)).withServerStartPolicy(START_ALWAYS);
 
     DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
     processor.createMakeRightOperation(info).execute();
@@ -405,9 +428,9 @@ class DomainProcessorTest {
 
     assertServerPodAndServicePresent(info, ADMIN_NAME);
     for (Integer i : Arrays.asList(1,3)) {
-      assertServerPodAndServicePresent(info, MS_PREFIX + i);
+      assertServerPodAndServicePresent(info, getManagedServerName(i));
     }
-    assertServerPodNotPresent(info, MS_PREFIX + 2);
+    assertServerPodNotPresent(info, getManagedServerName(2));
 
     assertThat(info.getClusterService(CLUSTER), notNullValue());
     assertThat(info.getPodDisruptionBudget(CLUSTER), notNullValue());
@@ -430,7 +453,7 @@ class DomainProcessorTest {
 
     assertServerPodAndServicePresent(info, ADMIN_NAME);
     for (Integer i : Arrays.asList(1,2,3)) {
-      assertServerPodAndServicePresent(info, MS_PREFIX + i);
+      assertServerPodAndServicePresent(info, getManagedServerName(i));
     }
     assertThat(info.getClusterService(CLUSTER), notNullValue());
 
@@ -442,7 +465,7 @@ class DomainProcessorTest {
     establishPreviousIntrospection(null, Arrays.asList(1,3));
 
     domainConfigurator.configureCluster(CLUSTER).withReplicas(1);
-    domainConfigurator.configureServer(MS_PREFIX + 3).withServerStartPolicy(START_ALWAYS);
+    domainConfigurator.configureServer(getManagedServerName(3)).withServerStartPolicy(START_ALWAYS);
 
     DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
     processor.createMakeRightOperation(info).execute();
@@ -454,9 +477,9 @@ class DomainProcessorTest {
     assertThat(runningPods.size(), equalTo(3));
 
     assertServerPodAndServicePresent(info, ADMIN_NAME);
-    assertServerPodAndServicePresent(info, MS_PREFIX + 3);
+    assertServerPodAndServicePresent(info, getManagedServerName(3));
     for (Integer i : Arrays.asList(1,2)) {
-      assertServerPodNotPresent(info, MS_PREFIX + i);
+      assertServerPodNotPresent(info, getManagedServerName(i));
     }
 
     assertThat(info.getClusterService(CLUSTER), notNullValue());
@@ -468,7 +491,7 @@ class DomainProcessorTest {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(3);
 
     for (Integer i : Arrays.asList(3,4)) {
-      domainConfigurator.configureServer(MS_PREFIX + i).withServerStartPolicy(START_ALWAYS);
+      domainConfigurator.configureServer(getManagedServerName(i)).withServerStartPolicy(START_ALWAYS);
     }
 
     DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
@@ -480,9 +503,9 @@ class DomainProcessorTest {
 
     assertServerPodAndServicePresent(info, ADMIN_NAME);
     for (Integer i : Arrays.asList(1,3,4)) {
-      assertServerPodAndServicePresent(info, MS_PREFIX + i);
+      assertServerPodAndServicePresent(info, getManagedServerName(i));
     }
-    assertServerPodNotPresent(info, MS_PREFIX + 2);
+    assertServerPodNotPresent(info, getManagedServerName(2));
 
     assertThat(info.getClusterService(CLUSTER), notNullValue());
   }
@@ -592,7 +615,7 @@ class DomainProcessorTest {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(2);
 
     for (Integer i : Arrays.asList(1,2,3)) {
-      domainConfigurator.configureServer(MS_PREFIX + i).withServerStartPolicy(START_ALWAYS);
+      domainConfigurator.configureServer(getManagedServerName(i)).withServerStartPolicy(START_ALWAYS);
     }
 
     DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
@@ -604,7 +627,7 @@ class DomainProcessorTest {
 
     assertServerPodAndServicePresent(info, ADMIN_NAME);
     for (Integer i : Arrays.asList(1,2,3)) {
-      assertServerPodAndServicePresent(info, MS_PREFIX + i);
+      assertServerPodAndServicePresent(info, getManagedServerName(i));
     }
 
     assertThat(info.getClusterService(CLUSTER), notNullValue());
@@ -619,7 +642,7 @@ class DomainProcessorTest {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(1);
 
     for (Integer i : Arrays.asList(1,2,3)) {
-      domainConfigurator.configureServer(MS_PREFIX + i).withServerStartPolicy(START_ALWAYS);
+      domainConfigurator.configureServer(getManagedServerName(i)).withServerStartPolicy(START_ALWAYS);
     }
 
     DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
@@ -632,7 +655,7 @@ class DomainProcessorTest {
 
     assertServerPodAndServicePresent(info, ADMIN_NAME);
     for (Integer i : Arrays.asList(1,2,3)) {
-      assertServerPodAndServicePresent(info, MS_PREFIX + i);
+      assertServerPodAndServicePresent(info, getManagedServerName(i));
     }
     assertThat(info.getClusterService(CLUSTER), notNullValue());
   }
@@ -640,7 +663,7 @@ class DomainProcessorTest {
   @Test
   void whenClusterReplicas2_server2NeverPolicy_establishMatchingPresence() {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(2);
-    domainConfigurator.configureServer(MS_PREFIX + 2).withServerStartPolicy(START_NEVER);
+    domainConfigurator.configureServer(getManagedServerName(2)).withServerStartPolicy(START_NEVER);
     DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
     processor.createMakeRightOperation(info).execute();
 
@@ -650,9 +673,9 @@ class DomainProcessorTest {
 
     assertServerPodAndServicePresent(info, ADMIN_NAME);
     for (Integer i : Arrays.asList(1,3)) {
-      assertServerPodAndServicePresent(info, MS_PREFIX + i);
+      assertServerPodAndServicePresent(info, getManagedServerName(i));
     }
-    assertServerPodNotPresent(info, MS_PREFIX + 2);
+    assertServerPodNotPresent(info, getManagedServerName(2));
     assertThat(info.getClusterService(CLUSTER), notNullValue());
   }
 
@@ -662,7 +685,7 @@ class DomainProcessorTest {
     int[] servers = IntStream.rangeClosed(1, MAX_SERVERS).toArray();
     for (int i : servers) {
       if (i != 5) {
-        domainConfigurator.configureServer(MS_PREFIX + i).withServerStartPolicy(START_NEVER);
+        domainConfigurator.configureServer(getManagedServerName(i)).withServerStartPolicy(START_NEVER);
       }
     }
     DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
@@ -675,9 +698,9 @@ class DomainProcessorTest {
     assertServerPodAndServicePresent(info, ADMIN_NAME);
     for (int i : servers) {
       if (i != 5) {
-        assertServerPodAndServiceNotPresent(info, MS_PREFIX + i);
+        assertServerPodAndServiceNotPresent(info, getManagedServerName(i));
       } else {
-        assertServerPodAndServicePresent(info, MS_PREFIX + i);
+        assertServerPodAndServicePresent(info, getManagedServerName(i));
       }
     }
 
@@ -811,7 +834,13 @@ class DomainProcessorTest {
   }
 
   private void establishPreviousIntrospection(Consumer<Domain> domainSetup, List<Integer> msNumbers)
-      throws JsonProcessingException {
+          throws JsonProcessingException {
+    establishPreviousIntrospection(domainSetup, msNumbers, Collections.singletonList(CLUSTER), new ArrayList<>());
+  }
+
+  private void establishPreviousIntrospection(Consumer<Domain> domainSetup, List<Integer> msNumbers,
+                                              List<String> clusterNames, List<String> independentServers)
+          throws JsonProcessingException {
     if (domainSetup != null) {
       domainSetup.accept(domain);
       domainSetup.accept(newDomain);
@@ -822,7 +851,7 @@ class DomainProcessorTest {
       defineServerResources(getManagedServerName(i));
     }
     DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
-    testSupport.defineResources(createIntrospectorConfigMap(OLD_INTROSPECTION_STATE));
+    testSupport.defineResources(createIntrospectorConfigMap(OLD_INTROSPECTION_STATE, clusterNames, independentServers));
     testSupport.doOnCreate(KubernetesTestSupport.JOB, j -> recordJob((V1Job) j));
     domainConfigurator.withIntrospectVersion(OLD_INTROSPECTION_STATE);
   }
@@ -833,11 +862,13 @@ class DomainProcessorTest {
 
   // define a config map with a topology to avoid the no-topology condition that always runs the introspector
   @SuppressWarnings("SameParameterValue")
-  private V1ConfigMap createIntrospectorConfigMap(String introspectionDoneValue) throws JsonProcessingException {
+  private V1ConfigMap createIntrospectorConfigMap(String introspectionDoneValue, List<String> clusterNames,
+                                                  List<String> serverNames) throws JsonProcessingException {
     return new V1ConfigMap()
           .metadata(createIntrospectorConfigMapMeta(introspectionDoneValue))
-          .data(new HashMap<>(Map.of(IntrospectorConfigMapConstants.TOPOLOGY_YAML, defineTopology(),
-                                     IntrospectorConfigMapConstants.DOMAIN_INPUTS_HASH, getCurrentImageSpecHash())));
+          .data(new HashMap<>(Map.of(IntrospectorConfigMapConstants.TOPOLOGY_YAML,
+                  defineTopology(clusterNames, serverNames),
+                  IntrospectorConfigMapConstants.DOMAIN_INPUTS_HASH, getCurrentImageSpecHash())));
   }
 
   private V1ObjectMeta createIntrospectorConfigMapMeta(@Nullable String introspectionDoneValue) {
@@ -849,7 +880,11 @@ class DomainProcessorTest {
   }
 
   private String defineTopology() throws JsonProcessingException {
-    return IntrospectionTestUtils.createTopologyYaml(createDomainConfig());
+    return defineTopology(Collections.singletonList(CLUSTER), new ArrayList<>());
+  }
+
+  private String defineTopology(List<String> clusterNames, List<String> serverNames) throws JsonProcessingException {
+    return IntrospectionTestUtils.createTopologyYaml(createDomainConfig(clusterNames, serverNames));
   }
 
   @Test
@@ -1196,6 +1231,38 @@ class DomainProcessorTest {
     assertThat(logRecords, containsFine(NOT_STARTING_DOMAINUID_THREAD));
   }
 
+  @Test
+  void whenRunningClusterAndIndependentManagedServerRemovedFromDomainTopology_establishMatchingPresence()
+          throws JsonProcessingException {
+    establishPreviousIntrospection(null, Arrays.asList(1, 2, 3, 4), Arrays.asList(CLUSTER, CLUSTER2),
+            Arrays.asList("server-1"));
+    domainConfigurator.configureCluster(CLUSTER).withReplicas(4);
+    domainConfigurator.configureCluster(CLUSTER2).withReplicas(4);
+    DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
+    processor.createMakeRightOperation(info).execute();
+
+    List<V1Pod> runningPods = getRunningPods();
+    //one introspector pod, one admin server pod, one independent server and four managed server pods for each cluster
+    assertThat(runningPods.size(), equalTo(11));
+
+    removeSecondClusterAndIndependentServerFromDomainTopology();
+    processor.createMakeRightOperation(info).withExplicitRecheck().execute();
+
+    runningPods = getRunningPods();
+    //one introspector pod, one admin server pod and four managed server pods for the one remaining cluster
+    assertThat(runningPods.size(), equalTo(6));
+  }
+
+  private void removeSecondClusterAndIndependentServerFromDomainTopology() throws JsonProcessingException {
+    testSupport.deleteResources(new V1ConfigMap()
+            .metadata(createIntrospectorConfigMapMeta(OLD_INTROSPECTION_STATE)));
+    testSupport.defineResources(new V1ConfigMap()
+            .metadata(createIntrospectorConfigMapMeta(OLD_INTROSPECTION_STATE))
+            .data(new HashMap<>(Map.of(IntrospectorConfigMapConstants.TOPOLOGY_YAML,
+                    IntrospectionTestUtils.createTopologyYaml(createDomainConfig()),
+                    IntrospectorConfigMapConstants.DOMAIN_INPUTS_HASH, getCurrentImageSpecHash()))));
+  }
+
 
   // todo after external service created, if adminService deleted, delete service
 
@@ -1234,11 +1301,15 @@ class DomainProcessorTest {
   }
 
   private void defineServerResources(String serverName) {
-    testSupport.defineResources(createServerPod(serverName), createServerService(serverName));
+    defineServerResources(serverName, CLUSTER);
+  }
+
+  private void defineServerResources(String serverName, String clusterName) {
+    testSupport.defineResources(createServerPod(serverName, clusterName), createServerService(serverName));
   }
 
   /**/
-  private V1Pod createServerPod(String serverName) {
+  private V1Pod createServerPod(String serverName, String clusterName) {
     Packet packet = new Packet();
     packet
           .getComponents()
@@ -1249,14 +1320,14 @@ class DomainProcessorTest {
       packet.put(ProcessingConstants.SERVER_SCAN, domainConfig.getServerConfig(serverName));
       return PodHelper.createAdminServerPodModel(packet);
     } else {
-      packet.put(ProcessingConstants.CLUSTER_NAME, CLUSTER);
-      packet.put(ProcessingConstants.SERVER_SCAN, getClusteredServerConfig(serverName));
+      packet.put(ProcessingConstants.CLUSTER_NAME, clusterName);
+      packet.put(ProcessingConstants.SERVER_SCAN, getClusteredServerConfig(serverName, clusterName));
       return PodHelper.createManagedServerPodModel(packet);
     }
   }
 
-  private WlsServerConfig getClusteredServerConfig(String serverName) {
-    return domainConfig.getClusterConfig(CLUSTER).getServerConfigs()
+  private WlsServerConfig getClusteredServerConfig(String serverName, String clusterName) {
+    return domainConfig.getClusterConfig(clusterName).getServerConfigs()
           .stream()
           .filter(c -> serverName.equals(c.getName())).findFirst()
           .orElseThrow();
