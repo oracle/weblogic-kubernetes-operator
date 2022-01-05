@@ -576,7 +576,7 @@ class ItStickySession {
 
     // send a HTTP request to set http session state(count number) and save HTTP session info
     Map<String, String> httpDataInfo = getServerAndSessionInfoAndVerify(hostname,
-            servicePort, webServiceSetUrl, " -D ", clusterAddress);
+            servicePort, webServiceSetUrl, " -c ", clusterAddress);
     // get server and session info from web service deployed on the cluster
     String serverName1 = httpDataInfo.get(serverNameAttr);
     String sessionId1 = httpDataInfo.get(sessionIdAttr);
