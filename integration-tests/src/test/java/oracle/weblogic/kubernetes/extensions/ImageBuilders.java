@@ -374,6 +374,13 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
         }
       }
     }
+    
+    //delete certificate manager
+    String certManager = CERT_MANAGER;
+    CommandParams params = new CommandParams().defaults();
+    params.command("kubectl delete -f " + certManager);
+    boolean response = Command.withParams(params).execute();
+    assertTrue(response, "Failed to uninstall cert manager");
 
     for (Handler handler : logger.getUnderlyingLogger().getHandlers()) {
       handler.close();
