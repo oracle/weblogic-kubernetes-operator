@@ -12,7 +12,6 @@ import java.util.List;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
@@ -44,14 +43,11 @@ import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
-import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
-import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listPersistentVolumes;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDatabaseSecret;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResourceWithLogHome;
@@ -66,8 +62,10 @@ import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAnd
 import static oracle.weblogic.kubernetes.utils.DbUtils.createOracleDBUsingOperator;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuAccessSecret;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuSchema;
-import static oracle.weblogic.kubernetes.utils.DbUtils.deleteStorageclass;
+import static oracle.weblogic.kubernetes.utils.DbUtils.deleteHostPathProvisioner;
+import static oracle.weblogic.kubernetes.utils.DbUtils.deleteOracleDB;
 import static oracle.weblogic.kubernetes.utils.DbUtils.installDBOperator;
+import static oracle.weblogic.kubernetes.utils.DbUtils.uninstallDBOperator;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
@@ -171,8 +169,7 @@ class ItDBOperator {
     assertDoesNotThrow(() -> installDBOperator(dbNamespace), "Failed to install database operator");
 
     logger.info("Create Oracle DB in namespace: {0} ", dbNamespace);
-    dbUrl = assertDoesNotThrow(() -> createOracleDBUsingOperator(dbName, RCUSYSPASSWORD,
-        dbNamespace, Paths.get(WORK_DIR, dbNamespace, "oracledatabase").toString()));
+    dbUrl = assertDoesNotThrow(() -> createOracleDBUsingOperator(dbName, RCUSYSPASSWORD, dbNamespace));
 
     logger.info("Create RCU schema with fmwImage: {0}, rcuSchemaPrefix: {1}, dbUrl: {2}, "
         + " dbNamespace: {3}", FMWINFRA_IMAGE_TO_USE_IN_SPEC, RCUSCHEMAPREFIX, dbUrl, dbNamespace);
@@ -459,26 +456,16 @@ class ItDBOperator {
   /**
    * Uninstall DB operator.
    * The cleanup framework does not uninstall storageclass and delete pv.
-   * Do it here for now.
+   * Deletes Oracle database instance, operator and storageclass.
    */
   @AfterAll
   public void tearDownAll() throws ApiException {
     if (System.getenv("SKIP_CLEANUP") == null
         || (System.getenv("SKIP_CLEANUP") != null
         && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false"))) {
-      var pvs = listPersistentVolumes();
-      logger.info("Deleting persistent volumes in after all");
-      logger.info(Yaml.dump(pvs.getItems()));
-      for (var pv : pvs.getItems()) {
-        if (pv.getSpec().getClaimRef() != null) {
-          if (pv.getSpec().getClaimRef().getName().equals(dbName)
-              && pv.getSpec().getClaimRef().getNamespace().equals(dbNamespace)) {
-            deletePersistentVolumeClaim(dbName, dbNamespace);
-            deletePersistentVolume(pv.getMetadata().getName());
-          }
-        }
-      }
-      deleteStorageclass();
+      deleteOracleDB(dbNamespace, dbName);
+      deleteHostPathProvisioner(dbNamespace);
+      uninstallDBOperator(dbNamespace);
     }
   }
 
