@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
@@ -930,12 +930,12 @@ function checkService(){
 # Get pod name when pod available in a given namespace
 function getPodName(){
 
- max=$((SECONDS + 120))
+ local max=$((SECONDS + 120))
 
- pod=$1
- ns=$2
+ local pod=$1
+ local ns=$2
 
- pname=""
+ local pname=""
  while [ $SECONDS -le $max ] ; do
    pname=`kubectl get po -n ${ns} | grep -w ${pod} | awk '{print $1}'`
    [ -z "${pname}" ] || break
