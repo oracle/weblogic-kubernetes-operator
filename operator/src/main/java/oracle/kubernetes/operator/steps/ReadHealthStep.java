@@ -87,7 +87,6 @@ public class ReadHealthStep extends Step {
     String serverName = (String) packet.get(ProcessingConstants.SERVER_NAME);
     DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
     V1Service service = info.getServerService(serverName);
-
     if (service == null) {
       return doNext(packet);
     } else {
@@ -191,6 +190,9 @@ public class ReadHealthStep extends Step {
     @Override
     public NextAction apply(Packet packet) {
       ReadHealthProcessing processing = new ReadHealthProcessing(packet, service, pod);
+      if (processing.getWlsServerConfig() == null) {
+        return doNext(packet);
+      }
       return doNext(createRequestStep(processing.createRequest(), new RecordHealthStep(getNext())), packet);
     }
 
