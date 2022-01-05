@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -15,6 +15,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
+import io.kubernetes.client.openapi.models.V1Pod;
 import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.ProcessingConstants;
@@ -41,6 +42,7 @@ import static java.util.Comparator.comparing;
 import static oracle.kubernetes.operator.DomainStatusUpdater.MANAGED_SERVERS_STARTING_PROGRESS_REASON;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createProgressingStartedEventStep;
 import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
+import static oracle.kubernetes.operator.helpers.PodHelper.getPodServerName;
 
 public class ManagedServersUpStep extends Step {
   static final String SERVERS_UP_MSG =
@@ -118,7 +120,7 @@ public class ManagedServersUpStep extends Step {
       LOGGER.fine(SERVERS_UP_MSG, factory.domain.getDomainUid(), getRunningServers(info));
     }
 
-    Optional.ofNullable(config).ifPresent(wlsDomainConfig -> addServersToFactory(factory, wlsDomainConfig));
+    Optional.ofNullable(config).ifPresent(wlsDomainConfig -> addServersToFactory(factory, wlsDomainConfig, info));
 
     info.setServerStartupInfo(factory.getStartupInfos());
     info.setServerShutdownInfo(factory.getShutdownInfos());
@@ -130,7 +132,8 @@ public class ManagedServersUpStep extends Step {
         packet);
   }
 
-  private void addServersToFactory(@Nonnull ServersUpStepFactory factory, @Nonnull WlsDomainConfig wlsDomainConfig) {
+  private void addServersToFactory(@Nonnull ServersUpStepFactory factory, @Nonnull WlsDomainConfig wlsDomainConfig,
+                                   DomainPresenceInfo info) {
     Set<String> clusteredServers = new HashSet<>();
 
     List<ServerConfig> pendingServers = new ArrayList<>();
@@ -145,6 +148,15 @@ public class ManagedServersUpStep extends Step {
     for (ServerConfig serverConfig : pendingServers) {
       factory.addServerIfNeeded(serverConfig.wlsServerConfig, serverConfig.wlsClusterConfig);
     }
+
+    info.getServerPods().filter(pod -> !factory.getServers().contains(getPodServerName(pod)))
+            .filter(pod -> !getPodServerName(pod).equals(wlsDomainConfig.getAdminServerName()))
+            .forEach(pod -> shutdownServersNotPresentInDomainConfig(factory, pod));
+  }
+
+  private void shutdownServersNotPresentInDomainConfig(ServersUpStepFactory factory, V1Pod pod) {
+    WlsServerConfig serverConfig = new WlsServerConfig(getPodServerName(pod), pod.getMetadata().getName(), 0);
+    factory.addShutdownInfo(new ServerShutdownInfo(serverConfig, pod.getMetadata().getClusterName(), null, false));
   }
 
   private void addClusteredServersToFactory(
@@ -256,6 +268,10 @@ public class ManagedServersUpStep extends Step {
 
     Collection<DomainPresenceInfo.ServerShutdownInfo> getShutdownInfos() {
       return shutdownInfos;
+    }
+
+    Collection<String> getServers() {
+      return servers;
     }
 
     private void addStartupInfo(ServerStartupInfo startupInfo) {
