@@ -1458,7 +1458,7 @@ class DomainProcessorTest {
     //one introspector pod, one admin server pod, one independent server and four managed server pods for each cluster
     assertThat(runningPods.size(), equalTo(11));
 
-    updateDomainTopologyToSingleCluster();
+    removeSecondClusterAndIndependentServerFromDomainTopology();
     processor.createMakeRightOperation(info).withExplicitRecheck().execute();
 
     runningPods = getRunningPods();
@@ -1466,7 +1466,7 @@ class DomainProcessorTest {
     assertThat(runningPods.size(), equalTo(6));
   }
 
-  private void updateDomainTopologyToSingleCluster() throws JsonProcessingException {
+  private void removeSecondClusterAndIndependentServerFromDomainTopology() throws JsonProcessingException {
     testSupport.deleteResources(new V1ConfigMap()
             .metadata(createIntrospectorConfigMapMeta(OLD_INTROSPECTION_STATE)));
     testSupport.defineResources(new V1ConfigMap()
@@ -1474,31 +1474,6 @@ class DomainProcessorTest {
             .data(new HashMap<>(Map.of(IntrospectorConfigMapConstants.TOPOLOGY_YAML,
                     IntrospectionTestUtils.createTopologyYaml(createDomainConfig()),
                     IntrospectorConfigMapConstants.DOMAIN_INPUTS_HASH, getCurrentImageSpecHash()))));
-  }
-
-  @Test
-  void whenRunningClusterAndIndependentManagedServerRemovedFromDomainTopology_establishMatchingPresence1()
-          throws JsonProcessingException {
-    establishPreviousIntrospection(null, Arrays.asList(1, 2, 3, 4), Arrays.asList(CLUSTER, CLUSTER2),
-            Arrays.asList(INDEPENDENT_SERVER));
-    domainConfigurator.configureCluster(CLUSTER).withReplicas(4);
-    domainConfigurator.configureCluster(CLUSTER2).withReplicas(4);
-    DomainPresenceInfo info = new DomainPresenceInfo(newDomain);
-    processor.createMakeRightOperation(info).execute();
-
-    List<V1Pod> runningPods = getRunningPods();
-    //one introspector pod, one admin server pod, one independent server and four managed server pods for each cluster
-    assertThat(runningPods.size(), equalTo(11));
-
-    updateDomainTopologyToSingleCluster();
-    testSupport.setTime(10, TimeUnit.SECONDS);
-    processor.createMakeRightOperation(info).withExplicitRecheck().execute();
-    testSupport.setTime(10, TimeUnit.SECONDS);
-
-    runningPods = getRunningPods();
-    //one introspector pod, one admin server pod and four managed server pods for the one remaining cluster
-    assertThat(runningPods.size(), equalTo(6));
-    testSupport.setTime(10, TimeUnit.SECONDS);
   }
 
   // todo after external service created, if adminService deleted, delete service
