@@ -135,6 +135,18 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
           logger.severe("Failed to cleanup the download directory " + DOWNLOAD_DIR, ioe);
         }
 
+        //Install cert-manager for Database installation through DB operator
+        try {
+          Files.createDirectories(Paths.get(DOWNLOAD_DIR));
+        } catch (IOException ex) {
+          logger.info(ex.getLocalizedMessage());
+        }
+        String certManager = CERT_MANAGER;
+        CommandParams params = new CommandParams().defaults();
+        params.command("kubectl apply -f " + certManager);
+        boolean response = Command.withParams(params).execute();
+        assertTrue(response, "Failed to install cert manager");
+
         // Only the first thread will enter this block.
         logger.info("Building docker Images before any integration test classes are run");
         context.getRoot().getStore(GLOBAL).put("BuildSetup", this);
@@ -276,18 +288,6 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
                 .execute();
           }
         }
-
-        //Install cert-manager for Database installation through DB operator
-        try {
-          Files.createDirectories(Paths.get(DOWNLOAD_DIR));
-        } catch (IOException ex) {
-          logger.info(ex.getLocalizedMessage());
-        }
-        String certManager = CERT_MANAGER;
-        CommandParams params = new CommandParams().defaults();
-        params.command("kubectl apply -f " + certManager);
-        boolean response = Command.withParams(params).execute();
-        assertTrue(response, "Failed to install cert manager");
 
         // set initialization success to true, not counting the istio installation as not all tests use istio
         isInitializationSuccessful = true;
