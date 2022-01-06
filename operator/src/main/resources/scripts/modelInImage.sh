@@ -1057,7 +1057,7 @@ function wdtHandleOnlineUpdate() {
         # expand the archive domain libraries to the domain lib, 11 is caution when zip entry doesn't exists
         cd ${DOMAIN_HOME}/lib || exitOrLoop
         unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainLibraries/*
-        if [ $? -ne 0 && $? != 11 ] ; then
+        if [ $? -ne 0 && $? -ne 11 ] ; then
           trace SEVERE  "Domain Source Type is FromModel, error in extracting domainLibraries
           ${IMG_ARCHIVES_ROOTDIR}/${file}"
           exitOrLoop
@@ -1067,7 +1067,7 @@ function wdtHandleOnlineUpdate() {
         # zip entry doesn't exists
         cd ${DOMAIN_HOME}/bin || exitOrLoop
         unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainBin/*
-        if [ $? -ne 0 && $? != 11 ] ; then
+        if [ $? -ne 0 && $? -ne 11 ] ; then
           trace SEVERE  "Domain Source Type is FromModel, error in extracting domainBin
           ${IMG_ARCHIVES_ROOTDIR}/${file}"
           exitOrLoop
@@ -1299,8 +1299,8 @@ function prepareMIIServer() {
 
         # expand the archive domain libraries to the domain lib, 11 is caution when zip entry doesn't exists
         cd ${DOMAIN_HOME}/lib || exitOrLoop
-        unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainLibraries/
-        if [ $? -ne 0 && $? != 11 ] ; then
+        unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainLibraries/*
+        if [ $? -ne 0 && $? -ne 11 ] ; then
           trace SEVERE  "Domain Source Type is FromModel, error in extracting domainLibraries
           ${IMG_ARCHIVES_ROOTDIR}/${file}"
           exitOrLoop
@@ -1310,7 +1310,7 @@ function prepareMIIServer() {
         # zip entry doesn't exists
         cd ${DOMAIN_HOME}/bin || exitOrLoop
         unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainBin/*
-        if [ $? -ne 0 && $? != 11 ] ; then
+        if [ $? -ne 0 && $? -ne 11 ] ; then
           trace SEVERE  "Domain Source Type is FromModel, error in extracting domainBin
           ${IMG_ARCHIVES_ROOTDIR}/${file}"
           exitOrLoop
