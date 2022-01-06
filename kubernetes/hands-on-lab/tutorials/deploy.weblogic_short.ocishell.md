@@ -11,7 +11,7 @@ $ kubectl create namespace sample-domain1-ns
 Create a Kubernetes Secret containing the Administration Server boot credentials:
 ```shell
 $ kubectl -n sample-domain1-ns create secret generic sample-domain1-weblogic-credentials \
-  --from-literal=username=<a username> \
+  --from-literal=username=<a user name> \
   --from-literal=password=<a password>
 ```
 where the actual username and password should be specified instead of `<a username>` and `<a password>`
