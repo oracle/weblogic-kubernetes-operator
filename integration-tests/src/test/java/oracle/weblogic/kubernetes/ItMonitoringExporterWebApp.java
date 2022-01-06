@@ -43,6 +43,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
@@ -57,6 +58,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.copyFileToPod;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteNamespace;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.exec;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createIngressForDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
@@ -72,8 +74,10 @@ import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installVerifyGraf
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.uninstallPrometheusGrafana;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.verifyMonExpAppAccess;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.verifyMonExpAppAccessThroughNginx;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPvAndPvc;
+import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -187,13 +191,15 @@ class ItMonitoringExporterWebApp {
     logger.info("create and verify WebLogic domain image using model in image with model files");
     miiImage = MonitoringUtils.createAndVerifyMiiImage(monitoringExporterAppDir, MODEL_DIR + "/" + MONEXP_MODEL_FILE,
         SESSMIGR_APP_NAME, MONEXP_IMAGE_NAME);
+    if (!OKD) {
+      // install and verify NGINX
+      nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
 
-    // install and verify NGINX
-    nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
-    String nginxServiceName = nginxHelmParams.getReleaseName() + "-ingress-nginx-controller";
-    logger.info("NGINX service name: {0}", nginxServiceName);
-    nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
-    nodeportshttps = getServiceNodePort(nginxNamespace, nginxServiceName, "https");
+      String nginxServiceName = nginxHelmParams.getReleaseName() + "-ingress-nginx-controller";
+      logger.info("NGINX service name: {0}", nginxServiceName);
+      nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
+      nodeportshttps = getServiceNodePort(nginxNamespace, nginxServiceName, "https");
+    }
     logger.info("NGINX http node port: {0}", nodeportshttp);
     logger.info("NGINX https node port: {0}", nodeportshttps);
     clusterNameMsPortMap = new HashMap<>();
@@ -233,9 +239,25 @@ class ItMonitoringExporterWebApp {
 
       // create ingress for the domain
       logger.info("Creating ingress for domain {0} in namespace {1}", domain1Uid, domain1Namespace);
-      ingressHost1List =
-          createIngressForDomainAndVerify(domain1Uid, domain1Namespace, clusterNameMsPortMap, false);
-      verifyMonExpAppAccessThroughNginx(ingressHost1List.get(0), 1, nodeportshttp);
+      String adminServerPodName = domain1Uid + "-admin-server";
+      String clusterService = domain1Uid + "-cluster-cluster-1";
+      if (!OKD) {
+        ingressHost1List =
+            createIngressForDomainAndVerify(domain1Uid, domain1Namespace, clusterNameMsPortMap, false);
+        verifyMonExpAppAccessThroughNginx(ingressHost1List.get(0), 1, nodeportshttp);
+        // Need to expose the admin server external service to access the console in OKD cluster only
+      } else {
+        String hostName = createRouteForOKD(getExternalServicePodName(clusterService), domain1Namespace);
+
+        int nodePort = getServiceNodePort(
+            domain1Namespace, getExternalServicePodName(hostName), "default");
+        assertTrue(nodePort != -1,
+            "Could not get the default external service node port");
+        logger.info("Found the default service nodePort {0}", nodePort);
+        String hostAndPort = getHostAndPort(hostName, nodePort);
+        logger.info("hostAndPort = {0} ", hostAndPort);
+        exporterUrl = String.format("http://%s/wls-exporter/",hostAndPort);
+      }
       installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
           domain1Namespace,
           domain1Uid);
