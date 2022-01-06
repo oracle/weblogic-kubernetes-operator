@@ -1,4 +1,4 @@
-# Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 set -o pipefail
@@ -20,7 +20,7 @@ source ${SCRIPTPATH}/utils_base.sh
 # exportInstallHomes
 #   purpose:  export MW_HOME, WL_HOME, ORACLE_HOME
 #             with defaults as needed 
-function exportInstallHomes() {
+exportInstallHomes() {
   export ORACLE_HOME=${ORACLE_HOME:-${MW_HOME}}
 
   if [ -z ${ORACLE_HOME} ]; then
@@ -39,7 +39,7 @@ function exportInstallHomes() {
 # tracen
 #   purpose: same as "trace -n"
 #
-function tracen() {
+tracen() {
   (
   set +x
   trace -cloc "`basename $0`:${BASH_LINENO[0]}" -n "$@"
@@ -50,7 +50,7 @@ function tracen() {
 # tracePipe
 #   purpose:  same as "trace -pipe"
 #
-function tracePipe() {
+tracePipe() {
   (
   set +x
   trace -cloc "`basename $0`:${BASH_LINENO[0]}" -pipe "$@"
@@ -61,7 +61,7 @@ function tracePipe() {
 # traceTiming
 #   purpose: specially decorated trace statements for timing measurements
 #
-function traceTiming() {
+traceTiming() {
   [ "${TRACE_TIMING^^}" = "TRUE" ] && trace INFO "TIMING: ""$@"
 }
 
@@ -71,7 +71,7 @@ function traceTiming() {
 #   warning: we purposely avoid dumping all env vars
 #            (K8S provides env vars with potentially sensitive network information)
 #
-function traceEnv() {
+traceEnv() {
   local env_var
   trace FINE "Env vars ${*}:"
   for env_var in \
@@ -111,7 +111,7 @@ function traceEnv() {
 # internal helper for logFileRotate():
 #   return all files that match ${1}NNNNN in numeric order
 #
-function logFiles() {
+logFiles() {
   ls -1 ${1}[0-9][0-9][0-9][0-9][0-9] 2>/dev/null
 }
 
@@ -119,7 +119,7 @@ function logFiles() {
 # internal helper for logFileRotate():
 #   return all files that match ${1}NNNNN in reverse order
 #
-function logFilesReverse() {
+logFilesReverse() {
   ls -1r ${1}[0-9][0-9][0-9][0-9][0-9] 2>/dev/null
 }
 
@@ -127,7 +127,7 @@ function logFilesReverse() {
 # internal helper for logFileRotate():
 #   parse NNNNN out of $1, but if not found at end of $1 return 0
 #
-function logFileNum() {
+logFileNum() {
   local logNum=$(echo "$1" | sed 's/.*\([0-9][0-9][0-9][0-9][0-9]\)$/\1/' | sed 's/^0*//')
   echo ${logNum:-0}
 }
@@ -140,7 +140,7 @@ function logFileNum() {
 #     $3 = if "quiet", then suppress any tracing 
 #   See logFileRotate() for detailed usage.A
 #
-function logFileRotateInner() {
+logFileRotateInner() {
   local logmax=${2:-7}
   local logcur
 
@@ -199,7 +199,7 @@ function logFileRotateInner() {
 #
 # internal helper for logFileRotate():
 #
-function testLFRWarn() {
+testLFRWarn() {
   trace WARNING "File rotation test failed. Log files named '${1}' will not be rotated, errcode='${2}'."
 }
 
@@ -207,7 +207,7 @@ function testLFRWarn() {
 # internal helper for logFileRotate():
 #   Convert new-lines to space, multi-spaces to single space, and trim
 #
-function testTR() {
+testTR() {
   tr '\n' ' ' | sed 's/  */ /g' | sed 's/ $//g'
 }
 
@@ -215,7 +215,7 @@ function testTR() {
 # internal helper for logFileRotate():
 #   Verify  logFileRotateInner works, return non-zero if not.
 #
-function testLogFileRotate() {
+testLogFileRotate() {
   local curfile=${1:-/tmp/unknown}
   local fname=$(dirname $curfile)/testFileRotate.$RANDOM.$SECONDS.tmp
   mkdir -p $(dirname $curfile)
@@ -278,7 +278,7 @@ function testLogFileRotate() {
 #     - If current max file is 99999, then old files are
 #       renumbered starting with 00001.
 #
-function logFileRotate() {
+logFileRotate() {
   # test rotation, if it fails, log a Warning that rotation of $1 is skipped.
   testLogFileRotate "$1" || return 0
   # now do the actual rotation
@@ -294,7 +294,7 @@ function logFileRotate() {
 #     2) Export DOMAIN_HOME to reflect the actual location 
 #     3) Trace an Error and return non-zero if not found or more than 1 found
 #
-function exportEffectiveDomainHome() {
+exportEffectiveDomainHome() {
   local count=0
   local cur_domain_home=""
   local eff_domain_home=""
@@ -523,7 +523,7 @@ checkWebLogicVersion()
 #   sample:
 #     ADMIN_URL=$(getAdminServerUrl)
 #
-function getAdminServerUrl() {
+getAdminServerUrl() {
   local admin_protocol="http"
   if [ "${ISTIO_ENABLED}" = "true" ]; then
     admin_protocol="t3"
@@ -539,7 +539,7 @@ function getAdminServerUrl() {
   echo ${admin_protocol}://${AS_SERVICE_NAME}:${ADMIN_PORT}
 }
 
-function waitForShutdownMarker() {
+waitForShutdownMarker() {
   #
   # Wait forever.   Kubernetes will monitor this pod via liveness and readyness probes.
   #
@@ -561,7 +561,7 @@ function waitForShutdownMarker() {
 #   (The liveness probe checks the same file.)
 #
 
-function exitOrLoop {
+exitOrLoop {
   if [ -f /weblogic-operator/debug/livenessProbeSuccessOverride ]
   then
     waitForShutdownMarker
@@ -573,7 +573,7 @@ function exitOrLoop {
 # Create a folder and test access to it
 #   Arg $1 - path of folder to create
 #   Arg $2 - optional wording to append to the FINE and SEVERE traces
-function createFolder {
+createFolder {
   local targetDir="${1}"
   local folderDescription="${2:-}"
   local mkdirCommand="mkdir -m 750 -p $targetDir"
@@ -605,7 +605,7 @@ function createFolder {
 }
 
 # Returns the count of the number of files in the specified directory
-function countFilesInDir() {
+countFilesInDir() {
   dir=${1}
   cnt=`find ${dir} -type f | wc -l`
   [ $? -ne 0 ] && trace SEVERE "failed determining number of files in '${dir}'" && exitOrLoop
@@ -614,7 +614,7 @@ function countFilesInDir() {
 }
 
 # Creates symbolic link from source directory to target directory
-function createSymbolicLink() {
+createSymbolicLink() {
   targetDir=${1}
   sourceDir=${2}
   /bin/ln -sFf ${targetDir} ${sourceDir}
@@ -629,7 +629,7 @@ function createSymbolicLink() {
 # than an error message is logged asking the user to manually resolve the files and then exit.
 # Note: This function is experimental, it is only called when
 #       [ ! -z ${EXPERIMENTAL_LINK_SERVER_DEFAULT_DATA_DIR} ] && [ -z ${KEEP_DEFAULT_DATA_HOME} ]
-function linkServerDefaultDir() {
+linkServerDefaultDir() {
   # if server's default 'data' directory (${DOMAIN_HOME}/servers/${SERVER_NAME}/data) does not exist than create
   # symbolic link to location specified by $DATA_HOME/${SERVER_NAME}/data
   if [ ! -d ${DOMAIN_HOME}/servers/${SERVER_NAME}/data ]; then
@@ -710,7 +710,7 @@ function linkServerDefaultDir() {
 #   purpose: Prepend $PATH with $JAVA_HOME/bin if $JAVA_HOME is set
 #            and if $JAVA_HOME/bin is not already in $PATH
 #
-function adjustPath() {
+adjustPath() {
   if [ ! -z ${JAVA_HOME} ]; then
     if [[ ":$PATH:" != *":${JAVA_HOME}/bin:"* ]]; then
       export PATH="${JAVA_HOME}/bin:$PATH"
@@ -728,7 +728,7 @@ function adjustPath() {
 #            See also 'auxImage.sh'.
 #            See also initAuxiliaryImage in 'utils_base.sh'.
 #
-function checkAuxiliaryImage() {
+checkAuxiliaryImage() {
   # check auxiliary image results (if any)
   if [ -z "$AUXILIARY_IMAGE_PATHS" ]; then
     trace FINE "Auxiliary Image: Skipping auxiliary image checks (no auxiliary images configured)."

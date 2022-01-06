@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
@@ -38,35 +38,35 @@ source $SCRIPTDIR/env-init.sh
 DRY_RUN="false"
 [ "${1:-}" = "-dry" ] && DRY_RUN="true"
 
-function get_service_name() {
+get_service_name() {
   # $1 is service name
   echo $(tr [A-Z_] [a-z-] <<< $1)
 }
 
-function get_service_yaml() {
+get_service_yaml() {
   # $1 is service name
   echo "$WORKDIR/ingresses/traefik-ingress-$(get_service_name $1).yaml"
 }
 
-function get_kube_address() {
+get_kube_address() {
   echo "\$(kubectl cluster-info | grep KubeDNS | sed 's;^.*//;;' | sed 's;:.*$;;')"
 }
 
-function get_sample_host() {
+get_sample_host() {
   # $1 is service name
   tr [A-Z_] [a-z-] <<< $1.mii-sample.org
 }
 
-function get_curl_command() {
+get_curl_command() {
   # $1 is service name
   echo "curl -s -S -m 10 -H 'host: $(get_sample_host $1)'"
 }
 
-function timestamp() {
+timestamp() {
   date --utc '+%Y-%m-%dT%H:%M:%S'
 }
 
-function get_help() {
+get_help() {
   # $1 is echo prefix
   # $2 is service name
   echo "${1:-}"
