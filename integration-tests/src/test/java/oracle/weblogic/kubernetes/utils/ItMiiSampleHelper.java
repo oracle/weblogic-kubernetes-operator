@@ -255,7 +255,10 @@ public class ItMiiSampleHelper {
         ? getModelImageName(testClassName + "-wlsv1") : getModelImageName(testClassName + "-jrfv1");
     previousTestSuccessful = true;
     envMap.put("MODEL_IMAGE_NAME", imageName);
-    envMap.put("MODEL_IMAGE_TAG", MII_BASIC_IMAGE_TAG + "-" + domainType + "-v1");
+    String decoration = (envMap.get("DO_AI") != null && envMap.get("DO_AI").equalsIgnoreCase("true"))  ? "AI-" : "";
+    envMap.put("MODEL_IMAGE_TAG",
+        MII_BASIC_IMAGE_TAG + "-" + domainType + "-" + decoration + "v1");
+    envMap.put("MODEL_DIR", "model-images/model-in-image__" + domainType + "-v1");
 
     if (domainType.equals(DomainType.JRF)) {
       String dbImageName = (KIND_REPO != null
@@ -297,7 +300,9 @@ public class ItMiiSampleHelper {
       String imageName = (domainType.equals(DomainType.WLS))
           ? getModelImageName(testClassName + "-wlsv2") : getModelImageName(testClassName + "-jrfv2");
       envMap.put("MODEL_IMAGE_NAME", imageName);
-      envMap.put("MODEL_IMAGE_TAG", MII_BASIC_IMAGE_TAG + "-" + domainType + "-v2");
+      String decoration = (envMap.get("DO_AI") != null && envMap.get("DO_AI").equalsIgnoreCase("true"))  ? "AI-" : "";
+      envMap.put("MODEL_IMAGE_TAG", MII_BASIC_IMAGE_TAG + "-" + domainType + "-" + decoration + "v2");
+      envMap.put("MODEL_DIR", "model-images/model-in-image__" + domainType + "-v2");
     }
 
     execTestScriptAndAssertSuccess(domainType, args, errString);
