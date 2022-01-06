@@ -69,7 +69,7 @@ You can connect to the database in your app using:
 
   java.util.Properties props = new java.util.Properties();
   props.put("user", "sys as sysdba");
-  props.put("password", "Oradoc_db1");
+  props.put("password", <the actual sysdba password>);
   java.sql.Driver d =
     Class.forName("oracle.jdbc.OracleDriver").newInstance();
   java.sql.Connection conn =
@@ -130,16 +130,14 @@ Use this script to drop the RCU schema based `schemaPrefix` and `dburl`.
 $ ./drop-rcu-schema.sh -h
 usage: ./drop-rcu-schema.sh -s <schemaPrefix> -d <dburl> -n <namespace> -q <sysPassword> -r <schemaPassword> [-h]
   -s RCU Schema Prefix (required)
+  -q password for database SYSDBA user. (required)
+  -r password for all schema owner (regular user). (required)
   -t RCU Schema Type (optional)
       (supported values: fmw(default), soa, osb, soaosb, soaess, soaessosb)
   -d Oracle Database URL (optional)
       (default: oracle-db.default.svc.cluster.local:1521/devpdb.k8s)
   -n Namespace where RCU pod is deployed (optional)
       (default: default)
-  -q password for database SYSDBA user. (optional)
-      (default: Oradoc_db1)
-  -r password for all schema owner (regular user). (optional)
-      (default: Oradoc_db1)
   -h Help
 
 $ ./drop-rcu-schema.sh -s domain1
@@ -157,7 +155,7 @@ You can connect to the database in your app using:
 
   java.util.Properties props = new java.util.Properties();
   props.put("user", "sys as sysdba");
-  props.put("password", "Oradoc_db1");
+  props.put("password", <the actual password>);
   java.sql.Driver d =
     Class.forName("oracle.jdbc.OracleDriver").newInstance();
   java.sql.Connection conn =
