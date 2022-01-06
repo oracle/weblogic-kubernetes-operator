@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
@@ -42,7 +42,7 @@ DO_UPDATE4=false
 DO_AI=${DO_AI:-false}
 WDT_DOMAIN_TYPE=WLS
 
-function usage() {
+usage() {
   cat << EOF
 
   Usage: $(basename $0)
@@ -200,7 +200,7 @@ fi
 # Helper script ($1 == number of pods)
 #
 
-function doPodWait() {
+doPodWait() {
   # wl-pod-wait.sh is a public script that's checked into the sample utils directory
 
   local wcmd="\$WORKDIR/utils/wl-pod-wait.sh -p $1 -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE -t \$POD_WAIT_TIMEOUT_SECS"

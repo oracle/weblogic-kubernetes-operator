@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # -----------------
@@ -71,7 +71,7 @@
 #             (See optional LEASE_ID env var above.)
 #
 
-function timestamp {
+timestamp() {
   echo -n [`date '+%m-%d-%YT%H:%M:%S'`]
 }
 
@@ -99,7 +99,7 @@ if [ ! "$1" = "" ] && [ ! "$1" = "-dryrun" ]; then
 fi
 
 # wait for current jobs to finish, and kill any remaining after $1 seconds, default is 15 seconds
-function jobWaitAndKill {
+jobWaitAndKill() {
   local job_timeout=${1:-15}
   echo "@@ `timestamp` Info: jobWaitAndKill: Waiting up to $job_timeout seconds for $(jobs -rp | wc -w) background delete jobs to finish."
   local start_seconds=$SECONDS
@@ -111,7 +111,7 @@ function jobWaitAndKill {
 }
 
 # helper fn to speedup pvc deletes
-function patchPVCFinalizer() {
+patchPVCFinalizer() {
   while read line; do
     if [ ! "$DRY_RUN" = "true" ]; then
       set -x
@@ -125,7 +125,7 @@ function patchPVCFinalizer() {
 
 # use for kubectl delete of a specific name, exits silently if nothing found via 'get'
 # usage: doDeleteByName [-n foobar] kind name
-function doDeleteByName {
+doDeleteByName() {
 
   # sneaky way to get current pid that works in ancient MacOS bash 3
   local mypid=$(bash -c "echo \$PPID")
@@ -153,7 +153,7 @@ function doDeleteByName {
 
 # use for kubectl delete of a potential set, exits silently if nothing found via 'get'
 # usage: doDeleteByRange [-n foobar] kind -l labelexpression -l labelexpression ...
-function doDeleteByRange {
+doDeleteByRange() {
 
   # sneaky way to get current pid that works in ancient MacOS bash 3
   local mypid=$(bash -c "echo \$PPID")
@@ -314,7 +314,7 @@ deleteWebLogicPods() {
 # delete everything with label $LABEL_SELECTOR
 # - the delete order is order of NAMESPACED_TYPES and then NOT_NAMESPACED_TYPES
 # - uses $1 as a temporary file
-function deleteLabel {
+deleteLabel() {
   echo @@ `timestamp` Info: Delete resources with label $LABEL_SELECTOR.
 
   # clean the output file first
@@ -384,7 +384,7 @@ function deleteLabel {
 
 # deletes all namespaces in the $1 file, assumes the namespaces are in column 4 of $1
 # TBD: Currently not called
-function deleteNamespaces {
+deleteNamespaces() {
   cat $1 | awk '{ print $4 }' | grep -v "^$" | sort -u | while read line; do
     if [ "$line" != "default" ]; then
       kubectl $FAST_DELETE delete namespace $line --ignore-not-found
@@ -394,7 +394,7 @@ function deleteNamespaces {
 
 # Delete everything individually by name, one by one, in order of type, that matches given label $LABEL_SELECTOR
 # The order is determined by NAMESPACED_TYPES NOT_NAMESPACED_TYPES below...
-function deleteByTypeAndLabel {
+deleteByTypeAndLabel() {
 
   DOMAIN_CRD="domains.weblogic.oracle"
   if [ ! `kubectl get crd $DOMAIN_CRD --ignore-not-found | grep $DOMAIN_CRD | wc -l` = 1 ]; then
@@ -452,7 +452,7 @@ function deleteByTypeAndLabel {
 #                               Note that this is incompatible with "FAST_DELETE" so 
 #                               FAST_DELETE is overridden in this path.
 #
-function genericDelete {
+genericDelete() {
 
   local mode="$4"
 
@@ -576,7 +576,7 @@ function genericDelete {
 }
 
 # if helm is installed, delete all helm releases
-function deleteHelmReleases {
+deleteHelmReleases() {
   [ ! -x "$(command -v helm)" ] && return
 
   helm version --short --client  | grep v2
