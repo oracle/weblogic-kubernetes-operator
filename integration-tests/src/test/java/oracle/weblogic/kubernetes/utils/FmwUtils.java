@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -19,6 +19,7 @@ import oracle.weblogic.domain.Cluster;
 import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainSpec;
+import oracle.weblogic.domain.Istio;
 import oracle.weblogic.domain.Model;
 import oracle.weblogic.domain.Opss;
 import oracle.weblogic.domain.ServerPod;
@@ -31,6 +32,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
+import static oracle.weblogic.kubernetes.utils.IstioUtils.isLocalHostBindingsEnabled;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -99,6 +101,74 @@ public class FmwUtils {
                     .walletPasswordSecret(opssWalletPasswordSecretName))
                 .model(new Model()
                     .domainType("JRF")
+                    .runtimeEncryptionSecret(encryptionSecretName))
+                .addSecretsItem(rcuAccessSecretName)
+                .introspectorJobActiveDeadlineSeconds(600L)));
+
+    return domain;
+  }
+
+
+  /**
+   * Construct a domain object with the given parameters that can be used to create a domain resource.
+   * @param domainUid unique Uid of the domain
+   * @param domNamespace  namespace where the domain exists
+   * @param adminSecretName  name of admin secret
+   * @param repoSecretName name of repository secret
+   * @param encryptionSecretName name of encryption secret
+   * @param rcuAccessSecretName name of RCU access secret
+   * @param opssWalletPasswordSecretName name of opss wallet password secret
+   * @param replicaCount count of replicas
+   * @param miiImage name of model in image
+   * @return Domain WebLogic domain
+   */
+  public static Domain createIstioDomainResource(
+      String domainUid, String domNamespace, String adminSecretName,
+      String repoSecretName, String encryptionSecretName, String rcuAccessSecretName,
+      String opssWalletPasswordSecretName, int replicaCount, String miiImage, String configmapName) {
+    // create the domain CR
+    Domain domain = new Domain()
+        .apiVersion(DOMAIN_API_VERSION)
+        .kind("Domain")
+        .metadata(new V1ObjectMeta()
+            .name(domainUid)
+            .namespace(domNamespace))
+        .spec(new DomainSpec()
+            .domainUid(domainUid)
+            .domainHomeSourceType("FromModel")
+            .image(miiImage)
+            .imagePullPolicy("IfNotPresent")
+            .addImagePullSecretsItem(new V1LocalObjectReference()
+                .name(repoSecretName))
+            .webLogicCredentialsSecret(new V1SecretReference()
+                .name(adminSecretName)
+                .namespace(domNamespace))
+            .includeServerOutInPodLog(true)
+            .serverStartPolicy("IF_NEEDED")
+            .introspectVersion("1")
+            .serverPod(new ServerPod()
+                .addEnvItem(new V1EnvVar()
+                    .name("JAVA_OPTIONS")
+                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                .addEnvItem(new V1EnvVar()
+                    .name("USER_MEM_ARGS")
+                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+            .adminServer(new AdminServer()
+                .serverStartState("RUNNING"))
+            .addClustersItem(new Cluster()
+                .clusterName("cluster-1")
+                .replicas(replicaCount)
+                .serverStartState("RUNNING"))
+            .configuration(new Configuration()
+                .istio(new Istio()
+                    .enabled(Boolean.TRUE)
+                    .readinessPort(8888)
+                    .localhostBindingsEnabled(isLocalHostBindingsEnabled()))
+                .opss(new Opss()
+                    .walletPasswordSecret(opssWalletPasswordSecretName))
+                .model(new Model()
+                    .domainType("JRF")
+                    .configMap(configmapName)
                     .runtimeEncryptionSecret(encryptionSecretName))
                 .addSecretsItem(rcuAccessSecretName)
                 .introspectorJobActiveDeadlineSeconds(600L)));
