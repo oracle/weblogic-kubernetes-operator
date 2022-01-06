@@ -42,21 +42,26 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTPS_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
+import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_IMAGE;
+import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.ELKSTACK_NAMESPACE;
 import static oracle.weblogic.kubernetes.TestConstants.FLUENTD_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.FLUENTD_INDEX_KEY;
+import static oracle.weblogic.kubernetes.TestConstants.KIBANA_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_INDEX_KEY;
+import static oracle.weblogic.kubernetes.TestConstants.KIBANA_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.KIBANA_PORT;
+import static oracle.weblogic.kubernetes.TestConstants.KIBANA_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
@@ -80,7 +85,6 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePasswordElk;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -117,7 +121,6 @@ class ItElasticLoggingFluentd {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
-  private static ConditionFactory withStandardRetryPolicy = null;
 
   private static LoggingExporterParams elasticsearchParams = null;
   private static LoggingExporterParams kibanaParams = null;
@@ -136,10 +139,6 @@ class ItElasticLoggingFluentd {
   @BeforeAll
   public static void init(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
-    // create standard, reusable retry/backoff policy
-    withStandardRetryPolicy = with().pollDelay(2, SECONDS)
-      .and().with().pollInterval(10, SECONDS)
-      .atMost(5, MINUTES).await();
 
     // get a new unique opNamespace
     logger.info("Assigning a unique namespace for Operator");
@@ -203,18 +202,29 @@ class ItElasticLoggingFluentd {
     if (System.getenv("SKIP_CLEANUP") == null
         || (System.getenv("SKIP_CLEANUP") != null
         && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false"))) {
-      // uninstall ELK Stack
-      if (elasticsearchParams != null) {
-        logger.info("Uninstall Elasticsearch pod");
-        assertDoesNotThrow(() -> uninstallAndVerifyElasticsearch(elasticsearchParams),
-            "uninstallAndVerifyElasticsearch failed with ApiException");
-      }
 
-      if (kibanaParams != null) {
-        logger.info("Uninstall Elasticsearch pod");
-        assertDoesNotThrow(() -> uninstallAndVerifyKibana(kibanaParams),
-            "uninstallAndVerifyKibana failed with ApiException");
-      }
+      elasticsearchParams = new LoggingExporterParams()
+          .elasticsearchName(ELASTICSEARCH_NAME)
+          .elasticsearchImage(ELASTICSEARCH_IMAGE)
+          .elasticsearchHttpPort(ELASTICSEARCH_HTTP_PORT)
+          .elasticsearchHttpsPort(ELASTICSEARCH_HTTPS_PORT)
+          .loggingExporterNamespace(ELKSTACK_NAMESPACE);
+
+      kibanaParams = new LoggingExporterParams()
+          .kibanaName(KIBANA_NAME)
+          .kibanaImage(KIBANA_IMAGE)
+          .kibanaType(KIBANA_TYPE)
+          .loggingExporterNamespace(ELKSTACK_NAMESPACE)
+          .kibanaContainerPort(KIBANA_PORT);
+
+      // uninstall ELK Stack
+      logger.info("Uninstall Elasticsearch pod");
+      assertDoesNotThrow(() -> uninstallAndVerifyElasticsearch(elasticsearchParams),
+          "uninstallAndVerifyElasticsearch failed with ApiException");
+
+      logger.info("Uninstall Kibana pod");
+      assertDoesNotThrow(() -> uninstallAndVerifyKibana(kibanaParams),
+          "uninstallAndVerifyKibana failed with ApiException");
     }
   }
 

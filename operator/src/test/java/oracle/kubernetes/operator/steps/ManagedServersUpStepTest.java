@@ -38,6 +38,7 @@ import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.steps.ManagedServersUpStep.ServersUpStepFactory;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
+import oracle.kubernetes.operator.utils.WlsDomainConfigSupport.DynamicClusterConfigBuilder;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 import oracle.kubernetes.operator.work.Step;
@@ -55,8 +56,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_PATTERN;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_PATTERN;
+import static oracle.kubernetes.operator.EventConstants.REPLICAS_TOO_HIGH_ERROR;
+import static oracle.kubernetes.operator.EventConstants.REPLICAS_TOO_HIGH_ERROR_SUGGESTION;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventWithMessage;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 import static oracle.kubernetes.operator.logging.MessageKeys.REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT;
@@ -82,7 +85,6 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.Matchers.sameInstance;
-import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 /**
@@ -143,7 +145,7 @@ class ManagedServersUpStepTest {
   }
 
   @BeforeEach
-  public void setUp() throws NoSuchFieldException {
+  void setUp() throws NoSuchFieldException {
     mementos.add(consoleHandlerMemento = TestUtils.silenceOperatorLogger());
     mementos.add(factoryMemento = TestStepFactory.install());
     mementos.add(testSupport.install());
@@ -153,7 +155,7 @@ class ManagedServersUpStepTest {
   }
 
   @AfterEach
-  public void tearDown() throws Exception {
+  void tearDown() throws Exception {
     mementos.forEach(Memento::revert);
 
     testSupport.throwOnCompletionFailure();
@@ -184,16 +186,17 @@ class ManagedServersUpStepTest {
       int minDynamicClusterSize,
       int maxDynamicClusterSize,
       String... serverNames) {
-    configSupport.addDynamicWlsCluster(clusterName, serverNames);
-    configSupport.getWlsCluster(clusterName).getDynamicServersConfig().setMinDynamicClusterSize(minDynamicClusterSize);
-    configSupport.getWlsCluster(clusterName).getDynamicServersConfig().setMaxDynamicClusterSize(maxDynamicClusterSize);
+    configSupport.addWlsCluster(
+          new DynamicClusterConfigBuilder(clusterName)
+                .withClusterLimits(minDynamicClusterSize, maxDynamicClusterSize)
+                .withServerNames(serverNames));
   }
 
   @Test
   void whenStartPolicyUndefined_startServers() {
     invokeStepWithConfiguredServer();
 
-    assertServersToBeStarted();
+    assertManagedServersUpStepCreated();
   }
 
   private void invokeStepWithConfiguredServer() {
@@ -208,7 +211,7 @@ class ManagedServersUpStepTest {
 
     invokeStepWithConfiguredServer();
 
-    assertServersToBeStarted();
+    assertManagedServersUpStepCreated();
   }
 
   @Test
@@ -217,7 +220,7 @@ class ManagedServersUpStepTest {
 
     invokeStepWithConfiguredServer();
 
-    assertServersToBeStarted();
+    assertManagedServersUpStepCreated();
   }
 
   private void startAllServers() {
@@ -228,7 +231,7 @@ class ManagedServersUpStepTest {
     setDefaultServerStartPolicy(ConfigurationConstants.START_IF_NEEDED);
   }
 
-  private void assertServersToBeStarted() {
+  private void assertManagedServersUpStepCreated() {
     assertThat(TestStepFactory.next, instanceOf(ManagedServerUpIteratorStep.class));
   }
 
@@ -238,7 +241,7 @@ class ManagedServersUpStepTest {
 
     invokeStepWithConfiguredServer();
 
-    assertServersWillNotBeStarted();
+    assertManagedServersUpStepNotCreated();
   }
 
   private void startAdminServerOnly() {
@@ -254,7 +257,7 @@ class ManagedServersUpStepTest {
 
     invokeStepWithConfiguredServer();
 
-    assertServersWillNotBeStarted();
+    assertManagedServersUpStepNotCreated();
   }
 
   private void startNoServers() {
@@ -473,6 +476,7 @@ class ManagedServersUpStepTest {
     invokeStep();
 
     assertThat(getServers(), containsInAnyOrder("ms1", "ms2", "ms3"));
+    assertThat(domainPresenceInfo.getExpectedRunningServers(), containsInAnyOrder("ms1", "ms2", "ms3"));
   }
 
   @Test
@@ -484,20 +488,6 @@ class ManagedServersUpStepTest {
 
     assertThat(getServers(), hasItem("ms1"));
     assertThat(getServerStartupInfo("ms1").serverConfig, equalTo(getWlsServer("ms1")));
-  }
-
-  @Test
-  void whenShuttingDown_insertCreateAvailableStep() {
-    configurator.setShuttingDown(true);
-
-    assertThat(createNextStep().getClass().getSimpleName(), equalTo("AvailableStep"));
-  }
-
-  @Test
-  void whenNotShuttingDown_dontInsertCreateAvailableStep() {
-    configurator.setShuttingDown(false);
-
-    assertThat(createNextStep(), instanceOf(ClusterServicesStep.class));
   }
 
   @Test
@@ -629,31 +619,6 @@ class ManagedServersUpStepTest {
   }
 
   @Test
-  void whenReplicasLessThanDynClusterSize_createsEvent() {
-    startNoServers();
-    setCluster1Replicas(0);
-    addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
-    setCluster1AllowReplicasBelowMinDynClusterSize(false);
-
-    invokeStep();
-
-    assertContainsEventWithMessage(REPLICAS_LESS_THAN_TOTAL_CLUSTER_SERVER_COUNT, 0, 2, "cluster1");
-  }
-
-  @Test
-  void whenReplicasLessThanDynClusterSize_addValidationWarning() {
-    startNoServers();
-    setCluster1Replicas(0);
-    addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
-    setCluster1AllowReplicasBelowMinDynClusterSize(false);
-
-    invokeStep();
-
-    assertThat(domainPresenceInfo.getValidationWarningsAsString(),
-        stringContainsInOrder("0", "less than",  "minimum dynamic server", "2", "cluster1"));
-  }
-
-  @Test
   void whenReplicasExceedsMaxDynClusterSize_logMessage() {
     List<LogRecord> messages = new ArrayList<>();
     consoleHandlerMemento.withLogLevel(Level.WARNING)
@@ -667,63 +632,6 @@ class ManagedServersUpStepTest {
     invokeStep();
 
     assertThat(messages, containsWarning(REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT));
-  }
-
-  @Test
-  void whenReplicasExceedsMaxDynClusterSize_createsEvent() {
-    startNoServers();
-    setCluster1Replicas(10);
-    addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
-
-    invokeStep();
-
-    assertContainsEventWithMessage(REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT, 10, 5, "cluster1");
-  }
-
-  @Test
-  void whenReplicasExceedsMaxDynClusterSize_addValidationWarning() {
-    startNoServers();
-    setCluster1Replicas(10);
-    addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
-
-    invokeStep();
-
-    assertThat(domainPresenceInfo.getValidationWarningsAsString(),
-        stringContainsInOrder("10", "exceeds",  "maximum dynamic server", "5", "cluster1"));
-  }
-
-  @Test
-  void whenReplicasExceedsMaxDynClusterSize_andStartNoServers_createsEvent() {
-    startNoServers();
-    setCluster1Replicas(10);
-    addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
-
-    invokeStep();
-
-    assertContainsEventWithMessage(REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT, 10, 5, "cluster1");
-  }
-
-  @Test
-  void withInvalidReplicasDuringExplicitRecheck_addValidationWarning() {
-    setExplicitRecheck();
-    setCluster1Replicas(10);
-    addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
-
-    invokeStep();
-
-    assertThat(domainPresenceInfo.getValidationWarningsAsString(),
-        stringContainsInOrder("10", "exceeds",  "maximum dynamic server", "5", "cluster1"));
-  }
-
-  @Test
-  void withInvalidReplicasDuringExplicitRecheck_createsNoEvent() {
-    setExplicitRecheck();
-    setCluster1Replicas(10);
-    addDynamicWlsCluster("cluster1", 2, 5,"ms1", "ms2", "ms3", "ms4", "ms5");
-
-    invokeStep();
-
-    assertThat(getEvents(), empty());
   }
 
   @Test
@@ -750,13 +658,13 @@ class ManagedServersUpStepTest {
   void whenDomainTopologyIsMissing_noExceptionAndDontStartServers() {
     invokeStepWithoutDomainTopology();
 
-    assertServersWillNotBeStarted();
+    assertManagedServersUpStepNotCreated();
   }
 
   private static Step skipProgressingStep(Step step) {
     Step stepLocal = step;
     while (stepLocal instanceof EventHelper.CreateEventStep
-        || stepLocal instanceof DomainStatusUpdater.ProgressingStep) {
+        || stepLocal instanceof DomainStatusUpdater.RemoveFailuresStep) {
       stepLocal = stepLocal.getNext();
     }
 
@@ -779,7 +687,7 @@ class ManagedServersUpStepTest {
     configSupport.setAdminServerName(ADMIN);
     WlsDomainConfig config = configSupport.createDomainConfig();
     ManagedServersUpStep.NextStepFactory factory = factoryMemento.getOriginalValue();
-    ServersUpStepFactory serversUpStepFactory = new ServersUpStepFactory(config, domain, domainPresenceInfo, false);
+    ServersUpStepFactory serversUpStepFactory = new ServersUpStepFactory(config, domainPresenceInfo, false);
     List<DomainPresenceInfo.ServerShutdownInfo> ssi = new ArrayList<>();
     domainPresenceInfo.getServerPods().map(PodHelper::getPodServerName).collect(Collectors.toList())
             .forEach(s -> addShutdownServerInfo(s, servers, ssi));
@@ -856,7 +764,7 @@ class ManagedServersUpStepTest {
     return configurator.configureCluster(clusterName).withReplicas(1);
   }
 
-  private void assertServersWillNotBeStarted() {
+  private void assertManagedServersUpStepNotCreated() {
     assertThat(TestStepFactory.next, sameInstance(nextStep));
   }
 
@@ -920,7 +828,7 @@ class ManagedServersUpStepTest {
       TestStepFactory.servers = factory.servers;
       TestStepFactory.preCreateServers = factory.preCreateServers;
       TestStepFactory.next = next;
-      return (next instanceof CreateEventStep) ? next : new TerminalStep();
+      return (next != null && next.getNext() instanceof CreateEventStep) ? next.getNext() : new TerminalStep();
     }
   }
 
@@ -941,15 +849,15 @@ class ManagedServersUpStepTest {
     }
   }
 
-  private void assertContainsEventWithMessage(String msgId, Object... messageParams) {
+  private void assertContainsEventWithReplicasTooHighMessage(String msgId, Object... messageParams) {
     String formattedMessage = formatMessage(msgId, messageParams);
     assertThat(
-        "Expected Event with message "
-            + getExpectedValidationEventMessage(formattedMessage) + " was not created",
+        "Expected Event with message '"
+            + getExpectedReplicasTooHighEventMessage(formattedMessage) + "' was not created",
         containsEventWithMessage(
             getEvents(),
-            DOMAIN_VALIDATION_ERROR_EVENT,
-            getExpectedValidationEventMessage(formattedMessage)),
+            DOMAIN_FAILED_EVENT,
+            getExpectedReplicasTooHighEventMessage(formattedMessage)),
         is(true));
   }
 
@@ -958,7 +866,8 @@ class ManagedServersUpStepTest {
     return logger.formatMessage(msgId, params);
   }
 
-  private String getExpectedValidationEventMessage(String message) {
-    return String.format(DOMAIN_VALIDATION_ERROR_PATTERN, UID, message);
+  private String getExpectedReplicasTooHighEventMessage(String message) {
+    return String.format(DOMAIN_FAILED_PATTERN, UID,
+        REPLICAS_TOO_HIGH_ERROR, message, REPLICAS_TOO_HIGH_ERROR_SUGGESTION);
   }
 }

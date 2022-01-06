@@ -8,6 +8,7 @@ import io.kubernetes.client.openapi.ApiException;
 import jakarta.json.Json;
 import jakarta.json.JsonPatchBuilder;
 import jakarta.json.JsonValue;
+import oracle.kubernetes.operator.DomainFailureReason;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 
@@ -17,15 +18,10 @@ public class DomainStatusPatch {
   private final String namespace;
   private final JsonPatchBuilder patchBuilder;
 
-  /**
-   * Update the domain status synchronously. This may involve either replacing the current status or adding to it.
-   * @param domain the domain to update
-   * @param reason the reason, a camel-cased string with no spaces
-   * @param message a text description of the new status; may include multiple lines
-   */
-  static void updateSynchronously(Domain domain, String reason, String message) {
-    new DomainStatusPatch(domain, reason, message).update();
-    updateCachedDomainStatus(domain, reason, message);
+  @SuppressWarnings("SameParameterValue")
+  static void updateSynchronously(Domain domain, DomainFailureReason reason, String message) {
+    new DomainStatusPatch(domain, reason.toString(), message).update();
+    updateCachedDomainStatus(domain, reason.toString(), message);
   }
 
   private DomainStatusPatch(Domain domain, String reason, String message) {

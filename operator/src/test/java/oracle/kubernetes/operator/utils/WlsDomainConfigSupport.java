@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator.utils;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
@@ -12,7 +13,6 @@ import java.util.Map;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDynamicServersConfig;
-import oracle.kubernetes.operator.wlsconfig.WlsMachineConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 
 public class WlsDomainConfigSupport {
@@ -22,7 +22,6 @@ public class WlsDomainConfigSupport {
   private final Map<String, WlsClusterConfig> wlsClusters = new HashMap<>();
   private final Map<String, WlsServerConfig> wlsServers = new HashMap<>();
   private final Map<String, WlsServerConfig> templates = new HashMap<>();
-  private final Map<String, WlsMachineConfig> machineConfigs = new HashMap<>();
 
   public WlsDomainConfigSupport(String domain) {
     this.domain = domain;
@@ -118,6 +117,14 @@ public class WlsDomainConfigSupport {
   }
 
   /**
+   * Adds a WLS cluster to the configuration.
+   * @param builder a builder for the cluster
+   */
+  public void addWlsCluster(ClusterConfigBuilder builder) {
+    wlsClusters.put(builder.getName(), builder.build());
+  }
+
+  /**
    * Adds a WLS cluster to the configuration, including its member servers.
    *
    * @param clusterName the name of the cluster
@@ -179,6 +186,7 @@ public class WlsDomainConfigSupport {
     wlsClusters.put(clusterName, builder.build());
   }
 
+
   /**
    * Creates a domain configuration, based on the defined servers and clusters.
    *
@@ -196,13 +204,12 @@ public class WlsDomainConfigSupport {
       }
     }
     return new WlsDomainConfig(
-        domain, adminServerName, wlsClusters, wlsServers, templates, machineConfigs);
+        domain, adminServerName, wlsClusters, wlsServers, templates);
   }
 
   static class ServerConfigBuilder {
     private final String name;
     private final Integer listenPort;
-    private Integer adminPort;
 
     ServerConfigBuilder(String name, Integer listenPort) {
       this.name = name;
@@ -210,11 +217,11 @@ public class WlsDomainConfigSupport {
     }
 
     WlsServerConfig build() {
-      return new WlsServerConfig(name, null, null, listenPort, null, adminPort, null);
+      return new WlsServerConfig(name, null, null, listenPort, null, null, null);
     }
   }
 
-  static class ClusterConfigBuilder {
+  public static class ClusterConfigBuilder {
     final List<WlsServerConfig> serverConfigs = new ArrayList<>();
     private final String name;
 
@@ -224,6 +231,11 @@ public class WlsDomainConfigSupport {
 
     String getName() {
       return name;
+    }
+
+    public ClusterConfigBuilder withServerNames(String... serverNames) {
+      Arrays.stream(serverNames).forEach(this::addServer);
+      return this;
     }
 
     void addServer(String serverName) {
@@ -243,10 +255,12 @@ public class WlsDomainConfigSupport {
     }
   }
 
-  static class DynamicClusterConfigBuilder extends ClusterConfigBuilder {
-    private WlsServerConfig serverTemplate;
+  public static class DynamicClusterConfigBuilder extends ClusterConfigBuilder {
+    private final WlsServerConfig serverTemplate;
+    private Integer minimumClusterSize;
+    private Integer maximumClusterSize;
 
-    DynamicClusterConfigBuilder(String name) {
+    public DynamicClusterConfigBuilder(String name) {
       this(name, null, 0);
     }
 
@@ -255,13 +269,25 @@ public class WlsDomainConfigSupport {
       serverTemplate = new WlsServerConfig(serverTemplateName, null, port);
     }
 
+    /**
+     * Updates the builder to include minimum and maximum cluster sizes.
+     * @param minimumClusterSize the fewest running servers allowed in this cluster
+     * @param maximumClusterSize the most running servers allowed in this cluster
+     */
+    public DynamicClusterConfigBuilder withClusterLimits(int minimumClusterSize, int maximumClusterSize) {
+      this.minimumClusterSize = minimumClusterSize;
+      this.maximumClusterSize = maximumClusterSize;
+      return this;
+    }
+
     WlsClusterConfig build() {
       WlsDynamicServersConfig wlsDynamicServersConfig = new WlsDynamicServersConfig();
       wlsDynamicServersConfig.setServerConfigs(serverConfigs);
       wlsDynamicServersConfig.setDynamicClusterSize(serverConfigs.size());
       wlsDynamicServersConfig.setServerTemplate(serverTemplate);
-      WlsClusterConfig wlsClusterConfig = new WlsClusterConfig(getName(), wlsDynamicServersConfig);
-      return wlsClusterConfig;
+      wlsDynamicServersConfig.setMinDynamicClusterSize(minimumClusterSize);
+      wlsDynamicServersConfig.setMaxDynamicClusterSize(maximumClusterSize);
+      return new WlsClusterConfig(getName(), wlsDynamicServersConfig);
     }
   }
 }

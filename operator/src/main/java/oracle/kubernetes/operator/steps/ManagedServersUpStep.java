@@ -15,14 +15,11 @@ import java.util.Set;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
-import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerShutdownInfo;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo.ServerStartupInfo;
-import oracle.kubernetes.operator.helpers.EventHelper.EventData;
-import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -38,9 +35,6 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 
 import static java.util.Comparator.comparing;
-import static oracle.kubernetes.operator.DomainStatusUpdater.MANAGED_SERVERS_STARTING_PROGRESS_REASON;
-import static oracle.kubernetes.operator.DomainStatusUpdater.createProgressingStartedEventStep;
-import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
 
 public class ManagedServersUpStep extends Step {
   static final String SERVERS_UP_MSG =
@@ -68,16 +62,13 @@ public class ManagedServersUpStep extends Step {
     List<Step> steps = new ArrayList<>(Collections.singletonList(next));
 
     if (info.getDomain().isShuttingDown()) {
-      insert(steps, createAvailableHookStep());
       factory.shutdownInfos.add(new ServerShutdownInfo(domainTopology.getAdminServerName(), null));
     }
 
     List<ServerShutdownInfo> serversToStop = getServersToStop(info, factory.shutdownInfos);
 
     if (!serversToStop.isEmpty()) {
-      insert(steps,
-              Step.chain(createProgressingStartedEventStep(info, MANAGED_SERVERS_STARTING_PROGRESS_REASON, true,
-                      null), new ServerDownIteratorStep(factory.shutdownInfos, null)));
+      insert(steps, new ServerDownIteratorStep(factory.shutdownInfos, null));
     }
 
     return Step.chain(steps.toArray(new Step[0]));
@@ -95,11 +86,6 @@ public class ManagedServersUpStep extends Step {
             || (ssi.isServiceOnly() && info.getServerService(ssi.getServerName()) == null);
   }
 
-  private static Step createAvailableHookStep() {
-    return DomainStatusUpdater.createAvailableStep(
-        DomainStatusUpdater.ALL_STOPPED_AVAILABLE_REASON, null);
-  }
-
   private static void insert(List<Step> steps, Step step) {
     steps.add(0, step);
   }
@@ -111,8 +97,7 @@ public class ManagedServersUpStep extends Step {
     boolean isExplicitRecheck = MakeRightDomainOperation.isExplicitRecheck(packet);
     WlsDomainConfig config = (WlsDomainConfig) packet.get(ProcessingConstants.DOMAIN_TOPOLOGY);
 
-    ServersUpStepFactory factory = new ServersUpStepFactory(config,
-        info.getDomain(), info, isExplicitRecheck);
+    ServersUpStepFactory factory = new ServersUpStepFactory(config, info, isExplicitRecheck);
 
     if (LOGGER.isFineEnabled()) {
       LOGGER.fine(SERVERS_UP_MSG, factory.domain.getDomainUid(), getRunningServers(info));
@@ -122,6 +107,7 @@ public class ManagedServersUpStep extends Step {
 
     info.setServerStartupInfo(factory.getStartupInfos());
     info.setServerShutdownInfo(factory.getShutdownInfos());
+
     LOGGER.exiting();
 
     return doNext(
@@ -177,12 +163,11 @@ public class ManagedServersUpStep extends Step {
     final Collection<String> servers = new ArrayList<>();
     final Collection<String> preCreateServers = new ArrayList<>();
     final Map<String, Integer> replicas = new HashMap<>();
-    private Step eventStep;
 
-    ServersUpStepFactory(WlsDomainConfig domainTopology, Domain domain,
-        DomainPresenceInfo info, boolean skipEventCreation) {
+    ServersUpStepFactory(WlsDomainConfig domainTopology,
+                         DomainPresenceInfo info, boolean skipEventCreation) {
       this.domainTopology = domainTopology;
-      this.domain = domain;
+      this.domain = info.getDomain();
       this.info = info;
       this.skipEventCreation = skipEventCreation;
     }
@@ -242,8 +227,7 @@ public class ManagedServersUpStep extends Step {
     }
 
     private Step createNextStep(Step next) {
-      Step nextStep = (servers.isEmpty()) ? next : new ManagedServerUpIteratorStep(getStartupInfos(), next);
-      return Optional.ofNullable(eventStep).map(s -> Step.chain(s, nextStep)).orElse(nextStep);
+      return  (servers.isEmpty()) ? next : new ManagedServerUpIteratorStep(getStartupInfos(), next);
     }
 
     Collection<ServerStartupInfo> getStartupInfos() {
@@ -285,7 +269,7 @@ public class ManagedServersUpStep extends Step {
     private void logIfReplicasExceedsClusterServersMax(WlsClusterConfig clusterConfig) {
       if (exceedsMaxConfiguredClusterSize(clusterConfig)) {
         String clusterName = clusterConfig.getClusterName();
-        addValidationErrorEventAndWarning(MessageKeys.REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT,
+        addReplicasTooHighValidationErrorWarning(
             domain.getReplicaCount(clusterName),
             clusterConfig.getMaxDynamicClusterSize(),
             clusterName);
@@ -295,7 +279,7 @@ public class ManagedServersUpStep extends Step {
     private void logIfReplicasLessThanClusterServersMin(WlsClusterConfig clusterConfig) {
       if (lessThanMinConfiguredClusterSize(clusterConfig)) {
         String clusterName = clusterConfig.getClusterName();
-        addValidationErrorEventAndWarning(MessageKeys.REPLICAS_LESS_THAN_TOTAL_CLUSTER_SERVER_COUNT,
+        LOGGER.warning(MessageKeys.REPLICAS_LESS_THAN_TOTAL_CLUSTER_SERVER_COUNT,
             domain.getReplicaCount(clusterName),
             clusterConfig.getMinDynamicClusterSize(),
             clusterName);
@@ -306,13 +290,8 @@ public class ManagedServersUpStep extends Step {
       }
     }
 
-    private void addValidationErrorEventAndWarning(String msgId, Object... messageParams) {
-      LOGGER.warning(msgId, messageParams);
-      String message = LOGGER.formatMessage(msgId, messageParams);
-      if (!skipEventCreation) {
-        eventStep = createEventStep(new EventData(EventItem.DOMAIN_VALIDATION_ERROR, message));
-      }
-      info.addValidationWarning(message);
+    private void addReplicasTooHighValidationErrorWarning(Object... messageParams) {
+      LOGGER.warning(MessageKeys.REPLICAS_EXCEEDS_TOTAL_CLUSTER_SERVER_COUNT, messageParams);
     }
 
     private boolean lessThanMinConfiguredClusterSize(WlsClusterConfig clusterConfig) {

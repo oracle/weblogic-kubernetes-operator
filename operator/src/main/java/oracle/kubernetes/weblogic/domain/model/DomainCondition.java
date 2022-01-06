@@ -4,23 +4,27 @@
 package oracle.kubernetes.weblogic.domain.model;
 
 import java.time.OffsetDateTime;
+import java.util.Optional;
 
 import com.google.gson.annotations.Expose;
 import com.google.gson.annotations.SerializedName;
 import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.json.Description;
+import oracle.kubernetes.operator.DomainFailureReason;
 import oracle.kubernetes.utils.SystemClock;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
-import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static oracle.kubernetes.weblogic.domain.model.ObjectPatch.createObjectPatch;
 
 /** DomainCondition contains details for the current condition of this domain. */
 public class DomainCondition implements Comparable<DomainCondition>, PatchableComponent<DomainCondition> {
 
+  public static final String TRUE = "True";
+  public static final String FALSE = "False";
+
   @Description(
-      "The type of the condition. Valid types are Progressing, "
+      "The type of the condition. Valid types are Completed, "
           + "Available, Failed, and ConfigChangesPendingRestart.")
   @NotNull
   private final DomainConditionType type;
@@ -49,8 +53,12 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
   @SerializedName("status")
   @Expose
   @NotNull
-  private String status;
+  private String status = "True";
 
+  /**
+   * Creates a new domain condition, initialized with its type.
+   * @param conditionType the enum that designates the condition type
+   */
   public DomainCondition(DomainConditionType conditionType) {
     lastTransitionTime = SystemClock.now();
     type = conditionType;
@@ -63,22 +71,6 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
     this.message = other.message;
     this.reason = other.reason;
     this.status = other.status;
-  }
-
-  /**
-   * Returns the reason to set on the domain status when this condition is added.
-   * @return a reason or null
-   */
-  String getStatusReason() {
-    return getType().getStatusReason(this);
-  }
-
-  /**
-   * Returns the message to set on the domain status when this condition is added.
-   * @return a message or null
-   */
-  String getStatusMessage() {
-    return getType().getStatusMessage(this);
   }
 
   /**
@@ -120,6 +112,26 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
   }
 
   /**
+   * Last time we transitioned the condition.
+   *
+   * @param lastTransitionTime time
+   */
+  public void setLastTransitionTime(OffsetDateTime lastTransitionTime) {
+    this.lastTransitionTime = lastTransitionTime;
+  }
+
+  /**
+   * Last time we lastTransitionTime the condition.
+   *
+   * @param lastTransitionTime time
+   * @return this
+   */
+  public DomainCondition withLastTransitionTime(OffsetDateTime lastTransitionTime) {
+    this.lastTransitionTime = lastTransitionTime;
+    return this;
+  }
+
+  /**
    * Human-readable message indicating details about last transition.
    *
    * @return message
@@ -155,9 +167,9 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
    * @param reason reason
    * @return this
    */
-  public DomainCondition withReason(String reason) {
+  public DomainCondition withReason(DomainFailureReason reason) {
     lastTransitionTime = SystemClock.now();
-    this.reason = reason;
+    this.reason = Optional.ofNullable(reason).map(Enum::toString).orElse(null);
     return this;
   }
 
@@ -173,18 +185,30 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
   /**
    * The status of the condition. Can be True, False, Unknown. Required.
    *
-   * @param status status
-   * @return this
+   * @param status the new status value
+   * @return this object
    */
   public DomainCondition withStatus(String status) {
+    assert status.equals(TRUE) || ! type.statusMustBeTrue() : "Attempt to set illegal status value";
     lastTransitionTime = SystemClock.now();
     this.status = status;
     return this;
   }
 
   /**
-   * Type is the type of the condition. Currently, valid types are Progressing, Available, and
-   * Failure. Required.
+   * Sets the condition status to a boolean value, which will be converted to a standard string.
+   * @param status the new status value
+   * @return this object
+   */
+  public DomainCondition withStatus(boolean status) {
+    assert status || ! type.statusMustBeTrue() : "Attempt to set illegal status value";
+    lastTransitionTime = SystemClock.now();
+    this.status = status ? TRUE : FALSE;
+    return this;
+  }
+
+  /**
+   * The type of the condition. Required.
    *
    * @return type
    */
@@ -203,14 +227,12 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
 
   @Override
   public String toString() {
-    return new ToStringBuilder(this)
-        .append("lastProbeTime", lastProbeTime)
-        .append("lastTransitionTime", lastTransitionTime)
-        .append("message", message)
-        .append("reason", reason)
-        .append("status", status)
-        .append("type", type)
-        .toString();
+    StringBuilder sb = new StringBuilder("at ").append(lastTransitionTime).append(" ");
+    Optional.ofNullable(type).ifPresent(sb::append);
+    Optional.ofNullable(status).ifPresent(s -> sb.append("/").append(s));
+    Optional.ofNullable(reason).ifPresent(r -> sb.append(" reason: ").append(r));
+    Optional.ofNullable(message).ifPresent(m -> sb.append(" message: ").append(m));
+    return sb.toString();
   }
 
   @Override
@@ -240,9 +262,15 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
         .isEquals();
   }
 
+  /**
+   * Conditions are sorted, first in ascending order of type, and next in descending order of transition time.
+   * @param o the condition against which to compare this one.
+   */
   @Override
   public int compareTo(DomainCondition o) {
-    return type.compareTo(o.type);
+    return type == o.type
+          ? -(lastTransitionTime.compareTo(o.lastTransitionTime))
+          : type.compareTo(o.type);
   }
 
   private static final ObjectPatch<DomainCondition> conditionPatch = createObjectPatch(DomainCondition.class)
@@ -253,6 +281,11 @@ public class DomainCondition implements Comparable<DomainCondition>, PatchableCo
 
   static ObjectPatch<DomainCondition> getObjectPatch() {
     return conditionPatch;
+  }
+
+  // Returns true if adding the specified condition should not remove this condition.
+  boolean isCompatibleWith(DomainCondition newCondition) {
+    return (newCondition.getType() != getType()) || getType().allowMultipleConditionsWithThisType();
   }
 
 }

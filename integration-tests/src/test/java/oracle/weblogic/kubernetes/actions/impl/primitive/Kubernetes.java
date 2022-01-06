@@ -74,9 +74,12 @@ import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServiceAccountList;
 import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1ServicePort;
+import io.kubernetes.client.openapi.models.V1StorageClass;
+import io.kubernetes.client.openapi.models.V1StorageClassList;
 import io.kubernetes.client.util.ClientBuilder;
 import io.kubernetes.client.util.PatchUtils;
 import io.kubernetes.client.util.Streams;
+import io.kubernetes.client.util.Yaml;
 import io.kubernetes.client.util.exception.CopyNotSupportedException;
 import io.kubernetes.client.util.generic.GenericKubernetesApi;
 import io.kubernetes.client.util.generic.KubernetesApiResponse;
@@ -85,12 +88,11 @@ import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainList;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-import org.awaitility.core.ConditionFactory;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodInitialized;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
@@ -102,7 +104,6 @@ public class Kubernetes {
   private static final String RESOURCE_VERSION_MATCH_UNSET = null;
   private static final Integer TIMEOUT_SECONDS = 5;
   private static final String DOMAIN_GROUP = "weblogic.oracle";
-  private static final String DOMAIN_VERSION = "v8";
   private static final String DOMAIN_PLURAL = "domains";
   private static final String FOREGROUND = "Foreground";
   private static final String BACKGROUND = "Background";
@@ -129,8 +130,7 @@ public class Kubernetes {
   private static GenericKubernetesApi<V1Secret, V1SecretList> secretClient = null;
   private static GenericKubernetesApi<V1Service, V1ServiceList> serviceClient = null;
   private static GenericKubernetesApi<V1ServiceAccount, V1ServiceAccountList> serviceAccountClient = null;
-
-  private static ConditionFactory withStandardRetryPolicy = null;
+  private static GenericKubernetesApi<V1StorageClass, V1StorageClassList> storageClassClient = null;
 
   static {
     try {
@@ -144,10 +144,6 @@ public class Kubernetes {
       customObjectsApi = new CustomObjectsApi();
       rbacAuthApi = new RbacAuthorizationV1Api();
       initializeGenericKubernetesApiClients();
-      // create standard, reusable retry/backoff policy
-      withStandardRetryPolicy = with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(5, MINUTES).await();
     } catch (IOException ioex) {
       throw new ExceptionInInitializerError(ioex);
     }
@@ -287,6 +283,16 @@ public class Kubernetes {
             "serviceaccounts", // the resource plural
             apiClient //the api client
         );
+
+    storageClassClient =
+        new GenericKubernetesApi<>(
+            V1StorageClass.class, // the api type class
+            V1StorageClassList.class, // the api list type class
+            "storage.k8s.io", // the api group
+            "v1", // the api version
+            "storageclasses", // the resource plural
+            apiClient //the api client
+        );
     deleteOptions = new DeleteOptions();
     deleteOptions.setGracePeriodSeconds(0L);
     deleteOptions.setPropagationPolicy(FOREGROUND);
@@ -417,6 +423,7 @@ public class Kubernetes {
    * @param namespace name of the Namespace
    * @param container name of container for which to stream logs
    * @param previous whether return previous terminated container logs
+   * @param sinceSeconds relative time in seconds before the current time from which to show logs
    * @return log as a String or NULL when there is an error
    * @throws ApiException if Kubernetes client API call fails
    */
@@ -427,6 +434,7 @@ public class Kubernetes {
                                  Integer sinceSeconds)
       throws ApiException {
     String log = null;
+    checkPodInitialized(name,null,namespace);
     try {
       log = coreV1Api.readNamespacedPodLog(
           name, // name of the Pod
@@ -749,12 +757,12 @@ public class Kubernetes {
    * @param container name of the container
    * @param srcPath source file location
    * @param destPath destination file location on pod
+   * @return true if copy succeeds, otherwise false
    * @throws IOException when copy fails
    * @throws ApiException when pod interaction fails
    */
-  public static void copyFileToPod(
-      String namespace, String pod, String container, Path srcPath, Path destPath)
-      throws IOException, ApiException {
+  public static boolean copyFileToPod(
+      String namespace, String pod, String container, Path srcPath, Path destPath) throws IOException, ApiException {
     // kubectl cp /tmp/foo <some-namespace>/<some-pod>:/tmp/bar -c <specific-container>
     StringBuilder sb = new StringBuilder();
     sb.append("kubectl cp ");
@@ -772,9 +780,8 @@ public class Kubernetes {
       sb.append(container);
     }
     String cmdToExecute = sb.toString();
-    Command
-        .withParams(new CommandParams().command(cmdToExecute))
-        .execute();
+
+    return Command.withParams(new CommandParams().command(cmdToExecute)).execute();
   }
 
   /**
@@ -1045,16 +1052,12 @@ public class Kubernetes {
       }
     }
 
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> getLogger().info("Waiting for namespace {0} to be deleted "
-                    + "(elapsed time {1}ms, remaining time {2}ms)",
-                name,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> namespaceDeleted(name),
-            String.format("namespaceExists failed with ApiException for namespace %s",
-                name)));
+    testUntil(
+        assertDoesNotThrow(() -> namespaceDeleted(name),
+          String.format("namespaceExists failed with ApiException for namespace %s", name)),
+        getLogger(),
+        "namespace {0} to be deleted",
+        name);
 
     return true;
   }
@@ -1091,6 +1094,40 @@ public class Kubernetes {
           null, // String | The continue option should be set when retrieving more results from the server.
           null, // String | A selector to restrict the list of returned objects by their fields.
           null, // String | A selector to restrict the list of returned objects by their labels.
+          null, // Integer | limit is a maximum number of responses to return for a list call.
+          RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
+          RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
+          TIMEOUT_SECONDS, // Integer | Timeout for the list call.
+          Boolean.FALSE // Boolean | Watch for changes to the described resources.
+      );
+      events = Optional.ofNullable(list).map(CoreV1EventList::getItems).orElse(Collections.EMPTY_LIST);
+      events.sort(Comparator.comparing(CoreV1Event::getLastTimestamp,
+          Comparator.nullsFirst(Comparator.naturalOrder())));
+      Collections.reverse(events);
+    } catch (ApiException apex) {
+      getLogger().warning(apex.getResponseBody());
+      throw apex;
+    }
+    return events;
+  }
+
+  /**
+   * List operator generated events in a namespace.
+   *
+   * @param namespace name of the namespace in which to list events
+   * @return List of {@link CoreV1Event} objects
+   * @throws ApiException when listing events fails
+   */
+  public static List<CoreV1Event> listOpGeneratedNamespacedEvents(String namespace) throws ApiException {
+    List<CoreV1Event> events = null;
+    try {
+      CoreV1EventList list = coreV1Api.listNamespacedEvent(
+          namespace, // String | namespace.
+          PRETTY, // String | If 'true', then the output is pretty printed.
+          ALLOW_WATCH_BOOKMARKS, // Boolean | allowWatchBookmarks requests watch events with type "BOOKMARK".
+          null, // String | The continue option should be set when retrieving more results from the server.
+          null, // String | A selector to restrict the list of returned objects by their fields.
+          "weblogic.createdByOperator", // String | A selector to restrict the list of returned objects by their labels.
           null, // Integer | limit is a maximum number of responses to return for a list call.
           RESOURCE_VERSION, // String | Shows changes that occur after that particular version of a resource.
           RESOURCE_VERSION_MATCH_UNSET, // String | how to match resource version, leave unset
@@ -1207,11 +1244,25 @@ public class Kubernetes {
    */
   public static Domain getDomainCustomResource(String domainUid, String namespace)
       throws ApiException {
+    return getDomainCustomResource(domainUid, namespace, DOMAIN_VERSION);
+  }
+
+  /**
+   * Get the Domain Custom Resource.
+   *
+   * @param domainUid unique domain identifier
+   * @param namespace name of namespace
+   * @param domainVersion version of domain
+   * @return domain custom resource or null if Domain does not exist
+   * @throws ApiException if Kubernetes request fails
+   */
+  public static Domain getDomainCustomResource(String domainUid, String namespace, String domainVersion)
+      throws ApiException {
     Object domain;
     try {
       domain = customObjectsApi.getNamespacedCustomObject(
           DOMAIN_GROUP, // custom resource's group name
-          DOMAIN_VERSION, // //custom resource's version
+          domainVersion, // //custom resource's version
           namespace, // custom resource's namespace
           DOMAIN_PLURAL, // custom resource's plural name
           domainUid // custom object's name
@@ -2029,7 +2080,7 @@ public class Kubernetes {
    */
   public static int getServiceNodePort(String namespace, String serviceName, String channelName) {
     LoggingFacade logger = getLogger();
-    logger.info("Retrieving Service NodePort for service [{0}] in namespace [{1}] for channel [{2}]", 
+    logger.info("Retrieving Service NodePort for service [{0}] in namespace [{1}] for channel [{2}]",
         serviceName, namespace, channelName);
     V1Service service = getNamespacedService(namespace, serviceName);
     if (service != null) {
@@ -2303,6 +2354,31 @@ public class Kubernetes {
     try {
       V1ClusterRoleBinding crb = rbacAuthApi.createClusterRoleBinding(
           clusterRoleBinding, // role binding configuration data
+          PRETTY, // pretty print output
+          null, // indicates that modifications should not be persisted
+          null // fieldManager is a name associated with the actor
+      );
+    } catch (ApiException apex) {
+      getLogger().severe(apex.getResponseBody());
+      throw apex;
+    }
+
+    return true;
+  }
+
+  /**
+   * Create a role in the specified namespace.
+   *
+   * @param namespace the namespace in which the role binding to be created
+   * @param role V1Role object containing role configuration data
+   * @return true if the creation succeeds, false otherwise
+   * @throws ApiException if Kubernetes client call fails
+   */
+  public static boolean createNamespacedRole(String namespace, V1Role role) throws ApiException {
+    try {
+      V1Role crb = rbacAuthApi.createNamespacedRole(
+          namespace, // namespace where this role is created
+          role, // role configuration data
           PRETTY, // pretty print output
           null, // indicates that modifications should not be persisted
           null // fieldManager is a name associated with the actor
@@ -2593,6 +2669,48 @@ public class Kubernetes {
       throw apex;
     }
     return roles;
+  }
+
+  /**
+   * Create a StorageClass object.
+   *
+   * @param sco V1StorageClass object
+   * @return true if the creation succeeds, false otherwise
+   */
+  public static boolean createStorageClass(V1StorageClass sco) {
+    KubernetesApiResponse<V1StorageClass> response = storageClassClient.create(sco);
+    if (response.isSuccess()) {
+      getLogger().info("Successfully created StorageClass {0}", sco.getMetadata().getName());
+      return true;
+    } else {
+      if (response.getStatus() != null) {
+        getLogger().info(Yaml.dump(response.getStatus()));
+      }
+      getLogger().warning("Failed to create StorageClass {0} with error code {1}",
+          sco.getMetadata().getName(), response.getHttpStatusCode());
+      return response.getHttpStatusCode() == 409;
+    }
+  }
+
+  /**
+   * Delete a StorageClass object.
+   *
+   * @param name V1StorageClass object name
+   * @return true if the deletion succeeds, false otherwise
+   */
+  public static boolean deleteStorageClass(String name) {
+    KubernetesApiResponse<V1StorageClass> response = storageClassClient.delete(name);
+    if (response.isSuccess()) {
+      getLogger().info("Successfully deleted StorageClass {0}", name);
+      return true;
+    } else {
+      if (response.getStatus() != null) {
+        getLogger().info(Yaml.dump(response.getStatus()));
+      }
+      getLogger().warning("Failed to delete StorageClass {0} with error code {1}",
+          name, response.getHttpStatusCode());
+      return false;
+    }
   }
 
   /**

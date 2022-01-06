@@ -213,6 +213,10 @@ public class TestUtils {
       testHandler.messagesToTrack.remove(message);
     }
 
+    public void trackMessage(String message) {
+      testHandler.messagesToTrack.add(message);
+    }
+
     @Override
     public void revert() {
       logger.removeHandler(testHandler);

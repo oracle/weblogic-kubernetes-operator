@@ -92,7 +92,7 @@ Here is an example of part of a domain custom resource file with the `imagePullS
 specified:
 
 ```yaml
-apiVersion: "weblogic.oracle/v8"
+apiVersion: "weblogic.oracle/v9"
 kind: Domain
 metadata:
   name: domain1
@@ -124,7 +124,7 @@ $ kubectl patch serviceaccount default \
 {{% notice note %}}
 You can provide multiple `imagePullSecrets` if you need to pull container images from multiple
 remote container registries or if your images require different authentication credentials.
-For more information, see [Container Image Protection]({{<relref "/security/domain-security/image-protection#weblogic-domain-in-container-image-protection">}}).
+For more information, see [Container Image Protection]({{<relref "/security/domain-security/image-protection#weblogic-domain-in-image-protection">}}).
 {{% /notice %}}
 
 #### Pushing the image to a repository

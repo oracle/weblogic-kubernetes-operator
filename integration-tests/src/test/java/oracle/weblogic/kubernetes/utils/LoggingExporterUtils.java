@@ -23,6 +23,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.installKibana;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallElasticsearch;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallKibana;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isElkStackPodReady;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -86,15 +87,12 @@ public class LoggingExporterUtils {
         .isTrue();
 
     // wait until the Elasticsearch pod is ready.
-    CommonTestUtils.withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info(
-                "Waiting for Elasticsearch to be ready in namespace {0} (elapsed time {1}ms, remaining time {2}ms)",
-                ELKSTACK_NAMESPACE,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> isElkStackPodReady(ELKSTACK_NAMESPACE, elasticsearchPodNamePrefix),
-            "isElkStackPodReady failed with ApiException"));
+    testUntil(
+        assertDoesNotThrow(() -> isElkStackPodReady(ELKSTACK_NAMESPACE, elasticsearchPodNamePrefix),
+          "isElkStackPodReady failed with ApiException"),
+        logger,
+        "Elasticsearch to be ready in namespace {0}",
+        ELKSTACK_NAMESPACE);
 
     return elasticsearchParams;
   }
@@ -123,15 +121,12 @@ public class LoggingExporterUtils {
         .isTrue();
 
     // wait until the Kibana pod is ready.
-    CommonTestUtils.withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info(
-                "Waiting for Kibana to be ready in namespace {0} (elapsed time {1}ms, remaining time {2}ms)",
-                ELKSTACK_NAMESPACE,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> isElkStackPodReady(ELKSTACK_NAMESPACE, kibanaPodNamePrefix),
-            "isElkStackPodReady failed with ApiException"));
+    testUntil(
+        assertDoesNotThrow(() -> isElkStackPodReady(ELKSTACK_NAMESPACE, kibanaPodNamePrefix),
+          "isElkStackPodReady failed with ApiException"),
+        logger,
+        "Kibana to be ready in namespace {0}",
+        ELKSTACK_NAMESPACE);
 
     return kibanaParams;
   }

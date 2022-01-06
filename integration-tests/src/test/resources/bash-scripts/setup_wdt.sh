@@ -90,12 +90,12 @@ if [ -z "${WDT_VERSION+x}" ] || [ ${WDT_VERSION} == "latest" ]; then
       echo @@ "Info: Getting latest release WDT url with https_proxy=\"$proxy\""
       https_proxy="${proxy}" \
         curl -Ls -w %{url_effective} --connect-timeout 30 -o /dev/null \
-          https://github.com/oracle/weblogic-deploy-tooling/releases/latest > out
+          https://github.com/oracle/weblogic-deploy-tooling/releases/latest > /u01/out
       curl_res=$?
       if [ $curl_res -eq 0 ]; then
-        echo "Got URL $(cat out)"
-        WDT_BASE_URL=$(cat out | sed -e "s/tag/download/g")
-        rm out
+        echo "Got URL $(cat /u01/out)"
+        WDT_BASE_URL=$(cat /u01/out | sed -e "s/tag/download/g")
+        rm /u01/out
         break
       fi
     done

@@ -3,21 +3,33 @@
 
 package oracle.kubernetes.operator.work;
 
+import java.util.Optional;
 import java.util.concurrent.Executor;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Consumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
+import static oracle.kubernetes.operator.work.Fiber.DEBUG_FIBER;
 
 /**
  * Indicates what shall happen after {@link Step#apply(Packet)} returns.
  *
  * <p>To allow reuse of this object, this class is mutable.
  */
-public final class NextAction {
+public final class NextAction implements BreadCrumbFactory {
+
+  /** To enable explanatory comments in breadcrumbs, set this to a non-null value.
+   * It will be printed with each breadcrumb comment. */
+  @SuppressWarnings("unused")
+  private static String commentPrefix;
+
   Kind kind;
   Step next;
   Packet packet;
   Consumer<AsyncFiber> onExit;
   Throwable throwable;
+  private String comment;
 
   private void set(Kind k, Step v, Packet p) {
     this.kind = k;
@@ -87,6 +99,11 @@ public final class NextAction {
     return next;
   }
 
+  @Override
+  public BreadCrumb createBreadCrumb() {
+    return new NextActionBreadCrumb(this);
+  }
+
   /** Dumps the contents to assist debugging. */
   @Override
   public String toString() {
@@ -97,9 +114,81 @@ public final class NextAction {
         + ']';
   }
 
+  /**
+   * Defines a comment for an action that gives more information. The comment supplier will only be invoked
+   * if the comment prefix has been defined.
+   *
+   * @param commentSupplier a no-argument function that generates a debug comment
+   */
+  public NextAction withDebugComment(Supplier<String> commentSupplier) {
+    Optional.ofNullable(packet).map(p -> p.get(DEBUG_FIBER)).ifPresent(prefix -> annotate(commentSupplier.get()));
+    return this;
+  }
+
+  /**
+   * Defines a comment for an action that gives more information. The comment supplier will only be invoked
+   * if the comment prefix has been defined.
+   *
+   * @param data a value uses to create the comment
+   * @param commentFunction a function that creates a comment from the data value
+   */
+  public <T> NextAction withDebugComment(T data, Function<T, String> commentFunction) {
+    Optional.ofNullable(packet).map(p -> p.get(DEBUG_FIBER)).ifPresent(prefix -> annotate(commentFunction.apply(data)));
+    return this;
+  }
+
+  private void annotate(String comment) {
+    this.comment = " ((" + comment + "))";
+  }
+
   public enum Kind {
     INVOKE,
     SUSPEND,
-    THROW
+    THROW;
+    Kind getPreviousKind(BreadCrumb previous) {
+      return (previous instanceof NextActionBreadCrumb) ? ((NextActionBreadCrumb) previous).na.kind : null;
+    }
+  }
+
+  static class NextActionBreadCrumb implements BreadCrumb {
+    private final NextAction na;
+
+    NextActionBreadCrumb(NextAction na) {
+      this.na = na;
+    }
+
+    @Override
+    public void writeTo(StringBuilder sb, BreadCrumb previous, PacketDumper dumper) {
+      Kind previousKind = na.kind.getPreviousKind(previous);
+      switch (na.kind) {
+        case INVOKE:
+          if (na.next != null) {
+            Optional.ofNullable(na.comment).ifPresent(sb::append);
+            if (previousKind != null) {
+              sb.append(", ");
+            }
+            sb.append(na.next.getResourceName());
+            dumper.dump(sb, na.packet);
+          }
+          break;
+        case SUSPEND:
+          if (previousKind != Kind.SUSPEND) {
+            sb.append("...");
+          }
+          break;
+        case THROW:
+          if (na.throwable != null) {
+            if (previousKind == Kind.INVOKE) {
+              sb.append(",");
+            }
+            sb.append('(');
+            sb.append(na.throwable.getClass().getSimpleName());
+            sb.append(')');
+          }
+          break;
+        default:
+          throw new AssertionError();
+      }
+    }
   }
 }

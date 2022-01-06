@@ -38,13 +38,21 @@ import static oracle.weblogic.kubernetes.TestConstants.APACHE_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.APACHE_SAMPLE_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.APPSCODE_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.APPSCODE_REPO_URL;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.GCR_NGINX_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_CHART_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.NGINX_INGRESS_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.NGINX_REPO_URL;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_NGINX_IMAGE_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_CHART_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.TRAEFIK_RELEASE_NAME;
@@ -55,6 +63,9 @@ import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.createIngress;
 import static oracle.weblogic.kubernetes.actions.TestActions.createService;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerPull;
+import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPersistentVolumeClaim;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
@@ -72,6 +83,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.isVoyagerRead
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
@@ -126,16 +138,13 @@ public class LoadBalancerUtils {
     checkServiceExists(loadBalancerName,namespace);
 
     // wait until the external IP is generated.
-    CommonTestUtils.withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info(
-                "Waiting for external IP to be generated in {0} (elapsed time {1}ms, remaining time {2}ms)",
-                namespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> isOCILoadBalancerReady(
-            loadBalancerName,
-            labels, namespace), "isOCILoadBalancerReady failed with ApiException"));
+    testUntil(
+        assertDoesNotThrow(() -> isOCILoadBalancerReady(
+          loadBalancerName,
+          labels, namespace), "isOCILoadBalancerReady failed with ApiException"),
+        logger,
+        "external IP to be generated in {0}",
+        namespace);
   }
 
   /**
@@ -166,6 +175,20 @@ public class LoadBalancerUtils {
                                                  int nodeportshttps,
                                                  String chartVersion) {
     LoggingFacade logger = getLogger();
+    if (BASE_IMAGES_REPO.contains(OCIR_DEFAULT)) {
+      testUntil(
+          () -> dockerLogin(OCIR_REGISTRY, OCIR_USERNAME, OCIR_PASSWORD),
+          logger, "docker login to be successful");
+
+      String localNginxImage = BASE_IMAGES_REPO + "/" 
+              + OCIR_NGINX_IMAGE_NAME + ":" + NGINX_INGRESS_IMAGE_TAG;
+      testUntil(
+          pullImageFromOcirAndTag(localNginxImage),
+          logger,
+          "pullImageFromOcirAndTag for image {0} to be successful",
+          localNginxImage);
+    }
+
     // Helm install parameters
     HelmParams nginxHelmParams = new HelmParams()
         .releaseName(NGINX_RELEASE_NAME + "-" + nginxNamespace.substring(3))
@@ -204,14 +227,11 @@ public class LoadBalancerUtils {
         NGINX_RELEASE_NAME, nginxNamespace);
 
     // wait until the NGINX pod is ready.
-    CommonTestUtils.withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info(
-                "Waiting for NGINX to be ready in namespace {0} (elapsed time {1}ms, remaining time {2}ms)",
-                nginxNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> isNginxReady(nginxNamespace), "isNginxReady failed with ApiException"));
+    testUntil(
+        assertDoesNotThrow(() -> isNginxReady(nginxNamespace), "isNginxReady failed with ApiException"),
+        logger,
+        "NGINX to be ready in namespace {0}",
+        nginxNamespace);
 
     return nginxHelmParams;
   }
@@ -261,15 +281,12 @@ public class LoadBalancerUtils {
         VOYAGER_RELEASE_NAME, voyagerNamespace);
 
     // wait until the Voyager pod is ready.
-    CommonTestUtils.withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info(
-                "Waiting for Voyager to be ready in namespace {0} (elapsed time {1}ms, remaining time {2}ms)",
-                voyagerNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> isVoyagerReady(voyagerNamespace, voyagerPodNamePrefix),
-            "isVoyagerReady failed with ApiException"));
+    testUntil(
+        assertDoesNotThrow(() -> isVoyagerReady(voyagerNamespace, voyagerPodNamePrefix),
+          "isVoyagerReady failed with ApiException"),
+        logger,
+        "Voyager to be ready in namespace {0}",
+        voyagerNamespace);
 
     return voyagerHelmParams;
   }
@@ -461,14 +478,11 @@ public class LoadBalancerUtils {
         APACHE_RELEASE_NAME + "-" + apacheNamespace.substring(3), apacheNamespace);
 
     // wait until the Apache pod is ready.
-    CommonTestUtils.withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info(
-                "Waiting for Apache to be ready in namespace {0} (elapsed time {1}ms, remaining time {2}ms)",
-                apacheNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> isApacheReady(apacheNamespace), "isApacheReady failed with ApiException"));
+    testUntil(
+        assertDoesNotThrow(() -> isApacheReady(apacheNamespace), "isApacheReady failed with ApiException"),
+        logger,
+        "Apache to be ready in namespace {0}",
+        apacheNamespace);
 
     return apacheHelmParams;
   }
@@ -515,13 +529,11 @@ public class LoadBalancerUtils {
         TRAEFIK_RELEASE_NAME, traefikNamespace);
 
     // wait until the Traefik pod is ready.
-    CommonTestUtils.withStandardRetryPolicy
-        .conditionEvaluationListener(condition -> logger.info("Waiting for Traefik to be ready in "
-                + "namespace {0} (elapsed time {1}ms, remaining time {2}ms)",
-            traefikNamespace,
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> isTraefikReady(traefikNamespace), "isTraefikReady failed with ApiException"));
+    testUntil(
+        assertDoesNotThrow(() -> isTraefikReady(traefikNamespace), "isTraefikReady failed with ApiException"),
+        logger,
+        "Traefik to be ready in namespace {0}",
+        traefikNamespace);
 
     return traefikHelmParams;
   }
@@ -778,15 +790,12 @@ public class LoadBalancerUtils {
         createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap, annotations, true, tlsSecret);
 
     // wait until the Voyager ingress pod is ready.
-    CommonTestUtils.withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info(
-                "Waiting for Voyager ingress to be ready in namespace {0} (elapsed time {1}ms, remaining time {2}ms)",
-                domainUid,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> isVoyagerReady(domainNamespace, voyagerIngressName),
-            "isVoyagerReady failed with ApiException"));
+    testUntil(
+        assertDoesNotThrow(() -> isVoyagerReady(domainNamespace, voyagerIngressName),
+          "isVoyagerReady failed with ApiException"),
+        logger,
+        "Voyager ingress to be ready in namespace {0}",
+        domainUid);
 
     assertNotNull(ingressHostList,
         String.format("Ingress creation failed for domain %s in namespace %s", domainUid, domainNamespace));
@@ -819,6 +828,16 @@ public class LoadBalancerUtils {
         ingressName, domainUid, domainNamespace);
 
     return ingressHostList;
+  }
+
+  private static Callable<Boolean> pullImageFromOcirAndTag(String localImage) {
+    return (() -> {
+      String nginxImage = GCR_NGINX_IMAGE_NAME + ":" + "v0.35.0";
+      LoggingFacade logger = getLogger();
+      logger.info("pulling image {0} from OCIR, tag it as image {1} ",
+          localImage, nginxImage);
+      return dockerPull(localImage) && dockerTag(localImage, nginxImage);
+    });
   }
 
   /**

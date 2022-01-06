@@ -18,8 +18,6 @@ import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
-import oracle.kubernetes.operator.helpers.EventHelper.EventData;
-import oracle.kubernetes.operator.helpers.EventHelper.EventItem;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
@@ -36,8 +34,6 @@ import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.KubernetesResourceLookup;
 
 import static java.lang.System.lineSeparator;
-import static oracle.kubernetes.operator.DomainStatusUpdater.BAD_DOMAIN;
-import static oracle.kubernetes.operator.helpers.EventHelper.createEventStep;
 import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_VALIDATION_FAILED;
 
 public class DomainValidationSteps {
@@ -46,9 +42,15 @@ public class DomainValidationSteps {
   private static final String SECRETS = "secrets";
   private static final String CONFIGMAPS = "configmaps";
 
-  public static Step createDomainValidationSteps(String namespace, Step next) {
-    return Step.chain(createListSecretsStep(namespace), createListConfigMapsStep(namespace),
-              new DomainValidationStep(next));
+  /**
+   * Returns a chain of steps to validate the domain in the current packet.
+   * @param namespace the namespace for the domain
+   */
+  public static Step createDomainValidationSteps(String namespace) {
+    return Step.chain(
+          createListSecretsStep(namespace),
+          createListConfigMapsStep(namespace),
+          new DomainValidationStep());
   }
 
   static Step createAdditionalDomainValidationSteps(V1PodSpec podSpec) {
@@ -79,7 +81,7 @@ public class DomainValidationSteps {
     }
 
     static List<V1Secret> getSecrets(Packet packet) {
-      return (List<V1Secret>) Optional.ofNullable(packet.get(SECRETS)).orElse(new ArrayList<>());
+      return Optional.ofNullable(packet.<List<V1Secret>>getValue(SECRETS)).orElse(new ArrayList<>());
     }
   }
 
@@ -99,15 +101,11 @@ public class DomainValidationSteps {
     }
 
     static List<V1ConfigMap> getConfigMaps(Packet packet) {
-      return (List<V1ConfigMap>) Optional.ofNullable(packet.get(CONFIGMAPS)).orElse(new ArrayList<>());
+      return Optional.ofNullable(packet.<List<V1ConfigMap>>getValue(CONFIGMAPS)).orElse(new ArrayList<>());
     }
   }
 
   static class DomainValidationStep extends Step {
-
-    DomainValidationStep(Step next) {
-      super(next);
-    }
 
     @Override
     public NextAction apply(Packet packet) {
@@ -116,16 +114,20 @@ public class DomainValidationSteps {
       List<String> validationFailures = domain.getValidationFailures(new KubernetesResourceLookupImpl(packet));
 
       if (validationFailures.isEmpty()) {
-        return doNext(packet);
+        return doNext(packet).withDebugComment(packet, this::domainValidated);
       }
 
       LOGGER.severe(DOMAIN_VALIDATION_FAILED, domain.getDomainUid(), perLine(validationFailures));
-      Step step = DomainStatusUpdater.createFailureRelatedSteps(BAD_DOMAIN, perLine(validationFailures), null);
+      Step step = DomainStatusUpdater.createDomainInvalidFailureSteps(perLine(validationFailures));
       return doNext(step, packet);
     }
 
     private String perLine(List<String> validationFailures) {
       return String.join(lineSeparator(), validationFailures);
+    }
+
+    private String domainValidated(Packet packet) {
+      return "Validated " + DomainPresenceInfo.fromPacket(packet).orElse(null);
     }
     
   }
@@ -148,7 +150,7 @@ public class DomainValidationSteps {
       }
 
       LOGGER.severe(DOMAIN_VALIDATION_FAILED, domain.getDomainUid(), perLine(validationFailures));
-      Step step = DomainStatusUpdater.createFailureRelatedSteps(BAD_DOMAIN, perLine(validationFailures), null);
+      Step step = DomainStatusUpdater.createDomainInvalidFailureSteps(perLine(validationFailures));
       return doNext(step, packet);
     }
 
@@ -261,7 +263,7 @@ public class DomainValidationSteps {
       return skipCreateEvent
           ? next
           : Optional.ofNullable((message))
-              .map(m -> createEventStep(new EventData(EventItem.DOMAIN_VALIDATION_ERROR, m), next))
+              .map(m -> Step.chain(DomainStatusUpdater.createTopologyMismatchFailureSteps(m), next))
               .orElse(next);
     }
   }
@@ -322,7 +324,7 @@ public class DomainValidationSteps {
       }
 
       LOGGER.severe(DOMAIN_VALIDATION_FAILED, domain.getDomainUid(), perLine(validationFailures));
-      Step step = DomainStatusUpdater.createFailureRelatedSteps(BAD_DOMAIN, perLine(validationFailures), null);
+      Step step = DomainStatusUpdater.createDomainInvalidFailureSteps(perLine(validationFailures));
       return doNext(step, packet);
     }
 

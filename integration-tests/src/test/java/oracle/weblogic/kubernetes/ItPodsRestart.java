@@ -30,19 +30,18 @@ import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.WLS_DOMAIN_TYPE;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
@@ -52,6 +51,7 @@ import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomRe
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
@@ -59,7 +59,7 @@ import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_COMPLETED;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.DOMAIN_ROLL_STARTING;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.POD_CYCLE_STARTING;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkEvent;
-import static oracle.weblogic.kubernetes.utils.K8sEvents.getEvent;
+import static oracle.weblogic.kubernetes.utils.K8sEvents.getOpGeneratedEvent;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
@@ -67,7 +67,6 @@ import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -100,12 +99,6 @@ class ItPodsRestart {
   private static final String managedServerPrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
   private static LoggingFacade logger = null;
   private Map<String, OffsetDateTime> podsWithTimeStamps = null;
-
-  // create standard, reusable retry/backoff policy
-  private static final ConditionFactory withStandardRetryPolicy
-      = with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(5, MINUTES).await();
 
   /**
    * Get namespaces for operator and WebLogic domain.
@@ -251,13 +244,13 @@ class ItPodsRestart {
     checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING,
         "Normal", timestamp, withStandardRetryPolicy);
 
-    CoreV1Event event = getEvent(opNamespace, domainNamespace,
-        domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+    CoreV1Event event = getOpGeneratedEvent(domainNamespace,
+        DOMAIN_ROLL_STARTING, "Normal", timestamp);
     logger.info("verify the event message contains the domain resource changed messages is logged");
     assertTrue(event.getMessage().contains("domain resource changed"));
 
-    event = getEvent(opNamespace, domainNamespace,
-        domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+    event = getOpGeneratedEvent(domainNamespace,
+        POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     assertTrue(event.getMessage().contains("cpu=Quantity"));
 
@@ -330,20 +323,19 @@ class ItPodsRestart {
     checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING,
         "Normal", timestamp, withStandardRetryPolicy);
 
-    CoreV1Event event = getEvent(opNamespace, domainNamespace,
-        domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+    CoreV1Event event = getOpGeneratedEvent(domainNamespace,
+        DOMAIN_ROLL_STARTING, "Normal", timestamp);
     logger.info("verify the event message contains the resource changed messages is logged");
     assertTrue(event.getMessage().contains("isIncludeServerOutInPodLog"));
 
-    event = getEvent(opNamespace, domainNamespace,
-        domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+    event = getOpGeneratedEvent(domainNamespace,
+        POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     assertTrue(event.getMessage().contains("SERVER_OUT_IN_POD_LOG"));
 
     logger.info("verify domain roll completed event is logged");
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED,
         "Normal", timestamp, withStandardRetryPolicy);
-
   }
 
   /**
@@ -419,14 +411,14 @@ class ItPodsRestart {
     checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING,
         "Normal", timestamp, withStandardRetryPolicy);
 
-    CoreV1Event event = getEvent(opNamespace, domainNamespace,
-        domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+    CoreV1Event event = getOpGeneratedEvent(domainNamespace,
+        DOMAIN_ROLL_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     logger.info("verify the event message contains the env changed messages is logged");
     assertTrue(event.getMessage().contains("domain resource changed"));
 
-    event = getEvent(opNamespace, domainNamespace,
-        domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+    event = getOpGeneratedEvent(domainNamespace,
+        POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     logger.info("verify the event message contains the JAVA_OPTIONS changed message is logged");
     assertTrue(event.getMessage().contains("JAVA_OPTIONS"));
@@ -444,6 +436,7 @@ class ItPodsRestart {
    * The tested resource: podSecurityContext: runAsUser: 1000.
    */
   @Test
+  @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   @DisplayName("Verify server pods are restarted by adding serverPod podSecurityContext")
   void testServerPodsRestartByChaningPodSecurityContext() {
     // get the original domain resource before update
@@ -503,31 +496,25 @@ class ItPodsRestart {
     assertTrue(verifyRollingRestartOccurred(podsWithTimeStamps, 1, domainNamespace),
         String.format("Rolling restart failed for domain %s in namespace %s", domainUid, domainNamespace));
 
-    /* commented due to bug  - OWLS-89857
     logger.info("verify domain roll starting/pod cycle starting events are logged");
-    //************* I don't see this event logged****************************************
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_STARTING,
         "Normal", timestamp, withStandardRetryPolicy);
     checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING,
         "Normal", timestamp, withStandardRetryPolicy);
 
-    CoreV1Event event = getEvent(opNamespace, domainNamespace,
-        domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+    CoreV1Event event = getOpGeneratedEvent(domainNamespace, DOMAIN_ROLL_STARTING, "Normal",  timestamp);
     logger.info("verify the event message contains the domain resource changed messages is logged");
     assertTrue(event.getMessage().contains("domain resource changed"));
 
-    event = getEvent(opNamespace, domainNamespace,
-        domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+    event = getOpGeneratedEvent(domainNamespace, POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     logger.info("verify the event message contains the security context changed messages is logged");
     assertTrue(event.getMessage().contains("securityContext"));
     assertTrue(event.getMessage().contains("runAsUser: 1000"));
 
-    //************* I don't see this event logged****************************************
     logger.info("verify domain roll completed event is logged");
     checkEvent(opNamespace, domainNamespace, domainUid, DOMAIN_ROLL_COMPLETED,
         "Normal", timestamp, withStandardRetryPolicy);
-    */
 
   }
 
@@ -594,14 +581,14 @@ class ItPodsRestart {
     checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING,
         "Normal", timestamp, withStandardRetryPolicy);
 
-    CoreV1Event event = getEvent(opNamespace, domainNamespace,
-        domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+    CoreV1Event event = getOpGeneratedEvent(domainNamespace,
+        DOMAIN_ROLL_STARTING, "Normal", timestamp);
     logger.info("verify the event message contains the 'imagePullPolicy' "
         + "changed from 'IfNotPresent' to 'Never' message is logged");
     assertTrue(event.getMessage().contains("Never"));
 
-    event = getEvent(opNamespace, domainNamespace,
-        domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+    event = getOpGeneratedEvent(domainNamespace,
+        POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     logger.info("verify the event message contains the 'imagePullPolicy' "
         + "changed from 'IfNotPresent' to 'Never' message is logged");
@@ -660,14 +647,14 @@ class ItPodsRestart {
     checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING,
         "Normal", timestamp, withStandardRetryPolicy);
 
-    CoreV1Event event = getEvent(opNamespace, domainNamespace,
-        domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+    CoreV1Event event = getOpGeneratedEvent(domainNamespace,
+        DOMAIN_ROLL_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     logger.info("verify the event message contains the restartVersion changed message is logged");
     assertTrue(event.getMessage().contains("restart version"));
 
-    event = getEvent(opNamespace, domainNamespace,
-        domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+    event = getOpGeneratedEvent(domainNamespace,
+        POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     logger.info("verify the event message contains the restartVersion changed message is logged");
     assertTrue(event.getMessage().contains("restart version"));
@@ -727,13 +714,13 @@ class ItPodsRestart {
     checkEvent(opNamespace, domainNamespace, domainUid, POD_CYCLE_STARTING,
         "Normal", timestamp, withStandardRetryPolicy);
 
-    CoreV1Event event = getEvent(opNamespace, domainNamespace,
-        domainUid, DOMAIN_ROLL_STARTING, "Normal", timestamp);
+    CoreV1Event event = getOpGeneratedEvent(domainNamespace,
+        DOMAIN_ROLL_STARTING, "Normal", timestamp);
     logger.info("verify the event message contains the image changed from mii-basic-image message is logged");
     assertTrue(event.getMessage().contains(tag));
 
-    event = getEvent(opNamespace, domainNamespace,
-        domainUid, POD_CYCLE_STARTING, "Normal", timestamp);
+    event = getOpGeneratedEvent(domainNamespace,
+        POD_CYCLE_STARTING, "Normal", timestamp);
     logger.info(Yaml.dump(event));
     assertTrue(event.getMessage().contains(tag));
 
@@ -786,6 +773,23 @@ class ItPodsRestart {
     String encryptionSecretName = "encryptionsecret";
     createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc", "weblogicenc");
 
+    ServerPod srvrPod = new ServerPod()
+        .addEnvItem(new V1EnvVar()
+            .name("JAVA_OPTIONS")
+            .value("-Dweblogic.StdoutDebugEnabled=false"))
+        .addEnvItem(new V1EnvVar()
+            .name("USER_MEM_ARGS")
+            .value("-Djava.security.egd=file:/dev/./urandom "))
+        .resources(new V1ResourceRequirements()
+            .limits(new HashMap<>())
+            .requests(new HashMap<>()));
+
+    if (!OKD) { 
+      V1PodSecurityContext podSecCtxt = new V1PodSecurityContext() 
+                 .runAsUser(0L);
+      srvrPod.podSecurityContext(podSecCtxt);
+    }
+
     // create the domain CR
     Domain domain = new Domain()
         .apiVersion(DOMAIN_API_VERSION)
@@ -804,18 +808,7 @@ class ItPodsRestart {
                 .namespace(domainNamespace))
             .includeServerOutInPodLog(true)
             .serverStartPolicy("IF_NEEDED")
-            .serverPod(new ServerPod()
-                .addEnvItem(new V1EnvVar()
-                    .name("JAVA_OPTIONS")
-                    .value("-Dweblogic.StdoutDebugEnabled=false"))
-                .addEnvItem(new V1EnvVar()
-                    .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom "))
-                .resources(new V1ResourceRequirements()
-                    .limits(new HashMap<>())
-                    .requests(new HashMap<>()))
-                .podSecurityContext(new V1PodSecurityContext()
-                    .runAsUser(0L)))
+            .serverPod(srvrPod)
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING"))
             .addClustersItem(new Cluster()

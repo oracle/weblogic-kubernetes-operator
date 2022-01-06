@@ -9,6 +9,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -22,6 +23,7 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1Deployment;
 import io.kubernetes.client.openapi.models.V1DeploymentCondition;
 import io.kubernetes.client.openapi.models.V1DeploymentList;
+import io.kubernetes.client.openapi.models.V1DeploymentStatus;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobCondition;
 import io.kubernetes.client.openapi.models.V1JobList;
@@ -143,7 +145,7 @@ public class Kubernetes {
    * @return true if pod exists and running otherwise false
    * @throws ApiException when there is error in querying the cluster
    */
-  public static boolean isPodInitializing(String namespace, String domainUid, String podName) throws ApiException {
+  public static boolean isPodInitialized(String namespace, String domainUid, String podName) throws ApiException {
     final LoggingFacade logger = getLogger();
     boolean status = false;
     V1Pod pod = getPod(namespace, null, podName);
@@ -661,18 +663,21 @@ public class Kubernetes {
                                           String namespace) throws ApiException {
     boolean status = false;
     V1Deployment deployment = getDeployment(deploymentName, label, namespace);
-    if (deployment != null) {
-      // get the deploymentCondition with the 'Available' type field
-      V1DeploymentCondition v1DeploymentRunningCondition = deployment.getStatus().getConditions().stream()
+
+    List<V1DeploymentCondition> deplList = Optional.ofNullable(deployment)
+        .map(V1Deployment::getStatus).map(V1DeploymentStatus::getConditions)
+        .orElse(null);
+    if (deplList != null) {
+      V1DeploymentCondition v1DeploymentRunningCondition = deplList.stream()
           .filter(v1DeploymentCondition -> "Available".equals(v1DeploymentCondition.getType()))
           .findAny()
           .orElse(null);
 
       if (v1DeploymentRunningCondition != null) {
         status = v1DeploymentRunningCondition.getStatus().equalsIgnoreCase("true");
+      } else {
+        getLogger().info("Can't check deployment status");
       }
-    } else {
-      getLogger().info("Deployment doesn't exist");
     }
     return status;
   }

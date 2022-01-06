@@ -39,7 +39,7 @@ def decode_archive():
     print 'decoding archive...'
     encoded_archive_bytes = Files.readAllBytes(File(node_archive_path).toPath())
     decoded_archive_bytes = Base64.getMimeDecoder().decode(encoded_archive_bytes)
-    fos = FileOutputStream(File(archive_name))
+    fos = FileOutputStream(File("/u01/" + archive_name))
     fos.write(decoded_archive_bytes)
     print 'successfully decoded archive'
   except:
@@ -52,8 +52,8 @@ def deploy_application():
   try:
     print 'connecting to admin server'
     connect(admin_username, admin_password, t3url)
-    print 'Running deploy(' + application_name + ', ' + archive_name + ', ' + targets + 'remote=\'true\', upload=\'true\')'
-    deploy(application_name, archive_name, targets, remote='true', upload='true')
+    print 'Running deploy(' + application_name + ', /u01/' + archive_name + ', ' + targets + 'remote=\'true\', upload=\'true\')'
+    deploy(application_name, '/u01/' + archive_name, targets, remote='true', upload='true')
     print 'done with deployment'
     disconnect()
   except NameError, e:

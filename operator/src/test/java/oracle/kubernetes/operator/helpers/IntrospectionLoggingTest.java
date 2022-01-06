@@ -5,9 +5,11 @@ package oracle.kubernetes.operator.helpers;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
+import io.kubernetes.client.openapi.models.CoreV1Event;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
@@ -16,14 +18,20 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static oracle.kubernetes.operator.DomainFailureReason.Introspection;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
+import static oracle.kubernetes.operator.EventTestUtils.getEventsWithReason;
+import static oracle.kubernetes.operator.ProcessingConstants.INTROSPECTION_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.JOB_POD_NAME;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.operator.helpers.JobHelper.INTROSPECTOR_LOG_PREFIX;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.utils.LogMatcher.containsSevere;
 import static oracle.kubernetes.utils.LogMatcher.containsWarning;
+import static oracle.kubernetes.utils.OperatorUtils.onSeparateLines;
 import static org.hamcrest.Matchers.equalTo;
+import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 class IntrospectionLoggingTest {
@@ -38,6 +46,7 @@ class IntrospectionLoggingTest {
   @BeforeEach
   public void setUp() throws Exception {
     mementos.add(TestUtils.silenceOperatorLogger().collectAllLogMessages(logRecords));
+    mementos.add(TuningParametersStub.install());
     mementos.add(testSupport.install());
 
     testSupport.addDomainPresenceInfo(info);
@@ -72,10 +81,6 @@ class IntrospectionLoggingTest {
     logRecords.clear();
   }
 
-  private String onSeparateLines(String... s) {
-    return String.join(System.lineSeparator(), s);
-  }
-
   @Test
   void whenIntrospectorMessageContainsAdditionalLines_logThem() {
     String extendedInfoMessage = onSeparateLines(INFO_MESSAGE, INFO_EXTRA1, INFO_EXTRA_2);
@@ -95,8 +100,36 @@ class IntrospectionLoggingTest {
     logRecords.clear();
 
     Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
-    assertThat(updatedDomain.getStatus().getReason(), equalTo("ErrIntrospector"));
-    assertThat(updatedDomain.getStatus().getMessage(), equalTo(SEVERE_PROBLEM_1));
+    assertThat(updatedDomain.getStatus().getReason(), equalTo(Introspection.name()));
+    assertThat(updatedDomain.getStatus().getMessage(),
+            equalTo(onSeparateLines("Introspection failed on try 1 of 2.", INTROSPECTION_ERROR, SEVERE_PROBLEM_1)));
+  }
+
+  @Test
+  void whenJobLogContainsSevereError_createDomainFailedIntrospectionEvent() {
+    IntrospectionTestUtils.defineResources(testSupport, SEVERE_MESSAGE_1);
+
+    testSupport.runSteps(JobHelper.readDomainIntrospectorPodLog(terminalStep));
+    logRecords.clear();
+
+    assertThat(
+        "Expected Event " + DOMAIN_FAILED + " expected with message not found",
+        getExpectedEventMessage(DOMAIN_FAILED),
+        stringContainsInOrder("Domain", UID, "failed due to", INTROSPECTION_ERROR));
+  }
+
+  protected String getExpectedEventMessage(EventHelper.EventItem event) {
+    List<CoreV1Event> events = getEventsWithReason(getEvents(), event.getReason());
+    //System.out.println(events);
+    return Optional.ofNullable(events)
+        .filter(list -> list.size() != 0)
+        .map(n -> n.get(0))
+        .map(CoreV1Event::getMessage)
+        .orElse("Event not found");
+  }
+
+  private List<CoreV1Event> getEvents() {
+    return testSupport.getResources(KubernetesTestSupport.EVENT);
   }
 
   @Test
@@ -108,9 +141,10 @@ class IntrospectionLoggingTest {
     logRecords.clear();
 
     Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
-    assertThat(updatedDomain.getStatus().getReason(), equalTo("ErrIntrospector"));
+    assertThat(updatedDomain.getStatus().getReason(), equalTo(Introspection.name()));
     assertThat(
         updatedDomain.getStatus().getMessage(),
-        equalTo(onSeparateLines(SEVERE_PROBLEM_1, SEVERE_PROBLEM_2)));
+        equalTo(onSeparateLines("Introspection failed on try 1 of 2.", INTROSPECTION_ERROR,
+                SEVERE_PROBLEM_1, SEVERE_PROBLEM_2)));
   }
 }

@@ -20,11 +20,13 @@ import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
+import org.jetbrains.annotations.Nullable;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -90,6 +92,18 @@ class BeforeAdminServiceStepTest {
     Packet packet = invokeStep();
 
     assertThat(packet, hasEntry(SERVER_NAME, ADMIN_NAME));
+  }
+
+  @Test
+  void afterProcessing_domainPresenceInfoContainsAdminServerName() {
+    Packet packet = invokeStep();
+
+    assertThat(getAdminServerName(packet), equalTo(ADMIN_NAME));
+  }
+
+  @Nullable
+  private String getAdminServerName(Packet packet) {
+    return DomainPresenceInfo.fromPacket(packet).map(DomainPresenceInfo::getAdminServerName).orElse(null);
   }
 
   private Packet invokeStep() {

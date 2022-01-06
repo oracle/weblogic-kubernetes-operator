@@ -23,8 +23,9 @@ import org.awaitility.core.ConditionFactory;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.junit.jupiter.api.Assertions.fail;
 
@@ -49,15 +50,13 @@ public class K8sEvents {
   public static void checkEvent(
       String opNamespace, String domainNamespace, String domainUid,
       String reason, String type, OffsetDateTime timestamp, ConditionFactory withStandardRetryPolicy) {
-    withStandardRetryPolicy
-        .conditionEvaluationListener(condition
-            -> logger.info("Waiting for domain event {0} to be logged in namespace {1} "
-            + "(elapsed time {2}ms, remaining time {3}ms)",
-            reason,
-            domainNamespace,
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
-        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid, reason, type, timestamp));
+    testUntil(
+        withStandardRetryPolicy,
+        checkDomainEvent(opNamespace, domainNamespace, domainUid, reason, type, timestamp),
+        logger,
+        "domain event {0} to be logged in namespace {1}",
+        reason,
+        domainNamespace);
   }
 
   /**
@@ -73,15 +72,31 @@ public class K8sEvents {
   public static void checkEvent(
       String opNamespace, String domainNamespace, String domainUid,
       String reason, String type, OffsetDateTime timestamp) {
-    withStandardRetryPolicy
-        .conditionEvaluationListener(condition ->
-            getLogger().info("Waiting for domain event {0} to be logged in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                reason,
-                domainNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(checkDomainEvent(opNamespace, domainNamespace, domainUid, reason, type, timestamp));
+    testUntil(
+        checkDomainEvent(opNamespace, domainNamespace, domainUid, reason, type, timestamp),
+        logger,
+        "domain event {0} to be logged in namespace {1}",
+        reason,
+        domainNamespace);
+  }
+
+
+  /**
+   * Check if a given DomainFailed event is logged by the operator.
+   *
+   * @param opNamespace namespace in which the operator is running
+   * @param domainNamespace namespace in which the domain exists
+   * @param domainUid UID of the domain
+   * @param failureReason DomainFailureReason to check
+   * @param type type of event, Normal of Warning
+   * @param timestamp the timestamp after which to see events
+   */
+  public static Callable<Boolean> checkDomainFailedEventWithReason(
+      String opNamespace, String domainNamespace, String domainUid, String failureReason,
+      String type, OffsetDateTime timestamp) {
+    return () -> {
+      return domainFailedEventExists(opNamespace, domainNamespace, domainUid, failureReason, type, timestamp);
+    };
   }
 
   /**
@@ -163,23 +178,24 @@ public class K8sEvents {
    * @param opNamespace namespace in which the operator is running
    * @param domainNamespace namespace in which the event is logged
    * @param domainUid UID of the domain
-   * @param reason event to check for Created, Changed, deleted, processing etc
+   * @param failureReason failure reason to check
    * @param type type of event, Normal or Warning
    * @param timestamp the timestamp after which to see events
    */
-  public static boolean domainEventExists(
-      String opNamespace, String domainNamespace, String domainUid, String reason,
+  public static boolean domainFailedEventExists(
+      String opNamespace, String domainNamespace, String domainUid, String failureReason,
       String type, OffsetDateTime timestamp) {
 
     try {
-      List<CoreV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
+      List<CoreV1Event> events = Kubernetes.listOpGeneratedNamespacedEvents(domainNamespace);
       for (CoreV1Event event : events) {
-        if (event.getReason().equals(reason) && (isEqualOrAfter(timestamp, event))) {
+        if (DOMAIN_FAILED.equals(event.getReason()) && (isEqualOrAfter(timestamp, event))
+            && event.getMessage().contains(failureReason)) {
           logger.info(Yaml.dump(event));
           verifyOperatorDetails(event, opNamespace, domainUid);
           //verify type
           logger.info("Verifying domain event type {0}", type);
-          assertTrue(event.getType().equals(type));
+          assertEquals(event.getType(), type);
           return true;
         }
       }
@@ -190,20 +206,53 @@ public class K8sEvents {
   }
 
   /**
-   * Get matching event object.
+   * Check if a given event is logged by the operator in the given namespace.
+   *
    * @param opNamespace namespace in which the operator is running
    * @param domainNamespace namespace in which the event is logged
    * @param domainUid UID of the domain
    * @param reason event to check for Created, Changed, deleted, processing etc
    * @param type type of event, Normal or Warning
    * @param timestamp the timestamp after which to see events
-   * @return CoreV1Event matching event object
    */
-  public static CoreV1Event getEvent(String opNamespace, String domainNamespace, String domainUid, String reason,
+  public static boolean domainEventExists(
+      String opNamespace, String domainNamespace, String domainUid, String reason,
       String type, OffsetDateTime timestamp) {
 
     try {
-      List<CoreV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
+      List<CoreV1Event> events = Kubernetes.listOpGeneratedNamespacedEvents(domainNamespace);
+      for (CoreV1Event event : events) {
+        if (reason.equals(event.getReason()) && (isEqualOrAfter(timestamp, event))) {
+          logger.info(Yaml.dump(event));
+          verifyOperatorDetails(event, opNamespace, domainUid);
+          //verify type
+          logger.info("Verifying domain event type {0} with reason {1} for domain {2} in namespace {3}",
+              type, reason, domainUid, domainNamespace);
+          assertEquals(event.getType(), type);
+          return true;
+        }
+      }
+    } catch (ApiException ex) {
+      logger.log(Level.SEVERE,
+          String.format("Failed to verify domain event type %s with reason %s for domain %s in namespace %s",
+              type, reason, domainUid, domainNamespace), ex);
+    }
+    return false;
+  }
+
+  /**
+   * Get matching operator generated event object.
+   * @param domainNamespace namespace in which the event is logged
+   * @param reason event to check for Created, Changed, deleted, processing etc
+   * @param type type of event, Normal or Warning
+   * @param timestamp the timestamp after which to see events
+   * @return CoreV1Event matching event object
+   */
+  public static CoreV1Event getOpGeneratedEvent(
+      String domainNamespace, String reason, String type, OffsetDateTime timestamp) {
+
+    try {
+      List<CoreV1Event> events = Kubernetes.listOpGeneratedNamespacedEvents(domainNamespace);
       for (CoreV1Event event : events) {
         if (event.getReason().equals(reason) && (isEqualOrAfter(timestamp, event))) {
           logger.info(Yaml.dump(event));
@@ -235,7 +284,7 @@ public class K8sEvents {
     return () -> {
       logger.info("Verifying {0} event is logged by the operator in domain namespace {1}", reason, domainNamespace);
       try {
-        List<CoreV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
+        List<CoreV1Event> events = Kubernetes.listOpGeneratedNamespacedEvents(domainNamespace);
         for (CoreV1Event event : events) {
           if (event.getReason().equals(reason) && (isEqualOrAfter(timestamp, event))) {
             logger.info(Yaml.dump(event));
@@ -266,12 +315,11 @@ public class K8sEvents {
   public static int getDomainEventCount(
           String domainNamespace, String domainUid, String reason, String type) {
     try {
-      List<CoreV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
+      List<CoreV1Event> events = Kubernetes.listOpGeneratedNamespacedEvents(domainNamespace);
       for (CoreV1Event event : events) {
         Map<String, String> labels = event.getMetadata().getLabels();
         if (event.getReason().equals(reason)
                 && event.getType().equals(type)
-                && labels.containsKey("weblogic.createdByOperator")
                 && labels.get("weblogic.domainUID").equals(domainUid)) {
           return event.getCount();
         }
@@ -291,13 +339,15 @@ public class K8sEvents {
    * @param timestamp the timestamp after which to see events
    * @return count number of events count
    */
-  public static int getEventCount(
+  public static int getOpGeneratedEventCount(
       String domainNamespace, String domainUid, String reason, OffsetDateTime timestamp) {
     int count = 0;
     try {
-      List<CoreV1Event> events = Kubernetes.listNamespacedEvents(domainNamespace);
+      List<CoreV1Event> events = Kubernetes.listOpGeneratedNamespacedEvents(domainNamespace);
       for (CoreV1Event event : events) {
+        Map<String, String> labels = event.getMetadata().getLabels();
         if (event.getReason().contains(reason)
+            && labels.get("weblogic.domainUID").equals(domainUid)
             && (isEqualOrAfter(timestamp, event))) {
           logger.info(Yaml.dump(event));
           count++;
@@ -354,8 +404,7 @@ public class K8sEvents {
                                                          OffsetDateTime timestamp,
                                                          String expectedMsg) {
     checkEvent(opNamespace, domainNamespace, domainUid, reason, type, timestamp);
-    CoreV1Event event =
-        getEvent(opNamespace, domainNamespace, domainUid, reason, type, timestamp);
+    CoreV1Event event = getOpGeneratedEvent(domainNamespace, reason, type, timestamp);
     if (event != null && event.getMessage() != null) {
       assertTrue(event.getMessage().contains(expectedMsg),
           String.format("The event message does not contain the expected msg %s", expectedMsg));
@@ -406,23 +455,28 @@ public class K8sEvents {
     }
   }
 
-
-  public static final String DOMAIN_CREATED = "DomainCreated";
-  public static final String DOMAIN_DELETED = "DomainDeleted";
-  public static final String DOMAIN_CHANGED = "DomainChanged";
-  public static final String DOMAIN_PROCESSING_STARTING = "DomainProcessingStarting";
-  public static final String DOMAIN_PROCESSING_COMPLETED = "DomainProcessingCompleted";
-  public static final String DOMAIN_PROCESSING_FAILED = "DomainProcessingFailed";
-  public static final String DOMAIN_PROCESSING_RETRYING = "DomainProcessingRetrying";
-  public static final String DOMAIN_PROCESSING_ABORTED = "DomainProcessingAborted";
-  public static final String DOMAIN_ROLL_STARTING = "DomainRollStarting";
-  public static final String DOMAIN_ROLL_COMPLETED = "DomainRollCompleted";
-  public static final String DOMAIN_VALIDATION_ERROR = "DomainValidationError";
+  public static final String DOMAIN_AVAILABLE = "Available";
+  public static final String DOMAIN_CREATED = "Created";
+  public static final String DOMAIN_DELETED = "Deleted";
+  public static final String DOMAIN_CHANGED = "Changed";
+  public static final String DOMAIN_COMPLETED = "Completed";
+  public static final String DOMAIN_FAILED = "Failed";
+  public static final String DOMAIN_ROLL_STARTING = "RollStarting";
+  public static final String DOMAIN_ROLL_COMPLETED = "RollCompleted";
   public static final String NAMESPACE_WATCHING_STARTED = "NamespaceWatchingStarted";
   public static final String NAMESPACE_WATCHING_STOPPED = "NamespaceWatchingStopped";
   public static final String STOP_MANAGING_NAMESPACE = "StopManagingNamespace";
   public static final String POD_TERMINATED = "Killing";
   public static final String POD_STARTED = "Started";
   public static final String POD_CYCLE_STARTING = "PodCycleStarting";
+
+  public static final String TOPOLOGY_MISMATCH_ERROR
+      = "Domain resource and WebLogic domain configuration mismatch error";
+  public static final String INTROSPECTION_ERROR = "Introspection error";
+  public static final String KUBERNETES_ERROR = "Kubernetes Api call error";
+  public static final String SERVER_POD_ERROR = "Server pod error";
+  public static final String REPLICAS_TOO_HIGH_ERROR = "Replicas too high";
+  public static final String INTERNAL_ERROR = "Internal error";
+  public static final String ABORTED_ERROR = "Domain processing is aborted";
 
 }

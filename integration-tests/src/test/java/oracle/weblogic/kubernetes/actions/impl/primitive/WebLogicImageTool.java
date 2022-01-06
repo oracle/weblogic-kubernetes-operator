@@ -6,12 +6,16 @@ package oracle.weblogic.kubernetes.actions.impl.primitive;
 import java.util.List;
 
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import oracle.weblogic.kubernetes.utils.ExecResult;
 
+import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.IMAGE_TOOL;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_ZIP_PATH;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_FILENAME_DEFAULT;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.WDT_DOWNLOAD_URL_BASE;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.defaultInstallWdtParams;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.defaultInstallWitParams;
+import static oracle.weblogic.kubernetes.actions.impl.primitive.Installer.installWdtParams;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 
 
@@ -90,7 +94,14 @@ public class WebLogicImageTool {
     // install WDT if needed
     return Installer.withParams(
         defaultInstallWdtParams())
-        .download();
+        .download(DOWNLOAD_DIR + "/latest");
+  }
+
+  private boolean downloadWdt(String version) {
+    // install WDT with specific version
+    return Installer.withParams(
+        installWdtParams(version, WDT_DOWNLOAD_URL_BASE))
+        .download(DOWNLOAD_DIR + "/" + version);
   }
 
   private String buildiWitCommand() {
@@ -137,6 +148,10 @@ public class WebLogicImageTool {
       command += " --additionalBuildFiles " + params.additionalBuildFiles();
     }
 
+    if (params.target() != null) {
+      command += " --target " + params.target();
+    }
+
     logger.info("Build image with command: {0} and domainType: {1}", command,  params.domainType());
     return command;
   }
@@ -165,11 +180,12 @@ public class WebLogicImageTool {
    * @return true if the command succeeds
    */
   public boolean addInstaller() {
+    String wdtVersion = (params.wdtVersion() != null) ? params.wdtVersion() : "latest";
     String command = String.format(
         "%s cache addInstaller --type wdt --version %s --path %s",
         IMAGE_TOOL,
-        params.wdtVersion(),
-        WDT_ZIP_PATH);
+        wdtVersion,
+        DOWNLOAD_DIR + "/" + wdtVersion + "/" + WDT_DOWNLOAD_FILENAME_DEFAULT);
 
     return Command.withParams(
             defaultCommandParams()
@@ -194,5 +210,167 @@ public class WebLogicImageTool {
             .env(params.env())
             .redirect(params.redirect()))
         .execute();
+  }
+
+  /**
+   * Create an Auxiliary image using WIT command.
+   * @return true if the command succeeds
+   */
+  public boolean createAuxImage() {
+    // download WIT if it is not in the expected location
+    if (!downloadWit()) {
+      return false;
+    }
+
+    // download WDT if it is not in the expected location
+    if (params.wdtVersion() != null) {
+      if (!downloadWdt(params.wdtVersion())) {
+        return false;
+      }
+    } else {
+      if (!downloadWdt()) {
+        return false;
+      }
+    }
+
+    // delete the old cache entry for the WDT installer
+    if (!deleteEntry()) {
+      return false;
+    }
+
+    // add the WDT installer that we just downloaded into WIT cache entry
+    if (!addInstaller()) {
+      return false;
+    }
+
+    return Command.withParams(
+        defaultCommandParams()
+            .command(buildCreateAuxImageCommand())
+            .env(params.env())
+            .redirect(params.redirect()))
+        .execute();
+  }
+
+  /**
+   * Create an Auxiliary image using WIT command and return result output.
+   * @return true if the command succeeds
+   */
+  public ExecResult createAuxImageAndReturnResult() {
+    // download WIT if it is not in the expected location
+    if (!downloadWit()) {
+      return new ExecResult(1, "failed to download WIT", "failed to download WIT");
+    }
+
+    // download WDT if it is not in the expected location
+    if (params.wdtVersion() != null) {
+      if (!downloadWdt(params.wdtVersion())) {
+        return new ExecResult(1, "failed to download WDT with version " + params.wdtVersion(),
+            "failed to download WDT with version " + params.wdtVersion());
+
+      }
+    } else {
+      if (!downloadWdt()) {
+        return new ExecResult(1, "failed to download latest WDT",
+            "failed to download latest WDT");
+      }
+    }
+
+    // delete the old cache entry for the WDT installer
+    if (!deleteEntry()) {
+      return new ExecResult(1, "failed to delete cache entry for the WDT installer",
+          "failed to delete cache entry for the WDT installer");
+    }
+
+    // add the WDT installer that we just downloaded into WIT cache entry
+    if (!addInstaller()) {
+      return new ExecResult(1, "failed to add WDT installer to the cache",
+          "failed to add WDT installer to the cache");
+    }
+
+    return Command.withParams(
+            defaultCommandParams()
+              .command(buildCreateAuxImageCommand())
+              .env(params.env())
+              .redirect(params.redirect()))
+          .executeAndReturnResult();
+  }
+
+  private String buildCreateAuxImageCommand() {
+    LoggingFacade logger = getLogger();
+    String command =
+        IMAGE_TOOL
+            + " createAuxImage "
+            + " --tag " + params.modelImageName() + ":" + params.modelImageTag();
+
+    if (params.builder() != null) {
+      command += " --builder " + params.builder();
+    }
+
+    if (params.buildNetwork() != null) {
+      command += " --buildNetwork " + params.buildNetwork();
+    }
+
+    if (params.dryRun()) {
+      command += " --dryRun ";
+    }
+
+    if (params.baseImageName() != null && params.baseImageTag() != null) {
+      command += " --fromImage " + params.baseImageName() + ":" + params.baseImageTag();
+    }
+
+    if (params.useridGroupid() != null) {
+      command += " --chown " + params.useridGroupid();
+    }
+
+    if (params.httpProxyUrl() != null) {
+      command += " --httpProxyUrl " + params.httpProxyUrl();
+    }
+
+    if (params.httpsProxyUrl() != null) {
+      command += " --httpsProxyUrl " + params.httpsProxyUrl();
+    }
+
+    if (params.packageManager() != null) {
+      command += " --packageManager " + params.packageManager();
+    }
+
+    if (params.pull()) {
+      command += " --pull ";
+    }
+
+    if (params.skipCleanup()) {
+      command += " --skipcleanup ";
+    }
+
+    if (params.wdtHome() != null) {
+      command += " --wdtHome " + params.wdtHome();
+    }
+
+    if (params.wdtModelHome() != null) {
+      command += " --wdtModelHome " + params.wdtModelHome();
+    }
+
+    if (params.modelFiles() != null && !params.modelFiles().isEmpty()) {
+      command += " --wdtModel " + buildList(params.modelFiles());
+    }
+
+    if (params.modelVariableFiles() != null && !params.modelVariableFiles().isEmpty()) {
+      command += " --wdtVariables " + buildList(params.modelVariableFiles());
+    }
+
+    if (params.modelArchiveFiles() != null && !params.modelArchiveFiles().isEmpty()) {
+      command += " --wdtArchive " + buildList(params.modelArchiveFiles());
+    }
+
+    if (params.wdtVersion() != null) {
+      command += " --wdtVersion " + params.wdtVersion();
+    }
+
+    if (params.target() != null) {
+      command += " --target " + params.target();
+    }
+
+    logger.info("Build auxiliary image with command: {0}", command);
+    return command;
   }
 }

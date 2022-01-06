@@ -96,7 +96,11 @@ import org.yaml.snakeyaml.Yaml;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
 import static com.meterware.simplestub.Stub.createStub;
+import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
+import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_ROLL_STARTING_EVENT;
+import static oracle.kubernetes.operator.EventConstants.KUBERNETES_ERROR;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventWithNamespace;
 import static oracle.kubernetes.operator.EventTestUtils.getEventsWithReason;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.DOMAINZIP_HASH;
@@ -108,6 +112,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_EXPORTER_SI
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.DOMAIN_DEBUG_CONFIG_MAP_SUFFIX;
 import static oracle.kubernetes.operator.KubernetesConstants.EXPORTER_CONTAINER_NAME;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.KubernetesConstants.IFNOTPRESENT_IMAGEPULLPOLICY;
 import static oracle.kubernetes.operator.KubernetesConstants.SCRIPT_CONFIG_MAP_NAME;
 import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
@@ -122,7 +127,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.SERVER_SCAN;
 import static oracle.kubernetes.operator.helpers.AnnotationHelper.SHA256_ANNOTATION;
 import static oracle.kubernetes.operator.helpers.BasePodStepContext.KUBERNETES_PLATFORM_HELM_VARIABLE;
 import static oracle.kubernetes.operator.helpers.DomainIntrospectorJobTest.TEST_VOLUME_NAME;
-import static oracle.kubernetes.operator.helpers.DomainStatusMatcher.hasStatus;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_STARTING;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
@@ -147,7 +152,6 @@ import static oracle.kubernetes.operator.helpers.TuningParametersStub.LIVENESS_T
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_INITIAL_DELAY;
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_PERIOD;
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_TIMEOUT;
-import static oracle.kubernetes.operator.logging.MessageKeys.CYCLING_POD;
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND;
@@ -223,12 +227,15 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   protected final V1Affinity affinity = createAffinity();
   private Memento hashMemento;
   private final Map<String, Map<String, KubernetesEventObjects>> domainEventObjects = new ConcurrentHashMap<>();
-
-  private TestUtils.ConsoleHandlerMemento consoleHandlerMemento = TestUtils.silenceOperatorLogger();
+  private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
 
   PodHelperTestBase(String serverName, int listenPort) {
     this.serverName = serverName;
     this.listenPort = listenPort;
+  }
+
+  TestUtils.ConsoleHandlerMemento getConsoleHandlerMemento() {
+    return consoleHandlerMemento;
   }
 
   Domain getDomain() {
@@ -303,7 +310,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     mementos.add(InMemoryCertificates.install());
     mementos.add(setProductVersion(TEST_PRODUCT_VERSION));
     mementos.add(
-        TestUtils.silenceOperatorLogger()
+          consoleHandlerMemento = TestUtils.silenceOperatorLogger()
             .collectLogMessages(logRecords, getMessageKeys())
             .withLogLevel(Level.FINE)
             .ignoringLoggedExceptions(ApiException.class));
@@ -982,22 +989,37 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
                 CONFIGURED_SUCCESS_THRESHOLD, CONFIGURED_FAILURE_THRESHOLD));
   }
 
-  @Test 
+  @Test
   public void whenPodCreationFailsDueToUnprocessableEntityFailure_reportInDomainStatus() {
-    testSupport.failOnResource(POD, getPodName(), NS, new UnrecoverableErrorBuilderImpl()
+    testSupport.failOnCreate(POD, NS, new UnrecoverableErrorBuilderImpl()
         .withReason("FieldValueNotFound")
         .withMessage("Test this failure")
         .build());
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
-    assertThat(getDomain(), hasStatus("FieldValueNotFound",
-        "testcall in namespace junit, for testName: Test this failure"));
+    assertThat(getDomain(), hasStatus().withReason(Kubernetes)
+        .withMessageContaining("create", "pod", NS, "Test this failure"));
+  }
+
+  @Test
+  public void whenPodCreationFailsDueToUnprocessableEntityFailure_createFailedKubernetesEvent() {
+    testSupport.failOnCreate(POD, NS, new UnrecoverableErrorBuilderImpl()
+        .withReason("FieldValueNotFound")
+        .withMessage("Test this failure")
+        .build());
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    assertThat(
+        "Expected Event " + DOMAIN_FAILED + " expected with message not found",
+        getExpectedEventMessage(DOMAIN_FAILED),
+        stringContainsInOrder("Domain", UID, "failed due to", KUBERNETES_ERROR));
   }
 
   @Test
   void whenPodCreationFailsDueToUnprocessableEntityFailure_abortFiber() {
-    testSupport.failOnResource(POD, getPodName(), NS, new UnrecoverableErrorBuilderImpl()
+    testSupport.failOnCreate(POD, NS, new UnrecoverableErrorBuilderImpl()
         .withReason("FieldValueNotFound")
         .withMessage("Test this failure")
         .build());
@@ -1009,12 +1031,24 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
 
   @Test
   void whenPodCreationFailsDueToQuotaExceeded_reportInDomainStatus() {
-    testSupport.failOnResource(POD, getPodName(), NS, createQuotaExceededException());
+    testSupport.failOnCreate(POD, NS, createQuotaExceededException());
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
-    assertThat(getDomain(), hasStatus("Forbidden",
-        "testcall in namespace junit, for testName: " + getQuotaExceededMessage()));
+    assertThat(getDomain(), hasStatus().withReason(Kubernetes)
+          .withMessageContaining("create", "pod", NS, getQuotaExceededMessage()));
+  }
+
+  @Test
+  void whenPodCreationFailsDueToQuotaExceeded_generateFailedEvent() {
+    testSupport.failOnCreate(POD, NS, createQuotaExceededException());
+
+    testSupport.runSteps(getStepFactory(), terminalStep);
+
+    assertThat(
+        "Expected Event " + DOMAIN_FAILED + " expected with message not found",
+        getExpectedEventMessage(DOMAIN_FAILED),
+        stringContainsInOrder("Domain", UID, "failed due to", KUBERNETES_ERROR));
   }
 
   private ApiException createQuotaExceededException() {
@@ -1027,7 +1061,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
 
   @Test
   void whenPodCreationFailsDueToQuotaExceeded_abortFiber() {
-    testSupport.failOnResource(POD, getPodName(), NS, createQuotaExceededException());
+    testSupport.failOnCreate(POD, NS, createQuotaExceededException());
 
     testSupport.runSteps(getStepFactory(), terminalStep);
 
@@ -1643,16 +1677,31 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  void whenNoPod_onFiveHundred() {
+  void whenNoPod_onInternalError() {
     testSupport.addRetryStrategy(retryStrategy);
-    testSupport.failOnCreate(KubernetesTestSupport.POD, getPodName(), NS, 500);
+    testSupport.failOnCreate(KubernetesTestSupport.POD, NS, HTTP_INTERNAL_ERROR);
 
     FiberTestSupport.StepFactory stepFactory = getStepFactory();
     Step initialStep = stepFactory.createStepList(terminalStep);
     testSupport.runSteps(initialStep);
 
-    assertThat(getDomain(), hasStatus("ServerError",
-            "testcall in namespace junit, for testName: failure reported in test"));
+    assertThat(getDomain(), hasStatus().withReason(Kubernetes).withMessageContaining("create", "pod", NS));
+  }
+
+  @Test
+  void whenNoPod_generateFailedEvent() {
+    testSupport.addRetryStrategy(retryStrategy);
+    testSupport.failOnCreate(KubernetesTestSupport.POD, NS, HTTP_INTERNAL_ERROR);
+
+    FiberTestSupport.StepFactory stepFactory = getStepFactory();
+    Step initialStep = stepFactory.createStepList(terminalStep);
+    testSupport.runSteps(initialStep);
+
+    assertThat(getEvents().stream().anyMatch(this::isKubernetesFailedEvent), is(true));
+  }
+
+  private boolean isKubernetesFailedEvent(CoreV1Event e) {
+    return DOMAIN_FAILED_EVENT.equals(e.getReason()) && e.getMessage().contains(KUBERNETES_ERROR);
   }
 
   @Test
@@ -2331,10 +2380,6 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
             "WebLogic domain configuration changed"));
   }
 
-  protected static String getCyclePodKey() {
-    return CYCLING_POD;
-  }
-
   protected static String getDomainRollStartingKey() {
     return MessageKeys.DOMAIN_ROLL_STARTING;
   }
@@ -2356,7 +2401,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
         .orElse("Event not found");
   }
 
-  private List<CoreV1Event> getEvents() {
+  List<CoreV1Event> getEvents() {
     return testSupport.getResources(KubernetesTestSupport.EVENT);
   }
 
