@@ -5,15 +5,16 @@ package oracle.kubernetes.operator.work;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Consumer;
+import java.util.stream.Collectors;
 
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -21,6 +22,7 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.NextAction.Kind;
 
 import static oracle.kubernetes.operator.logging.MessageKeys.CURRENT_STEPS;
+import static oracle.kubernetes.operator.logging.MessageKeys.DUMP_BREADCRUMBS;
 
 /**
  * User-level thread&#x2E; Represents the execution of one processing flow. The {@link Engine} is
@@ -31,7 +33,7 @@ import static oracle.kubernetes.operator.logging.MessageKeys.CURRENT_STEPS;
  *
  * <h2>Suspend/Resume</h2>
  *
- * <p>Fiber can be {@link NextAction#suspend(Consumer) suspended} by a {@link Step}. When a fiber is
+ * <p>Fiber can be {@link NextAction#suspend(Step,Consumer) suspended} by a {@link Step}. When a fiber is
  * suspended, it will be kept on the side until it is {@link #resume(Packet) resumed}. This allows
  * threads to go execute other runnable fibers, allowing efficient utilization of smaller number of
  * threads.
@@ -48,7 +50,14 @@ import static oracle.kubernetes.operator.logging.MessageKeys.CURRENT_STEPS;
  * logging. Using FINER would cause more detailed logging, which includes what steps are executed in
  * what order and how they behaved.
  */
-public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber {
+public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber, BreadCrumbFactory {
+
+  /**
+   * Add this to a packet with a string value to log the current fiber breadcrumbs at the INFO level when it exits,
+   * along with any defined debug strings. The string value will be displayed as a prefix in the log message.
+   */
+  public static final String DEBUG_FIBER = "debugFiber";
+
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final int NOT_COMPLETE = 0;
   private static final int DONE = 1;
@@ -77,7 +86,7 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber {
   private ExitCallback exitCallback;
   private Collection<Fiber> children = null;
   // Will only be populated if log level is at least FINE
-  private List<BreadCrumb> breadCrumbs = null;
+  private List<BreadCrumbFactory> breadCrumbs = null;
 
   Fiber(Engine engine) {
     this(engine, null);
@@ -130,9 +139,7 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber {
 
     if (status.get() == NOT_COMPLETE) {
       LOGGER.finer("{0} started", getName());
-      if (LOGGER.isFinestEnabled()) {
-        breadCrumbs = new ArrayList<>();
-      }
+      breadCrumbs = new ArrayList<>();
 
       owner.addRunnable(this);
     }
@@ -146,7 +153,7 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber {
    * the execution will be resumed, by calling the next step's {@link Step#apply(Packet)} method
    * with the specified resume packet as the parameter. This method is implemented in a race-free
    * way. Another thread can invoke this method even before this fiber goes into the suspension
-   * mode. So the caller need not worry about synchronizing {@link NextAction#suspend(Consumer)} and
+   * mode. So the caller need not worry about synchronizing {@link NextAction#suspend(Step,Consumer)} and
    * this method.
    *
    * @param resumePacket packet used in the resumed processing
@@ -184,6 +191,15 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber {
           owner.addRunnable(this);
         }
       }
+    }
+  }
+
+  private String getStatus() {
+    switch (status.get()) {
+      case NOT_COMPLETE: return "NOT_COMPLETE";
+      case DONE: return "DONE";
+      case CANCELLED: return "CANCELLED";
+      default: return "UNKNOWN: " + status.get();
     }
   }
 
@@ -318,6 +334,13 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber {
     Thread.interrupted();
   }
 
+  private void logFiberComplete(Packet packet) {
+    Optional.ofNullable(packet)
+          .map(p -> p.<String>getValue(DEBUG_FIBER))
+          .ifPresent(prefix -> LOGGER.info(DUMP_BREADCRUMBS, prefix, getBreadCrumbString()));
+  }
+
+
   private void completionCheck() {
     lock.lock();
     try {
@@ -331,7 +354,11 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber {
           LOGGER.finer("{0} completed", getName());
         }
 
-        recordBreadCrumb();
+        if (LOGGER.isFinestEnabled()) {
+          LOGGER.finest("{0} bread crumb: {1}", getName(), getBreadCrumbString());
+        }
+
+
         try {
           if (s == NOT_COMPLETE && completionCallback != null) {
             if (na.throwable != null) {
@@ -348,6 +375,7 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber {
         }
       }
     } finally {
+      logFiberComplete(getPacket());
       lock.unlock();
     }
   }
@@ -475,7 +503,7 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber {
         case INVOKE:
           break;
         case SUSPEND:
-          addBreadCrumb(new SuspendMarkerBreadCrumb());
+          addBreadCrumb(result);
           if (suspend(isRequireUnlock, result.onExit)) {
             return true; // explicitly exiting control loop
           }
@@ -517,7 +545,7 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber {
 
   @Override
   public String toString() {
-    return getName();
+    return getName() + " " + getStatus();
   }
 
   /**
@@ -590,54 +618,45 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber {
   }
 
   private synchronized void addBreadCrumb(NextAction na) {
-    if (breadCrumbs != null) {
-      breadCrumbs.add(new NextActionBreadCrumb(na));
-    }
+    breadCrumbs.add(na);
   }
 
   private synchronized void addBreadCrumb(Fiber child) {
-    if (breadCrumbs != null) {
-      breadCrumbs.add(new ChildFiberBreadCrumb(child));
+    breadCrumbs.add(child);
+  }
+
+  public List<BreadCrumb> getBreadCrumbs() {
+    return breadCrumbs.stream().map(BreadCrumbFactory::createBreadCrumb).collect(Collectors.toList());
+  }
+
+  public String getBreadCrumbString() {
+    return getBreadCrumbString(new NullPacketDumper());
+  }
+
+  /**
+   * Returns a description of the actions taken while running this fiber.
+   * @param dumper an object to inject contents from the packer into the description
+   */
+  public String getBreadCrumbString(PacketDumper dumper) {
+    StringBuilder sb = new StringBuilder();
+    writeBreadCrumbs(sb, dumper);
+    return sb.toString();
+  }
+
+  static class NullPacketDumper implements PacketDumper {
+    @Override
+    public void dump(StringBuilder sb, Packet packet) {
     }
   }
 
-  private synchronized void addBreadCrumb(BreadCrumb bc) {
-    if (breadCrumbs != null) {
-      breadCrumbs.add(bc);
+  private synchronized void writeBreadCrumbs(StringBuilder sb, PacketDumper dumper) {
+    sb.append('[');
+    BreadCrumb previous = null;
+    for (BreadCrumb bc : getBreadCrumbs()) {
+      bc.writeTo(sb, previous, dumper);
+      previous = bc;
     }
-  }
-
-  private synchronized void recordBreadCrumb() {
-    if (breadCrumbs != null) {
-      if (parent == null) {
-        StringBuilder sb = new StringBuilder();
-        writeBreadCrumb(sb);
-
-        if (LOGGER.isFinestEnabled()) {
-          LOGGER.finest("{0} bread crumb: {1}", getName(), sb.toString());
-        }
-        breadCrumbs = null;
-      }
-    }
-  }
-
-  private synchronized void writeBreadCrumb(StringBuilder sb) {
-    if (breadCrumbs != null) {
-      sb.append('[');
-      Iterator<BreadCrumb> it = breadCrumbs.iterator();
-      BreadCrumb previous = null;
-      while (it.hasNext()) {
-        BreadCrumb bc = it.next();
-        if (!bc.isMarker()) {
-          if (previous != null) {
-            sb.append(previous.isMarker() ? "][" : ",");
-          }
-          bc.writeTo(sb);
-        }
-        previous = bc;
-      }
-      sb.append(']');
-    }
+    sb.append(']');
   }
 
   @Override
@@ -653,6 +672,11 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber {
 
   public Map<String, Component> getComponents() {
     return components;
+  }
+
+  @Override
+  public BreadCrumb createBreadCrumb() {
+    return new ChildFiberBreadCrumb(this);
   }
 
   /**
@@ -688,14 +712,6 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber {
     void onExit();
   }
 
-  private interface BreadCrumb {
-    void writeTo(StringBuilder sb);
-
-    default boolean isMarker() {
-      return false;
-    }
-  }
-
   private static final class OnExitRunnableException extends RuntimeException {
     private static final long serialVersionUID = 1L;
 
@@ -707,35 +723,6 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber {
     }
   }
 
-  private static class NextActionBreadCrumb implements BreadCrumb {
-    private final NextAction na;
-
-    NextActionBreadCrumb(NextAction na) {
-      this.na = na;
-    }
-
-    @Override
-    public void writeTo(StringBuilder sb) {
-      switch (na.kind) {
-        case INVOKE:
-        case SUSPEND:
-          if (na.next != null) {
-            sb.append(na.next.getName());
-          }
-          break;
-        case THROW:
-          if (na.throwable != null) {
-            sb.append('(');
-            sb.append(na.throwable.getClass().getSimpleName());
-            sb.append(')');
-          }
-          break;
-        default:
-          throw new AssertionError();
-      }
-    }
-  }
-
   private static class ChildFiberBreadCrumb implements BreadCrumb {
     private final Fiber child;
 
@@ -744,29 +731,16 @@ public final class Fiber implements Runnable, ComponentRegistry, AsyncFiber {
     }
 
     @Override
-    public void writeTo(StringBuilder sb) {
+    public void writeTo(StringBuilder sb, BreadCrumb previous, PacketDumper dumper) {
       sb.append("{child-");
       sb.append(child.id);
       sb.append(": ");
       if (child.status.get() == NOT_COMPLETE) {
         sb.append("not-complete");
       } else {
-        child.writeBreadCrumb(sb);
+        child.writeBreadCrumbs(sb, dumper);
       }
       sb.append("}");
-    }
-  }
-
-  private static class SuspendMarkerBreadCrumb implements BreadCrumb {
-
-    @Override
-    public void writeTo(StringBuilder sb) {
-      // no-op
-    }
-
-    @Override
-    public boolean isMarker() {
-      return true;
     }
   }
 

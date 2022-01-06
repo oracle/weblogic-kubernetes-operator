@@ -28,7 +28,6 @@ import oracle.kubernetes.operator.TuningParameters.WatchTuning;
 import oracle.kubernetes.operator.builders.WatchBuilder;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.helpers.CallBuilder;
-import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.ResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
@@ -138,7 +137,11 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
     return false;
   }
 
-  static boolean isFailed(V1Job job) {
+  /**
+   * Returns true if the specified job has a failed status or condition.
+   * @param job job to be tested
+   */
+  public static boolean isFailed(V1Job job) {
     if (job == null) {
       return false;
     }
@@ -174,8 +177,12 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
     return Optional.ofNullable(jobCondition).map(V1JobCondition::getStatus).orElse("");
   }
 
-
-  static String getFailedReason(V1Job job) {
+  /**
+   * Get the reason for job failure.
+   * @param job job
+   * @return Job failure reason.
+   */
+  public static String getFailedReason(V1Job job) {
     V1JobStatus status = job.getStatus();
     if (status != null && status.getConditions() != null) {
       for (V1JobCondition cond : status.getConditions()) {
@@ -242,11 +249,8 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
           metadata.getCreationTimestamp());
     }
 
+    // A job is considered ready once it has either successfully completed, or been marked as failed.
     @Override
-    boolean isReady(V1Job job, DomainPresenceInfo info, String serverName) {
-      return isReady(job);
-    }
-
     boolean isReady(V1Job job) {
       return isComplete(job) || isFailed(job);
     }
@@ -259,7 +263,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
     // Ignore modified callbacks from different jobs (identified by having different creation times) or those
     // where the job is not yet ready.
     @Override
-    boolean shouldProcessCallback(V1Job job, Packet packet) {
+    boolean shouldProcessCallback(V1Job job) {
       return hasExpectedCreationTime(job) && isReady(job);
     }
 
@@ -302,7 +306,7 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
     // be available for reading
     @Override
     boolean shouldTerminateFiber(V1Job job) {
-      return isFailed(job) && ("DeadlineExceeded".equals(getFailedReason(job)));
+      return isJobTimedOut(job);
     }
 
     // create an exception to terminate the fiber
@@ -330,6 +334,10 @@ public class JobWatcher extends Watcher<V1Job> implements WatchListener<V1Job>, 
         }
       };
     }
+  }
+
+  public static boolean isJobTimedOut(V1Job job) {
+    return isFailed(job) && ("DeadlineExceeded".equals(getFailedReason(job)));
   }
 
   static class DeadlineExceededException extends Exception {

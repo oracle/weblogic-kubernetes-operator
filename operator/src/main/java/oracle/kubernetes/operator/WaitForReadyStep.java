@@ -23,7 +23,6 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
-import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
 import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLabel;
 
 /**
@@ -36,8 +35,7 @@ abstract class WaitForReadyStep<T> extends Step {
   private static final int DEFAULT_RECHECK_SECONDS = 5;
   private static final int DEFAULT_RECHECK_COUNT = 60;
 
-  static NextStepFactory NEXT_STEP_FACTORY =
-          (callback, info, next) -> createMakeDomainRightStep(callback, info, next);
+  static NextStepFactory NEXT_STEP_FACTORY = WaitForReadyStep::createMakeDomainRightStep;
 
   protected static Step createMakeDomainRightStep(WaitForReadyStep.Callback callback,
                                            DomainPresenceInfo info, Step next) {
@@ -77,14 +75,17 @@ abstract class WaitForReadyStep<T> extends Step {
     this.resourceName = resourceName;
   }
 
+  @Override
+  protected String getDetail() {
+    return getResourceName();
+  }
+
   /**
    * Returns true if the specified resource is deemed "ready." Different steps may define readiness in different ways.
    * @param resource the resource to check
-   * @param info domain presence info
-   * @param serverName Server name
    * @return true if processing can proceed
    */
-  abstract boolean isReady(T resource, DomainPresenceInfo info, String serverName);
+  abstract boolean isReady(T resource);
 
   /**
    * Returns true if the cached resource is not found during periodic listing.
@@ -103,7 +104,7 @@ abstract class WaitForReadyStep<T> extends Step {
    * @param resource the resource to check
    * @return true if the resource is expected
    */
-  boolean shouldProcessCallback(T resource, Packet packet) {
+  boolean shouldProcessCallback(T resource) {
     return true;
   }
 
@@ -177,14 +178,13 @@ abstract class WaitForReadyStep<T> extends Step {
 
   @Override
   public final NextAction apply(Packet packet) {
-    String serverName = (String)packet.get(SERVER_NAME);
     if (shouldTerminateFiber(initialResource)) {
       return doTerminate(createTerminationException(initialResource), packet);
-    } else if (isReady(initialResource, packet.getSpi(DomainPresenceInfo.class), serverName)) {
+    } else if (isReady(initialResource)) {
       return doNext(packet);
     }
 
-    logWaiting(getName());
+    logWaiting(getResourceName());
     return doSuspend((fiber) -> resumeWhenReady(packet, fiber));
   }
 
@@ -192,7 +192,7 @@ abstract class WaitForReadyStep<T> extends Step {
   // verifies that we haven't already missed the update.
   private void resumeWhenReady(Packet packet, AsyncFiber fiber) {
     Callback callback = new Callback(fiber, packet);
-    addCallback(getName(), callback);
+    addCallback(getResourceName(), callback);
     checkUpdatedResource(packet, fiber, callback);
   }
 
@@ -210,13 +210,13 @@ abstract class WaitForReadyStep<T> extends Step {
 
   Step createReadAndIfReadyCheckStep(Callback callback) {
     if (initialResource != null) {
-      return createReadAsyncStep(getName(), getNamespace(), getDomainUid(), resumeIfReady(callback));
+      return createReadAsyncStep(getResourceName(), getNamespace(), getDomainUid(), resumeIfReady(callback));
     } else {
-      return new ReadAndIfReadyCheckStep(getName(), resumeIfReady(callback), getNext());
+      return new ReadAndIfReadyCheckStep(getResourceName(), resumeIfReady(callback), getNext());
     }
   }
 
-  protected abstract ResponseStep resumeIfReady(Callback callback);
+  protected abstract ResponseStep<T> resumeIfReady(Callback callback);
 
   private String getNamespace() {
     return getMetadata(initialResource).getNamespace();
@@ -226,16 +226,16 @@ abstract class WaitForReadyStep<T> extends Step {
     return getDomainUidLabel(getMetadata(initialResource));
   }
 
-  public String getName() {
+  public String getResourceName() {
     return initialResource != null ? getMetadata(initialResource).getName() : resourceName;
   }
 
 
   private class ReadAndIfReadyCheckStep extends Step {
     private final String resourceName;
-    private final ResponseStep responseStep;
+    private final ResponseStep<T> responseStep;
 
-    ReadAndIfReadyCheckStep(String resourceName, ResponseStep responseStep, Step next) {
+    ReadAndIfReadyCheckStep(String resourceName, ResponseStep<T> responseStep, Step next) {
       super(next);
       this.resourceName = resourceName;
       this.responseStep = responseStep;
@@ -250,7 +250,7 @@ abstract class WaitForReadyStep<T> extends Step {
 
   }
 
-  static class MakeRightDomainStep extends DefaultResponseStep {
+  static class MakeRightDomainStep<V> extends DefaultResponseStep<V> {
     public static final String WAIT_TIMEOUT_EXCEEDED = "Wait timeout exceeded";
     private final WaitForReadyStep.Callback callback;
 
@@ -260,7 +260,7 @@ abstract class WaitForReadyStep<T> extends Step {
     }
 
     @Override
-    public NextAction onSuccess(Packet packet, CallResponse callResponse) {
+    public NextAction onSuccess(Packet packet, CallResponse<V> callResponse) {
       MakeRightDomainOperation makeRightDomainOperation =
               (MakeRightDomainOperation)packet.get(MAKE_RIGHT_DOMAIN_OPERATION);
       if (makeRightDomainOperation != null) {
@@ -279,17 +279,15 @@ abstract class WaitForReadyStep<T> extends Step {
     private final Packet packet;
     private final AtomicBoolean didResume = new AtomicBoolean(false);
     private final AtomicInteger recheckCount = new AtomicInteger(0);
-    private final String serverName;
 
     Callback(AsyncFiber fiber, Packet packet) {
       this.fiber = fiber;
       this.packet = packet;
-      this.serverName = (String) packet.get(SERVER_NAME);
     }
 
     @Override
     public void accept(T resource) {
-      boolean shouldProcessCallback = shouldProcessCallback(resource, packet);
+      boolean shouldProcessCallback = shouldProcessCallback(resource);
       if (shouldProcessCallback) {
         proceedFromWait(resource);
       }
@@ -297,7 +295,7 @@ abstract class WaitForReadyStep<T> extends Step {
 
     // The resource has now either completed or failed, so we can continue processing.
     void proceedFromWait(T resource) {
-      removeCallback(getName(), this);
+      removeCallback(getResourceName(), this);
       if (mayResumeFiber()) {
         handleResourceReady(fiber, packet, resource);
         fiber.resume(packet);
@@ -320,10 +318,6 @@ abstract class WaitForReadyStep<T> extends Step {
 
     int getRecheckCount() {
       return recheckCount.get();
-    }
-
-    String geServerName() {
-      return serverName;
     }
   }
 

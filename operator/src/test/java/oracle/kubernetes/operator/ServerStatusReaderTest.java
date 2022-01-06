@@ -7,17 +7,14 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
 import com.meterware.pseudoserver.HttpUserAgentTest;
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
-import io.kubernetes.client.openapi.ApiClient;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
@@ -25,8 +22,6 @@ import io.kubernetes.client.openapi.models.V1PodStatus;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
-import oracle.kubernetes.operator.utils.KubernetesExec;
-import oracle.kubernetes.operator.utils.KubernetesExecFactory;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -40,7 +35,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import static com.meterware.simplestub.Stub.createStub;
+import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
 import static org.hamcrest.Matchers.contains;
@@ -50,7 +45,6 @@ import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 class ServerStatusReaderTest extends HttpUserAgentTest {
   private static final String NS = "namespace";
-  private static final String UID = "uid";
   private final TerminalStep endStep = new TerminalStep();
   private final KubernetesExecFactoryFake execFactory = new KubernetesExecFactoryFake();
   private final ReadServerHealthStepFactoryFake stepFactory = new ReadServerHealthStepFactoryFake();
@@ -63,7 +57,7 @@ class ServerStatusReaderTest extends HttpUserAgentTest {
   @BeforeEach
   public void setUp() throws NoSuchFieldException {
     mementos.add(TestUtils.silenceOperatorLogger());
-    mementos.add(StaticStubSupport.install(ServerStatusReader.class, "EXEC_FACTORY", execFactory));
+    mementos.add(execFactory.install());
     mementos.add(StaticStubSupport.install(ServerStatusReader.class, "STEP_FACTORY", stepFactory));
     mementos.add(TuningParametersStub.install());
     mementos.add(ClientFactoryStub.install());
@@ -182,28 +176,6 @@ class ServerStatusReaderTest extends HttpUserAgentTest {
         public NextAction apply(Packet packet) {
           serverNames.add((String) packet.get(ProcessingConstants.SERVER_NAME));
           return doNext(packet);
-        }
-      };
-    }
-  }
-
-  static class KubernetesExecFactoryFake implements KubernetesExecFactory {
-    private final Map<String, String> responses = new HashMap<>();
-
-    void defineResponse(String serverName, String response) {
-      responses.put(LegalNames.toPodName(UID, serverName), response);
-    }
-
-    @Override
-    public KubernetesExec create(ApiClient client, V1Pod pod, String containerName) {
-      return new KubernetesExec() {
-        @Override
-        public Process exec(String... command) {
-          return createStub(ProcessStub.class, getResponse(pod.getMetadata().getName()));
-        }
-
-        private String getResponse(String name) {
-          return Optional.ofNullable(responses.get(name)).orElse("** unknown pod **");
         }
       };
     }

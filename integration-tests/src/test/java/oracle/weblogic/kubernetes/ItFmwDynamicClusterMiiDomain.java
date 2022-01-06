@@ -23,13 +23,10 @@ import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
@@ -37,29 +34,26 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
-import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
-import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
-import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuAccessSecret;
 import static oracle.weblogic.kubernetes.utils.DbUtils.setupDBandRCUschema;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyDomainReady;
+import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyEMconsoleAccess;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createOpsswalletpasswordSecret;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
  * Test to creat a FMW dynamic domain in model in image.
@@ -90,12 +84,7 @@ class ItFmwDynamicClusterMiiDomain {
   private String rcuaccessSecretName = domainUid + "-rcu-access";
   private String opsswalletpassSecretName = domainUid + "-opss-wallet-password-secret";
   private int replicaCount = 2;
-
-  // create standard, reusable retry/backoff policy
-  private static final ConditionFactory withStandardRetryPolicy
-      = with().pollDelay(2, SECONDS)
-      .and().with().pollInterval(10, SECONDS)
-      .atMost(5, MINUTES).await();
+  private String adminSvcExtHost = null;
 
   /**
    * Start DB service and create RCU schema.
@@ -149,7 +138,10 @@ class ItFmwDynamicClusterMiiDomain {
   void testFmwDynamicClusterDomainInModelInImage() {
     // create FMW dynamic domain and verify
     createFmwDomainAndVerify();
-    verifyDomainReady();
+    verifyDomainReady(domainNamespace, domainUid, replicaCount, "nosuffix");
+    // Expose the admin service external node port as  a route for OKD
+    adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
+    verifyEMconsoleAccess(domainNamespace, domainUid, adminSvcExtHost);
   }
 
   private void createFmwDomainAndVerify() {
@@ -283,29 +275,4 @@ class ItFmwDynamicClusterMiiDomain {
     createDomainAndVerify(domain, domainNamespace);
   }
 
-  /**
-   * Verify Pod is ready and service exists for both admin server and managed servers.
-   * Verify EM console is accessible.
-   */
-  private void verifyDomainReady() {
-    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Checking managed server service {0} is created in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
-    }
-
-    //check access to the em console: http://hostname:port/em
-    int nodePort = getServiceNodePort(
-        domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    assertTrue(nodePort != -1,
-          "Could not get the default external service node port");
-    logger.info("Found the default service nodePort {0}", nodePort);
-    String curlCmd1 = "curl -s -L --show-error --noproxy '*' "
-        + " http://" + K8S_NODEPORT_HOST + ":" + nodePort
-        + "/em --write-out %{http_code} -o /dev/null";
-    logger.info("Executing default nodeport curl command {0}", curlCmd1);
-    assertTrue(callWebAppAndWaitTillReady(curlCmd1, 5), "Calling web app failed");
-    logger.info("EM console is accessible thru default service");
-  }
 }

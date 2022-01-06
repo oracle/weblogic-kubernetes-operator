@@ -32,11 +32,14 @@ public class Istio {
 
   @ApiModelProperty(
       "This setting was added in operator version 3.3.3, "
-          + "defaults to the Helm chart configuration value `istioLocalhostBindingsEnabled` "
-          + "which in turn defaults to `true`. When `true`, the operator "
+          + "defaults to the `istioLocalhostBindingsEnabled` "
+          + "[Operator Helm value]({{< relref \"/userguide/managing-operators/using-helm.md\" >}}) "
+          + "which in turn defaults to `true`, "
+          + "and is ignored in version 4.0 and later. In version 3.x, when `true`, the operator "
           + "creates a WebLogic network access point with a `localhost` binding for each existing "
-          + "channel and protocol.  Use `true` for Istio versions prior to 1.10 "
-          + "and set to `false` for version 1.10 and later.")
+          + "channel and protocol.  In version 3.x, use `true` for Istio versions prior to 1.10 "
+          + "and set to `false` for version 1.10 and later.  Version 4.0 and later requires Istio "
+          + "1.10 and later, will not create localhost bindings, and ignores this attribute.")
   private Boolean localhostBindingsEnabled;
 
   /**
@@ -157,10 +160,7 @@ public class Istio {
   @Override
   public int hashCode() {
     HashCodeBuilder builder = new HashCodeBuilder().append(enabled).append(readinessPort)
-        .append(replicationChannelPort);
-    if (localhostBindingsEnabled != null) {
-      builder.append(localhostBindingsEnabled);
-    }
+        .append(replicationChannelPort).append(localhostBindingsEnabled);
 
     return builder.toHashCode();
   }

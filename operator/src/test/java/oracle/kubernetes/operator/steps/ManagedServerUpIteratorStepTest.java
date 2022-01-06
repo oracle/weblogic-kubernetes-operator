@@ -43,6 +43,7 @@ import oracle.kubernetes.operator.watcher.WatchListener;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
+import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.TestUtils;
@@ -55,14 +56,19 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static java.util.Collections.emptyMap;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
+import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
 import static oracle.kubernetes.operator.steps.ManagedServerUpIteratorStep.SCHEDULING_DETECTION_DELAY;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.notNullValue;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.containsInAnyOrder;
+import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.hasSize;
+import static org.hamcrest.Matchers.sameInstance;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements WatchListener<V1Pod>,
@@ -222,8 +228,9 @@ class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements W
     testSupport.throwOnCompletionFailure();
   }
 
-  protected PodWatcher createWatcher(String ns, AtomicBoolean stopping, BigInteger rv) {
-    return PodWatcher.create(this, ns, rv.toString(), tuning, this, stopping);
+  @SuppressWarnings("SameParameterValue")
+  protected PodWatcher createWatcher(String ns, AtomicBoolean stopping, BigInteger initialResourceVersion) {
+    return PodWatcher.create(this, ns, initialResourceVersion.toString(), tuning, this, stopping);
   }
 
   @Test
@@ -252,6 +259,29 @@ class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements W
 
   private String getServerName(@Nonnull Map<String,String> labels) {
     return labels.get(SERVERNAME_LABEL);
+  }
+
+  @Test
+  void whenStepCreated_serverNamesArePartOfItsName() {
+    addWlsCluster(CLUSTER1, MS1, MS2, MS3);
+
+    final Step step = createStepWithServerInfos();
+
+    assertThat(step.getResourceName(), allOf(containsString(MS1), containsString(MS2), containsString(MS3)));
+  }
+
+  @Test
+  void afterStepIsRun_rollingCollectionIsAddedToDomainPresenceInfo() {
+    addWlsCluster(CLUSTER1, MS1, MS2, MS3);
+
+    final Packet packet = invokeStepWithServerStartupInfos();
+
+    assertThat(getDomainPresenceServersToRoll(packet), sameInstance(packet.get(SERVERS_TO_ROLL)));
+  }
+
+  @Nonnull
+  private Map<String, Step.StepAndPacket> getDomainPresenceServersToRoll(Packet packet) {
+    return DomainPresenceInfo.fromPacket(packet).map(DomainPresenceInfo::getServersToRoll).orElse(emptyMap());
   }
 
   @Test
@@ -369,9 +399,13 @@ class ManagedServerUpIteratorStepTest extends ThreadFactoryTestBase implements W
   }
 
 
-  private void invokeStepWithServerStartupInfos() {
-    ManagedServerUpIteratorStep step = new ManagedServerUpIteratorStep(startupInfos, nextStep);
-    testSupport.runSteps(step);
+  private Packet invokeStepWithServerStartupInfos() {
+    return testSupport.runSteps(createStepWithServerInfos());
+  }
+
+  @Nonnull
+  private ManagedServerUpIteratorStep createStepWithServerInfos() {
+    return new ManagedServerUpIteratorStep(startupInfos, nextStep);
   }
 
   private ClusterConfigurator configureCluster(String clusterName) {

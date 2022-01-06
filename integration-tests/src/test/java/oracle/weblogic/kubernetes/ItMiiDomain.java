@@ -49,7 +49,6 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
-import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V1;
 import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V2;
 import static oracle.weblogic.kubernetes.TestConstants.MII_APP_RESPONSE_V3;
@@ -62,6 +61,8 @@ import static oracle.weblogic.kubernetes.TestConstants.OCIR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ARCHIVE_DIR;
@@ -77,7 +78,9 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerLogin;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
+import static oracle.weblogic.kubernetes.actions.TestActions.getOperatorPodName;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appNotAccessibleInPod;
@@ -85,11 +88,23 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExis
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainResourceImagePatched;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podImagePatched;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
+import static oracle.weblogic.kubernetes.utils.ApplicationUtils.verifyAdminConsoleAccessible;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.startPortForwardProcess;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.stopPortForwardProcess;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCredentials;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPolicy;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withQuickRetryPolicy;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.checkDirectory;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.LoggingUtil.checkPodLogContainsString;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.setTargetPortForRoute;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
@@ -109,8 +124,6 @@ class ItMiiDomain {
   private static String opNamespace = null;
   private static String domainNamespace = null;
   private static String domainNamespace1 = null;
-  private static ConditionFactory withStandardRetryPolicy = null;
-  private static ConditionFactory withQuickRetryPolicy = null;
 
   private String domainUid = "domain1";
   private String domainUid1 = "domain2";
@@ -128,15 +141,6 @@ class ItMiiDomain {
   @BeforeAll
   public static void initAll(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
-    // create standard, reusable retry/backoff policy
-    withStandardRetryPolicy = with().pollDelay(2, SECONDS)
-        .and().with().pollInterval(10, SECONDS)
-        .atMost(6, MINUTES).await();
-
-    // create a reusable quick retry policy
-    withQuickRetryPolicy = with().pollDelay(1, SECONDS)
-        .and().with().pollInterval(2, SECONDS)
-        .atMost(15, SECONDS).await();
 
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
@@ -161,7 +165,11 @@ class ItMiiDomain {
    * the cluster and accessible from all the managed server pods 
    * Make sure two external NodePort services are created in domain namespace.
    * Make sure WebLogic console is accessible through both 
-   *   `default-secure` service and `default` service.  
+   *   `default-secure` service and `default` service.
+   *
+   * Negative test case for when domain resource attribute domain.spec.adminServer.adminChannelPortForwardingEnabled
+   * is set to false, the WLS admin console can not be accessed using the forwarded port, like
+   * http://localhost:localPort/console/login/LoginForm.jsp.
    */
   @Test
   @Order(1)
@@ -171,6 +179,9 @@ class ItMiiDomain {
     final String adminServerPodName = domainUid + "-admin-server";
     final String managedServerPrefix = domainUid + "-managed-server";
     final int replicaCount = 2;
+    final String hostName = "localhost";
+    final int adminServerPort = 7001;
+    final int adminServerSecurePort = 7008;
 
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
@@ -194,7 +205,7 @@ class ItMiiDomain {
         + "    'admin-server':\n"
         + "       SSL: \n"
         + "         Enabled: true \n"
-        + "         ListenPort: '7008' \n";
+        + "         ListenPort: '" + adminServerSecurePort + "' \n";
     createModelConfigMap(configMapName, yamlString, domainUid);
      
     // create the domain object
@@ -219,6 +230,13 @@ class ItMiiDomain {
           managedServerPrefix + i, domainNamespace);
       checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
+    // Need to expose the admin server external service to access the console in OKD cluster only
+    // We will create one route for sslport and another for default port
+    String adminSvcSslPortExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), 
+                    domainNamespace, "domain1-admin-server-sslport-ext");
+    setTlsTerminationForRoute("domain1-admin-server-sslport-ext", domainNamespace);
+    String adminSvcExtHost = createRouteForOKD(getExternalServicePodName(adminServerPodName), domainNamespace);
+
     // check and wait for the application to be accessible in all server pods
     for (int i = 1; i <= replicaCount; i++) {
       checkAppRunning(
@@ -233,12 +251,18 @@ class ItMiiDomain {
 
     int sslNodePort = getServiceNodePort(
          domainNamespace, getExternalServicePodName(adminServerPodName), "default-secure");
+    // In OKD cluster, we need to set the target port of the route to be the ssl port
+    // By default, when a service is exposed as a route, the endpoint is set to the default port.
+    int sslPort = getServicePort(
+         domainNamespace, getExternalServicePodName(adminServerPodName), "default-secure");
+    setTargetPortForRoute("domain1-admin-server-sslport-ext", domainNamespace, sslPort);
     assertTrue(sslNodePort != -1,
           "Could not get the default-secure external service node port");
     logger.info("Found the administration service nodePort {0}", sslNodePort);
+    String hostAndPort = getHostAndPort(adminSvcSslPortExtHost, sslNodePort);
     if (!WEBLOGIC_SLIM) {
       String curlCmd = "curl -sk --show-error --noproxy '*' "
-          + " https://" + K8S_NODEPORT_HOST + ":" + sslNodePort
+          + " https://" + hostAndPort
           + "/console/login/LoginForm.jsp --write-out %{http_code} -o /dev/null";
       logger.info("Executing default-admin nodeport curl command {0}", curlCmd);
       assertTrue(callWebAppAndWaitTillReady(curlCmd, 10));
@@ -252,10 +276,11 @@ class ItMiiDomain {
     assertTrue(nodePort != -1,
           "Could not get the default external service node port");
     logger.info("Found the default service nodePort {0}", nodePort);
+    hostAndPort = getHostAndPort(adminSvcExtHost, nodePort);
 
     if (!WEBLOGIC_SLIM) {
       String curlCmd2 = "curl -s --show-error --noproxy '*' "
-          + " http://" + K8S_NODEPORT_HOST + ":" + nodePort
+          + " http://" + hostAndPort
           + "/console/login/LoginForm.jsp --write-out %{http_code} -o /dev/null";
       logger.info("Executing default nodeport curl command {0}", curlCmd2);
       assertTrue(callWebAppAndWaitTillReady(curlCmd2, 5));
@@ -265,6 +290,17 @@ class ItMiiDomain {
       verifyCredentials(adminServerPodName, domainNamespace,
             ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, true);
     }
+
+    // Test that `kubectl port-foward` is able to forward a local port to default channel port (7001 in this test)
+    // and default secure channel port (7002 in this test)
+    // Verify that the WLS admin console can not be accessed using http://localhost:localPort/console/login/LoginForm.jsp
+    String forwardedPortNo = startPortForwardProcess(hostName, domainNamespace, domainUid, adminServerPort);
+    verifyAdminConsoleAccessible(domainNamespace, hostName, forwardedPortNo, false, Boolean.FALSE);
+
+    forwardedPortNo = startPortForwardProcess(hostName, domainNamespace, domainUid, adminServerSecurePort);
+    verifyAdminConsoleAccessible(domainNamespace, hostName, forwardedPortNo, true, Boolean.FALSE);
+
+    stopPortForwardProcess(domainNamespace);
   }
 
   @Test
@@ -301,23 +337,32 @@ class ItMiiDomain {
                 replicaCount,
                 MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
 
+    // set low introspectorJobActiveDeadlineSeconds and verify introspector retries on timeouts
+    domain.getSpec().configuration().introspectorJobActiveDeadlineSeconds(30L);
+
     // create model in image domain
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
         domainUid1, domainNamespace1, MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
     createDomainAndVerify(domain, domainNamespace1);
 
     // check admin server pod is ready
+    // as low value is used for introspectorJobActiveDeadlineSeconds, wait longer for services and pods to come
+    // to give enough time for make-right intervals and retries
     logger.info("Check admin service {0} is created in namespace {1}",
             adminServerPodName, domainNamespace1);
-    checkPodReadyAndServiceExists(adminServerPodName, domainUid1, domainNamespace1);
+    checkPodReadyAndServiceExists(withLongRetryPolicy, adminServerPodName, domainUid1, domainNamespace1);
 
     // check managed server services created
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Check managed server service {0} is created in namespace {1}",
               managedServerPrefix + i, domainNamespace1);
-      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid1, domainNamespace1);
+      checkPodReadyAndServiceExists(withLongRetryPolicy, managedServerPrefix + i, domainUid1, domainNamespace1);
     }
 
+    // check operator pod log contains message for introspectorJobActiveDeadlineSeconds as a low value is used
+    String operatorPodName = assertDoesNotThrow(() -> getOperatorPodName(OPERATOR_RELEASE_NAME, opNamespace));
+    checkPodLogContainsString(opNamespace, operatorPodName,
+        "introspectorJobActiveDeadlineSeconds");
   }
 
   @Test
@@ -681,6 +726,8 @@ class ItMiiDomain {
       env.put("JAVA_HOME", witJavaHome);
     }
  
+    String witTarget = ((OKD) ? "OpenShift" : "Default");
+    
     // build an image using WebLogic Image Tool
     logger.info("Create image {0} using model list {1} and archive list {2}",
         image, modelList, archiveList);
@@ -692,6 +739,7 @@ class ItMiiDomain {
             .modelArchiveFiles(archiveList)
             .wdtModelOnly(true)
             .wdtVersion(WDT_VERSION)
+            .target(witTarget)
             .env(env)
             .redirect(true));
 
@@ -793,6 +841,7 @@ class ItMiiDomain {
                     .value("-Djava.security.egd=file:/dev/./urandom ")))
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING")
+                .adminChannelPortForwardingEnabled(false)
                 .serverService(new ServerService()
                     .annotations(keyValueMap)
                     .labels(keyValueMap))
@@ -893,22 +942,13 @@ class ItMiiDomain {
   ) {
    
     // check if the application is accessible inside of a server pod
-    conditionFactory
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for application {0} is running on pod {1} in namespace {2} "
-            + "(elapsed time {3}ms, remaining time {4}ms)",
-            appPath,
-            podName,
-            namespace,
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
-        .until(() -> appAccessibleInPod(
-                namespace,
-                podName, 
-                internalPort, 
-                appPath, 
-                expectedStr));
-
+    testUntil(conditionFactory,
+        () -> appAccessibleInPod(namespace, podName, internalPort, appPath, expectedStr),
+        logger,
+        "application {0} is running on pod {1} in namespace {2}",
+        appPath,
+        podName,
+        namespace);
   }
   
   private void quickCheckAppNotRunning(
@@ -920,21 +960,14 @@ class ItMiiDomain {
   ) {
    
     // check that the application is NOT running inside of a server pod
-    withQuickRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Checking if application {0} is not running on pod {1} in namespace {2} "
-            + "(elapsed time {3}ms, remaining time {4}ms)",
-            appPath,
-            podName,
-            namespace,
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
-        .until(() -> appNotAccessibleInPod(
-                namespace, 
-                podName,
-                internalPort, 
-                appPath, 
-                expectedStr));
+    testUntil(
+        withQuickRetryPolicy, () -> appNotAccessibleInPod(
+          namespace, podName, internalPort, appPath, expectedStr),
+        logger,
+        "Checking if application {0} is not running on pod {1} in namespace {2}",
+        appPath,
+        podName,
+        namespace);
   }
    
   private void checkDomainPatched(
@@ -944,18 +977,14 @@ class ItMiiDomain {
   ) {
    
     // check if the domain resource has been patched with the given image
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for domain {0} to be patched in namespace {1} "
-            + "(elapsed time {2}ms, remaining time {3}ms)",
-            domainUid,
-            namespace,
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> domainResourceImagePatched(domainUid, namespace, image),
-            String.format(
-               "Domain %s is not patched in namespace %s with image %s", domainUid, namespace, image)));
-
+    testUntil(
+        assertDoesNotThrow(
+            () -> domainResourceImagePatched(domainUid, namespace, image),
+              String.format("Domain %s is not patched in namespace %s with image %s", domainUid, namespace, image)),
+        logger,
+        "domain {0} to be patched in namespace {1}",
+        domainUid,
+        namespace);
   }
   
   private void checkPodImagePatched(
@@ -964,22 +993,18 @@ class ItMiiDomain {
       String podName,
       String image
   ) {
-   
     // check if the server pod has been patched with the given image
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for pod {0} to be patched in namespace {1} "
-            + "(elapsed time {2}ms, remaining time {3}ms)",
+    testUntil(
+        assertDoesNotThrow(() -> podImagePatched(domainUid, namespace, podName, "weblogic-server", image),
+          String.format(
+            "Pod %s is not patched with image %s in namespace %s.",
             podName,
-            namespace,
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> podImagePatched(domainUid, namespace, podName, "weblogic-server", image),
-            String.format(
-               "Pod %s is not patched with image %s in namespace %s.",
-               podName,
-               image,
-               namespace)));
+            image,
+            namespace)),
+        logger,
+        "pod {0} to be patched in namespace {1}",
+        podName,
+        namespace);
   }
   
   private static void collectAppAvailability(
@@ -990,22 +1015,18 @@ class ItMiiDomain {
       String internalPort,
       String appPath
   ) {
-    with().pollDelay(2, SECONDS)
-        .and().with().pollInterval(200, MILLISECONDS)
-        .atMost(15, MINUTES)
-        .await()
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for patched application running on all managed servers in namespace {1} "
-                + "(elapsed time {2}ms, remaining time {3}ms)",
-            namespace,
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> checkContinuousAvailability(
+    testUntil(
+        with().pollDelay(2, SECONDS)
+            .and().with().pollInterval(200, MILLISECONDS)
+            .atMost(15, MINUTES).await(),
+        assertDoesNotThrow(() -> checkContinuousAvailability(
             namespace, appAvailability, managedServerPrefix, replicaCount, internalPort, appPath),
-            String.format(
-                "App is not available on all managed servers in namespace %s.",
-                namespace)));
-
+        String.format(
+            "App is not available on all managed servers in namespace %s.",
+            namespace)),
+        logger,
+        "patched application running on all managed servers in namespace {0}",
+        namespace);
   }
 
   private static Callable<Boolean> checkContinuousAvailability(

@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.operator;
 
+import java.net.HttpURLConnection;
+
 /** Kubernetes constants. */
 public interface KubernetesConstants {
   String DEFAULT_IMAGE = "container-registry.oracle.com/middleware/weblogic:12.2.1.4";
@@ -18,7 +20,7 @@ public interface KubernetesConstants {
   String DOMAIN_PLURAL = "domains";
   String DOMAIN_SINGULAR = "domain";
   String DOMAIN_SHORT = "dom";
-  String DOMAIN_VERSION = "v8";
+  String DOMAIN_VERSION = "v9";
 
   String API_VERSION_WEBLOGIC_ORACLE = DOMAIN_GROUP + "/" + DOMAIN_VERSION;
 
@@ -47,4 +49,45 @@ public interface KubernetesConstants {
   String POD = "Pod";
 
   int DEFAULT_EXPORTER_SIDECAR_PORT = 8080;
+
+  //---------- HTTP statuses returned from Kubernetes ----------
+
+  // Operation was performed successfully
+  int HTTP_OK = HttpURLConnection.HTTP_OK;
+
+  // The server does not understand the request
+  int HTTP_BAD_REQUEST = HttpURLConnection.HTTP_BAD_REQUEST;
+
+  // The client could not be authenticated
+  int HTTP_UNAUTHORIZED = HttpURLConnection.HTTP_UNAUTHORIZED;
+
+  // The request conflicted with some other processing being performed at the same time.
+  int HTTP_CONFLICT = HttpURLConnection.HTTP_CONFLICT;
+
+  // The client is not permitted to perform the specified operation
+  int HTTP_FORBIDDEN = HttpURLConnection.HTTP_FORBIDDEN;
+  
+  // The requested resource was not found
+  int HTTP_NOT_FOUND = HttpURLConnection.HTTP_NOT_FOUND;
+
+  // The HTTP method used is not supported for this resource
+  int HTTP_BAD_METHOD = HttpURLConnection.HTTP_BAD_METHOD;
+
+  // The specified version of the requested resource is no longer available
+  int HTTP_GONE = HttpURLConnection.HTTP_GONE;
+
+  // Kubernetes is unable to perform the request. The associated exception contains more details.
+  int HTTP_UNPROCESSABLE_ENTITY = 422;
+
+  // More requests have been received by Kubernetes than it can handle. Clients may retry the failed operation.
+  int HTTP_TOO_MANY_REQUESTS = 429;
+
+  // An unspecified error has occurred inside Kubernetes. Clients may retry the failed operation.
+  int HTTP_INTERNAL_ERROR = HttpURLConnection.HTTP_INTERNAL_ERROR;
+
+  // Kubernetes is temporarily unavailable to respond. Clients may retry the failed operation.
+  int HTTP_UNAVAILABLE = HttpURLConnection.HTTP_UNAVAILABLE;
+
+  // A (possibly Ingress-related) timeout occurred internally to Kubernetes. Clients may retry the failed operation.
+  int HTTP_GATEWAY_TIMEOUT = HttpURLConnection.HTTP_GATEWAY_TIMEOUT;
 }

@@ -20,7 +20,6 @@ import io.kubernetes.client.openapi.models.V1ServiceList;
 import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import io.kubernetes.client.openapi.models.V1Status;
-import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.calls.CallResponse;
@@ -45,6 +44,8 @@ import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 
+import static oracle.kubernetes.operator.DomainStatusUpdater.createKubernetesFailureSteps;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.LabelConstants.forDomainUidSelector;
 import static oracle.kubernetes.operator.LabelConstants.getCreatedByOperatorSelector;
 import static oracle.kubernetes.operator.helpers.KubernetesUtils.getDomainUidLabel;
@@ -586,10 +587,10 @@ public class ServiceHelper {
               .withLabelSelectors(forDomainUidSelector(info.getDomainUid()), getCreatedByOperatorSelector())
               .listServiceAsync(
                       getNamespace(),
-                      new ActionResponseStep<V1ServiceList>() {
+                      new ActionResponseStep<>() {
                       public Step createSuccessStep(V1ServiceList result, Step next) {
                         Collection<V1Service> c = Optional.ofNullable(result).map(list -> list.getItems().stream()
-                                  .filter(s -> isNodePortType(s))
+                                  .filter(ServiceHelper::isNodePortType)
                                   .collect(Collectors.toList())).orElse(new ArrayList<>());
                         return new DeleteServiceListStep(c, createReplacementService(next));
                       }
@@ -641,7 +642,7 @@ public class ServiceHelper {
 
       @Override
       public NextAction onFailure(Packet packet, CallResponse<V1Service> callResponse) {
-        return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
+        return callResponse.getStatusCode() == HTTP_NOT_FOUND
             ? onSuccess(packet, callResponse)
             : onFailure(getConflictStep(), packet, callResponse);
       }
@@ -665,7 +666,7 @@ public class ServiceHelper {
 
       @Override
       public NextAction onFailure(Packet packet, CallResponse<V1Status> callResponse) {
-        return callResponse.getStatusCode() == CallBuilder.NOT_FOUND
+        return callResponse.getStatusCode() == HTTP_NOT_FOUND
             ? onSuccess(packet, callResponse)
             : onFailure(getConflictStep(), packet, callResponse);
       }
@@ -694,7 +695,7 @@ public class ServiceHelper {
       }
 
       private NextAction updateDomainStatus(Packet packet, CallResponse<V1Service> callResponse) {
-        return doNext(DomainStatusUpdater.createFailureRelatedSteps(callResponse, null), packet);
+        return doNext(createKubernetesFailureSteps(callResponse), packet);
       }
 
       @Override

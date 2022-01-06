@@ -943,7 +943,7 @@ window.onload = function() {
           "$ref": "#/definitions/ServerPod"
         },
         "adminChannelPortForwardingEnabled": {
-          "description": "When this flag is enabled, the operator updates the domain\u0027s WebLogic configuration for its Administration Server to have an admin protocol NetworkAccessPoint with a \u0027localhost\u0027 address for each existing admin protocol capable port. This allows external Administration Console and WLST \u0027T3\u0027 access when using the \u0027kubectl port-forward\u0027 pattern. Defaults to false.",
+          "description": "When this flag is enabled, the operator updates the domain\u0027s WebLogic configuration for its Administration Server to have an admin protocol NetworkAccessPoint with a \u0027localhost\u0027 address for each existing admin protocol capable port. This allows external Administration Console and WLST \u0027T3\u0027 access when using the \u0027kubectl port-forward\u0027 pattern. Defaults to true.",
           "type": "boolean"
         },
         "serverStartPolicy": {
@@ -1012,7 +1012,7 @@ window.onload = function() {
           ]
         },
         "command": {
-          "description": "The command for this init container. Defaults to `cp -R $AUXILIARY_IMAGE_PATH/* $TARGET_MOUNT_PATH`. This is an advanced setting for customizing the container command for copying files from the container image to the auxiliary image emptyDir volume. Use the `$AUXILIARY_IMAGE_PATH` environment variable to reference the value configured in `spec.auxiliaryImageVolumes.mountPath`, which defaults to \"/auxiliary\". Use \u0027$TARGET_MOUNT_PATH\u0027 to refer to the temporary directory created by the operator that resolves to the auxiliary image\u0027s internal emptyDir volume.",
+          "description": "The command for this init container. Defaults to `cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH`. This is an advanced setting for customizing the container command for copying files from the container image to the auxiliary image emptyDir volume. Use the `$AUXILIARY_IMAGE_PATH` environment variable to reference the value configured in `spec.auxiliaryImageVolumes.mountPath`, which defaults to \"/auxiliary\". Use \u0027$AUXILIARY_IMAGE_TARGET_PATH\u0027 to refer to the temporary directory created by the operator that resolves to the auxiliary image\u0027s internal emptyDir volume.",
           "type": "string"
         }
       }
@@ -1025,7 +1025,7 @@ window.onload = function() {
           "type": "string"
         },
         "mountPath": {
-          "description": "The mount path. The files in the path are populated from the same named directory in the images supplied by each container in `serverPod.auxiliaryImages`. Each volume must be configured with a different mount path. Required.",
+          "description": "The mount path. The files in the path are populated from the same named directory in the images supplied by each container in `serverPod.auxiliaryImages`. Each volume must be configured with a different mount path. Defaults to \u0027/auxiliary\u0027.",
           "type": "string"
         },
         "name": {
@@ -1235,13 +1235,13 @@ window.onload = function() {
           "type": "string"
         },
         "type": {
-          "description": "The type of the condition. Valid types are Progressing, Available, Failed, and ConfigChangesPendingRestart.",
+          "description": "The type of the condition. Valid types are Completed, Available, Failed, and ConfigChangesPendingRestart.",
           "type": "string",
           "enum": [
-            "Progressing",
+            "Failed",
             "Available",
-            "ConfigChangesPendingRestart",
-            "Failed"
+            "Completed",
+            "ConfigChangesPendingRestart"
           ]
         },
         "lastTransitionTime": {
@@ -1299,7 +1299,7 @@ window.onload = function() {
           "$ref": "#/definitions/ServerService"
         },
         "domainHome": {
-          "description": "The directory containing the WebLogic domain configuration inside the container. Defaults to /shared/domains/domains/\u003cdomainUID\u003e if `domainHomeSourceType` is PersistentVolume. Defaults to /u01/oracle/user_projects/domains/ if `domainHomeSourceType` is Image. Defaults to /u01/domains/\u003cdomainUID\u003e if `domainHomeSourceType` is FromModel.",
+          "description": "The directory containing the WebLogic domain configuration inside the container. Defaults to /shared/domains/\u003cdomainUID\u003e if `domainHomeSourceType` is PersistentVolume. Defaults to /u01/oracle/user_projects/domains/ if `domainHomeSourceType` is Image. Defaults to /u01/domains/\u003cdomainUID\u003e if `domainHomeSourceType` is FromModel.",
           "type": "string"
         },
         "domainHomeSourceType": {
@@ -1462,8 +1462,8 @@ window.onload = function() {
           "type": "number",
           "minimum": 0.0
         },
-        "lastIntrospectJobProcessedUid": {
-          "description": "Unique id of the last introspector job that was processed for this domain.",
+        "failedIntrospectionUid": {
+          "description": "Unique ID of the last failed introspection job.",
           "type": "string"
         },
         "startTime": {
@@ -1498,7 +1498,7 @@ window.onload = function() {
           "type": "number"
         },
         "localhostBindingsEnabled": {
-          "description": "This setting was added in operator version 3.3.3, defaults to the Helm chart configuration value `istioLocalhostBindingsEnabled` which in turn defaults to `true`. When `true`, the operator creates a WebLogic network access point with a `localhost` binding for each existing channel and protocol.  Use `true` for Istio versions prior to 1.10 and set to `false` for version 1.10 and later.",
+          "description": "This setting was added in operator version 3.3.3, defaults to the `istioLocalhostBindingsEnabled` Helm install value which in turn defaults to `true`, and is ignored in version 4.0 and later. In version 3.x, when `true`, the operator creates a WebLogic network access point with a `localhost` binding for each existing channel and protocol.  In version 3.x, use `true` for Istio versions prior to 1.10 and set to `false` for version 1.10 and later.  Version 4.0 and later requires Istio 1.10 and later, will not create localhost bindings, and ignores this attribute. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-operators/using-helm/#istiolocalhostbindingsenabled",
           "type": "boolean"
         },
         "readinessPort": {

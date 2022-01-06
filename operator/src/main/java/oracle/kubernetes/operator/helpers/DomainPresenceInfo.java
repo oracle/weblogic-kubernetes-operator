@@ -7,16 +7,21 @@ import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
+import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
@@ -27,10 +32,14 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1beta1PodDisruptionBudget;
+import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.TuningParameters;
 import oracle.kubernetes.operator.WebLogicConstants;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
+import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Packet;
+import oracle.kubernetes.operator.work.PacketComponent;
+import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
@@ -39,7 +48,7 @@ import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static java.lang.System.lineSeparator;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_COMPONENT_NAME;
 import static oracle.kubernetes.operator.helpers.PodHelper.hasClusterNameOrNull;
 import static oracle.kubernetes.operator.helpers.PodHelper.isNotAdminServer;
 
@@ -47,7 +56,7 @@ import static oracle.kubernetes.operator.helpers.PodHelper.isNotAdminServer;
  * Operator's mapping between custom resource Domain and runtime details about that domain,
  * including the scan and the Pods and Services for servers.
  */
-public class DomainPresenceInfo {
+public class DomainPresenceInfo implements PacketComponent {
   private final String namespace;
   private final String domainUid;
   private final AtomicReference<Domain> domain;
@@ -62,9 +71,10 @@ public class DomainPresenceInfo {
   private final ReadWriteLock webLogicCredentialsSecretLock = new ReentrantReadWriteLock();
   private V1Secret webLogicCredentialsSecret;
   private OffsetDateTime webLogicCredentialsSecretLastSet;
+  private String adminServerName;
 
   private final List<String> validationWarnings = Collections.synchronizedList(new ArrayList<>());
-  private EventItem lastEventItem;
+  private Map<String, Step.StepAndPacket> serversToRoll = Collections.emptyMap();
 
   /**
    * Create presence for a domain.
@@ -153,7 +163,7 @@ public class DomainPresenceInfo {
 
   @Nonnull
   private Stream<V1Pod> getServersInNoOtherCluster(String clusterName) {
-    return getServers().values().stream()
+    return getActiveServers().values().stream()
             .map(ServerKubernetesObjects::getPod)
             .map(AtomicReference::get)
             .filter(this::isNotDeletingPod)
@@ -162,7 +172,7 @@ public class DomainPresenceInfo {
 
   @Nonnull
   private Stream<V1Pod> getManagedServersInNoOtherCluster(String clusterName, String adminServerName) {
-    return getServers().values().stream()
+    return getActiveServers().values().stream()
           .map(ServerKubernetesObjects::getPod)
           .map(AtomicReference::get)
           .filter(this::isNotDeletingPod)
@@ -179,7 +189,7 @@ public class DomainPresenceInfo {
   }
 
   private ServerKubernetesObjects getSko(String serverName) {
-    return getServers().computeIfAbsent(serverName, (n -> new ServerKubernetesObjects()));
+    return servers.computeIfAbsent(serverName, (n -> new ServerKubernetesObjects()));
   }
 
   public V1Service getServerService(String serverName) {
@@ -192,6 +202,18 @@ public class DomainPresenceInfo {
 
   public static Optional<DomainPresenceInfo> fromPacket(Packet packet) {
     return Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class));
+  }
+
+  public void addToPacket(Packet packet) {
+    packet.getComponents().put(DOMAIN_COMPONENT_NAME, Component.createFor(this));
+  }
+
+  public String getAdminServerName() {
+    return adminServerName;
+  }
+
+  public void setAdminServerName(String adminServerName) {
+    this.adminServerName = adminServerName;
   }
 
   /**
@@ -220,7 +242,7 @@ public class DomainPresenceInfo {
    * @return a pod stream
    */
   public Stream<V1Pod> getServerPods() {
-    return getServers().values().stream().map(this::getPod).filter(Objects::nonNull);
+    return getActiveServers().values().stream().map(this::getPod);
   }
 
   private V1Pod getPod(ServerKubernetesObjects sko) {
@@ -240,12 +262,14 @@ public class DomainPresenceInfo {
   }
 
   /**
-   * Returns a collection of all servers defined.
-   *
-   * @return the servers
+   * Returns a collection of the names of the active servers.
    */
   public Collection<String> getServerNames() {
-    return getServers().keySet();
+    return getActiveServers().keySet();
+  }
+
+  private boolean hasDefinedServer(Map.Entry<String, ServerKubernetesObjects> e) {
+    return e.getValue().getPod().get() != null;
   }
 
   /**
@@ -298,12 +322,12 @@ public class DomainPresenceInfo {
   }
 
   /**
-   * Computes the result of a delete attempt. If the current pod is newer than the one associated
-   * with the delete event, returns it; otherwise returns null, thus deleting the value.
+   * Handles a delete event. If the cached pod is newer than the one associated with the event, ignores the attempt
+   * as out-of-date and returns false; otherwise deletes the pod and returns true.
    *
    * @param serverName the server name associated with the pod
    * @param event the pod associated with the delete event
-   * @return the new value for the pod.
+   * @return true if the pod was deleted from the cache.
    */
   public boolean deleteServerPodFromEvent(String serverName, V1Pod event) {
     if (serverName == null) {
@@ -545,14 +569,6 @@ public class DomainPresenceInfo {
     isPopulated.set(populated);
   }
 
-  EventItem getLastEventItem() {
-    return lastEventItem;
-  }
-
-  void setLastEventItem(EventItem lastEventItem) {
-    this.lastEventItem = lastEventItem;
-  }
-
   /**
    * Gets the domain. Except the instance to change frequently based on status updates.
    *
@@ -589,13 +605,28 @@ public class DomainPresenceInfo {
     return namespace;
   }
 
+  // Returns a map of the active servers (those with a known running pod).
+  private Map<String, ServerKubernetesObjects> getActiveServers() {
+    return servers.entrySet().stream()
+          .filter(this::hasDefinedServer)
+          .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
+
+  }
+
   /**
-   * Map from server name to server objects (Pods and Services).
-   *
-   * @return Server object map
+   * Returns a list of server names whose pods are defined and match the specified criteria.
+   * @param criteria a function that returns true for the desired pods.
    */
-  public ConcurrentMap<String, ServerKubernetesObjects> getServers() {
-    return servers;
+  public List<String> getSelectedActiveServerNames(Function<V1Pod,Boolean> criteria) {
+    return servers.entrySet().stream()
+          .filter(e -> hasMatchingServer(e, criteria))
+          .map(Map.Entry::getKey)
+          .collect(Collectors.toList());
+  }
+
+  private boolean hasMatchingServer(Map.Entry<String, ServerKubernetesObjects> e, Function<V1Pod,Boolean> criteria) {
+    final V1Pod pod = e.getValue().getPod().get();
+    return pod != null && criteria.apply(pod);
   }
 
   /**
@@ -604,7 +635,7 @@ public class DomainPresenceInfo {
    * @return Server startup info
    */
   public Collection<ServerStartupInfo> getServerStartupInfo() {
-    return serverStartupInfo.get();
+    return Optional.ofNullable(serverStartupInfo.get()).orElse(Collections.emptyList());
   }
 
   /**
@@ -668,37 +699,47 @@ public class DomainPresenceInfo {
     return String.join(lineSeparator(), validationWarnings);
   }
 
-  /** Details about a specific managed server that will be started up. */
-  public static class ServerStartupInfo {
+  /**
+   * Returns the names of the servers which are supposed to be running.
+   */
+  public Set<String> getExpectedRunningServers() {
+    final Set<String> result = new HashSet<>(getExpectedRunningManagedServers());
+    Optional.ofNullable(adminServerName).ifPresent(result::add);
+    return result;
+  }
+
+  @Nonnull
+  private Set<String> getExpectedRunningManagedServers() {
+    return getServerStartupInfo().stream().map(ServerStartupInfo::getServerName).collect(Collectors.toSet());
+  }
+
+  public Map<String, Step.StepAndPacket> getServersToRoll() {
+    return serversToRoll;
+  }
+
+  public void setServersToRoll(Map<String, Step.StepAndPacket> serversToRoll) {
+    this.serversToRoll = serversToRoll;
+  }
+
+  /** Details about a specific managed server. */
+  public static class ServerInfo {
     public final WlsServerConfig serverConfig;
-    private final String clusterName;
-    private final ServerSpec serverSpec;
-    private final boolean isServiceOnly;
+    protected final String clusterName;
+    protected final ServerSpec serverSpec;
+    protected final boolean isServiceOnly;
 
     /**
-     * Create server startup info.
-     *
-     * @param serverConfig Server config scan
-     * @param clusterName the name of the cluster
-     * @param serverSpec the server startup configuration
-     */
-    public ServerStartupInfo(
-        WlsServerConfig serverConfig, String clusterName, ServerSpec serverSpec) {
-      this(serverConfig, clusterName, serverSpec, false);
-    }
-
-    /**
-     * Create server startup info.
+     * Create server info.
      *
      * @param serverConfig Server config scan
      * @param clusterName the name of the cluster
      * @param serverSpec the server startup configuration
      * @param isServiceOnly true, if only the server service should be created
      */
-    public ServerStartupInfo(
+    public ServerInfo(
         @Nonnull WlsServerConfig serverConfig,
         @Nullable String clusterName,
-        @Nonnull ServerSpec serverSpec,
+        ServerSpec serverSpec,
         boolean isServiceOnly) {
       this.serverConfig = serverConfig;
       this.clusterName = clusterName;
@@ -718,21 +759,23 @@ public class DomainPresenceInfo {
       return clusterName;
     }
 
-    /**
-     * Returns the desired state for the started server.
-     *
-     * @return return a string, which may be null.
-     */
-    public String getDesiredState() {
-      return serverSpec == null ? null : serverSpec.getDesiredState();
-    }
-
     public List<V1EnvVar> getEnvironment() {
       return serverSpec == null ? Collections.emptyList() : serverSpec.getEnvironmentVariables();
     }
 
-    public boolean isNotServiceOnly() {
-      return !isServiceOnly;
+    /**
+     * Create a packet using this server info.
+     *
+     * @param packet the packet to copy from
+     * @return a new packet that is populated with the server info
+     */
+    public Packet createPacket(Packet packet) {
+      Packet p = packet.copy();
+      p.put(ProcessingConstants.CLUSTER_NAME, getClusterName());
+      p.put(ProcessingConstants.SERVER_NAME, getName());
+      p.put(ProcessingConstants.SERVER_SCAN, serverConfig);
+      p.put(ProcessingConstants.ENVVARS, getEnvironment());
+      return p;
     }
 
     @Override
@@ -755,7 +798,7 @@ public class DomainPresenceInfo {
         return false;
       }
 
-      ServerStartupInfo that = (ServerStartupInfo) o;
+      ServerInfo that = (ServerInfo) o;
 
       return new EqualsBuilder()
           .append(serverConfig, that.serverConfig)
@@ -774,15 +817,27 @@ public class DomainPresenceInfo {
           .append(isServiceOnly)
           .toHashCode();
     }
+
+  }
+
+  /** Details about a specific managed server that will be started up. */
+  public static class ServerStartupInfo extends ServerInfo {
+
+    /**
+     * Create server startup info.
+     *
+     * @param serverConfig Server config scan
+     * @param clusterName the name of the cluster
+     * @param serverSpec the server startup configuration
+     */
+    public ServerStartupInfo(
+        WlsServerConfig serverConfig, String clusterName, ServerSpec serverSpec) {
+      super(serverConfig, clusterName, serverSpec, false);
+    }
   }
 
   /** Details about a specific managed server that will be shutdown. */
-  public static class ServerShutdownInfo {
-    public final WlsServerConfig serverConfig;
-    private final String clusterName;
-    private final ServerSpec serverSpec;
-    private final boolean isServiceOnly;
-
+  public static class ServerShutdownInfo extends ServerInfo {
     /**
      * Create server shutdown info.
      *
@@ -790,7 +845,7 @@ public class DomainPresenceInfo {
      * @param clusterName the name of the cluster
      */
     public ServerShutdownInfo(String serverName, String clusterName) {
-      this(new WlsServerConfig(serverName, null, 0), clusterName, null, false);
+      super(new WlsServerConfig(serverName, null, 0), clusterName, null, false);
     }
 
     /**
@@ -804,70 +859,11 @@ public class DomainPresenceInfo {
     public ServerShutdownInfo(
             WlsServerConfig serverConfig, String clusterName,
             ServerSpec serverSpec, boolean isServiceOnly) {
-      this.serverConfig = serverConfig;
-      this.clusterName = clusterName;
-      this.serverSpec = serverSpec;
-      this.isServiceOnly = isServiceOnly;
-    }
-
-    public String getName() {
-      return serverConfig.getName();
-    }
-
-    public String getServerName() {
-      return serverConfig.getName();
-    }
-
-    public String getClusterName() {
-      return clusterName;
+      super(serverConfig, clusterName, serverSpec, isServiceOnly);
     }
 
     public boolean isServiceOnly() {
       return  isServiceOnly;
-    }
-
-    public List<V1EnvVar> getEnvironment() {
-      return serverSpec == null ? Collections.emptyList() : serverSpec.getEnvironmentVariables();
-    }
-
-    @Override
-    public String toString() {
-      return new ToStringBuilder(this)
-              .append("serverConfig", serverConfig)
-              .append("clusterName", clusterName)
-              .append("serverSpec", serverSpec)
-              .append("isServiceOnly", isServiceOnly)
-              .toString();
-    }
-
-    @Override
-    public boolean equals(Object o) {
-      if (this == o) {
-        return true;
-      }
-
-      if (o == null || getClass() != o.getClass()) {
-        return false;
-      }
-
-      ServerShutdownInfo that = (ServerShutdownInfo) o;
-
-      return new EqualsBuilder()
-              .append(serverConfig, that.serverConfig)
-              .append(clusterName, that.clusterName)
-              .append(serverSpec, that.serverSpec)
-              .append(isServiceOnly, that.isServiceOnly)
-              .isEquals();
-    }
-
-    @Override
-    public int hashCode() {
-      return new HashCodeBuilder(17, 37)
-              .append(serverConfig)
-              .append(clusterName)
-              .append(serverSpec)
-              .append(isServiceOnly)
-              .toHashCode();
     }
   }
 }

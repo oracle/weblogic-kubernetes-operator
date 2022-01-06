@@ -16,7 +16,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public class DomainCondition {
 
   @ApiModelProperty(
-      "The type of the condition. Valid types are Progressing, "
+      "The type of the condition. Valid types are Completed, "
           + "Available, and Failed. Required.")
   private String type;
 

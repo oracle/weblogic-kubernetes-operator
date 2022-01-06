@@ -3,7 +3,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # This script create or delete an Ingress controller. 
-#  The script supports ingress controllers: Traefik, Voyager, and Nginx.
+#  The script supports ingress controllers: Traefik and Nginx.
 
 set -eu
 set -o pipefail
@@ -14,14 +14,11 @@ UTILDIR="$(dirname "$(readlink -f "$0")")"
 #Default is 'kubectl' if KUBERNETES_CLI env variable is not set.  
 kubernetesCli=${KUBERNETES_CLI:-kubectl}
 
-# https://hub.helm.sh/charts/appscode/voyager
-# https://artifacthub.io/packages/helm/appscode/voyager
-# https://github.com/voyagermesh/voyager#supported-versions
-DefaultVoyagerVersion=12.0.0
-
 # https://github.com/containous/traefik/releases
 DefaultTraefikVersion=2.2.1
 
+#https://artifacthub.io/packages/helm/ingress-nginx/ingress-nginx
+#https://docs.nginx.com/nginx-ingress-controller/installation/installation-with-helm/
 # https://github.com/kubernetes/ingress-nginx/releases
 DefaultNginxVersion=2.16.0
 
@@ -60,7 +57,7 @@ function usage() {
     $(basename $0) -c[d]  -t ingress-type  [-n namespace] [-v version]
     -c                   : create ingress controller [required]
     -d                   : delete ingress controller [required]
-    -t <ingress type>    : ingress type traefik, voyager or nginx [required]
+    -t <ingress type>    : ingress type traefik or nginx [required]
     -v <ingress version> : ingress release version
     -n <namespace>       : ingress namespace
     -m <kubernetes_cli>  : Kubernetes command line interface. Default is 'kubectl' if KUBERNETES_CLI env variable is not set. Otherwise default is the value of KUBERNETES_CLI env variable.
@@ -108,7 +105,7 @@ if [ "x${action}" == "x" ]; then
 fi
 
 if [ "x${ingressType}" == "x" ]; then
- printError "You must specify ingress type (traefik, voyager or nginx) thru -t option"
+ printError "You must specify ingress type (traefik or nginx) thru -t option"
  usage 1
 fi 
 
@@ -119,19 +116,13 @@ case  ${ingressType} in
               repository="traefik"
               chart="traefik-release"
               ;;
-    "voyager") 
-              [[ -z "${release}"   ]] && release="${DefaultVoyagerVersion}"
-              [[ -z "${namespace}" ]] && namespace="${ingressType}"
-              repository="appscode"
-              chart="voyager-release"
-              ;;
     "nginx")   
               [[ -z "${release}"   ]] && release="${DefaultNginxVersion}"
               [[ -z "${namespace}" ]] && namespace="${ingressType}"
               repository="ingress-nginx"
               chart="nginx-release"
               ;;
-    *)         printError "Unsupported ingress type [${ingressType}]. Suppoprted ingress type are [traefik, voyager or nginx] "
+    *)         printError "Unsupported ingress type [${ingressType}]. Suppoprted ingress type are [traefik or nginx] "
                exit -1  ;;
 esac
 
@@ -163,116 +154,21 @@ function waitForIngressPod() {
   type=$1
   ns=$2
 
-  printInfo "Wait until ${type} ingress controller pod is running."
-  ipod=$(${kubernetesCli} -o name get po -n ${ns} | grep -v admission-patch)
-  if [[ "${ipod}" != *$chart* ]]; then
-   printError "Couldn't find the pod associated with ${type} helm deployment. List helm deployment status on namespace [${ns}]. "
-   helm list -n ${ns}
+  printInfo "Wait (max 5min) until ${type} ingress controller pod to be ready."
+  ${kubernetesCli} wait --namespace ${ns} \
+  --for=condition=ready pod \
+  --selector=app.kubernetes.io/instance=${type}-release \
+  --timeout=300s
+
+  if [ $? != 0 ]; then
+   printError "${type} ingress controller pod not READY in state in 5 min"
    exit -1;
-  fi
-  printInfo "Found pod [${ipod}] associated with ${type} helm deployment on namespace [${ns}]."
-
-  max=20
-  count=0
-  while test $count -lt $max; do
-    status=$(${kubernetesCli} get ${ipod} -n ${ns} --no-headers 2> /dev/null | awk '{print $2}')
-    #printInfo "[${type} Ingress controller pod status: ${status}]"
-    if [ x${status} == "x1/1" ]; then
-      echo " "
-      printInfo "${type} controller pod is running now."
-      ${kubernetesCli} get ${ipod} -n ${ns}
-      break;
-    fi
-    count=`expr $count + 1`
-    sleep 2
-    echo -n "."
-  done
-  if test $count -eq $max; then
-    ${kubernetesCli} describe ${ipod} -n ${ns}
-    printError "${type} controller pod failed to start."
-    exit 1
-  fi
-  ${kubernetesCli} get ${ipod} -n ${ns}
-  helm list -n ${ns}
- } 
-
-function createVoyager() {
-  ns=${1}
-  release=${2}
-  createNameSpace $ns || true
-
-  printInfo "Creating Voyager controller on namespace ${ns}"
-  if [ "$(helm search repo appscode/voyager | grep voyager | wc -l)" = 0 ]; then
-    printInfo "Add AppsCode chart repository"
-    helm repo add appscode https://charts.appscode.com/stable/
-    helm repo update
-  else
-    printInfo "AppsCode chart repository is already added."
-  fi
-
-  if [ "$(helm list --namespace $ns | grep $chart |  wc -l)" = 0 ]; then
-    printInfo "Installing Voyager controller"
-    # remove resources from previous run if any  
-    purgeVoyagerResources || true
-    helm install $chart appscode/voyager --version ${release}  \
-      --namespace ${ns} \
-      --set cloudProvider=baremetal \
-      --set apiserver.enableValidatingWebhook=false \
-      --set apiserver.healthcheck.enabled=false \
-      --set ingressClass=voyager
-    if [ $? != 0 ]; then
-      printError "Helm istallation of the Voyager ingress controller failed."
-      exit -1;
-    fi
-  else
-    printInfo "Voyager controller is already installed."
-    exit 0;
+  else 
+   ipod=$(${kubernetesCli} get pod -n ${ns} -l app.kubernetes.io/instance=${type}-release -o jsonpath="{.items[0].metadata.name}")
+   ${kubernetesCli} get po/${ipod} -n ${ns}
+   helm list -n ${ns}
   fi 
-
-  max=20
-  count=0
-  printInfo "Checking availability of voyager deployment [${chart}]"
-  while test $count -lt $max; do
-   status=$(${kubernetesCli} get deployment --namespace ${ns} -l "app.kubernetes.io/name=voyager,app.kubernetes.io/instance=${chart}" --no-headers 2> /dev/null | awk '{print $2}' || true)
-   if [ "${status}" == "1/1" ];  then
-      echo " "
-      printInfo "voyager deployment resource [${chart}] is available now."
-      ${kubernetesCli} get deployment --namespace ${ns} -l "app.kubernetes.io/name=voyager,app.kubernetes.io/instance=${chart}" 
-      break;
-   fi
-   count=`expr $count + 1`
-   echo -n "."
-   sleep 2
-  done
-  if test $count -eq $max; then
-    printError "voyager deployment resource can not be created" 
-    exit 1
-  fi
-
-  waitForIngressPod voyager ${ns}
-
-  max=20
-  count=0
-  crd="ingresses.voyager.appscode.com"
-  printInfo "Checking availability of voyager ingress resource [${crd}]"
-  while test $count -lt $max; do
-   obj=$(${kubernetesCli} get crd ${crd} -n ${ns} --no-headers 2> /dev/null | awk '{print $1}' || true)
-   if [ "${obj}" == "$crd" ];  then
-      echo " "
-      printInfo "voyager ingress resource [${crd}] is available now."
-      ${kubernetesCli} get crd ${crd} -n ${ns} --no-headers
-      break;
-   fi
-   count=`expr $count + 1`
-   echo -n "."
-   sleep 2
-  done
-  if test $count -eq $max; then
-    printError "voyager ingress resource can not be created" 
-    exit 1
-  fi
-  exit 0
-}
+ } 
 
 function createTraefik() {
   ns=${1}
@@ -332,49 +228,18 @@ function purgeDefaultResources() {
   done
 }
 
-# Remove voyager related resources from default Namespace ( if any )
-function purgeVoyagerResources() {
-  # get rid of Voyager CRD deletion deadlock:  https://github.com/kubernetes/kubernetes/issues/60538
-  printInfo "Delete extra resources associated with Voyager Ingress Controller"
-  crds=(certificates ingresses)
-  for crd in "${crds[@]}"; do
-    pairs=($(${kubernetesCli} get ${crd}.voyager.appscode.com --all-namespaces -o jsonpath='{range .items[*]}{.metadata.name} {.metadata.namespace} {end}' || true))
-    total=${#pairs[*]}
-
-    # save objects
-    if [ $total -gt 0 ]; then
-      printInfo "Dumping ${crd} objects into ${crd}.yaml"
-      ${kubernetesCli} get ${crd}.voyager.appscode.com --all-namespaces -o yaml >${crd}.yaml
-    fi
-
-    for ((i = 0; i < $total; i += 2)); do
-      name=${pairs[$i]}
-      namespace=${pairs[$i + 1]}
-      # remove finalizers
-      ${kubernetesCli} patch ${crd}.voyager.appscode.com $name -n $namespace -p '{"metadata":{"finalizers":[]}}' --type=merge
-      # delete crd object
-      printInfo "Deleting ${crd} $namespace/$name"
-      ${kubernetesCli} delete ${crd}.voyager.appscode.com $name -n $namespace --ignore-not-found
-    done
-
-    # delete crd
-    ${kubernetesCli} delete crd ${crd}.voyager.appscode.com --ignore-not-found || true
-  done
-  # delete user/cluster roles
-  ${kubernetesCli} delete clusterroles appscode:voyager:edit appscode:voyager:view --ignore-not-found
-   ${kubernetesCli} delete ClusterRole/${chart} --ignore-not-found
-   ${kubernetesCli} delete ClusterRoleBinding/${chart} --ignore-not-found
-   ${kubernetesCli} delete ClusterRoleBinding/${chart}-apiserver-auth-delegator  --ignore-not-found
-   ${kubernetesCli} delete RoleBinding/${chart}-apiserver-extension-server-authentication-reader -n kube-system --ignore-not-found
-}
-
 function deleteIngress() {
   type=${1}
   ns=${2}
   if [ "$(helm list --namespace $ns | grep $chart |  wc -l)" = 1 ]; then
     printInfo "Deleting ${type} controller from namespace $ns" 
     helm uninstall --namespace $ns $chart
+    ${kubernetesCli} wait --namespace ${ns} \
+       --for=delete pod \
+       --selector=app.kubernetes.io/instance=${type}-release \
+       --timeout=120s
     ${kubernetesCli} delete ns ${ns}
+    ${kubernetesCli} wait --for=delete namespace ${ns} --timeout=60s || true
     printInfo "Remove ${type} chart repository [${repository}] "
     helm repo remove ${repository}
   else
@@ -383,8 +248,6 @@ function deleteIngress() {
 
   if [ "${ingressType}" = traefik ]; then
       purgeDefaultResources || true
-    elif [ "${ingressType}" = voyager ]; then
-      purgeVoyagerResources || true
     elif [ "${ingressType}" = nginx ]; then
       purgeDefaultResources || true
     fi
@@ -408,6 +271,7 @@ function createNginx() {
   if [ "$(helm list --namespace ${ns} | grep $chart |  wc -l)" = 0 ]; then
     purgeDefaultResources || true
     helm install $chart ingress-nginx/ingress-nginx \
+         --set "controller.admissionWebhooks.enabled=false" \
          --namespace ${ns} --version ${release}
     if [ $? != 0 ]; then
      printError "Helm istallation of the Nginx ingress controller failed."
@@ -429,9 +293,6 @@ function main() {
     if [ "${ingressType}" = traefik ]; then
       printInfo "Selected Traefik release [${release}]"
       createTraefik ${namespace} ${release}
-    elif [ "${ingressType}" = voyager ]; then
-      printInfo "Selected Voyager release [$release]"
-      createVoyager ${namespace} ${release}
     elif [ "${ingressType}" = nginx ]; then
       printInfo "Selected NGINX release [$release]"
       createNginx ${namespace} ${release}
@@ -439,8 +300,6 @@ function main() {
   else
     if [ "${ingressType}" = traefik ]; then
       deleteIngress traefik ${namespace}
-    elif [ "${ingressType}" = voyager ]; then
-      deleteIngress  voyager ${namespace}
     elif [ "${ingressType}" = nginx ]; then
       deleteIngress  nginx ${namespace}
     fi

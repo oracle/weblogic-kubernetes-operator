@@ -2,7 +2,7 @@
 title: "Supported platforms"
 date: 2019-02-23T16:40:54-05:00
 description: "See the operator supported environments."
-weight: 4
+weight: 3
 ---
 
 ### Contents
@@ -40,10 +40,10 @@ WebLogic Server and the operator are certified on offerings, such as:
 - VMWare Tanzu
 - VMware Tanzu Kubernetes Grid (TKG)
 
-WebLogic Server and the operator are also supported on service offerings which 
+WebLogic Server and the operator are also supported on service offerings which
 deploy the WebLogic Server and the operator for you. These include:
-- Oracle WebLogic Server for OKE (WLS for OKE)
-- Oracle WebLogic Server on AKS from the Azure Marketplace (WLS on AKS Marketplace)
+- [Oracle WebLogic Server for OKE (WLS for OKE)](https://docs.oracle.com/en/cloud/paas/weblogic-container/)
+- [Oracle WebLogic Server on AKS from the Azure Marketplace (WLS on AKS Marketplace)](#oracle-weblogic-server-on-aks-from-the-azure-marketplace-wls-on-aks-marketplace)
 
 [Development-focused Kubernetes distributions](#development-focused-kubernetes-distributions) are also supported.
 
@@ -57,14 +57,14 @@ to the operator, or are subject to limitations and restrictions: see
 
 ### Kubernetes, WebLogic Server, and operating system prerequisites
 
-The operator is subject to Kubernetes, WebLogic Server, and operating system versioning prerequisites:
+The operator is subject to Kubernetes, WebLogic Server, and operating system versioning prerequisites,
 see [Operator prerequisites]({{< relref "/userguide/prerequisites/introduction.md" >}}).
 
 ### Pricing and licensing
 
 The WebLogic Kubernetes Operator and Oracle Linux are open source and free;
 WebLogic Server requires licenses unless used in a single developer desktop development environment.
-In detail:
+See the following sections for more detailed information.
 
 #### WebLogic Kubernetes Operator
 
@@ -101,7 +101,7 @@ patched images are rebuilt every CPU cycle, which is quarterly.
 Customer support for WebLogic Server images is handled by Oracle support.
 
 Using the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool)
-customers can also build their own WebLogic Server images with 
+customers can also build their own WebLogic Server images with
 the latest Oracle Linux images, Java updates, and WebLogic Server patches.
 
 #### Reference
@@ -219,7 +219,7 @@ Operator 2.0.1+ is certified for use on OpenShift Container Platform 3.11.43+, w
 Operator 2.5.0+ is certified for use on OpenShift Container Platform 4.3.0+ with Kubernetes 1.16.2+.
 
 To accommodate OpenShift security requirements:
-- For security requirements to run WebLogic Server in OpenShift, see the [OpenShift chapter]({{<relref "/security/openshift.md">}}) in the Security section.
+- For security requirements to run WebLogic Server in OpenShift, see the [OpenShift]({{<relref "/security/openshift.md">}}) documentation.
 - Beginning with operator version 3.3.2, specify the `kubernetesPlatorm` Helm chart property with value `OpenShift`. For more information, see [Operator Helm configuration values]({{<relref "/userguide/managing-operators/using-helm#operator-helm-configuration-values">}}).
 
 #### Development-focused Kubernetes distributions

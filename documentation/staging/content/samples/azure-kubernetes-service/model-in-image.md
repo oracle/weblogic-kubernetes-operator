@@ -720,13 +720,13 @@ Name:         sample-domain1
 Namespace:    sample-domain1-ns
 Labels:       weblogic.domainUID=sample-domain1
 Annotations:  <none>
-API Version:  weblogic.oracle/v8
+API Version:  weblogic.oracle/v9
 Kind:         Domain
 Metadata:
   Creation Timestamp:  2020-11-30T05:40:11Z
   Generation:          1
   Resource Version:    9346
-  Self Link:           /apis/weblogic.oracle/v8/namespaces/sample-domain1-ns/domains/sample-domain1
+  Self Link:           /apis/weblogic.oracle/v9/namespaces/sample-domain1-ns/domains/sample-domain1
   UID:                 9f10a602-714a-46c5-8dcb-815616b587af
 Spec:
   Admin Server:

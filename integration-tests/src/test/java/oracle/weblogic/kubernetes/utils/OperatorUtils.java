@@ -19,6 +19,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.JAVA_LOGGING_LEVEL_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.LOGSTASH_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_CHART_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.createServiceAccount;
@@ -31,7 +32,10 @@ import static oracle.weblogic.kubernetes.actions.TestActions.upgradeOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorIsReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.operatorRestServiceRunning;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createExternalRestIdentitySecret;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -331,6 +335,11 @@ public class OperatorUtils {
       opParams.domainPresenceFailureRetrySeconds(domainPresenceFailureRetrySeconds);
     }
 
+    // If running on OKD cluster, we need to specify the target
+    if (OKD) {
+      opParams.kubernetesPlatform("OpenShift");
+    }
+
     // install operator
     logger.info("Installing operator in namespace {0}", opNamespace);
     assertTrue(installOperator(opParams),
@@ -348,27 +357,23 @@ public class OperatorUtils {
 
     // wait for the operator to be ready
     logger.info("Wait for the operator pod is ready in namespace {0}", opNamespace);
-    CommonTestUtils.withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for operator to be running in namespace {0} "
-                    + "(elapsed time {1}ms, remaining time {2}ms)",
-                opNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> operatorIsReady(opNamespace),
-            "operatorIsReady failed with ApiException"));
+    testUntil(
+        assertDoesNotThrow(() -> operatorIsReady(opNamespace),
+          "operatorIsReady failed with ApiException"),
+        logger,
+        "operator to be running in namespace {0}",
+        opNamespace);
 
     if (withRestAPI) {
       logger.info("Wait for the operator external service in namespace {0}", opNamespace);
-      CommonTestUtils.withStandardRetryPolicy
-          .conditionEvaluationListener(
-              condition -> logger.info("Waiting for operator external service in namespace {0} "
-                      + "(elapsed time {1}ms, remaining time {2}ms)",
-                  opNamespace,
-                  condition.getElapsedTimeInMS(),
-                  condition.getRemainingTimeInMS()))
-          .until(assertDoesNotThrow(() -> operatorRestServiceRunning(opNamespace),
-              "operator external service is not running"));
+      testUntil(
+          assertDoesNotThrow(() -> operatorRestServiceRunning(opNamespace),
+            "operator external service is not running"),
+          logger,
+          "operator external service in namespace {0}",
+          opNamespace);
+      createRouteForOKD("external-weblogic-operator-svc", opNamespace);
+      setTlsTerminationForRoute("external-weblogic-operator-svc", opNamespace);
     }
     return opParams;
   }
@@ -480,14 +485,11 @@ public class OperatorUtils {
 
     // check operator is running
     logger.info("Check Operator pod is running in namespace {0}", opNamespace);
-    CommonTestUtils.withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for operator to be running in namespace {0} "
-                    + "(elapsed time {1}ms, remaining time {2}ms)",
-                opNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(operatorIsReady(opNamespace));
+    testUntil(
+        operatorIsReady(opNamespace),
+        logger,
+        "operator to be running in namespace {0}",
+        opNamespace);
 
     logger.info("Operator pod is restarted in namespace {0}", opNamespace);
 

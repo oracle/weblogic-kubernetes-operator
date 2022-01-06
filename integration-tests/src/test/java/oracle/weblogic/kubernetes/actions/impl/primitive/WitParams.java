@@ -58,6 +58,9 @@ public class WitParams {
   // Custom WDT model home
   private String wdtModelHome;
 
+  // Custom WDT model home
+  private String target;
+
   // The env variables that are needed for running WIT
   private Map<String, String> env;
 
@@ -69,6 +72,37 @@ public class WitParams {
 
   // Additional files that are required by additionalBuildCommands
   private String additionalBuildFiles;
+
+  // Target folder in the auxiliary image for the WDT install and models
+  private String wdtHome;
+
+  // userid:groupid for JDK/Middleware installs and patches
+  private String useridGroupid;
+
+  // Executable to process the Dockerfile. Use the full path of the executable if not on your path
+  private String builder;
+
+  // Networking mode for the RUN instructions during the image build. See --network for Docker build
+  private String buildNetwork;
+
+  // Skip Docker build execution and print the Dockerfile to stdout
+  private boolean dryRun;
+
+  // Proxy for the HTTP protocol. Example: http://myproxy:80
+  private String httpProxyUrl;
+
+  // Proxy for the HTTPS protocol. Example: https://myproxy:80
+  private String httpsProxyUrl;
+
+  // Override the default package manager for the base image's operating system.
+  // Supported values: APK, APTGET, NONE, YUM, ZYPPER
+  private String packageManager;
+
+  // Whether to always attempt to pull a newer version of base images during the build
+  private boolean pull;
+
+  // Do not delete the build context folder, intermediate images, and failed build containers. For debugging purposes.
+  private boolean skipCleanup;
 
   /**
    * Generate default WIT parameters.
@@ -164,6 +198,24 @@ public class WitParams {
     return this;
   }
 
+  public String useridGroupid() {
+    return useridGroupid;
+  }
+
+  public WitParams useridGroupid(String useridGroupid) {
+    this.useridGroupid = useridGroupid;
+    return this;
+  }
+
+  public String wdtHome() {
+    return wdtHome;
+  }
+
+  public WitParams wdtHome(String wdtHome) {
+    this.wdtHome = wdtHome;
+    return this;
+  }
+
   public String wdtModelHome() {
     return wdtModelHome;
   }
@@ -238,5 +290,86 @@ public class WitParams {
 
   public String additionalBuildFiles() {
     return additionalBuildFiles;
+  }
+
+  public WitParams target(String target) {
+    this.target = target;
+    return this;
+  }
+
+  public String target() {
+    return target;
+  }
+
+  public WitParams builder(String builder) {
+    this.builder = builder;
+    return this;
+  }
+
+  public String builder() {
+    return builder;
+  }
+
+  public WitParams buildNetwork(String buildNetwork) {
+    this.buildNetwork = buildNetwork;
+    return this;
+  }
+
+  public String buildNetwork() {
+    return buildNetwork;
+  }
+
+  public WitParams dryRun(Boolean dryRun) {
+    this.dryRun = dryRun;
+    return this;
+  }
+
+  public boolean dryRun() {
+    return dryRun;
+  }
+
+  public WitParams httpProxyUrl(String httpProxyUrl) {
+    this.httpProxyUrl = httpProxyUrl;
+    return this;
+  }
+
+  public String httpProxyUrl() {
+    return httpProxyUrl;
+  }
+
+  public WitParams httpsProxyUrl(String httpsProxyUrl) {
+    this.httpsProxyUrl = httpsProxyUrl;
+    return this;
+  }
+
+  public String httpsProxyUrl() {
+    return httpsProxyUrl;
+  }
+
+  public WitParams packageManager(String packageManager) {
+    this.packageManager = packageManager;
+    return this;
+  }
+
+  public String packageManager() {
+    return packageManager;
+  }
+
+  public WitParams pull(boolean pull) {
+    this.pull = pull;
+    return this;
+  }
+
+  public boolean pull() {
+    return pull;
+  }
+
+  public WitParams skipCleanup(boolean skipCleanup) {
+    this.skipCleanup = skipCleanup;
+    return this;
+  }
+
+  public boolean skipCleanup() {
+    return skipCleanup;
   }
 }

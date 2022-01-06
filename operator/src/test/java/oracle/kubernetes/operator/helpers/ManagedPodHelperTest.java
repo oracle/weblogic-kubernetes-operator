@@ -25,7 +25,6 @@ import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
-import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.work.FiberTestSupport;
@@ -37,10 +36,13 @@ import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.junit.jupiter.api.Test;
 
+import static oracle.kubernetes.operator.DomainFailureReason.DomainInvalid;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_INVALID_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.helpers.AdminPodHelperTest.CUSTOM_MOUNT_PATH2;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.operator.helpers.ManagedPodHelperTest.JavaOptMatcher.hasJavaOption;
 import static oracle.kubernetes.operator.helpers.Matchers.hasContainer;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
@@ -72,6 +74,7 @@ import static org.hamcrest.Matchers.hasKey;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
+import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings("ConstantConditions")
@@ -282,8 +285,31 @@ class ManagedPodHelperTest extends PodHelperTestBase {
     testSupport.runSteps(PodHelper.createManagedPodStep(terminalStep));
 
     assertThat(testSupport.getResources(KubernetesTestSupport.POD).isEmpty(), is(true));
-    assertThat(getDomain().getStatus().getReason(), is(DomainStatusUpdater.BAD_DOMAIN));
+    assertThat(getDomain().getStatus().getReason(), is(DomainInvalid.name()));
     assertThat(logRecords, containsSevere(getDomainValidationFailedKey()));
+  }
+
+  @Test
+  void whenDomainHasAdditionalVolumesWithCustomVariablesContainInvalidValue_createFailedEvent() {
+    resourceLookup.defineResource(SECRET_NAME, KubernetesResourceType.Secret, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
+
+    V1EnvVar envVar = new V1EnvVar().name(ENV_NAME1).value(BAD_MY_ENV_VALUE);
+    testSupport.addToPacket(ProcessingConstants.ENVVARS, Collections.singletonList(envVar));
+
+    getConfigurator()
+        .withWebLogicCredentialsSecret(SECRET_NAME, null)
+        .withAdditionalVolume("volume1", VOLUME_PATH_1)
+        .withAdditionalVolumeMount("volume1", VOLUME_MOUNT_PATH_1);
+
+    testSupport.runSteps(PodHelper.createManagedPodStep(terminalStep));
+    logRecords.clear();
+
+    assertThat(
+        "Expected Event " + DOMAIN_FAILED + " expected with message not found",
+        getExpectedEventMessage(DOMAIN_FAILED),
+        stringContainsInOrder("Domain", UID, "failed due to", DOMAIN_INVALID_ERROR));
   }
 
   @Test

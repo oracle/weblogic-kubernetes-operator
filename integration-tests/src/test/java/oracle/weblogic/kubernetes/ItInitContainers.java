@@ -30,7 +30,6 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
@@ -49,7 +48,7 @@ import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodInitializing;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodInitialized;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodCreationTime;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
@@ -66,7 +65,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 @DisplayName("Test server's pod init container feature")
 @IntegrationTest
-@Tag("okdenv")
 class ItInitContainers {
 
   private static String opNamespace = null;
@@ -411,7 +409,7 @@ class ItInitContainers {
     createDomainAndVerify(domain, domainNamespace);
     String adminServerPodName = domainUid + adminServerPrefix;
     //check if pod in init state
-    checkPodInitializing(adminServerPodName,domainUid, domainNamespace);
+    checkPodInitialized(adminServerPodName,domainUid, domainNamespace);
 
     // check that admin service exists and pod is ready in the domain namespace
     logger.info("Checking that admin service {0} exists in namespace {1}",
@@ -422,7 +420,7 @@ class ItInitContainers {
     for (int i = 1; i <= replicaCount; i++) {
       String managedServerPodName = domainUid + managedServerPrefix + i;
       //check if pod in init state
-      checkPodInitializing(managedServerPodName,domainUid, domainNamespace);
+      checkPodInitialized(managedServerPodName,domainUid, domainNamespace);
       // check that the managed server service exists and pod is ready in the domain namespace
       logger.info("Checking that managed server service {0} exists in namespace {1}",
           managedServerPodName, domainNamespace);

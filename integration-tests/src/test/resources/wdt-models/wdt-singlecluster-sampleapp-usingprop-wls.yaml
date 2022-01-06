@@ -20,6 +20,9 @@ topology:
     Server:
         "admin-server":
             ListenPort: 7001
+            SSL :
+              Enabled : true
+              ListenPort: 7002
     ServerTemplate:
         "cluster-1-template":
             Cluster: "cluster-1"

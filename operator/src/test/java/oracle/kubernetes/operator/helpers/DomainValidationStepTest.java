@@ -45,8 +45,10 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_PATTERN;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_PATTERN;
+import static oracle.kubernetes.operator.EventConstants.TOPOLOGY_MISMATCH_ERROR;
+import static oracle.kubernetes.operator.EventConstants.TOPOLOGY_MISMATCH_ERROR_SUGGESTION;
 import static oracle.kubernetes.operator.EventTestUtils.containsEventWithMessage;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
@@ -120,7 +122,7 @@ class DomainValidationStepTest {
     testSupport.defineResources(domain);
     testSupport.addDomainPresenceInfo(info);
     DomainProcessorTestSetup.defineRequiredResources(testSupport);
-    domainValidationSteps = DomainValidationSteps.createDomainValidationSteps(NS, terminalStep);
+    domainValidationSteps = Step.chain(DomainValidationSteps.createDomainValidationSteps(NS), terminalStep);
     topologyValidationStep = DomainValidationSteps.createValidateDomainTopologyStep(terminalStep);
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domainEventK8SObjects", domainEventObjects));
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "namespaceEventK8SObjects", nsEventObjects));
@@ -161,7 +163,7 @@ class DomainValidationStepTest {
     testSupport.runSteps(domainValidationSteps);
 
     Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
-    assertThat(getStatusReason(updatedDomain), equalTo("ErrBadDomain"));
+    assertThat(getStatusReason(updatedDomain), equalTo("DomainInvalid"));
     assertThat(getStatusMessage(updatedDomain), stringContainsInOrder("managedServers", "ms1"));
   }
 
@@ -195,7 +197,7 @@ class DomainValidationStepTest {
     testSupport.runSteps(domainValidationSteps);
 
     Domain updatedDomain = testSupport.getResourceWithName(DOMAIN, UID);
-    assertThat(getStatusReason(updatedDomain), equalTo("ErrBadDomain"));
+    assertThat(getStatusReason(updatedDomain), equalTo("DomainInvalid"));
     assertThat(getStatusMessage(updatedDomain), stringContainsInOrder("name", "not found", NS));
   }
 
@@ -369,6 +371,7 @@ class DomainValidationStepTest {
     assertThat(logRecords, containsWarning(MessageKeys.NO_CLUSTER_IN_DOMAIN));
     assertThat(info.getValidationWarningsAsString(),
         stringContainsInOrder("Cluster", "no-such-cluster", "does not exist"));
+    assertThat(getEvents().stream().anyMatch(this::isTopologyMistachFailedEvent), is(true));
   }
 
   @Test
@@ -379,6 +382,7 @@ class DomainValidationStepTest {
     testSupport.runSteps(topologyValidationStep);
 
     assertThat(logRecords, containsWarning(MessageKeys.NO_MANAGED_SERVER_IN_DOMAIN));
+    assertThat(getEvents().stream().anyMatch(this::isTopologyMistachFailedEvent), is(true));
     assertThat(info.getValidationWarningsAsString(),
         stringContainsInOrder("Managed Server", "no-such-server", "does not exist"));
   }
@@ -398,6 +402,7 @@ class DomainValidationStepTest {
     assertThat(info.getValidationWarningsAsString(),
         stringContainsInOrder(Integer.toString(7001), ADMIN_SERVER, Integer.toString(ADMIN_SERVER_PORT_NUM)));
 
+    assertThat(getEvents().stream().anyMatch(this::isTopologyMistachFailedEvent), is(true));
     assertContainsEventWithFormattedMessage(
         getFormattedMessage(MONITORING_EXPORTER_CONFLICT_SERVER,
             Integer.toString(7001), ADMIN_SERVER, Integer.toString(ADMIN_SERVER_PORT_NUM)));
@@ -414,6 +419,7 @@ class DomainValidationStepTest {
     assertThat(info.getValidationWarningsAsString(),
         stringContainsInOrder(Integer.toString(8001), MANAGED_SERVER1, Integer.toString(MANAGED_SERVER1_PORT_NUM)));
 
+    assertThat(getEvents().stream().anyMatch(this::isTopologyMistachFailedEvent), is(true));
     assertContainsEventWithFormattedMessage(
         getFormattedMessage(MONITORING_EXPORTER_CONFLICT_SERVER,
             Integer.toString(8001), MANAGED_SERVER1, Integer.toString(MANAGED_SERVER1_PORT_NUM)));
@@ -431,6 +437,7 @@ class DomainValidationStepTest {
         stringContainsInOrder(Integer.toString(9001), DYNAMIC_CLUSTER_NAME,
             Integer.toString(SERVER_TEMPLATE_PORT_NUM)));
 
+    assertThat(getEvents().stream().anyMatch(this::isTopologyMistachFailedEvent), is(true));
     assertContainsEventWithFormattedMessage(
         getFormattedMessage(MONITORING_EXPORTER_CONFLICT_DYNAMIC_CLUSTER,
             Integer.toString(9001), DYNAMIC_CLUSTER_NAME, Integer.toString(SERVER_TEMPLATE_PORT_NUM)));
@@ -444,7 +451,12 @@ class DomainValidationStepTest {
 
     testSupport.runSteps(topologyValidationStep);
 
+    assertThat(getEvents().stream().anyMatch(this::isTopologyMistachFailedEvent), is(true));
     assertContainsEventWithMessage(NO_MANAGED_SERVER_IN_DOMAIN, "no-such-server");
+  }
+
+  private boolean isTopologyMistachFailedEvent(CoreV1Event e) {
+    return DOMAIN_FAILED_EVENT.equals(e.getReason()) && e.getMessage().contains(TOPOLOGY_MISMATCH_ERROR);
   }
 
   @Test
@@ -455,6 +467,7 @@ class DomainValidationStepTest {
 
     testSupport.runSteps(topologyValidationStep);
 
+    assertThat(getEvents().stream().anyMatch(this::isTopologyMistachFailedEvent), is(true));
     assertContainsEventWithMessage(NO_CLUSTER_IN_DOMAIN, "no-such-cluster");
   }
 
@@ -468,6 +481,7 @@ class DomainValidationStepTest {
 
     testSupport.runSteps(topologyValidationStep);
 
+    assertThat(getEvents().stream().anyMatch(this::isTopologyMistachFailedEvent), is(true));
     assertContainsEventWithFormattedMessage(getFormattedMessage(NO_CLUSTER_IN_DOMAIN, "no-such-cluster")
         + "\n" + getFormattedMessage(NO_MANAGED_SERVER_IN_DOMAIN, "no-such-server"));
   }
@@ -503,12 +517,12 @@ class DomainValidationStepTest {
 
   private void assertContainsEventWithFormattedMessage(String message) {
     assertThat(
-        "Expected Event with message was not created: " + getExpectedValidationEventMessage(message)
+        "Expected Event with message was not created: " + getExpectedTopologyMismatchEventMessage(message)
             + ".\nThere are " + getEvents().size() + " event.\nEvents: " + getEvents(),
         containsEventWithMessage(
             getEvents(),
-            DOMAIN_VALIDATION_ERROR_EVENT,
-            getExpectedValidationEventMessage(message)),
+            DOMAIN_FAILED_EVENT,
+            getExpectedTopologyMismatchEventMessage(message)),
         is(true));
   }
 
@@ -517,8 +531,9 @@ class DomainValidationStepTest {
     return logger.formatMessage(msgId, params);
   }
 
-  private String getExpectedValidationEventMessage(String message) {
-    return String.format(DOMAIN_VALIDATION_ERROR_PATTERN, UID, message);
+  private String getExpectedTopologyMismatchEventMessage(String message) {
+    return String.format(DOMAIN_FAILED_PATTERN, UID,
+        TOPOLOGY_MISMATCH_ERROR, message, TOPOLOGY_MISMATCH_ERROR_SUGGESTION);
   }
 
   private void setExplicitRecheck() {

@@ -4,14 +4,33 @@
 package oracle.kubernetes.operator.work;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiConsumer;
+import java.util.function.Function;
+import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.LogRecord;
+import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 
+import com.meterware.simplestub.Memento;
+import com.meterware.simplestub.StaticStubSupport;
+import oracle.kubernetes.utils.TestUtils;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
+import static oracle.kubernetes.operator.logging.MessageKeys.DUMP_BREADCRUMBS;
+import static oracle.kubernetes.utils.LogMatcher.containsInfo;
+import static org.hamcrest.Matchers.allOf;
+import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.contains;
+import static org.hamcrest.Matchers.containsInRelativeOrder;
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.hasSize;
 import static org.hamcrest.Matchers.instanceOf;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.sameInstance;
@@ -29,20 +48,32 @@ class FiberTest {
   private final Fiber fiber = testSupport.getEngine().createFiber();
 
   private final List<Step> stepList = new ArrayList<>();
-  private final List<Throwable> throwablesList = new ArrayList<>();
+  private final List<Throwable> throwableList = new ArrayList<>();
   private final List<AsyncFiber> fiberList = new ArrayList<>();
 
-  private final Step step1 = new BasicStep();
-  private final Step step2 = new BasicStep();
-  private final Step step3 = new BasicStep();
+  private final Step step1 = new BasicStep(1);
+  private final Step step2 = new BasicStep(2);
+  private final Step step3 = new BasicStep(3);
+  private final ChildFiberStep childFiberStep = new ChildFiberStep(step3, step1, step2);
   private final Step retry = new RetryStep();
   private final Step error = new ThrowableStep();
   private final Step suspend = new SuspendingStep(this::recordFiber);
+  private final List<Memento> mementos = new ArrayList<>();
+  private final List<LogRecord> logRecords = new ArrayList<>();
 
   @BeforeEach
   public void setUp() {
+    mementos.add(TestUtils.silenceOperatorLogger()
+          .collectLogMessages(logRecords, DUMP_BREADCRUMBS)
+          .withLogLevel(Level.INFO));
+
     packet.put(STEPS, stepList);
     packet.put(FIBERS, fiberList);
+  }
+
+  @AfterEach
+  void tearDown() {
+    mementos.forEach(Memento::revert);
   }
 
   @Test
@@ -82,7 +113,7 @@ class FiberTest {
   void whenStepThrowsException_captureThrowable() {
     runSteps(step1, error, step3);
 
-    assertThat(throwablesList, contains(instanceOf(RuntimeException.class)));
+    assertThat(throwableList, contains(instanceOf(RuntimeException.class)));
   }
 
   @Test
@@ -132,11 +163,153 @@ class FiberTest {
     assertThat(stepList, contains(step1, suspend, step3));
   }
 
+  @Test
+  void whenChildFibersCreated_runAllSteps() {
+    runSteps(childFiberStep);
+
+    assertThat(stepList, contains(step1, step2, step3));
+  }
+
+  @Test
+  void whenChildFibersCreated_runSynchronizationStepLast() {
+    runSteps(childFiberStep);
+
+    assertThat(stepList, containsInRelativeOrder(step2, step3));
+  }
+
+  @Test
+  void whenFiberCompletes_breadcrumbsAreCreated() {
+    runSteps(step1, step2, step3);
+
+    assertThat(fiber.getBreadCrumbs(), hasSize(3));
+  }
+
+  @Test
+  void whenFiberCompletes_canWriteStepNames() {
+    runSteps(step1, step2, step3);
+
+    assertThat(fiber.getBreadCrumbString(), allOf(containsString("1"), containsString("2"), containsString("3")));
+  }
+
+  @Test
+  void whenFiberWithSuspendCompletes_breadCrumbReportsSuspend() {
+    runSteps(step1, suspend, step3);
+    fiber.resume(packet);
+
+    assertThat(fiber.getBreadCrumbString(), allOf(containsString("Suspending..."), containsString("Basic (3)")));
+  }
+
+  @Test
+  void whenFiberThrowsException_breadCrumbReportsException() {
+    runSteps(step1, error, step3);
+
+    assertThat(fiber.getBreadCrumbString(), containsString("Throwable,(RuntimeException"));
+  }
+
+  @Test
+  void whenChildFibersCreated_createBreadCrumbsForChildFibers() {
+    runSteps(childFiberStep);
+
+    assertThat(fiber.getBreadCrumbString(), containsString("child-1: [FiberTest$Basic (1)"));
+  }
+
+  @Test
+  void whenDebugNotEnabled_doNotInvokeDebugCommentGenerator() {
+    runSteps(
+          new SimpleAnnotationStep(this::failOnInvoke),
+          new ComputedAnnotationStep(this::failOnInvoke));
+  }
+
+  private String failOnInvoke() {
+    throw new RuntimeException();
+  }
+
+  private String failOnInvoke(Integer i) {
+    throw new RuntimeException();
+  }
+
+  @Test
+  void whenDebugEnable_breadCrumbsIncludeComments() throws NoSuchFieldException {
+    mementos.add(StaticStubSupport.install(NextAction.class, "commentPrefix", "PREFIX: "));
+    packet.put(Fiber.DEBUG_FIBER, "PREFIX");
+
+    runSteps(
+          new SimpleAnnotationStep(this::simpleComment),
+          new ComputedAnnotationStep(this::computedComment),
+          step1);
+
+    final String breadCrumbString = fiber.getBreadCrumbString();
+    assertThat(logRecords, containsInfo(DUMP_BREADCRUMBS, "PREFIX", breadCrumbString));
+    assertThat(breadCrumbString, both(containsString("something")).and(containsString("comment(0)")));
+  }
+
+  private String simpleComment() {
+    return "something";
+  }
+
+  private String computedComment(Integer i) {
+    return "comment(" + i + ")";
+  }
+
   static class BasicStep extends Step {
+
+    private final Integer stepNum;
+
+    BasicStep() {
+      stepNum = null;
+    }
+
+    BasicStep(int stepNum) {
+      this.stepNum = stepNum;
+    }
+
     @Override
     public NextAction apply(Packet packet) {
       recordStep(packet);
       return doNext(packet);
+    }
+
+    @SuppressWarnings("unchecked")
+    final void recordStep(Packet packet) {
+      ((List<Step>) packet.get(STEPS)).add(this);
+    }
+
+    @Override
+    protected String getDetail() {
+      return Optional.ofNullable(stepNum).map(Integer::toHexString).orElse(null);
+    }
+  }
+
+  static class SimpleAnnotationStep extends Step {
+    private final Supplier<String> annotationGenerator;
+
+    SimpleAnnotationStep(Supplier<String> annotationGenerator) {
+      this.annotationGenerator = annotationGenerator;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      recordStep(packet);
+      return doNext(packet).withDebugComment(annotationGenerator);
+    }
+
+    @SuppressWarnings("unchecked")
+    final void recordStep(Packet packet) {
+      ((List<Step>) packet.get(STEPS)).add(this);
+    }
+  }
+
+  static class ComputedAnnotationStep extends Step {
+    private final Function<Integer,String> annotationGenerator;
+
+    ComputedAnnotationStep(Function<Integer,String> annotationGenerator) {
+      this.annotationGenerator = annotationGenerator;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      recordStep(packet);
+      return doNext(packet).withDebugComment(0, annotationGenerator);
     }
 
     @SuppressWarnings("unchecked")
@@ -167,7 +340,7 @@ class FiberTest {
   static class SuspendingStep extends BasicStep {
     private final BiConsumer<Packet, AsyncFiber> suspendAction;
 
-    public SuspendingStep(BiConsumer<Packet, AsyncFiber> suspendAction) {
+    SuspendingStep(BiConsumer<Packet, AsyncFiber> suspendAction) {
       this.suspendAction = suspendAction;
     }
 
@@ -176,6 +349,29 @@ class FiberTest {
       recordStep(packet);
 
       return doSuspend(f -> suspendAction.accept(packet, f));
+    }
+  }
+
+  static class ChildFiberStep extends BasicStep {
+
+    private final Step nextStep;
+    private final Step[] childSteps;
+
+    ChildFiberStep(Step nextStep, Step... steps) {
+      this.nextStep = nextStep;
+      childSteps = steps;
+    }
+
+    @Override
+    public NextAction apply(Packet packet) {
+      return doForkJoin(nextStep, packet, createStepAndPacketList(packet));
+    }
+
+    @Nonnull
+    private List<StepAndPacket> createStepAndPacketList(Packet packet) {
+      return Arrays.stream(childSteps)
+            .map(s -> new StepAndPacket(s, packet.copy()))
+            .collect(Collectors.toList());
     }
   }
 
@@ -189,7 +385,7 @@ class FiberTest {
 
     @Override
     public void onThrowable(Packet packet, Throwable throwable) {
-      throwablesList.add(throwable);
+      throwableList.add(throwable);
     }
   }
 }

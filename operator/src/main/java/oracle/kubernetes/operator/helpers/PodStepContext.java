@@ -41,7 +41,6 @@ import io.kubernetes.client.util.Yaml;
 import jakarta.json.Json;
 import jakarta.json.JsonPatchBuilder;
 import oracle.kubernetes.operator.DomainSourceType;
-import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
@@ -75,11 +74,13 @@ import oracle.kubernetes.weblogic.domain.model.Shutdown;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.jetbrains.annotations.NotNull;
 
+import static oracle.kubernetes.operator.DomainStatusUpdater.createKubernetesFailureSteps;
 import static oracle.kubernetes.operator.EventConstants.ROLL_REASON_DOMAIN_RESOURCE_CHANGED;
 import static oracle.kubernetes.operator.EventConstants.ROLL_REASON_WEBLOGIC_CONFIGURATION_CHANGED;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.NUM_CONFIG_MAPS;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_EXPORTER_SIDECAR_PORT;
 import static oracle.kubernetes.operator.KubernetesConstants.EXPORTER_CONTAINER_NAME;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.MODEL_IN_IMAGE_DOMAINZIP_HASH;
@@ -442,16 +443,8 @@ public abstract class PodStepContext extends BasePodStepContext {
     return createPodAsync(replaceResponse(next));
   }
 
-  /**
-   * Creates a Progressing step before an action step.
-   *
-   * @param actionStep the step to perform after the ProgressingStep.
-   * @return a step to be scheduled.
-   */
-  abstract Step createProgressingStep(Step actionStep);
-
   private Step patchCurrentPod(V1Pod currentPod, Step next) {
-    return createProgressingStep(patchPod(currentPod, next));
+    return patchPod(currentPod, next);
   }
 
   private Step patchPod(V1Pod currentPod, Step next) {
@@ -1227,7 +1220,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     }
 
     private NextAction updateDomainStatus(Packet packet, CallResponse<V1Pod> callResponse) {
-      return doNext(DomainStatusUpdater.createFailureRelatedSteps(callResponse, null), packet);
+      return doNext(createKubernetesFailureSteps(callResponse), packet);
     }
   }
 
@@ -1270,7 +1263,7 @@ public abstract class PodStepContext extends BasePodStepContext {
 
     @Override
     public NextAction onFailure(Packet packet, CallResponse<Object> callResponses) {
-      if (callResponses.getStatusCode() == CallBuilder.NOT_FOUND) {
+      if (callResponses.getStatusCode() == HTTP_NOT_FOUND) {
         return onSuccess(packet, callResponses);
       }
       return super.onFailure(getConflictStep(), packet, callResponses);

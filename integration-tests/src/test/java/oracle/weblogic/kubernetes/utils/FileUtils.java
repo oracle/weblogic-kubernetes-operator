@@ -18,6 +18,7 @@ import java.nio.file.StandardCopyOption;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
@@ -138,15 +139,32 @@ public class FileUtils {
    * @param container name of the container inside of the pod
    * @param srcPath source location of the file
    * @param destPath destination location of the file
-   * @throws ApiException if Kubernetes API client call fails
-   * @throws IOException if copy fails
+   * @return true if copy succeeds, false otherwise
+   * @throws IOException when copy fails
+   * @throws ApiException when pod interaction fails
    */
-  public static void copyFileToPod(String namespace,
+  public static boolean copyFileToPod(String namespace,
                                    String pod,
                                    String container,
                                    Path srcPath,
-                                   Path destPath) throws ApiException, IOException {
-    Kubernetes.copyFileToPod(namespace, pod, container, srcPath, destPath);
+                                   Path destPath) throws IOException, ApiException {
+    return Kubernetes.copyFileToPod(namespace, pod, container, srcPath, destPath);
+  }
+
+  /**
+   * Copy a file to a pod in specified namespace.
+   * @param namespace namespace in which the pod exists
+   * @param pod name of pod where the file will be copied to
+   * @param container name of the container inside of the pod
+   * @param srcPath source location of the file
+   * @param destPath destination location of the file
+   */
+  public static Callable<Boolean> checkCopyFileToPod(String namespace,
+                                                     String pod,
+                                                     String container,
+                                                     Path srcPath,
+                                                     Path destPath) {
+    return () -> copyFileToPod(namespace, pod, container, srcPath, destPath);
   }
 
   /**
@@ -292,9 +310,12 @@ public class FileUtils {
     logger.info("Replacing {0}", src.toString());
     Charset charset = StandardCharsets.UTF_8;
     String content = new String(Files.readAllBytes(src), charset);
-    content = content.replaceAll(regex, replacement);
+    String newcontent = content.replaceAll(regex, replacement);
     logger.info("with {0}", replacement);
-    Files.write(src, content.getBytes(charset));
+    if (content.equals(newcontent)) {
+      logger.info("search string {0} not found to replace with {1}", regex, replacement);
+    }
+    Files.write(src, newcontent.getBytes(charset));
   }
 
   /**
@@ -382,6 +403,21 @@ public class FileUtils {
       FileUtils.replaceStringInFile(out, entry.getKey(), entry.getValue());
     }
     return targetFile;
+  }
+
+
+  /**
+   * Check if the required file ls empty.
+   *
+   * @param fileName the name of the file that needs to be checked
+   * @return true if a file is not empty with the given fileName
+   */
+  public static Callable<Boolean> isFileExistAndNotEmpty(String fileName) {
+    File file = new File(fileName);
+    return () -> {
+      boolean fileReady = (file.exists() && file.length() != 0);
+      return fileReady;
+    };
   }
 
 }

@@ -93,7 +93,7 @@ import javax.management.ObjectName;
     JMSContext context = cf.createContext();
     tmsg = context.createTextMessage("(On Server) " + serverRuntime.getName());
     context.createProducer().send(rq,tmsg);
-    System.out.println("["+dateFormat.format(date)+"]<TMDB> message added to [@FWD_DEST_URL@]");
+    System.out.println("["+dateFormat.format(date)+"]<TMDB> message forwarded to [t3://domain1-admin-server:7001]");
    } catch (Exception e) {
       e.printStackTrace ();
     }

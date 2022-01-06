@@ -17,7 +17,6 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -27,15 +26,16 @@ import org.junit.jupiter.api.TestMethodOrder;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.OCIR_WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.SKIP_BUILD_IMAGES_IF_EXISTS;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
@@ -47,6 +47,8 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.pvcExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkClusterReplicaCountMatches;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
@@ -59,7 +61,6 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.copyDirectory;
 import static org.apache.commons.io.FileUtils.copyFile;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -84,11 +85,11 @@ class ItWlsSamples {
 
   private static String traefikNamespace = null;
   private static String nginxNamespace = null;
-  private static String voyagerNamespace = null;
   private static String domainNamespace = null;
   private static final String domainName = "domain1";
   private static final String diiImageNameBase = "domain-home-in-image";
-  private static final String diiImageTag = "12.2.1.4";
+  private static final String diiImageTag =
+      Boolean.valueOf(SKIP_BUILD_IMAGES_IF_EXISTS) ? OCIR_WEBLOGIC_IMAGE_TAG : getDateAndTimeStamp();
   private final int replicaCount = 2;
   private final String clusterName = "cluster-1";
   private final String managedServerNameBase = "managed-server";
@@ -102,12 +103,6 @@ class ItWlsSamples {
 
   private static final String[] params = {"wlst:domain1", "wdt:domain2"};
 
-  // create standard, reusable retry/backoff policy
-  private static final ConditionFactory withStandardRetryPolicy
-      = with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(10, MINUTES).await();
-
   private static LoggingFacade logger = null;
 
   /**
@@ -116,7 +111,7 @@ class ItWlsSamples {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(5) List<String> namespaces) {
+  public static void initAll(@Namespaces(4) List<String> namespaces) {
     logger = getLogger();
 
     logger.info("Assign a unique namespace for operator");
@@ -133,10 +128,6 @@ class ItWlsSamples {
     logger.info("Assign a unique namespace for Nginx controller");
     assertNotNull(namespaces.get(3), "Namespace is null");
     nginxNamespace = namespaces.get(3);
-
-    logger.info("Assign a unique namespace for Voyager controller");
-    assertNotNull(namespaces.get(4), "Namespace is null");
-    voyagerNamespace = namespaces.get(4);
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
@@ -157,9 +148,8 @@ class ItWlsSamples {
   void testSampleDomainInImage(String model) {
     String domainName = model.split(":")[1];
     String script = model.split(":")[0];
-    String imageName = (KIND_REPO != null
-            ? KIND_REPO + diiImageNameBase + "_" + script + ":" + diiImageTag
-            : diiImageNameBase + "_" + script + ":" + diiImageTag);
+
+    String imageName = DOMAIN_IMAGES_REPO + diiImageNameBase + "-" + script + ":" + diiImageTag;
 
     //copy the samples directory to a temporary location
     setupSample();
@@ -174,7 +164,7 @@ class ItWlsSamples {
     // update domainHomeImageBase with right values in create-domain-inputs.yaml
     assertDoesNotThrow(() -> {
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-              "domainHomeImageBase: container-registry.oracle.com/middleware/weblogic:" + diiImageTag,
+              "domainHomeImageBase: container-registry.oracle.com/middleware/weblogic:" + OCIR_WEBLOGIC_IMAGE_TAG,
               "domainHomeImageBase: " + WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "#image:",
@@ -247,7 +237,7 @@ class ItWlsSamples {
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "createDomainFilesDir: wlst", "createDomainFilesDir: " + script);
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
-              "image: container-registry.oracle.com/middleware/weblogic:12.2.1.4",
+              "image: container-registry.oracle.com/middleware/weblogic:" + OCIR_WEBLOGIC_IMAGE_TAG,
               "image: " + WEBLOGIC_IMAGE_TO_USE_IN_SPEC);
     });
 
@@ -357,7 +347,7 @@ class ItWlsSamples {
   /**
    * Verify setupLoadBalancer scripts for managing Traefik LoadBalancer.
    */
-  @Order(7)
+  @Order(0)
   @Test
   @DisplayName("Manage Traefik Ingress Controller with setupLoadBalancer")
   void testTraefikIngressController() {
@@ -368,22 +358,9 @@ class ItWlsSamples {
   }
 
   /**
-   * Verify setupLoadBalancer scripts for managing Voyager LoadBalancer.
-   */
-  @Order(8)
-  @Test
-  @DisplayName("Manage Voyager Ingress Controller with setupLoadBalancer")
-  void testVoyagerIngressController() {
-    setupSample();
-    Path scriptBase = Paths.get(tempSamplePath.toString(), "charts/util");
-    setupLoadBalancer(scriptBase, "voyager", " -c -n " + voyagerNamespace);
-    setupLoadBalancer(scriptBase, "voyager", " -d -n " + voyagerNamespace);
-  }
-
-  /**
    * Verify setupLoadBalancer scripts for managing Nginx LoadBalancer.
    */
-  @Order(9)
+  @Order(8)
   @Test
   @DisplayName("Manage Nginx Ingress Controller with setupLoadBalancer")
   void testNginxIngressController() {
@@ -508,16 +485,12 @@ class ItWlsSamples {
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create pv");
 
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for pv {0} to be ready, "
-                + "(elapsed time {1}ms, remaining time {2}ms)",
-                pvName,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> pvExists(pvName, null),
-            String.format("pvExists failed with ApiException for pv %s",
-                pvName)));
+    testUntil(
+        assertDoesNotThrow(() -> pvExists(pvName, null),
+          String.format("pvExists failed with ApiException for pv %s", pvName)),
+        logger,
+        "pv {0} to be ready",
+        pvName);
 
     params = new CommandParams().defaults();
     params.command("kubectl create -f " + Paths.get(pvpvcBase.toString(),
@@ -525,18 +498,13 @@ class ItWlsSamples {
     result = Command.withParams(params).execute();
     assertTrue(result, "Failed to create pvc");
 
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for pv {0} to be ready in namespace {1} "
-                + "(elapsed time {2}ms, remaining time {3}ms)",
-                pvcName,
-                domainNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> pvcExists(pvcName, domainNamespace),
-            String.format("pvcExists failed with ApiException for pvc %s",
-                pvcName)));
-
+    testUntil(
+        assertDoesNotThrow(() -> pvcExists(pvcName, domainNamespace),
+          String.format("pvcExists failed with ApiException for pvc %s", pvcName)),
+        logger,
+        "pv {0} to be ready in namespace {1}",
+        pvcName,
+        domainNamespace);
   }
 
   private void updateDomainInputsFile(String domainName, Path sampleBase) {
@@ -550,6 +518,10 @@ class ItWlsSamples {
               "#t3PublicAddress:", "t3PublicAddress: " + K8S_NODEPORT_HOST);
       replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
               "#imagePullSecretName:", "imagePullSecretName: " + BASE_IMAGES_REPO_SECRET);
+      if (KIND_REPO == null) {
+        replaceStringInFile(Paths.get(sampleBase.toString(), "create-domain-inputs.yaml").toString(),
+            "imagePullPolicy: IfNotPresent", "imagePullPolicy: Always");
+      }
     });
   }
 
@@ -592,15 +564,12 @@ class ItWlsSamples {
 
     // wait for the domain to exist
     logger.info("Checking for domain custom resource in namespace {0}", domainNamespace);
-    withStandardRetryPolicy
-            .conditionEvaluationListener(
-                condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
-                            + "(elapsed time {2}ms, remaining time {3}ms)",
-                            domainName,
-                            domainNamespace,
-                            condition.getElapsedTimeInMS(),
-                            condition.getRemainingTimeInMS()))
-            .until(domainExists(domainName, DOMAIN_VERSION, domainNamespace));
+    testUntil(
+        domainExists(domainName, DOMAIN_VERSION, domainNamespace),
+        logger,
+        "domain {0} to be created in namespace {1}",
+        domainName,
+        domainNamespace);
 
     final String adminServerName = "admin-server";
     final String adminServerPodName = domainName + "-" + adminServerName;
@@ -686,23 +655,20 @@ class ItWlsSamples {
     boolean result = Command.withParams(params).execute();
     assertTrue(result, "Failed to delete domain custom resource");
 
-    withStandardRetryPolicy
-            .conditionEvaluationListener(
-                condition -> logger.info("Waiting for domain {0} to be deleted in namespace {1} "
-                            + "(elapsed time {2}ms, remaining time {3}ms)",
-                            domainName,
-                            domainNamespace,
-                            condition.getElapsedTimeInMS(),
-                            condition.getRemainingTimeInMS()))
-            .until(domainDoesNotExist(domainName, DOMAIN_VERSION, domainNamespace));
+    testUntil(
+        domainDoesNotExist(domainName, DOMAIN_VERSION, domainNamespace),
+        logger,
+        "domain {0} to be deleted in namespace {1}",
+        domainName,
+        domainNamespace);
   }
 
   private void setupLoadBalancer(Path sampleBase, String ingressType, String additionalOptions) {
-    // run setupLoadBalancer.sh to install/uninstall ingress controller 
+    // run setupLoadBalancer.sh to install/uninstall ingress controller
     CommandParams params = new CommandParams().defaults();
     params.command("sh "
            + Paths.get(sampleBase.toString(), "setupLoadBalancer.sh").toString()
-           + " -t " + ingressType 
+           + " -t " + ingressType
            + additionalOptions);
     logger.info("Run setupLoadBalancer.sh to manage {0} ingress controller", ingressType);
     boolean result = Command.withParams(params).execute();
