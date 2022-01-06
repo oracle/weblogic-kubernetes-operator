@@ -69,5 +69,5 @@ public abstract class Pool<T> {
    * take} to return a different object from pool.
    *
    */
-  protected abstract void discard(T client);
+  public abstract void discard(T client);
 }

@@ -143,6 +143,10 @@ public class MessageKeys {
   public static final String EXECUTE_MAKE_RIGHT_DOMAIN = "WLSKO-0192";
   public static final String LOG_WAITING_COUNT = "WLSKO-0193";
   public static final String INTERNAL_IDENTITY_INITIALIZATION_FAILED = "WLSKO-0194";
+  public static final String DOMAIN_FATAL_ERROR = "WLSKO-0195";
+  public static final String INTROSPECTOR_MAX_ERRORS_EXCEEDED = "WLSKO-0196";
+  public static final String NON_FATAL_INTROSPECTOR_ERROR = "WLSKO-0197";
+  public static final String DUMP_BREADCRUMBS = "WLSKO-0198";
 
   // domain status messages
   public static final String DUPLICATE_SERVER_NAME_FOUND = "WLSDO-0001";
@@ -177,6 +181,9 @@ public class MessageKeys {
   public static final String RESERVED_CONTAINER_NAME = "WLSDO-0030";
   public static final String ILLEGAL_CONTAINER_PORT_NAME_LENGTH = "WLSDO-0031";
   public static final String ILLEGAL_NETWORK_CHANNEL_NAME_LENGTH = "WLSDO-0032";
+  public static final String K8S_REQUEST_FAILURE = "WLSDO-0033";
+  public static final String SERVER_POD_FAILURE = "WLSDO-0034";
+  public static final String TOO_MANY_REPLICAS_FAILURE = "WLSDO-0035";
 
   private MessageKeys() {
   }

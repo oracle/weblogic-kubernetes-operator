@@ -28,14 +28,10 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.FileUtils;
-import org.awaitility.core.ConditionFactory;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
-import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.PROJECT_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RBAC_API_GROUP;
@@ -54,18 +50,15 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.creat
 import static oracle.weblogic.kubernetes.assertions.impl.ClusterRole.clusterRoleExists;
 import static oracle.weblogic.kubernetes.assertions.impl.ClusterRoleBinding.clusterRoleBindingExists;
 import static oracle.weblogic.kubernetes.assertions.impl.RoleBinding.roleBindingExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.getRouteHost;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class Domain {
-
-  public static final ConditionFactory withStandardRetryPolicy =
-      with().pollDelay(10, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(2, MINUTES).await();
 
   /**
    * Create a domain custom resource.
@@ -161,6 +154,21 @@ public class Domain {
   public static oracle.weblogic.domain.Domain getDomainCustomResource(String domainUid,
                                                                       String namespace) throws ApiException {
     return Kubernetes.getDomainCustomResource(domainUid, namespace);
+  }
+
+  /**
+   * Get a Domain Custom Resource.
+   *
+   * @param domainUid unique domain identifier
+   * @param namespace name of namespace
+   * @param domainVersion domain version
+   * @return domain custom resource or null if Domain does not exist
+   * @throws ApiException if Kubernetes request fails
+   */
+  public static oracle.weblogic.domain.Domain getDomainCustomResource(String domainUid,
+                                                                      String namespace,
+                                                                      String domainVersion) throws ApiException {
+    return Kubernetes.getDomainCustomResource(domainUid, namespace, domainVersion);
   }
 
   /**
@@ -406,6 +414,7 @@ public class Domain {
                                                 String opServiceAccount) {
     LoggingFacade logger = getLogger();
 
+    String opExternalSvc = getRouteHost(opNamespace, "external-weblogic-operator-svc"); 
     logger.info("Getting the secret of service account {0} in namespace {1}", opServiceAccount, opNamespace);
     String secretName = Secret.getSecretOfServiceAccount(opNamespace, opServiceAccount);
     if (secretName.isEmpty()) {
@@ -444,9 +453,7 @@ public class Domain {
         .append(numOfServers)
         .append("}' ")
         .append("-X POST https://")
-        .append(K8S_NODEPORT_HOST)
-        .append(":")
-        .append(externalRestHttpsPort)
+        .append(getHostAndPort(opExternalSvc, externalRestHttpsPort))
         .append("/operator/latest/domains/")
         .append(domainUid)
         .append("/clusters/")
@@ -460,15 +467,10 @@ public class Domain {
         .redirect(true);
 
     logger.info("Calling curl to scale the cluster");
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Calling curl command, waiting for success "
-                    + "(elapsed time {0}ms, remaining time {1}ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(() -> {
-          return Command.withParams(params).execute();
-        });
+    testUntil(
+        () -> Command.withParams(params).execute(),
+        logger,
+        "Calling curl command");
     return true;
   }
 
@@ -521,80 +523,50 @@ public class Domain {
 
     // create $DOMAIN_HOME/bin/scripts directory on admin server pod
     logger.info("Creating directory {0}/bin/scripts on admin server pod", domainHomeLocation);
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Creating directory {0}/bin/scripts on admin server pod, waiting for success"
-                    + " (elapsed time {1}ms, remaining time {2}ms)",
-                domainHomeLocation,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(() -> {
-          return executeCommandOnPod(adminPod, null, true,
-              "/bin/sh", "-c", "mkdir -p " + domainHomeLocation + "/bin/scripts");
-        });
+    testUntil(
+        () -> executeCommandOnPod(
+            adminPod, null, true,"/bin/sh", "-c", "mkdir -p " + domainHomeLocation + "/bin/scripts"),
+        logger,
+        "Creating directory {0}/bin/scripts on admin server pod",
+        domainHomeLocation);
 
     logger.info("Copying scalingAction.sh to admin server pod");
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Copying scalingAction.sh to admin server pod, waiting for success "
-                    + "(elapsed time {0}ms, remaining time {1}ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(() -> {
-          return copyFileToPod(domainNamespace, adminServerPodName, null,
-              Paths.get(PROJECT_ROOT + "/../operator/scripts/scaling/scalingAction.sh"),
-              Paths.get(domainHomeLocation + "/bin/scripts/scalingAction.sh"));
-        });
+    testUntil(
+        () -> copyFileToPod(domainNamespace, adminServerPodName, null,
+          Paths.get(PROJECT_ROOT + "/../operator/scripts/scaling/scalingAction.sh"),
+          Paths.get(domainHomeLocation + "/bin/scripts/scalingAction.sh")),
+        logger,
+        "Copying scalingAction.sh to admin server pod");
 
     logger.info("Adding execute mode for scalingAction.sh");
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Adding execute mode for scalingAction.sh, waiting for success "
-                    + "(elapsed time {0}ms, remaining time {1}ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(() -> {
-          return executeCommandOnPod(adminPod, null, true,
-              "/bin/sh", "-c", "chmod +x " + domainHomeLocation + "/bin/scripts/scalingAction.sh");
-        });
+    testUntil(
+        () -> executeCommandOnPod(adminPod, null, true,
+        "/bin/sh", "-c", "chmod +x " + domainHomeLocation + "/bin/scripts/scalingAction.sh"),
+        logger,
+        "Adding execute mode for scalingAction.sh");
 
     // copy wldf.py and callpyscript.sh to Admin Server pod
     logger.info("Copying wldf.py and callpyscript.sh to admin server pod");
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Copying wldf.py to admin server pod, waiting for success "
-                    + "(elapsed time {0}ms, remaining time {1}ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(() -> {
-          return copyFileToPod(domainNamespace, adminServerPodName, null,
-              Paths.get(RESOURCE_DIR, "python-scripts", "wldf.py"),
-              Paths.get("/u01/oracle/wldf.py"));
-        });
+    testUntil(
+        () -> copyFileToPod(domainNamespace, adminServerPodName, null,
+          Paths.get(RESOURCE_DIR, "python-scripts", "wldf.py"),
+          Paths.get("/u01/wldf.py")),
+        logger,
+        "Copying wldf.py to admin server pod");
 
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Copying callpyscript.sh to admin server pod, waiting for success "
-                    + "(elapsed time {0}ms, remaining time {1}ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(() -> {
-          return copyFileToPod(domainNamespace, adminServerPodName, null,
-              Paths.get(RESOURCE_DIR, "bash-scripts", "callpyscript.sh"),
-              Paths.get("/u01/oracle/callpyscript.sh"));
-        });
+    testUntil(
+        () -> copyFileToPod(domainNamespace, adminServerPodName, null,
+          Paths.get(RESOURCE_DIR, "bash-scripts", "callpyscript.sh"),
+          Paths.get("/u01/callpyscript.sh")),
+        logger,
+        "Copying callpyscript.sh to admin server pod");
 
     logger.info("Adding execute mode for callpyscript.sh");
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Adding execute mode for callpyscript.sh, waiting for success "
-                    + "(elapsed time {0}ms, remaining time {1}ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(() -> {
-          return executeCommandOnPod(adminPod, null, true,
-              "/bin/sh", "-c", "chmod +x /u01/oracle/callpyscript.sh");
-        });
+    testUntil(
+        () -> executeCommandOnPod(adminPod, null, true,
+        "/bin/sh", "-c", "chmod +x /u01/callpyscript.sh"),
+        logger,
+        "Adding execute mode for callpyscript.sh");
 
     if (!scalingAction.equals("scaleUp") && !scalingAction.equals("scaleDown")) {
       logger.info("Set scaleAction to either scaleUp or scaleDown");
@@ -602,7 +574,7 @@ public class Domain {
     }
 
     logger.info("Creating WLDF policy rule and action");
-    String command = new StringBuffer("/u01/oracle/callpyscript.sh /u01/oracle/wldf.py ")
+    String command = new StringBuffer("/u01/callpyscript.sh /u01/wldf.py ")
         .append(ADMIN_USERNAME_DEFAULT)
         .append(" ")
         .append(ADMIN_PASSWORD_DEFAULT)
@@ -626,16 +598,11 @@ public class Domain {
         .append(myWebAppName).toString();
 
     logger.info("executing command {0} in admin server pod", command);
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("executing command {0} in admin server pod, waiting for success "
-                    + "(elapsed time {1}ms, remaining time {2}ms)",
-                command,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(() -> {
-          return executeCommandOnPod(adminPod, null, true, "/bin/sh", "-c", command);
-        });
+    testUntil(
+        () -> executeCommandOnPod(adminPod, null, true, "/bin/sh", "-c", command),
+        logger,
+        "executing command {0} in admin server pod",
+        command);
 
     // sleep for a while to make sure the diagnostic modules are created
     try {
@@ -652,17 +619,12 @@ public class Domain {
         .redirect(true);
 
     // copy scalingAction.log to local
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Copying scalingAction.log from admin server pod, waiting for success "
-                    + "(elapsed time {0}ms, remaining time {1}ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(() -> {
-          return copyFileFromPod(domainNamespace, adminServerPodName, null,
-              domainHomeLocation + "/bin/scripts/scalingAction.log",
-              Paths.get(RESULTS_ROOT + "/" + domainUid + "-scalingAction.log"));
-        });
+    testUntil(
+        () -> copyFileFromPod(domainNamespace, adminServerPodName, null,
+          domainHomeLocation + "/bin/scripts/scalingAction.log",
+          Paths.get(RESULTS_ROOT + "/" + domainUid + "-scalingAction.log")),
+        logger,
+        "Copying scalingAction.log from admin server pod");
 
     return Command.withParams(params).execute();
   }
@@ -726,42 +688,29 @@ public class Domain {
 
     // create $DOMAIN_HOME/bin/scripts directory on admin server pod
     logger.info("Creating directory {0}/bin/scripts on admin server pod", domainHomeLocation);
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Creating directory {0}/bin/scripts on admin server pod, waiting for success"
-                    + " (elapsed time {1}ms, remaining time {2}ms)",
-                domainHomeLocation,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(() -> {
-          return executeCommandOnPod(adminPod, null, true,
-              "/bin/sh", "-c", "mkdir -p " + domainHomeLocation + "/bin/scripts");
-        });
+    testUntil(
+        () -> executeCommandOnPod(adminPod, null, true,
+          "/bin/sh", "-c", "mkdir -p " + domainHomeLocation + "/bin/scripts"),
+        logger,
+        "Creating directory {0}/bin/scripts on admin server pod",
+        domainHomeLocation);
 
     logger.info("Copying scalingAction.sh to admin server pod");
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Copying scalingAction.sh to admin server pod, waiting for success "
-                    + "(elapsed time {0}ms, remaining time {1}ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(() -> {
-          return copyFileToPod(domainNamespace, adminServerPodName, null,
-              Paths.get(PROJECT_ROOT + "/../operator/scripts/scaling/scalingAction.sh"),
-              Paths.get(domainHomeLocation + "/bin/scripts/scalingAction.sh"));
-        });
+    testUntil(
+        () -> copyFileToPod(domainNamespace, adminServerPodName, null,
+          Paths.get(PROJECT_ROOT + "/../operator/scripts/scaling/scalingAction.sh"),
+          Paths.get("/u01/scalingAction.sh")),
+        logger,
+        "Copying scalingAction.sh to admin server pod");
+    //      Paths.get(domainHomeLocation + "/bin/scripts/scalingAction.sh")),
 
     logger.info("Adding execute mode for scalingAction.sh");
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Adding execute mode for scalingAction.sh, waiting for success "
-                    + "(elapsed time {0}ms, remaining time {1}ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(() -> {
-          return executeCommandOnPod(adminPod, null, true,
-              "/bin/sh", "-c", "chmod +x " + domainHomeLocation + "/bin/scripts/scalingAction.sh");
-        });
+    testUntil(
+        () -> executeCommandOnPod(adminPod, null, true,
+          "/bin/sh", "-c", "chmod +x /u01/scalingAction.sh"),
+        logger,
+        "Adding execute mode for scalingAction.sh");
+    //      "/bin/sh", "-c", "chmod +x " + domainHomeLocation + "/bin/scripts/scalingAction.sh"),
 
     if (!scalingAction.equals("scaleUp") && !scalingAction.equals("scaleDown")) {
       logger.info("Set scaleAction to either scaleUp or scaleDown");
@@ -968,7 +917,8 @@ public class Domain {
                                      V1Pod adminPod) throws ApiException, InterruptedException {
     LoggingFacade logger = getLogger();
     StringBuffer scalingCommand = new StringBuffer()
-        .append(Paths.get(domainHomeLocation + "/bin/scripts/scalingAction.sh"))
+        //.append(Paths.get(domainHomeLocation + "/bin/scripts/scalingAction.sh"))
+        .append(Paths.get("cd /u01; /u01/scalingAction.sh"))
         .append(" --action=")
         .append(scalingAction)
         .append(" --domain_uid=")
@@ -999,17 +949,13 @@ public class Domain {
         commandToExecuteInsidePod, result.exitValue(), result.stderr(), result.stdout());
 
     // copy scalingAction.log to local
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Copying scalingAction.log from admin server pod, waiting for success "
-                    + "(elapsed time {0}ms, remaining time {1}ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(() -> {
-          return copyFileFromPod(domainNamespace, adminPod.getMetadata().getName(), null,
-              domainHomeLocation + "/bin/scripts/scalingAction.log",
-              Paths.get(RESULTS_ROOT + "/" + domainUid + "-scalingAction.log"));
-        });
+    testUntil(
+        () -> copyFileFromPod(domainNamespace, adminPod.getMetadata().getName(), null,
+          "/u01/scalingAction.log",
+          Paths.get(RESULTS_ROOT + "/" + domainUid + "-scalingAction.log")),
+        logger,
+        "Copying scalingAction.log from admin server pod");
+    //      domainHomeLocation + "/bin/scripts/scalingAction.log",
 
     // checking for exitValue 0 for success fails sometimes as k8s exec api returns non-zero exit value even on success,
     // so checking for exitValue non-zero and stderr not empty for failure, otherwise its success

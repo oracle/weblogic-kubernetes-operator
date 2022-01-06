@@ -3,8 +3,13 @@
 
 package oracle.kubernetes.operator.helpers;
 
+import java.util.Collections;
 import java.util.Optional;
+import java.util.stream.Collectors;
+import javax.annotation.Nonnull;
 
+import io.kubernetes.client.common.KubernetesListObject;
+import io.kubernetes.client.common.KubernetesObject;
 import oracle.kubernetes.operator.calls.AsyncRequestStep;
 import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.RetryStrategy;
@@ -16,6 +21,8 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_FORBIDDEN;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAUTHORIZED;
 import static oracle.kubernetes.operator.calls.AsyncRequestStep.CONTINUE;
 import static oracle.kubernetes.operator.calls.AsyncRequestStep.accessContinue;
 
@@ -86,7 +93,7 @@ public abstract class ResponseStep<T> extends Step {
     return (CallResponse<T>) packet.getSpi(CallResponse.class);
   }
 
-  private NextAction fromCallResponse(Packet packet,CallResponse<T> callResponse) {
+  private NextAction fromCallResponse(Packet packet, CallResponse<T> callResponse) {
     return callResponse.isFailure() ? onFailure(packet, callResponse) : onSuccess(packet, callResponse);
   }
 
@@ -123,7 +130,26 @@ public abstract class ResponseStep<T> extends Step {
       // the next window of data.
       return resetRetryStrategyAndReinvokeRequest(packet);
     }
-    return doNext(next, packet);
+    if (callResponse.getResult() instanceof KubernetesListObject) {
+      return doNext(next, packet).withDebugComment((KubernetesListObject)callResponse.getResult(), this::toComment);
+    } else {
+      return doNext(next, packet);
+    }
+  }
+
+  private String toComment(KubernetesListObject list) {
+    return Optional.ofNullable(list).map(KubernetesListObject::getItems).orElse(Collections.emptyList()).stream()
+          .map(this::toElementString).collect(Collectors.joining(", "));
+  }
+
+  private String toElementString(KubernetesObject object) {
+    return toElementType(object) + ' ' + object.getMetadata().getName();
+  }
+
+  @Nonnull
+  private String toElementType(KubernetesObject object) {
+    final String[] parts = object.getClass().getSimpleName().split("(?<!^)(?=[A-Z])");
+    return parts.length == 1 ? parts[0].toLowerCase() : parts[1].toLowerCase();
   }
 
   /**
@@ -137,12 +163,16 @@ public abstract class ResponseStep<T> extends Step {
   private NextAction doPotentialRetry(Step conflictStep, Packet packet, CallResponse<T> callResponse) {
     return Optional.ofNullable(packet.getSpi(RetryStrategy.class))
         .map(rs -> rs.doPotentialRetry(conflictStep, packet, callResponse.getStatusCode()))
-        .orElseGet(() -> {
-          LOGGER.fine(MessageKeys.ASYNC_NO_RETRY,
-                  Optional.ofNullable(callResponse.getRequestParams()).map(rp -> rp.call).orElse(""),
-                  callResponse.getExceptionString(), callResponse.getStatusCode(), callResponse.getHeadersString());
-          return null;
-        });
+        .orElseGet(() -> logNoRetry(callResponse));
+  }
+
+  private NextAction logNoRetry(CallResponse<T> callResponse) {
+    if (LOGGER.isFineEnabled()) {
+      LOGGER.fine(MessageKeys.ASYNC_NO_RETRY,
+            Optional.ofNullable(callResponse.getRequestParams()).map(r -> r.call).orElse("--no call--"),
+            callResponse.getExceptionString(), callResponse.getStatusCode(), callResponse.getHeadersString());
+    }
+    return null;
   }
 
   /**
@@ -184,11 +214,8 @@ public abstract class ResponseStep<T> extends Step {
    * @return Next action for fiber processing, which may be a retry
    */
   public NextAction onFailure(Step conflictStep, Packet packet, CallResponse<T> callResponse) {
-    Optional<NextAction> optionalNextAction =
-        Optional.ofNullable(doPotentialRetry(conflictStep, packet, callResponse));
-    return optionalNextAction
-        .filter(na -> optionalNextAction.isPresent())
-        .orElseGet(() -> onFailureNoRetry(packet, callResponse));
+    return Optional.ofNullable(doPotentialRetry(conflictStep, packet, callResponse))
+          .orElseGet(() -> onFailureNoRetry(packet, callResponse));
   }
 
   protected NextAction onFailureNoRetry(Packet packet, CallResponse<T> callResponse) {
@@ -196,11 +223,11 @@ public abstract class ResponseStep<T> extends Step {
   }
 
   protected boolean isNotAuthorizedOrForbidden(CallResponse<T> callResponse) {
-    return callResponse.getStatusCode() == 401 || callResponse.getStatusCode() == 403;
+    return callResponse.getStatusCode() == HTTP_UNAUTHORIZED || callResponse.getStatusCode() == HTTP_FORBIDDEN;
   }
 
   protected boolean isForbidden(CallResponse<T> callResponse) {
-    return callResponse.getStatusCode() == 403;
+    return callResponse.getStatusCode() == HTTP_FORBIDDEN;
   }
 
   /**

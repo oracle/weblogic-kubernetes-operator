@@ -44,7 +44,7 @@ import static org.hamcrest.Matchers.both;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 
-public class DomainUpPlanTest {
+class DomainUpPlanTest {
 
   private final TerminalStep adminStep = new TerminalStep();
   private final TerminalStep managedServersStep = new TerminalStep();
@@ -137,13 +137,12 @@ public class DomainUpPlanTest {
         plan,
         hasChainWithStepsInOrder(
             "DomainPresenceStep",
-            "ReplaceOrCreateIntrospectorJobStep",
+            "IntrospectionStartStep",
             "BeforeAdminServiceStep",
             "AdminPodStep",
             "ForServerStep",
             "WatchPodReadyAdminStep",
-            "ManagedServersUpStep",
-            "EndProgressingStep"));
+            "ManagedServersUpStep"));
   }
 
   @Test
@@ -218,7 +217,7 @@ public class DomainUpPlanTest {
   }
 
   @SuppressWarnings("unused")
-  public static class StepChainMatcher
+  static class StepChainMatcher
       extends org.hamcrest.TypeSafeDiagnosingMatcher<oracle.kubernetes.operator.work.Step> {
     private final String[] expectedSteps;
 
@@ -230,7 +229,7 @@ public class DomainUpPlanTest {
       return hasChainWithStepsInOrder(expectedStep);
     }
 
-    public static StepChainMatcher hasChainWithStepsInOrder(String... expectedSteps) {
+    static StepChainMatcher hasChainWithStepsInOrder(String... expectedSteps) {
       return new StepChainMatcher(expectedSteps);
     }
 

@@ -20,10 +20,10 @@ import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.VersionInfo;
 import oracle.kubernetes.operator.builders.StubWatchFactory;
 import oracle.kubernetes.operator.helpers.EventHelper;
-import oracle.kubernetes.operator.helpers.EventRetryStrategyStub;
 import oracle.kubernetes.operator.helpers.HelmAccessStub;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
+import oracle.kubernetes.operator.helpers.OnConflictRetryStrategyStub;
 import oracle.kubernetes.operator.helpers.SemanticVersion;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.utils.TestUtils;
@@ -66,7 +66,7 @@ class NamespaceTest {
   private final MainDelegateStub delegate = createStrictStub(MainDelegateStub.class, dp, domainNamespaces);
   private final TestUtils.ConsoleHandlerMemento loggerControl = TestUtils.silenceOperatorLogger();
   private final Collection<LogRecord> logRecords = new ArrayList<>();
-  private final EventRetryStrategyStub retryStrategy = createStrictStub(EventRetryStrategyStub.class);
+  private final OnConflictRetryStrategyStub retryStrategy = createStrictStub(OnConflictRetryStrategyStub.class);
 
   @BeforeEach
   public void setUp() throws Exception {
@@ -199,7 +199,7 @@ class NamespaceTest {
     specifyDomainNamespaces(namespace);
 
     loggerControl.withLogLevel(Level.INFO).collectLogMessages(logRecords, CREATING_EVENT_FORBIDDEN);
-    testSupport.failOnCreate(KubernetesTestSupport.EVENT, null, namespace, HTTP_FORBIDDEN);
+    testSupport.failOnCreate(KubernetesTestSupport.EVENT, namespace, HTTP_FORBIDDEN);
     testSupport.runSteps(new DomainRecheck(delegate).createStartNamespaceBeforeStep(namespace));
 
     MatcherAssert.assertThat(logRecords,
@@ -227,7 +227,7 @@ class NamespaceTest {
     specifyDomainNamespaces(namespace);
 
     loggerControl.collectLogMessages(logRecords, CREATING_EVENT_FORBIDDEN);
-    testSupport.failOnCreate(KubernetesTestSupport.EVENT, null, namespace, HTTP_FORBIDDEN);
+    testSupport.failOnCreate(KubernetesTestSupport.EVENT, namespace, HTTP_FORBIDDEN);
     testSupport.runSteps(new DomainRecheck(delegate).createStartNamespaceBeforeStep(namespace));
     testSupport.cancelFailures();
     testSupport.runSteps(createEventStep(delegate.domainNamespaces,
@@ -239,6 +239,7 @@ class NamespaceTest {
     assertThat(domainNamespaces.isStarting(namespace), is(true));
   }
 
+  @SuppressWarnings("SameParameterValue")
   private String getMessage(String pattern, String event, String ns) {
     return String.format(pattern, event, ns);
   }

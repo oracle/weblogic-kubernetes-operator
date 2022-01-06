@@ -18,14 +18,11 @@ import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
-import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
@@ -44,6 +41,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
@@ -53,7 +51,6 @@ import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsern
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.apache.commons.io.FileUtils.copyDirectory;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -76,12 +73,6 @@ public class ItFmwDiiSample {
   private static final String RCUSCHEMAUSERNAME = "myrcuuser";
   private static final String RCUSCHEMAPASSWORD = "Oradoc_db1";
   private static String dbUrl = null;
-
-  // create standard, reusable retry/backoff policy
-  private static final ConditionFactory withStandardRetryPolicy
-      = with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(10, MINUTES).await();
 
   private static LoggingFacade logger = null;
 
@@ -202,13 +193,11 @@ public class ItFmwDiiSample {
     if (KIND_REPO != null) {
       String taggedImage = FMWINFRA_IMAGE_TO_USE_IN_SPEC.replaceAll("localhost", "domain-home-in-image");
       String newImage = KIND_REPO + "domain-in-image:" + domainName;
-      withStandardRetryPolicy
-          .conditionEvaluationListener(
-              condition -> logger.info("Waiting for tagAndPushToKind for image {0} to be "
-                  + "successful (elapsed time {1} ms, remaining time {2} ms)", newImage,
-                  condition.getElapsedTimeInMS(),
-                  condition.getRemainingTimeInMS()))
-          .until(tagAndPushToKind(taggedImage, newImage));
+      testUntil(
+          tagAndPushToKind(taggedImage, newImage),
+          logger,
+          "tagAndPushToKind for image {0} to be successful",
+          newImage);
       assertDoesNotThrow(() -> replaceStringInFile(
           Paths.get(sampleBase.toString(), "weblogic-domains/" + domainName + "/domain.yaml").toString(),
           taggedImage, newImage));
@@ -227,15 +216,12 @@ public class ItFmwDiiSample {
 
     // wait for the domain to exist
     logger.info("Checking for domain custom resource in namespace {0}", domainNamespace);
-    withStandardRetryPolicy
-            .conditionEvaluationListener(
-                condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
-                                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                            domainName,
-                            domainNamespace,
-                            condition.getElapsedTimeInMS(),
-                            condition.getRemainingTimeInMS()))
-            .until(domainExists(domainName, DOMAIN_VERSION, domainNamespace));
+    testUntil(
+        domainExists(domainName, DOMAIN_VERSION, domainNamespace),
+        logger,
+        "domain {0} to be created in namespace {1}",
+        domainName,
+        domainNamespace);
 
     final String adminServerName = "admin-server";
     final String adminServerPodName = domainName + "-" + adminServerName;

@@ -28,8 +28,8 @@ public class AdminServer extends Server {
       "When this flag is enabled, the operator updates the domain's WebLogic configuration for its"
           + " Administration Server to have an admin protocol NetworkAccessPoint with a 'localhost' address for"
           + " each existing admin protocol capable port. This allows external Administration Console and WLST 'T3'"
-          + " access when using the 'kubectl port-forward' pattern. Defaults to false.")
-  private Boolean adminChannelPortForwardingEnabled = false;
+          + " access when using the 'kubectl port-forward' pattern. Defaults to true.")
+  private Boolean adminChannelPortForwardingEnabled = true;
 
   /**
    * Add channel.

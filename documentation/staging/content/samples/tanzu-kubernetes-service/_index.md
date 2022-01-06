@@ -360,7 +360,7 @@ When the command succeeds, it should end with output like the following:
 
 Also, if you run the `docker images` command, then you will see an image named `model-in-image:WLS-v1`.
 
-> Note: If you have Kubernetes cluster worker nodes that are remote to your local machine, then you need to put the image in a location that these nodes can access. See [Ensuring your Kubernetes cluster can access images](#ensuring-your-kubernetes-cluster-can-access-images).
+> Note: If you have Kubernetes cluster worker nodes that are remote to your local machine, then you need to put the image in a location that these nodes can access. See [Ensuring your Kubernetes cluster can access images]({{< relref "/samples/domains/model-in-image/_index.md#ensuring-your-kubernetes-cluster-can-access-images" >}}).
 
 
 #### Create WebLogic domain
@@ -452,7 +452,7 @@ Copy the following to a file called `/tmp/mii-sample/mii-initial.yaml` or simila
     #
     # This is an example of how to define a Domain resource.
     #
-    apiVersion: "weblogic.oracle/v8"
+    apiVersion: "weblogic.oracle/v9"
     kind: Domain
     metadata:
       name: sample-domain1

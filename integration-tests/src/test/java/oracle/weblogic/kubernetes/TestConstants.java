@@ -14,7 +14,7 @@ public interface TestConstants {
 
   // domain constants
   public static final String DOMAIN_VERSION = Optional.ofNullable(System.getenv("DOMAIN_VERSION"))
-      .orElse("v8");
+      .orElse("v9");
   public static final String DOMAIN_API_VERSION = "weblogic.oracle/" + DOMAIN_VERSION;
   public static final String ADMIN_SERVER_NAME_BASE = "admin-server";
   public static final String MANAGED_SERVER_NAME_BASE = "managed-server";
@@ -82,6 +82,7 @@ public interface TestConstants {
   public static final String OCR_FMWINFRA_IMAGE_TAG = "12.2.1.4";
   public static final String OCR_DB_IMAGE_NAME = "database/enterprise";
   public static final String OCR_DB_IMAGE_TAG = "12.2.0.1-slim";
+  public static final String OCR_DB_19C_IMAGE_TAG = "19.3.0.0";
 
   // ----------------------------- base images constants ---------------------
   // Get BASE_IMAGES_REPO from env var, if its not provided use OCIR as default to pull base images
@@ -147,7 +148,7 @@ public interface TestConstants {
       System.getProperty("java.io.tmpdir") + "/it-testsresults");
 
   public static final String LOGS_DIR = RESULTS_BASE + "/diagnostics";
-  public static final String PV_ROOT = System.getenv().getOrDefault("PV_ROOT", 
+  public static final String PV_ROOT = System.getenv().getOrDefault("PV_ROOT",
       RESULTS_BASE + "/pvroot");
   public static final String RESULTS_ROOT = RESULTS_BASE + "/workdir";
 
@@ -157,6 +158,9 @@ public interface TestConstants {
   public static final String NGINX_REPO_NAME = "ingress-nginx";
   public static final String NGINX_CHART_NAME = "ingress-nginx";
   public static final String NGINX_CHART_VERSION = "2.16.0";
+  public static final String NGINX_INGRESS_IMAGE_TAG = "v0.35.0";
+  public static final String OCIR_NGINX_IMAGE_NAME = "weblogick8s/ingress-nginx/controller";
+  public static final String GCR_NGINX_IMAGE_NAME = "k8s.gcr.io/ingress-nginx/controller";
 
   // Traefik constants
   public static final String TRAEFIK_REPO_URL = "https://containous.github.io/traefik-helm-chart";
@@ -216,7 +220,12 @@ public interface TestConstants {
   public static final String MII_BASIC_WDT_MODEL_FILE = "model-singleclusterdomain-sampleapp-wls.yaml";
   public static final String MII_BASIC_IMAGE_NAME = DOMAIN_IMAGES_REPO + "mii-basic-image";
   public static final String MII_AUXILIARY_IMAGE_NAME = DOMAIN_IMAGES_REPO + "mii-ai-image";
-  public static final String MII_BASIC_IMAGE_TAG = getDateAndTimeStamp();
+  public static final String SKIP_BUILD_IMAGES_IF_EXISTS =
+        Optional.ofNullable(System.getenv("SKIP_BUILD_IMAGES_IF_EXISTS")).orElse("false");
+
+  // Skip the mii/wdt basic image build locally if needed
+  public static final String MII_BASIC_IMAGE_TAG =
+      Boolean.valueOf(SKIP_BUILD_IMAGES_IF_EXISTS) ? "local" : getDateAndTimeStamp();
   public static final String MII_BASIC_IMAGE_DOMAINTYPE = "mii";
   public static final String MII_BASIC_APP_NAME = "sample-app";
   public static final String MII_BASIC_APP_DEPLOYMENT_NAME = "myear";
@@ -233,14 +242,15 @@ public interface TestConstants {
   public static final String WDT_BASIC_MODEL_FILE = "wdt-singlecluster-sampleapp-usingprop-wls.yaml";
   public static final String WDT_BASIC_MODEL_PROPERTIES_FILE = "wdt-singleclusterdomain-sampleapp-wls.properties";
   public static final String WDT_BASIC_IMAGE_NAME = DOMAIN_IMAGES_REPO + "wdt-basic-image";
-  public static final String WDT_BASIC_IMAGE_TAG = getDateAndTimeStamp();
+  // Skip the mii/wdt basic image build locally if needed
+  public static final String WDT_BASIC_IMAGE_TAG =
+      Boolean.valueOf(SKIP_BUILD_IMAGES_IF_EXISTS) ? "local" : getDateAndTimeStamp();
   public static final String WDT_BASIC_IMAGE_DOMAINHOME = "/u01/oracle/user_projects/domains/domain1";
   public static final String WDT_IMAGE_DOMAINHOME_BASE_DIR = "/u01/oracle/user_projects/domains";
   public static final String WDT_BASIC_IMAGE_DOMAINTYPE = "wdt";
   public static final String WDT_BASIC_APP_NAME = "sample-app";
-  public static final String WDT_TEST_VERSION = Optional.ofNullable(System.getenv(
-      "WDT_TEST_VERSION"))
-      .orElse("1.9.15");
+  public static final String WDT_TEST_VERSION =
+      Optional.ofNullable(System.getenv("WDT_TEST_VERSION")).orElse("1.9.15");
 
   //monitoring constants
   public static final String MONITORING_EXPORTER_WEBAPP_VERSION = Optional.ofNullable(System.getenv(
@@ -264,15 +274,18 @@ public interface TestConstants {
   public static final String ADMIN_USERNAME_PATCH = "weblogicnew";
   public static final String ADMIN_PASSWORD_PATCH = "welcome1new";
 
+  public static final String ENCRYPION_USERNAME_DEFAULT = "weblogicenc";
+  public static final String ENCRYPION_PASSWORD_DEFAULT = "weblogicenc";
+
   // REST API
   public static final String PROJECT_ROOT = System.getProperty("user.dir");
   public static final String GEN_EXTERNAL_REST_IDENTITY_FILE =
       PROJECT_ROOT + "/../kubernetes/samples/scripts/rest/generate-external-rest-identity.sh";
   public static final String DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME = "weblogic-operator-external-rest-identity";
 
-  // Default ISTIO version is 1.7.3
-  public static final String ISTIO_VERSION = 
-        Optional.ofNullable(System.getenv("ISTIO_VERSION")).orElse("1.7.3");
+  // Default ISTIO version is 1.10.4
+  public static final String ISTIO_VERSION =
+        Optional.ofNullable(System.getenv("ISTIO_VERSION")).orElse("1.10.4");
 
   //MySQL database constants
   public static final String MYSQL_VERSION = "5.6";
@@ -306,4 +319,20 @@ public interface TestConstants {
 
   public static final String WEBLOGIC_VERSION = "12.2.1.4.0";
   public static final String HTTPS_PROXY = Optional.ofNullable(System.getenv("https_proxy")).orElse("");
+
+  // domain status condition type
+  public static final String DOMAIN_STATUS_CONDITION_COMPLETED_TYPE = "Completed";
+  public static final String DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE = "Available";
+  public static final String DOMAIN_STATUS_CONDITION_FAILED_TYPE = "Failed";
+
+  //Oracle database operator constants
+  public static final String ORACLE_DB_OPERATOR_RELEASE_LATEST = "release/0.1.0";
+  public static final String ORACLE_DB_OPERATOR_RELEASE = Optional.ofNullable(
+      System.getenv("ORACLE_DB_OPERATOR_RELEASE")).orElse(ORACLE_DB_OPERATOR_RELEASE_LATEST);
+  public static final String CERT_MANAGER
+      = "https://github.com/jetstack/cert-manager/releases/latest/download/cert-manager.yaml";
+  public static final String DB_OPERATOR_YAML_URL = "https://raw.githubusercontent.com/"
+      + "oracle/oracle-database-operator/" + ORACLE_DB_OPERATOR_RELEASE + "/oracle-database-operator.yaml";
+  public static final String SIDB_YAML_URL = "https://raw.githubusercontent.com/oracle/oracle-database-operator/main/"
+      + "config/samples/sidb/singleinstancedatabase.yaml";
 }

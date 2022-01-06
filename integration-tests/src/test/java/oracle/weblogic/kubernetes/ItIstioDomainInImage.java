@@ -24,21 +24,23 @@ import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.SSL_PROPERTIES;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_BASIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -46,8 +48,13 @@ import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespac
 import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.isWebLogicPsuPatchApplied;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.startPortForwardProcess;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.stopPortForwardProcess;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DeployUtil.deployToClusterUsingRest;
+import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.createAdminServer;
@@ -56,23 +63,22 @@ import static oracle.weblogic.kubernetes.utils.IstioUtils.deployIstioDestination
 import static oracle.weblogic.kubernetes.utils.IstioUtils.getIstioHttpIngressPort;
 import static oracle.weblogic.kubernetes.utils.IstioUtils.isLocalHostBindingsEnabled;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
+
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify istio enabled WebLogic domain in domainhome-in-image model")
 @IntegrationTest
 class ItIstioDomainInImage {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
-  private static ConditionFactory withStandardRetryPolicy = null;
   private final String domainUid = "istio-dii-wdt";
   private final String clusterName = "cluster-1"; // do not modify 
   private final String adminServerName = "admin-server"; // do not modify
@@ -88,10 +94,6 @@ class ItIstioDomainInImage {
   @BeforeAll
   public static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
-    // create standard, reusable retry/backoff policy
-    withStandardRetryPolicy = with().pollDelay(2, SECONDS)
-        .and().with().pollInterval(10, SECONDS)
-        .atMost(5, MINUTES).await();
 
     // get a new unique opNamespace
     logger.info("Assigning unique namespace for Operator");
@@ -121,10 +123,12 @@ class ItIstioDomainInImage {
    * Do not add any AdminService under AdminServer configuration
    * Deploy istio gateways and virtual service 
    * Verify server pods are in ready state and services are created.
-   * Verify login to WebLogic console is successful thru istio ingress http port.
+   * Verify WebLogic console is accessible thru istio ingress http port
+   * Verify WebLogic console is accessible thru kubectl forwarded port(s)
    * Deploy a web application thru istio http ingress port using REST api  
    * Access web application thru istio http ingress port using curl
    */
+  @Order(1)
   @Test
   @DisplayName("Create WebLogic domainhome-in-image with istio")
   void testIstioDomainHomeInImage() {
@@ -146,42 +150,25 @@ class ItIstioDomainInImage {
 
     // wait for the domain to exist
     logger.info("Check for domain custom resource in namespace {0}", domainNamespace);
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for domain {0} to be created in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                domainUid,
-                domainNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(domainExists(domainUid, DOMAIN_VERSION, domainNamespace));
+    testUntil(
+        domainExists(domainUid, DOMAIN_VERSION, domainNamespace),
+        logger,
+        "domain {0} to be created in namespace {1}",
+        domainUid,
+        domainNamespace);
 
     // check admin server service is created
     logger.info("Check admin service {0} is created in namespace {1}",
         adminServerPodName, domainNamespace);
-    checkServiceExists(adminServerPodName, domainNamespace);
-
-    // check admin server pod is ready
-    logger.info("Wait for admin server pod {0} to be ready in namespace {1}",
-        adminServerPodName, domainNamespace);
-    checkPodReady(adminServerPodName, domainUid, domainNamespace);
-
+    checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
     // check managed server services created
     for (int i = 1; i <= replicaCount; i++) {
       logger.info("Check managed service {0} is created in namespace {1}",
           managedServerPrefix + i, domainNamespace);
-      checkServiceExists(managedServerPrefix + i, domainNamespace);
-    }
-
-    // check managed server pods are ready
-    for (int i = 1; i <= replicaCount; i++) {
-      logger.info("Wait for managed pod {0} to be ready in namespace {1}",
-          managedServerPrefix + i, domainNamespace);
-      checkPodReady(managedServerPrefix + i, domainUid, domainNamespace);
+      checkPodReadyAndServiceExists(managedServerPrefix + i, domainUid, domainNamespace);
     }
 
     String clusterService = domainUid + "-cluster-" + clusterName + "." + domainNamespace + ".svc.cluster.local";
-
     Map<String, String> templateMap  = new HashMap();
     templateMap.put("NAMESPACE", domainNamespace);
     templateMap.put("DUID", domainUid);
@@ -217,6 +204,31 @@ class ItIstioDomainInImage {
           checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
       assertTrue(checkConsole, "Failed to access WebLogic console");
       logger.info("WebLogic console is accessible");
+      String localhost = "localhost";
+      // Forward the non-ssl port 7001 
+      String forwardPort = 
+           startPortForwardProcess(localhost, domainNamespace, 
+           domainUid, 7001);
+      assertNotNull(forwardPort, "port-forward fails to assign local port");
+      logger.info("Forwarded local port is {0}", forwardPort);
+      consoleUrl = "http://" + localhost + ":" + forwardPort + "/console/login/LoginForm.jsp";
+      checkConsole = 
+          checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
+      assertTrue(checkConsole, "Failed to access WebLogic console thru port-forwarded port");
+      logger.info("WebLogic console is accessible thru non-ssl port forwarding");
+      // Forward the ssl port 7002 
+      forwardPort = 
+           startPortForwardProcess(localhost, domainNamespace, 
+           domainUid, 7002);
+      assertNotNull(forwardPort, "(ssl) port-forward fails to assign local port");
+      logger.info("Forwarded local port is {0}", forwardPort);
+      consoleUrl = "https://" + localhost + ":" + forwardPort + "/console/login/LoginForm.jsp";
+      checkConsole = 
+          checkAppUsingHostHeader(consoleUrl, domainNamespace + ".org");
+      assertTrue(checkConsole, "Failed to access WebLogic console thru port-forwarded port");
+      logger.info("WebLogic console is accessible thru ssl port forwarding");
+
+      stopPortForwardProcess(domainNamespace);
     } else {
       logger.info("Skipping WebLogic console in WebLogic slim image");
     }
@@ -235,6 +247,48 @@ class ItIstioDomainInImage {
     logger.info("Application Access URL {0}", url);
     boolean checkApp = checkAppUsingHostHeader(url, domainNamespace + ".org");
     assertTrue(checkApp, "Failed to access WebLogic application");
+
+  }
+
+  /**
+   * Verify that Security Warning Tool does not detect any security warning
+   * messages on console.
+  */
+  
+  @Test
+  @Order(2)
+  @DisplayName("Verify the Security Warning in domain in image")
+  void testVerifySecurityWarnings() {
+
+    int istioIngressPort = getIstioHttpIngressPort();
+
+    logger.info("Istio Ingress Port is {0}", istioIngressPort);
+    if (isWebLogicPsuPatchApplied()) {
+      String curlCmd2 = "curl -j -sk --show-error --noproxy '*' "
+          + " -H 'Host: " + domainNamespace + ".org'"
+          + " --user " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
+          + " --url http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort
+          + "/management/weblogic/latest/domainRuntime/domainSecurityRuntime?" 
+          + "link=none";
+
+      ExecResult result = null;
+      logger.info("curl command {0}", curlCmd2);
+      result = assertDoesNotThrow(
+        () -> exec(curlCmd2, true));
+
+      if (result.exitValue() == 0) {
+        logger.info("curl command returned {0}", result.toString());
+        assertTrue(result.stdout().contains("SecurityValidationWarnings"), 
+                "Could not access the Security Warning Tool page");
+        assertTrue(!result.stdout().contains("minimum of umask 027"), "umask warning check failed");
+        logger.info("No minimum umask warning reported");
+      } else {
+        assertTrue(false, "Curl command failed to get DomainSecurityRuntime");
+      }
+    } else {
+      logger.info("Skipping Security warning check, since Security Warning tool "
+           + " is not available in the WLS Release {0}", WEBLOGIC_IMAGE_TAG);
+    } 
   }
 
   private void createDomainResource(String domainUid, String domNamespace, String adminSecretName,
@@ -261,7 +315,7 @@ class ItIstioDomainInImage {
                     .serverPod(new ServerPod()
                             .addEnvItem(new V1EnvVar()
                                     .name("JAVA_OPTIONS")
-                                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                                    .value(SSL_PROPERTIES))
                             .addEnvItem(new V1EnvVar()
                                     .name("USER_MEM_ARGS")
                                     .value("-Djava.security.egd=file:/dev/./urandom ")))
@@ -273,8 +327,8 @@ class ItIstioDomainInImage {
                     .configuration(new Configuration()
                             .istio(new Istio()
                                  .enabled(Boolean.TRUE)
-                                .readinessPort(8888)
-                                .localhostBindingsEnabled(isLocalHostBindingsEnabled()))
+                                 .readinessPort(8888)
+                                 .localhostBindingsEnabled(isLocalHostBindingsEnabled()))
                             .model(new Model()
                                     .domainType("WLS"))
                         .introspectorJobActiveDeadlineSeconds(300L)));
@@ -287,5 +341,4 @@ class ItIstioDomainInImage {
     assertTrue(domCreated, String.format("Create domain custom resource failed with ApiException "
                     + "for %s in namespace %s", domainUid, domNamespace));
   }
-
 }

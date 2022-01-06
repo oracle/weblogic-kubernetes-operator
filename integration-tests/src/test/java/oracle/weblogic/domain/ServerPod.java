@@ -225,7 +225,7 @@ public class ServerPod {
     this.annotations = annotations;
   }
 
-  public ServerPod livenessProve(ProbeTuning livenessProbe) {
+  public ServerPod livenessProbe(ProbeTuning livenessProbe) {
     this.livenessProbe = livenessProbe;
     return this;
   }

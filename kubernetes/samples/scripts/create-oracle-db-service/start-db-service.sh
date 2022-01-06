@@ -67,28 +67,39 @@ fi
 
 echo "NodePort[$nodeport] ImagePullSecret[$pullsecret] Image[${dbimage}] NameSpace[${namespace}]"
 
+#create unique db yaml file if does not exists
+dbYaml=${scriptDir}/common/oracle.db.${namespace}.yaml
+if [ ! -f "$dbYaml" ]; then
+    echo "$dbYaml does not exist."
+    cp ${scriptDir}/common/oracle.db.yaml ${dbYaml}
+fi
+
 # Modify ImagePullSecret and DatabaseImage based on input
-sed -i -e '$d' ${scriptDir}/common/oracle.db.yaml
-echo '           - name: docker-store' >> ${scriptDir}/common/oracle.db.yaml
-sed -i -e "s?name: docker-store?name: ${pullsecret}?g" ${scriptDir}/common/oracle.db.yaml
-sed -i -e "s?image:.*?image: ${dbimage}?g" ${scriptDir}/common/oracle.db.yaml
-sed -i -e "s?namespace:.*?namespace: ${namespace}?g" ${scriptDir}/common/oracle.db.yaml
+sed -i -e '$d' ${dbYaml}
+echo '           - name: docker-store' >> ${dbYaml}
+sed -i -e "s?name: docker-store?name: ${pullsecret}?g" ${dbYaml}
+sed -i -e "s?image:.*?image: ${dbimage}?g" ${dbYaml}
+sed -i -e "s?namespace:.*?namespace: ${namespace}?g" ${dbYaml}
 
 # Modify the NodePort based on input 
 if [ "${nodeport}" = "none" ]; then
-  sed -i -e "s? nodePort:? #nodePort:?g" ${scriptDir}/common/oracle.db.yaml
-  sed -i -e "s? type:.*LoadBalancer? #type: LoadBalancer?g" ${scriptDir}/common/oracle.db.yaml
+  sed -i -e "s? nodePort:? #nodePort:?g" ${dbYaml}
+  sed -i -e "s? type:.*LoadBalancer? #type: LoadBalancer?g" ${dbYaml}
 else
-  sed -i -e "s?[#]*nodePort:.*?nodePort: ${nodeport}?g" ${scriptDir}/common/oracle.db.yaml
-  sed -i -e "s?[#]*type:.*LoadBalancer?type: LoadBalancer?g" ${scriptDir}/common/oracle.db.yaml # default type is ClusterIP
+  sed -i -e "s?[#]*nodePort:.*?nodePort: ${nodeport}?g" ${dbYaml}
+  sed -i -e "s?[#]*type:.*LoadBalancer?type: LoadBalancer?g" ${dbYaml} # default type is ClusterIP
 fi
 
 kubectl delete service oracle-db -n ${namespace} --ignore-not-found
-kubectl apply -f ${scriptDir}/common/oracle.db.yaml
+kubectl apply -f ${dbYaml}
 
-dbpod=`kubectl get po -n ${namespace} | grep oracle-db | cut -f1 -d " " `
+detectPod ${namespace}
+dbpod=${retVal}
 
+echo "Is going to check dbpod: ${dbpod} in the namespace: ${namespace} "
 checkPod ${dbpod} ${namespace}
+
+echo " checking pod state for pod ${dbpod} running in ${namespace}"
 checkPodState ${dbpod} ${namespace} "1/1"
 checkService oracle-db ${namespace}
 

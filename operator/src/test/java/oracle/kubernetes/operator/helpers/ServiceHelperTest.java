@@ -9,6 +9,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Consumer;
 import java.util.logging.Level;
@@ -17,6 +18,7 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1OwnerReference;
 import io.kubernetes.client.openapi.models.V1Service;
@@ -24,7 +26,7 @@ import io.kubernetes.client.openapi.models.V1ServicePort;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
-import oracle.kubernetes.operator.calls.FailureStatusSourceException;
+import oracle.kubernetes.operator.calls.UnrecoverableCallException;
 import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderImpl;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -45,11 +47,16 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static com.meterware.simplestub.Stub.createStrictStub;
+import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
+import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
+import static oracle.kubernetes.operator.EventConstants.KUBERNETES_ERROR;
+import static oracle.kubernetes.operator.EventTestUtils.getEventsWithReason;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.CLUSTER_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_SCAN;
-import static oracle.kubernetes.operator.helpers.DomainStatusMatcher.hasStatus;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.SERVICE;
 import static oracle.kubernetes.operator.helpers.ServiceHelperTest.NodePortMatcher.nodePort;
 import static oracle.kubernetes.operator.helpers.ServiceHelperTest.PortMatcher.containsPort;
@@ -76,6 +83,7 @@ import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 @SuppressWarnings("ConstantConditions")
@@ -116,6 +124,7 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
   private static final int SIP_SECURE_NAP_PORT = 8004;
   public static final String STRANDED = "Stranded";
   public static final String NODE_PORT = "NodePort";
+  private static final String FAILURE_MESSAGE = "Test this failure";
   private final TerminalStep terminalStep = new TerminalStep();
   public TestFacade testFacade;
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
@@ -362,33 +371,63 @@ abstract class ServiceHelperTest extends ServiceHelperTestBase {
   @Test
   void onFailedRun_reportFailure() {
     testSupport.addRetryStrategy(retryStrategy);
-    testSupport.failOnResource(SERVICE, testFacade.getServiceName(), NS, 500);
+    testSupport.failOnCreate(SERVICE, NS, HTTP_INTERNAL_ERROR);
 
     runServiceHelper();
 
-    testSupport.verifyCompletionThrowable(FailureStatusSourceException.class);
+    testSupport.verifyCompletionThrowable(UnrecoverableCallException.class);
   }
 
   @Test
   void whenServiceCreationFailsDueToUnprocessableEntityFailure_reportInDomainStatus() {
     testSupport.defineResources(domainPresenceInfo.getDomain());
-    testSupport.failOnResource(SERVICE, testFacade.getServiceName(), NS, new UnrecoverableErrorBuilderImpl()
+    testSupport.failOnCreate(SERVICE, NS, new UnrecoverableErrorBuilderImpl()
         .withReason("FieldValueNotFound")
-        .withMessage("Test this failure")
+        .withMessage(FAILURE_MESSAGE)
         .build());
 
     runServiceHelper();
 
-    assertThat(getDomain(), hasStatus("FieldValueNotFound",
-        "testcall in namespace junit, for testName: Test this failure"));
+    assertThat(getDomain(), hasStatus().withReason(Kubernetes)
+        .withMessageContaining("create", "service", NS, FAILURE_MESSAGE));
+  }
+
+  @Test
+  void whenServiceCreationFailsDueToUnprocessableEntityFailure_createFailedEventWithKubernetesReason() {
+    testSupport.defineResources(domainPresenceInfo.getDomain());
+    testSupport.failOnCreate(SERVICE, NS, new UnrecoverableErrorBuilderImpl()
+        .withReason("FieldValueNotFound")
+        .withMessage(FAILURE_MESSAGE)
+        .build());
+
+    runServiceHelper();
+
+    assertThat(
+        "Expected Event " + DOMAIN_FAILED + " expected with message not found",
+        getExpectedEventMessage(DOMAIN_FAILED),
+        stringContainsInOrder("Domain", UID, "failed due to", KUBERNETES_ERROR));
+  }
+
+  protected String getExpectedEventMessage(EventHelper.EventItem event) {
+    List<CoreV1Event> events = getEventsWithReason(getEvents(), event.getReason());
+    //System.out.println(events);
+    return Optional.ofNullable(events)
+        .filter(list -> list.size() != 0)
+        .map(n -> n.get(0))
+        .map(CoreV1Event::getMessage)
+        .orElse("Event not found");
+  }
+
+  private List<CoreV1Event> getEvents() {
+    return testSupport.getResources(KubernetesTestSupport.EVENT);
   }
 
   @Test
   void whenServiceCreationFailsDueToUnprocessableEntityFailure_abortFiber() {
     testSupport.defineResources(domainPresenceInfo.getDomain());
-    testSupport.failOnResource(SERVICE, testFacade.getServiceName(), NS, new UnrecoverableErrorBuilderImpl()
+    testSupport.failOnCreate(SERVICE, NS, new UnrecoverableErrorBuilderImpl()
         .withReason("FieldValueNotFound")
-        .withMessage("Test this failure")
+        .withMessage(FAILURE_MESSAGE)
         .build());
 
     runServiceHelper();

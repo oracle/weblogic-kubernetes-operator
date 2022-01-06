@@ -7,7 +7,7 @@
     <parent>
         <groupId>oracle.kubernetes</groupId>
         <artifactId>operator-parent</artifactId>
-        <version>3.3.6</version>
+        <version>4.0.0</version>
     </parent>
 
     <artifactId>integration-tests</artifactId>
@@ -52,15 +52,21 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-          <groupId>commons-io</groupId>
-          <artifactId>commons-io</artifactId>
-          <scope>test</scope>
+            <groupId>commons-io</groupId>
+            <artifactId>commons-io</artifactId>
+            <scope>test</scope>
         </dependency>
         <dependency>
-          <groupId>net.sourceforge.htmlunit</groupId>
-          <artifactId>htmlunit</artifactId>
-          <version>2.51.0</version>
-          <scope>test</scope>
+            <groupId>net.sourceforge.htmlunit</groupId>
+            <artifactId>htmlunit</artifactId>
+            <version>${htmlunit-version}</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>${jackson-version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -232,10 +238,10 @@
                    **/ItIstioMiiDomain,
                    **/ItManagedCoherence,
                    **/ItMiiDomain,
-                   **/ItMiiDynamicUpdate,
+                   **/ItMiiDynamicUpdate*,
                    **/ItMiiSampleWlsMain,
                    **/ItMiiUpdateDomainConfig,
-                   **/ItMonitoringExporter,
+                   **/ItMonitoringExporter*,
                    **/ItParameterizedDomain,
                    **/ItPodsShutdownOption,
                    **/ItProductionSecureMode,
@@ -243,26 +249,6 @@
                    **/ItSessionMigration,
                    **/ItStickySession,
                    **/ItSystemResOverrides
-                </includes-failsafe>
-            </properties>
-        </profile>
-        <profile>
-            <id>fmw-pipeline</id>
-            <properties>
-                <skipITs>false</skipITs>
-                <includes-failsafe>
-                    **/ItMiiAuxiliaryImage,
-                    **/ItMiiAuxiliaryImageCluster,
-                    **/ItMiiCustomSslStore,
-                    **/ItExternalRmiTunneling,
-                    **/ItIstioDomainInPV,
-                    **/ItMiiDomain,
-                    **/ItMiiUpdateDomainConfig,
-                    **/ItIstioDomainInImage,
-                    **/ItPodsShutdownOption,
-                    **/ItProductionSecureMode,
-                    **/ItSessionMigration,
-                    **/ItSystemResOverrides
                 </includes-failsafe>
             </properties>
         </profile>
@@ -286,9 +272,12 @@
                 <includes-failsafe>
                   **/ItParameterizedDomain,
                   **/ItServerStartPolicy,
+                  **/ItServiceStartPolicyDynamicCluster,
+                  **/ItServerStartPolicyConfigCluster,
                   **/ItMiiUpdateDomainConfig,
                   **/ItIntrospectVersion,
-                  **/ItFmwDomainInPV,
+                  **/ItFmwDomainInPVUsingWLST,
+                  **/ItFmwDomainInPVUsingWDT,
                   **/ItStickySession,
                   **/ItSessionMigration,
                   **/ItIstioTwoDomainsInImage,
@@ -303,16 +292,139 @@
             </properties>
         </profile>
         <profile>
+            <id>resilience</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                  **/ItResilience
+               </includes-failsafe>
+            </properties>
+        </profile>
+        <profile>
             <id>kind-sequential</id>
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>
                   **/ItT3Channel,
                   **/ItDedicatedMode,
-                  **/ItOpUpgradeFmwDomainInPV,
+                  **/ItOperatorFmwUpgrade,
                   **/ItOperatorWlsUpgrade,
                   **/ItFmwDynamicDomainInPV,
-                  **/ItFmwDomainInPVUsingWDT
+                  **/ItFmwDomainInPVUsingWDT,
+                  **/ItMiiSampleFmwMain
+                </includes-failsafe>
+            </properties>
+        </profile>
+        <profile>
+            <id>wko-olcne-cert</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                   **/ItConfigDistributionStrategy,
+                   **/ItCrossDomainTransaction,
+                   **/ItElasticLogging,
+                   **/ItElasticLoggingFluentd,
+                   **/ItIntrospectVersion,
+                   **/ItIstioDomainInPV,
+                   **/ItIstioMiiDomain,
+                   **/ItMiiAuxiliaryImage,
+                   **/ItMiiAuxiliaryImageCluster,
+                   **/ItMiiSampleWlsAux,
+                   **/ItMiiServiceMigration,
+                   **/ItMiiDomain,
+                   **/ItMiiDynamicUpdate*,
+                   **/ItMiiSampleWlsMain,
+                   **/ItMiiUpdateDomainConfig,
+                   **/ItMonitoringExporter*,
+                   **/ItParameterizedDomain,
+                   **/ItPodsShutdownOption,
+                   **/ItProductionSecureMode,
+                   **/ItWlsSamples,
+                   **/ItSessionMigration,
+                   **/ItSystemResOverrides
+                </includes-failsafe>
+            </properties>
+        </profile>
+        <profile>
+            <id>wko-okd-wls-cert</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                  **/ItCrossDomainTransaction,
+                  **/ItCoherenceTests,
+                  **/ItConfigDistributionStrategy,
+                  **/ItDedicatedMode,
+                  **/ItElasticLogging,
+                  **/ItExternalLbTunneling,
+                  **/ItExternalNodePortService,
+                  **/ItInitContainers,
+                  **/ItIntrospectVersion,
+                  **/ItKubernetesEvents,
+                  **/ItLiftAndShiftFromOnPremDomain,
+                  **/ItLivenessProbeCustomization,
+                  **/ItManagedCoherence,
+                  **/ItManageNameSpace,
+                  **/ItMiiAuxiliaryImage,
+                  **/ItMiiAuxiliaryImageCluster,
+                  **/ItMiiCustomSslStore,
+                  **/ItMiiDomain,
+                  **/ItMiiDomainModelInPV,
+                  **/ItMiiDynamicUpdate*,
+                  **/ItMiiMultiModel,
+                  **/ItMiiSampleWlsAux,
+                  **/ItMiiSampleWlsMain,
+                  **/ItMiiServiceMigration,
+                  **/ItMiiUpdateDomainConfig,
+                  **/ItOperatorRestart,
+                  **/ItParameterizedDomain,
+                  **/ItPodsRestart,
+                  **/ItPodsShutdownOption,
+                  **/ItPodTemplates,
+                  **/ItProductionSecureMode,
+                  **/ItRemoteConsole,
+                  **/ItServerStartPolicy,
+		  **/ItServiceStartPolicyDynamicCluster,
+                  **/ItServerStartPolicyConfigCluster,
+                  **/ItSessionMigration,
+                  **/ItStickySession,
+                  **/ItSystemResOverrides,
+                  **/ItUsabilityOperatorHelmChart
+                </includes-failsafe>
+            </properties>
+        </profile>
+        <profile>
+            <id>wko-okd-fmw-cert</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                  **/ItFmwDomainInPVUsingWLST,
+                  **/ItFmwDomainInPVUsingWDT,
+                  **/ItFmwDynamicClusterMiiDomain,
+                  **/ItFmwBigCMMiiDomain,
+                  **/ItFmwDynamicDomainInPV,
+                  **/ItFmwMiiDomain,
+                  **/ItMiiSampleFmwMain,
+                  **/ItMiiSampleFmwAux
+                </includes-failsafe>
+            </properties>
+        </profile>
+        <profile>
+            <id>fmw-pipeline</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                    **/ItMiiAuxiliaryImage,
+                    **/ItMiiAuxiliaryImageCluster,
+                    **/ItMiiCustomSslStore,
+                    **/ItExternalRmiTunneling,
+                    **/ItIstioDomainInPV,
+                    **/ItMiiDomain,
+                    **/ItMiiUpdateDomainConfig,
+                    **/ItIstioDomainInImage,
+                    **/ItPodsShutdownOption,
+                    **/ItProductionSecureMode,
+                    **/ItSessionMigration,
+                    **/ItSystemResOverrides
                 </includes-failsafe>
             </properties>
         </profile>

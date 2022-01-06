@@ -1,73 +1,141 @@
 ---
-title: "Configure the operator using Helm"
+title: "Configuration reference"
 date: 2019-02-23T17:08:43-05:00
-weight: 2
+weight: 30
+description: "An operator runtime is installed and configured using Helm. Here are useful Helm operations and operator configuration values."
 ---
 
-#### Contents
+### Contents
 
-* [Useful Helm operations](#useful-helm-operations)
-* [Operator Helm configuration values](#operator-helm-configuration-values)
-  * [Overall operator information](#overall-operator-information)
-  * [Creating the operator pod](#creating-the-operator-pod)
-  * [WebLogic domain management](#weblogic-domain-management)
-  * [Elastic Stack integration](#elastic-stack-integration)
-  * [REST interface configuration](#rest-interface-configuration)
-  * [Debugging options](#debugging-options)
-* [Common mistakes and solutions](#common-mistakes-and-solutions)
+- [Introduction](#introduction)
+- [Useful Helm operations](#useful-helm-operations)
+- [Operator Helm configuration values](#operator-helm-configuration-values)
+  - [Overall operator information](#overall-operator-information)
+    - [`serviceAccount`](#serviceaccount)
+    - [`kubernetesPlatform`](#kubernetesplatform)
+    - [`enableClusterRoleBinding`](#enableclusterrolebinding)
+  - [Creating the operator pod](#creating-the-operator-pod)
+    - [`image`](#image)
+    - [`imagePullPolicy`](#imagepullpolicy)
+    - [`imagePullSecrets`](#imagepullsecrets)
+    - [`annotations`](#annotations)
+    - [`labels`](#labels)
+    - [`nodeSelector`](#nodeselector)
+    - [`affinity`](#affinity)
+  - [WebLogic domain management](#weblogic-domain-management)
+    - [`domainNamespaceSelectionStrategy`](#domainnamespaceselectionstrategy)
+    - [`domainNamespaces`](#domainnamespaces)
+    - [`domainNamespaceLabelSelector`](#domainnamespacelabelselector)
+    - [`domainNamespaceRegExp`](#domainnamespaceregexp)
+    - [`dedicated` ***(Deprecated)***](#dedicated-deprecated)
+    - [`domainPresenceFailureRetryMaxCount` and `domainPresenceFailureRetrySeconds`](#domainpresencefailureretrymaxcount-and-domainpresencefailureretryseconds)
+    - [`introspectorJobNameSuffix` and `externalServiceNameSuffix`](#introspectorjobnamesuffix-and-externalservicenamesuffix)
+    - [`clusterSizePaddingValidationEnabled`](#clustersizepaddingvalidationenabled)
+    - [`istioLocalhostBindingsEnabled`](#istiolocalhostbindingsenabled)
+  - [Elastic Stack integration](#elastic-stack-integration)
+    - [`elkIntegrationEnabled`](#elkintegrationenabled)
+    - [`logStashImage`](#logstashimage)
+    - [`elasticSearchHost`](#elasticsearchhost)
+    - [`elasticSearchPort`](#elasticsearchport)
+  - [REST interface configuration](#rest-interface-configuration)
+    - [`externalRestEnabled`](#externalrestenabled)
+    - [`externalRestHttpsPort`](#externalresthttpsport)
+    - [`externalRestIdentitySecret`](#externalrestidentitysecret)
+    - [`externalOperatorCert` ***(Deprecated)***](#externaloperatorcert-deprecated)
+    - [`externalOperatorKey` ***(Deprecated)***](#externaloperatorkey-deprecated)
+    - [`tokenReviewAuthentication`](#tokenreviewauthentication)
+  - [Debugging options](#debugging-options)
+    - [`javaLoggingLevel`](#javalogginglevel)
+    - [`remoteDebugNodePortEnabled`](#remotedebugnodeportenabled)
+    - [`internalDebugHttpPort`](#internaldebughttpport)
+    - [`externalDebugHttpPort`](#externaldebughttpport)
 
-Note that the operator Helm chart is available from the GitHub chart repository. For more details, see [Alternatively, install the operator Helm chart from the GitHub chart repository]({{< relref "/userguide/managing-operators/installation.md#alternatively-install-the-operator-helm-chart-from-the-github-chart-repository" >}}).
+### Introduction
 
-#### Useful Helm operations
+The operator requires Helm for its installation and tuning,
+and this document is a reference guide for useful Helm commands and operator configuration values.
 
-Show the available operator configuration values and their defaults:
-```shell
-$ helm inspect values kubernetes/charts/weblogic-operator
-```
+This document assumes that the operator has been installed using an operator Helm chart.
+An operator Helm chart can be obtained from the GitHub chart repository or can be found in the operator source.
+For information about operator Helm chart access, installation, and upgrade,
+see [Prepare for installation]({{< relref "/userguide/managing-operators/preparation.md" >}})
+and [Installation and upgrade]({{< relref "/userguide/managing-operators/installation.md" >}}).
 
-Show the custom values you configured for the operator Helm release:
-```shell
-$ helm get values weblogic-operator
-```
+### Useful Helm operations
 
-Show all of the values your operator Helm release is using:
-```shell
-$ helm get values --all weblogic-operator
-```
+- You can find out the configuration values that the operator Helm chart supports,
+  as well as the default values, using the `helm inspect` command.
+  - Here's an example of using `helm inspect`
+    with the local file based operator Helm chart
+    assuming the operator source code is in
+    `/tmp/weblogic-kubernetes-operator`.
+    ```text
+    $ cd /tmp/weblogic-kubernetes-operator
+    ```
+    ```text
+    $ helm inspect values kubernetes/charts/weblogic-operator
+    ```
+  - Here's an example of using `helm inspect`
+    with a GitHub chart repository based operator Helm chart
+    where the repository is named `weblogic-operator`:
+    ```text
+    $ helm inspect values weblogic-operator/weblogic-operator
+    ```
+  Alternatively, you can view most of the configuration values
+  and their defaults in the operator source in the
+  `./kubernetes/charts/weblogic-operator/values.yaml` file.
 
-List the Helm releases for a specified namespace or all namespaces:
-```shell
-$ helm list --namespace <namespace>
-```
-```shell
-$ helm list --all-namespaces
-```
+- An installed operator is maintained by a Helm release. List the Helm releases for a specified namespace or all namespaces:
+  ```shell
+  $ helm list --namespace <namespace>
+  ```
 
-Get the status of the operator Helm release:
-```shell
-$ helm status weblogic-operator --namespace <namespace>
-```
+  ```shell
+  $ helm list --all-namespaces
+  ```
 
-Show the history of the operator Helm release:
-```shell
-$ helm history weblogic-operator --namespace <namespace>
-```
+- Get the status of the operator Helm release named `weblogic-operator`:
+  ```shell
+  $ helm status weblogic-operator --namespace <namespace>
+  ```
 
-Roll back to a previous version of this operator Helm release, in this case, the first version:
-```shell
-$ helm rollback weblogic-operator 1 --namespace <namespace>
-```
+- Show the history of the operator Helm release named `weblogic-operator`:
+  ```shell
+  $ helm history weblogic-operator --namespace <namespace>
+  ```
 
-Change one or more values in the operator Helm release. In this example, the `--reuse-values` flag indicates that previous overrides of other values should be retained:
-```shell
-$ helm upgrade \
-  --reuse-values \
-  --set "domainNamespaces={sample-domains-ns1}" \
-  --set "javaLoggingLevel=FINE" \
-  --wait \
-  weblogic-operator \
-  kubernetes/charts/weblogic-operator
-```
+- Roll back to a previous version of the operator Helm release named `weblogic-operator`, in this case, the first version:
+  ```shell
+  $ helm rollback weblogic-operator 1 --namespace <namespace>
+  ```
+
+- Show the custom values you configured for a operator Helm release named `weblogic-operator`:
+  ```shell
+  $ helm get values weblogic-operator
+  ```
+
+- Show all of the values your operator Helm release named `weblogic-operator` is using:
+  ```shell
+  $ helm get values --all weblogic-operator
+  ```
+
+- Change one or more values in the operator Helm release named `weblogic-operator` using `helm upgrade`, for example:
+  ```shell
+  $ helm upgrade \
+    --reuse-values \
+    --set "domainNamespaces={sample-domains-ns1}" \
+    --set "javaLoggingLevel=FINE" \
+    --wait \
+    weblogic-operator \
+    kubernetes/charts/weblogic-operator
+  ```
+  **Notes**:
+  - In this example, the `--reuse-values` flag indicates that previous overrides of other values should be retained,
+    `kubernetes/charts/weblogic-operator` refers to the operator Helm chart supplied in the operator source,
+    and it is assumed you are running the command from the top directory within the operator source:
+  - Before changing the `javaLoggingLevel` setting,
+    consult the [Operator logging level]({{< relref "/userguide/managing-operators/troubleshooting#operator-logging-level" >}}) advice.
+
 
 ### Operator Helm configuration values
 
@@ -86,33 +154,44 @@ Example:
 serviceAccount: "weblogic-operator"
 ```
 
-##### `javaLoggingLevel`
-Specifies the level of Java logging that should be enabled in the operator. Valid values are:  `SEVERE`, `WARNING`, `INFO`, `CONFIG`, `FINE`, `FINER`, and `FINEST`.
-
-Defaults to `INFO`.
-
-Example:
-```yaml
-javaLoggingLevel:  "FINE"
-```
-
 ##### `kubernetesPlatform`
 Specify the Kubernetes platform on which the operator is running. This setting has no default, the only valid value is OpenShift, and the setting should be left unset for other platforms. When set to `OpenShift`, the operator:
 - Sets the domain home file permissions in each WebLogic Server pod to work correctly in OpenShift for [Model in Image]({{< relref "/samples/domains/model-in-image/_index.md" >}}), and [Domain home in Image]({{< relref "/samples/domains/domain-home-in-image/_index.md" >}}) domains. Specifically, it sets file group permissions so that they match file user permissions.
 - Sets the `weblogic.SecureMode.WarnOnInsecureFileSystem` Java system property to `false` on the command line of each WebLogic Server. This flag suppresses insecure file system warnings reported in the WebLogic Server console when the WebLogic Server is in production mode. These warnings result from setting the file permissions necessary to work with restricted security context constraints on OpenShift.
 
-For more information about the security requirements for running WebLogic in OpenShift, see the [OpenShift chapter]({{<relref "/security/openshift.md">}}) in the Security section.
+For more information about the security requirements for running WebLogic in OpenShift, see the [OpenShift]({{<relref "/security/openshift.md">}}) documentation.
 
 Example:
 ```yaml
 kubernetesPlatform: OpenShift
 ```
+
+##### `enableClusterRoleBinding`
+Specifies whether the roles necessary for the operator to manage domains
+will be granted using a ClusterRoleBinding rather than using RoleBindings in each managed namespace.
+
+Defaults to `false`.
+
+This option greatly simplifies managing namespaces when the selection is done using label selectors or
+regular expressions as the operator will already have privilege in any namespace.
+
+Customers who deploy the operator in Kubernetes clusters that run unrelated workloads will likely
+not want to use this option.
+
+**Note:** If your operator Helm `enableClusterRoleBinding` configuration value is `false`, then
+then a running operator will _not_ have privilege to manage a newly added namespace
+that matches its namespace selection criteria until you upgrade
+the operator's Helm release.
+See [Ensuring the operator has permission to manage a namespace]({{< relref "/userguide/managing-operators/namespace-management#ensuring-the-operator-has-permission-to-manage-a-namespace" >}}).
+
 #### Creating the operator pod
 
 ##### `image`
 Specifies the container image containing the operator code.
 
-Defaults to `ghcr.io/oracle/weblogic-kubernetes-operator:{{< latestVersion >}}`.
+Defaults to `ghcr.io/oracle/weblogic-kubernetes-operator:{{< latestVersion >}}`
+or similar (based on the default in your Helm chart, see `helm inspect`
+in [Useful Helm operations](#useful-helm-operations)).
 
 Example:
 ```yaml
@@ -132,11 +211,18 @@ image:  "Always"
 ##### `imagePullSecrets`
 Contains an optional list of Kubernetes Secrets, in the operator's namespace, that are needed to access the registry containing the operator image. You are responsible for creating the secret. If no secrets are required, then omit this property.
 
-Example:
-```yaml
-imagePullSecrets:
-- name: "my-image-pull-secret"
-```
+Examples:
+- Using YAML:
+  ```yaml
+  imagePullSecrets:
+  - name: "my-image-pull-secret1"
+  - name: "my-image-pull-secret2"
+  ```
+- Using the Helm command line:
+  ```
+  --set "imagePullSecrets[0].name=my-image-pull-secret1" \
+  --set "imagePullSecrets[1].name=my-image-pull-secret2"
+  ```
 
 ##### `annotations`
 Specifies a set of key-value annotations that will be added to each pod running the operator. If no customer defined annotations are required, then omit this property.
@@ -202,126 +288,120 @@ affinity:
           - another-node-label-value
 ```
 
-##### `enableClusterRoleBinding`
-Specifies whether the roles necessary for the operator to manage domains
-will be granted using a ClusterRoleBinding rather than using RoleBindings in each managed namespace.
-
-Defaults to `false`.
-
-This option greatly simplifies managing namespaces when the selection is done using label selectors or
-regular expressions as the operator will already have privilege in any namespace.
-
-Customers who deploy the operator in Kubernetes clusters that run unrelated workloads will likely
-not want to use this option.
-
-If `enableClusterRoleBinding` is `false` and you select namespaces that the operator will
-manage using label selectors or a regular expression, then the Helm release will only include
-RoleBindings in each namespace that match at the time the Helm release is created. If you later
-create namespaces that the operator should manage, the new namespaces will not yet have the necessary
-RoleBinding.
-
-You can correct this by upgrading the Helm release and reusing values:
-```shell
-$ helm upgrade \
-  --reuse-values \
-  weblogic-operator \
-  kubernetes/charts/weblogic-operator
-```
-
 #### WebLogic domain management
 
+The settings in this section determine the namespaces that an operator
+monitors for domain resources. For usage,
+also see [Namespace management]({{< relref "/userguide/managing-operators/namespace-management.md" >}}).
+
 ##### `domainNamespaceSelectionStrategy`
+
 Specifies how the operator will select the set of namespaces that it will manage.
-Legal values are: `List`, `LabelSelector`, `RegExp`, and `Dedicated`.
+Legal values are: `List`, `LabelSelector`, `RegExp`, and `Dedicated`:
 
-Defaults to `List`.
+- If set to `List`, then the operator will manage the set of namespaces listed by the `domainNamespaces` value.
+- If set to `LabelSelector`, then the operator will manage the set of namespaces discovered by a list
+  of namespaces using the value specified by `domainNamespaceLabelSelector` as a label selector.
+- If set to `RegExp`, then the operator will manage the set of namespaces discovered by a list
+  of namespaces using the value specified by `domainNamespaceRegExp` as a regular expression matched
+  against the namespace names.
+- Finally, if set to `Dedicated`, then operator will manage WebLogic domains only in the same namespace
+  which the operator itself is deployed, which is the namespace of the Helm release.
 
-If set to `List`, then the operator will manage the set of namespaces listed by the `domainNamespaces` value.
-If set to `LabelSelector`, then the operator will manage the set of namespaces discovered by a list
-of namespaces using the value specified by `domainNamespaceLabelSelector` as a label selector.
-If set to `RegExp`, then the operator will manage the set of namespaces discovered by a list
-of namespaces using the value specified by `domainNamespaceRegExp` as a regular expression matched
-against the namespace names.
-Finally, if set to `Dedicated`, then operator will manage WebLogic Domains only in the same namespace
-which the operator itself is deployed, which is the namespace of the Helm release.
+**Notes:**
+- Defaults to `List`.
+- If the deprecated `dedicated` setting is set to `true`,
+  then this value is ignored and
+  the operator will manage only domains in its own namespace.
+
+For more information,
+see [Choose a domain namespace section strategy]({{<relref "/userguide/managing-operators/namespace-management#choose-a-domain-namespace-selection-strategy">}})
+in the operator _Namespace management_ guide.
 
 ##### `domainNamespaces`
+
 Specifies a list of namespaces that the operator manages. The names must be lowercase. You are responsible for creating these namespaces.
-The operator will only manage Domains found in these namespaces.
+The operator will only manage domains found in these namespaces.
 This value is required if `domainNamespaceSelectionStrategy` is `List` and ignored otherwise.
 
-Example 1: In the configuration below, the operator will manage the `default` Kubernetes Namespace:
-```yaml
-domainNamespaces:
-- "default"
-```
+Examples:
+- Example 1: In the configuration below, the operator will manage the `default` and `ns1` Kubernetes Namespaces:
+  ```yaml
+  domainNamespaces:
+  - "default"
+  - "ns1"
+  ```
+- Example 2: In the configuration below, the operator will manage `namespace1` and `namespace2`:
+  ```yaml
+  domainNamespaces: [ "namespace1", "namespace2" ]
+  ```
+  Note that this is a valid but different YAML syntax for specifying arrays
+  in comparison to the previous example.
+- Example 3: To specify on the Helm command line:
+  ```
+  --set "domainNamespaces={namespace1,namespace2}"
+  ```
 
-Example 2: In the configuration below, the operator will manage `namespace1` and `namespace2`:
-```yaml
-domainNamespaces: [ "namespace1", "namespace2" ]
-```
-
-{{% notice note %}}
-These examples show two valid YAML syntax options for arrays.
-{{% /notice %}}
-
-{{% notice note %}}
-You must include the `default` namespace in the list if you want the operator to monitor both the `default` namespace and some other namespaces.
-{{% /notice %}}
-
-{{% notice note %}}
-This value is ignored if `dedicated` is set to `true`. Then, the operator will manage only domains in its own namespace.
-{{% /notice %}}
-
-For more details about managing `domainNamespaces`, see [Managing domain namespaces]({{< relref "/faq/namespace-management.md" >}}).
+**Notes:**
+- Defaults to the `default` namespace.
+- You must include the `default` namespace in the list if you want the operator to monitor both the `default` namespace and some other namespaces.
+- If you change `domainNamespaces` using a `helm upgrade`,
+  then the new list completely replaces the original list
+  (they are not merged).
+- If the deprecated `dedicated` setting is set to `true`,
+  then this value is ignored and
+  the operator will manage only domains in its own namespace.
 
 ##### `domainNamespaceLabelSelector`
 Specifies a [label selector](https://kubernetes.io/docs/concepts/overview/working-with-objects/labels/#label-selectors) that will be used when searching for namespaces that the operator will manage.
-The operator will only manage Domains found in namespaces matching this selector.
+The operator will only manage domains found in namespaces matching this selector.
 This value is required if `domainNamespaceSelectionStrategy` is `LabelSelector` and ignored otherwise.
 
-If `enableClusterRoleBinding` is `false`, the Helm chart will create RoleBindings in each namespace that matches the selector.
-These RoleBindings give the operator's service account the necessary privileges in the namespace. The Helm chart will only create
-these RoleBindings in namespaces that match the label selector at the time the chart is installed. If you later create namespaces
-that match the selector or label existing namespaces that make them now match the selector, then the operator will not have
-privilege in these namespaces until you upgrade the Helm release.
+Examples:
+- Example 1: In the configuration below, the operator will manage namespaces that have the label "weblogic-operator"
+  regardless of the value of that label:
+  ```yaml
+  domainNamespaceLabelSelector: weblogic-operator
+  ```
+- Example 2: In the configuration below, the operator will manage all namespaces that have the label "environment",
+  but where the value of that label is not "production" or "systemtest":
+  ```yaml
+  domainNamespaceLabelSelector: environment notin (production,systemtest)
+  ```
 
-Example 1: In the configuration below, the operator will manage namespaces that have the label "weblogic-operator"
-regardless of the value of that label:
-```yaml
-domainNamespaceLabelSelector: weblogic-operator
-```
-
-Example 2: In the configuration below, the operator will manage all namespaces that have the label "environment",
-but where the value of that label is not "production" or "systemtest":
-```yaml
-domainNamespaceLabelSelector: environment notin (production,systemtest)
-```
-
-{{% notice note %}}
-To specify the above sample on the Helm command line, escape spaces and commas as follows:
-```
---set "domainNamespaceLabelSelector=environment\\ notin\\ (production\\,systemtest)"
-```
-{{% /notice %}}
+**Notes**:
+- To specify the previous sample on the Helm command line, escape the equal sign, spaces and commas as follows:
+  ```
+  --set "domainNamespaceLabelSelector\=environment\\ notin\\ (production\\,systemtest)"
+  ```
+- If your operator Helm `enableClusterRoleBinding` configuration value is `false`, then
+  then a running operator will _not_ have privilege to manage a newly added namespace
+  that matches its label selector until you upgrade
+  the operator's Helm release.
+  See [Ensuring the operator has permission to manage a namespace]({{< relref "/userguide/managing-operators/namespace-management#ensuring-the-operator-has-permission-to-manage-a-namespace" >}}).
+- If the deprecated `dedicated` setting is set to `true`,
+  then this value is ignored and
+  the operator will manage only domains in its own namespace.
 
 ##### `domainNamespaceRegExp`
 Specifies a regular expression that will be used when searching for namespaces that the operator will manage.
-The operator will only manage Domains found in namespaces matching this regular expression.
+The operator will only manage domains found in namespaces matching this regular expression.
 This value is required if `domainNamespaceSelectionStrategy` is `RegExp` and ignored otherwise.
 
-If `enableClusterRoleBinding` is `false`, the Helm chart will create RoleBindings in each namespace that matches the regular expression.
-These RoleBindings give the operator's service account the necessary privileges in the namespace. The Helm chart will only create
-these RoleBindings in namespaces that match the regular expression at the time the chart is installed. If you later create namespaces
-that match the selector or label existing namespaces that make them now match the selector, the operator will not have
-privilege in these namespaces until you upgrade the Helm release.
+**Notes:**
 
-{{% notice note %}}
-The regular expression functionality included with Helm is restricted to linear time constructs and,
-in particular, does not support lookarounds. The operator, written in Java, supports these
-complicated expressions. If you need to use a complex regular expression, then either set
-`enableClusterRoleBinding` to `true` or create the necessary RoleBindings outside of Helm.
-{{% /notice %}}
+- The regular expression functionality included with Helm is restricted to linear time constructs and,
+  in particular, does not support lookarounds. The operator, written in Java, supports these
+  complicated expressions. If you need to use a complex regular expression, then either set
+  `enableClusterRoleBinding` to `true` or create the necessary RoleBindings outside of Helm.
+- If your operator Helm `enableClusterRoleBinding` configuration value is `false`, then
+  then a running operator will _not_ have privilege to manage a newly added namespace
+  that matches its regular expression until you upgrade
+  the operator's Helm release.
+  See [Ensuring the operator has permission to manage a namespace]({{< relref "/userguide/managing-operators/namespace-management#ensuring-the-operator-has-permission-to-manage-a-namespace" >}}).
+- If the deprecated `dedicated` setting is set to `true`,
+  then this value is ignored and
+  the operator will manage only domains in its own namespace.
 
 ##### `dedicated` ***(Deprecated)***
 Specifies if this operator will manage WebLogic domains only in the same namespace in which the operator itself is deployed. If set to `true`, then the `domainNamespaces` value is ignored.
@@ -342,7 +422,7 @@ It is the responsibility of the administrator to make sure that the required `Cu
 {{% /notice %}}
 
 ##### `domainPresenceFailureRetryMaxCount` and `domainPresenceFailureRetrySeconds`
-Specify the number of introspector job retries for a Domain and the interval in seconds between these retries.
+Specify the number of introspector job retries for a domain and the interval in seconds between these retries.
 
 Defaults to 5 retries and 10 seconds between each retry.
 
@@ -376,9 +456,13 @@ If `clusterSizePaddingValidationEnabed` is set to true, two additional character
 
 Default for the domain resource `domain.spec.configuration.istio.localhostBindingsEnabled` setting.
 
-For more information, see [Configuring the domain resource]({{< relref "/userguide/istio/istio#configuring-the-domain-resource" >}}).
+For more information, see [_Configuring the domain resource_ in the Istio user guide]({{< relref "/userguide/istio/istio.md#configuring-the-domain-resource" >}}).
 
 #### Elastic Stack integration
+
+The following settings are related to integrating the Elastic Stack with the operator pod.
+
+For example usage, see the [Operator Elastic Stack (Elasticsearch, Logstash, and Kibana) integration sample]({{<relref "/samples/elastic-stack/operator/_index.md#elastic-stack-per-operator-configuration">}}).
 
 ##### `elkIntegrationEnabled`
 Specifies whether or not Elastic Stack integration is enabled.
@@ -422,8 +506,14 @@ elasticSearchPort: 9201
 
 #### REST interface configuration
 
+The REST interface configuration options are advanced settings for configuring the operator's external REST interface.
+
+For usage information, see the operator [REST Services]({{<relref "/userguide/managing-operators/the-rest-api.md">}}).
+
 ##### `externalRestEnabled`
-Determines whether the operator's REST interface will be exposed outside the Kubernetes cluster.
+Determines whether the operator's REST interface will be exposed outside the Kubernetes cluster using a node port.
+
+See also `externalRestHttpsPort` for customizing the port number.
 
 Defaults to `false`.
 
@@ -433,6 +523,8 @@ Example:
 ```yaml
 externalRestEnabled: true
 ```
+
+**Note**: A node port is a security risk because the port may be publicly exposed to the internet in some environments. If you need external access to the REST port, then consider alternatives such as providing access through your load balancer, or using Kubernetes port forwarding.
 
 ##### `externalRestHttpsPort`
 Specifies the node port that should be allocated for the external operator REST HTTPS interface.
@@ -445,6 +537,8 @@ Example:
 ```yaml
 externalRestHttpsPort: 32009
 ```
+
+**Note**: A node port is a security risk because the port may be publicly exposed to the internet in some environments. If you need external access to the REST port, then consider alternatives such as providing access through your load balancer, or using Kubernetes port forwarding.
 
 ##### `externalRestIdentitySecret`
 Specifies the user supplied secret that contains the SSL/TLS certificate and private key for the external operator REST HTTPS interface. The value must be the name of the Kubernetes `tls` secret previously created in the namespace where the operator is deployed. This parameter is required if `externalRestEnabled` is `true`, otherwise, it is ignored. In order to create the Kubernetes `tls` secret you can use the following command:
@@ -520,10 +614,10 @@ If set to `true`, `tokenReviewAuthentication` specifies whether the the operator
    * Kubernetes token review API for authenticating users and
    * Kubernetes subject access review API for authorizing a user's operation (`get`, `list`,
       `patch`, and such) on a resource.
-   * Update the Domain resource using the operator's privileges.
+   * Update the domain resource using the operator's privileges.
 
  If set to `false`, the operator's REST API will use the caller's bearer token for any update
- to the Domain resource so that it is done using the caller's privileges.
+ to the domain resource so that it is done using the caller's privileges.
 
  Defaults to `false`.
 
@@ -532,6 +626,19 @@ If set to `true`, `tokenReviewAuthentication` specifies whether the the operator
  tokenReviewAuthentication: true
  ```
 #### Debugging options
+
+##### `javaLoggingLevel`
+
+Specifies the level of Java logging that should be enabled in the operator. Valid values are:  `SEVERE`, `WARNING`, `INFO`, `CONFIG`, `FINE`, `FINER`, and `FINEST`.
+
+Defaults to `INFO`.
+
+Example:
+```yaml
+javaLoggingLevel:  "FINE"
+```
+
+**Note**: Please consult [Operator logging level]({{< relref "/userguide/managing-operators/troubleshooting#operator-logging-level" >}}) before changing this setting.
 
 ##### `remoteDebugNodePortEnabled`
 Specifies whether or not the operator will start a Java remote debug server on the provided port and suspend execution until a remote debugger has attached.
@@ -547,7 +654,7 @@ remoteDebugNodePortEnabled:  true
 
 Specifies the port number inside the Kubernetes cluster for the operator's Java remote debug server.
 
-This parameter is required if `remoteDebugNodePortEnabled` is `true`. Otherwise, it is ignored.
+This parameter is required if `remoteDebugNodePortEnabled` is `true` (default `false`). Otherwise, it is ignored.
 
 Defaults to `30999`.
 
@@ -568,139 +675,4 @@ Example:
 externalDebugHttpPort:  30777
 ```
 
-### Common mistakes and solutions
-
-#### Installing the operator a second time into the same namespace
-
-A new `FAILED` Helm release is created.
-```shell
-$ helm install --no-hooks --name op2 --namespace myuser-op-ns --values custom-values.yaml kubernetes/charts/weblogic-operator
-```
-```
-Error: release op2 failed: secrets "weblogic-operator-secrets" already exists
-```
-
-Both the previous and new release own the resources created by the previous operator.
-
-* You can't modify it to change the namespace (because `helm upgrade` does not let you change the namespace).
-* You can't fix it by deleting this release because it removes your previous operator's resources.
-* You can't fix it by rolling back this release because it is not in the `DEPLOYED` state.
-* You can't fix it by deleting the previous release because it removes the operator's resources too.
-* All you can do is delete both operator releases and reinstall the original operator.
-See https://github.com/helm/helm/issues/2349
-
-#### Installing an operator and having it manage a domain namespace that another operator is already managing
-
-A new `FAILED` Helm release is created.
-```shell
-$ helm install --no-hooks --name op2 --namespace myuser-op2-ns --values custom-values.yaml kubernetes/charts/weblogic-operator
-```
-```
-Error: release op2 failed: rolebindings.rbac.authorization.k8s.io "weblogic-operator-rolebinding-namespace" already exists
-```
-
-To recover:
-
-- `helm delete --purge` the failed release.
-  - **NOTE**: This deletes the role binding in the domain namespace that was created by the first operator release, to give the operator access to the domain namespace.
-- `helm upgrade <old op release> kubernetes/charts/weblogic-operator --values <old op custom-values.yaml>`
-  - This recreates the role binding.
-  - There might be intermittent failures in the operator for the period of time when the role binding was deleted.
-
-#### Upgrading an operator and having it manage a domain namespace that another operator is already managing
-
-The `helm upgrade` succeeds, and silently adopts the resources the first operator's Helm chart created in the domain namespace (for example, `rolebinding`), and, if you also instructed it to stop managing another domain namespace, it abandons the role binding it created in that namespace.
-
-For example, if you delete this release, then the first operator will end up without the role binding it needs. The problem is that you don't get a warning, so you don't know that there's a problem to fix.
-
-* This can be fixed by just upgrading the Helm release.
-* This may also be fixed by rolling back the Helm release.
-
-#### Installing an operator and assigning it the same external REST port number as another operator
-
-A new `FAILED` Helm release is created.
-```shell
-$ helm install --no-hooks --name op2 --namespace myuser-op2-ns --values o.yaml kubernetes/charts/weblogic-operator
-```
-```
-Error: release op2 failed: Service "external-weblogic-operator-svc" is invalid: spec.ports[0].nodePort: Invalid value: 31023: provided port is already allocated
-```
-
-To recover:
-
-- $ `helm delete --purge` the failed release.
-- Change the port number and `helm install` the second operator again.
-
-#### Upgrading an operator and assigning it the same external REST port number as another operator
-
-The `helm upgrade` fails and moves the release to the `FAILED` state.
-```shell
-$ helm upgrade --no-hooks --values o23.yaml op2 kubernetes/charts/weblogic-operator --wait
-```
-```
-Error: UPGRADE FAILED: Service "external-weblogic-operator-svc" is invalid: spec.ports[0].nodePort: Invalid value: 31023: provided port is already allocated
-```
-
-* You can fix this by upgrading the Helm release (to fix the port number).
-* You can also fix this by rolling back the Helm release.
-
-#### Installing an operator and assigning it a service account that doesn't exist
-
-The following `helm install` command fails because it tries to install an operator release with a non-existing service account `op2-sa`.
-```shell
-$ helm install op2 kubernetes/charts/weblogic-operator --namespace myuser-op2-ns --set serviceAccount=op2-sa --wait --no-hooks
-```
-
-The output contains the following error message.
-```
-ServiceAccount op2-sa not found in namespace myuser-op2-ns
-```
-To recover:
-
-- Create the service account.
-- `helm install` again.
-
-#### Upgrading an operator and assigning it a service account that doesn't exist
-
-The `helm upgrade` with a non-existing service account fails with the same error message as mentioned in the previous section, and the existing operator deployment stays unchanged.
-
-To recover:
-
-- Create the service account.
-- `helm upgrade` again.
-
-#### Installing an operator and having it manage a domain namespace that doesn't exist
-
-A new `FAILED` Helm release is created.
-```shell
-$ helm install --no-hooks --name op2 --namespace myuser-op2-ns --values o.yaml kubernetes/charts/weblogic-operator
-```
-```
-Error: release op2 failed: namespaces "myuser-d2-ns" not found
-```
-
-To recover:
-
-- `helm delete --purge` the failed release.
-- Create the domain namespace.
-- `helm install` again.
-
-#### Upgrading an operator and having it manage a domain namespace that doesn't exist
-
-The `helm upgrade` fails and moves the release to the `FAILED` state.
-```shell
-$ helm upgrade myuser-op kubernetes/charts/weblogic-operator --values o.yaml --no-hooks
-```
-```
-Error: UPGRADE FAILED: failed to create resource: namespaces "myuser-d2-ns" not found
-```
-To recover:
-
-- `helm rollback`
-- Create the domain namespace.
-- `helm upgrade` again.
-
-#### Deleting and recreating a namespace that an operator manages without informing the operator
-
-If you create a new domain in a namespace that is deleted and recreated, the domain does not start up until you notify the operator.
-For more details about the problem and solutions, see [Managing domain namespaces]({{<relref "/faq/namespace-management.md">}}).
+**Note**: A node port is a security risk because the port may be publicly exposed to the internet in some environments. If you need external access to the debug port, then consider using Kubernetes port forwarding instead.

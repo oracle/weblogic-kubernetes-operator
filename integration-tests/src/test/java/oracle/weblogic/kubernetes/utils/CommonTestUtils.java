@@ -3,31 +3,51 @@
 
 package oracle.weblogic.kubernetes.utils;
 
+
 import java.io.IOException;
 import java.net.Socket;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.text.DateFormat;
+import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+import java.util.stream.Stream;
 
 import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.domain.Cluster;
+import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainCondition;
 import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import org.awaitility.core.ConditionEvaluationListener;
 import org.awaitility.core.ConditionFactory;
+import org.awaitility.core.ConditionTimeoutException;
+import org.awaitility.core.EvaluatedCondition;
+import org.awaitility.core.TimeoutEvent;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
@@ -39,6 +59,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceDoesNo
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.serviceExists;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndCheckForServerNameInResponse;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
+import static oracle.weblogic.kubernetes.utils.FileUtils.isFileExistAndNotEmpty;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
@@ -46,6 +67,8 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /**
@@ -53,10 +76,77 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  */
 public class CommonTestUtils {
 
-  public static ConditionFactory withStandardRetryPolicy =
-      with().pollDelay(2, SECONDS)
-          .and().with().pollInterval(10, SECONDS)
-          .atMost(5, MINUTES).await();
+  private static ConditionFactory createStandardRetryPolicyWithAtMost(long minutes) {
+    return with().pollDelay(2, SECONDS)
+        .and().with().pollInterval(10, SECONDS)
+        .atMost(minutes, MINUTES).await();
+  }
+
+  public static ConditionFactory withStandardRetryPolicy = createStandardRetryPolicyWithAtMost(5);
+  public static ConditionFactory withLongRetryPolicy = createStandardRetryPolicyWithAtMost(15);
+
+  /**
+   * Test assertion using standard retry policy over time until it passes or the timeout expires.
+   * @param conditionEvaluator Condition evaluator
+   * @param logger Logger
+   * @param msg Message for logging
+   * @param params Parameter to message for logging
+   */
+  public static void testUntil(Callable<Boolean> conditionEvaluator,
+                               LoggingFacade logger, String msg, Object... params) {
+    testUntil(withStandardRetryPolicy, conditionEvaluator, logger, msg, params);
+  }
+
+  /**
+   * Test assertion over time until it passes or the timeout expires.
+   * @param conditionFactory Configuration for Awaitility condition factory
+   * @param conditionEvaluator Condition evaluator
+   * @param logger Logger
+   * @param msg Message for logging
+   * @param params Parameter to message for logging
+   */
+  public static void testUntil(ConditionFactory conditionFactory, Callable<Boolean> conditionEvaluator,
+                               LoggingFacade logger, String msg, Object... params) {
+    try {
+      conditionFactory
+          .conditionEvaluationListener(createConditionEvaluationListener(logger, msg, params))
+          .until(conditionEvaluator);
+    } catch (ConditionTimeoutException timeout) {
+      throw new TimeoutException(MessageFormat.format("Timed out waiting for: " + msg, params), timeout);
+    }
+  }
+
+  private static <T> ConditionEvaluationListener<T> createConditionEvaluationListener(
+      LoggingFacade logger, String msg, Object... params) {
+    return new ConditionEvaluationListener<T>() {
+      @Override
+      public void conditionEvaluated(EvaluatedCondition condition) {
+        int paramsSize = params != null ? params.length : 0;
+        String preamble;
+        String timeInfo;
+        if (condition.isSatisfied()) {
+          preamble = "Completed: ";
+          timeInfo = " (elapsed time {" + paramsSize + "} ms)";
+        } else {
+          preamble = "Waiting for: ";
+          timeInfo = " (elapsed time {" + paramsSize + "} ms, remaining time {" + (paramsSize + 1) + "} ms)";
+        }
+        logger.info(preamble + msg + timeInfo,
+            Stream.concat(
+                Optional.ofNullable(params).map(Arrays::asList).orElse(Collections.emptyList()).stream(),
+                Stream.of(condition.getElapsedTimeInMS(), condition.getRemainingTimeInMS())).toArray());
+      }
+
+      @Override
+      public void onTimeout(TimeoutEvent timeoutEvent) {
+        int paramsSize = params != null ? params.length : 0;
+        logger.info("Timed out waiting for: " + msg + " (elapsed time {" + paramsSize + "} ms)",
+            Stream.concat(
+                Optional.ofNullable(params).map(Arrays::asList).orElse(Collections.emptyList()).stream(),
+                Stream.of(timeoutEvent.getElapsedTimeInMS())).toArray());
+      }
+    };
+  }
 
   public static ConditionFactory withQuickRetryPolicy = with().pollDelay(0, SECONDS)
       .and().with().pollInterval(3, SECONDS)
@@ -80,6 +170,25 @@ public class CommonTestUtils {
   }
 
   /**
+   * Check pod is ready and service exists in the specified namespace.
+   *
+   * @param conditionFactory Configuration for Awaitility condition factory
+   * @param podName pod name to check
+   * @param domainUid the label the pod is decorated with
+   * @param namespace the namespace in which the pod exists
+   */
+  public static void checkPodReadyAndServiceExists(ConditionFactory conditionFactory,
+                                                   String podName, String domainUid, String namespace) {
+    LoggingFacade logger = getLogger();
+
+    logger.info("Check service {0} exists in namespace {1}", podName, namespace);
+    checkServiceExists(conditionFactory, podName, namespace);
+
+    logger.info("Waiting for pod {0} to be ready in namespace {1}", podName, namespace);
+    checkPodReady(conditionFactory, podName, domainUid, namespace);
+  }
+
+  /**
    * Check service exists in the specified namespace.
    *
    * @param serviceName service name to check
@@ -87,17 +196,33 @@ public class CommonTestUtils {
    */
   public static void checkServiceExists(String serviceName, String namespace) {
     LoggingFacade logger = getLogger();
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for service {0} to exist in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                serviceName,
-                namespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> serviceExists(serviceName, null, namespace),
+    testUntil(
+        assertDoesNotThrow(() -> serviceExists(serviceName, null, namespace),
+          String.format("serviceExists failed with ApiException for service %s in namespace %s",
+            serviceName, namespace)),
+        logger,
+        "service {0} to exist in namespace {1}",
+        serviceName,
+        namespace);
+  }
+
+  /**
+   * Check service exists in the specified namespace.
+   *
+   * @param conditionFactory Configuration for Awaitility condition factory
+   * @param serviceName service name to check
+   * @param namespace the namespace in which to check for the service
+   */
+  public static void checkServiceExists(ConditionFactory conditionFactory,String serviceName, String namespace) {
+    LoggingFacade logger = getLogger();
+    testUntil(conditionFactory,
+        assertDoesNotThrow(() -> serviceExists(serviceName, null, namespace),
             String.format("serviceExists failed with ApiException for service %s in namespace %s",
-                serviceName, namespace)));
+                serviceName, namespace)),
+        logger,
+        "service {0} to exist in namespace {1}",
+        serviceName,
+        namespace);
   }
 
   /**
@@ -108,7 +233,7 @@ public class CommonTestUtils {
   public static void addSccToDBSvcAccount(String serviceAccount, String namespace) {
     assertTrue(new Command()
         .withParams(new CommandParams()
-            .command("oc adm policy add-scc-to-user anyuid -z " + serviceAccount + " -n " + namespace))
+            .command("oc adm policy add-scc-to-user privileged -z " + serviceAccount + " -n " + namespace))
         .execute(), "oc expose service failed");
   }
 
@@ -120,17 +245,14 @@ public class CommonTestUtils {
    */
   public static void checkServiceDoesNotExist(String serviceName, String namespace) {
     LoggingFacade logger = getLogger();
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for service {0} to be deleted in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                serviceName,
-                namespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> serviceDoesNotExist(serviceName, null, namespace),
-            String.format("serviceDoesNotExist failed with ApiException for service %s in namespace %s",
-                serviceName, namespace)));
+    testUntil(
+        assertDoesNotThrow(() -> serviceDoesNotExist(serviceName, null, namespace),
+          String.format("serviceDoesNotExist failed with ApiException for service %s in namespace %s",
+            serviceName, namespace)),
+        logger,
+        "service {0} to be deleted in namespace {1}",
+        serviceName,
+        namespace);
   }
 
   /**
@@ -391,24 +513,19 @@ public class CommonTestUtils {
     logger.info("Check if the given WebLogic admin credentials are {0}", msg);
     String finalHost = host != null ? host : K8S_NODEPORT_HOST;
     logger.info("finalHost = {0}", finalHost);
-    withQuickRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Checking that credentials {0}/{1} are {2}"
-                    + "(elapsed time {3}ms, remaining time {4}ms)",
-                username,
-                password,
-                msg,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(
-            expectValid
-                ?
-            () -> credentialsValid(finalHost, podName, namespace, username, password, args)
-                :
-            () -> credentialsNotValid(finalHost, podName, namespace, username, password, args),
-            String.format(
-                "Failed to validate credentials %s/%s on pod %s in namespace %s",
-                username, password, podName, namespace)));
+    testUntil(
+        withQuickRetryPolicy,
+        assertDoesNotThrow(
+          expectValid ? () -> credentialsValid(finalHost, podName, namespace, username, password, args)
+              : () -> credentialsNotValid(finalHost, podName, namespace, username, password, args),
+          String.format(
+            "Failed to validate credentials %s/%s on pod %s in namespace %s",
+            username, password, podName, namespace)),
+        logger,
+        "Checking that credentials {0}/{1} are {2}",
+        username,
+        password,
+        msg);
   }
 
   /**
@@ -421,10 +538,28 @@ public class CommonTestUtils {
    */
   public static boolean checkSystemResourceConfiguration(int nodePort, String resourcesType,
                                                    String resourcesName, String expectedStatusCode) {
+    return checkSystemResourceConfiguration(null, nodePort, resourcesType, resourcesName, expectedStatusCode);
+  }
+
+  /**
+   * Check the system resource configuration using REST API.
+   * @param adminSvcExtHost Used only in OKD env - this is the route host created for AS external service
+   * @param nodePort admin node port
+   * @param resourcesType type of the resource
+   * @param resourcesName name of the resource
+   * @param expectedStatusCode expected status code
+   * @return true if the REST API results matches expected status code
+   */
+  public static boolean checkSystemResourceConfiguration(String adminSvcExtHost, int nodePort, String resourcesType,
+                                                   String resourcesName, String expectedStatusCode) {
     final LoggingFacade logger = getLogger();
+
+    String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + nodePort;
+    logger.info("hostAndPort = {0} ", hostAndPort);
+
     StringBuffer curlString = new StringBuffer("status=$(curl --user ");
     curlString.append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
-        .append(" http://" + K8S_NODEPORT_HOST + ":" + nodePort)
+        .append(" http://" + hostAndPort)
         .append("/management/weblogic/latest/domainConfig")
         .append("/")
         .append(resourcesType)
@@ -444,17 +579,18 @@ public class CommonTestUtils {
 
   /**
    * verify the system resource configuration using REST API.
+   * @param adminRouteHost only required for OKD env. null otherwise
    * @param nodePort admin node port
    * @param resourcesType type of the resource
    * @param resourcesName name of the resource
    * @param expectedStatusCode expected status code
    */
-  public static void verifySystemResourceConfiguration(int nodePort, String resourcesType,
+  public static void verifySystemResourceConfiguration(String adminRouteHost, int nodePort, String resourcesType,
                                                        String resourcesName, String expectedStatusCode) {
     final LoggingFacade logger = getLogger();
     StringBuffer curlString = new StringBuffer("status=$(curl --user ");
     curlString.append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
-        .append(" http://" + K8S_NODEPORT_HOST + ":" + nodePort)
+        .append(" http://" + getHostAndPort(adminRouteHost, nodePort))
         .append("/management/weblogic/latest/domainConfig")
         .append("/")
         .append(resourcesType)
@@ -470,8 +606,6 @@ public class CommonTestUtils {
     verifyCommandResultContainsMsg(new String(curlString), expectedStatusCode);
   }
 
-
-
   /**
    * Check the system resource configuration using REST API.
    * @param nodePort admin node port
@@ -480,10 +614,27 @@ public class CommonTestUtils {
    * @return true if the REST API results matches expected status code
    */
   public static boolean checkSystemResourceConfig(int nodePort, String resourcesPath, String expectedValue) {
+    return checkSystemResourceConfig(null, nodePort, resourcesPath, expectedValue);
+  }
+
+  /**
+   * Check the system resource configuration using REST API.
+   * @param adminSvcExtHost Used only in OKD env - this is the route host created for AS external service
+   * @param nodePort admin node port
+   * @param resourcesPath path of the resource
+   * @param expectedValue expected value returned in the REST call
+   * @return true if the REST API results matches expected status code
+   */
+  public static boolean checkSystemResourceConfig(String adminSvcExtHost, int nodePort,
+                                       String resourcesPath, String expectedValue) {
     final LoggingFacade logger = getLogger();
+
+    String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + nodePort;
+    logger.info("hostAndPort = {0} ", hostAndPort);
+
     StringBuffer curlString = new StringBuffer("curl --user ");
     curlString.append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
-        .append(" http://" + K8S_NODEPORT_HOST + ":" + nodePort)
+        .append(" http://" + hostAndPort)
         .append("/management/weblogic/latest/domainConfig")
         .append("/")
         .append(resourcesPath)
@@ -498,16 +649,22 @@ public class CommonTestUtils {
 
   /**
    * Check the system resource runtime using REST API.
+   * @param adminSvcExtHost Used only in OKD env - this is the route host created for AS external service
    * @param nodePort admin node port
    * @param resourcesUrl url of the resource
    * @param expectedValue expected value returned in the REST call
    * @return true if the REST API results matches expected value
    */
-  public static boolean checkSystemResourceRuntime(int nodePort, String resourcesUrl, String expectedValue) {
+  public static boolean checkSystemResourceRuntime(String adminSvcExtHost, int nodePort, 
+                                            String resourcesUrl, String expectedValue) {
     final LoggingFacade logger = getLogger();
+
+    String hostAndPort = (OKD) ? adminSvcExtHost : K8S_NODEPORT_HOST + ":" + nodePort;
+    logger.info("hostAndPort = {0} ", hostAndPort);
+
     StringBuffer curlString = new StringBuffer("curl --user ");
     curlString.append(ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT)
-        .append(" http://" + K8S_NODEPORT_HOST + ":" + nodePort)
+        .append(" http://" + hostAndPort)
         .append("/management/weblogic/latest/domainRuntime")
         .append("/")
         .append(resourcesUrl)
@@ -638,21 +795,12 @@ public class CommonTestUtils {
   public static void verifyServerCommunication(String curlRequest, List<String> managedServerNames) {
     LoggingFacade logger = getLogger();
 
-    ConditionFactory withStandardRetryPolicy
-        = with().pollDelay(2, SECONDS)
-        .and().with().pollInterval(10, SECONDS)
-        .atMost(10, MINUTES).await();
-
     HashMap<String, Boolean> managedServers = new HashMap<>();
     managedServerNames.forEach(managedServerName -> managedServers.put(managedServerName, false));
 
     //verify each server in the cluster can connect to other
-    withStandardRetryPolicy.conditionEvaluationListener(
-        condition -> logger.info("Waiting until each managed server can see other cluster members"
-                + "(elapsed time {0} ms, remaining time {1} ms)",
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
-        .until((Callable<Boolean>) () -> {
+    testUntil(
+        () -> {
           for (int i = 0; i < managedServerNames.size(); i++) {
             logger.info(curlRequest);
             // check the response contains managed server name
@@ -687,7 +835,9 @@ public class CommonTestUtils {
             }
           });
           return !managedServers.containsValue(false);
-        });
+        },
+        logger,
+        "Waiting until each managed server can see other cluster members");
   }
 
   /**
@@ -768,20 +918,28 @@ public class CommonTestUtils {
   }
 
   /**
+   * Evaluates the route host name for OKD env, and host:serviceport for othe env's.
+   *
+   * @param hostName - in OKD it is host name when svc is exposed as a route, null otherwise
+   * @param servicePort - port of the service to access
+   * @return host and port for all env, route hostname for OKD
+   */
+  public static String getHostAndPort(String hostName, int servicePort) {
+    LoggingFacade logger = getLogger();
+    String hostAndPort = ((OKD) ? hostName : K8S_NODEPORT_HOST + ":" + servicePort);
+    logger.info("hostAndPort = {0} ", hostAndPort);
+    return hostAndPort;
+  }
+
+  /** 
    * Verify the command result contains expected message.
    *
    * @param command the command to execute
    * @param expectedMsg the expected message in the command output
    */
   public static void verifyCommandResultContainsMsg(String command, String expectedMsg) {
-    withStandardRetryPolicy.conditionEvaluationListener(
-        condition -> getLogger().info("Waiting until command result contains expected message \"{0}\" "
-                + "(elapsed time {1} ms, remaining time {2} ms)",
-            expectedMsg,
-            condition.getElapsedTimeInMS(),
-            condition.getRemainingTimeInMS()))
-        .until(() -> {
-
+    testUntil(
+        () -> {
           ExecResult result;
           try {
             result = exec(command, true);
@@ -793,11 +951,146 @@ public class CommonTestUtils {
             }
 
             return result.stdout().contains(expectedMsg);
-
           } catch (Exception e) {
             getLogger().info("Got exception, command failed with errors " + e.getMessage());
             return false;
           }
-        });
+        },
+        getLogger(),
+        "Waiting until command result contains expected message \"{0}\"",
+        expectedMsg);
   }
+
+  /**
+   * Verify if the WebLogic image is patched with psu.
+   * @return true if the WEBLOGIC_IMAGE_TAG contains the string psu
+   */
+  public static boolean isWebLogicPsuPatchApplied() {
+    return  WEBLOGIC_IMAGE_TAG.contains("psu") ? true : false;
+  }
+
+  /**
+   * Verify domain status conditions contains the given condition type and message.
+   *
+   * @param domainUid uid of the domain
+   * @param domainNamespace namespace of the domain
+   * @param conditionType condition type
+   * @param conditionMsg  messsage in condition
+   * @return true if the condition matches
+   */
+  public static boolean verifyDomainStatusCondition(String domainUid,
+                                              String domainNamespace,
+                                              String conditionType,
+                                              String conditionMsg) {
+    withLongRetryPolicy
+        .conditionEvaluationListener(
+            condition -> getLogger().info("Waiting for domain status condition message contains the expected msg "
+                    + "\"{0}\", (elapsed time {1}ms, remaining time {2}ms)",
+                conditionMsg,
+                condition.getElapsedTimeInMS(),
+                condition.getRemainingTimeInMS()))
+        .until(() -> {
+          Domain domain = getDomainCustomResource(domainUid, domainNamespace);
+          if ((domain != null) && (domain.getStatus() != null)) {
+            for (DomainCondition domainCondition : domain.getStatus().getConditions()) {
+              getLogger().info("Condition Type =" + domainCondition.getType()
+                  + " Condition Msg =" + domainCondition.getMessage());
+              if ((domainCondition.getType() != null && domainCondition.getType().equalsIgnoreCase(conditionType))
+                  && (domainCondition.getMessage() != null && domainCondition.getMessage().contains(conditionMsg))) {
+                return true;
+              }
+            }
+          }
+          return false;
+        });
+    return false;
+  }
+
+  /**
+   * Start a port-forward process with a given set of attributes.
+   * @param hostName host information to used against address param
+   * @param domainNamespace domain namespace
+   * @param domainUid domain uid
+   * @param port the remote port
+   * @return generated local forward port
+   */
+  public static String startPortForwardProcess(String hostName,
+                                       String domainNamespace,
+                                       String domainUid,
+                                       int port) {
+    LoggingFacade logger = getLogger();
+    // Create a unique stdout file for kubectl port-forward command
+    String pfFileName = RESULTS_ROOT + "/pf-" + domainNamespace 
+                    + "-" + port + ".out"; 
+
+    logger.info("Start port forward process");
+    String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+
+    // Let kubectl choose and allocate a local port number that is not in use
+    StringBuffer cmd = new StringBuffer("kubectl port-forward --address ")
+        .append(hostName)
+        .append(" pod/")
+        .append(adminServerPodName)
+        .append(" -n ")
+        .append(domainNamespace)
+        .append(" :")
+        .append(String.valueOf(port))
+        .append(" > ")
+        .append(pfFileName)
+        .append(" 2>&1 &");
+    logger.info("Command to forward port {0} ", cmd.toString());
+    ExecResult result = assertDoesNotThrow(() -> ExecCommand.exec(cmd.toString(), true),
+        String.format("Failed to forward port by running command %s", cmd));
+    assertEquals(0, result.exitValue(),
+        String.format("Failed to forward a local port to admin port. Error is %s ", result.stderr()));
+    assertNotNull(getForwardedPort(pfFileName), 
+          "port-forward command fails to assign a local port");
+    return getForwardedPort(pfFileName);
+  }
+
+  /**
+   * Stop port-forward process(es) started through startPortForwardProcess.
+   * @param domainNamespace namespace where port-forward procees were started 
+   */
+  public static void stopPortForwardProcess(String domainNamespace) {
+    LoggingFacade logger = getLogger();
+    logger.info("Stop port forward process");
+    final StringBuffer getPids = new StringBuffer("ps -ef | ")
+        .append("grep 'kubectl* port-forward ' | grep ")
+        .append(domainNamespace)
+        .append(" | awk ")
+        .append(" '{print $2}'");
+    logger.info("Command to get pids for port-forward processes {0}", getPids.toString());
+    ExecResult result = assertDoesNotThrow(() -> exec(getPids.toString(), true));
+    if (result.exitValue() == 0) {
+      String[] pids = result.stdout().split(System.lineSeparator());
+
+      for (String pid : pids) {
+        logger.info("Command to kill port forward process: {0}", "kill -9 " + pid);
+        result = assertDoesNotThrow(() -> exec("kill -9 " + pid, true));
+        logger.info("stopPortForwardProcess command returned {0}", result.toString());
+      }
+    }
+  }
+
+  private static String getForwardedPort(String portForwardFileName) {
+    //wait until forwarded port number is written to the file upto 5 minutes
+    LoggingFacade logger = getLogger();
+    assertDoesNotThrow(() ->
+        testUntil(
+            isFileExistAndNotEmpty(portForwardFileName),
+            logger,
+            "forwarded port number is written to the file " + portForwardFileName));
+    String portFile = assertDoesNotThrow(() -> Files.readAllLines(Paths.get(portForwardFileName)).get(0));
+    logger.info("Port forward info:\n {0}", portFile);
+    String forwardedPortNo = null;
+    String regex = ".*Forwarding.*:(\\d+).*";
+    Pattern pattern = Pattern.compile(regex, Pattern.DOTALL | Pattern.MULTILINE);
+    Matcher matcher = pattern.matcher(portFile);
+    if (matcher.find()) {
+      forwardedPortNo = matcher.group(1);
+    }
+    return forwardedPortNo;
+  }
+
 }

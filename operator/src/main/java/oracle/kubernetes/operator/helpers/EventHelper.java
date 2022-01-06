@@ -6,11 +6,13 @@ package oracle.kubernetes.operator.helpers;
 import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.Random;
+import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import jakarta.validation.constraints.NotNull;
+import oracle.kubernetes.operator.DomainFailureReason;
 import oracle.kubernetes.operator.DomainNamespaces;
 import oracle.kubernetes.operator.DomainProcessorImpl;
 import oracle.kubernetes.operator.EventConstants;
@@ -28,25 +30,25 @@ import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 
 import static oracle.kubernetes.operator.DomainProcessorImpl.getEventK8SObjects;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_AVAILABLE_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_AVAILABLE_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CHANGED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CHANGED_PATTERN;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_COMPLETED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_COMPLETED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CREATED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_CREATED_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_DELETED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_DELETED_PATTERN;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_ABORTED_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_ABORTED_PATTERN;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_COMPLETED_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_COMPLETED_PATTERN;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_FAILED_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_FAILED_PATTERN;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_RETRYING_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_RETRYING_PATTERN;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_STARTING_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_PROCESSING_STARTING_PATTERN;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_PATTERN;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILURE_RESOLVED_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILURE_RESOLVED_PATTERN;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_INCOMPLETE_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_INCOMPLETE_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_ROLL_STARTING_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_EVENT;
-import static oracle.kubernetes.operator.EventConstants.DOMAIN_VALIDATION_ERROR_PATTERN;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_UNAVAILABLE_EVENT;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_UNAVAILABLE_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.EVENT_NORMAL;
 import static oracle.kubernetes.operator.EventConstants.EVENT_WARNING;
 import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STARTED_PATTERN;
@@ -54,9 +56,7 @@ import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STOPP
 import static oracle.kubernetes.operator.EventConstants.POD_CYCLE_STARTING_EVENT;
 import static oracle.kubernetes.operator.EventConstants.POD_CYCLE_STARTING_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_COMPLETED;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_STARTING;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STARTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STOPPED;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
@@ -126,16 +126,12 @@ public class EventHelper {
     }
 
     @Override
+    protected String getDetail() {
+      return eventData.eventItem.toString();
+    }
+
+    @Override
     public NextAction apply(Packet packet) {
-      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-      if (hasProcessingNotStarted(info) && (eventData.eventItem == DOMAIN_PROCESSING_COMPLETED)) {
-        return doNext(packet);
-      }
-
-      if (isDuplicatedStartedEvent(info)) {
-        return doNext(packet);
-      }
-
       return doNext(createEventAPICall(createEventModel(packet, eventData)), packet);
     }
 
@@ -171,15 +167,6 @@ public class EventHelper {
           .map(o -> o.getExistingEvent(event)).orElse(null);
     }
 
-    private boolean isDuplicatedStartedEvent(DomainPresenceInfo info) {
-      return eventData.eventItem == EventItem.DOMAIN_PROCESSING_STARTING
-          && Optional.ofNullable(info).map(dpi -> dpi.getLastEventItem() == DOMAIN_PROCESSING_STARTING).orElse(false);
-    }
-
-    private boolean hasProcessingNotStarted(DomainPresenceInfo info) {
-      return Optional.ofNullable(info).map(dpi -> dpi.getLastEventItem() != DOMAIN_PROCESSING_STARTING).orElse(false);
-    }
-
     private class CreateEventResponseStep extends ResponseStep<CoreV1Event> {
       CreateEventResponseStep(Step next) {
         super(next);
@@ -191,9 +178,6 @@ public class EventHelper {
           LOGGER.info(BEGIN_MANAGING_NAMESPACE, eventData.getNamespace());
           domainNamespaces.shouldStartNamespace(eventData.getNamespace());
         }
-
-        Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
-            .ifPresent(dpi -> setLastEventItemIfNeeded(dpi, eventData.eventItem));
         return doNext(packet);
       }
 
@@ -228,12 +212,6 @@ public class EventHelper {
       }
     }
 
-    private void setLastEventItemIfNeeded(DomainPresenceInfo dpi, EventItem eventItem) {
-      if (eventItem.shouldSetLastEventItem()) {
-        dpi.setLastEventItem(eventItem);
-      }
-    }
-
     private class ReplaceEventResponseStep extends ResponseStep<CoreV1Event> {
       Step replaceEventStep;
       CoreV1Event existingEvent;
@@ -246,8 +224,6 @@ public class EventHelper {
 
       @Override
       public NextAction onSuccess(Packet packet, CallResponse<CoreV1Event> callResponse) {
-        Optional.ofNullable(packet.getSpi(DomainPresenceInfo.class))
-            .ifPresent(dpi -> setLastEventItemIfNeeded(dpi, eventData.eventItem));
         return doNext(packet);
       }
 
@@ -258,7 +234,7 @@ public class EventHelper {
           return doNext(packet);
         }
         if (UnrecoverableErrorBuilder.isAsyncCallNotFoundFailure(callResponse)
-                || UnrecoverableErrorBuilder.isAsyncCallConflictFailure(callResponse)) {
+            || UnrecoverableErrorBuilder.isAsyncCallConflictFailure(callResponse)) {
           return doNext(Step.chain(createCreateEventCall(createEventModel(packet, eventData)), getNext()), packet);
         } else if (UnrecoverableErrorBuilder.isAsyncCallUnrecoverableFailure(callResponse)) {
           return onFailureNoRetry(packet, callResponse);
@@ -319,6 +295,7 @@ public class EventHelper {
     DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
     EventItem eventItem = eventData.eventItem;
     eventData.domainPresenceInfo(info);
+    addAdditionalMessage(eventData, info);
 
     return new CoreV1Event()
         .metadata(createMetadata(eventData))
@@ -330,6 +307,19 @@ public class EventHelper {
         .message(eventItem.getMessage(eventData))
         .involvedObject(eventItem.createInvolvedObject(eventData))
         .count(1);
+  }
+
+  private static void addAdditionalMessage(@Nonnull EventData eventData, DomainPresenceInfo info) {
+    eventData.additionalMessage(getAdditionalMessage(eventData, info));
+  }
+
+  private static String getAdditionalMessageFromFailureReason(EventData eventData, DomainPresenceInfo info) {
+    return Optional.ofNullable(eventData.failureReason).map(f -> f.getEventSuggestion(info)).orElse("");
+  }
+
+  private static String getAdditionalMessage(EventData eventData, DomainPresenceInfo info) {
+    return Optional.ofNullable(eventData.additionalMessage)
+        .orElse(getAdditionalMessageFromFailureReason(eventData, info));
   }
 
   private static V1ObjectMeta createMetadata(
@@ -348,6 +338,17 @@ public class EventHelper {
   }
 
   public enum EventItem {
+    DOMAIN_AVAILABLE {
+      @Override
+      public String getReason() {
+        return DOMAIN_AVAILABLE_EVENT;
+      }
+
+      @Override
+      public String getPattern() {
+        return DOMAIN_AVAILABLE_PATTERN;
+      }
+    },
     DOMAIN_CREATED {
       @Override
       public String getReason() {
@@ -369,7 +370,17 @@ public class EventHelper {
       public String getPattern() {
         return DOMAIN_CHANGED_PATTERN;
       }
+    },
+    DOMAIN_COMPLETE {
+      @Override
+      public String getReason() {
+        return DOMAIN_COMPLETED_EVENT;
+      }
 
+      @Override
+      public String getPattern() {
+        return DOMAIN_COMPLETED_PATTERN;
+      }
     },
     DOMAIN_DELETED {
       @Override
@@ -381,41 +392,8 @@ public class EventHelper {
       public String getPattern() {
         return DOMAIN_DELETED_PATTERN;
       }
-
     },
-    DOMAIN_PROCESSING_STARTING {
-      @Override
-      public String getReason() {
-        return DOMAIN_PROCESSING_STARTING_EVENT;
-      }
-
-      @Override
-      public String getPattern() {
-        return DOMAIN_PROCESSING_STARTING_PATTERN;
-      }
-
-      @Override
-      public boolean shouldSetLastEventItem() {
-        return true;
-      }
-    },
-    DOMAIN_PROCESSING_COMPLETED {
-      @Override
-      public String getReason() {
-        return DOMAIN_PROCESSING_COMPLETED_EVENT;
-      }
-
-      @Override
-      public String getPattern() {
-        return DOMAIN_PROCESSING_COMPLETED_PATTERN;
-      }
-
-      @Override
-      public boolean shouldSetLastEventItem() {
-        return true;
-      }
-    },
-    DOMAIN_PROCESSING_FAILED {
+    DOMAIN_FAILED {
       @Override
       protected String getType() {
         return EVENT_WARNING;
@@ -423,42 +401,31 @@ public class EventHelper {
 
       @Override
       public String getReason() {
-        return DOMAIN_PROCESSING_FAILED_EVENT;
+        return DOMAIN_FAILED_EVENT;
       }
 
       @Override
       public String getPattern() {
-        return DOMAIN_PROCESSING_FAILED_PATTERN;
+        return DOMAIN_FAILED_PATTERN;
       }
 
       @Override
       public String getMessage(EventData eventData) {
-        return getMessageFromEventData(eventData);
+        return getMessageFromFailedEventData(eventData);
       }
-
-      @Override
-      public boolean shouldSetLastEventItem() {
-        return true;
-      }
-
     },
-    DOMAIN_PROCESSING_RETRYING {
+    DOMAIN_FAILURE_RESOLVED {
       @Override
       public String getReason() {
-        return DOMAIN_PROCESSING_RETRYING_EVENT;
+        return DOMAIN_FAILURE_RESOLVED_EVENT;
       }
 
       @Override
       public String getPattern() {
-        return DOMAIN_PROCESSING_RETRYING_PATTERN;
-      }
-
-      @Override
-      public boolean shouldSetLastEventItem() {
-        return true;
+        return DOMAIN_FAILURE_RESOLVED_PATTERN;
       }
     },
-    DOMAIN_PROCESSING_ABORTED {
+    DOMAIN_UNAVAILABLE {
       @Override
       protected String getType() {
         return EVENT_WARNING;
@@ -466,24 +433,29 @@ public class EventHelper {
 
       @Override
       public String getReason() {
-        return DOMAIN_PROCESSING_ABORTED_EVENT;
+        return DOMAIN_UNAVAILABLE_EVENT;
       }
 
       @Override
       public String getPattern() {
-        return DOMAIN_PROCESSING_ABORTED_PATTERN;
+        return DOMAIN_UNAVAILABLE_PATTERN;
+      }
+    },
+    DOMAIN_INCOMPLETE {
+      @Override
+      protected String getType() {
+        return EVENT_WARNING;
       }
 
       @Override
-      public String getMessage(EventData eventData) {
-        return getMessageFromEventData(eventData);
+      public String getReason() {
+        return DOMAIN_INCOMPLETE_EVENT;
       }
 
       @Override
-      public boolean shouldSetLastEventItem() {
-        return true;
+      public String getPattern() {
+        return DOMAIN_INCOMPLETE_PATTERN;
       }
-
     },
     DOMAIN_ROLL_STARTING {
       @Override
@@ -500,7 +472,6 @@ public class EventHelper {
       public String getMessage(EventData eventData) {
         return getMessageFromEventData(eventData);
       }
-
     },
     DOMAIN_ROLL_COMPLETED {
       @Override
@@ -511,33 +482,6 @@ public class EventHelper {
       @Override
       public String getPattern() {
         return EventConstants.DOMAIN_ROLL_COMPLETED_PATTERN;
-      }
-
-    },
-    DOMAIN_VALIDATION_ERROR {
-      @Override
-      protected String getType() {
-        return EVENT_WARNING;
-      }
-
-      @Override
-      public String getReason() {
-        return DOMAIN_VALIDATION_ERROR_EVENT;
-      }
-
-      @Override
-      public String getPattern() {
-        return DOMAIN_VALIDATION_ERROR_PATTERN;
-      }
-
-      @Override
-      public String getMessage(EventData eventData) {
-        return getMessageFromEventData(eventData);
-      }
-
-      @Override
-      public boolean shouldSetLastEventItem() {
-        return true;
       }
     },
     POD_CYCLE_STARTING {
@@ -687,6 +631,30 @@ public class EventHelper {
           eventData.getResourceNameFromInfo(), Optional.ofNullable(eventData.message).orElse(""));
     }
 
+    private static String getMessageFromFailedEventData(EventData eventData) {
+      return String.format(eventData.eventItem.getPattern(),
+          eventData.getResourceNameFromInfo(),
+          getEffectiveReasonDetail(eventData),
+          getEffectiveMessage(eventData),
+          getAdditionalMessage(eventData));
+    }
+
+    private static String getAdditionalMessage(EventData eventData) {
+      return Optional.ofNullable(eventData.additionalMessage).orElse("");
+    }
+
+    private static String getEffectiveMessage(EventData eventData) {
+      return Optional.ofNullable(eventData.message).orElse(getFailureReason(eventData));
+    }
+
+    private static String getFailureReason(EventData eventData) {
+      return Optional.ofNullable(eventData.failureReason).map(DomainFailureReason::getEventError).orElse("");
+    }
+    
+    private static String getEffectiveReasonDetail(EventData eventData) {
+      return eventData.message == null ? "" : getFailureReason(eventData);
+    }
+
     private static String getMessageFromEventDataWithPod(EventData eventData) {
       return String.format(eventData.eventItem.getPattern(),
           eventData.getPodName(), Optional.ofNullable(eventData.message).orElse(""));
@@ -698,10 +666,10 @@ public class EventHelper {
 
     protected String generateEventName(EventData eventData) {
       return String.format("%s.%s.%h%h",
-              eventData.getResourceName(),
-              eventData.eventItem.getReason(),
-              System.currentTimeMillis(),
-              generateRandomLong());
+          eventData.getResourceName(),
+          eventData.eventItem.getReason(),
+          System.currentTimeMillis(),
+          generateRandomLong());
     }
 
     protected static V1ObjectReference createOperatorEventInvolvedObject() {
@@ -722,11 +690,11 @@ public class EventHelper {
 
     String generateOperatorNSEventName(EventData eventData) {
       return String.format("%s.%s.%s.%h%h",
-              getOperatorPodName(),
-              eventData.eventItem.getReason(),
-              eventData.getResourceName(),
-              System.currentTimeMillis(),
-              generateRandomLong());
+          getOperatorPodName(),
+          eventData.eventItem.getReason(),
+          eventData.getResourceName(),
+          System.currentTimeMillis(),
+          generateRandomLong());
     }
 
     public String getMessage(EventData eventData) {
@@ -756,10 +724,6 @@ public class EventHelper {
       return EVENT_NORMAL;
     }
 
-    boolean shouldSetLastEventItem() {
-      return false;
-    }
-
     public abstract String getPattern();
 
     public abstract String getReason();
@@ -767,7 +731,9 @@ public class EventHelper {
 
   public static class EventData {
     private final EventItem eventItem;
+    private DomainFailureReason failureReason;
     private String message;
+    private String additionalMessage;
     private String namespace;
     private String resourceName;
     private String podName;
@@ -782,8 +748,18 @@ public class EventHelper {
       this.message = message;
     }
 
+    public EventData failureReason(DomainFailureReason failureReason) {
+      this.failureReason = failureReason;
+      return this;
+    }
+
     public EventData message(String message) {
       this.message = message;
+      return this;
+    }
+
+    public EventData additionalMessage(String additionalMessage) {
+      this.additionalMessage = additionalMessage;
       return this;
     }
 
@@ -830,11 +806,12 @@ public class EventHelper {
     }
 
     public static boolean isProcessingAbortedEvent(@NotNull EventData eventData) {
-      return eventData.eventItem == DOMAIN_PROCESSING_ABORTED;
+      return eventData.eventItem == DOMAIN_FAILED && DomainFailureReason.Aborted.equals(eventData.failureReason);
     }
 
     /**
      * Get the UID from the domain metadata.
+     *
      * @return domain resource's UID
      */
     public String getUID() {

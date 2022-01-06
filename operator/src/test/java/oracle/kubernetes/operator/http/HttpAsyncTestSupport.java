@@ -28,6 +28,17 @@ import static java.net.HttpURLConnection.HTTP_NOT_FOUND;
  * A class to enable unit testing of async http requests.
  */
 public class HttpAsyncTestSupport {
+  public static final String OK_RESPONSE =
+      "{\n"
+          + "    \"overallHealthState\": {\n"
+          + "        \"state\": \"ok\",\n"
+          + "        \"subsystemName\": null,\n"
+          + "        \"partitionName\": null,\n"
+          + "        \"symptoms\": []\n"
+          + "    },\n"
+          + "    \"state\": \"RUNNING\",\n"
+          + "    \"activationTime\": 1556759105378\n"
+          + "}";
   private static final HttpResponse<String> NOT_FOUND = createStub(HttpResponseStub.class, HTTP_NOT_FOUND);
   private static final RequestHandler NO_SUCH_HANDLER = new RequestHandler(null, NOT_FOUND);
 
@@ -36,6 +47,17 @@ public class HttpAsyncTestSupport {
   private final Map<URI, List<RequestHandler>> cannedResponses = new HashMap<>();
   private final Stack<HttpRequest> receivedRequests = new Stack<>();
   private final List<Consumer<HttpRequest>> callbacks = new ArrayList<>();
+
+  /**
+   * Creates a request object to the WLS REST API on the specified host and port.
+   * @param url the base url, with no path.
+   */
+  public static HttpRequest createExpectedRequest(String url) {
+    return HttpRequest.newBuilder()
+        .uri(URI.create(url + "/management/weblogic/latest/serverRuntime/search"))
+        .POST(HttpRequest.BodyPublishers.noBody())
+        .build();
+  }
 
   /**
    * Add a callback to be invoked whenever a request is handled.

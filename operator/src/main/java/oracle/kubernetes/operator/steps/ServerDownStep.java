@@ -40,7 +40,7 @@ public class ServerDownStep extends Step {
 
     if (oldPod != null) {
       PodAwaiterStepFactory pw = packet.getSpi(PodAwaiterStepFactory.class);
-      next = pw.waitForDelete(oldPod, next);
+      next = pw.waitForDelete(oldPod, new DomainPresenceInfoUpdateStep(serverName, next));
     }
 
     return doNext(oldPod != null ? PodHelper.deletePodStep(serverName, next) : next, packet);

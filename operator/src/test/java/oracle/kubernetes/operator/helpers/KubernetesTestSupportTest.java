@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.concurrent.Semaphore;
 import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
@@ -34,7 +35,7 @@ import io.kubernetes.client.openapi.models.V1TokenReview;
 import jakarta.json.Json;
 import jakarta.json.JsonPatchBuilder;
 import oracle.kubernetes.operator.calls.CallResponse;
-import oracle.kubernetes.operator.calls.FailureStatusSourceException;
+import oracle.kubernetes.operator.calls.UnrecoverableCallException;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
@@ -52,6 +53,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static java.net.HttpURLConnection.HTTP_BAD_REQUEST;
+import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.CUSTOM_RESOURCE_DEFINITION;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.POD;
@@ -68,7 +70,7 @@ import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class KubernetesTestSupportTest {
 
@@ -137,7 +139,7 @@ class KubernetesTestSupportTest {
           new CallBuilder().createCustomResourceDefinitionAsync(createCrd("mycrd"), responseStep);
     testSupport.runSteps(steps);
 
-    testSupport.verifyCompletionThrowable(FailureStatusSourceException.class);
+    testSupport.verifyCompletionThrowable(UnrecoverableCallException.class);
   }
 
   @Test
@@ -191,7 +193,7 @@ class KubernetesTestSupportTest {
     Step steps = new CallBuilder()
         .replaceDomainStatusAsync("domain1", NS,
             createDomain(NS, "domain1")
-                .withStatus(new DomainStatus().addCondition(new DomainCondition(DomainConditionType.Progressing))),
+                .withStatus(new DomainStatus().addCondition(new DomainCondition(DomainConditionType.Completed))),
             null);
     testSupport.runSteps(steps);
 
@@ -306,22 +308,6 @@ class KubernetesTestSupportTest {
   }
 
   @Test
-  void whenHttpErrorNotAssociatedWithResource_dontThrowException() throws ApiException {
-    testSupport.failOnResource(TOKEN_REVIEW, "tr2", HTTP_BAD_REQUEST);
-    V1TokenReview tokenReview = new V1TokenReview().metadata(new V1ObjectMeta().name("tr"));
-
-    new CallBuilder().createTokenReview(tokenReview);
-  }
-
-  @Test
-  void whenHttpErrorAssociatedWithResource_throwException() {
-    testSupport.failOnResource(TOKEN_REVIEW, "tr", HTTP_BAD_REQUEST);
-    V1TokenReview tokenReview = new V1TokenReview().metadata(new V1ObjectMeta().name("tr"));
-
-    assertThrows(ApiException.class, () -> new CallBuilder().createTokenReview(tokenReview));
-  }
-
-  @Test
   void afterCreateSubjectAccessReview_subjectAccessReviewExists() throws ApiException {
     V1SubjectAccessReview sar = new V1SubjectAccessReview().metadata(new V1ObjectMeta().name("rr"));
 
@@ -378,7 +364,7 @@ class KubernetesTestSupportTest {
     TestResponseStep<Object> responseStep = new TestResponseStep<>();
     testSupport.runSteps(new CallBuilder().deletePodAsync("pod1", "ns2", "", null, responseStep));
 
-    testSupport.verifyCompletionThrowable(FailureStatusSourceException.class);
+    testSupport.verifyCompletionThrowable(UnrecoverableCallException.class);
     assertThat(responseStep.callResponse.getStatusCode(), equalTo(HTTP_BAD_REQUEST));
   }
 
@@ -527,7 +513,7 @@ class KubernetesTestSupportTest {
     TestResponseStep<V1ConfigMap> endStep = new TestResponseStep<>();
     testSupport.runSteps(new CallBuilder().readConfigMapAsync("", "", "", endStep));
 
-    assertThat(endStep.callResponse.getStatusCode(), equalTo(CallBuilder.NOT_FOUND));
+    assertThat(endStep.callResponse.getStatusCode(), equalTo(HTTP_NOT_FOUND));
     assertThat(endStep.callResponse.getE(), notNullValue());
   }
 
@@ -557,6 +543,31 @@ class KubernetesTestSupportTest {
     assertThat(getResourcesInNamespace("ns2"), hasSize(3));
   }
 
+  @Test
+  void canPerformActionAfterCallIsCompleted() {
+    testSupport.setAddCreationTimestamp(true);
+    definePodResource();
+    final OffsetDateTime initialCreationTime = getPodCreationTime();
+
+    SystemClockTestSupport.increment();
+    testSupport.doAfterCall(POD, "deletePod", this::definePodResource);
+    testSupport.runSteps(new CallBuilder().deletePodAsync("pod", "ns", "uid", null, new DefaultResponseStep<>()));
+
+    assertTrue(getPodCreationTime().isAfter(initialCreationTime));
+  }
+
+  private void definePodResource() {
+    V1Pod pod = createPod("ns", "pod");
+    testSupport.defineResources(pod);
+  }
+
+  private OffsetDateTime getPodCreationTime() {
+    return Optional.ofNullable(testSupport.<V1Pod>getResources(POD).get(0))
+          .map(V1Pod::getMetadata)
+          .map(V1ObjectMeta::getCreationTimestamp)
+          .orElse(OffsetDateTime.MIN);
+  }
+
   private List<KubernetesObject> getResourcesInNamespace(String name) {
     List<KubernetesObject> result = new ArrayList<>();
     result.addAll(getResourcesInNamespace(DOMAIN, name));
@@ -578,6 +589,7 @@ class KubernetesTestSupportTest {
   static class TestResponseStep<T> extends DefaultResponseStep<T> {
 
     private CallResponse<T> callResponse;
+    private static final Semaphore responseAvailableSignal = new Semaphore(0);
 
     TestResponseStep() {
       super(null);
@@ -586,13 +598,27 @@ class KubernetesTestSupportTest {
     @Override
     public NextAction onFailure(Packet packet, CallResponse<T> callResponse) {
       this.callResponse = callResponse;
+      responseAvailableSignal.release();
       return super.onFailure(packet, callResponse);
     }
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<T> callResponse) {
       this.callResponse = callResponse;
+      responseAvailableSignal.release();
       return super.onSuccess(packet, callResponse);
+    }
+
+    /**
+     * Wait for and then return call response. This method is needed for tests async CallBuilder
+     * methods because the suspending of the requesting thread otherwise allows test code to move
+     * on before the response is processed.
+     * @return Call response
+     * @throws InterruptedException Interrupted waiting for response available signal
+     */
+    public CallResponse<T> waitForAndGetCallResponse() throws InterruptedException {
+      responseAvailableSignal.acquire();
+      return callResponse;
     }
   }
 }

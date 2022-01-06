@@ -13,6 +13,7 @@ import org.awaitility.core.ConditionFactory;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.awaitility.Awaitility.with;
 
@@ -40,26 +41,22 @@ public class Pod {
 
     for (Map.Entry<String, OffsetDateTime> entry : pods.entrySet()) {
       // check pods are replaced
-      retry
-          .conditionEvaluationListener(condition -> getLogger().info("Waiting for pod {0} to be "
-          + "restarted in namespace {1} "
-          + "(elapsed time {2}ms, remaining time {3}ms)",
+      testUntil(
+          retry,
+          podRestarted(entry.getKey(), pods, maxUnavailable, namespace),
+          getLogger(),
+          "pod {0} to be restarted in namespace {1}",
           entry.getKey(),
-          namespace,
-          condition.getElapsedTimeInMS(),
-          condition.getRemainingTimeInMS()))
-          .until(podRestarted(entry.getKey(), pods, maxUnavailable, namespace));
+          namespace);
 
       // check pods are in ready status
-      retry
-          .conditionEvaluationListener(condition -> getLogger().info("Waiting for pod {0} to be "
-          + "ready in namespace {1} "
-          + "(elapsed time {2}ms, remaining time {3}ms)",
+      testUntil(
+          retry,
+          podReady(namespace, null, entry.getKey()),
+          getLogger(),
+          "pod {0} to be ready in namespace {1}",
           entry.getKey(),
-          namespace,
-          condition.getElapsedTimeInMS(),
-          condition.getRemainingTimeInMS()))
-          .until(podReady(namespace, null, entry.getKey()));
+          namespace);
     }
 
     return true;
@@ -123,6 +120,20 @@ public class Pod {
   }
 
   /**
+   * Check a given pod is in ready status.
+   *
+   * @param namespace name of the namespace in which to check the pod status
+   * @param labels map of labels as key value pairs
+   * @param podName name of the pod
+   * @return true if pod is ready otherwise false
+   */
+  public static Callable<Boolean> podReady(String namespace, String podName, Map<String, String> labels) {
+    return () -> {
+      return Kubernetes.isPodReady(namespace, labels, podName);
+    };
+  }
+
+  /**
    * Check a given pod is in initializing status.
    *
    * @param namespace name of the namespace in which to check the pod status
@@ -130,9 +141,9 @@ public class Pod {
    * @param podName name of the pod
    * @return true if pod is initializing otherwise false
    */
-  public static Callable<Boolean> podInitializing(String namespace, String domainUid, String podName) {
+  public static Callable<Boolean> podInitialized(String namespace, String domainUid, String podName) {
     return () -> {
-      return Kubernetes.isPodInitializing(namespace, domainUid, podName);
+      return Kubernetes.isPodInitialized(namespace, domainUid, podName);
     };
   }
 

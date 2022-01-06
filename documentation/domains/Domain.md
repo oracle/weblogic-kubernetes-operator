@@ -22,7 +22,7 @@ The specification of the operation of the WebLogic domain. Required.
 | `configOverrideSecrets` | Array of string | Deprecated. Use `configuration.secrets` instead. Ignored if `configuration.secrets` is specified. A list of names of the Secrets for optional WebLogic configuration overrides. |
 | `configuration` | [Configuration](#configuration) | Models and overrides affecting the WebLogic domain configuration. |
 | `dataHome` | string | An optional directory in a server's container for data storage of default and custom file stores. If `dataHome` is not specified or its value is either not set or empty, then the data storage directories are determined from the WebLogic domain configuration. |
-| `domainHome` | string | The directory containing the WebLogic domain configuration inside the container. Defaults to /shared/domains/domains/<domainUID> if `domainHomeSourceType` is PersistentVolume. Defaults to /u01/oracle/user_projects/domains/ if `domainHomeSourceType` is Image. Defaults to /u01/domains/<domainUID> if `domainHomeSourceType` is FromModel. |
+| `domainHome` | string | The directory containing the WebLogic domain configuration inside the container. Defaults to /shared/domains/<domainUID> if `domainHomeSourceType` is PersistentVolume. Defaults to /u01/oracle/user_projects/domains/ if `domainHomeSourceType` is Image. Defaults to /u01/domains/<domainUID> if `domainHomeSourceType` is FromModel. |
 | `domainHomeInImage` | Boolean | Deprecated. Use `domainHomeSourceType` instead. Ignored if `domainHomeSourceType` is specified. True indicates that the domain home file system is present in the container image specified by the image field. False indicates that the domain home file system is located on a persistent volume. Defaults to unset. |
 | `domainHomeSourceType` | string | Domain home file system source type: Legal values: Image, PersistentVolume, FromModel. Image indicates that the domain home file system is present in the container image specified by the `image` field. PersistentVolume indicates that the domain home file system is located on a persistent volume. FromModel indicates that the domain home file system will be created and managed by the operator based on a WDT domain model. If this field is specified, it overrides the value of `domainHomeInImage`. If both fields are unspecified, then `domainHomeSourceType` defaults to Image. |
 | `domainUID` | string | Domain unique identifier. It is recommended that this value be unique to assist in future work to identify related domains in active-passive scenarios across data centers; however, it is only required that this value be unique within the namespace, similarly to the names of Kubernetes resources. This value is distinct and need not match the domain name from the WebLogic domain configuration. Defaults to the value of `metadata.name`. |
@@ -55,8 +55,8 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | --- | --- | --- |
 | `clusters` | Array of [Cluster Status](#cluster-status) | Status of WebLogic clusters in this domain. |
 | `conditions` | Array of [Domain Condition](#domain-condition) | Current service state of the domain. |
+| `failedIntrospectionUid` | string | Unique ID of the last failed introspection job. |
 | `introspectJobFailureCount` | number | Non-zero if the introspector job fails for any reason. You can configure an introspector job retry limit for jobs that log script failures using the Operator tuning parameter 'domainPresenceFailureRetryMaxCount' (default 5). You cannot configure a limit for other types of failures, such as a Domain resource reference to an unknown secret name; in which case, the retries are unlimited. |
-| `lastIntrospectJobProcessedUid` | string | Unique id of the last introspector job that was processed for this domain. |
 | `message` | string | A human readable message indicating details about why the domain is in this condition. |
 | `reason` | string | A brief CamelCase message indicating details about why the domain is in this state. |
 | `replicas` | number | The number of running cluster member Managed Servers in the WebLogic cluster if there is exactly one cluster defined in the domain configuration and where the `replicas` field is set at the `spec` level rather than for the specific cluster under `clusters`. This field is provided to support use of Kubernetes scaling for this limited use case. |
@@ -67,7 +67,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `adminChannelPortForwardingEnabled` | Boolean | When this flag is enabled, the operator updates the domain's WebLogic configuration for its Administration Server to have an admin protocol NetworkAccessPoint with a 'localhost' address for each existing admin protocol capable port. This allows external Administration Console and WLST 'T3' access when using the 'kubectl port-forward' pattern. Defaults to false. |
+| `adminChannelPortForwardingEnabled` | Boolean | When this flag is enabled, the operator updates the domain's WebLogic configuration for its Administration Server to have an admin protocol NetworkAccessPoint with a 'localhost' address for each existing admin protocol capable port. This allows external Administration Console and WLST 'T3' access when using the 'kubectl port-forward' pattern. Defaults to true. |
 | `adminService` | [Admin Service](#admin-service) | Customization affecting the generation of a NodePort Service for the Administration Server used to expose specific channels or network access points outside the Kubernetes cluster. See also `domains.spec.adminServer.serverService` for configuration affecting the generation of the ClusterIP Service. |
 | `restartVersion` | string | Changes to this field cause the operator to restart WebLogic Server instances. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#restarting-servers. |
 | `serverPod` | [Server Pod](#server-pod) | Customization affecting the generation of Pods for WebLogic Server instances. |
@@ -80,7 +80,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | Name | Type | Description |
 | --- | --- | --- |
 | `medium` | string | The emptyDir volume medium. This is an advanced setting that rarely needs to be configured. Defaults to unset, which means the volume's files are stored on the local node's file system for the life of the pod. |
-| `mountPath` | string | The mount path. The files in the path are populated from the same named directory in the images supplied by each container in `serverPod.auxiliaryImages`. Each volume must be configured with a different mount path. Required. |
+| `mountPath` | string | The mount path. The files in the path are populated from the same named directory in the images supplied by each container in `serverPod.auxiliaryImages`. Each volume must be configured with a different mount path. Defaults to '/auxiliary'. |
 | `name` | string | The name of the volume. Required. |
 | `sizeLimit` | string | The emptyDir volume size limit. Defaults to unset. |
 
@@ -191,7 +191,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `message` | string | Human-readable message indicating details about last transition. |
 | `reason` | string | Unique, one-word, CamelCase reason for the condition's last transition. |
 | `status` | string | The status of the condition. Can be True, False, Unknown. |
-| `type` | string | The type of the condition. Valid types are Progressing, Available, Failed, and ConfigChangesPendingRestart. |
+| `type` | string | The type of the condition. Valid types are Completed, Available, Failed, and ConfigChangesPendingRestart. |
 
 ### Server Status
 
@@ -225,7 +225,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | Name | Type | Description |
 | --- | --- | --- |
 | `enabled` | Boolean | True, if this domain is deployed under an Istio service mesh. Defaults to true when the `istio` field is specified. |
-| `localhostBindingsEnabled` | Boolean | This setting was added in operator version 3.3.3, defaults to the Helm chart configuration value `istioLocalhostBindingsEnabled` which in turn defaults to `true`. When `true`, the operator creates a WebLogic network access point with a `localhost` binding for each existing channel and protocol.  Use `true` for Istio versions prior to 1.10 and set to `false` for version 1.10 and later. |
+| `localhostBindingsEnabled` | Boolean | This setting was added in operator version 3.3.3, defaults to the `istioLocalhostBindingsEnabled` Helm install value which in turn defaults to `true`, and is ignored in version 4.0 and later. In version 3.x, when `true`, the operator creates a WebLogic network access point with a `localhost` binding for each existing channel and protocol.  In version 3.x, use `true` for Istio versions prior to 1.10 and set to `false` for version 1.10 and later.  Version 4.0 and later requires Istio 1.10 and later, will not create localhost bindings, and ignores this attribute. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-operators/using-helm/#istiolocalhostbindingsenabled |
 | `readinessPort` | number | The operator will create WebLogic network access points with this port on each WebLogic Server. The readiness probe on each pod will use these network access points to verify that the pod is ready for application traffic. Defaults to 8888. |
 | `replicationChannelPort` | number | The operator will create a `T3` protocol WebLogic network access point on each WebLogic Server that is part of a cluster with this port to handle EJB and servlet session state replication traffic between servers. This setting is ignored for clusters where the WebLogic cluster configuration already defines a `replication-channel` attribute. Defaults to 4564. |
 
@@ -251,7 +251,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `command` | string | The command for this init container. Defaults to `cp -R $AUXILIARY_IMAGE_PATH/* $TARGET_MOUNT_PATH`. This is an advanced setting for customizing the container command for copying files from the container image to the auxiliary image emptyDir volume. Use the `$AUXILIARY_IMAGE_PATH` environment variable to reference the value configured in `spec.auxiliaryImageVolumes.mountPath`, which defaults to "/auxiliary". Use '$TARGET_MOUNT_PATH' to refer to the temporary directory created by the operator that resolves to the auxiliary image's internal emptyDir volume. |
+| `command` | string | The command for this init container. Defaults to `cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH`. This is an advanced setting for customizing the container command for copying files from the container image to the auxiliary image emptyDir volume. Use the `$AUXILIARY_IMAGE_PATH` environment variable to reference the value configured in `spec.auxiliaryImageVolumes.mountPath`, which defaults to "/auxiliary". Use '$AUXILIARY_IMAGE_TARGET_PATH' to refer to the temporary directory created by the operator that resolves to the auxiliary image's internal emptyDir volume. |
 | `image` | string | The name of an image with files located in the directory specified by `spec.auxiliaryImageVolumes.mountPath` of the auxiliary image volume referenced by `serverPod.auxiliaryImages.volume`, which defaults to "/auxiliary". |
 | `imagePullPolicy` | string | The image pull policy for the container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise. |
 | `volume` | string | The name of an auxiliary image volume defined in `spec.auxiliaryImageVolumes`. Required. |

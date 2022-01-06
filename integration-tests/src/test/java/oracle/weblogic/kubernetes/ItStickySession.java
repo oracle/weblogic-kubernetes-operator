@@ -35,46 +35,37 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecCommand;
 import oracle.weblogic.kubernetes.utils.ExecResult;
-import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
-import static java.util.concurrent.TimeUnit.MINUTES;
-import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.LOGS_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
-import static oracle.weblogic.kubernetes.TestConstants.VOYAGER_CHART_NAME;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallTraefik;
-import static oracle.weblogic.kubernetes.actions.TestActions.uninstallVoyager;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyTraefik;
-import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyVoyager;
-import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installVoyagerIngressAndVerify;
-import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.isVoyagerPodReady;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.awaitility.Awaitility.with;
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -84,12 +75,11 @@ import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * This test is used for testing the affinity between a web client and a WebLogic server
- * for the duration of a HTTP session using Voyager and Traefik ingress controllers
+ * for the duration of a HTTP session using Traefik ingress controllers
  * as well as cluster service.
  */
-@DisplayName("Test sticky sessions management with Voyager, Traefik and ClusterService")
+@DisplayName("Test sticky sessions management with Traefik and ClusterService")
 @IntegrationTest
-@Tag("okdenv")
 class ItStickySession {
 
   // constants for creating domain image using model in image
@@ -111,57 +101,37 @@ class ItStickySession {
   private static int replicaCount = 2;
   private static String opNamespace = null;
   private static String domainNamespace = null;
-  private static String voyagerNamespace = null;
   private static String traefikNamespace = null;
-  private static ConditionFactory withStandardRetryPolicy = null;
 
-  // constants for Voyager and Traefik
-  private static String cloudProvider = "baremetal";
-  private static boolean enableValidatingWebhook = false;
-  private static HelmParams voyagerHelmParams = null;
+  // constants for Traefik
   private static HelmParams traefikHelmParams = null;
   private static LoggingFacade logger = null;
 
   /**
-   * Install Voyager, Traefik and operator, create a custom image using model in image
+   * Install Traefik and operator, create a custom image using model in image
    * with model files and create a one cluster domain.
    *
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
    *                   JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void init(@Namespaces(4) List<String> namespaces) {
+  public static void init(@Namespaces(3) List<String> namespaces) {
     logger = getLogger();
-    // create standard, reusable retry/backoff policy
-    withStandardRetryPolicy = with().pollDelay(2, SECONDS)
-        .and().with().pollInterval(10, SECONDS)
-        .atMost(5, MINUTES).await();
-
-    // get a unique Voyager namespace
-    logger.info("Get a unique namespace for Voyager");
-    assertNotNull(namespaces.get(0), "Namespace list is null");
-    voyagerNamespace = namespaces.get(0);
 
     // get a unique Traefik namespace
     logger.info("Get a unique namespace for Traefik");
-    assertNotNull(namespaces.get(1), "Namespace list is null");
-    traefikNamespace = namespaces.get(1);
+    assertNotNull(namespaces.get(0), "Namespace list is null");
+    traefikNamespace = namespaces.get(0);
 
     // get a unique operator namespace
     logger.info("Get a unique namespace for operator");
-    assertNotNull(namespaces.get(2), "Namespace list is null");
-    opNamespace = namespaces.get(2);
+    assertNotNull(namespaces.get(1), "Namespace list is null");
+    opNamespace = namespaces.get(1);
 
     // get a unique domain namespace
     logger.info("Get a unique namespace for WebLogic domain");
-    assertNotNull(namespaces.get(3), "Namespace list is null");
-    domainNamespace = namespaces.get(3);
-
-    // install and verify Voyager
-    if (!OKD) {
-      voyagerHelmParams =
-          installAndVerifyVoyager(voyagerNamespace, cloudProvider, enableValidatingWebhook);
-    }
+    assertNotNull(namespaces.get(2), "Namespace list is null");
+    domainNamespace = namespaces.get(2);
 
     // install and verify Traefik
     if (!OKD) {
@@ -189,14 +159,6 @@ class ItStickySession {
 
   @AfterAll
   void tearDown() {
-    // uninstall Voyager
-    if (voyagerHelmParams != null) {
-      assertThat(uninstallVoyager(voyagerHelmParams))
-          .as("Test uninstallVoyager returns true")
-          .withFailMessage("uninstallVoyager() did not return true")
-          .isTrue();
-    }
-
     // uninstall Traefik
     if (traefikHelmParams != null) {
       assertThat(uninstallTraefik(traefikHelmParams))
@@ -204,63 +166,6 @@ class ItStickySession {
           .withFailMessage("uninstallTraefik() did not return true")
           .isTrue();
     }
-  }
-
-  /**
-   * Verify that using Voyager ingress controller, two HTTP requests sent to WebLogic
-   * are directed to same WebLogic server.
-   * The test uses a web application deployed on WebLogic cluster to track HTTP session.
-   * server-affinity is achieved by Voyager ingress controller based on HTTP session information.
-   */
-  @Test
-  @DisplayName("Create a Voyager ingress resource and verify that two HTTP connections are sticky to the same server")
-  @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
-  void testSameSessionStickinessUsingVoyager() {
-    final String ingressName = domainUid + "-ingress-host-routing";
-    final String ingressServiceName = VOYAGER_CHART_NAME + "-" + ingressName;
-    final String channelName = "tcp-80";
-    final int maxRetry = 60;
-
-    // create Voyager ingress resource
-    Map<String, Integer> clusterNameMsPortMap = new HashMap<>();
-    clusterNameMsPortMap.put(clusterName, managedServerPort);
-
-    List<String>  hostNames = null;
-
-    for (int i = 0; i < maxRetry; i++) {
-      hostNames =
-          installVoyagerIngressAndVerify(domainUid, domainNamespace, ingressName, clusterNameMsPortMap);
-
-      if (hostNames != null && !hostNames.isEmpty()) {
-        break;
-      }
-
-      try {
-        // sometimes the ingress may not be ready even the condition check is ready, sleep a little bit
-        Thread.sleep(1000);
-      } catch (InterruptedException ignore) {
-        // ignore
-      }
-    }
-
-    withStandardRetryPolicy
-        .conditionEvaluationListener(
-            condition -> logger.info("Waiting for pod {0} to be created in namespace {1} "
-                    + "(elapsed time {2}ms, remaining time {3}ms)",
-                ingressServiceName,
-                domainNamespace,
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> isVoyagerPodReady(domainNamespace, ingressServiceName),
-            String.format("podExists failed with ApiException for pod %s in namespace %s",
-                ingressServiceName, domainNamespace)));
-
-    // get Voyager ingress service Nodeport
-    int ingressServiceNodePort =
-        getIngressServiceNodePort(domainNamespace, ingressServiceName, channelName);
-
-    // verify that two HTTP connections are sticky to the same server
-    sendHttpRequestsToTestSessionStickinessAndVerify(hostNames.get(0), ingressServiceNodePort);
   }
 
   /**
@@ -311,22 +216,16 @@ class ItStickySession {
     // create route for cluster service
     String ingressHost = createRouteForOKD(serviceName, domainNamespace);
 
-    // Since the app seems to take a bit longer to be available, 
+    // Since the app seems to take a bit longer to be available,
     // checking if the app is running by executing the curl command
-    String curlString =
-        buildCurlCommand(ingressHost, 0, SESSMIGR_APP_WAR_NAME + "/?getCounter", " -b ");
+    String curlString
+        = buildCurlCommand(ingressHost, 0, SESSMIGR_APP_WAR_NAME + "/?getCounter", " -b ");
     logger.info("Command to set HTTP request or get HTTP response {0} ", curlString);
-    withStandardRetryPolicy 
-        .conditionEvaluationListener(
-            condition -> logger.info("Checking if app is available "
-                + "(elapsed time {0} ms, remaining time {1} ms)",
-                condition.getElapsedTimeInMS(),
-                condition.getRemainingTimeInMS()))
-        .until(assertDoesNotThrow(() -> {
-          return () -> {
-            return exec(new String(curlString), true).stdout().contains("managed-server");
-          };
-        }));
+    testUntil(
+        assertDoesNotThrow(()
+            -> () -> exec(curlString, true).stdout().contains("managed-server")),
+        logger,
+        "Checking if app is available");
     // verify that two HTTP connections are sticky to the same server
     sendHttpRequestsToTestSessionStickinessAndVerify(ingressHost, 0);
   }
@@ -563,7 +462,7 @@ class ItStickySession {
       final String httpHeaderFile = LOGS_DIR + "/headers";
       logger.info("Build a curl command with hostname {0} and port {1}", hostName, servicePort);
 
-      String hostAndPort = (OKD) ? hostName : K8S_NODEPORT_HOST + ":" + servicePort;
+      String hostAndPort = getHostAndPort(hostName, servicePort);
 
       curlCmd.append(" --noproxy '*' -H 'host: ")
           .append(hostName)

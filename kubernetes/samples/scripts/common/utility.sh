@@ -949,3 +949,21 @@ function getPodName(){
 
  echo "${pname}"
 }
+
+# Checks if a pod is available in a given namespace
+function detectPod(){
+ ns=$1
+ startSecs=$SECONDS
+ maxWaitSecs=10
+ while [ -z "`kubectl get pod -n ${ns} -o jsonpath={.items[0].metadata.name}`" ]; do
+   if [ $((SECONDS - startSecs)) -lt $maxWaitSecs ]; then
+     echo "Pod not found after $((SECONDS - startSecs)) seconds, retrying ..."
+     sleep 2
+   else
+     echo "[Error] Could not find Pod after $((SECONDS - startSecs)) seconds"
+     exit 1
+   fi
+ done
+ retVal=`kubectl get pod -n ${ns} -o jsonpath={.items[0].metadata.name}`
+ echo "$retVal"
+}

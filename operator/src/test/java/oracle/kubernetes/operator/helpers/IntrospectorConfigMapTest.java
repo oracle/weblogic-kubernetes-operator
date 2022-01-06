@@ -3,9 +3,6 @@
 
 package oracle.kubernetes.operator.helpers;
 
-import java.time.Instant;
-import java.time.OffsetDateTime;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -22,6 +19,7 @@ import io.kubernetes.client.openapi.models.V1ConfigMap;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
 import oracle.kubernetes.operator.DomainSourceType;
+import oracle.kubernetes.operator.EventTestUtils;
 import oracle.kubernetes.operator.IntrospectorConfigMapConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.rest.ScanCacheStub;
@@ -36,8 +34,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static java.lang.System.lineSeparator;
+import static oracle.kubernetes.operator.DomainConditionMatcher.hasCondition;
+import static oracle.kubernetes.operator.DomainFailureReason.DomainInvalid;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.NS;
 import static oracle.kubernetes.operator.DomainProcessorTestSetup.UID;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_INVALID_ERROR;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.DOMAINZIP_HASH;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.DOMAIN_INPUTS_HASH;
 import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.DOMAIN_RESTART_VERSION;
@@ -48,8 +49,9 @@ import static oracle.kubernetes.operator.IntrospectorConfigMapConstants.getIntro
 import static oracle.kubernetes.operator.LabelConstants.CREATEDBYOPERATOR_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
-import static oracle.kubernetes.operator.helpers.DomainStatusMatcher.hasStatus;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory.forDomain;
+import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
@@ -61,6 +63,7 @@ import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.notNullValue;
 import static org.hamcrest.Matchers.nullValue;
+import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
 class IntrospectorConfigMapTest {
@@ -94,8 +97,6 @@ class IntrospectorConfigMapTest {
 
     testSupport.defineResources(domain);
     testSupport.addDomainPresenceInfo(info);
-    testSupport.addToPacket(JobHelper.START_TIME,
-            OffsetDateTime.ofInstant(Instant.now().minusMillis(10L), ZoneId.systemDefault()));
   }
 
   @AfterEach
@@ -181,7 +182,21 @@ class IntrospectorConfigMapTest {
 
     testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(terminalStep));
 
-    assertThat(getDomain(), hasStatus("BadTopology", perLine("first problem", "second problem")));
+    assertThat(getDomain(), hasCondition(Failed).withReason(DomainInvalid)
+          .withMessageContaining(perLine("first problem", "second problem")));
+  }
+
+  @Test
+  void whenTopologyNotValid_generateFailedEvent() {
+    introspectResult.defineFile(TOPOLOGY_YAML,
+        "domainValid: false", "validationErrors: [first problem, second problem]").addToPacket();
+
+    testSupport.runSteps(ConfigMapHelper.createIntrospectorConfigMapStep(terminalStep));
+
+    assertThat(
+        "Expected Event " + DOMAIN_FAILED + " expected with message not found",
+        EventTestUtils.getExpectedEventMessage(testSupport, DOMAIN_FAILED),
+        stringContainsInOrder("Domain", UID, "failed due to", DOMAIN_INVALID_ERROR));
   }
 
   @Nonnull

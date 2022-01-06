@@ -6,9 +6,11 @@ package oracle.kubernetes.operator.work;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import javax.annotation.Nonnull;
 
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
 
@@ -46,6 +48,16 @@ public abstract class Step {
       addLink(stepGroups[start], stepGroups[i]);
     }
     return stepGroups[start];
+  }
+
+  /**
+   * Chain the specified step groups into a single chain of steps.
+   *
+   * @param stepGroups multiple groups of steps
+   * @return the first step of the resultant chain
+   */
+  public static Step chain(List<Step> stepGroups) {
+    return chain(stepGroups.toArray(new Step[0]));
   }
 
   private static int getFirstNonNullIndex(Step[] stepGroups) {
@@ -101,15 +113,24 @@ public abstract class Step {
    * The name of the step. This will default to the class name minus "Step".
    * @return The name of the step
    */
-  public String getName() {
+  public String getResourceName() {
+    return getBaseName() + getNameSuffix();
+  }
+
+  @Nonnull
+  private String getBaseName() {
     String name = getClass().getName();
     int idx = name.lastIndexOf('.');
     if (idx >= 0) {
       name = name.substring(idx + 1);
     }
     name = name.endsWith("Step") ? name.substring(0, name.length() - 4) : name;
-    String detail = getDetail();
-    return detail != null ? name + "(" + detail + ")" : name;
+    return name;
+  }
+
+  @Nonnull
+  private String getNameSuffix() {
+    return Optional.ofNullable(getDetail()).map(detail -> " (" + detail + ")").orElse("");
   }
 
   protected String getDetail() {
@@ -119,9 +140,9 @@ public abstract class Step {
   @Override
   public String toString() {
     if (next == null) {
-      return getName();
+      return getResourceName();
     }
-    return getName() + "[" + next.toString() + "]";
+    return getResourceName() + "[" + next.toString() + "]";
   }
 
   /**
@@ -191,6 +212,7 @@ public abstract class Step {
    * @param unit Delay time unit
    * @return The next action
    */
+  @SuppressWarnings("SameParameterValue")
   protected NextAction doRetry(Packet packet, long delay, TimeUnit unit) {
     NextAction na = new NextAction();
     na.delay(this, packet, delay, unit);
@@ -285,7 +307,6 @@ public abstract class Step {
   }
 
   /** Multi-exception. */
-  @SuppressWarnings("serial")
   public static class MultiThrowable extends RuntimeException {
     private final List<Throwable> throwables;
 

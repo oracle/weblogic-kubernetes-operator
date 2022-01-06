@@ -16,7 +16,6 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
-import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.work.NextAction;
@@ -65,7 +64,8 @@ public class ServerDownIteratorStep extends Step {
   private StepAndPacket createServerDownWaiters(Packet packet, DomainPresenceInfo.ServerShutdownInfo ssi) {
     DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
     return new StepAndPacket(Optional.ofNullable(packet.getSpi(PodAwaiterStepFactory.class))
-            .map(p -> p.waitForDelete(info.getServerPod(ssi.getServerName()), null)).orElse(null),
+            .map(p -> p.waitForDelete(info.getServerPod(ssi.getServerName()),
+                    createDomainPresenceInfoUpdateStep(ssi.getServerName(), null))).orElse(null),
             createPacketForServer(packet, ssi));
   }
 
@@ -101,12 +101,7 @@ public class ServerDownIteratorStep extends Step {
   }
 
   private Packet createPacketForServer(Packet packet, DomainPresenceInfo.ServerShutdownInfo ssi) {
-    Packet p = packet.copy();
-    p.put(ProcessingConstants.CLUSTER_NAME, ssi.getClusterName());
-    p.put(ProcessingConstants.SERVER_NAME, ssi.getName());
-    p.put(ProcessingConstants.SERVER_SCAN, ssi.serverConfig);
-    p.put(ProcessingConstants.ENVVARS, ssi.getEnvironment());
-    return p;
+    return ssi.createPacket(packet);
   }
 
   private Map<String, ShutdownClusteredServersStepFactory> getShutdownClusteredServersStepFactories(
@@ -193,4 +188,9 @@ public class ServerDownIteratorStep extends Step {
       }
     }
   }
+
+  private Step createDomainPresenceInfoUpdateStep(String serverName, Step next) {
+    return new DomainPresenceInfoUpdateStep(serverName, next);
+  }
+
 }

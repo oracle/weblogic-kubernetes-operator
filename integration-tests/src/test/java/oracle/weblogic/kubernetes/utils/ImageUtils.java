@@ -11,6 +11,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 
 import com.google.gson.JsonObject;
 import io.kubernetes.client.openapi.ApiException;
@@ -34,6 +35,7 @@ import static oracle.weblogic.kubernetes.TestConstants.OCR_PASSWORD;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_USERNAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.REPO_DUMMY_VALUE;
 import static oracle.weblogic.kubernetes.TestConstants.WDT_IMAGE_DOMAINHOME_BASE_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
@@ -350,9 +352,23 @@ public class ImageUtils {
     }
 
     // Set additional environment variables for WIT
+
+    // Generates a "unique" name by choosing a random name from
+    // 26^4 possible combinations.
+    Random random = new Random(System.currentTimeMillis());
+    char[] cacheSfx = new char[4];
+    for (int i = 0; i < cacheSfx.length; i++) {
+      cacheSfx[i] = (char) (random.nextInt(25) + (int) 'a');
+    }
+    String cacheDir = WIT_BUILD_DIR + "/cache-" + new String(cacheSfx);
+    logger.info("WLSIMG_CACHEDIR is set to {0}", cacheDir);
+    logger.info("WLSIMG_BLDDIR is set to {0}", WIT_BUILD_DIR);
+
     checkDirectory(WIT_BUILD_DIR);
+    checkDirectory(cacheDir);
     Map<String, String> env = new HashMap<>();
     env.put("WLSIMG_BLDDIR", WIT_BUILD_DIR);
+    env.put("WLSIMG_CACHEDIR", cacheDir);
 
     // For k8s 1.16 support and as of May 6, 2020, we presently need a different JDK for these
     // tests and for image tool. This is expected to no longer be necessary once JDK 11.0.8 or
@@ -362,6 +378,7 @@ public class ImageUtils {
       env.put("JAVA_HOME", witJavaHome);
     }
 
+    String witTarget = ((OKD) ? "OpenShift" : "Default");
     // build an image using WebLogic Image Tool
     logger.info("Creating image {0} using model directory {1}", image, MODEL_DIR);
     boolean result = false;
@@ -380,6 +397,7 @@ public class ImageUtils {
               .wdtModelOnly(modelType)
               .wdtOperation("CREATE")
               .wdtVersion(WDT_VERSION)
+              .target(witTarget)
               .env(env)
               .redirect(true));
     } else {
@@ -394,6 +412,7 @@ public class ImageUtils {
           .modelArchiveFiles(archiveList)
           .wdtModelOnly(modelType)
           .wdtVersion(WDT_VERSION)
+          .target(witTarget)
           .env(env)
           .redirect(true);
 
@@ -407,6 +426,11 @@ public class ImageUtils {
 
         witParams.additionalBuildFiles(additionalBuildFilesBuff.toString().trim());
       }
+
+      if (OKD) {
+        witParams.target("OpenShift");
+      }
+
       result = createImage(witParams);
     }
 

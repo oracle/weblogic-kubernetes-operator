@@ -3,7 +3,6 @@
 
 package oracle.kubernetes.operator.steps;
 
-import java.net.URI;
 import java.net.http.HttpRequest;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -13,11 +12,11 @@ import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.LogRecord;
+import javax.annotation.Nonnull;
 
 import com.meterware.httpunit.Base64;
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
-import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceSpec;
 import oracle.kubernetes.operator.DomainProcessorTestSetup;
@@ -48,6 +47,8 @@ import static oracle.kubernetes.operator.ProcessingConstants.REMAINING_SERVERS_H
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
+import static oracle.kubernetes.operator.http.HttpAsyncTestSupport.OK_RESPONSE;
+import static oracle.kubernetes.operator.http.HttpAsyncTestSupport.createExpectedRequest;
 import static oracle.kubernetes.operator.logging.MessageKeys.WLS_HEALTH_READ_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.WLS_HEALTH_READ_FAILED_NO_HTTPCLIENT;
 import static oracle.kubernetes.operator.steps.ReadHealthStep.OVERALL_HEALTH_FOR_SERVER_OVERLOADED;
@@ -59,17 +60,6 @@ import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
 class ReadHealthStepTest {
-  static final String OK_RESPONSE =
-      "{\n"
-          + "    \"overallHealthState\": {\n"
-          + "        \"state\": \"ok\",\n"
-          + "        \"subsystemName\": null,\n"
-          + "        \"partitionName\": null,\n"
-          + "        \"symptoms\": []\n"
-          + "    },\n"
-          + "    \"state\": \"RUNNING\",\n"
-          + "    \"activationTime\": 1556759105378\n"
-          + "}";
   // The log messages to be checked during this test
   private static final String[] LOG_KEYS = {
       WLS_HEALTH_READ_FAILED, WLS_HEALTH_READ_FAILED_NO_HTTPCLIENT
@@ -86,6 +76,7 @@ class ReadHealthStepTest {
   private static final String DYNAMIC_MANAGED_SERVER2 = "dyn-managed-server2";
 
   private static final ClassCastException CLASSCAST_EXCEPTION = new ClassCastException("");
+  static final String MS1_URL = "http://127.0.0.1:7001";
   private final V1Service service = createStub(V1ServiceStub.class);
   private final V1Service headlessService = createStub(V1HeadlessServiceStub.class);
   private final V1Service headlessMSService = createStub(V1HeadlessMSServiceStub.class);
@@ -158,28 +149,17 @@ class ReadHealthStepTest {
   @Test
   void whenReadAdminServerHealth_decrementRemainingServers() {
     selectServer(ADMIN_NAME);
-    defineResponse(200, "", "http://127.0.0.1:3456");
+    defineResponse(200, OK_RESPONSE, "http://127.0.0.1:3456");
 
     Packet packet = testSupport.runSteps(readHealthStep);
 
     assertThat(getRemainingServersToRead(packet), equalTo(0));
   }
 
-  private void defineResponse(int status, String body) {
-    defineResponse(status, body, null);
-  }
-
-  private void defineResponse(int status, String body, String url) {
+  private void defineResponse(int status, String body, @Nonnull String url) {
     httpSupport.defineResponse(
-        createExpectedRequest(Objects.requireNonNullElse(url, "http://127.0.0.1:7001")),
+        createExpectedRequest(url),
         createStub(HttpResponseStub.class, status, body));
-  }
-
-  private HttpRequest createExpectedRequest(String url) {
-    return HttpRequest.newBuilder()
-        .uri(URI.create(url + "/management/weblogic/latest/serverRuntime/search"))
-        .POST(HttpRequest.BodyPublishers.noBody())
-        .build();
   }
 
 
@@ -187,7 +167,7 @@ class ReadHealthStepTest {
   void whenReadConfiguredManagedServerHealth_decrementRemainingServers() {
     selectServer(CONFIGURED_MANAGED_SERVER1);
     configureServiceWithClusterName(CONFIGURED_CLUSTER_NAME);
-    defineResponse(200, "");
+    defineResponse(200, OK_RESPONSE, MS1_URL);
 
     Packet packet = testSupport.runSteps(readHealthStep);
 
@@ -201,7 +181,7 @@ class ReadHealthStepTest {
   void whenReadDynamicManagedServerHealth_decrementRemainingServers() {
     selectServer(DYNAMIC_MANAGED_SERVER1);
     configureServiceWithClusterName(DYNAMIC_CLUSTER_NAME);
-    defineResponse(200, "");
+    defineResponse(200, OK_RESPONSE, MS1_URL);
 
     Packet packet = testSupport.runSteps(readHealthStep);
 
@@ -265,7 +245,6 @@ class ReadHealthStepTest {
     selectServer(MANAGED_SERVER1);
 
     defineResponse(500, "", "http://127.0.0.1:8001");
-    testSupport.defineResources(createPod(MANAGED_SERVER1));
 
     Packet packet = testSupport.runSteps(readHealthStep);
 
@@ -274,16 +253,11 @@ class ReadHealthStepTest {
     assertThat(getServerStateMap(packet).get(MANAGED_SERVER1), is("UNKNOWN"));
   }
 
-  private V1Pod createPod(String serverName) {
-    return new V1Pod().metadata(new V1ObjectMeta().name(serverName).namespace("namespace").uid("test-domain"));
-  }
-
   @Test
   void whenUnableToReadHealth_verifyNotAvailable() {
     selectServer(MANAGED_SERVER1);
 
-    defineResponse(404, "");
-    testSupport.defineResources(createPod(MANAGED_SERVER1));
+    defineResponse(404, "", MS1_URL);
 
     Packet packet = testSupport.runSteps(readHealthStep);
 
@@ -398,7 +372,7 @@ class ReadHealthStepTest {
   void whenAuthorizedToReadHealth_verifySecretSet() {
     selectServer(MANAGED_SERVER1);
 
-    defineResponse(200, "", "http://127.0.0.1:8001");
+    defineResponse(200, OK_RESPONSE, "http://127.0.0.1:8001");
 
     testSupport.runSteps(readHealthStep);
 
@@ -409,7 +383,7 @@ class ReadHealthStepTest {
   void whenAuthorizedToReadHealthAndThenWait_verifySecretCleared() {
     selectServer(MANAGED_SERVER1);
 
-    defineResponse(200, "", "http://127.0.0.1:8001");
+    defineResponse(200, OK_RESPONSE, "http://127.0.0.1:8001");
 
     testSupport.runSteps(readHealthStep);
 
@@ -432,7 +406,7 @@ class ReadHealthStepTest {
   }
 
   private void defineExpectedURLInResponse(String protocol, int port) {
-    defineResponse(200, "", protocol + "://dyn-managed-server2.Test:" + port);
+    defineResponse(200, OK_RESPONSE, protocol + "://dyn-managed-server2.Test:" + port);
   }
 
   private boolean readServerHealthSucceeded(Packet packet) {
