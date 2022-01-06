@@ -136,11 +136,6 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
         }
 
         //Install cert-manager for Database installation through DB operator
-        try {
-          Files.createDirectories(Paths.get(DOWNLOAD_DIR));
-        } catch (IOException ex) {
-          logger.info(ex.getLocalizedMessage());
-        }
         String certManager = CERT_MANAGER;
         CommandParams params = new CommandParams().defaults();
         params.command("kubectl apply -f " + certManager);
@@ -379,8 +374,9 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
     String certManager = CERT_MANAGER;
     CommandParams params = new CommandParams().defaults();
     params.command("kubectl delete -f " + certManager);
-    boolean response = Command.withParams(params).execute();
-    assertTrue(response, "Failed to uninstall cert manager");
+    if (!Command.withParams(params).execute()) {
+      logger.warning("Failed to uninstall cert manager");
+    }
 
     for (Handler handler : logger.getUnderlyingLogger().getHandlers()) {
       handler.close();

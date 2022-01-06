@@ -454,8 +454,8 @@ class ItDBOperator {
   }
 
   /**
-   * Uninstall DB operator.
-   * The cleanup framework does not uninstall storageclass and delete pv.
+   * Uninstall DB operator and delete DB instance.
+   * The cleanup framework does not uninstall DB operator, delete DB instance and storageclass.
    * Deletes Oracle database instance, operator and storageclass.
    */
   @AfterAll
