@@ -272,7 +272,6 @@
                 <skipITs>false</skipITs>
                 <includes-failsafe>
                     **/ItConfigDistributionStrategy,
-                    **/ItIntrospectVersion,
                     **/ItIstioDomainInPV,
                     **/ItIstioMiiDomain,
                     **/ItMiiAuxiliaryImage,
