@@ -168,7 +168,7 @@ class ItIstioDBOperator {
   /**
    * Start DB service and create RCU schema.
    * Assigns unique namespaces for operator and domains.
-   * Pull FMW image and Oracle DB image if running tests in Kind cluster. Installs operator.
+   * Installs operator.
    *
    * @param namespaces injected by JUnit
    */
@@ -227,11 +227,11 @@ class ItIstioDBOperator {
   }
 
   /**
-   * Create a basic FMW model in image domain using the database created by DB Operator. Verify Pod is ready and service
-   * exists for both admin server and managed servers. Verify EM console is accessible.
+   * Create a basic istio enabled FMW model in image domain using the database created by DB Operator.
+   * Verify Pod is ready and service exists for both admin server and managed servers.
    */
   @Test
-  @DisplayName("Create FMW Domain model in image with Istio")
+  @DisplayName("Create Istio enabled FMW Domain model in image domain")
   void  testIstioEnabledFmwModelInImageWithDbOperator() {
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
@@ -555,8 +555,8 @@ class ItIstioDBOperator {
   }
 
   /**
-   * Uninstall DB operator.
-   * The cleanup framework does not uninstall storageclass and delete pv.
+   * Uninstall DB operator and delete DB instance.
+   * The cleanup framework does not uninstall DB operator, delete DB instance and storageclass.
    * Deletes Oracle database instance, operator and storageclass.
    */
   @AfterAll

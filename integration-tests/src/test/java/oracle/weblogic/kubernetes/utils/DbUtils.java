@@ -847,6 +847,7 @@ public class DbUtils {
     PodUtils.checkPodDoesNotExist(dbName, null, namespace);
   }
 
+  // create hostpath-provisioner for persistent volume creation.
   private static void createHostPathProvisioner(String namespace, String hostPath) throws ApiException, IOException {
     Path hpYamlFileTemplate = Paths.get(RESOURCE_DIR, "storageclass", "hostpath-provisioner.yaml");
     Path hpYamlFile = Paths.get(DOWNLOAD_DIR, namespace, "hostpath-provisioner.yaml");
@@ -872,6 +873,7 @@ public class DbUtils {
     assertTrue(response, "Failed to delete hostpath provisioner");
   }
 
+  // create hostpath provisioner using api.
   private static void createHostPathProvisionerObjects(String namespace, String hostPath) throws ApiException {
 
     String name = "hostpath-provisioner";
