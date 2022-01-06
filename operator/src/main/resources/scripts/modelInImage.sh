@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # This script contains the all the function of model in image
@@ -86,7 +86,7 @@ fi
 #    $2  extension
 #
 
-function sort_files() {
+sort_files() {
   shopt -s nullglob
   root_dir=$1
   ext=$2
@@ -115,7 +115,7 @@ function sort_files() {
 # If there are any WDT archives changed set ARCHIVE_ZIP_CHANGED=1 (for online update)
 #
 
-function compareArtifactsMD5() {
+compareArtifactsMD5() {
 
   local has_md5=0
 
@@ -163,7 +163,7 @@ function compareArtifactsMD5() {
 # otherwise use the one in the introspect job config map
 #
 
-function get_opss_key_wallet() {
+get_opss_key_wallet() {
   if [ -f ${OPSS_KEY_B64EWALLET} ]; then
     echo ${OPSS_KEY_B64EWALLET}
   else
@@ -176,7 +176,7 @@ function get_opss_key_wallet() {
 #  Also setup the wdt parameters
 #
 
-function buildWDTParams_MD5() {
+buildWDTParams_MD5() {
   trace "Entering setupInventoryList"
 
   model_list=""
@@ -276,13 +276,13 @@ function buildWDTParams_MD5() {
   trace "Exiting setupInventoryList"
 }
 
-function changeTimeoutProperty() {
+changeTimeoutProperty() {
   if [ ! -z $2 ] ; then
     sed -i "s/\($1=\).*\$/\1$2/" ${WDT_ROOT}/lib/tool.properties || exitOrLoop
   fi
 }
 
-function overrideWDTTimeoutValues() {
+overrideWDTTimeoutValues() {
   start_trap
   trace "Entering overrideWDTTimeoutValues"
   # WDT defaults
@@ -312,7 +312,7 @@ function overrideWDTTimeoutValues() {
 # createWLDomain
 #
 
-function createWLDomain() {
+createWLDomain() {
   start_trap
   trace "Entering createWLDomain"
 
@@ -422,7 +422,7 @@ function createWLDomain() {
 # checkDirNotExistsOrEmpty
 #  Test directory exists or empty
 
-function checkDirNotExistsOrEmpty() {
+checkDirNotExistsOrEmpty() {
   trace "Entering checkDirNotExistsOrEmpty"
 
   if [ $# -eq 1 ] ; then
@@ -442,7 +442,7 @@ function checkDirNotExistsOrEmpty() {
 
 # limit the file extensions in the model directories
 
-function checkModelDirectoryExtensions() {
+checkModelDirectoryExtensions() {
   trace "Entering checkModelDirectoryExtensions"
 
   cd ${IMG_MODELS_HOME}
@@ -469,7 +469,7 @@ function checkModelDirectoryExtensions() {
 
 # Check for WDT version
 
-function checkWDTVersion() {
+checkWDTVersion() {
   trace "Entering checkWDTVersion"
   unzip -c ${WDT_ROOT}/lib/weblogic-deploy-core.jar META-INF/MANIFEST.MF > /tmp/wdtversion.txt || exitOrLoop
   WDT_VERSION="$(grep "Implementation-Version" /tmp/wdtversion.txt | cut -f2 -d' ' | tr -d '\r' )" || exitOrLoop
@@ -504,7 +504,7 @@ function checkWDTVersion() {
 # Note: the secrets are two levels indirections, so use find and filter out the ..data
 # output:  /tmp/secrets_and_env.md5
 
-function getSecretsAndEnvMD5() {
+getSecretsAndEnvMD5() {
   trace "Entering getSecretsAndEnvMD5"
 
   local secrets_and_env_text="/tmp/secrets.txt"
@@ -543,7 +543,7 @@ function getSecretsAndEnvMD5() {
 # createModelDomain call WDT to create the domain
 #
 
-function createModelDomain() {
+createModelDomain() {
 
   trace "Entering createModelDomain"
   createPrimordialDomain
@@ -577,21 +577,21 @@ function createModelDomain() {
 
 
 # Expands into the root directory the MII domain configuration, stored in one or more config maps
-function restoreDomainConfig() {
+restoreDomainConfig() {
   restoreEncodedTar "domainzip.secure" || return 1
 
   chmod u+x ${DOMAIN_HOME}/bin/*.sh ${DOMAIN_HOME}/*.sh  || return 1
 }
 
 # Expands into the root directory the MII primordial domain, stored in one or more config maps
-function restorePrimordialDomain() {
+restorePrimordialDomain() {
   restoreEncodedTar "primordial_domainzip.secure" || return 1
 }
 
 # Restores the specified directory, targz'ed and stored in one or more config maps after base 64 encoding
 # args:
 # $1 the name of the encoded file in the config map
-function restoreEncodedTar() {
+restoreEncodedTar() {
   cd / || return 1
   cat $(ls ${OPERATOR_ROOT}/introspector*/${1} | sort -t- -k3) > /tmp/domain.secure || return 1
   base64 -d "/tmp/domain.secure" > /tmp/domain.tar.gz || return 1
@@ -601,7 +601,7 @@ function restoreEncodedTar() {
 
 # This is before WDT compareModel implementation
 #
-function diff_model_v1() {
+diff_model_v1() {
   trace "Entering diff_model v1"
 
   #
@@ -624,7 +624,7 @@ function diff_model_v1() {
 
 # This is WDT compareModel.sh implementation
 
-function diff_model() {
+diff_model() {
   trace "Entering diff_model"
   # wdt shell script or logFileRotate may return non-zero code if trap is on, then it will go to trap instead
   # temporarily disable it
@@ -691,7 +691,7 @@ function diff_model() {
 # createPrimordialDomain will create the primordial domain
 #
 
-function createPrimordialDomain() {
+createPrimordialDomain() {
   trace "Entering createPrimordialDomain"
   local create_primordial_tgz=0
   local recreate_domain=0
@@ -830,7 +830,7 @@ function createPrimordialDomain() {
 #
 # Generate model from wdt artifacts
 #
-function generateMergedModel() {
+generateMergedModel() {
   # wdt shell script may return non-zero code if trap is on, then it will go to trap instead
   # temporarily disable it
   trace "Entering generateMergedModel"
@@ -865,7 +865,7 @@ function generateMergedModel() {
 # Create the actual primordial domain using WDT
 #
 
-function wdtCreatePrimordialDomain() {
+wdtCreatePrimordialDomain() {
   # wdt shell script may return non-zero code if trap is on, then it will go to trap instead
   # temporarily disable it
   trace "Entering wdtCreatePrimordialDomain"
@@ -964,7 +964,7 @@ function wdtCreatePrimordialDomain() {
 # wdtUpdateModelDomain  use WDT to update the model domain over the primordial domain
 #
 
-function wdtUpdateModelDomain() {
+wdtUpdateModelDomain() {
 
   trace "Entering wdtUpdateModelDomain"
   # wdt shell script may return non-zero code if trap is on, then it will go to trap instead
@@ -1034,7 +1034,7 @@ function wdtUpdateModelDomain() {
   trace "Exiting wdtUpdateModelDomain"
 }
 
-function wdtHandleOnlineUpdate() {
+wdtHandleOnlineUpdate() {
 
   trace "Entering wdtHandleOnlineUpdate"
   # wdt shell script may return non-zero code if trap is on, then it will go to trap instead
@@ -1130,12 +1130,12 @@ function wdtHandleOnlineUpdate() {
 
 }
 
-function write_updatedresult() {
+write_updatedresult() {
     # The >>> updatedomainResult is used in the operator code
     trace ">>>  updatedomainResult=${1}"
 }
 
-function write_non_dynamic_changes_text_file() {
+write_non_dynamic_changes_text_file() {
     # Containing text regarding the non dynmaic mbean details
     if [ -f /tmp/non_dynamic_changes.file ] ; then
       echo ">>> /tmp/non_dynamic_changes.file"
@@ -1144,7 +1144,7 @@ function write_non_dynamic_changes_text_file() {
     fi
 }
 
-function contain_returncode() {
+contain_returncode() {
   if echo ",$1," | grep -q ",$2,"
   then
     echo "true"
@@ -1162,7 +1162,7 @@ function contain_returncode() {
 #   3 -  password
 #   4 -  output file
 #
-function encrypt_decrypt_model() {
+encrypt_decrypt_model() {
   trace "Entering encrypt_wdtmodel $1"
 
   local ORACLE_SERVER_DIR=${ORACLE_HOME}/wlserver
@@ -1196,7 +1196,7 @@ function encrypt_decrypt_model() {
 #   3 -  password
 #   4 -  output file
 
-function encrypt_decrypt_domain_secret() {
+encrypt_decrypt_domain_secret() {
   trace "Entering encrypt_decrypt_domain_secret $1"
   # Do not use trap for this startServer.sh fail for some not zero function call
 
@@ -1240,7 +1240,7 @@ function encrypt_decrypt_domain_secret() {
 
 # prepare mii server
 
-function prepareMIIServer() {
+prepareMIIServer() {
 
   trace "Model-in-Image: Creating domain home."
 
@@ -1320,7 +1320,7 @@ function prepareMIIServer() {
 #
 # Generic error handler
 #
-function error_handler() {
+error_handler() {
     if [ $1 -ne 0 ]; then
         # Use FINE instead of SEVERE, avoid showing in domain status
         trace FINE  "Script Error: There was an error at line: ${2} command: ${@:3:20}"
@@ -1329,21 +1329,21 @@ function error_handler() {
     fi
 }
 
-function start_trap() {
+start_trap() {
     set -eE
     trap 'error_handler $? $BASH_LINENO $BASH_COMMAND ' ERR EXIT SIGHUP SIGINT SIGTERM SIGQUIT
 }
 
-function stop_trap() {
+stop_trap() {
     trap -  ERR EXIT SIGHUP SIGINT SIGTERM SIGQUIT
     set +eE
 }
 
-function cleanup_mii() {
+cleanup_mii() {
   rm -f /tmp/*.md5 /tmp/*.gz /tmp/*.ini /tmp/*.json
 }
 
-function logSevereAndExit() {
+logSevereAndExit() {
   trace SEVERE "cp '$1' failed"
   exitOrLoop
 }
@@ -1351,7 +1351,7 @@ function logSevereAndExit() {
 # Function to rotate WDT script log file and copy the file to WDT output dir.
 # parameter:
 #   1 - Name of the log file to rotate and copy to WDT output directory.
-function wdtRotateAndCopyLogFile() {
+wdtRotateAndCopyLogFile() {
   local logFileName=$1
 
   logFileRotate "${WDT_OUTPUT_DIR}/${logFileName}" "${WDT_LOG_FILE_MAX:-11}"

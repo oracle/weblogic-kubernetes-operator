@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 #  This script is to be run inside a model in image pod that has JDK, WebLogic and WDT in it.
@@ -13,7 +13,7 @@
 #   4 -  output file
 #
 
-function encrypt_decrypt_model() {
+encrypt_decrypt_model() {
   trace "Entering encrypt_decrypt_model"
   
   local ORACLE_SERVER_DIR=${ORACLE_HOME}/wlserver
@@ -35,7 +35,7 @@ function encrypt_decrypt_model() {
   trace "Exiting encrypt_decrypt_model"
 }
 
-function trace() {
+trace() {
     echo $*
 }
 
