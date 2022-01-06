@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
@@ -925,6 +925,29 @@ function checkService(){
    fi
  done
  echo "Service [$svc] found"
+}
+
+# Get pod name when pod available in a given namespace
+function getPodName(){
+
+ local max=$((SECONDS + 120))
+
+ local pod=$1
+ local ns=$2
+
+ local pname=""
+ while [ $SECONDS -le $max ] ; do
+   pname=`kubectl get po -n ${ns} | grep -w ${pod} | awk '{print $1}'`
+   [ -z "${pname}" ] || break
+   sleep 1
+ done
+
+ if [ -z "${pname}" ] ; then
+  echo "[ERROR] Could not find Pod [$pod] after $max seconds";
+  exit 1
+ fi
+
+ echo "${pname}"
 }
 
 # Checks if a pod is available in a given namespace
