@@ -157,14 +157,14 @@ metadata:
   name: mysql-secret
   namespace: default
 data:
-  root-user: <user placeholder>
+  root-user: <user name placeholder>
   root-password: <password placeholder>
 ```
 
 In file `mysql.yaml`, replace `<user placeholder>` and `<password placeholder>`, respectively, with the output from piping the
 root username and password through base64:
 ```
-echo -n <the root username> | base64
+echo -n <the root user name> | base64
 echo -n <the root password> | base64
 ```
 Deploy MySQL using the command `kubectl create -f mysql.yaml`.

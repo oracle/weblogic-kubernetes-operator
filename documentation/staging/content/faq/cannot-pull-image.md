@@ -67,7 +67,7 @@ To create a secret, you can use the following command:
 ```shell
 $ kubectl create secret docker-registry <name of the secret> \
         --docker-server=<the registry host name> \
-        --docker-username=<the username> \
+        --docker-username=<the user name> \
         --docker-password=<the actual password> \
         --docker-email=<the user email> \
         --namespace=<the selected namespace>
