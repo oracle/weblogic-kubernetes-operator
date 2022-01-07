@@ -194,7 +194,8 @@ class ItIstioMonitoringExporter {
           "Can't modify Prometheus CM, not possible to monitor " + domainUid);
     }
     //verify metrics via prometheus
-    checkMetricsViaPrometheus(searchKey, "sessmigr", prometheusPort);
+    checkMetricsViaPrometheus(searchKey, "sessmigr",
+        K8S_NODEPORT_HOST + ":" +prometheusPort);
   }
 
   /**
