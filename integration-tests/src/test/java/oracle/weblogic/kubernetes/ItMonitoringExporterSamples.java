@@ -54,7 +54,6 @@ import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CHART_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
@@ -222,7 +221,7 @@ class ItMonitoringExporterSamples {
     logger.info("create and verify WebLogic domain image using model in image with model files");
     miiImage = createAndVerifyMiiImage(monitoringExporterAppDir, MODEL_DIR + "/" + MONEXP_MODEL_FILE,
         SESSMIGR_APP_NAME, MONEXP_IMAGE_NAME);
-    if(!OKD) {
+    if (!OKD) {
       // install and verify NGINX
       nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
       String nginxServiceName = nginxHelmParams.getReleaseName() + "-ingress-nginx-controller";
@@ -405,7 +404,8 @@ class ItMonitoringExporterSamples {
       prometheusDomainRegexValue = prometheusRegexValue;
       hostPortPrometheus = K8S_NODEPORT_HOSTNAME + ":" + nodeportPrometheus;
       if (OKD) {
-        hostPortPrometheus = createRouteForOKD("prometheus" + releaseSuffix + "-service", monitoringNS) + ":" + nodeportPrometheus;
+        hostPortPrometheus = createRouteForOKD("prometheus" + releaseSuffix
+            + "-service", monitoringNS) + ":" + nodeportPrometheus;
       }
     }
     //if prometheus already installed change CM for specified domain

@@ -28,7 +28,6 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.jetbrains.annotations.NotNull;
 
 import static java.nio.file.Files.createDirectories;
-import static java.nio.file.Paths.get;
 import static oracle.weblogic.kubernetes.TestConstants.FSS_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.NFS_SERVER;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
@@ -302,7 +301,8 @@ public class PersistentVolumeUtils {
    * @param className - class name
    * @throws IOException when creating pv path fails
    */
-  public static void createPvAndPvc(String nameSuffix, String namespace, HashMap<String,String> labels, String className)
+  public static void createPvAndPvc(String nameSuffix, String namespace,
+                                    HashMap<String,String> labels, String className)
       throws IOException {
     LoggingFacade logger = getLogger();
     logger.info("creating persistent volume and persistent volume claim");
