@@ -45,35 +45,35 @@ while getopts ":h:s:d:t:n:q:r:" opt; do
   esac
 done
 
-if [ -z ${schemaPrefix} ]; then
+if [ -z "${schemaPrefix}" ]; then
   echo "${script}: -s <schemaPrefix> must be specified."
   usage 1
 fi
 
-if [ -z ${dburl} ]; then
+if [ -z "${dburl}" ]; then
   dburl="oracle-db.default.svc.cluster.local:1521/devpdb.k8s"
 fi
 
-if [ -z ${rcuType} ]; then
+if [ -z "${rcuType}" ]; then
   rcuType="fmw"
 fi
 
-if [ -z ${namespace} ]; then
+if [ -z "${namespace}" ]; then
   namespace="default"
 fi
 
-if [ -z ${sysPassword} ]; then
+if [ -z "${sysPassword}" ]; then
   echo "${script}: -q <SYSDBA user password> must be specified."
   usage 1
 fi
 
-if [ -z ${schemaPassword} ]; then
+if [ -z "${schemaPassword}" ]; then
   echo "${script}: -r <schema owner password> must be specified."
   usage 1
 fi
 
 rcupod=`kubectl get po -n ${namespace} | grep rcu | cut -f1 -d " " `
-if [ -z ${rcupod} ]; then
+if [ -z "${rcupod}" ]; then
   echo "RCU deployment pod not found in [$namespace] Namespace"
   exit -2
 fi
