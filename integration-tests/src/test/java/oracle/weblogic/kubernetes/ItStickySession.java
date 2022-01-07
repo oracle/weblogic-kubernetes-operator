@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -474,7 +474,8 @@ class ItStickySession {
           .append(httpHeaderFile);
     } else {
       //use cluster service to build the curl command to run in admin pod
-      final String httpHeaderFile = "/u01/oracle/header";
+      // save the cookie file to /u01 in order to run the test on openshift env
+      final String httpHeaderFile = "/u01/header";
       logger.info("Build a curl command with pod name {0}, curl URL path {1} and HTTP header option {2}",
           clusterAddress[0], curlUrlPath, headerOption);
 
@@ -576,7 +577,7 @@ class ItStickySession {
 
     // send a HTTP request to set http session state(count number) and save HTTP session info
     Map<String, String> httpDataInfo = getServerAndSessionInfoAndVerify(hostname,
-            servicePort, webServiceSetUrl, " -D ", clusterAddress);
+            servicePort, webServiceSetUrl, " -c ", clusterAddress);
     // get server and session info from web service deployed on the cluster
     String serverName1 = httpDataInfo.get(serverNameAttr);
     String sessionId1 = httpDataInfo.get(sessionIdAttr);
