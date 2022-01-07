@@ -65,15 +65,14 @@ to use that secret when pulling the image.
 To create a secret, you can use the following command:
 
 ```shell
-$ kubectl create secret docker-registry secret1 \
-        --docker-server=some.registry.com \
-        --docker-username=bob \
-        --docker-password=bigSecret \
-        --docker-email=bob@some.com \
-        --namespace=default
+$ kubectl create secret docker-registry <name of the secret> \
+        --docker-server=<the registry host name> \
+        --docker-username=<the user name> \
+        --docker-password=<the actual password> \
+        --docker-email=<the user email> \
+        --namespace=<the selected namespace>
 ```
-
-In this command, you would replace `secret1` with the name of the secret; the `docker-server`
+where actual values should replace the strings in angle brackets. Note that the `docker-server`
 is set to the registry name, without the `https://` prefix; the `docker-username`, `docker-password`
 and `docker-email` are set to match the credentials you use to authenticate to the remote
 container registry; and the `namespace` must be set to the same namespace where you intend to
