@@ -225,9 +225,19 @@ class RollingHelperTest {
   void afterRoll_domainRollCompletedEventCreated() {
     initializeExistingPods();
     testSupport.addToPacket(SERVERS_TO_ROLL, rolling);
-    testSupport.addToPacket(DOMAIN_ROLL_START_EVENT_GENERATED, "true");
     SERVER_NAMES.forEach(s ->
         rolling.put(s, createRollingStepAndPacket(modifyRestartVersion(createPodModel(s), "V10"), s)));
+
+    testSupport.runSteps(RollingHelper.rollServers(rolling, terminalStep));
+    logRecords.clear();
+
+    assertContainsEventWithMessage(DOMAIN_ROLL_COMPLETED, UID);
+  }
+
+  @Test
+  void noRoll_withDomainRollStartFlag_domainRollCompletedEventCreated() {
+    initializeExistingPods();
+    testSupport.addToPacket(DOMAIN_ROLL_START_EVENT_GENERATED, "true");
 
     testSupport.runSteps(RollingHelper.rollServers(rolling, terminalStep));
     logRecords.clear();
