@@ -8,16 +8,17 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1HTTPIngressPath;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1HTTPIngressRuleValue;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1Ingress;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressBackend;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressList;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressRule;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressSpec;
+import io.kubernetes.client.openapi.models.V1HTTPIngressPath;
+import io.kubernetes.client.openapi.models.V1HTTPIngressRuleValue;
+import io.kubernetes.client.openapi.models.V1Ingress;
+import io.kubernetes.client.openapi.models.V1IngressBackend;
+import io.kubernetes.client.openapi.models.V1IngressList;
+import io.kubernetes.client.openapi.models.V1IngressRule;
+import io.kubernetes.client.openapi.models.V1IngressServiceBackend;
+import io.kubernetes.client.openapi.models.V1IngressSpec;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1ServiceBackendPort;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Helm;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes;
@@ -103,16 +104,18 @@ public class Nginx {
     annotation.put("kubernetes.io/ingress.class", INGRESS_NGINX_CLASS);
 
     List<String> ingressHostList = new ArrayList<>();
-    ArrayList<NetworkingV1beta1IngressRule> ingressRules = new ArrayList<>();
+    ArrayList<V1IngressRule> ingressRules = new ArrayList<>();
     clusterNameMsPortMap.forEach((clusterName, managedServerPort) -> {
       // set the http ingress paths
-      NetworkingV1beta1HTTPIngressPath httpIngressPath = new NetworkingV1beta1HTTPIngressPath()
+      V1HTTPIngressPath httpIngressPath = new V1HTTPIngressPath()
               .path(null)
-              .backend(new NetworkingV1beta1IngressBackend()
-                      .serviceName(domainUid + "-cluster-" + clusterName.toLowerCase().replace("_", "-"))
-                      .servicePort(new IntOrString(managedServerPort))
+              .backend(new V1IngressBackend()
+                  .service(new V1IngressServiceBackend()
+                      .name(domainUid + "-cluster-" + clusterName.toLowerCase().replace("_", "-"))
+                      .port(new V1ServiceBackendPort()
+                          .number(managedServerPort)))
               );
-      ArrayList<NetworkingV1beta1HTTPIngressPath> httpIngressPaths = new ArrayList<>();
+      ArrayList<V1HTTPIngressPath> httpIngressPaths = new ArrayList<>();
       httpIngressPaths.add(httpIngressPath);
 
       // set the ingress rule
@@ -121,9 +124,9 @@ public class Nginx {
         ingressHost = "";
         ingressHostList.add("*");
       }
-      NetworkingV1beta1IngressRule ingressRule = new NetworkingV1beta1IngressRule()
+      V1IngressRule ingressRule = new V1IngressRule()
               .host(ingressHost)
-              .http(new NetworkingV1beta1HTTPIngressRuleValue()
+              .http(new V1HTTPIngressRuleValue()
                       .paths(httpIngressPaths));
 
       ingressRules.add(ingressRule);
@@ -132,14 +135,14 @@ public class Nginx {
     });
 
     // set the ingress
-    NetworkingV1beta1Ingress ingress = new NetworkingV1beta1Ingress()
+    V1Ingress ingress = new V1Ingress()
             .apiVersion(INGRESS_API_VERSION)
             .kind(INGRESS_KIND)
             .metadata(new V1ObjectMeta()
                     .name(ingressName)
                     .namespace(domainNamespace)
                     .annotations(annotation))
-            .spec(new NetworkingV1beta1IngressSpec()
+            .spec(new V1IngressSpec()
                     .rules(ingressRules));
 
     // create the ingress
@@ -162,8 +165,8 @@ public class Nginx {
   public static List<String> listIngresses(String namespace) throws ApiException {
 
     List<String> ingressNames = new ArrayList<>();
-    NetworkingV1beta1IngressList ingressList = Kubernetes.listNamespacedIngresses(namespace);
-    List<NetworkingV1beta1Ingress> listOfIngress = ingressList.getItems();
+    V1IngressList ingressList = Kubernetes.listNamespacedIngresses(namespace);
+    List<V1Ingress> listOfIngress = ingressList.getItems();
 
     listOfIngress.forEach(ingress -> {
       if (ingress.getMetadata() != null) {

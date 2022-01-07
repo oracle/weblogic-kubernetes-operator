@@ -170,7 +170,7 @@ public class Helpers {
 
     V1Secret secret =
         coreApi.readNamespacedSecret(
-            reference.getName(), namespace, "false", Boolean.TRUE, Boolean.TRUE);
+            reference.getName(), namespace, "false");
 
     LOGGER.exiting(secret);
     return secret;

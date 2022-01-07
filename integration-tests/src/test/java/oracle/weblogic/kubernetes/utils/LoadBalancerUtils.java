@@ -17,8 +17,8 @@ import java.util.concurrent.Callable;
 
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressRule;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressTLS;
+import io.kubernetes.client.openapi.models.V1IngressRule;
+import io.kubernetes.client.openapi.models.V1IngressTLS;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
@@ -721,8 +721,8 @@ public class LoadBalancerUtils {
                                                  String ingressName,
                                                  String namespace,
                                                  Map<String, String> annotations,
-                                                 List<NetworkingV1beta1IngressRule> ingressRules,
-                                                 List<NetworkingV1beta1IngressTLS> tlsList) {
+                                                 List<V1IngressRule> ingressRules,
+                                                 List<V1IngressTLS> tlsList) {
     for (int i = 0; i < maxRetries; i++) {
       try {
         if (isTLS) {

@@ -15,7 +15,9 @@ import com.appscode.voyager.client.models.V1beta1IngressRule;
 import com.appscode.voyager.client.models.V1beta1IngressSpec;
 import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.Quantity;
-import io.kubernetes.client.openapi.models.ApiregistrationV1beta1ServiceReference;
+import io.kubernetes.client.openapi.models.ApiregistrationV1ServiceReference;
+import io.kubernetes.client.openapi.models.V1APIService;
+import io.kubernetes.client.openapi.models.V1APIServiceSpec;
 import io.kubernetes.client.openapi.models.V1ClusterRole;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
@@ -67,8 +69,6 @@ import io.kubernetes.client.openapi.models.V1TCPSocketAction;
 import io.kubernetes.client.openapi.models.V1Toleration;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
-import io.kubernetes.client.openapi.models.V1beta1APIService;
-import io.kubernetes.client.openapi.models.V1beta1APIServiceSpec;
 import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
@@ -172,18 +172,18 @@ public class KubernetesArtifactUtils {
    * Create API service.
    * @return API service
    */
-  public static V1beta1APIService newApiService() {
-    return (new V1beta1APIService())
+  public static V1APIService newApiService() {
+    return (new V1APIService())
         .apiVersion(API_VERSION_REGISTRATION_V1BETA1)
         .kind(KIND_API_SERVICE);
   }
 
-  public static V1beta1APIServiceSpec newApiServiceSpec() {
-    return new V1beta1APIServiceSpec();
+  public static V1APIServiceSpec newApiServiceSpec() {
+    return new V1APIServiceSpec();
   }
 
-  public static ApiregistrationV1beta1ServiceReference newServiceReference() {
-    return new ApiregistrationV1beta1ServiceReference();
+  public static ApiregistrationV1ServiceReference newServiceReference() {
+    return new ApiregistrationV1ServiceReference();
   }
 
   public static V1beta1Ingress newIngress() {

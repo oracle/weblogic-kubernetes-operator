@@ -12,11 +12,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
-import io.kubernetes.client.custom.IntOrString;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1HTTPIngressPath;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1HTTPIngressRuleValue;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressBackend;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressRule;
+import io.kubernetes.client.openapi.models.V1HTTPIngressPath;
+import io.kubernetes.client.openapi.models.V1HTTPIngressRuleValue;
+import io.kubernetes.client.openapi.models.V1IngressBackend;
+import io.kubernetes.client.openapi.models.V1IngressRule;
+import io.kubernetes.client.openapi.models.V1IngressServiceBackend;
+import io.kubernetes.client.openapi.models.V1ServiceBackendPort;
 import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
@@ -280,20 +281,22 @@ class ItRemoteConsole {
     annotations.put("kubernetes.io/ingress.class", "nginx");
 
     // create ingress rules for two domains
-    List<NetworkingV1beta1IngressRule> ingressRules = new ArrayList<>();
-    List<NetworkingV1beta1HTTPIngressPath> httpIngressPaths = new ArrayList<>();
+    List<V1IngressRule> ingressRules = new ArrayList<>();
+    List<V1HTTPIngressPath> httpIngressPaths = new ArrayList<>();
 
-    NetworkingV1beta1HTTPIngressPath httpIngressPath = new NetworkingV1beta1HTTPIngressPath()
+    V1HTTPIngressPath httpIngressPath = new V1HTTPIngressPath()
         .path("/")
-        .backend(new NetworkingV1beta1IngressBackend()
-            .serviceName(domainUid + "-admin-server")
-            .servicePort(new IntOrString(ADMIN_SERVER_PORT))
+        .backend(new V1IngressBackend()
+            .service(new V1IngressServiceBackend()
+                .name(domainUid + "-admin-server")
+                .port(new V1ServiceBackendPort()
+                    .number(ADMIN_SERVER_PORT)))
         );
     httpIngressPaths.add(httpIngressPath);
 
-    NetworkingV1beta1IngressRule ingressRule = new NetworkingV1beta1IngressRule()
+    V1IngressRule ingressRule = new V1IngressRule()
         .host("")
-        .http(new NetworkingV1beta1HTTPIngressRuleValue()
+        .http(new V1HTTPIngressRuleValue()
             .paths(httpIngressPaths));
 
     ingressRules.add(ingressRule);

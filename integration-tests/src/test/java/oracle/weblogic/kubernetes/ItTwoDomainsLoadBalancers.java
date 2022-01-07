@@ -25,18 +25,18 @@ import com.gargoylesoftware.htmlunit.WebClient;
 import com.gargoylesoftware.htmlunit.html.HtmlElement;
 import com.gargoylesoftware.htmlunit.html.HtmlForm;
 import com.gargoylesoftware.htmlunit.html.HtmlPage;
-import io.kubernetes.client.custom.IntOrString;
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1HTTPIngressPath;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1HTTPIngressRuleValue;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressBackend;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressRule;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressTLS;
 import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1HTTPIngressPath;
+import io.kubernetes.client.openapi.models.V1HTTPIngressRuleValue;
+import io.kubernetes.client.openapi.models.V1IngressBackend;
+import io.kubernetes.client.openapi.models.V1IngressRule;
+import io.kubernetes.client.openapi.models.V1IngressServiceBackend;
+import io.kubernetes.client.openapi.models.V1IngressTLS;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobSpec;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
@@ -52,6 +52,7 @@ import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretReference;
+import io.kubernetes.client.openapi.models.V1ServiceBackendPort;
 import io.kubernetes.client.openapi.models.V1Volume;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import oracle.weblogic.domain.AdminServer;
@@ -1344,15 +1345,17 @@ class ItTwoDomainsLoadBalancers {
     annotations.put("kubernetes.io/ingress.class", "nginx");
 
     // create ingress rules for two domains
-    List<NetworkingV1beta1IngressRule> ingressRules = new ArrayList<>();
-    List<NetworkingV1beta1IngressTLS> tlsList = new ArrayList<>();
+    List<V1IngressRule> ingressRules = new ArrayList<>();
+    List<V1IngressTLS> tlsList = new ArrayList<>();
     for (String domainUid : domainUids) {
 
-      NetworkingV1beta1HTTPIngressPath httpIngressPath = new NetworkingV1beta1HTTPIngressPath()
+      V1HTTPIngressPath httpIngressPath = new V1HTTPIngressPath()
           .path(null)
-          .backend(new NetworkingV1beta1IngressBackend()
-              .serviceName(domainUid + "-cluster-cluster-1")
-              .servicePort(new IntOrString(MANAGED_SERVER_PORT))
+          .backend(new V1IngressBackend()
+              .service(new V1IngressServiceBackend()
+                  .name(domainUid + "-cluster-cluster-1")
+                  .port(new V1ServiceBackendPort()
+                      .number(MANAGED_SERVER_PORT)))
           );
 
       // set the ingress rule host
@@ -1362,9 +1365,9 @@ class ItTwoDomainsLoadBalancers {
       } else {
         ingressHost = domainUid + "." + defaultNamespace + ".nginx.nonssl.test";
       }
-      NetworkingV1beta1IngressRule ingressRule = new NetworkingV1beta1IngressRule()
+      V1IngressRule ingressRule = new V1IngressRule()
           .host(ingressHost)
-          .http(new NetworkingV1beta1HTTPIngressRuleValue()
+          .http(new V1HTTPIngressRuleValue()
               .paths(Collections.singletonList(httpIngressPath)));
 
       ingressRules.add(ingressRule);
@@ -1373,7 +1376,7 @@ class ItTwoDomainsLoadBalancers {
         String tlsSecretName = domainUid + "-nginx-tls-secret";
         createCertKeyFiles(ingressHost);
         assertDoesNotThrow(() -> createSecretWithTLSCertKey(tlsSecretName, defaultNamespace, tlsKeyFile, tlsCertFile));
-        NetworkingV1beta1IngressTLS tls = new NetworkingV1beta1IngressTLS()
+        V1IngressTLS tls = new V1IngressTLS()
             .addHostsItem(ingressHost)
             .secretName(tlsSecretName);
         tlsList.add(tls);
@@ -1418,22 +1421,24 @@ class ItTwoDomainsLoadBalancers {
     annotations.put("nginx.ingress.kubernetes.io/rewrite-target", "/$1");
 
     // create ingress rules for two domains
-    List<NetworkingV1beta1IngressRule> ingressRules = new ArrayList<>();
-    List<NetworkingV1beta1HTTPIngressPath> httpIngressPaths = new ArrayList<>();
+    List<V1IngressRule> ingressRules = new ArrayList<>();
+    List<V1HTTPIngressPath> httpIngressPaths = new ArrayList<>();
 
     for (String domainUid : domainUids) {
-      NetworkingV1beta1HTTPIngressPath httpIngressPath = new NetworkingV1beta1HTTPIngressPath()
+      V1HTTPIngressPath httpIngressPath = new V1HTTPIngressPath()
           .path("/" + domainUid.substring(6) + "(.+)")
-          .backend(new NetworkingV1beta1IngressBackend()
-              .serviceName(domainUid + "-cluster-cluster-1")
-              .servicePort(new IntOrString(MANAGED_SERVER_PORT))
+          .backend(new V1IngressBackend()
+              .service(new V1IngressServiceBackend()
+                  .name(domainUid + "-cluster-cluster-1")
+                  .port(new V1ServiceBackendPort()
+                      .number(MANAGED_SERVER_PORT)))
           );
       httpIngressPaths.add(httpIngressPath);
     }
 
-    NetworkingV1beta1IngressRule ingressRule = new NetworkingV1beta1IngressRule()
+    V1IngressRule ingressRule = new V1IngressRule()
         .host("")
-        .http(new NetworkingV1beta1HTTPIngressRuleValue()
+        .http(new V1HTTPIngressRuleValue()
             .paths(httpIngressPaths));
 
     ingressRules.add(ingressRule);
@@ -1472,39 +1477,43 @@ class ItTwoDomainsLoadBalancers {
     annotations.put("nginx.ingress.kubernetes.io/ingress.allow-http", "false");
 
     // create ingress rules for two domains
-    List<NetworkingV1beta1IngressRule> ingressRules = new ArrayList<>();
-    List<NetworkingV1beta1HTTPIngressPath> httpIngressPaths = new ArrayList<>();
+    List<V1IngressRule> ingressRules = new ArrayList<>();
+    List<V1HTTPIngressPath> httpIngressPaths = new ArrayList<>();
 
     for (String domainUid : domainUids) {
-      NetworkingV1beta1HTTPIngressPath httpIngressAdminConsolePath = new NetworkingV1beta1HTTPIngressPath()
+      V1HTTPIngressPath httpIngressAdminConsolePath = new V1HTTPIngressPath()
           .path("/" + domainUid.substring(6) + "console(.+)")
-          .backend(new NetworkingV1beta1IngressBackend()
-              .serviceName(domainUid + "-" + ADMIN_SERVER_NAME_BASE)
-              .servicePort(new IntOrString(ADMIN_SERVER_PORT))
+          .backend(new V1IngressBackend()
+              .service(new V1IngressServiceBackend()
+                  .name(domainUid + "-" + ADMIN_SERVER_NAME_BASE)
+                  .port(new V1ServiceBackendPort()
+                      .number(ADMIN_SERVER_PORT)))
           );
       httpIngressPaths.add(httpIngressAdminConsolePath);
-      NetworkingV1beta1HTTPIngressPath httpIngressPath = new NetworkingV1beta1HTTPIngressPath()
+      V1HTTPIngressPath httpIngressPath = new V1HTTPIngressPath()
           .path("/" + domainUid.substring(6) + "(.+)")
-          .backend(new NetworkingV1beta1IngressBackend()
-              .serviceName(domainUid + "-cluster-cluster-1")
-              .servicePort(new IntOrString(MANAGED_SERVER_PORT))
+          .backend(new V1IngressBackend()
+              .service(new V1IngressServiceBackend()
+                  .name(domainUid + "-cluster-cluster-1")
+                  .port(new V1ServiceBackendPort()
+                      .number(MANAGED_SERVER_PORT)))
           );
       httpIngressPaths.add(httpIngressPath);
     }
 
-    NetworkingV1beta1IngressRule ingressRule = new NetworkingV1beta1IngressRule()
+    V1IngressRule ingressRule = new V1IngressRule()
         .host("")
-        .http(new NetworkingV1beta1HTTPIngressRuleValue()
+        .http(new V1HTTPIngressRuleValue()
             .paths(httpIngressPaths));
 
     ingressRules.add(ingressRule);
 
     // create TLS list for the ingress
-    List<NetworkingV1beta1IngressTLS> tlsList = new ArrayList<>();
+    List<V1IngressTLS> tlsList = new ArrayList<>();
     String tlsSecretName = domainUids.get(0) + "-nginx-tlspathrouting-secret";
     createCertKeyFiles(domainUids.get(0) + "." + defaultNamespace + ".nginx.tlspathrouting.test");
     assertDoesNotThrow(() -> createSecretWithTLSCertKey(tlsSecretName, defaultNamespace, tlsKeyFile, tlsCertFile));
-    NetworkingV1beta1IngressTLS tls = new NetworkingV1beta1IngressTLS()
+    V1IngressTLS tls = new V1IngressTLS()
         .secretName(tlsSecretName);
     tlsList.add(tls);
 
@@ -1752,7 +1761,7 @@ class ItTwoDomainsLoadBalancers {
         HtmlElement submit = form.getOneHtmlElementByAttribute("input", "type", "submit");
         getLogger().info("Clicking login button");
         HtmlPage home = submit.click();
-        if (home.asText().contains("Persistent Stores")) {
+        if (home.asNormalizedText().contains("Persistent Stores")) {
           getLogger().info("Console login passed");
           adminAccessible = true;
           break;
