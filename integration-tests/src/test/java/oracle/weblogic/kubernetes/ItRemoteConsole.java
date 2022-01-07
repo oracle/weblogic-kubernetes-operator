@@ -158,7 +158,7 @@ class ItRemoteConsole {
     logger.info("WebLogic domain is accessible through remote console using Traefik");
   }
 
-   /**
+  /**
    * Access WebLogic domain through remote console using NGINX.
    */
   @Test
