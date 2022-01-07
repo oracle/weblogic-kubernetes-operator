@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # This script contains the all the function of model in image
@@ -1054,12 +1054,22 @@ function wdtHandleOnlineUpdate() {
   createFolder "${DOMAIN_HOME}/lib" "This is the './lib' directory within directory 'domain.spec.domainHome'." || exitOrLoop
   for file in $(sort_files ${IMG_ARCHIVES_ROOTDIR} "*.zip")
     do
-        # expand the archive domain libraries to the domain lib
+        # expand the archive domain libraries to the domain lib, 11 is caution when zip entry doesn't exists
         cd ${DOMAIN_HOME}/lib || exitOrLoop
-        ${JAVA_HOME}/bin/jar xf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainLibraries/
+        unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainLibraries/*
+        if [ $? -ne 0 && $? -ne 11 ] ; then
+          trace SEVERE  "Domain Source Type is FromModel, error in extracting domainLibraries " \
+          "${IMG_ARCHIVES_ROOTDIR}/${file}"
+          exitOrLoop
+        fi
 
-        if [ $? -ne 0 ] ; then
-          trace SEVERE  "Error extracting domain lib '${IMG_ARCHIVES_ROOTDIR}/${file}'"
+        # expand the domain bin, in update case user may only update a file in the domainBin archive, 11 is caution when
+        # zip entry doesn't exists
+        cd ${DOMAIN_HOME}/bin || exitOrLoop
+        unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainBin/*
+        if [ $? -ne 0 && $? -ne 11 ] ; then
+          trace SEVERE  "Domain Source Type is FromModel, error in extracting domainBin " \
+          "${IMG_ARCHIVES_ROOTDIR}/${file}"
           exitOrLoop
         fi
 
@@ -1286,21 +1296,25 @@ function prepareMIIServer() {
 
   for file in $(sort_files ${IMG_ARCHIVES_ROOTDIR} "*.zip")
     do
-        # expand the archive domain libraries to the domain lib
-        cd ${DOMAIN_HOME}/lib || return 1
-        ${JAVA_HOME}/bin/jar xf ${IMG_ARCHIVES_ROOTDIR}/${file} ${WLSDEPLOY_DOMAINLIB}
 
-        if [ $? -ne 0 ] ; then
-          trace SEVERE  "Domain Source Type is FromModel, error in extracting domain libs ${IMG_ARCHIVES_ROOTDIR}/${file}"
-          return 1
+        # expand the archive domain libraries to the domain lib, 11 is caution when zip entry doesn't exists
+        cd ${DOMAIN_HOME}/lib || exitOrLoop
+        unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainLibraries/*
+        if [ $? -ne 0 && $? -ne 11 ] ; then
+          trace SEVERE  "Domain Source Type is FromModel, error in extracting domainLibraries " \
+          "${IMG_ARCHIVES_ROOTDIR}/${file}"
+          exitOrLoop
         fi
 
-        # Flatten the jars to the domain lib root
-
-        if [ -d ${WLSDEPLOY_DOMAINLIB} ] && [ "$(ls -A ${WLSDEPLOY_DOMAINLIB})" ] ; then
-          mv ${WLSDEPLOY_DOMAINLIB}/* .
+        # expand the domain bin, in update case user may only update a file in the domainBin archive, 11 is caution when
+        # zip entry doesn't exists
+        cd ${DOMAIN_HOME}/bin || exitOrLoop
+        unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainBin/*
+        if [ $? -ne 0 && $? -ne 11 ] ; then
+          trace SEVERE  "Domain Source Type is FromModel, error in extracting domainBin " \
+          "${IMG_ARCHIVES_ROOTDIR}/${file}"
+          exitOrLoop
         fi
-        rm -fr wlsdeploy/
 
         # expand the archive apps and shared lib to the wlsdeploy/* directories
         # the config.xml is referencing them from that path
