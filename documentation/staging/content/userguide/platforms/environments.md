@@ -12,8 +12,9 @@ weight: 4
 - [Pricing and licensing](#pricing-and-licensing)
   - [WebLogic Kubernetes Operator](#weblogic-kubernetes-operator)
   - [WebLogic Server](#weblogic-server)
-  - [Oracle Linux and WebLogic Server Images](#oracle-linux-and-weblogic-server-images)
-  - [Reference](#reference)
+  - [Oracle Linux](#oracle-linux)
+  - [Oracle Java](#oracle-java)
+  - [WebLogic Server Images](#weblogic-server-images)
 - [Important notes about specific environments](#important-notes-about-specific-environments)
   - [Oracle Cloud Infrastructure (OCI)](#oracle-cloud-infrastructure-oci)
   - [Oracle Linux Cloud Native Environment (OLCNE)](#oracle-linux-cloud-native-environment-olcne)
@@ -68,8 +69,8 @@ see [Operator prerequisites]({{< relref "/userguide/prerequisites/introduction.m
 ### Pricing and licensing
 
 The WebLogic Kubernetes Operator and Oracle Linux are open source and free;
-WebLogic Server requires licenses unless used in a single developer desktop development environment.
-In detail:
+Oracle WebLogic Server licenses are suitable
+to run WebLogic deployments in containers and Kubernetes.
 
 #### WebLogic Kubernetes Operator
 
@@ -79,38 +80,68 @@ For support details, see [Get help]({{< relref "userguide/introduction/get-help.
 
 #### WebLogic Server
 
-WebLogic Server is not open source.
-Licensing is required for each running WebLogic Server instance in Kubernetes,
-just as with any deployment of WebLogic Server.
-Licensing is free for a single developer desktop development environment.
-For more information, see the [Fusion Middleware Licensing Information User Manual - Application Server Products](https://docs.oracle.com/en/middleware/fusion-middleware/fmwlc/application-server-products-new-structure.html) and the following section.
+WebLogic Server is not open source:
 
-#### Oracle Linux and WebLogic Server images
+- Licensing is required to run WebLogic Server instances in Kubernetes,
+  just as with any deployment of WebLogic Server.
 
-{{% notice warning %}}
-For production deployments,
-Oracle requires using dated Critical Patch Update (CPU) images from the
-[Oracle Container Registry](https://container-registry.oracle.com/) (OCR)
-(such images contain `_cpu` and an embedded date stamp in their image name),
-or fully patched custom images that you generate yourself.
-General Availabity (GA) images are not licensable or suitable for production use.
-{{% /notice %}}
+- Licensing is free for a single developer desktop development environment
+  when using an Oracle Technology Network (OTN) developer license.
+
+For more information, see the
+[Fusion Middleware Licensing Information User Manual - Application Server Products](https://docs.oracle.com/en/middleware/fusion-middleware/fmwlc/application-server-products-new-structure.html)
+and the following sections.
+
+#### Oracle Linux
 
 Oracle Linux is under open source license and is completely free to download and use.
 
-TBD this could use rewording to distinguish the case where the only license is a developer license.
-
-In addition, with WebLogic Server licenses and support, customers have access to:
-
-- The latest WebLogic Server images which bundle Java SE and the latest slim Oracle Linux images.
-- Tooling for creating custom WebLogic Server images.
-- Oracle support for Linux.
-- Oracle support for WebLogic Server images.
-
-Note that WebLogic Server licenses and support do _not_ include customer entitlements
+Note that WebLogic Server licenses that include support
+do _not_ include customer entitlements
 for direct access to Oracle Linux support or Unbreakable Linux Network
-(to directly access the standalone Oracle Linux patches). The
-latest Oracle Linux patches are included the latest WebLogic Server images.
+(to directly access the standalone Oracle Linux patches).
+The latest Oracle Linux patches are included with the latest [WebLogic Server images](#weblogic-server-images).
+
+#### Oracle Java
+
+Oracle support for Java is included with
+WebLogic Server licenses
+when Java is used for running WebLogic and Coherence servers or clients.
+
+For more information, see the
+[Fusion Middleware Licensing Information User Manual - Application Server Products](https://docs.oracle.com/en/middleware/fusion-middleware/fmwlc/application-server-products-new-structure.html).
+
+#### WebLogic Server images
+
+Oracle provides two different types of images:
+
+- _Critical Patch Update (CPU) WebLogic Server images:_
+  images with the latest WebLogic Server and Coherence PSU
+  and other fixes released by the
+  Critical Patch Update (CPU) program.
+  CPU images are intended for production use.
+
+- _General Availability (GA) WebLogic Server images:_
+  images which are _not_ intended for production use
+  and do _not_ include WebLogic or Coherence PSUs.
+
+All WebLogic Server licenses,
+including free Oracle Technology Network (OTN) developer licenses,
+include access to the latest General Availability (GA) WebLogic Server images which bundle Java SE.
+
+Customers with access to WebLogic Server support additionally have:
+
+  - Access to Critical Patch Update (CPU) WebLogic Server images which bundle Java SE.
+  - Access to WebLogic Server patches.
+  - Oracle support for WebLogic Server images.
+  - Oracle support for the WebLogic Kubernetes ToolKit. 
+
+You can use the free and open source WebLogic Image Tool
+to create new or updated (patched) WebLogic images.
+See My Oracle Support (MOS)
+[Doc ID 2790123.1](https://support.oracle.com/epmos/faces/DocContentDisplay?id=2790123.1)
+for community and Oracle support policies
+for the WebLogic Kubernetes ToolKit.
 
 See [WebLogic Server images]({{< relref "/userguide/base-images/_index.md" >}})
 for information about obtaining WebLogic Server images,
@@ -119,10 +150,13 @@ the different types of images,
 creating custom images,
 and patching images.
 
-#### Reference
-
-The Oracle [Global Pricing and Licensing site](https://www.oracle.com/corporate/pricing/specialty-topics.html)
-provides details about licensing practices and policies.
+TBD Tom use this exact wording everywhere we have this warning
+{{% notice warning %}}
+The latest **GA images** include the latest security patches for Oracle Linux and Java,
+and do _not_ include the latest security patches for WebLogic Server.
+Oracle strongly recommends using images with the latest security patches.
+See [Ensuring you are using recently patched images]({{< relref "/userguide/base-images/_index.md#ensuring-you-are-using-recently-patched-images" >}}).
+{{% /notice %}}
 
 ### Important notes about specific environments
 

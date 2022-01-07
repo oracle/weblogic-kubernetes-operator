@@ -115,7 +115,7 @@ For more information, see the [Domain life cycle]({{< relref "/userguide/managin
 
 **Q:** Patching: rolling upgrades, handling of one-off-patches and overlays, CPUs, and such.
 
-**A:** For relevant information, see [Patch WebLogic Server images]({{< relref "/userguide/base-images/#patch-weblogic-server-images" >}}), [Rolling restarts]({{< relref "/userguide/managing-domains/domain-lifecycle/restarting#overview" >}}), and [CI/CD considerations]({{< relref "/userguide/cicd/_index.md" >}}).
+**A:** For relevant information, see [WebLogic Server images]({{< relref "/userguide/base-images/_index.md" >}}), [Rolling restarts]({{< relref "/userguide/managing-domains/domain-lifecycle/restarting#overview" >}}), and [CI/CD considerations]({{< relref "/userguide/cicd/_index.md" >}}).
 
 ***
 
