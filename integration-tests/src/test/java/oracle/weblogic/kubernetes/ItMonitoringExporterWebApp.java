@@ -58,7 +58,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.copyFileToPod;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.deleteNamespace;
 import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.exec;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createIngressForDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
@@ -77,7 +76,6 @@ import static oracle.weblogic.kubernetes.utils.MonitoringUtils.verifyMonExpAppAc
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPvAndPvc;
-import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -248,16 +246,9 @@ class ItMonitoringExporterWebApp {
         verifyMonExpAppAccessThroughNginx(ingressHost1List.get(0), 1, nodeportshttp);
         // Need to expose the admin server external service to access the console in OKD cluster only
       } else {
-        String hostName = createRouteForOKD(getExternalServicePodName(clusterService), domain1Namespace);
-
-        int nodePort = getServiceNodePort(
-            domain1Namespace, getExternalServicePodName(hostName), "default");
-        assertTrue(nodePort != -1,
-            "Could not get the default external service node port");
-        logger.info("Found the default service nodePort {0}", nodePort);
-        String hostAndPort = getHostAndPort(hostName, nodePort);
-        logger.info("hostAndPort = {0} ", hostAndPort);
-        exporterUrl = String.format("http://%s/wls-exporter/",hostAndPort);
+        String hostName = createRouteForOKD(clusterService, domain1Namespace);
+        logger.info("hostName = {0} ", hostName);
+        exporterUrl = String.format("http://%s/wls-exporter/",hostName);
       }
       installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
           domain1Namespace,

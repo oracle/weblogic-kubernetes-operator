@@ -71,7 +71,6 @@ import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.delet
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPodReady;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.searchPodLogForKey;
 import static oracle.weblogic.kubernetes.assertions.impl.Kubernetes.listPods;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
@@ -273,13 +272,7 @@ class ItMonitoringExporterSamples {
         verifyMonExpAppAccessThroughNginx(ingressHost2List.get(0), managedServersCount, nodeportshttp);
       } else {
         String hostName = createRouteForOKD(getExternalServicePodName(clusterService), domain2Namespace);
-        int nodePort = getServiceNodePort(
-            domain2Namespace, getExternalServicePodName(hostName), "default");
-        assertTrue(nodePort != -1,
-            "Could not get the default external service node port");
-        logger.info("Found the default service nodePort {0}", nodePort);
-        String hostAndPort = getHostAndPort(hostName, nodePort);
-        logger.info("hostAndPort = {0} ", hostAndPort);
+        logger.info("hostAndPort = {0} ", hostName);
 
       }
       logger.info("Installing Prometheus and Grafana");
