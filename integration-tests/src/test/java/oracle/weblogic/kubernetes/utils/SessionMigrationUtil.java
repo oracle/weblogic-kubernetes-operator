@@ -18,6 +18,8 @@ import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownManagedServerUsingServerStartPolicy;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -56,12 +58,6 @@ public class SessionMigrationUtil {
     // check that the managed server pod shutdown successfylly
     logger.info("Check that managed server pod {0} stopped in namespace {1}", podName, domainNamespace);
     checkPodDoesNotExist(podName, domainUid, domainNamespace);
-
-    try {
-      Thread.sleep(30000);
-    } catch (Exception ex) {
-      //ignore
-    }
   }
 
   /**
@@ -92,7 +88,8 @@ public class SessionMigrationUtil {
     final String countAttr = "count";
     LoggingFacade logger = getLogger();
 
-    // send a HTTP request to set http session state(count number) and save HTTP session info
+    // send a HTTP request to set http session state(count number) and save HTTP session cookie info
+    // or get http session state(count number usind saved HTTP session cookie info
     logger.info("Process HTTP request with web service URL {0} in the pod {1} ", webServiceUrl, serverName);
     Map<String, String> httpAttrInfo =
         processHttpRequest(domainNamespace, adminServerPodName, hostName, port, webServiceUrl, headerOption);
@@ -154,11 +151,11 @@ public class SessionMigrationUtil {
   }
 
   private static Map<String, String> processHttpRequest(String domainNamespace,
-                                                       String adminServerPodName,
-                                                       String hostName,
-                                                       int port,
-                                                       String curlUrlPath,
-                                                       String headerOption) {
+                                                        String adminServerPodName,
+                                                        String hostName,
+                                                        int port,
+                                                        String curlUrlPath,
+                                                        String headerOption) {
     String[] httpAttrArray = {"sessioncreatetime", "sessionid", "primary", "secondary", "count"};
     Map<String, String> httpAttrInfo = new HashMap<String, String>();
     LoggingFacade logger = getLogger();
@@ -166,6 +163,11 @@ public class SessionMigrationUtil {
     // build curl command
     String curlCmd = buildCurlCommand(curlUrlPath, headerOption, hostName, port);
     logger.info("Command to set HTTP request and get HTTP response {0} ", curlCmd);
+
+    // check if primary server is ready
+    testUntil(withStandardRetryPolicy,
+        () -> checkPrimanyServerReady(domainNamespace, adminServerPodName, curlCmd),
+        logger, "check if primary server is ready in namespace {0}", domainNamespace);
 
     // set HTTP request and get HTTP response
     ExecResult execResult = assertDoesNotThrow(
@@ -187,6 +189,29 @@ public class SessionMigrationUtil {
     }
 
     return httpAttrInfo;
+  }
+
+  private static boolean checkPrimanyServerReady(String domainNamespace,
+                                                 String adminServerPodName,
+                                                 String curlCmd) {
+    boolean primaryServerReady = false;
+    LoggingFacade logger = getLogger();
+
+    // set HTTP request and get HTTP response
+    ExecResult execResult = assertDoesNotThrow(
+        () -> execCommand(domainNamespace, adminServerPodName,
+        null, true, "/bin/sh", "-c", curlCmd));
+
+    if (execResult.exitValue() == 0 && execResult.stdout() != null && !execResult.stdout().isEmpty()) {
+      String primaryServerName = getHttpResponseAttribute(execResult.stdout(), "primary");
+
+      if (primaryServerName != null && !primaryServerName.isEmpty()) {
+        logger.info("\n Primany server is ready: \n " + execResult.stdout());
+        primaryServerReady = true;
+      }
+    }
+
+    return primaryServerReady;
   }
 
   private static String buildCurlCommand(String curlUrlPath,
