@@ -538,7 +538,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
                 .wdtOperation("CREATE")
                 .wdtVersion(WDT_VERSION)
                 .env(env)
-                .redirect(true));
+                .redirect(false));
       } else if (domainType.equalsIgnoreCase("mii")) {
         imageCreation = createImage(
             defaultWitParams()
@@ -549,7 +549,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
                 .wdtModelOnly(true)
                 .wdtVersion(WDT_VERSION)
                 .env(env)
-                .redirect(true));
+                .redirect(false));
       }
       return imageCreation;
     });
