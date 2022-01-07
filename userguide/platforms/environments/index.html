@@ -12,20 +12,20 @@
     <title>Supported platforms :: WebLogic Kubernetes Operator</title>
 
     
-    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1641589510" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1641589510" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1641589510" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1641589510" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1641589510" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1641589510" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1641589510" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/theme.css?1641589510" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/tabs.css?1641589510" rel="stylesheet">
-    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1641589510" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/nucleus.css?1641591396" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/fontawesome-all.min.css?1641591396" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hybrid.css?1641591396" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/featherlight.min.css?1641591396" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/perfect-scrollbar.min.css?1641591396" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/auto-complete.css?1641591396" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/atom-one-dark-reasonable.css?1641591396" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/theme.css?1641591396" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/tabs.css?1641591396" rel="stylesheet">
+    <link href="/weblogic-kubernetes-operator/css/hugo-theme.css?1641591396" rel="stylesheet">
     
     
 
-    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1641589510"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery-3.6.0.min.js?1641591396"></script>
 
     <style>
       :root #header + #content > #left > #rlblock_left{
@@ -59,14 +59,14 @@
     <span data-search-clear=""><i class="fas fa-times"></i></span>
 </div>
 
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1641589510"></script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1641589510"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/lunr.min.js?1641591396"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/auto-complete.js?1641591396"></script>
 <script type="text/javascript">
     
         var baseurl = "https:\/\/oracle.github.io\/weblogic-kubernetes-operator";
     
 </script>
-<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1641589510"></script>
+<script type="text/javascript" src="/weblogic-kubernetes-operator/js/search.js?1641591396"></script>
 
     
   </div>
@@ -393,18 +393,13 @@
  
   
     
-    <li data-nav-id="/weblogic-kubernetes-operator/userguide/prepare/" title="Setup checklist" class="dd-item
+      <li data-nav-id="/weblogic-kubernetes-operator/userguide/platforms/environments/" title="Supported platforms" class="dd-item active">
+        <a href="/weblogic-kubernetes-operator/userguide/platforms/environments/">
+        Supported platforms
         
-        
-        
-        ">
-      <a href="/weblogic-kubernetes-operator/userguide/prepare/">
-          Setup checklist
-          
-      </a>
-      
-      
+        </a>
     </li>
+     
   
  
 
@@ -419,13 +414,18 @@
  
   
     
-      <li data-nav-id="/weblogic-kubernetes-operator/userguide/platforms/environments/" title="Supported platforms" class="dd-item active">
-        <a href="/weblogic-kubernetes-operator/userguide/platforms/environments/">
-        Supported platforms
+    <li data-nav-id="/weblogic-kubernetes-operator/userguide/prepare/" title="Setup checklist" class="dd-item
         
-        </a>
+        
+        
+        ">
+      <a href="/weblogic-kubernetes-operator/userguide/prepare/">
+          Setup checklist
+          
+      </a>
+      
+      
     </li>
-     
   
  
 
@@ -3261,6 +3261,7 @@
 <li><a href="#microsoft-azure">Microsoft Azure</a></li>
 <li><a href="#vmware-tanzu-kubernetes-grid-tkg">VMware Tanzu Kubernetes Grid (TKG)</a></li>
 <li><a href="#openshift">OpenShift</a></li>
+<li><a href="#weblogic-server-running-in-kubernetes-connecting-to-an-oracle-database-also-running-in-kubernetes">WebLogic Server running in Kubernetes connecting to an Oracle Database also running in Kubernetes</a></li>
 <li><a href="#development-focused-kubernetes-distributions">Development-focused Kubernetes distributions</a></li>
 </ul>
 </li>
@@ -3286,8 +3287,8 @@
 <p>WebLogic Server and the operator are also supported on service offerings which
 deploy the WebLogic Server and the operator for you. These include:</p>
 <ul>
-<li>Oracle WebLogic Server for OKE (WLS for OKE)</li>
-<li>Oracle WebLogic Server on AKS from the Azure Marketplace (WLS on AKS Marketplace)</li>
+<li><a href="https://docs.oracle.com/en/cloud/paas/weblogic-container/">Oracle WebLogic Server for OKE (WLS for OKE)</a></li>
+<li><a href="#oracle-weblogic-server-on-aks-from-the-azure-marketplace-wls-on-aks-marketplace">Oracle WebLogic Server on AKS from the Azure Marketplace (WLS on AKS Marketplace)</a></li>
 </ul>
 <p><a href="#development-focused-kubernetes-distributions">Development-focused Kubernetes distributions</a> are also supported.</p>
 <p>For detailed virtualization and cloud licensing descriptions, see:</p>
@@ -3299,12 +3300,12 @@ deploy the WebLogic Server and the operator for you. These include:</p>
 to the operator, or are subject to limitations and restrictions: see
 <a href="#important-notes-about-specific-environments">Important notes about specific environments</a>.</p>
 <h3 id="kubernetes-weblogic-server-and-operating-system-prerequisites">Kubernetes, WebLogic Server, and operating system prerequisites</h3>
-<p>The operator is subject to Kubernetes, WebLogic Server, and operating system versioning prerequisites:
+<p>The operator is subject to Kubernetes, WebLogic Server, and operating system versioning prerequisites,
 see <a href="/weblogic-kubernetes-operator/userguide/prerequisites/introduction/">Operator prerequisites</a>.</p>
 <h3 id="pricing-and-licensing">Pricing and licensing</h3>
 <p>The WebLogic Kubernetes Operator and Oracle Linux are open source and free;
 WebLogic Server requires licenses unless used in a single developer desktop development environment.
-In detail:</p>
+See the following sections for more detailed information.</p>
 <h4 id="weblogic-kubernetes-operator">WebLogic Kubernetes Operator</h4>
 <p>The WebLogic Kubernetes Operator (the &ldquo;operator&rdquo;) is open source and free,
 licensed under the Universal Permissive license (UPL), Version 1.0.
@@ -3426,13 +3427,26 @@ The WebLogic Kubernetes Operator and Oracle WebLogic Server are fully supported 
 </ul>
 <p>See also the <a href="/weblogic-kubernetes-operator/samples/tanzu-kubernetes-service/">Tanzu Kubernetes Grid sample</a>.</p>
 <h4 id="openshift">OpenShift</h4>
-<p>OpenShift can be a cloud platform or can be deployed on premise.</p>
+<p>OpenShift can be a cloud platform or can be deployed on premises.</p>
 <p>Operator 2.0.1+ is certified for use on OpenShift Container Platform 3.11.43+, with Kubernetes 1.11.5+.</p>
 <p>Operator 2.5.0+ is certified for use on OpenShift Container Platform 4.3.0+ with Kubernetes 1.16.2+.</p>
 <p>To accommodate OpenShift security requirements:</p>
 <ul>
-<li>For security requirements to run WebLogic Server in OpenShift, see the <a href="/weblogic-kubernetes-operator/security/openshift/">OpenShift chapter</a> in the Security section.</li>
+<li>For security requirements to run WebLogic Server in OpenShift, see the <a href="/weblogic-kubernetes-operator/security/openshift/">OpenShift</a> documentation.</li>
 <li>Beginning with operator version 3.3.2, specify the <code>kubernetesPlatorm</code> Helm chart property with value <code>OpenShift</code>. For more information, see <a href="/weblogic-kubernetes-operator/userguide/managing-operators/using-helm/#operator-helm-configuration-values">Operator Helm configuration values</a>.</li>
+</ul>
+<h4 id="weblogic-server-running-in-kubernetes-connecting-to-an-oracle-database-also-running-in-kubernetes">WebLogic Server running in Kubernetes connecting to an Oracle Database also running in Kubernetes</h4>
+<p>We have certified support for WebLogic Server domains, managed by the WebLogic Kubernetes Operator (operator), connecting to an Oracle Database, managed by the Oracle Database Operator for Kubernetes (OraOperator).  For details on the supported WLS and database versions, see the following:</p>
+<ul>
+<li><a href="/weblogic-kubernetes-operator/userguide/prerequisites/introduction/">Operator prerequisites</a></li>
+<li><a href="https://github.com/oracle/oracle-database-operator/blob/main/PREREQUISITES.md">Oracle Database Operator for Kubernetes prerequisites</a></li>
+</ul>
+<p>The certification includes support for both application data access and all WLS database-dependent features supported in Kubernetes. For more information, see WebLogic Server Certifications on Kubernetes in My Oracle Support <a href="https://support.oracle.com/epmos/faces/DocumentDisplay?_afrLoop=208317433106215&amp;id=2349228.1&amp;_afrWindowMode=0&amp;_adf.ctrl-state=c2nhai8p3_4">Doc ID 2349228.1</a>.</p>
+<p>Included in the certification is support for the following topologies:</p>
+<ul>
+<li>WebLogic Server, operator, Oracle Database, and OraOperator all running in the same Kubernetes cluster.</li>
+<li>WebLogic Server, operator, Oracle Database, and OraOperator all running in the same Kubernetes cluster and WebLogic Server running on an Istio mesh.</li>
+<li>WebLogic Server and operator running in a Kubernetes cluster and the Oracle Database and OraOperator in a different Kubernetes cluster.</li>
 </ul>
 <h4 id="development-focused-kubernetes-distributions">Development-focused Kubernetes distributions</h4>
 <p>There are a number of development-focused distributions of Kubernetes, like kind, Minikube, Minishift, and so on.
@@ -3699,22 +3713,6 @@ development/test option.</p>
             
                 
                     
-                
-                
-
-                    
-                    
-                    
-
-                    
-            
-        
-                    
-                        
-            
-            
-                
-                    
                     
                 
                 
@@ -3734,6 +3732,22 @@ development/test option.</p>
                     
                         
                         
+                    
+                
+                
+
+                    
+                    
+                    
+
+                    
+            
+        
+                    
+                        
+            
+            
+                
                     
                 
                 
@@ -5544,10 +5558,10 @@ development/test option.</p>
 	 
 	 
 		
-			<a class="nav nav-prev" href="/weblogic-kubernetes-operator/userguide/prepare/" title="Setup checklist"> <i class="fa fa-chevron-left"></i></a>
+			<a class="nav nav-prev" href="/weblogic-kubernetes-operator/userguide/prerequisites/introduction/" title="Operator prerequisites"> <i class="fa fa-chevron-left"></i></a>
 		
 		
-			<a class="nav nav-next" href="/weblogic-kubernetes-operator/userguide/managing-operators/" title="Manage operators" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
+			<a class="nav nav-next" href="/weblogic-kubernetes-operator/userguide/prepare/" title="Setup checklist" style="margin-right: 0px;"><i class="fa fa-chevron-right"></i></a>
 		
 	
     </div>
@@ -5557,19 +5571,19 @@ development/test option.</p>
     <div style="left: -1000px; overflow: scroll; position: absolute; top: -1000px; border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;">
       <div style="border: none; box-sizing: content-box; height: 200px; margin: 0px; padding: 0px; width: 200px;"></div>
     </div>
-    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1641589510"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1641589510"></script>
-    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1641589510"></script>
-    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1641589510"></script>
-    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1641589510"></script>
-    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1641589510"></script>
+    <script src="/weblogic-kubernetes-operator/js/clipboard.min.js?1641591396"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.min.js?1641591396"></script>
+    <script src="/weblogic-kubernetes-operator/js/perfect-scrollbar.jquery.min.js?1641591396"></script>
+    <script src="/weblogic-kubernetes-operator/js/jquery.sticky.js?1641591396"></script>
+    <script src="/weblogic-kubernetes-operator/js/featherlight.min.js?1641591396"></script>
+    <script src="/weblogic-kubernetes-operator/js/highlight.pack.js?1641591396"></script>
     <script>hljs.initHighlightingOnLoad();</script>
-    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1641589510"></script>
-    <script src="/weblogic-kubernetes-operator/js/learn.js?1641589510"></script>
-    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1641589510"></script>
+    <script src="/weblogic-kubernetes-operator/js/modernizr.custom-3.6.0.js?1641591396"></script>
+    <script src="/weblogic-kubernetes-operator/js/learn.js?1641591396"></script>
+    <script src="/weblogic-kubernetes-operator/js/hugo-learn.js?1641591396"></script>
     
         
-            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1641589510"></script>
+            <script src="/weblogic-kubernetes-operator/mermaid/mermaid.js?1641591396"></script>
         
         <script>
             mermaid.initialize({ startOnLoad: true });

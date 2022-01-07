@@ -23,7 +23,7 @@
       <pubDate>Sat, 23 Feb 2019 16:40:54 -0500</pubDate>
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/userguide/platforms/environments/</guid>
-      <description>Contents  Supported environments Kubernetes, WebLogic Server, and operating system prerequisites Pricing and licensing  WebLogic Kubernetes Operator WebLogic Server Oracle Linux and WebLogic Server Images Reference   Important notes about specific environments  Oracle Cloud Infrastructure (OCI) Oracle Linux Cloud Native Environment (OLCNE) Oracle Private Cloud Appliance (PCA) and Oracle Private Cloud at Customer (OPCC) Microsoft Azure VMware Tanzu Kubernetes Grid (TKG) OpenShift Development-focused Kubernetes distributions    Supported environments WebLogic Server and the operator are supported on Oracle Cloud offerings, such as:</description>
+      <description>Contents  Supported environments Kubernetes, WebLogic Server, and operating system prerequisites Pricing and licensing  WebLogic Kubernetes Operator WebLogic Server Oracle Linux and WebLogic Server Images Reference   Important notes about specific environments  Oracle Cloud Infrastructure (OCI) Oracle Linux Cloud Native Environment (OLCNE) Oracle Private Cloud Appliance (PCA) and Oracle Private Cloud at Customer (OPCC) Microsoft Azure VMware Tanzu Kubernetes Grid (TKG) OpenShift WebLogic Server running in Kubernetes connecting to an Oracle Database also running in Kubernetes Development-focused Kubernetes distributions    Supported environments WebLogic Server and the operator are supported on Oracle Cloud offerings, such as:</description>
     </item>
     
     <item>
