@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -14,6 +14,7 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.TimeUnit;
 
 import io.kubernetes.client.openapi.models.V1Pod;
+import oracle.kubernetes.operator.DomainStatusUpdater;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -144,25 +145,44 @@ public class RollingHelper {
       }
 
       if (!work.isEmpty()) {
-        return doForkJoin(createAfterRollStep(getNext()), packet, work);
+        LOGGER.info("RollingHelper got work to do", dom.getDomainUid(), work);
+        return doForkJoin(createAfterRollStep(getNext(), true), packet, work);
       }
-
+      LOGGER.info("RollingHelper got NO work to do", dom.getDomainUid());
       return doNext(createAfterRollStep(getNext()), packet);
     }
 
     private Step createAfterRollStep(Step next) {
       return new AfterRollStep(next);
     }
+
+    private Step createAfterRollStep(Step next, boolean rolled) {
+      return new AfterRollStep(next, rolled);
+    }
   }
 
-  private static class AfterRollStep extends Step {
+  static class AfterRollStep extends Step {
+    boolean rolled = false;
+
     public AfterRollStep(Step next) {
       super(next);
     }
 
+    public AfterRollStep(Step next, boolean rolled) {
+      super(next);
+      this.rolled = rolled;
+    }
+
     @Override
     public NextAction apply(Packet packet) {
-      return doNext(createDomainRollCompletedEventStepIfNeeded(getNext(), packet), packet);
+      return doNext(
+          rolled
+              ?
+              createDomainRollCompletedEvent(DomainStatusUpdater.createStatusUpdateStep(getNext()), packet)
+              :
+              createDomainRollCompletedEventStepIfNeeded(
+                  DomainStatusUpdater.createStatusUpdateStep(getNext()), packet),
+            packet);
     }
 
   }
@@ -175,13 +195,20 @@ public class RollingHelper {
    * @return step chain
    */
   public static Step createDomainRollCompletedEventStepIfNeeded(Step next, Packet packet) {
+    LOGGER.info("Entering createDomainRollCompletedEventStepIfNeeded START_EVENT_GENERATED= {0} packet = {1} ",
+        packet, packet == null ? "null" : packet.getValue(DOMAIN_ROLL_START_EVENT_GENERATED), packet);
     if ("true".equals(packet.remove(DOMAIN_ROLL_START_EVENT_GENERATED))) {
-      LOGGER.info(MessageKeys.DOMAIN_ROLL_COMPLETED, getDomainUid(packet));
-      return Step.chain(
-          EventHelper.createEventStep(new EventHelper.EventData(EventHelper.EventItem.DOMAIN_ROLL_COMPLETED)),
-          next);
+      return createDomainRollCompletedEvent(next, packet);
     }
     return next;
+  }
+
+  private static Step createDomainRollCompletedEvent(Step next, Packet packet) {
+    LOGGER.info(MessageKeys.DOMAIN_ROLL_COMPLETED, getDomainUid(packet));
+    packet.remove(DOMAIN_ROLL_START_EVENT_GENERATED);
+    return Step.chain(
+            EventHelper.createEventStep(new EventHelper.EventData(EventHelper.EventItem.DOMAIN_ROLL_COMPLETED)),
+        next);
   }
 
   private static String getDomainUid(Packet packet) {
@@ -250,12 +277,13 @@ public class RollingHelper {
       LOGGER.info(MessageKeys.ROLLING_SERVERS, dom.getDomainUid(), servers, readyServers);
 
       int countToRestartNow = countReady - dom.getMinAvailable(clusterName);
+
       Collection<StepAndPacket> restarts = new ArrayList<>();
       for (int i = 0; i < countToRestartNow; i++) {
         Optional.ofNullable(servers.poll())
             .ifPresent(restarts::add);
       }
-
+      LOGGER.info("RollingHelper  countToRestartNow {0} restarts.size {1}", countToRestartNow, restarts.size());
       if (!restarts.isEmpty()) {
         return doForkJoin(this, packet, restarts);
       } else if (!servers.isEmpty()) {

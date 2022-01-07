@@ -57,6 +57,9 @@ import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPON
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_COMPLETED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_STARTING;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_ROLL_START_EVENT_GENERATED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_FAILED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_STARTING;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STARTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STOPPED;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
@@ -136,6 +139,9 @@ public class EventHelper {
         return doNext(packet);
       }
 
+      if (DOMAIN_ROLL_STARTING == eventData.eventItem) {
+        packet.put(DOMAIN_ROLL_START_EVENT_GENERATED, "true");
+      }
       return doNext(createEventAPICall(createEventModel(packet, eventData)), packet);
     }
 

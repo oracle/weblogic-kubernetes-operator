@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -266,9 +266,28 @@ class RollingHelperTest {
     logRecords.clear();
 
     SERVER_NAMES.forEach(s -> assertThat(
-        "Expected Event " + DOMAIN_ROLL_STARTING + " expected with message not found",
+        "Expected Event " + POD_CYCLE_STARTING + " expected with message not found",
         getExpectedEventMessage(POD_CYCLE_STARTING, getPodName(s), NS),
         stringContainsInOrder("Replacing ", getPodName(s), "domain restart version changed")));
+    assertThat("Expected Event " + DOMAIN_ROLL_COMPLETED + " expected with message not found",
+        getExpectedEventMessage(DOMAIN_ROLL_COMPLETED, UID, NS),
+        stringContainsInOrder("Rolling restart of domain", UID, "completed"));
+  }
+
+  @Test
+  void whenRolling_domainRollCompletedEventCreatedWithCorrectMessage() {
+    initializeExistingPods();
+    testSupport.addToPacket(SERVERS_TO_ROLL, rolling);
+    testSupport.addToPacket(DOMAIN_ROLL_START_EVENT_GENERATED, "true");
+    SERVER_NAMES.forEach(s ->
+        rolling.put(s, createRollingStepAndPacket(modifyRestartVersion(createPodModel(s), "V3"), s)));
+
+    testSupport.runSteps(RollingHelper.rollServers(rolling, terminalStep));
+    logRecords.clear();
+
+    assertThat("Expected Event " + DOMAIN_ROLL_COMPLETED + " expected with message not found",
+        getExpectedEventMessage(DOMAIN_ROLL_COMPLETED, UID, NS),
+        stringContainsInOrder("Rolling restart of domain", UID, "completed"));
   }
 
   @Test
