@@ -561,7 +561,7 @@ waitForShutdownMarker() {
 #   (The liveness probe checks the same file.)
 #
 
-exitOrLoop {
+exitOrLoop() {
   if [ -f /weblogic-operator/debug/livenessProbeSuccessOverride ]
   then
     waitForShutdownMarker
@@ -573,7 +573,7 @@ exitOrLoop {
 # Create a folder and test access to it
 #   Arg $1 - path of folder to create
 #   Arg $2 - optional wording to append to the FINE and SEVERE traces
-createFolder {
+createFolder() {
   local targetDir="${1}"
   local folderDescription="${2:-}"
   local mkdirCommand="mkdir -m 750 -p $targetDir"
