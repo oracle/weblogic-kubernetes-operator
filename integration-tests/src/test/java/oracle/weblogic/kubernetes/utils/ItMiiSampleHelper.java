@@ -296,6 +296,7 @@ public class ItMiiSampleHelper {
    * @param testClassName the test class name which will call this method
    */
   public void callUpdateUseCase(String args, String errString, String testClassName) {
+
     if (args.contains("update3")) {
       String imageName = (domainType.equals(DomainType.WLS))
           ? getModelImageName(testClassName + "-wlsv2") : getModelImageName(testClassName + "-jrfv2");
