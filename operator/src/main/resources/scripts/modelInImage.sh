@@ -1058,8 +1058,8 @@ function wdtHandleOnlineUpdate() {
         cd ${DOMAIN_HOME}/lib || exitOrLoop
         unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainLibraries/*
         if [ $? -ne 0 && $? -ne 11 ] ; then
-          trace SEVERE  "Domain Source Type is FromModel, error in extracting domainLibraries
-          ${IMG_ARCHIVES_ROOTDIR}/${file}"
+          trace SEVERE  "Domain Source Type is FromModel, error in extracting domainLibraries " \
+          "${IMG_ARCHIVES_ROOTDIR}/${file}"
           exitOrLoop
         fi
 
@@ -1068,8 +1068,8 @@ function wdtHandleOnlineUpdate() {
         cd ${DOMAIN_HOME}/bin || exitOrLoop
         unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainBin/*
         if [ $? -ne 0 && $? -ne 11 ] ; then
-          trace SEVERE  "Domain Source Type is FromModel, error in extracting domainBin
-          ${IMG_ARCHIVES_ROOTDIR}/${file}"
+          trace SEVERE  "Domain Source Type is FromModel, error in extracting domainBin " \
+          "${IMG_ARCHIVES_ROOTDIR}/${file}"
           exitOrLoop
         fi
 
@@ -1301,8 +1301,8 @@ function prepareMIIServer() {
         cd ${DOMAIN_HOME}/lib || exitOrLoop
         unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainLibraries/*
         if [ $? -ne 0 && $? -ne 11 ] ; then
-          trace SEVERE  "Domain Source Type is FromModel, error in extracting domainLibraries
-          ${IMG_ARCHIVES_ROOTDIR}/${file}"
+          trace SEVERE  "Domain Source Type is FromModel, error in extracting domainLibraries " \
+          "${IMG_ARCHIVES_ROOTDIR}/${file}"
           exitOrLoop
         fi
 
@@ -1311,8 +1311,8 @@ function prepareMIIServer() {
         cd ${DOMAIN_HOME}/bin || exitOrLoop
         unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainBin/*
         if [ $? -ne 0 && $? -ne 11 ] ; then
-          trace SEVERE  "Domain Source Type is FromModel, error in extracting domainBin
-          ${IMG_ARCHIVES_ROOTDIR}/${file}"
+          trace SEVERE  "Domain Source Type is FromModel, error in extracting domainBin " \
+          "${IMG_ARCHIVES_ROOTDIR}/${file}"
           exitOrLoop
         fi
 
