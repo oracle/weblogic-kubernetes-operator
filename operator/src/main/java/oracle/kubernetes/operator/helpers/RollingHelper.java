@@ -145,10 +145,8 @@ public class RollingHelper {
       }
 
       if (!work.isEmpty()) {
-        LOGGER.info("RollingHelper got work to do", dom.getDomainUid(), work);
         return doForkJoin(createAfterRollStep(getNext(), true), packet, work);
       }
-      LOGGER.info("RollingHelper got NO work to do", dom.getDomainUid());
       return doNext(createAfterRollStep(getNext()), packet);
     }
 
@@ -195,8 +193,6 @@ public class RollingHelper {
    * @return step chain
    */
   public static Step createDomainRollCompletedEventStepIfNeeded(Step next, Packet packet) {
-    LOGGER.info("Entering createDomainRollCompletedEventStepIfNeeded START_EVENT_GENERATED= {0} packet = {1} ",
-        packet, packet == null ? "null" : packet.getValue(DOMAIN_ROLL_START_EVENT_GENERATED), packet);
     if ("true".equals(packet.remove(DOMAIN_ROLL_START_EVENT_GENERATED))) {
       return createDomainRollCompletedEvent(next, packet);
     }
@@ -277,13 +273,12 @@ public class RollingHelper {
       LOGGER.info(MessageKeys.ROLLING_SERVERS, dom.getDomainUid(), servers, readyServers);
 
       int countToRestartNow = countReady - dom.getMinAvailable(clusterName);
-
       Collection<StepAndPacket> restarts = new ArrayList<>();
       for (int i = 0; i < countToRestartNow; i++) {
         Optional.ofNullable(servers.poll())
             .ifPresent(restarts::add);
       }
-      LOGGER.info("RollingHelper  countToRestartNow {0} restarts.size {1}", countToRestartNow, restarts.size());
+
       if (!restarts.isEmpty()) {
         return doForkJoin(this, packet, restarts);
       } else if (!servers.isEmpty()) {

@@ -222,7 +222,7 @@ class RollingHelperTest {
   }
 
   @Test
-  void afterRoll_domainRollCompletedEventCreated() {
+  void whenRoll_domainRollCompletedEventCreated() {
     initializeExistingPods();
     testSupport.addToPacket(SERVERS_TO_ROLL, rolling);
     SERVER_NAMES.forEach(s ->
@@ -235,7 +235,7 @@ class RollingHelperTest {
   }
 
   @Test
-  void noRoll_withDomainRollStartFlag_domainRollCompletedEventCreated() {
+  void whenNoRoll_withDomainRollStartFlag_domainRollCompletedEventCreated() {
     initializeExistingPods();
     testSupport.addToPacket(DOMAIN_ROLL_START_EVENT_GENERATED, "true");
 
