@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.extensions;
@@ -36,6 +36,7 @@ import org.junit.jupiter.api.extension.ExtensionContext;
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.CERT_MANAGER;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
@@ -134,6 +135,13 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
           logger.severe("Failed to cleanup the download directory " + DOWNLOAD_DIR, ioe);
         }
 
+        //Install cert-manager for Database installation through DB operator
+        String certManager = CERT_MANAGER;
+        CommandParams params = new CommandParams().defaults();
+        params.command("kubectl apply -f " + certManager);
+        boolean response = Command.withParams(params).execute();
+        assertTrue(response, "Failed to install cert manager");
+
         // Only the first thread will enter this block.
         logger.info("Building docker Images before any integration test classes are run");
         context.getRoot().getStore(GLOBAL).put("BuildSetup", this);
@@ -193,7 +201,7 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
 
         // build MII basic image if does not exits
         logger.info("Build/Check mii-basic image with tag {0}", MII_BASIC_IMAGE_TAG);
-        if (! dockerImageExists(MII_BASIC_IMAGE_NAME, MII_BASIC_IMAGE_TAG)) { 
+        if (! dockerImageExists(MII_BASIC_IMAGE_NAME, MII_BASIC_IMAGE_TAG)) {
           logger.info("Building mii-basic image {0}", miiBasicImage);
           testUntil(
                 withVeryLongRetryPolicy,
@@ -360,6 +368,14 @@ public class ImageBuilders implements BeforeAllCallback, ExtensionContext.Store.
           deleteImageOcir(token, image);
         }
       }
+    }
+
+    //delete certificate manager
+    String certManager = CERT_MANAGER;
+    CommandParams params = new CommandParams().defaults();
+    params.command("kubectl delete -f " + certManager);
+    if (!Command.withParams(params).execute()) {
+      logger.warning("Failed to uninstall cert manager");
     }
 
     for (Handler handler : logger.getUnderlyingLogger().getHandlers()) {
