@@ -75,7 +75,8 @@ public class WebLogicImageTool {
         defaultCommandParams()
             .command(buildiWitCommand())
             .env(params.env())
-            .redirect(params.redirect()))
+            .redirect(params.redirect())
+            .verbose(true))
         .execute();
   }
 
