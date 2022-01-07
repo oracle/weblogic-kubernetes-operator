@@ -12,11 +12,11 @@ import java.util.Map;
 import com.google.gson.JsonObject;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressRule;
-import io.kubernetes.client.openapi.models.NetworkingV1beta1IngressTLS;
 import io.kubernetes.client.openapi.models.V1ClusterRole;
 import io.kubernetes.client.openapi.models.V1ClusterRoleBinding;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
+import io.kubernetes.client.openapi.models.V1IngressRule;
+import io.kubernetes.client.openapi.models.V1IngressTLS;
 import io.kubernetes.client.openapi.models.V1Job;
 import io.kubernetes.client.openapi.models.V1JobList;
 import io.kubernetes.client.openapi.models.V1PersistentVolume;
@@ -596,8 +596,8 @@ public class TestActions {
   public static void createIngress(String ingressName,
                                    String namespace,
                                    Map<String, String> annotations,
-                                   List<NetworkingV1beta1IngressRule> ingressRules,
-                                   List<NetworkingV1beta1IngressTLS> tlsList) throws ApiException {
+                                   List<V1IngressRule> ingressRules,
+                                   List<V1IngressTLS> tlsList) throws ApiException {
     Ingress.createIngress(ingressName, namespace, annotations, ingressRules, tlsList);
   }
 

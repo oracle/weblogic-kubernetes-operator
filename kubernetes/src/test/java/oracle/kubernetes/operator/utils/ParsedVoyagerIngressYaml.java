@@ -5,7 +5,7 @@ package oracle.kubernetes.operator.utils;
 
 import java.nio.file.Path;
 
-import io.kubernetes.client.openapi.models.NetworkingV1beta1Ingress;
+import io.kubernetes.client.openapi.models.V1Ingress;
 import io.kubernetes.client.openapi.models.V1Service;
 
 /**
@@ -25,7 +25,7 @@ public class ParsedVoyagerIngressYaml extends ParsedKubernetesYaml {
     this.inputs = inputs;
   }
 
-  public NetworkingV1beta1Ingress getVoyagerIngress() {
+  public V1Ingress getVoyagerIngress() {
     return getIngresses().find(getVoyagerIngressName());
   }
 
