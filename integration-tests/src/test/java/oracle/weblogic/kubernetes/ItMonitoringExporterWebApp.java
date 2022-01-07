@@ -46,7 +46,6 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOSTNAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CHART_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -419,7 +418,8 @@ class ItMonitoringExporterWebApp {
       nodeportPrometheus = promHelmParams.getNodePortServer();
       hostPortPrometheus = K8S_NODEPORT_HOSTNAME + ":" + nodeportPrometheus;
       if (OKD) {
-        hostPortPrometheus = createRouteForOKD("prometheus" + releaseSuffix + "-service", monitoringNS) + ":" + nodeportPrometheus;
+        hostPortPrometheus = createRouteForOKD("prometheus" + releaseSuffix
+            + "-service", monitoringNS) + ":" + nodeportPrometheus;
       }
     }
     //if prometheus already installed change CM for specified domain

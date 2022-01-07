@@ -34,7 +34,6 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOSTNAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CHART_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -395,7 +394,8 @@ class ItMonitoringExporterSideCar {
     logger.info("Prometheus is running");
     hostPortPrometheus = K8S_NODEPORT_HOSTNAME + ":" + nodeportPrometheus;
     if (OKD) {
-      hostPortPrometheus = createRouteForOKD("prometheus" + releaseSuffix + "-service", monitoringNS) + ":" + nodeportPrometheus;
+      hostPortPrometheus = createRouteForOKD("prometheus" + releaseSuffix
+          + "-service", monitoringNS) + ":" + nodeportPrometheus;
     }
     if (grafanaHelmParams == null) {
       //logger.info("Node Port for Grafana is " + nodeportgrafana);
