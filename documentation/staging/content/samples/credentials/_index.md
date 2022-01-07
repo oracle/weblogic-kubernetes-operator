@@ -41,8 +41,8 @@ $ kubectl -n domain-namespace-1 get secret domain1-weblogic-credentials -o yaml
 ```
 apiVersion: v1
 data:
-  password: d2VsY29tZTE=
-  username: d2VibG9naWM=
+  username: <user name>
+  password: <password>
 kind: Secret
 metadata:
   creationTimestamp: 2018-12-12T20:25:20Z
@@ -56,3 +56,4 @@ metadata:
   uid: 0c2b3510-fe4c-11e8-994d-00001700101d
 type: Opaque
 ```
+where `<user name>` and `<password>` are to be replaced with their actual values.
