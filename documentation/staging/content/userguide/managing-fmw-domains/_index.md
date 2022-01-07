@@ -225,8 +225,8 @@ spec:
 ```
 
 Notice that you can pass in environment variables to set the SID, the name of the PDB, and
-so on.  The documentation describes the other variables that are available.  The `sys` password
-defaults to `Oradoc_db1`.  Follow the instructions in the documentation to reset this password.
+so on.  The documentation describes the other variables that are available.  
+Follow the instructions in the documentation to set the `sys` password.
 
 You should also create a service to make the database available within the Kubernetes cluster with
 a well known name.  Here is an example:
