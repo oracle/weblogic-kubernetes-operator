@@ -210,17 +210,17 @@ public class MonitoringUtils {
    *
    * @param searchKey   - metric query expression
    * @param expectedVal - expected metrics to search
-   * @param prometheusPort prometheusPort
+   * @param hostPortPrometheus host:nodePort for prometheus
    * @throws Exception if command to check metrics fails
    */
-  public static void checkMetricsViaPrometheus(String searchKey, String expectedVal, int prometheusPort)
+  public static void checkMetricsViaPrometheus(String searchKey, String expectedVal, String hostPortPrometheus)
       throws Exception {
 
     LoggingFacade logger = getLogger();
     // url
     String curlCmd =
-        String.format("curl --silent --show-error --noproxy '*'  http://%s:%s/api/v1/query?query=%s",
-            K8S_NODEPORT_HOST, prometheusPort, searchKey);
+        String.format("curl --silent --show-error --noproxy '*'  http://%s/api/v1/query?query=%s",
+            hostPortPrometheus, searchKey);
 
     logger.info("Executing Curl cmd {0}", curlCmd);
     logger.info("Checking searchKey: {0}", searchKey);
@@ -787,15 +787,16 @@ public class MonitoringUtils {
   /**
    * Install wls dashboard from endtoend sample and verify it is accessable.
    *
-   * @param nodeportGrafana  nodeport for grafana
+   * @param hostPort  host:nodeport string for grafana
    * @param monitoringExporterEndToEndDir endtoend sample directory
    *
    */
-  public static void installVerifyGrafanaDashBoard(int nodeportGrafana, String monitoringExporterEndToEndDir) {
+  //public static void installVerifyGrafanaDashBoard(int nodeportGrafana, String monitoringExporterEndToEndDir) {
+  public static void installVerifyGrafanaDashBoard(String hostPort, String monitoringExporterEndToEndDir) {
     //wait until it starts dashboard
     String curlCmd = String.format("curl -v  -H 'Content-Type: application/json' "
-            + " -X GET http://admin:12345678@%s:%s/api/dashboards",
-        K8S_NODEPORT_HOST, nodeportGrafana);
+            + " -X GET http://admin:12345678@%s/api/dashboards",
+        hostPort);
     testUntil(
         assertDoesNotThrow(() -> searchForKey(curlCmd, "grafana"),
             String.format("Check access to grafana dashboard")),
@@ -805,24 +806,24 @@ public class MonitoringUtils {
     // url
     String curlCmd0 =
         String.format("curl -v -H 'Content-Type: application/json' -H \"Content-Type: application/json\""
-                + "  -X POST http://admin:12345678@%s:%s/api/datasources/"
+                + "  -X POST http://admin:12345678@%s/api/datasources/"
                 + "  --data-binary @%s/grafana/datasource.json",
-            K8S_NODEPORT_HOST, nodeportGrafana, monitoringExporterEndToEndDir);
+            hostPort, monitoringExporterEndToEndDir);
 
     logger.info("Executing Curl cmd {0}", curlCmd);
     assertDoesNotThrow(() -> ExecCommand.exec(curlCmd0));
 
     String curlCmd1 =
         String.format("curl -v -H 'Content-Type: application/json' -H \"Content-Type: application/json\""
-                + "  -X POST http://admin:12345678@%s:%s/api/dashboards/db/"
+                + "  -X POST http://admin:12345678@%s/api/dashboards/db/"
                 + "  --data-binary @%s/grafana/dashboard.json",
-            K8S_NODEPORT_HOST, nodeportGrafana, monitoringExporterEndToEndDir);
+            hostPort, monitoringExporterEndToEndDir);
     logger.info("Executing Curl cmd {0}", curlCmd1);
     assertDoesNotThrow(() -> ExecCommand.exec(curlCmd1));
 
     String curlCmd2 = String.format("curl -v  -H 'Content-Type: application/json' "
-            + " -X GET http://admin:12345678@%s:%s/api/dashboards/db/weblogic-server-dashboard",
-        K8S_NODEPORT_HOST, nodeportGrafana);
+            + " -X GET http://admin:12345678@%s/api/dashboards/db/weblogic-server-dashboard",
+        hostPort);
     testUntil(
         assertDoesNotThrow(() -> searchForKey(curlCmd2, "wls_jvm_uptime"),
             String.format("Check grafana dashboard wls against expected %s", "wls_jvm_uptime")),

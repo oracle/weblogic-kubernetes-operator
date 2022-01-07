@@ -43,6 +43,7 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOSTNAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
@@ -136,6 +137,7 @@ class ItMonitoringExporterWebApp {
   private static String prometheusReleaseName = "prometheus" + releaseSuffix;
   private static String grafanaReleaseName = "grafana" + releaseSuffix;
   private static  String monitoringExporterDir;
+  private static String hostPortPrometheus = null;
 
 
   /**
@@ -213,10 +215,10 @@ class ItMonitoringExporterWebApp {
     HashMap<String, String> labels = new HashMap<>();
     labels.put("app", "monitoring");
     labels.put("weblogic.domainUid", "test");
-    String pvDir = PV_ROOT + "/ItMonitoringExporterWebApp/monexp-persistentVolume/";
-    assertDoesNotThrow(() -> createPvAndPvc(prometheusReleaseName, monitoringNS, labels, pvDir));
-    assertDoesNotThrow(() -> createPvAndPvc("alertmanager" + releaseSuffix, monitoringNS, labels, pvDir));
-    assertDoesNotThrow(() -> createPvAndPvc(grafanaReleaseName, monitoringNS, labels,pvDir));
+    String className = "ItMonitoringExporterWebApp";
+    assertDoesNotThrow(() -> createPvAndPvc(prometheusReleaseName, monitoringNS, labels, className));
+    assertDoesNotThrow(() -> createPvAndPvc("alertmanager" + releaseSuffix, monitoringNS, labels, className));
+    assertDoesNotThrow(() -> createPvAndPvc(grafanaReleaseName, monitoringNS, labels,className));
     cleanupPromGrafanaClusterRoles(prometheusReleaseName,grafanaReleaseName);
   }
 
@@ -415,6 +417,10 @@ class ItMonitoringExporterWebApp {
       assertNotNull(promHelmParams, " Failed to install prometheus");
       prometheusDomainRegexValue = prometheusRegexValue;
       nodeportPrometheus = promHelmParams.getNodePortServer();
+      hostPortPrometheus = K8S_NODEPORT_HOSTNAME + ":" + nodeportPrometheus;
+      if (OKD) {
+        hostPortPrometheus = createRouteForOKD("prometheus" + releaseSuffix + "-service", monitoringNS) + ":" + nodeportPrometheus;
+      }
     }
     //if prometheus already installed change CM for specified domain
     if (!prometheusRegexValue.equals(prometheusDomainRegexValue)) {
@@ -432,7 +438,11 @@ class ItMonitoringExporterWebApp {
               monitoringExporterEndToEndDir + "/grafana/values.yaml",
               grafanaChartVersion);
       assertNotNull(grafanaHelmParams, "Grafana failed to install");
-      installVerifyGrafanaDashBoard(grafanaHelmParams.getNodePort(), monitoringExporterEndToEndDir);
+      String hostPortGrafana = K8S_NODEPORT_HOSTNAME + ":" + grafanaHelmParams.getNodePort();
+      if (OKD) {
+        hostPortGrafana = createRouteForOKD(grafanaReleaseName, monitoringNS) + ":" + grafanaHelmParams.getNodePort();
+      }
+      installVerifyGrafanaDashBoard(hostPortGrafana, monitoringExporterEndToEndDir);
     }
     logger.info("Grafana is running");
   }
@@ -588,7 +598,7 @@ class ItMonitoringExporterWebApp {
     Thread.sleep(20 * 1000);
     // "heap_free_current{name="managed-server1"}[15s]" search for results for last 15secs
     checkMetricsViaPrometheus("heap_free_current%7Bname%3D%22" + cluster1Name + "-managed-server1%22%7D%5B15s%5D",
-        cluster1Name + "-managed-server1",nodeportPrometheus);
+        cluster1Name + "-managed-server1",hostPortPrometheus);
 
   }
 
@@ -608,7 +618,7 @@ class ItMonitoringExporterWebApp {
 
     String sessionAppPrometheusSearchKey =
             "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
-    checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr",nodeportPrometheus);
+    checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr",hostPortPrometheus);
   }
 
   /**
@@ -747,7 +757,7 @@ class ItMonitoringExporterWebApp {
     assertNotNull(page);
     assertFalse(page.asText().contains("metricsNameSnakeCase"));
     String searchKey = "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D";
-    checkMetricsViaPrometheus(searchKey, "sessmigr",nodeportPrometheus);
+    checkMetricsViaPrometheus(searchKey, "sessmigr",hostPortPrometheus);
   }
 
   /**
@@ -767,7 +777,7 @@ class ItMonitoringExporterWebApp {
 
     String prometheusSearchKey1 =
         "heap_free_current";
-    checkMetricsViaPrometheus(prometheusSearchKey1, "managed-server1",nodeportPrometheus);
+    checkMetricsViaPrometheus(prometheusSearchKey1, "managed-server1",hostPortPrometheus);
   }
 
   /**
@@ -784,7 +794,7 @@ class ItMonitoringExporterWebApp {
     assertTrue(page.asText().contains("domainQualifier"));
 
     String searchKey = "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D";
-    checkMetricsViaPrometheus(searchKey, "\"domain\":\"wls-monexp-domain-1" + "\"",nodeportPrometheus);
+    checkMetricsViaPrometheus(searchKey, "\"domain\":\"wls-monexp-domain-1" + "\"",hostPortPrometheus);
   }
 
   /**
@@ -875,11 +885,11 @@ class ItMonitoringExporterWebApp {
     try {
       copyFileToPod(domainNS, adminServerPodName, null,
           Paths.get(RESOURCE_DIR, "python-scripts", "changeListenPort.py"),
-          Paths.get("/u01/oracle/changeListenPort.py"));
+          Paths.get("/u01/changeListenPort.py"));
 
       copyFileToPod(domainNS, adminServerPodName, null,
           Paths.get(RESOURCE_DIR, "bash-scripts", "callpyscript.sh"),
-          Paths.get("/u01/oracle/callpyscript.sh"));
+          Paths.get("/u01/callpyscript.sh"));
     } catch (ApiException apex) {
       logger.severe("Got ApiException while copying file to admin pod {0}", apex.getResponseBody());
       return false;
@@ -890,12 +900,12 @@ class ItMonitoringExporterWebApp {
 
     logger.info("Adding execute mode for callpyscript.sh");
     ExecResult result = exec(adminPod, null, true,
-        "/bin/sh", "-c", "chmod +x /u01/oracle/callpyscript.sh");
+        "/bin/sh", "-c", "chmod +x /u01/callpyscript.sh");
     if (result.exitValue() != 0) {
       return false;
     }
     logger.info("Changing ListenPortEnabled");
-    String command = new StringBuffer("/u01/oracle/callpyscript.sh /u01/oracle/changeListenPort.py ")
+    String command = new StringBuffer("/u01/callpyscript.sh /u01/changeListenPort.py ")
         .append(ADMIN_USERNAME_DEFAULT)
         .append(" ")
         .append(ADMIN_PASSWORD_DEFAULT)

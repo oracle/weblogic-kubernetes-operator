@@ -30,7 +30,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_CHART_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOSTNAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
@@ -60,6 +62,7 @@ import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyP
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installMonitoringExporter;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installVerifyGrafanaDashBoard;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.uninstallPrometheusGrafana;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPvAndPvc;
@@ -120,6 +123,7 @@ class ItMonitoringExporterSideCar {
   private static String prometheusReleaseName = "prometheus" + releaseSuffix;
   private static String grafanaReleaseName = "grafana" + releaseSuffix;
   private static String monitoringExporterDir;
+  private static String hostPortPrometheus;
 
 
   /**
@@ -175,15 +179,16 @@ class ItMonitoringExporterSideCar {
     exporterImage = assertDoesNotThrow(() -> createImageAndPushToRepo(monitoringExporterSrcDir, "exporter",
         domain1Namespace, OCIR_SECRET_NAME, getDockerExtraArgs()),
         "Failed to create image for exporter");
-
-    // install and verify NGINX
-    nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
-    String nginxServiceName = nginxHelmParams.getReleaseName() + "-ingress-nginx-controller";
-    logger.info("NGINX service name: {0}", nginxServiceName);
-    nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
-    nodeportshttps = getServiceNodePort(nginxNamespace, nginxServiceName, "https");
-    logger.info("NGINX http node port: {0}", nodeportshttp);
-    logger.info("NGINX https node port: {0}", nodeportshttps);
+    if (!OKD) {
+      // install and verify NGINX
+      nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
+      String nginxServiceName = nginxHelmParams.getReleaseName() + "-ingress-nginx-controller";
+      logger.info("NGINX service name: {0}", nginxServiceName);
+      nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
+      nodeportshttps = getServiceNodePort(nginxNamespace, nginxServiceName, "https");
+      logger.info("NGINX http node port: {0}", nodeportshttp);
+      logger.info("NGINX https node port: {0}", nodeportshttps);
+    }
     clusterNameMsPortMap = new HashMap<>();
     clusterNameMsPortMap.put(cluster1Name, managedServerPort);
     clusterNameMsPortMap.put(cluster2Name, managedServerPort);
@@ -194,10 +199,10 @@ class ItMonitoringExporterSideCar {
     HashMap<String, String> labels = new HashMap<>();
     labels.put("app", "monitoring");
     labels.put("weblogic.domainUid", "test");
-    String pvDir = PV_ROOT + "/ItMonitoringExporterSideCar/monexp-persistentVolume/";
-    assertDoesNotThrow(() -> createPvAndPvc(prometheusReleaseName, monitoringNS, labels, pvDir));
-    assertDoesNotThrow(() -> createPvAndPvc("alertmanager" + releaseSuffix, monitoringNS, labels, pvDir));
-    assertDoesNotThrow(() -> createPvAndPvc(grafanaReleaseName, monitoringNS, labels, pvDir));
+    String className = "ItMonitoringExporterSideCar";
+    assertDoesNotThrow(() -> createPvAndPvc(prometheusReleaseName, monitoringNS, labels, className));
+    assertDoesNotThrow(() -> createPvAndPvc("alertmanager" + releaseSuffix, monitoringNS, labels, className));
+    assertDoesNotThrow(() -> createPvAndPvc(grafanaReleaseName, monitoringNS, labels, className));
     cleanupPromGrafanaClusterRoles(prometheusReleaseName, grafanaReleaseName);
   }
 
@@ -224,7 +229,7 @@ class ItMonitoringExporterSideCar {
 
       String sessionAppPrometheusSearchKey =
           "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
-      checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr", nodeportPrometheus);
+      checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr", hostPortPrometheus);
       Domain domain = getDomainCustomResource(domain3Uid, domain3Namespace);
       String monexpConfig = domain.getSpec().getMonitoringExporter().toString();
       logger.info("MonitorinExporter new Configuration from crd " + monexpConfig);
@@ -292,7 +297,7 @@ class ItMonitoringExporterSideCar {
         managedServerPodName, domainNamespace);
     checkPodReadyAndServiceExists(managedServerPodName + "1", domainUid, domainNamespace);
     checkPodReadyAndServiceExists(managedServerPodName + "2", domainUid, domainNamespace);
-    checkMetricsViaPrometheus(promSearchString, expectedVal,nodeportPrometheus);
+    checkMetricsViaPrometheus(promSearchString, expectedVal,hostPortPrometheus);
   }
 
   /**
@@ -317,9 +322,9 @@ class ItMonitoringExporterSideCar {
 
       // "heap_free_current{name="managed-server1"}[15s]" search for results for last 15secs
       checkMetricsViaPrometheus("heap_free_current%7Bname%3D%22" + cluster1Name + "-managed-server1%22%7D%5B15s%5D",
-          cluster1Name + "-managed-server1",nodeportPrometheus);
+          cluster1Name + "-managed-server1",hostPortPrometheus);
       checkMetricsViaPrometheus("heap_free_current%7Bname%3D%22" + cluster2Name + "-managed-server2%22%7D%5B15s%5D",
-          cluster2Name + "-managed-server2",nodeportPrometheus);
+          cluster2Name + "-managed-server2",hostPortPrometheus);
     } finally {
       shutdownDomain(domain1Namespace, domain1Uid);
     }
@@ -349,7 +354,7 @@ class ItMonitoringExporterSideCar {
 
       String sessionAppPrometheusSearchKey =
           "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
-      checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr",nodeportPrometheus);
+      checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr",hostPortPrometheus);
 
       Domain domain = getDomainCustomResource(domain2Uid,domain2Namespace);
       String monexpConfig = domain.getSpec().getMonitoringExporter().toString();
@@ -388,7 +393,10 @@ class ItMonitoringExporterSideCar {
       prometheusDomainRegexValue = prometheusRegexValue;
     }
     logger.info("Prometheus is running");
-
+    hostPortPrometheus = K8S_NODEPORT_HOSTNAME + ":" + nodeportPrometheus;
+    if (OKD) {
+      hostPortPrometheus = createRouteForOKD("prometheus" + releaseSuffix + "-service", monitoringNS) + ":" + nodeportPrometheus;
+    }
     if (grafanaHelmParams == null) {
       //logger.info("Node Port for Grafana is " + nodeportgrafana);
       grafanaHelmParams = installAndVerifyGrafana(grafanaReleaseName,
@@ -396,7 +404,11 @@ class ItMonitoringExporterSideCar {
           monitoringExporterEndToEndDir + "/grafana/values.yaml",
           grafanaChartVersion);
       assertNotNull(grafanaHelmParams, "Grafana failed to install");
-      installVerifyGrafanaDashBoard(grafanaHelmParams.getNodePort(), monitoringExporterEndToEndDir);
+      String hostPortGrafana = K8S_NODEPORT_HOSTNAME + ":" + grafanaHelmParams.getNodePort();
+      if (OKD) {
+        hostPortGrafana = createRouteForOKD(grafanaReleaseName, monitoringNS) + ":" + grafanaHelmParams.getNodePort();
+      }
+      installVerifyGrafanaDashBoard(hostPortGrafana, monitoringExporterEndToEndDir);
     }
     logger.info("Grafana is running");
   }
