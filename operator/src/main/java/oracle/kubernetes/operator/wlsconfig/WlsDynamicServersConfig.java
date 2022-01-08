@@ -5,12 +5,10 @@ package oracle.kubernetes.operator.wlsconfig;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
-import oracle.kubernetes.operator.logging.MessageKeys;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -71,68 +69,6 @@ public class WlsDynamicServersConfig {
   }
 
   /**
-   * Creates a WlsDynamicServersConfig object using an "dynamicServers" item parsed from JSON result
-   * from WLS REST call.
-   *
-   * @param dynamicServerConfig Map containing "dynamicServers" item parsed from JSON result from
-   *     WLS REST call
-   * @param serverTemplates Map containing all server templates configuration read from the WLS
-   *     domain
-   * @param clusterName Name of the WLS cluster that this dynamic servers configuration belongs to
-   * @param domainName Name of the WLS domain that this WLS cluster belongs to
-   * @return A new WlsDynamicServersConfig object created based on the JSON result
-   */
-  @SuppressWarnings("unchecked")
-  static WlsDynamicServersConfig create(
-      Map<String, Object> dynamicServerConfig,
-      Map<String, WlsServerConfig> serverTemplates,
-      String clusterName,
-      String domainName) {
-    Integer dynamicClusterSize = null;
-    Integer maxDynamicClusterSize = null;
-    Integer minDynamicClusterSize = null;
-    String serverNamePrefix = null;
-    boolean calculatedListenPorts = false;
-    String machineNameMatchExpression = null;
-    WlsServerConfig serverTemplate = null;
-    List<WlsServerConfig> serverConfigs = null;
-    if (dynamicServerConfig != null) {
-      dynamicClusterSize = (Integer) dynamicServerConfig.get("dynamicClusterSize");
-      maxDynamicClusterSize = (Integer) dynamicServerConfig.get("maxDynamicClusterSize");
-      minDynamicClusterSize = (Integer) dynamicServerConfig.get("minDynamicClusterSize");
-      serverNamePrefix = (String) dynamicServerConfig.get("serverNamePrefix");
-      calculatedListenPorts = (boolean) dynamicServerConfig.get("calculatedListenPorts");
-      machineNameMatchExpression = (String) dynamicServerConfig.get("machineNameMatchExpression");
-      String serverTemplateName = getServerTemplateNameFromConfig(dynamicServerConfig);
-
-      if (serverTemplateName != null) {
-        serverTemplate = serverTemplates.get(serverTemplateName);
-        if (serverTemplate == null) {
-          LOGGER.warning(
-              MessageKeys.WLS_SERVER_TEMPLATE_NOT_FOUND, serverTemplateName, clusterName);
-        } else {
-          serverConfigs =
-              createServerConfigsFromTemplate(
-                  (List<String>) dynamicServerConfig.get("dynamicServerNames"),
-                  serverTemplate,
-                  clusterName,
-                  domainName,
-                  calculatedListenPorts);
-        }
-      }
-    }
-    return new WlsDynamicServersConfig(
-        dynamicClusterSize,
-        maxDynamicClusterSize,
-        minDynamicClusterSize,
-        serverNamePrefix,
-        calculatedListenPorts,
-        machineNameMatchExpression,
-        serverTemplate,
-        serverConfigs);
-  }
-
-  /**
    * Create a list of WlsServerConfig objects for dynamic servers that corresponds to the current
    * cluster size.
    *
@@ -170,40 +106,6 @@ public class WlsDynamicServersConfig {
       }
     }
     return serverConfigs;
-  }
-
-  /**
-   * Helper method to extract the server template name from the Map obtained from parsing the
-   * "dynamicServers" element from the REST result.
-   *
-   * @param dynamicServerConfig Map containing the "dynamicServers" element from the REST call
-   * @return Name of the server template associated with this dynamic server configuration
-   */
-  private static String getServerTemplateNameFromConfig(Map dynamicServerConfig) {
-    // dynamicServerConfig contains a "serverTemplates" entry from the REST call which is in the
-    // form: "serverTemplate": ["serverTemplates", "my-server-template-name"]
-    List serverTemplatesList = (List) dynamicServerConfig.get("serverTemplate");
-    if (serverTemplatesList != null) {
-      for (Object value : serverTemplatesList) {
-        // the first entry that is not "serverTemplates" is assumed to be the server template name
-        if (!"serverTemplates".equals(value)) {
-          return (String) value;
-        }
-      }
-    }
-    return null;
-  }
-
-  /**
-   * Returns a String containing the fields that we are interested in from the dynamic servers
-   * configuration which will used in the payload to the REST call to WLS admin server.
-   *
-   * @return a String containing the fields that we are interested in from the dynamic servers
-   *     configuration which will used in the payload to the REST call to WLS admin server
-   */
-  static String getSearchFields() {
-    return "'serverTemplate', 'dynamicClusterSize', 'maxDynamicClusterSize', 'minDynamicClusterSize', "
-        + "'serverNamePrefix', 'calculatedListenPorts', 'dynamicServerNames', 'machineNameMatchExpression' ";
   }
 
   /**
