@@ -49,7 +49,6 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
-import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOSTNAME;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
@@ -395,7 +394,7 @@ class ItMonitoringExporterSamples {
       assertNotNull(promHelmParams, " Failed to install prometheus");
       nodeportPrometheus = promHelmParams.getNodePortServer();
       prometheusDomainRegexValue = prometheusRegexValue;
-      hostPortPrometheus = K8S_NODEPORT_HOSTNAME + ":" + nodeportPrometheus;
+      hostPortPrometheus = K8S_NODEPORT_HOST + ":" + nodeportPrometheus;
       if (OKD) {
         hostPortPrometheus = createRouteForOKD("prometheus" + releaseSuffix
             + "-service", monitoringNS) + ":" + nodeportPrometheus;
@@ -416,7 +415,7 @@ class ItMonitoringExporterSamples {
           monitoringExporterEndToEndDir + "/grafana/values.yaml",
           grafanaChartVersion);
       assertNotNull(grafanaHelmParams, "Grafana failed to install");
-      String hostPortGrafana = K8S_NODEPORT_HOSTNAME + ":" + grafanaHelmParams.getNodePort();
+      String hostPortGrafana = K8S_NODEPORT_HOST + ":" + grafanaHelmParams.getNodePort();
       if (OKD) {
         hostPortGrafana = createRouteForOKD(grafanaReleaseName, monitoringNS) + ":" + grafanaHelmParams.getNodePort();
       }
