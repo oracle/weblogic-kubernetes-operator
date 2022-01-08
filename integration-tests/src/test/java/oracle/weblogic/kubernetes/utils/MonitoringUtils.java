@@ -56,6 +56,7 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_WEBAPP_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
@@ -334,8 +335,12 @@ public class MonitoringUtils {
         "pvc-alertmanager" + promReleaseSuffix), "Failed to replace String ");;
     assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
         "pvc-prometheus",
-        "pvc-" + prometheusReleaseName),"Failed to replace String ");;
-
+        "pvc-" + prometheusReleaseName),"Failed to replace String ");
+    if (OKD) {
+      assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
+          "65534",
+          "1000620001"), "Failed to replace String ");
+    }
     int promServerNodePort = getNextFreePort();
     int alertManagerNodePort = getNextFreePort();
 
