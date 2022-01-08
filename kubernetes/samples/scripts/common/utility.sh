@@ -928,7 +928,7 @@ checkService() {
 }
 
 # Get pod name when pod available in a given namespace
-function getPodName(){
+getPodName() {
 
  local max=$((SECONDS + 120))
 
