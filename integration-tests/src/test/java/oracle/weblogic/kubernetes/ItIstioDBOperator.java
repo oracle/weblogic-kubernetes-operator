@@ -1,4 +1,4 @@
-// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -6,13 +6,30 @@ package oracle.weblogic.kubernetes;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
-import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
+import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
+import io.kubernetes.client.openapi.models.V1SecretReference;
+import io.kubernetes.client.openapi.models.V1Volume;
+import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.weblogic.domain.AdminServer;
+import oracle.weblogic.domain.Cluster;
+import oracle.weblogic.domain.Configuration;
 import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainSpec;
+import oracle.weblogic.domain.Istio;
+import oracle.weblogic.domain.Model;
+import oracle.weblogic.domain.OnlineUpdate;
+import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -29,34 +46,40 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ENCRYPION_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TO_USE_IN_SPEC;
+import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.ITTESTS_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.WORK_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.addLabelsToNamespace;
+import static oracle.weblogic.kubernetes.actions.TestActions.createDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
-import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
-import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Command.defaultCommandParams;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainExists;
+import static oracle.weblogic.kubernetes.utils.ApplicationUtils.checkAppUsingHostHeader;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDatabaseSecret;
-import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResourceWithLogHome;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainSecret;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createJobToChangePermissionsOnPvHostPath;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.isWebLogicPsuPatchApplied;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runClientInsidePod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.runJavacInsidePod;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.startPortForwardProcess;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.stopPortForwardProcess;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAndVerify;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createOracleDBUsingOperator;
@@ -66,35 +89,40 @@ import static oracle.weblogic.kubernetes.utils.DbUtils.deleteHostPathProvisioner
 import static oracle.weblogic.kubernetes.utils.DbUtils.deleteOracleDB;
 import static oracle.weblogic.kubernetes.utils.DbUtils.installDBOperator;
 import static oracle.weblogic.kubernetes.utils.DbUtils.uninstallDBOperator;
+import static oracle.weblogic.kubernetes.utils.DeployUtil.deployToClusterUsingRest;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
 import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileToPod;
+import static oracle.weblogic.kubernetes.utils.FileUtils.generateFileFromTemplate;
 import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyDomainReady;
-import static oracle.weblogic.kubernetes.utils.FmwUtils.verifyEMconsoleAccess;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
+import static oracle.weblogic.kubernetes.utils.IstioUtils.deployHttpIstioGatewayAndVirtualservice;
+import static oracle.weblogic.kubernetes.utils.IstioUtils.deployIstioDestinationRule;
+import static oracle.weblogic.kubernetes.utils.IstioUtils.getIstioHttpIngressPort;
+import static oracle.weblogic.kubernetes.utils.IstioUtils.isLocalHostBindingsEnabled;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
-import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResourceServerStartPolicy;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
-import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
+import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createOpsswalletpasswordSecret;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Test to a create FMW model in image domain and WebLogic domain using Oracle "
+@DisplayName("Test to a create Istio enabled FMW model in image domain and WebLogic domain using Oracle "
     + "database created using Oracle Database Operator")
 @IntegrationTest
-class ItDBOperator {
+class ItIstioDBOperator {
 
   private static String dbNamespace = null;
   private static String opNamespace = null;
@@ -108,10 +136,10 @@ class ItDBOperator {
   private static final String modelFile = "model-singleclusterdomain-sampleapp-jrf.yaml";
 
   private static String dbUrl = null;
-  private static String dbName = "my-oracle-sidb";
+  private static String dbName = "istio-oracle-sidb";
   private static LoggingFacade logger = null;
 
-  private String fmwDomainUid = "fmwdomain-mii-db";
+  private String fmwDomainUid = "jrf-istio-db";
   private String fmwAdminServerPodName = fmwDomainUid + "-admin-server";
   private String fmwManagedServerPrefix = fmwDomainUid + "-managed-server";
   private int replicaCount = 2;
@@ -122,21 +150,25 @@ class ItDBOperator {
   private String opsswalletfileSecretName = fmwDomainUid + "opss-wallet-file-secret";
   private String adminSvcExtHost = null;
 
-  private static final String wlsDomainUid = "mii-jms-recovery-db";
+  private static final String wlsDomainUid = "mii-jms-istio-db";
   private static String pvName = wlsDomainUid + "-pv";
   private static String pvcName = wlsDomainUid + "-pvc";
   private static final String wlsAdminServerPodName = wlsDomainUid + "-admin-server";
   private static final String wlsManagedServerPrefix = wlsDomainUid + "-managed-server";
+  private static int wlDomainIstioIngressPort;
+  private String configMapName = "dynamicupdate-istio-configmap";
   private static String cpUrl;
   private static String adminSvcExtRouteHost = null;
 
   private final Path samplePath = Paths.get(ITTESTS_DIR, "../kubernetes/samples");
   private final Path domainLifecycleSamplePath = Paths.get(samplePath + "/scripts/domain-lifecycle");
 
+  private static String hostHeader;
+
   /**
    * Start DB service and create RCU schema.
    * Assigns unique namespaces for operator and domains.
-   * Pull FMW image and Oracle DB image if running tests in Kind cluster. Installs operator.
+   * Installs operator.
    *
    * @param namespaces injected by JUnit
    */
@@ -165,6 +197,20 @@ class ItDBOperator {
     createSecretForBaseImages(fmwDomainNamespace);
     createSecretForBaseImages(wlsDomainNamespace);
 
+    // create PV, PVC for logs/data
+    createPV(pvName, wlsDomainUid, ItIstioDBOperator.class.getSimpleName());
+    createPVC(pvName, pvcName, wlsDomainUid, wlsDomainNamespace);
+
+    // create job to change permissions on PV hostPath
+    createJobToChangePermissionsOnPvHostPath(pvName, pvcName, wlsDomainNamespace);
+
+    // Label the domain/operator namespace with istio-injection=enabled
+    Map<String, String> labelMap = new HashMap();
+    labelMap.put("istio-injection", "enabled");
+    assertDoesNotThrow(() -> addLabelsToNamespace(fmwDomainNamespace, labelMap));
+    assertDoesNotThrow(() -> addLabelsToNamespace(wlsDomainNamespace, labelMap));
+    assertDoesNotThrow(() -> addLabelsToNamespace(opNamespace, labelMap));
+
     //install Oracle Database Operator
     assertDoesNotThrow(() -> installDBOperator(dbNamespace), "Failed to install database operator");
 
@@ -181,12 +227,12 @@ class ItDBOperator {
   }
 
   /**
-   * Create a basic FMW model in image domain using the database created by DB Operator. Verify Pod is ready and service
-   * exists for both admin server and managed servers. Verify EM console is accessible.
+   * Create a basic istio enabled FMW model in image domain using the database created by DB Operator.
+   * Verify Pod is ready and service exists for both admin server and managed servers.
    */
   @Test
-  @DisplayName("Create FMW Domain model in image")
-  void  testFmwModelInImageWithDbOperator() {
+  @DisplayName("Create Istio enabled FMW Domain model in image domain")
+  void  testIstioEnabledFmwModelInImageWithDbOperator() {
     // Create the repo secret to pull the image
     // this secret is used only for non-kind cluster
     createOcirRepoSecret(fmwDomainNamespace);
@@ -239,8 +285,11 @@ class ItDBOperator {
     // push the image to a registry to make it accessible in multi-node cluster
     dockerLoginAndPushImageToRegistry(fmwMiiImage);
 
+    // create WDT config map without any files
+    createConfigMapAndVerify(configMapName, fmwDomainUid, fmwDomainNamespace, Collections.EMPTY_LIST);
+
     // create the domain object
-    Domain domain = FmwUtils.createDomainResource(fmwDomainUid,
+    Domain domain = FmwUtils.createIstioDomainResource(fmwDomainUid,
         fmwDomainNamespace,
         fmwAminSecretName,
         OCIR_SECRET_NAME,
@@ -248,25 +297,92 @@ class ItDBOperator {
         rcuaccessSecretName,
         opsswalletpassSecretName,
         replicaCount,
-        fmwMiiImage);
+        fmwMiiImage,
+        configMapName
+        );
 
     createDomainAndVerify(domain, fmwDomainNamespace);
 
     verifyDomainReady(fmwDomainNamespace, fmwDomainUid, replicaCount);
-    // Expose the admin service external node port as  a route for OKD
-    adminSvcExtHost = createRouteForOKD(getExternalServicePodName(fmwAdminServerPodName), fmwDomainNamespace);
-    verifyEMconsoleAccess(fmwDomainNamespace, fmwDomainUid, adminSvcExtHost);
 
-    //Reuse the same RCU schema to restart JRF domain
-    testReuseRCUschemaToRestartDomain();
+    String clusterName = "cluster-1";
+    int istioIngressPort = enableIstio(clusterName, fmwDomainUid, fmwDomainNamespace, fmwAdminServerPodName);
+    logger.info("Istio Ingress Port is {0}", istioIngressPort);
 
+    // We can not verify Rest Management console thru Adminstration NodePort
+    // in istio, as we can not enable Adminstration NodePort
+    if (!WEBLOGIC_SLIM) {
+      String consoleUrl = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/console/login/LoginForm.jsp";
+      boolean checkConsole =
+          checkAppUsingHostHeader(consoleUrl, fmwDomainNamespace + ".org");
+      assertTrue(checkConsole, "Failed to access WebLogic console");
+      logger.info("WebLogic console is accessible");
+      String localhost = "localhost";
+      String forwardPort =
+           startPortForwardProcess(localhost, fmwDomainNamespace,
+           fmwDomainUid, 7001);
+      assertNotNull(forwardPort, "port-forward command fails to assign local port");
+      logger.info("Forwarded local port is {0}", forwardPort);
+      consoleUrl = "http://" + localhost + ":" + forwardPort + "/console/login/LoginForm.jsp";
+      checkConsole =
+          checkAppUsingHostHeader(consoleUrl, fmwDomainNamespace + ".org");
+      assertTrue(checkConsole, "Failed to access WebLogic console thru port-forwarded port");
+      logger.info("WebLogic console is accessible thru port forwarding");
+      stopPortForwardProcess(fmwDomainNamespace);
+    } else {
+      logger.info("Skipping WebLogic console in WebLogic slim image");
+    }
+
+    if (isWebLogicPsuPatchApplied()) {
+      String curlCmd2 = "curl -j -sk --show-error --noproxy '*' "
+          + " -H 'Host: " + fmwDomainNamespace + ".org'"
+          + " --user " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
+          + " --url http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort
+          + "/management/weblogic/latest/domainRuntime/domainSecurityRuntime?"
+          + "link=none";
+
+      ExecResult result = null;
+      logger.info("curl command {0}", curlCmd2);
+      result = assertDoesNotThrow(
+        () -> exec(curlCmd2, true));
+
+      if (result.exitValue() == 0) {
+        logger.info("curl command returned {0}", result.toString());
+        assertTrue(result.stdout().contains("SecurityValidationWarnings"),
+                "Could not access the Security Warning Tool page");
+        assertTrue(!result.stdout().contains("minimum of umask 027"), "umask warning check failed");
+        logger.info("No minimum umask warning reported");
+      } else {
+        assertTrue(false, "Curl command failed to get DomainSecurityRuntime");
+      }
+    } else {
+      logger.info("Skipping Security warning check, since Security Warning tool "
+            + " is not available in the WLS Release {0}", WEBLOGIC_IMAGE_TAG);
+    }
+
+    Path archivePath = Paths.get(ITTESTS_DIR, "../operator/integration-tests/apps/testwebapp.war");
+    ExecResult result = null;
+    result = deployToClusterUsingRest(K8S_NODEPORT_HOST,
+        String.valueOf(istioIngressPort),
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
+        clusterName, archivePath, fmwDomainNamespace + ".org", "testwebapp");
+    assertNotNull(result, "Application deployment failed");
+    logger.info("Application deployment returned {0}", result.toString());
+    assertEquals("202", result.stdout(), "Deployment didn't return HTTP status code 202");
+
+    String url = "http://" + K8S_NODEPORT_HOST + ":" + istioIngressPort + "/testwebapp/index.jsp";
+    logger.info("Application Access URL {0}", url);
+    hostHeader = fmwDomainNamespace + ".org";
+    boolean checkApp = checkAppUsingHostHeader(url, hostHeader);
+    assertTrue(checkApp, "Failed to access WebLogic application");
   }
 
   /**
-   * Create WebLogic domain using model in image and Oracle database used for JMS and JTA migration and service logs.
+   * Create Istio enabled WebLogic domain using model in image and Oracle database used for JMS and JTA
+   * migration and service logs.
    */
   @Test
-  void  testWlsModelInImageWithDbOperator() {
+  void  testIstioWlsModelInImageWithDbOperator() {
 
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
@@ -295,13 +411,6 @@ class ItDBOperator {
     createConfigMapAndVerify(configMapName, wlsDomainUid, wlsDomainNamespace,
         Arrays.asList(MODEL_DIR + "/jms.recovery.yaml"));
 
-    // create PV, PVC for logs/data
-    createPV(pvName, wlsDomainUid, ItDBOperator.class.getSimpleName());
-    createPVC(pvName, pvcName, wlsDomainUid, wlsDomainNamespace);
-
-    // create job to change permissions on PV hostPath
-    createJobToChangePermissionsOnPvHostPath(pvName, pvcName, wlsDomainNamespace);
-
     // create the domain CR with a pre-defined configmap
     createDomainResourceWithLogHome(wlsDomainUid, wlsDomainNamespace,
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
@@ -320,6 +429,7 @@ class ItDBOperator {
     logger.info("Check admin service and pod {0} is created in namespace {1}",
         wlsAdminServerPodName, wlsDomainNamespace);
     checkPodReadyAndServiceExists(wlsAdminServerPodName, wlsDomainUid, wlsDomainNamespace);
+
     adminSvcExtRouteHost = createRouteForOKD(getExternalServicePodName(wlsAdminServerPodName), wlsDomainNamespace);
     // create the required leasing table 'ACTIVE' before we start the cluster
     createLeasingTable(wlsAdminServerPodName, wlsDomainNamespace, dbUrl);
@@ -330,22 +440,13 @@ class ItDBOperator {
       checkPodReadyAndServiceExists(wlsManagedServerPrefix + i, wlsDomainUid, wlsDomainNamespace);
     }
 
+    wlDomainIstioIngressPort = enableIstio("cluster-1", wlsDomainUid, wlsDomainNamespace, wlsAdminServerPodName);
+    logger.info("Istio Ingress Port is {0}", wlDomainIstioIngressPort);
+
+    hostHeader = wlsDomainNamespace + ".org";
+
     //Verify JMS/JTA Service migration with File(JDBC) Store
     testMiiJmsJtaServiceMigration();
-  }
-
-  /**
-   * Save the OPSS key wallet from a running JRF domain's introspector configmap to a file. Restore the OPSS key wallet
-   * file to a Kubernetes secret. Shutdown the domain. Using the same RCU schema to restart the same JRF domain with
-   * restored OPSS key wallet file secret. Verify Pod is ready and service exists for both admin server and managed
-   * servers. Verify EM console is accessible.
-   */
-  private void testReuseRCUschemaToRestartDomain() {
-    saveAndRestoreOpssWalletfileSecret(fmwDomainNamespace, fmwDomainUid, opsswalletfileSecretName);
-    shutdownDomain();
-    patchDomainWithWalletFileSecret(opsswalletfileSecretName);
-    startupDomain();
-    verifyDomainReady(fmwDomainNamespace, fmwDomainUid, replicaCount);
   }
 
   /**
@@ -469,6 +570,7 @@ class ItDBOperator {
     }
   }
 
+
   // Restart the managed-server
   private void restartManagedServer(String serverName) {
     String commonParameters = " -d " + wlsDomainUid + " -n " + wlsDomainNamespace;
@@ -502,12 +604,10 @@ class ItDBOperator {
    * @returns true if MBean is found otherwise false
    **/
   private boolean checkJmsServerRuntime(String jmsServer, String managedServer) {
-    ExecResult result = null;
-    int adminServiceNodePort
-        = getServiceNodePort(wlsDomainNamespace, getExternalServicePodName(wlsAdminServerPodName), "default");
-    String hostAndPort = getHostAndPort(adminSvcExtRouteHost, adminServiceNodePort);
+    String hostAndPort = getHostAndPort(adminSvcExtRouteHost, wlDomainIstioIngressPort);
     StringBuffer curlString = new StringBuffer("status=$(curl --user "
-        + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT + " ");
+        + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
+        + " -H 'host: " + hostHeader + " ' ");
     curlString.append("http://" + hostAndPort)
         .append("/management/weblogic/latest/domainRuntime/serverRuntimes/")
         .append(managedServer)
@@ -533,12 +633,10 @@ class ItDBOperator {
    * @returns true if MBean is found otherwise false
    **/
   private boolean checkStoreRuntime(String storeName, String managedServer) {
-    ExecResult result = null;
-    int adminServiceNodePort
-        = getServiceNodePort(wlsDomainNamespace, getExternalServicePodName(wlsAdminServerPodName), "default");
-    String hostAndPort = getHostAndPort(adminSvcExtRouteHost, adminServiceNodePort);
+    String hostAndPort = getHostAndPort(adminSvcExtRouteHost, wlDomainIstioIngressPort);
     StringBuffer curlString = new StringBuffer("status=$(curl --user "
-        + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT + " ");
+        + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT + " "
+        + " -H 'host: " + hostHeader + " ' ");
     curlString.append("http://" + hostAndPort)
         .append("/management/weblogic/latest/domainRuntime/serverRuntimes/")
         .append(managedServer)
@@ -566,12 +664,10 @@ class ItDBOperator {
    * @returns true if MBean is found otherwise false
    **/
   private boolean checkJtaRecoveryServiceRuntime(String managedServer, String recoveryService, String active) {
-    ExecResult result = null;
-    int adminServiceNodePort
-        = getServiceNodePort(wlsDomainNamespace, getExternalServicePodName(wlsAdminServerPodName), "default");
-    String hostAndPort = getHostAndPort(adminSvcExtRouteHost, adminServiceNodePort);
+    String hostAndPort = getHostAndPort(adminSvcExtRouteHost, wlDomainIstioIngressPort);
     StringBuffer curlString = new StringBuffer("curl --user "
-        + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT + " ");
+        + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
+        + " -H 'host: " + hostHeader + " ' ");
     curlString.append("\"http://" + hostAndPort)
         .append("/management/weblogic/latest/domainRuntime/serverRuntimes/")
         .append(managedServer)
@@ -632,88 +728,131 @@ class ItDBOperator {
     assertTrue(execResult.exitValue() == 0, "Could not create the Leasing Table");
   }
 
-  /**
-   * Save the OPSS key wallet from a running JRF domain's introspector configmap to a file.
-   *
-   * @param namespace namespace where JRF domain exists
-   * @param domainUid unique domain Uid
-   * @param walletfileSecretName name of wallet file secret
-   */
-  private void saveAndRestoreOpssWalletfileSecret(String namespace, String domainUid,
-      String walletfileSecretName) {
-    Path saveAndRestoreOpssPath
-        = Paths.get(RESOURCE_DIR, "bash-scripts", "opss-wallet.sh");
-    String script = saveAndRestoreOpssPath.toString();
-    logger.info("Script for saveAndRestoreOpss is {0)", script);
+  private int enableIstio(String clusterName, String domainUid, String namespace, String adminServerPodName) {
 
-    //save opss wallet file
-    String command1 = script + " -d " + domainUid + " -n " + namespace + " -s";
-    logger.info("Save wallet file command: {0}", command1);
-    assertTrue(() -> Command.withParams(
-        defaultCommandParams()
-            .command(command1)
-            .saveResults(true)
-            .redirect(true))
-        .execute());
+    String clusterService = domainUid + "-cluster-" + clusterName + "." + namespace + ".svc.cluster.local";
 
-    //restore opss wallet password secret
-    String command2 = script + " -d " + domainUid + " -n " + namespace + " -r" + " -ws " + walletfileSecretName;
-    logger.info("Restore wallet file command: {0}", command2);
-    assertTrue(() -> Command.withParams(
-        defaultCommandParams()
-            .command(command2)
-            .saveResults(true)
-            .redirect(true))
-        .execute());
+    Map<String, String> templateMap = new HashMap();
+    templateMap.put("NAMESPACE", namespace);
+    templateMap.put("DUID", domainUid);
+    templateMap.put("ADMIN_SERVICE", adminServerPodName);
+    templateMap.put("CLUSTER_SERVICE", clusterService);
 
+    Path srcHttpFile = Paths.get(RESOURCE_DIR, "istio", "istio-http-template.yaml");
+    Path targetHttpFile = assertDoesNotThrow(
+        () -> generateFileFromTemplate(srcHttpFile.toString(), "istio-http.yaml", templateMap));
+    logger.info("Generated Http VS/Gateway file path is {0}", targetHttpFile);
+
+    boolean deployRes = assertDoesNotThrow(
+        () -> deployHttpIstioGatewayAndVirtualservice(targetHttpFile));
+    assertTrue(deployRes, "Failed to deploy Http Istio Gateway/VirtualService");
+
+    Path srcDrFile = Paths.get(RESOURCE_DIR, "istio", "istio-dr-template.yaml");
+    Path targetDrFile = assertDoesNotThrow(
+        () -> generateFileFromTemplate(srcDrFile.toString(), "istio-dr.yaml", templateMap));
+    logger.info("Generated DestinationRule file path is {0}", targetDrFile);
+
+    deployRes = assertDoesNotThrow(
+        () -> deployIstioDestinationRule(targetDrFile));
+    assertTrue(deployRes, "Failed to deploy Istio DestinationRule");
+
+    int istioIngressPort = getIstioHttpIngressPort();
+    logger.info("Istio Ingress Port is {0}", istioIngressPort);
+    return istioIngressPort;
   }
 
-  /**
-   * Shutdown the domain by setting serverStartPolicy as "NEVER".
-   */
-  private void shutdownDomain() {
-    patchDomainResourceServerStartPolicy("/spec/serverStartPolicy", "NEVER", fmwDomainNamespace, fmwDomainUid);
-    logger.info("Domain is patched to stop entire WebLogic domain");
+  private static Domain createDomainResourceWithLogHome(
+      String domainResourceName,
+      String domNamespace,
+      String imageName,
+      String adminSecretName,
+      String repoSecretName,
+      String encryptionSecretName,
+      int replicaCount,
+      String pvName,
+      String pvcName,
+      String clusterName,
+      String configMapName,
+      String dbSecretName,
+      boolean allowReplicasBelowMinDynClusterSize,
+      boolean onlineUpdateEnabled,
+      boolean setDataHome) {
 
-    // make sure all the server pods are removed after patch
-    checkPodDeleted(fmwAdminServerPodName, fmwDomainUid, fmwDomainNamespace);
-    for (int i = 1; i <= replicaCount; i++) {
-      checkPodDeleted(fmwManagedServerPrefix + i, fmwDomainUid, fmwDomainNamespace);
+    List<String> securityList = new ArrayList<>();
+    if (dbSecretName != null) {
+      securityList.add(dbSecretName);
     }
 
-    logger.info("Domain shutdown success");
+    DomainSpec domainSpec = new DomainSpec()
+        .domainUid(domainResourceName)
+        .domainHomeSourceType("FromModel")
+        .allowReplicasBelowMinDynClusterSize(allowReplicasBelowMinDynClusterSize)
+        .image(imageName)
+        .addImagePullSecretsItem(new V1LocalObjectReference()
+            .name(repoSecretName))
+        .webLogicCredentialsSecret(new V1SecretReference()
+            .name(adminSecretName)
+            .namespace(domNamespace))
+        .includeServerOutInPodLog(true)
+        .logHomeEnabled(Boolean.TRUE)
+        .logHome("/shared/logs")
+        .serverStartPolicy("IF_NEEDED")
+        .serverPod(new ServerPod()
+            .addEnvItem(new V1EnvVar()
+                .name("JAVA_OPTIONS")
+                .value("-Dweblogic.security.SSL.ignoreHostnameVerification=true"))
+            .addEnvItem(new V1EnvVar()
+                .name("USER_MEM_ARGS")
+                .value("-Djava.security.egd=file:/dev/./urandom "))
+            .addVolumesItem(new V1Volume()
+                .name(pvName)
+                .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource()
+                    .claimName(pvcName)))
+            .addVolumeMountsItem(new V1VolumeMount()
+                .mountPath("/shared")
+                .name(pvName)))
+        .adminServer(new AdminServer()
+            .serverStartState("RUNNING"))
+        .addClustersItem(new Cluster()
+            .clusterName(clusterName)
+            .replicas(replicaCount)
+            .serverStartState("RUNNING"))
+        .configuration(new Configuration()
+            .istio(new Istio()
+                .enabled(Boolean.TRUE)
+                .readinessPort(8888)
+                .localhostBindingsEnabled(isLocalHostBindingsEnabled()))
+            .secrets(securityList)
+            .model(new Model()
+                .domainType("WLS")
+                .configMap(configMapName)
+                .runtimeEncryptionSecret(encryptionSecretName)
+                .onlineUpdate(new OnlineUpdate()
+                    .enabled(onlineUpdateEnabled)))
+            .introspectorJobActiveDeadlineSeconds(300L));
 
-  }
+    if (setDataHome) {
+      domainSpec.dataHome("/shared/data");
+    }
+    // create the domain CR
+    Domain domain = new Domain()
+        .apiVersion(DOMAIN_API_VERSION)
+        .kind("Domain")
+        .metadata(new V1ObjectMeta()
+            .name(domainResourceName)
+            .namespace(domNamespace))
+        .spec(domainSpec);
 
-  /**
-   * Startup the domain by setting serverStartPolicy as "IF_NEEDED".
-   */
-  private void startupDomain() {
-    patchDomainResourceServerStartPolicy("/spec/serverStartPolicy", "IF_NEEDED", fmwDomainNamespace, fmwDomainUid);
-    logger.info("Domain is patched to start all servers in the domain");
-  }
+    logger.info("Create domain custom resource for domainUid {0} in namespace {1}",
+        domainResourceName, domNamespace);
+    boolean domCreated = assertDoesNotThrow(() -> createDomainCustomResource(domain),
+        String.format("Create domain custom resource failed with ApiException for %s in namespace %s",
+            domainResourceName, domNamespace));
+    assertTrue(domCreated, String.format("Create domain custom resource failed with ApiException "
+        + "for %s in namespace %s", domainResourceName, domNamespace));
 
-  /**
-   * Patch the domain with opss wallet file secret.
-   *
-   * @param opssWalletFileSecretName the name of opps wallet file secret
-   * @return true if patching succeeds, false otherwise
-   */
-  private boolean patchDomainWithWalletFileSecret(String opssWalletFileSecretName) {
-    // construct the patch string for adding server pod resources
-    StringBuffer patchStr = new StringBuffer("[{")
-        .append("\"op\": \"add\", ")
-        .append("\"path\": \"/spec/configuration/opss/walletFileSecret\", ")
-        .append("\"value\": \"")
-        .append(opssWalletFileSecretName)
-        .append("\"}]");
-
-    logger.info("Adding opssWalletPasswordSecretName for domain {0} in namespace {1} using patch string: {2}",
-        fmwDomainUid, fmwDomainNamespace, patchStr.toString());
-
-    V1Patch patch = new V1Patch(new String(patchStr));
-
-    return patchDomainCustomResource(fmwDomainUid, fmwDomainNamespace, patch, V1Patch.PATCH_FORMAT_JSON_PATCH);
+    setPodAntiAffinity(domain);
+    return domain;
   }
 
 }

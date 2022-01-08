@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # ------------
@@ -351,6 +351,7 @@ class TopologyGenerator(Generator):
     self.validateAdminServer()
     self.validateClusters()
     self.validateServerCustomChannelName()
+    self.validateDynamicClustersDuplicateServerNamePrefix()
     return self.isValid()
 
   def generate(self):
@@ -400,6 +401,15 @@ class TopologyGenerator(Generator):
     cluster = self.env.getClusterOrNone(adminServer)
     if cluster is not None:
       self.addError("The admin server " + self.name(adminServer) + " belongs to the WebLogic cluster " + self.name(cluster) + ", the operator does not support having an admin server participate in a cluster.")
+
+  def validateDynamicClustersDuplicateServerNamePrefix(self):
+    serverNamePrefixes = []
+    for cluster in self.env.getDomain().getClusters():
+      if self.getDynamicServersOrNone(cluster) is not None:
+        if cluster.getDynamicServers().getServerNamePrefix() in serverNamePrefixes:
+          self.addError("The ServerNamePrefix '" + cluster.getDynamicServers().getServerNamePrefix() + "' specified for WebLogic dynamic cluster " + self.name(cluster) + "'s dynamic servers is already in use. The ServerNamePrefix must be unique for each WebLogic dynamic cluster.")
+        else:
+          serverNamePrefixes.append(cluster.getDynamicServers().getServerNamePrefix())
 
   def validateClusters(self):
     for cluster in self.env.getDomain().getClusters():
