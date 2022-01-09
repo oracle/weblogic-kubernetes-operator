@@ -36,9 +36,9 @@ For example:
   persistent or non-persistent messages
   can expect JMS to efficiently cache the backlogs in memory.
 - CPU requirements are sometimes significantly higher
-  when a WebLogic Server is starting so that a low CPU
+  when a WebLogic Server is starting. This means that a low CPU
   allocation that might be suitable
-  for runtime use risks causing unacceptably slow startup times.
+  for runtime workloads risks causing unacceptably slow startup times.
 Requirements vary considerably between use cases.
 You may need to experiment and make adjustments
 based on monitoring resource usage in your environment.
