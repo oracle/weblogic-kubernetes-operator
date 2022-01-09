@@ -27,6 +27,7 @@ The CPU and memory requests and limits for WebLogic server pods usually need to 
 where the optimal values depend on your workload, applications, and the Kubernetes environment.
 Requests and limits should be configured based on the expected traffic during peak usage.
 For example: 
+
 - Tune CPU and memory high enough
   to handle expected peak workloads for applications
   that require large amounts of in-memory processing
@@ -37,8 +38,9 @@ For example:
   can expect JMS to efficiently cache the backlogs in memory.
 - CPU requirements are sometimes significantly higher
   when a WebLogic Server is starting. This means that a low CPU
-  allocation that might be suitable
-  for runtime workloads risks causing unacceptably slow startup times.
+  allocation that might be suitable for
+  light runtime workloads risks causing unacceptably slow startup times.
+
 Requirements vary considerably between use cases.
 You may need to experiment and make adjustments
 based on monitoring resource usage in your environment.
