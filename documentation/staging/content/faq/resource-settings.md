@@ -26,10 +26,22 @@ description: "Tune container memory and CPU usage by configuring Kubernetes reso
 The CPU and memory requests and limits for WebLogic server pods usually need to be tuned
 where the optimal values depend on your workload, applications, and the Kubernetes environment.
 Requests and limits should be configured based on the expected traffic during peak usage.
-For example, if you have an application that processes video files,
-it may require significantly more memory and CPU than other types of applications.
-As another example, CPU usage might be higher when a WebLogic Server is starting.
-You may need to experiment and make adjustments based on monitoring resource usage in your environment.
+For example: 
+- Tune CPU and memory high enough
+  to handle expected peak workloads for applications
+  that require large amounts of in-memory processing
+  or very CPU intensive calculations.
+- Tune memory high enough so that WebLogic JMS messaging
+  applications that generate large backlogs of unprocessed
+  persistent or non-persistent messages
+  can expect JMS to efficiently cache the backlogs in memory.
+- CPU requirements are sometimes significantly higher
+  when a WebLogic Server is starting so that a low CPU
+  allocation that might be suitable
+  for runtime use risks causing unacceptably slow startup times.
+Requirements vary considerably between use cases.
+You may need to experiment and make adjustments
+based on monitoring resource usage in your environment.
 
 The operator creates a container in its own Pod for each domain's
 WebLogic Server instances and for the short lived introspector job that
