@@ -75,11 +75,11 @@ Values set in the ".serverPod" stanzas for a more specific type of pod override
 the same values if they are also set for a more general type of pod, and inherit
 any other values set in the more general pod.
 The `spec.adminServer.serverPod`, `spec.managedServers.serverPod`,
-and `spec.clusters.serverPod` stanzas all inherit from and overrides
+and `spec.clusters.serverPod` stanzas all inherit from and override
 the `spec.serverPod` stanza. When a `spec.managedServers.serverPod` stanza
 refers to a pod that is part of a cluster, it inherits
 from and overrides from its cluster's `spec.clusters.serverPod` setting (if any),
-which in turn inherites from and overrides the domain's `spec.serverPod` setting.
+which in turn inherits from and overrides the domain's `spec.serverPod` setting.
 
 ```yaml
   spec:
