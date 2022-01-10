@@ -883,7 +883,7 @@ class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   Step getAfterUpStep() {
-    return new RollingHelper.AfterRollStep(null);
+    return new RollingHelper.AfterRollStep(null, false);
   }
 
   @Test
