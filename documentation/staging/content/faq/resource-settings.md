@@ -71,7 +71,7 @@ and you can override the setting for individual WebLogic Server instances or clu
 Note that the introspector job pod uses the same settings
 as the WebLogic Administration Server pod.
 
-Values set in the `.serverPod` stanzas for a more specific type of pod override
+Values set in the `.serverPod` stanzas for a more specific type of pod, override
 the same values if they are also set for a more general type of pod, and inherit
 any other values set in the more general pod.
 The `spec.adminServer.serverPod`, `spec.managedServers.serverPod`,
