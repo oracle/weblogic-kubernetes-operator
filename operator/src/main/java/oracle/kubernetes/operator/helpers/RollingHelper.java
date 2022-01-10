@@ -147,7 +147,7 @@ public class RollingHelper {
     }
 
     private Step createAfterRollStep(Step next) {
-      return new AfterRollStep(next);
+      return createAfterRollStep(next, false);
     }
 
     private Step createAfterRollStep(Step next, boolean rolled) {
@@ -156,11 +156,7 @@ public class RollingHelper {
   }
 
   static class AfterRollStep extends Step {
-    boolean rolled = false;
-
-    public AfterRollStep(Step next) {
-      super(next);
-    }
+    boolean rolled;
 
     public AfterRollStep(Step next, boolean rolled) {
       super(next);
