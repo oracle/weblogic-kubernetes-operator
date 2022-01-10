@@ -368,6 +368,7 @@ public class MonitoringUtils {
       addSccToDBSvcAccount(prometheusReleaseName + "-server", promNamespace);
       addSccToDBSvcAccount(prometheusReleaseName + "-kube-state-metrics", promNamespace);
       addSccToDBSvcAccount(prometheusReleaseName + "-alertmanager", promNamespace);
+      addSccToDBSvcAccount("default", promNamespace);
     }
     // install prometheus
     logger.info("Installing prometheus in namespace {0}", promNamespace);
