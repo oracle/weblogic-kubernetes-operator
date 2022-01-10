@@ -73,6 +73,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.isGrafanaRead
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPrometheusReady;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndCheckForServerNameInResponse;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.addSccToDBSvcAccount;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
@@ -363,6 +364,11 @@ public class MonitoringUtils {
         .nodePortServer(promServerNodePort)
         .nodePortAlertManager(alertManagerNodePort);
 
+    if (OKD) {
+      addSccToDBSvcAccount(prometheusReleaseName + "-server", promNamespace);
+      addSccToDBSvcAccount(prometheusReleaseName + "-kube-state-metrics", promNamespace);
+      addSccToDBSvcAccount(prometheusReleaseName + "-alertmanager", promNamespace);
+    }
     // install prometheus
     logger.info("Installing prometheus in namespace {0}", promNamespace);
     assertTrue(installPrometheus(prometheusParams),
@@ -440,9 +446,12 @@ public class MonitoringUtils {
         .helmParams(grafanaHelmParams)
         .nodePort(grafanaNodePort);
     boolean isGrafanaInstalled = false;
+    if (OKD) {
+      addSccToDBSvcAccount(grafanaReleaseName,grafanaNamespace);
+    }
     try {
       assertTrue(installGrafana(grafanaParams),
-          String.format("Failed to install grafana in namespace %s", grafanaNamespace));
+          String.format("Failed to install grafana in namespace %s",grafanaNamespace));
     } catch (AssertionError err) {
       //retry with different nodeport
       uninstallGrafana(grafanaHelmParams);
