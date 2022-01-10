@@ -23,7 +23,7 @@ description: "Tune container memory and CPU usage by configuring Kubernetes reso
 
 #### Introduction
 
-The CPU and memory requests and limits for WebLogic server pods usually need to be tuned
+The CPU and memory requests and limits for WebLogic Server Pods usually need to be tuned
 where the optimal values depend on your workload, applications, and the Kubernetes environment.
 Requests and limits should be configured based on the expected traffic during peak usage.
 For example: 
@@ -46,14 +46,14 @@ You may need to experiment and make adjustments
 based on monitoring resource usage in your environment.
 
 The operator creates a container in its own Pod for each domain's
-WebLogic Server instances and for the short lived introspector job that
-is automatically launched before WebLogic Server pods are launched.
+WebLogic Server instances and for the short-lived introspector job that
+is automatically launched before WebLogic Server Pods are launched.
 You can tune container memory and CPU usage
 by configuring Kubernetes resource requests and limits,
 and you can tune a WebLogic JVM heap usage
 using the `USER_MEM_ARGS` environment variable in your Domain YAML file.
 The introspector job pod uses the same CPU and memory settings as the
-domain's administration WebLogic Server pod.
+domain's WebLogic Administration Server pod.
 A resource request sets the minimum amount of a resource that a container requires.
 A resource limit is the maximum amount of a resource a container is given
 and prevents a container from using more than its share of a resource.
@@ -69,9 +69,9 @@ using its `spec.serverPod.resources` stanza,
 and you can override the setting for individual WebLogic Server instances or clusters using the
 `serverPod.resources` element in `spec.adminServer`, `spec.clusters`, or `spec.managedServers`.
 Note that the introspector job pod uses the same settings
-as the WebLogic administration Server pod.
+as the WebLogic Administration Server pod.
 
-Values set in the ".serverPod" stanzas for a more specific type of pod override
+Values set in the `.serverPod` stanzas for a more specific type of pod override
 the same values if they are also set for a more general type of pod, and inherit
 any other values set in the more general pod.
 The `spec.adminServer.serverPod`, `spec.managedServers.serverPod`,
@@ -206,7 +206,7 @@ Similarly, the operator samples configure CPU and memory resource requests to at
 
 There's no memory or CPU limit configured by default in samples and so the default QoS for sample WebLogic Server Pod's is `burstable`.
 
-If you wish to set resource requests or limits differently on a sample Domain YAML file or template, see [Setting resource requests and limits in a Domain resource](#setting-resource-requests-and-limits-in-a-domain-resource). Or, for samples that generate their Domain resource using an 'inputs' file, see the `serverPodMemoryRequest`, `serverPodMemoryLimit`, `serverPodCpuRequest`, and `serverPodCpuLimit` parameters in the sample's `create-domain.sh` input file.
+If you wish to set resource requests or limits differently on a sample Domain YAML file or template, see [Setting resource requests and limits in a Domain resource](#setting-resource-requests-and-limits-in-a-domain-resource). Or, for samples that generate their Domain resource using an "inputs" YAML file, see the `serverPodMemoryRequest`, `serverPodMemoryLimit`, `serverPodCpuRequest`, and `serverPodCpuLimit` parameters in the sample's `create-domain.sh` inputs file.
 
 #### Configuring CPU affinity
 
