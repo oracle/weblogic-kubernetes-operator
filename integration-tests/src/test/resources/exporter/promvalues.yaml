@@ -38,8 +38,10 @@ server:
     type: NodePort
     nodePort: 30500
   securityContext:
-    runAsNonRoot: false
-    runAsUser: 0
+    runAsUser: 65534
+    runAsNonRoot: true
+    runAsGroup: 65534
+    fsGroup: 65534
 
   global:
     evaluation_interval: 1m
@@ -64,7 +66,7 @@ alertmanagerFiles:
     receivers:
       - name: 'logging-webhook'
         webhook_configs:
-        - url: 'http://webhook.webhook.svc.cluster.local:8080/log'
+        - url: 'http://webhook.ns-gkbpss.svc.cluster.local:8080/log'
 
 serverFiles:
   alerts:
