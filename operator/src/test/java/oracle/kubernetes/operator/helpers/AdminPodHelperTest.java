@@ -835,6 +835,7 @@ class AdminPodHelperTest extends PodHelperTestBase {
 
     testSupport.runSteps(getStepFactory(), Step.chain(getAfterUpStep(), terminalStep));
     logRecords.clear();
+    
     assertThat("Expected Event " + DOMAIN_ROLL_COMPLETED + " expected with message not found",
         getExpectedEventMessage(DOMAIN_ROLL_COMPLETED),
         stringContainsInOrder("Rolling restart of domain", UID, " completed"));
