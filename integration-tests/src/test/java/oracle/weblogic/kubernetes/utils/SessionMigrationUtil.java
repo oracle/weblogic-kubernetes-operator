@@ -166,7 +166,7 @@ public class SessionMigrationUtil {
 
     // check if primary server is ready
     testUntil(withStandardRetryPolicy,
-        () -> checkPrimanyServerReady(domainNamespace, adminServerPodName, curlCmd),
+        () -> checkPrimaryServerReady(domainNamespace, adminServerPodName, curlCmd),
         logger, "check if primary server is ready in namespace {0}", domainNamespace);
 
     // set HTTP request and get HTTP response
@@ -191,7 +191,7 @@ public class SessionMigrationUtil {
     return httpAttrInfo;
   }
 
-  private static boolean checkPrimanyServerReady(String domainNamespace,
+  private static boolean checkPrimaryServerReady(String domainNamespace,
                                                  String adminServerPodName,
                                                  String curlCmd) {
     boolean primaryServerReady = false;
@@ -206,7 +206,7 @@ public class SessionMigrationUtil {
       String primaryServerName = getHttpResponseAttribute(execResult.stdout(), "primary");
 
       if (primaryServerName != null && !primaryServerName.isEmpty()) {
-        logger.info("\n Primany server is ready: \n " + execResult.stdout());
+        logger.info("\n Primary server is ready: \n " + execResult.stdout());
         primaryServerReady = true;
       }
     }
