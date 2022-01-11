@@ -212,10 +212,12 @@ class ItMonitoringExporterWebApp {
     labels.put("app", "monitoring");
     labels.put("weblogic.domainUid", "test");
     String className = "ItMonitoringExporterWebApp";
-    assertDoesNotThrow(() -> createPvAndPvc(prometheusReleaseName, monitoringNS, labels, className));
-    assertDoesNotThrow(() -> createPvAndPvc("alertmanager" + releaseSuffix, monitoringNS, labels, className));
-    assertDoesNotThrow(() -> createPvAndPvc(grafanaReleaseName, monitoringNS, labels,className));
-    cleanupPromGrafanaClusterRoles(prometheusReleaseName,grafanaReleaseName);
+    if (!OKD) {
+      assertDoesNotThrow(() -> createPvAndPvc(prometheusReleaseName, monitoringNS, labels, className));
+      assertDoesNotThrow(() -> createPvAndPvc("alertmanager" + releaseSuffix, monitoringNS, labels, className));
+      assertDoesNotThrow(() -> createPvAndPvc(grafanaReleaseName, monitoringNS, labels, className));
+      cleanupPromGrafanaClusterRoles(prometheusReleaseName, grafanaReleaseName);
+    }
   }
 
 
@@ -454,15 +456,16 @@ class ItMonitoringExporterWebApp {
     if (miiImage != null) {
       deleteImage(miiImage);
     }
+    if (!OKD) {
+      uninstallPrometheusGrafana(promHelmParams.getHelmParams(), grafanaHelmParams);
 
-    uninstallPrometheusGrafana(promHelmParams.getHelmParams(), grafanaHelmParams);
-
-    deletePersistentVolumeClaim("pvc-alertmanager" + releaseSuffix,monitoringNS);
-    deletePersistentVolume("pv-testalertmanager" + releaseSuffix);
-    deletePersistentVolumeClaim("pvc-" + prometheusReleaseName, monitoringNS);
-    deletePersistentVolume("pv-test" + prometheusReleaseName);
-    deletePersistentVolumeClaim("pvc-" + grafanaReleaseName, monitoringNS);
-    deletePersistentVolume("pv-test" + grafanaReleaseName);
+      deletePersistentVolumeClaim("pvc-alertmanager" + releaseSuffix, monitoringNS);
+      deletePersistentVolume("pv-testalertmanager" + releaseSuffix);
+      deletePersistentVolumeClaim("pvc-" + prometheusReleaseName, monitoringNS);
+      deletePersistentVolume("pv-test" + prometheusReleaseName);
+      deletePersistentVolumeClaim("pvc-" + grafanaReleaseName, monitoringNS);
+      deletePersistentVolume("pv-test" + grafanaReleaseName);
+    }
     deleteNamespace(monitoringNS);
     deleteMonitoringExporterTempDir(monitoringExporterDir);
   }
