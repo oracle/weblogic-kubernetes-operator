@@ -281,7 +281,6 @@
                     **/ItMiiDomain,
                     **/ItMiiDynamicUpdate*,
                     **/ItMiiSampleWlsMain,
-                    **/ItMiiUpdateDomainConfig,
                     **/ItMonitoringExporter*,
                     **/ItPodsShutdownOption,
                     **/ItProductionSecureMode,
