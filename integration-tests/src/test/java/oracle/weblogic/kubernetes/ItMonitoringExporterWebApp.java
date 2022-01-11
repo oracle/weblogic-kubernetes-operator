@@ -249,10 +249,11 @@ class ItMonitoringExporterWebApp {
         logger.info("hostName = {0} ", hostName);
         exporterUrl = String.format("http://%s/wls-exporter/",hostName);
       }
-      installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
-          domain1Namespace,
-          domain1Uid);
-
+      if (!OKD) {
+        installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
+            domain1Namespace,
+            domain1Uid);
+      }
       logger.info("Testing replace configuration");
       replaceConfiguration();
       logger.info("Testing append configuration");
@@ -584,11 +585,13 @@ class ItMonitoringExporterWebApp {
         "Page does not contain expected JVMRuntime configuration");
     assertFalse(page.asText().contains("WebAppComponentRuntime"),
         "Page contains unexpected WebAppComponentRuntime configuration");
-    //needs 20 secs to fetch the metrics to prometheus
-    Thread.sleep(20 * 1000);
-    // "heap_free_current{name="managed-server1"}[15s]" search for results for last 15secs
-    checkMetricsViaPrometheus("heap_free_current%7Bname%3D%22" + cluster1Name + "-managed-server1%22%7D%5B15s%5D",
-        cluster1Name + "-managed-server1",hostPortPrometheus);
+    if (!OKD) {
+      //needs 20 secs to fetch the metrics to prometheus
+      Thread.sleep(20 * 1000);
+      // "heap_free_current{name="managed-server1"}[15s]" search for results for last 15secs
+      checkMetricsViaPrometheus("heap_free_current%7Bname%3D%22" + cluster1Name + "-managed-server1%22%7D%5B15s%5D",
+          cluster1Name + "-managed-server1", hostPortPrometheus);
+    }
 
   }
 
@@ -605,10 +608,11 @@ class ItMonitoringExporterWebApp {
             "Page does not contain expected WebAppComponentRuntime configuration");
     // check previous config is there
     assertTrue(page.asText().contains("JVMRuntime"), "Page does not contain expected JVMRuntime configuration");
-
-    String sessionAppPrometheusSearchKey =
-            "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
-    checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr",hostPortPrometheus);
+    if (!OKD) {
+      String sessionAppPrometheusSearchKey =
+          "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
+      checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr", hostPortPrometheus);
+    }
   }
 
   /**
@@ -746,8 +750,10 @@ class ItMonitoringExporterWebApp {
             submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/rest_snakecasefalse.yaml");
     assertNotNull(page);
     assertFalse(page.asText().contains("metricsNameSnakeCase"));
-    String searchKey = "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D";
-    checkMetricsViaPrometheus(searchKey, "sessmigr",hostPortPrometheus);
+    if (!OKD) {
+      String searchKey = "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D";
+      checkMetricsViaPrometheus(searchKey, "sessmigr", hostPortPrometheus);
+    }
   }
 
   /**
@@ -761,13 +767,15 @@ class ItMonitoringExporterWebApp {
         submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/norestport.yaml");
     assertNotNull(page);
     assertFalse(page.asText().contains("restPort"));
-    //needs 20 secs to fetch the metrics to prometheus
-    Thread.sleep(20 * 1000);
-    // "heap_free_current{name="managed-server1"}[15s]" search for results for last 15secs
+    if (!OKD) {
+      //needs 20 secs to fetch the metrics to prometheus
+      Thread.sleep(20 * 1000);
+      // "heap_free_current{name="managed-server1"}[15s]" search for results for last 15secs
 
-    String prometheusSearchKey1 =
-        "heap_free_current";
-    checkMetricsViaPrometheus(prometheusSearchKey1, "managed-server1",hostPortPrometheus);
+      String prometheusSearchKey1 =
+          "heap_free_current";
+      checkMetricsViaPrometheus(prometheusSearchKey1, "managed-server1", hostPortPrometheus);
+    }
   }
 
   /**
@@ -782,9 +790,10 @@ class ItMonitoringExporterWebApp {
     assertNotNull(page);
     logger.info("page - " + page.asText());
     assertTrue(page.asText().contains("domainQualifier"));
-
-    String searchKey = "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D";
-    checkMetricsViaPrometheus(searchKey, "\"domain\":\"wls-monexp-domain-1" + "\"",hostPortPrometheus);
+    if (!OKD) {
+      String searchKey = "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D";
+      checkMetricsViaPrometheus(searchKey, "\"domain\":\"wls-monexp-domain-1" + "\"", hostPortPrometheus);
+    }
   }
 
   /**
