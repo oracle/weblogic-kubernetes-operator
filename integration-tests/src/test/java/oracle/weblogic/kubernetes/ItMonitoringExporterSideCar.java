@@ -28,6 +28,7 @@ import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
@@ -198,10 +199,12 @@ class ItMonitoringExporterSideCar {
     HashMap<String, String> labels = new HashMap<>();
     labels.put("app", "monitoring");
     labels.put("weblogic.domainUid", "test");
-    String className = "ItMonitoringExporterSideCar";
-    assertDoesNotThrow(() -> createPvAndPvc(prometheusReleaseName, monitoringNS, labels, className));
-    assertDoesNotThrow(() -> createPvAndPvc("alertmanager" + releaseSuffix, monitoringNS, labels, className));
-    assertDoesNotThrow(() -> createPvAndPvc(grafanaReleaseName, monitoringNS, labels, className));
+    if (!OKD) {
+      String className = "ItMonitoringExporterSideCar";
+      assertDoesNotThrow(() -> createPvAndPvc(prometheusReleaseName, monitoringNS, labels, className));
+      assertDoesNotThrow(() -> createPvAndPvc("alertmanager" + releaseSuffix, monitoringNS, labels, className));
+      assertDoesNotThrow(() -> createPvAndPvc(grafanaReleaseName, monitoringNS, labels, className));
+    }
     cleanupPromGrafanaClusterRoles(prometheusReleaseName, grafanaReleaseName);
   }
 
@@ -222,13 +225,15 @@ class ItMonitoringExporterSideCar {
       String miiImage1 = createAndVerifyMiiImage(modelFile);
       String yaml = RESOURCE_DIR + "/exporter/rest_webapp.yaml";
       createAndVerifyDomain(miiImage1, domain3Uid, domain3Namespace, "FromModel", 2, false, yaml, exporterImage);
-      installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
-          domain3Namespace,
-          domain3Uid);
+      if (!OKD) {
+        installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
+            domain3Namespace,
+            domain3Uid);
 
-      String sessionAppPrometheusSearchKey =
-          "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
-      checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr", hostPortPrometheus);
+        String sessionAppPrometheusSearchKey =
+            "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
+        checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr", hostPortPrometheus);
+      }
       Domain domain = getDomainCustomResource(domain3Uid, domain3Namespace);
       String monexpConfig = domain.getSpec().getMonitoringExporter().toString();
       logger.info("MonitorinExporter new Configuration from crd " + monexpConfig);
@@ -296,7 +301,9 @@ class ItMonitoringExporterSideCar {
         managedServerPodName, domainNamespace);
     checkPodReadyAndServiceExists(managedServerPodName + "1", domainUid, domainNamespace);
     checkPodReadyAndServiceExists(managedServerPodName + "2", domainUid, domainNamespace);
-    checkMetricsViaPrometheus(promSearchString, expectedVal,hostPortPrometheus);
+    if (!OKD) {
+      checkMetricsViaPrometheus(promSearchString, expectedVal, hostPortPrometheus);
+    }
   }
 
   /**
@@ -307,6 +314,7 @@ class ItMonitoringExporterSideCar {
    * Check basic functionality of monitoring exporter.
    */
   @Test
+  @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   @DisplayName("Test Basic Functionality of Monitoring Exporter SideCar for domain with two clusters.")
   void testSideCarBasicFunctionalityTwoClusters() throws Exception {
     try {
@@ -347,13 +355,15 @@ class ItMonitoringExporterSideCar {
       String  miiImage1 = createAndVerifyMiiImage(MODEL_DIR + "/model.ssl.yaml");
       createAndVerifyDomain(miiImage1, domain2Uid, domain2Namespace, "FromModel",
           2, false, yaml, exporterImage);
-      installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
-          domain2Namespace,
-          domain2Uid);
+      if (!OKD) {
+        installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
+            domain2Namespace,
+            domain2Uid);
 
-      String sessionAppPrometheusSearchKey =
-          "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
-      checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr",hostPortPrometheus);
+        String sessionAppPrometheusSearchKey =
+            "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
+        checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr", hostPortPrometheus);
+      }
 
       Domain domain = getDomainCustomResource(domain2Uid,domain2Namespace);
       String monexpConfig = domain.getSpec().getMonitoringExporter().toString();
@@ -425,14 +435,16 @@ class ItMonitoringExporterSideCar {
           .withFailMessage("uninstallNginx() did not return true")
           .isTrue();
     }
-    uninstallPrometheusGrafana(promHelmParams.getHelmParams(), grafanaHelmParams);
+    if (!OKD) {
+      uninstallPrometheusGrafana(promHelmParams.getHelmParams(), grafanaHelmParams);
 
-    deletePersistentVolumeClaim("pvc-alertmanager" + releaseSuffix,monitoringNS);
-    deletePersistentVolume("pv-testalertmanager" + releaseSuffix);
-    deletePersistentVolumeClaim("pvc-" + prometheusReleaseName, monitoringNS);
-    deletePersistentVolume("pv-test" + prometheusReleaseName);
-    deletePersistentVolumeClaim("pvc-" + grafanaReleaseName, monitoringNS);
-    deletePersistentVolume("pv-test" + grafanaReleaseName);
+      deletePersistentVolumeClaim("pvc-alertmanager" + releaseSuffix, monitoringNS);
+      deletePersistentVolume("pv-testalertmanager" + releaseSuffix);
+      deletePersistentVolumeClaim("pvc-" + prometheusReleaseName, monitoringNS);
+      deletePersistentVolume("pv-test" + prometheusReleaseName);
+      deletePersistentVolumeClaim("pvc-" + grafanaReleaseName, monitoringNS);
+      deletePersistentVolume("pv-test" + grafanaReleaseName);
+    }
     deleteNamespace(monitoringNS);
     deleteMonitoringExporterTempDir(monitoringExporterDir);
   }
