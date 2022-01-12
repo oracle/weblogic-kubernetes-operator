@@ -894,7 +894,6 @@ public class MonitoringUtils {
         String.format("curl --silent --show-error --noproxy '*'  http://%s:%s@%s/wls-exporter/metrics",
             ADMIN_USERNAME_DEFAULT,
             ADMIN_PASSWORD_DEFAULT,
-            K8S_NODEPORT_HOST,
             hostPort);
     assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, managedServerNames, 50))
         .as("Verify the access to the monitoring exporter metrics "
