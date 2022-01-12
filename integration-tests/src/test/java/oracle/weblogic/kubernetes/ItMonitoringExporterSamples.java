@@ -235,11 +235,11 @@ class ItMonitoringExporterSamples {
     clusterNames.add(cluster1Name);
     clusterNames.add(cluster2Name);
 
-    logger.info("create pv and pvc for monitoring");
     HashMap<String, String> labels = new HashMap<>();
     labels.put("app", "monitoring");
     labels.put("weblogic.domainUid", domain1Uid);
     if (!OKD) {
+      logger.info("create pv and pvc for monitoring");
       String className = "ItMonitoringExporterSamples";
       assertDoesNotThrow(() -> createPvAndPvc(prometheusReleaseName, monitoringNS, labels, className));
       assertDoesNotThrow(() -> createPvAndPvc("alertmanager" + releaseSuffix, monitoringNS, labels, className));
@@ -273,7 +273,7 @@ class ItMonitoringExporterSamples {
         verifyMonExpAppAccessThroughNginx(ingressHost2List.get(0), managedServersCount, nodeportshttp);
       } else {
         String clusterService = domain2Uid + "-cluster-cluster-1";
-        String hostName = createRouteForOKD(clusterService, domain1Namespace);
+        String hostName = createRouteForOKD(clusterService, domain2Namespace);
         logger.info("hostName = {0} ", hostName);
         verifyMonExpAppAccess(managedServersCount,hostName);
       }
