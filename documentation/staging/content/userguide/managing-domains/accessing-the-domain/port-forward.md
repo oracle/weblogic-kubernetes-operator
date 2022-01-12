@@ -67,21 +67,38 @@ This behavior depends on your version and domain resource configuration:
   configured with the following attributes:
   * Protocol defined as `t3`.
   * Listen address defined with `localhost`.
-  * Listen port. Note, you should choose a port that does not conflict with any ports defined 
+  * Listen port. Note, you should choose a port value that does not conflict with any ports defined 
   in any of the additional network channels created for use with Istio versions prior to v1.10.
   For more details, see [Added network channels for Istio versions prior to v1.10]({{< relref "/userguide/istio/istio#added-network-channels-for-istio-versions-prior-to-v110" >}}).
   * Enable `HTTP` protocol for this network channel.
-  * Do _NOT_ set an `external listen address` or `external listen port` on the network access point.
+  * Do _NOT_ set an `external listen address` or `external listen port`.
   
-For example, here is a snippet of a WebLogic domain `config.xml` file for channel `PortForward`
+For example, here is a snippet of a WebLogic domain `config.xml` file for channel `PortForward` for the Admin Server
 ```xml
-<network-access-point>
-  <name>PortForward</name>
-  <protocol>t3</protocol>
-  <listen-address>localhost</listen-address>
-  <listen-port>8989</listen-port>
-  <http-enabled-for-this-protocol>true</http-enabled-for-this-protocol>
-</network-access-point>
+<server>
+  <name>admin-server</name>
+  <network-access-point>
+    <name>PortForward</name>
+    <protocol>t3</protocol>
+    <listen-address>localhost</listen-address>
+    <listen-port>7890</listen-port>
+    <http-enabled-for-this-protocol>true</http-enabled-for-this-protocol>
+  </network-access-point>
+</server>
+```
+For Model in Image (MII) and Domain Home in Image (DII), here is a snippet model configuration for channel `PortForward` for the Admin Server
+```yaml
+topology:
+    ...
+    Server:
+        'admin-server':
+            ListenPort: 7001
+            NetworkAccessPoint:
+                PortForward:
+                    Protocol: 't3'
+                    ListenAddress: 'localhost'
+                    ListenPort: '7890'
+                    HttpEnabledForThisProtocol: true
 ```
 
 {{% notice note %}}
@@ -90,7 +107,8 @@ then you will need to rerun its introspector job and ensure that the admin pod
 restarts for the configuration changes to take effect.
 {{% /notice %}}
 
-When administration channel port forwarding is enabled,
+If Istio is _not_ enabled on the domain or for Istio enabled domains running
+Istio 1.10 and later, when administration channel port forwarding is enabled,
 the operator automatically adds the following network channels
 (also known as Network Access Points) to the WebLogic Administration Server Pod:
 
