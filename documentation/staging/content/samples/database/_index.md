@@ -41,7 +41,7 @@ The following example shows how to set up an ephemeral Oracle database with the 
 | Kubernetes node port | `30011` |
 | Image | `container-registry.oracle.com/database/enterprise:12.2.0.1-slim` |
 | DBA user (with full privileges) | `sys as sysdba` |
-| DBA password | `Oradoc_db1` |
+| DBA password | `<the DBA user password>` |
 | Database URL inside Kubernetes cluster (from any namespace) | `oracle-db.default.svc.cluster.local:1521/devpdb.k8s` |
 | Database URL outside Kubernetes cluster | `dns-name-that-resolves-to-node-location:30011/devpdb.k8s` |
 
@@ -157,12 +157,16 @@ metadata:
   name: mysql-secret
   namespace: default
 data:
-  # echo -n "root" | base64
-  root-user: cm9vdA==
-  # echo -n "password" | base64
-  root-password: cGFzc3dvcmQ=
+  root-user: <user name placeholder>
+  root-password: <password placeholder>
 ```
 
+In file `mysql.yaml`, replace `<user placeholder>` and `<password placeholder>`, respectively, with the output from piping the
+root username and password through base64:
+```
+echo -n <the root user name> | base64
+echo -n <the root password> | base64
+```
 Deploy MySQL using the command `kubectl create -f mysql.yaml`.
 
 To shut down and clean up the resources, use `kubectl delete -f mysql.yaml`.
