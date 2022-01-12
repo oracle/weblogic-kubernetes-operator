@@ -274,7 +274,6 @@
                     **/ItConfigDistributionStrategy,
                     **/ItIstioDomainInPV,
                     **/ItIstioMiiDomain,
-                    **/ItMiiAuxiliaryImage,
                     **/ItMiiAuxiliaryImageCluster,
                     **/ItMiiSampleWlsAux,
                     **/ItMiiServiceMigration,
