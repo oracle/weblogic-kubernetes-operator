@@ -63,11 +63,26 @@ This behavior depends on your version and domain resource configuration:
   [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md).
 
 * For Istio-enabled domains running Istio versions prior to 1.10,
-  the operator already adds a
-  network channel with a `localhost` listen address for each
-  existing port. This means that no additional configuration is required
-  to enable port forwarding when Istio is enabled.
+  you must add an additional network channel to the WebLogic Administration Server 
+  configured with the following attributes:
+  * Protocol defined as `t3`.
+  * Listen address defined with `localhost`.
+  * Listen port. Note, you should choose a port that does not conflict with any ports defined 
+  in any of the additional network channels created for use with Istio versions prior to v1.10.
   For more details, see [Added network channels for Istio versions prior to v1.10]({{< relref "/userguide/istio/istio#added-network-channels-for-istio-versions-prior-to-v110" >}}).
+  * Enable `HTTP` protocol for this network channel.
+  * Do _NOT_ set an `external listen address` or `external listen port` on the network access point.
+  
+For example, here is a snippet of a WebLogic domain `config.xml` file for channel `PortForward`
+```xml
+<network-access-point>
+  <name>PortForward</name>
+  <protocol>t3</protocol>
+  <listen-address>localhost</listen-address>
+  <listen-port>8989</listen-port>
+  <http-enabled-for-this-protocol>true</http-enabled-for-this-protocol>
+</network-access-point>
+```
 
 {{% notice note %}}
 If your domain is already running, and you have made configuration changes,
