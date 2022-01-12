@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -141,26 +141,37 @@ public class RollingHelper {
       }
 
       if (!work.isEmpty()) {
-        return doForkJoin(createAfterRollStep(getNext()), packet, work);
+        return doForkJoin(createAfterRollStep(getNext(), true), packet, work);
       }
-
       return doNext(createAfterRollStep(getNext()), packet);
     }
 
     private Step createAfterRollStep(Step next) {
-      return new AfterRollStep(next);
+      return createAfterRollStep(next, false);
+    }
+
+    private Step createAfterRollStep(Step next, boolean rolled) {
+      return new AfterRollStep(next, rolled);
     }
   }
 
-  private static class AfterRollStep extends Step {
-    public AfterRollStep(Step next) {
+  static class AfterRollStep extends Step {
+    boolean rolled;
+
+    public AfterRollStep(Step next, boolean rolled) {
       super(next);
+      this.rolled = rolled;
     }
 
     @Override
     public NextAction apply(Packet packet) {
-      return doNext(createDomainRollCompletedEventStepIfNeeded(
-                        DomainStatusUpdater.createStatusUpdateStep(getNext()), packet),
+      return doNext(
+          rolled
+              ?
+              createDomainRollCompletedEvent(DomainStatusUpdater.createStatusUpdateStep(getNext()), packet)
+              :
+              createDomainRollCompletedEventStepIfNeeded(
+                  DomainStatusUpdater.createStatusUpdateStep(getNext()), packet),
             packet);
     }
 
@@ -175,12 +186,17 @@ public class RollingHelper {
    */
   public static Step createDomainRollCompletedEventStepIfNeeded(Step next, Packet packet) {
     if ("true".equals(packet.remove(DOMAIN_ROLL_START_EVENT_GENERATED))) {
-      LOGGER.info(MessageKeys.DOMAIN_ROLL_COMPLETED, getDomainUid(packet));
-      return Step.chain(
-          EventHelper.createEventStep(new EventHelper.EventData(EventHelper.EventItem.DOMAIN_ROLL_COMPLETED)),
-          next);
+      return createDomainRollCompletedEvent(next, packet);
     }
     return next;
+  }
+
+  private static Step createDomainRollCompletedEvent(Step next, Packet packet) {
+    LOGGER.info(MessageKeys.DOMAIN_ROLL_COMPLETED, getDomainUid(packet));
+    packet.remove(DOMAIN_ROLL_START_EVENT_GENERATED);
+    return Step.chain(
+            EventHelper.createEventStep(new EventHelper.EventData(EventHelper.EventItem.DOMAIN_ROLL_COMPLETED)),
+        next);
   }
 
   private static String getDomainUid(Packet packet) {
