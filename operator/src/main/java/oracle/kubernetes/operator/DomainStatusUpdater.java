@@ -568,6 +568,7 @@ public class DomainStatusUpdater {
       private final Map<String, String> serverState;
       private final Map<String, ServerHealth> serverHealth;
       private final Packet packet;
+      private final RollStateComputation rollStateComputation;
 
       StatusUpdateContext(Packet packet, StatusUpdateStep statusUpdateStep) {
         super(packet, statusUpdateStep);
@@ -575,9 +576,8 @@ public class DomainStatusUpdater {
         config = packet.getValue(DOMAIN_TOPOLOGY);
         serverState = packet.getValue(SERVER_STATE_MAP);
         serverHealth = packet.getValue(SERVER_HEALTH_MAP);
-        expectedRunningServers = DomainPresenceInfo.fromPacket(packet)
-            .map(DomainPresenceInfo::getExpectedRunningServers)
-            .orElse(Collections.emptySet());
+        expectedRunningServers = getInfo().getExpectedRunningServers();
+        rollStateComputation = new RollStateComputation(getInfo());
       }
 
       @Override
@@ -1029,7 +1029,15 @@ public class DomainStatusUpdater {
       }
 
       private boolean isRunning(@Nonnull String serverName) {
-        return RUNNING_STATE.equals(getRunningState(serverName));
+        return RUNNING_STATE.equals(getRunningState(serverName)) && isRollCompleteFor(serverName);
+      }
+
+      private boolean isRollCompleteFor(@Nonnull String serverName) {
+        return isAdminServer(serverName) || rollStateComputation.isRollCompleteFor(serverName);
+      }
+
+      private boolean isAdminServer(@Nonnull String serverName) {
+        return serverName.equals(getInfo().getAdminServerName());
       }
 
       private boolean isNotRunning(@Nonnull String serverName) {
