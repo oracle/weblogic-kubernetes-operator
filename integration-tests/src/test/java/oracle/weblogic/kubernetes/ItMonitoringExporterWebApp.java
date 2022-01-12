@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -249,6 +249,7 @@ class ItMonitoringExporterWebApp {
       } else {
         String hostName = createRouteForOKD(clusterService, domain1Namespace);
         logger.info("hostName = {0} ", hostName);
+        verifyMonExpAppAccess(1,hostName);
         exporterUrl = String.format("http://%s/wls-exporter/",hostName);
       }
       if (!OKD) {
