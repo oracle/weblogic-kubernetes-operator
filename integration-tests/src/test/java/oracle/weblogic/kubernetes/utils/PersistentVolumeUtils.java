@@ -324,6 +324,7 @@ public class PersistentVolumeUtils {
             .name("pv-test" + nameSuffix)
             .namespace(namespace));
     setVolumeSource(pvHostPath, v1pv);
+    v1pv.getSpec().storageClassName(nameSuffix);
     boolean hasLabels = false;
     String labelSelector = null;
     if (labels != null || !labels.isEmpty()) {
@@ -357,7 +358,7 @@ public class PersistentVolumeUtils {
           .storageClassName("okd-nfsmnt");
     } else {
       v1pvc.getSpec()
-          .storageClassName("weblogic-domain-storage-class");
+          .storageClassName(nameSuffix);
     }
 
     createPVPVCAndVerify(v1pv,v1pvc, labelSelector, namespace);
