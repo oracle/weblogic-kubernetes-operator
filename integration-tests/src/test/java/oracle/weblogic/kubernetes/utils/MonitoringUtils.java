@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022 Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -876,41 +876,32 @@ public class MonitoringUtils {
         .isTrue();
   }
 
-  /** To build monitoring exporter sidecar image.
+  /**
+   * Verify the monitoring exporter app can be accessed from all managed servers in the domain through NGINX.
    *
-   * @param imageName image nmae
-   * @param monitoringExporterSrcDir path to monitoring exporter src location
+   * @param replicaCount number of managed servers
+   * @param hostPort  host:port combination to access app
    */
-  public static void buildMonitoringExporterImage(String imageName, String monitoringExporterSrcDir) {
-    String httpsproxy = System.getenv("HTTPS_PROXY");
-    logger.info(" httpsproxy : " + httpsproxy);
-    String proxyHost = "";
-    String command;
-    if (httpsproxy != null) {
-      int firstIndex = httpsproxy.lastIndexOf("www");
-      int lastIndex = httpsproxy.lastIndexOf(":");
-      logger.info("Got indexes : " + firstIndex + " : " + lastIndex);
-      proxyHost = httpsproxy.substring(firstIndex,lastIndex);
-      logger.info(" proxyHost: " + proxyHost);
+  public static void verifyMonExpAppAccess(int replicaCount, String hostPort) {
 
-      command = String.format("cd %s && mvn clean install -Dmaven.test.skip=true "
-              + " &&   docker build . -t "
-              + imageName
-              + " --build-arg MAVEN_OPTS=\"-Dhttps.proxyHost=%s -Dhttps.proxyPort=80\" --build-arg https_proxy=%s",
-          monitoringExporterSrcDir, proxyHost, httpsproxy);
-    } else {
-      command = String.format("cd %s && mvn clean install -Dmaven.test.skip=true "
-          + " &&   docker build . -t "
-          + imageName
-          + monitoringExporterSrcDir);
+    List<String> managedServerNames = new ArrayList<>();
+    for (int i = 1; i <= replicaCount; i++) {
+      managedServerNames.add(MANAGED_SERVER_NAME_BASE + i);
     }
-    logger.info("Executing command " + command);
-    assertTrue(new Command()
-        .withParams(new CommandParams()
-            .command(command))
-        .execute(), "Failed to build monitoring exporter image");
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(imageName);
+
+    // check the access to monitoring exporter apps from all managed servers in the domain
+    String curlCmd =
+        String.format("curl --silent --show-error --noproxy '*'  http://%s:%s@%s/wls-exporter/metrics",
+            ADMIN_USERNAME_DEFAULT,
+            ADMIN_PASSWORD_DEFAULT,
+            K8S_NODEPORT_HOST,
+            hostPort);
+    assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, managedServerNames, 50))
+        .as("Verify the access to the monitoring exporter metrics "
+            + "from all managed servers in the domain via http")
+        .withFailMessage("Can not access the monitoring exporter metrics "
+            + "from one or more of the managed servers via http")
+        .isTrue();
   }
 
   /**
@@ -957,6 +948,43 @@ public class MonitoringUtils {
       return false;
     }
     return isFound;
+  }
+
+  /** To build monitoring exporter sidecar image.
+   *
+   * @param imageName image nmae
+   * @param monitoringExporterSrcDir path to monitoring exporter src location
+   */
+  public static void buildMonitoringExporterImage(String imageName, String monitoringExporterSrcDir) {
+    String httpsproxy = System.getenv("HTTPS_PROXY");
+    logger.info(" httpsproxy : " + httpsproxy);
+    String proxyHost = "";
+    String command;
+    if (httpsproxy != null) {
+      int firstIndex = httpsproxy.lastIndexOf("www");
+      int lastIndex = httpsproxy.lastIndexOf(":");
+      logger.info("Got indexes : " + firstIndex + " : " + lastIndex);
+      proxyHost = httpsproxy.substring(firstIndex,lastIndex);
+      logger.info(" proxyHost: " + proxyHost);
+
+      command = String.format("cd %s && mvn clean install -Dmaven.test.skip=true "
+              + " &&   docker build . -t "
+              + imageName
+              + " --build-arg MAVEN_OPTS=\"-Dhttps.proxyHost=%s -Dhttps.proxyPort=80\" --build-arg https_proxy=%s",
+          monitoringExporterSrcDir, proxyHost, httpsproxy);
+    } else {
+      command = String.format("cd %s && mvn clean install -Dmaven.test.skip=true "
+          + " &&   docker build . -t "
+          + imageName
+          + monitoringExporterSrcDir);
+    }
+    logger.info("Executing command " + command);
+    assertTrue(new Command()
+        .withParams(new CommandParams()
+            .command(command))
+        .execute(), "Failed to build monitoring exporter image");
+    // docker login and push image to docker registry if necessary
+    dockerLoginAndPushImageToRegistry(imageName);
   }
 
   /** Change monitoring exporter webapp confiuration inside the pod.
