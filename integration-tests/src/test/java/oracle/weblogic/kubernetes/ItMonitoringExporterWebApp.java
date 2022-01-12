@@ -207,12 +207,12 @@ class ItMonitoringExporterWebApp {
     clusterNames.add(cluster2Name);
 
     exporterUrl = String.format("http://%s:%s/wls-exporter/",K8S_NODEPORT_HOST,nodeportshttp);
-    logger.info("create pv and pvc for monitoring");
     HashMap<String, String> labels = new HashMap<>();
     labels.put("app", "monitoring");
     labels.put("weblogic.domainUid", "test");
     String className = "ItMonitoringExporterWebApp";
     if (!OKD) {
+      logger.info("create pv and pvc for monitoring");
       assertDoesNotThrow(() -> createPvAndPvc(prometheusReleaseName, monitoringNS, labels, className));
       assertDoesNotThrow(() -> createPvAndPvc("alertmanager" + releaseSuffix, monitoringNS, labels, className));
       assertDoesNotThrow(() -> createPvAndPvc(grafanaReleaseName, monitoringNS, labels, className));
