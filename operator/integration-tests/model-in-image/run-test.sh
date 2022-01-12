@@ -54,7 +54,9 @@ function usage() {
     WORKDIR               : /tmp/\$USER/mii-sample-work-dir
     DOMAIN_NAMESPACE      : sample-domain1-ns
     MODEL_IMAGE_NAME      : model-in-image 
-    MODEL_IMAGE_TAG       : ${WDT_DOMAIN_TYPE}-v2
+    MODEL_IMAGE_TAG       : Defaults to JRF-v1, JRF-v2, WLS-v1, or WLS-v2 depending on use-case and domain type.
+                            IMPORTANT: If setting this env var, do not run multiple use cases on the same command line,
+                            as then all use cases will use the same image.
     IMAGE_PULL_SECRET_NAME: (not set)
     DB_NAMESPACE          : default (used by -db and -rcu)
     DB_IMAGE_PULL_SECRET  : docker-secret (used by -db and -rcu)
@@ -111,7 +113,8 @@ function usage() {
                     checked into the mii sample git location.
 
     -initial-image: Build image required for initial use case.
-                    Image is named '\$MODEL_IMAGE_NAME:\$MODEL_IMAGE_TAG' or '...:\$MODEL_IMAGE_TAG'
+                    Image is named '\$MODEL_IMAGE_NAME:WLS-v1' or '...:JRF-v1' if MODEL_IMAGE_TAG not specified.
+                    Image is named '\$MODEL_IMAGE_NAME:\$MODEL_IMAGE_TAG' if MODEL_IMAGE_TAG is specified.
 
     -initial-main : Deploy initial use case (domain resource, secrets, etc).
                     Domain uid 'sample-domain1'.
@@ -128,7 +131,8 @@ function usage() {
                     Depends on '-initial-main' (calls its app).
 
     -update3-image: Build image required for update3 use case.
-                    Image is named '\$MODEL_IMAGE_NAME:\$MODEL_IMAGE_TAG' or '...:JRF-v2'
+                    Image is named '\$MODEL_IMAGE_NAME:WLS-v2' or '...:JRF-v2' if MODEL_IMAGE_TAG is not set.
+                    And is named '\$MODEL_IMAGE_NAME:\$MODEL_IMAGE_TAG` if MODEL_IMAGE_TAG is set.'
 
     -update3-main : Run update3 use case (update initial domain's app via new image).
                     Domain uid 'sample-domain1'.
