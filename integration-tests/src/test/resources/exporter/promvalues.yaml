@@ -78,7 +78,7 @@ alertmanagerFiles:
     receivers:
       - name: 'logging-webhook'
         webhook_configs:
-          - url: 'http://webhook.ns-gkbpss.svc.cluster.local:8080/log'
+          - url: 'http://webhook.webhook.svc.cluster.local:8080/log'
 
 serverFiles:
   alerts:
