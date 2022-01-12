@@ -9,7 +9,7 @@ description: "Tune container memory and CPU usage by configuring Kubernetes reso
 #### Contents
 
  - [Introduction](#introduction)
- - [Setting resource requests and limits in a Domain YAML file](#setting-resource-requests-and-limits-in-a-domain)
+ - [Setting resource requests and limits in a Domain resource](#setting-resource-requests-and-limits-in-a-domain-resource)
  - [Determining Pod Quality Of Service](#determining-pod-quality-of-service)
  - [Java heap size and memory resource considerations](#java-heap-size-and-memory-resource-considerations)
    - [Importance of setting heap size and memory resources](#importance-of-setting-heap-size-and-memory-resources)
@@ -23,13 +23,63 @@ description: "Tune container memory and CPU usage by configuring Kubernetes reso
 
 #### Introduction
 
-The operator creates a container in its own Pod for each WebLogic Server instance. You can tune container memory and CPU usage by configuring Kubernetes resource requests and limits, and you can tune a WebLogic JVM heap usage using the `USER_MEM_ARGS` environment variable in your Domain YAML file. A resource request sets the minimum amount of a resource that a container requires. A resource limit is the maximum amount of a resource a container is given and prevents a container from using more than its share of a resource. Additionally, resource requests and limits determine a Pod's quality of service.
+The CPU and memory requests and limits for WebLogic Server Pods usually need to be tuned
+where the optimal values depend on your workload, applications, and the Kubernetes environment.
+Requests and limits should be configured based on the expected traffic during peak usage.
+For example: 
+
+- Tune CPU and memory high enough
+  to handle expected peak workloads for applications
+  that require large amounts of in-memory processing
+  or very CPU intensive calculations.
+- Tune memory high enough so that WebLogic JMS messaging
+  applications that generate large backlogs of unprocessed
+  persistent or non-persistent messages
+  can expect JMS to efficiently cache the backlogs in memory.
+- CPU requirements are sometimes significantly higher
+  when a WebLogic Server is starting. This means that a low CPU
+  allocation that might be suitable for
+  light runtime workloads risks causing unacceptably slow startup times.
+
+Requirements vary considerably between use cases.
+You may need to experiment and make adjustments
+based on monitoring resource usage in your environment.
+
+The operator creates a container in its own Pod for each domain's
+WebLogic Server instances and for the short-lived introspector job that
+is automatically launched before WebLogic Server Pods are launched.
+You can tune container memory and CPU usage
+by configuring Kubernetes resource requests and limits,
+and you can tune a WebLogic JVM heap usage
+using the `USER_MEM_ARGS` environment variable in your Domain YAML file.
+The introspector job pod uses the same CPU and memory settings as the
+domain's WebLogic Administration Server pod.
+A resource request sets the minimum amount of a resource that a container requires.
+A resource limit is the maximum amount of a resource a container is given
+and prevents a container from using more than its share of a resource.
+Additionally, resource requests and limits determine a Pod's quality of service.
 
 This FAQ discusses tuning these parameters so WebLogic Server instances run efficiently.
 
-#### Setting resource requests and limits in a Domain
+#### Setting resource requests and limits in a Domain resource
 
-You can set Kubernetes memory and CPU requests and limits in a [Domain YAML file]({{< relref "/userguide/managing-domains/domain-resource" >}}) using its `spec.serverPod.resources` stanza, and you can override the setting for individual WebLogic Server instances or clusters using the `serverPod.resources` element in `spec.adminServer`, `spec.clusters`, or `spec.managedServers`. For example:
+You can set Kubernetes memory and CPU requests and limits in a
+[Domain YAML file]({{< relref "/userguide/managing-domains/domain-resource" >}})
+using its `spec.serverPod.resources` stanza,
+and you can override the setting for individual WebLogic Server instances or clusters using the
+`serverPod.resources` element in `spec.adminServer`, `spec.clusters`, or `spec.managedServers`.
+Note that the introspector job pod uses the same settings
+as the WebLogic Administration Server pod.
+
+Values set in the `.serverPod` stanzas for a more specific type of pod, override
+the same values if they are also set for a more general type of pod, and inherit
+any other values set in the more general pod.
+The `spec.adminServer.serverPod`, `spec.managedServers.serverPod`,
+and `spec.clusters.serverPod` stanzas all inherit from and override
+the `spec.serverPod` stanza. When a `spec.managedServers.serverPod` stanza
+refers to a pod that is part of a cluster, it inherits
+from and overrides from its cluster's `spec.clusters.serverPod` setting (if any),
+which in turn inherits from and overrides the domain's `spec.serverPod` setting.
 
 ```yaml
   spec:
@@ -156,7 +206,7 @@ Similarly, the operator samples configure CPU and memory resource requests to at
 
 There's no memory or CPU limit configured by default in samples and so the default QoS for sample WebLogic Server Pod's is `burstable`.
 
-If you wish to set resource requests or limits differently on a sample Domain YAML file or template, see [Setting resource requests and limits in a Domain resource](#setting-resource-requests-and-limits-in-a-domain). Or, for samples that generate their Domain resource using an 'inputs' file, see the `serverPodMemoryRequest`, `serverPodMemoryLimit`, `serverPodCpuRequest`, and `serverPodCpuLimit` parameters in the sample's `create-domain.sh` input file.
+If you wish to set resource requests or limits differently on a sample Domain YAML file or template, see [Setting resource requests and limits in a Domain resource](#setting-resource-requests-and-limits-in-a-domain-resource). Or, for samples that generate their Domain resource using an "inputs" YAML file, see the `serverPodMemoryRequest`, `serverPodMemoryLimit`, `serverPodCpuRequest`, and `serverPodCpuLimit` parameters in the sample's `create-domain.sh` inputs file.
 
 #### Configuring CPU affinity
 
