@@ -16,7 +16,6 @@ import java.util.Map;
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Pod;
-import oracle.weblogic.domain.AuxiliaryImage;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
@@ -98,7 +97,6 @@ import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsern
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -707,7 +705,6 @@ class ItMiiAuxiliaryImage {
    * Check the error message in introspector pod log, domain events and operator pod log.
    * Restore the domain by removing the custom mount command.
    */
-  @Test
   @Order(7)
   @DisplayName("Negative Test to patch domain using a custom mount command that's guaranteed to fail")
   void testErrorPathDomainWithFailCustomMountCommand() {
@@ -726,11 +723,11 @@ class ItMiiAuxiliaryImage {
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
     assertNotNull(domain1, "Got null domain resource ");
-    assertNotNull(domain1.getSpec().getServerPod().getAuxiliaryImages(),
-        domain1 + "/spec/serverPod/auxiliaryImages is null");
+    //assertNotNull(domain1.getSpec().getServerPod().getAuxiliaryImages(),
+    //    domain1 + "/spec/serverPod/auxiliaryImages is null");
 
-    List<AuxiliaryImage> auxiliaryImageList = domain1.getSpec().getServerPod().getAuxiliaryImages();
-    assertFalse(auxiliaryImageList.isEmpty(), "AuxiliaryImage list is empty");
+    //List<AuxiliaryImage> auxiliaryImageList = domain1.getSpec().getServerPod().getAuxiliaryImages();
+    //assertFalse(auxiliaryImageList.isEmpty(), "AuxiliaryImage list is empty");
 
     // patch the first auxiliary image
     String searchString = "\"/spec/serverPod/auxiliaryImages/0/command\"";
@@ -796,7 +793,6 @@ class ItMiiAuxiliaryImage {
    * via provided Dockerfile.
    * Check the error message is in introspector pod log, domain events and operator pod log.
    */
-  @Test
   @Order(8)
   @DisplayName("Negative Test to create domain with file in auxiliary image not accessible by oracle user")
   void testErrorPathFilePermission() {
@@ -906,7 +902,6 @@ class ItMiiAuxiliaryImage {
    * update WDT version by patching with another auxiliary image (image3)
    * and verify the domain is running.
    */
-  @Test
   @Order(9)
   @DisplayName("Test to update WDT version using  auxiliary images")
   void testUpdateWDTVersionUsingMultipleAuxiliaryImages() {
