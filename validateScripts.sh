@@ -6,8 +6,12 @@
 found_error=0
 
 validate_script() {
-  # verify no function keywords in script
-  result=$(grep -E ".*function +\w+.+{" "$1"  )
+  # verify that no 'function' keywords is used in script
+  # See https://github.com/oracle/weblogic-kubernetes-operator/issues/1251
+  #
+  FIND_FUNCTION_EXPRESSION=".*function +\w+.+{"
+
+  result=$(grep -E "$FIND_FUNCTION_EXPRESSION" "$1"  )
   if [ -n "$result" ]; then
    printf "Please remove usages of 'function' keyword from %s:\n%s\n" "$1" "$result"
   fi
