@@ -3,6 +3,8 @@
 
 package oracle.weblogic.domain;
 
+import java.util.Optional;
+
 import io.swagger.annotations.ApiModel;
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.builder.EqualsBuilder;
@@ -15,6 +17,11 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
         + "This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share "
         + "the files from the additional images with the pod.")
 public class AuxiliaryImage {
+
+  public static final String AUXILIARY_IMAGE_PATH = "/auxiliary";
+  public static final String AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME =
+          AUXILIARY_IMAGE_PATH + "/weblogic-deploy";
+  public static final String AUXILIARY_IMAGE_DEFAULT_SOURCE_MODEL_HOME = AUXILIARY_IMAGE_PATH + "/models";
 
   /**
    * The auxiliary image.
@@ -30,17 +37,13 @@ public class AuxiliaryImage {
                   + "Defaults to Always if image ends in :latest; IfNotPresent, otherwise.")
   private String imagePullPolicy;
 
-  @ApiModelProperty(
-      "The command for this init container. Defaults to 'cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH'. "
-          + "This is an advanced setting for customizing the container command for copying files from the container "
-          + "image to the emptyDir volume. Use the '$AUXILIARY_IMAGE_PATH' environment variable to reference "
-          + "the value configured in 'spec.auxiliaryImageVolumes.mountPath' (which defaults to '/auxiliary'). Use "
-          + "'$AUXILIARY_IMAGE_TARGET_PATH' to refer to the temporary directory created by the operator that resolves "
-          + "to the internal emptyDir volume.")
-  private String command;
+  @ApiModelProperty("The source location of the WebLogic Deploy Tooling installation within the auxiliary image. "
+          + "Defaults to /auxiliary/weblogic-deploy. Ignored if the value is set to 'None'.")
+  private String sourceWDTInstallHome;
 
-  @ApiModelProperty("The name of a auxiliary image volume defined in 'spec.auxiliaryImageVolumes'. Required.")
-  private String volume;
+  @ApiModelProperty("The source location of the WebLogic Deploy Tooling model home within the auxiliary image. "
+          + "Defaults to /auxiliary/models. Ignored if the value is set to 'None'.")
+  private String sourceModelHome;
 
   public String getImage() {
     return image;
@@ -68,29 +71,31 @@ public class AuxiliaryImage {
     return this;
   }
 
-  public String getCommand() {
-    return command;
+  public String getSourceWDTInstallHome() {
+    return Optional.ofNullable(sourceWDTInstallHome)
+            .orElse(AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME);
   }
 
-  public void setCommand(String command) {
-    this.command = command;
+  public void setSourceWDTInstallHome() {
+    this.sourceWDTInstallHome = sourceWDTInstallHome;
   }
 
-  public AuxiliaryImage command(String command) {
-    this.command = command;
+  public AuxiliaryImage sourceWDTInstallHome(String sourceWDTInstallHome) {
+    this.sourceWDTInstallHome = sourceWDTInstallHome;
     return this;
   }
 
-  public String getVolume() {
-    return volume;
+  public String getSourceModelHome() {
+    return Optional.ofNullable(sourceModelHome)
+            .orElse(AUXILIARY_IMAGE_DEFAULT_SOURCE_MODEL_HOME);
   }
 
-  public void setVolume(String volume) {
-    this.volume = volume;
+  public void setSourceModelHome(String sourceModelHome) {
+    this.sourceModelHome = sourceModelHome;
   }
 
-  public AuxiliaryImage volume(String volume) {
-    this.volume = volume;
+  public AuxiliaryImage sourceModelHome(String sourceModelHome) {
+    this.sourceModelHome = sourceModelHome;
     return this;
   }
 
@@ -100,8 +105,8 @@ public class AuxiliaryImage {
             new ToStringBuilder(this)
                     .append("image", image)
                     .append("imagePullPolicy", imagePullPolicy)
-                    .append("command", command)
-                    .append("volume", volume);
+                    .append("sourceWDTInstallHome", sourceWDTInstallHome)
+                    .append("sourceModelHome", sourceModelHome);
     return builder.toString();
   }
 
@@ -119,8 +124,8 @@ public class AuxiliaryImage {
             new EqualsBuilder()
                     .append(image, rhs.image)
                     .append(imagePullPolicy, rhs.imagePullPolicy)
-                    .append(command, rhs.command)
-                    .append(volume, rhs.volume);
+                    .append(sourceWDTInstallHome, rhs.sourceWDTInstallHome)
+                    .append(sourceModelHome, rhs.sourceModelHome);
 
     return builder.isEquals();
   }
@@ -130,8 +135,8 @@ public class AuxiliaryImage {
     HashCodeBuilder builder = new HashCodeBuilder()
             .append(image)
             .append(imagePullPolicy)
-            .append(command)
-            .append(volume);
+            .append(sourceWDTInstallHome)
+            .append(sourceModelHome);
     return builder.toHashCode();
   }
 }

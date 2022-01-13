@@ -3,6 +3,7 @@
 
 package oracle.weblogic.domain;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import javax.annotation.Nullable;
@@ -47,12 +48,22 @@ public class Model {
    * The auxiliary images.
    *
    */
+  @ApiModelProperty("Use an auxiliary image to automatically include directory content from additional images. "
+          + "This is a useful alternative for including Model in Image model files, or other types of files, in a pod "
+          + "without requiring modifications to the pod's base image 'domain.spec.image'. "
+          + "This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share "
+          + "the files from the additional images with the pod.")
   private List<AuxiliaryImage> auxiliaryImages;
 
+  @ApiModelProperty("The auxiliary image volume mount path. Defaults to '/aux'.")
   private String auxiliaryImageVolumeMountPath;
 
+  @ApiModelProperty("The emptyDir volume withAuxiliaryImageVolumeMedium. This is an advanced setting that rarely "
+          + "needs to be configured. Defaults to unset, which means the volume's files are stored on the local node's "
+          + "file system for the life of the pod.")
   private String auxiliaryImageVolumeMedium;
 
+  @ApiModelProperty("The emptyDir volume size limit. Defaults to unset.")
   private String auxiliaryImageVolumeSizeLimit;
 
   public Model domainType(String domainType) {
@@ -162,7 +173,16 @@ public class Model {
     return this;
   }
 
+  /**
+  * Create the domain resource model with auxiliary image.
+  *
+  * @param auxiliaryImage Auxiliary image to be added
+  * @return Model with auxiliary image
+  */
   public Model withAuxiliaryImage(@Nullable AuxiliaryImage auxiliaryImage) {
+    if (this.auxiliaryImages == null) {
+      this.auxiliaryImages = new ArrayList<>();
+    }
     this.auxiliaryImages.add(auxiliaryImage);
     return this;
   }
