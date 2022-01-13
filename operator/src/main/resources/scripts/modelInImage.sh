@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # This script contains the all the function of model in image
@@ -78,7 +78,7 @@ export WDT_MODEL_SECRETS_NAME_DIR_PAIRS="__weblogic-credentials__=/weblogic-oper
 
 if [ ! -d "${WDT_OUTPUT_DIR}" ]; then
   trace "Creating WDT standard output directory: '${WDT_OUTPUT_DIR}'"
-  createFolder "${WDT_OUTPUT_DIR}"
+  createFolder "${WDT_OUTPUT_DIR}"  "This folder is for holding Model In Image WDT command output files for logging purposes. If 'domain.spec.logHomeEnabled' is 'true', then it is located in 'domain.spec.logHome', otherwise it is located within '/tmp'." || exitOrLoop
 fi
 
 # sort_files  sort the files according to the names and naming conventions and write the result to stdout
@@ -262,7 +262,7 @@ function buildWDTParams_MD5() {
   opss_wallet=$(get_opss_key_wallet)
   if [ -f "${opss_wallet}" ] ; then
     trace "A wallet file was passed in using walletFileSecret, so we're using an existing rcu schema."
-    mkdir -p /tmp/opsswallet
+    createFolder "/tmp/opsswallet" "This folder is used to hold a generated OPSS wallet file." || exitOrLoop
     base64 -d  ${opss_wallet} > /tmp/opsswallet/ewallet.p12
     OPSS_FLAGS="-opss_wallet /tmp/opsswallet"
   else
@@ -559,7 +559,7 @@ function createModelDomain() {
       trace "Using existing primordial domain"
       cd / && base64 -d ${PRIMORDIAL_DOMAIN_ZIPPED} > ${LOCAL_PRIM_DOMAIN_ZIP} && tar -pxzf ${LOCAL_PRIM_DOMAIN_ZIP}
       # create empty lib since we don't archive it in primordial zip and WDT will fail without it
-      mkdir ${DOMAIN_HOME}/lib
+      createFolder "${DOMAIN_HOME}/lib" "This is the './lib' directory within directory 'domain.spec.domainHome'." || exitOrLoop
       # Since the SerializedSystem ini is encrypted, restore it first
       local MII_PASSPHRASE=$(cat ${RUNTIME_ENCRYPTION_SECRET_PASSWORD})
       encrypt_decrypt_domain_secret "decrypt" ${DOMAIN_HOME} ${MII_PASSPHRASE}
@@ -1051,15 +1051,25 @@ function wdtHandleOnlineUpdate() {
   # We need to extract all the archives, WDT online checks for file existence
   # even for delete
   #
-  mkdir -p ${DOMAIN_HOME}/lib || exitOrLoop
+  createFolder "${DOMAIN_HOME}/lib" "This is the './lib' directory within directory 'domain.spec.domainHome'." || exitOrLoop
   for file in $(sort_files ${IMG_ARCHIVES_ROOTDIR} "*.zip")
     do
-        # expand the archive domain libraries to the domain lib
+        # expand the archive domain libraries to the domain lib, 11 is caution when zip entry doesn't exists
         cd ${DOMAIN_HOME}/lib || exitOrLoop
-        ${JAVA_HOME}/bin/jar xf ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainLibraries/
+        unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainLibraries/*
+        if [ $? -ne 0 && $? -ne 11 ] ; then
+          trace SEVERE  "Domain Source Type is FromModel, error in extracting domainLibraries " \
+          "${IMG_ARCHIVES_ROOTDIR}/${file}"
+          exitOrLoop
+        fi
 
-        if [ $? -ne 0 ] ; then
-          trace SEVERE  "Error extracting domain lib '${IMG_ARCHIVES_ROOTDIR}/${file}'"
+        # expand the domain bin, in update case user may only update a file in the domainBin archive, 11 is caution when
+        # zip entry doesn't exists
+        cd ${DOMAIN_HOME}/bin || exitOrLoop
+        unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainBin/*
+        if [ $? -ne 0 && $? -ne 11 ] ; then
+          trace SEVERE  "Domain Source Type is FromModel, error in extracting domainBin " \
+          "${IMG_ARCHIVES_ROOTDIR}/${file}"
           exitOrLoop
         fi
 
@@ -1281,30 +1291,30 @@ function prepareMIIServer() {
   #
   trace "Model-in-Image: Restoring apps and libraries"
 
-  mkdir -p ${DOMAIN_HOME}/lib
-  if [ $? -ne 0 ] ; then
-    trace  SEVERE "Domain Source Type is FromModel, cannot create ${DOMAIN_HOME}/lib "
-    return 1
-  fi
+  createFolder "${DOMAIN_HOME}/lib" "This is the './lib' directory within DOMAIN_HOME directory 'domain.spec.domainHome'." || return 1
   local WLSDEPLOY_DOMAINLIB="wlsdeploy/domainLibraries"
 
   for file in $(sort_files ${IMG_ARCHIVES_ROOTDIR} "*.zip")
     do
-        # expand the archive domain libraries to the domain lib
-        cd ${DOMAIN_HOME}/lib || return 1
-        ${JAVA_HOME}/bin/jar xf ${IMG_ARCHIVES_ROOTDIR}/${file} ${WLSDEPLOY_DOMAINLIB}
 
-        if [ $? -ne 0 ] ; then
-          trace SEVERE  "Domain Source Type is FromModel, error in extracting domain libs ${IMG_ARCHIVES_ROOTDIR}/${file}"
-          return 1
+        # expand the archive domain libraries to the domain lib, 11 is caution when zip entry doesn't exists
+        cd ${DOMAIN_HOME}/lib || exitOrLoop
+        unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainLibraries/*
+        if [ $? -ne 0 && $? -ne 11 ] ; then
+          trace SEVERE  "Domain Source Type is FromModel, error in extracting domainLibraries " \
+          "${IMG_ARCHIVES_ROOTDIR}/${file}"
+          exitOrLoop
         fi
 
-        # Flatten the jars to the domain lib root
-
-        if [ -d ${WLSDEPLOY_DOMAINLIB} ] && [ "$(ls -A ${WLSDEPLOY_DOMAINLIB})" ] ; then
-          mv ${WLSDEPLOY_DOMAINLIB}/* .
+        # expand the domain bin, in update case user may only update a file in the domainBin archive, 11 is caution when
+        # zip entry doesn't exists
+        cd ${DOMAIN_HOME}/bin || exitOrLoop
+        unzip -jo ${IMG_ARCHIVES_ROOTDIR}/${file} wlsdeploy/domainBin/*
+        if [ $? -ne 0 && $? -ne 11 ] ; then
+          trace SEVERE  "Domain Source Type is FromModel, error in extracting domainBin " \
+          "${IMG_ARCHIVES_ROOTDIR}/${file}"
+          exitOrLoop
         fi
-        rm -fr wlsdeploy/
 
         # expand the archive apps and shared lib to the wlsdeploy/* directories
         # the config.xml is referencing them from that path

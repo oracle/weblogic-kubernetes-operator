@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -87,7 +87,6 @@ public class ReadHealthStep extends Step {
     String serverName = (String) packet.get(ProcessingConstants.SERVER_NAME);
     DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
     V1Service service = info.getServerService(serverName);
-
     if (service == null) {
       return doNext(packet);
     } else {
@@ -191,6 +190,9 @@ public class ReadHealthStep extends Step {
     @Override
     public NextAction apply(Packet packet) {
       ReadHealthProcessing processing = new ReadHealthProcessing(packet, service, pod);
+      if (processing.getWlsServerConfig() == null) {
+        return doNext(packet);
+      }
       return doNext(createRequestStep(processing.createRequest(), new RecordHealthStep(getNext())), packet);
     }
 

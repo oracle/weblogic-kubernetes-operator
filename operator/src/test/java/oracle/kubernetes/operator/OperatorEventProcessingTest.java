@@ -34,7 +34,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_NAMESPACE_
 import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_POD_NAME_ENV;
 import static oracle.kubernetes.operator.KubernetesConstants.OPERATOR_POD_UID_ENV;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_CREATED;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_FAILED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STOPPED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.START_MANAGING_NAMESPACE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.STOP_MANAGING_NAMESPACE;
@@ -142,30 +142,30 @@ class OperatorEventProcessingTest {
 
   @Test
   void onNewDomainProcessingFailedEventWithNoInvolvedObject_doNothing() {
-    CoreV1Event event = createDomainEvent(".acbd7", DOMAIN_PROCESSING_FAILED, "failure", null);
+    CoreV1Event event = createDomainEvent(".acbd7", DOMAIN_FAILED, "failure", null);
     dispatchAddedEventWatch(event);
     assertThat(getMatchingEvent(event), nullValue());
   }
 
   @Test
   void onNewProcessingFailedEvent_updateKubernetesEventObjectsMap() {
-    CoreV1Event event = createDomainEvent(".acbd8", DOMAIN_PROCESSING_FAILED, "failure2", domainReference);
+    CoreV1Event event = createDomainEvent(".acbd8", DOMAIN_FAILED, "failure2", domainReference);
     dispatchAddedEventWatch(event);
     assertThat(getMatchingEvent(event), notNullValue());
   }
 
   @Test
   void afterAddProcessingFailedEvent_onDeleteDomainProcessingFailedEventWithNoInvolvedObject_doNothing() {
-    CoreV1Event event1 = createDomainEvent(".acbd9", DOMAIN_PROCESSING_FAILED, "failureOnDelete1", domainReference);
+    CoreV1Event event1 = createDomainEvent(".acbd9", DOMAIN_FAILED, "failureOnDelete1", domainReference);
     dispatchAddedEventWatch(event1);
-    CoreV1Event event2 = createDomainEvent(".acbd9", DOMAIN_PROCESSING_FAILED, "failureOnDelete1", null);
+    CoreV1Event event2 = createDomainEvent(".acbd9", DOMAIN_FAILED, "failureOnDelete1", null);
     dispatchDeletedEventWatch(event2);
     assertThat(getMatchingEvent(event1), notNullValue());
   }
 
   @Test
   void afterAddProcessingFailedEvent_onDeleteDomainProcessingFailedEvent_updateKubernetesEventObjectsMap() {
-    CoreV1Event event = createDomainEvent(".acbd10", DOMAIN_PROCESSING_FAILED, "failureOnDelete2", domainReference);
+    CoreV1Event event = createDomainEvent(".acbd10", DOMAIN_FAILED, "failureOnDelete2", domainReference);
     dispatchAddedEventWatch(event);
     dispatchDeletedEventWatch(event);
     assertThat(getMatchingEvent(event), nullValue());
@@ -173,18 +173,18 @@ class OperatorEventProcessingTest {
 
   @Test
   void afterAddProcessingFailedEvent_onModifyDomainProcessingFailedEventWithNoInvolvedObject_doNothing() {
-    CoreV1Event event1 = createDomainEvent(".acbd11", DOMAIN_PROCESSING_FAILED, "failureOnModify1", domainReference);
+    CoreV1Event event1 = createDomainEvent(".acbd11", DOMAIN_FAILED, "failureOnModify1", domainReference);
     dispatchAddedEventWatch(event1);
-    CoreV1Event event2 = createDomainEvent(".acbd11", DOMAIN_PROCESSING_FAILED, "failureOnModify1", null);
+    CoreV1Event event2 = createDomainEvent(".acbd11", DOMAIN_FAILED, "failureOnModify1", null);
     dispatchModifiedEventWatch(event2);
     assertThat(getMatchingEventCount(event1), equalTo(1));
   }
 
   @Test
   void afterAddProcessingFailedEvent_onModifyDomainProcessingFailedEvent_updateKubernetesEventObjectsMap() {
-    CoreV1Event event1 = createDomainEvent(".acbd12", DOMAIN_PROCESSING_FAILED, "failureOnModify2", domainReference);
+    CoreV1Event event1 = createDomainEvent(".acbd12", DOMAIN_FAILED, "failureOnModify2", domainReference);
     dispatchAddedEventWatch(event1);
-    CoreV1Event event2 = createDomainEvent(".acbd12", DOMAIN_PROCESSING_FAILED, "failureOnModify2", domainReference, 2);
+    CoreV1Event event2 = createDomainEvent(".acbd12", DOMAIN_FAILED, "failureOnModify2", domainReference, 2);
     dispatchModifiedEventWatch(event2);
     assertThat(getMatchingEventCount(event1), equalTo(2));
   }

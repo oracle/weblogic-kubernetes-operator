@@ -2,7 +2,7 @@
 title: "Supported platforms"
 date: 2019-02-23T16:40:54-05:00
 description: "See the operator supported environments."
-weight: 4
+weight: 3
 ---
 
 ### Contents
@@ -22,6 +22,7 @@ weight: 4
   - [Microsoft Azure](#microsoft-azure)
   - [VMware Tanzu Kubernetes Grid (TKG)](#vmware-tanzu-kubernetes-grid-tkg)
   - [OpenShift](#openshift)
+  - [WebLogic Server running in Kubernetes connecting to an Oracle Database also running in Kubernetes](#weblogic-server-running-in-kubernetes-connecting-to-an-oracle-database-also-running-in-kubernetes)
   - [Development-focused Kubernetes distributions](#development-focused-kubernetes-distributions)
 
 ### Supported environments
@@ -45,7 +46,7 @@ yourself. These include, but are not limited to:
   - VMWare Tanzu
   - VMware Tanzu Kubernetes Grid (TKG)
 
-WebLogic Server and the operator are also supported on service offerings which 
+WebLogic Server and the operator are also supported on service offerings which
 deploy the WebLogic Server and the operator for you. These include:
 
 - [Oracle WebLogic Server for OKE (WLS for OKE)](https://docs.oracle.com/en/cloud/paas/weblogic-container/)
@@ -63,14 +64,16 @@ to the operator, or are subject to limitations and restrictions: see
 
 ### Kubernetes, WebLogic Server, and operating system prerequisites
 
-The operator is subject to Kubernetes, WebLogic Server, and operating system versioning prerequisites:
+The operator is subject to Kubernetes, WebLogic Server, and operating system versioning prerequisites,
 see [Operator prerequisites]({{< relref "/userguide/prerequisites/introduction.md" >}}).
 
 ### Pricing and licensing
 
 The WebLogic Kubernetes Operator and Oracle Linux are open source and free;
-Oracle WebLogic Server licenses are suitable
-to run WebLogic deployments in containers and Kubernetes.
+WebLogic Server requires licenses in any environment.
+All WebLogic Server licenses are suitable for deploying WebLogic to containers and Kubernetes,
+including free single desktop Oracle Technology Network (OTN) developer licenses.
+See the following sections for more detailed information.
 
 #### WebLogic Kubernetes Operator
 
@@ -261,15 +264,29 @@ See also the [Tanzu Kubernetes Grid sample]({{<relref "/samples/tanzu-kubernetes
 
 #### OpenShift
 
-OpenShift can be a cloud platform or can be deployed on premise.
+OpenShift can be a cloud platform or can be deployed on premises.
 
 Operator 2.0.1+ is certified for use on OpenShift Container Platform 3.11.43+, with Kubernetes 1.11.5+.
 
 Operator 2.5.0+ is certified for use on OpenShift Container Platform 4.3.0+ with Kubernetes 1.16.2+.
 
 To accommodate OpenShift security requirements:
-- For security requirements to run WebLogic Server in OpenShift, see the [OpenShift chapter]({{<relref "/security/openshift.md">}}) in the Security section.
+- For security requirements to run WebLogic Server in OpenShift, see the [OpenShift]({{<relref "/security/openshift.md">}}) documentation.
 - Beginning with operator version 3.3.2, specify the `kubernetesPlatorm` Helm chart property with value `OpenShift`. For more information, see [Operator Helm configuration values]({{<relref "/userguide/managing-operators/using-helm#operator-helm-configuration-values">}}).
+
+#### WebLogic Server running in Kubernetes connecting to an Oracle Database also running in Kubernetes
+
+We have certified support for WebLogic Server domains, managed by the WebLogic Kubernetes Operator (operator), connecting to an Oracle Database, managed by the Oracle Database Operator for Kubernetes (OraOperator).  For details on the supported WLS and database versions, see the following:
+* [Operator prerequisites]({{< relref "/userguide/prerequisites/introduction.md" >}})
+* [Oracle Database Operator for Kubernetes prerequisites](https://github.com/oracle/oracle-database-operator/blob/main/PREREQUISITES.md)
+
+The certification includes support for both application data access and all WLS database-dependent features supported in Kubernetes. For more information, see WebLogic Server Certifications on Kubernetes in My Oracle Support [Doc ID 2349228.1](https://support.oracle.com/epmos/faces/DocumentDisplay?_afrLoop=208317433106215&id=2349228.1&_afrWindowMode=0&_adf.ctrl-state=c2nhai8p3_4).
+
+Included in the certification is support for the following topologies:
+* WebLogic Server, operator, Oracle Database, and OraOperator all running in the same Kubernetes cluster.
+* WebLogic Server, operator, Oracle Database, and OraOperator all running in the same Kubernetes cluster and WebLogic Server running on an Istio mesh.
+* WebLogic Server and operator running in a Kubernetes cluster and the Oracle Database and OraOperator in a different Kubernetes cluster.
+
 
 #### Development-focused Kubernetes distributions
 

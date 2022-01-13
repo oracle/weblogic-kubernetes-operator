@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -29,12 +29,16 @@ import org.junit.jupiter.api.Test;
 import static oracle.kubernetes.operator.DomainFailureReason.DomainInvalid;
 import static oracle.kubernetes.operator.DomainFailureReason.Kubernetes;
 import static oracle.kubernetes.operator.DomainStatusMatcher.hasStatus;
+import static oracle.kubernetes.operator.EventConstants.DOMAIN_INVALID_ERROR;
+import static oracle.kubernetes.operator.EventConstants.KUBERNETES_ERROR;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_INTERNAL_ERROR;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAUTHORIZED;
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.helpers.DomainIntrospectorJobTest.TEST_VOLUME_NAME;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_COMPLETED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.POD_CYCLE_STARTING;
 import static oracle.kubernetes.operator.helpers.Matchers.hasContainer;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
@@ -218,6 +222,22 @@ class AdminPodHelperTest extends PodHelperTestBase {
 
     assertThat(getDomain(),
           hasStatus().withReason(Kubernetes).withMessageContaining("create", "pod", NS));
+  }
+
+  @Test
+  void whenAdminPodReplacementFails_generateFailedEvent() {
+    testSupport.addRetryStrategy(retryStrategy);
+    initializeExistingPod(getIncompatiblePod());
+    testSupport.failOnCreate(KubernetesTestSupport.POD, NS, HTTP_INTERNAL_ERROR);
+
+    FiberTestSupport.StepFactory stepFactory = getStepFactory();
+    Step initialStep = stepFactory.createStepList(terminalStep);
+    testSupport.runSteps(initialStep);
+
+    assertThat(
+        "Expected Event " + DOMAIN_FAILED + " expected with message not found",
+        getExpectedEventMessage(DOMAIN_FAILED),
+        stringContainsInOrder("Domain", UID, "failed due to", KUBERNETES_ERROR));
   }
 
   @Test
@@ -426,8 +446,28 @@ class AdminPodHelperTest extends PodHelperTestBase {
     testSupport.runSteps(PodHelper.createAdminPodStep(terminalStep));
 
     assertThat(testSupport.getResources(KubernetesTestSupport.POD).isEmpty(), is(true));
-    assertThat(getDomain().getStatus().getReason(), is(DomainInvalid.toString()));
+    assertThat(getDomain().getStatus().getReason(), is(DomainInvalid.name()));
     assertThat(logRecords, containsSevere(getDomainValidationFailedKey()));
+  }
+
+  @Test
+  void whenDomainHasAdditionalVolumesWithCustomVariablesContainInvalidValue_createFailedEvent() {
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_MODEL, KubernetesResourceType.ConfigMap, NS);
+    resourceLookup.defineResource(OVERRIDES_CM_NAME_IMAGE, KubernetesResourceType.ConfigMap, NS);
+
+    configureAdminServer()
+        .withEnvironmentVariable(ENV_NAME1, BAD_MY_ENV_VALUE)
+        .withAdditionalVolume("volume1", VOLUME_PATH_1)
+
+        .withAdditionalVolumeMount("volume1", VOLUME_MOUNT_PATH_1);
+
+    testSupport.runSteps(PodHelper.createAdminPodStep(terminalStep));
+    logRecords.clear();
+
+    assertThat(
+        "Expected Event " + DOMAIN_FAILED + " expected with message not found",
+        getExpectedEventMessage(DOMAIN_FAILED),
+        stringContainsInOrder("Domain", UID, "failed due to", DOMAIN_INVALID_ERROR));
   }
 
   @Test
@@ -827,6 +867,24 @@ class AdminPodHelperTest extends PodHelperTestBase {
     logRecords.clear();
 
     assertContainsEventWithNamespace(POD_CYCLE_STARTING, NS);
+  }
+
+  @Test
+  void whenDomainHomeChanged_andRunAfterUpStep_domainRollCompletedEventCreatedWithCorrectMessage()
+      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    initializeExistingPod();
+    getConfiguredDomainSpec().setDomainHome("adfgg");
+
+    testSupport.runSteps(getStepFactory(), Step.chain(getAfterUpStep(), terminalStep));
+    logRecords.clear();
+
+    assertThat("Expected Event " + DOMAIN_ROLL_COMPLETED + " expected with message not found",
+        getExpectedEventMessage(DOMAIN_ROLL_COMPLETED),
+        stringContainsInOrder("Rolling restart of domain", UID, " completed"));
+  }
+
+  Step getAfterUpStep() {
+    return new RollingHelper.AfterRollStep(null, false);
   }
 
   @Test

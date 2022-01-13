@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -223,12 +223,12 @@ class ItOperatorFmwUpgrade {
   }
 
   /**
-   * Operator upgrade from 3.3.6 to latest with a FMW Domain.
+   * Operator upgrade from 3.3.7 to latest with a FMW Domain.
    */
   @Test
-  @DisplayName("Upgrade Operator from 3.3.6 to latest")
-  void testOperatorFmwUpgradeFrom336ToLatest() {
-    installAndUpgradeOperator("3.3.6", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  @DisplayName("Upgrade Operator from 3.3.7 to latest")
+  void testOperatorFmwUpgradeFrom337ToLatest() {
+    installAndUpgradeOperator("3.3.7", "v8", DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   private void installAndUpgradeOperator(
@@ -447,7 +447,7 @@ class ItOperatorFmwUpgrade {
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
-                        .nodePort(0))
+                        .nodePort(getNextFreePort()))
                     .addChannelsItem(new Channel()
                         .channelName("T3Channel")
                         .nodePort(t3ChannelPort))))
