@@ -392,6 +392,9 @@
                   **/ItSessionMigration,
                   **/ItStickySession,
                   **/ItSystemResOverrides,
+                  **/ItMonitoringExporterWebApp,
+                  **/ItMonitoringExporterSideCar,
+                  **/ItMonitoringExporterSamples,
                   **/ItUsabilityOperatorHelmChart
                 </includes-failsafe>
             </properties>

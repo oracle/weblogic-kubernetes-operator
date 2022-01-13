@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -56,6 +56,7 @@ import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_WEBAPP_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_URL;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
@@ -72,6 +73,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.isGrafanaRead
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isHelmReleaseDeployed;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.isPrometheusReady;
 import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndCheckForServerNameInResponse;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.addSccToDBSvcAccount;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
@@ -210,17 +212,17 @@ public class MonitoringUtils {
    *
    * @param searchKey   - metric query expression
    * @param expectedVal - expected metrics to search
-   * @param prometheusPort prometheusPort
+   * @param hostPortPrometheus host:nodePort for prometheus
    * @throws Exception if command to check metrics fails
    */
-  public static void checkMetricsViaPrometheus(String searchKey, String expectedVal, int prometheusPort)
+  public static void checkMetricsViaPrometheus(String searchKey, String expectedVal, String hostPortPrometheus)
       throws Exception {
 
     LoggingFacade logger = getLogger();
     // url
     String curlCmd =
-        String.format("curl --silent --show-error --noproxy '*'  http://%s:%s/api/v1/query?query=%s",
-            K8S_NODEPORT_HOST, prometheusPort, searchKey);
+        String.format("curl --silent --show-error --noproxy '*'  http://%s/api/v1/query?query=%s",
+            hostPortPrometheus, searchKey);
 
     logger.info("Executing Curl cmd {0}", curlCmd);
     logger.info("Checking searchKey: {0}", searchKey);
@@ -334,8 +336,12 @@ public class MonitoringUtils {
         "pvc-alertmanager" + promReleaseSuffix), "Failed to replace String ");;
     assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
         "pvc-prometheus",
-        "pvc-" + prometheusReleaseName),"Failed to replace String ");;
-
+        "pvc-" + prometheusReleaseName),"Failed to replace String ");
+    if (OKD) {
+      assertDoesNotThrow(() -> replaceStringInFile(targetPromFile.toString(),
+          "65534",
+          "1000620001"), "Failed to replace String ");
+    }
     int promServerNodePort = getNextFreePort();
     int alertManagerNodePort = getNextFreePort();
 
@@ -358,6 +364,12 @@ public class MonitoringUtils {
         .nodePortServer(promServerNodePort)
         .nodePortAlertManager(alertManagerNodePort);
 
+    if (OKD) {
+      addSccToDBSvcAccount(prometheusReleaseName + "-server", promNamespace);
+      addSccToDBSvcAccount(prometheusReleaseName + "-kube-state-metrics", promNamespace);
+      addSccToDBSvcAccount(prometheusReleaseName + "-alertmanager", promNamespace);
+      addSccToDBSvcAccount("default", promNamespace);
+    }
     // install prometheus
     logger.info("Installing prometheus in namespace {0}", promNamespace);
     assertTrue(installPrometheus(prometheusParams),
@@ -435,9 +447,12 @@ public class MonitoringUtils {
         .helmParams(grafanaHelmParams)
         .nodePort(grafanaNodePort);
     boolean isGrafanaInstalled = false;
+    if (OKD) {
+      addSccToDBSvcAccount(grafanaReleaseName,grafanaNamespace);
+    }
     try {
       assertTrue(installGrafana(grafanaParams),
-          String.format("Failed to install grafana in namespace %s", grafanaNamespace));
+          String.format("Failed to install grafana in namespace %s",grafanaNamespace));
     } catch (AssertionError err) {
       //retry with different nodeport
       uninstallGrafana(grafanaHelmParams);
@@ -787,15 +802,16 @@ public class MonitoringUtils {
   /**
    * Install wls dashboard from endtoend sample and verify it is accessable.
    *
-   * @param nodeportGrafana  nodeport for grafana
+   * @param hostPort  host:nodeport string for grafana
    * @param monitoringExporterEndToEndDir endtoend sample directory
    *
    */
-  public static void installVerifyGrafanaDashBoard(int nodeportGrafana, String monitoringExporterEndToEndDir) {
+  //public static void installVerifyGrafanaDashBoard(int nodeportGrafana, String monitoringExporterEndToEndDir) {
+  public static void installVerifyGrafanaDashBoard(String hostPort, String monitoringExporterEndToEndDir) {
     //wait until it starts dashboard
     String curlCmd = String.format("curl -v  -H 'Content-Type: application/json' "
-            + " -X GET http://admin:12345678@%s:%s/api/dashboards",
-        K8S_NODEPORT_HOST, nodeportGrafana);
+            + " -X GET http://admin:12345678@%s/api/dashboards",
+        hostPort);
     testUntil(
         assertDoesNotThrow(() -> searchForKey(curlCmd, "grafana"),
             String.format("Check access to grafana dashboard")),
@@ -805,24 +821,24 @@ public class MonitoringUtils {
     // url
     String curlCmd0 =
         String.format("curl -v -H 'Content-Type: application/json' -H \"Content-Type: application/json\""
-                + "  -X POST http://admin:12345678@%s:%s/api/datasources/"
+                + "  -X POST http://admin:12345678@%s/api/datasources/"
                 + "  --data-binary @%s/grafana/datasource.json",
-            K8S_NODEPORT_HOST, nodeportGrafana, monitoringExporterEndToEndDir);
+            hostPort, monitoringExporterEndToEndDir);
 
     logger.info("Executing Curl cmd {0}", curlCmd);
     assertDoesNotThrow(() -> ExecCommand.exec(curlCmd0));
 
     String curlCmd1 =
         String.format("curl -v -H 'Content-Type: application/json' -H \"Content-Type: application/json\""
-                + "  -X POST http://admin:12345678@%s:%s/api/dashboards/db/"
+                + "  -X POST http://admin:12345678@%s/api/dashboards/db/"
                 + "  --data-binary @%s/grafana/dashboard.json",
-            K8S_NODEPORT_HOST, nodeportGrafana, monitoringExporterEndToEndDir);
+            hostPort, monitoringExporterEndToEndDir);
     logger.info("Executing Curl cmd {0}", curlCmd1);
     assertDoesNotThrow(() -> ExecCommand.exec(curlCmd1));
 
     String curlCmd2 = String.format("curl -v  -H 'Content-Type: application/json' "
-            + " -X GET http://admin:12345678@%s:%s/api/dashboards/db/weblogic-server-dashboard",
-        K8S_NODEPORT_HOST, nodeportGrafana);
+            + " -X GET http://admin:12345678@%s/api/dashboards/db/weblogic-server-dashboard",
+        hostPort);
     testUntil(
         assertDoesNotThrow(() -> searchForKey(curlCmd2, "wls_jvm_uptime"),
             String.format("Check grafana dashboard wls against expected %s", "wls_jvm_uptime")),
@@ -860,41 +876,31 @@ public class MonitoringUtils {
         .isTrue();
   }
 
-  /** To build monitoring exporter sidecar image.
+  /**
+   * Verify the monitoring exporter app can be accessed from all managed servers in the domain through NGINX.
    *
-   * @param imageName image nmae
-   * @param monitoringExporterSrcDir path to monitoring exporter src location
+   * @param replicaCount number of managed servers
+   * @param hostPort  host:port combination to access app
    */
-  public static void buildMonitoringExporterImage(String imageName, String monitoringExporterSrcDir) {
-    String httpsproxy = System.getenv("HTTPS_PROXY");
-    logger.info(" httpsproxy : " + httpsproxy);
-    String proxyHost = "";
-    String command;
-    if (httpsproxy != null) {
-      int firstIndex = httpsproxy.lastIndexOf("www");
-      int lastIndex = httpsproxy.lastIndexOf(":");
-      logger.info("Got indexes : " + firstIndex + " : " + lastIndex);
-      proxyHost = httpsproxy.substring(firstIndex,lastIndex);
-      logger.info(" proxyHost: " + proxyHost);
+  public static void verifyMonExpAppAccess(int replicaCount, String hostPort) {
 
-      command = String.format("cd %s && mvn clean install -Dmaven.test.skip=true "
-              + " &&   docker build . -t "
-              + imageName
-              + " --build-arg MAVEN_OPTS=\"-Dhttps.proxyHost=%s -Dhttps.proxyPort=80\" --build-arg https_proxy=%s",
-          monitoringExporterSrcDir, proxyHost, httpsproxy);
-    } else {
-      command = String.format("cd %s && mvn clean install -Dmaven.test.skip=true "
-          + " &&   docker build . -t "
-          + imageName
-          + monitoringExporterSrcDir);
+    List<String> managedServerNames = new ArrayList<>();
+    for (int i = 1; i <= replicaCount; i++) {
+      managedServerNames.add(MANAGED_SERVER_NAME_BASE + i);
     }
-    logger.info("Executing command " + command);
-    assertTrue(new Command()
-        .withParams(new CommandParams()
-            .command(command))
-        .execute(), "Failed to build monitoring exporter image");
-    // docker login and push image to docker registry if necessary
-    dockerLoginAndPushImageToRegistry(imageName);
+
+    // check the access to monitoring exporter apps from all managed servers in the domain
+    String curlCmd =
+        String.format("curl --silent --show-error --noproxy '*'  http://%s:%s@%s/wls-exporter/metrics",
+            ADMIN_USERNAME_DEFAULT,
+            ADMIN_PASSWORD_DEFAULT,
+            hostPort);
+    assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, managedServerNames, 50))
+        .as("Verify the access to the monitoring exporter metrics "
+            + "from all managed servers in the domain via http")
+        .withFailMessage("Can not access the monitoring exporter metrics "
+            + "from one or more of the managed servers via http")
+        .isTrue();
   }
 
   /**
@@ -941,6 +947,43 @@ public class MonitoringUtils {
       return false;
     }
     return isFound;
+  }
+
+  /** To build monitoring exporter sidecar image.
+   *
+   * @param imageName image nmae
+   * @param monitoringExporterSrcDir path to monitoring exporter src location
+   */
+  public static void buildMonitoringExporterImage(String imageName, String monitoringExporterSrcDir) {
+    String httpsproxy = System.getenv("HTTPS_PROXY");
+    logger.info(" httpsproxy : " + httpsproxy);
+    String proxyHost = "";
+    String command;
+    if (httpsproxy != null) {
+      int firstIndex = httpsproxy.lastIndexOf("www");
+      int lastIndex = httpsproxy.lastIndexOf(":");
+      logger.info("Got indexes : " + firstIndex + " : " + lastIndex);
+      proxyHost = httpsproxy.substring(firstIndex,lastIndex);
+      logger.info(" proxyHost: " + proxyHost);
+
+      command = String.format("cd %s && mvn clean install -Dmaven.test.skip=true "
+              + " &&   docker build . -t "
+              + imageName
+              + " --build-arg MAVEN_OPTS=\"-Dhttps.proxyHost=%s -Dhttps.proxyPort=80\" --build-arg https_proxy=%s",
+          monitoringExporterSrcDir, proxyHost, httpsproxy);
+    } else {
+      command = String.format("cd %s && mvn clean install -Dmaven.test.skip=true "
+          + " &&   docker build . -t "
+          + imageName
+          + monitoringExporterSrcDir);
+    }
+    logger.info("Executing command " + command);
+    assertTrue(new Command()
+        .withParams(new CommandParams()
+            .command(command))
+        .execute(), "Failed to build monitoring exporter image");
+    // docker login and push image to docker registry if necessary
+    dockerLoginAndPushImageToRegistry(imageName);
   }
 
   /** Change monitoring exporter webapp confiuration inside the pod.
