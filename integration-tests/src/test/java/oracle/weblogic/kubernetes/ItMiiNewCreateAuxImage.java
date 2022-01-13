@@ -342,15 +342,13 @@ class ItMiiNewCreateAuxImage {
     domainCR.spec().addAuxiliaryImageVolumesItem(new AuxiliaryImageVolume()
         .mountPath(auxiliaryImagePath3)
         .name(auxiliaryImageVolumeName3));
+    // ANIL - commenting this out since introspector will fail if these values are set to non-default values.
+    //domainCR.spec().configuration().model()
+    //    .withModelHome(auxiliaryImagePath3 + "/models")
+    //    .withWdtInstallHome(auxiliaryImagePath3 + "/weblogic-deploy");
     domainCR.spec().configuration().model()
-        .withModelHome(auxiliaryImagePath3 + "/models")
-        .withWdtInstallHome(auxiliaryImagePath3 + "/weblogic-deploy");
-    domainCR.spec().serverPod()
-        .addAuxiliaryImagesItem(new AuxiliaryImage()
+        .withAuxiliaryImage(new AuxiliaryImage()
             .image(miiAuxiliaryImage3 + ":" + MII_BASIC_IMAGE_TAG)
-            .command("cp -R " + customWdtHome + "/weblogic-deploy $AUXILIARY_IMAGE_TARGET_PATH; "
-                + "cp -R " + customWdtModelHome + " $AUXILIARY_IMAGE_TARGET_PATH")
-            .volume(auxiliaryImageVolumeName3)
             .imagePullPolicy("IfNotPresent"));
 
     String adminServerPodName = domain3Uid + "-admin-server";

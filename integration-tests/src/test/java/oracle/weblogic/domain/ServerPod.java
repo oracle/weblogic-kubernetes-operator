@@ -121,18 +121,6 @@ public class ServerPod {
   @ApiModelProperty("Additional volume mounts for the server pod.")
   private List<V1VolumeMount> volumeMounts = new ArrayList<>();
 
-  /**
-   * The auxiliary image.
-   *
-   */
-  @ApiModelProperty("Use an auxiliary image to automatically include directory content from additional images. "
-      + "This is a useful alternative for including Model in Image model files, or other types of files, in a pod "
-      + "without requiring modifications to the pod's base image 'domain.spec.image'. "
-      + "This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share "
-      + "the files from the additional images with the pod.")
-  private List<AuxiliaryImage> auxiliaryImages = new ArrayList<>();
-
-
   public ServerPod env(List<V1EnvVar> env) {
     this.env = env;
     return this;
@@ -352,28 +340,6 @@ public class ServerPod {
 
   public void setReadinessGates(List<V1PodReadinessGate> readinessGates) {
     this.readinessGates = readinessGates;
-  }
-
-
-  /**
-   * Adds volume mounts item.
-   * @param auxiliaryImagesItem auxiliary image
-   * @return this
-   */
-  public ServerPod addAuxiliaryImagesItem(AuxiliaryImage auxiliaryImagesItem) {
-    if (auxiliaryImages == null) {
-      auxiliaryImages = new ArrayList<>();
-    }
-    auxiliaryImages.add(auxiliaryImagesItem);
-    return this;
-  }
-
-  public List<AuxiliaryImage> getAuxiliaryImages() {
-    return this.auxiliaryImages;
-  }
-
-  void setAuxiliaryImages(List<AuxiliaryImage> auxiliaryImages) {
-    this.auxiliaryImages = auxiliaryImages;
   }
 
   public ServerPod restartPolicy(String restartPolicy) {
