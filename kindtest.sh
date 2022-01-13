@@ -39,7 +39,7 @@ scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 usage() {
   echo "usage: ${script} [-v <version>] [-n <name>] [-s] [-o <directory>] [-t <tests>] [-c <name>] [-p true|false] [-x <number_of_threads>] [-d <wdt_download_url>] [-i <wit_download_url>] [-l <wle_download_url>] [-m <maven_profile_name>] [-h]"
   echo "  -v Kubernetes version (optional) "
-  echo "      (default: 1.16, supported values depend on the kind version. See kindversions.properties) "
+  echo "      (default: 1.21, supported values depend on the kind version. See kindversions.properties) "
   echo "  -n Kind cluster name (optional) "
   echo "      (default: kind) "
   echo "  -s Skip tests. If this option is specified then the cluster is created, but no tests are run. "
@@ -71,7 +71,7 @@ captureLogs() {
   kind export logs "${RESULT_ROOT}/kubelogs" --name "${kind_name}" --verbosity 99
 }
 
-k8s_version="1.16"
+k8s_version="1.21"
 kind_name="kind"
 if [[ -z "${WORKSPACE}" ]]; then
   outdir="/scratch/${USER}/kindtest"
