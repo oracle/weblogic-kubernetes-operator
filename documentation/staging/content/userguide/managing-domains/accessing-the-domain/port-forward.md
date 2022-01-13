@@ -62,16 +62,23 @@ This behavior depends on your version and domain resource configuration:
   command or see the domain resource
   [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md).
 
-* For Istio-enabled domains running Istio versions prior to 1.10,
+* If WLST access is required for Istio-enabled domains running Istio versions prior to 1.10,
   you must add an additional network channel to the WebLogic Administration Server 
   configured with the following attributes:
   * Protocol defined as `t3`.
-  * Listen address defined with `localhost`.
+  * Listen address defined with `localhost`. (Note: Stting the address to localhost is solely 
+  for self documenting purposes. The address can be set to any value, and the operator will override 
+  it to the required value regardless.)
   * Listen port. Note: Choose a port value that does not conflict with any ports defined 
   in any of the additional network channels created for use with Istio versions prior to v1.10.
   For more details, see [Added network channels for Istio versions prior to v1.10]({{< relref "/userguide/istio/istio#added-network-channels-for-istio-versions-prior-to-v110" >}}).
   * Enable `HTTP` protocol for this network channel.
   * Do _NOT_ set an `external listen address` or `external listen port`.
+  
+{{% notice note %}}
+It is not necessary to add an additional network channel, for Istio-enabled domains running Istio 
+versions prior to 1.10, to the WebLogic Administration Server if only console access is required .
+{{% /notice %}}
   
 For example, here is a snippet of a WebLogic domain `config.xml` file for channel `PortForward` for the Administration Server.
 ```xml
