@@ -6,7 +6,7 @@
 found_error=0
 
 verify_no_function_keyword() {
-  result=$(grep -oE ".*function +(\w+).+{" "$1"  )
+  result=$(grep -E ".*function +\w+.+{" "$1"  )
   if [ -n "$result" ]; then
    printf "Please remove usages of 'function' keyword from %s:\n%s\n" "$1" "$result"
   fi
