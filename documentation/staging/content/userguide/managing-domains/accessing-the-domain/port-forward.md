@@ -67,13 +67,13 @@ This behavior depends on your version and domain resource configuration:
   configured with the following attributes:
   * Protocol defined as `t3`.
   * Listen address defined with `localhost`.
-  * Listen port. Note, you should choose a port value that does not conflict with any ports defined 
+  * Listen port. Note: Choose a port value that does not conflict with any ports defined 
   in any of the additional network channels created for use with Istio versions prior to v1.10.
   For more details, see [Added network channels for Istio versions prior to v1.10]({{< relref "/userguide/istio/istio#added-network-channels-for-istio-versions-prior-to-v110" >}}).
   * Enable `HTTP` protocol for this network channel.
   * Do _NOT_ set an `external listen address` or `external listen port`.
   
-For example, here is a snippet of a WebLogic domain `config.xml` file for channel `PortForward` for the Admin Server
+For example, here is a snippet of a WebLogic domain `config.xml` file for channel `PortForward` for the Administration Server.
 ```xml
 <server>
   <name>admin-server</name>
@@ -86,7 +86,7 @@ For example, here is a snippet of a WebLogic domain `config.xml` file for channe
   </network-access-point>
 </server>
 ```
-For Model in Image (MII) and Domain Home in Image (DII), here is a snippet model configuration for channel `PortForward` for the Admin Server
+For Model in Image (MII) and Domain in Image (DII), here is a snippet model configuration for channel `PortForward` for the Administration Server.
 ```yaml
 topology:
     ...
