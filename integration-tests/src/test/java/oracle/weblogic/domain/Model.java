@@ -3,6 +3,10 @@
 
 package oracle.weblogic.domain;
 
+import java.util.List;
+import java.util.Optional;
+import javax.annotation.Nullable;
+
 import io.swagger.annotations.ApiModelProperty;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
@@ -12,6 +16,10 @@ public class Model {
 
   static final String DEFAULT_WDT_MODEL_HOME = "/u01/wdt/models";
   static final String DEFAULT_WDT_INSTALL_HOME = "/u01/wdt/weblogic-deploy";
+  public static final String DEFAULT_AUXILIARY_IMAGE_PATH = "/aux";
+  static final String DEFAULT_WDT_INSTALL_HOME_FOR_AUXILIARY_IMAGES = DEFAULT_AUXILIARY_IMAGE_PATH + "/weblogic-deploy";
+  static final String DEFAULT_MODEL_HOME_FOR_AUXILIARY_IMAGES = DEFAULT_AUXILIARY_IMAGE_PATH + "/models";
+
 
   @ApiModelProperty(
       value = "WDT domain type: Legal values: WLS, RestrictedJRF, JRF. Defaults to WLS.",
@@ -34,6 +42,18 @@ public class Model {
   @ApiModelProperty(
       "Runtime encryption secret. Required when domainHomeSourceType is set to FromModel.")
   private String runtimeEncryptionSecret;
+
+  /**
+   * The auxiliary images.
+   *
+   */
+  private List<AuxiliaryImage> auxiliaryImages;
+
+  private String auxiliaryImageVolumeMountPath;
+
+  private String auxiliaryImageVolumeMedium;
+
+  private String auxiliaryImageVolumeSizeLimit;
 
   public Model domainType(String domainType) {
     this.domainType = domainType;
@@ -129,6 +149,63 @@ public class Model {
     this.onlineUpdate = onlineUpdate;
   }
 
+  List<AuxiliaryImage> getAuxiliaryImages() {
+    return this.auxiliaryImages;
+  }
+
+  void setAuxiliaryImages(List<AuxiliaryImage> auxiliaryImages) {
+    this.auxiliaryImages = auxiliaryImages;
+  }
+
+  public Model withAuxiliaryImages(@Nullable List<AuxiliaryImage> auxiliaryImages) {
+    this.auxiliaryImages = auxiliaryImages;
+    return this;
+  }
+
+  public Model withAuxiliaryImage(@Nullable AuxiliaryImage auxiliaryImage) {
+    this.auxiliaryImages.add(auxiliaryImage);
+    return this;
+  }
+
+  public String getAuxiliaryImageVolumeMountPath() {
+    return Optional.ofNullable(auxiliaryImageVolumeMountPath).orElse(DEFAULT_AUXILIARY_IMAGE_PATH);
+  }
+
+  public void setAuxiliaryImageVolumeMountPath(String auxiliaryImageVolumeMountPath) {
+    this.auxiliaryImageVolumeMountPath = auxiliaryImageVolumeMountPath;
+  }
+
+  public Model withAuxiliaryImageVolumeMountPath(@Nullable String auxiliaryImageVolumeMountPath) {
+    this.auxiliaryImageVolumeMountPath = auxiliaryImageVolumeMountPath;
+    return this;
+  }
+
+  public String getAuxiliaryImageVolumeMedium() {
+    return auxiliaryImageVolumeMedium;
+  }
+
+  public void setAuxiliaryImageVolumeMedium(String auxiliaryImageVolumeMedium) {
+    this.auxiliaryImageVolumeMedium = auxiliaryImageVolumeMedium;
+  }
+
+  public Model withAuxiliaryImageVolumeMedium(@Nullable String auxiliaryImageVolumeMedium) {
+    this.auxiliaryImageVolumeMedium = auxiliaryImageVolumeMedium;
+    return this;
+  }
+
+  public String getAuxiliaryImageVolumeSizeLimit() {
+    return auxiliaryImageVolumeSizeLimit;
+  }
+
+  public void setAuxiliaryImageVolumeSizeLimit(String auxiliaryImageVolumeSizeLimit) {
+    this.auxiliaryImageVolumeSizeLimit = auxiliaryImageVolumeSizeLimit;
+  }
+
+  public Model withAuxiliaryImageVolumeSizeLimit(@Nullable String auxiliaryImageVolumeSizeLimit) {
+    this.auxiliaryImageVolumeSizeLimit = auxiliaryImageVolumeSizeLimit;
+    return this;
+  }
+
   @Override
   public String toString() {
     ToStringBuilder builder =
@@ -137,41 +214,55 @@ public class Model {
             .append("configMap", configMap)
             .append("modelHome", modelHome)
             .append("wdtInstallHome", wdtInstallHome)
+            .append("onlineUpdate", onlineUpdate)
             .append("runtimeEncryptionSecret", runtimeEncryptionSecret)
-            .append("onlineUpdate", onlineUpdate);
+            .append("auxiliaryImages", auxiliaryImages)
+            .append("auxiliaryImageVolumeMountPath", auxiliaryImageVolumeMountPath)
+            .append("auxiliaryImageVolumeMedium", auxiliaryImageVolumeMedium)
+            .append("auxiliaryImageVolumeSizeLimit", auxiliaryImageVolumeSizeLimit);
 
     return builder.toString();
   }
 
   @Override
   public int hashCode() {
-    HashCodeBuilder builder =
-        new HashCodeBuilder().append(domainType).append(configMap).append(modelHome)
-            .append(wdtInstallHome)
-            .append(runtimeEncryptionSecret);
+    HashCodeBuilder builder = new HashCodeBuilder()
+        .append(domainType)
+        .append(configMap)
+        .append(modelHome)
+        .append(wdtInstallHome)
+        .append(onlineUpdate)
+        .append(runtimeEncryptionSecret)
+        .append(auxiliaryImages)
+        .append(auxiliaryImageVolumeMountPath)
+        .append(auxiliaryImageVolumeMedium)
+        .append(auxiliaryImageVolumeSizeLimit);
 
     return builder.toHashCode();
   }
 
   @Override
   public boolean equals(Object other) {
-    if (this == other) {
+    if (other == this) {
       return true;
     }
-
-    if (other == null || getClass() != other.getClass()) {
+    if (!(other instanceof Model)) {
       return false;
     }
-    Model rhs = (Model) other;
+
+    Model rhs = ((Model) other);
     EqualsBuilder builder =
         new EqualsBuilder()
             .append(domainType, rhs.domainType)
-            .append(configMap, rhs.configMap)
+            .append(configMap,rhs.configMap)
             .append(modelHome,rhs.modelHome)
             .append(wdtInstallHome,rhs.wdtInstallHome)
+            .append(onlineUpdate,rhs.onlineUpdate)
             .append(runtimeEncryptionSecret, rhs.runtimeEncryptionSecret)
-            .append(onlineUpdate, rhs.onlineUpdate);
-
+            .append(auxiliaryImages, rhs.auxiliaryImages)
+            .append(auxiliaryImageVolumeMountPath, rhs.auxiliaryImageVolumeMountPath)
+            .append(auxiliaryImageVolumeMedium, rhs.auxiliaryImageVolumeMedium)
+            .append(auxiliaryImageVolumeSizeLimit, rhs.auxiliaryImageVolumeSizeLimit);
     return builder.isEquals();
   }
 }
