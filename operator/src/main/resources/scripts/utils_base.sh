@@ -216,6 +216,40 @@ function checkEnv() {
   return 0
 }
 
+# Create a folder and test access to it
+#   Arg $1 - path of folder to create
+#   Arg $2 - optional wording to append to the FINE and SEVERE traces
+function createFolder {
+  local targetDir="${1}"
+  local folderDescription="${2:-}"
+  local mkdirCommand="mkdir -m 750 -p $targetDir"
+
+  trace FINE "Creating folder '${targetDir}' using command '${mkdirCommand}'. ${folderDescription}"
+
+  local mkdirOutput="$($mkdirCommand 2>&1)"
+  [ ! -z "$mkdirOutput" ] && echo "$mkdirOutput"
+
+  if [ ! -d "$targetDir" ]; then
+    trace SEVERE "Unable to create folder '${targetDir}' using command '${mkdirCommand}', error='${mkdirOutput}'. ${folderDescription}"
+    return 1
+  fi
+
+  local touchFile="${targetDir}/testaccess.tmp"
+  local touchCommand="touch $touchFile"
+
+  rm -f "${touchFile}"
+  local touchOutput="$($touchCommand 2>&1)"
+  [ ! -z "$touchOutput" ] && echo "$touchOutput"
+
+  if [ ! -f "$touchFile" ] ; then
+    trace SEVERE "Cannot write a file to directory '${targetDir}' using command '${touchCommand}', error='${touchOutput}'. ${folderDescription}"
+    return 1
+  fi
+
+  rm -f "${touchFile}"
+  return 0
+}
+
 #
 # initAuxiliaryImage
 #   purpose: Execute the AUXILIARY_IMAGE_COMMAND specified as part of the auxiliary image init container.
@@ -228,22 +262,67 @@ function checkEnv() {
 #
 function initAuxiliaryImage() {
 
-  if [ -z "${AUXILIARY_IMAGE_COMMAND}" ]; then
-    trace SEVERE "Auxiliary Image: The 'serverPod.auxiliaryImages.command' is empty for the " \
-                "container image='$AUXILIARY_IMAGE_CONTAINER_IMAGE'. Exiting."
-    return
+  traceDirs before AUXILIARY_IMAGE_PATH
+  if [ "${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME}" != "None" ]; then
+    trace FINE "Auxiliary Image: About to copy WDT installation files from '${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME}' " \
+               "in container image='$AUXILIARY_IMAGE_CONTAINER_IMAGE'. "
+    if [ "${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME}" != "${AUXILIARY_IMAGE_PATH}/weblogic-deploy" ]; then
+      checkSourceWDTInstallDirExistsAndNotEmpty "${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME}" || return 1
+    fi
+    createFolder "${AUXILIARY_IMAGE_TARGET_PATH}/weblogic-deploy" "This is the target directory for WDT installation files." || return 1
+    if [ ! -z "$(ls -A ${AUXILIARY_IMAGE_TARGET_PATH}/weblogic-deploy)" ] ; then
+      trace SEVERE "The target directory for WDT installation files '${AUXILIARY_IMAGE_TARGET_PATH}/weblogic-deploy' is not empty. Exiting." 
+      return 1
+    fi
+    cp -R ${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME}/* ${AUXILIARY_IMAGE_TARGET_PATH}/weblogic-deploy 2>&1
+    if [ $? -ne 0 ]; then
+     trace SEVERE "Failed to copy WDT installation files from '${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME}' directory."
+     return 1
+    fi
   fi
 
-  trace FINE "Auxiliary Image: About to execute command '$AUXILIARY_IMAGE_COMMAND' in container image='$AUXILIARY_IMAGE_CONTAINER_IMAGE'. " \
-             "AUXILIARY_IMAGE_PATH is '$AUXILIARY_IMAGE_PATH' and AUXILIARY_IMAGE_TARGET_PATH is '${AUXILIARY_IMAGE_TARGET_PATH}'."
-  traceDirs before AUXILIARY_IMAGE_PATH
+  if [ "${AUXILIARY_IMAGE_SOURCE_MODEL_HOME}" != "None" ]; then
+    trace FINE "Auxiliary Image: About to copy WDT model files from '${AUXILIARY_IMAGE_SOURCE_MODEL_HOME}' " \
+               "in container image='$AUXILIARY_IMAGE_CONTAINER_IMAGE'. "
+    if [ "${AUXILIARY_IMAGE_SOURCE_MODEL_HOME}" != "${AUXILIARY_IMAGE_PATH}/models" ]; then
+      checkSourceWDTModelHomeDirExistsAndNotEmpty "${AUXILIARY_IMAGE_SOURCE_MODEL_HOME}" || return 1
+    fi
+    createFolder "${AUXILIARY_IMAGE_TARGET_PATH}/models" "This is the target directory for WDT model files." || return 1
+    cp -R ${AUXILIARY_IMAGE_SOURCE_MODEL_HOME}/* ${AUXILIARY_IMAGE_TARGET_PATH}/models 2>&1
+    if [ $? -ne 0 ]; then
+      trace SEVERE "Failed to copy WDT model files from '${AUXILIARY_IMAGE_SOURCE_MODEL_HOME}' directory."
+      return 1
+    fi
+  fi
 
-  trace FINE "Auxiliary Image: About to execute AUXILIARY_IMAGE_COMMAND='$AUXILIARY_IMAGE_COMMAND' ."
-  results=$(eval $AUXILIARY_IMAGE_COMMAND 2>&1)
-  if [ $? -ne 0 ]; then
-    trace SEVERE "Auxiliary Image: Command '$AUXILIARY_IMAGE_COMMAND' execution failed in container image='$AUXILIARY_IMAGE_CONTAINER_IMAGE' " \
-                "with AUXILIARY_IMAGE_PATH=$AUXILIARY_IMAGE_PATH. Error -> '$results' ."
+  trace FINE "Auxiliary Image: Commands executed successfully."
+}
+
+
+function checkSourceWDTInstallDirExistsAndNotEmpty() {
+  if [ ! -d $1 ] ; then
+    trace SEVERE "WDT installation home directory '$1' specified in 'spec.configuration.model.auxiliaryImages[].sourceWDTInstallHome' does not exist. " \
+      "Please make sure the 'sourcWDTInstallHome' is correctly specified and the WDT installation files are available in this directory."
+    return 1
   else
-    trace FINE "Auxiliary Image: Command '$AUXILIARY_IMAGE_COMMAND' executed successfully. Output -> '$results'."
+    if [ -z "$(ls -A $1)" ] ; then
+      trace SEVERE "WDT installation home directory '$1' specified in 'spec.configuration.model.auxiliaryImages[].sourceWDTInstallHome' is empty." \
+        "Please make sure the 'sourcWDTInstallHome' is correctly specified and the WDT installation files are available in this directory."
+      return 1
+    fi
+  fi
+}
+
+function checkSourceWDTModelHomeDirExistsAndNotEmpty() {
+  if [ ! -d $1 ] ; then
+    trace SEVERE "WDT model home directory '$1' specified in 'spec.configuration.model.auxiliaryImages[].sourceModelHome' does not exist. " \
+      "Please make sure the 'sourcWDTInstallHome' is correctly specified and the WDT installation files are available in this directory."
+    return 1
+  else
+    if [ -z "$(ls -A $1)" ] ; then
+      trace SEVERE "WDT installation directory '$1' specified in 'spec.configuration.model.auxiliaryImages[].sourceModelHome' is empty." \
+        "Please make sure the 'sourceModelHome' is correctly specified and the WDT model files are available in this directory."
+      return 1
+    fi
   fi
 }

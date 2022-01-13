@@ -204,7 +204,7 @@ function getDomainAIImages() {
     kubectl \
       get domain ${DOMAIN_UID} \
       -n ${DOMAIN_NAMESPACE} \
-      -o=jsonpath="{range .spec.serverPod.auxiliaryImages[*]}{.image}{','}{end}" \
+      -o=jsonpath="{range .spec.configuration.model.auxiliaryImages[*]}{.image}{','}{end}" \
       2>&1
   )
   if [ $? -ne 0 ]; then
