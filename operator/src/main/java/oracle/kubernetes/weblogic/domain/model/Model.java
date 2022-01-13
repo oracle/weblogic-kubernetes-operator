@@ -1,8 +1,10 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import java.util.List;
+import java.util.Optional;
 import javax.annotation.Nullable;
 
 import jakarta.validation.Valid;
@@ -16,6 +18,9 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public class Model {
   static final String DEFAULT_WDT_MODEL_HOME = "/u01/wdt/models";
   static final String DEFAULT_WDT_INSTALL_HOME = "/u01/wdt/weblogic-deploy";
+  public static final String DEFAULT_AUXILIARY_IMAGE_PATH = "/aux";
+  static final String DEFAULT_WDT_INSTALL_HOME_FOR_AUXILIARY_IMAGES = DEFAULT_AUXILIARY_IMAGE_PATH + "/weblogic-deploy";
+  static final String DEFAULT_MODEL_HOME_FOR_AUXILIARY_IMAGES = DEFAULT_AUXILIARY_IMAGE_PATH + "/models";
 
   @EnumClass(value = ModelInImageDomainType.class)
   @Description("WebLogic Deploy Tooling domain type. Legal values: WLS, RestrictedJRF, JRF. Defaults to WLS.")
@@ -32,6 +37,28 @@ public class Model {
 
   @Description("Online update option for Model In Image dynamic update.")
   private OnlineUpdate onlineUpdate;
+
+  /**
+   * The auxiliary images.
+   *
+   */
+  @Description("Use an auxiliary image to automatically include directory content from additional images. "
+          + "This is a useful alternative for including Model in Image model files, or other types of files, in a pod "
+          + "without requiring modifications to the pod's base image 'domain.spec.image'. "
+          + "This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share "
+          + "the files from the additional images with the pod.")
+  private List<AuxiliaryImage> auxiliaryImages;
+
+  @Description("The auxiliary image volume mount path. Defaults to '/aux'.")
+  private String auxiliaryImageVolumeMountPath;
+
+  @Description("The emptyDir volume withAuxiliaryImageVolumeMedium. This is an advanced setting that rarely needs to "
+          + "be configured. Defaults to unset, which means the volume's files are stored on the local node's file "
+          + "system for the life of the pod.")
+  private String auxiliaryImageVolumeMedium;
+
+  @Description("The emptyDir volume size limit. Defaults to unset.")
+  private String auxiliaryImageVolumeSizeLimit;
 
   @Nullable
   public OnlineUpdate getOnlineUpdate() {
@@ -120,6 +147,58 @@ public class Model {
     return this;
   }
 
+  List<AuxiliaryImage> getAuxiliaryImages() {
+    return this.auxiliaryImages;
+  }
+
+  void setAuxiliaryImages(List<AuxiliaryImage> auxiliaryImages) {
+    this.auxiliaryImages = auxiliaryImages;
+  }
+
+  public Model withAuxiliaryImages(@Nullable List<AuxiliaryImage> auxiliaryImages) {
+    this.auxiliaryImages = auxiliaryImages;
+    return this;
+  }
+
+  public String getAuxiliaryImageVolumeMountPath() {
+    return Optional.ofNullable(auxiliaryImageVolumeMountPath).orElse(DEFAULT_AUXILIARY_IMAGE_PATH);
+  }
+
+  public void setAuxiliaryImageVolumeMountPath(String auxiliaryImageVolumeMountPath) {
+    this.auxiliaryImageVolumeMountPath = auxiliaryImageVolumeMountPath;
+  }
+
+  public Model withAuxiliaryImageVolumeMountPath(@Nullable String auxiliaryImageVolumeMountPath) {
+    this.auxiliaryImageVolumeMountPath = auxiliaryImageVolumeMountPath;
+    return this;
+  }
+
+  public String getAuxiliaryImageVolumeMedium() {
+    return auxiliaryImageVolumeMedium;
+  }
+
+  public void setAuxiliaryImageVolumeMedium(String auxiliaryImageVolumeMedium) {
+    this.auxiliaryImageVolumeMedium = auxiliaryImageVolumeMedium;
+  }
+
+  public Model withAuxiliaryImageVolumeMedium(@Nullable String auxiliaryImageVolumeMedium) {
+    this.auxiliaryImageVolumeMedium = auxiliaryImageVolumeMedium;
+    return this;
+  }
+
+  public String getAuxiliaryImageVolumeSizeLimit() {
+    return auxiliaryImageVolumeSizeLimit;
+  }
+
+  public void setAuxiliaryImageVolumeSizeLimit(String auxiliaryImageVolumeSizeLimit) {
+    this.auxiliaryImageVolumeSizeLimit = auxiliaryImageVolumeSizeLimit;
+  }
+
+  public Model withAuxiliaryImageVolumeSizeLimit(@Nullable String auxiliaryImageVolumeSizeLimit) {
+    this.auxiliaryImageVolumeSizeLimit = auxiliaryImageVolumeSizeLimit;
+    return this;
+  }
+
   @Override
   public String toString() {
     ToStringBuilder builder =
@@ -129,7 +208,11 @@ public class Model {
             .append("modelHome", modelHome)
             .append("wdtInstallHome", wdtInstallHome)
             .append("onlineUpdate", onlineUpdate)
-            .append("runtimeEncryptionSecret", runtimeEncryptionSecret);
+            .append("runtimeEncryptionSecret", runtimeEncryptionSecret)
+            .append("auxiliaryImages", auxiliaryImages)
+            .append("auxiliaryImageVolumeMountPath", auxiliaryImageVolumeMountPath)
+            .append("auxiliaryImageVolumeMedium", auxiliaryImageVolumeMedium)
+            .append("auxiliaryImageVolumeSizeLimit", auxiliaryImageVolumeSizeLimit);
 
     return builder.toString();
   }
@@ -142,7 +225,11 @@ public class Model {
         .append(modelHome)
         .append(wdtInstallHome)
         .append(onlineUpdate)
-        .append(runtimeEncryptionSecret);
+        .append(runtimeEncryptionSecret)
+        .append(auxiliaryImages)
+        .append(auxiliaryImageVolumeMountPath)
+        .append(auxiliaryImageVolumeMedium)
+        .append(auxiliaryImageVolumeSizeLimit);
 
     return builder.toHashCode();
   }
@@ -164,9 +251,11 @@ public class Model {
             .append(modelHome,rhs.modelHome)
             .append(wdtInstallHome,rhs.wdtInstallHome)
             .append(onlineUpdate,rhs.onlineUpdate)
-            .append(runtimeEncryptionSecret, rhs.runtimeEncryptionSecret);
-
+            .append(runtimeEncryptionSecret, rhs.runtimeEncryptionSecret)
+            .append(auxiliaryImages, rhs.auxiliaryImages)
+            .append(auxiliaryImageVolumeMountPath, rhs.auxiliaryImageVolumeMountPath)
+            .append(auxiliaryImageVolumeMedium, rhs.auxiliaryImageVolumeMedium)
+            .append(auxiliaryImageVolumeSizeLimit, rhs.auxiliaryImageVolumeSizeLimit);
     return builder.isEquals();
   }
-
 }

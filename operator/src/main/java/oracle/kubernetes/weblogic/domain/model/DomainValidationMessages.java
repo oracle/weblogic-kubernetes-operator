@@ -30,25 +30,6 @@ class DomainValidationMessages {
   }
 
   /**
-   * Returns a validation message indicating that more than one auxiliary image volume has same name
-   * after DNS-1123 conversion.
-   * @param volumeName the duplicate volume name
-   * @return the localized message
-   */
-  static String duplicateAuxiliaryImageVolumeName(@Nonnull String volumeName) {
-    return getMessage(MessageKeys.DUPLICATE_AUXILIARY_IMAGE_VOLUME_FOUND, volumeName);
-  }
-
-  /**
-   * Returns a validation message indicating that more than one auxiliary image volume has same mountPath.
-   * @param mountPath the duplicate mount path
-   * @return the localized message
-   */
-  static String duplicateAIVMountPath(@Nonnull String mountPath) {
-    return getMessage(MessageKeys.DUPLICATE_AUXILIARY_IMAGE_PATH_FOUND, mountPath);
-  }
-
-  /**
    * Returns a validation message indicating that more than one cluster spec has the same effective name
    * after DNS-1123 conversion.
    * @param clusterName the duplicate cluster name
@@ -140,16 +121,12 @@ class DomainValidationMessages {
     return getMessage(MessageKeys.ILLEGAL_INTROSPECTOR_JOB_NAME_LENGTH, domainUid, result, limit);
   }
 
-  public static String noMatchingAuxiliaryImageVolumeDefined(String volumeName) {
-    return getMessage(MessageKeys.NO_MATCHING_AUXILIARY_IMAGE_VOLUME_DEFINED, volumeName);
+  public static String mountPathForAuxiliaryImageAlreadyInUse() {
+    return getMessage(MessageKeys.MOUNT_PATH_FOR_AUXILIARY_IMAGE_ALREADY_IN_USE);
   }
 
-  public static String noAuxiliaryImageVolumeDefined() {
-    return getMessage(MessageKeys.NO_AUXILIARY_IMAGE_VOLUME_DEFINED);
-  }
-
-  public static String auxiliaryImageVolumeNameNotDefined() {
-    return getMessage(MessageKeys.AUXILIARY_IMAGE_VOLUME_NAME_NOT_DEFINED);
+  public static String moreThanOneAuxiliaryImageConfiguredWDTInstallHome() {
+    return getMessage(MessageKeys.MORE_THAN_ONE_AUXILIARY_IMAGE_CONFIGURED_WDT_INSTALL_HOME);
   }
 
   public static String exceedMaxClusterServiceName(String domainUid, String clusterName, String result, int limit) {
@@ -182,4 +159,11 @@ class DomainValidationMessages {
             LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH);
   }
 
+  public static String invalidWdtInstallHome(String domainUid, String wdtInstallHome, String modelHome) {
+    return getMessage(MessageKeys.INVALID_WDT_INSTALL_HOME, domainUid, wdtInstallHome, modelHome);
+  }
+
+  public static String invalidModelHome(String domainUid, String wdtInstallHome, String modelHome) {
+    return getMessage(MessageKeys.INVALID_MODEL_HOME, domainUid, wdtInstallHome, modelHome);
+  }
 }
