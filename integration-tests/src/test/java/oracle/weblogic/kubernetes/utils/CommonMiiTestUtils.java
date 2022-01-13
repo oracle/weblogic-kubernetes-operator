@@ -378,17 +378,10 @@ public class CommonMiiTestUtils {
     Domain domainCR = CommonMiiTestUtils.createDomainResource(domainResourceName, domNamespace,
         baseImageName, adminSecretName, repoSecretName,
         encryptionSecretName, replicaCount, clusterNames);
-    domainCR.spec().addAuxiliaryImageVolumesItem(new AuxiliaryImageVolume()
-        .mountPath(auxiliaryImagePath)
-        .name(auxiliaryImageVolumeName));
-    domainCR.spec().configuration().model()
-        .withModelHome(auxiliaryImagePath + "/models")
-        .withWdtInstallHome(auxiliaryImagePath + "/weblogic-deploy");
     for (String cmImageName: auxiliaryImageName) {
-      domainCR.spec().serverPod()
-          .addAuxiliaryImagesItem(new AuxiliaryImage()
+      domainCR.spec().configuration().model()
+          .withAuxiliaryImage(new AuxiliaryImage()
               .image(cmImageName)
-              .volume(auxiliaryImageVolumeName)
               .imagePullPolicy("IfNotPresent"));
     }
     return domainCR;
