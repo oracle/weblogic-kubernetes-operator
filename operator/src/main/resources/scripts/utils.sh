@@ -570,40 +570,6 @@ function exitOrLoop {
   fi
 }
 
-# Create a folder and test access to it
-#   Arg $1 - path of folder to create
-#   Arg $2 - optional wording to append to the FINE and SEVERE traces
-function createFolder {
-  local targetDir="${1}"
-  local folderDescription="${2:-}"
-  local mkdirCommand="mkdir -m 750 -p $targetDir"
-
-  trace FINE "Creating folder '${targetDir}' using command '${mkdirCommand}'. ${folderDescription}"
-
-  local mkdirOutput="$($mkdirCommand 2>&1)"
-  [ ! -z "$mkdirOutput" ] && echo "$mkdirOutput"
-
-  if [ ! -d "$targetDir" ]; then
-    trace SEVERE "Unable to create folder '${targetDir}' using command '${mkdirCommand}', error='${mkdirOutput}'. ${folderDescription}"
-    return 1
-  fi
-
-  local touchFile="${targetDir}/testaccess.tmp"
-  local touchCommand="touch $touchFile"
-
-  rm -f "${touchFile}"
-  local touchOutput="$($touchCommand 2>&1)"
-  [ ! -z "$touchOutput" ] && echo "$touchOutput"
-
-  if [ ! -f "$touchFile" ] ; then
-    trace SEVERE "Cannot write a file to directory '${targetDir}' using command '${touchCommand}', error='${touchOutput}'. ${folderDescription}"
-    return 1
-  fi
-
-  rm -f "${touchFile}"
-  return 0
-}
-
 # Returns the count of the number of files in the specified directory
 function countFilesInDir() {
   dir=${1}
@@ -730,51 +696,48 @@ function adjustPath() {
 #
 function checkAuxiliaryImage() {
   # check auxiliary image results (if any)
-  if [ -z "$AUXILIARY_IMAGE_PATHS" ]; then
+  if [ -z "$AUXILIARY_IMAGE_PATH" ]; then
     trace FINE "Auxiliary Image: Skipping auxiliary image checks (no auxiliary images configured)."
     return
   fi
 
-  trace FINE "Auxiliary Image: AUXILIARY_IMAGE_PATHS is '$AUXILIARY_IMAGE_PATHS'."
-  for AUXILIARY_IMAGE_PATH in ${AUXILIARY_IMAGE_PATHS/,/ }; do
-    trace FINE "Auxiliary Image: AUXILIARY_IMAGE_PATH is '$AUXILIARY_IMAGE_PATH'."
-    traceDirs $AUXILIARY_IMAGE_PATH
-    touch ${AUXILIARY_IMAGE_PATH}/testaccess.tmp
-    if [ $? -ne 0 ]; then
-      trace SEVERE "Auxiliary Image: Cannot write to the AUXILIARY_IMAGE_PATH '${AUXILIARY_IMAGE_PATH}'. " \
-                   "This path is configurable using the domain resource 'spec.auxiliaryImageVolumes.mountPath' " \
-                   "attribute." && return 1
-    fi
-    rm -f ${AUXILIARY_IMAGE_PATH}/testaccess.tmp || return 1
+  trace FINE "Auxiliary Image: AUXILIARY_IMAGE_PATH is '$AUXILIARY_IMAGE_PATH'."
+  traceDirs $AUXILIARY_IMAGE_PATH
+  touch ${AUXILIARY_IMAGE_PATH}/testaccess.tmp
+  if [ $? -ne 0 ]; then
+    trace SEVERE "Auxiliary Image: Cannot write to the AUXILIARY_IMAGE_PATH '${AUXILIARY_IMAGE_PATH}'. " \
+                 "This path is configurable using the domain resource 'spec.auxiliaryImageVolumes.mountPath' " \
+                 "attribute." && return 1
+  fi
+  rm -f ${AUXILIARY_IMAGE_PATH}/testaccess.tmp || return 1
 
-    # The container .out files embed their container name, the names will sort in the same order in which the containers ran
-    out_files=$(ls -1 $AUXILIARY_IMAGE_PATH/auxiliaryImageLogs/*.out 2>/dev/null | sort --version-sort)
-    if [ -z "${out_files}" ]; then
-      trace SEVERE "Auxiliary Image: Assertion failure. No files found in '$AUXILIARY_IMAGE_PATH/auxiliaryImageLogs/*.out'"
-      return 1
-    fi
-    severe_found=false
-    for out_file in $out_files; do
-      if [ "$(grep -c SEVERE $out_file)" != "0" ]; then
-        trace FINE "Auxiliary Image: Error found in file '${out_file}' while initializing auxiliaryImage."
-        severe_found=true
-      elif [ "$(grep -c successfully $out_file)" = "0" ]; then
-        trace SEVERE "Auxiliary Image: Command execution was unsuccessful in file '${out_file}' while initializing auxiliaryImage. " \
-                     "Contents of '${out_file}':"
-        cat $out_file
-        severe_found=true
-        continue
-      fi
-      trace "Auxiliary Image: Contents of '${out_file}':"
+  # The container .out files embed their container name, the names will sort in the same order in which the containers ran
+  out_files=$(ls -1 $AUXILIARY_IMAGE_PATH/auxiliaryImageLogs/*.out 2>/dev/null | sort --version-sort)
+  if [ -z "${out_files}" ]; then
+    trace SEVERE "Auxiliary Image: Assertion failure. No files found in '$AUXILIARY_IMAGE_PATH/auxiliaryImageLogs/*.out'"
+    return 1
+  fi
+  severe_found=false
+  for out_file in $out_files; do
+    if [ "$(grep -c SEVERE $out_file)" != "0" ]; then
+      trace FINE "Auxiliary Image: Error found in file '${out_file}' while initializing auxiliaryImage."
+      severe_found=true
+    elif [ "$(grep -c successfully $out_file)" = "0" ]; then
+      trace SEVERE "Auxiliary Image: Command execution was unsuccessful in file '${out_file}' while initializing auxiliaryImage. " \
+                   "Contents of '${out_file}':"
       cat $out_file
-      trace "Auxiliary Image: End of '${out_file}' contents"
-    done
-    [ "${severe_found}" = "true" ] && return 1
-    [ -z "$(ls -A $AUXILIARY_IMAGE_PATH 2>/dev/null | grep -v auxiliaryImageLogs)" ] \
-      && trace SEVERE "Auxiliary Image: No files found in '$AUXILIARY_IMAGE_PATH'. " \
-       "Do your auxiliary images have files in their '$AUXILIARY_IMAGE_PATH' directories? " \
-       "This path is configurable using the domain resource 'spec.auxiliaryImageVolumes.mountPath' attribute." \
-      && return 1
+      severe_found=true
+      continue
+    fi
+    trace "Auxiliary Image: Contents of '${out_file}':"
+    cat $out_file
+    trace "Auxiliary Image: End of '${out_file}' contents"
   done
+  [ "${severe_found}" = "true" ] && return 1
+  [ -z "$(ls -A $AUXILIARY_IMAGE_PATH 2>/dev/null | grep -v auxiliaryImageLogs)" ] \
+    && trace SEVERE "Auxiliary Image: No files found in '$AUXILIARY_IMAGE_PATH'. " \
+     "Do your auxiliary images have files in their '$AUXILIARY_IMAGE_PATH' directories? " \
+     "This path is configurable using the domain resource 'spec.auxiliaryImageVolumes.mountPath' attribute." \
+    && return 1
   return 0
 }

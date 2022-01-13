@@ -36,7 +36,9 @@ import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_ALLOW_REPLI
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_SHUTDOWN;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP;
+import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_MODEL_HOME_FOR_AUXILIARY_IMAGES;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_INSTALL_HOME;
+import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_INSTALL_HOME_FOR_AUXILIARY_IMAGES;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_MODEL_HOME;
 
 /** DomainSpec is a description of a domain. */
@@ -279,11 +281,6 @@ public class DomainSpec extends BaseConfiguration {
 
   @Description("Models and overrides affecting the WebLogic domain configuration.")
   private Configuration configuration;
-
-  @Description("Configure auxiliary image volumes including their respective mount paths. Auxiliary image volumes are "
-          + "in turn referenced by one or more `serverPod.auxiliaryImages` mounts, and are internally implemented "
-          + "using a Kubernetes `emptyDir` volume.")
-  private List<AuxiliaryImageVolume> auxiliaryImageVolumes;
 
   /**
    * The name of the Kubernetes config map used for optional WebLogic configuration overrides.
@@ -731,14 +728,6 @@ public class DomainSpec extends BaseConfiguration {
     this.configuration = configuration;
   }
 
-  public List<AuxiliaryImageVolume> getAuxiliaryImageVolumes() {
-    return auxiliaryImageVolumes;
-  }
-
-  public void setAuxiliaryImageVolumes(List<AuxiliaryImageVolume> auxiliaryImageVolumes) {
-    this.auxiliaryImageVolumes = auxiliaryImageVolumes;
-  }
-
   /**
    * The desired number of running managed servers in each WebLogic cluster that is not explicitly
    * configured in clusters.
@@ -935,7 +924,22 @@ public class DomainSpec extends BaseConfiguration {
    */
   public String getModelHome() {
     return Optional.ofNullable(configuration)
-        .map(Configuration::getModel).map(Model::getModelHome).orElse(DEFAULT_WDT_MODEL_HOME);
+        .map(Configuration::getModel).map(Model::getModelHome).orElse(getDefaultModelHome());
+  }
+
+  public void setModelHome(String modelHome) {
+    Optional.ofNullable(configuration)
+            .map(Configuration::getModel).ifPresent(m -> m.setModelHome(modelHome));
+  }
+
+  private String getDefaultModelHome() {
+    return Optional.ofNullable(getAuxiliaryImages())
+            .map(ai -> getDefaultModelHome(ai))
+            .orElse(DEFAULT_WDT_MODEL_HOME);
+  }
+
+  private String getDefaultModelHome(List<AuxiliaryImage> ai) {
+    return ai.size() > 0 ? DEFAULT_MODEL_HOME_FOR_AUXILIARY_IMAGES : DEFAULT_WDT_MODEL_HOME;
   }
 
   /**
@@ -945,7 +949,42 @@ public class DomainSpec extends BaseConfiguration {
    */
   public String getWdtInstallHome() {
     return Optional.ofNullable(configuration)
-            .map(Configuration::getModel).map(Model::getWdtInstallHome).orElse(DEFAULT_WDT_INSTALL_HOME);
+            .map(Configuration::getModel).map(Model::getWdtInstallHome).orElse(getDefaultWDTInstallHome());
+  }
+
+  public void setWdtInstallHome(String wdtInstallHome) {
+    Optional.ofNullable(configuration)
+            .map(Configuration::getModel).ifPresent(m -> m.setWdtInstallHome(wdtInstallHome));
+  }
+
+  private String getDefaultWDTInstallHome() {
+    return Optional.ofNullable(getAuxiliaryImages())
+            .map(ai -> getDefaultWDTInstallHome(ai))
+            .orElse(DEFAULT_WDT_INSTALL_HOME);
+  }
+
+  private String getDefaultWDTInstallHome(List<AuxiliaryImage> ai) {
+    return ai.size() > 0 ? DEFAULT_WDT_INSTALL_HOME_FOR_AUXILIARY_IMAGES : DEFAULT_WDT_INSTALL_HOME;
+  }
+
+  List<AuxiliaryImage> getAuxiliaryImages() {
+    return Optional.ofNullable(configuration)
+            .map(Configuration::getModel).map(Model::getAuxiliaryImages).orElse(null);
+  }
+
+  String getAuxiliaryImageVolumeMountPath() {
+    return Optional.ofNullable(configuration)
+            .map(Configuration::getModel).map(Model::getAuxiliaryImageVolumeMountPath).orElse(null);
+  }
+
+  String getAuxiliaryImageVolumeMedium() {
+    return Optional.ofNullable(configuration)
+            .map(Configuration::getModel).map(Model::getAuxiliaryImageVolumeMedium).orElse(null);
+  }
+
+  String getAuxiliaryImageVolumeSizeLimit() {
+    return Optional.ofNullable(configuration)
+            .map(Configuration::getModel).map(Model::getAuxiliaryImageVolumeSizeLimit).orElse(null);
   }
 
   @Override
