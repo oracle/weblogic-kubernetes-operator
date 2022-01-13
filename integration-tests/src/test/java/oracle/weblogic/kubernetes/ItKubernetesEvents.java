@@ -128,7 +128,6 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * DomainFailed, NamespaceWatchingStarted, and NamespaceWatchingStopped.
  * The tests creates the domain resource, modifies it, introduces some validation errors in the domain resource
  * and finally deletes it to generate all the domain related events.
- * OKD certified - pending
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @DisplayName("Verify the Kubernetes events for domain lifecycle")
