@@ -5,7 +5,8 @@
 #
 found_error=0
 
-verify_no_function_keyword() {
+validate_script() {
+  # verify no function keywords in script
   result=$(grep -E ".*function +\w+.+{" "$1"  )
   if [ -n "$result" ]; then
    printf "Please remove usages of 'function' keyword from %s:\n%s\n" "$1" "$result"
@@ -14,7 +15,7 @@ verify_no_function_keyword() {
 
 
 find . -type f -name '*.sh' -print0 | while IFS= read -r -d '' file; do
-    retval=$(verify_no_function_keyword "$file" )
+    retval=$(validate_script "$file" )
     if [ -n "$retval" ]; then
       echo "$retval"
       exit 1
