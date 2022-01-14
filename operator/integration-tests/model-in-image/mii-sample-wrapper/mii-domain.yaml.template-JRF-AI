@@ -133,7 +133,6 @@ spec:
     model:
       # Valid model domain types are 'WLS', 'JRF', and 'RestrictedJRF', default is 'WLS'
       domainType: "JRF"
-      modelHome: "@@WDT_MODEL_HOME@@"
 
       # Auxiliary image(s) containing WDT model, archives and install.
       auxiliaryImages:
