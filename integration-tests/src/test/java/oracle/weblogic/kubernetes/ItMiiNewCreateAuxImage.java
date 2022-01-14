@@ -349,7 +349,9 @@ class ItMiiNewCreateAuxImage {
     domainCR.spec().configuration().model()
         .withAuxiliaryImage(new AuxiliaryImage()
             .image(miiAuxiliaryImage3 + ":" + MII_BASIC_IMAGE_TAG)
-            .imagePullPolicy("IfNotPresent"));
+            .imagePullPolicy("IfNotPresent")
+            .sourceWDTInstallHome(auxiliaryImagePath3 + "/weblogic-deploy")
+            .sourceModelHome(auxiliaryImagePath3 + "/models"));
 
     String adminServerPodName = domain3Uid + "-admin-server";
     String managedServerPrefix = domain3Uid + "-managed-server";
