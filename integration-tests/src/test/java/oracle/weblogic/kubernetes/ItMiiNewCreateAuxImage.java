@@ -282,7 +282,8 @@ class ItMiiNewCreateAuxImage {
 
     // verify the WDT version
     String wdtVersion =
-        assertDoesNotThrow(() -> checkWDTVersion(domainNamespace, adminServerPodName, witParams.wdtHome()));
+        assertDoesNotThrow(() -> checkWDTVersion(domainNamespace, adminServerPodName,
+                "/aux/weblogic-deploy"));
     assertEquals("WebLogic Deploy Tooling " + WDT_TEST_VERSION, wdtVersion,
           " Used WDT in the auxiliary image was not updated");
   }
