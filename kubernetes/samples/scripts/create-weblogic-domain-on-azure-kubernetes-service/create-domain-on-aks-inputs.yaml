@@ -53,17 +53,6 @@ azureKubernetesNodeVMSize: Standard_DS2_v2
 # The suffix of azure kubernetes node pool name, the azure kubernetes node pool name will be${azureKubernetesNodepoolNamePrefix} ${namePrefix}.
 azureKubernetesNodepoolNamePrefix: pool1
 
-# SKU of azure storage account, used to create storage account.
-azureStorageAccountSku: Standard_LRS
-
-# Name of Azure Storage Class. We will use initial StorageClasses azurefile.
-# If you want to create new class, follow the document: https://docs.microsoft.com/en-us/azure/aks/azure-files-dynamic-pv#create-a-storage-class.
-# Go to this page for more details:  https://docs.microsoft.com/en-us/azure/aks/concepts-storage#storage-classes
-azureStorageClassName: azurefile
-
-# The suffix of azure storage file share name, the complete value is ${namePrefix}-${azureStorageShareNameSuffix}-<timestamp>, used to create file share, and mount file share. 
-azureStorageShareNameSuffix: weblogic
-
 #Java Option for WebLogic Server
 javaOptions: -Dweblogic.StdoutDebugEnabled=false -XX:MinRAMPercentage=25.0 -XX:MaxRAMPercentage=50.0
 
@@ -71,6 +60,12 @@ javaOptions: -Dweblogic.StdoutDebugEnabled=false -XX:MinRAMPercentage=25.0 -XX:M
 # Used to create Kubernetes secret for container registry account.
 # Parameter "imagePullSecretName" will be overwritten with this field in kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain-inputs.yaml
 imagePullSecretNameSuffix: regcred
+
+# Storage class name for Azure Files using Container Storage Interface driver, see https://docs.microsoft.com/en-us/azure/aks/azure-files-csi#nfs-file-shares
+azureFileCsiNfsClassName: azurefile-csi-nfs
+
+# The suffix of azure storage file share name, the complete value is ${namePrefix}-${azureStorageShareNameSuffix}-<timestamp>, used to create file share, and mount file share. 
+azureStorageShareNameSuffix: weblogic
 
 # Resource request for each server pod (Memory and CPU). This is minimum amount of compute
 # resources required for each server pod. Edit value(s) below as per pod sizing requirements.
