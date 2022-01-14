@@ -54,6 +54,9 @@ function usage() {
     WORKDIR               : /tmp/\$USER/mii-sample-work-dir
     DOMAIN_NAMESPACE      : sample-domain1-ns
     MODEL_IMAGE_NAME      : model-in-image 
+    MODEL_IMAGE_TAG       : Defaults to JRF-v1, JRF-v2, WLS-v1, or WLS-v2 depending on use-case and domain type.
+                            IMPORTANT: If setting this env var, do not run multiple use cases on the same command line,
+                            as then all use cases will use the same image.
     IMAGE_PULL_SECRET_NAME: (not set)
     DB_NAMESPACE          : default (used by -db and -rcu)
     DB_IMAGE_PULL_SECRET  : docker-secret (used by -db and -rcu)
@@ -110,7 +113,8 @@ function usage() {
                     checked into the mii sample git location.
 
     -initial-image: Build image required for initial use case.
-                    Image is named '\$MODEL_IMAGE_NAME:WLS-v1' or '...:JRF-v1'
+                    Image is named '\$MODEL_IMAGE_NAME:WLS-v1' or '...:JRF-v1' if MODEL_IMAGE_TAG not specified.
+                    Image is named '\$MODEL_IMAGE_NAME:\$MODEL_IMAGE_TAG' if MODEL_IMAGE_TAG is specified.
 
     -initial-main : Deploy initial use case (domain resource, secrets, etc).
                     Domain uid 'sample-domain1'.
@@ -127,7 +131,8 @@ function usage() {
                     Depends on '-initial-main' (calls its app).
 
     -update3-image: Build image required for update3 use case.
-                    Image is named '\$MODEL_IMAGE_NAME:WLS-v2' or '...:JRF-v2'
+                    Image is named '\$MODEL_IMAGE_NAME:WLS-v2' or '...:JRF-v2' if MODEL_IMAGE_TAG is not set.
+                    And is named '\$MODEL_IMAGE_NAME:\$MODEL_IMAGE_TAG` if MODEL_IMAGE_TAG is set.'
 
     -update3-main : Run update3 use case (update initial domain's app via new image).
                     Domain uid 'sample-domain1'.
@@ -230,8 +235,8 @@ if [ "$DO_CLEANUP" = "true" ]; then
 
   # delete model images, if any, and dangling images
   for m_image in \
-    "${MODEL_IMAGE_NAME:-model-in-image}:${WDT_DOMAIN_TYPE}-v1" \
-    "${MODEL_IMAGE_NAME:-model-in-image}:${WDT_DOMAIN_TYPE}-v2" 
+    "${MODEL_IMAGE_NAME:-model-in-image}:${MODEL_IMAGE_TAG:-${WDT_DOMAIN_TYPE}-v1}" \
+    "${MODEL_IMAGE_NAME:-model-in-image}:${MODEL_IMAGE_TAG:-${WDT_DOMAIN_TYPE}-v2}" 
   do
     if [ ! "$DRY_RUN" = "true" ]; then
       if [ ! -z "$(docker images -q $m_image)" ]; then
@@ -526,9 +531,9 @@ if [ "$DO_UPDATE3_IMAGE" = "true" ]; then
   if [ "$DO_AI" = "true" ]; then
     doCommand -c "echo Running in auxiliary image mode"
     doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-AI"
-    doCommand -c "export MODEL_IMAGE_TAG=${IMAGE_TYPE}-v2"
+    doCommand -c "export MODEL_IMAGE_TAG=${MODEL_IMAGE_TAG:-${IMAGE_TYPE}-v2}"
   else
-    doCommand -c "export MODEL_IMAGE_TAG=${WDT_DOMAIN_TYPE}-v2"
+    doCommand -c "export MODEL_IMAGE_TAG=${MODEL_IMAGE_TAG:-${WDT_DOMAIN_TYPE}-v2}"
   fi
   doCommand -c "export ARCHIVE_SOURCEDIR=archives/archive-v2"
   doCommand    "\$MIIWRAPPERDIR/build-model-image.sh"
@@ -542,9 +547,9 @@ if [ "$DO_UPDATE3_MAIN" = "true" ]; then
   if [ "$DO_AI" = "true" ]; then
     doCommand -c "echo Running in auxiliary image mode"
     doCommand -c "export IMAGE_TYPE=${WDT_DOMAIN_TYPE}-AI"
-    doCommand -c "export MODEL_IMAGE_TAG=${IMAGE_TYPE}-v2"
+    doCommand -c "export MODEL_IMAGE_TAG=${MODEL_IMAGE_TAG:-${IMAGE_TYPE}-v2}"
   else
-    doCommand -c "export MODEL_IMAGE_TAG=${WDT_DOMAIN_TYPE}-v2"
+    doCommand -c "export MODEL_IMAGE_TAG=${MODEL_IMAGE_TAG:-${WDT_DOMAIN_TYPE}-v2}"
   fi
   doCommand -c "export DOMAIN_UID=$DOMAIN_UID1"
   doCommand -c "export DOMAIN_RESOURCE_FILENAME=domain-resources/mii-update3.yaml"
