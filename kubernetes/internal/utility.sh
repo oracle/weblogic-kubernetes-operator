@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
@@ -9,7 +9,7 @@
 #
 # Function to exit and print an error message
 # $1 - text of message
-function fail {
+fail() {
   printError $*
   exit 1
 }
@@ -17,20 +17,20 @@ function fail {
 #
 # Function to note that a validate error has occurred
 #
-function validationError {
+validationError() {
   printError $*
   validateErrors=true
 }
 
 # Function to print an error message
-function printError {
+printError() {
   echo [ERROR] $*
 }
 
 #
 # Function to cause the script to fail if there were any validation errors
 #
-function failIfValidationErrors {
+failIfValidationErrors() {
   if [ "$validateErrors" = true ]; then
     fail 'The errors listed above must be resolved before the script can continue'
   fi
@@ -39,7 +39,7 @@ function failIfValidationErrors {
 #
 # Function to validate that a list of required input parameters were specified
 #
-function validateInputParamsSpecified {
+validateInputParamsSpecified() {
   for p in $*; do
     local name=$p
     local val=${!name}
@@ -53,7 +53,7 @@ function validateInputParamsSpecified {
 # Function to validate that a list of input parameters have boolean values.
 # It assumes that validateInputParamsSpecified will also be called for these params.
 #
-function validateBooleanInputParamsSpecified {
+validateBooleanInputParamsSpecified() {
   validateInputParamsSpecified $*
   for p in $*; do
     local name=$p
@@ -69,7 +69,7 @@ function validateBooleanInputParamsSpecified {
 #
 # Function to validate that a list of input parameters have integer values.
 #
-function validateIntegerInputParamsSpecified {
+validateIntegerInputParamsSpecified() {
   validateInputParamsSpecified $*
   for p in $*; do
     local name=$p
@@ -88,7 +88,7 @@ function validateIntegerInputParamsSpecified {
 # Function to validate a kubernetes secret exists
 # $1 - the name of the secret
 # $2 - namespace
-function validateSecretExists {
+validateSecretExists() {
   # delegate to a function supplied by the caller so that while unit testing,
   # where kubectl and kubernetes are not available, we can stub out this check
   validateThatSecretExists $*
@@ -98,7 +98,7 @@ function validateSecretExists {
 # Function to parse a yaml file and generate the bash exports
 # $1 - Input filename
 # $2 - Output filename
-function parseYaml {
+parseYaml() {
   local s='[[:space:]]*' w='[a-zA-Z0-9_]*' fs=$(echo @|tr @ '\034')
   sed -ne "s|^\($s\):|\1|" \
      -e "s|^\($s\)\($w\)$s:$s[\"']\(.*\)[\"']$s\$|\1$fs\2$fs\3|p" \
@@ -119,7 +119,7 @@ function parseYaml {
 #
 # Function to parse the common parameter inputs file
 #
-function parseCommonInputs {
+parseCommonInputs() {
   exportValuesFile="/tmp/export-values.sh"
   tmpFile="/tmp/javaoptions_tmp.dat"
   parseYaml ${valuesInputFile} ${exportValuesFile}
@@ -151,7 +151,7 @@ function parseCommonInputs {
 # $1 object type
 # $2 object name
 # $3 yaml file
-function deleteK8sObj {
+deleteK8sObj() {
   # If the yaml file does not exist yet, unable to do the delete
   if [ ! -f $3 ]; then
     fail "Unable to delete object type $1 with name $2 because file $3 does not exist"
@@ -168,7 +168,7 @@ function deleteK8sObj {
 #
 # Function to lowercase a value
 # $1 - value to convert to lowercase
-function toLower {
+toLower() {
   local lc=`echo $1 | tr "[:upper:]" "[:lower:]"`
   echo "$lc"
 }
@@ -176,7 +176,7 @@ function toLower {
 #
 # Function to lowercase a value and make it a legal DNS1123 name
 # $1 - value to convert to lowercase
-function toDNS1123Legal {
+toDNS1123Legal() {
   local val=`echo $1 | tr "[:upper:]" "[:lower:]"`
   val=${val//"_"/"-"}
   echo "$val"
@@ -186,7 +186,7 @@ function toDNS1123Legal {
 # Function to check if a value is lowercase
 # $1 - name of object being checked
 # $2 - value to check
-function validateLowerCase {
+validateLowerCase() {
   local lcVal=$(toLower $2)
   if [ "$lcVal" != "$2" ]; then
     validationError "The value of $1 must be lowercase: $2"
@@ -196,7 +196,7 @@ function validateLowerCase {
 # 
 # Function to lowercase a value and make it a legal DNS1123 name 
 # $1 - value to convert to DNS legal name
-function toDNS1123Legal { 
+toDNS1123Legal() { 
   local val=`echo $1 | tr "[:upper:]" "[:lower:]"` 
   val=${val//"_"/"-"} 
   echo "$val" 
@@ -206,7 +206,7 @@ function toDNS1123Legal {
 # Function to check if a value is lowercase and legal DNS name 
 # $1 - name of object being checked 
 # $2 - value to check 
-function validateDNS1123LegalName { 
+validateDNS1123LegalName() { 
   local val=$(toDNS1123Legal $2) 
   if [ "$val" != "$2" ]; then 
     validationError "The value of $1 contains invalid charaters (uppercase letters or "_"): $2" 
@@ -217,7 +217,7 @@ function validateDNS1123LegalName {
 # Function to check if a value is lowercase and legal DNS name
 # $1 - value to check
 # $2 - name of object being checked
-function validateDNS1123LegalName {
+validateDNS1123LegalName() {
   local val=$(toDNS1123Legal $2)
   if [ "$val" != "$2" ]; then
     validationError "The value of $1 contains invalid charaters: $2"
@@ -227,14 +227,14 @@ function validateDNS1123LegalName {
 #
 # Function to validate the namespace
 #
-function validateNamespace {
+validateNamespace() {
   validateLowerCase "namespace" ${namespace}
 }
 
 #
 # Function to check if a persistent volume exists
 # $1 - name of volume
-function checkPvExists {
+checkPvExists() {
 
   echo "Checking if the persistent volume ${1} exists"
   PV_EXISTS=`kubectl get pv | grep ${1} | wc | awk ' { print $1; } '`
@@ -251,7 +251,7 @@ function checkPvExists {
 # Function to check if a persistent volume claim exists
 # $1 - name of persistent volume claim
 # $2 - namespace
-function checkPvcExists {
+checkPvcExists() {
   echo "Checking if the persistent volume claim ${1} in namespace ${2} exists"
   PVC_EXISTS=`kubectl get pvc -n ${2} | grep ${1} | wc | awk ' { print $1; } '`
   if [ "${PVC_EXISTS}" = "1" ]; then
@@ -267,7 +267,7 @@ function checkPvcExists {
 # Check the state of a persistent volume.
 # $1 - name of volume
 # $2 - expected state of volume
-function checkPvState {
+checkPvState() {
 
   echo "Checking if the persistent volume ${1:?} is ${2:?}"
   local pv_state=`kubectl get pv $1 -o jsonpath='{.status.phase}'`
@@ -291,7 +291,7 @@ function checkPvState {
 # $2   - the name of the input file the create script is using
 # $3   - the name of the input file that is put into the output directory
 # $4-n - the names of the generated yaml files
-function validateOutputDir {
+validateOutputDir() {
   local dir=$1
   shift
   if [ -e ${dir} ]; then
@@ -316,7 +316,7 @@ function validateOutputDir {
 # $1 - the output directory to validate
 # $2 - the name of the input file the create script is using
 # $3 - the name of the input file that is put into the output directory
-function internalValidateInputsFileDoesNotExistOrIsTheSame {
+internalValidateInputsFileDoesNotExistOrIsTheSame() {
   local dir=$1
   local in1=$2
   local in2=$3
@@ -338,7 +338,7 @@ function internalValidateInputsFileDoesNotExistOrIsTheSame {
 # in the outputs directory
 # $1 - the output directory to validate
 # $2-n - the names of the generated yaml files
-function internalValidateGeneratedYamlFilesDoNotExist {
+internalValidateGeneratedYamlFilesDoNotExist() {
   local dir=$1
   shift
   for var in "$@"; do
@@ -354,7 +354,7 @@ function internalValidateGeneratedYamlFilesDoNotExist {
 # inputs file and the file is the same as the one from the commandline.
 # $1 the inputs file from the command line
 # $2 the file in the output directory that needs to be made the same as $1
-function copyInputsFileToOutputDirectory {
+copyInputsFileToOutputDirectory() {
   local from=$1
   local to=$2
   local doCopy="true"

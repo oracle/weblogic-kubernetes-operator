@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # This script provisions a OKE Kubernetes cluster using terraform (https://www.terraform.io/) and runs the new
@@ -19,7 +19,7 @@ set -o pipefail
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 
-function usage {
+usage() {
   echo "usage: ${script} [-n <terraform config files directory>] [-o <directory>] [-t <tests>] [-c <name>] [-p true|false] [-x <number_of_threads>] [-d <wdt_download_url>] [-i <wit_download_url>] [-l <wle_download_url>] [-m <maven_profile_name>] [-h]"
   echo "  -n Terraform config files directory "
   echo "  -o Output directory (optional) "
@@ -45,7 +45,7 @@ function usage {
   exit $1
 }
 
-function prop {
+prop() {
     grep "${1}" ${oci_property_file}| grep -v "#" | cut -d'=' -f2
 }
 

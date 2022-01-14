@@ -1,5 +1,5 @@
 # !/bin/sh
-# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 
@@ -9,7 +9,7 @@ source ${scriptDir}/helper.sh
 if [ "${debug}" == "true" ]; then set -x; fi;
 set -eu
 
-function usage() {
+usage() {
 
   cat << EOF
 
@@ -64,7 +64,7 @@ done
 #
 # Function to perform validations, read files and initialize workspace
 #
-function initialize {
+initialize() {
 
   validateErrors=false
 

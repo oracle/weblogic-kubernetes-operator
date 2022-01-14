@@ -1,12 +1,12 @@
 #!/bin/bash
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-function prop {
+prop() {
     grep "${1}" ${propsFile}| grep -v "#" | cut -d'=' -f2
 }
 
-function generateTFVarFile {
+generateTFVarFile() {
     tfVarsFiletfVarsFile=${terraformVarDir}/${clusterTFVarsFile}.tfvars
     rm -f ${tfVarsFiletfVarsFile}
     cp ${terraformVarDir}/template.tfvars $tfVarsFiletfVarsFile
@@ -28,7 +28,7 @@ function generateTFVarFile {
     echo "Generated TFVars file [${tfVarsFiletfVarsFile}]"
 }
 
-function setupTerraform () {
+setupTerraform() {
     mkdir ${terraformDir}
     cd ${terraformDir}
     if [[ "${OSTYPE}" == "darwin"* ]]; then
@@ -44,7 +44,7 @@ function setupTerraform () {
     export PATH=${terraformDir}:${PATH}
 }
 
-function deleteOlderVersionTerraformOCIProvider() {
+deleteOlderVersionTerraformOCIProvider() {
     if [ -d ~/.terraform.d/plugins ]; then
         echo "Deleting older version of terraform plugins dir"
         rm -rf ~/.terraform.d/plugins
@@ -57,7 +57,7 @@ function deleteOlderVersionTerraformOCIProvider() {
     fi
 }
 
-function createCluster () {
+createCluster () {
     cd ${terraformVarDir}
     echo "terraform init -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars"
     terraform init -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
@@ -65,7 +65,7 @@ function createCluster () {
     terraform apply -auto-approve -var-file=${terraformVarDir}/${clusterTFVarsFile}.tfvars
 }
 
-function createRoleBindings () {
+createRoleBindings () {
     kubectl -n kube-system create serviceaccount $okeclustername-sa
     kubectl create clusterrolebinding add-on-cluster-admin --clusterrole=cluster-admin --serviceaccount=kube-system:$okeclustername-sa
     TOKENNAME=`kubectl -n kube-system get serviceaccount/$okeclustername-sa -o jsonpath='{.secrets[0].name}'`
@@ -74,7 +74,7 @@ function createRoleBindings () {
     kubectl config set-context --current --user=$okeclustername-sa
 }
 
-function checkClusterRunning () {
+checkClusterRunning () {
 
     echo 'Confirm we have kubectl working...'
     myline=`kubectl get nodes | awk '{print $2}'| tail -n+2`
