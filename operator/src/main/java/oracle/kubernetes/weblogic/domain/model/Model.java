@@ -147,7 +147,7 @@ public class Model {
     return this;
   }
 
-  List<AuxiliaryImage> getAuxiliaryImages() {
+  public List<AuxiliaryImage> getAuxiliaryImages() {
     return this.auxiliaryImages;
   }
 

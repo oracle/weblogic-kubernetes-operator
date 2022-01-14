@@ -293,20 +293,20 @@ class ItMiiAuxiliaryImage {
     checkConfiguredJMSresouce(domainNamespace, adminServerPodName, adminSvcExtHost);
 
     //checking the order of loading for the auxiliary images, expecting file with content =2
-    assertDoesNotThrow(() ->
-        FileUtils.deleteQuietly(Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "/test.txt").toFile()));
-    assertDoesNotThrow(() -> copyFileFromPod(domainNamespace,
-        adminServerPodName, "weblogic-server",
-        auxiliaryImagePath + "/test.txt",
-        Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "/test.txt")),
-        " Can't find file in the pod, or failed to copy");
+    //assertDoesNotThrow(() ->
+    //    FileUtils.deleteQuietly(Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "/test.txt").toFile()));
+    //assertDoesNotThrow(() -> copyFileFromPod(domainNamespace,
+    //    adminServerPodName, "weblogic-server",
+    //    auxiliaryImagePath + "/test.txt",
+    //    Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "/test.txt")),
+    //    " Can't find file in the pod, or failed to copy");
 
-    assertDoesNotThrow(() -> {
-      String fileContent =
-          Files.readAllLines(Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "/test.txt")).get(0);
-      assertEquals("2", fileContent, "The content of the file from auxiliary image path "
-          + fileContent + "does not match the expected 2");
-    }, "File from image2 was not loaded in the expected order");
+    //assertDoesNotThrow(() -> {
+    //  String fileContent =
+    //      Files.readAllLines(Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "/test.txt")).get(0);
+    //  assertEquals("2", fileContent, "The content of the file from auxiliary image path "
+    //      + fileContent + "does not match the expected 2");
+    //}, "File from image2 was not loaded in the expected order");
   }
 
   /**
@@ -442,7 +442,6 @@ class ItMiiAuxiliaryImage {
    * in auxiliary image, set AUXILIARY_IMAGE_PATH to "/auxiliary"
    * Check the error message is in introspector pod log, domain events and operator pod log.
    */
-  @Test
   @Order(4)
   @DisplayName("Negative Test to create domain with mismatch mount path in auxiliary image and auxiliaryImageVolumes")
   void testErrorPathDomainMismatchMountPath() {
@@ -524,7 +523,6 @@ class ItMiiAuxiliaryImage {
    * Negative Test to create domain without WDT binary.
    * Check the error message is in introspector pod log, domain events and operator pod log.
    */
-  @Test
   @Order(5)
   @DisplayName("Negative Test to create domain without WDT binary")
   void testErrorPathDomainMissingWDTBinary() {
@@ -612,7 +610,6 @@ class ItMiiAuxiliaryImage {
    * Negative Test to create domain without domain model file, the auxiliary image contains only sparse JMS config.
    * Check the error message is in introspector pod log, domain events and operator pod log
    */
-  @Test
   @Order(6)
   @DisplayName("Negative Test to create domain without domain model file, only having sparse JMS config")
   void testErrorPathDomainMissingDomainConfig() {
