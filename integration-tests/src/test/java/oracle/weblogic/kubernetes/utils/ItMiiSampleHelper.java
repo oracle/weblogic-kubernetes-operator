@@ -25,13 +25,13 @@ import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.doesImageExist;
-import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeStamp;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.dockerLoginAndPushImageToRegistry;
@@ -52,12 +52,6 @@ public class ItMiiSampleHelper {
       + "/model-in-image-sample-work-dir";
   private static final String MII_SAMPLES_SCRIPT =
       "../operator/integration-tests/model-in-image/run-test.sh";
-
-  private static final String CURRENT_DATE_TIME = getDateAndTimeStamp();
-  private static final String MII_SAMPLE_WLS_IMAGE_NAME_V1 = DOMAIN_IMAGES_REPO + "mii-" + CURRENT_DATE_TIME + "-wlsv1";
-  private static final String MII_SAMPLE_WLS_IMAGE_NAME_V2 = DOMAIN_IMAGES_REPO + "mii-" + CURRENT_DATE_TIME + "-wlsv2";
-  private static final String MII_SAMPLE_JRF_IMAGE_NAME_V1 = DOMAIN_IMAGES_REPO + "mii-" + CURRENT_DATE_TIME + "-jrfv1";
-  private static final String MII_SAMPLE_JRF_IMAGE_NAME_V2 = DOMAIN_IMAGES_REPO + "mii-" + CURRENT_DATE_TIME + "-jrfv2";
   private static final String SUCCESS_SEARCH_STRING = "Finished without errors";
 
   private static String opNamespace = null;
@@ -78,6 +72,12 @@ public class ItMiiSampleHelper {
   public enum ImageType {
     MAIN,
     AUX
+  }
+
+  private String getModelImageName(String suffix) {
+    return new StringBuffer(DOMAIN_IMAGES_REPO)
+        .append("mii-")
+        .append(suffix).toString();
   }
 
   /**
@@ -108,7 +108,7 @@ public class ItMiiSampleHelper {
     installAndVerifyOperator(opNamespace, domainNamespace);
 
     // env variables to override default values in sample scripts
-    envMap = new HashMap<String, String>();
+    envMap = new HashMap<>();
     envMap.put("DOMAIN_NAMESPACE", domainNamespace);
     envMap.put("TRAEFIK_NAMESPACE", traefikNamespace);
     envMap.put("TRAEFIK_HTTP_NODEPORT", "0"); // 0-->dynamically choose the np
@@ -173,17 +173,17 @@ public class ItMiiSampleHelper {
     String imageVer = "notset";
     String decoration = (envMap.get("DO_AI") != null && envMap.get("DO_AI").equalsIgnoreCase("true"))  ? "AI-" : "";
 
-    if (imageName.equals(MII_SAMPLE_WLS_IMAGE_NAME_V1)) {
-      imageVer = "WLS-" + decoration + "v1";
+    if (imageName.contains("-wlsv1")) {
+      imageVer = MII_BASIC_IMAGE_TAG + "-WLS-" + decoration + "v1";
     }
-    if (imageName.equals(MII_SAMPLE_WLS_IMAGE_NAME_V2)) {
-      imageVer = "WLS-" + decoration + "v2";
+    if (imageName.contains("-wlsv2")) {
+      imageVer = MII_BASIC_IMAGE_TAG + "-WLS-" + decoration + "v2";
     }
-    if (imageName.equals(MII_SAMPLE_JRF_IMAGE_NAME_V1)) {
-      imageVer = "JRF-" + decoration + "v1";
+    if (imageName.contains("-jrfv1")) {
+      imageVer = MII_BASIC_IMAGE_TAG + "-JRF-" + decoration + "v1";
     }
-    if (imageName.equals(MII_SAMPLE_JRF_IMAGE_NAME_V2)) {
-      imageVer = "JRF-" + decoration + "v2";
+    if (imageName.contains("-jrfv2")) {
+      imageVer = MII_BASIC_IMAGE_TAG + "-JRF-" + decoration + "v2";
     }
 
     String image = imageName + ":" + imageVer;
@@ -246,12 +246,17 @@ public class ItMiiSampleHelper {
 
   /**
    * Test MII sample WLS or JRF initial use case.
+   * @param testClassName the test class name
    */
-  public static void callInitialUseCase() {
+  public void callInitialUseCase(String testClassName) {
     String imageName = (domainType.equals(DomainType.WLS))
-        ? MII_SAMPLE_WLS_IMAGE_NAME_V1 : MII_SAMPLE_JRF_IMAGE_NAME_V1;
+        ? getModelImageName(testClassName + "-wlsv1") : getModelImageName(testClassName + "-jrfv1");
     previousTestSuccessful = true;
     envMap.put("MODEL_IMAGE_NAME", imageName);
+    String decoration = (envMap.get("DO_AI") != null && envMap.get("DO_AI").equalsIgnoreCase("true"))  ? "AI-" : "";
+    envMap.put("MODEL_IMAGE_TAG",
+        MII_BASIC_IMAGE_TAG + "-" + domainType + "-" + decoration + "v1");
+    envMap.put("MODEL_DIR", "model-images/model-in-image__" + domainType + "-v1");
 
     if (domainType.equals(DomainType.JRF)) {
       String dbImageName = (KIND_REPO != null
@@ -284,13 +289,19 @@ public class ItMiiSampleHelper {
 
   /**
    * Test MII sample WLS or JRF update1 use case.
+   * @param args test arguments
+   * @param errString a string of detailed error
+   * @param testClassName the test class name which will call this method
    */
-  public static void callUpdateUseCase(String args,
-                                       String errString) {
+  public void callUpdateUseCase(String args, String errString, String testClassName) {
+
     if (args.contains("update3")) {
       String imageName = (domainType.equals(DomainType.WLS))
-          ? MII_SAMPLE_WLS_IMAGE_NAME_V2 : MII_SAMPLE_JRF_IMAGE_NAME_V2;
+          ? getModelImageName(testClassName + "-wlsv2") : getModelImageName(testClassName + "-jrfv2");
       envMap.put("MODEL_IMAGE_NAME", imageName);
+      String decoration = (envMap.get("DO_AI") != null && envMap.get("DO_AI").equalsIgnoreCase("true"))  ? "AI-" : "";
+      envMap.put("MODEL_IMAGE_TAG", MII_BASIC_IMAGE_TAG + "-" + domainType + "-" + decoration + "v2");
+      envMap.put("MODEL_DIR", "model-images/model-in-image__" + domainType + "-v2");
     }
 
     execTestScriptAndAssertSuccess(domainType, args, errString);
