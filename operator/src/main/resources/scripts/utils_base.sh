@@ -261,23 +261,36 @@ function createFolder {
 #            See also checkAuxiliaryImage in 'utils.sh'.
 #
 function initAuxiliaryImage() {
+  local skipWdtInstallCopy=false
+  local skipModelCopy=false
 
   traceDirs before AUXILIARY_IMAGE_PATH
   if [ "${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME}" != "None" ]; then
     trace FINE "Auxiliary Image: About to copy WDT installation files from '${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME}' " \
                "in container image='$AUXILIARY_IMAGE_CONTAINER_IMAGE'. "
     if [ "${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME}" != "${AUXILIARY_IMAGE_PATH}/weblogic-deploy" ]; then
+      # Source WDT install home is non-default, validate that the directory exists and is non-empty.
       checkSourceWDTInstallDirExistsAndNotEmpty "${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME}" || return 1
+    elif [ ! -d ${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME} ]; then
+      # Source WDT install home is at the default and directory doesn't exist. Ignore.
+      trace FINE "Auxiliary Image: The directory '${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME}' doesn't exist. Skip copying WDT install files."
+      skipWdtInstallCopy=true
+    elif [ -z "$(ls -A ${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME})" ]; then
+      # Source WDT install home is at the default and no files found at the location. Ignore.
+      trace FINE "Auxiliary Image: The directory '${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME}' is empty. Skip copying WDT install files."
+      skipWdtInstallCopy=true
     fi
-    createFolder "${AUXILIARY_IMAGE_TARGET_PATH}/weblogic-deploy" "This is the target directory for WDT installation files." || return 1
-    if [ ! -z "$(ls -A ${AUXILIARY_IMAGE_TARGET_PATH}/weblogic-deploy)" ] ; then
-      trace SEVERE "The target directory for WDT installation files '${AUXILIARY_IMAGE_TARGET_PATH}/weblogic-deploy' is not empty. Exiting." 
-      return 1
-    fi
-    cp -R ${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME}/* ${AUXILIARY_IMAGE_TARGET_PATH}/weblogic-deploy 2>&1
-    if [ $? -ne 0 ]; then
-     trace SEVERE "Failed to copy WDT installation files from '${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME}' directory."
-     return 1
+    if [ ${skipWdtInstallCopy} == false ]; then
+      createFolder "${AUXILIARY_IMAGE_TARGET_PATH}/weblogic-deploy" "This is the target directory for WDT installation files." || return 1
+      if [ ! -z "$(ls -A ${AUXILIARY_IMAGE_TARGET_PATH}/weblogic-deploy)" ] ; then
+        trace SEVERE "The target directory for WDT installation files '${AUXILIARY_IMAGE_TARGET_PATH}/weblogic-deploy' is not empty. Exiting."
+        return 1
+      fi
+      cp -R ${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME}/* ${AUXILIARY_IMAGE_TARGET_PATH}/weblogic-deploy 2>&1
+      if [ $? -ne 0 ]; then
+       trace SEVERE "Failed to copy WDT installation files from '${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME}' directory."
+       return 1
+      fi
     fi
   fi
 
@@ -285,13 +298,24 @@ function initAuxiliaryImage() {
     trace FINE "Auxiliary Image: About to copy WDT model files from '${AUXILIARY_IMAGE_SOURCE_MODEL_HOME}' " \
                "in container image='$AUXILIARY_IMAGE_CONTAINER_IMAGE'. "
     if [ "${AUXILIARY_IMAGE_SOURCE_MODEL_HOME}" != "${AUXILIARY_IMAGE_PATH}/models" ]; then
+      # Source model home is non-default, validate that the directory exists and is non-empty.
       checkSourceWDTModelHomeDirExistsAndNotEmpty "${AUXILIARY_IMAGE_SOURCE_MODEL_HOME}" || return 1
+    elif [ ! -d ${AUXILIARY_IMAGE_SOURCE_MODEL_HOME} ]; then
+      # Source WDT install home is at the default and directory doesn't exist. Ignore.
+      trace FINE "Auxiliary Image: The directory '${AUXILIARY_IMAGE_SOURCE_MODEL_HOME}' doesn't exist. Skip copying WDT model files."
+      skipModelCopy=true
+    elif [ -z "$(ls -A ${AUXILIARY_IMAGE_SOURCE_MODEL_HOME})" ]; then
+      # Source WDT install home is at the default and no files found at the location. Ignore.
+      trace FINE "Auxiliary Image: The directory '${AUXILIARY_IMAGE_SOURCE_MODEL_HOME}' is empty. Skip copying WDT model files."
+      skipModelCopy=true
     fi
-    createFolder "${AUXILIARY_IMAGE_TARGET_PATH}/models" "This is the target directory for WDT model files." || return 1
-    cp -R ${AUXILIARY_IMAGE_SOURCE_MODEL_HOME}/* ${AUXILIARY_IMAGE_TARGET_PATH}/models 2>&1
-    if [ $? -ne 0 ]; then
-      trace SEVERE "Failed to copy WDT model files from '${AUXILIARY_IMAGE_SOURCE_MODEL_HOME}' directory."
-      return 1
+    if [ ${skipModelCopy} == false ]; then
+      createFolder "${AUXILIARY_IMAGE_TARGET_PATH}/models" "This is the target directory for WDT model files." || return 1
+      cp -R ${AUXILIARY_IMAGE_SOURCE_MODEL_HOME}/* ${AUXILIARY_IMAGE_TARGET_PATH}/models 2>&1
+      if [ $? -ne 0 ]; then
+        trace SEVERE "Failed to copy WDT model files from '${AUXILIARY_IMAGE_SOURCE_MODEL_HOME}' directory."
+        return 1
+      fi
     fi
   fi
 
