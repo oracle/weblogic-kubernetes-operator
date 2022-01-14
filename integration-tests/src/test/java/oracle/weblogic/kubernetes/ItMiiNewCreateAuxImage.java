@@ -12,7 +12,6 @@ import java.util.Optional;
 import java.util.concurrent.Callable;
 
 import oracle.weblogic.domain.AuxiliaryImage;
-import oracle.weblogic.domain.AuxiliaryImageVolume;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
@@ -283,7 +282,7 @@ class ItMiiNewCreateAuxImage {
     // verify the WDT version
     String wdtVersion =
         assertDoesNotThrow(() -> checkWDTVersion(domainNamespace, adminServerPodName,
-                "/aux/weblogic-deploy"));
+                "/aux"));
     assertEquals("WebLogic Deploy Tooling " + WDT_TEST_VERSION, wdtVersion,
           " Used WDT in the auxiliary image was not updated");
   }
@@ -340,9 +339,9 @@ class ItMiiNewCreateAuxImage {
     Domain domainCR = createDomainResource(domain3Uid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1");
-    domainCR.spec().addAuxiliaryImageVolumesItem(new AuxiliaryImageVolume()
-        .mountPath(auxiliaryImagePath3)
-        .name(auxiliaryImageVolumeName3));
+    //domainCR.spec().addAuxiliaryImageVolumesItem(new AuxiliaryImageVolume()
+    //    .mountPath(auxiliaryImagePath3)
+    //    .name(auxiliaryImageVolumeName3));
     // ANIL - commenting this out since introspector will fail if these values are set to non-default values.
     //domainCR.spec().configuration().model()
     //    .withModelHome(auxiliaryImagePath3 + "/models")
@@ -351,8 +350,8 @@ class ItMiiNewCreateAuxImage {
         .withAuxiliaryImage(new AuxiliaryImage()
             .image(miiAuxiliaryImage3 + ":" + MII_BASIC_IMAGE_TAG)
             .imagePullPolicy("IfNotPresent")
-            .sourceWDTInstallHome(auxiliaryImagePath3 + "/weblogic-deploy")
-            .sourceModelHome(auxiliaryImagePath3 + "/models"));
+            .sourceWDTInstallHome(customWdtHome + "/weblogic-deploy")
+            .sourceModelHome(customWdtModelHome));
 
     String adminServerPodName = domain3Uid + "-admin-server";
     String managedServerPrefix = domain3Uid + "-managed-server";
