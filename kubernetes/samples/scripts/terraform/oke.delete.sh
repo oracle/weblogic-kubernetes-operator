@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # This script deletes provisioned OKE Kubernetes cluster using terraform (https://www.terraform.io/)
@@ -8,11 +8,11 @@
 set -o errexit
 set -o pipefail
 
-function prop {
+prop() {
   grep "${1}" ${oci_property_file}| grep -v "#" | cut -d'=' -f2
 }
 
-function cleanupLB {
+cleanupLB() {
   echo 'Clean up left over LB'
   myvcn_id=`oci network vcn list --compartment-id $compartment_ocid  --display-name=${clusterName}_vcn | jq -r '.data[] | .id'`
   declare -a vcnidarray
@@ -39,7 +39,7 @@ function cleanupLB {
     done
 }
 
-function deleteOKE {
+deleteOKE() {
   cd ${terraform_script_dir}
   terraform init -var-file=${terraform_script_dir}/${clusterName}.tfvars
   terraform plan -var-file=${terraform_script_dir}/${clusterName}.tfvars

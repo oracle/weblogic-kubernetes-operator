@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # Drop the DB Service created by start-db-service.sh
@@ -8,7 +8,7 @@ script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 source ${scriptDir}/../common/utility.sh
 
-function usage {
+usage() {
   echo "usage: ${script} -n namespace  [-h]"
   echo " -n Kubernetes NameSpace for Oracle DB Service to be Stopped (optional)"
   echo "     (default: default) "
