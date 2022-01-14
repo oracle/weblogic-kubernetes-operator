@@ -9,7 +9,7 @@ script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 source ${scriptDir}/../common/utility.sh
 
-function usage {
+usage() {
   echo "usage: ${script} -s <schemaPrefix> -d <dburl> -n <namespace> -q <sysPassword> -r <schemaPassword> [-h]"
   echo "  -s RCU Schema Prefix (required)"
   echo "  -q password for database SYSDBA user. (required)"

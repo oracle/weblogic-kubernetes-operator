@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # This script create or delete an Ingress controller. 
@@ -32,7 +32,7 @@ chart=""
 # timestamp
 #   purpose:  echo timestamp in the form yyyy-mm-ddThh:mm:ss.nnnnnnZ
 #   example:  2018-10-01T14:00:00.000001Z
-function timestamp() {
+timestamp() {
   local timestamp="`date --utc '+%Y-%m-%dT%H:%M:%S.%NZ' 2>&1`"
   if [ ! "${timestamp/illegal/xyz}" = "${timestamp}" ]; then
     # old shell versions don't support %N or --utc
@@ -42,16 +42,16 @@ function timestamp() {
 }
 
 # Function to print an error message
-function printError {
+printError() {
   echo [`timestamp`][ERROR] "$*"
 }
 
 # Function to print an error message
-function printInfo {
+printInfo() {
   echo [`timestamp`][INFO] "$*"
 }
 
-function usage() {
+usage() {
   cat << EOF
   Usage:
     $(basename $0) -c[d]  -t ingress-type  [-n namespace] [-v version]
@@ -141,7 +141,7 @@ if [[ "$HELM_VERSION" =~ "v2" ]]; then
   exit -1
 fi
 
-function createNameSpace() {
+createNameSpace() {
  ns=$1
  namespace=`${kubernetesCli} get namespace ${ns} 2> /dev/null | grep ${ns} | awk '{print $1}'`
  if [ -z ${namespace} ]; then
@@ -150,7 +150,7 @@ function createNameSpace() {
  fi
 }
 
-function waitForIngressPod() {
+waitForIngressPod() {
   type=$1
   ns=$2
 
@@ -170,7 +170,7 @@ function waitForIngressPod() {
   fi 
  } 
 
-function createTraefik() {
+createTraefik() {
   ns=${1}
   rel=${2}
 
@@ -207,7 +207,7 @@ function createTraefik() {
 }
 
 # Remove ingress related resources from default Namespace ( if any )
-function purgeDefaultResources() {
+purgeDefaultResources() {
    printInfo "Remove ingress related resources from default Namespace (if any)"
   croles=$(${kubernetesCli} get ClusterRole | grep ${chart} | awk '{print $1}')
   for crole in ${croles}; do 
@@ -228,7 +228,7 @@ function purgeDefaultResources() {
   done
 }
 
-function deleteIngress() {
+deleteIngress() {
   type=${1}
   ns=${2}
   if [ "$(helm list --namespace $ns | grep $chart |  wc -l)" = 1 ]; then
@@ -253,7 +253,7 @@ function deleteIngress() {
     fi
 }
 
-function createNginx() {
+createNginx() {
   ns=${1}
   release=${2}
   chart="nginx-release"
@@ -287,7 +287,7 @@ function createNginx() {
   ${kubernetesCli} describe ${tpod} -n ${ns}
 }
 
-function main() {
+main() {
 
   if [ "${action}" = "create" ]; then
     if [ "${ingressType}" = traefik ]; then

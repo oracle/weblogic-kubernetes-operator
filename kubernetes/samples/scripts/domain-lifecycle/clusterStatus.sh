@@ -1,11 +1,11 @@
 # !/bin/sh
-# Copyright (c) 2021, Oracle and/or its affiliates.
+# Copyright (c) 2021,2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 set -eu
 set -o pipefail
 
-function usage() {
+usage() {
 cat<<EOF
 
 Usage:
@@ -41,7 +41,7 @@ exit $1
 
 # function to display the domain cluster status in a table
 # $1=ns $2=uid, pass "" to mean "any"
-function clusterStatus() {
+clusterStatus() {
   local __ns="${1:-}"
   if [ -z "$__ns" ]; then
     # an empty ns means check all namespaces
