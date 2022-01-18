@@ -1,9 +1,9 @@
 # !/bin/sh
-# Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 
-function usage() {
+usage() {
 
   cat << EOF
 
@@ -89,7 +89,7 @@ fi
 
 set -eu
 
-function kubectlDryRunDelete() {
+kubectlDryRunDelete() {
 cat << EOF
 dryrun:kubectl -n $NAMESPACE delete secret \\
 dryrun:  $SECRET_NAME \\
@@ -97,7 +97,7 @@ dryrun:  --ignore-not-found
 EOF
 }
 
-function kubectlDryRunCreate() {
+kubectlDryRunCreate() {
 local moredry=""
 if [ "$DRY_RUN" = "yaml" ]; then
   local moredry="--dry-run -o yaml"
@@ -109,7 +109,7 @@ dryrun:  $LITERALS $FILENAMES ${moredry}
 EOF
 }
 
-function kubectlDryRunLabel() {
+kubectlDryRunLabel() {
 cat << EOF
 dryrun:kubectl -n $NAMESPACE label  secret \\
 dryrun:  $SECRET_NAME \\
@@ -117,7 +117,7 @@ dryrun:  weblogic.domainUID=$DOMAIN_UID
 EOF
 }
 
-function kubectlDryRun() {
+kubectlDryRun() {
 cat << EOF
 dryrun:
 dryrun:echo "@@ Info: Setting up secret '$SECRET_NAME'."

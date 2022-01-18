@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
@@ -28,7 +28,7 @@ if [ "${MOCK_WLS}" == 'true' ]; then
   exit 0
 fi
 
-function check_for_shutdown() {
+check_for_shutdown() {
   [ ! -f "${SCRIPTPATH}/readState.sh" ] && trace SEVERE "Missing file '${SCRIPTPATH}/readState.sh'." && exit 1
 
   state=`${SCRIPTPATH}/readState.sh`

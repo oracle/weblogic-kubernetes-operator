@@ -1,15 +1,15 @@
-# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
-function timestamp() {
+timestamp() {
   date --utc '+%Y-%m-%dT%H:%M:%S'
 }
 
-function trace() {
+trace() {
   echo @@ "[$(timestamp)]" "[$(basename $0):${BASH_LINENO[0]}]:" "$@"
 }
 
-function tracen() {
+tracen() {
   echo -n @@ "[$(timestamp)]" "[$(basename $0):${BASH_LINENO[0]}]:" "$@"
 }
 
@@ -18,34 +18,34 @@ function tracen() {
 # Use 'diefast' to touch the '/tmp/diefast' file in all WL pods. This will
 # cause them to use an unsafe (fast) shutdown when they're deleted/rolled.
 
-function diefast() {
+diefast() {
   kubectl -n ${DOMAIN_NAMESPACE:-sample-domain1-ns} get pods -l weblogic.serverName \
     -o=jsonpath='{range .items[*]}{.metadata.namespace}{" "}{.metadata.name}{"\n"}' \
     | awk '{ system("set -x ; kubectl -n " $1 " exec " $2 " touch /tmp/diefast") }'
 }
 
-function get_service_name() {
+get_service_name() {
   # $1 is service name
   echo $(tr [A-Z_] [a-z-] <<< $1)
 }
 
-function get_service_yaml() {
+get_service_yaml() {
   # $1 is service name
   echo "$WORKDIR/ingresses/traefik-ingress-$(get_service_name $1).yaml"
 }
 
-function get_kube_address() {
+get_kube_address() {
   # kubectl cluster-info | grep KubeDNS | sed 's;^.*//;;' | sed 's;:.*$;;'
   # This is the heuristic used by the integration test framework:
   echo ${K8S_NODEPORT_HOST:-$(hostname)}
 }
 
-function get_sample_host() {
+get_sample_host() {
   # $1 is service name
   tr [A-Z_] [a-z-] <<< $1.mii-sample.org
 }
 
-function curl_timeout_parms() {
+curl_timeout_parms() {
   local curl_parms="--connect-timeout 5"
   curl_parms+=" --max-time 20"        # max seconds for each try
   # don't bother retrying - we will retry externally because
@@ -56,7 +56,7 @@ function curl_timeout_parms() {
   echo "$curl_parms"
 }
 
-function get_curl_command() {
+get_curl_command() {
   # $1 is service name
   if [ "$OKD" = "true" ]; then
     echo "curl -s -S $(curl_timeout_parms) "
@@ -80,7 +80,7 @@ function get_curl_command() {
 #
 # For example, 'testapp internal "Hello World!"'.
 
-function testapp() {
+testapp() {
 
   # note: we retry 5 times in case services, etc need more time to come up
   #       curl's internal retry doesn't actually retry if there's a 'connect failure'
@@ -177,7 +177,7 @@ EOF
 #   outputs interesting labels, timestamps, and other info for current DOMAIN_UID and DOMAIN_NAMESPACE pods
 #
 
-function getPodInfo() {
+getPodInfo() {
   local jpath=''
   jpath+='{range .items[*]}'
   jpath+='{" name="}'
@@ -206,7 +206,7 @@ function getPodInfo() {
   echo "$cur_pods"
 }
 
-function getRouteHost() {
+getRouteHost() {
   local routeHost="$( oc -n ${DOMAIN_NAMESPACE} get routes $1 '-o=jsonpath={.spec.host}')" 
   
   echo $routeHost
@@ -218,7 +218,7 @@ function getRouteHost() {
 #   file name is $WORKDIR/test-out/$PPID.$COUNT.$(timestamp).getPodInfo.out
 #
 
-function dumpInfo() {
+dumpInfo() {
   [ "$DRY_RUN" = "true" ] && return
   COMMAND_OUTFILE_COUNT=${COMMAND_OUTFILE_COUNT:-0}
   COMMAND_OUTFILE_COUNT=$((COMMAND_OUTFILE_COUNT + 1))
@@ -249,7 +249,7 @@ function dumpInfo() {
 #  This function expects -e, -u, and -o pipefail to be set. If not, it returns 1.
 #
 
-function doCommand() {
+doCommand() {
   if [ "${SHELLOPTS/errexit}" = "${SHELLOPTS}" ]; then
     trace "Error: The doCommand script expects that 'set -e' was already called."
     return 1

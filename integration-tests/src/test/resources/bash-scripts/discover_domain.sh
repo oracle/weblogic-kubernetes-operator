@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2021, Oracle and/or its affiliates.
+# Copyright (c) 2021,2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # Description:
@@ -113,11 +113,11 @@ TARGET_TYPE="${TARGET_TYPE:-wko}"
 
 # Define functions
 
-function setup_wdt_shared_dir {
+setup_wdt_shared_dir() {
   mkdir -p $WDT_DIR || return 1
 }
 
-function install_wdt {
+install_wdt() {
   #
   # Download $WDT_INSTALL_ZIP_FILE from $WDT_INSTALL_ZIP_URL into $WDT_DIR using
   # proxies https_proxy or https_proxy2, then unzip the zip file in $WDT_DIR.
@@ -169,7 +169,7 @@ function install_wdt {
   return 0
 }
 
-function run_wdt {
+run_wdt() {
   #
   # Run WDT using WDT_VAR_FILE, WDT_MODEL_FILE, and ORACLE_HOME.  
   # Output:
