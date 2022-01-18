@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 export PATH=$PATH:/operator
@@ -7,7 +7,7 @@ export PATH=$PATH:/operator
 echo "Launching Oracle WebLogic Server Kubernetes Operator..."
 
 # Relays SIGTERM to all java processes
-function relay_SIGTERM {
+relay_SIGTERM() {
   pid=`grep java /proc/[0-9]*/comm | awk -F / '{ print $3; }'`
   echo "Sending SIGTERM to java process " $pid
   kill -SIGTERM $pid

@@ -1,4 +1,4 @@
-# Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
@@ -38,7 +38,7 @@ set -o pipefail
 set -u
 
 # setup globals based on phase, the phases match the phases in the MII sample
-function phase_setup() {
+phase_setup() {
   case "$1" in 
     # An initial domain with admin server, web-app 'v1', and a single cluster 'cluster-1' with 2 replicas.
     initial)
@@ -217,7 +217,7 @@ echo "@@"
 
 yaml_error=false
 
-function yaml_compare() {
+yaml_compare() {
   set -e
   cd $1
   for line in $(find . -name "*.yaml"); do
