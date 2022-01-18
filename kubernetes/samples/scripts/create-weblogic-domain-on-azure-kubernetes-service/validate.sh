@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # Description
@@ -19,7 +19,7 @@
 script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 
-function usage {
+usage() {
   echo "Arguments"
   echo "  --aks-name          [Required] ：Azure Kubernetes Service instance name. "
   echo "  --file-share        [Required] ：File share name."
@@ -179,26 +179,26 @@ fi
 #
 # Function to exit and print an error message
 # $1 - text of message
-function fail {
+fail() {
   echo [ERROR] $*
   exit 1
 }
 
-function validateAzLogin {
+validateAzLogin() {
     az account show
     if [ $? -ne 0 ]; then
         fail "Please run az login to setup account."
     fi
 }
 
-function validateResourceGroup {
+validateResourceGroup() {
     ret=$(az group exists --name ${resourceGroup})
     if [ $ret == false ];then 
       fail "${resourceGroup} does not exist."
     fi
 }
 
-function validateStorageAccount {
+validateStorageAccount() {
     ret=$(az storage account check-name --name ${storageAccount})
     echo $ret
     nameAvailable=$(echo "$ret" | grep "AlreadyExists")
@@ -207,14 +207,14 @@ function validateStorageAccount {
     fi
 }
 
-function validateAKSName {
+validateAKSName() {
     ret=$(az aks list -g ${resourceGroup} | grep "${aksName}")
     if [ -z "$ret" ];then 
       fail "AKS instance with name ${aksName} does not exist."
     fi
 }
 
-function validateFileShare {
+validateFileShare() {
     export azureStorageConnectionString=$(az storage account show-connection-string \
     -n $storageAccount -g $resourceGroup -o tsv)
 
@@ -225,28 +225,28 @@ function validateFileShare {
     fi
 }
 
-function connectAKS {
+connectAKS() {
     az aks get-credentials --resource-group $resourceGroup --name $aksName
     if [ $? -ne 0 ]; then
         fail "Connect to ${aksName} failed."
     fi
 }
 
-function validateDockerSecret {
+validateDockerSecret() {
     kubectl get secret ${secretDocker}
     if [ $? -ne 0 ]; then
         fail "Secret:${secretDocker} for docker account is not created."
     fi
 }
 
-function validateStorageSecret {
+validateStorageSecret() {
     kubectl get secret ${secretStorage}
     if [ $? -ne 0 ]; then
         fail "Secret:${secretStorage} for storage is not created."
     fi
 }
 
-function validateWebLogicDomainSecret {
+validateWebLogicDomainSecret() {
     ret=$(kubectl get secrets | grep "weblogic-credentials")
     if [ $? -ne 0 ]; then
         fail "Secret:${secretStorage} for storage is not created."
@@ -255,7 +255,7 @@ function validateWebLogicDomainSecret {
     export secretWebLogic=$(echo ${ret%% *})
 }
 
-function validatePV {
+validatePV() {
     ret=$(kubectl get pv)
     index=0
     for item in ${ret};
@@ -277,7 +277,7 @@ function validatePV {
     done
 }
 
-function validatePVC {
+validatePVC() {
     ret=$(kubectl get pvc)
     index=0
     for item in ${ret};
@@ -299,21 +299,21 @@ function validatePVC {
     done
 } 
 
-function validateOperator {
+validateOperator() {
     ret=$(kubectl get pods | grep "weblogic-operator" | grep "Running")
     if [ -z "${ret}" ]; then
         fail "Please make sure WebLogic operator is running."
     fi
 }
 
-function validateDomain {
+validateDomain() {
     ret=$(kubectl get domain | grep "${domainUID}")
     if [ -n "$ret" ]; then
         fail "${domainUID} is created! Please create a new domain or follow the page to delete it https://oracle.github.io/weblogic-kubernetes-operator/samples/domains/domain-home-on-pv/#delete-the-generated-domain-home."
     fi
 }
 
-function pass {
+pass() {
     echo ""
     echo "PASS"
     echo "You can create your domain with the following resources ready:"

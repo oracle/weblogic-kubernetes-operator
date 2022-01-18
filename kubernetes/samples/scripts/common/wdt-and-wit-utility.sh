@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2021, Oracle and/or its affiliates.
+# Copyright (c) 2021,2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # Description:
@@ -85,7 +85,7 @@ WIT_VERSION=${WIT_VERSION:-LATEST}
 
 DOMAIN_TYPE="${DOMAIN_TYPE:-WLS}"
 
-function download {
+download() {
   local fileUrl="${1}"
 
   local curl_res=1
@@ -108,7 +108,7 @@ function download {
   fi
 }
 
-function run_wdt {
+run_wdt() {
   #
   # Run WDT using WDT_VAR_FILE, WDT_MODEL_FILE, and ORACLE_HOME.  
   # Output:
@@ -242,14 +242,14 @@ function run_wdt {
   return 0
 }
 
-function setup_wdt_shared_dir {
+setup_wdt_shared_dir() {
   mkdir -p $WDT_DIR || return 1
 }
 
 #
 # Install Weblogic Server Deploy Tooling to ${WDT_DIR}
 #
-function install_wdt {
+install_wdt() {
 
   WDT_INSTALL_ZIP_FILE="${WDT_INSTALL_ZIP_FILE:-weblogic-deploy.zip}"
 
@@ -298,7 +298,7 @@ function install_wdt {
 # Install WebLogic Image Tool to ${WIT_DIR}. Used by install_wit_if_needed.
 # Do not call this function directory.
 #
-function install_wit {
+install_wit() {
 
   WIT_INSTALL_ZIP_FILE="${WIT_INSTALL_ZIP_FILE:-imagetool.zip}"
 
@@ -346,7 +346,7 @@ function install_wit {
 # Checks whether WebLogic Image Tool is already installed under ${WIT_DIR}, and install
 # it if not.
 #
-function install_wit_if_needed {
+install_wit_if_needed() {
 
   local save_dir=`pwd`
 
@@ -403,7 +403,7 @@ function install_wit_if_needed {
   return 0
 }
 
-function encrypt_model {
+encrypt_model() {
   #
   # run encryptModel.sh from WDT to encrypt model and properties files
   #
