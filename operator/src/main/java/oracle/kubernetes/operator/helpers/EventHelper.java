@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -56,7 +56,6 @@ import static oracle.kubernetes.operator.EventConstants.NAMESPACE_WATCHING_STOPP
 import static oracle.kubernetes.operator.EventConstants.POD_CYCLE_STARTING_EVENT;
 import static oracle.kubernetes.operator.EventConstants.POD_CYCLE_STARTING_PATTERN;
 import static oracle.kubernetes.operator.EventConstants.WEBLOGIC_OPERATOR_COMPONENT;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STARTED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STOPPED;
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
@@ -71,16 +70,6 @@ public class EventHelper {
   /**
    * Factory for {@link Step} that asynchronously create an event.
    *
-   * @param eventItem event item
-   * @return Step for creating an event
-   */
-  public static Step createEventStep(EventItem eventItem) {
-    return createEventStep(new EventData(eventItem));
-  }
-
-  /**
-   * Factory for {@link Step} that asynchronously create an event.
-   *
    * @param eventData event data
    * @return Step for creating an event
    */
@@ -91,24 +80,13 @@ public class EventHelper {
   /**
    * Factory for {@link Step} that asynchronously create an event.
    *
-   * @param domainNamespaces DomainSpaces instance
+   * @param domainNamespaces DomainNamespaces instance
    * @param eventData event item
    * @param next next step
    * @return Step for creating an event
    */
   public static Step createEventStep(DomainNamespaces domainNamespaces, EventData eventData, Step next) {
     return new CreateEventStep(domainNamespaces, eventData, next);
-  }
-
-  /**
-   * Factory for {@link Step} that asynchronously create an event.
-   *
-   * @param eventData event item
-   * @param next next step
-   * @return Step for creating an event
-   */
-  public static Step createEventStep(EventData eventData, Step next) {
-    return new CreateEventStep(null, eventData, next);
   }
 
   public static class CreateEventStep extends Step {
@@ -803,10 +781,6 @@ public class EventHelper {
     @Override
     public String toString() {
       return "EventData: " + eventItem;
-    }
-
-    public static boolean isProcessingAbortedEvent(@NotNull EventData eventData) {
-      return eventData.eventItem == DOMAIN_FAILED && DomainFailureReason.Aborted.equals(eventData.failureReason);
     }
 
     /**

@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -1376,7 +1376,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     private class DomainPresenceInfoStep extends Step {
       @Override
       public NextAction apply(Packet packet) {
-        packet.with(DOMAINS.get(getNamespace()).get(getDomainUid()));
+        Optional.ofNullable(DOMAINS.get(getNamespace()).get(getDomainUid())).map(i -> packet.with(i));
         return doNext(packet);
       }
     }
