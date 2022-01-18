@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -129,6 +129,8 @@ public class KubernetesTestSupport extends FiberTestSupport {
   private long resourceVersion;
   private int numCalls;
   private boolean addCreationTimestamp;
+  private boolean ignoreSelectorOnList;
+  private String ignoreSelectorOnListResourceType;
 
   /**
    * Installs a factory into CallBuilder to use canned responses.
@@ -444,6 +446,15 @@ public class KubernetesTestSupport extends FiberTestSupport {
    */
   public void doAfterCall(@Nonnull String resourceType, @Nonnull String call, @Nonnull Runnable action) {
     afterCallAction = new AfterCallAction(resourceType, call, action);
+  }
+
+  /**
+   * Specifies if the label selectors should be ignored when list a resource.
+   * @param resourceType the type of resource
+   */
+  public void ignoreSelectorOnListOperation(@Nonnull String resourceType) {
+    ignoreSelectorOnList = true;
+    ignoreSelectorOnListResourceType = resourceType;
   }
 
   @SuppressWarnings("unused")
@@ -801,7 +812,9 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
 
     private Predicate<Object> withLabels(String[] labelSelectors) {
-      return o -> labelSelectors == null || hasLabels(getMetadata(o), labelSelectors);
+      return o -> (labelSelectors == null
+          || labelSelectors.length == 0
+          || hasLabels(getMetadata(o), labelSelectors));
     }
 
     private boolean hasLabels(V1ObjectMeta metadata, String[] selectors) {
@@ -1110,10 +1123,20 @@ public class KubernetesTestSupport extends FiberTestSupport {
     CallContext(RequestParams requestParams, String fieldSelector, String labelSelector, Integer gracePeriodSeconds) {
       this.requestParams = requestParams;
       this.fieldSelector = fieldSelector;
-      this.labelSelector = labelSelector == null ? null : labelSelector.split(",");
       this.gracePeriodSeconds = gracePeriodSeconds;
 
       parseCallName(requestParams);
+      this.labelSelector =
+          labelSelector == null || shouldIgnoreSelectorOnList()
+              ?
+              null
+              : labelSelector.split(",");
+    }
+
+    private boolean shouldIgnoreSelectorOnList() {
+      return ignoreSelectorOnList
+          && resourceType.equalsIgnoreCase(ignoreSelectorOnListResourceType)
+          && operation.equals(Operation.list);
     }
 
     public void setContinue(String cont) {

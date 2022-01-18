@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -468,6 +468,19 @@ class MainTest extends ThreadFactoryTestBase {
     defineSelectionStrategy(SelectionStrategy.LabelSelector);
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
           NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
+
+    TuningParameters.getInstance().put("domainNamespaceLabelSelector", LABEL + "=" + VALUE);
+    runCreateReadNamespacesStep();
+
+    assertThat(getStartingNamespaces(), contains(NS_WEBLOGIC1, NS_WEBLOGIC3, NS_WEBLOGIC5));
+  }
+
+  @Test
+  void withLabelSelector_onCreateReadNamespaces_ignoreSelectorOnList_startsNamespaces() {
+    defineSelectionStrategy(SelectionStrategy.LabelSelector);
+    testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
+        NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
+    testSupport.ignoreSelectorOnListOperation("namespace");
 
     TuningParameters.getInstance().put("domainNamespaceLabelSelector", LABEL + "=" + VALUE);
     runCreateReadNamespacesStep();
