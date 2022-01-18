@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -6,7 +6,7 @@ package oracle.kubernetes.weblogic.domain.model;
 public class AuxiliaryImageEnvVars {
 
   /** The auxiliary image path. */
-  public static final String AUXILIARY_IMAGE_PATH = "AUXILIARY_IMAGE_PATH";
+  public static final String AUXILIARY_IMAGE_MOUNT_PATH = "AUXILIARY_IMAGE_MOUNT_PATH";
 
   /** The auxiliary image target path. */
   public static final String AUXILIARY_IMAGE_TARGET_PATH = "AUXILIARY_IMAGE_TARGET_PATH";

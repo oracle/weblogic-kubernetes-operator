@@ -18,9 +18,10 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 public class Model {
   static final String DEFAULT_WDT_MODEL_HOME = "/u01/wdt/models";
   static final String DEFAULT_WDT_INSTALL_HOME = "/u01/wdt/weblogic-deploy";
-  public static final String DEFAULT_AUXILIARY_IMAGE_PATH = "/aux";
-  static final String DEFAULT_WDT_INSTALL_HOME_FOR_AUXILIARY_IMAGES = DEFAULT_AUXILIARY_IMAGE_PATH + "/weblogic-deploy";
-  static final String DEFAULT_MODEL_HOME_FOR_AUXILIARY_IMAGES = DEFAULT_AUXILIARY_IMAGE_PATH + "/models";
+  public static final String DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH = "/aux";
+  static final String DEFAULT_AUXILIARY_IMAGE_WDT_INSTALL_HOME =
+          DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH + "/weblogic-deploy";
+  static final String DEFAULT_AUXILIARY_IMAGE_MODEL_HOME = DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH + "/models";
 
   @EnumClass(value = ModelInImageDomainType.class)
   @Description("WebLogic Deploy Tooling domain type. Legal values: WLS, RestrictedJRF, JRF. Defaults to WLS.")
@@ -52,7 +53,7 @@ public class Model {
   @Description("The auxiliary image volume mount path. Defaults to '/aux'.")
   private String auxiliaryImageVolumeMountPath;
 
-  @Description("The emptyDir volume withAuxiliaryImageVolumeMedium. This is an advanced setting that rarely needs to "
+  @Description("The emptyDir volume medium. This is an advanced setting that rarely needs to "
           + "be configured. Defaults to unset, which means the volume's files are stored on the local node's file "
           + "system for the life of the pod.")
   private String auxiliaryImageVolumeMedium;
@@ -161,7 +162,7 @@ public class Model {
   }
 
   public String getAuxiliaryImageVolumeMountPath() {
-    return Optional.ofNullable(auxiliaryImageVolumeMountPath).orElse(DEFAULT_AUXILIARY_IMAGE_PATH);
+    return Optional.ofNullable(auxiliaryImageVolumeMountPath).orElse(DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH);
   }
 
   public void setAuxiliaryImageVolumeMountPath(String auxiliaryImageVolumeMountPath) {
@@ -236,10 +237,11 @@ public class Model {
 
   @Override
   public boolean equals(Object other) {
-    if (other == this) {
+    if (this == other) {
       return true;
     }
-    if (!(other instanceof Model)) {
+
+    if (other == null || getClass() != other.getClass()) {
       return false;
     }
 
@@ -250,8 +252,8 @@ public class Model {
             .append(configMap,rhs.configMap)
             .append(modelHome,rhs.modelHome)
             .append(wdtInstallHome,rhs.wdtInstallHome)
-            .append(onlineUpdate,rhs.onlineUpdate)
             .append(runtimeEncryptionSecret, rhs.runtimeEncryptionSecret)
+            .append(onlineUpdate,rhs.onlineUpdate)
             .append(auxiliaryImages, rhs.auxiliaryImages)
             .append(auxiliaryImageVolumeMountPath, rhs.auxiliaryImageVolumeMountPath)
             .append(auxiliaryImageVolumeMedium, rhs.auxiliaryImageVolumeMedium)

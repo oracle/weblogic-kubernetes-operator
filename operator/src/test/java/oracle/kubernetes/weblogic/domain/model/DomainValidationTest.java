@@ -33,7 +33,7 @@ import static oracle.kubernetes.operator.DomainSourceType.Image;
 import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.getAuxiliaryImage;
-import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_PATH;
+import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
@@ -119,7 +119,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
   @Test
   void whenDomainConfiguredWithAuxiliaryImageAndVolumeMountExists_reportError() {
     configureDomain(domain)
-            .withAdditionalVolumeMount("test", DEFAULT_AUXILIARY_IMAGE_PATH)
+            .withAdditionalVolumeMount("test", DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH)
             .withRuntimeEncryptionSecret("mysecret")
             .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")));
 

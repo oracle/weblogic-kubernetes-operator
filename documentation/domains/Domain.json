@@ -650,7 +650,7 @@
           "type": "string"
         },
         "auxiliaryImageVolumeMedium": {
-          "description": "The emptyDir volume withAuxiliaryImageVolumeMedium. This is an advanced setting that rarely needs to be configured. Defaults to unset, which means the volume\u0027s files are stored on the local node\u0027s file system for the life of the pod.",
+          "description": "The emptyDir volume medium. This is an advanced setting that rarely needs to be configured. Defaults to unset, which means the volume\u0027s files are stored on the local node\u0027s file system for the life of the pod.",
           "type": "string"
         },
         "auxiliaryImageVolumeSizeLimit": {

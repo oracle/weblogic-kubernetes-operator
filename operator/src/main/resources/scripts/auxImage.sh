@@ -1,7 +1,9 @@
 #!/bin/sh
+# Copyright (c) 2021, 2022, Oracle and/or its affiliates.
+# Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # Init container script for the auxiliary image feature.
-# See 'domain.spec.serverPod.auxiliaryImages' for details.
+# See 'domain.spec.configuration.model.auxiliaryImages' for details.
 
 # Notes:
 # This script purposely tries to exit zero even on failure as
@@ -14,10 +16,10 @@
 # 'executed successfully'.
 #
 # The main introspector and pod scripts will echo
-# the contents of /${AUXILIARY_IMAGE_PATH}/auxiliary-image-logs/
+# the contents of /${AUXILIARY_IMAGE_MOUNT_PATH}/auxiliary-image-logs/
 # and fail if they are missing, or if any do not
 # include 'executed successfully', or if the scripts
-# cannot create (touch) files in /${AUXILIARY_IMAGE_PATH}.
+# cannot create (touch) files in /${AUXILIARY_IMAGE_MOUNT_PATH}.
 # (See also utils.sh checkAuxiliaryImage function)
 
 scriptDir="$( cd "$(dirname "$0")" > /dev/null 2>&1 ; pwd -P )"

@@ -1,4 +1,4 @@
-# Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 set -o pipefail
@@ -686,35 +686,34 @@ function adjustPath() {
 
 #
 # checkAuxiliaryImage
-#   purpose: If the AUXILIARY_IMAGE_PATH directory exists, it echoes the contents of output files
-#            in ${AUXILIARY_IMAGE_PATH}/auxiliaryImagetLogs dir. It returns 1 if a SEVERE message
-#            is found in any of the output files in ${AUXILIARY_IMAGE_PATH}/auxiliaryImageLogs dirs.
-#            It also returns 1 if 'successfully' message is not found in the output files
-#            or if the AUXILIARY_IMAGE_PATH directory is empty. Otherwise it returns 0 (success).
+#   purpose: If the AUXILIARY_IMAGE_MOUNT_PATH directory exists, it echoes the contents of output files
+#            in ${AUXILIARY_IMAGE_MOUNT_PATH}/auxiliaryImagetLogs dir. It returns 1 if a SEVERE message
+#            is found in any of the output files in ${AUXILIARY_IMAGE_MOUNT_PATH}/auxiliaryImageLogs dirs.
+#            It also returns 1 if 'successfully' message is not found in the output files.
+#            Otherwise it returns 0 (success).
 #            See also 'auxImage.sh'.
 #            See also initAuxiliaryImage in 'utils_base.sh'.
 #
 function checkAuxiliaryImage() {
   # check auxiliary image results (if any)
-  if [ -z "$AUXILIARY_IMAGE_PATH" ]; then
+  if [ -z "$AUXILIARY_IMAGE_MOUNT_PATH" ]; then
     trace FINE "Auxiliary Image: Skipping auxiliary image checks (no auxiliary images configured)."
     return
   fi
 
-  trace FINE "Auxiliary Image: AUXILIARY_IMAGE_PATH is '$AUXILIARY_IMAGE_PATH'."
-  traceDirs $AUXILIARY_IMAGE_PATH
-  touch ${AUXILIARY_IMAGE_PATH}/testaccess.tmp
+  trace FINE "Auxiliary Image: AUXILIARY_IMAGE_MOUNT_PATH is '$AUXILIARY_IMAGE_MOUNT_PATH'."
+  traceDirs $AUXILIARY_IMAGE_MOUNT_PATH
+  touch ${AUXILIARY_IMAGE_MOUNT_PATH}/testaccess.tmp
   if [ $? -ne 0 ]; then
-    trace SEVERE "Auxiliary Image: Cannot write to the AUXILIARY_IMAGE_PATH '${AUXILIARY_IMAGE_PATH}'. " \
-                 "This path is configurable using the domain resource 'spec.auxiliaryImageVolumes.mountPath' " \
-                 "attribute." && return 1
+    trace SEVERE "Auxiliary Image: Cannot write to the AUXILIARY_IMAGE_MOUNT_PATH '${AUXILIARY_IMAGE_MOUNT_PATH}'. " \
+    && return 1
   fi
-  rm -f ${AUXILIARY_IMAGE_PATH}/testaccess.tmp || return 1
+  rm -f ${AUXILIARY_IMAGE_MOUNT_PATH}/testaccess.tmp || return 1
 
   # The container .out files embed their container name, the names will sort in the same order in which the containers ran
-  out_files=$(ls -1 $AUXILIARY_IMAGE_PATH/auxiliaryImageLogs/*.out 2>/dev/null | sort --version-sort)
+  out_files=$(ls -1 $AUXILIARY_IMAGE_MOUNT_PATH/auxiliaryImageLogs/*.out 2>/dev/null | sort --version-sort)
   if [ -z "${out_files}" ]; then
-    trace SEVERE "Auxiliary Image: Assertion failure. No files found in '$AUXILIARY_IMAGE_PATH/auxiliaryImageLogs/*.out'"
+    trace SEVERE "Auxiliary Image: Assertion failure. No files found in '$AUXILIARY_IMAGE_MOUNT_PATH/auxiliaryImageLogs/*.out'"
     return 1
   fi
   severe_found=false
@@ -734,10 +733,5 @@ function checkAuxiliaryImage() {
     trace "Auxiliary Image: End of '${out_file}' contents"
   done
   [ "${severe_found}" = "true" ] && return 1
-  [ -z "$(ls -A $AUXILIARY_IMAGE_PATH 2>/dev/null | grep -v auxiliaryImageLogs)" ] \
-    && trace SEVERE "Auxiliary Image: No files found in '$AUXILIARY_IMAGE_PATH'. " \
-     "Do your auxiliary images have files in their '$AUXILIARY_IMAGE_PATH' directories? " \
-     "This path is configurable using the domain resource 'spec.auxiliaryImageVolumes.mountPath' attribute." \
-    && return 1
   return 0
 }

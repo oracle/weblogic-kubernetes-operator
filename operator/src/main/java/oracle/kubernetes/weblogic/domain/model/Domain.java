@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -52,7 +52,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.DEFAULT_SUCCESS_THRESHOLD;
 import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME;
-import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_PATH;
+import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
 
 /**
  * Domain represents a WebLogic domain and how it will be realized in the Kubernetes cluster.
@@ -1111,7 +1111,7 @@ public class Domain implements KubernetesObject, Upgradable<Domain> {
     private void verifyMountPathForAuxiliaryImagesNotUsed(V1VolumeMount volumeMount) {
       Optional.ofNullable(getSpec().getModel()).map(m -> m.getAuxiliaryImages())
               .ifPresent(ai -> {
-                if (volumeMount.getMountPath().equals(DEFAULT_AUXILIARY_IMAGE_PATH)) {
+                if (volumeMount.getMountPath().equals(DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH)) {
                   failures.add(DomainValidationMessages.mountPathForAuxiliaryImageAlreadyInUse());
                 }
               });
