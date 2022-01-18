@@ -223,7 +223,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | Name | Type | Description |
 | --- | --- | --- |
 | `auxiliaryImages` | Array of [Auxiliary Image](#auxiliary-image) | Use an auxiliary image to automatically include directory content from additional images. This is a useful alternative for including Model in Image model files, or other types of files, in a pod without requiring modifications to the pod's base image 'domain.spec.image'. This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share the files from the additional images with the pod. |
-| `auxiliaryImageVolumeMedium` | string | The emptyDir volume withAuxiliaryImageVolumeMedium. This is an advanced setting that rarely needs to be configured. Defaults to unset, which means the volume's files are stored on the local node's file system for the life of the pod. |
+| `auxiliaryImageVolumeMedium` | string | The emptyDir volume medium. This is an advanced setting that rarely needs to be configured. Defaults to unset, which means the volume's files are stored on the local node's file system for the life of the pod. |
 | `auxiliaryImageVolumeMountPath` | string | The auxiliary image volume mount path. Defaults to '/aux'. |
 | `auxiliaryImageVolumeSizeLimit` | string | The emptyDir volume size limit. Defaults to unset. |
 | `configMap` | string | Name of a ConfigMap containing the WebLogic Deploy Tooling model. |

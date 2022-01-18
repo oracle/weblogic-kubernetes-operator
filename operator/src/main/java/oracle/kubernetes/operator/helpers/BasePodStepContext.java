@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -31,7 +31,6 @@ import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
-import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_PATH;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_TARGET_PATH;
 
 public abstract class BasePodStepContext extends StepContextBase {
@@ -119,7 +118,6 @@ public abstract class BasePodStepContext extends StepContextBase {
 
   protected List<V1EnvVar> createEnv(AuxiliaryImage auxiliaryImage, String name) {
     List<V1EnvVar> vars = new ArrayList<>();
-    addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATH, AUXILIARY_IMAGE_PATH);
     addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_TARGET_PATH, AUXILIARY_IMAGE_TARGET_PATH);
     addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME,
             auxiliaryImage.getSourceWDTInstallHome());

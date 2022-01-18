@@ -1,4 +1,4 @@
-# Copyright (c) 2021, Oracle and/or its affiliates.
+# Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # Important: Functions defined in this file can work with unknown shells,
@@ -252,35 +252,38 @@ function createFolder {
 
 #
 # initAuxiliaryImage
-#   purpose: Execute the AUXILIARY_IMAGE_COMMAND specified as part of the auxiliary image init container.
-#            If the specified AUXILIARY_IMAGE_COMMAND is empty, it logs an error message and returns.
-#            If the AUXILIARY_IMAGE_PATH directory doesn't exist or is empty, it logs error and returns.
-#            If the command execution fails, it logs error message with failure details. Otherwise it
-#            logs a success message with details.
+#   purpose: Copy the WDT installation and model files from the source locations. The WDT install source location can be specified using 
+#            'spec.configuration.model.auxiliaryImages[].sourceWDTInstallHome' and the WDT model files source location can be specified
+#            using 'spec.configuration.model.auxiliaryImages.sourceModelHome'.
+#            If the WDT install source location location is not specified then copy from the default location '/auxiliary/weblogic-deploy'.
+#            If the WDT model files location is not specified then copy from the default location '/auxiliary/models'. If the source location is 
+#            set to 'None' then skip copying the files. If the source location is at default value and there are no files at the source location then 
+#            skip copying the files. If the command execution fails, it logs error message with failure details. Otherwise it logs a success message 
+#            with details.
 #            See also 'auxImage.sh'.
 #            See also checkAuxiliaryImage in 'utils.sh'.
 #
 function initAuxiliaryImage() {
-  local skipWdtInstallCopy=false
-  local skipModelCopy=false
+  local copyWdtInstall=true
+  local copyModel=true
 
-  traceDirs before AUXILIARY_IMAGE_PATH
-  if [ "${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME}" != "None" ]; then
+  wdtInstallHome=$(echo $AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME |  tr '[a-z]' '[A-Z]')
+  if [ "${wdtInstallHome}" != "NONE" ]; then
     trace FINE "Auxiliary Image: About to copy WDT installation files from '${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME}' " \
                "in container image='$AUXILIARY_IMAGE_CONTAINER_IMAGE'. "
-    if [ "${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME}" != "${AUXILIARY_IMAGE_PATH}/weblogic-deploy" ]; then
+    if [ "${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME}" != "/auxiliary/weblogic-deploy" ]; then
       # Source WDT install home is non-default, validate that the directory exists and is non-empty.
       checkSourceWDTInstallDirExistsAndNotEmpty "${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME}" || return 1
     elif [ ! -d ${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME} ]; then
       # Source WDT install home is at the default and directory doesn't exist. Ignore.
       trace FINE "Auxiliary Image: The directory '${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME}' doesn't exist. Skip copying WDT install files."
-      skipWdtInstallCopy=true
+      copyWdtInstall=false
     elif [ -z "$(ls -A ${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME})" ]; then
       # Source WDT install home is at the default and no files found at the location. Ignore.
       trace FINE "Auxiliary Image: The directory '${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME}' is empty. Skip copying WDT install files."
-      skipWdtInstallCopy=true
+      copyWdtInstall=false
     fi
-    if [ ${skipWdtInstallCopy} == false ]; then
+    if [ "${copyWdtInstall}" == "true" ]; then
       createFolder "${AUXILIARY_IMAGE_TARGET_PATH}/weblogic-deploy" "This is the target directory for WDT installation files." || return 1
       if [ ! -z "$(ls -A ${AUXILIARY_IMAGE_TARGET_PATH}/weblogic-deploy)" ] ; then
         trace SEVERE "The target directory for WDT installation files '${AUXILIARY_IMAGE_TARGET_PATH}/weblogic-deploy' is not empty. Exiting."
@@ -294,22 +297,23 @@ function initAuxiliaryImage() {
     fi
   fi
 
-  if [ "${AUXILIARY_IMAGE_SOURCE_MODEL_HOME}" != "None" ]; then
+  wdtModelHome=$(echo $AUXILIARY_IMAGE_SOURCE_MODEL_HOME |  tr '[a-z]' '[A-Z]')
+  if [ "${wdtModelHome}" != "NONE" ]; then
     trace FINE "Auxiliary Image: About to copy WDT model files from '${AUXILIARY_IMAGE_SOURCE_MODEL_HOME}' " \
                "in container image='$AUXILIARY_IMAGE_CONTAINER_IMAGE'. "
-    if [ "${AUXILIARY_IMAGE_SOURCE_MODEL_HOME}" != "${AUXILIARY_IMAGE_PATH}/models" ]; then
+    if [ "${AUXILIARY_IMAGE_SOURCE_MODEL_HOME}" != "/auxiliary/models" ]; then
       # Source model home is non-default, validate that the directory exists and is non-empty.
       checkSourceWDTModelHomeDirExistsAndNotEmpty "${AUXILIARY_IMAGE_SOURCE_MODEL_HOME}" || return 1
     elif [ ! -d ${AUXILIARY_IMAGE_SOURCE_MODEL_HOME} ]; then
-      # Source WDT install home is at the default and directory doesn't exist. Ignore.
+      # Source WDT model home is at the default and directory doesn't exist. Ignore.
       trace FINE "Auxiliary Image: The directory '${AUXILIARY_IMAGE_SOURCE_MODEL_HOME}' doesn't exist. Skip copying WDT model files."
-      skipModelCopy=true
+      copyModel=false
     elif [ -z "$(ls -A ${AUXILIARY_IMAGE_SOURCE_MODEL_HOME})" ]; then
-      # Source WDT install home is at the default and no files found at the location. Ignore.
+      # Source WDT model home is at the default and no files found at the location. Ignore.
       trace FINE "Auxiliary Image: The directory '${AUXILIARY_IMAGE_SOURCE_MODEL_HOME}' is empty. Skip copying WDT model files."
-      skipModelCopy=true
+      copyModel=false
     fi
-    if [ ${skipModelCopy} == false ]; then
+    if [ "${copyModel}" == "true" ]; then
       createFolder "${AUXILIARY_IMAGE_TARGET_PATH}/models" "This is the target directory for WDT model files." || return 1
       cp -R ${AUXILIARY_IMAGE_SOURCE_MODEL_HOME}/* ${AUXILIARY_IMAGE_TARGET_PATH}/models 2>&1
       if [ $? -ne 0 ]; then
@@ -325,13 +329,15 @@ function initAuxiliaryImage() {
 
 function checkSourceWDTInstallDirExistsAndNotEmpty() {
   if [ ! -d $1 ] ; then
-    trace SEVERE "WDT installation home directory '$1' specified in 'spec.configuration.model.auxiliaryImages[].sourceWDTInstallHome' does not exist. " \
-      "Please make sure the 'sourcWDTInstallHome' is correctly specified and the WDT installation files are available in this directory."
+    trace SEVERE "Source WDT install home directory '$1' specified in 'spec.configuration.model.auxiliaryImages.sourceWDTInstallHome' " \
+      "for image '$AUXILIARY_IMAGE_CONTAINER_IMAGE' does not exist. Make sure the 'sourcWDTInstallHome' is correctly specified and " \
+      "the WDT installation files are available in this directory."
     return 1
   else
     if [ -z "$(ls -A $1)" ] ; then
-      trace SEVERE "WDT installation home directory '$1' specified in 'spec.configuration.model.auxiliaryImages[].sourceWDTInstallHome' is empty." \
-        "Please make sure the 'sourcWDTInstallHome' is correctly specified and the WDT installation files are available in this directory."
+      trace SEVERE "Source WDT install home directory '$1' specified in 'spec.configuration.model.auxiliaryImages.sourceWDTInstallHome' " \
+        "for image '$AUXILIARY_IMAGE_CONTAINER_IMAGE' is empty. Make sure the 'sourcWDTInstallHome' is correctly specified and " \
+        "the WDT installation files are available in this directory."
       return 1
     fi
   fi
@@ -339,13 +345,15 @@ function checkSourceWDTInstallDirExistsAndNotEmpty() {
 
 function checkSourceWDTModelHomeDirExistsAndNotEmpty() {
   if [ ! -d $1 ] ; then
-    trace SEVERE "WDT model home directory '$1' specified in 'spec.configuration.model.auxiliaryImages[].sourceModelHome' does not exist. " \
-      "Please make sure the 'sourcWDTInstallHome' is correctly specified and the WDT installation files are available in this directory."
+    trace SEVERE "Source WDT model home directory '$1' specified in 'spec.configuration.model.auxiliaryImages.sourceModelHome' for image " \
+       "'$AUXILIARY_IMAGE_CONTAINER_IMAGE' does not exist. Make sure the 'sourcModelHome' is correctly specified and the WDT model " \
+       "files are available in this directory."
     return 1
   else
     if [ -z "$(ls -A $1)" ] ; then
-      trace SEVERE "WDT installation directory '$1' specified in 'spec.configuration.model.auxiliaryImages[].sourceModelHome' is empty." \
-        "Please make sure the 'sourceModelHome' is correctly specified and the WDT model files are available in this directory."
+      trace SEVERE "Source WDT installation directory '$1' specified in 'spec.configuration.model.auxiliaryImages.sourceModelHome' " \
+        "for image '$AUXILIARY_IMAGE_CONTAINER_IMAGE' is empty. Make sure the 'sourceModelHome' is correctly specified and the WDT " \
+        "model files are available in this directory."
       return 1
     fi
   fi
