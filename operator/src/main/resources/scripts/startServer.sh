@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
@@ -32,7 +32,7 @@ exportInstallHomes
 # Define helper fn to copy a file only if src & tgt differ
 #
 
-function copyIfChanged() {
+copyIfChanged() {
   [ ! -f "${1?}" ] && trace SEVERE "File '$1' not found." && exit 1
   if [ ! -f "${2?}" ] || [ ! -z "`diff $1 $2 2>&1`" ]; then
     trace "Copying '$1' to '$2'."
@@ -56,7 +56,7 @@ checkAuxiliaryImage || exitOrLoop
 # Define function to start WebLogic
 #
 
-function startWLS() {
+startWLS() {
   #
   # Start NM
   #
@@ -116,7 +116,7 @@ function startWLS() {
   fi
 }
 
-function mockWLS() {
+mockWLS() {
 
   trace "Mocking WebLogic Server"
 
@@ -136,7 +136,7 @@ function mockWLS() {
 # This method is called during boot, see 'copySitCfgWhileRunning' in 'livenessProbe.sh'
 # for the similar method that is periodically called while the server is running.
 
-function copySitCfgWhileBooting() {
+copySitCfgWhileBooting() {
   # Helper fn to copy sit cfg xml files to the WL server's domain home.
   #   - params $1/$2/$3 == 'src_dir tgt_dir fil_prefix'
   #   - $src_dir files are assumed to start with $fil_prefix and end with .xml
