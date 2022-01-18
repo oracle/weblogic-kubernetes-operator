@@ -1,17 +1,21 @@
 ---
-title: "WebLogic Server images"
+title: "Domain images"
 date: 2019-02-23T16:45:55-05:00
 weight: 6
-description: "Create or obtain WebLogic Server images."
+description: "Create or obtain images for WebLogic Server or Fusion Middleware Infrastructure deployments."
 ---
 
 #### Contents
 
 - [Overview](#overview)
-- [Understanding Oracle Container Registry WebLogic Server images](#understanding-oracle-container-registry-weblogic-server-images)
-- [Obtain WebLogic Server images from the Oracle Container Registry](#obtain-weblogic-server-images-from-the-oracle-container-registry)
+- [Understand Oracle Container Registry images](#understand-oracle-container-registry-images)
+  - [Compare General Availability to Critical Patch Updates images](#compare-general-availability-to-critical-patch-updates-images)
+  - [WebLogic distribution installer type](#weblogic-distribution-installer-type)
+  - [Compare "dated" and "undated" images](#compare-dated-and-undated-images)
+  - [Example OCR image names](#example-ocr-image-names)
+- [Obtain images from the Oracle Container Registry](#obtain-images-from-the-oracle-container-registry)
 - [Set up Kubernetes to access a container registry](#set-up-kubernetes-to-access-a-container-registry)
-- [Ensuring you are using recently patched images](#ensuring-you-are-using-recently-patched-images)
+- [Ensure you are using recently patched images](#ensure-you-are-using-recently-patched-images)
 - [Create a custom image with patches applied](#create-a-custom-image-with-patches-applied)
 - [Create a custom image with your domain inside the image](#create-a-custom-image-with-your-domain-inside-the-image)
 - [Create a custom image with your model inside the image](#create-a-custom-image-with-your-model-inside-the-image)
@@ -23,12 +27,14 @@ description: "Create or obtain WebLogic Server images."
 
 #### Overview
 
-You will need WebLogic Server or Fussion Middleware Infrastructure
+You will need WebLogic Server or Fusion Middleware Infrastructure
 images to run your WebLogic domains in Kubernetes,
 where the image location is specified in the domain resource's `domain.spec.image` attribute.
 Oracle recommends obtaining such images
 from the Oracle Container Registry (OCR)
 or creating custom images using the WebLogic Image Tool.
+Model in Image domains may additionally leverage
+[auxiliary images]({{< relref "/userguide/managing-domains/model-in-image/auxiliary-images.md" >}}).
 
 There are three main options available for obtaining or creating such images,
 where the option depends on your
@@ -40,8 +46,8 @@ where the option depends on your
     * Model in Image domains that leverage
       [auxiliary images]({{< relref "/userguide/managing-domains/model-in-image/auxiliary-images.md" >}}).
   * See:
-    * [Understanding Oracle Container Registry WebLogic Server images](#understanding-oracle-container-registry-weblogic-server-images)
-    * [Obtain WebLogic Server images from the Oracle Container Registry](#obtain-weblogic-server-images-from-the-oracle-container-registry)
+    * [Understand Oracle Container Registry images](#understand-oracle-container-registry-images)
+    * [Obtain images from the Oracle Container Registry](#obtain-images-from-the-oracle-container-registry)
     * [Create a custom image with patches applied](#create-a-custom-image-with-patches-applied)
 
 * Create an image which contains both the WebLogic Server binaries
@@ -56,33 +62,43 @@ where the option depends on your
     are supplied in the image.
   * See [Create a custom image with your model inside the image](#create-a-custom-image-with-your-model-inside-the-image).
 
-#### Understanding Oracle Container Registry WebLogic Server images
+#### Understand Oracle Container Registry images
 
-TBD Tom update to reconcile same wording as in environments
-
-{{% notice warning %}}
-Oracle strongly recommends using images with up to date patches.
-See [Ensuring you are using recently patched images](#ensuring-you-are-using-recently-patched-images).
+{{% notice note %}}
+All of the OCR images that are described in this section are built using
+the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) (WIT).
+Customers can use WIT to build their own WebLogic Server or Fusion Middleware Infrastructure images
+(with the latest Oracle Linux images, Java updates, and WebLogic Server patches),
+apply one-off patches to existing OCR images,
+or overlay their own files and applications on top of an OCR image.
+See [Contents](#contents) for information about using this tool
+to create custom WebLogic Server or Fusion Middleware Infrastructure images for the WebLogic Kubernetes Operator.
 {{% /notice %}}
 
-TBD Monica:
-- Is it confusing to say "WebLogic Server images" when this same applies to infra images?
-- Derek thinks this is probably OK, but recommends asking Monica.
-- Monica to Tom:
-  - Derek is right, but it is sometimes better to say "WebLogic Server and Fusion Middleware Infrastructure images"
-    because they have separate sets of images and installers.
-  - Please add an introductory discussion that covers the following:
-    - WebLogic Server images have a pre-installed Oracle Home
-      with Oracle WebLogic Server and Coherence
-    - Fusion Middleware Infrastructure images
-      have a pre-installed Oracle Home with Oracle WebLogic Server with Java Required Files (JRF) and Coherence
-      It contains the same binaries as those installed by the WebLogic generic installer
-      and adds Fusion Middleware Control and Java Required Files (JRF)
+The Oracle Container Registry (OCR) is
+located at [https://container-registry.oracle.com/](https://container-registry.oracle.com/)
+and contains images for licensed commercial Oracle software products
+that you may use in your enterprise for deployment using Docker.
 
-The [Oracle Container Registry](https://container-registry.oracle.com/) (OCR)
-contains images for licensed commercial Oracle software products
-that you may use in your enterprise.
-OCR supplies two types of WebLogic Server or Fusion Middleware Infrastructure images:
+OCR supplies _WebLogic Server images_ which have a pre-installed Oracle Home
+with Oracle WebLogic Server and Coherence.
+OCR also supplies _Fusion Middleware Infrastructure images_
+which  have a pre-installed Oracle Home with Oracle WebLogic Server,
+Coherence, Fusion Middleware Control, and Java Required Files (JRF).
+
+##### Compare General Availability to Critical Patch Updates images
+
+{{% notice warning %}}
+The latest Oracle Container Registry (OCR) **GA images**
+include the latest security patches for Oracle Linux and Java,
+and do _not_ include the latest security patches for WebLogic Server.
+Oracle strongly recommends using images with the latest security patches,
+such as OCR Critical Patch Updates (CPU) images or custom generated images.
+See [Ensure you are using recently patched images]({{< relref "/userguide/base-images/_index.md#ensure-you-are-using-recently-patched-images" >}}).
+{{% /notice %}}
+
+OCR images WebLogic Server or Fusion Middleware Infrastructure can be 
+either General Availability (GA) images or Critical Patch Updates (CPU) images:
 
 - General Availability (GA) images.
   - Located in OCR repositories "middleware/weblogic" and "middleware/fmw-infrastructure".
@@ -93,69 +109,61 @@ OCR supplies two types of WebLogic Server or Fusion Middleware Infrastructure im
     which include, but are not limited to:
     - Must only be used for the purpose of developing, testing, prototyping, and demonstrating applications.
     - Must _not_ be used for any data processing, business, commercial, or production purposes.
-  - Examples:
-    - `container-registry.oracle.com/middleware/weblogic:12.2.1.4-YYMMDD`
-      - Includes JDK 8, Oracle Linux 7, and the GA Oracle WebLogic Server 12.2.1.4 generic distribution for the given date.
-    - `container-registry.oracle.com/middleware/weblogic:12.2.1.4`
-      - Includes latest JDK 8, latest Oracle Linux 7, and the GA Oracle WebLogic Server 12.2.1.4 generic distribution.
 
 - Critical Patch Updates (CPU) images.
   - Located in OCR repositories "middleware/weblogic_cpu" and "middleware/fmw-infrastructure_cpu".
   - Updated quarterly (every CPU cycle).
   - Includes critical security fixes for Oracle Linux, Java, and Oracle WebLogic Server and Coherence.
   - Suitable for production use.
-  - Examples:
-    - `container-registry.oracle.com/middleware/weblogic_cpu:12.2.1.4-generic-jdk8-ol7-211124`
-      - Includes JDK 8u311, Oracle Linux 7u9, and the Oracle WebLogic Server 12.2.1.4 generic distribution October 2021 CPU.
-    - `container-registry.oracle.com/middleware/weblogic_cpu:12.2.1.4-generic-jdk8-ol7`
-      - Includes latest JDK 8, latest Oracle Linux 7, and GA Oracle WebLogic Server 12.2.1.4 generic distribution CPU.
 
-You may have noticed that the image tags may include keywords like `generic`, `slim`, etc.
+##### WebLogic distribution installer type
+
+You may have noticed that OCR image tags may include keywords like `generic`, `slim`, etc.
 This reflects the type of WebLogic distribution installed in the image's Oracle Home.
 There are multiple types,
 and the type usually can be determined by examining the image name and tag:
 
 - `.../weblogic...:...generic...` or `.../weblogic...:...`:
-  - The WebLogic generic image is supported for development and production deployment
-    of WebLogic configurations using Docker.
+  - The _WebLogic generic image_.
   - Contains the same binaries as those installed by the WebLogic generic installer.
   - Note that if an image name does not have a string that specifies its WebLogic installer type
     (does _not_ embed the keyword `slim`, `dev`, or `generic`),
     then you can assume it is a WebLogic generic image.
 
 - `.../weblogic...:...slim...`:
-  - The WebLogic slim image is supported for development and production deployment
-    of WebLogic configurations using Docker.
+  - The _WebLogic slim image_.
   - In order to reduce image size,
-    it contains a subset of the binaries included in the WebLogic generic image:
+    contains a subset of the binaries included in the WebLogic generic image:
     - The WebLogic Administration Console, WebLogic examples, WebLogic clients, Maven plug-ins,
-      and Java DB have been removed. (Note that you can use the
-      open source WebLogic Remote Console (TBDLink)
-      as an alternative for the WebLogic Administration Console).
+      and Java DB have been removed.
     - All binaries that remain included are
       the same as those in the WebLogic generic image.
-  - If there are requirements to monitor the WebLogic configuration,
-    they should be addressed using Prometheus and Grafana, or other alternatives.
+  - If there are requirements to monitor the WebLogic configuration, then:
+    - They should be addressed using Prometheus and Grafana, or other alternatives.
+    - Note that you can use the open source
+      [WebLogic Remote Console]({{< relref "/userguide/managing-domains/accessing-the-domain/admin-console.md" >}})
+      as an alternative for the WebLogic Administration Console.
 
 - `.../weblogic...:...dev...`:
-  - The WebLogic developer image is supported for development
-    of WebLogic applications in Docker containers.
-  - In order to reduce image size, it contains a subset
-    of the binaries included in the WebLogic generic image:
+  - The _WebLogic developer image_.
+  - In order to reduce image size,
+    contains a subset of the binaries included in the WebLogic generic image:
     - WebLogic examples and Console help files have been removed
       (the WebLogic Administration Console is still included).
     - All binaries that remain included are the same as those in the WebLogic generic image.
   - This image type is primarily intended to provide a Docker image
     that is consistent with the WebLogic "quick installers" intended for development only.
-    Production WebLogic domains should use the WebLogic generic or WebLogic slim images.
+    Production WebLogic domains should use the WebLogic generic, WebLogic slim,
+    or Fusion Middleware Infrastructure images.
 
 - `.../fmw-infrastructure...:...`:
-  - The Fusion Middleware (FMW) Infrastructure image is supported for
-    development and production deployment of FMW configurations using Docker.
-  - It contains the same binaries as those installed by the WebLogic generic installer
+  - The _Fusion Middleware (FMW) Infrastructure image_.
+  - Contains the same binaries as those installed by the WebLogic generic installer
     and adds Fusion Middleware Control and Java Required Files (JRF)
 
-You may also have noticed there are "dated" and "undated" OCR images
+##### Compare "dated" and "undated" images
+
+OCR images are "dated" or "undated"
 depending on whether the name tags include an embedded date stamp
 of the form `YYMMDD`.
 Unlike dated images with an embedded date stamp,
@@ -165,24 +173,27 @@ the latest available versions of their GA or CPU equivalents.
 _Therefore they change over time in the repository
 even though their name and tag remain the same._
 
-{{% notice note %}}
-All of the OCR images that are described in this section are built using
-the [WebLogic Image Tool](https://github.com/oracle/weblogic-image-tool) (WIT).
-Customers can use WIT to build their own WebLogic Server images
-(with the latest Oracle Linux images, Java updates, and WebLogic Server patches),
-apply one-off patches to existing OCR images,
-or overlay their own files and applications on top of an OCR image.
-See [Contents](#contents) for information about using this tool
-to create custom WebLogic Server images for the WebLogic Kubernetes Operator.
-{{% /notice %}}
+##### Example OCR image names
 
-#### Obtain WebLogic Server images from the Oracle Container Registry
+Here are some example WebLogic Server Oracle Container Repository (OCR) images,
+where the names are abbreviated to omit their `container-registry.oracle.com/middleware/` prefix:
 
-TBD Tom - use warning wording that Monica and I agreed on in "environments":
+| Abbreviated Name | Descripton |
+|-|-|
+|`weblogic:12.2.1.4`|GA image with latest JDK 8, latest Oracle Linux 7, and the GA Oracle WebLogic Server 12.2.1.4 generic distribution.|
+|`weblogic:12.2.1.4-YYMMDD`|GA image with JDK 8, Oracle Linux 7, and the GA Oracle WebLogic Server 12.2.1.4 generic distribution for the given date.|
+|`weblogic_cpu:12.2.1.4-generic-jdk8-ol7`|CPU image with latest JDK 8, latest Oracle Linux 7, and GA Oracle WebLogic Server 12.2.1.4 generic distribution CPU.|
+|`weblogic_cpu:12.2.1.4-generic-jdk8-ol7-211124`|CPU image with JDK 8u311, Oracle Linux 7u9, and the Oracle WebLogic Server 12.2.1.4 generic distribution October 2021 CPU.|
+
+#### Obtain images from the Oracle Container Registry
 
 {{% notice warning %}}
-Oracle strongly recommends using images with up to date patches.
-See [Ensuring you are using recently patched images](#ensuring-you-are-using-recently-patched-images).
+The latest Oracle Container Registry (OCR) **GA images**
+include the latest security patches for Oracle Linux and Java,
+and do _not_ include the latest security patches for WebLogic Server.
+Oracle strongly recommends using images with the latest security patches,
+such as OCR Critical Patch Updates (CPU) images or custom generated images.
+See [Ensure you are using recently patched images]({{< relref "/userguide/base-images/_index.md#ensure-you-are-using-recently-patched-images" >}}).
 {{% /notice %}}
 
 The Oracle Container Registry (OCR) contains images for licensed commercial Oracle software products
@@ -196,7 +207,8 @@ you can pull images of the software from OCR using the standard `docker pull` co
 
 For example, to use docker to pull an image from OCR:
 
-1. Accept the Oracle Standard Terms and Restrictions for the Oracle software images that you intend to deploy:
+1. Accept the Oracle Standard Terms and Restrictions
+   for the Oracle software images that you intend to deploy:
 
    - In a web browser, navigate to
      [https://container-registry.oracle.com](https://container-registry.oracle.com)
@@ -205,20 +217,31 @@ For example, to use docker to pull an image from OCR:
      then at the top of the page, click the Sign In link to create them.
 
    - Use the web interface to accept the Oracle Standard Terms and Restrictions
-     for the Oracle software images that you intend to deploy.
-     For example, click the "Middleware" button, click the "weblogic_cpu" link,
-     and follow the prompts to sign in with your SSO and accept the terms.
+     for the Oracle software images that you intend to deploy:
 
-     Your acceptance of these terms is stored in a database that links the software images
-     to your Oracle Single Sign-On login credentials.
+     1. Click the "Middleware" button.
 
-   **Note**:
-   This step is only needed once for each image name (not the tag level).
+     1. Click one of "weblogic", "weblogic_cpu", "fmw-infrastructure_cpu", etc,
+        depending in your [image type](#understand-oracle-container-registry-images).
+
+        For example: If you are following the operator quick start sample
+        (which uses "weblogic" GA images), then click the "weblogic" link.
+
+     1. Follow the prompts to sign in with your SSO and accept the terms.
+
+        Your acceptance of these terms is stored in a database
+        that links the software images
+        to your Oracle Single Sign-On login credentials.
+        This database is automatically checked when
+        you use docker pull to obtain images from OCR.
+
+   **Note**: This step is only needed once for each image name (not the tag level).
    For example, if you accept the terms for the "weblogic_cpu"
    link in the "middleware" repository, then
    the acceptance applies to all versions of WebLogic CPU images.
 
-1. Log docker in to the Oracle Container Registry:
+1. Log docker in to the Oracle Container Registry. For example,
+   the following command will prompt for your SSO credentials:
 
    ```shell
    $ docker login container-registry.oracle.com
@@ -229,6 +252,10 @@ For example, to use docker to pull an image from OCR:
    ```shell
    $ docker pull container-registry.oracle.com/middleware/weblogic_cpu:12.2.1.4-generic-jdk8-ol8
    ```
+
+   **Note**: If you are following the quick start sample
+   (which uses "weblogic" GA images with version 12.2.1.4),
+   then pull `container-registry.oracle.com/middleware/weblogic:12.2.1.4`).
 
 1. Use docker to display an inventory of your local image cache:
 
@@ -252,20 +279,27 @@ For example, to use docker to pull an image from OCR:
        sh -c '$ORACLE_HOME/OPatch/opatch lspatches'
      ```
 
-   * If you have images that were generated using the WebLogic Image Tool, including OCR images,
+   * If you have images that were generated using the WebLogic Image Tool (WIT), including OCR images,
      and you have installed the tool, then you can obtain useful version and patch information
-     using the inspect command (TBDLink). For example:
+     using the
+     [WIT inspect command](https://oracle.github.io/weblogic-image-tool/userguide/tools/inspect-image/).
+     For example:
      ```
      $ imagetool inspect \
        --image=container-registry.oracle.com/middleware/weblogic_cpu:12.2.1.4-generic-jdk8-ol8 \
        --patches
      ```
-     TBD Tom test above command
-    
+
+   **Note**: If you are following the quick start sample
+   (which uses "weblogic" GA images with version 12.2.1.4),
+   then replace the image references
+   below with `container-registry.oracle.com/middleware/weblogic:12.2.1.4`).
+
 {{% notice note %}}
 The operator requires WebLogic Server 12.2.1.3.0 or later.
-Note that WebLogic Server 12.2.1.3 images must contain patch 29135930,
-which is included in OCR 12.2.1.3 GA and CPU images.
+When using 12.2.1.3 images, the operator requires that
+the images contain patches 29135930 and 27117282;
+these patches are included in OCR 12.2.1.3 GA and CPU images.
 {{% /notice %}}
 
 #### Set up Kubernetes to access a container registry
@@ -301,15 +335,15 @@ such as the Oracle Container Registry (OCR), then:
   you must use the web interface to accept the Oracle Standard Terms and Restrictions
   for the Oracle software images that you intend to deploy.
   You only need to do this once for a particular image.
-  See [Obtain WebLogic Server images from the Oracle Container Registry](#obtain-weblogic-server-images-from-the-oracle-container-registry).
+  See [Obtain images from the Oracle Container Registry](#obtain-images-from-the-oracle-container-registry).
 
 Alternatively, it may be preferable to manually pull an image in advance
 on each Kubernetes worker node in you Kubernetes cluster,
-see [Obtain WebLogic Server images from the Oracle Container Registry](#obtain-weblogic-server-images-from-the-oracle-container-registry).
+see [Obtain images from the Oracle Container Registry](#obtain-images-from-the-oracle-container-registry).
 If you choose this approach, then a Kubernetes secret is not required
 and your domain resource `domain.spec.imagePullPolicy` must be set to `Never` or `IfNotPresent`.
 
-#### Ensuring you are using recently patched images
+#### Ensure you are using recently patched images
 
 Please review the following guidance
 to ensure that you are using recently patched images:
@@ -318,7 +352,7 @@ to ensure that you are using recently patched images:
   Oracle requires using
   fully patched custom images that you generate yourself,
   or Critical Patch Update (CPU) images from the
-  [Oracle Container Registry](https://container-registry.oracle.com/) (OCR).
+  Oracle Container Registry (OCR).
   Such images contain `_cpu` in their image name,
   for example `container-registry.oracle.com/middleware/weblogic_cpu:TAG`.
 
@@ -338,15 +372,14 @@ to ensure that you are using recently patched images:
       and having a domain resource `spec.imagePullPolicy`
       of `Always` when a pod starts.
 
-See the [Overview](#overview) for information about OCR and custom images.
+See the [Overview](#overview) for general information about OCR and custom images,
+and [Understand Oracle Container Registry images](#understand-oracle-container-registry-images)
+for detailed information about the differences between GA and CPU images.
 
-See
-[supported environments]({{< relref "/userguide/platforms/environments.md" >}})
+See [supported environments]({{< relref "/userguide/platforms/environments.md" >}})
 for information about licensed access to WebLogic patches and CPU images.
 
 #### Create a custom image with patches applied
-
-TBD Create in title --> Generate
 
 You can use the
 [WebLogic Image Tool](https://oracle.github.io/weblogic-image-tool/) (WIT)
@@ -363,7 +396,7 @@ with patches applied from a base OS image:
     See also [Create a custom image with your domain inside the image](#create-a-custom-image-with-your-domain-inside-the-image).
 
     **Important:**
-    This command is not suitable for updating an existing domain home
+    This command is _not_ suitable for updating an existing domain home
     in existing Domain in Image images
     when the update is intended for a running domain. Use `rebase` instead, 
     or shutdown the running domain entirely before applying the new image.
@@ -435,7 +468,8 @@ a base WebLogic Server image:
    [Oracle Software Delivery Cloud (OSDC)](https://edelivery.oracle.com/osdc/faces/Home.jspx).
 
    Note that the WebLogic Server installers may not be fully patched.
-   You will use the "--patches" or "--recommendedPatches" Image Tool options in a later step to add patches.
+   You will use the "--patches" or "--recommendedPatches" Image Tool options
+   in a later step to add patches.
 
 1. Add the installers to your WIT cache using the
    [WIT `cache` command](https://oracle.github.io/weblogic-image-tool/userguide/tools/cache/).
@@ -519,7 +553,7 @@ a base WebLogic Server image:
   the `wlsslim` type to the WLS slim install,
   and the `wlsdev` type to the WLS developer install.
   See
-  [Understanding Oracle Container Registry WebLogic Server images](#understanding-oracle-container-registry-weblogic-server-images)
+  [Understand Oracle Container Registry images](#understand-oracle-container-registry-images)
   for a discussion of each install type.
 - The `--recommendedPatches` parameter finds and applies
   the latest PatchSet Update (PSU)
@@ -557,12 +591,13 @@ In these samples, you will see a reference to a "base" or `--fromImage` image.
 You should use an image with the mandatory patches installed as this base image.
 This image could be an OCR image or a custom image.
 See
-[Obtain WebLogic Server images from the Oracle Container Registry](#obtain-weblogic-server-images-from-the-oracle-container-registry)
+[Obtain images from the Oracle Container Registry](#obtain-images-from-the-oracle-container-registry)
 and
 [Create a custom image with patches applied](#create-a-custom-image-with-patches-applied)).
 
 TBD Tom These samples use the WIT `update` command. Explain when to use `rebase` or `create` instead, and how...
 
+TBD sprinkly this warning every where applicable, or centralize it:
 {{% notice warning %}}
 Oracle strongly recommends storing a domain image as private in the registry.
 A container image that contains a WebLogic domain home has sensitive information
@@ -579,7 +614,7 @@ TBD Tom mention auxiliary image alternative...
 In these samples, you will see a reference to a "base" or `--fromImage` image.
 This image could be an OCR image or a custom image.
 See
-[Obtain WebLogic Server images from the Oracle Container Registry](#obtain-weblogic-server-images-from-the-oracle-container-registry)
+[Obtain images from the Oracle Container Registry](#obtain-images-from-the-oracle-container-registry)
 and
 [Create a custom image with patches applied](#create-a-custom-image-with-patches-applied)).
 
@@ -608,6 +643,7 @@ see [CI/CD]({{< relref "/userguide/cicd/_index.md" >}}).
 
 TBD Tom The following sections are repetitive/verbose. Consolidate/remove
 plus replace with bullets. Plus move 'rebase' details to earlier sections.
+Finally, update the overview to mention this section.
 
 ##### Domain in PV
 
@@ -732,3 +768,26 @@ TBD Derek Tom Rosemary:
      an image update that has not been tested).
   Monica: We can do this in detail in a future pull.
 
+TBD
+- Tom use the following exact wording everywhere we reference GA images (samples, etc)
+- Tom word-smith with Derek & Monica to make this gentler (more suitable)
+  for including in quick start, etc.
+  - For samples that mention a specific WebLogic image:
+    - The `container-registry.oracle.com/middleware/weblogic:12.2.1.4` 
+      Oracle Container Registry (OCR) image is a _GA image_
+      which includes the latest security patches for Oracle Linux and Java,
+      _and does not include the latest security patches for WebLogic Server_.
+      GA images are intended for single desktop demonstration and development purposes. 
+      For all other uses, Oracle strongly recommends using images with the latest security patches,
+      such as OCR Critical Patch Updates (CPU) images or custom generated images.
+      See [Ensure you are using recently patched images]({{< relref "/userguide/base-images/_index.md#ensure-you-are-using-recently-patched-images" >}}).
+      - (Replace WebLogic Server with Fusion Middleware Infrastructure for FMW Infra images.)
+  - For the generic case:
+    - The latest Oracle Container Registry (OCR) _GA images_
+      include the latest security patches for Oracle Linux and Java,
+      _and do not_ include the latest security patches for WebLogic Server,
+      or, when applicable, for Fusion Middleware Infrastructure_.
+      Oracle strongly recommends using images with the latest security patches,
+      such as OCR Critical Patch Updates (CPU) images or custom generated images.
+      See [Ensure you are using recently patched images]({{< relref "/userguide/base-images/_index.md#ensure-you-are-using-recently-patched-images" >}}).
+      

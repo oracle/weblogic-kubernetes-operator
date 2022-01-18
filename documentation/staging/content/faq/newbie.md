@@ -15,6 +15,8 @@ The WebLogic Kubernetes Operator (the “operator”) is open source and free, l
 
 WebLogic Server is not open source. Licensing is required for each running WebLogic Server instance, just as with any deployment of WebLogic Server. Licensing is free for a single developer desktop development environment.
 
+For more information, see [Pricing and licensing]({{< relref "/userguide/platforms/environments.md#pricing-and-licensing" >}}).
+
 #### How can I get help?
 
 You are welcome to get in touch with us to ask questions, provide feedback, or give suggestions.
@@ -115,7 +117,7 @@ For more information, see the [Domain life cycle]({{< relref "/userguide/managin
 
 **Q:** Patching: rolling upgrades, handling of one-off-patches and overlays, CPUs, and such.
 
-**A:** For relevant information, see [WebLogic Server images]({{< relref "/userguide/base-images/_index.md" >}}), [Rolling restarts]({{< relref "/userguide/managing-domains/domain-lifecycle/restarting#overview" >}}), and [CI/CD considerations]({{< relref "/userguide/cicd/_index.md" >}}).
+**A:** For relevant information, see [Domain images]({{< relref "/userguide/base-images/_index.md" >}}), [Rolling restarts]({{< relref "/userguide/managing-domains/domain-lifecycle/restarting#overview" >}}), and [CI/CD considerations]({{< relref "/userguide/cicd/_index.md" >}}).
 
 ***
 

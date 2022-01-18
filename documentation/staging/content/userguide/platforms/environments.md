@@ -8,13 +8,6 @@ weight: 3
 ### Contents
 
 - [Supported environments](#supported-environments)
-- [Kubernetes, WebLogic Server, and operating system prerequisites](#kubernetes-weblogic-server-and-operating-system-prerequisites)
-- [Pricing and licensing](#pricing-and-licensing)
-  - [WebLogic Kubernetes Operator](#weblogic-kubernetes-operator)
-  - [WebLogic Server](#weblogic-server)
-  - [Oracle Linux](#oracle-linux)
-  - [Oracle Java](#oracle-java)
-  - [WebLogic Server Images](#weblogic-server-images)
 - [Important notes about specific environments](#important-notes-about-specific-environments)
   - [Oracle Cloud Infrastructure (OCI)](#oracle-cloud-infrastructure-oci)
   - [Oracle Linux Cloud Native Environment (OLCNE)](#oracle-linux-cloud-native-environment-olcne)
@@ -24,6 +17,13 @@ weight: 3
   - [OpenShift](#openshift)
   - [WebLogic Server running in Kubernetes connecting to an Oracle Database also running in Kubernetes](#weblogic-server-running-in-kubernetes-connecting-to-an-oracle-database-also-running-in-kubernetes)
   - [Development-focused Kubernetes distributions](#development-focused-kubernetes-distributions)
+- [Pricing and licensing](#pricing-and-licensing)
+  - [WebLogic Kubernetes Operator](#weblogic-kubernetes-operator)
+  - [WebLogic Server](#weblogic-server)
+  - [Oracle Linux](#oracle-linux)
+  - [Oracle Java](#oracle-java)
+  - [WebLogic Server or Fusion Middleware Infrastructure Images](#weblogic-server-or-fusion-middleware-infrastructure-images)
+  - [Additional references](#additional-references)
 
 ### Supported environments
 
@@ -54,112 +54,17 @@ deploy the WebLogic Server and the operator for you. These include:
 
 [Development-focused Kubernetes distributions](#development-focused-kubernetes-distributions) are also supported.
 
-For detailed virtualization and cloud licensing descriptions, see:
-- [Supported Virtualization Technologies for Oracle Fusion Middleware](https://www.oracle.com/middleware/technologies/ias/oracleas-supported-virtualization.html) (search for keyword 'Kubernetes')
-- [Running and Licensing Oracle Programs in Containers and Kubernetes](https://www.oracle.com/a/tech/docs/running-and-licensing-programs-in-containers-and-kubernetes.pdf)
+**Notes:**
 
-Some supported environments have additional help or samples that are specific
+- **Important:** Some supported environments have additional help or samples that are specific
 to the operator, or are subject to limitations and restrictions: see
 [Important notes about specific environments](#important-notes-about-specific-environments).
 
-### Kubernetes, WebLogic Server, and operating system prerequisites
+- For detailed virtualization licensing, cloud licensing, and support
+descriptions, see [Pricing and licensing](#pricing-and-licensing).
 
-The operator is subject to Kubernetes, WebLogic Server, and operating system versioning prerequisites,
+- The operator is subject to Kubernetes, WebLogic Server, and operating system versioning prerequisites,
 see [Operator prerequisites]({{< relref "/userguide/prerequisites/introduction.md" >}}).
-
-### Pricing and licensing
-
-The WebLogic Kubernetes Operator and Oracle Linux are open source and free;
-WebLogic Server requires licenses in any environment.
-All WebLogic Server licenses are suitable for deploying WebLogic to containers and Kubernetes,
-including free single desktop Oracle Technology Network (OTN) developer licenses.
-See the following sections for more detailed information.
-
-#### WebLogic Kubernetes Operator
-
-The WebLogic Kubernetes Operator (the "operator") is open source and free,
-licensed under the Universal Permissive license (UPL), Version 1.0.
-For support details, see [Get help]({{< relref "userguide/introduction/get-help.md" >}}).
-
-#### WebLogic Server
-
-WebLogic Server is not open source:
-
-- Licensing is required to run WebLogic Server instances in Kubernetes,
-  just as with any deployment of WebLogic Server.
-
-- Licensing is free for a single developer desktop development environment
-  when using an Oracle Technology Network (OTN) developer license.
-
-For more information, see the
-[Fusion Middleware Licensing Information User Manual - Application Server Products](https://docs.oracle.com/en/middleware/fusion-middleware/fmwlc/application-server-products-new-structure.html)
-and the following sections.
-
-#### Oracle Linux
-
-Oracle Linux is under open source license and is completely free to download and use.
-
-Note that WebLogic Server licenses that include support
-do _not_ include customer entitlements
-for direct access to Oracle Linux support or Unbreakable Linux Network
-(to directly access the standalone Oracle Linux patches).
-The latest Oracle Linux patches are included with the latest [WebLogic Server images](#weblogic-server-images).
-
-#### Oracle Java
-
-Oracle support for Java is included with
-WebLogic Server licenses
-when Java is used for running WebLogic and Coherence servers or clients.
-
-For more information, see the
-[Fusion Middleware Licensing Information User Manual - Application Server Products](https://docs.oracle.com/en/middleware/fusion-middleware/fmwlc/application-server-products-new-structure.html).
-
-#### WebLogic Server images
-
-Oracle provides two different types of images:
-
-- _Critical Patch Update (CPU) WebLogic Server images:_
-  images with the latest WebLogic Server and Coherence PSU
-  and other fixes released by the
-  Critical Patch Update (CPU) program.
-  CPU images are intended for production use.
-
-- _General Availability (GA) WebLogic Server images:_
-  images which are _not_ intended for production use
-  and do _not_ include WebLogic or Coherence PSUs.
-
-All WebLogic Server licenses,
-including free Oracle Technology Network (OTN) developer licenses,
-include access to the latest General Availability (GA) WebLogic Server images which bundle Java SE.
-
-Customers with access to WebLogic Server support additionally have:
-
-  - Access to Critical Patch Update (CPU) WebLogic Server images which bundle Java SE.
-  - Access to WebLogic Server patches.
-  - Oracle support for WebLogic Server images.
-  - Oracle support for the WebLogic Kubernetes ToolKit. 
-
-You can use the free and open source WebLogic Image Tool
-to create new or updated (patched) WebLogic images.
-See My Oracle Support (MOS)
-[Doc ID 2790123.1](https://support.oracle.com/epmos/faces/DocContentDisplay?id=2790123.1)
-for community and Oracle support policies
-for the WebLogic Kubernetes ToolKit.
-
-See [WebLogic Server images]({{< relref "/userguide/base-images/_index.md" >}})
-for information about obtaining WebLogic Server images,
-developer and production licensing details,
-the different types of images,
-creating custom images,
-and patching images.
-
-TBD Tom use this exact wording everywhere we have this warning
-{{% notice warning %}}
-The latest **GA images** include the latest security patches for Oracle Linux and Java,
-and do _not_ include the latest security patches for WebLogic Server.
-Oracle strongly recommends using images with the latest security patches.
-See [Ensuring you are using recently patched images]({{< relref "/userguide/base-images/_index.md#ensuring-you-are-using-recently-patched-images" >}}).
-{{% /notice %}}
 
 ### Important notes about specific environments
 
@@ -218,7 +123,7 @@ There are three different approaches for deploying the operator to Microsoft Azu
 
 [Azure Kubernetes Service (AKS)](https://docs.microsoft.com/en-us/azure/aks/) is a hosted Kubernetes environment.  The WebLogic Kubernetes
 Operator, Oracle WebLogic Server 12c, and Oracle Fusion Middleware Infrastructure 12c are fully supported and certified on Azure Kubernetes Service (as per the documents
-referenced in [Supported environments](#supported-environments)). In this environment, it is the customer's responsibility to install the operator and supply WebLogic Server images.
+referenced in [Supported environments](#supported-environments)). In this environment, it is the customer's responsibility to install the operator and supply WebLogic Server or Fusion Middleware Infrastructure images.
 
 AKS support and limitations:
 
@@ -233,6 +138,8 @@ AKS support and limitations:
 See also the [Azure Kubernetes Service sample]({{<relref "/samples/azure-kubernetes-service/_index.md">}}).
 
 ##### Oracle WebLogic Server on AKS from the Azure Marketplace (WLS on AKS Marketplace)
+
+TBD Monica: Does WLS on AKS Marketplace include Fusion Middleware Infrastructure? If so, I assume we should mention that too...
 
 The WebLogic Server on AKS Azure Marketplace
 offer lets you embrace cloud computing by providing greater choice
@@ -304,3 +211,110 @@ provide support for WebLogic Server or the operator running in these distributio
 
 We have found that Docker for Desktop does not seem to suffer the same limitations, and we do support that as a
 development/test option.
+
+### Pricing and licensing
+
+The WebLogic Kubernetes Operator and Oracle Linux are open source and free;
+WebLogic Server requires licenses in any environment.
+All WebLogic Server licenses are suitable for deploying WebLogic to containers and Kubernetes,
+including free single desktop Oracle Technology Network (OTN) developer licenses.
+See the following sections for more detailed information.
+
+#### WebLogic Kubernetes Operator
+
+The WebLogic Kubernetes Operator (the "operator") is open source and free,
+licensed under the Universal Permissive license (UPL), Version 1.0.
+For support details, see [Get help]({{< relref "userguide/introduction/get-help.md" >}}).
+
+#### WebLogic Server
+
+WebLogic Server is not open source:
+
+- Licensing is required to run WebLogic Server instances in Kubernetes,
+  just as with any deployment of WebLogic Server.
+
+- Licensing is free for a single developer desktop development environment
+  when using an Oracle Technology Network (OTN) developer license.
+
+For more information, see the
+[Fusion Middleware Licensing Information User Manual - Application Server Products](https://docs.oracle.com/en/middleware/fusion-middleware/fmwlc/application-server-products-new-structure.html)
+and the following sections.
+
+#### Oracle Linux
+
+Oracle Linux is under open source license and is completely free to download and use.
+
+Note that WebLogic Server licenses that include support
+do _not_ include customer entitlements
+for direct access to Oracle Linux support or Unbreakable Linux Network
+(to directly access the standalone Oracle Linux patches).
+The latest Oracle Linux patches are included with the latest [WebLogic Server or Fusion Middleware Infrastructure Images](#weblogic-server-or-fusion-middleware-infrastructure-images).
+
+#### Oracle Java
+
+Oracle support for Java is included with
+WebLogic Server licenses
+when Java is used for running WebLogic and Coherence servers or clients.
+
+For more information, see the
+[Fusion Middleware Licensing Information User Manual - Application Server Products](https://docs.oracle.com/en/middleware/fusion-middleware/fmwlc/application-server-products-new-structure.html).
+
+#### WebLogic Server or Fusion Middleware Infrastructure images
+
+Oracle provides two different types of WebLogic Server or Fusion Middleware (FMW) Infrastructure images:
+
+- _Critical Patch Update (CPU) images:_
+  images with the latest WebLogic Server (or Fusion Middleware Infrastructure) and Coherence PSU
+  and other fixes released by the
+  Critical Patch Update (CPU) program.
+  CPU images are intended for production use.
+
+- _General Availability (GA) WebLogic Server (or Fusion Middleware Infrastructure) images:_
+  images which are _not_ intended for production use
+  and do _not_ include WebLogic, Fusion Middleware Infrastructure, or Coherence PSUs.
+
+All WebLogic Server and Fusion Middleware Infrastructure licenses,
+including free Oracle Technology Network (OTN) developer licenses,
+include access to the latest General Availability (GA) WebLogic Server
+or Fusion Middleware Infrastructure images which bundle Java SE.
+
+Customers with access to WebLogic Server support additionally have:
+
+  - Access to Critical Patch Update (CPU) WebLogic Server images which bundle Java SE.
+  - Access to WebLogic Server patches.
+  - Oracle support for WebLogic Server images.
+  - Oracle support for the WebLogic Kubernetes ToolKit.
+
+(Customers with access to Fusion Middleware Infrastructure support have
+similar access to its CPU images, patches, and support.)
+
+You can use the free and open source WebLogic Image Tool
+to create new or updated (patched) WebLogic or Fusion Middleware Infrastructure images.
+See My Oracle Support (MOS)
+[Doc ID 2790123.1](https://support.oracle.com/epmos/faces/DocContentDisplay?id=2790123.1)
+for community and Oracle support policies
+for the WebLogic Kubernetes ToolKit.
+
+See [Domain images]({{< relref "/userguide/base-images/_index.md" >}})
+for information about obtaining WebLogic Server or Fusion Middleware Infrastructure images,
+developer and production licensing details,
+the different types of images,
+creating custom images,
+and patching images.
+
+{{% notice warning %}}
+The latest Oracle Container Registry (OCR) **GA images** include
+the latest security patches for Oracle Linux and Java,
+and do _not_ include the latest security patches for WebLogic Server.
+Oracle strongly recommends using images with the latest security patches,
+such as OCR Critical Patch Updates (CPU) images or custom generated images.
+See [Ensure you are using recently patched images]({{< relref "/userguide/base-images/_index.md#ensure-you-are-using-recently-patched-images" >}}).
+{{% /notice %}}
+
+#### Additional references
+
+TBD Monica Do we need to keep the following refs?
+
+- [Supported Virtualization Technologies for Oracle Fusion Middleware](https://www.oracle.com/middleware/technologies/ias/oracleas-supported-virtualization.html) (search for keyword 'Kubernetes')
+- [Running and Licensing Oracle Programs in Containers and Kubernetes](https://www.oracle.com/a/tech/docs/running-and-licensing-programs-in-containers-and-kubernetes.pdf)
+
