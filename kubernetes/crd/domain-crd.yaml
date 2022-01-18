@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: a9978851bbc86ce4653d328db25d01661829c8531a6971c001fdaa1a00bfa5a6
+    weblogic.sha256: 5a5f3a7877677f9aca7593f0bd0159cd3c1e8f89251955589a2accd35224c7b9
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -8609,7 +8609,7 @@ spec:
                       description: The mount path. The files in the path are populated
                         from the same named directory in the images supplied by each
                         container in `serverPod.auxiliaryImages`. Each volume must
-                        be configured with a different mount path. Required.
+                        be configured with a different mount path. Defaults to '/auxiliary'.
                       type: string
                     name:
                       description: The name of the volume. Required.

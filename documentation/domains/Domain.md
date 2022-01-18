@@ -80,7 +80,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | Name | Type | Description |
 | --- | --- | --- |
 | `medium` | string | The emptyDir volume medium. This is an advanced setting that rarely needs to be configured. Defaults to unset, which means the volume's files are stored on the local node's file system for the life of the pod. |
-| `mountPath` | string | The mount path. The files in the path are populated from the same named directory in the images supplied by each container in `serverPod.auxiliaryImages`. Each volume must be configured with a different mount path. Required. |
+| `mountPath` | string | The mount path. The files in the path are populated from the same named directory in the images supplied by each container in `serverPod.auxiliaryImages`. Each volume must be configured with a different mount path. Defaults to '/auxiliary'. |
 | `name` | string | The name of the volume. Required. |
 | `sizeLimit` | string | The emptyDir volume size limit. Defaults to unset. |
 
