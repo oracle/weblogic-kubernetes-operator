@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -36,9 +36,9 @@ import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_ALLOW_REPLI
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_SHUTDOWN;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP;
-import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_MODEL_HOME_FOR_AUXILIARY_IMAGES;
+import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MODEL_HOME;
+import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_WDT_INSTALL_HOME;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_INSTALL_HOME;
-import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_INSTALL_HOME_FOR_AUXILIARY_IMAGES;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_MODEL_HOME;
 
 /** DomainSpec is a description of a domain. */
@@ -938,8 +938,8 @@ public class DomainSpec extends BaseConfiguration {
             .orElse(DEFAULT_WDT_MODEL_HOME);
   }
 
-  private String getDefaultModelHome(List<AuxiliaryImage> ai) {
-    return ai.size() > 0 ? DEFAULT_MODEL_HOME_FOR_AUXILIARY_IMAGES : DEFAULT_WDT_MODEL_HOME;
+  private String getDefaultModelHome(List<AuxiliaryImage> auxiliaryImages) {
+    return auxiliaryImages.size() > 0 ? DEFAULT_AUXILIARY_IMAGE_MODEL_HOME : DEFAULT_WDT_MODEL_HOME;
   }
 
   /**
@@ -963,8 +963,8 @@ public class DomainSpec extends BaseConfiguration {
             .orElse(DEFAULT_WDT_INSTALL_HOME);
   }
 
-  private String getDefaultWDTInstallHome(List<AuxiliaryImage> ai) {
-    return ai.size() > 0 ? DEFAULT_WDT_INSTALL_HOME_FOR_AUXILIARY_IMAGES : DEFAULT_WDT_INSTALL_HOME;
+  private String getDefaultWDTInstallHome(List<AuxiliaryImage> auxiliaryImages) {
+    return auxiliaryImages.size() > 0 ? DEFAULT_AUXILIARY_IMAGE_WDT_INSTALL_HOME : DEFAULT_WDT_INSTALL_HOME;
   }
 
   List<AuxiliaryImage> getAuxiliaryImages() {

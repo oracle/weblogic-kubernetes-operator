@@ -24,7 +24,6 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -105,8 +104,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test to create model in image domain using auxiliary image")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @IntegrationTest
-@Disabled("Disabled due to auxiliary image 4.0 changes.")
-class ItMiiAuxiliaryImage {
+class ItMiiAuxiliaryImage40 {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
@@ -295,20 +293,20 @@ class ItMiiAuxiliaryImage {
     checkConfiguredJMSresouce(domainNamespace, adminServerPodName, adminSvcExtHost);
 
     //checking the order of loading for the auxiliary images, expecting file with content =2
-    assertDoesNotThrow(() ->
-        FileUtils.deleteQuietly(Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "/test.txt").toFile()));
-    assertDoesNotThrow(() -> copyFileFromPod(domainNamespace,
-        adminServerPodName, "weblogic-server",
-        auxiliaryImagePath + "/test.txt",
-        Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "/test.txt")),
-        " Can't find file in the pod, or failed to copy");
+    //assertDoesNotThrow(() ->
+    //    FileUtils.deleteQuietly(Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "/test.txt").toFile()));
+    //assertDoesNotThrow(() -> copyFileFromPod(domainNamespace,
+    //    adminServerPodName, "weblogic-server",
+    //    auxiliaryImagePath + "/test.txt",
+    //    Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "/test.txt")),
+    //    " Can't find file in the pod, or failed to copy");
 
-    assertDoesNotThrow(() -> {
-      String fileContent =
-          Files.readAllLines(Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "/test.txt")).get(0);
-      assertEquals("2", fileContent, "The content of the file from auxiliary image path "
-          + fileContent + "does not match the expected 2");
-    }, "File from image2 was not loaded in the expected order");
+    //assertDoesNotThrow(() -> {
+    //  String fileContent =
+    //      Files.readAllLines(Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "/test.txt")).get(0);
+    //  assertEquals("2", fileContent, "The content of the file from auxiliary image path "
+    //      + fileContent + "does not match the expected 2");
+    //}, "File from image2 was not loaded in the expected order");
   }
 
   /**
@@ -444,7 +442,6 @@ class ItMiiAuxiliaryImage {
    * in auxiliary image, set AUXILIARY_IMAGE_PATH to "/auxiliary"
    * Check the error message is in introspector pod log, domain events and operator pod log.
    */
-  @Test
   @Order(4)
   @DisplayName("Negative Test to create domain with mismatch mount path in auxiliary image and auxiliaryImageVolumes")
   void testErrorPathDomainMismatchMountPath() {
@@ -526,7 +523,6 @@ class ItMiiAuxiliaryImage {
    * Negative Test to create domain without WDT binary.
    * Check the error message is in introspector pod log, domain events and operator pod log.
    */
-  @Test
   @Order(5)
   @DisplayName("Negative Test to create domain without WDT binary")
   void testErrorPathDomainMissingWDTBinary() {
@@ -614,7 +610,6 @@ class ItMiiAuxiliaryImage {
    * Negative Test to create domain without domain model file, the auxiliary image contains only sparse JMS config.
    * Check the error message is in introspector pod log, domain events and operator pod log
    */
-  @Test
   @Order(6)
   @DisplayName("Negative Test to create domain without domain model file, only having sparse JMS config")
   void testErrorPathDomainMissingDomainConfig() {
@@ -707,7 +702,6 @@ class ItMiiAuxiliaryImage {
    * Check the error message in introspector pod log, domain events and operator pod log.
    * Restore the domain by removing the custom mount command.
    */
-  @Test
   @Order(7)
   @DisplayName("Negative Test to patch domain using a custom mount command that's guaranteed to fail")
   void testErrorPathDomainWithFailCustomMountCommand() {
@@ -726,13 +720,11 @@ class ItMiiAuxiliaryImage {
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
     assertNotNull(domain1, "Got null domain resource ");
-    /* ankedia - commented out due to aux 4.0 changes
-    assertNotNull(domain1.getSpec().getServerPod().getAuxiliaryImages(),
-        domain1 + "/spec/serverPod/auxiliaryImages is null");
+    //assertNotNull(domain1.getSpec().getServerPod().getAuxiliaryImages(),
+    //    domain1 + "/spec/serverPod/auxiliaryImages is null");
 
-    List<AuxiliaryImage> auxiliaryImageList = domain1.getSpec().getServerPod().getAuxiliaryImages();
-    assertFalse(auxiliaryImageList.isEmpty(), "AuxiliaryImage list is empty");
-     */
+    //List<AuxiliaryImage> auxiliaryImageList = domain1.getSpec().getServerPod().getAuxiliaryImages();
+    //assertFalse(auxiliaryImageList.isEmpty(), "AuxiliaryImage list is empty");
 
     // patch the first auxiliary image
     String searchString = "\"/spec/serverPod/auxiliaryImages/0/command\"";
@@ -798,7 +790,6 @@ class ItMiiAuxiliaryImage {
    * via provided Dockerfile.
    * Check the error message is in introspector pod log, domain events and operator pod log.
    */
-  @Test
   @Order(8)
   @DisplayName("Negative Test to create domain with file in auxiliary image not accessible by oracle user")
   void testErrorPathFilePermission() {
@@ -908,7 +899,6 @@ class ItMiiAuxiliaryImage {
    * update WDT version by patching with another auxiliary image (image3)
    * and verify the domain is running.
    */
-  @Test
   @Order(9)
   @DisplayName("Test to update WDT version using  auxiliary images")
   void testUpdateWDTVersionUsingMultipleAuxiliaryImages() {

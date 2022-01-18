@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -31,6 +31,7 @@ import static oracle.kubernetes.operator.helpers.Matchers.EnvVarMatcher.envVarWi
 import static oracle.kubernetes.operator.helpers.StepContextConstants.SCRIPTS_MOUNTS_PATH;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.SCRIPTS_VOLUME;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_SOURCE_MODEL_HOME;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_TARGET_PATH;
@@ -47,6 +48,12 @@ public class Matchers {
   public static Matcher<Iterable<? super V1Container>> hasInitContainer(
           String name, String image, String serverName, String... command) {
     return hasItem(createInitContainer(name, image, serverName, command));
+  }
+
+  public static Matcher<Iterable<? super V1Container>> hasAuxiliaryImageInitContainer(
+          String name, String image, String imagePullPolicy) {
+    return hasAuxiliaryImageInitContainer(name, image, imagePullPolicy, AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME,
+            AUXILIARY_IMAGE_DEFAULT_SOURCE_MODEL_HOME);
   }
 
   public static Matcher<Iterable<? super V1Container>> hasAuxiliaryImageInitContainer(

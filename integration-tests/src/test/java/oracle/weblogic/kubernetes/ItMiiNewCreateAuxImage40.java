@@ -11,7 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 
-import oracle.weblogic.domain.AuxiliaryImageVolume;
+import oracle.weblogic.domain.AuxiliaryImage;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
@@ -21,7 +21,6 @@ import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
@@ -78,8 +77,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Test to create model in image domain using auxiliary image with new createAuxImage command")
 @IntegrationTest
-@Disabled("Disabled due to auxiliary image 4.0 changes.")
-class ItMiiNewCreateAuxImage {
+class ItMiiNewCreateAuxImage40 {
 
   private static String opNamespace = null;
   private static String domainNamespace = null;
@@ -283,7 +281,8 @@ class ItMiiNewCreateAuxImage {
 
     // verify the WDT version
     String wdtVersion =
-        assertDoesNotThrow(() -> checkWDTVersion(domainNamespace, adminServerPodName, witParams.wdtHome()));
+        assertDoesNotThrow(() -> checkWDTVersion(domainNamespace, adminServerPodName,
+                "/aux"));
     assertEquals("WebLogic Deploy Tooling " + WDT_TEST_VERSION, wdtVersion,
           " Used WDT in the auxiliary image was not updated");
   }
@@ -340,21 +339,19 @@ class ItMiiNewCreateAuxImage {
     Domain domainCR = createDomainResource(domain3Uid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1");
-    domainCR.spec().addAuxiliaryImageVolumesItem(new AuxiliaryImageVolume()
-        .mountPath(auxiliaryImagePath3)
-        .name(auxiliaryImageVolumeName3));
+    //domainCR.spec().addAuxiliaryImageVolumesItem(new AuxiliaryImageVolume()
+    //    .mountPath(auxiliaryImagePath3)
+    //    .name(auxiliaryImageVolumeName3));
+    // ANIL - commenting this out since introspector will fail if these values are set to non-default values.
+    //domainCR.spec().configuration().model()
+    //    .withModelHome(auxiliaryImagePath3 + "/models")
+    //    .withWdtInstallHome(auxiliaryImagePath3 + "/weblogic-deploy");
     domainCR.spec().configuration().model()
-        .withModelHome(auxiliaryImagePath3 + "/models")
-        .withWdtInstallHome(auxiliaryImagePath3 + "/weblogic-deploy");
-    /* ankedia - commented out due to aux 4.0 changes
-    domainCR.spec().serverPod()
-        .addAuxiliaryImagesItem(new AuxiliaryImage()
+        .withAuxiliaryImage(new AuxiliaryImage()
             .image(miiAuxiliaryImage3 + ":" + MII_BASIC_IMAGE_TAG)
-            .command("cp -R " + customWdtHome + "/weblogic-deploy $AUXILIARY_IMAGE_TARGET_PATH; "
-                + "cp -R " + customWdtModelHome + " $AUXILIARY_IMAGE_TARGET_PATH")
-            .volume(auxiliaryImageVolumeName3)
-            .imagePullPolicy("IfNotPresent"));
-     */
+            .imagePullPolicy("IfNotPresent")
+            .sourceWDTInstallHome(customWdtHome + "/weblogic-deploy")
+            .sourceModelHome(customWdtModelHome));
 
     String adminServerPodName = domain3Uid + "-admin-server";
     String managedServerPrefix = domain3Uid + "-managed-server";

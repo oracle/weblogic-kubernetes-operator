@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 4ff6638aa5e2ef7824cdeb213f710013f0eb89c630a94ee0eab0f21dec791a0e
+    weblogic.sha256: 14b9e931f1aa6e1d080baade399aea07370562d6b2c79108c7c0d0ba636a989b
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -245,10 +245,10 @@ spec:
                           Defaults to /u01/wdt/weblogic-deploy.
                         type: string
                       auxiliaryImageVolumeMedium:
-                        description: The emptyDir volume withAuxiliaryImageVolumeMedium.
-                          This is an advanced setting that rarely needs to be configured.
-                          Defaults to unset, which means the volume's files are stored
-                          on the local node's file system for the life of the pod.
+                        description: The emptyDir volume medium. This is an advanced
+                          setting that rarely needs to be configured. Defaults to
+                          unset, which means the volume's files are stored on the
+                          local node's file system for the life of the pod.
                         type: string
                       auxiliaryImageVolumeSizeLimit:
                         description: The emptyDir volume size limit. Defaults to unset.
