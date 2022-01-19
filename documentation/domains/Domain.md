@@ -222,7 +222,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `auxiliaryImages` | Array of [Auxiliary Image](#auxiliary-image) | Use auxiliary images to include Model in Image model and application archive files from additional images. Using auxiliary images eliminates the need to make modifications to the pod's base image 'domain.spec.image' when making changes to the WebLogic Deploy Tooling model or applications. This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share the files from the additional images with the pod. |
+| `auxiliaryImages` | Array of [Auxiliary Image](#auxiliary-image) | Use auxiliary images to provide Model in Image model, application archive and WebLogic Deploy Tooling files. This is a useful alternative for providing these files without requiring modifications to the pod's base image 'domain.spec.image'. This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share the files from the additional images with the pod. |
 | `auxiliaryImageVolumeMedium` | string | The emptyDir volume medium. This is an advanced setting that rarely needs to be configured. Defaults to unset, which means the volume's files are stored on the local node's file system for the life of the pod. |
 | `auxiliaryImageVolumeMountPath` | string | The auxiliary image volume mount path. This is an advanced setting that rarely needs to be configured. Defaults to '/aux', which means the emptyDir volume will be mounted at '/aux' path in the WebLogic-Server container within the pod. |
 | `auxiliaryImageVolumeSizeLimit` | string | The emptyDir volume size limit. Defaults to unset. |
@@ -277,10 +277,10 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `image` | string | The name of an image with files located in the directory specified by `spec.auxiliaryImageVolumes.mountPath` of the auxiliary image volume referenced by `serverPod.auxiliaryImages.volume`, which defaults to "/auxiliary". |
+| `image` | string | The auxiliary image with Model in Image model files, application archive files and/or WebLogic Deploying Tooling installation files. Required. |
 | `imagePullPolicy` | string | The image pull policy for the container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise. |
-| `sourceModelHome` | string | The source location of the WebLogic Deploy Tooling model home within the auxiliary image. Defaults to /auxiliary/models. Ignored if the value is set to 'None'. |
-| `sourceWDTInstallHome` | string | The source location of the WebLogic Deploy Tooling installation within the auxiliary image. Defaults to /auxiliary/weblogic-deploy. Ignored if the value is set to 'None'. |
+| `sourceModelHome` | string | The source location of the WebLogic Deploy Tooling model home within the auxiliary image. Defaults to '/auxiliary/models'. If the value is set to 'None' or no files found at the default location, then the model files copy is skipped. |
+| `sourceWDTInstallHome` | string | The source location of the WebLogic Deploy Tooling installation within the auxiliary image. Defaults to '/auxiliary/weblogic-deploy'. If the value is set to 'None' or no files found at the default location, then the WebLogic Deploy Tooling installation copy is skipped. |
 
 ### Online Update
 

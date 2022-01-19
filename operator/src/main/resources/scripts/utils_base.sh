@@ -267,8 +267,8 @@ function initAuxiliaryImage() {
   local copyWdtInstall=true
   local copyModel=true
 
-  wdtInstallHome=$(echo $AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME |  tr '[a-z]' '[A-Z]')
-  if [ "${wdtInstallHome}" != "NONE" ]; then
+  sourceWdtInstallHome=$(echo $AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME |  tr '[a-z]' '[A-Z]')
+  if [ "${sourceWdtInstallHome}" != "NONE" ]; then
     trace FINE "Auxiliary Image: About to copy WDT installation files from '${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME}' " \
                "in container image='$AUXILIARY_IMAGE_CONTAINER_IMAGE'. "
     if [ "${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME}" != "/auxiliary/weblogic-deploy" ]; then
@@ -297,8 +297,8 @@ function initAuxiliaryImage() {
     fi
   fi
 
-  wdtModelHome=$(echo $AUXILIARY_IMAGE_SOURCE_MODEL_HOME |  tr '[a-z]' '[A-Z]')
-  if [ "${wdtModelHome}" != "NONE" ]; then
+  sourceWdtModelHome=$(echo $AUXILIARY_IMAGE_SOURCE_MODEL_HOME |  tr '[a-z]' '[A-Z]')
+  if [ "${sourceWdtModelHome}" != "NONE" ]; then
     trace FINE "Auxiliary Image: About to copy WDT model files from '${AUXILIARY_IMAGE_SOURCE_MODEL_HOME}' " \
                "in container image='$AUXILIARY_IMAGE_CONTAINER_IMAGE'. "
     if [ "${AUXILIARY_IMAGE_SOURCE_MODEL_HOME}" != "/auxiliary/models" ]; then

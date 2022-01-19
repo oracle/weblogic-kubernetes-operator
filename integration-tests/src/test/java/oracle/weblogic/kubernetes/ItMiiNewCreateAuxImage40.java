@@ -52,7 +52,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.appAccessibleInPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.dockerImageExists;
-import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResource;
+import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResource40;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfig;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfiguration;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
@@ -176,10 +176,10 @@ class ItMiiNewCreateAuxImage40 {
     // create domain custom resource using auxiliary image
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
         domain1Uid, miiAuxiliaryImage1);
-    Domain domainCR = createDomainResource(domain1Uid, domainNamespace,
+    Domain domainCR = createDomainResource40(domain1Uid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath,
-        auxiliaryImageVolumeName, miiAuxiliaryImage1 + ":" + MII_BASIC_IMAGE_TAG);
+        miiAuxiliaryImage1 + ":" + MII_BASIC_IMAGE_TAG);
 
     // create domain and verify its running
     logger.info("Creating domain {0} with auxiliary image {1} in namespace {2}",
@@ -260,10 +260,10 @@ class ItMiiNewCreateAuxImage40 {
     // create domain custom resource using auxiliary image
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
         domain2Uid, miiAuxiliaryImage2);
-    Domain domainCR = createDomainResource(domain2Uid, domainNamespace,
+    Domain domainCR = createDomainResource40(domain2Uid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1", auxiliaryImagePath2,
-        auxiliaryImageVolumeName2, miiAuxiliaryImage2 + ":" + MII_BASIC_IMAGE_TAG);
+        miiAuxiliaryImage2 + ":" + MII_BASIC_IMAGE_TAG);
 
     String adminServerPodName = domain2Uid + "-admin-server";
     String managedServerPrefix = domain2Uid + "-managed-server";
@@ -336,7 +336,7 @@ class ItMiiNewCreateAuxImage40 {
     // create domain custom resource using auxiliary image
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
         domain3Uid, miiAuxiliaryImage3);
-    Domain domainCR = createDomainResource(domain3Uid, domainNamespace,
+    Domain domainCR = createDomainResource40(domain3Uid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1");
     domainCR.spec().configuration().model()

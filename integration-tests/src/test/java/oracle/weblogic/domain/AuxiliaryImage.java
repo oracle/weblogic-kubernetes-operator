@@ -11,9 +11,9 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-@ApiModel("Use an auxiliary image to automatically include directory content from additional images. "
-        + "This is a useful alternative for including Model in Image model files, or other types of files, in a pod "
-        + "without requiring modifications to the pod's base image 'domain.spec.image'. "
+@ApiModel("Use auxiliary images to provide Model in Image model, application archive and WebLogic Deploy Tooling "
+        + "files. This is a useful alternative for providing these files without requiring modifications "
+        + "to the pod's base image 'domain.spec.image'. "
         + "This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share "
         + "the files from the additional images with the pod.")
 public class AuxiliaryImage {
@@ -24,9 +24,8 @@ public class AuxiliaryImage {
   /**
    * The auxiliary image.
    */
-  @ApiModelProperty("The name of an image with files located in the directory specified by "
-      + "'spec.auxiliaryImageVolumes.mountPath' of the auxiliary image volume referenced by "
-      + "serverPod.auxiliaryImage.volume (which defaults to '/auxiliary').")
+  @ApiModelProperty("The auxiliary image with Model in Image model files, application archive files and/or WebLogic "
+          + "Deploying Tooling installation files.")
   private String image;
 
   @ApiModelProperty(
@@ -36,11 +35,13 @@ public class AuxiliaryImage {
   private String imagePullPolicy;
 
   @ApiModelProperty("The source location of the WebLogic Deploy Tooling installation within the auxiliary image. "
-          + "Defaults to /auxiliary/weblogic-deploy. Ignored if the value is set to 'None'.")
+          + "Defaults to '/auxiliary/weblogic-deploy'. If the value is set to 'None' or no files found at the default "
+          + "location, then the WebLogic Deploy Tooling installation copy is skipped.")
   private String sourceWDTInstallHome;
 
   @ApiModelProperty("The source location of the WebLogic Deploy Tooling model home within the auxiliary image. "
-          + "Defaults to /auxiliary/models. Ignored if the value is set to 'None'.")
+          + "Defaults to '/auxiliary/models'. If the value is set to 'None' or no files found at the default location, "
+          + "then the model files copy is skipped.")
   private String sourceModelHome;
 
   public String getImage() {
