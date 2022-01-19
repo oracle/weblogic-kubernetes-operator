@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -53,10 +53,18 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTPS_PORT;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTP_PORT;
+import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_IMAGE;
+import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.ELKSTACK_NAMESPACE;
 import static oracle.weblogic.kubernetes.TestConstants.FLUENTD_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.FLUENTD_INDEX_KEY;
+import static oracle.weblogic.kubernetes.TestConstants.KIBANA_IMAGE;
 import static oracle.weblogic.kubernetes.TestConstants.KIBANA_INDEX_KEY;
+import static oracle.weblogic.kubernetes.TestConstants.KIBANA_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.KIBANA_PORT;
+import static oracle.weblogic.kubernetes.TestConstants.KIBANA_TYPE;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_APP_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OPERATOR_RELEASE_NAME;
@@ -203,18 +211,29 @@ class ItElasticLoggingFluentd {
     if (System.getenv("SKIP_CLEANUP") == null
         || (System.getenv("SKIP_CLEANUP") != null
         && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false"))) {
-      // uninstall ELK Stack
-      if (elasticsearchParams != null) {
-        logger.info("Uninstall Elasticsearch pod");
-        assertDoesNotThrow(() -> uninstallAndVerifyElasticsearch(elasticsearchParams),
-            "uninstallAndVerifyElasticsearch failed with ApiException");
-      }
 
-      if (kibanaParams != null) {
-        logger.info("Uninstall Elasticsearch pod");
-        assertDoesNotThrow(() -> uninstallAndVerifyKibana(kibanaParams),
-            "uninstallAndVerifyKibana failed with ApiException");
-      }
+      elasticsearchParams = new LoggingExporterParams()
+          .elasticsearchName(ELASTICSEARCH_NAME)
+          .elasticsearchImage(ELASTICSEARCH_IMAGE)
+          .elasticsearchHttpPort(ELASTICSEARCH_HTTP_PORT)
+          .elasticsearchHttpsPort(ELASTICSEARCH_HTTPS_PORT)
+          .loggingExporterNamespace(ELKSTACK_NAMESPACE);
+
+      kibanaParams = new LoggingExporterParams()
+          .kibanaName(KIBANA_NAME)
+          .kibanaImage(KIBANA_IMAGE)
+          .kibanaType(KIBANA_TYPE)
+          .loggingExporterNamespace(ELKSTACK_NAMESPACE)
+          .kibanaContainerPort(KIBANA_PORT);
+
+      // uninstall ELK Stack
+      logger.info("Uninstall Elasticsearch pod");
+      assertDoesNotThrow(() -> uninstallAndVerifyElasticsearch(elasticsearchParams),
+          "uninstallAndVerifyElasticsearch failed with ApiException");
+
+      logger.info("Uninstall Kibana pod");
+      assertDoesNotThrow(() -> uninstallAndVerifyKibana(kibanaParams),
+          "uninstallAndVerifyKibana failed with ApiException");
     }
   }
 
