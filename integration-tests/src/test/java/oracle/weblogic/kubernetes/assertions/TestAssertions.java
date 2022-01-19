@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.assertions;
@@ -667,7 +667,7 @@ public class TestAssertions {
     return Grafana.isReady(namespace);
   }
 
-  /*
+  /**
    * Check whether persistent volume with pvName exists.
    *
    * @param pvName persistent volume to check
@@ -676,6 +676,17 @@ public class TestAssertions {
    */
   public static Callable<Boolean> pvExists(String pvName, String labelSelector) {
     return PersistentVolume.pvExists(pvName, labelSelector);
+  }
+
+  /**
+   * Check whether persistent volume with pvName NOT exists.
+   *
+   * @param pvName persistent volume to check
+   * @param labelSelector String containing the labels the PV is decorated with
+   * @return true if the persistent volume exists, false otherwise
+   */
+  public static Callable<Boolean> pvNotExists(String pvName, String labelSelector) {
+    return PersistentVolume.pvNotExists(pvName, labelSelector);
   }
 
   /**
