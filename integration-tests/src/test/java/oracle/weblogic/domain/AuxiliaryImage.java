@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.domain;
@@ -18,10 +18,8 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
         + "the files from the additional images with the pod.")
 public class AuxiliaryImage {
 
-  public static final String AUXILIARY_IMAGE_PATH = "/auxiliary";
-  public static final String AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME =
-          AUXILIARY_IMAGE_PATH + "/weblogic-deploy";
-  public static final String AUXILIARY_IMAGE_DEFAULT_SOURCE_MODEL_HOME = AUXILIARY_IMAGE_PATH + "/models";
+  public static final String AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME = "/auxiliary/weblogic-deploy";
+  public static final String AUXILIARY_IMAGE_DEFAULT_SOURCE_MODEL_HOME = "/auxiliary/models";
 
   /**
    * The auxiliary image.

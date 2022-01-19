@@ -222,9 +222,9 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `auxiliaryImages` | Array of [Auxiliary Image](#auxiliary-image) | Use an auxiliary image to automatically include directory content from additional images. This is a useful alternative for including Model in Image model files, or other types of files, in a pod without requiring modifications to the pod's base image 'domain.spec.image'. This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share the files from the additional images with the pod. |
+| `auxiliaryImages` | Array of [Auxiliary Image](#auxiliary-image) | Use auxiliary images to include Model in Image model and application archive files from additional images. Using auxiliary images eliminates the need to make modifications to the pod's base image 'domain.spec.image' when making changes to the WebLogic Deploy Tooling model or applications. This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share the files from the additional images with the pod. |
 | `auxiliaryImageVolumeMedium` | string | The emptyDir volume medium. This is an advanced setting that rarely needs to be configured. Defaults to unset, which means the volume's files are stored on the local node's file system for the life of the pod. |
-| `auxiliaryImageVolumeMountPath` | string | The auxiliary image volume mount path. Defaults to '/aux'. |
+| `auxiliaryImageVolumeMountPath` | string | The auxiliary image volume mount path. This is an advanced setting that rarely needs to be configured. Defaults to '/aux', which means the emptyDir volume will be mounted at '/aux' path in the WebLogic-Server container within the pod. |
 | `auxiliaryImageVolumeSizeLimit` | string | The emptyDir volume size limit. Defaults to unset. |
 | `configMap` | string | Name of a ConfigMap containing the WebLogic Deploy Tooling model. |
 | `domainType` | string | WebLogic Deploy Tooling domain type. Legal values: WLS, RestrictedJRF, JRF. Defaults to WLS. |
