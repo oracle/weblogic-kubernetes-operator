@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -11,6 +11,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 
+import oracle.weblogic.domain.AuxiliaryImage;
 import oracle.weblogic.domain.AuxiliaryImageVolume;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
@@ -78,7 +79,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @DisplayName("Test to create model in image domain using auxiliary image with new createAuxImage command")
 @IntegrationTest
-@Disabled("Disabled due to auxiliary image 4.0 changes.")
+@Disabled("Temporarily disabled due to auxiliary image 4.0 changes.")
 class ItMiiNewCreateAuxImage {
 
   private static String opNamespace = null;
@@ -346,15 +347,9 @@ class ItMiiNewCreateAuxImage {
     domainCR.spec().configuration().model()
         .withModelHome(auxiliaryImagePath3 + "/models")
         .withWdtInstallHome(auxiliaryImagePath3 + "/weblogic-deploy");
-    /* ankedia - commented out due to aux 4.0 changes
-    domainCR.spec().serverPod()
-        .addAuxiliaryImagesItem(new AuxiliaryImage()
+    domainCR.spec().configuration().model().withAuxiliaryImage(new AuxiliaryImage()
             .image(miiAuxiliaryImage3 + ":" + MII_BASIC_IMAGE_TAG)
-            .command("cp -R " + customWdtHome + "/weblogic-deploy $AUXILIARY_IMAGE_TARGET_PATH; "
-                + "cp -R " + customWdtModelHome + " $AUXILIARY_IMAGE_TARGET_PATH")
-            .volume(auxiliaryImageVolumeName3)
             .imagePullPolicy("IfNotPresent"));
-     */
 
     String adminServerPodName = domain3Uid + "-admin-server";
     String managedServerPrefix = domain3Uid + "-managed-server";

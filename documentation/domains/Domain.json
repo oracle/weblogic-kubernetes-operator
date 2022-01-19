@@ -627,7 +627,7 @@
           "type": "string"
         },
         "auxiliaryImages": {
-          "description": "Use an auxiliary image to automatically include directory content from additional images. This is a useful alternative for including Model in Image model files, or other types of files, in a pod without requiring modifications to the pod\u0027s base image \u0027domain.spec.image\u0027. This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share the files from the additional images with the pod.",
+          "description": "Use auxiliary images to include Model in Image model and application archive files from additional images. Using auxiliary images eliminates the need to make modifications to the pod\u0027s base image \u0027domain.spec.image\u0027 when making changes to the WebLogic Deploy Tooling model or applications. This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share the files from the additional images with the pod.",
           "type": "array",
           "items": {
             "$ref": "#/definitions/AuxiliaryImage"
@@ -638,7 +638,7 @@
           "$ref": "#/definitions/OnlineUpdate"
         },
         "auxiliaryImageVolumeMountPath": {
-          "description": "The auxiliary image volume mount path. Defaults to \u0027/aux\u0027.",
+          "description": "The auxiliary image volume mount path. This is an advanced setting that rarely needs to be configured. Defaults to \u0027/aux\u0027, which means the emptyDir volume will be mounted at \u0027/aux\u0027 path in the WebLogic-Server container within the pod.",
           "type": "string"
         },
         "modelHome": {

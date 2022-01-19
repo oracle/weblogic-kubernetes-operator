@@ -15,12 +15,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class Model {
 
-  static final String DEFAULT_WDT_MODEL_HOME = "/u01/wdt/models";
-  static final String DEFAULT_WDT_INSTALL_HOME = "/u01/wdt/weblogic-deploy";
-  public static final String DEFAULT_AUXILIARY_IMAGE_PATH = "/aux";
-  static final String DEFAULT_WDT_INSTALL_HOME_FOR_AUXILIARY_IMAGES = DEFAULT_AUXILIARY_IMAGE_PATH + "/weblogic-deploy";
-  static final String DEFAULT_MODEL_HOME_FOR_AUXILIARY_IMAGES = DEFAULT_AUXILIARY_IMAGE_PATH + "/models";
-
+  public static final String DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH = "/aux";
 
   @ApiModelProperty(
       value = "WDT domain type: Legal values: WLS, RestrictedJRF, JRF. Defaults to WLS.",
@@ -48,14 +43,16 @@ public class Model {
    * The auxiliary images.
    *
    */
-  @ApiModelProperty("Use an auxiliary image to automatically include directory content from additional images. "
-          + "This is a useful alternative for including Model in Image model files, or other types of files, in a pod "
-          + "without requiring modifications to the pod's base image 'domain.spec.image'. "
+  @ApiModelProperty("Use an auxiliary image to include Model in Image model and application archive files from "
+          + "additional images. Using auxiliary images eliminates the need to make modifications to the pod's base "
+          + "image 'domain.spec.image' when making changes to the WebLogic Deploy Tooling model or applications. "
           + "This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share "
           + "the files from the additional images with the pod.")
   private List<AuxiliaryImage> auxiliaryImages;
 
-  @ApiModelProperty("The auxiliary image volume mount path. Defaults to '/aux'.")
+  @ApiModelProperty("The auxiliary image volume mount path. This is an advanced setting that rarely needs to be "
+          + "configured. Defaults to '/aux', which means the emptyDir volume will be mounted at '/aux' path in the "
+          + "WebLogic-Server container within the pod.")
   private String auxiliaryImageVolumeMountPath;
 
   @ApiModelProperty("The emptyDir volume withAuxiliaryImageVolumeMedium. This is an advanced setting that rarely "
@@ -160,7 +157,7 @@ public class Model {
     this.onlineUpdate = onlineUpdate;
   }
 
-  List<AuxiliaryImage> getAuxiliaryImages() {
+  public List<AuxiliaryImage> getAuxiliaryImages() {
     return this.auxiliaryImages;
   }
 
@@ -188,7 +185,7 @@ public class Model {
   }
 
   public String getAuxiliaryImageVolumeMountPath() {
-    return Optional.ofNullable(auxiliaryImageVolumeMountPath).orElse(DEFAULT_AUXILIARY_IMAGE_PATH);
+    return Optional.ofNullable(auxiliaryImageVolumeMountPath).orElse(DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH);
   }
 
   public void setAuxiliaryImageVolumeMountPath(String auxiliaryImageVolumeMountPath) {
@@ -263,10 +260,10 @@ public class Model {
 
   @Override
   public boolean equals(Object other) {
-    if (other == this) {
+    if (this == other) {
       return true;
     }
-    if (!(other instanceof Model)) {
+    if (other == null || getClass() != other.getClass()) {
       return false;
     }
 
@@ -274,11 +271,11 @@ public class Model {
     EqualsBuilder builder =
         new EqualsBuilder()
             .append(domainType, rhs.domainType)
-            .append(configMap,rhs.configMap)
+            .append(configMap, rhs.configMap)
             .append(modelHome,rhs.modelHome)
             .append(wdtInstallHome,rhs.wdtInstallHome)
-            .append(onlineUpdate,rhs.onlineUpdate)
             .append(runtimeEncryptionSecret, rhs.runtimeEncryptionSecret)
+            .append(onlineUpdate,rhs.onlineUpdate)
             .append(auxiliaryImages, rhs.auxiliaryImages)
             .append(auxiliaryImageVolumeMountPath, rhs.auxiliaryImageVolumeMountPath)
             .append(auxiliaryImageVolumeMedium, rhs.auxiliaryImageVolumeMedium)

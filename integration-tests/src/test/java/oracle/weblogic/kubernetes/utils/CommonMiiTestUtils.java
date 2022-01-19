@@ -1198,21 +1198,6 @@ public class CommonMiiTestUtils {
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
         domainUid, domainNamespace));
     assertNotNull(domain1, "Got null domain resource after patching");
-    //assertNotNull(domain1.getSpec().getClusters().get(clusterIndex).getServerPod().getAuxiliaryImages(),
-    //    domain1 + "/spec/serverPod/auxiliaryImages is null");
-
-    //verify that the domain is patched with new image
-    //List<AuxiliaryImage> auxiliaryImageListAf =
-    //    domain1.getSpec().getClusters().get(clusterIndex).getServerPod().getAuxiliaryImages();
-    //boolean doMainPatched = false;
-    //for (AuxiliaryImage auxImage : auxiliaryImageListAf) {
-    //  if (auxImage.getImage().equals(auxiliaryImageName)) {
-    //    logger.info("Domain patched and cluster config {0} found", auxImage);
-    //    doMainPatched = true;
-    //    break;
-    //  }
-    //}
-    //assertTrue(doMainPatched, String.format("Image name %s should be patched", auxiliaryImageName));
 
     // verify the server pods in cluster are rolling restarted and back to ready state
     logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",

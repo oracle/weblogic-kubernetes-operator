@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -105,7 +105,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test to create model in image domain using auxiliary image")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @IntegrationTest
-@Disabled("Disabled due to auxiliary image 4.0 changes.")
+@Disabled("Temporarily disabled due to auxiliary image 4.0 changes.")
 class ItMiiAuxiliaryImage {
 
   private static String opNamespace = null;
@@ -726,13 +726,6 @@ class ItMiiAuxiliaryImage {
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
     assertNotNull(domain1, "Got null domain resource ");
-    /* ankedia - commented out due to aux 4.0 changes
-    assertNotNull(domain1.getSpec().getServerPod().getAuxiliaryImages(),
-        domain1 + "/spec/serverPod/auxiliaryImages is null");
-
-    List<AuxiliaryImage> auxiliaryImageList = domain1.getSpec().getServerPod().getAuxiliaryImages();
-    assertFalse(auxiliaryImageList.isEmpty(), "AuxiliaryImage list is empty");
-     */
 
     // patch the first auxiliary image
     String searchString = "\"/spec/serverPod/auxiliaryImages/0/command\"";
