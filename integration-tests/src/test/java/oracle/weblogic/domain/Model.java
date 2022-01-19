@@ -31,7 +31,6 @@ public class Model {
   @ApiModelProperty("Location of the WebLogic Deploy Tooling installation. Defaults to /u01/wdt/weblogic-deploy.")
   private String wdtInstallHome;
 
-
   @ApiModelProperty("Online update option for Model In Image dynamic update.")
   private OnlineUpdate onlineUpdate;
 
@@ -43,9 +42,9 @@ public class Model {
    * The auxiliary images.
    *
    */
-  @ApiModelProperty("Use an auxiliary image to include Model in Image model and application archive files from "
-          + "additional images. Using auxiliary images eliminates the need to make modifications to the pod's base "
-          + "image 'domain.spec.image' when making changes to the WebLogic Deploy Tooling model or applications. "
+  @ApiModelProperty("Use auxiliary images to provide Model in Image model, application archive and WebLogic Deploy "
+          + "Tooling files. This is a useful alternative for providing these files without requiring modifications "
+          + "to the pod's base image 'domain.spec.image'. "
           + "This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share "
           + "the files from the additional images with the pod.")
   private List<AuxiliaryImage> auxiliaryImages;

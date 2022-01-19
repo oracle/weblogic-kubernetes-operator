@@ -148,7 +148,7 @@ class DomainValidationTest extends DomainValidationBaseTest {
     assertThat(domain.getValidationFailures(resourceLookup),
             contains(stringContainsInOrder("More than one auxiliary image under",
                     "'spec.configuration.model.auxiliaryImages'",
-                    "set sourceWDTInstallHome")));
+                    "sets 'sourceWDTInstallHome'")));
   }
 
   @Test

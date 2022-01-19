@@ -24,8 +24,8 @@ public class AuxiliaryImage {
   /**
    * The auxiliary image.
    */
-  @ApiModelProperty("The auxiliary image with Model in Image model files, application archive files and/or WebLogic "
-          + "Deploying Tooling installation files.")
+  @ApiModelProperty("The auxiliary image containing Model in Image model files, application archive files and/or "
+          + "WebLogic Deploying Tooling installation files. Required.")
   private String image;
 
   @ApiModelProperty(

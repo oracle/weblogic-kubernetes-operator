@@ -26,7 +26,7 @@ public class AuxiliaryImage {
   /**
    * The auxiliary image.
    */
-  @Description("The auxiliary image with Model in Image model files, application archive files and/or WebLogic "
+  @Description("The auxiliary image containing Model in Image model files, application archive files and/or WebLogic "
           + "Deploying Tooling installation files. Required.")
   @NotNull
   private String image;

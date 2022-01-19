@@ -324,17 +324,17 @@ public class CommonMiiTestUtils {
    * @return domain object of the domain resource
    */
   public static Domain createDomainResource(
-          String domainResourceName,
-          String domNamespace,
-          String baseImageName,
-          String adminSecretName,
-          String repoSecretName,
-          String encryptionSecretName,
-          int replicaCount,
-          String clusterName,
-          String auxiliaryImagePath,
-          String auxiliaryImageVolumeName,
-          String... auxiliaryImageName) {
+      String domainResourceName,
+      String domNamespace,
+      String baseImageName,
+      String adminSecretName,
+      String repoSecretName,
+      String encryptionSecretName,
+      int replicaCount,
+      String clusterName,
+      String auxiliaryImagePath,
+      String auxiliaryImageVolumeName,
+      String... auxiliaryImageName) {
 
     Domain domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domainResourceName,
             domNamespace, baseImageName, adminSecretName, repoSecretName, encryptionSecretName, replicaCount,
@@ -362,27 +362,27 @@ public class CommonMiiTestUtils {
    * @return domain object of the domain resource
    */
   public static Domain createDomainResourceWithAuxiliaryImage(
-          String domainResourceName,
-          String domNamespace,
-          String baseImageName,
-          String adminSecretName,
-          String repoSecretName,
-          String encryptionSecretName,
-          int replicaCount,
-          List<String> clusterNames,
-          String auxiliaryImagePath,
-          String auxiliaryImageVolumeName,
-          String... auxiliaryImageName) {
+      String domainResourceName,
+      String domNamespace,
+      String baseImageName,
+      String adminSecretName,
+      String repoSecretName,
+      String encryptionSecretName,
+      int replicaCount,
+      List<String> clusterNames,
+      String auxiliaryImagePath,
+      String auxiliaryImageVolumeName,
+      String... auxiliaryImageName) {
 
     Domain domainCR = CommonMiiTestUtils.createDomainResource(domainResourceName, domNamespace,
-            baseImageName, adminSecretName, repoSecretName,
-            encryptionSecretName, replicaCount, clusterNames);
+        baseImageName, adminSecretName, repoSecretName,
+        encryptionSecretName, replicaCount, clusterNames);
     domainCR.spec().addAuxiliaryImageVolumesItem(new AuxiliaryImageVolume()
-            .mountPath(auxiliaryImagePath)
-            .name(auxiliaryImageVolumeName));
+        .mountPath(auxiliaryImagePath)
+        .name(auxiliaryImageVolumeName));
     domainCR.spec().configuration().model()
-            .withModelHome(auxiliaryImagePath + "/models")
-            .withWdtInstallHome(auxiliaryImagePath + "/weblogic-deploy");
+        .withModelHome(auxiliaryImagePath + "/models")
+        .withWdtInstallHome(auxiliaryImagePath + "/weblogic-deploy");
     for (String cmImageName: auxiliaryImageName) {
       /* Commented out due to auxiliary image 4.0 changes
       domainCR.spec().serverPod()
@@ -411,20 +411,20 @@ public class CommonMiiTestUtils {
    * @return domain object of the domain resource
    */
   public static Domain createDomainResourceWithAuxiliaryImage(
-          String domainResourceName,
-          String domNamespace,
-          String baseImageName,
-          String adminSecretName,
-          String repoSecretName,
-          String encryptionSecretName,
-          int replicaCount,
-          String clusterName,
-          List<AuxiliaryImageVolume> auxiliaryImageVolumes,
-          List<AuxiliaryImage> auxiliaryImages) {
+      String domainResourceName,
+      String domNamespace,
+      String baseImageName,
+      String adminSecretName,
+      String repoSecretName,
+      String encryptionSecretName,
+      int replicaCount,
+      String clusterName,
+      List<AuxiliaryImageVolume> auxiliaryImageVolumes,
+      List<AuxiliaryImage> auxiliaryImages) {
 
     Domain domainCR = CommonMiiTestUtils.createDomainResource(domainResourceName, domNamespace,
-            baseImageName, adminSecretName, repoSecretName,
-            encryptionSecretName, replicaCount, clusterName);
+        baseImageName, adminSecretName, repoSecretName,
+        encryptionSecretName, replicaCount, clusterName);
 
     for (AuxiliaryImageVolume auxiliaryImageVolume : auxiliaryImageVolumes) {
       domainCR.spec().addAuxiliaryImageVolumesItem(auxiliaryImageVolume);
@@ -464,30 +464,30 @@ public class CommonMiiTestUtils {
    * @return domain object of the domain resource
    */
   public static Domain createDomainResourceWithAuxiliaryImageClusterScope(
-          String domainResourceName,
-          String domNamespace,
-          String baseImageName,
-          String adminSecretName,
-          String repoSecretName,
-          String encryptionSecretName,
-          int replicaCount,
-          String clusterName,
-          Map<String, List<String>> auxiliaryImagePathVolume,
-          List<String> auxiliaryImageDomainScopeNames,
-          List<String> auxiliaryImageClusterScopeNames) {
+      String domainResourceName,
+      String domNamespace,
+      String baseImageName,
+      String adminSecretName,
+      String repoSecretName,
+      String encryptionSecretName,
+      int replicaCount,
+      String clusterName,
+      Map<String, List<String>> auxiliaryImagePathVolume,
+      List<String> auxiliaryImageDomainScopeNames,
+      List<String> auxiliaryImageClusterScopeNames) {
 
     Domain domainCR =
-            createDomainResourceWithAuxiliaryImageClusterScope(domainResourceName,
-                    domNamespace,
-                    baseImageName,
-                    adminSecretName,
-                    repoSecretName,
-                    encryptionSecretName,
-                    replicaCount,
-                    List.of(clusterName),
-                    auxiliaryImagePathVolume,
-                    auxiliaryImageDomainScopeNames,
-                    auxiliaryImageClusterScopeNames);
+        createDomainResourceWithAuxiliaryImageClusterScope(domainResourceName,
+                domNamespace,
+                baseImageName,
+                adminSecretName,
+                repoSecretName,
+                encryptionSecretName,
+                replicaCount,
+                List.of(clusterName),
+                auxiliaryImagePathVolume,
+                auxiliaryImageDomainScopeNames,
+                auxiliaryImageClusterScopeNames);
 
     return domainCR;
   }
@@ -513,50 +513,50 @@ public class CommonMiiTestUtils {
    * @return domain object of the domain resource
    */
   public static Domain createDomainResourceWithAuxiliaryImageClusterScope(
-          String domainResourceName,
-          String domNamespace,
-          String baseImageName,
-          String adminSecretName,
-          String repoSecretName,
-          String encryptionSecretName,
-          int replicaCount,
-          List<String> clusterNames,
-          Map<String, List<String>> auxiliaryImagePathVolume,
-          List<String> auxiliaryImageDomainScopeNames,
-          List<String> auxiliaryImageClusterScopeNames) {
+      String domainResourceName,
+      String domNamespace,
+      String baseImageName,
+      String adminSecretName,
+      String repoSecretName,
+      String encryptionSecretName,
+      int replicaCount,
+      List<String> clusterNames,
+      Map<String, List<String>> auxiliaryImagePathVolume,
+      List<String> auxiliaryImageDomainScopeNames,
+      List<String> auxiliaryImageClusterScopeNames) {
 
     Domain domainCR = CommonMiiTestUtils.createDomainResource(domainResourceName,
-            domNamespace, baseImageName, adminSecretName, repoSecretName,
-            encryptionSecretName, replicaCount, clusterNames);
+        domNamespace, baseImageName, adminSecretName, repoSecretName,
+        encryptionSecretName, replicaCount, clusterNames);
 
     auxiliaryImagePathVolume.forEach((auxiliaryImagePath, auxiliaryImageVolumes) -> {
       System.out.println(auxiliaryImagePath + " - " + auxiliaryImageVolumes.toString());
       for (String auxiliaryImageVolumeName : auxiliaryImageVolumes) {
         domainCR.spec().addAuxiliaryImageVolumesItem(new AuxiliaryImageVolume()
-                .mountPath(auxiliaryImagePath)
-                .name(auxiliaryImageVolumeName));
+            .mountPath(auxiliaryImagePath)
+            .name(auxiliaryImageVolumeName));
         domainCR.spec().configuration().model()
-                .withModelHome(auxiliaryImagePath + "/models")
-                .withWdtInstallHome(auxiliaryImagePath + "/weblogic-deploy");
+            .withModelHome(auxiliaryImagePath + "/models")
+            .withWdtInstallHome(auxiliaryImagePath + "/weblogic-deploy");
 
         /* Commented out due to auxiliary image 4.0 changes.
         for (String auxiliaryImageName: auxiliaryImageDomainScopeNames) {
           domainCR.spec().serverPod()
-                  .addAuxiliaryImagesItem(new AuxiliaryImage()
-                          .image(auxiliaryImageName)
-                          .volume(auxiliaryImageVolumeName)
-                          .imagePullPolicy("IfNotPresent"));
+              .addAuxiliaryImagesItem(new AuxiliaryImage()
+                      .image(auxiliaryImageName)
+                      .volume(auxiliaryImageVolumeName)
+                      .imagePullPolicy("IfNotPresent"));
         }
 
         for (String auxiliaryImageName: auxiliaryImageClusterScopeNames) {
           List<Cluster> clusterList = domainCR.spec().getClusters().stream()
-                  .filter(cluster ->
-                          clusterNames.contains(cluster.clusterName())).collect(Collectors.toList());
+              .filter(cluster ->
+                      clusterNames.contains(cluster.clusterName())).collect(Collectors.toList());
           clusterList.forEach(cluster ->
-                  cluster.serverPod().addAuxiliaryImagesItem(new AuxiliaryImage()
-                          .image(auxiliaryImageName)
-                          .volume(auxiliaryImageVolumeName)
-                          .imagePullPolicy("IfNotPresent")));
+              cluster.serverPod().addAuxiliaryImagesItem(new AuxiliaryImage()
+                      .image(auxiliaryImageName)
+                      .volume(auxiliaryImageVolumeName)
+                      .imagePullPolicy("IfNotPresent")));
         }
          */
       }
@@ -580,19 +580,19 @@ public class CommonMiiTestUtils {
    * @return domain object of the domain resource
    */
   public static Domain createDomainResource40(
-          String domainResourceName,
-          String domNamespace,
-          String imageName,
-          String adminSecretName,
-          String repoSecretName,
-          String encryptionSecretName,
-          int replicaCount,
-          String clusterName) {
+      String domainResourceName,
+      String domNamespace,
+      String imageName,
+      String adminSecretName,
+      String repoSecretName,
+      String encryptionSecretName,
+      int replicaCount,
+      String clusterName) {
 
     // create the domain CR
     Domain domain = CommonMiiTestUtils.createDomainResource40(domainResourceName, domNamespace,
-            imageName, adminSecretName, repoSecretName,
-            encryptionSecretName, replicaCount, List.of(clusterName));
+        imageName, adminSecretName, repoSecretName,
+        encryptionSecretName, replicaCount, List.of(clusterName));
     setPodAntiAffinity(domain);
 
     return domain;
@@ -613,14 +613,14 @@ public class CommonMiiTestUtils {
    * @return domain object of the domain resource
    */
   public static Domain createDomainResource40(
-          String domainResourceName,
-          String domNamespace,
-          String imageName,
-          String adminSecretName,
-          String repoSecretName,
-          String encryptionSecretName,
-          int replicaCount,
-          List<String> clusterNames) {
+      String domainResourceName,
+      String domNamespace,
+      String imageName,
+      String adminSecretName,
+      String repoSecretName,
+      String encryptionSecretName,
+      int replicaCount,
+      List<String> clusterNames) {
 
     // create the domain CR
     Domain domain = new Domain()
@@ -1560,6 +1560,23 @@ public class CommonMiiTestUtils {
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
         domainUid, domainNamespace));
     assertNotNull(domain1, "Got null domain resource after patching");
+    /*
+    assertNotNull(domain1.getSpec().getClusters().get(clusterIndex).getServerPod().getAuxiliaryImages(),
+        domain1 + "/spec/serverPod/auxiliaryImages is null");
+
+    //verify that the domain is patched with new image
+    List<AuxiliaryImage> auxiliaryImageListAf =
+        domain1.getSpec().getClusters().get(clusterIndex).getServerPod().getAuxiliaryImages();
+    boolean doMainPatched = false;
+    for (AuxiliaryImage auxImage : auxiliaryImageListAf) {
+      if (auxImage.getImage().equals(auxiliaryImageName)) {
+        logger.info("Domain patched and cluster config {0} found", auxImage);
+        doMainPatched = true;
+        break;
+      }
+    }
+    assertTrue(doMainPatched, String.format("Image name %s should be patched", auxiliaryImageName));
+    */
 
     // verify the server pods in cluster are rolling restarted and back to ready state
     logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",
