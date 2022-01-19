@@ -726,6 +726,13 @@ class ItMiiAuxiliaryImage {
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
     assertNotNull(domain1, "Got null domain resource ");
+    /* Commented due to auxiliary image 4.0 changes.
+    assertNotNull(domain1.getSpec().getServerPod().getAuxiliaryImages(),
+            domain1 + "/spec/serverPod/auxiliaryImages is null");
+
+    List<AuxiliaryImage> auxiliaryImageList = domain1.getSpec().getServerPod().getAuxiliaryImages();
+    assertFalse(auxiliaryImageList.isEmpty(), "AuxiliaryImage list is empty");
+     */
 
     // patch the first auxiliary image
     String searchString = "\"/spec/serverPod/auxiliaryImages/0/command\"";
