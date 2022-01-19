@@ -277,7 +277,7 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `image` | string | The auxiliary image with Model in Image model files, application archive files and/or WebLogic Deploying Tooling installation files. Required. |
+| `image` | string | The auxiliary image containing Model in Image model files, application archive files and/or WebLogic Deploying Tooling installation files. Required. |
 | `imagePullPolicy` | string | The image pull policy for the container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise. |
 | `sourceModelHome` | string | The source location of the WebLogic Deploy Tooling model home within the auxiliary image. Defaults to '/auxiliary/models'. If the value is set to 'None' or no files found at the default location, then the model files copy is skipped. |
 | `sourceWDTInstallHome` | string | The source location of the WebLogic Deploy Tooling installation within the auxiliary image. Defaults to '/auxiliary/weblogic-deploy'. If the value is set to 'None' or no files found at the default location, then the WebLogic Deploy Tooling installation copy is skipped. |

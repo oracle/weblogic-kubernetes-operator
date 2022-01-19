@@ -11,7 +11,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.Callable;
 
-import oracle.weblogic.domain.AuxiliaryImage;
 import oracle.weblogic.domain.AuxiliaryImageVolume;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
@@ -344,12 +343,15 @@ class ItMiiNewCreateAuxImage {
     domainCR.spec().addAuxiliaryImageVolumesItem(new AuxiliaryImageVolume()
         .mountPath(auxiliaryImagePath3)
         .name(auxiliaryImageVolumeName3));
-    domainCR.spec().configuration().model()
-        .withModelHome(auxiliaryImagePath3 + "/models")
-        .withWdtInstallHome(auxiliaryImagePath3 + "/weblogic-deploy");
-    domainCR.spec().configuration().model().withAuxiliaryImage(new AuxiliaryImage()
-            .image(miiAuxiliaryImage3 + ":" + MII_BASIC_IMAGE_TAG)
-            .imagePullPolicy("IfNotPresent"));
+    /* Commented out due to auxiliary image 4.0 changes.
+    domainCR.spec().serverPod()
+         .addAuxiliaryImagesItem(new AuxiliaryImage()
+                 .image(miiAuxiliaryImage3 + ":" + MII_BASIC_IMAGE_TAG)
+                 .command("cp -R " + customWdtHome + "/weblogic-deploy $AUXILIARY_IMAGE_TARGET_PATH; "
+                         + "cp -R " + customWdtModelHome + " $AUXILIARY_IMAGE_TARGET_PATH")
+                 .volume(auxiliaryImageVolumeName3)
+                 .imagePullPolicy("IfNotPresent"));
+     */
 
     String adminServerPodName = domain3Uid + "-admin-server";
     String managedServerPrefix = domain3Uid + "-managed-server";

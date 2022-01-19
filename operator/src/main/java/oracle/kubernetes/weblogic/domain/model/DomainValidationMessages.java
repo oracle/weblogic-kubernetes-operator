@@ -16,6 +16,7 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.utils.OperatorUtils;
 
 import static oracle.kubernetes.operator.helpers.LegalNames.LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH;
+import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
 
 class DomainValidationMessages {
 
@@ -122,7 +123,7 @@ class DomainValidationMessages {
   }
 
   public static String mountPathForAuxiliaryImageAlreadyInUse() {
-    return getMessage(MessageKeys.MOUNT_PATH_FOR_AUXILIARY_IMAGE_ALREADY_IN_USE);
+    return getMessage(MessageKeys.MOUNT_PATH_FOR_AUXILIARY_IMAGE_ALREADY_IN_USE, DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH);
   }
 
   public static String moreThanOneAuxiliaryImageConfiguredWDTInstallHome() {

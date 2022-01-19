@@ -1,11 +1,11 @@
-# Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 49b76f91c62f31d4bacda7a4d4da1472537c5e28fc23952c4aa554ccbf53ee1c
+    weblogic.sha256: 3dc40744e261f13e192757819ec22576bb771e08c8cf681f5aae84baaa38f227
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -144,9 +144,9 @@ spec:
                                 is skipped.
                               type: string
                             image:
-                              description: The auxiliary image with Model in Image
-                                model files, application archive files and/or WebLogic
-                                Deploying Tooling installation files. Required.
+                              description: The auxiliary image containing Model in
+                                Image model files, application archive files and/or
+                                WebLogic Deploying Tooling installation files. Required.
                               type: string
                             imagePullPolicy:
                               description: The image pull policy for the container
