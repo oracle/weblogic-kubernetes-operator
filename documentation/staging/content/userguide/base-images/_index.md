@@ -2,7 +2,7 @@
 title: "Domain images"
 date: 2019-02-23T16:45:55-05:00
 weight: 6
-description: "Create or obtain images for WebLogic Server or Fusion Middleware Infrastructure deployments."
+description: "Create, obtain, or inspect images for WebLogic Server or Fusion Middleware Infrastructure deployments."
 ---
 
 #### Contents
@@ -13,8 +13,12 @@ description: "Create or obtain images for WebLogic Server or Fusion Middleware I
   - [WebLogic distribution installer type](#weblogic-distribution-installer-type)
   - [Compare "dated" and "undated" images](#compare-dated-and-undated-images)
   - [Example OCR image names](#example-ocr-image-names)
-- [Obtain images from the Oracle Container Registry](#obtain-images-from-the-oracle-container-registry)
-- [Set up Kubernetes to access a container registry](#set-up-kubernetes-to-access-a-container-registry)
+  - [Obtain images from the Oracle Container Registry](#obtain-images-from-the-oracle-container-registry)
+- [Inspect images](#inspect-images)
+- [Set up Kubernetes to access domain images](#set-up-kubernetes-to-access-domain-images)
+  - [Option 1: Store images in a central registry and set up image pull secrets on each domain resource](#option-1-store-images-in-a-central-registry-and-set-up-image-pull-secrets-on-each-domain-resource)
+  - [Option 2: Store images in a central registry and set up a Kubernetes service account with image pull secrets in each domain namespace](#option-2-store-images-in-a-central-registry-and-set-up-a-kubernetes-service-account-with-image-pull-secrets-in-each-domain-namespace)
+  - [Option 3: Manually place images on Kubernetes cluster nodes](#option-3-manually-place-images-on-kubernetes-cluster-nodes)
 - [Ensure you are using recently patched images](#ensure-you-are-using-recently-patched-images)
 - [Create a custom image with patches applied](#create-a-custom-image-with-patches-applied)
 - [Create a custom image with your domain inside the image](#create-a-custom-image-with-your-domain-inside-the-image)
@@ -85,6 +89,14 @@ with Oracle WebLogic Server and Coherence.
 OCR also supplies _Fusion Middleware Infrastructure images_
 which  have a pre-installed Oracle Home with Oracle WebLogic Server,
 Coherence, Fusion Middleware Control, and Java Required Files (JRF).
+
+See the following sections for information about naming and accessing OCR images:
+
+- [Compare General Availability to Critical Patch Updates images](#compare-general-availability-to-critical-patch-updates-images)
+- [WebLogic distribution installer type](#weblogic-distribution-installer-type)
+- [Compare "dated" and "undated" images](#compare-dated-and-undated-images)
+- [Example OCR image names](#example-ocr-image-names)
+- [Obtain images from the Oracle Container Registry](#obtain-images-from-the-oracle-container-registry)
 
 ##### Compare General Availability to Critical Patch Updates images
 
@@ -185,7 +197,7 @@ where the names are abbreviated to omit their `container-registry.oracle.com/mid
 |`weblogic_cpu:12.2.1.4-generic-jdk8-ol7`|CPU image with latest JDK 8, latest Oracle Linux 7, and GA Oracle WebLogic Server 12.2.1.4 generic distribution CPU.|
 |`weblogic_cpu:12.2.1.4-generic-jdk8-ol7-211124`|CPU image with JDK 8u311, Oracle Linux 7u9, and the Oracle WebLogic Server 12.2.1.4 generic distribution October 2021 CPU.|
 
-#### Obtain images from the Oracle Container Registry
+##### Obtain images from the Oracle Container Registry
 
 {{% notice warning %}}
 The latest Oracle Container Registry (OCR) **GA images**
@@ -263,54 +275,87 @@ For example, to use docker to pull an image from OCR:
    $ docker images
    ```
 
-1. If desired, you can:
+1. If desired, you can [inspect](inspect-images) the content of the image.
 
-   * Check the WLS version with:
-     ```text
-     $ docker run \
-       container-registry.oracle.com/middleware/weblogic_cpu:12.2.1.4-generic-jdk8-ol8 \
-       sh -c 'source $ORACLE_HOME/wlserver/server/bin/setWLSEnv.sh > /dev/null 2>&1 && java weblogic.version'
-     ```
+__Notes:__
+- If you are using a multi-node Kubernetes cluster,
+  or your Kubernetes cluster is remote from your locally created or pulled domain image,
+  then additional steps are usually required to enusure that your Kubernetes cluster can access the image.
+  See [Set up Kubernetes to access domain images](#set-up-kubernetes-to-access-domain-images).
+- The operator requires domain images to contain WebLogic Server 12.2.1.3.0 or later.
+  When using 12.2.1.3 images, the operator requires that
+  the images contain patches 29135930 and 27117282;
+  these patches are included in OCR 12.2.1.3 GA and CPU images.
 
-   * Check the WLS patches with:
-     ```text
-     $ docker run \
-       container-registry.oracle.com/middleware/weblogic_cpu:12.2.1.4-generic-jdk8-ol8 \
-       sh -c '$ORACLE_HOME/OPatch/opatch lspatches'
-     ```
+#### Inspect images
 
-   * If you have images that were generated using the WebLogic Image Tool (WIT), including OCR images,
-     and you have installed the tool, then you can obtain useful version and patch information
-     using the
-     [WIT inspect command](https://oracle.github.io/weblogic-image-tool/userguide/tools/inspect-image/).
-     For example:
-     ```
-     $ imagetool inspect \
-       --image=container-registry.oracle.com/middleware/weblogic_cpu:12.2.1.4-generic-jdk8-ol8 \
-       --patches
-     ```
+If you have access to WebLogic Server or Fusion Middleware Infrastructure image
+(such as by following the steps in TBD ),
+and the image originates from the Oracle Container Registry or
+was created using the WebLogic Image Tool,
+then you can use the following commands to determine their contents:
 
-   **Note**: If you are following the quick start sample
-   (which uses "weblogic" GA images with version 12.2.1.4),
-   then replace the image references
-   below with `container-registry.oracle.com/middleware/weblogic:12.2.1.4`).
+**Note**: If you are following the quick start sample
+(which uses "weblogic" GA images with version 12.2.1.4),
+then replace the image references
+below with `container-registry.oracle.com/middleware/weblogic:12.2.1.4`.
 
-{{% notice note %}}
-The operator requires WebLogic Server 12.2.1.3.0 or later.
-When using 12.2.1.3 images, the operator requires that
-the images contain patches 29135930 and 27117282;
-these patches are included in OCR 12.2.1.3 GA and CPU images.
-{{% /notice %}}
+* Check the WLS version with:
+  ```text
+  $ docker run \
+    container-registry.oracle.com/middleware/weblogic_cpu:12.2.1.4-generic-jdk8-ol8 \
+    sh -c 'source $ORACLE_HOME/wlserver/server/bin/setWLSEnv.sh > /dev/null 2>&1 && java weblogic.version'
+  ```
 
-#### Set up Kubernetes to access a container registry
+* Check the WLS patches with:
+  ```text
+  $ docker run \
+  container-registry.oracle.com/middleware/weblogic_cpu:12.2.1.4-generic-jdk8-ol8 \
+  sh -c '$ORACLE_HOME/OPatch/opatch lspatches'
+  ```
 
-If Kubernetes needs to directly obtain a WebLogic Server image for a domain resource
-from a container image registry or repository that requires authentication,
-such as the Oracle Container Registry (OCR), then:
+* If you have images that were generated using the WebLogic Image Tool (WIT), including OCR images,
+  and you have installed the tool, then you can obtain useful version and patch information
+  using the
+  [WIT inspect command](https://oracle.github.io/weblogic-image-tool/userguide/tools/inspect-image/).
+  For example:
+  ```
+  $ imagetool inspect \
+  --image=container-registry.oracle.com/middleware/weblogic_cpu:12.2.1.4-generic-jdk8-ol8 \
+  --patches
+  ```
+
+#### Set up Kubernetes to access domain images
+
+In most operator samples, it is assumed that Kubernetes cluster has a single worker node,
+and any images that are needed by that node have either been created on that node or
+externally pulled to the node from a registry (using `docker pull`).
+This is fine for most demonstration purposes,
+and if this assumption is correct, then no additional steps
+are needed to ensure that Kubernetes has access to the image.
+_Otherwise, additional steps are typically required to ensure that a Kubernetes cluster has access to domain images._
+
+For example, it is typical in production deployments
+for the Kubernetes cluster to be remote and have multiple worker nodes,
+and to store domain images in a central repository that requires authentication.
+
+Here are three typical options for supplying domain images to such deployments:
+
+- [Option 1: Store images in a central registry and set up image pull secrets on each domain resource](#option-1-store-images-in-a-central-registry-and-set-up-image-pull-secrets-on-each-domain-resource)
+
+- [Option 2: Store images in a central registry and set up a Kubernetes service account with image pull secrets in each domain namespace](#option-2-store-images-in-a-central-registry-and-set-up-a-kubernetes-service-account-with-image-pull-secrets-in-each-domain-namespace)
+
+- [Option 3: Manually place images on Kubernetes cluster nodes](#option-3-manually-place-images-on-kubernetes-cluster-nodes)
+
+##### Option 1: Store images in a central registry and set up image pull secrets on each domain resource
+
+The most commonly used option is to store the image is a central registry,
+and set up image pull secrets for a domain resource:
 
 - A Kubernetes "docker-registry" secret containing the registry credentials must be created
   in the same namespace as domain resources with a `domain.spec.image` attribute that reference the image.
   For example, to create a secret with OCR credentials, issue the following command:
+
   ```shell
   $ kubectl create secret docker-registry SECRET_NAME \
     -n NAMESPACE_WHERE_YOU_DEPLOY_DOMAINS \
@@ -322,6 +367,7 @@ such as the Oracle Container Registry (OCR), then:
 
 - The name of the secret must be added to these domain resources using
   the `domain.spec.imagePullSecrets` field. For example:
+
   ```text
   ...
   spec:
@@ -331,15 +377,64 @@ such as the Oracle Container Registry (OCR), then:
   ...
   ```
 
+  If you are following the Quick Start sample (which creates a domain resource for you),
+  then you can set up this action by uncommenting and setting the `imagePullSecretName` setting
+  in the sample's `create-domain-inputs.yaml` file.
+
 - If you are using the Oracle Container Registry, then
   you must use the web interface to accept the Oracle Standard Terms and Restrictions
   for the Oracle software images that you intend to deploy.
   You only need to do this once for a particular image.
   See [Obtain images from the Oracle Container Registry](#obtain-images-from-the-oracle-container-registry).
 
-Alternatively, it may be preferable to manually pull an image in advance
-on each Kubernetes worker node in you Kubernetes cluster,
+For more information about creating Kubernetes Secrets for accessing
+the registry, see the Kubernetes documentation about
+[pulling an image from a private registry](https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/).
+
+##### Option 2: Store images in a central registry and set up a Kubernetes service account with image pull secrets in each domain namespace
+
+An additional option for accessing an image that is stored in a private registry
+is to set up the Kubernetes `ServiceAccount` in the namespace running the
+WebLogic domain with a set of image pull secrets thus avoiding the need to
+set `imagePullSecrets` for each `Domain` resource being created (because each resource
+instance represents a WebLogic domain that the operator is managing):
+
+- Create a Kubernetes "docker-registry" secret in the same manner as shown 
+  in the previous option.
+
+- Modify the `ServiceAccount` that is in the same namespace
+  as your domain resources to include this image pull secret:
+
+  ```shell
+  $ kubectl patch serviceaccount default -n domain1-ns \
+  -p '{"imagePullSecrets": [{"name": "my-registry-pull-secret"}]}'
+  ```
+
+  Note that this patch command entirely replaces the current list of
+  image pull secrets (if any). To include multiple secrets, use
+  the following format:
+  `-p '{"imagePullSecrets": [{"name": "my-registry-pull-secret"}, {"name": "my-registry-pull-secret2"}]}'`.
+
+For more information about updating a Kubernetes `ServiceAccount`
+for accessing the registry, see the Kubernetes documentation about
+[configuring service accounts](https://kubernetes.io/docs/tasks/configure-pod-container/configure-service-account/#add-image-pull-secrets-to-a-service-account).
+
+##### Option 3: Manually place images on Kubernetes cluster nodes
+
+Alternatively, it may be preferable to manually place an image in advance
+on each Kubernetes worker node in your Kubernetes cluster.
+
+For example, if the desired image is located in a docker registry,
+then you can manually call `docker login` and `docker pull` on each
+worker node. For the steps to do with Orace Container Registry images,
 see [Obtain images from the Oracle Container Registry](#obtain-images-from-the-oracle-container-registry).
+
+As another example,
+if the docker image is located in a local docker cache,
+then you can get an inventory of the cache by calling `docker images`,
+you can save the image to a tar file `docker save -o myimage.tar myimagerepo:myimagetag`,
+and finally copy the tar file to each node and call `docker load -o myimage.tar` on each node.
+
 If you choose this approach, then a Kubernetes secret is not required
 and your domain resource `domain.spec.imagePullPolicy` must be set to `Never` or `IfNotPresent`.
 
@@ -353,7 +448,7 @@ to ensure that you are using recently patched images:
   fully patched custom images that you generate yourself,
   or Critical Patch Update (CPU) images from the
   Oracle Container Registry (OCR).
-  Such images contain `_cpu` in their image name,
+  CPU images contain `_cpu` in their image name,
   for example `container-registry.oracle.com/middleware/weblogic_cpu:TAG`.
 
 - General Availability (GA) images are not licensable or suitable for production use.
@@ -374,10 +469,13 @@ to ensure that you are using recently patched images:
 
 See the [Overview](#overview) for general information about OCR and custom images,
 and [Understand Oracle Container Registry images](#understand-oracle-container-registry-images)
-for detailed information about the differences between GA and CPU images.
+for detailed information about OCR image naming and the differences between GA and CPU images.
 
 See [supported environments]({{< relref "/userguide/platforms/environments.md" >}})
 for information about licensed access to WebLogic patches and CPU images.
+
+See [inspect images](#inspect-images)
+to learn how to determine the patches and versions of software within a particular image.
 
 #### Create a custom image with patches applied
 
@@ -507,7 +605,8 @@ a base WebLogic Server image:
      - JDK 8u291
      - the latest version of the Oracle Linux 7 slim container image
      - the minimal patches required for the operator to run a 12.2.1.3 image
-       (patches 29135930 and 27117282).
+       (patches 29135930 and 27117282);
+       these patches are included in OCR 12.2.1.3 GA and CPU images.
 
      ```shell
      $ imagetool create \

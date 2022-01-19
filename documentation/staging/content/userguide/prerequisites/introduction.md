@@ -26,4 +26,4 @@ For the current production release {{< latestVersion >}}:
   [RBAC]({{< relref "/userguide/managing-operators/rbac.md" >}}) documentation.
 * We do not currently support running WebLogic in non-Linux containers.
 
-See also [Supported platforms]({{< relref "userguide/platforms/environments.md" >}}) for environment and licensing requirements.
+See also [Supported environments]({{< relref "userguide/platforms/environments.md" >}}) for environment and licensing requirements.

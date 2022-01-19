@@ -1,13 +1,13 @@
 ---
-title: "Supported platforms"
+title: "Supported environments"
 date: 2019-02-23T16:40:54-05:00
-description: "See the operator supported environments."
+description: "The supported environments, pricing and licensing, and support details for the operator."
 weight: 3
 ---
 
 ### Contents
 
-- [Supported environments](#supported-environments)
+- [Overview](#overview)
 - [Important notes about specific environments](#important-notes-about-specific-environments)
   - [Oracle Cloud Infrastructure (OCI)](#oracle-cloud-infrastructure-oci)
   - [Oracle Linux Cloud Native Environment (OLCNE)](#oracle-linux-cloud-native-environment-olcne)
@@ -25,7 +25,7 @@ weight: 3
   - [WebLogic Server or Fusion Middleware Infrastructure Images](#weblogic-server-or-fusion-middleware-infrastructure-images)
   - [Additional references](#additional-references)
 
-### Supported environments
+### Overview
 
 The operator supports a wide range of on-premises and cloud Kubernetes
 offerings where Kubernetes is supplied for you or you set up Kubernetes
@@ -68,11 +68,19 @@ see [Operator prerequisites]({{< relref "/userguide/prerequisites/introduction.m
 
 ### Important notes about specific environments
 
-Here are some important considerations for specific environments.
+Here are some important considerations for specific environments:
+
+- [Oracle Cloud Infrastructure (OCI)](#oracle-cloud-infrastructure-oci)
+- [Oracle Linux Cloud Native Environment (OLCNE)](#oracle-linux-cloud-native-environment-olcne)
+- [Oracle Private Cloud Appliance (PCA) and Oracle Private Cloud at Customer (OPCC)](#oracle-private-cloud-appliance-pca-and-oracle-private-cloud-at-customer-opcc)
+- [Microsoft Azure](#microsoft-azure)
+- [VMware Tanzu Kubernetes Grid (TKG)](#vmware-tanzu-kubernetes-grid-tkg)
+- [OpenShift](#openshift)
+- [WebLogic Server running in Kubernetes connecting to an Oracle Database also running in Kubernetes](#weblogic-server-running-in-kubernetes-connecting-to-an-oracle-database-also-running-in-kubernetes)
+- [Development-focused Kubernetes distributions](#development-focused-kubernetes-distributions)
 
 **Note:** This section does not list all supported environments.
-See [Supported environments](#supported-environments)
-for a list of all supported environments.
+See the [Overview](#overview) for a list of all supported environments.
 
 #### Oracle Cloud Infrastructure (OCI)
 
@@ -80,7 +88,7 @@ The operator and WebLogic Server are supported on Oracle Cloud
 Infrastructure using *Oracle Container Engine for Kubernetes*, or in a cluster running *Oracle Linux
 Container Services for use with Kubernetes* on OCI Compute, and on
 any other OCI "Authorized Cloud Environments"
-as described in [Supported environments](#supported-environments).
+as described in the [Overview](#overview).
 
 #### Oracle Linux Cloud Native Environment (OLCNE)
 
@@ -123,7 +131,7 @@ There are three different approaches for deploying the operator to Microsoft Azu
 
 [Azure Kubernetes Service (AKS)](https://docs.microsoft.com/en-us/azure/aks/) is a hosted Kubernetes environment.  The WebLogic Kubernetes
 Operator, Oracle WebLogic Server 12c, and Oracle Fusion Middleware Infrastructure 12c are fully supported and certified on Azure Kubernetes Service (as per the documents
-referenced in [Supported environments](#supported-environments)). In this environment, it is the customer's responsibility to install the operator and supply WebLogic Server or Fusion Middleware Infrastructure images.
+referenced in the [Overview](#overview)). In this environment, it is the customer's responsibility to install the operator and supply WebLogic Server or Fusion Middleware Infrastructure images.
 
 AKS support and limitations:
 
@@ -218,7 +226,14 @@ The WebLogic Kubernetes Operator and Oracle Linux are open source and free;
 WebLogic Server requires licenses in any environment.
 All WebLogic Server licenses are suitable for deploying WebLogic to containers and Kubernetes,
 including free single desktop Oracle Technology Network (OTN) developer licenses.
-See the following sections for more detailed information.
+See the following sections for more detailed information:
+
+- [WebLogic Kubernetes Operator](#weblogic-kubernetes-operator)
+- [WebLogic Server](#weblogic-server)
+- [Oracle Linux](#oracle-linux)
+- [Oracle Java](#oracle-java)
+- [WebLogic Server or Fusion Middleware Infrastructure Images](#weblogic-server-or-fusion-middleware-infrastructure-images)
+- [Additional references](#additional-references)
 
 #### WebLogic Kubernetes Operator
 
