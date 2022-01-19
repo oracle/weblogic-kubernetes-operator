@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 14b9e931f1aa6e1d080baade399aea07370562d6b2c79108c7c0d0ba636a989b
+    weblogic.sha256: 65447f15264f53b21620421d68a61186ac7ff87949a063b3f84d6fa1be86962c
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -125,14 +125,14 @@ spec:
                           Tooling model.
                         type: string
                       auxiliaryImages:
-                        description: Use an auxiliary image to automatically include
-                          directory content from additional images. This is a useful
-                          alternative for including Model in Image model files, or
-                          other types of files, in a pod without requiring modifications
-                          to the pod's base image 'domain.spec.image'. This feature
-                          internally uses a Kubernetes emptyDir volume and Kubernetes
-                          init containers to share the files from the additional images
-                          with the pod.
+                        description: Use auxiliary images to include Model in Image
+                          model and application archive files from additional images.
+                          Using auxiliary images eliminates the need to make modifications
+                          to the pod's base image 'domain.spec.image' when making
+                          changes to the WebLogic Deploy Tooling model or applications.
+                          This feature internally uses a Kubernetes emptyDir volume
+                          and Kubernetes init containers to share the files from the
+                          additional images with the pod.
                         items:
                           type: object
                           properties:
@@ -233,8 +233,11 @@ spec:
                             type: object
                         type: object
                       auxiliaryImageVolumeMountPath:
-                        description: The auxiliary image volume mount path. Defaults
-                          to '/aux'.
+                        description: The auxiliary image volume mount path. This is
+                          an advanced setting that rarely needs to be configured.
+                          Defaults to '/aux', which means the emptyDir volume will
+                          be mounted at '/aux' path in the WebLogic-Server container
+                          within the pod.
                         type: string
                       modelHome:
                         description: Location of the WebLogic Deploy Tooling model

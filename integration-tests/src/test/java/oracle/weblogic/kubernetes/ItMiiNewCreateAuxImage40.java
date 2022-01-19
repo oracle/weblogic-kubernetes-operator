@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -339,13 +339,6 @@ class ItMiiNewCreateAuxImage40 {
     Domain domainCR = createDomainResource(domain3Uid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1");
-    //domainCR.spec().addAuxiliaryImageVolumesItem(new AuxiliaryImageVolume()
-    //    .mountPath(auxiliaryImagePath3)
-    //    .name(auxiliaryImageVolumeName3));
-    // ANIL - commenting this out since introspector will fail if these values are set to non-default values.
-    //domainCR.spec().configuration().model()
-    //    .withModelHome(auxiliaryImagePath3 + "/models")
-    //    .withWdtInstallHome(auxiliaryImagePath3 + "/weblogic-deploy");
     domainCR.spec().configuration().model()
         .withAuxiliaryImage(new AuxiliaryImage()
             .image(miiAuxiliaryImage3 + ":" + MII_BASIC_IMAGE_TAG)

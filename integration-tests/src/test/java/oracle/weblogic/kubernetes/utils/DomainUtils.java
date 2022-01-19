@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.Map;
 
 import io.kubernetes.client.custom.V1Patch;
+import oracle.weblogic.domain.AuxiliaryImage;
 import oracle.weblogic.domain.Domain;
 import oracle.weblogic.domain.DomainCondition;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -29,6 +30,7 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withLongRetryPoli
 import static oracle.weblogic.kubernetes.utils.PodUtils.getPodsWithTimeStamps;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
@@ -279,22 +281,22 @@ public class DomainUtils {
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
     assertNotNull(domain1, "Got null domain resource ");
-    //assertNotNull(domain1.getSpec().getServerPod().getAuxiliaryImages(),
-    //    domain1 + "/spec/serverPod/auxiliaryImages is null");
-    //List<AuxiliaryImage> auxiliaryImageList = domain1.getSpec().getServerPod().getAuxiliaryImages();
-    //assertFalse(auxiliaryImageList.isEmpty(), "AuxiliaryImage list is empty");
+    assertNotNull(domain1.getSpec().getConfiguration().getModel().getAuxiliaryImages(),
+        domain1 + "/spec/serverPod/auxiliaryImages is null");
+    List<AuxiliaryImage> auxiliaryImageList = domain1.getSpec().getConfiguration().getModel().getAuxiliaryImages();
+    assertFalse(auxiliaryImageList.isEmpty(), "AuxiliaryImage list is empty");
 
     String searchString;
     int index = 0;
 
-    //AuxiliaryImage ai = auxiliaryImageList.stream()
-    //    .filter(auxiliaryImage -> oldImageName.equals(auxiliaryImage.getImage()))
-    //    .findAny()
-    //    .orElse(null);
-    //assertNotNull(ai, "Can't find auxiliary image with Image name " + oldImageName
-    //    + "can't patch domain " + domainUid);
+    AuxiliaryImage ai = auxiliaryImageList.stream()
+        .filter(auxiliaryImage -> oldImageName.equals(auxiliaryImage.getImage()))
+        .findAny()
+        .orElse(null);
+    assertNotNull(ai, "Can't find auxiliary image with Image name " + oldImageName
+        + "can't patch domain " + domainUid);
 
-    //index = auxiliaryImageList.indexOf(ai);
+    index = auxiliaryImageList.indexOf(ai);
     searchString = "\"/spec/configuration/model/auxiliaryImages/" + index + "/image\"";
     StringBuffer patchStr = new StringBuffer("[{");
     patchStr.append("\"op\": \"replace\",")
@@ -319,16 +321,16 @@ public class DomainUtils {
     assertNotNull(domain1, "Got null domain resource after patching");
     assertNotNull(domain1.getSpec(), domain1 + " /spec is null");
     assertNotNull(domain1.getSpec().getServerPod(), domain1 + " /spec/serverPod is null");
-    //assertNotNull(domain1.getSpec().getServerPod().getAuxiliaryImages(),
-    //    domain1 + "/spec/serverPod/auxiliaryImages is null");
+    assertNotNull(domain1.getSpec().getConfiguration().getModel().getAuxiliaryImages(),
+        domain1 + "/spec/serverPod/auxiliaryImages is null");
 
     //verify the new auxiliary image in the new patched domain
-    //auxiliaryImageList = domain1.getSpec().getServerPod().getAuxiliaryImages();
+    auxiliaryImageList = domain1.getSpec().getConfiguration().getModel().getAuxiliaryImages();
 
-    //String auxiliaryImage = auxiliaryImageList.get(index).getImage();
-    //getLogger().info("In the new patched domain, imageValue is: {0}", auxiliaryImage);
-    //assertTrue(auxiliaryImage.equalsIgnoreCase(newImageName), "auxiliary image was not updated"
-    //    + " in the new patched domain");
+    String auxiliaryImage = auxiliaryImageList.get(index).getImage();
+    getLogger().info("In the new patched domain, imageValue is: {0}", auxiliaryImage);
+    assertTrue(auxiliaryImage.equalsIgnoreCase(newImageName), "auxiliary image was not updated"
+        + " in the new patched domain");
 
     // verify the server pods are rolling restarted and back to ready state
     getLogger().info("Verifying rolling restart occurred for domain {0} in namespace {1}",

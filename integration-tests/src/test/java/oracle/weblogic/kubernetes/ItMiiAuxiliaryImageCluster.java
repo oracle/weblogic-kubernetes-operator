@@ -53,7 +53,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test to create model in image domain using auxiliary image containing the cluster configuration")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @IntegrationTest
-@Disabled("Disabled due to auxiliary image 4.0 changes.")
+@Disabled("Temporarily disabled due to auxiliary image 4.0 changes.")
 class ItMiiAuxiliaryImageCluster {
 
   private static String opNamespace = null;
@@ -173,7 +173,7 @@ class ItMiiAuxiliaryImageCluster {
     // create domain custom resource using 3 auxiliary images
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
         domainUid, auxiliaryImageDomainScopeNames.toString(), auxiliaryImageClusterScopeNames.toString());
-    /* ankedia - commented out due to aux 4.0 changes
+    /* Commented out due to auxiliary image 4.0 changes.
     Domain domainCR = createDomainResourceWithAuxiliaryImageClusterScope(domainUid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, clusterName,
