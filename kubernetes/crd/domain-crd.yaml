@@ -1,11 +1,11 @@
-# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 65447f15264f53b21620421d68a61186ac7ff87949a063b3f84d6fa1be86962c
+    weblogic.sha256: 49b76f91c62f31d4bacda7a4d4da1472537c5e28fc23952c4aa554ccbf53ee1c
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -125,11 +125,10 @@ spec:
                           Tooling model.
                         type: string
                       auxiliaryImages:
-                        description: Use auxiliary images to include Model in Image
-                          model and application archive files from additional images.
-                          Using auxiliary images eliminates the need to make modifications
-                          to the pod's base image 'domain.spec.image' when making
-                          changes to the WebLogic Deploy Tooling model or applications.
+                        description: Use auxiliary images to provide Model in Image
+                          model, application archive and WebLogic Deploy Tooling files.
+                          This is a useful alternative for providing these files without
+                          requiring modifications to the pod's base image 'domain.spec.image'.
                           This feature internally uses a Kubernetes emptyDir volume
                           and Kubernetes init containers to share the files from the
                           additional images with the pod.
@@ -139,14 +138,15 @@ spec:
                             sourceWDTInstallHome:
                               description: The source location of the WebLogic Deploy
                                 Tooling installation within the auxiliary image. Defaults
-                                to /auxiliary/weblogic-deploy. Ignored if the value
-                                is set to 'None'.
+                                to '/auxiliary/weblogic-deploy'. If the value is set
+                                to 'None' or no files found at the default location,
+                                then the WebLogic Deploy Tooling installation copy
+                                is skipped.
                               type: string
                             image:
-                              description: The name of an image with files located
-                                in the directory specified by `spec.auxiliaryImageVolumes.mountPath`
-                                of the auxiliary image volume referenced by `serverPod.auxiliaryImages.volume`,
-                                which defaults to "/auxiliary".
+                              description: The auxiliary image with Model in Image
+                                model files, application archive files and/or WebLogic
+                                Deploying Tooling installation files. Required.
                               type: string
                             imagePullPolicy:
                               description: The image pull policy for the container
@@ -161,8 +161,9 @@ spec:
                             sourceModelHome:
                               description: The source location of the WebLogic Deploy
                                 Tooling model home within the auxiliary image. Defaults
-                                to /auxiliary/models. Ignored if the value is set
-                                to 'None'.
+                                to '/auxiliary/models'. If the value is set to 'None'
+                                or no files found at the default location, then the
+                                model files copy is skipped.
                               type: string
                         type: array
                       onlineUpdate:

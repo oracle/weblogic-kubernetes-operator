@@ -26,9 +26,8 @@ public class AuxiliaryImage {
   /**
    * The auxiliary image.
    */
-  @Description("The name of an image with files located in the directory specified by "
-      + "`spec.auxiliaryImageVolumes.mountPath` of the auxiliary image volume referenced by "
-      + "`serverPod.auxiliaryImages.volume`, which defaults to \"/auxiliary\".")
+  @Description("The auxiliary image with Model in Image model files, application archive files and/or WebLogic "
+          + "Deploying Tooling installation files. Required.")
   @NotNull
   private String image;
 
@@ -39,11 +38,13 @@ public class AuxiliaryImage {
   private String imagePullPolicy;
 
   @Description("The source location of the WebLogic Deploy Tooling installation within the auxiliary image. "
-          + "Defaults to /auxiliary/weblogic-deploy. Ignored if the value is set to 'None'.")
+          + "Defaults to '/auxiliary/weblogic-deploy'. If the value is set to 'None' or no files found at the default "
+          + "location, then the WebLogic Deploy Tooling installation copy is skipped.")
   private String sourceWDTInstallHome;
 
   @Description("The source location of the WebLogic Deploy Tooling model home within the auxiliary image. "
-          + "Defaults to /auxiliary/models. Ignored if the value is set to 'None'.")
+          + "Defaults to '/auxiliary/models'. If the value is set to 'None' or no files found at the default location, "
+          + "then the model files copy is skipped.")
   private String sourceModelHome;
 
   public String getImage() {
