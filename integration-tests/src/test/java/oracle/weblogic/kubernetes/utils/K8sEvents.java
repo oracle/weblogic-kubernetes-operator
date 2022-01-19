@@ -293,7 +293,7 @@ public class K8sEvents {
             logger.info("Verifying domain event type {0}", type);
             assertTrue(event.getType().equals(type));
             int countAfter = getDomainEventCount(domainNamespace, domainUid, reason, "Normal");
-            return (countAfter == countBefore + 1);
+            return (countAfter >= countBefore + 1);
           }
         }
       } catch (ApiException ex) {
