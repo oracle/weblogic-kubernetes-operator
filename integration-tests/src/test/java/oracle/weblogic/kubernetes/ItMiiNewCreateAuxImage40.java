@@ -85,7 +85,6 @@ class ItMiiNewCreateAuxImage40 {
   private static LoggingFacade logger = null;
   private String domain1Uid = "domain1";
   private String domain2Uid = "domain2";
-  private String domain3Uid = "domain3";
   private static String miiAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + "-new1";
   private static String miiAuxiliaryImage2 = MII_AUXILIARY_IMAGE_NAME + "-new2";
   private static String miiAuxiliaryImage3 = MII_AUXILIARY_IMAGE_NAME + "-new3";
@@ -148,7 +147,6 @@ class ItMiiNewCreateAuxImage40 {
   void testCreateDomainUsingAuxImageDefaultOptions() {
 
     // admin/managed server name here should match with model yaml
-    final String auxiliaryImageVolumeName = "auxiliaryImageVolume1";
     final String auxiliaryImagePath = "/auxiliary";
     List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
 
@@ -219,7 +217,6 @@ class ItMiiNewCreateAuxImage40 {
   @DisplayName("Test to create domain using auxiliary image with customized options")
   void testCreateDomainUsingAuxImageCustomizedOptions() {
     // admin/managed server name here should match with model yaml
-    final String auxiliaryImageVolumeName2 = "auxiliaryImageVolume2";
     final String auxiliaryImagePath2 = "/auxiliary2";
 
     // create a new auxiliary image with Alpine base image instead of busybox
@@ -295,8 +292,6 @@ class ItMiiNewCreateAuxImage40 {
   @DisplayName("Test to create domain using auxiliary image with customized wdtModelHome")
   void testCreateDomainUsingAuxImageCustomizedWdtmodelhome() {
     // admin/managed server name here should match with model yaml
-    final String auxiliaryImageVolumeName3 = "auxiliaryImageVolume3";
-    final String auxiliaryImagePath3 = "/auxiliary3";
 
     // create a new auxiliary image with Alpine base image instead of busybox
     List<String> archiveList = Collections.singletonList(ARCHIVE_DIR + "/" + MII_BASIC_APP_NAME + ".zip");
@@ -334,8 +329,9 @@ class ItMiiNewCreateAuxImage40 {
     dockerLoginAndPushImageToRegistry(miiAuxiliaryImage3 + ":" + MII_BASIC_IMAGE_TAG);
 
     // create domain custom resource using auxiliary image
+    String domain3Uid = "domain3";
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary image {1}",
-        domain3Uid, miiAuxiliaryImage3);
+            domain3Uid, miiAuxiliaryImage3);
     Domain domainCR = createDomainResource40(domain3Uid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, "cluster-1");
@@ -351,7 +347,7 @@ class ItMiiNewCreateAuxImage40 {
 
     // create domain and verify its running
     logger.info("Creating domain {0} with auxiliary images {1} in namespace {2}",
-        domain3Uid, miiAuxiliaryImage1, domainNamespace);
+            domain3Uid, miiAuxiliaryImage1, domainNamespace);
     createDomainAndVerify(domain3Uid, domainCR, domainNamespace, adminServerPodName, managedServerPrefix, replicaCount);
 
     //create router for admin service on OKD
