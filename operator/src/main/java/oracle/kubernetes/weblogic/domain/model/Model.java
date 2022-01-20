@@ -239,11 +239,11 @@ public class Model {
 
   @Override
   public boolean equals(Object other) {
-    if (this == other) {
+    if (other == this) {
       return true;
     }
 
-    if (other == null || getClass() != other.getClass()) {
+    if (!(other instanceof Model)) {
       return false;
     }
 

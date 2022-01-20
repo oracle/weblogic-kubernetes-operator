@@ -343,6 +343,9 @@ class ItMiiNewCreateAuxImage {
     domainCR.spec().addAuxiliaryImageVolumesItem(new AuxiliaryImageVolume()
         .mountPath(auxiliaryImagePath3)
         .name(auxiliaryImageVolumeName3));
+    domainCR.spec().configuration().model()
+        .withModelHome(auxiliaryImagePath3 + "/models")
+        .withWdtInstallHome(auxiliaryImagePath3 + "/weblogic-deploy");
     /* Commented out due to auxiliary image 4.0 changes.
     domainCR.spec().serverPod()
          .addAuxiliaryImagesItem(new AuxiliaryImage()

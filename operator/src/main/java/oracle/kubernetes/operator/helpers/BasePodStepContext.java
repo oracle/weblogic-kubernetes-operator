@@ -120,7 +120,7 @@ public abstract class BasePodStepContext extends StepContextBase {
     List<V1EnvVar> vars = new ArrayList<>();
     addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_TARGET_PATH, AUXILIARY_IMAGE_TARGET_PATH);
     addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME,
-            auxiliaryImage.getSourceWDTInstallHome());
+            auxiliaryImage.getSourceWDTInstallHomeOrDefault());
     addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_SOURCE_MODEL_HOME,
             auxiliaryImage.getSourceModelHome());
     addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_IMAGE, auxiliaryImage.getImage());

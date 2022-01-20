@@ -728,7 +728,7 @@ class ItMiiAuxiliaryImage {
     assertNotNull(domain1, "Got null domain resource ");
     /* Commented due to auxiliary image 4.0 changes.
     assertNotNull(domain1.getSpec().getServerPod().getAuxiliaryImages(),
-            domain1 + "/spec/serverPod/auxiliaryImages is null");
+        domain1 + "/spec/serverPod/auxiliaryImages is null");
 
     List<AuxiliaryImage> auxiliaryImageList = domain1.getSpec().getServerPod().getAuxiliaryImages();
     assertFalse(auxiliaryImageList.isEmpty(), "AuxiliaryImage list is empty");
