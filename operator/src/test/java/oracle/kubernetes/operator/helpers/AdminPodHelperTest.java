@@ -37,6 +37,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAUTHORIZED;
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_COMPLETED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.POD_CYCLE_STARTING;
 import static oracle.kubernetes.operator.helpers.Matchers.hasContainer;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
@@ -857,6 +858,24 @@ class AdminPodHelperTest extends PodHelperTestBase {
     logRecords.clear();
 
     assertContainsEventWithNamespace(POD_CYCLE_STARTING, NS);
+  }
+
+  @Test
+  void whenDomainHomeChanged_andRunAfterUpStep_domainRollCompletedEventCreatedWithCorrectMessage()
+      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    initializeExistingPod();
+    getConfiguredDomainSpec().setDomainHome("adfgg");
+
+    testSupport.runSteps(getStepFactory(), Step.chain(getAfterUpStep(), terminalStep));
+    logRecords.clear();
+
+    assertThat("Expected Event " + DOMAIN_ROLL_COMPLETED + " expected with message not found",
+        getExpectedEventMessage(DOMAIN_ROLL_COMPLETED),
+        stringContainsInOrder("Rolling restart of domain", UID, " completed"));
+  }
+
+  Step getAfterUpStep() {
+    return new RollingHelper.AfterRollStep(null, false);
   }
 
   @Test

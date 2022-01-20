@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # Description
@@ -18,7 +18,7 @@ scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 source ${scriptDir}/../common/utility.sh
 source ${scriptDir}/../common/validate.sh
 
-function usage {
+usage() {
   echo usage: ${script} -i file -o dir [-e] [-h]
   echo "  -i Parameter inputs file, must be specified."
   echo "  -o Output directory for the generated yaml files, must be specified."
@@ -64,7 +64,7 @@ fi
 # Function to initialize and validate the output directory
 # for the generated yaml files for this domain.
 #
-function initOutputDir {
+initOutputDir() {
   pvOutputDir="$outputDir/pv-pvcs"
 
   if [ -z ${domainUID} ]; then
@@ -87,7 +87,7 @@ function initOutputDir {
 #
 # Function to setup the environment to run the create domain job
 #
-function initialize {
+initialize() {
 
   # Validate the required files exist
   validateErrors=false
@@ -138,7 +138,7 @@ function initialize {
 #
 # Function to generate the yaml files for creating a domain
 #
-function createYamlFiles {
+createYamlFiles() {
 
   # Create a directory for this domain's output files
   mkdir -p ${pvOutputDir}
@@ -204,7 +204,7 @@ function createYamlFiles {
 #
 # Function to create the domain's persistent volume
 #
-function createDomainPV {
+createDomainPV() {
   # Check if the persistent volume is already available
   checkPvExists ${persistentVolumeName}
   if [ "${PV_EXISTS}" = "false" ]; then
@@ -219,7 +219,7 @@ function createDomainPV {
 # Must be called after createDomainPV since it relies on
 # createDomainPV defining persistentVolumeName
 #
-function createDomainPVC {
+createDomainPVC() {
   # Check if the persistent volume claim is already available
   checkPvcExists ${persistentVolumeClaimName} ${namespace}
   if [ "${PVC_EXISTS}" = "false" ]; then
@@ -232,7 +232,7 @@ function createDomainPVC {
 #
 # Function to output to the console a summary of the work completed
 #
-function printSummary {
+printSummary() {
   echo "The following files were generated:"
   echo "  ${pvOutput}"
   echo "  ${pvcOutput}"

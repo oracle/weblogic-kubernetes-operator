@@ -1,11 +1,8 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
 
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.regex.Matcher;
@@ -13,12 +10,10 @@ import java.util.regex.Pattern;
 
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
-import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
-import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.execCommand;
 import static oracle.weblogic.kubernetes.actions.TestActions.shutdownManagedServerUsingServerStartPolicy;
-import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.withStandardRetryPolicy;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertAll;
@@ -32,6 +27,17 @@ import static org.junit.jupiter.api.Assertions.fail;
  * Utility class for session migration tests.
  */
 public class SessionMigrationUtil {
+
+  private static final String SESSMIGR_MODEL_FILE = "model.sessmigr.yaml";
+
+  /**
+   * Get original model file for session migration tests.
+   *
+   * @return - the model file name
+   */
+  public static String getOrigModelFile() {
+    return SESSMIGR_MODEL_FILE;
+  }
 
   /**
    * Patch domain to shutdown a WebLogic server by changing the value of
@@ -56,12 +62,6 @@ public class SessionMigrationUtil {
     // check that the managed server pod shutdown successfylly
     logger.info("Check that managed server pod {0} stopped in namespace {1}", podName, domainNamespace);
     checkPodDoesNotExist(podName, domainUid, domainNamespace);
-
-    try {
-      Thread.sleep(10000);
-    } catch (Exception ex) {
-      //ignore
-    }
   }
 
   /**
@@ -92,7 +92,8 @@ public class SessionMigrationUtil {
     final String countAttr = "count";
     LoggingFacade logger = getLogger();
 
-    // send a HTTP request to set http session state(count number) and save HTTP session info
+    // send a HTTP request to set http session state(count number) and save HTTP session cookie info
+    // or get http session state(count number usind saved HTTP session cookie info
     logger.info("Process HTTP request with web service URL {0} in the pod {1} ", webServiceUrl, serverName);
     Map<String, String> httpAttrInfo =
         processHttpRequest(domainNamespace, adminServerPodName, hostName, port, webServiceUrl, headerOption);
@@ -121,51 +122,24 @@ public class SessionMigrationUtil {
     return httpDataInfo;
   }
 
-  /**
-   * Generate the model.sessmigr.yaml for a given test class
-   *
-   * @param className test class name
-   * @param domainUid unique domain identifier
-   *
-   * @return path of generated yaml file for a session migration test
-   */
-  public static String generateSessionMigrYaml(String className, String domainUid) {
-    final String SESSMIGR_MODEL_FILE = "model.sessmigr.yaml";
-    final String srcSessionMigrYamlFile =  MODEL_DIR + "/" + SESSMIGR_MODEL_FILE;
-    final String destSessionMigrYamlFile = RESULTS_ROOT + "/" + className + "/" + SESSMIGR_MODEL_FILE;
-    Path srcSessionMigrYamlPath = Paths.get(srcSessionMigrYamlFile);
-    Path destSessionMigrYamlPath = Paths.get(destSessionMigrYamlFile);
-
-    // create dest dir
-    assertDoesNotThrow(() -> Files.createDirectories(
-        Paths.get(RESULTS_ROOT + "/" + className)),
-        String.format("Could not create directory under %s", RESULTS_ROOT + "/" + className + ""));
-
-    // copy model.sessmigr.yamlto results dir
-    assertDoesNotThrow(() -> Files.copy(srcSessionMigrYamlPath, destSessionMigrYamlPath, REPLACE_EXISTING),
-        "Failed to copy " + srcSessionMigrYamlFile + " to " + destSessionMigrYamlFile);
-
-    // DOMAIN_NAME in model.sessmigr.yaml
-    assertDoesNotThrow(() -> replaceStringInFile(
-        destSessionMigrYamlFile.toString(), "DOMAIN_NAME", domainUid),
-        "Could not modify DOMAIN_NAME in " + destSessionMigrYamlFile);
-
-    return destSessionMigrYamlFile;
-  }
-
   private static Map<String, String> processHttpRequest(String domainNamespace,
-                                                       String adminServerPodName,
-                                                       String hostName,
-                                                       int port,
-                                                       String curlUrlPath,
-                                                       String headerOption) {
+                                                        String adminServerPodName,
+                                                        String hostName,
+                                                        int port,
+                                                        String curlUrlPath,
+                                                        String headerOption) {
     String[] httpAttrArray = {"sessioncreatetime", "sessionid", "primary", "secondary", "count"};
     Map<String, String> httpAttrInfo = new HashMap<String, String>();
     LoggingFacade logger = getLogger();
 
     // build curl command
     String curlCmd = buildCurlCommand(curlUrlPath, headerOption, hostName, port);
-    logger.info("==== Command to set HTTP request and get HTTP response {0} ", curlCmd);
+    logger.info("Command to set HTTP request and get HTTP response {0} ", curlCmd);
+
+    // check if primary server is ready
+    testUntil(withStandardRetryPolicy,
+        () -> checkPrimaryServerReady(domainNamespace, adminServerPodName, curlCmd),
+        logger, "check if primary server is ready in namespace {0}", domainNamespace);
 
     // set HTTP request and get HTTP response
     ExecResult execResult = assertDoesNotThrow(
@@ -189,6 +163,29 @@ public class SessionMigrationUtil {
     return httpAttrInfo;
   }
 
+  private static boolean checkPrimaryServerReady(String domainNamespace,
+                                                 String adminServerPodName,
+                                                 String curlCmd) {
+    boolean primaryServerReady = false;
+    LoggingFacade logger = getLogger();
+
+    // set HTTP request and get HTTP response
+    ExecResult execResult = assertDoesNotThrow(
+        () -> execCommand(domainNamespace, adminServerPodName,
+        null, true, "/bin/sh", "-c", curlCmd));
+
+    if (execResult.exitValue() == 0 && execResult.stdout() != null && !execResult.stdout().isEmpty()) {
+      String primaryServerName = getHttpResponseAttribute(execResult.stdout(), "primary");
+
+      if (primaryServerName != null && !primaryServerName.isEmpty()) {
+        logger.info("\n Primary server is ready: \n " + execResult.stdout());
+        primaryServerReady = true;
+      }
+    }
+
+    return primaryServerReady;
+  }
+
   private static String buildCurlCommand(String curlUrlPath,
                                          String headerOption,
                                          String hostName,
@@ -196,7 +193,9 @@ public class SessionMigrationUtil {
     final String httpHeaderFile = "/u01/domains/header";
     LoggingFacade logger = getLogger();
 
-    int waittime = 5;
+    // --connect-timeout - Maximum time in seconds that you allow curl's connection to take
+    // --max-time - Maximum time in seconds that you allow the whole operation to take
+    int waittime = 10;
     String curlCommand =  new StringBuilder()
         .append("curl --silent --show-error")
         .append(" --connect-timeout ").append(waittime).append(" --max-time ").append(waittime)
