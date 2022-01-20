@@ -657,7 +657,7 @@ public class DomainStatusUpdater {
           status.addCondition(new DomainCondition(Failed).withStatus(true).withReason(ServerPod));
         } else {
           status.removeConditionsMatching(c -> c.hasType(Failed) && ServerPod.name().equals(c.getReason()));
-          if (newConditions.allIntendedServersRunning() && !stillHasPodPendingRestart(status)) {
+          if (newConditions.allIntendedServersReady() && !stillHasPodPendingRestart(status)) {
             status.removeConditionsWithType(ConfigChangesPendingRestart);
           }
         }
@@ -741,16 +741,16 @@ public class DomainStatusUpdater {
         }
 
         private boolean isProcessingCompleted() {
-          return !haveTooManyReplicas() && allIntendedServersRunning();
+          return !haveTooManyReplicas() && allIntendedServersReady();
         }
 
         private boolean haveTooManyReplicas() {
           return Arrays.stream(clusterChecks).anyMatch(ClusterCheck::hasTooManyReplicas);
         }
 
-        private boolean allIntendedServersRunning() {
+        private boolean allIntendedServersReady() {
           return haveServerData()
-              && allStartedServersAreRunning()
+              && allStartedServersAreReady()
               && allNonStartedServersAreShutdown()
               && serversMarkedForRoll().isEmpty();
         }
@@ -811,7 +811,7 @@ public class DomainStatusUpdater {
         }
 
         private boolean sufficientServersRunning() {
-          return numServersReady() >= getSufficientServerCount();
+          return numServersRunning() >= getSufficientServerCount();
         }
 
         private long getSufficientServerCount() {
@@ -826,7 +826,7 @@ public class DomainStatusUpdater {
           return getDomain().isAllowReplicasBelowMinDynClusterSize(clusterName) ? 0 : minReplicaCount;
         }
 
-        private long numServersReady() {
+        private long numServersRunning() {
           return startedServers.stream()
               .map(StatusUpdateContext.this::getRunningState)
               .filter(this::isRunning)
@@ -978,8 +978,8 @@ public class DomainStatusUpdater {
             .orElse(Collections.emptyMap());
       }
 
-      private boolean allStartedServersAreRunning() {
-        return expectedRunningServers.stream().allMatch(this::isRunning);
+      private boolean allStartedServersAreReady() {
+        return expectedRunningServers.stream().allMatch(this::isReady);
       }
 
       private boolean allNonStartedServersAreShutdown() {
@@ -1027,16 +1027,9 @@ public class DomainStatusUpdater {
         return Optional.ofNullable(scan).map(Scan::getWlsDomainConfig);
       }
 
-      private boolean isRunning(@Nonnull String serverName) {
-        return RUNNING_STATE.equals(getRunningState(serverName)) && isRollCompleteFor(serverName);
-      }
-
-      private boolean isRollCompleteFor(@Nonnull String serverName) {
-        return isAdminServer(serverName) || isNotMarkedForRoll(serverName);
-      }
-
-      private boolean isAdminServer(@Nonnull String serverName) {
-        return serverName.equals(getInfo().getAdminServerName());
+      // A server is ready if it is in the running state and does not need to roll to accommodate changes to the domain.
+      private boolean isReady(@Nonnull String serverName) {
+        return RUNNING_STATE.equals(getRunningState(serverName)) && isNotMarkedForRoll(serverName);
       }
 
       // returns true if the server pod does not have a label indicating that it needs to be rolled
