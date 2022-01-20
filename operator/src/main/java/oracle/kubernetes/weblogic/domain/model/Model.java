@@ -30,10 +30,12 @@ public class Model {
   @Description("Name of a ConfigMap containing the WebLogic Deploy Tooling model.")
   private String configMap;
 
-  @Description("Location of the WebLogic Deploy Tooling model home. Defaults to /u01/wdt/models.")
+  @Description("Location of the WebLogic Deploy Tooling model home. Defaults to '/u01/wdt/models' if no "
+          + "'spec.configuration.model.AuxiliaryImages' are specified, and to '/aux/models' otherwise.")
   private String modelHome;
 
-  @Description("Location of the WebLogic Deploy Tooling installation. Defaults to /u01/wdt/weblogic-deploy.")
+  @Description("Location of the WebLogic Deploy Tooling installation. Defaults to '/u01/wdt/weblogic-deploy' if no "
+          + "'spec.configuration.model.AuxiliaryImages' are specified, and to '/aux/weblogic-deploy' otherwise.")
   private String wdtInstallHome;
 
   @Description("Online update option for Model In Image dynamic update.")
@@ -43,9 +45,9 @@ public class Model {
    * The auxiliary images.
    *
    */
-  @Description("Use auxiliary images to provide Model in Image model, application archive and WebLogic Deploy Tooling "
-          + "files. This is a useful alternative for providing these files without requiring modifications "
-          + "to the pod's base image 'domain.spec.image'. "
+  @Description("Optionally use auxiliary images to provide Model in Image model, application archive and WebLogic "
+          + "Deploy Tooling files. This is a useful alternative for providing these files without requiring "
+          + "modifications to the pod's base image 'domain.spec.image'. "
           + "This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share "
           + "the files from the additional images with the pod.")
   private List<AuxiliaryImage> auxiliaryImages;
@@ -60,7 +62,8 @@ public class Model {
           + "system for the life of the pod.")
   private String auxiliaryImageVolumeMedium;
 
-  @Description("The emptyDir volume size limit. Defaults to unset.")
+  @Description("The emptyDir volume size limit. This is an advanced setting that rarely needs to be configured. "
+          + "Defaults to unset.")
   private String auxiliaryImageVolumeSizeLimit;
 
   @Nullable

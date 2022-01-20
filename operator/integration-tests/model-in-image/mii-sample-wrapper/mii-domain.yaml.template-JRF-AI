@@ -134,9 +134,16 @@ spec:
       # Valid model domain types are 'WLS', 'JRF', and 'RestrictedJRF', default is 'WLS'
       domainType: "JRF"
 
-      # Auxiliary image(s) containing WDT model, archives and install.
+      # Optional auxiliary image(s) containing WDT model, archives, and install.
+      #   `image`                - Image location
+      #   `imagePullPolicy`      - Pull policy, default `IfNotPresent`
+      #   `sourceModelHome`      - Model files directory in image, default `/auxiliary/models`.
+      #   `sourceWDTInstallHome` - WDT install directory in image, default `/auxiliary/weblogic-deploy`.
       auxiliaryImages:
       - image: "@@MODEL_IMAGE_NAME@@:@@MODEL_IMAGE_TAG@@"
+        imagePullPolicy: IfNotPresent
+        #sourceWDTInstallHome: /auxiliary/weblogic-deploy
+        #sourceModelHome: /auxiliary/models
 
       # Optional configmap for additional models and variable files
       #configMap: @@DOMAIN_UID@@-wdt-config-map
