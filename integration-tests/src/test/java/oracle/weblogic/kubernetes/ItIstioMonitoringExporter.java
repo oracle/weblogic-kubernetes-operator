@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -194,7 +194,8 @@ class ItIstioMonitoringExporter {
           "Can't modify Prometheus CM, not possible to monitor " + domainUid);
     }
     //verify metrics via prometheus
-    checkMetricsViaPrometheus(searchKey, "sessmigr", prometheusPort);
+    checkMetricsViaPrometheus(searchKey, "sessmigr",
+        K8S_NODEPORT_HOST + ":" + prometheusPort);
   }
 
   /**

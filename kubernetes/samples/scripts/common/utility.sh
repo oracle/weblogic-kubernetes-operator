@@ -9,20 +9,20 @@
 #
 # Function to exit and print an error message
 # $1 - text of message
-function fail {
+fail() {
   printError $*
   exit 1
 }
 
 # Function to print an error message
-function printError {
+printError() {
   echo [ERROR] $*
 }
 
 # Function to see if there is more than 1 input file.
 # This could happen if the user has a properties file from
 # running wdt discover domain on a on-prem domain
-function checkInputFiles {
+checkInputFiles() {
   if [[ "${valuesInputFile}" =~ [,] ]] ; then
     echo "Found a comma separated list of input files"
     IFS=','
@@ -45,7 +45,7 @@ function checkInputFiles {
 # Function to parse a yaml file and generate the bash exports
 # $1 - Input filename
 # $2 - Output filename
-function parseYaml {
+parseYaml() {
   local s='[[:space:]]*' w='[a-zA-Z0-9_]*' fs=$(echo @|tr @ '\034')
   sed -ne "s|^\($s\):|\1|" \
      -e "s|^\($s\)\($w\)$s:$s[\"']\(.*\)[\"']$s\$|\1$fs\2$fs\3|p" \
@@ -67,7 +67,7 @@ function parseYaml {
 # Function to parse a properties file and generate the bash exports
 # $1 - Input filename
 # $2 - Output filename
-function parseProperties {
+parseProperties() {
   while IFS='=' read -r key value
   do
     echo "export ${key}=\"${value}\"" >> $2
@@ -77,7 +77,7 @@ function parseProperties {
 #
 # Function to remove a file if it exists 
 #
-function removeFileIfExists {
+removeFileIfExists() {
   if [ -f $1 ]; then
     rm $1
   fi
@@ -86,7 +86,7 @@ function removeFileIfExists {
 #
 # Function to parse the common parameter inputs file
 #
-function parseCommonInputs {
+parseCommonInputs() {
   exportValuesFile=$(mktemp /tmp/export-values-XXXXXXXXX.sh)  
   tmpFile=$(mktemp /tmp/javaoptions_tmp-XXXXXXXXX.dat)  
   parseYaml ${valuesInputFile} ${exportValuesFile}
@@ -135,7 +135,7 @@ function parseCommonInputs {
 # $1 object type
 # $2 object name
 # $3 yaml file
-function deleteK8sObj {
+deleteK8sObj() {
   # If the yaml file does not exist yet, unable to do the delete
   if [ ! -f $3 ]; then
     fail "Unable to delete object type $1 with name $2 because file $3 does not exist"
@@ -152,7 +152,7 @@ function deleteK8sObj {
 #
 # Function to lowercase a value
 # $1 - value to convert to lowercase
-function toLower {
+toLower() {
   local lc=`echo $1 | tr "[:upper:]" "[:lower:]"`
   echo "$lc"
 }
@@ -160,7 +160,7 @@ function toLower {
 #
 # Function to lowercase a value and make it a legal DNS1123 name
 # $1 - value to convert to lowercase
-function toDNS1123Legal {
+toDNS1123Legal() {
   local val=`echo $1 | tr "[:upper:]" "[:lower:]"`
   val=${val//"_"/"-"}
   echo "$val"
@@ -170,7 +170,7 @@ function toDNS1123Legal {
 # Check the state of a persistent volume.
 # $1 - name of volume
 # $2 - expected state of volume
-function checkPvState {
+checkPvState() {
 
   echo "Checking if the persistent volume ${1:?} is ${2:?}"
   local pv_state=`kubectl get pv $1 -o jsonpath='{.status.phase}'`
@@ -188,7 +188,7 @@ function checkPvState {
 #
 # Function to check if a persistent volume exists
 # $1 - name of volume
-function checkPvExists {
+checkPvExists() {
 
   echo "Checking if the persistent volume ${1} exists"
   PV_EXISTS=`kubectl get pv | grep ${1} | wc | awk ' { print $1; } '`
@@ -205,7 +205,7 @@ function checkPvExists {
 # Function to check if a persistent volume claim exists
 # $1 - name of persistent volume claim
 # $2 - NameSpace
-function checkPvcExists {
+checkPvcExists() {
   echo "Checking if the persistent volume claim ${1} in NameSpace ${2} exists"
   PVC_EXISTS=`kubectl get pvc -n ${2} | grep ${1} | wc | awk ' { print $1; } '`
   if [ "${PVC_EXISTS}" = "1" ]; then
@@ -222,7 +222,7 @@ function checkPvcExists {
 # inputs file and the file is the same as the one from the commandline.
 # $1 the inputs file from the command line
 # $2 the file in the output directory that needs to be made the same as $1
-function copyInputsFileToOutputDirectory {
+copyInputsFileToOutputDirectory() {
   local from=$1
   local to=$2
   local doCopy="true"
@@ -243,7 +243,7 @@ function copyInputsFileToOutputDirectory {
 # Function to obtain the IP address of the kubernetes cluster.  This information
 # is used to form the URL's for accessing services that were deployed.
 #
-function getKubernetesClusterIP {
+getKubernetesClusterIP() {
 
   # Get name of the current context
   local CUR_CTX=`kubectl config current-context | awk ' { print $1; } '`
@@ -269,7 +269,7 @@ function getKubernetesClusterIP {
 # if specified.
 # The serverPodResources variable remains unset if none of the input values are provided.
 #
-function buildServerPodResources {
+buildServerPodResources() {
 
   if [ -n "${serverPodMemoryRequest}" ]; then
     local memoryRequest="         memory\: \"${serverPodMemoryRequest}\"\n"
@@ -300,7 +300,7 @@ function buildServerPodResources {
 #
 # Function to generate the properties and yaml files for creating a domain
 #
-function createFiles {
+createFiles() {
 
   update=false
   if [ "$#" == 1 ]; then
@@ -643,7 +643,7 @@ function createFiles {
 #
 # Function to markup the wdt model file
 #
-function updateModelFile {
+updateModelFile() {
   # Update the wdt model file with kubernetes section
   modelFile="${domainOutputDir}/tmp/wdt_model.yaml"
   cat ${scriptDir}/wdt_k8s_model_template.yaml >> ${modelFile}
@@ -705,7 +705,7 @@ function updateModelFile {
 #
 # Function to create the domain recource
 #
-function createDomainResource {
+createDomainResource() {
   kubectl apply -f ${dcrOutput}
 
   attempts=0
@@ -725,7 +725,7 @@ function createDomainResource {
 #      true means domain home in image
 #      false means domain home on PV
 #
-function createDomain {
+createDomain() {
   if [ "$#" != 1 ]; then
     fail "The function must be called with domainHomeInImage parameter."
   fi
@@ -766,7 +766,7 @@ function createDomain {
 #      true means domain home in image
 #      false means domain home on PV
 #
-function updateDomain {
+updateDomain() {
 
   domainHomeInImage="false"
 
@@ -796,7 +796,7 @@ function updateDomain {
 }
 
 # checks if a given pod in a NameSpace has been deleted
-function checkPodDelete(){
+checkPodDelete() {
 
  pod=$1
  ns=$2
@@ -837,7 +837,7 @@ function checkPodDelete(){
 #NAME                READY     STATUS    RESTARTS   AGE
 #domain1-adminserver 1/1       Running   0          4m
 
-function checkPodState(){
+checkPodState() {
 
  status="NotReady"
  max=60
@@ -874,7 +874,7 @@ function checkPodState(){
 }
 
 # Checks if a pod is available in a given namespace 
-function checkPod(){
+checkPod() {
 
  max=20
  count=1
@@ -910,7 +910,7 @@ function checkPod(){
 }
 
 # Checks if a service is available in a given namespace 
-function checkService(){
+checkService() {
  svc=$1
  ns=$2
  startSecs=$SECONDS
@@ -928,7 +928,7 @@ function checkService(){
 }
 
 # Get pod name when pod available in a given namespace
-function getPodName(){
+getPodName() {
 
  local max=$((SECONDS + 120))
 
@@ -951,7 +951,7 @@ function getPodName(){
 }
 
 # Checks if a pod is available in a given namespace
-function detectPod(){
+detectPod() {
  ns=$1
  startSecs=$SECONDS
  maxWaitSecs=10
