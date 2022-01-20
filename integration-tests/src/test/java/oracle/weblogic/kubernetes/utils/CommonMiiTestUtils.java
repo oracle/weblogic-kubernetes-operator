@@ -337,8 +337,8 @@ public class CommonMiiTestUtils {
       String... auxiliaryImageName) {
 
     Domain domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage(domainResourceName,
-            domNamespace, baseImageName, adminSecretName, repoSecretName, encryptionSecretName, replicaCount,
-            List.of(clusterName), auxiliaryImagePath, auxiliaryImageVolumeName, auxiliaryImageName);
+        domNamespace, baseImageName, adminSecretName, repoSecretName, encryptionSecretName, replicaCount,
+        List.of(clusterName), auxiliaryImagePath, auxiliaryImageVolumeName, auxiliaryImageName);
 
     return domainCR;
   }
@@ -386,10 +386,10 @@ public class CommonMiiTestUtils {
     for (String cmImageName: auxiliaryImageName) {
       /* Commented out due to auxiliary image 4.0 changes
       domainCR.spec().serverPod()
-              .addAuxiliaryImagesItem(new AuxiliaryImage()
-                      .image(cmImageName)
-                      .volume(auxiliaryImageVolumeName)
-                      .imagePullPolicy("IfNotPresent"));
+          .addAuxiliaryImagesItem(new AuxiliaryImage()
+                  .image(cmImageName)
+                  .volume(auxiliaryImageVolumeName)
+                  .imagePullPolicy("IfNotPresent"));
        */
     }
     return domainCR;
@@ -429,8 +429,8 @@ public class CommonMiiTestUtils {
     for (AuxiliaryImageVolume auxiliaryImageVolume : auxiliaryImageVolumes) {
       domainCR.spec().addAuxiliaryImageVolumesItem(auxiliaryImageVolume);
       domainCR.spec().configuration().model()
-              .withModelHome(auxiliaryImageVolume.getMountPath() + "/models")
-              .withWdtInstallHome(auxiliaryImageVolume.getMountPath() + "/weblogic-deploy");
+          .withModelHome(auxiliaryImageVolume.getMountPath() + "/models")
+          .withWdtInstallHome(auxiliaryImageVolume.getMountPath() + "/weblogic-deploy");
     }
 
     for (AuxiliaryImage auxiliaryImage : auxiliaryImages) {
@@ -478,16 +478,16 @@ public class CommonMiiTestUtils {
 
     Domain domainCR =
         createDomainResourceWithAuxiliaryImageClusterScope(domainResourceName,
-                domNamespace,
-                baseImageName,
-                adminSecretName,
-                repoSecretName,
-                encryptionSecretName,
-                replicaCount,
-                List.of(clusterName),
-                auxiliaryImagePathVolume,
-                auxiliaryImageDomainScopeNames,
-                auxiliaryImageClusterScopeNames);
+            domNamespace,
+            baseImageName,
+            adminSecretName,
+            repoSecretName,
+            encryptionSecretName,
+            replicaCount,
+            List.of(clusterName),
+            auxiliaryImagePathVolume,
+            auxiliaryImageDomainScopeNames,
+            auxiliaryImageClusterScopeNames);
 
     return domainCR;
   }
@@ -543,20 +543,20 @@ public class CommonMiiTestUtils {
         for (String auxiliaryImageName: auxiliaryImageDomainScopeNames) {
           domainCR.spec().serverPod()
               .addAuxiliaryImagesItem(new AuxiliaryImage()
-                      .image(auxiliaryImageName)
-                      .volume(auxiliaryImageVolumeName)
-                      .imagePullPolicy("IfNotPresent"));
+                  .image(auxiliaryImageName)
+                  .volume(auxiliaryImageVolumeName)
+                  .imagePullPolicy("IfNotPresent"));
         }
 
         for (String auxiliaryImageName: auxiliaryImageClusterScopeNames) {
           List<Cluster> clusterList = domainCR.spec().getClusters().stream()
               .filter(cluster ->
-                      clusterNames.contains(cluster.clusterName())).collect(Collectors.toList());
+                clusterNames.contains(cluster.clusterName())).collect(Collectors.toList());
           clusterList.forEach(cluster ->
               cluster.serverPod().addAuxiliaryImagesItem(new AuxiliaryImage()
-                      .image(auxiliaryImageName)
-                      .volume(auxiliaryImageVolumeName)
-                      .imagePullPolicy("IfNotPresent")));
+                  .image(auxiliaryImageName)
+                  .volume(auxiliaryImageVolumeName)
+                  .imagePullPolicy("IfNotPresent")));
         }
          */
       }

@@ -152,6 +152,30 @@ class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
+  void whenTwoAuxiliaryImageSetsSourceWDTInstallHomeAndOneIsNone_noErrorReported() {
+    List<AuxiliaryImage> auxiliaryImages = new ArrayList<>();
+    auxiliaryImages.add(new AuxiliaryImage().image("image1").sourceWDTInstallHome("/wdtInstallHome1"));
+    auxiliaryImages.add(new AuxiliaryImage().image("image2").sourceWDTInstallHome("None"));
+
+    configureDomainWithRuntimeEncryptionSecret(domain)
+            .withAuxiliaryImages(auxiliaryImages);
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
+  void wheOnlyOneAuxiliaryImageSetsSourceWDTInstallHome_noErrorReported() {
+    List<AuxiliaryImage> auxiliaryImages = new ArrayList<>();
+    auxiliaryImages.add(new AuxiliaryImage().image("image1"));
+    auxiliaryImages.add(new AuxiliaryImage().image("image2").sourceWDTInstallHome("/wdtInstallHome1"));
+
+    configureDomainWithRuntimeEncryptionSecret(domain)
+            .withAuxiliaryImages(auxiliaryImages);
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
+  }
+
+  @Test
   void whenModelHomePlacedUnderWDTInstallHome_reportError() {
     configureDomainWithRuntimeEncryptionSecret(domain)
             .withWDTInstallationHome("/aux")

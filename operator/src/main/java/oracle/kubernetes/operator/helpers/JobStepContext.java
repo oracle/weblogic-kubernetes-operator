@@ -665,12 +665,14 @@ public class JobStepContext extends BasePodStepContext {
       addEnvVar(vars, IntrospectorJobEnvVars.WDT_INSTALL_HOME, wdtInstallHome);
     }
 
-    Optional.ofNullable(getAuxiliaryImages()).ifPresent(c -> addAuxImagePathEnv(vars));
+    Optional.ofNullable(getAuxiliaryImages()).ifPresent(ais -> addAuxImagePathEnv(ais, vars));
     return vars;
   }
 
-  private void addAuxImagePathEnv(List<V1EnvVar> vars) {
-    addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_MOUNT_PATH, getDomain().getAuxiliaryImageVolumeMountPath());
+  private void addAuxImagePathEnv(List<AuxiliaryImage> auxiliaryImages, List<V1EnvVar> vars) {
+    if (auxiliaryImages.size() > 0) {
+      addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_MOUNT_PATH, getDomain().getAuxiliaryImageVolumeMountPath());
+    }
   }
 
   private void addEnvVarsForExistingTopology(List<V1EnvVar> vars) {
