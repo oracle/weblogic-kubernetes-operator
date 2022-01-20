@@ -68,6 +68,7 @@ import static oracle.kubernetes.operator.DomainFailureReason.ReplicasTooHigh;
 import static oracle.kubernetes.operator.DomainFailureReason.ServerPod;
 import static oracle.kubernetes.operator.DomainFailureReason.TopologyMismatch;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
+import static oracle.kubernetes.operator.LabelConstants.TO_BE_ROLLED_LABEL;
 import static oracle.kubernetes.operator.MIINonDynamicChangesMethod.CommitUpdateOnly;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
@@ -568,7 +569,6 @@ public class DomainStatusUpdater {
       private final Map<String, String> serverState;
       private final Map<String, ServerHealth> serverHealth;
       private final Packet packet;
-      private final RollStateComputation rollStateComputation;
 
       StatusUpdateContext(Packet packet, StatusUpdateStep statusUpdateStep) {
         super(packet, statusUpdateStep);
@@ -577,7 +577,6 @@ public class DomainStatusUpdater {
         serverState = packet.getValue(SERVER_STATE_MAP);
         serverHealth = packet.getValue(SERVER_HEALTH_MAP);
         expectedRunningServers = getInfo().getExpectedRunningServers();
-        rollStateComputation = new RollStateComputation(getInfo());
       }
 
       @Override
@@ -1033,11 +1032,20 @@ public class DomainStatusUpdater {
       }
 
       private boolean isRollCompleteFor(@Nonnull String serverName) {
-        return isAdminServer(serverName) || rollStateComputation.isRollCompleteFor(serverName);
+        return isAdminServer(serverName) || isNotMarkedForRoll(serverName);
       }
 
       private boolean isAdminServer(@Nonnull String serverName) {
         return serverName.equals(getInfo().getAdminServerName());
+      }
+
+      // returns true if the server pod does not have a label indicating that it needs to be rolled
+      private boolean isNotMarkedForRoll(String serverName) {
+        return Optional.ofNullable(getInfo().getServerPod(serverName))
+              .map(V1Pod::getMetadata)
+              .map(V1ObjectMeta::getLabels)
+              .map(Map::keySet).orElse(Collections.emptySet()).stream()
+              .noneMatch(k -> k.equals(TO_BE_ROLLED_LABEL));
       }
 
       private boolean isNotRunning(@Nonnull String serverName) {

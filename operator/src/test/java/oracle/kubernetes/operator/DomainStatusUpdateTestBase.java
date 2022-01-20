@@ -65,7 +65,6 @@ import static oracle.kubernetes.operator.EventConstants.DOMAIN_FAILED_EVENT;
 import static oracle.kubernetes.operator.EventConstants.REPLICAS_TOO_HIGH_ERROR;
 import static oracle.kubernetes.operator.EventConstants.SERVER_POD_ERROR;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
-import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED;
@@ -492,11 +491,10 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @Test
-  void withAClusterWhenAllDesiredServersRunningButIntrospectVersionNotUpdated_establishCompletedConditionFalse() {
-    domain.getSpec().setIntrospectVersion("12");
+  void whenAnyServerHasRollNeededLabel_establishCompletedConditionFalse() {
     defineScenario().withCluster("cluster1", "ms1", "ms2", "ms3").build();
-    setServerPodIntrospectionVersion("ms1", "12");
-    setServerPodIntrospectionVersion("ms2", "13");
+    addRollNeededLabel("ms1");
+    addRollNeededLabel("ms2");
 
     updateDomainStatus();
 
@@ -507,17 +505,13 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @SuppressWarnings("ConstantConditions")
-  private void setServerPodIntrospectionVersion(String serverName, String labelValue) {
-    info.getServerPod(serverName).getMetadata().getLabels().put(INTROSPECTION_STATE_LABEL, labelValue);
+  private void addRollNeededLabel(String serverName) {
+    info.getServerPod(serverName).getMetadata().getLabels().put(LabelConstants.TO_BE_ROLLED_LABEL, "true");
   }
 
   @Test
-  void withAClusterWhenAllDesiredServersAndIntrospectVersionUpdated_establishCompletedConditionTrue() {
-    domain.getSpec().setIntrospectVersion("12");
+  void whenNoServerHasRollNeededLabel_establishCompletedConditionTrue() {
     defineScenario().withCluster("cluster1", "ms1", "ms2", "ms3").build();
-    setServerPodIntrospectionVersion("ms1", "12");
-    setServerPodIntrospectionVersion("ms2", "12");
-    setServerPodIntrospectionVersion("ms3", "12");
 
     updateDomainStatus();
 
