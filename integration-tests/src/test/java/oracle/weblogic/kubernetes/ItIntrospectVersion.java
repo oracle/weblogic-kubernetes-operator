@@ -656,18 +656,11 @@ class ItIntrospectVersion {
 
     //verify admin server accessibility and the health of cluster members
     verifyMemberHealth(adminServerPodName, managedServerNames, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-
+    
     // verify each managed server can see other member in the cluster
-    String podName = domainUid + "-managed-server1";
-    final String command = String.format(
-        "kubectl exec -n " + introDomainNamespace + "  " + podName + " -- curl http://"
-            + ADMIN_USERNAME_DEFAULT
-            + ":"
-            + ADMIN_PASSWORD_DEFAULT
-            + "@" + podName + ":%s/clusterview/ClusterViewServlet"
-            + "\"?user=" + ADMIN_USERNAME_DEFAULT
-            + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"",managedServerPort);
-    verifyServerCommunication(command, managedServerNames);
+    for (String managedServerName : managedServerNames) {
+      verifyConnectionBetweenClusterMembers(managedServerName, managedServerNames);
+    }
 
     // verify when a domain/cluster is rolling restarted without changing the spec.introspectVersion,
     // all server pods' weblogic.introspectVersion label stay unchanged after the pods are restarted.
