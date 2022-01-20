@@ -847,7 +847,8 @@ public class CommonTestUtils {
    * @param managedServerNames managed server names part of the cluster
    * @param manServerName managed server to check
    */
-  public static void verifyServerCommunication(String curlRequest, String manServerName, List<String> managedServerNames) {
+  public static void verifyServerCommunication(String curlRequest, String manServerName,
+                                               List<String> managedServerNames) {
     LoggingFacade logger = getLogger();
 
     HashMap<String, Boolean> managedServers = new HashMap<>();
