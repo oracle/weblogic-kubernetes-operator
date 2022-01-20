@@ -11,6 +11,7 @@ import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1EnvVarBuilder;
@@ -19,6 +20,8 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
+import jakarta.json.Json;
+import jakarta.json.JsonPatchBuilder;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
@@ -452,15 +455,33 @@ public class PodHelper {
     @Override
     // let the pod rolling step update the pod
     Step replaceCurrentPod(V1Pod pod, Step next) {
-      return createDomainRollStartEventIfNeeded(pod, deferProcessing(createCyclePodStep(pod, next)));
+      return createDomainRollStartEventIfNeeded(pod, deferProcessing(pod, createCyclePodStep(pod, next)));
     }
 
-    private Step deferProcessing(Step deferredStep) {
+    private Step deferProcessing(V1Pod pod, Step deferredStep) {
       synchronized (packet) {
         Optional.ofNullable(getServersToRoll()).ifPresent(r -> r.put(getServerName(), createRollRequest(deferredStep)));
       }
-      return null;
+      return createPodNeedsToRollStep(pod);
     }
+
+    // Patch the pod to indicate a pending roll.
+    private Step createPodNeedsToRollStep(V1Pod pod) {
+      return isPodAlreadyLabeledToRoll(pod) ? null : createPatchStep();
+    }
+
+    private boolean isPodAlreadyLabeledToRoll(V1Pod pod) {
+      return pod.getMetadata().getLabels().containsKey(LabelConstants.TO_BE_ROLLED_LABEL);
+    }
+
+    private Step createPatchStep() {
+      JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
+      patchBuilder.add("/metadata/labels/" + LabelConstants.TO_BE_ROLLED_LABEL, "true");
+      return new CallBuilder()
+          .patchPodAsync(getPodName(), getNamespace(), getDomainUid(),
+              new V1Patch(patchBuilder.build().toString()), new DefaultResponseStep<>(null));
+    }
+
 
     private Step.StepAndPacket createRollRequest(Step deferredStep) {
       return new Step.StepAndPacket(deferredStep, packet.copy());
