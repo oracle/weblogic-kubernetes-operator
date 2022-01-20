@@ -204,7 +204,10 @@
                             <goal>exec</goal>
                         </goals>
                         <configuration>
-                            <executable>${project.basedir}/../validateScripts.sh</executable>
+                            <executable>bash</executable>
+                            <arguments>
+                              ${project.basedir}/../validateScripts.sh
+                            </arguments>
                         </configuration>
                     </execution>
                 </executions>
