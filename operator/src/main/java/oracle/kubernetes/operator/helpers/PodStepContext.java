@@ -172,7 +172,7 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   abstract Map<String, String> getPodAnnotations();
 
-  private String getNamespace() {
+  String getNamespace() {
     return info.getNamespace();
   }
 

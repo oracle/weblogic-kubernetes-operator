@@ -12,12 +12,14 @@ import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 
+import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LabelSelector;
 import io.kubernetes.client.openapi.models.V1LabelSelectorRequirement;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodAffinityTerm;
 import io.kubernetes.client.openapi.models.V1PodAntiAffinity;
@@ -38,6 +40,7 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.DomainFailureReason.DomainInvalid;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_INVALID_ERROR;
+import static oracle.kubernetes.operator.LabelConstants.TO_BE_ROLLED_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
@@ -147,6 +150,34 @@ class ManagedPodHelperTest extends PodHelperTestBase {
   @Override
   List<String> createStartCommand() {
     return Collections.singletonList("/weblogic-operator/scripts/startServer.sh");
+  }
+
+  @Test
+  void whenPodNeedsToRoll_addRollLabel() {
+    initializeExistingPod();
+    configureServer().withRestartVersion("123");
+
+    assertThat(getCreatedPod().getMetadata().getLabels(), hasEntry(TO_BE_ROLLED_LABEL, "true"));
+  }
+
+  @Test
+  void whenPodNeedsToRollAndAlreadyMarkedForRoll_dontUpdateRollLabel() {
+    initializeExistingPod();
+    configureServer().withRestartVersion("123");
+    final V1Pod pod = (V1Pod) testSupport.getResources(KubernetesTestSupport.POD).get(0);
+    pod.getMetadata().putLabelsItem(TO_BE_ROLLED_LABEL, "true");
+    testSupport.doOnUpdate(KubernetesTestSupport.POD, this::reportUnexpectedUpdate);
+
+    assertThat(getCreatedPod().getMetadata().getLabels(), hasEntry(TO_BE_ROLLED_LABEL, "true"));
+  }
+
+  private void reportUnexpectedUpdate(@Nonnull Object object) {
+    throw new RuntimeException("unexpected update to pod " + getPodName((KubernetesObject) object));
+  }
+
+  @Nonnull
+  private String getPodName(@Nonnull KubernetesObject object) {
+    return Optional.ofNullable(object.getMetadata()).map(V1ObjectMeta::getName).orElse("<unknown>");
   }
 
   @Test
