@@ -74,6 +74,10 @@ public class AuxiliaryImage {
   }
 
   public String getSourceWDTInstallHome() {
+    return sourceWDTInstallHome;
+  }
+
+  public String getSourceWDTInstallHomeOrDefault() {
     return Optional.ofNullable(sourceWDTInstallHome)
             .orElse(AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME);
   }

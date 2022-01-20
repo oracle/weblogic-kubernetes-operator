@@ -51,7 +51,6 @@ import static java.util.stream.Collectors.toSet;
 import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.DEFAULT_SUCCESS_THRESHOLD;
 import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
-import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
 
 /**
@@ -891,7 +890,7 @@ public class Domain implements KubernetesObject, Upgradable<Domain> {
       verifyContainerPortNameValidInPodSpec();
       verifyModelHomeNotInWDTInstallHome();
       verifyWDTInstallHomeNotInModelHome();
-      whenAuxiliaryImagesDefinedVerifyVolumeMountValidInPodSpecs();
+      whenAuxiliaryImagesDefinedVerifyMountPathNotInUse();
       whenAuxiliaryImagesDefinedVerifyOnlyOneImageSetsSourceWDTInstallHome();
       return failures;
     }
@@ -1097,7 +1096,7 @@ public class Domain implements KubernetesObject, Upgradable<Domain> {
       return true;
     }
 
-    private void whenAuxiliaryImagesDefinedVerifyVolumeMountValidInPodSpecs() {
+    private void whenAuxiliaryImagesDefinedVerifyMountPathNotInUse() {
       getAdminServerSpec().getAdditionalVolumeMounts().forEach(volumeMount ->
               verifyMountPathForAuxiliaryImagesNotUsed(volumeMount));
       getSpec().getClusters().forEach(cluster ->
@@ -1123,14 +1122,13 @@ public class Domain implements KubernetesObject, Upgradable<Domain> {
     }
 
     private void verifyWDTInstallHome(List<AuxiliaryImage> auxiliaryImages) {
-      if (auxiliaryImages.stream().filter(ai -> isWDTInstallHomeNoneOrDefault(ai)).count() > 1) {
+      if (auxiliaryImages.stream().filter(ai -> isWDTInstallHomeSetAndNotNone(ai)).count() > 1) {
         failures.add(DomainValidationMessages.moreThanOneAuxiliaryImageConfiguredWDTInstallHome());
       }
     }
 
-    private boolean isWDTInstallHomeNoneOrDefault(AuxiliaryImage ai) {
-      return !ai.getSourceWDTInstallHome().equals("None")
-              && !ai.getSourceWDTInstallHome().equals(AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME);
+    private boolean isWDTInstallHomeSetAndNotNone(AuxiliaryImage ai) {
+      return ai.getSourceWDTInstallHome() != null && !"None".equalsIgnoreCase(ai.getSourceWDTInstallHomeOrDefault());
     }
 
     private void verifyLivenessProbeSuccessThreshold() {
