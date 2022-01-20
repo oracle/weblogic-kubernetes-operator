@@ -12,6 +12,7 @@ import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
 import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1EnvVarBuilder;
@@ -455,31 +456,37 @@ public class PodHelper {
     @Override
     // let the pod rolling step update the pod
     Step replaceCurrentPod(V1Pod pod, Step next) {
-      return createDomainRollStartEventIfNeeded(pod, deferProcessing(pod, createCyclePodStep(pod, next)));
+      labelPodAsNeedingToRoll(pod);
+      deferProcessing(pod, createCyclePodStep(pod, next));
+      return createDomainRollStartEventIfNeeded(pod, null);
     }
 
-    private Step deferProcessing(V1Pod pod, Step deferredStep) {
+    private void deferProcessing(V1Pod pod, Step deferredStep) {
       synchronized (packet) {
         Optional.ofNullable(getServersToRoll()).ifPresent(r -> r.put(getServerName(), createRollRequest(deferredStep)));
       }
-      return createPodNeedsToRollStep(pod);
     }
 
     // Patch the pod to indicate a pending roll.
-    private Step createPodNeedsToRollStep(V1Pod pod) {
-      return isPodAlreadyLabeledToRoll(pod) ? null : createPatchStep();
+    private void labelPodAsNeedingToRoll(V1Pod pod) {
+      if (!isPodAlreadyLabeledToRoll(pod)) {
+        patchPod();
+      }
     }
 
     private boolean isPodAlreadyLabeledToRoll(V1Pod pod) {
       return pod.getMetadata().getLabels().containsKey(LabelConstants.TO_BE_ROLLED_LABEL);
     }
 
-    private Step createPatchStep() {
-      JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
-      patchBuilder.add("/metadata/labels/" + LabelConstants.TO_BE_ROLLED_LABEL, "true");
-      return new CallBuilder()
-          .patchPodAsync(getPodName(), getNamespace(), getDomainUid(),
-              new V1Patch(patchBuilder.build().toString()), new DefaultResponseStep<>(null));
+    private void patchPod() {
+      try {
+        JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
+        patchBuilder.add("/metadata/labels/" + LabelConstants.TO_BE_ROLLED_LABEL, "true");
+        new CallBuilder()
+            .patchPod(getPodName(), getNamespace(), getDomainUid(), new V1Patch(patchBuilder.build().toString()));
+      } catch (ApiException ignored) {
+        /* extraneous comment to fool checkstyle into thinking that this is not an empty catch block. */
+      }
     }
 
 
