@@ -39,12 +39,16 @@ public class AuxiliaryImage {
 
   @Description("The source location of the WebLogic Deploy Tooling installation within the auxiliary image. "
           + "Defaults to '/auxiliary/weblogic-deploy'. If the value is set to 'None' or no files found at the default "
-          + "location, then the WebLogic Deploy Tooling installation copy is skipped.")
+          + "location, then the WebLogic Deploy Tooling installation copy is skipped. When specifying multiple "
+          + "auxiliary images, it is important to ensure that no more than one of the images "
+          + "supplies a WDT install home; if more than one WDT install home is copied, then domain deployment will "
+          + "fail.")
   private String sourceWDTInstallHome;
 
   @Description("The source location of the WebLogic Deploy Tooling model home within the auxiliary image. "
           + "Defaults to '/auxiliary/models'. If the value is set to 'None' or no files found at the default location, "
-          + "then the model files copy is skipped.")
+          + "then the model files copy is skipped. If specifying multiple auxiliary images with model files in their "
+          + "respective 'sourceModelHome' directories, then model files are merged. ")
   private String sourceModelHome;
 
   public String getImage() {

@@ -11,8 +11,8 @@ import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 
-@ApiModel("Use auxiliary images to provide Model in Image model, application archive and WebLogic Deploy Tooling "
-        + "files. This is a useful alternative for providing these files without requiring modifications "
+@ApiModel("Optionally use auxiliary images to provide Model in Image model, application archive and WebLogic Deploy "
+        + "Tooling files. This is a useful alternative for providing these files without requiring modifications "
         + "to the pod's base image 'domain.spec.image'. "
         + "This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share "
         + "the files from the additional images with the pod.")
@@ -36,12 +36,16 @@ public class AuxiliaryImage {
 
   @ApiModelProperty("The source location of the WebLogic Deploy Tooling installation within the auxiliary image. "
           + "Defaults to '/auxiliary/weblogic-deploy'. If the value is set to 'None' or no files found at the default "
-          + "location, then the WebLogic Deploy Tooling installation copy is skipped.")
+          + "location, then the WebLogic Deploy Tooling installation copy is skipped. When specifying multiple "
+          + "auxiliary images, it is important to ensure that no more than one of the images "
+          + "supplies a WDT install home; if more than one WDT install home is copied, then domain deployment will "
+          + "fail.")
   private String sourceWDTInstallHome;
 
   @ApiModelProperty("The source location of the WebLogic Deploy Tooling model home within the auxiliary image. "
           + "Defaults to '/auxiliary/models'. If the value is set to 'None' or no files found at the default location, "
-          + "then the model files copy is skipped.")
+          + "then the model files copy is skipped. If specifying multiple auxiliary images with model files in their "
+          + "respective 'sourceModelHome' directories, then model files are merged. ")
   private String sourceModelHome;
 
   public String getImage() {

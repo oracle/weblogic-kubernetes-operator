@@ -702,7 +702,7 @@ checkAuxiliaryImage() {
   fi
 
   trace FINE "Auxiliary Image: AUXILIARY_IMAGE_MOUNT_PATH is '$AUXILIARY_IMAGE_MOUNT_PATH'."
-  traceDirs $AUXILIARY_IMAGE_MOUNT_PATH
+  traceDirs before $AUXILIARY_IMAGE_MOUNT_PATH
   touch ${AUXILIARY_IMAGE_MOUNT_PATH}/testaccess.tmp
   if [ $? -ne 0 ]; then
     trace SEVERE "Auxiliary Image: Cannot write to the AUXILIARY_IMAGE_MOUNT_PATH '${AUXILIARY_IMAGE_MOUNT_PATH}'. " \
@@ -711,12 +711,12 @@ checkAuxiliaryImage() {
   rm -f ${AUXILIARY_IMAGE_MOUNT_PATH}/testaccess.tmp || return 1
 
   # The container .out files embed their container name, the names will sort in the same order in which the containers ran
-  out_files=$(ls -1 $AUXILIARY_IMAGE_MOUNT_PATH/auxiliaryImageLogs/*.out 2>/dev/null | sort --version-sort)
+  local out_files=$(ls -1 $AUXILIARY_IMAGE_MOUNT_PATH/auxiliaryImageLogs/*.out 2>/dev/null | sort --version-sort)
   if [ -z "${out_files}" ]; then
     trace SEVERE "Auxiliary Image: Assertion failure. No files found in '$AUXILIARY_IMAGE_MOUNT_PATH/auxiliaryImageLogs/*.out'"
     return 1
   fi
-  severe_found=false
+  local severe_found=false
   for out_file in $out_files; do
     if [ "$(grep -c SEVERE $out_file)" != "0" ]; then
       trace FINE "Auxiliary Image: Error found in file '${out_file}' while initializing auxiliaryImage."
