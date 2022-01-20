@@ -898,14 +898,14 @@ public class Domain implements KubernetesObject, Upgradable<Domain> {
     private void verifyModelHomeNotInWDTInstallHome() {
       if (getSpec().getWdtInstallHome().contains(getSpec().getModelHome())) {
         failures.add(DomainValidationMessages
-                .invalidWdtInstallHome(getDomainUid(), getSpec().getWdtInstallHome(), getSpec().getModelHome()));
+                .invalidWdtInstallHome(getSpec().getWdtInstallHome(), getSpec().getModelHome()));
       }
     }
 
     private void verifyWDTInstallHomeNotInModelHome() {
       if (getSpec().getModelHome().contains(getSpec().getWdtInstallHome())) {
         failures.add(DomainValidationMessages
-                .invalidModelHome(getDomainUid(), getSpec().getWdtInstallHome(), getSpec().getModelHome()));
+                .invalidModelHome(getSpec().getWdtInstallHome(), getSpec().getModelHome()));
       }
     }
 

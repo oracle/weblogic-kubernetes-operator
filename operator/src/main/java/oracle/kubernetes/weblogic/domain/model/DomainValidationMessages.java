@@ -160,11 +160,11 @@ class DomainValidationMessages {
             LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH);
   }
 
-  public static String invalidWdtInstallHome(String domainUid, String wdtInstallHome, String modelHome) {
-    return getMessage(MessageKeys.INVALID_WDT_INSTALL_HOME, domainUid, wdtInstallHome, modelHome);
+  public static String invalidWdtInstallHome(String wdtInstallHome, String modelHome) {
+    return getMessage(MessageKeys.INVALID_WDT_INSTALL_HOME, wdtInstallHome, modelHome);
   }
 
-  public static String invalidModelHome(String domainUid, String wdtInstallHome, String modelHome) {
-    return getMessage(MessageKeys.INVALID_MODEL_HOME, domainUid, wdtInstallHome, modelHome);
+  public static String invalidModelHome(String wdtInstallHome, String modelHome) {
+    return getMessage(MessageKeys.INVALID_MODEL_HOME, wdtInstallHome, modelHome);
   }
 }
