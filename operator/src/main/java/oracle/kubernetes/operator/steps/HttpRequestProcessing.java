@@ -23,7 +23,7 @@ import oracle.kubernetes.operator.work.Packet;
 
 abstract class HttpRequestProcessing {
 
-  public static final Integer HTTP_TIMEOUT_SECONDS = 60;
+  public static final Long HTTP_TIMEOUT_SECONDS = 60L;
   protected final Packet packet;
   private final V1Service service;
   protected final V1Pod pod;
@@ -35,8 +35,13 @@ abstract class HttpRequestProcessing {
   }
 
   static HttpAsyncRequestStep createRequestStep(HttpRequest request, HttpResponseStep responseStep) {
+    return createRequestStep(request, responseStep, HTTP_TIMEOUT_SECONDS);
+  }
+
+  static HttpAsyncRequestStep createRequestStep(HttpRequest request, HttpResponseStep responseStep,
+      Long httpTimeoutSeconds) {
     return HttpAsyncRequestStep.create(request, responseStep)
-          .withTimeoutSeconds(HTTP_TIMEOUT_SECONDS);
+          .withTimeoutSeconds(httpTimeoutSeconds);
   }
 
   @Nonnull

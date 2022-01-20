@@ -28,9 +28,14 @@ import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.LegalNames;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
+import oracle.kubernetes.operator.http.HttpAsyncRequestStep;
 import oracle.kubernetes.operator.http.HttpAsyncTestSupport;
 import oracle.kubernetes.operator.http.HttpResponseStub;
+import oracle.kubernetes.operator.steps.ShutdownManagedServerStep.ShutdownManagedServerProcessing;
+import oracle.kubernetes.operator.steps.ShutdownManagedServerStep.ShutdownManagedServerResponseStep;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
+import oracle.kubernetes.operator.work.Component;
+import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.TerminalStep;
 import oracle.kubernetes.utils.SystemClockTestSupport;
@@ -48,18 +53,24 @@ import static oracle.kubernetes.operator.LabelConstants.SERVERNAME_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_NAME;
 import static oracle.kubernetes.operator.logging.MessageKeys.SERVER_SHUTDOWN_REST_FAILURE;
+import static oracle.kubernetes.operator.logging.MessageKeys.SERVER_SHUTDOWN_REST_RETRY;
 import static oracle.kubernetes.operator.logging.MessageKeys.SERVER_SHUTDOWN_REST_SUCCESS;
+import static oracle.kubernetes.operator.logging.MessageKeys.SERVER_SHUTDOWN_REST_THROWABLE;
+import static oracle.kubernetes.operator.logging.MessageKeys.SERVER_SHUTDOWN_REST_TIMEOUT;
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.is;
 
 class ShutdownManagedServerStepTest {
   // The log messages to be checked during this test
   private static final String[] LOG_KEYS = {
-      SERVER_SHUTDOWN_REST_SUCCESS, SERVER_SHUTDOWN_REST_FAILURE
+      SERVER_SHUTDOWN_REST_SUCCESS, SERVER_SHUTDOWN_REST_FAILURE,
+      SERVER_SHUTDOWN_REST_TIMEOUT, SERVER_SHUTDOWN_REST_RETRY,
+      SERVER_SHUTDOWN_REST_THROWABLE
   };
   private static final String UID = "test-domain";
   private static final String NS = "namespace";
@@ -73,6 +84,8 @@ class ShutdownManagedServerStepTest {
   private static final String DYNAMIC_CLUSTER_NAME = "dyn-cluster-1";
   private static final String DYNAMIC_MANAGED_SERVER1 = "dyn-managed-server1";
   private static final String DYNAMIC_MANAGED_SERVER2 = "dyn-managed-server2";
+  private static final String RESPONSE = "httpResponse";
+  private static final String SHUTDOWN_REQUEST_RETRY_COUNT = "shutdownRequestRetryCount";
 
   private final V1Pod configuredManagedServer1 = defineManagedPod(CONFIGURED_MANAGED_SERVER1);
   private final V1Pod standaloneManagedServer1 = defineManagedPod(MANAGED_SERVER1);
@@ -288,6 +301,48 @@ class ShutdownManagedServerStepTest {
 
     assertThat(httpSupport.getLastRequest().toString(), containsString("forceShutdown"));
     assertThat(logRecords, containsFine(SERVER_SHUTDOWN_REST_SUCCESS));
+  }
+
+  @Test
+  void verifyShutdownManagedServerProcessing_requestTimeout() {
+    ShutdownManagedServerProcessing processing = new ShutdownManagedServerProcessing(testSupport.getPacket(),
+        configuredServerService, configuredManagedServer1);
+    assertThat(processing.getRequestTimeoutSeconds(), equalTo(Shutdown.DEFAULT_TIMEOUT));
+  }
+
+  @Test
+  void whenShutdownResponseTimesOut_logTimeout() {
+    ShutdownManagedServerResponseStep responseStep = new ShutdownManagedServerResponseStep(MANAGED_SERVER1,
+        30L, terminalStep);
+
+    // Null HTTP response and no response recorded in packet implies HTTP request timed out
+    responseStep.onFailure(testSupport.getPacket(), null);
+    assertThat(logRecords, containsFine(SERVER_SHUTDOWN_REST_TIMEOUT));
+  }
+
+  @Test
+  void whenShutdownResponseThrowsException_logRetry() {
+    ShutdownManagedServerResponseStep responseStep = new ShutdownManagedServerResponseStep(MANAGED_SERVER1,
+        30L, terminalStep);
+    Packet p = testSupport.getPacket();
+
+    // Setup Throwable exception
+    p.getComponents().put(RESPONSE, Component
+        .createFor(Throwable.class, new Throwable()));
+    ShutdownManagedServerProcessing processing = new ShutdownManagedServerProcessing(p,
+        standaloneServerService, standaloneManagedServer1);
+    HttpAsyncRequestStep httpAsyncRequestStep = processing.createRequestStep(responseStep);
+    responseStep.setHttpAsyncRequestStep(httpAsyncRequestStep);
+
+    // Assert that we will retry due to exception
+    responseStep.onFailure(p, null);
+    assertThat((Integer) p.get(SHUTDOWN_REQUEST_RETRY_COUNT), equalTo(1));
+    assertThat(logRecords, containsFine(SERVER_SHUTDOWN_REST_RETRY));
+
+    // Assert we only retry once
+    responseStep.onFailure(p, null);
+    assertThat(p.get(SHUTDOWN_REQUEST_RETRY_COUNT), is(nullValue()));
+    assertThat(logRecords, containsFine(SERVER_SHUTDOWN_REST_THROWABLE));
   }
 
   private void setForcedShutdownType(String serverName) {

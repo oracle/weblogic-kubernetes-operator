@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: fb9a0b3deb5859c4df7aaa5250958f81404de48e1b19d146044b8cc72bac04bb
+    weblogic.sha256: 19fdce9a0413a6e5bfff68bf6a9e0747aaf110e047dafe421487a485bd06b071
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -2738,7 +2738,7 @@ spec:
                               down the server. Defaults to 30 seconds.
                             type: number
                           waitForAllSessions:
-                            description: For graceful shutdown only, Set to true to
+                            description: For graceful shutdown only, set to true to
                               wait for all HTTP sessions during inflight work handling;
                               false to wait for non-persisted HTTP sessions only.
                               Defaults to false.
@@ -5545,7 +5545,7 @@ spec:
                                 down the server. Defaults to 30 seconds.
                               type: number
                             waitForAllSessions:
-                              description: For graceful shutdown only, Set to true
+                              description: For graceful shutdown only, set to true
                                 to wait for all HTTP sessions during inflight work
                                 handling; false to wait for non-persisted HTTP sessions
                                 only. Defaults to false.
@@ -8348,7 +8348,7 @@ spec:
                           the server. Defaults to 30 seconds.
                         type: number
                       waitForAllSessions:
-                        description: For graceful shutdown only, Set to true to wait
+                        description: For graceful shutdown only, set to true to wait
                           for all HTTP sessions during inflight work handling; false
                           to wait for non-persisted HTTP sessions only. Defaults to
                           false.
@@ -11062,7 +11062,7 @@ spec:
                                 down the server. Defaults to 30 seconds.
                               type: number
                             waitForAllSessions:
-                              description: For graceful shutdown only, Set to true
+                              description: For graceful shutdown only, set to true
                                 to wait for all HTTP sessions during inflight work
                                 handling; false to wait for non-persisted HTTP sessions
                                 only. Defaults to false.

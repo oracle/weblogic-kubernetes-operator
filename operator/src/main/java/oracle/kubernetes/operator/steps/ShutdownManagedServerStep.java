@@ -23,6 +23,7 @@ import oracle.kubernetes.operator.ShutdownType;
 import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.SecretHelper;
+import oracle.kubernetes.operator.http.HttpAsyncRequestStep;
 import oracle.kubernetes.operator.http.HttpResponseStep;
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
@@ -40,7 +41,6 @@ import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
-import static oracle.kubernetes.operator.steps.HttpRequestProcessing.createRequestStep;
 
 public class ShutdownManagedServerStep extends Step {
 
@@ -108,12 +108,24 @@ public class ShutdownManagedServerStep extends Step {
   }
 
   static final class ShutdownManagedServerProcessing extends HttpRequestProcessing {
+    private Boolean isGracefulShutdown;
+    private Long timeout;
+    private Boolean ignoreSessions;
+    private Boolean waitForAllSessions;
 
     ShutdownManagedServerProcessing(Packet packet, @Nonnull V1Service service, V1Pod pod) {
       super(packet, service, pod);
+      initializeRequestPayloadParameters();
     }
 
     private HttpRequest createRequest() {
+      HttpRequest request = createRequestBuilder(getRequestUrl(isGracefulShutdown))
+            .POST(HttpRequest.BodyPublishers.ofString(getManagedServerShutdownPayload(
+                isGracefulShutdown, ignoreSessions, timeout, waitForAllSessions))).build();
+      return request;
+    }
+
+    private void initializeRequestPayloadParameters() {
       String serverName = pod.getMetadata().getLabels().get(LabelConstants.SERVERNAME_LABEL);
       String clusterName = getClusterNameFromServiceLabel();
       Optional<List<V1EnvVar>> envVarList = Optional.ofNullable(pod.getSpec()).flatMap(this::getEnvVars);
@@ -122,15 +134,10 @@ public class ShutdownManagedServerStep extends Step {
       Shutdown shutdown = Optional.ofNullable(info.getDomain().getServer(serverName, clusterName))
           .map(ServerSpec::getShutdown).orElse(null);
 
-      Boolean isGracefulShutdown = isGracefulShutdown(envVarList, shutdown);
-      Long timeout = getTimeout(envVarList, shutdown);
-      Boolean ignoreSessions = getIgnoreSessions(envVarList, shutdown);
-      Boolean waitForAllSessions = getWaitForAllSessions(envVarList, shutdown);
-
-      HttpRequest request = createRequestBuilder(getRequestUrl(isGracefulShutdown))
-            .POST(HttpRequest.BodyPublishers.ofString(getManagedServerShutdownPayload(
-                isGracefulShutdown, ignoreSessions, timeout, waitForAllSessions))).build();
-      return request;
+      isGracefulShutdown = isGracefulShutdown(envVarList, shutdown);
+      timeout = getTimeout(envVarList, shutdown);
+      ignoreSessions = getIgnoreSessions(envVarList, shutdown);
+      waitForAllSessions = getWaitForAllSessions(envVarList, shutdown);
     }
 
     private Optional<List<V1EnvVar>> getEnvVars(V1PodSpec v1PodSpec) {
@@ -196,6 +203,10 @@ public class ShutdownManagedServerStep extends Step {
               .orElse(Shutdown.DEFAULT_TIMEOUT) : Long.valueOf(timeout);
     }
 
+    Long getRequestTimeoutSeconds() {
+      return timeout;
+    }
+
     private String getRequestUrl(Boolean isGracefulShutdown) {
       return getServiceUrl() + getManagedServerShutdownPath(isGracefulShutdown);
     }
@@ -253,6 +264,14 @@ public class ShutdownManagedServerStep extends Step {
       }
       return domainConfig;
     }
+
+    public HttpAsyncRequestStep createRequestStep(
+        ShutdownManagedServerResponseStep shutdownManagedServerResponseStep) {
+      HttpAsyncRequestStep requestStep = createRequestStep(createRequest(), shutdownManagedServerResponseStep,
+          getRequestTimeoutSeconds());
+      shutdownManagedServerResponseStep.requestStep = requestStep;
+      return requestStep;
+    }
   }
 
   static final class ShutdownManagedServerWithHttpStep extends Step {
@@ -269,30 +288,80 @@ public class ShutdownManagedServerStep extends Step {
     @Override
     public NextAction apply(Packet packet) {
       ShutdownManagedServerProcessing processing = new ShutdownManagedServerProcessing(packet, service, pod);
-      return doNext(createRequestStep(processing.createRequest(),
-          new ShutdownManagedServerResponseStep(PodHelper.getPodServerName(pod), getNext())), packet);
+      ShutdownManagedServerResponseStep shutdownManagedServerResponseStep =
+          new ShutdownManagedServerResponseStep(PodHelper.getPodServerName(pod),
+          processing.getRequestTimeoutSeconds(), getNext());
+      HttpAsyncRequestStep requestStep = processing.createRequestStep(shutdownManagedServerResponseStep);
+      return doNext(requestStep, packet);
     }
 
   }
 
   static final class ShutdownManagedServerResponseStep extends HttpResponseStep {
-    String serverName;
+    private static final String SHUTDOWN_REQUEST_RETRY_COUNT = "shutdownRequestRetryCount";
+    private String serverName;
+    private Long requestTimeout;
+    private HttpAsyncRequestStep requestStep;
 
-    ShutdownManagedServerResponseStep(String serverName, Step next) {
+    ShutdownManagedServerResponseStep(String serverName, Long requestTimeout, Step next) {
       super(next);
       this.serverName = serverName;
+      this.requestTimeout = requestTimeout;
     }
 
     @Override
     public NextAction onSuccess(Packet packet, HttpResponse<String> response) {
       LOGGER.fine(MessageKeys.SERVER_SHUTDOWN_REST_SUCCESS, serverName);
+      removeShutdownRequestRetryCount(packet);
       return doNext(packet);
     }
 
     @Override
     public NextAction onFailure(Packet packet, HttpResponse<String> response) {
-      LOGGER.fine(MessageKeys.SERVER_SHUTDOWN_REST_FAILURE, serverName, response);
+      if (getThrowableResponse(packet) != null) {
+        Throwable throwable = getThrowableResponse(packet);
+        if (getShutdownRequestRetryCount(packet) == null) {
+          addShutdownRequestRetryCountToPacket(packet, 1);
+          if (requestStep != null) {
+            // Retry request
+            LOGGER.fine(MessageKeys.SERVER_SHUTDOWN_REST_RETRY, serverName);
+            return doNext(requestStep, packet);
+          }
+        }
+        LOGGER.fine(MessageKeys.SERVER_SHUTDOWN_REST_THROWABLE, serverName, throwable.getMessage());
+      } else if (getResponse(packet) == null) {
+        // Request timed out
+        LOGGER.fine(MessageKeys.SERVER_SHUTDOWN_REST_TIMEOUT, serverName, Long.toString(requestTimeout));
+      } else {
+        LOGGER.fine(MessageKeys.SERVER_SHUTDOWN_REST_FAILURE, serverName, response);
+      }
+
+      removeShutdownRequestRetryCount(packet);
       return doNext(packet);
+    }
+
+    private HttpResponse<String> getResponse(Packet packet) {
+      return packet.getSpi(HttpResponse.class);
+    }
+
+    private Throwable getThrowableResponse(Packet packet) {
+      return packet.getSpi(Throwable.class);
+    }
+
+    private static Integer getShutdownRequestRetryCount(Packet packet) {
+      return (Integer) packet.get(SHUTDOWN_REQUEST_RETRY_COUNT);
+    }
+
+    private static void addShutdownRequestRetryCountToPacket(Packet packet, Integer count) {
+      packet.put(SHUTDOWN_REQUEST_RETRY_COUNT, count);
+    }
+
+    private static void removeShutdownRequestRetryCount(Packet packet) {
+      packet.remove(SHUTDOWN_REQUEST_RETRY_COUNT);
+    }
+
+    public void setHttpAsyncRequestStep(HttpAsyncRequestStep requestStep) {
+      this.requestStep = requestStep;
     }
   }
 }
