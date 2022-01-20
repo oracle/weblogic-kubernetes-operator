@@ -135,13 +135,17 @@ spec:
       domainType: "JRF"
 
       # Optional auxiliary image(s) containing WDT model, archives, and install.
+      # Files are copied from `sourceModelHome` in the aux image to the `/aux/models` directory
+      # in running WebLogic Server pods, and files are copied from `sourceWDTInstallHome` 
+      # to the `/aux/weblogic-deploy` directory. Set `sourceModelHome` and/or `sourceWDTInstallHome` 
+      # to "None" if you want skip such copies.
       #   `image`                - Image location
       #   `imagePullPolicy`      - Pull policy, default `IfNotPresent`
-      #   `sourceModelHome`      - Model files directory in image, default `/auxiliary/models`.
+      #   `sourceModelHome`      - Model file directory in image, default `/auxiliary/models`.
       #   `sourceWDTInstallHome` - WDT install directory in image, default `/auxiliary/weblogic-deploy`.
       auxiliaryImages:
       - image: "model-in-image:JRF-AI-v2"
-        imagePullPolicy: IfNotPresent
+        #imagePullPolicy: IfNotPresent
         #sourceWDTInstallHome: /auxiliary/weblogic-deploy
         #sourceModelHome: /auxiliary/models
 

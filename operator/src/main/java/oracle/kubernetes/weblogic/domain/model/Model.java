@@ -54,7 +54,9 @@ public class Model {
 
   @Description("The auxiliary image volume mount path. This is an advanced setting that rarely needs to be configured. "
           + "Defaults to '/aux', which means the emptyDir volume will be mounted at '/aux' path in the WebLogic-Server "
-          + "container within the pod.")
+          + "container within every pod. The defaults for 'modelHome' and 'wdtInstallHome' will start with the new "
+          + "mount path, and files from 'sourceModelHome' and 'sourceWDTInstallHome' will be copied to the new "
+          + "default locations.")
   private String auxiliaryImageVolumeMountPath;
 
   @Description("The emptyDir volume medium. This is an advanced setting that rarely needs to "

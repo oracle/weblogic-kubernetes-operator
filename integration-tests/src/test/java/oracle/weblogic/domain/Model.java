@@ -53,7 +53,9 @@ public class Model {
 
   @ApiModelProperty("The auxiliary image volume mount path. This is an advanced setting that rarely needs to be "
           + "configured. Defaults to '/aux', which means the emptyDir volume will be mounted at '/aux' path in the "
-          + "WebLogic-Server container within the pod.")
+          + "WebLogic-Server container within every pod. The defaults for 'modelHome' and 'wdtInstallHome' will start "
+          + "with the new mount path, and files from 'sourceModelHome' and 'sourceWDTInstallHome' will be copied to "
+          + "the new default locations.")
   private String auxiliaryImageVolumeMountPath;
 
   @ApiModelProperty("The emptyDir volume withAuxiliaryImageVolumeMedium. This is an advanced setting that rarely "

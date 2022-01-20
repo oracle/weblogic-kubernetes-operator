@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 87da1504381303a5d8baee3b5631f9ba6518823beb66acb414466d945d974d60
+    weblogic.sha256: 30112a501700eb77ceb1393f0a6fd0f93304d47718a73fe5097241d9ab930a4a
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -245,7 +245,10 @@ spec:
                           an advanced setting that rarely needs to be configured.
                           Defaults to '/aux', which means the emptyDir volume will
                           be mounted at '/aux' path in the WebLogic-Server container
-                          within the pod.
+                          within every pod. The defaults for 'modelHome' and 'wdtInstallHome'
+                          will start with the new mount path, and files from 'sourceModelHome'
+                          and 'sourceWDTInstallHome' will be copied to the new default
+                          locations.
                         type: string
                       modelHome:
                         description: Location of the WebLogic Deploy Tooling model
