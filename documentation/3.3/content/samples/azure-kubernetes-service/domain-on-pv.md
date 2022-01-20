@@ -15,7 +15,7 @@ This sample demonstrates how to use the [WebLogic Kubernetes Operator](/weblogic
  - [Create WebLogic domain](#create-weblogic-domain)
  - [Automation](#automation)
  - [Deploy sample application](#deploy-sample-application)
- - [Access WebLogic Server logs](#access-weblogic-server-logs)
+ - [Validate NFS volume](#validate-nfs-volume)
  - [Clean up resources](#clean-up-resources)
  - [Troubleshooting](#troubleshooting)
  - [Useful links](#useful-links)
@@ -26,7 +26,7 @@ This sample demonstrates how to use the [WebLogic Kubernetes Operator](/weblogic
 
 ##### Clone WebLogic Kubernetes Operator repository
 
-Clone the [WebLogic Kubernetes Operator repository](https://github.com/oracle/weblogic-kubernetes-operator) to your machine. We will use several scripts in this repository to create a WebLogic domain. This sample was tested with v3.1.1, but should work with the latest release.
+Clone the [WebLogic Kubernetes Operator repository](https://github.com/oracle/weblogic-kubernetes-operator) to your machine. We will use several scripts in this repository to create a WebLogic domain. This sample was tested with v3.3.7, but should work with the latest release.
 
 ```shell
 $ git clone --branch v{{< latestVersion >}} https://github.com/oracle/weblogic-kubernetes-operator.git
@@ -52,17 +52,15 @@ Kubernetes Operators use [Helm](https://helm.sh/) to manage Kubernetes applicati
 $ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
 ```
 ```shell
-$ helm install weblogic-operator weblogic-operator/weblogic-operator --version "3.1.1"
+$ helm install weblogic-operator weblogic-operator/weblogic-operator --version "3.3.7"
 ```
 
 The output will show something similar to the following:
 
 ```shell
-$ helm install weblogic-operator weblogic-operator/weblogic-operator --version "3.1.1"
-```
-```
+$ helm install weblogic-operator weblogic-operator/weblogic-operator --version "3.3.7"
 NAME: weblogic-operator
-LAST DEPLOYED: Wed Jul  1 23:47:44 2020
+LAST DEPLOYED: Tue Jan 18 17:07:56 2022
 NAMESPACE: default
 STATUS: deployed
 REVISION: 1
@@ -116,7 +114,7 @@ $ export SECRET_NAME_DOCKER="${NAME_PREFIX}regcred"
 ```
 # cd kubernetes/samples/scripts/create-kubernetes-secrets
 ```
-```sehll
+```shell
 $ ./create-docker-credentials-secret.sh -s ${SECRET_NAME_DOCKER} -e oracleSsoEmail@bar.com -p oracleSsoPassword -u oracleSsoEmail@bar.com
 ```
 ```
@@ -131,7 +129,6 @@ $ kubectl get secret
 ```
 ```
 NAME                                      TYPE                                  DATA   AGE
-wlsazure-secret                           Opaque                                2      17m
 regcred                                   kubernetes.io/dockerconfigjson        1      2m25s
 default-token-csdvd                       kubernetes.io/service-account-token   3      25m
 domain1-weblogic-credentials              Opaque                                2      3m42s
@@ -166,10 +163,8 @@ We need to set up the domain configuration for the WebLogic domain.
     --file-share ${AKS_PERS_SHARE_NAME} \
     --storage-account ${AKS_PERS_STORAGE_ACCOUNT_NAME} \
     --domain-uid domain1 \
-    --pv-name ${NAME_PREFIX}-azurefile-${TIMESTAMP} \
     --pvc-name ${NAME_PREFIX}-azurefile-${TIMESTAMP} \
-    --secret-docker ${SECRET_NAME_DOCKER} \
-    --secret-storage ${SECRET_NAME_AZURE_FILE}
+    --secret-docker ${SECRET_NAME_DOCKER}
    ```
 
    You will see output with `PASS` if all the resources are ready. The following is an example of output:
@@ -181,10 +176,8 @@ We need to set up the domain configuration for the WebLogic domain.
      Azure Kubenetes Service instacne: wlsaks1612795811
      Azure storage account: wlsstorage1612795811
      Azure file share: wls-weblogic-1612795811
-     Kubenetes secret for Azure storage: wlsazure-secret
      Kubenetes secret for Docker Account: regcred
      Kubenetes secret for Weblogic domain: domain1-weblogic-credentials
-     Persistent Volume: wls-azurefile-1612795811
      Persistent Volume Claim: wls-azurefile-1612795811
    ```
 
@@ -510,7 +503,7 @@ For input values, you can edit `kubernetes/samples/scripts/create-weblogic-domai
 | `dockerEmail` | `yourDockerEmail` | Oracle Single Sign-On (SSO) account email, used to pull the WebLogic Server Docker image. |
 | `dockerPassword` | `yourDockerPassword`| Password for Oracle SSO account, used to pull the WebLogic Server Docker image, in clear text. |
 | `dockerUserName` | `yourDockerId` | The same value as `dockerEmail`.  |
-| `namePrefix` | `0730` | Alphanumeric value used as a disambiguation prefix for several Kubernetes resources. |
+| `namePrefix` | `wls` | Alphanumeric value used as a disambiguation prefix for several Kubernetes resources. |
 
 If you don't want to change the other parameters, you can use the default values.  Please make sure no extra whitespaces are added!
 
@@ -528,7 +521,7 @@ $ ./create-domain-on-aks.sh -i my-create-domain-on-aks-inputs.yaml -o ~/azure -e
 
 The script will print the Administration Server address after a successful deployment.  The default user name for the Administration Console is `weblogic` and the default password is `welcome1`.  Please change this for production deployments.  To interact with the cluster using `kubectl`, use `az aks get-credentials` as shown in the script output.
 
-{{% notice info %}} You now have created an AKS cluster with `PersistentVolumeClaim` and `PersistentVolume` to contain the WLS domain configuration files.  Using those artifacts, you have used the operator to create a WLS domain.
+{{% notice info %}} You now have created an AKS cluster with Azure Fils NFS share to contain the WLS domain configuration files.  Using those artifacts, you have used the operator to create a WLS domain.
 {{% /notice %}}
 
 #### Deploy sample application
@@ -574,22 +567,27 @@ In the example, the application address is: `http://52.224.248.40:8001/testwebap
 
 The test application will list the server host and server IP on the page.
 
-#### Access WebLogic Server logs
+#### Validate NFS volume
 
-The logs are stored in the Azure file share. Follow these steps to access the log:
+There are several approaches to validate the NFS volume:
 
-1. Go to the [Azure Portal](https://ms.portal.azure.com).
-2. Go to your resource group.
-3. Open the storage account.
-4. In the "File service" section of the left panel, select File shares.
-5. Select the file share name (e.g. weblogic in this example).
-6. Select logs.
-7. Select domain1.
-8. WebLogic Server logs are listed in the folder.
+- Use Azure Storage bowser, make sure you have permission to access the NFS server, see [Azure Storage firewalls and virtual networks document](https://docs.microsoft.com/en-us/azure/storage/common/storage-network-security?tabs=azure-portal)
+- Mount the same NFS share in an existing machine, access files from the mounted path.
 
-{{%expand "Click here to view the WebLogic Server logs screenshot." %}}
-![WebLogic Server Logs](../screenshot-logs.png)
-{{% /expand %}}
+We will use `kubectl exec` to enter the admin server pod to check file system status:
+
+```shell
+kubectl exec -it domain1-admin-server -- df -h
+```
+
+You should find output like the following, with filesystem `${AKS_PERS_STORAGE_ACCOUNT_NAME}.file.core.windows.net:/${AKS_PERS_STORAGE_ACCOUNT_NAME}/${AKS_PERS_SHARE_NAME}`, size `100G`, and mounted on `/shared`:
+
+```text
+Filesystem                                                                                Size  Used Avail Use% Mounted on
+...
+wlsstorage1612795811.file.core.windows.net:/wlsstorage1612795811/wls-weblogic-1612795811  100G   76M  100G   1% /shared
+...
+```
 
 #### Clean up resources
 
