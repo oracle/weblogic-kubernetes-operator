@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -70,6 +70,7 @@ class ItDiagnosticsCompleteAvailableCondition {
   private static LoggingFacade logger = null;
   private static String domainNamespace1 = null;
   private static int replicaCount = 2;
+  private static int maxClusterSize = 5;
 
   /**
    * Assigns unique namespaces for operator and domains.
@@ -345,7 +346,7 @@ class ItDiagnosticsCompleteAvailableCondition {
     String patchStr;
     try {
       logger.info("patch the domain resource with replica larger than max size of cluster");
-      int newReplicaCount = replicaCount + 1;
+      int newReplicaCount = maxClusterSize + 1;
       patchStr = "[{\"op\": \"replace\",\"path\": \"/spec/clusters/0/replicas\", \"value\": " + newReplicaCount + "}]";
 
       logger.info("Updating domain configuration using patch string: {0}", patchStr);
@@ -357,12 +358,12 @@ class ItDiagnosticsCompleteAvailableCondition {
 
       // verify the cluster server pods are up and running
       logger.info("Checking managed server pods were ready");
-      for (int i = 1; i <= replicaCount; i++) {
+      for (int i = 1; i <= maxClusterSize; i++) {
         checkPodReadyAndServiceExists(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
       }
 
       // verify there is no pod created larger than max size of cluster
-      for (int i = replicaCount + 1; i <= newReplicaCount; i++) {
+      for (int i = maxClusterSize + 1; i <= newReplicaCount; i++) {
         checkPodDoesNotExist(managedServerPodNamePrefix + i, domainUid, domainNamespace1);
       }
 
@@ -376,8 +377,10 @@ class ItDiagnosticsCompleteAvailableCondition {
       // verify the condition Available type has status True
       checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace1,
           DOMAIN_STATUS_CONDITION_AVAILABLE_TYPE, "True");
-      // verify there is no status condition type Failed
-      verifyDomainStatusConditionTypeDoesNotExist(domainUid, domainNamespace1, DOMAIN_STATUS_CONDITION_FAILED_TYPE);
+      // verify the condition Failed type has status True
+      checkDomainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace1,
+          DOMAIN_STATUS_CONDITION_FAILED_TYPE, "True");
+
     } finally {
       restoreDomainResource();
     }
