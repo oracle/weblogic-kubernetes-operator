@@ -841,6 +841,61 @@ public class CommonTestUtils {
   }
 
   /**
+   * Call the curl command and check the managed server in the cluster can connect to each other.
+   *
+   * @param curlRequest curl command to call the clusterview app
+   * @param managedServerNames managed server names part of the cluster
+   * @param manServerName managed server to check
+   */
+  public static void verifyServerCommunication(String curlRequest, String manServerName, List<String> managedServerNames) {
+    LoggingFacade logger = getLogger();
+
+    HashMap<String, Boolean> managedServers = new HashMap<>();
+    managedServerNames.forEach(managedServerName -> managedServers.put(managedServerName, false));
+
+    //verify each server in the cluster can connect to other
+    testUntil(
+        () -> {
+          for (int i = 0; i < managedServerNames.size(); i++) {
+            logger.info(curlRequest);
+            // check the response contains managed server name
+            ExecResult result = null;
+            try {
+              result = ExecCommand.exec(curlRequest, true);
+            } catch (IOException | InterruptedException ex) {
+              logger.severe(ex.getMessage());
+            }
+            String response = result.stdout().trim();
+            logger.info(response);
+            for (var managedServer : managedServers.entrySet()) {
+              boolean connectToOthers = true;
+              logger.info("Looking for Server:" + manServerName);
+              if (response.contains("ServerName:" + manServerName)) {
+                for (String managedServerName : managedServerNames) {
+                  logger.info("Looking for Success:" + managedServerName);
+                  connectToOthers = connectToOthers && response.contains("Success:" + managedServerName);
+                }
+                if (connectToOthers) {
+                  logger.info("Server:" + manServerName + " can see all cluster members");
+                  managedServers.put(managedServer.getKey(), true);
+                }
+              }
+            }
+          }
+          managedServers.forEach((key, value) -> {
+            if (value) {
+              logger.info("The server {0} can see other cluster members", key);
+            } else {
+              logger.info("The server {0} unable to see other cluster members ", key);
+            }
+          });
+          return !managedServers.containsValue(false);
+        },
+        logger,
+        "Waiting until each managed server can see other cluster members");
+  }
+
+  /**
    * Get the next free port between from and to.
    *
    * @param from range starting point
