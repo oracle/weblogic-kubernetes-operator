@@ -274,7 +274,7 @@ initAuxiliaryImage() {
     if [ "${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME}" != "/auxiliary/weblogic-deploy" ]; then
       # Source WDT install home is non-default, validate that the directory exists and is non-empty.
       checkSourceWDTInstallDirExistsAndNotEmpty "${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME}" || return 1
-    elif [ ! -d ${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME} ]; then
+    elif [ ! -d "${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME}" ]; then
       # Source WDT install home is at the default and directory doesn't exist. Ignore.
       trace FINE "Auxiliary Image: The directory '${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME}' doesn't exist. Skip copying WDT install files."
       copyWdtInstallFiles=false
@@ -311,7 +311,7 @@ initAuxiliaryImage() {
     if [ "${AUXILIARY_IMAGE_SOURCE_MODEL_HOME}" != "/auxiliary/models" ]; then
       # Source model home is non-default, validate that the directory exists and is non-empty.
       checkSourceWDTModelHomeDirExistsAndNotEmpty "${AUXILIARY_IMAGE_SOURCE_MODEL_HOME}" || return 1
-    elif [ ! -d ${AUXILIARY_IMAGE_SOURCE_MODEL_HOME} ]; then
+    elif [ ! -d "${AUXILIARY_IMAGE_SOURCE_MODEL_HOME}" ]; then
       # Source WDT model home is at the default and directory doesn't exist. Ignore.
       trace FINE "Auxiliary Image: The directory '${AUXILIARY_IMAGE_SOURCE_MODEL_HOME}' doesn't exist. Skip copying WDT model files."
       copyModelFiles=false
