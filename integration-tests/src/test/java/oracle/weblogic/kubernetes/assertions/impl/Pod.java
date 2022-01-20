@@ -141,9 +141,9 @@ public class Pod {
    * @param podName name of the pod
    * @return true if pod is initializing otherwise false
    */
-  public static Callable<Boolean> podInitializing(String namespace, String domainUid, String podName) {
+  public static Callable<Boolean> podInitialized(String namespace, String domainUid, String podName) {
     return () -> {
-      return Kubernetes.isPodInitializing(namespace, domainUid, podName);
+      return Kubernetes.isPodInitialized(namespace, domainUid, podName);
     };
   }
 

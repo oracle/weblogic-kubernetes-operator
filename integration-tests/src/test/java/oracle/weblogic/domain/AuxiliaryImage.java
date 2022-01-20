@@ -31,12 +31,12 @@ public class AuxiliaryImage {
   private String imagePullPolicy;
 
   @ApiModelProperty(
-      "The command for this init container. Defaults to 'cp -R $AUXILIARY_IMAGE_PATH/* $TARGET_MOUNT_PATH'. "
+      "The command for this init container. Defaults to 'cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH'. "
           + "This is an advanced setting for customizing the container command for copying files from the container "
           + "image to the emptyDir volume. Use the '$AUXILIARY_IMAGE_PATH' environment variable to reference "
           + "the value configured in 'spec.auxiliaryImageVolumes.mountPath' (which defaults to '/auxiliary'). Use "
-          + "'$TARGET_MOUNT_PATH' to refer to the temporary directory created by the operator that resolves to the "
-          + "internal emptyDir volume.")
+          + "'$AUXILIARY_IMAGE_TARGET_PATH' to refer to the temporary directory created by the operator that resolves "
+          + "to the internal emptyDir volume.")
   private String command;
 
   @ApiModelProperty("The name of a auxiliary image volume defined in 'spec.auxiliaryImageVolumes'. Required.")

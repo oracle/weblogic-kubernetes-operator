@@ -13,7 +13,6 @@ import java.util.Map;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDynamicServersConfig;
-import oracle.kubernetes.operator.wlsconfig.WlsMachineConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
 
 public class WlsDomainConfigSupport {
@@ -23,7 +22,6 @@ public class WlsDomainConfigSupport {
   private final Map<String, WlsClusterConfig> wlsClusters = new HashMap<>();
   private final Map<String, WlsServerConfig> wlsServers = new HashMap<>();
   private final Map<String, WlsServerConfig> templates = new HashMap<>();
-  private final Map<String, WlsMachineConfig> machineConfigs = new HashMap<>();
 
   public WlsDomainConfigSupport(String domain) {
     this.domain = domain;
@@ -206,7 +204,7 @@ public class WlsDomainConfigSupport {
       }
     }
     return new WlsDomainConfig(
-        domain, adminServerName, wlsClusters, wlsServers, templates, machineConfigs);
+        domain, adminServerName, wlsClusters, wlsServers, templates);
   }
 
   static class ServerConfigBuilder {

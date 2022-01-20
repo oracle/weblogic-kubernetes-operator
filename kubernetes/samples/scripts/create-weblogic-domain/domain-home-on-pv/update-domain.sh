@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (c) 2018, 2019, Oracle and/or its affiliates.  All rights reserved.
+# Copyright (c) 2018, 2022, Oracle and/or its affiliates. 
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # Description
@@ -23,7 +23,7 @@ scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 source ${scriptDir}/../../common/utility.sh
 source ${scriptDir}/../../common/validate.sh
 
-function usage {
+usage() {
   echo usage: ${script} -o dir -i file [-e] [-v] [-h]
   echo "  -i Parameter inputs file, must be specified."
   echo "  -o Output directory for the generated yaml files, must be specified."
@@ -76,7 +76,7 @@ fi
 # Function to initialize and validate the output directory
 # for the generated yaml files for this domain.
 #
-function initOutputDir {
+initOutputDir() {
   domainOutputDir="${outputDir}/weblogic-domains/${domainUID}"
   # Create a directory for this domain's output files
   mkdir -p ${domainOutputDir}
@@ -90,7 +90,7 @@ function initOutputDir {
 #
 # Function to setup the environment to run the create domain job
 #
-function initialize {
+initialize() {
 
   # Validate the required files exist
   validateErrors=false
@@ -132,7 +132,7 @@ function initialize {
 }
 
 # create domain configmap using what is in the createDomainFilesDir
-function createDomainConfigmap {
+createDomainConfigmap() {
   # Use the default files if createDomainFilesDir is not specified
   if [ -z "${createDomainFilesDir}" ]; then
     createDomainFilesDir=${scriptDir}/wlst
@@ -190,7 +190,7 @@ function createDomainConfigmap {
 #
 # Function to run the job that creates the domain
 #
-function updateDomainHome {
+updateDomainHome() {
 
   # set createDomainFilesDir to wdt - so domain can be updated regardless of wdt or wlst is used for creation
   createDomainFilesDir="wdt"
@@ -279,7 +279,7 @@ function updateDomainHome {
 #
 # Function to output to the console a summary of the work completed
 #
-function printSummary {
+printSummary() {
 
   # Get the IP address of the kubernetes cluster (into K8S_IP)
   getKubernetesClusterIP

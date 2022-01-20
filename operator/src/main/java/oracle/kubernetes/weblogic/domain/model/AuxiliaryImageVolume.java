@@ -21,7 +21,7 @@ public class AuxiliaryImageVolume {
 
   @Description("The mount path. The files in the path are populated from the same named directory in the images "
           + "supplied by each container in `serverPod.auxiliaryImages`. Each volume must be configured with "
-          + "a different mount path. Required.")
+          + "a different mount path. Defaults to '/auxiliary'.")
   @NotNull
   private String mountPath;
 

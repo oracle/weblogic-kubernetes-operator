@@ -1,11 +1,11 @@
 #!/bin/bash
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
 # Report an error and fail the job
 # $1 - text of error
-function fail {
+fail() {
   echo ERROR: $1
   exit 1
 }
@@ -13,14 +13,14 @@ function fail {
 #
 # Create a folder
 # $1 - path of folder to create
-function createFolder {
+createFolder() {
   mkdir -m 777 -p $1
   if [ ! -d $1 ]; then
     fail "Unable to create folder $1"
   fi
 }
 
-function checkCreateDomainScript {
+checkCreateDomainScript() {
   if [ -f $1 ]; then
     echo The domain will be created using the script $1
   else
@@ -28,7 +28,7 @@ function checkCreateDomainScript {
   fi
 }
  
-function checkDomainSecret { 
+checkDomainSecret() { 
 
   # Validate the domain secrets exist before proceeding.
   if [ ! -f /weblogic-operator/secrets/username ]; then
@@ -43,7 +43,7 @@ function checkDomainSecret {
 # traceDirs before|after
 #   Trace contents and owner of DOMAIN_HOME/LOG_HOME/DATA_HOME directories
 #
-function traceDirs() {
+traceDirs() {
   echo "id = '`id`'"
   local indir
   for indir in DOMAIN_HOME_DIR DOMAIN_ROOT_DIR DOMAIN_LOGS_DIR; do
@@ -62,7 +62,7 @@ function traceDirs() {
   done
 }
 
-function prepareDomainHomeDir { 
+prepareDomainHomeDir() { 
   traceDirs before
 
   # Do not proceed if the domain already exists

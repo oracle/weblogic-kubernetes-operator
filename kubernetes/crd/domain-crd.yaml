@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 19fdce9a0413a6e5bfff68bf6a9e0747aaf110e047dafe421487a485bd06b071
+    weblogic.sha256: 386a03c7101614583aa5e1035288ff3bb549df26089200d717d6b871ddf7dc3f
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -304,8 +304,8 @@ spec:
                 type: object
               domainHome:
                 description: The directory containing the WebLogic domain configuration
-                  inside the container. Defaults to /shared/domains/domains/<domainUID>
-                  if `domainHomeSourceType` is PersistentVolume. Defaults to /u01/oracle/user_projects/domains/
+                  inside the container. Defaults to /shared/domains/<domainUID> if
+                  `domainHomeSourceType` is PersistentVolume. Defaults to /u01/oracle/user_projects/domains/
                   if `domainHomeSourceType` is Image. Defaults to /u01/domains/<domainUID>
                   if `domainHomeSourceType` is FromModel.
                 type: string
@@ -1542,16 +1542,16 @@ spec:
                               - IfNotPresent
                             command:
                               description: The command for this init container. Defaults
-                                to `cp -R $AUXILIARY_IMAGE_PATH/* $TARGET_MOUNT_PATH`.
+                                to `cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH`.
                                 This is an advanced setting for customizing the container
                                 command for copying files from the container image
                                 to the auxiliary image emptyDir volume. Use the `$AUXILIARY_IMAGE_PATH`
                                 environment variable to reference the value configured
                                 in `spec.auxiliaryImageVolumes.mountPath`, which defaults
-                                to "/auxiliary". Use '$TARGET_MOUNT_PATH' to refer
-                                to the temporary directory created by the operator
-                                that resolves to the auxiliary image's internal emptyDir
-                                volume.
+                                to "/auxiliary". Use '$AUXILIARY_IMAGE_TARGET_PATH'
+                                to refer to the temporary directory created by the
+                                operator that resolves to the auxiliary image's internal
+                                emptyDir volume.
                               type: string
                         type: array
                       containers:
@@ -4349,13 +4349,13 @@ spec:
                                 - IfNotPresent
                               command:
                                 description: The command for this init container.
-                                  Defaults to `cp -R $AUXILIARY_IMAGE_PATH/* $TARGET_MOUNT_PATH`.
+                                  Defaults to `cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH`.
                                   This is an advanced setting for customizing the
                                   container command for copying files from the container
                                   image to the auxiliary image emptyDir volume. Use
                                   the `$AUXILIARY_IMAGE_PATH` environment variable
                                   to reference the value configured in `spec.auxiliaryImageVolumes.mountPath`,
-                                  which defaults to "/auxiliary". Use '$TARGET_MOUNT_PATH'
+                                  which defaults to "/auxiliary". Use '$AUXILIARY_IMAGE_TARGET_PATH'
                                   to refer to the temporary directory created by the
                                   operator that resolves to the auxiliary image's
                                   internal emptyDir volume.
@@ -7153,15 +7153,16 @@ spec:
                           - IfNotPresent
                         command:
                           description: The command for this init container. Defaults
-                            to `cp -R $AUXILIARY_IMAGE_PATH/* $TARGET_MOUNT_PATH`.
+                            to `cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH`.
                             This is an advanced setting for customizing the container
                             command for copying files from the container image to
                             the auxiliary image emptyDir volume. Use the `$AUXILIARY_IMAGE_PATH`
                             environment variable to reference the value configured
                             in `spec.auxiliaryImageVolumes.mountPath`, which defaults
-                            to "/auxiliary". Use '$TARGET_MOUNT_PATH' to refer to
-                            the temporary directory created by the operator that resolves
-                            to the auxiliary image's internal emptyDir volume.
+                            to "/auxiliary". Use '$AUXILIARY_IMAGE_TARGET_PATH' to
+                            refer to the temporary directory created by the operator
+                            that resolves to the auxiliary image's internal emptyDir
+                            volume.
                           type: string
                     type: array
                   containers:
@@ -8631,7 +8632,7 @@ spec:
                       description: The mount path. The files in the path are populated
                         from the same named directory in the images supplied by each
                         container in `serverPod.auxiliaryImages`. Each volume must
-                        be configured with a different mount path. Required.
+                        be configured with a different mount path. Defaults to '/auxiliary'.
                       type: string
                     name:
                       description: The name of the volume. Required.
@@ -9866,13 +9867,13 @@ spec:
                                 - IfNotPresent
                               command:
                                 description: The command for this init container.
-                                  Defaults to `cp -R $AUXILIARY_IMAGE_PATH/* $TARGET_MOUNT_PATH`.
+                                  Defaults to `cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH`.
                                   This is an advanced setting for customizing the
                                   container command for copying files from the container
                                   image to the auxiliary image emptyDir volume. Use
                                   the `$AUXILIARY_IMAGE_PATH` environment variable
                                   to reference the value configured in `spec.auxiliaryImageVolumes.mountPath`,
-                                  which defaults to "/auxiliary". Use '$TARGET_MOUNT_PATH'
+                                  which defaults to "/auxiliary". Use '$AUXILIARY_IMAGE_TARGET_PATH'
                                   to refer to the temporary directory created by the
                                   operator that resolves to the auxiliary image's
                                   internal emptyDir volume.
@@ -13040,16 +13041,16 @@ spec:
                               - IfNotPresent
                             command:
                               description: The command for this init container. Defaults
-                                to `cp -R $AUXILIARY_IMAGE_PATH/* $TARGET_MOUNT_PATH`.
+                                to `cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH`.
                                 This is an advanced setting for customizing the container
                                 command for copying files from the container image
                                 to the auxiliary image emptyDir volume. Use the `$AUXILIARY_IMAGE_PATH`
                                 environment variable to reference the value configured
                                 in `spec.auxiliaryImageVolumes.mountPath`, which defaults
-                                to "/auxiliary". Use '$TARGET_MOUNT_PATH' to refer
-                                to the temporary directory created by the operator
-                                that resolves to the auxiliary image's internal emptyDir
-                                volume.
+                                to "/auxiliary". Use '$AUXILIARY_IMAGE_TARGET_PATH'
+                                to refer to the temporary directory created by the
+                                operator that resolves to the auxiliary image's internal
+                                emptyDir volume.
                               type: string
                         type: array
                       containers:
@@ -15841,13 +15842,13 @@ spec:
                                 - IfNotPresent
                               command:
                                 description: The command for this init container.
-                                  Defaults to `cp -R $AUXILIARY_IMAGE_PATH/* $TARGET_MOUNT_PATH`.
+                                  Defaults to `cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH`.
                                   This is an advanced setting for customizing the
                                   container command for copying files from the container
                                   image to the auxiliary image emptyDir volume. Use
                                   the `$AUXILIARY_IMAGE_PATH` environment variable
                                   to reference the value configured in `spec.auxiliaryImageVolumes.mountPath`,
-                                  which defaults to "/auxiliary". Use '$TARGET_MOUNT_PATH'
+                                  which defaults to "/auxiliary". Use '$AUXILIARY_IMAGE_TARGET_PATH'
                                   to refer to the temporary directory created by the
                                   operator that resolves to the auxiliary image's
                                   internal emptyDir volume.
@@ -18639,15 +18640,16 @@ spec:
                           - IfNotPresent
                         command:
                           description: The command for this init container. Defaults
-                            to `cp -R $AUXILIARY_IMAGE_PATH/* $TARGET_MOUNT_PATH`.
+                            to `cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH`.
                             This is an advanced setting for customizing the container
                             command for copying files from the container image to
                             the auxiliary image emptyDir volume. Use the `$AUXILIARY_IMAGE_PATH`
                             environment variable to reference the value configured
                             in `spec.auxiliaryImageVolumes.mountPath`, which defaults
-                            to "/auxiliary". Use '$TARGET_MOUNT_PATH' to refer to
-                            the temporary directory created by the operator that resolves
-                            to the auxiliary image's internal emptyDir volume.
+                            to "/auxiliary". Use '$AUXILIARY_IMAGE_TARGET_PATH' to
+                            refer to the temporary directory created by the operator
+                            that resolves to the auxiliary image's internal emptyDir
+                            volume.
                           type: string
                     type: array
                   containers:
@@ -21346,13 +21348,13 @@ spec:
                                 - IfNotPresent
                               command:
                                 description: The command for this init container.
-                                  Defaults to `cp -R $AUXILIARY_IMAGE_PATH/* $TARGET_MOUNT_PATH`.
+                                  Defaults to `cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH`.
                                   This is an advanced setting for customizing the
                                   container command for copying files from the container
                                   image to the auxiliary image emptyDir volume. Use
                                   the `$AUXILIARY_IMAGE_PATH` environment variable
                                   to reference the value configured in `spec.auxiliaryImageVolumes.mountPath`,
-                                  which defaults to "/auxiliary". Use '$TARGET_MOUNT_PATH'
+                                  which defaults to "/auxiliary". Use '$AUXILIARY_IMAGE_TARGET_PATH'
                                   to refer to the temporary directory created by the
                                   operator that resolves to the auxiliary image's
                                   internal emptyDir volume.

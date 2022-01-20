@@ -1,12 +1,12 @@
 #!/bin/bash
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
-# Usage:  See 'function usage' below, or call 'lease.sh -h'.
-# Main:   See 'function main' below.
+# Usage:  See function 'usage' below, or call 'lease.sh -h'.
+# Main:   See function 'main' below.
 #
 
-function usage {
+usage() {
 cat << EOF
 
   Summary:
@@ -91,7 +91,7 @@ EOF
 }
 
 
-function main {
+main() {
   #
   # The main for this script.  Arguments come from the command line.
   #
@@ -202,20 +202,20 @@ function main {
   return $?
 }
 
-function traceInfo {
+traceInfo() {
   echo "@@ [script=$0] [fn=${FUNCNAME[1]}]"" Info: ""$@"
 }
 
-function traceError {
+traceError() {
   echo "@@ [script=$0] [fn=${FUNCNAME[1]}]"" Error: ""$@"
 }
 
-function commandLineError {
+commandLineError() {
   traceError "Incorrect command line syntax '$COMMAND_LINE'.  Use '-h' to get usage."
   return 1
 }
 
-function getLocalLease {
+getLocalLease() {
   #
   # cat the local candidate lease file in $LOCAL_FILE
   # if local lease DNE, just make a dummy file and cat that instead
@@ -240,7 +240,7 @@ function getLocalLease {
   fi
 }
 
-function makeLocalLease {
+makeLocalLease() {
 #
 # Make a candidate lease file in ${LOCAL_ROOT}/[expired/]${LOCAL_FILE}
 # Embed id, hostname, timestamp, etc to make it easy to identify the owner.
@@ -285,7 +285,7 @@ EOF
   fi
 }
 
-function makeLocalLeaseAndReplaceRemote {
+makeLocalLeaseAndReplaceRemote() {
   # Replace the remote lease with a new lease that we own
   # It's assumed that it's already determined it's safe to try and get the lease
   # (either the lease is unowned, expired, or owned by us).
@@ -327,7 +327,7 @@ function makeLocalLeaseAndReplaceRemote {
   return 0
 }
 
-function getRemoteLease {
+getRemoteLease() {
   #
   #  first, if the remote lease configmap doesn't exist
   #         then try create one with a lease that's already expired
@@ -364,12 +364,12 @@ function getRemoteLease {
   fi
 }
 
-function getLeaseTimestamp {
+getLeaseTimestamp() {
   # Get the timestamp value from a lease.   $1 must contain the lease
   echo "$1" | grep "timestamp=" | sed "s/.*timestamp=\([0-9]*\).*/\1/g"
 }
 
-function showRemoteLease {
+showRemoteLease() {
   local remote_lease="`getRemoteLease`"
   if [ $? -ne 0 ]; then
     traceError "failed while trying to get values in remote lease"
@@ -390,7 +390,7 @@ function showRemoteLease {
   return 0
 }
 
-function checkLease {
+checkLease() {
   #
   # get current local lease || fail
   # get current remote lease || fail
@@ -412,7 +412,7 @@ function checkLease {
   fi
 }
 
-function obtainLease {
+obtainLease() {
   #
   # pseudo-code
   #   try look at remote lease, return a failure if cannot
@@ -456,7 +456,7 @@ function obtainLease {
   done
 }
 
-function renewLease {
+renewLease() {
   #
   # this must called every few minutes (less than ABANDON_TIMEOUT_SECONDS)
   # after obtaining a lease in order to keep ownership of a lease
@@ -484,7 +484,7 @@ function renewLease {
   fi
 }
 
-function deleteRemoteLeaseSafe {
+deleteRemoteLeaseSafe() {
   #
   # delete the remote lease if we determine we're the local owner
   # fail otherwise
@@ -498,7 +498,7 @@ function deleteRemoteLeaseSafe {
   return $?
 }
 
-function deleteRemoteLeaseUnsafe {
+deleteRemoteLeaseUnsafe() {
   #
   # delete the remote lease regardless of whether we're the owner
   #

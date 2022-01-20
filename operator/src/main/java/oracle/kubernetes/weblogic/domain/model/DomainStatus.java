@@ -170,8 +170,16 @@ public class DomainStatus {
    *
    * @param type the type of the condition
    */
-  public void removeConditionWithType(DomainConditionType type) {
-    for (DomainCondition condition : getConditionsMatching(c -> c.hasType(type))) {
+  public void removeConditionsWithType(DomainConditionType type) {
+    removeConditionsMatching(c -> c.hasType(type));
+  }
+
+  /**
+   * Removes any condition matching the specified predicate.
+   * @param predicate the criteria for removing a condition
+   */
+  public void removeConditionsMatching(Predicate<DomainCondition> predicate) {
+    for (DomainCondition condition : getConditionsMatching(predicate)) {
       removeCondition(condition);
     }
   }

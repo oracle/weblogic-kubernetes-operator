@@ -12,6 +12,7 @@ import java.util.concurrent.Callable;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1Secret;
+import io.kubernetes.client.util.Yaml;
 import oracle.weblogic.domain.DomainCondition;
 import oracle.weblogic.kubernetes.actions.impl.LoggingExporter;
 import oracle.weblogic.kubernetes.assertions.impl.Apache;
@@ -36,6 +37,7 @@ import oracle.weblogic.kubernetes.assertions.impl.Voyager;
 import oracle.weblogic.kubernetes.assertions.impl.WitAssertion;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
 
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.listSecrets;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -327,8 +329,8 @@ public class TestAssertions {
    * @param namespace in which the pod is initializing
    * @return true if the pod is initializing otherwise false
    */
-  public static Callable<Boolean> podInitializing(String podName, String domainUid, String namespace) {
-    return Pod.podInitializing(namespace, domainUid, podName);
+  public static Callable<Boolean> podInitialized(String podName, String domainUid, String namespace) {
+    return Pod.podInitialized(namespace, domainUid, podName);
   }
 
   /**
@@ -440,13 +442,30 @@ public class TestAssertions {
   public static Callable<Boolean> domainStatusConditionTypeExists(String domainUid,
                                                                   String domainNamespace,
                                                                   String conditionType) {
+    return domainStatusConditionTypeExists(domainUid, domainNamespace, conditionType, DOMAIN_VERSION);
+  }
+
+  /**
+   * Check the domain status condition type exists.
+   * @param domainUid uid of the domain
+   * @param domainNamespace namespace of the domain
+   * @param conditionType the type name of condition, accepted value: Completed, Available, Failed and
+   *                      ConfigChangesPendingRestart
+   * @param domainVersion version of domain
+   * @return true if the condition type exists, false otherwise
+   */
+  public static Callable<Boolean> domainStatusConditionTypeExists(String domainUid,
+                                                                  String domainNamespace,
+                                                                  String conditionType,
+                                                                  String domainVersion) {
     LoggingFacade logger = getLogger();
     return () -> {
       oracle.weblogic.domain.Domain domain =
-          assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace));
+          assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace, domainVersion));
 
       if (domain != null && domain.getStatus() != null) {
         List<DomainCondition> domainConditionList = domain.getStatus().getConditions();
+        logger.info(Yaml.dump(domainConditionList));
         for (DomainCondition domainCondition : domainConditionList) {
           if (domainCondition.getType().equalsIgnoreCase(conditionType)) {
             return true;
@@ -476,14 +495,34 @@ public class TestAssertions {
                                                                              String domainNamespace,
                                                                              String conditionType,
                                                                              String expectedStatus) {
+    return domainStatusConditionTypeHasExpectedStatus(domainUid, domainNamespace,
+        conditionType, expectedStatus, DOMAIN_VERSION);
+  }
+
+  /**
+   * Check the domain status condition type has expected status.
+   * @param domainUid uid of the domain
+   * @param domainNamespace namespace of the domain
+   * @param conditionType the type name of condition, accepted value: Completed, Available, Failed and
+   *                      ConfigChangesPendingRestart
+   * @param expectedStatus expected status value, either True or False
+   * @param domainVersion version of domain
+   * @return true if the condition type has the expected status, false otherwise
+   */
+  public static Callable<Boolean> domainStatusConditionTypeHasExpectedStatus(String domainUid,
+                                                                             String domainNamespace,
+                                                                             String conditionType,
+                                                                             String expectedStatus,
+                                                                             String domainVersion) {
     LoggingFacade logger = getLogger();
 
     return () -> {
       oracle.weblogic.domain.Domain domain =
-          assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace));
+          assertDoesNotThrow(() -> getDomainCustomResource(domainUid, domainNamespace, domainVersion));
 
       if (domain != null && domain.getStatus() != null) {
         List<DomainCondition> domainConditionList = domain.getStatus().getConditions();
+        logger.info(Yaml.dump(domainConditionList));
         for (DomainCondition domainCondition : domainConditionList) {
           if (domainCondition.getType().equalsIgnoreCase(conditionType)
               && domainCondition.getStatus().equalsIgnoreCase(expectedStatus)) {
@@ -544,7 +583,7 @@ public class TestAssertions {
    * @return true if the WebLogic administration service node port is accessible otherwise false
    * @throws java.io.IOException when connection to WebLogic administration server fails
    */
-  public static Callable<Boolean> adminNodePortAccessible(int nodePort, String userName, 
+  public static Callable<Boolean> adminNodePortAccessible(int nodePort, String userName,
                                                      String password, String... routeHost)
       throws IOException {
     if (routeHost.length == 0) {

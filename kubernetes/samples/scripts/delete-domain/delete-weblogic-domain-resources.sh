@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # Description:
@@ -14,7 +14,7 @@
 
 script="${BASH_SOURCE[0]}"
 
-function usage {
+usage() {
 cat << EOF
   Usage:
 
@@ -67,7 +67,7 @@ EOF
 #    PersistentVolumeClaim domain1-pv-claim -n default 
 #    PersistentVolume domain1-pv 
 #
-function getDomainResources {
+getDomainResources() {
   local domain_regex=''
   LABEL_SELECTOR="weblogic.domainUID in ($1)"
   IFS=',' read -ra UIDS <<< "$1"
@@ -125,7 +125,7 @@ function getDomainResources {
 #   If global $test_mode is true, it shows candidate actions but doesn't
 #   actually perform them
 #
-function deleteDomains {
+deleteDomains() {
 
   if [ "$test_mode" = "true" ]; then
     echo @@ Test mode! Displaying commands for deleting kubernetes resources with label weblogic.domainUID \'$1\' without actually deleting them.

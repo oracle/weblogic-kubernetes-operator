@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 
@@ -9,19 +9,17 @@ script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 source ${scriptDir}/../common/utility.sh
 
-function usage {
+usage() {
   echo "usage: ${script} -s <schemaPrefix> -d <dburl> -n <namespace> -q <sysPassword> -r <schemaPassword> [-h]"
   echo "  -s RCU Schema Prefix (required)"
+  echo "  -q password for database SYSDBA user. (required)"
+  echo "  -r password for all schema owner (regular user). (required)"
   echo "  -t RCU Schema Type (optional)"
   echo "      (supported values: fmw(default), soa, osb, soaosb, soaess, soaessosb) "
   echo "  -d Oracle Database URL (optional)"
   echo "      (default: oracle-db.default.svc.cluster.local:1521/devpdb.k8s) "
   echo "  -n Namespace where RCU pod is deployed (optional)"
   echo "      (default: default) "
-  echo "  -q password for database SYSDBA user. (optional)"
-  echo "      (default: Oradoc_db1)"
-  echo "  -r password for all schema owner (regular user). (optional)"
-  echo "      (default: Oradoc_db1)"
   echo "  -h Help"
   exit $1
 }
@@ -47,33 +45,35 @@ while getopts ":h:s:d:t:n:q:r:" opt; do
   esac
 done
 
-if [ -z ${schemaPrefix} ]; then
+if [ -z "${schemaPrefix}" ]; then
   echo "${script}: -s <schemaPrefix> must be specified."
   usage 1
 fi
 
-if [ -z ${dburl} ]; then
+if [ -z "${dburl}" ]; then
   dburl="oracle-db.default.svc.cluster.local:1521/devpdb.k8s"
 fi
 
-if [ -z ${rcuType} ]; then
+if [ -z "${rcuType}" ]; then
   rcuType="fmw"
 fi
 
-if [ -z ${namespace} ]; then
+if [ -z "${namespace}" ]; then
   namespace="default"
 fi
 
-if [ -z ${sysPassword} ]; then
-  sysPassword="Oradoc_db1"
+if [ -z "${sysPassword}" ]; then
+  echo "${script}: -q <SYSDBA user password> must be specified."
+  usage 1
 fi
 
-if [ -z ${schemaPassword} ]; then
-  schemaPassword="Oradoc_db1"
+if [ -z "${schemaPassword}" ]; then
+  echo "${script}: -r <schema owner password> must be specified."
+  usage 1
 fi
 
 rcupod=`kubectl get po -n ${namespace} | grep rcu | cut -f1 -d " " `
-if [ -z ${rcupod} ]; then
+if [ -z "${rcupod}" ]; then
   echo "RCU deployment pod not found in [$namespace] Namespace"
   exit -2
 fi

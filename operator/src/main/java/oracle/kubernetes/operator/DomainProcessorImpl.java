@@ -19,6 +19,7 @@ import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.stream.Stream;
 import javax.annotation.Nonnull;
+import javax.annotation.Nullable;
 
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1ConfigMap;
@@ -73,14 +74,17 @@ import oracle.kubernetes.weblogic.domain.model.ServerHealth;
 import oracle.kubernetes.weblogic.domain.model.ServerStatus;
 import org.jetbrains.annotations.NotNull;
 
+import static oracle.kubernetes.operator.DomainStatusUpdater.createAbortedFailureSteps;
+import static oracle.kubernetes.operator.DomainStatusUpdater.createInternalFailureSteps;
+import static oracle.kubernetes.operator.DomainStatusUpdater.createStatusInitializationStep;
 import static oracle.kubernetes.operator.DomainStatusUpdater.createStatusUpdateStep;
 import static oracle.kubernetes.operator.LabelConstants.INTROSPECTION_STATE_LABEL;
+import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECTOR_JOB;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_INTROSPECT_REQUESTED;
 import static oracle.kubernetes.operator.ProcessingConstants.FATAL_INTROSPECTOR_ERROR;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_HEALTH_MAP;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_STATE_MAP;
-import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_PROCESSING_ABORTED;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodDomainUid;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodName;
 import static oracle.kubernetes.operator.helpers.PodHelper.getPodNamespace;
@@ -709,6 +713,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     private boolean willInterrupt;
     private boolean inspectionRun;
     private EventData eventData;
+    private boolean willThrow;
 
     /**
      * Create the operation.
@@ -788,6 +793,17 @@ public class DomainProcessorImpl implements DomainProcessor {
       return this;
     }
 
+    /**
+     * Modifies the factory to indicate that it should throw.
+     * For unit testing only.
+     *
+     * @return the updated factory
+     */
+    public MakeRightDomainOperation throwNPE() {
+      willThrow = true;
+      return this;
+    }
+
     @Override
     public void execute() {
       try (LoggingContext ignored = LoggingContext.setThreadContext().presenceInfo(liveInfo)) {
@@ -839,8 +855,6 @@ public class DomainProcessorImpl implements DomainProcessor {
 
       if (isNewDomain(cachedInfo)) {
         return true;
-      } else if (shouldReportAbortedEvent()) {
-        return true;
       } else if (hasExceededRetryCount(liveInfo) && !isImgRestartIntrospectVerChanged(liveInfo, cachedInfo)) {
         LOGGER.severe(MessageKeys.INTROSPECTOR_MAX_ERRORS_EXCEEDED, getFailureRetryMaxCount());
         return false;
@@ -864,10 +878,6 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     private int getFailureRetryMaxCount() {
       return DomainPresence.getDomainPresenceFailureRetryMaxCount();
-    }
-
-    private boolean shouldReportAbortedEvent() {
-      return Optional.ofNullable(eventData).map(EventData::getItem).orElse(null) == DOMAIN_PROCESSING_ABORTED;
     }
 
     private void logRetryCount(DomainPresenceInfo cachedInfo) {
@@ -918,20 +928,12 @@ public class DomainProcessorImpl implements DomainProcessor {
     }
 
     private StepAndPacket createDomainPlanSteps(Packet packet) {
-      if (containsAbortedEventData()) {
-        return new StepAndPacket(Step.chain(createEventStep(eventData), new TailStep()), packet);
-      }
-
       return new StepAndPacket(
           getEventStep(Step.chain(createPopulatePacketServerMapsStep(),  createSteps())), packet);
     }
 
     private Step getEventStep(Step next) {
       return Optional.ofNullable(eventData).map(ed -> Step.chain(createEventStep(ed), next)).orElse(next);
-    }
-
-    private boolean containsAbortedEventData() {
-      return Optional.ofNullable(eventData).map(EventData::isProcessingAbortedEvent).orElse(false);
     }
 
     private Domain getDomain() {
@@ -948,12 +950,37 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     @Override
     public Step createSteps() {
-      Step strategy =
-            new StartPlanStep(liveInfo, deleting ? createDomainDownPlan(liveInfo) : createDomainUpPlan(liveInfo));
-      if (deleting || getDomain() == null) {
-        return strategy;
+      final List<Step> result = new ArrayList<>();
+
+      result.add(willThrow ? createThrowStep() : null);
+      result.add(createStatusInitializationStep());
+      if (deleting) {
+        result.add(new StartPlanStep(liveInfo, createDomainDownPlan(liveInfo)));
       } else {
-        return DomainValidationSteps.createDomainValidationSteps(getNamespace(), strategy);
+        result.add(createDomainValidationStep(getDomain()));
+        result.add(new StartPlanStep(liveInfo, createDomainUpPlan(liveInfo)));
+      }
+
+      return Step.chain(result);
+    }
+
+    private Step createDomainValidationStep(@Nullable Domain domain) {
+      return domain == null ? null : DomainValidationSteps.createDomainValidationSteps(getNamespace());
+    }
+
+    // for unit testing only
+    private Step createThrowStep() {
+      return new ThrowStep();
+    }
+
+    // for unit testing only
+    private class ThrowStep extends Step {
+
+      @Override
+      public NextAction apply(Packet packet) {
+        String text = null;
+        text.toString();
+        return doNext(packet);
       }
     }
   }
@@ -1037,12 +1064,18 @@ public class DomainProcessorImpl implements DomainProcessor {
           @Override
           public void onThrowable(Packet packet, Throwable throwable) {
             logThrowable(throwable);
-
+            DomainPresenceInfo existing = getExistingDomainPresenceInfo(ns, domainUid);
+            Step failureSteps = createInternalFailureSteps(throwable, packet.getValue(DOMAIN_INTROSPECTOR_JOB));
+            if (existing != null) {
+              if (getCurrentIntrospectFailureRetryCount(existing)
+                  > DomainPresence.getDomainPresenceFailureRetryMaxCount()) {
+                failureSteps = createAbortedFailureSteps();
+              }
+            }
             gate.startFiberIfLastFiberMatches(
                 domainUid,
                 Fiber.getCurrentIfSet(),
-                Step.chain(DomainStatusUpdater.createFailureCountStep(null),
-                        DomainStatusUpdater.createFailureRelatedSteps(throwable)),
+                failureSteps,
                 plan.packet,
                 new CompletionCallback() {
                   @Override
@@ -1059,7 +1092,6 @@ public class DomainProcessorImpl implements DomainProcessor {
             gate.getExecutor()
                 .schedule(
                     () -> {
-                      DomainPresenceInfo existing = getExistingDomainPresenceInfo(ns, domainUid);
                       if (existing != null) {
                         try (LoggingContext ignored =
                                  LoggingContext.setThreadContext().namespace(ns).domainUid(domainUid)) {
@@ -1083,14 +1115,6 @@ public class DomainProcessorImpl implements DomainProcessor {
                                 ns,
                                 DomainPresence.getDomainPresenceFailureRetryMaxCount(),
                                 throwable);
-                            createMakeRightOperation(existing)
-                                .withEventData(DOMAIN_PROCESSING_ABORTED,
-                                    String.format(
-                                        "Unable to start domain %s after %s attempts due to exception: %s",
-                                        domainUid,
-                                        DomainPresence.getDomainPresenceFailureRetryMaxCount(),
-                                        throwable))
-                                .execute();
                           }
                         }
                       }
@@ -1112,7 +1136,7 @@ public class DomainProcessorImpl implements DomainProcessor {
     Step managedServerStrategy = Step.chain(
         bringManagedServersUp(null),
         MonitoringExporterSteps.updateExporterSidecars(),
-        new TailStep());
+        createStatusUpdateStep(new TailStep()));
 
     Step domainUpStrategy =
         Step.chain(
@@ -1194,7 +1218,7 @@ public class DomainProcessorImpl implements DomainProcessor {
 
     private Step getNextSteps() {
       if (lookForPodsAndServices()) {
-        return Step.chain(createStatusUpdateStep(null), getRecordExistingResourcesSteps(), getNext());
+        return Step.chain(getRecordExistingResourcesSteps(), getNext());
       } else {
         return getNext();
       }

@@ -59,7 +59,9 @@ the change requires entirely shutting domain the domain,
 applying the change, and finally restarting the domain. Full domain restarts are discussed in
 [Full domain restarts]({{< relref "/userguide/managing-domains/domain-lifecycle/startup/_index.md#full-domain-restarts">}}).
 Supported and unsupported changes are discussed in
-[Supported and unsupported updates](#supported-and-unsupported-updates).
+[Supported updates](#supported-updates)
+and
+[Unsupported updates](#unsupported-updates).
 
 _It is the administrator's responsibility to make the necessary changes to a domain resource in order to initiate the correct approach for an update._
 
@@ -237,7 +239,9 @@ and a description of workarounds and alternatives when applicable:
 
 If you have verified your proposed model updates to a running
 Model in Image domain are supported by consulting
-[Supported and unsupported updates](#supported-and-unsupported-updates),
+[Supported updates](#supported-updates)
+and
+[Unsupported updates](#unsupported-updates),
 then you can use the following approaches.
 
 For online or offline updates:

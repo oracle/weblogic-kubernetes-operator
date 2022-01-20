@@ -1,12 +1,12 @@
 #!/bin/bash
 #
-#Copyright (c) 2021, Oracle and/or its affiliates.
+#Copyright (c) 2021,2022, Oracle and/or its affiliates.
 #Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 
 # Function to parse a properties file set environment variables
 # $1 - Input properties filename
-function parseProperties {
+parseProperties() {
   while IFS='=' read -r key value
   do
     if [ -n "${value}" ] && [ "${key}" != "\#*" ]; then

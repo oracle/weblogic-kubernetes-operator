@@ -1,4 +1,4 @@
-# Copyright (c) 2021, Oracle and/or its affiliates.
+# Copyright (c) 2021,2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # Important: Functions defined in this file can work with unknown shells,
@@ -47,7 +47,7 @@
 #
 #   Set TRACE_INCLUDE_FILE env var to false to suppress file name and line number.
 #
-function trace() {
+trace() {
   (
   set +x
 
@@ -114,7 +114,7 @@ function trace() {
       ;;
   esac
 
-  function logPrefix() {
+  logPrefix() {
     echo "@[`timestamp`][$logLoc][$logLevel]"
   }
 
@@ -143,7 +143,7 @@ function trace() {
 # traceDirs before|after DOMAIN_HOME LOG_HOME DATA_HOME ...
 #   Trace contents and owner of directory for the specified env vars...
 
-function traceDirs() {
+traceDirs() {
   trace "id = '`id`'"
   local keyword="$1"
   shift
@@ -169,7 +169,7 @@ function traceDirs() {
 # timestamp
 #   purpose:  echo timestamp in the form yyyy-mm-ddThh:mm:ss.nnnnnnZ
 #   example:  2018-10-01T14:00:00.000001Z
-function timestamp() {
+timestamp() {
   local timestamp="`date --utc '+%Y-%m-%dT%H:%M:%S.%NZ' 2>&1`"
   if [ ! "${timestamp/illegal/xyz}" = "${timestamp}" ]; then
     # old shell versions don't support %N or --utc
@@ -191,7 +191,7 @@ function timestamp() {
 #            @[2018-10-05T22:48:04.393000Z][FINE] USER='friendly'
 #            @[2018-10-05T22:48:04.415000Z][SEVERE] The following env vars are missing or empty:  NOTSET1 NOTSET2
 #
-function checkEnv() {
+checkEnv() {
   local do_fine="true"
   if [ "$1" = "-q" ]; then 
     do_fine="false"
@@ -226,7 +226,7 @@ function checkEnv() {
 #            See also 'auxImage.sh'.
 #            See also checkAuxiliaryImage in 'utils.sh'.
 #
-function initAuxiliaryImage() {
+initAuxiliaryImage() {
 
   if [ -z "${AUXILIARY_IMAGE_COMMAND}" ]; then
     trace SEVERE "Auxiliary Image: The 'serverPod.auxiliaryImages.command' is empty for the " \
@@ -237,11 +237,6 @@ function initAuxiliaryImage() {
   trace FINE "Auxiliary Image: About to execute command '$AUXILIARY_IMAGE_COMMAND' in container image='$AUXILIARY_IMAGE_CONTAINER_IMAGE'. " \
              "AUXILIARY_IMAGE_PATH is '$AUXILIARY_IMAGE_PATH' and AUXILIARY_IMAGE_TARGET_PATH is '${AUXILIARY_IMAGE_TARGET_PATH}'."
   traceDirs before AUXILIARY_IMAGE_PATH
-
-  if [ ! -d ${AUXILIARY_IMAGE_PATH} ] ||  [ -z "$(ls -A ${AUXILIARY_IMAGE_PATH})" ]; then
-    trace SEVERE "Auxiliary Image: Dir '${AUXILIARY_IMAGE_PATH}' doesn't exist or is empty. Exiting."
-    return
-  fi
 
   trace FINE "Auxiliary Image: About to execute AUXILIARY_IMAGE_COMMAND='$AUXILIARY_IMAGE_COMMAND' ."
   results=$(eval $AUXILIARY_IMAGE_COMMAND 2>&1)

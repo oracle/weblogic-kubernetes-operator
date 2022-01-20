@@ -1,5 +1,10 @@
-# Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+rbac:
+  create: true
+
+podSecurityPolicy:
+  enabled: false
 
 serviceAccounts:
   pushgateway:
@@ -10,17 +15,26 @@ pushgateway:
 
 alertmanager:
   enabled: true
+
+  ## Use a ClusterRole (and ClusterRoleBinding)
+  ## - If set to false - we define a Role and RoleBinding in the defined namespaces ONLY
+  ## This makes alertmanager work - for users who do not have ClusterAdmin privs, but wants alertmanager to operate on their own namespaces, instead of clusterwide.
+  useClusterRole: true
+
+  ## Set to a rolename to use existing role - skipping role creating - but still doing serviceaccount and rolebinding to the rolename set here.
+  useExistingRole: false
+
   persistentVolume:
     existingClaim: pvc-alertmanager
   service:
     type: NodePort
     nodePort: 32500
- # securityContext:
- #   runAsNonRoot: false
- #  runAsUser: 0
+  # securityContext:
+  #   runAsNonRoot: false
+  #  runAsUser: 0
   image:
-    repository: prom/alertmanager
-    tag: v0.20.0
+    repository: quay.io/prometheus/alertmanager
+    tag: v0.23.0
     pullPolicy: IfNotPresent
   securityContext:
     runAsUser: 65534
@@ -38,16 +52,16 @@ server:
     type: NodePort
     nodePort: 30500
   securityContext:
-    runAsNonRoot: false
     runAsUser: 0
+    runAsNonRoot: false
 
   global:
     evaluation_interval: 1m
     scrape_interval: 10s
     scrape_timeout: 5s
   image:
-    repository: prom/prometheus
-    tag: v2.16.0
+    repository: quay.io/prometheus/prometheus
+    tag: v2.31.1
     pullPolicy: IfNotPresent
 
 alertmanagerFiles:
@@ -64,7 +78,7 @@ alertmanagerFiles:
     receivers:
       - name: 'logging-webhook'
         webhook_configs:
-        - url: 'http://webhook.webhook.svc.cluster.local:8080/log'
+          - url: 'http://webhook.webhook.svc.cluster.local:8080/log'
 
 serverFiles:
   alerts:
@@ -81,27 +95,27 @@ serverFiles:
               summary: 'Some wls cluster is in warning state.'
 
 extraScrapeConfigs: |
-    - job_name: 'wls-domain1'
-      kubernetes_sd_configs:
-      - role: pod
-      relabel_configs:
-      - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_pod_label_weblogic_domainUID, __meta_kubernetes_pod_label_weblogic_clusterName]
-        action: keep
-        regex: default;domain1;(.+)
-      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
-        action: replace
-        target_label: __metrics_path__
-        regex: (.+)
-      - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
-        action: replace
-        regex: ([^:]+)(?::\d+)?;(\d+)
-        replacement: $1:$2
-        target_label: __address__
-      - action: labelmap
-        regex: __meta_kubernetes_pod_label_(.+)
-      - source_labels: [__meta_kubernetes_pod_name]
-        action: replace
-        target_label: pod_name
-      basic_auth:
-        username: weblogic
-        password: welcome1
+  - job_name: 'wls-domain1'
+    kubernetes_sd_configs:
+    - role: pod
+    relabel_configs:
+    - source_labels: [__meta_kubernetes_namespace, __meta_kubernetes_pod_label_weblogic_domainUID, __meta_kubernetes_pod_label_weblogic_clusterName]
+      action: keep
+      regex: default;domain1;(.+)
+    - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+      action: replace
+      target_label: __metrics_path__
+      regex: (.+)
+    - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+      action: replace
+      regex: ([^:]+)(?::\d+)?;(\d+)
+      replacement: $1:$2
+      target_label: __address__
+    - action: labelmap
+      regex: __meta_kubernetes_pod_label_(.+)
+    - source_labels: [__meta_kubernetes_pod_name]
+      action: replace
+      target_label: pod_name
+    basic_auth:
+      username: weblogic
+      password: welcome1

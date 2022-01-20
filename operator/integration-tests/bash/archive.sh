@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
@@ -11,17 +11,17 @@
 #
 
 # trace <message>
-function trace {
+trace() {
   #Date reported in same format as oper-log for easier correlation.  01-22-2018T21:49:01
   echo "[`date '+%m-%d-%YT%H:%M:%S'`] [secs=$SECONDS] [test=archive] [fn=archive]: ""$@"
 }
 
-function fail {
+fail() {
   trace "Error: ""$@"
   exit 1
 }
 
-function archive {
+archive() {
   local SOURCE_DIR="${1?}"
   local ARCHIVE_DIR="${2?}"
   local ARCHIVE_FILE="IntSuite.${IT_CLASS}.TMP.`date '+%Y%m%d%H%M%S'`.jar"

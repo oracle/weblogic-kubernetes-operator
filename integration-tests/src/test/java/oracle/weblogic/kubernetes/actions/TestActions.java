@@ -23,12 +23,14 @@ import io.kubernetes.client.openapi.models.V1PersistentVolume;
 import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodList;
+import io.kubernetes.client.openapi.models.V1Role;
 import io.kubernetes.client.openapi.models.V1RoleBinding;
 import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1Service;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServiceList;
+import io.kubernetes.client.openapi.models.V1StorageClass;
 import oracle.weblogic.domain.DomainList;
 import oracle.weblogic.kubernetes.actions.impl.Apache;
 import oracle.weblogic.kubernetes.actions.impl.ApacheParams;
@@ -176,7 +178,7 @@ public class TestActions {
   public static boolean createDomainCustomResource(oracle.weblogic.domain.Domain domain,
                                                    String... domainVersion) throws ApiException {
     return Domain.createDomainCustomResource(domain, domainVersion);
-  } 
+  }
 
   /**
    * List Domain Custom Resources.
@@ -199,6 +201,21 @@ public class TestActions {
   public static oracle.weblogic.domain.Domain getDomainCustomResource(String domainUid,
                                                                       String namespace) throws ApiException {
     return Domain.getDomainCustomResource(domainUid, namespace);
+  }
+
+  /**
+   * Get the Domain Custom Resource.
+   *
+   * @param domainUid unique domain identifier
+   * @param namespace name of namespace
+   * @param domainVersion version of domain
+   * @return Domain Custom Resource or null if Domain does not exist
+   * @throws ApiException if Kubernetes client API call fails
+   */
+  public static oracle.weblogic.domain.Domain getDomainCustomResource(String domainUid,
+                                                                      String namespace,
+                                                                      String domainVersion) throws ApiException {
+    return Domain.getDomainCustomResource(domainUid, namespace, domainVersion);
   }
 
   /**
@@ -699,6 +716,30 @@ public class TestActions {
             .updateImage();
   }
 
+  /**
+   * Create an auxiliary image using WebLogic Image Tool.
+   *
+   * @param params - the parameters for creating a model-in-image Docker image
+   * @return true if the operation succeeds
+   */
+  public static boolean createAuxImage(WitParams params) {
+    return WebLogicImageTool
+            .withParams(params)
+            .createAuxImage();
+  }
+
+  /**
+   * Create an auxiliary image using WebLogic Image Tool and return result output.
+   *
+   * @param params - the parameters for creating a model-in-image Docker image
+   * @return true if the operation succeeds
+   */
+  public static ExecResult createAuxImageAndReturnResult(WitParams params) {
+    return WebLogicImageTool
+            .withParams(params)
+            .createAuxImageAndReturnResult();
+  }
+
   // -------------------------   pv/pvc  ---------------------------------
   /**
    * Get the V1PersistentVolume object in the Kubernetes cluster with specified Persistent Volume name.
@@ -984,6 +1025,41 @@ public class TestActions {
    */
   public static boolean deleteClusterRole(String name) throws ApiException {
     return ClusterRole.deleteClusterRole(name);
+  }
+
+  /**
+   * Create a role in the specified namespace.
+   *
+   * @param namespace the namespace in which the role to be created
+   * @param role V1Role object containing role configuration data
+   * @return true if the creation succeeds, false otherwise
+   * @throws ApiException if Kubernetes client call fails
+   */
+  public static boolean createRole(String namespace, V1Role role) throws ApiException {
+    return Kubernetes.createNamespacedRole(namespace, role);
+  }
+
+
+  // ----------------------- Storage class---------------------------
+
+  /**
+   * Create StorageClass.
+   *
+   * @param sco V1StorageClass object
+   * @return true if success otherwise false
+   */
+  public static boolean createStorageClass(V1StorageClass sco) {
+    return Kubernetes.createStorageClass(sco);
+  }
+
+  /**
+   * Delete StorageClass.
+   *
+   * @param name V1StorageClass object name
+   * @return true if success otherwise false
+   */
+  public static boolean deleteStorageClass(String name) {
+    return Kubernetes.deleteStorageClass(name);
   }
 
   // ----------------------- Helm -----------------------------------

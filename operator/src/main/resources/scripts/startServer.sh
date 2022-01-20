@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
@@ -32,7 +32,7 @@ exportInstallHomes
 # Define helper fn to copy a file only if src & tgt differ
 #
 
-function copyIfChanged() {
+copyIfChanged() {
   [ ! -f "${1?}" ] && trace SEVERE "File '$1' not found." && exit 1
   if [ ! -f "${2?}" ] || [ ! -z "`diff $1 $2 2>&1`" ]; then
     trace "Copying '$1' to '$2'."
@@ -56,7 +56,7 @@ checkAuxiliaryImage || exitOrLoop
 # Define function to start WebLogic
 #
 
-function startWLS() {
+startWLS() {
   #
   # Start NM
   #
@@ -116,14 +116,15 @@ function startWLS() {
   fi
 }
 
-function mockWLS() {
+mockWLS() {
 
   trace "Mocking WebLogic Server"
 
   STATEFILE_DIR=${DOMAIN_HOME}/servers/${SERVER_NAME}/data/nodemanager
   STATEFILE=${STATEFILE_DIR}/${SERVER_NAME}.state
 
-  createFolder $STATEFILE_DIR
+  createFolder "$STATEFILE_DIR" "This is the directory for holding '${SERVER_NAME}.state' in mock mode for 'server '${SERVER_NAME}' within the 'domain.spec.domainHome' directory." || exitOrLoop
+
   echo "RUNNING:Y:N" > $STATEFILE
 }
 
@@ -135,7 +136,7 @@ function mockWLS() {
 # This method is called during boot, see 'copySitCfgWhileRunning' in 'livenessProbe.sh'
 # for the similar method that is periodically called while the server is running.
 
-function copySitCfgWhileBooting() {
+copySitCfgWhileBooting() {
   # Helper fn to copy sit cfg xml files to the WL server's domain home.
   #   - params $1/$2/$3 == 'src_dir tgt_dir fil_prefix'
   #   - $src_dir files are assumed to start with $fil_prefix and end with .xml
@@ -152,7 +153,7 @@ function copySitCfgWhileBooting() {
 
   trace "Copying files starting with '$src_dir/$fil_prefix' to '$tgt_dir' without the prefix."
 
-  createFolder $tgt_dir
+  createFolder "$tgt_dir" "This is a directory within directory 'domain.spec.domainHome' that the operator uses for supplying internal or user specified configuration overrides." || exitOrLoop
 
   ls ${src_dir}/${fil_prefix}*.xml > /dev/null 2>&1
   if [ $? = 0 ]; then
@@ -225,7 +226,7 @@ if [ ! -z ${DATA_HOME} ]; then
   # Create $DATA_HOME directory for server if doesn't exist
   if [ ! -d ${DATA_HOME}/${SERVER_NAME}/data ]; then
     trace "Creating directory '${DATA_HOME}/${SERVER_NAME}/data'"
-    createFolder ${DATA_HOME}/${SERVER_NAME}/data
+    createFolder "${DATA_HOME}/${SERVER_NAME}/data" "This is the server '$SERVER_NAME' data directory within directory DATA_HOME 'domain.spec.dataHome'." || exitOrLoop
   else
     trace "Directory '${DATA_HOME}/${SERVER_NAME}/data' exists"
   fi
@@ -286,7 +287,8 @@ fi
 #          trigger unnecessary situational config overhead.
 #
 
-createFolder ${DOMAIN_HOME}/servers/${SERVER_NAME}/security
+createFolder "${DOMAIN_HOME}/servers/${SERVER_NAME}/security" "This is the server '${SERVER_NAME}' security directory within directory DOMAIN_HOME 'domain.spec.domainHome'." || exitOrLoop
+
 copyIfChanged /weblogic-operator/introspector/boot.properties \
               ${DOMAIN_HOME}/servers/${SERVER_NAME}/security/boot.properties
 

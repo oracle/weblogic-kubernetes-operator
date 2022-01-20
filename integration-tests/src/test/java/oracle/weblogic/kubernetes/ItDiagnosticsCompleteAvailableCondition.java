@@ -97,7 +97,7 @@ class ItDiagnosticsCompleteAvailableCondition {
     externalRestHttpsPort = getServiceNodePort(opNamespace, "external-weblogic-operator-svc");
 
     // This test uses the operator restAPI to scale the domain. To do this in OKD cluster,
-    // we need to expose the external service as route and set tls termination to  passthrough 
+    // we need to expose the external service as route and set tls termination to  passthrough
     logger.info("Create a route for the operator external service - only for OKD");
     createRouteForOKD("external-weblogic-operator-svc", opNamespace);
     // Patch the route just created to set tls termination to passthrough
@@ -150,9 +150,7 @@ class ItDiagnosticsCompleteAvailableCondition {
    * type: Completed, status: true
    * type: Available, status: true
    * Verify no Failed type condition generated.
-   * Disabled due to bug.
    */
-  @Disabled
   @Test
   @DisplayName("Test domain events for various successful domain life cycle changes")
   void testCompleteAvailableConditionWithAdminOnly() {
@@ -199,9 +197,7 @@ class ItDiagnosticsCompleteAvailableCondition {
    * type: Completed, status: true
    * type: Available, status: False
    * Verify no Failed type condition generated.
-   * Disabled due to bug.
    */
-  @Disabled
   @Test
   @DisplayName("Test domain status condition with serverStartPolicy set to NEVER")
   void testCompleteAvailableConditionWithNever() {
@@ -247,9 +243,7 @@ class ItDiagnosticsCompleteAvailableCondition {
    * type: Completed, status: true
    * type: Available, status: False
    * Verify no Failed type condition generated.
-   * Disabled due to bug.
    */
-  @Disabled
   @Test
   @DisplayName("Test domain status condition with cluster replica set to zero and min-replicas set to zero")
   void testCompleteAvailableConditionWithReplicaZero() {
@@ -296,9 +290,7 @@ class ItDiagnosticsCompleteAvailableCondition {
    * type: Completed, status: true
    * type: Available, status: False
    * Verify no Failed type condition generated.
-   * Disabled due to bug.
    */
-  @Disabled
   @Test
   @DisplayName("Test domain status condition with cluster serverStartPolicy to NEVER")
   void testCompleteAvailableConditionWithClusterNever() {

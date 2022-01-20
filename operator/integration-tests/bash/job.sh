@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #
@@ -55,7 +55,7 @@ if [ $k8s_major -gt 1 ] || [ $k8s_minor -gt 9 ]; then
   show_all=""
 fi
 
-function launchCommandJob {
+launchCommandJob() {
   command="$*"
 
   # setup the yaml
