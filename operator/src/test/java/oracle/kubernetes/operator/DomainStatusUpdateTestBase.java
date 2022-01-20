@@ -725,6 +725,7 @@ abstract class DomainStatusUpdateTestBase {
     updateDomainStatus();
 
     assertThat(getRecordedDomain(), hasCondition(Failed).withReason(ReplicasTooHigh).withMessageContaining("cluster1"));
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus(FALSE));;
   }
 
   @Test
