@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -40,6 +40,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.generateNewModelFileWithUpdatedDomainUid;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createMiiImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
@@ -48,7 +49,7 @@ import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOpe
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
-import static oracle.weblogic.kubernetes.utils.SessionMigrationUtil.generateSessionMigrYaml;
+import static oracle.weblogic.kubernetes.utils.SessionMigrationUtil.getOrigModelFile;
 import static oracle.weblogic.kubernetes.utils.SessionMigrationUtil.getServerAndSessionInfoAndVerify;
 import static oracle.weblogic.kubernetes.utils.SessionMigrationUtil.shutdownServerAndVerify;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -258,7 +259,7 @@ class ItSessionMigration {
 
     // Generate the model.sessmigr.yaml file at RESULTS_ROOT
     String destSessionMigrYamlFile =
-        generateSessionMigrYaml("ItSessionMigration", domainUid);
+        generateNewModelFileWithUpdatedDomainUid(domainUid, "ItSessionMigration", getOrigModelFile());
 
     List<String> appList = new ArrayList();
     appList.add(SESSMIGR_APP_NAME);

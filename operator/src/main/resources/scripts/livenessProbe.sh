@@ -1,13 +1,13 @@
 #!/bin/bash
 
-# Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # Kubernetes periodically calls this liveness probe script to determine whether
 # the pod should be restarted. The script checks a WebLogic Server state file which
 # is updated by the node manager.
 
-function copySitCfgWhileRunning() {
+copySitCfgWhileRunning() {
   # Helper fn to copy sit cfg xml files to the WL server's domain home.
   #   - params $1/$2/$3 == 'src_dir tgt_dir fil_prefix'
   #   - $src_dir files are assumed to start with $fil_prefix and end with .xml
