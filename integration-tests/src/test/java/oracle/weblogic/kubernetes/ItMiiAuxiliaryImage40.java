@@ -7,7 +7,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
-import java.time.OffsetDateTime;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -47,7 +46,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.deleteImage;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerTag;
 import static oracle.weblogic.kubernetes.actions.TestActions.getDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
-import static oracle.weblogic.kubernetes.assertions.TestAssertions.secretExists;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResource40;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
@@ -57,7 +55,6 @@ import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getDateAndTimeSta
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.patchDomainWithAuxiliaryImageAndVerify;
-import static oracle.weblogic.kubernetes.utils.FileUtils.copyFileFromPod;
 import static oracle.weblogic.kubernetes.utils.FileUtils.replaceStringInFile;
 import static oracle.weblogic.kubernetes.utils.FileUtils.unzipWDTInstallationFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
@@ -79,28 +76,22 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 class ItMiiAuxiliaryImage40 {
 
-  private static String opNamespace = null;
   private static String domainNamespace = null;
-  private static String errorpathDomainNamespace = null;
-  private static String wdtDomainNamespace = null;
   private static LoggingFacade logger = null;
-  private String domainUid = "domain1";
-  private static String miiAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + "-domain:" + MII_BASIC_IMAGE_TAG + "1";
-  private static String miiAuxiliaryImage2 = MII_AUXILIARY_IMAGE_NAME + "-domain:" + MII_BASIC_IMAGE_TAG + "2";
-  private static String miiAuxiliaryImage3 = MII_AUXILIARY_IMAGE_NAME + "-domain:" + MII_BASIC_IMAGE_TAG + "3";
-  private static String miiAuxiliaryImage4 = MII_AUXILIARY_IMAGE_NAME + "-domain:" + MII_BASIC_IMAGE_TAG + "4";
-  private static String miiAuxiliaryImage5 = MII_AUXILIARY_IMAGE_NAME + "-domain:" + MII_BASIC_IMAGE_TAG + "5";
-  private static String miiAuxiliaryImage6 = MII_AUXILIARY_IMAGE_NAME + "-domain:" + MII_BASIC_IMAGE_TAG + "6";
-  private static String errorPathAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + "-domain:errorpathimage1";
-  private static String errorPathAuxiliaryImage2 = MII_AUXILIARY_IMAGE_NAME + "-domain:errorpathimage2";
-  private static String errorPathAuxiliaryImage3 = MII_AUXILIARY_IMAGE_NAME + "-domain:errorpathimage3";
-  private static String errorPathAuxiliaryImage4 = MII_AUXILIARY_IMAGE_NAME + "-domain:errorpathimage4";
-  private static Map<String, OffsetDateTime> podsWithTimeStamps = null;
+  private final String domainUid = "domain1";
+  private static final String miiAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + "-domain:" + MII_BASIC_IMAGE_TAG + "1";
+  private static final String miiAuxiliaryImage2 = MII_AUXILIARY_IMAGE_NAME + "-domain:" + MII_BASIC_IMAGE_TAG + "2";
+  private static final String miiAuxiliaryImage3 = MII_AUXILIARY_IMAGE_NAME + "-domain:" + MII_BASIC_IMAGE_TAG + "3";
+  private static final String miiAuxiliaryImage4 = MII_AUXILIARY_IMAGE_NAME + "-domain:" + MII_BASIC_IMAGE_TAG + "4";
+  private static final String miiAuxiliaryImage5 = MII_AUXILIARY_IMAGE_NAME + "-domain:" + MII_BASIC_IMAGE_TAG + "5";
+  private static final String miiAuxiliaryImage6 = MII_AUXILIARY_IMAGE_NAME + "-domain:" + MII_BASIC_IMAGE_TAG + "6";
+  private static final String errorPathAuxiliaryImage1 = MII_AUXILIARY_IMAGE_NAME + "-domain:errorpathimage1";
+  private static final String errorPathAuxiliaryImage2 = MII_AUXILIARY_IMAGE_NAME + "-domain:errorpathimage2";
+  private static final String errorPathAuxiliaryImage3 = MII_AUXILIARY_IMAGE_NAME + "-domain:errorpathimage3";
+  private static final String errorPathAuxiliaryImage4 = MII_AUXILIARY_IMAGE_NAME + "-domain:errorpathimage4";
   private final String adminServerPodName = domainUid + "-admin-server";
   private final String managedServerPrefix = domainUid + "-managed-server";
   private final int replicaCount = 2;
-  private String adminSecretName = "weblogic-credentials";
-  private String encryptionSecretName = "encryptionsecret";
   private String adminSvcExtHost = null;
 
   /**
@@ -115,7 +106,7 @@ class ItMiiAuxiliaryImage40 {
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
-    opNamespace = namespaces.get(0);
+    String opNamespace = namespaces.get(0);
 
     logger.info("Creating unique namespace for Domain1");
     assertNotNull(namespaces.get(1), "Namespace list is null");
@@ -123,11 +114,11 @@ class ItMiiAuxiliaryImage40 {
 
     logger.info("Creating unique namespace for errorpathDomain");
     assertNotNull(namespaces.get(2), "Namespace list is null");
-    errorpathDomainNamespace = namespaces.get(2);
+    String errorpathDomainNamespace = namespaces.get(2);
 
     logger.info("Creating unique namespace for wdtDomainNamespace");
     assertNotNull(namespaces.get(3), "Namespace list is null");
-    wdtDomainNamespace = namespaces.get(3);
+    String wdtDomainNamespace = namespaces.get(3);
 
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace, errorpathDomainNamespace, wdtDomainNamespace);
@@ -144,7 +135,6 @@ class ItMiiAuxiliaryImage40 {
   void testCreateDomainUsingMultipleAuxiliaryImages() {
 
     // admin/managed server name here should match with model yaml
-    final String auxiliaryImageVolumeName = "auxiliaryImageVolume1";
     final String auxiliaryImagePath = "/auxiliary";
 
     // Create the repo secret to pull the image
@@ -263,7 +253,7 @@ class ItMiiAuxiliaryImage40 {
     }
 
     // check configuration for JMS
-    checkConfiguredJMSresouce(domainNamespace, adminServerPodName, adminSvcExtHost);
+    checkConfiguredJMSresouce(domainNamespace, adminSvcExtHost);
   }
 
   /**
@@ -336,8 +326,8 @@ class ItMiiAuxiliaryImage40 {
     assertNotNull(domain1.getSpec(), domain1 + "/spec is null");
 
     // get the map with server pods and their original creation timestamps
-    podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace, adminServerPodName, managedServerPrefix,
-        replicaCount);
+    Map podsWithTimeStamps = getPodsWithTimeStamps(domainNamespace, adminServerPodName, managedServerPrefix,
+            replicaCount);
 
     //print out the original image name
     String imageName = domain1.getSpec().getImage();
@@ -351,7 +341,7 @@ class ItMiiAuxiliaryImage40 {
     dockerTag(imageName, imageUpdate);
     dockerLoginAndPushImageToRegistry(imageUpdate);
 
-    StringBuffer patchStr = null;
+    StringBuffer patchStr;
     patchStr = new StringBuffer("[{");
     patchStr.append("\"op\": \"replace\",")
         .append(" \"path\": \"/spec/image\",")
@@ -387,7 +377,7 @@ class ItMiiAuxiliaryImage40 {
     }
 
     // check configuration for JMS
-    checkConfiguredJMSresouce(domainNamespace, adminServerPodName, adminSvcExtHost);
+    checkConfiguredJMSresouce(domainNamespace, adminSvcExtHost);
     //check configuration for JDBC
     checkConfiguredJDBCresouce(domainNamespace, adminServerPodName, adminSvcExtHost);
 
@@ -398,45 +388,25 @@ class ItMiiAuxiliaryImage40 {
    */
   public void tearDownAll() {
     // delete images
-    if (miiAuxiliaryImage1 != null) {
-      deleteImage(miiAuxiliaryImage1);
-    }
+    deleteImage(miiAuxiliaryImage1);
 
-    if (miiAuxiliaryImage2 != null) {
-      deleteImage(miiAuxiliaryImage2);
-    }
+    deleteImage(miiAuxiliaryImage2);
 
-    if (miiAuxiliaryImage3 != null) {
-      deleteImage(miiAuxiliaryImage3);
-    }
+    deleteImage(miiAuxiliaryImage3);
 
-    if (miiAuxiliaryImage4 != null) {
-      deleteImage(miiAuxiliaryImage4);
-    }
+    deleteImage(miiAuxiliaryImage4);
 
-    if (miiAuxiliaryImage5 != null) {
-      deleteImage(miiAuxiliaryImage5);
-    }
+    deleteImage(miiAuxiliaryImage5);
 
-    if (miiAuxiliaryImage6 != null) {
-      deleteImage(miiAuxiliaryImage6);
-    }
+    deleteImage(miiAuxiliaryImage6);
 
-    if (errorPathAuxiliaryImage1 != null) {
-      deleteImage(errorPathAuxiliaryImage1);
-    }
+    deleteImage(errorPathAuxiliaryImage1);
 
-    if (errorPathAuxiliaryImage2 != null) {
-      deleteImage(errorPathAuxiliaryImage2);
-    }
+    deleteImage(errorPathAuxiliaryImage2);
 
-    if (errorPathAuxiliaryImage3 != null) {
-      deleteImage(errorPathAuxiliaryImage3);
-    }
+    deleteImage(errorPathAuxiliaryImage3);
 
-    if (errorPathAuxiliaryImage4 != null) {
-      deleteImage(errorPathAuxiliaryImage4);
-    }
+    deleteImage(errorPathAuxiliaryImage4);
   }
 
   private void createAuxiliaryImage(String stageDirPath, String dockerFileLocation, String auxiliaryImage) {
@@ -449,28 +419,9 @@ class ItMiiAuxiliaryImage40 {
         .execute(), String.format("Failed to execute", cmdToExecute));
   }
 
-  private void createSecretsForDomain(String adminSecretName, String encryptionSecretName, String domainNamespace) {
-    if (!secretExists(OCIR_SECRET_NAME, domainNamespace)) {
-      createOcirRepoSecret(domainNamespace);
-    }
-
-    // create secret for admin credentials
-    logger.info("Create secret for admin credentials");
-    if (!secretExists(adminSecretName, domainNamespace)) {
-      createSecretWithUsernamePassword(adminSecretName, domainNamespace,
-          ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-    }
-
-    // create encryption secret
-    logger.info("Create encryption secret");
-    if (!secretExists(encryptionSecretName, domainNamespace)) {
-      createSecretWithUsernamePassword(encryptionSecretName, domainNamespace, "weblogicenc", "weblogicenc");
-    }
-  }
-
-  private void checkConfiguredJMSresouce(String domainNamespace, String adminServerPodName, String adminSvcExtHost) {
+  private void checkConfiguredJMSresouce(String domainNamespace, String adminSvcExtHost) {
     int adminServiceNodePort
-        = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+        = getServiceNodePort(domainNamespace, getExternalServicePodName("domain1-admin-server"), "default");
     assertNotEquals(-1, adminServiceNodePort, "admin server default node port is not valid");
 
     testUntil(
@@ -499,18 +450,5 @@ class ItMiiAuxiliaryImage40 {
         adminServiceNodePort,
         "JDBCSystemResources/TestDataSource/JDBCResource/JDBCDriverParams");
     logger.info("Found the DataResource configuration");
-  }
-
-  private String checkWDTVersion(String domainNamespace, String auxiliaryImagePath) throws Exception {
-    assertDoesNotThrow(() ->
-        FileUtils.deleteQuietly(Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "/WDTversion.txt").toFile()));
-    assertDoesNotThrow(() -> copyFileFromPod(domainNamespace,
-        adminServerPodName, "weblogic-server",
-        auxiliaryImagePath + "/weblogic-deploy/VERSION.txt",
-        Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "/WDTversion.txt")),
-        " Can't find file in the pod, or failed to copy");
-
-
-    return Files.readAllLines(Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "/WDTversion.txt")).get(0);
   }
 }

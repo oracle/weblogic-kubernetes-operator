@@ -37,18 +37,19 @@ public class AuxiliaryImage {
   @EnumClass(ImagePullPolicy.class)
   private String imagePullPolicy;
 
-  @Description("The source location of the WebLogic Deploy Tooling installation within the auxiliary image. "
-          + "Defaults to '/auxiliary/weblogic-deploy'. If the value is set to 'None' or no files found at the default "
-          + "location, then the WebLogic Deploy Tooling installation copy is skipped. When specifying multiple "
-          + "auxiliary images, it is important to ensure that no more than one of the images "
-          + "supplies a WDT install home; if more than one WDT install home is copied, then domain deployment will "
-          + "fail.")
+  @Description("The source location of the WebLogic Deploy Tooling installation within the auxiliary image that will "
+          + "be made available in the '/aux/weblogic-deploy' directory of the WebLogic Server container in all pods. "
+          + "Defaults to '/auxiliary/weblogic-deploy'. If the value is set to 'None' or no files found at "
+          + "the default location, then the source directory is ignored. When specifying multiple auxiliary images, "
+          + "ensure that only one of the images supplies a WDT install home; if more than one WDT install home is "
+          + "provided, then the domain deployment will fail.")
   private String sourceWDTInstallHome;
 
-  @Description("The source location of the WebLogic Deploy Tooling model home within the auxiliary image. "
+  @Description("The source location of the WebLogic Deploy Tooling model home within the auxiliary image that will "
+          + "be made available in the '/aux/models' directory of the WebLogic Server container in all pods. "
           + "Defaults to '/auxiliary/models'. If the value is set to 'None' or no files found at the default location, "
-          + "then the model files copy is skipped. If specifying multiple auxiliary images with model files in their "
-          + "respective 'sourceModelHome' directories, then model files are merged. ")
+          + "then the source directory is ignored. If specifying multiple auxiliary images with model files in their "
+          + "respective 'sourceModelHome' directories, then model files are merged.")
   private String sourceModelHome;
 
   public String getImage() {

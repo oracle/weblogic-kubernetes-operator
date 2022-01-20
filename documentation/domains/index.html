@@ -1559,7 +1559,7 @@ window.onload = function() {
           "$ref": "#/definitions/OnlineUpdate"
         },
         "auxiliaryImageVolumeMountPath": {
-          "description": "The auxiliary image volume mount path. This is an advanced setting that rarely needs to be configured. Defaults to \u0027/aux\u0027, which means the emptyDir volume will be mounted at \u0027/aux\u0027 path in the WebLogic-Server container within the pod.",
+          "description": "The auxiliary image volume mount path. This is an advanced setting that rarely needs to be configured. Defaults to \u0027/aux\u0027, which means the emptyDir volume will be mounted at \u0027/aux\u0027 path in the WebLogic-Server container within every pod. The defaults for \u0027modelHome\u0027 and \u0027wdtInstallHome\u0027 will start with the new mount path, and files from \u0027sourceModelHome\u0027 and \u0027sourceWDTInstallHome\u0027 will be copied to the new default locations.",
           "type": "string"
         },
         "modelHome": {

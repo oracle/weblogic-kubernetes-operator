@@ -74,7 +74,7 @@
       "type": "object",
       "properties": {
         "sourceWDTInstallHome": {
-          "description": "The source location of the WebLogic Deploy Tooling installation within the auxiliary image. Defaults to \u0027/auxiliary/weblogic-deploy\u0027. If the value is set to \u0027None\u0027 or no files found at the default location, then the WebLogic Deploy Tooling installation copy is skipped. When specifying multiple auxiliary images, it is important to ensure that no more than one of the images supplies a WDT install home; if more than one WDT install home is copied, then domain deployment will fail.",
+          "description": "The source location of the WebLogic Deploy Tooling installation within the auxiliary image that will be made available in the \u0027/aux/weblogic-deploy\u0027 directory of the WebLogic Server container in all pods. Defaults to \u0027/auxiliary/weblogic-deploy\u0027. If the value is set to \u0027None\u0027 or no files found at the default location, then the source directory is ignored. When specifying multiple auxiliary images, ensure that only one of the images supplies a WDT install home; if more than one WDT install home is provided, then the domain deployment will fail.",
           "type": "string"
         },
         "image": {
@@ -91,7 +91,7 @@
           ]
         },
         "sourceModelHome": {
-          "description": "The source location of the WebLogic Deploy Tooling model home within the auxiliary image. Defaults to \u0027/auxiliary/models\u0027. If the value is set to \u0027None\u0027 or no files found at the default location, then the model files copy is skipped. If specifying multiple auxiliary images with model files in their respective \u0027sourceModelHome\u0027 directories, then model files are merged. ",
+          "description": "The source location of the WebLogic Deploy Tooling model home within the auxiliary image that will be made available in the \u0027/aux/models\u0027 directory of the WebLogic Server container in all pods. Defaults to \u0027/auxiliary/models\u0027. If the value is set to \u0027None\u0027 or no files found at the default location, then the source directory is ignored. If specifying multiple auxiliary images with model files in their respective \u0027sourceModelHome\u0027 directories, then model files are merged.",
           "type": "string"
         }
       }
