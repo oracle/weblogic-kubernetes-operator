@@ -36,8 +36,6 @@ import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_ALLOW_REPLI
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_IMAGE;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_SHUTDOWN;
 import static oracle.kubernetes.operator.KubernetesConstants.DEFAULT_MAX_CLUSTER_CONCURRENT_START_UP;
-import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MODEL_HOME;
-import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_WDT_INSTALL_HOME;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_INSTALL_HOME;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_MODEL_HOME;
 
@@ -939,7 +937,7 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   private String getDefaultModelHome(List<AuxiliaryImage> auxiliaryImages) {
-    return auxiliaryImages.size() > 0 ? DEFAULT_AUXILIARY_IMAGE_MODEL_HOME : DEFAULT_WDT_MODEL_HOME;
+    return auxiliaryImages.size() > 0 ? getAuxiliaryImageVolumeMountPath() + "/models" : DEFAULT_WDT_MODEL_HOME;
   }
 
   /**
@@ -964,7 +962,8 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   private String getDefaultWDTInstallHome(List<AuxiliaryImage> auxiliaryImages) {
-    return auxiliaryImages.size() > 0 ? DEFAULT_AUXILIARY_IMAGE_WDT_INSTALL_HOME : DEFAULT_WDT_INSTALL_HOME;
+    return auxiliaryImages.size() > 0 ? getAuxiliaryImageVolumeMountPath() + "/weblogic-deploy"
+            : DEFAULT_WDT_INSTALL_HOME;
   }
 
   List<AuxiliaryImage> getAuxiliaryImages() {
