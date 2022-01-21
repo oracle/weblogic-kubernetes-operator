@@ -432,6 +432,30 @@
             </properties>
         </profile>
         <profile>
+            <id>wko-okd-crio-job</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                  **/ItConfigDistributionStrategy,
+                  **/ItMiiAuxiliaryImage,
+                  **/ItMiiDomain,
+                  **/ItMiiDynamicUpdate,
+                  **/ItMiiNewCreateAuxImage,
+                  **/ItMiiSampleWlsAux,
+                  **/ItMiiSampleWlsMain,
+                  **/ItMiiSampleFmwMain,
+                  **/ItMiiSampleFmwAux,
+                  **/ItMiiServiceMigration,
+                  **/ItParameterizedDomain,
+                  **/ItPodsShutdownOption,
+                  **/ItProductionSecureMode,
+                  **/ItSessionMigration,
+                  **/ItSystemResOverrides,
+                  **/ItFmwMiiDomain
+                </includes-failsafe>
+            </properties>
+        </profile>
+        <profile>
             <id>fmw-pipeline</id>
             <properties>
                 <skipITs>false</skipITs>
