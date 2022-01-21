@@ -52,13 +52,13 @@ Kubernetes Operators use [Helm](https://helm.sh/) to manage Kubernetes applicati
 $ helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts --force-update
 ```
 ```shell
-$ helm install weblogic-operator weblogic-operator/weblogic-operator --version "3.3.7"
+$ helm install weblogic-operator weblogic-operator/weblogic-operator
 ```
 
 The output will show something similar to the following:
 
 ```shell
-$ helm install weblogic-operator weblogic-operator/weblogic-operator --version "3.3.7"
+$ helm install weblogic-operator weblogic-operator/weblogic-operator
 NAME: weblogic-operator
 LAST DEPLOYED: Tue Jan 18 17:07:56 2022
 NAMESPACE: default
