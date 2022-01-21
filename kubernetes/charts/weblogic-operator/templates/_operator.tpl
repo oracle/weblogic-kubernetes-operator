@@ -18,8 +18,8 @@
 {{- include "operator.operatorRole" . }}
 {{- include "operator.operatorRoleBinding" . }}
 {{- include "operator.operatorConfigMap" . }}
-{{- if .elkIntegrationEnabled }}
-{{-   include "operator.logstashConfigMap" . }}
+{{- if and .elkIntegrationEnabled .createLogStashConfigMap }}
+{{-   include "operator.logStashConfigMap" . }}
 {{- end }}
 {{- include "operator.operatorSecrets" . }}
 {{- include "operator.operatorDeployment" . }}

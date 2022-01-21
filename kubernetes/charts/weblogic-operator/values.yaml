@@ -114,6 +114,8 @@ elasticSearchHost: "elasticsearch.default.svc.cluster.local"
 # This parameter is ignored if 'elkIntegrationEnabled' is false.
 elasticSearchPort: 9200
 
+createLogStashConfigMap: true
+
 # featureGates specifies a set of key=value pairs separated by commas that describe whether a given
 # operator feature is enabled. You enable a feature by including a key=value pair where the key is the
 # feature name and the value is "true". This will allow the operator team to release features that
