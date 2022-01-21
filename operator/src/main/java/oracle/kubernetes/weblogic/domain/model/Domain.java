@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -49,9 +49,9 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 import static java.util.stream.Collectors.toSet;
 import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
-import static oracle.kubernetes.operator.helpers.LegalNames.toDns1123LegalName;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.DEFAULT_SUCCESS_THRESHOLD;
 import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
+import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
 
 /**
  * Domain represents a WebLogic domain and how it will be realized in the Kubernetes cluster.
@@ -787,12 +787,31 @@ public class Domain implements KubernetesObject, Upgradable<Domain> {
   }
 
   /**
-   * Returns the auxiliary image volumes for the domain.
-   *
-   * @return auxiliary volumes
+   * Returns the auxiliary images configured for the domain.
    */
-  public List<AuxiliaryImageVolume> getAuxiliaryImageVolumes() {
-    return spec.getAuxiliaryImageVolumes();
+  public List<AuxiliaryImage> getAuxiliaryImages() {
+    return spec.getAuxiliaryImages();
+  }
+
+  /**
+   * Returns the auxiliary image volume mount path.
+   */
+  public String getAuxiliaryImageVolumeMountPath() {
+    return spec.getAuxiliaryImageVolumeMountPath();
+  }
+
+  /**
+   * Returns the auxiliary image volume withAuxiliaryImageVolumeMedium.
+   */
+  public String getAuxiliaryImageVolumeMedium() {
+    return spec.getAuxiliaryImageVolumeMedium();
+  }
+
+  /**
+   * Returns the auxiliary image volume size limit.
+   */
+  public String getAuxiliaryImageVolumeSizeLimit() {
+    return spec.getAuxiliaryImageVolumeSizeLimit();
   }
 
   @Override
@@ -854,7 +873,6 @@ public class Domain implements KubernetesObject, Upgradable<Domain> {
     private final List<String> failures = new ArrayList<>();
     private final Set<String> clusterNames = new HashSet<>();
     private final Set<String> serverNames = new HashSet<>();
-    private final Set<AuxiliaryImageVolume> auxiliaryImageVolumes = new HashSet<>();
 
     List<String> getValidationFailures(KubernetesResourceLookup kubernetesResources) {
       addDuplicateNames();
@@ -867,14 +885,28 @@ public class Domain implements KubernetesObject, Upgradable<Domain> {
       addMissingModelConfigMap(kubernetesResources);
       verifyIstioExposingDefaultChannel();
       verifyIntrospectorJobName();
-      verifyAuxiliaryImages();
-      verifyAuxiliaryImageVolumes();
-      addDuplicateAuxiliaryImageVolumeNames();
       verifyLivenessProbeSuccessThreshold();
       verifyContainerNameValidInPodSpec();
       verifyContainerPortNameValidInPodSpec();
-
+      verifyModelHomeNotInWDTInstallHome();
+      verifyWDTInstallHomeNotInModelHome();
+      whenAuxiliaryImagesDefinedVerifyMountPathNotInUse();
+      whenAuxiliaryImagesDefinedVerifyOnlyOneImageSetsSourceWDTInstallHome();
       return failures;
+    }
+
+    private void verifyModelHomeNotInWDTInstallHome() {
+      if (getSpec().getWdtInstallHome().contains(getSpec().getModelHome())) {
+        failures.add(DomainValidationMessages
+                .invalidWdtInstallHome(getSpec().getWdtInstallHome(), getSpec().getModelHome()));
+      }
+    }
+
+    private void verifyWDTInstallHomeNotInModelHome() {
+      if (getSpec().getModelHome().contains(getSpec().getWdtInstallHome())) {
+        failures.add(DomainValidationMessages
+                .invalidModelHome(getSpec().getWdtInstallHome(), getSpec().getModelHome()));
+      }
     }
 
     private void verifyIntrospectorJobName() {
@@ -1064,58 +1096,39 @@ public class Domain implements KubernetesObject, Upgradable<Domain> {
       return true;
     }
 
-    private void verifyAuxiliaryImages() {
-      // if the auxiliary image is specified, verify that specified volume exists in 'spec.auxiliaryImageVolumes'.
-      verifyAuxiliaryImages(getAdminServerSpec().getAuxiliaryImages());
-      getSpec().getManagedServers().forEach(managedServer -> verifyAuxiliaryImages(managedServer.getAuxiliaryImages()));
+    private void whenAuxiliaryImagesDefinedVerifyMountPathNotInUse() {
+      getAdminServerSpec().getAdditionalVolumeMounts().forEach(volumeMount ->
+              verifyMountPathForAuxiliaryImagesNotUsed(volumeMount));
+      getSpec().getClusters().forEach(cluster ->
+              cluster.getAdditionalVolumeMounts().forEach(volumeMount ->
+                      verifyMountPathForAuxiliaryImagesNotUsed(volumeMount)));
+      getSpec().getManagedServers().forEach(managedServer ->
+              managedServer.getAdditionalVolumeMounts().forEach(volumeMount ->
+                      verifyMountPathForAuxiliaryImagesNotUsed(volumeMount)));
     }
 
-    private void verifyAuxiliaryImages(List<AuxiliaryImage> auxiliaryImages) {
-      Optional.ofNullable(auxiliaryImages)
-              .ifPresent(aiList -> aiList.forEach(this::checkIfVolumeExists));
+    private void verifyMountPathForAuxiliaryImagesNotUsed(V1VolumeMount volumeMount) {
+      Optional.ofNullable(getSpec().getModel()).map(m -> m.getAuxiliaryImages())
+              .ifPresent(ai -> {
+                if (volumeMount.getMountPath().equals(DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH)) {
+                  failures.add(DomainValidationMessages.mountPathForAuxiliaryImageAlreadyInUse());
+                }
+              });
     }
 
-    private void checkIfVolumeExists(AuxiliaryImage auxiliaryImage) {
-      if (auxiliaryImage.getVolume() == null) {
-        failures.add(DomainValidationMessages.noAuxiliaryImageVolumeDefined());
-      } else if (Optional.ofNullable(getSpec().getAuxiliaryImageVolumes()).map(c -> c.stream()
-              .filter(auxiliaryImageVolume -> hasMatchingVolumeName(auxiliaryImageVolume, auxiliaryImage))
-              .collect(Collectors.toList())).orElse(new ArrayList<>()).isEmpty()) {
-        failures.add(DomainValidationMessages.noMatchingAuxiliaryImageVolumeDefined(auxiliaryImage.getVolume()));
+    private void whenAuxiliaryImagesDefinedVerifyOnlyOneImageSetsSourceWDTInstallHome() {
+      Optional.ofNullable(getSpec().getModel()).map(m -> m.getAuxiliaryImages()).ifPresent(
+              auxiliaryImages -> verifyWDTInstallHome(auxiliaryImages));
+    }
+
+    private void verifyWDTInstallHome(List<AuxiliaryImage> auxiliaryImages) {
+      if (auxiliaryImages.stream().filter(ai -> isWDTInstallHomeSetAndNotNone(ai)).count() > 1) {
+        failures.add(DomainValidationMessages.moreThanOneAuxiliaryImageConfiguredWDTInstallHome());
       }
     }
 
-    private boolean hasMatchingVolumeName(AuxiliaryImageVolume auxiliaryImageVolume, AuxiliaryImage auxiliaryImage) {
-      return auxiliaryImage.getVolume().equals(auxiliaryImageVolume.getName());
-    }
-
-    private void verifyAuxiliaryImageVolumes() {
-      Optional.ofNullable(getSpec().getAuxiliaryImageVolumes())
-              .ifPresent(auxiliaryImageVolumes -> auxiliaryImageVolumes.forEach(this::checkNameAndMountPath));
-    }
-
-    private void checkNameAndMountPath(AuxiliaryImageVolume aiv) {
-      if (aiv.getName() == null) {
-        failures.add(DomainValidationMessages.auxiliaryImageVolumeNameNotDefined());
-      }
-    }
-
-    private void addDuplicateAuxiliaryImageVolumeNames() {
-      Optional.ofNullable(getSpec().getAuxiliaryImageVolumes())
-              .ifPresent(auxiliaryImageVolumes -> auxiliaryImageVolumes
-                      .forEach(this::checkDuplicateAuxiliaryImageVolume));
-    }
-
-    private void checkDuplicateAuxiliaryImageVolume(AuxiliaryImageVolume auxiliaryImageVolume) {
-      if (auxiliaryImageVolumes.stream().anyMatch(
-          aiv -> aiv.getMountPath().equals(auxiliaryImageVolume.getMountPath()))) {
-        failures.add(DomainValidationMessages.duplicateAIVMountPath(auxiliaryImageVolume.getMountPath()));
-      } else if (auxiliaryImageVolumes.stream().anyMatch(aiv ->
-              aiv.getName().equals(toDns1123LegalName(auxiliaryImageVolume.getName())))) {
-        failures.add(DomainValidationMessages.duplicateAuxiliaryImageVolumeName(auxiliaryImageVolume.getName()));
-      } else {
-        auxiliaryImageVolumes.add(auxiliaryImageVolume);
-      }
+    private boolean isWDTInstallHomeSetAndNotNone(AuxiliaryImage ai) {
+      return ai.getSourceWDTInstallHome() != null && !"None".equalsIgnoreCase(ai.getSourceWDTInstallHomeOrDefault());
     }
 
     private void verifyLivenessProbeSuccessThreshold() {

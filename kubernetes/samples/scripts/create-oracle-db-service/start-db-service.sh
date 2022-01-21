@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # Bring up Oracle DB Instance in [default] NameSpace with a NodePort Service 
@@ -8,7 +8,7 @@ script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 source ${scriptDir}/../common/utility.sh
 
-function usage {
+usage() {
   echo "usage: ${script} -p <nodeport> -i <image> -s <pullsecret> -n <namespace>  [-h]"
   echo "  -i  Oracle DB Image (optional)"
   echo "      (default: container-registry.oracle.com/database/enterprise:12.2.0.1-slim)"

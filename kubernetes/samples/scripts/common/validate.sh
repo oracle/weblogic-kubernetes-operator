@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # Description
@@ -9,7 +9,7 @@
 #
 # Function to note that a validate error has occurred
 #
-function validationError {
+validationError() {
   printError $*
   validateErrors=true
 }
@@ -17,7 +17,7 @@ function validationError {
 #
 # Function to cause the script to fail if there were any validation errors
 #
-function failIfValidationErrors {
+failIfValidationErrors() {
   if [ "$validateErrors" = true ]; then
     fail 'The errors listed above must be resolved before the script can continue'
   fi
@@ -26,7 +26,7 @@ function failIfValidationErrors {
 #
 # Function to validate that a list of required input parameters were specified
 #
-function validateInputParamsSpecified {
+validateInputParamsSpecified() {
   for p in $*; do
     local name=$p
     local val=${!name}
@@ -40,7 +40,7 @@ function validateInputParamsSpecified {
 # Function to validate that a list of input parameters have boolean values.
 # It assumes that validateInputParamsSpecified will also be called for these params.
 #
-function validateBooleanInputParamsSpecified {
+validateBooleanInputParamsSpecified() {
   validateInputParamsSpecified $*
   for p in $*; do
     local name=$p
@@ -56,7 +56,7 @@ function validateBooleanInputParamsSpecified {
 #
 # Function to validate that a list of input parameters have integer values.
 #
-function validateIntegerInputParamsSpecified {
+validateIntegerInputParamsSpecified() {
   validateInputParamsSpecified $*
   for p in $*; do
     local name=$p
@@ -75,7 +75,7 @@ function validateIntegerInputParamsSpecified {
 # Function to check if a value is lowercase
 # $1 - name of object being checked
 # $2 - value to check
-function validateLowerCase {
+validateLowerCase() {
   local lcVal=$(toLower $2)
   if [ "$lcVal" != "$2" ]; then
     validationError "The value of $1 must be lowercase: $2"
@@ -86,7 +86,7 @@ function validateLowerCase {
 # Function to check if a value is lowercase and legal DNS name
 # $1 - name of object being checked
 # $2 - value to check
-function validateDNS1123LegalName {
+validateDNS1123LegalName() {
   local val=$(toDNS1123Legal $2)
   if [ "$val" != "$2" ]; then
     validationError "The value of $1 contains invalid charaters: $2"
@@ -96,14 +96,14 @@ function validateDNS1123LegalName {
 #
 # Function to validate the namespace
 #
-function validateNamespace {
+validateNamespace() {
   validateLowerCase "namespace" ${namespace}
 }
 
 #
 # Function to validate the version of the inputs file
 #
-function validateVersion {
+validateVersion() {
   local requiredVersion=${requiredInputsVersion}
   if [ "${version}" != "${requiredVersion}" ]; then
     validationError "Invalid version: \"${version}\".  Must be ${requiredVersion}."
@@ -113,7 +113,7 @@ function validateVersion {
 #
 # Function to ensure the domain uid is a legal DNS name
 #
-function validateDomainUid {
+validateDomainUid() {
   validateLowerCase "domainUID" ${domainUID}
   validateDNS1123LegalName domainUID ${domainUID}
 }
@@ -121,42 +121,42 @@ function validateDomainUid {
 #
 # Function to ensure the namespace is lowercase
 #
-function validateNamespace {
+validateNamespace() {
   validateLowerCase "namespace" ${namespace}
 }
 
 #
 # Create an instance of clusterName to be used in cases where a legal DNS name is required.
 #
-function validateClusterName {
+validateClusterName() {
   clusterNameSVC=$(toDNS1123Legal $clusterName)
 }
 
 #
 # Create an instance of adminServerName to be used in cases where a legal DNS name is required.
 #
-function validateAdminServerName {
+validateAdminServerName() {
   adminServerNameSVC=$(toDNS1123Legal $adminServerName)
 }
 
 #
 # Create an instance of adminServerName to be used in cases where a legal DNS name is required.
 #
-function validateManagedServerNameBase {
+validateManagedServerNameBase() {
   managedServerNameBaseSVC=$(toDNS1123Legal $managedServerNameBase)
 }
 
 #
 # Function to validate the secret name
 #
-function validateWeblogicCredentialsSecretName {
+validateWeblogicCredentialsSecretName() {
   validateLowerCase "weblogicCredentialsSecretName" ${weblogicCredentialsSecretName}
 }
 
 #
 # Function to validate the weblogic image pull policy
 #
-function validateWeblogicImagePullPolicy {
+validateWeblogicImagePullPolicy() {
   if [ ! -z ${imagePullPolicy} ]; then
     case ${imagePullPolicy} in
       "IfNotPresent")
@@ -179,7 +179,7 @@ function validateWeblogicImagePullPolicy {
 #
 # Function to validate the fmwDomainType
 #
-function validateFmwDomainType {
+validateFmwDomainType() {
   if [ ! -z ${fmwDomainType} ]; then
     case ${fmwDomainType} in
       "JRF")
@@ -200,7 +200,7 @@ function validateFmwDomainType {
 #
 # Function to validate the weblogic image pull secret name
 #
-function validateWeblogicImagePullSecretName {
+validateWeblogicImagePullSecretName() {
   if [ ! -z ${imagePullSecretName} ]; then
     validateLowerCase imagePullSecretName ${imagePullSecretName}
     imagePullSecretPrefix=""
@@ -217,7 +217,7 @@ function validateWeblogicImagePullSecretName {
 #
 # Function to validate the weblogic image pull secret exists
 #
-function validateWeblogicImagePullSecret {
+validateWeblogicImagePullSecret() {
   # The kubernetes secret for pulling images from a container registry is optional.
   # If it was specified, make sure it exists.
   validateSecretExists ${imagePullSecretName} ${namespace}
@@ -225,7 +225,7 @@ function validateWeblogicImagePullSecret {
 }
 
 # try to execute kubectl to see whether kubectl is available
-function validateKubectlAvailable {
+validateKubectlAvailable() {
   if ! [ -x "$(command -v kubectl)" ]; then
     validationError "kubectl is not installed"
   fi
@@ -233,7 +233,7 @@ function validateKubectlAvailable {
 
 # Function to validate the server start policy value
 #
-function validateServerStartPolicy {
+validateServerStartPolicy() {
   validateInputParamsSpecified serverStartPolicy
   if [ ! -z "${serverStartPolicy}" ]; then
     case ${serverStartPolicy} in
@@ -255,7 +255,7 @@ function validateServerStartPolicy {
 #
 # Function to validate the weblogic domain storage reclaim policy
 #
-function validateWeblogicDomainStorageReclaimPolicy {
+validateWeblogicDomainStorageReclaimPolicy() {
   validateInputParamsSpecified weblogicDomainStorageReclaimPolicy
   if [ ! -z "${weblogicDomainStorageReclaimPolicy}" ]; then
     case ${weblogicDomainStorageReclaimPolicy} in
@@ -278,7 +278,7 @@ function validateWeblogicDomainStorageReclaimPolicy {
 #
 # Function to validate the weblogic domain storage type
 #
-function validateWeblogicDomainStorageType {
+validateWeblogicDomainStorageType() {
   validateInputParamsSpecified weblogicDomainStorageType
   if [ ! -z "${weblogicDomainStorageType}" ]; then
     case ${weblogicDomainStorageType} in
@@ -297,7 +297,7 @@ function validateWeblogicDomainStorageType {
 #
 # Function to validate the load balancer value
 #
-function validateLoadBalancer {
+validateLoadBalancer() {
   validateInputParamsSpecified loadBalancer
   if [ ! -z "${loadBalancer}" ]; then
     case ${loadBalancer} in
@@ -318,7 +318,7 @@ function validateLoadBalancer {
 # Function to validate a kubernetes secret exists
 # $1 - the name of the secret
 # $2 - namespace
-function validateSecretExists {
+validateSecretExists() {
   echo "Checking to see if the secret ${1} exists in namespace ${2}"
   local SECRET=`kubectl get secret ${1} -n ${2} | grep ${1} | wc | awk ' { print $1; }'`
   if [ "${SECRET}" != "1" ]; then
@@ -329,7 +329,7 @@ function validateSecretExists {
 #
 # Function to validate the domain secret
 #
-function validateDomainSecret {
+validateDomainSecret() {
   # Verify the secret exists
   validateSecretExists ${weblogicCredentialsSecretName} ${namespace}
   failIfValidationErrors
@@ -351,7 +351,7 @@ function validateDomainSecret {
 #
 # function to validate if we will be using wdt or wlst to create the domain
 #
-function validateDomainFilesDir {
+validateDomainFilesDir() {
   useWdt=true
   if [ -z "${createDomainFilesDir}" ] || [ "${createDomainFilesDir}" == "wlst" ]; then
     useWdt=false
@@ -361,7 +361,7 @@ function validateDomainFilesDir {
 #
 # Function to validate the common input parameters
 #
-function validateCommonInputs {
+validateCommonInputs() {
   sample_name=${1:-"other"}
 
   # Parse the common inputs file
@@ -418,7 +418,7 @@ function validateCommonInputs {
 #
 # Function to validate the domain's persistent volume claim has been created
 #
-function validateDomainPVC {
+validateDomainPVC() {
   # Check if the persistent volume claim is already available
   checkPvcExists ${persistentVolumeClaimName} ${namespace}
   if [ "${PVC_EXISTS}" = "false" ]; then
@@ -431,7 +431,7 @@ function validateDomainPVC {
 # Function to validate the WDT model file exists
 # used for MII integration testing
 #
-function validateWdtModelFile {
+validateWdtModelFile() {
   # Check if the model file exists
   if [ ! -z $wdtModelFile ]; then
     if [ ! -f $wdtModelFile ]; then
@@ -445,7 +445,7 @@ function validateWdtModelFile {
 # Function to validate the WDT model property file exists
 # used for MII integration testing
 #
-function validateWdtModelPropertiesFile {
+validateWdtModelPropertiesFile() {
   # Check if the model property file exists
   if [ ! -z $wdtModelPropertiesFile ]; then
     if [ ! -f $wdtModelPropertiesFile ]; then
@@ -457,7 +457,7 @@ function validateWdtModelPropertiesFile {
 
 # Function to validate the wdtDomainType
 # used for MII integration testing
-function validateWdtDomainType {
+validateWdtDomainType() {
   if [ ! -z ${wdtDomainType} ]; then
     case ${wdtDomainType} in
       "WLS")

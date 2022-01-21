@@ -1,5 +1,5 @@
 # !/bin/sh
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 #############################################################################
@@ -147,7 +147,7 @@ fi
 # Location for this test to put its temporary files
 test_home=/tmp/introspect
 
-function cleanupMajor() {
+cleanupMajor() {
   trace "Info: Cleaning files and k8s artifacts from previous run."
 
   # first, let's delete the test's local tmp files for rm -fr
@@ -180,7 +180,7 @@ function cleanupMajor() {
   fi
 }
 
-function cleanupMinor() {
+cleanupMinor() {
   trace "Info: RERUN_INTROSPECT_ONLY==true, skipping cleanup.sh and domain home setup, and only deleting wl pods + introspector job."
 
   kubectl -n $NAMESPACE delete pod ${DOMAIN_UID}-${ADMIN_NAME}                --grace-period=2 > /dev/null 2>&1
@@ -208,7 +208,7 @@ function cleanupMinor() {
 # to ${test_home}/$2, and then ${test_home}/$2 is deployed.
 #
 
-function deployYamlTemplate() {
+deployYamlTemplate() {
   local yamlt_file="${1?}"
   local yaml_file="${2?}"
 
@@ -257,7 +257,7 @@ createConfigMapFromDir() {
 # $1 - value to convert to lowercase
 #
 
-function toDNS1123Legal {
+toDNS1123Legal() {
   local val=`echo $1 | tr "[:upper:]" "[:lower:]"`
   val=${val//"_"/"-"}
   echo "$val"
@@ -272,7 +272,7 @@ function toDNS1123Legal {
 #   - mounted by create domain job, introspect job, and wl pods
 #
 
-function deployDomainConfigMap() {
+deployDomainConfigMap() {
   trace "Info: Deploying 'weblogic-script-cm'."
 
   kubectl -n $NAMESPACE delete cm weblogic-script-cm \
@@ -290,7 +290,7 @@ function deployDomainConfigMap() {
 #   - mounted by create test root job, and by create domain job
 #
 
-function deployTestScriptConfigMap() {
+deployTestScriptConfigMap() {
   trace "Info: Deploying 'test-script-cm'."
 
   mkdir -p ${test_home}/test-scripts
@@ -319,7 +319,7 @@ function deployTestScriptConfigMap() {
 #
 
 
-function deployCustomOverridesConfigMap() {
+deployCustomOverridesConfigMap() {
   local cmdir="${test_home}/customOverrides"
   local cmname="${DOMAIN_UID}-mycustom-overrides-cm"
 
@@ -357,7 +357,7 @@ function deployCustomOverridesConfigMap() {
 # Create base directory for PV (uses a job)
 #
 
-function createTestRootPVDir() {
+createTestRootPVDir() {
   trace "Info: PV_ROOT='$PV_ROOT'"
 
   # TBD on shared cluster/Jenkins PV_ROOT will differ and may already exist or be remote
@@ -388,7 +388,7 @@ function createTestRootPVDir() {
 # Deploy WebLogic pv, pvc, & admin user/pass secret
 #
 
-function deployWebLogic_PV_PVC_and_Secret() {
+deployWebLogic_PV_PVC_and_Secret() {
   trace "Info: Deploying WebLogic domain's pv, pvc, & secret."
 
   deployYamlTemplate wl-pv.yamlt wl-pv.yaml
@@ -396,7 +396,7 @@ function deployWebLogic_PV_PVC_and_Secret() {
   deployYamlTemplate wl-secret.yamlt wl-secret.yaml
 }
 
-function deployMySQL() {
+deployMySQL() {
   trace "Info: Deploying MySQL secret, pv, pvc, & pod."
   # Create local custom mysql image that runs as 'oracle' user with uid/gid 1000/1000:
   docker build -t mysql:5.6o -f ${SCRIPTPATH}/Dockerfile.adduser . 2>&1 > ${test_home}/docker_build.out 2>&1
@@ -413,7 +413,7 @@ function deployMySQL() {
 # Run create domain "JobPod" - This is a pod that acts somewhat like a job
 #
 
-function deployCreateDomainJobPod() {
+deployCreateDomainJobPod() {
   trace "Info: Run create domain pod."
 
   local target_yaml=${test_home}/wl-create-domain-pod.yaml
@@ -442,7 +442,7 @@ function deployCreateDomainJobPod() {
 #
 # Create the model in image docker image
 #
-function createMII_Image() {
+createMII_Image() {
   trace "Info: Create MII Image"
 
   (
@@ -512,7 +512,7 @@ function createMII_Image() {
 # Here we emulate the introspect job by directly starting an introspect pod and monitoring it.
 # (Running a pod directly is helpful for debugging.)
 
-function deployIntrospectJobPod() {
+deployIntrospectJobPod() {
   local introspect_output_cm_name=${DOMAIN_UID}-weblogic-domain-introspect-cm
   local target_yaml=${test_home}/wl-introspect-pod.yaml
   local pod_name=${DOMAIN_UID}--introspect-domain-pod
@@ -583,7 +583,7 @@ function deployIntrospectJobPod() {
 #   - this emulates what the operator pod would do after running the introspect job
 #
 
-function waitForPod() {
+waitForPod() {
   local pod_name=${1?}
   local status="0/1"
   local startsecs=$SECONDS
@@ -605,7 +605,7 @@ function waitForPod() {
   echo "  ($((SECONDS - startsecs)) seconds)"
 }
 
-function deployPod() {
+deployPod() {
   local server_name=${1?}
   local pod_name=${DOMAIN_UID}-${server_name}
   local target_yaml=${test_home}/wl-${server_name}-pod.yaml
@@ -646,7 +646,7 @@ function deployPod() {
     2>&1 | tracePipe "Info: kubectl output: " || exit 1
 }
 
-function deploySinglePodService() {
+deploySinglePodService() {
   local server_name=${1?}
   local internal_port=${2?}
   local external_port=${3?}
@@ -694,7 +694,7 @@ function deploySinglePodService() {
 # Check if automatic overrides and custom overrides took effect on the admin pod for non MII
 #
 
-function checkOverrides() {
+checkOverrides() {
 
   trace "Info: Checking admin server stdout to make sure situational config was loaded and there are no reported situational config errors."
 
@@ -758,7 +758,7 @@ function checkOverrides() {
 # Check if wl version checks are working on the admin pod
 #
 
-function checkWLVersionChecks() {
+checkWLVersionChecks() {
 
   trace "Info: Checking pod log for 'error' strings."
 
@@ -806,7 +806,7 @@ function checkWLVersionChecks() {
 # Check if datasource is working
 #
 
-function checkDataSource() {
+checkDataSource() {
 
   local pod_name=${1?}
   local admin_url=${2?}
@@ -838,7 +838,7 @@ function checkDataSource() {
 # a location specified by DATA_HOME environment variable
 #
 
-function checkFileStores() {
+checkFileStores() {
 
   # Copy file store test file up to admin server and run it
 
@@ -874,7 +874,7 @@ function checkFileStores() {
 # applied to Node Manager command line.
 #
 
-function checkNodeManagerMemArg() {
+checkNodeManagerMemArg() {
 
   trace "Info: Verifying node manager memory arguments"
 
@@ -947,7 +947,7 @@ function checkNodeManagerMemArg() {
 # Validate USER_MEM_ARGS environment variable values (-MaxRAMFraction)
 # applied to Managed Server command line.
 #
-function checkManagedServer1MemArg() {
+checkManagedServer1MemArg() {
 
   trace "Info: Verifying managed server memory arguments"
 
@@ -988,7 +988,7 @@ function checkManagedServer1MemArg() {
 # applied to Node Manager command line.
 #
 
-function checkNodeManagerJavaOptions() {
+checkNodeManagerJavaOptions() {
 
   trace "Info: Verifying node manager java options"
 
@@ -1038,7 +1038,7 @@ function checkNodeManagerJavaOptions() {
 # </cluster>
 #
 
-function createStaticCluster() {
+createStaticCluster() {
 
   local cluster_name=${1?}
   local pod_name=${2?}

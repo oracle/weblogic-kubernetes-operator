@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -36,8 +36,8 @@ import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAUTHORIZED;
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
-import static oracle.kubernetes.operator.helpers.DomainIntrospectorJobTest.TEST_VOLUME_NAME;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
+import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_COMPLETED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.POD_CYCLE_STARTING;
 import static oracle.kubernetes.operator.helpers.Matchers.hasContainer;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
@@ -55,9 +55,9 @@ import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_VALIDATION_F
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.utils.LogMatcher.containsSevere;
-import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
-import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImageVolume.DEFAULT_AUXILIARY_IMAGE_PATH;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
+import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
@@ -626,39 +626,31 @@ class AdminPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  void whenDomainAndServerHaveAuxiliaryImages_createAdminPodWithInitContainersInCorrectOrderAndVolumeMounts() {
+  void whenDomainHasAuxiliaryImages_createAdminPodWithInitContainersInCorrectOrderAndVolumeMounts() {
     getConfigurator()
-            .withAuxiliaryImageVolumes(getAuxiliaryImageVolume())
-            .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")));
-    getConfigurator()
-            .withAuxiliaryImageVolumes(getAuxiliaryImageVolume())
-            .configureAdminServer()
-            .withAuxiliaryImages(Collections.singletonList((getAuxiliaryImage("wdt-image:v2"))));
+            .withAuxiliaryImages(getAuxiliaryImages("wdt-image:v1", "wdt-image:v2"));
 
     assertThat(getCreatedPodSpecInitContainers(),
             allOf(Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
-                "wdt-image:v1",
-                "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND),
+                "wdt-image:v1", "IfNotPresent"),
                 Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 2,
-                    "wdt-image:v2",
-                    "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND)));
-    assertThat(getCreatedPod().getSpec().getVolumes(),
-            hasItem(new V1Volume().name(getAuxiliaryImageVolumeName(TEST_VOLUME_NAME)).emptyDir(
+                    "wdt-image:v2", "IfNotPresent")));
+    assertThat(Objects.requireNonNull(getCreatedPod().getSpec()).getVolumes(),
+            hasItem(new V1Volume().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME).emptyDir(
                     new V1EmptyDirVolumeSource())));
     assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
-            hasItem(new V1VolumeMount().name(getAuxiliaryImageVolumeName(TEST_VOLUME_NAME))
-                    .mountPath(DEFAULT_AUXILIARY_IMAGE_PATH)));
+            hasItem(new V1VolumeMount().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME)
+                    .mountPath(DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH)));
   }
 
   @Test
-  void whenServerHasAuxiliaryImageVolumeWithMountPath_createPodWithVolumeMountHavingCorrectMountPath() {
+  void whenDomainHasAuxiliaryImageVolumeWithMountPath_createPodWithVolumeMountHavingCorrectMountPath() {
     getConfigurator()
-            .withAuxiliaryImageVolumes(getAuxiliaryImageVolume(CUSTOM_MOUNT_PATH))
-            .configureAdminServer()
+            .withAuxiliaryImageVolumeMountPath(CUSTOM_MOUNT_PATH)
             .withAuxiliaryImages(Collections.singletonList((getAuxiliaryImage("wdt-image:v2"))));
 
     assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
-            hasItem(new V1VolumeMount().name(getAuxiliaryImageVolumeName()).mountPath(CUSTOM_MOUNT_PATH)));
+            hasItem(new V1VolumeMount().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME).mountPath(CUSTOM_MOUNT_PATH)));
   }
 
   @Test
@@ -866,6 +858,24 @@ class AdminPodHelperTest extends PodHelperTestBase {
     logRecords.clear();
 
     assertContainsEventWithNamespace(POD_CYCLE_STARTING, NS);
+  }
+
+  @Test
+  void whenDomainHomeChanged_andRunAfterUpStep_domainRollCompletedEventCreatedWithCorrectMessage()
+      throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
+    initializeExistingPod();
+    getConfiguredDomainSpec().setDomainHome("adfgg");
+
+    testSupport.runSteps(getStepFactory(), Step.chain(getAfterUpStep(), terminalStep));
+    logRecords.clear();
+
+    assertThat("Expected Event " + DOMAIN_ROLL_COMPLETED + " expected with message not found",
+        getExpectedEventMessage(DOMAIN_ROLL_COMPLETED),
+        stringContainsInOrder("Rolling restart of domain", UID, " completed"));
+  }
+
+  Step getAfterUpStep() {
+    return new RollingHelper.AfterRollStep(null, false);
   }
 
   @Test

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2021, Oracle and/or its affiliates.
+# Copyright (c) 2021,2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # This script checks for the below required environment variables on Jenkins and runs the integration tests
@@ -21,7 +21,7 @@
 set -o errexit
 set -o pipefail
 
-function checkEnvVars {
+checkEnvVars() {
   local has_errors=false
   while [ ! -z "${1}" ]; do
     if [ -z "${!1}" ]; then
@@ -41,8 +41,8 @@ function checkEnvVars {
     exit 1
   fi
 }
-function ver { printf %02d%02d%02d%02d%02d $(echo "$1" | tr '.' ' '); }
-function checkJavaVersion {
+ver() { printf %02d%02d%02d%02d%02d $(echo "$1" | tr '.' ' '); }
+checkJavaVersion() {
   java_version=`java -version 2>&1 >/dev/null | grep 'java version' | awk '{print $3}'`
   echo "Info: java version ${java_version}"
   if [ $(ver $java_version) -lt $(ver "11.0.10") ]; then
@@ -50,7 +50,7 @@ function checkJavaVersion {
     exit 1
   fi
 }
-function dockerLogin {
+dockerLogin() {
   echo "Info: about to do docker login"
   if [ ! -z ${DOCKER_USERNAME+x} ] && [ ! -z ${DOCKER_PASSWORD+x} ]; then
     out=$(echo $DOCKER_PASSWORD | docker login -u $DOCKER_USERNAME --password-stdin)
