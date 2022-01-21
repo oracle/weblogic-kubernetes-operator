@@ -222,16 +222,16 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `auxiliaryImages` | Array of [Auxiliary Image](#auxiliary-image) | Optionally use auxiliary images to provide Model in Image model, application archive and WebLogic Deploy Tooling files. This is a useful alternative for providing these files without requiring modifications to the pod's base image 'domain.spec.image'. This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share the files from the additional images with the pod. |
+| `auxiliaryImages` | Array of [Auxiliary Image](#auxiliary-image) | Optionally, use auxiliary images to provide Model in Image model, application archive, and WebLogic Deploy Tooling files. This is a useful alternative for providing these files without requiring modifications to the pod's base image `domain.spec.image`. This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share the files from the additional images with the pod. |
 | `auxiliaryImageVolumeMedium` | string | The emptyDir volume medium. This is an advanced setting that rarely needs to be configured. Defaults to unset, which means the volume's files are stored on the local node's file system for the life of the pod. |
-| `auxiliaryImageVolumeMountPath` | string | The auxiliary image volume mount path. This is an advanced setting that rarely needs to be configured. Defaults to '/aux', which means the emptyDir volume will be mounted at '/aux' path in the WebLogic-Server container within every pod. The defaults for 'modelHome' and 'wdtInstallHome' will start with the new mount path, and files from 'sourceModelHome' and 'sourceWDTInstallHome' will be copied to the new default locations. |
+| `auxiliaryImageVolumeMountPath` | string | The auxiliary image volume mount path. This is an advanced setting that rarely needs to be configured. Defaults to `/aux`, which means the emptyDir volume will be mounted at `/aux` path in the WebLogic-Server container within every pod. The defaults for `modelHome` and `wdtInstallHome` will start with the new mount path, and files from `sourceModelHome` and `sourceWDTInstallHome` will be copied to the new default locations. |
 | `auxiliaryImageVolumeSizeLimit` | string | The emptyDir volume size limit. This is an advanced setting that rarely needs to be configured. Defaults to unset. |
 | `configMap` | string | Name of a ConfigMap containing the WebLogic Deploy Tooling model. |
 | `domainType` | string | WebLogic Deploy Tooling domain type. Legal values: WLS, RestrictedJRF, JRF. Defaults to WLS. |
-| `modelHome` | string | Location of the WebLogic Deploy Tooling model home. Defaults to '/u01/wdt/models' if no 'spec.configuration.model.AuxiliaryImages' are specified, and to '/aux/models' otherwise. |
+| `modelHome` | string | Location of the WebLogic Deploy Tooling model home. Defaults to `/u01/wdt/models` if no `spec.configuration.model.AuxiliaryImages` are specified, and to `/aux/models` otherwise. |
 | `onlineUpdate` | [Online Update](#online-update) | Online update option for Model In Image dynamic update. |
 | `runtimeEncryptionSecret` | string | Runtime encryption secret. Required when `domainHomeSourceType` is set to FromModel. |
-| `wdtInstallHome` | string | Location of the WebLogic Deploy Tooling installation. Defaults to '/u01/wdt/weblogic-deploy' if no 'spec.configuration.model.AuxiliaryImages' are specified, and to '/aux/weblogic-deploy' otherwise. |
+| `wdtInstallHome` | string | Location of the WebLogic Deploy Tooling installation. Defaults to `/u01/wdt/weblogic-deploy` if no `spec.configuration.model.AuxiliaryImages` are specified, and to `/aux/weblogic-deploy` otherwise. |
 
 ### Opss
 
@@ -277,10 +277,10 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 
 | Name | Type | Description |
 | --- | --- | --- |
-| `image` | string | The auxiliary image containing Model in Image model files, application archive files and/or WebLogic Deploying Tooling installation files. Required. |
+| `image` | string | The auxiliary image containing Model in Image model files, application archive files, and/or WebLogic Deploying Tooling installation files. Required. |
 | `imagePullPolicy` | string | The image pull policy for the container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise. |
-| `sourceModelHome` | string | The source location of the WebLogic Deploy Tooling model home within the auxiliary image that will be made available in the '/aux/models' directory of the WebLogic Server container in all pods. Defaults to '/auxiliary/models'. If the value is set to 'None' or no files found at the default location, then the source directory is ignored. If specifying multiple auxiliary images with model files in their respective 'sourceModelHome' directories, then model files are merged. |
-| `sourceWDTInstallHome` | string | The source location of the WebLogic Deploy Tooling installation within the auxiliary image that will be made available in the '/aux/weblogic-deploy' directory of the WebLogic Server container in all pods. Defaults to '/auxiliary/weblogic-deploy'. If the value is set to 'None' or no files found at the default location, then the source directory is ignored. When specifying multiple auxiliary images, ensure that only one of the images supplies a WDT install home; if more than one WDT install home is provided, then the domain deployment will fail. |
+| `sourceModelHome` | string | The source location of the WebLogic Deploy Tooling model home within the auxiliary image that will be made available in the `/aux/models` directory of the WebLogic Server container in all pods. Defaults to `/auxiliary/models`. If the value is set to `None` or no files are found at the default location, then the source directory is ignored. If specifying multiple auxiliary images with model files in their respective `sourceModelHome` directories, then model files are merged. |
+| `sourceWDTInstallHome` | string | The source location of the WebLogic Deploy Tooling installation within the auxiliary image that will be made available in the `/aux/weblogic-deploy` directory of the WebLogic Server container in all pods. Defaults to `/auxiliary/weblogic-deploy`. If the value is set to `None` or no files are found at the default location, then the source directory is ignored. When specifying multiple auxiliary images, ensure that only one of the images supplies a WDT install home; if more than one WDT install home is provided, then the domain deployment will fail. |
 
 ### Online Update
 

@@ -19,9 +19,6 @@ public class Model {
   static final String DEFAULT_WDT_MODEL_HOME = "/u01/wdt/models";
   static final String DEFAULT_WDT_INSTALL_HOME = "/u01/wdt/weblogic-deploy";
   public static final String DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH = "/aux";
-  static final String DEFAULT_AUXILIARY_IMAGE_WDT_INSTALL_HOME =
-          DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH + "/weblogic-deploy";
-  static final String DEFAULT_AUXILIARY_IMAGE_MODEL_HOME = DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH + "/models";
 
   @EnumClass(value = ModelInImageDomainType.class)
   @Description("WebLogic Deploy Tooling domain type. Legal values: WLS, RestrictedJRF, JRF. Defaults to WLS.")
@@ -30,12 +27,12 @@ public class Model {
   @Description("Name of a ConfigMap containing the WebLogic Deploy Tooling model.")
   private String configMap;
 
-  @Description("Location of the WebLogic Deploy Tooling model home. Defaults to '/u01/wdt/models' if no "
-          + "'spec.configuration.model.AuxiliaryImages' are specified, and to '/aux/models' otherwise.")
+  @Description("Location of the WebLogic Deploy Tooling model home. Defaults to `/u01/wdt/models` if no "
+          + "`spec.configuration.model.AuxiliaryImages` are specified, and to `/aux/models` otherwise.")
   private String modelHome;
 
-  @Description("Location of the WebLogic Deploy Tooling installation. Defaults to '/u01/wdt/weblogic-deploy' if no "
-          + "'spec.configuration.model.AuxiliaryImages' are specified, and to '/aux/weblogic-deploy' otherwise.")
+  @Description("Location of the WebLogic Deploy Tooling installation. Defaults to `/u01/wdt/weblogic-deploy` if no "
+          + "`spec.configuration.model.AuxiliaryImages` are specified, and to `/aux/weblogic-deploy` otherwise.")
   private String wdtInstallHome;
 
   @Description("Online update option for Model In Image dynamic update.")
@@ -45,17 +42,17 @@ public class Model {
    * The auxiliary images.
    *
    */
-  @Description("Optionally use auxiliary images to provide Model in Image model, application archive and WebLogic "
+  @Description("Optionally, use auxiliary images to provide Model in Image model, application archive, and WebLogic "
           + "Deploy Tooling files. This is a useful alternative for providing these files without requiring "
-          + "modifications to the pod's base image 'domain.spec.image'. "
+          + "modifications to the pod's base image `domain.spec.image`. "
           + "This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share "
           + "the files from the additional images with the pod.")
   private List<AuxiliaryImage> auxiliaryImages;
 
   @Description("The auxiliary image volume mount path. This is an advanced setting that rarely needs to be configured. "
-          + "Defaults to '/aux', which means the emptyDir volume will be mounted at '/aux' path in the WebLogic-Server "
-          + "container within every pod. The defaults for 'modelHome' and 'wdtInstallHome' will start with the new "
-          + "mount path, and files from 'sourceModelHome' and 'sourceWDTInstallHome' will be copied to the new "
+          + "Defaults to `/aux`, which means the emptyDir volume will be mounted at `/aux` path in the WebLogic-Server "
+          + "container within every pod. The defaults for `modelHome` and `wdtInstallHome` will start with the new "
+          + "mount path, and files from `sourceModelHome` and `sourceWDTInstallHome` will be copied to the new "
           + "default locations.")
   private String auxiliaryImageVolumeMountPath;
 

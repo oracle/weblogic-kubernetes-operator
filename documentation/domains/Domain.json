@@ -74,11 +74,11 @@
       "type": "object",
       "properties": {
         "sourceWDTInstallHome": {
-          "description": "The source location of the WebLogic Deploy Tooling installation within the auxiliary image that will be made available in the \u0027/aux/weblogic-deploy\u0027 directory of the WebLogic Server container in all pods. Defaults to \u0027/auxiliary/weblogic-deploy\u0027. If the value is set to \u0027None\u0027 or no files found at the default location, then the source directory is ignored. When specifying multiple auxiliary images, ensure that only one of the images supplies a WDT install home; if more than one WDT install home is provided, then the domain deployment will fail.",
+          "description": "The source location of the WebLogic Deploy Tooling installation within the auxiliary image that will be made available in the `/aux/weblogic-deploy` directory of the WebLogic Server container in all pods. Defaults to `/auxiliary/weblogic-deploy`. If the value is set to `None` or no files are found at the default location, then the source directory is ignored. When specifying multiple auxiliary images, ensure that only one of the images supplies a WDT install home; if more than one WDT install home is provided, then the domain deployment will fail.",
           "type": "string"
         },
         "image": {
-          "description": "The auxiliary image containing Model in Image model files, application archive files and/or WebLogic Deploying Tooling installation files. Required.",
+          "description": "The auxiliary image containing Model in Image model files, application archive files, and/or WebLogic Deploying Tooling installation files. Required.",
           "type": "string"
         },
         "imagePullPolicy": {
@@ -91,7 +91,7 @@
           ]
         },
         "sourceModelHome": {
-          "description": "The source location of the WebLogic Deploy Tooling model home within the auxiliary image that will be made available in the \u0027/aux/models\u0027 directory of the WebLogic Server container in all pods. Defaults to \u0027/auxiliary/models\u0027. If the value is set to \u0027None\u0027 or no files found at the default location, then the source directory is ignored. If specifying multiple auxiliary images with model files in their respective \u0027sourceModelHome\u0027 directories, then model files are merged.",
+          "description": "The source location of the WebLogic Deploy Tooling model home within the auxiliary image that will be made available in the `/aux/models` directory of the WebLogic Server container in all pods. Defaults to `/auxiliary/models`. If the value is set to `None` or no files are found at the default location, then the source directory is ignored. If specifying multiple auxiliary images with model files in their respective `sourceModelHome` directories, then model files are merged.",
           "type": "string"
         }
       }
@@ -627,7 +627,7 @@
           "type": "string"
         },
         "auxiliaryImages": {
-          "description": "Optionally use auxiliary images to provide Model in Image model, application archive and WebLogic Deploy Tooling files. This is a useful alternative for providing these files without requiring modifications to the pod\u0027s base image \u0027domain.spec.image\u0027. This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share the files from the additional images with the pod.",
+          "description": "Optionally, use auxiliary images to provide Model in Image model, application archive, and WebLogic Deploy Tooling files. This is a useful alternative for providing these files without requiring modifications to the pod\u0027s base image `domain.spec.image`. This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share the files from the additional images with the pod.",
           "type": "array",
           "items": {
             "$ref": "#/definitions/AuxiliaryImage"
@@ -638,15 +638,15 @@
           "$ref": "#/definitions/OnlineUpdate"
         },
         "auxiliaryImageVolumeMountPath": {
-          "description": "The auxiliary image volume mount path. This is an advanced setting that rarely needs to be configured. Defaults to \u0027/aux\u0027, which means the emptyDir volume will be mounted at \u0027/aux\u0027 path in the WebLogic-Server container within every pod. The defaults for \u0027modelHome\u0027 and \u0027wdtInstallHome\u0027 will start with the new mount path, and files from \u0027sourceModelHome\u0027 and \u0027sourceWDTInstallHome\u0027 will be copied to the new default locations.",
+          "description": "The auxiliary image volume mount path. This is an advanced setting that rarely needs to be configured. Defaults to `/aux`, which means the emptyDir volume will be mounted at `/aux` path in the WebLogic-Server container within every pod. The defaults for `modelHome` and `wdtInstallHome` will start with the new mount path, and files from `sourceModelHome` and `sourceWDTInstallHome` will be copied to the new default locations.",
           "type": "string"
         },
         "modelHome": {
-          "description": "Location of the WebLogic Deploy Tooling model home. Defaults to \u0027/u01/wdt/models\u0027 if no \u0027spec.configuration.model.AuxiliaryImages\u0027 are specified, and to \u0027/aux/models\u0027 otherwise.",
+          "description": "Location of the WebLogic Deploy Tooling model home. Defaults to `/u01/wdt/models` if no `spec.configuration.model.AuxiliaryImages` are specified, and to `/aux/models` otherwise.",
           "type": "string"
         },
         "wdtInstallHome": {
-          "description": "Location of the WebLogic Deploy Tooling installation. Defaults to \u0027/u01/wdt/weblogic-deploy\u0027 if no \u0027spec.configuration.model.AuxiliaryImages\u0027 are specified, and to \u0027/aux/weblogic-deploy\u0027 otherwise.",
+          "description": "Location of the WebLogic Deploy Tooling installation. Defaults to `/u01/wdt/weblogic-deploy` if no `spec.configuration.model.AuxiliaryImages` are specified, and to `/aux/weblogic-deploy` otherwise.",
           "type": "string"
         },
         "auxiliaryImageVolumeMedium": {
