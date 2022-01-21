@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -53,7 +53,6 @@ import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
-import oracle.kubernetes.weblogic.domain.model.AuxiliaryImageVolume;
 import oracle.kubernetes.weblogic.domain.model.Cluster;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
@@ -87,8 +86,9 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FA
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.JOB;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
-import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CUSTOM_COMMAND_SCRIPT;
+import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CUSTOM_MODEL_SOURCE_HOME;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CUSTOM_MOUNT_PATH;
+import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CUSTOM_WDT_INSTALL_SOURCE_HOME;
 import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_FATAL_ERROR;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTROSPECTOR_JOB_FAILED_DETAIL;
@@ -100,12 +100,12 @@ import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static oracle.kubernetes.utils.OperatorUtils.onSeparateLines;
-import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
-import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_VOLUME_NAME_PREFIX;
-import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImageVolume.DEFAULT_AUXILIARY_IMAGE_PATH;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
+import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasItem;
@@ -139,7 +139,6 @@ class DomainIntrospectorJobTest {
   private static final String FATAL_PROBLEM = "FatalIntrospectorError: really bad";
   private static final String FATAL_MESSAGE = "@[SEVERE] " + FATAL_PROBLEM;
   private static final String INFO_MESSAGE = "@[INFO] just letting you know";
-  public static final String TEST_VOLUME_NAME = "test";
   private static final String JOB_UID = "FAILED_JOB";
   private static final String JOB_NAME = UID + "-introspector";
   private final TerminalStep terminalStep = new TerminalStep();
@@ -398,7 +397,6 @@ class DomainIntrospectorJobTest {
   @Test
   void whenJobCreatedWithAuxiliaryImageDefined_hasAuxiliaryImageInitContainerVolumeAndMounts() {
     getConfigurator()
-            .withAuxiliaryImageVolumes(getAuxiliaryImageVolume(DEFAULT_AUXILIARY_IMAGE_PATH))
             .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")));
 
     V1Job job = runStepsAndGetJobs().get(0);
@@ -407,19 +405,13 @@ class DomainIntrospectorJobTest {
     assertThat(
             podTemplateInitContainers,
             Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
-                "wdt-image:v1",
-                "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND));
+                "wdt-image:v1", "IfNotPresent"));
     assertThat(getJobPodSpec(job).getVolumes(),
-            hasItem(new V1Volume().name(AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME).emptyDir(
+            hasItem(new V1Volume().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME).emptyDir(
                     new V1EmptyDirVolumeSource())));
     assertThat(getPodTemplateContainers(job).get(0).getVolumeMounts(),
-            hasItem(new V1VolumeMount().name(AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME)
-                    .mountPath(DEFAULT_AUXILIARY_IMAGE_PATH)));
-  }
-
-  @NotNull
-  List<AuxiliaryImageVolume> getAuxiliaryImageVolume(String mountPath) {
-    return Collections.singletonList(new AuxiliaryImageVolume().mountPath(mountPath).name(TEST_VOLUME_NAME));
+            hasItem(new V1VolumeMount().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME)
+                    .mountPath(DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH)));
   }
 
   private List<V1Container> getCreatedPodSpecContainers(List<V1Job> jobs) {
@@ -429,99 +421,105 @@ class DomainIntrospectorJobTest {
   @NotNull
   private List<AuxiliaryImage> getAuxiliaryImages(String...images) {
     List<AuxiliaryImage> auxiliaryImageList = new ArrayList<>();
-    Arrays.stream(images).forEach(image -> auxiliaryImageList.add(new AuxiliaryImage().image(image)
-            .volume(TEST_VOLUME_NAME)));
+    Arrays.stream(images).forEach(image -> auxiliaryImageList.add(new AuxiliaryImage().image(image)));
     return auxiliaryImageList;
   }
 
   @NotNull
   public static AuxiliaryImage getAuxiliaryImage(String image) {
-    return new AuxiliaryImage().image(image).volume(TEST_VOLUME_NAME);
+    //return new AuxiliaryImage().image(image).volume(TEST_VOLUME_NAME);
+    return new AuxiliaryImage().image(image);
   }
 
   @Test
   void whenJobCreatedWithAuxiliaryImageAndVolumeHavingAuxiliaryImagePath_hasVolumeMountWithAuxiliaryImagePath() {
     DomainConfiguratorFactory.forDomain(domain)
-            .withAuxiliaryImageVolumes(getAuxiliaryImageVolume(CUSTOM_MOUNT_PATH))
+            .withAuxiliaryImageVolumeMountPath(CUSTOM_MOUNT_PATH)
             .withAuxiliaryImages(getAuxiliaryImages("wdt-image:v1"));
 
     List<V1Job> jobs = runStepsAndGetJobs();
     assertThat(getCreatedPodSpecContainers(jobs).get(0).getVolumeMounts(),
-            hasItem(new V1VolumeMount().name(AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME)
+            hasItem(new V1VolumeMount().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME)
                     .mountPath(CUSTOM_MOUNT_PATH)));
   }
 
   @Test
   void whenJobCreatedWithAuxiliaryImageVolumeWithMedium_createdJobPodsHasVolumeWithSpecifiedMedium() {
     getConfigurator()
-            .withAuxiliaryImageVolumes(Collections.singletonList(
-                    new AuxiliaryImageVolume().name(TEST_VOLUME_NAME).medium("Memory")))
+            .withAuxiliaryImageVolumeMedium("Memory")
             .withAuxiliaryImages(getAuxiliaryImages("wdt-image:v1"));
 
     V1Job job = runStepsAndGetJobs().get(0);
     assertThat(getJobPodSpec(job).getVolumes(),
-            hasItem(new V1Volume().name(AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME).emptyDir(
+            hasItem(new V1Volume().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME).emptyDir(
                     new V1EmptyDirVolumeSource().medium("Memory"))));
   }
-
 
   @Test
   void whenJobCreatedWithAuxiliaryImageVolumeWithSizeLimit_createdJobPodsHasVolumeWithSpecifiedSizeLimit() {
     getConfigurator()
-            .withAuxiliaryImageVolumes(Collections.singletonList(
-                    new AuxiliaryImageVolume().name(TEST_VOLUME_NAME).sizeLimit("100G")))
+            .withAuxiliaryImageVolumeSizeLimit("100G")
             .withAuxiliaryImages(getAuxiliaryImages());
 
     V1Job job = runStepsAndGetJobs().get(0);
     assertThat(getJobPodSpec(job).getVolumes(),
-            hasItem(new V1Volume().name(AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME).emptyDir(
+            hasItem(new V1Volume().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME).emptyDir(
                     new V1EmptyDirVolumeSource().sizeLimit(Quantity.fromString("100G")))));
   }
 
   @Test
   void whenJobCreatedWithAuxiliaryImageWithImagePullPolicy_createJobPodHasImagePullPolicy() {
     getConfigurator()
-            .withAuxiliaryImageVolumes(getAuxiliaryImageVolume(DEFAULT_AUXILIARY_IMAGE_PATH))
             .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")
                     .imagePullPolicy("ALWAYS")));
 
     V1Job job = runStepsAndGetJobs().get(0);
     assertThat(getPodTemplateInitContainers(job),
                 Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
-                    "wdt-image:v1", "ALWAYS", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND));
+                    "wdt-image:v1", "ALWAYS"));
   }
 
   @Test
-  void whenJobCreatedWithAuxiliaryImageAndCustomCommand_createJobPodsWithInitContainerHavingCustomCommand() {
+  void whenJobCreatedWithAIAndCustomSourceWDTInstallHome_createPodWithInitContainerHavingCustomSourceWDTInstallHome() {
     getConfigurator()
-            .withAuxiliaryImageVolumes(getAuxiliaryImageVolume(DEFAULT_AUXILIARY_IMAGE_PATH))
             .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")
-                    .command(CUSTOM_COMMAND_SCRIPT)));
+                    .sourceWDTInstallHome(CUSTOM_WDT_INSTALL_SOURCE_HOME)));
 
     V1Job job = runStepsAndGetJobs().get(0);
     assertThat(getPodTemplateInitContainers(job),
                 Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
-                    "wdt-image:v1", "IfNotPresent", CUSTOM_COMMAND_SCRIPT));
+                    "wdt-image:v1", "IfNotPresent", CUSTOM_WDT_INSTALL_SOURCE_HOME));
+  }
+
+  @Test
+  void whenJobCreatedWithAIAndCustomSourceModelHome_createPodWithInitContainerHavingCustomSourceModelHome() {
+    getConfigurator()
+            .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")
+                    .sourceModelHome(CUSTOM_MODEL_SOURCE_HOME)));
+
+    V1Job job = runStepsAndGetJobs().get(0);
+    assertThat(getPodTemplateInitContainers(job),
+            Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+                    "wdt-image:v1", "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME,
+                    CUSTOM_MODEL_SOURCE_HOME));
   }
 
   @Test
   void whenJobCreatedWithMultipleAuxiliaryImages_createdJobPodsHasMultipleInitContainers() {
     getConfigurator()
-            .withAuxiliaryImageVolumes(getAuxiliaryImageVolume(DEFAULT_AUXILIARY_IMAGE_PATH))
             .withAuxiliaryImages(getAuxiliaryImages("wdt-image1:v1", "wdt-image2:v1"));
 
     V1Job job = runStepsAndGetJobs().get(0);
     assertThat(getPodTemplateInitContainers(job),
             org.hamcrest.Matchers.allOf(
                 Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
-                    "wdt-image1:v1", "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND),
+                    "wdt-image1:v1", "IfNotPresent"),
                     Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 2,
-                        "wdt-image2:v1",
-                        "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND)));
-    assertThat(getPodTemplateContainers(job).get(0).getVolumeMounts(), hasSize(7));
+                        "wdt-image2:v1", "IfNotPresent")));
+    assertThat(getPodTemplateContainers(job).get(0).getVolumeMounts(), hasSize(8));
     assertThat(getPodTemplateContainers(job).get(0).getVolumeMounts(),
-            hasItem(new V1VolumeMount().name(AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME)
-                    .mountPath(DEFAULT_AUXILIARY_IMAGE_PATH)));
+            hasItem(new V1VolumeMount().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME)
+                    .mountPath(DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH)));
   }
 
   @Test
