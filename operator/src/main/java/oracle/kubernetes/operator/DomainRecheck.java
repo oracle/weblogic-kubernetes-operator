@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -196,6 +197,7 @@ class DomainRecheck {
       return namespaces.getItems().stream()
           .filter(Namespaces::isDomainNamespace)
           .map(V1Namespace::getMetadata)
+          .filter(Objects::nonNull)
           .map(V1ObjectMeta::getName)
           .collect(Collectors.toSet());
     }
