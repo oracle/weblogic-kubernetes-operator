@@ -189,7 +189,7 @@ checkPvState() {
 # Check the state of a persistent volume claim.
 # $1 - name of volume claim
 # $2 - expected state of volume claim
-checkPvcState {
+checkPvcState() {
 
   echo "Checking if the persistent volume claim ${1:?} is ${2:?}"
   local pvc_state=`kubectl get pvc $1 -o jsonpath='{.status.phase}'`
