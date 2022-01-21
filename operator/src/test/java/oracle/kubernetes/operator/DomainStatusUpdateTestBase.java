@@ -752,13 +752,14 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @Test
-  void whenReplicaCountExceedsMaxReplicasForDynamicCluster_addFailedCondition() {
+  void whenReplicaCountExceedsMaxReplicasForDynamicCluster_addFailedAndCompletedFalseCondition() {
     domain.setReplicaCount("cluster1", 5);
     defineScenario().withDynamicCluster("cluster1", 0, 4).build();
 
     updateDomainStatus();
 
     assertThat(getRecordedDomain(), hasCondition(Failed).withReason(ReplicasTooHigh).withMessageContaining("cluster1"));
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus(FALSE));;
   }
 
   @Test

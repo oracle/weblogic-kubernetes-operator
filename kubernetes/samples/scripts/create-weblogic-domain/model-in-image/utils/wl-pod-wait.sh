@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 set -eu
@@ -9,7 +9,7 @@ DOMAIN_UID="sample-domain1"
 DOMAIN_NAMESPACE="sample-domain1-ns"
 timeout_secs=1000
 
-function usage() {
+usage() {
 
   cat << EOF
 
@@ -112,15 +112,15 @@ if [ "$syntax_error" = "true" ]; then
   exit 1
 fi
 
-function timestamp() {
+timestamp() {
   date --utc '+%Y-%m-%dT%H:%M:%S'
 }
 
-function tempfile() {
+tempfile() {
   mktemp /tmp/$(basename "$0").$PPID.$(timestamp).XXXXXX
 }
 
-function sortlist() {
+sortlist() {
   # sort a comma or space separated list
   #   - stdin input, stdout output
   #   - spaces replaced with commas
@@ -133,7 +133,7 @@ function sortlist() {
   xargs echo -n  | \
   tr ' ' ','
 }
-function sortAIImages() {
+sortAIImages() {
   # sort "aiimages=;im2,im1;" field assuming comma or space sep list
   #   - stdin input, stdout output
   #   - spaces replaced with commas
@@ -146,7 +146,7 @@ function sortAIImages() {
     echo "$line"    | sed 's/.*aiimages=;[^;]*\(;.*\)/\1/'
   done
 }
-function _sortAIImagesUnitTest() {
+_sortAIImagesUnitTest() {
   local res=$(echo "$1" | sortAIImages)
   if [ ! "$res" = "$2" ]; then
     echo "unit test fail"
@@ -156,7 +156,7 @@ function _sortAIImagesUnitTest() {
     exit 1
   fi
 }
-function sortAIImagesUnitTest() {
+sortAIImagesUnitTest() {
   _sortAIImagesUnitTest "foo=;bar; aiimages=;c,b; bar=;foo;"   "foo=;bar; aiimages=;b,c; bar=;foo;"
   _sortAIImagesUnitTest "foo=;bar; aiimages=; c,b,; bar=;foo;" "foo=;bar; aiimages=;b,c; bar=;foo;"
   _sortAIImagesUnitTest "foo=;bar; aiimages=;; bar=;foo;"      "foo=;bar; aiimages=;; bar=;foo;"
@@ -171,7 +171,7 @@ function sortAIImagesUnitTest() {
 sortAIImagesUnitTest
 
 
-function getDomainValue() {
+getDomainValue() {
   # get domain value specified by $1 and put in env var named by $2
   #   - if get fails, and global expected is >0, then echo an Error and exit script non-zero
   #   - example: getDomainValue '.spec.introspectVersion' DOM_VERSION
@@ -193,7 +193,7 @@ function getDomainValue() {
   set -e
 }
 
-function getDomainAIImages() {
+getDomainAIImages() {
   # get list of domain auxiliary images (if any) and place result in the env var named by $1
   #   - if expected>0 and get fails, then echo an Error and exit script non-zero
   #   - result is a sorted comma separated list
@@ -204,7 +204,7 @@ function getDomainAIImages() {
     kubectl \
       get domain ${DOMAIN_UID} \
       -n ${DOMAIN_NAMESPACE} \
-      -o=jsonpath="{range .spec.serverPod.auxiliaryImages[*]}{.image}{','}{end}" \
+      -o=jsonpath="{range .spec.configuration.model.auxiliaryImages[*]}{.image}{','}{end}" \
       2>&1
   )
   if [ $? -ne 0 ]; then

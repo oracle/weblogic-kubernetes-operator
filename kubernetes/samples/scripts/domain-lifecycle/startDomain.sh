@@ -1,5 +1,5 @@
 # !/bin/sh
-# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 
@@ -7,7 +7,7 @@ script="${BASH_SOURCE[0]}"
 scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 source ${scriptDir}/helper.sh
 
-function usage() {
+usage() {
 
   cat << EOF
 
@@ -61,7 +61,7 @@ done
 set -eu
 set -o pipefail
 
-function initialize {
+initialize() {
 
   validateErrors=false
 

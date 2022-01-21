@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -33,11 +33,11 @@ import static oracle.kubernetes.operator.DomainSourceType.Image;
 import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_TOPOLOGY;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.getAuxiliaryImage;
+import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
 import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.equalTo;
 import static org.hamcrest.Matchers.hasSize;
-import static org.hamcrest.Matchers.not;
 import static org.hamcrest.Matchers.stringContainsInOrder;
 import static org.hamcrest.junit.MatcherAssert.assertThat;
 
@@ -117,79 +117,89 @@ class DomainValidationTest extends DomainValidationBaseTest {
   }
 
   @Test
-  void whenDomainConfiguredWithAuxiliaryImageButNoAuxiliaryImageVolumes_reportError() {
+  void whenDomainConfiguredWithAuxiliaryImageAndVolumeMountExists_reportError() {
     configureDomain(domain)
+            .withAdditionalVolumeMount("test", DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH)
+            .withRuntimeEncryptionSecret("mysecret")
             .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")));
 
     assertThat(domain.getValidationFailures(resourceLookup),
-            contains(stringContainsInOrder("serverPod.auxiliaryImages",
-                    "there is no matching volume defined with name 'test'")));
+            contains(stringContainsInOrder("auxiliary images", "mountPath", "already in use")));
   }
 
   @Test
-  void whenDomainConfiguredWithAuxiliaryImageButNoMatchingAuxiliaryImageVolumes_reportError() {
-    configureDomain(domain)
-            .withAuxiliaryImageVolumes(Collections.singletonList(new AuxiliaryImageVolume().name(WRONG_VOLUME_NAME)))
+  void whenDomainConfiguredWithAuxiliaryImageAndDomainHomeInImage_noErrorReported() {
+    configureDomain(domain).withDomainHomeSourceType(Image)
+            .withModelConfigMap("wdt-cm")
             .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")));
 
-    assertThat(domain.getValidationFailures(resourceLookup),
-            contains(stringContainsInOrder("serverPod.auxiliaryImages",
-                    "there is no matching volume defined with name 'test'")));
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
 
   @Test
-  void whenDomainConfiguredWithAuxiliaryImageButNoVolumeName_reportError() {
-    configureDomain(domain)
-            .withAuxiliaryImageVolumes(Collections.singletonList(new AuxiliaryImageVolume().name(TEST_VOLUME_NAME)))
-            .withAuxiliaryImages(Collections.singletonList(new AuxiliaryImage().image("wdt-image:v1")));
+  void whenMoreThanOneAuxiliaryImageSetsSourceWDTInstallHome_reportError() {
+    List<AuxiliaryImage> auxiliaryImages = new ArrayList<>();
+    auxiliaryImages.add(new AuxiliaryImage().image("image1").sourceWDTInstallHome("/wdtInstallHome1"));
+    auxiliaryImages.add(new AuxiliaryImage().image("image2").sourceWDTInstallHome("/wdtInstallHome2"));
+
+    configureDomainWithRuntimeEncryptionSecret(domain)
+            .withAuxiliaryImages(auxiliaryImages);
 
     assertThat(domain.getValidationFailures(resourceLookup),
-            contains(stringContainsInOrder("serverPod.auxiliaryImages", "does not define a volume name")));
+            contains(stringContainsInOrder("More than one auxiliary image under",
+                    "'spec.configuration.model.auxiliaryImages'",
+                    "sets a 'sourceWDTInstallHome'")));
   }
 
   @Test
-  void whenDomainConfiguredWithAuxiliaryImageAndMatchingAuxiliaryImageVolumes_noErrorsReported() {
-    configureDomain(domain)
-            .withAuxiliaryImageVolumes(Collections.singletonList(new AuxiliaryImageVolume().name(TEST_VOLUME_NAME)))
-            .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")));
+  void whenTwoAuxiliaryImageSetsSourceWDTInstallHomeAndOneIsNone_noErrorReported() {
+    List<AuxiliaryImage> auxiliaryImages = new ArrayList<>();
+    auxiliaryImages.add(new AuxiliaryImage().image("image1").sourceWDTInstallHome("/wdtInstallHome1"));
+    auxiliaryImages.add(new AuxiliaryImage().image("image2").sourceWDTInstallHome("None"));
 
-    assertThat(domain.getValidationFailures(resourceLookup),
-            not(contains(stringContainsInOrder("auxiliaryImages", "no volume defined with name 'test'"))));
+    configureDomainWithRuntimeEncryptionSecret(domain)
+            .withAuxiliaryImages(auxiliaryImages);
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
 
   @Test
-  void whenDomainConfiguredWithAuxiliaryImageVolumesWithNullName_reportError() {
-    configureDomain(domain)
-            .withAuxiliaryImageVolumes(Collections.singletonList(new AuxiliaryImageVolume()));
+  void wheOnlyOneAuxiliaryImageSetsSourceWDTInstallHome_noErrorReported() {
+    List<AuxiliaryImage> auxiliaryImages = new ArrayList<>();
+    auxiliaryImages.add(new AuxiliaryImage().image("image1"));
+    auxiliaryImages.add(new AuxiliaryImage().image("image2").sourceWDTInstallHome("/wdtInstallHome1"));
 
-    assertThat(domain.getValidationFailures(resourceLookup),
-            contains(stringContainsInOrder("An item under 'spec.auxiliaryImageVolumes'", "does not have a name",
-                    "A name is required")));
+    configureDomainWithRuntimeEncryptionSecret(domain)
+            .withAuxiliaryImages(auxiliaryImages);
+
+    assertThat(domain.getValidationFailures(resourceLookup), empty());
   }
 
   @Test
-  void whenDomainConfiguredWithAuxiliaryImageVolumesWithSameMountPath_reportError() {
-    List<AuxiliaryImageVolume> auxiliaryImageVolumes = new ArrayList<>();
-    auxiliaryImageVolumes.add(new AuxiliaryImageVolume().name("TestVolume").mountPath("/shared"));
-    auxiliaryImageVolumes.add(new AuxiliaryImageVolume().name("TestVolume").mountPath("/shared"));
-    configureDomain(domain)
-            .withAuxiliaryImageVolumes(auxiliaryImageVolumes);
+  void whenModelHomePlacedUnderWDTInstallHome_reportError() {
+    configureDomainWithRuntimeEncryptionSecret(domain)
+            .withWDTInstallationHome("/aux")
+            .withModelHome("/aux/y");
 
     assertThat(domain.getValidationFailures(resourceLookup),
-            contains(stringContainsInOrder("More than one item under 'spec.auxiliaryImageVolumes'", "/shared")));
+            contains(stringContainsInOrder("modelHome", "is invalid",
+                    "modelHome must be outside the directory for the wdtInstallHome")));
+  }
+
+  private DomainConfigurator configureDomainWithRuntimeEncryptionSecret(Domain domain) {
+    return configureDomain(domain)
+            .withRuntimeEncryptionSecret("mysecret");
   }
 
   @Test
-  void whenDomainConfiguredWithAuxiliaryImageVolumesWithSameName_reportError() {
-    List<AuxiliaryImageVolume> auxiliaryImageVolumes = new ArrayList<>();
-    auxiliaryImageVolumes.add(new AuxiliaryImageVolume().name(TEST_VOLUME_NAME));
-    auxiliaryImageVolumes.add(new AuxiliaryImageVolume().name(TEST_VOLUME_NAME).mountPath("/common1"));
-    configureDomain(domain)
-            .withAuxiliaryImageVolumes(auxiliaryImageVolumes);
+  void whenWDTInstallHomePlacedUnderModelHome_reportError() {
+    configureDomainWithRuntimeEncryptionSecret(domain)
+            .withWDTInstallationHome("/aux/y")
+            .withModelHome("/aux");
 
     assertThat(domain.getValidationFailures(resourceLookup),
-            contains(stringContainsInOrder("More than one item under 'spec.auxiliaryImageVolumes'",
-                    TEST_VOLUME_NAME)));
+            contains(stringContainsInOrder("wdtInstallHome", "is invalid",
+                    "wdtInstallHome must be outside the directory for the modelHome")));
   }
 
   @Test
