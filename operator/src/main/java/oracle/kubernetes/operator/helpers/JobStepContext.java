@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -337,11 +337,16 @@ public class JobStepContext extends BasePodStepContext {
     V1PodTemplateSpec podTemplateSpec = new V1PodTemplateSpec()
           .metadata(createPodTemplateMetadata())
           .spec(createPodSpec(tuningParameters));
-    Optional.ofNullable(getServerSpec().getAuxiliaryImages()).ifPresent(auxiliaryImages ->
+    Optional.ofNullable(getAuxiliaryImages()).ifPresent(auxiliaryImages ->
             addAuxiliaryImageInitContainers(podTemplateSpec.getSpec(), auxiliaryImages));
-    addEmptyDirVolume(podTemplateSpec.getSpec(), info.getDomain().getAuxiliaryImageVolumes());
+    Optional.ofNullable(getAuxiliaryImages())
+            .ifPresent(p -> podTemplateSpec.getSpec().addVolumesItem(createEmptyDirVolume()));
 
     return updateForDeepSubstitution(podTemplateSpec.getSpec(), podTemplateSpec);
+  }
+
+  private List<AuxiliaryImage> getAuxiliaryImages() {
+    return getDomain().getAuxiliaryImages();
   }
 
   private V1ObjectMeta createPodTemplateMetadata() {
@@ -460,8 +465,7 @@ public class JobStepContext extends BasePodStepContext {
             readOnlyVolumeMount(getVolumeName(getConfigOverrides(), CONFIGMAP_TYPE), OVERRIDES_CM_MOUNT_PATH));
     }
 
-    Optional.ofNullable(getServerSpec().getAuxiliaryImages()).ifPresent(auxiliaryImages ->
-            auxiliaryImages.forEach(cm -> addVolumeMount(container, cm)));
+    Optional.ofNullable(getAuxiliaryImages()).ifPresent(auxiliaryImages -> addVolumeMountIfMissing(container));
 
     List<String> configOverrideSecrets = getConfigOverrideSecrets();
     for (String secretName : configOverrideSecrets) {
@@ -661,10 +665,14 @@ public class JobStepContext extends BasePodStepContext {
       addEnvVar(vars, IntrospectorJobEnvVars.WDT_INSTALL_HOME, wdtInstallHome);
     }
 
-    Optional.ofNullable(getAuxiliaryImagePaths(getServerSpec().getAuxiliaryImages(),
-        getDomain().getAuxiliaryImageVolumes()))
-            .ifPresent(c -> addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATHS, c));
+    Optional.ofNullable(getAuxiliaryImages()).ifPresent(ais -> addAuxImagePathEnv(ais, vars));
     return vars;
+  }
+
+  private void addAuxImagePathEnv(List<AuxiliaryImage> auxiliaryImages, List<V1EnvVar> vars) {
+    if (auxiliaryImages.size() > 0) {
+      addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_MOUNT_PATH, getDomain().getAuxiliaryImageVolumeMountPath());
+    }
   }
 
   private void addEnvVarsForExistingTopology(List<V1EnvVar> vars) {

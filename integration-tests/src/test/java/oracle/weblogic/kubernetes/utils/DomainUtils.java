@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -281,9 +281,9 @@ public class DomainUtils {
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
             domainUid, domainNamespace));
     assertNotNull(domain1, "Got null domain resource ");
-    assertNotNull(domain1.getSpec().getServerPod().getAuxiliaryImages(),
+    assertNotNull(domain1.getSpec().getConfiguration().getModel().getAuxiliaryImages(),
         domain1 + "/spec/serverPod/auxiliaryImages is null");
-    List<AuxiliaryImage> auxiliaryImageList = domain1.getSpec().getServerPod().getAuxiliaryImages();
+    List<AuxiliaryImage> auxiliaryImageList = domain1.getSpec().getConfiguration().getModel().getAuxiliaryImages();
     assertFalse(auxiliaryImageList.isEmpty(), "AuxiliaryImage list is empty");
 
     String searchString;
@@ -297,7 +297,7 @@ public class DomainUtils {
         + "can't patch domain " + domainUid);
 
     index = auxiliaryImageList.indexOf(ai);
-    searchString = "\"/spec/serverPod/auxiliaryImages/" + index + "/image\"";
+    searchString = "\"/spec/configuration/model/auxiliaryImages/" + index + "/image\"";
     StringBuffer patchStr = new StringBuffer("[{");
     patchStr.append("\"op\": \"replace\",")
         .append(" \"path\": " + searchString + ",")
@@ -321,11 +321,11 @@ public class DomainUtils {
     assertNotNull(domain1, "Got null domain resource after patching");
     assertNotNull(domain1.getSpec(), domain1 + " /spec is null");
     assertNotNull(domain1.getSpec().getServerPod(), domain1 + " /spec/serverPod is null");
-    assertNotNull(domain1.getSpec().getServerPod().getAuxiliaryImages(),
+    assertNotNull(domain1.getSpec().getConfiguration().getModel().getAuxiliaryImages(),
         domain1 + "/spec/serverPod/auxiliaryImages is null");
 
     //verify the new auxiliary image in the new patched domain
-    auxiliaryImageList = domain1.getSpec().getServerPod().getAuxiliaryImages();
+    auxiliaryImageList = domain1.getSpec().getConfiguration().getModel().getAuxiliaryImages();
 
     String auxiliaryImage = auxiliaryImageList.get(index).getImage();
     getLogger().info("In the new patched domain, imageValue is: {0}", auxiliaryImage);

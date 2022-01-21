@@ -1,15 +1,12 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain;
-
-import java.util.List;
 
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1PodSecurityContext;
 import io.kubernetes.client.openapi.models.V1SecurityContext;
-import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 
 /** An interface for an object to configure a cluster in a test. */
 @SuppressWarnings("UnusedReturnValue")
@@ -136,7 +133,5 @@ public interface ClusterConfigurator extends ServiceConfigurator {
   ClusterConfigurator withMaxConcurrentStartup(Integer maxConcurrentStartup);
 
   ClusterConfigurator withMaxConcurrentShutdown(Integer maxConcurrentShutdown);
-
-  ClusterConfigurator withAuxiliaryImages(List<AuxiliaryImage> auxiliaryImageList);
 
 }
