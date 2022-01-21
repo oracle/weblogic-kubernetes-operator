@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -20,6 +20,7 @@ import javax.annotation.Nonnull;
 import com.meterware.simplestub.Memento;
 import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.CoreV1Event;
+import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
@@ -95,6 +96,7 @@ abstract class DomainStatusUpdateTestBase {
   private static final String NAME = UID;
   private static final String ADMIN = "admin";
   public static final String CLUSTER = "cluster1";
+  private static final String IMAGE = "initialImage:0";
   private final TerminalStep endStep = new TerminalStep();
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final List<Memento> mementos = new ArrayList<>();
@@ -113,6 +115,7 @@ abstract class DomainStatusUpdateTestBase {
     mementos.add(ClientFactoryStub.install());
     mementos.add(SystemClockTestSupport.installClock());
 
+    domain.getSpec().setImage(IMAGE);
     domain.setStatus(new DomainStatus());
     info.setAdminServerName(ADMIN);
 
@@ -488,6 +491,37 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @Test
+  void whenAnyServerHasRollNeededLabel_establishCompletedConditionFalse() {
+    defineScenario().withCluster("cluster1", "ms1", "ms2", "ms3").build();
+    addRollNeededLabel("ms1");
+    addRollNeededLabel("ms2");
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus(FALSE));
+    assertThat(
+        getRecordedDomain().getApiVersion(),
+        equalTo(KubernetesConstants.API_VERSION_WEBLOGIC_ORACLE));
+  }
+
+  @SuppressWarnings("ConstantConditions")
+  private void addRollNeededLabel(String serverName) {
+    info.getServerPod(serverName).getMetadata().getLabels().put(LabelConstants.TO_BE_ROLLED_LABEL, "true");
+  }
+
+  @Test
+  void whenNoServerHasRollNeededLabel_establishCompletedConditionTrue() {
+    defineScenario().withCluster("cluster1", "ms1", "ms2", "ms3").build();
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus(TRUE));
+    assertThat(
+        getRecordedDomain().getApiVersion(),
+        equalTo(KubernetesConstants.API_VERSION_WEBLOGIC_ORACLE));
+  }
+
+  @Test
   void whenAllDesiredServersRunningAndMatchingCompletedConditionFound_leaveIt() {  
     domain.getStatus().addCondition(new DomainCondition(Completed).withStatus(true));
     defineScenario()
@@ -718,13 +752,14 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @Test
-  void whenReplicaCountExceedsMaxReplicasForDynamicCluster_addFailedCondition() {
+  void whenReplicaCountExceedsMaxReplicasForDynamicCluster_addFailedAndCompletedFalseCondition() {
     domain.setReplicaCount("cluster1", 5);
     defineScenario().withDynamicCluster("cluster1", 0, 4).build();
 
     updateDomainStatus();
 
     assertThat(getRecordedDomain(), hasCondition(Failed).withReason(ReplicasTooHigh).withMessageContaining("cluster1"));
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus(FALSE));;
   }
 
   @Test
@@ -1083,7 +1118,8 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   private V1Pod createPod(String serverName) {
-    return new V1Pod().metadata(createPodMetadata(serverName)).spec(new V1PodSpec());
+    return new V1Pod().metadata(createPodMetadata(serverName))
+          .spec(new V1PodSpec().addContainersItem(new V1Container().image(IMAGE)));
   }
 
   @Test
