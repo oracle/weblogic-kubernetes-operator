@@ -233,7 +233,7 @@ Example output:
 ```shell
 $ kubectl get pvc
 NAME                       STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS        AGE
-wls-weblogic-1612795811   Bound    pvc-b9c0dfbb-0cee-4362-809e-1621894c5794   100Gi      RWX            azurefile-csi-nfs   17s
+wls-azurefile-1612795811   Bound    pvc-b9c0dfbb-0cee-4362-809e-1621894c5794   100Gi      RWX            azurefile-csi-nfs   17s
 ```
 
 **Note**: Carefully inspect the output and verify it matches the above. `ACCESS MODES`, `CLAIM`, and `STORAGECLASS` are vital.
