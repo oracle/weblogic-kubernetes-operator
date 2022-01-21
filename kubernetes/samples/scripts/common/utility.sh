@@ -186,6 +186,25 @@ checkPvState() {
 }
 
 #
+# Check the state of a persistent volume claim.
+# $1 - name of volume claim
+# $2 - expected state of volume claim
+checkPvcState {
+
+  echo "Checking if the persistent volume claim ${1:?} is ${2:?}"
+  local pvc_state=`kubectl get pvc $1 -o jsonpath='{.status.phase}'`
+  attempts=0
+  while [ ! "$pvc_state" = "$2" ] && [ ! $attempts -eq 10 ]; do
+    attempts=$((attempts + 1))
+    sleep 1
+    pvc_state=`kubectl get pvc $1 -o jsonpath='{.status.phase}'`
+  done
+  if [ "$pvc_state" != "$2" ]; then
+    fail "The persistent volume state should be $2 but is $pvc_state"
+  fi
+}
+
+#
 # Function to check if a persistent volume exists
 # $1 - name of volume
 checkPvExists() {

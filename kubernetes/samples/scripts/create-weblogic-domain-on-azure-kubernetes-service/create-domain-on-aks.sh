@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # Description
-#  This sample script creates a WebLogic Server domain home on the Azure Kubernetes Service (AKS). 
-#  It creates a new Azure resource group, with a new Azure Storage Account and Azure File Share to allow WebLogic 
+#  This sample script creates a WebLogic Server domain home on the Azure Kubernetes Service (AKS).
+#  It creates a new Azure resource group, with a new Azure Storage Account and Azure File Share to allow WebLogic
 #  to persist its configuration and data separately from the Kubernetes pods that run WebLogic workloads.
-#  Besides, it also generates the domain resource yaml files, which can be used to restart the Kubernetes 
+#  Besides, it also generates the domain resource yaml files, which can be used to restart the Kubernetes
 #  artifacts of the corresponding domain.
 #
 #  The Azure resource deployment is customized by editing
@@ -24,7 +24,7 @@
 
 # Initialize
 script="${BASH_SOURCE[0]}"
-scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
+scriptDir="$(cd "$(dirname "${script}")" && pwd)"
 
 source ${scriptDir}/../common/utility.sh
 source ${scriptDir}/../common/validate.sh
@@ -46,19 +46,26 @@ usage() {
 executeIt=false
 while getopts "ehi:o:u:d:" opt; do
   case $opt in
-    i) valuesInputFile="${OPTARG}"
+  i)
+    valuesInputFile="${OPTARG}"
     ;;
-    o) outputDir="${OPTARG}"
+  o)
+    outputDir="${OPTARG}"
     ;;
-    u) azureResourceUID="${OPTARG}"
+  u)
+    azureResourceUID="${OPTARG}"
     ;;
-    e) executeIt=true
+  e)
+    executeIt=true
     ;;
-    d) domainInputFile="${OPTARG}"
+  d)
+    domainInputFile="${OPTARG}"
     ;;
-    h) usage 0
+  h)
+    usage 0
     ;;
-    *) usage 1
+  *)
+    usage 1
     ;;
   esac
 done
@@ -77,8 +84,8 @@ if [ "${missingRequiredOption}" == "true" ]; then
   usage 1
 fi
 
-if [ -z "${azureResourceUID}" ];then
-  azureResourceUID=`date +%s`
+if [ -z "${azureResourceUID}" ]; then
+  azureResourceUID=$(date +%s)
 fi
 
 #
@@ -96,13 +103,13 @@ fail() {
 initOutputDir() {
   aksOutputDir="$outputDir/weblogic-on-aks"
 
-  pvOutput="${aksOutputDir}/pv.yaml"
+  scOutput="${aksOutputDir}/azure-csi-nfs.yaml"
   pvcOutput="${aksOutputDir}/pvc.yaml"
   adminLbOutput="${aksOutputDir}/admin-lb.yaml"
   clusterLbOutput="${aksOutputDir}/cluster-lb.yaml"
   domain1Output="${aksOutputDir}/domain1.yaml"
 
-  removeFileIfExists ${pvOutput}
+  removeFileIfExists ${scOutput}
   removeFileIfExists ${pvcOutput}
   removeFileIfExists ${adminLbOutput}
   removeFileIfExists ${clusterLbOutput}
@@ -130,9 +137,9 @@ initialize() {
     validationError "You must use the -o option to specify the name of an existing directory to store the generated yaml files in."
   fi
 
-  domainPVInput="${scriptDir}/azure-file-pv-template.yaml"
-  if [ ! -f ${domainPVInput} ]; then
-    validationError "The template file ${domainPVInput} for generating a persistent volume was not found"
+  storageClassInput="${scriptDir}/azure-csi-storageaccount-template.yaml"
+  if [ ! -f ${storageClassInput} ]; then
+    validationError "The template file ${storageClassInput} for generating a NFS storage class was not found"
   fi
 
   domainPVCInput="${scriptDir}/azure-file-pvc-template.yaml"
@@ -166,7 +173,7 @@ initialize() {
   export azureStorageShareName="${namePrefix}-${azureStorageShareNameSuffix}-${azureResourceUID}"
   export imagePullSecretName="${namePrefix}${imagePullSecretNameSuffix}"
   export persistentVolumeClaimName="${namePrefix}-${persistentVolumeClaimNameSuffix}-${azureResourceUID}"
-
+  export persistentVolumeId="${namePrefix}-${persistentVolumeClaimNameSuffix}-${azureResourceUID}"
 }
 
 #
@@ -184,20 +191,20 @@ createYamlFiles() {
   # (if needed) and copy the inputs file there.
   copyInputsFileToOutputDirectory ${valuesInputFile} "${aksOutputDir}/create-domain-on-aks-inputs.yaml"
 
-  echo Generating ${pvOutput}
+  echo Generating ${scOutput}
 
-  cp ${domainPVInput} ${pvOutput}
-  sed -i -e "s:%PERSISTENT_VOLUME_NAME%:${persistentVolumeClaimName}:g" ${pvOutput}
-  sed -i -e "s:%AZURE_FILE_SHARE_SECRET_NAME%:${azureFileShareSecretName}:g" ${pvOutput}
-  sed -i -e "s:%AZURE_FILE_SHARE_NAME%:${azureStorageShareName}:g" ${pvOutput}
-  sed -i -e "s:%STORAGE_CLASS_NAME%:${azureStorageClassName}:g" ${pvOutput}
+  cp ${storageClassInput} ${scOutput}  
+  sed -i -e "s:%STORAGE_CLASS_NAME%:${azureFileCsiNfsClassName}:g" ${scOutput}
+  sed -i -e "s:%AZURE_FILE_SHARE_NAME%:${azureStorageShareName}:g" ${scOutput}
+  sed -i -e "s:%STORAGE_ACCOUNT_RESOURCE_GROUP_NAME%:${azureResourceGroupName}:g" ${scOutput}
+  sed -i -e "s:%STORAGE_ACCOUNT_NAME%:${storageAccountName}:g" ${scOutput}
 
   # Generate the yaml to create the persistent volume claim
   echo Generating ${pvcOutput}
 
   cp ${domainPVCInput} ${pvcOutput}
   sed -i -e "s:%PERSISTENT_VOLUME_CLAIM_NAME%:${persistentVolumeClaimName}:g" ${pvcOutput}
-  sed -i -e "s:%STORAGE_CLASS_NAME%:${azureStorageClassName}:g" ${pvcOutput}
+  sed -i -e "s:%STORAGE_CLASS_NAME%:${azureFileCsiNfsClassName}:g" ${pvcOutput}
 
   # Generate the yaml to create WebLogic Server domain.
   echo Generating ${domain1Output}
@@ -234,11 +241,11 @@ createYamlFiles() {
   # javaOptions may contain tokens that are not allowed in export command
   # we need to handle it differently.
   # we set the javaOptions variable that can be used later
-  tmpStr=`grep "javaOptions" ${exportValuesFile}`
+  tmpStr=$(grep "javaOptions" ${exportValuesFile})
   javaOptions=${tmpStr//"javaOptions="/}
 
   # We exclude javaOptions from the exportValuesFile
-  grep -v "javaOptions" ${exportValuesFile} > ${tmpFile}
+  grep -v "javaOptions" ${exportValuesFile} >${tmpFile}
   source ${tmpFile}
   rm ${exportValuesFile} ${tmpFile}
 
@@ -265,142 +272,164 @@ createYamlFiles() {
 }
 
 loginAzure() {
-    # login with a service principal
-    az login --service-principal --username $azureServicePrincipalAppId \
-    --password $azureServicePrincipalClientSecret \
-    --tenant $azureServicePrincipalTenantId
-    echo Login Azure with Servie Principal successfully.
+  # login with a service principal
+  az login --service-principal --username $azureServicePrincipalAppId \
+  --password $azureServicePrincipalClientSecret \
+  --tenant $azureServicePrincipalTenantId
+  echo Login Azure with Servie Principal successfully.
 
-    if [ $? -ne 0 ]; then
-      fail "Login to Azure failed!"
-    fi
+  if [ $? -ne 0 ]; then
+    fail "Login to Azure failed!"
+  fi
 }
 
 createResourceGroup() {
-    # Create a resource group
-    echo Check if ${azureResourceGroupName} exists
-    ret=$(az group exists --name ${azureResourceGroupName})
-    if [ $ret != false ];then
-      fail "${azureResourceGroupName} exists, please change value of namePrefix to generate a new resource group name."
-    fi
+  # Create a resource group
+  echo Check if ${azureResourceGroupName} exists
+  ret=$(az group exists --name ${azureResourceGroupName})
+  if [ $ret != false ]; then
+    fail "${azureResourceGroupName} exists, please change value of namePrefix to generate a new resource group name."
+  fi
 
-    echo Creating Resource Group ${azureResourceGroupName}
-    az group create --name $azureResourceGroupName --location $azureLocation
+  echo Creating Resource Group ${azureResourceGroupName}
+  az group create --name $azureResourceGroupName --location $azureLocation
 }
 
 createAndConnectToAKSCluster() {
-    # Create aks cluster
-    echo Check if ${aksClusterName} exists
-    ret=$(az aks list -g ${azureResourceGroupName} | grep "${aksClusterName}")
-    if [ -n "$ret" ];then
-      fail "AKS instance with name ${aksClusterName} exists."
-    fi
+  # Create aks cluster
+  echo Check if ${aksClusterName} exists
+  ret=$(az aks list -g ${azureResourceGroupName} | grep "${aksClusterName}")
+  if [ -n "$ret" ]; then
+    fail "AKS instance with name ${aksClusterName} exists."
+  fi
 
-    echo Creating Azure Kubernetes Service ${aksClusterName}
-    az aks create --resource-group $azureResourceGroupName \
-    --name $aksClusterName \
-    --vm-set-type VirtualMachineScaleSets \
-    --node-count ${azureKubernetesNodeCount} \
-    --generate-ssh-keys \
-    --nodepool-name ${azureKubernetesNodepoolName} \
-    --node-vm-size ${azureKubernetesNodeVMSize} \
-    --location $azureLocation \
-    --service-principal $azureServicePrincipalAppId \
-    --client-secret $azureServicePrincipalClientSecret
+  echo Creating Azure Kubernetes Service ${aksClusterName}
+  az aks create --resource-group $azureResourceGroupName \
+  --name $aksClusterName \
+  --vm-set-type VirtualMachineScaleSets \
+  --node-count ${azureKubernetesNodeCount} \
+  --generate-ssh-keys \
+  --nodepool-name ${azureKubernetesNodepoolName} \
+  --node-vm-size ${azureKubernetesNodeVMSize} \
+  --location $azureLocation \
+  --service-principal $azureServicePrincipalAppId \
+  --client-secret $azureServicePrincipalClientSecret
 
-    # Connect to AKS cluster
-    echo Connencting to Azure Kubernetes Service.
-    az aks get-credentials --resource-group $azureResourceGroupName --name $aksClusterName
+  # Connect to AKS cluster
+  echo Connencting to Azure Kubernetes Service.
+  az aks get-credentials --resource-group $azureResourceGroupName --name $aksClusterName
 }
 
 createFileShare() {
-    # Create a storage account
-    echo Check if the storage account ${storageAccountName} exists.
-    ret=$(az storage account check-name --name ${storageAccountName})
-    nameAvailable=$(echo "$ret" | grep "nameAvailable" | grep "false")
-    if [ -n "$nameAvailable" ];then
-      echo $ret
-      fail "Storage account ${aksClusterName} is unavaliable."
-    fi
+  # Create a storage account
+  echo Check if the storage account ${storageAccountName} exists.
+  ret=$(az storage account check-name --name ${storageAccountName})
+  nameAvailable=$(echo "$ret" | grep "nameAvailable" | grep "false")
+  if [ -n "$nameAvailable" ]; then
+    echo $ret
+    fail "Storage account ${aksClusterName} is unavaliable."
+  fi
 
-    echo Creating Azure Storage Account ${storageAccountName}.
-    az storage account create \
-    -n $storageAccountName \
-    -g $azureResourceGroupName \
-    -l $azureLocation \
-    --sku ${azureStorageAccountSku}
+  echo Creating Azure Storage Account ${storageAccountName}.
+  az storage account create \
+  -n $storageAccountName \
+  -g $azureResourceGroupName \
+  -l $azureLocation \
+  --sku Premium_LRS \
+  --kind FileStorage \
+  --https-only false \
+  --default-action Deny
 
-    # Export the connection string as an environment variable, this is used when creating the Azure file share
-    export azureStorageConnectionString=$(az storage account show-connection-string \
-    -n $storageAccountName -g $azureResourceGroupName -o tsv)
+  echo Creating Azure NFS file share.
+  az storage share-rm create \
+  --resource-group $azureResourceGroupName \
+  --storage-account $storageAccountName \
+  --name ${azureStorageShareName} \
+  --enabled-protocol NFS \
+  --root-squash NoRootSquash \
+  --quota 100
 
-    # Create the file share
-    echo Check if file share exists
-    ret=$( az storage share exists --name ${azureStorageShareName} --account-name ${storageAccountName} --connection-string $azureStorageConnectionString | grep "exists" | grep false)
-    if [[ "$ret" == "true" ]];then
-      fail "File share name  ${azureStorageShareName} is unavaliable."
-    fi
+  configureStorageAccountNetwork
 
-    echo Creating Azure File Share ${azureStorageShareName}.
-    az storage share create -n $azureStorageShareName \
-    --connection-string $azureStorageConnectionString
+  # Echo storage account name and key
+  echo Storage account name: $storageAccountName
+  echo NFS file share name: ${azureStorageShareName}
 
-    # Get storage account key
-    azureStorageKey=$(az storage account keys list --resource-group $azureResourceGroupName \
-    --account-name $storageAccountName --query "[0].value" -o tsv)
+  # Mount the file share as a volume
+  echo Mounting file share as a volume.
+  kubectl apply -f ${scOutput}
+  kubectl get storageclass ${azureFileCsiNfsClassName} -o yaml
+  kubectl apply -f ${pvcOutput}
+  kubectl get pvc ${persistentVolumeClaimName} -o yaml
 
-    # Echo storage account name and key
-    echo Storage account name: $storageAccountName
-    echo Storage account key: $azureStorageKey
+  checkPvcState ${persistentVolumeClaimName} "Bound"
+}
 
-    # Create a Kubernetes secret
-    echo Creating kubectl secret for Azure File Share ${azureFileShareSecretName}.
-    bash $dirKubernetesSecrets/create-azure-storage-credentials-secret.sh \
-      -s ${azureFileShareSecretName} \
-      -a $storageAccountName \
-      -k $azureStorageKey
+configureStorageAccountNetwork() {
+  # get the resource group name of the AKS managed resources
+  aksMCRGName=$(az aks show --name $aksClusterName --resource-group $azureResourceGroupName -o tsv --query "nodeResourceGroup")
+  echo ${aksMCRGName}
 
-    # Mount the file share as a volume
-    echo Mounting file share as a volume.
-    kubectl apply -f ${pvOutput}
-    kubectl get pv ${persistentVolumeClaimName} -o yaml
-    kubectl apply -f ${pvcOutput}
-    kubectl get pvc ${persistentVolumeClaimName} -o yaml
+  # get network name of AKS cluster
+  aksNetworkName=$(az resource list --resource-group ${aksMCRGName} --resource-type Microsoft.Network/virtualNetworks -o tsv --query '[*].name')
+  echo ${aksNetworkName}
+
+  # get subnet name of AKS agent pool
+  aksSubnetName=$(az network vnet subnet list --resource-group ${aksMCRGName} --vnet-name ${aksNetworkName} -o tsv --query "[*].name")
+  echo ${aksSubnetName}
+
+  aksSubnetId=$(az network vnet subnet list --resource-group ${aksMCRGName} --vnet-name ${aksNetworkName} -o tsv --query "[*].id")
+  echo ${aksSubnetId}
+
+  az network vnet subnet update \
+    --resource-group $aksMCRGName \
+    --name ${aksSubnetName} \
+    --vnet-name ${aksNetworkName} \
+    --service-endpoints Microsoft.Storage
+
+  az storage account network-rule add \
+    --resource-group $azureResourceGroupName \
+    --account-name $storageAccountName \
+    --subnet ${aksSubnetId}
+
+  if [ $? != 0 ]; then
+    fail "Fail to configure network for storage account ${storageAccountName}. Network name: ${aksNetworkName}. Subnet name: ${aksSubnetName}."
+  fi
 }
 
 installWebLogicOperator() {
-    echo `helm version`
-    helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts
-    helm repo update
-    helm install weblogic-operator weblogic-operator/weblogic-operator --version "3.0.0"
+  echo $(helm version)
+  helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts
+  helm repo update
+  helm install weblogic-operator weblogic-operator/weblogic-operator --version "3.3.7"
 }
 
 createWebLogicDomain() {
-    # Create WebLogic Server Domain Credentials.
-    echo Creating WebLogic Server Domain credentials, with user ${weblogicUserName}, domainUID ${domainUID}
-    bash ${dirCreateDomainCredentials}/create-weblogic-credentials.sh -u ${weblogicUserName} \
-    -p ${weblogicAccountPassword} -d ${domainUID}
+  # Create WebLogic Server Domain Credentials.
+  echo Creating WebLogic Server Domain credentials, with user ${weblogicUserName}, domainUID ${domainUID}
+  bash ${dirCreateDomainCredentials}/create-weblogic-credentials.sh -u ${weblogicUserName} \
+  -p ${weblogicAccountPassword} -d ${domainUID}
 
-    # Create Container Registry Credentials.
-    bash $dirKubernetesSecrets/create-docker-credentials-secret.sh \
-      -e ${docker-email} \
-      -p ${dockerPassword} \
-      -u ${dockerUserName} \
-      -s ${imagePullSecretName} \
-      -d container-registry.oracle.com
+  # Create Container Registry Credentials.
+  bash $dirKubernetesSecrets/create-docker-credentials-secret.sh \
+  -e ${docker-email} \
+  -p ${dockerPassword} \
+  -u ${dockerUserName} \
+  -s ${imagePullSecretName} \
+  -d container-registry.oracle.com
 
-    # Create WebLogic Server Domain
-    echo Creating WebLogic Server domain ${domainUID}
-    bash ${dirCreateDomain}/create-domain.sh -i $domain1Output -o ${outputDir} -e -v
+  # Create WebLogic Server Domain
+  echo Creating WebLogic Server domain ${domainUID}
+  bash ${dirCreateDomain}/create-domain.sh -i $domain1Output -o ${outputDir} -e -v
 
-    kubectl  apply -f ${adminLbOutput}
-    kubectl  apply -f ${clusterLbOutput}
+  kubectl apply -f ${adminLbOutput}
+  kubectl apply -f ${clusterLbOutput}
 }
 
 waitForJobComplete() {
-   attempts=0
-   svcState="running"
-   while [ ! "$svcState" == "completed" ] && [ ! $attempts -eq 30 ]; do
+  attempts=0
+  svcState="running"
+  while [ ! "$svcState" == "completed" ] && [ ! $attempts -eq 30 ]; do
     svcState="completed"
     attempts=$((attempts + 1))
     echo Waiting for job completed...${attempts}
@@ -410,25 +439,25 @@ waitForJobComplete() {
     #    ${domainUID}-${adminServerName}, e.g. domain1-admin-server
     #    ${domainUID}-${adminServerName}-ext, e.g. domain1-admin-server-ext
     #    ${domainUID}-${adminServerName}-external-lb, e.g domain1-admin-server-external-lb
-    adminServiceCount=`kubectl get svc | grep -c "${domainUID}-${adminServerName}"`
+    adminServiceCount=$(kubectl get svc | grep -c "${domainUID}-${adminServerName}")
     if [ ${adminServiceCount} -lt 3 ]; then svcState="running"; fi
 
     # If the job is completed, there should have the following services created, .assuming initialManagedServerReplicas=2
     #    ${domainUID}-${managedServerNameBase}1, e.g. domain1-managed-server1
     #    ${domainUID}-${managedServerNameBase}2, e.g. domain1-managed-server2
-    managedServiceCount=`kubectl get svc | grep -c "${domainUID}-${managedServerNameBase}"`
+    managedServiceCount=$(kubectl get svc | grep -c "${domainUID}-${managedServerNameBase}")
     if [ ${managedServiceCount} -lt ${initialManagedServerReplicas} ]; then svcState="running"; fi
 
     # If the job is completed, there should have no service in pending status.
-    pendingCount=`kubectl get svc | grep -c "pending"`
+    pendingCount=$(kubectl get svc | grep -c "pending")
     if [ ${pendingCount} -ne 0 ]; then svcState="running"; fi
 
     # If the job is completed, there should have the following pods running
     #    ${domainUID}-${adminServerName}, e.g. domain1-admin-server
-    #    ${domainUID}-${managedServerNameBase}1, e.g. domain1-managed-server1 
+    #    ${domainUID}-${managedServerNameBase}1, e.g. domain1-managed-server1
     #    to
     #    ${domainUID}-${managedServerNameBase}n, e.g. domain1-managed-servern, n = initialManagedServerReplicas
-    runningPodCount=`kubectl get pods | grep "${domainUID}" | grep -c "Running"`
+    runningPodCount=$(kubectl get pods | grep "${domainUID}" | grep -c "Running")
     if [[ $runningPodCount -le ${initialManagedServerReplicas} ]]; then svcState="running"; fi
 
     echo ==============================Current Status==========================================
@@ -440,8 +469,7 @@ waitForJobComplete() {
 
   # If all the services are completed, print service details
   # Otherwise, ask the user to refer to document for troubleshooting
-  if [ "$svcState" == "completed" ];
-  then 
+  if [ "$svcState" == "completed" ]; then
     kubectl get pods
     kubectl get svc
   else
@@ -451,8 +479,11 @@ waitForJobComplete() {
 
 printSummary() {
   if [ "${executeIt}" = true ]; then
-    regionJsonExcerpt=`az group list --query "[?name=='${azureResourceGroupName}']" | grep location`
-    tokens=($(IFS='"'; for word in $regionJsonExcerpt; do echo "$word"; done))
+    regionJsonExcerpt=$(az group list --query "[?name=='${azureResourceGroupName}']" | grep location)
+    tokens=($(
+      IFS='"'
+      for word in $regionJsonExcerpt; do echo "$word"; done
+    ))
     region=${tokens[2]}
     echo ""
     echo ""
@@ -468,30 +499,30 @@ printSummary() {
     echo ""
 
     if [ "${exposeAdminNodePort}" = true ]; then
-      adminLbIP=`kubectl  get svc ${domainUID}-${adminServerName}-external-lb --output jsonpath='{.status.loadBalancer.ingress[0].ip}'`
+      adminLbIP=$(kubectl get svc ${domainUID}-${adminServerName}-external-lb --output jsonpath='{.status.loadBalancer.ingress[0].ip}')
       echo "Administration console access is available at http://${adminLbIP}:${adminPort}/console"
     fi
 
     echo ""
-    clusterLbIP=`kubectl  get svc ${domainUID}-${clusterName}-external-lb --output jsonpath='{.status.loadBalancer.ingress[0].ip}'`
+    clusterLbIP=$(kubectl get svc ${domainUID}-${clusterName}-external-lb --output jsonpath='{.status.loadBalancer.ingress[0].ip}')
     echo "Cluster external ip is ${clusterLbIP}, after you deploy application to WebLogic Server cluster, you can access it at http://${clusterLbIP}:${managedServerPort}/<your-app-path>"
   fi
   echo ""
   echo "The following files were generated:"
-  echo "  ${pvOutput}"
+  echo "  ${scOutput}"
   echo "  ${pvcOutput}"
   echo "  ${adminLbOutput}"
   echo "  ${clusterLbOutput}"
   echo "  ${domain1Output}"
   echo ""
-  
+
   echo "Completed"
 }
 
 cd ${scriptDir}
 
 cd ..
-export dirSampleScripts=`pwd`
+export dirSampleScripts=$(pwd)
 export dirCreateDomain="${dirSampleScripts}/create-weblogic-domain/domain-home-on-pv"
 export dirCreateDomainCredentials="${dirSampleScripts}/create-weblogic-domain-credentials"
 export dirKubernetesSecrets="${dirSampleScripts}/create-kubernetes-secrets"
@@ -530,7 +561,7 @@ if [ "${executeIt}" = true ]; then
 
   # Create WebLogic Server Domain
   createWebLogicDomain
- 
+
   # Wait for all the jobs completed
   waitForJobComplete
 fi

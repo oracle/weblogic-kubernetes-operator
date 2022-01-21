@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # Description
@@ -10,9 +10,7 @@
 #   * Azure storage account: check if it is created
 #   * Azure file share: check if it's created
 #   * Kubernetes secret for container registry account: check if it's created
-#   * Kubernetes secret for storage account: check if it's created
 #   * Kubernetes secret for WebLogic domain: check if it's created
-#   * Persistent Volume: check if it's mounted and verify the status and storage class
 #   * Persistent Volume Claim: check if it's mounted and verify the status and storage class
 
 # Initialize
@@ -27,10 +25,8 @@ usage() {
   echo "  --storage-account   [Required] ：Storage account name."
   
   echo "  --domain-uid -d     [Required] ：Domain UID."
-  echo "  --pv-name    [Required] : Persistent Volume name."
-  echo "  --pvc-name   [Required] : Persistent Volume Claim name."
+  echo "  --pvc-name          [Required] : Persistent Volume Claim name."
   echo "  --secret-docker     [Required] : Name of the Kubernetes secret that stores docker account."
-  echo "  --secret-storage    [Required] : Name of the  Kubernetes secret that stores Azure storage file share credentials."
   echo "  --help -h                      ：Help"
   exit $1
 }
@@ -87,16 +83,6 @@ while test $# -gt 0; do
         fi
         shift
     ;;
-    --pv-name*)
-        shift
-        if test $# -gt 0; then
-            export pvName=$1
-        else
-            echo "Persistent Volume name is required."
-            exit 1
-        fi
-        shift
-    ;;
     --pvc-name*)
         shift
         if test $# -gt 0; then
@@ -113,16 +99,6 @@ while test $# -gt 0; do
             export secretDocker=$1
         else
             echo "Secret name for Container Registry Account is required."
-            exit 1
-        fi
-        shift
-    ;;
-    --secret-storage*)
-        shift
-        if test $# -gt 0; then
-            export secretStorage=$1
-        else
-            echo "Secret name for Storage is required."
             exit 1
         fi
         shift
@@ -147,10 +123,6 @@ if [ -z ${fileShare} ]; then
   echo "${script}: --file-share must be specified."
   missingRequiredOption="true"
 fi
-if [ -z ${pvName} ]; then
-  echo "${script}: --pv-name must be specified."
-  missingRequiredOption="true"
-fi
 if [ -z ${pvcName} ]; then
   echo "${script}: --pvc-name must be specified."
   missingRequiredOption="true"
@@ -161,10 +133,6 @@ if [ -z ${resourceGroup} ]; then
 fi
 if [ -z ${secretDocker} ]; then
   echo "${script}: --secret-docker must be specified."
-  missingRequiredOption="true"
-fi
-if [ -z ${secretStorage} ]; then
-  echo "${script}: --secret-storage must be specified."
   missingRequiredOption="true"
 fi
 if [ -z ${storageAccount} ]; then
@@ -219,7 +187,7 @@ validateFileShare() {
     -n $storageAccount -g $resourceGroup -o tsv)
 
     echo Check if file share exists
-    ret=$( az storage share exists --name ${fileShare} --account-name ${storageAccount} --connection-string $azureStorageConnectionString | grep "exists" | grep false)
+    ret=$( az storage share-rm exists --name ${fileShare} --storage-account ${storageAccount} | grep "exists" | grep false)
     if [ -n "$ret" ];then 
       fail "File share ${fileShare} is unavailable."
     fi
@@ -239,42 +207,13 @@ validateDockerSecret() {
     fi
 }
 
-validateStorageSecret() {
-    kubectl get secret ${secretStorage}
-    if [ $? -ne 0 ]; then
-        fail "Secret:${secretStorage} for storage is not created."
-    fi
-}
-
 validateWebLogicDomainSecret() {
     ret=$(kubectl get secrets | grep "weblogic-credentials")
     if [ $? -ne 0 ]; then
-        fail "Secret:${secretStorage} for storage is not created."
+        fail "Secret:weblogic-credentials is not created."
     fi
 
     export secretWebLogic=$(echo ${ret%% *})
-}
-
-validatePV() {
-    ret=$(kubectl get pv)
-    index=0
-    for item in ${ret};
-    do
-        index=$((index + 1))
-        if [ $index -eq 12 ]; then
-             if [[ "$item" != "$pvName"  ]];then
-                 fail "Persistent Volume name $item does not match value $pvName."
-            fi
-        fi
-        
-        if [[ $index -eq 16  && "$item" != "Bound" ]]; then
-            fail "Persistent Volume status is not Bound."
-        fi
-
-        if [[ $index -eq 18  && "$item" != "azurefile" ]]; then
-            echo "WARNING" "Storage class $item does not match azurefile, please check."
-        fi
-    done
 }
 
 validatePVC() {
@@ -285,16 +224,12 @@ validatePVC() {
         index=$((index + 1))
         if [ $index -eq 9 ]; then
             if [[ "$item" != "$pvcName"  ]];then
-                fail "Persistent Volume name $item does not match value $pvcName."
+                fail "Persistent Volume Claim name $item does not match value $pvcName."
             fi
         fi
         
         if [[ $index -eq 10  && "$item" != "Bound" ]]; then
-            fail "Persistent Volume status is not Bound."
-        fi
-
-        if [[ $index -eq 14  && "$item" != "azurefile" ]]; then
-            echo "WARNING" "Storage class $item does not match azurefile, please check."
+            fail "Persistent Volume Claim status is not Bound."
         fi
     done
 } 
@@ -321,10 +256,8 @@ pass() {
     echo "  Azure Kubernetes Service instance: ${aksName}"
     echo "  Azure storage account: ${storageAccount}"
     echo "  Azure file share: ${fileShare}"
-    echo "  Kubernetes secret for Azure storage: ${secretStorage}"
     echo "  Kubernetes secret for Container Registry Account: ${secretDocker}"
     echo "  Kubernetes secret for WebLogic domain: ${secretWebLogic}"
-    echo "  Persistent Volume: ${pvName}"
     echo "  Persistent Volume Claim: ${pvcName}"
 }
 
@@ -342,11 +275,7 @@ connectAKS
 
 validateDockerSecret
 
-validateStorageSecret
-
 validateWebLogicDomainSecret
-
-validatePV
 
 validatePVC
 
