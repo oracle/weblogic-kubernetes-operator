@@ -7,7 +7,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -144,7 +143,6 @@ class DomainRecheck {
    */
   Step readExistingNamespaces() {
     return new CallBuilder()
-          .withLabelSelectors(Namespaces.getLabelSelectors())
           .listNamespaceAsync(new NamespaceListResponseStep());
   }
 
@@ -171,7 +169,7 @@ class DomainRecheck {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1NamespaceList> callResponse) {
-      final Set<String> domainNamespaces = getNamespacesToStart(getNSMetadata(callResponse.getResult()));
+      final Set<String> domainNamespaces = getNamespacesToStart(callResponse.getResult());
       Namespaces.getFoundDomainNamespaces(packet).addAll(domainNamespaces);
 
       return doContinueListOrNext(callResponse, packet, createNextSteps(domainNamespaces));
@@ -194,18 +192,12 @@ class DomainRecheck {
       return Namespaces.getConfiguredDomainNamespaces() != null;
     }
 
-    private Set<String> getNamespacesToStart(List<V1ObjectMeta> nsMetaDataList) {
-      return nsMetaDataList.stream()
+    private Set<String> getNamespacesToStart(V1NamespaceList namespaces) {
+      return namespaces.getItems().stream()
           .filter(Namespaces::isDomainNamespace)
+          .map(V1Namespace::getMetadata)
           .map(V1ObjectMeta::getName)
           .collect(Collectors.toSet());
-    }
-
-    private List<V1ObjectMeta> getNSMetadata(V1NamespaceList result) {
-      return result.getItems().stream()
-            .map(V1Namespace::getMetadata)
-            .filter(Objects::nonNull)
-            .collect(Collectors.toList());
     }
   }
 

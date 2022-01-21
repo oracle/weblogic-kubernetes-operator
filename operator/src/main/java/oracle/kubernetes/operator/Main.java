@@ -523,7 +523,6 @@ public class Main {
     return NamespaceWatcher.create(
         threadFactory,
         initialResourceVersion,
-        Namespaces.getLabelSelectors(),
         TuningParameters.getInstance().getWatchTuning(),
         this::dispatchNamespaceWatch,
         new AtomicBoolean(false));
@@ -538,7 +537,7 @@ public class Main {
 
     switch (item.type) {
       case "ADDED":
-        if (!Namespaces.isDomainNamespace(metadata)) {
+        if (!Namespaces.isDomainNamespace(item.object)) {
           return;
         }
 
