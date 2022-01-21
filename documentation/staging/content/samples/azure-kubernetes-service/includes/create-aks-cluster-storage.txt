@@ -1,86 +1,147 @@
-#### Create storage and set up file share
+#### Create storage
 
 Our usage pattern for the operator involves creating Kubernetes "persistent volumes" to allow the WebLogic Server to persist its configuration and data separately from the Kubernetes Pods that run WebLogic Server workloads.
 
 We will create an external data volume to access and persist data. There are several options for data sharing as described in [Storage options for applications in Azure Kubernetes Service (AKS)](https://docs.microsoft.com/azure/aks/concepts-storage).
 
-We will use Azure Files as a Kubernetes volume. For details about this full featured cloud storage solution, see the [Azure Files Documentation](https://docs.microsoft.com/azure/aks/azure-files-volume).
+We will dynamically create and use a persistent volume with Azure Files NFS share.  For details about this full featured cloud storage solution, see the [Azure Files Documentation](https://docs.microsoft.com/en-us/azure/aks/azure-files-dynamic-pv).
 
-##### Create an Azure Storage account
+##### Create an Azure Storage account and NFS share
 
-Create a storage account using the Azure CLI. Note that the storage account name can contain only lowercase letters and numbers, and must be between 3 and 24 characters in length:
+1. Create an Azure Storage Account
 
-```shell
-# Change the value as needed for your own environment
-$ export AKS_PERS_STORAGE_ACCOUNT_NAME="${NAME_PREFIX}storage${TIMESTAMP}"
+    Create a storage account using the Azure CLI. Make sure the following values must be specified:
 
-$ az storage account create \
-   -n $AKS_PERS_STORAGE_ACCOUNT_NAME \
-   -g $AKS_PERS_RESOURCE_GROUP \
-   -l $AKS_PERS_LOCATION \
-   --sku Standard_LRS
-```
+    | Option name | Value | Notes |
+    |-------------------|---------------|-------|
+    | `name` | `$AKS_PERS_STORAGE_ACCOUNT_NAME` | The storage account name can contain only lowercase letters and numbers, and must be between 3 and 24 characters in length. |
+    | `sku`  | `Premium_LRS` | Only `Premium_LRS` and `Premium_ZRS` work for NFS share, see the [Azure Files NFS Share Documentation](https://docs.microsoft.com/en-us/azure/storage/files/storage-files-how-to-create-nfs-shares?tabs=azure-portal#applies-to)|
+    | `https-only` | `false` | You can't mount an NFS file share unless you disable secure transfer. |
+    | `default-action` | `Deny` | For security, we suggest to deny access by default, and choose to allow access from AKS cluster network. |
 
-Successful output will be a JSON object with the entry `"type": "Microsoft.Storage/storageAccounts"`.
+    ```shell
+    # Change the value as needed for your own environment
+    $ export AKS_PERS_STORAGE_ACCOUNT_NAME="${NAME_PREFIX}storage${TIMESTAMP}"
 
-Now we need to create a file share. To create the file share, you need a storage connection string. Run the `show-connection-string` command to get connection string, then create the share with `az storage share create`, as shown here.
+    $ az storage account create \
+        --resource-group $AKS_PERS_RESOURCE_GROUP \
+        --name $AKS_PERS_STORAGE_ACCOUNT_NAME \
+        --location $AKS_PERS_LOCATION \
+        --sku Premium_LRS \
+        --kind FileStorage \
+        --https-only false \
+        --default-action Deny
+    ```
 
-```shell
-# Change value as needed for your own environment
-$ export AKS_PERS_SHARE_NAME="${NAME_PREFIX}-weblogic-${TIMESTAMP}"
-# Get connection string
-$ export AZURE_STORAGE_CONNECTION_STRING=$(az storage account show-connection-string -n $AKS_PERS_STORAGE_ACCOUNT_NAME -g $AKS_PERS_RESOURCE_GROUP -o tsv)
-# Create file share
-$ az storage share create -n $AKS_PERS_SHARE_NAME --connection-string $AZURE_STORAGE_CONNECTION_STRING
-```
+    Successful output will be a JSON object with the entry `"type": "Microsoft.Storage/storageAccounts"`.
 
-Successful output will be exactly the following:
+2. Create a NFS share
 
-```shell
-{
-  "created": true
-}
-```
+    To create the file share, you must use `NoRootSquash` to allow the operator to change the ownership of the directory in NFS share.
 
-The operator uses Kubernetes Secrets.  We need a storage key for the secret. These commands query the storage account to obtain the key, and then stores the storage account key as a Kubernetes secret.
+    Otherwise, you will get an error like `chown: changing ownership of '/shared': Operation not permitted`.
 
-```shell
-$ export STORAGE_KEY=$(az storage account keys list --resource-group $AKS_PERS_RESOURCE_GROUP --account-name $AKS_PERS_STORAGE_ACCOUNT_NAME --query "[0].value" -o tsv)
-```
+    The following command creates a NFS share with 100GiB:
 
-Verify the successful output by examining the `STORAGE_KEY` environment variable.  It must not be empty.  It must be a long ASCII string.
+    ```shell
+    # Change value as needed for your own environment
+    $ export AKS_PERS_SHARE_NAME="${NAME_PREFIX}-weblogic-${TIMESTAMP}"
+    # Create NFS file share
+    $ az storage share-rm create \
+        --resource-group $AKS_PERS_RESOURCE_GROUP \
+        --storage-account $AKS_PERS_STORAGE_ACCOUNT_NAME \
+        --name ${AKS_PERS_SHARE_NAME} \
+        --enabled-protocol NFS \
+        --root-squash NoRootSquash \
+        --quota 100
+    ```
 
-We will use the `kubernetes/samples/scripts/create-kubernetes-secrets/create-azure-storage-credentials-secret.sh` script to create the storage account key as a Kubernetes secret, naming the secret with value `${NAME_PREFIX}azure-secret`. Please run:
+    The command provisions a NFS file share with NFS 4.1 or above.
 
-```shell
-# Please change persistentVolumeClaimNameSuffix if you changed pre-defined value "regcred" before generating the configuration files.
-$ export SECRET_NAME_AZURE_FILE="${NAME_PREFIX}azure-secret"
+3. Configure network security
 
-#cd kubernetes/samples/scripts/create-kubernetes-secrets
-$ ./create-azure-storage-credentials-secret.sh -s $SECRET_NAME_AZURE_FILE -a $AKS_PERS_STORAGE_ACCOUNT_NAME -k $STORAGE_KEY
-```
+    We have to configure the network security allowing access from AKS cluster to the storage account.
 
-You will see the following output:
+    Firstly, we have to get the virtual network name and the subnet name of the AKS cluster. 
 
-```text
-secret/wlsazure-secret created
-The secret wlsazure-secret has been successfully created in the default namespace.
-```
+    Run the following commands to get network information:
 
-##### Create PV and PVC
+    ```shell
+    # get the resource group name of the AKS managed resources
+    $ aksMCRGName=$(az aks show --name $AKS_CLUSTER_NAME --resource-group $AKS_PERS_RESOURCE_GROUP -o tsv --query "nodeResourceGroup")
+    $ echo ${aksMCRGName}
 
-This sample uses Kubernetes Persistent Volume Claims (PVC) as storage resource.  These features are passed to Kubernetes using YAML files.  The script `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks.sh` generates the required configuration files automatically, given an input file containing the parameters.  A parameters file is provided at `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks-inputs.yaml`.  Copy and customize this file for your needs.
+    # get network name of AKS cluster
+    $ aksNetworkName=$(az resource list --resource-group ${aksMCRGName} --resource-type Microsoft.Network/virtualNetworks -o tsv --query '[*].name')
+    $ echo ${aksNetworkName}
 
-To generate YAML files to create PV and PVC in the AKS cluster, the following values must be substituted in your copy of the input file.
+    # get subnet name of AKS agent pool
+    $ aksSubnetName=$(az network vnet subnet list --resource-group ${aksMCRGName} --vnet-name ${aksNetworkName} -o tsv --query "[*].name")
+    $ echo ${aksSubnetName}
+
+    # get subnet id of the AKS agent pool
+    $ aksSubnetId=$(az network vnet subnet list --resource-group ${aksMCRGName} --vnet-name ${aksNetworkName} -o tsv --query "[*].id")
+    $ echo ${aksSubnetId}
+    ```
+
+    You must enable the service endpoint `Microsoft.Storage` for the subnet using the following command:
+
+    ```shell
+    $ az network vnet subnet update \
+        --resource-group $aksMCRGName \
+        --name ${aksSubnetName} \
+        --vnet-name ${aksNetworkName} \
+        --service-endpoints Microsoft.Storage
+    ```
+
+    It takes several minutes to enable the service endpoint; successful output will be a JSON object with string like:
+
+    ```text
+    "serviceEndpoints": [
+    {
+      "locations": [
+        "eastus",
+        "westus"
+      ],
+      "provisioningState": "Succeeded",
+      "service": "Microsoft.Storage"
+    }
+    ```
+
+    Now we need to create a network rule to allow access from AKS cluster.
+    The following command enables access from AKS subnet to the storage account: 
+
+    ```shell
+    $ az storage account network-rule add \
+      --resource-group $AKS_PERS_RESOURCE_GROUP \
+      --account-name $AKS_PERS_STORAGE_ACCOUNT_NAME \
+      --subnet ${aksSubnetId}
+    ```
+
+    Successful output will be a JSON object with virtual network rule like:
+
+    ```text
+    "virtualNetworkRules": [
+      {
+        "action": "Allow",
+        "state": "Succeeded",
+        "virtualNetworkResourceId": "${aksSubnetId}"
+      }
+    ]
+    ```
+
+##### Create Storage Class and PVC
+
+This sample will dynamically create and use a persistent volume with Azure Files in AKS.  These features are passed to Kubernetes using YAML files.  
+
+The script `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks.sh` generates the required configuration files automatically, given an input file containing the parameters.  
+
+A parameters file is provided at `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/create-domain-on-aks-inputs.yaml`.  Copy and customize this file for your needs.
+
+To generate YAML files to create Storage Class and PVC in the AKS cluster, the following values must be substituted in your copy of the input file.
 
 | Name in YAML file | Example value | Notes |
 |-------------------|---------------|-------|
-| `azureServicePrincipalAppId` | `nr086o75-pn59-4782-no5n-nq2op0rsr1q6` | Application ID of your service principal. |
-| `azureServicePrincipalClientSecret` | `8693089o-q190-45ps-9319-or36252s3s90` | A client secret of your service principal. |
-| `azureServicePrincipalTenantId` | `72s988os-86s1-cafe-babe-2q7pq011qo47` | Tenant (Directory ) ID of your service principal.|
-| `dockerEmail` | `yourDockerEmail` | Oracle Single Sign-On (SSO) account email, used to pull the WebLogic Server Docker image. |
-| `dockerPassword` | `yourDockerPassword`| Password for Oracle SSO account, used to pull the WebLogic Server Docker image, in clear text. |
-| `dockerUserName` | `yourDockerId` | The same value as `dockerEmail`.  |
 | `namePrefix` | `wls` | Alphanumeric value used as a disambiguation prefix for several Kubernetes resources. Make sure the value matches the value of `${NAME_PREFIX}` to keep names in step-by-step commands the same with those in configuration files. |
 
 Use the following command to generate configuration files, assuming the output directory is `~/azure`.  The script will overwrite any files generated by a previous invocation.
@@ -95,12 +156,11 @@ After running the command, all needed configuration files are generated and outp
 
 ```shell
 The following files were generated:
-  /home/username/azure/weblogic-on-aks/pv.yaml
+  /home/username/azure/weblogic-on-aks/azure-csi-nfs.yaml
   /home/username/azure/weblogic-on-aks/pvc.yaml
   /home/username/azure/weblogic-on-aks/admin-lb.yaml
   /home/username/azure/weblogic-on-aks/cluster-lb.yaml
   /home/username/azure/weblogic-on-aks/domain1.yaml
-  /home/username/azure/weblogic-on-aks/cluster-admin-role.yaml
 
 Completed
 ```
@@ -109,101 +169,54 @@ Completed
 
 ##### Apply generated configuration files
 
-In order to mount the file share as a persistent volume, we have provided a configuration file `pv.yaml`. You can find it in your output directory. The following content is an example that uses the value `wls-weblogic` as "shareName", `wlsazure-secret` as "secretName", and the persistent volume name is `wls-azurefile`.
+In order to define how an Azure file NFS share is created, we have provided a configuration file `azure-csi-nfs.yaml`. You can find it in your output directory. 
 
-We will use the storage class `azurefile`. If you want to create a new class, follow this document [Create a storage class](https://docs.microsoft.com/en-us/azure/aks/azure-files-dynamic-pv#create-a-storage-class). For more information, see the page [Storage options for applications in Azure Kubernetes Service (AKS)](https://docs.microsoft.com/en-us/azure/aks/concepts-storage#storage-classes).
+The following command output the YAML content of your current settings, should be the same with content in `azure-csi-nfs.yaml`; use value `${AKS_PERS_RESOURCE_GROUP}` as "resourceGroup", `${AKS_PERS_STORAGE_ACCOUNT_NAME}` as "storageAccount", 
+`${AKS_PERS_SHARE_NAME}` as "shareName", and the Storage Class name is `azurefile-csi-nfs`. 
 
-```yaml
-apiVersion: v1
-kind: PersistentVolume
+This sample uses Azure Files Container Storage Interface (CSI) drivers to manage the NFS file share, provisioner is `file.csi.azure.com`, see the [Azure Files CSI drivers documentation](https://docs.microsoft.com/en-us/azure/aks/azure-files-csi).
+
+```shell
+cat <<EOF
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
 metadata:
-  name: wls-azurefile
-spec:
-  capacity:
-    storage: 5Gi
-  accessModes:
-    - ReadWriteMany
-  storageClassName: azurefile
-  azureFile:
-    secretName: wlsazure-secret
-    shareName: wls-weblogic-1597391432
-    readOnly: false
-  mountOptions:
-  - dir_mode=0777
-  - file_mode=0777
-  - uid=1000
-  - gid=1000
-  - mfsymlinks
-  - nobrl
+  name: azurefile-csi-nfs
+provisioner: file.csi.azure.com
+parameters:
+  protocol: nfs
+  resourceGroup: ${AKS_PERS_RESOURCE_GROUP}
+  storageAccount: ${AKS_PERS_STORAGE_ACCOUNT_NAME}
+  shareName: ${AKS_PERS_SHARE_NAME}
+reclaimPolicy: Delete
+volumeBindingMode: Immediate
+allowVolumeExpansion: true
+EOF
 ```
 
-**Note:** This sample includes `nobrl` in the `mountOptions` to disable byte range file locking on the `azurefile` storage class.  Currently, this is necessary because the `azurefile` storage class does not support advisory byte range locking.  This approach is documented in the [Azure Kubernetes Service FAQ](https://docs.microsoft.com/en-us/azure/aks/troubleshooting#what-are-the-default-mountoptions-when-using-azure-files).
+We have provided another configuration file `pvc.yaml` for the `PersistentVolumeClaim`.  The `pvc.yaml` have exactly the same Storage Class name created above. This is required. 
+The following command outputs the YAML content of `pvc.yaml`.
 
---------
-
-##### Additional important file locking information
-
-Some action must be taken to deal with the presence or absence of advisory byte range locking when running WebLogic on Kubernetes.  Failure to address this issue will cause WebLogic file store locking issues during domain lifecycle management.  When this happens, WebLogic will not be able to start.
-
-If it is not possible to use a different file system that fully supports advisory byte range locking, such as [NFS file shares in Azure Files](https://docs.microsoft.com/en-us/azure/storage/files/files-nfs-protocol#regional-availability), be aware that disabling locking risks data corruption and additional steps are required to mitigate this risk, as shown in the next section.
-
-Here are several different approaches to disable file locking.
-
-- When using the `azurefile` storage class, you can universally disable locking on the entire file system by enabling the `nobrl` mount option, as shown previously.
-
-   - Note that this affects all software using the same file system. Steps to reduce the consequent corruption risk will vary based on software, and will differ from the steps used for WebLogic.
-
-- You can disable file locking in the WebLogic configuration for each default file store, custom file store, and JMS paging store by following the steps outlined in [Handling NFS Locking Errors](https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/perfm/storetune.html#GUID-A1126893-C60F-4C39-BFCF-0D0F2436478D).
-
-   - When using the operator, you can provide this configuration without needing to modify your original configuration using [configuration overrides](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/configoverrides/) for Domain on PV or Domain in Image, or [runtime updates](https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/model-in-image/runtime-updates/) for Model in Image
-   - Note that this can be a substantial amount of work and error prone as it requires configuration updates for each individual default store, custom file store, and JMS paging store.
-
-- You can disable all file store locks on a particular WebLogic server JVM by _both_ applying patch `32471832` and setting `-Dweblogic.store.file.LockEnabled=false`. When using the operator, you can set command-line  values using the `JAVA_OPTIONS` env var in `spec.serverPod.env` domain resource attribute. This will work for any operator domain home source type.
-
-##### Mitigating corruption risk when locking is disabled
-
-It is important to mitigate the risk of WebLogic data corruption when locking is disabled.
-
-- Do not configure [service migration](https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/clust/service_migration.html#GUID-AEECC92D-88DA-4E07-8C42-A24DBC1C7076) for WebLogic JTA default file stores or custom file stores.
-
-   - File store service migration is not supported when file locking is disabled because it relies on file locks for safe behavior.
-
-   - Service migration is a WebLogic high availability option that is typically configured to enable data recovery on surviving WebLogic Servers in a cluster upon an unexpected WebLogic server failure. It is also used to enable JMS and JTA data recovery from WebLogic Servers that are shutdown due to a cluster shrink.
-
-- If at all possible, do not store important data in WebLogic default or custom file stores.
-
-- Configure WebLogic JMS, JTA, and EJB Timers to use database storage instead of file storage.
-
-   - For example, use the 'TLOG-in-DB' feature for JTA and custom database stores instead of file stores for JMS.
-
-   - This will require a change to your original WebLogic configuration. It is not practical to use operator configuration overrides or runtime updates for this purpose because the changes are too extensive.
-
-- Note that it is fine to configure service migration for database stores even when file locking is disabled.
-
-- Take additional steps in your CI/CD processes to guard against the user errors that file locks normally help prevent.  In particular, ensure you have procedures in place to prevent administrators or testers from mistakenly starting a duplicate WebLogic domain in the same shared file system.
-
---------
-
-We have provided another configuration file `pvc.yaml` for the `PersistentVolumeClaim`.  Both `pv.yaml` and `pvc.yaml` have exactly the same content for `storageClassName` attributes. This is required. We set the same value to the `metadata` property in both files. The following content is an example that uses the persistent volume claim name `wls-azurefile`.
-
-```yaml
+```shell
+cat <<EOF
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: wls-azurefile
+  name: wls-azurefile-${TIMESTAMP}
 spec:
   accessModes:
     - ReadWriteMany
-  storageClassName: azurefile
+  storageClassName: azurefile-csi-nfs
   resources:
     requests:
-      storage: 5Gi
+      storage: 100Gi
+EOF
 ```
 
-Use the `kubectl` command to create the persistent volume and persistent volume claim to the `default` namespace.
+Use the `kubectl` command to create the Storage Class and persistent volume claim to the `default` namespace.
 
 ```shell
-$ kubectl apply -f ~/azure/weblogic-on-aks/pv.yaml
+$ kubectl apply -f ~/azure/weblogic-on-aks/azure-csi-nfs.yaml
 persistentvolume/wls-azurefile created
 $ kubectl apply -f ~/azure/weblogic-on-aks/pvc.yaml
 persistentvolumeclaim/wls-azurefile created
@@ -212,18 +225,15 @@ persistentvolumeclaim/wls-azurefile created
 Use the following command to verify:
 
 ```shell
-$ kubectl get pv,pvc
+$ kubectl get pvc
 ```
 
 Example output:
 
 ```shell
-$ kubectl get pv,pvc
-NAME                                          CAPACITY   ACCESS MODES   RECLAIM POLICY   STATUS   CLAIM                                STORAGECLASS   REASON   AGE
-persistentvolume/wls-azurefile   5Gi        RWX            Retain           Bound    default/wls-azurefile   azurefile               16m
-
-NAME                                               STATUS   VOLUME                       CAPACITY   ACCESS MODES   STORAGECLASS   AGE
-persistentvolumeclaim/wls-azurefile   Bound    wls-azurefile   5Gi        RWX            azurefile      16m
+$ kubectl get pvc
+NAME                       STATUS   VOLUME                                     CAPACITY   ACCESS MODES   STORAGECLASS        AGE
+wls-azurefile-1612795811   Bound    pvc-b9c0dfbb-0cee-4362-809e-1621894c5794   100Gi      RWX            azurefile-csi-nfs   17s
 ```
 
 **Note**: Carefully inspect the output and verify it matches the above. `ACCESS MODES`, `CLAIM`, and `STORAGECLASS` are vital.
