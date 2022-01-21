@@ -26,7 +26,7 @@ public class AuxiliaryImage {
   /**
    * The auxiliary image.
    */
-  @Description("The auxiliary image containing Model in Image model files, application archive files and/or WebLogic "
+  @Description("The auxiliary image containing Model in Image model files, application archive files, and/or WebLogic "
           + "Deploying Tooling installation files. Required.")
   @NotNull
   private String image;
@@ -38,18 +38,18 @@ public class AuxiliaryImage {
   private String imagePullPolicy;
 
   @Description("The source location of the WebLogic Deploy Tooling installation within the auxiliary image that will "
-          + "be made available in the '/aux/weblogic-deploy' directory of the WebLogic Server container in all pods. "
-          + "Defaults to '/auxiliary/weblogic-deploy'. If the value is set to 'None' or no files found at "
+          + "be made available in the `/aux/weblogic-deploy` directory of the WebLogic Server container in all pods. "
+          + "Defaults to `/auxiliary/weblogic-deploy`. If the value is set to `None` or no files are found at "
           + "the default location, then the source directory is ignored. When specifying multiple auxiliary images, "
           + "ensure that only one of the images supplies a WDT install home; if more than one WDT install home is "
           + "provided, then the domain deployment will fail.")
   private String sourceWDTInstallHome;
 
   @Description("The source location of the WebLogic Deploy Tooling model home within the auxiliary image that will "
-          + "be made available in the '/aux/models' directory of the WebLogic Server container in all pods. "
-          + "Defaults to '/auxiliary/models'. If the value is set to 'None' or no files found at the default location, "
-          + "then the source directory is ignored. If specifying multiple auxiliary images with model files in their "
-          + "respective 'sourceModelHome' directories, then model files are merged.")
+          + "be made available in the `/aux/models` directory of the WebLogic Server container in all pods. "
+          + "Defaults to `/auxiliary/models`. If the value is set to `None` or no files are found at the default "
+          + "location, then the source directory is ignored. If specifying multiple auxiliary images with model files "
+          + "in their respective `sourceModelHome` directories, then model files are merged.")
   private String sourceModelHome;
 
   public String getImage() {
