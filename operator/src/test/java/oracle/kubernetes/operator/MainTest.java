@@ -476,7 +476,7 @@ class MainTest extends ThreadFactoryTestBase {
   }
 
   @Test
-  void withLabelSelector_onCreateReadNamespaces_ignoreSelectorOnList_startsNamespaces() {
+  void withLabelSelector_returnAllNamespacesOnCreateReadNamespaces_startsExpectedNamespaces() {
     defineSelectionStrategy(SelectionStrategy.LabelSelector);
     testSupport.defineResources(NAMESPACE_WEBLOGIC1, NAMESPACE_WEBLOGIC2, NAMESPACE_WEBLOGIC3,
         NAMESPACE_WEBLOGIC4, NAMESPACE_WEBLOGIC5);
