@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -164,14 +164,6 @@ public abstract class BaseConfiguration {
 
   ProbeTuning getReadinessProbe() {
     return serverPod.getReadinessProbeTuning();
-  }
-
-  List<AuxiliaryImage> getAuxiliaryImages() {
-    return serverPod.getAuxiliaryImages();
-  }
-
-  void setAuxiliaryImages(List<AuxiliaryImage> auxiliaryImageList) {
-    serverPod.setAuxiliaryImages(auxiliaryImageList);
   }
 
   Shutdown getShutdown() {
