@@ -80,6 +80,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
+import org.apache.commons.lang3.ArrayUtils;
 import org.jetbrains.annotations.NotNull;
 
 import static java.net.HttpURLConnection.HTTP_INTERNAL_ERROR;
@@ -769,9 +770,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
 
     private Predicate<Object> withLabels(String[] labelSelectors) {
-      return o -> (labelSelectors == null
-          || labelSelectors.length == 0
-          || hasLabels(getMetadata(o), labelSelectors));
+      return o -> (ArrayUtils.isEmpty(labelSelectors) || hasLabels(getMetadata(o), labelSelectors));
     }
 
     private boolean hasLabels(V1ObjectMeta metadata, String[] selectors) {

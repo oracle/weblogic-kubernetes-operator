@@ -171,7 +171,7 @@ class DomainRecheck {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1NamespaceList> callResponse) {
-      final Set<String> domainNamespaces = getNames(getNamespacesToStart(getNSMetadata(callResponse.getResult())));
+      final Set<String> domainNamespaces = getNamespacesToStart(getNSMetadata(callResponse.getResult()));
       Namespaces.getFoundDomainNamespaces(packet).addAll(domainNamespaces);
 
       return doContinueListOrNext(callResponse, packet, createNextSteps(domainNamespaces));
@@ -194,8 +194,11 @@ class DomainRecheck {
       return Namespaces.getConfiguredDomainNamespaces() != null;
     }
 
-    private List<V1ObjectMeta> getNamespacesToStart(List<V1ObjectMeta> nsMetaDataList) {
-      return nsMetaDataList.stream().filter(Namespaces::isDomainNamespace).collect(Collectors.toList());
+    private Set<String> getNamespacesToStart(List<V1ObjectMeta> nsMetaDataList) {
+      return nsMetaDataList.stream()
+          .filter(Namespaces::isDomainNamespace)
+          .map(V1ObjectMeta::getName)
+          .collect(Collectors.toSet());
     }
 
     private List<V1ObjectMeta> getNSMetadata(V1NamespaceList result) {
@@ -203,13 +206,6 @@ class DomainRecheck {
             .map(V1Namespace::getMetadata)
             .filter(Objects::nonNull)
             .collect(Collectors.toList());
-    }
-
-    private Set<String> getNames(List<V1ObjectMeta> nsMetadataList) {
-      return nsMetadataList.stream()
-          .filter(Objects::nonNull)
-          .map(V1ObjectMeta::getName)
-          .collect(Collectors.toSet());
     }
   }
 

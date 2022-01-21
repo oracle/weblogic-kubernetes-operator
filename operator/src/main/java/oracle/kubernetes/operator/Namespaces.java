@@ -29,6 +29,7 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import org.apache.commons.lang3.ArrayUtils;
 
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STOPPED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.STOP_MANAGING_NAMESPACE;
@@ -126,7 +127,7 @@ public class Namespaces {
 
       @Override
       public boolean isDomainNamespace(@Nonnull V1ObjectMeta nsMetadata) {
-        // although filtering is done by Kubernetes list call, there is a rice condition where readExistingNamespaces
+        // although filtering is done by Kubernetes list call, there is a race condition where readExistingNamespaces
         // may give us a namespace that does not match the required label selector when the operator's selection
         // strategy is changed from List to LabelSelector when the operator is running.
         String[] selectors = getLabelSelectors();
@@ -135,7 +136,7 @@ public class Namespaces {
       }
 
       private boolean matchSpecifiedLabelSelectors(@NotNull V1ObjectMeta nsMetadata, String[] selectors) {
-        return selectors == null || selectors.length == 0 || hasLabels(nsMetadata, selectors);
+        return ArrayUtils.isEmpty(selectors) || hasLabels(nsMetadata, selectors);
       }
 
       private boolean hasLabels(@NotNull V1ObjectMeta metadata, String[] selectors) {
