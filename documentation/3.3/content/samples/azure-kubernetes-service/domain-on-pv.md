@@ -572,7 +572,7 @@ The test application will list the server host and server IP on the page.
 There are several approaches to validate the NFS volume:
 
 - Use Azure Storage bowser, make sure you have permission to access the NFS server, see [Azure Storage firewalls and virtual networks document](https://docs.microsoft.com/en-us/azure/storage/common/storage-network-security?tabs=azure-portal)
-- Mount the same NFS share in an existing machine, access files from the mounted path.
+- Mount the same NFS share in an existing virtual machine from Azure, access files from the mounted path, see [Mount Azure NFS file share to Linux](https://docs.microsoft.com/en-us/azure/storage/files/storage-files-how-to-mount-nfs-shares).
 
 We will use `kubectl exec` to enter the admin server pod to check file system status:
 
