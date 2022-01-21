@@ -384,7 +384,9 @@ if [ "$DO_INITIAL_MAIN" = "true" ]; then
 
   doCommand    "\$MIIWRAPPERDIR/stage-domain-resource.sh"
   doCommand    "\$MIIWRAPPERDIR/create-secrets.sh"
-  doCommand    "\$MIIWRAPPERDIR/stage-and-create-ingresses.sh"
+  if [ "$OKD" = "false" ]; then
+    doCommand    "\$MIIWRAPPERDIR/stage-and-create-ingresses.sh"
+  fi
 
   doCommand -c "kubectl -n \$DOMAIN_NAMESPACE delete domain \$DOMAIN_UID --ignore-not-found"
   doPodWait 0
@@ -482,7 +484,9 @@ if [ "$DO_UPDATE2" = "true" ]; then
 
   doCommand    "\$MIIWRAPPERDIR/stage-domain-resource.sh"
   doCommand    "\$MIIWRAPPERDIR/create-secrets.sh"
-  doCommand    "\$MIIWRAPPERDIR/stage-and-create-ingresses.sh"
+  if [ "$OKD" = "false" ]; then
+    doCommand    "\$MIIWRAPPERDIR/stage-and-create-ingresses.sh"
+  fi
   doCommand -c "\$WORKDIR/utils/create-configmap.sh -c \${DOMAIN_UID}-wdt-config-map -f \${WORKDIR}/model-configmaps/datasource -d \$DOMAIN_UID -n \$DOMAIN_NAMESPACE"
 
   doCommand -c "kubectl -n \$DOMAIN_NAMESPACE delete domain \$DOMAIN_UID --ignore-not-found"

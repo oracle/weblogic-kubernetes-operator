@@ -166,14 +166,6 @@ public abstract class BaseConfiguration {
     return serverPod.getReadinessProbeTuning();
   }
 
-  List<AuxiliaryImage> getAuxiliaryImages() {
-    return serverPod.getAuxiliaryImages();
-  }
-
-  void setAuxiliaryImages(List<AuxiliaryImage> auxiliaryImageList) {
-    serverPod.setAuxiliaryImages(auxiliaryImageList);
-  }
-
   Shutdown getShutdown() {
     return serverPod.getShutdown();
   }
