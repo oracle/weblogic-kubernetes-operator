@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -16,6 +16,7 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.utils.OperatorUtils;
 
 import static oracle.kubernetes.operator.helpers.LegalNames.LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH;
+import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
 
 class DomainValidationMessages {
 
@@ -27,25 +28,6 @@ class DomainValidationMessages {
    */
   static String duplicateServerName(@Nonnull String serverName) {
     return getMessage(MessageKeys.DUPLICATE_SERVER_NAME_FOUND, serverName);
-  }
-
-  /**
-   * Returns a validation message indicating that more than one auxiliary image volume has same name
-   * after DNS-1123 conversion.
-   * @param volumeName the duplicate volume name
-   * @return the localized message
-   */
-  static String duplicateAuxiliaryImageVolumeName(@Nonnull String volumeName) {
-    return getMessage(MessageKeys.DUPLICATE_AUXILIARY_IMAGE_VOLUME_FOUND, volumeName);
-  }
-
-  /**
-   * Returns a validation message indicating that more than one auxiliary image volume has same mountPath.
-   * @param mountPath the duplicate mount path
-   * @return the localized message
-   */
-  static String duplicateAIVMountPath(@Nonnull String mountPath) {
-    return getMessage(MessageKeys.DUPLICATE_AUXILIARY_IMAGE_PATH_FOUND, mountPath);
   }
 
   /**
@@ -140,16 +122,12 @@ class DomainValidationMessages {
     return getMessage(MessageKeys.ILLEGAL_INTROSPECTOR_JOB_NAME_LENGTH, domainUid, result, limit);
   }
 
-  public static String noMatchingAuxiliaryImageVolumeDefined(String volumeName) {
-    return getMessage(MessageKeys.NO_MATCHING_AUXILIARY_IMAGE_VOLUME_DEFINED, volumeName);
+  public static String mountPathForAuxiliaryImageAlreadyInUse() {
+    return getMessage(MessageKeys.MOUNT_PATH_FOR_AUXILIARY_IMAGE_ALREADY_IN_USE, DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH);
   }
 
-  public static String noAuxiliaryImageVolumeDefined() {
-    return getMessage(MessageKeys.NO_AUXILIARY_IMAGE_VOLUME_DEFINED);
-  }
-
-  public static String auxiliaryImageVolumeNameNotDefined() {
-    return getMessage(MessageKeys.AUXILIARY_IMAGE_VOLUME_NAME_NOT_DEFINED);
+  public static String moreThanOneAuxiliaryImageConfiguredWDTInstallHome() {
+    return getMessage(MessageKeys.MORE_THAN_ONE_AUXILIARY_IMAGE_CONFIGURED_WDT_INSTALL_HOME);
   }
 
   public static String exceedMaxClusterServiceName(String domainUid, String clusterName, String result, int limit) {
@@ -182,4 +160,11 @@ class DomainValidationMessages {
             LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH);
   }
 
+  public static String invalidWdtInstallHome(String wdtInstallHome, String modelHome) {
+    return getMessage(MessageKeys.INVALID_WDT_INSTALL_HOME, wdtInstallHome, modelHome);
+  }
+
+  public static String invalidModelHome(String wdtInstallHome, String modelHome) {
+    return getMessage(MessageKeys.INVALID_MODEL_HOME, wdtInstallHome, modelHome);
+  }
 }
