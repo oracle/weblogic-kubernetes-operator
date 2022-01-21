@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -11,12 +11,12 @@ import java.util.Optional;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Service;
-import oracle.kubernetes.operator.KubernetesConstants;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.ShutdownType;
@@ -40,6 +40,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.ServerSpec;
 import oracle.kubernetes.weblogic.domain.model.Shutdown;
 
+import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.LabelConstants.CLUSTERNAME_LABEL;
 
 public class ShutdownManagedServerStep extends Step {
@@ -149,7 +150,7 @@ public class ShutdownManagedServerStep extends Step {
     }
 
     protected boolean isK8sContainer(V1Container c) {
-      return KubernetesConstants.WLS_CONTAINER_NAME.equals(c.getName());
+      return WLS_CONTAINER_NAME.equals(c.getName());
     }
 
     private String getEnvValue(List<V1EnvVar> vars, String name) {
@@ -213,11 +214,31 @@ public class ShutdownManagedServerStep extends Step {
 
     protected PortDetails getPortDetails() {
       Integer port = getWlsServerPort();
-      return new PortDetails(port, !port.equals(getWlsServerConfig().getListenPort()));
+      boolean isSecure = port != null && getWlsServerConfig() != null
+          && !port.equals(getWlsServerConfig().getListenPort());
+      return new PortDetails(port, isSecure);
     }
 
     private Integer getWlsServerPort() {
-      return getWlsServerConfig().getListenPort();
+      Integer listenPort = Optional.ofNullable(getWlsServerConfig()).map(WlsServerConfig::getListenPort)
+          .orElse(null);
+
+      if (listenPort == null) {
+        // This can only happen if the running server pod does not exist in the WLS Domain.
+        // This is a rare case where the server was deleted from the WLS Domain config.
+        listenPort = getListenPortFromPod(this.pod);
+      }
+
+      return listenPort;
+    }
+
+    private Integer getListenPortFromPod(V1Pod pod) {
+      return getContainer(pod.getSpec()).map(V1Container::getPorts).get().stream()
+          .filter(this::isTCPProtocol).findFirst().get().getContainerPort();
+    }
+
+    protected boolean isTCPProtocol(V1ContainerPort port) {
+      return "TCP".equals(port.getProtocol());
     }
 
     private WlsServerConfig getWlsServerConfig() {

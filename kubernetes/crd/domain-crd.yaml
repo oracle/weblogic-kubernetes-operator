@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 386a03c7101614583aa5e1035288ff3bb549df26089200d717d6b871ddf7dc3f
+    weblogic.sha256: 69ced51aa6a213b32ae00ea7a131d59fe23fdab3f07496fda4e1f8c52a1e7038
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle

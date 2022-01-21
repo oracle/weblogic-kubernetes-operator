@@ -420,7 +420,7 @@ class DomainProcessorTest {
   @Test
   void whenDomainScaledDown_removeExcessPodsAndServices() {
     defineServerResources(ADMIN_NAME);
-    Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineClusteredServerResources);
+    Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
 
     domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
     processor.createMakeRightOperation(new DomainPresenceInfo(newDomain)).withExplicitRecheck().execute();
@@ -432,7 +432,7 @@ class DomainProcessorTest {
   @Test
   void whenDomainScaledDown_withPreCreateServerService_doesNotRemoveServices() {
     defineServerResources(ADMIN_NAME);
-    Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineClusteredServerResources);
+    Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
 
     domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS).withPrecreateServerService(true);
 
@@ -456,7 +456,7 @@ class DomainProcessorTest {
   @Test
   void whenDomainShutDown_removeAllPodsServicesAndPodDisruptionBudgets() {
     defineServerResources(ADMIN_NAME);
-    Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineClusteredServerResources);
+    Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
 
     DomainPresenceInfo info = new DomainPresenceInfo(domain);
     processor.createMakeRightOperation(info).interrupt().forDeletion().withExplicitRecheck().execute();
@@ -469,7 +469,7 @@ class DomainProcessorTest {
   @Test
   void whenDomainShutDown_ignoreNonOperatorServices() {
     defineServerResources(ADMIN_NAME);
-    Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineClusteredServerResources);
+    Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
     testSupport.defineResources(createNonOperatorService());
 
     DomainPresenceInfo info = new DomainPresenceInfo(domain);
@@ -523,7 +523,7 @@ class DomainProcessorTest {
   @Test
   void whenDomainShutDown_ignoreNonOperatorPodDisruptionBudgets() {
     defineServerResources(ADMIN_NAME);
-    Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineClusteredServerResources);
+    Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
     testSupport.defineResources(createNonOperatorPodDisruptionBudget());
 
     DomainPresenceInfo info = new DomainPresenceInfo(domain);
@@ -537,7 +537,7 @@ class DomainProcessorTest {
   @Test
   void whenMakeRightExecuted_ignoreNonOperatorPodDisruptionBudgets() {
     defineServerResources(ADMIN_NAME);
-    Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineClusteredServerResources);
+    Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
     testSupport.defineResources(createNonOperatorPodDisruptionBudget());
 
 
@@ -1063,7 +1063,7 @@ class DomainProcessorTest {
     domainConfigurator.configureCluster(CLUSTER).withReplicas(MIN_REPLICAS);
     defineServerResources(ADMIN_NAME);
     for (Integer i : msNumbers) {
-      defineClusteredServerResources(getManagedServerName(i));
+      defineServerResources(getManagedServerName(i));
     }
     DomainProcessorImpl.registerDomainPresenceInfo(new DomainPresenceInfo(domain));
     testSupport.defineResources(createIntrospectorConfigMap(OLD_INTROSPECTION_STATE, clusterNames, independentServers));
@@ -1521,11 +1521,7 @@ class DomainProcessorTest {
   }
 
   private void defineServerResources(String serverName, String clusterName) {
-    testSupport.defineResources(createServerPod(serverName, clusterName), createServerService(serverName));
-  }
-
-  private void defineClusteredServerResources(String serverName) {
-    testSupport.defineResources(createServerPod(serverName), createServerService(serverName, CLUSTER));
+    testSupport.defineResources(createServerPod(serverName, clusterName), createServerService(serverName, clusterName));
   }
 
   /**/
