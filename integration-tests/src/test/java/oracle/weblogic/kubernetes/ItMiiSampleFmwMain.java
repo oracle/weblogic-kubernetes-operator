@@ -52,7 +52,7 @@ class ItMiiSampleFmwMain {
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF initial use case")
   void testFmwInitialUseCase() {
-    myItMiiSampleHelper.callInitialUseCase();
+    myItMiiSampleHelper.callInitialUseCase(this.getClass().getSimpleName().toLowerCase());
   }
 
 
@@ -65,7 +65,8 @@ class ItMiiSampleFmwMain {
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update1 use case")
   void testFmwUpdate1UseCase() {
-    myItMiiSampleHelper.callUpdateUseCase("-update1", "Update1 use case failed");
+    myItMiiSampleHelper
+        .callUpdateUseCase("-update1", "Update1 use case failed", this.getClass().getSimpleName().toLowerCase());
   }
 
   /**
@@ -77,7 +78,8 @@ class ItMiiSampleFmwMain {
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update2 use case")
   void testFmwUpdate2UseCase() {
-    myItMiiSampleHelper.callUpdateUseCase("-update2", "Update2 use case failed");
+    myItMiiSampleHelper
+        .callUpdateUseCase("-update2", "Update2 use case failed", this.getClass().getSimpleName().toLowerCase());
   }
 
   /**
@@ -90,7 +92,7 @@ class ItMiiSampleFmwMain {
   @DisplayName("Test to verify MII sample JRF update3 use case")
   void testFmwUpdate3UseCase() {
     myItMiiSampleHelper.callUpdateUseCase("-update3-image,-check-image-and-push,-update3-main",
-        "Update3 use case failed");
+        "Update3 use case failed", this.getClass().getSimpleName().toLowerCase());
   }
 
   /**
@@ -105,7 +107,8 @@ class ItMiiSampleFmwMain {
   @DisabledIfEnvironmentVariable(named = "SKIP_JRF_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample JRF update4 use case")
   void testFmwUpdate4UseCase() {
-    myItMiiSampleHelper.callUpdateUseCase("-update4", "Update4 use case failed");
+    myItMiiSampleHelper
+        .callUpdateUseCase("-update4", "Update4 use case failed", this.getClass().getSimpleName().toLowerCase());
   }
 
   /**

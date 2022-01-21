@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # Description
@@ -25,7 +25,7 @@ source ${scriptDir}/../../common/utility.sh
 source ${scriptDir}/../../common/wdt-and-wit-utility.sh
 source ${scriptDir}/../../common/validate.sh
 
-function usage {
+usage() {
   echo usage: ${script} -o dir -i file -u username -p password [-s] [-e] [-v] [-n] [-h]
   echo "  -i Parameter inputs file, must be specified."
   echo "  -o Output directory for the generated properties and YAML files, must be specified."
@@ -98,7 +98,7 @@ fi
 # Function to initialize and validate the output directory
 # for the generated properties and yaml files for this domain.
 #
-function initOutputDir {
+initOutputDir() {
   domainOutputDir="${outputDir}/weblogic-domains/${domainUID}"
   # Create a directory for this domain's output files
   mkdir -p ${domainOutputDir}
@@ -110,7 +110,7 @@ function initOutputDir {
 }
 
 # try to execute docker to see whether docker is available
-function validateDockerAvailable {
+validateDockerAvailable() {
   if ! [ -x "$(command -v docker)" ]; then
     validationError "docker is not installed"
   fi
@@ -119,7 +119,7 @@ function validateDockerAvailable {
 #
 # Function to setup the environment to create domain
 #
-function initialize {
+initialize() {
 
   # Validate the required files exist
   validateErrors=false
@@ -191,7 +191,7 @@ function initialize {
 # e.g. If -s option is specified script will skip the image build only when 
 # image is available else build the image
 # If -s option is NOT specified script will ALWAYS build the image
-function createDomainHome {
+createDomainHome() {
 
   if [ "${skipImageBuild}" = false ] || [ -z "$(docker images $image | grep -v TAG)" ]; then
     echo @@ "Info: WIT_DIR is ${WIT_DIR}"
@@ -284,7 +284,7 @@ function createDomainHome {
 #
 # Function to output to the console a summary of the work completed
 #
-function printSummary {
+printSummary() {
 
   # Get the IP address of the kubernetes cluster (into K8S_IP)
   getKubernetesClusterIP

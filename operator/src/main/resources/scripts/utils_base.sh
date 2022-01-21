@@ -1,4 +1,4 @@
-# Copyright (c) 2021, Oracle and/or its affiliates.
+# Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # Important: Functions defined in this file can work with unknown shells,
@@ -47,7 +47,7 @@
 #
 #   Set TRACE_INCLUDE_FILE env var to false to suppress file name and line number.
 #
-function trace() {
+trace() {
   (
   set +x
 
@@ -114,7 +114,7 @@ function trace() {
       ;;
   esac
 
-  function logPrefix() {
+  logPrefix() {
     echo "@[`timestamp`][$logLoc][$logLevel]"
   }
 
@@ -143,7 +143,7 @@ function trace() {
 # traceDirs before|after DOMAIN_HOME LOG_HOME DATA_HOME ...
 #   Trace contents and owner of directory for the specified env vars...
 
-function traceDirs() {
+traceDirs() {
   trace "id = '`id`'"
   local keyword="$1"
   shift
@@ -169,7 +169,7 @@ function traceDirs() {
 # timestamp
 #   purpose:  echo timestamp in the form yyyy-mm-ddThh:mm:ss.nnnnnnZ
 #   example:  2018-10-01T14:00:00.000001Z
-function timestamp() {
+timestamp() {
   local timestamp="`date --utc '+%Y-%m-%dT%H:%M:%S.%NZ' 2>&1`"
   if [ ! "${timestamp/illegal/xyz}" = "${timestamp}" ]; then
     # old shell versions don't support %N or --utc
@@ -191,7 +191,7 @@ function timestamp() {
 #            @[2018-10-05T22:48:04.393000Z][FINE] USER='friendly'
 #            @[2018-10-05T22:48:04.415000Z][SEVERE] The following env vars are missing or empty:  NOTSET1 NOTSET2
 #
-function checkEnv() {
+checkEnv() {
   local do_fine="true"
   if [ "$1" = "-q" ]; then 
     do_fine="false"
@@ -216,34 +216,163 @@ function checkEnv() {
   return 0
 }
 
+# Create a folder and test access to it
+#   Arg $1 - path of folder to create
+#   Arg $2 - optional wording to append to the FINE and SEVERE traces
+createFolder() {
+  local targetDir="${1}"
+  local folderDescription="${2:-}"
+  local mkdirCommand="mkdir -m 750 -p $targetDir"
+
+  trace FINE "Creating folder '${targetDir}' using command '${mkdirCommand}'. ${folderDescription}"
+
+  local mkdirOutput="$($mkdirCommand 2>&1)"
+  [ ! -z "$mkdirOutput" ] && echo "$mkdirOutput"
+
+  if [ ! -d "$targetDir" ]; then
+    trace SEVERE "Unable to create folder '${targetDir}' using command '${mkdirCommand}', error='${mkdirOutput}'. ${folderDescription}"
+    return 1
+  fi
+
+  local touchFile="${targetDir}/testaccess.tmp"
+  local touchCommand="touch $touchFile"
+
+  rm -f "${touchFile}"
+  local touchOutput="$($touchCommand 2>&1)"
+  [ ! -z "$touchOutput" ] && echo "$touchOutput"
+
+  if [ ! -f "$touchFile" ] ; then
+    trace SEVERE "Cannot write a file to directory '${targetDir}' using command '${touchCommand}', error='${touchOutput}'. ${folderDescription}"
+    return 1
+  fi
+
+  rm -f "${touchFile}"
+  return 0
+}
+
 #
 # initAuxiliaryImage
-#   purpose: Execute the AUXILIARY_IMAGE_COMMAND specified as part of the auxiliary image init container.
-#            If the specified AUXILIARY_IMAGE_COMMAND is empty, it logs an error message and returns.
-#            If the AUXILIARY_IMAGE_PATH directory doesn't exist or is empty, it logs error and returns.
-#            If the command execution fails, it logs error message with failure details. Otherwise it
-#            logs a success message with details.
+#   purpose: Copy the WDT installation and model files from the source locations. The WDT install source location can be specified using 
+#            'spec.configuration.model.auxiliaryImages[].sourceWDTInstallHome' and the WDT model files source location can be specified
+#            using 'spec.configuration.model.auxiliaryImages[].sourceModelHome'.
+#            If the WDT install source location location is not specified then copy from the default location '/auxiliary/weblogic-deploy'.
+#            If the WDT model files location is not specified then copy from the default location '/auxiliary/models'. If the source location is 
+#            set to 'None' then skip copying the files. If the source location is at default value and there are no files at the source location then 
+#            skip copying the files. If the copy command or validation fails, log error message with details. Otherwise log a success message
+#            with details.
 #            See also 'auxImage.sh'.
 #            See also checkAuxiliaryImage in 'utils.sh'.
 #
-function initAuxiliaryImage() {
+initAuxiliaryImage() {
+  local copyWdtInstallFiles=true
+  local copyModelFiles=true
 
-  if [ -z "${AUXILIARY_IMAGE_COMMAND}" ]; then
-    trace SEVERE "Auxiliary Image: The 'serverPod.auxiliaryImages.command' is empty for the " \
-                "container image='$AUXILIARY_IMAGE_CONTAINER_IMAGE'. Exiting."
-    return
+  local sourceWdtInstallHome=$(echo $AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME |  tr '[a-z]' '[A-Z]')
+  if [ "${sourceWdtInstallHome}" != "NONE" ]; then
+    trace FINE "Auxiliary Image: About to copy WDT installation files from '${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME}' " \
+               "in container image='$AUXILIARY_IMAGE_CONTAINER_IMAGE'. "
+    if [ "${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME}" != "/auxiliary/weblogic-deploy" ]; then
+      # Source WDT install home is non-default, validate that the directory exists and is non-empty.
+      checkSourceWDTInstallDirExistsAndNotEmpty "${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME}" || return 1
+    elif [ ! -d "${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME}" ]; then
+      # Source WDT install home is at the default and directory doesn't exist. Ignore.
+      trace FINE "Auxiliary Image: The directory '${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME}' doesn't exist. Skip copying WDT install files."
+      copyWdtInstallFiles=false
+    elif [ -z "$(ls -A ${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME})" ]; then
+      # Source WDT install home is at the default and no files found at the location. Ignore.
+      trace FINE "Auxiliary Image: The directory '${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME}' is empty. Skip copying WDT install files."
+      copyWdtInstallFiles=false
+    fi
+    if [ "${copyWdtInstallFiles}" == "true" ]; then
+      createFolder "${AUXILIARY_IMAGE_TARGET_PATH}/weblogic-deploy" "This is the target directory for WDT installation files." || return 1
+      if [ ! -z "$(ls -A ${AUXILIARY_IMAGE_TARGET_PATH}/weblogic-deploy)" ] ; then
+        trace SEVERE "The target directory for WDT installation files '${AUXILIARY_IMAGE_TARGET_PATH}/weblogic-deploy' is not empty. " \
+        "This is usually because multiple auxiliary images are specified, and more than one specified a WDT install, " \
+        "which is not allowed; if this is the problem, then you can correct the problem by setting the " \
+        "'domain.spec.configuration.model.auxiliaryImages.sourceWDTInstallHome' to 'None' on images that you " \
+        "don't want to have an install copy. Exiting."
+        return 1
+      fi
+      local cpOut=$(cp -R ${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME}/* \
+                                          ${AUXILIARY_IMAGE_TARGET_PATH}/weblogic-deploy \
+                                          2>&1)
+      if [ $? -ne 0 ]; then
+       trace SEVERE "Failed to copy WDT installation files from the '${AUXILIARY_IMAGE_SOURCE_WDT_INSTALL_HOME}' directory."
+       echo $cpOut
+       return 1
+      fi
+    fi
   fi
 
-  trace FINE "Auxiliary Image: About to execute command '$AUXILIARY_IMAGE_COMMAND' in container image='$AUXILIARY_IMAGE_CONTAINER_IMAGE'. " \
-             "AUXILIARY_IMAGE_PATH is '$AUXILIARY_IMAGE_PATH' and AUXILIARY_IMAGE_TARGET_PATH is '${AUXILIARY_IMAGE_TARGET_PATH}'."
-  traceDirs before AUXILIARY_IMAGE_PATH
+  local sourceWdtModelHome=$(echo $AUXILIARY_IMAGE_SOURCE_MODEL_HOME |  tr '[a-z]' '[A-Z]')
+  if [ "${sourceWdtModelHome}" != "NONE" ]; then
+    trace FINE "Auxiliary Image: About to copy WDT model files from '${AUXILIARY_IMAGE_SOURCE_MODEL_HOME}' " \
+               "in container image='$AUXILIARY_IMAGE_CONTAINER_IMAGE'. "
+    if [ "${AUXILIARY_IMAGE_SOURCE_MODEL_HOME}" != "/auxiliary/models" ]; then
+      # Source model home is non-default, validate that the directory exists and is non-empty.
+      checkSourceWDTModelHomeDirExistsAndNotEmpty "${AUXILIARY_IMAGE_SOURCE_MODEL_HOME}" || return 1
+    elif [ ! -d "${AUXILIARY_IMAGE_SOURCE_MODEL_HOME}" ]; then
+      # Source WDT model home is at the default and directory doesn't exist. Ignore.
+      trace FINE "Auxiliary Image: The directory '${AUXILIARY_IMAGE_SOURCE_MODEL_HOME}' doesn't exist. Skip copying WDT model files."
+      copyModelFiles=false
+    elif [ -z "$(ls -A ${AUXILIARY_IMAGE_SOURCE_MODEL_HOME})" ]; then
+      # Source WDT model home is at the default and no files found at the location. Ignore.
+      trace FINE "Auxiliary Image: The directory '${AUXILIARY_IMAGE_SOURCE_MODEL_HOME}' is empty. Skip copying WDT model files."
+      copyModelFiles=false
+    fi
+    if [ "${copyModelFiles}" == "true" ]; then
+      createFolder "${AUXILIARY_IMAGE_TARGET_PATH}/models" "This is the target directory for WDT model files." || return 1
+      local cpOut=$(cp -R ${AUXILIARY_IMAGE_SOURCE_MODEL_HOME}/* \
+                                          ${AUXILIARY_IMAGE_TARGET_PATH}/models \
+                                          2>&1)
+      if [ $? -ne 0 ]; then
+        trace SEVERE "Failed to copy WDT model files from the '${AUXILIARY_IMAGE_SOURCE_MODEL_HOME}' directory."
+        echo $cpOut
+        return 1
+      fi
+    fi
+  fi
 
-  trace FINE "Auxiliary Image: About to execute AUXILIARY_IMAGE_COMMAND='$AUXILIARY_IMAGE_COMMAND' ."
-  results=$(eval $AUXILIARY_IMAGE_COMMAND 2>&1)
-  if [ $? -ne 0 ]; then
-    trace SEVERE "Auxiliary Image: Command '$AUXILIARY_IMAGE_COMMAND' execution failed in container image='$AUXILIARY_IMAGE_CONTAINER_IMAGE' " \
-                "with AUXILIARY_IMAGE_PATH=$AUXILIARY_IMAGE_PATH. Error -> '$results' ."
+  trace FINE "Auxiliary Image: Commands executed successfully."
+}
+
+
+checkSourceWDTInstallDirExistsAndNotEmpty() {
+  local sourceWdtInstallHomeDir=$1
+
+  if [ ! -d "${sourceWdtInstallHomeDir}" ] ; then
+    trace SEVERE "Source WDT install home directory '$sourceWdtInstallHomeDir' specified in " \
+      "'spec.configuration.model.auxiliaryImages[].sourceWDTInstallHome' for image '$AUXILIARY_IMAGE_CONTAINER_IMAGE' does not exist. " \
+      "Make sure the 'sourceWDTInstallHome' is correctly specified and the WDT installation files are available in this directory " \
+      "or set 'sourceWDTInstallHome' to 'None' for this image."
+    return 1
   else
-    trace FINE "Auxiliary Image: Command '$AUXILIARY_IMAGE_COMMAND' executed successfully. Output -> '$results'."
+    if [ -z "$(ls -A $sourceWdtInstallHomeDir)" ] ; then
+      trace SEVERE "Source WDT install home directory '$sourceWdtInstallHomeDir' specified in " \
+        "'spec.configuration.model.auxiliaryImages[].sourceWDTInstallHome' for image '$AUXILIARY_IMAGE_CONTAINER_IMAGE' is empty. Make sure " \
+        "the 'sourceWDTInstallHome' is correctly specified and the WDT installation files are available in this directory " \
+        "or set 'sourceWDTInstallHome' to 'None' for this image."
+      return 1
+    fi
+  fi
+}
+
+checkSourceWDTModelHomeDirExistsAndNotEmpty() {
+  local sourceWdtModelHomeDir=$1
+
+  if [ ! -d "${sourceWdtModelHomeDir}" ] ; then
+    trace SEVERE "Source WDT model home directory '$sourceWdtModelHomeDir' specified in " \
+       "'spec.configuration.model.auxiliaryImages[].sourceModelHome' for image '$AUXILIARY_IMAGE_CONTAINER_IMAGE' does not exist. " \
+       "Make sure the 'sourceModelHome' is correctly specified and the WDT model files are available in this directory " \
+       "or set 'sourceModelHome' to 'None' for this image."
+    return 1
+  else
+    if [ -z "$(ls -A $sourceWdtModelHomeDir)" ] ; then
+      trace SEVERE "Source WDT installation directory '$sourceWdtModelHomeDir' specified in " \
+        "'spec.configuration.model.auxiliaryImages[].sourceModelHome' for image '$AUXILIARY_IMAGE_CONTAINER_IMAGE' is empty. " \
+        "Make sure the 'sourceModelHome' is correctly specified and the WDT model files are available in this directory " \
+        "or set 'sourceModelHome' to 'None' for this image."
+      return 1
+    fi
   fi
 }

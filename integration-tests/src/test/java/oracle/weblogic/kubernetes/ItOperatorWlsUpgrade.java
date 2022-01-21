@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -168,14 +168,14 @@ class ItOperatorWlsUpgrade {
   }
 
   /**
-   * Operator upgrade from 3.3.6 to latest.
+   * Operator upgrade from 3.3.7 to latest.
    */
   @ParameterizedTest
-  @DisplayName("Upgrade Operator from 3.3.6 to latest")
+  @DisplayName("Upgrade Operator from 3.3.7 to latest")
   @ValueSource(strings = { "Image", "FromModel" })
-  void testOperatorWlsUpgradeFrom336ToLatest(String domainType) {
-    logger.info("Starting test testOperatorWlsUpgradeFrom336ToLatest with domain type {0}", domainType);
-    installAndUpgradeOperator(domainType, "3.3.6", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
+  void testOperatorWlsUpgradeFrom337ToLatest(String domainType) {
+    logger.info("Starting test testOperatorWlsUpgradeFrom337ToLatest with domain type {0}", domainType);
+    installAndUpgradeOperator(domainType, "3.3.7", OLD_DOMAIN_VERSION, DEFAULT_EXTERNAL_SERVICE_NAME_SUFFIX);
   }
 
   /**
