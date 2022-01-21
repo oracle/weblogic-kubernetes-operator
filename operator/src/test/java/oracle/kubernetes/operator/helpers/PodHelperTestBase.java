@@ -398,7 +398,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
 
   private List<V1ContainerPort> getContainerPorts() {
     return getCreatedPod().getSpec().getContainers().stream()
-            .filter(c -> c.getName().equals(WLS_CONTAINER_NAME)).findFirst().map(c -> c.getPorts()).orElse(null);
+            .filter(c -> c.getName().equals(WLS_CONTAINER_NAME)).findFirst().map(V1Container::getPorts).orElse(null);
   }
 
   private V1ContainerPort createContainerPort(String portName) {
@@ -1135,7 +1135,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   }
 
   @Test
-  void whenPodCreated_hasProductVersion() throws NoSuchFieldException {
+  void whenPodCreated_hasProductVersion() {
     assertThat(getCreatedPod().getMetadata().getLabels(), hasEntry(OPERATOR_VERSION, TEST_PRODUCT_VERSION));
   }
 
@@ -1346,10 +1346,6 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   void initializeExistingPod(V1Pod pod) {
     testSupport.defineResources(pod);
     domainPresenceInfo.setServerPod(getServerName(), pod);
-  }
-
-  void initializeExistingPodWithMii() {
-    initializeExistingPod(createPodModel());
   }
 
   void initializeExistingPodWithIntrospectVersion(String introspectVersion) {
