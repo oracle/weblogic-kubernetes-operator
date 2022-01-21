@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -11,6 +11,8 @@ import java.util.Optional;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.V1DeleteOptions;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1EnvVarBuilder;
@@ -19,6 +21,8 @@ import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodCondition;
 import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1PodStatus;
+import jakarta.json.Json;
+import jakarta.json.JsonPatchBuilder;
 import oracle.kubernetes.operator.LabelConstants;
 import oracle.kubernetes.operator.MakeRightDomainOperation;
 import oracle.kubernetes.operator.PodAwaiterStepFactory;
@@ -452,15 +456,39 @@ public class PodHelper {
     @Override
     // let the pod rolling step update the pod
     Step replaceCurrentPod(V1Pod pod, Step next) {
-      return createDomainRollStartEventIfNeeded(pod, deferProcessing(createCyclePodStep(pod, next)));
+      labelPodAsNeedingToRoll(pod);
+      deferProcessing(pod, createCyclePodStep(pod, next));
+      return createDomainRollStartEventIfNeeded(pod, null);
     }
 
-    private Step deferProcessing(Step deferredStep) {
+    private void deferProcessing(V1Pod pod, Step deferredStep) {
       synchronized (packet) {
         Optional.ofNullable(getServersToRoll()).ifPresent(r -> r.put(getServerName(), createRollRequest(deferredStep)));
       }
-      return null;
     }
+
+    // Patch the pod to indicate a pending roll.
+    private void labelPodAsNeedingToRoll(V1Pod pod) {
+      if (!isPodAlreadyLabeledToRoll(pod)) {
+        patchPod();
+      }
+    }
+
+    private boolean isPodAlreadyLabeledToRoll(V1Pod pod) {
+      return pod.getMetadata().getLabels().containsKey(LabelConstants.TO_BE_ROLLED_LABEL);
+    }
+
+    private void patchPod() {
+      try {
+        JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
+        patchBuilder.add("/metadata/labels/" + LabelConstants.TO_BE_ROLLED_LABEL, "true");
+        new CallBuilder()
+            .patchPod(getPodName(), getNamespace(), getDomainUid(), new V1Patch(patchBuilder.build().toString()));
+      } catch (ApiException ignored) {
+        /* extraneous comment to fool checkstyle into thinking that this is not an empty catch block. */
+      }
+    }
+
 
     private Step.StepAndPacket createRollRequest(Step deferredStep) {
       return new Step.StepAndPacket(deferredStep, packet.copy());

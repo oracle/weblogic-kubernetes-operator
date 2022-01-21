@@ -39,7 +39,6 @@ import oracle.weblogic.domain.DomainSpec;
 import oracle.weblogic.domain.ServerPod;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
-import oracle.weblogic.kubernetes.actions.impl.primitive.HelmParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
 import oracle.weblogic.kubernetes.annotations.Namespaces;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
@@ -47,7 +46,6 @@ import oracle.weblogic.kubernetes.utils.BuildApplication;
 import oracle.weblogic.kubernetes.utils.CommonTestUtils;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import oracle.weblogic.kubernetes.utils.OracleHttpClient;
-import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
@@ -81,7 +79,6 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getServicePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.now;
 import static oracle.weblogic.kubernetes.actions.TestActions.patchDomainResourceWithNewIntrospectVersion;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
-import static oracle.weblogic.kubernetes.actions.TestActions.uninstallNginx;
 import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.impl.Pod.getPod;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
@@ -108,7 +105,6 @@ import static oracle.weblogic.kubernetes.utils.K8sEvents.POD_CYCLE_STARTING;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.checkEvent;
 import static oracle.weblogic.kubernetes.utils.K8sEvents.getOpGeneratedEvent;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.createIngressForDomainAndVerify;
-import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
 import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
@@ -126,7 +122,6 @@ import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static oracle.weblogic.kubernetes.utils.WLSTUtils.executeWLSTScript;
 import static org.apache.commons.io.FileUtils.copyDirectory;
 import static org.apache.commons.io.FileUtils.deleteDirectory;
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
@@ -147,10 +142,6 @@ class ItIntrospectVersion {
 
   private static final String domainUid = "myintrodomain";
 
-  private static String nginxNamespace = null;
-  private static int nodeportshttp;
-  private static HelmParams nginxHelmParams = null;
-
   private final String wlSecretName = "weblogic-credentials";
 
   private static String adminSvcExtHost = null;
@@ -165,6 +156,7 @@ class ItIntrospectVersion {
 
   private static Path clusterViewAppPath;
   private static LoggingFacade logger = null;
+  private final int managedServerPort = 7100;
 
   /**
    * Assigns unique namespaces for operator and domains.
@@ -174,7 +166,7 @@ class ItIntrospectVersion {
    * @param namespaces injected by JUnit
    */
   @BeforeAll
-  public static void initAll(@Namespaces(3) List<String> namespaces) {
+  public static void initAll(@Namespaces(2) List<String> namespaces) {
     logger = getLogger();
     logger.info("Assign a unique namespace for operator");
     assertNotNull(namespaces.get(0), "Namespace is null");
@@ -182,20 +174,9 @@ class ItIntrospectVersion {
     logger.info("Assign a unique namespace for Introspect Version WebLogic domain");
     assertNotNull(namespaces.get(1), "Namespace is null");
     introDomainNamespace = namespaces.get(1);
-    logger.info("Assign a unique namespace for NGINX");
-    assertNotNull(namespaces.get(2), "Namespace is null");
-    nginxNamespace = namespaces.get(2);
 
     // install operator and verify its running in ready state
     installAndVerifyOperator(opNamespace, introDomainNamespace);
-
-    // get a free node port for NGINX
-    nodeportshttp = getNextFreePort();
-    int nodeportshttps = getNextFreePort();
-
-    if (!OKD) {
-      nginxHelmParams = installAndVerifyNginx(nginxNamespace, nodeportshttp, nodeportshttps);
-    }
 
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
@@ -234,7 +215,6 @@ class ItIntrospectVersion {
 
     final String managedServerNameBase = "managed-server";
     String managedServerPodNamePrefix = domainUid + "-" + managedServerNameBase;
-    final int managedServerPort = 7100;
 
     int replicaCount = 2;
 
@@ -521,23 +501,30 @@ class ItIntrospectVersion {
             + "http://%s/clusterview/ClusterViewServlet"
             + "\"?user=" + ADMIN_USERNAME_DEFAULT
             + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"", clusterRouteHost);
-    } else {
-      //access application in managed servers through NGINX load balancer
-      logger.info("Accessing the clusterview app through NGINX load balancer");
-      curlRequest = String.format("curl --silent --show-error --noproxy '*' "
-                   + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet"
-                   + "\"?user=" + ADMIN_USERNAME_DEFAULT
-                   + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"",
-               domainUid + "." + introDomainNamespace + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
     }
 
     // verify each managed server can see other member in the cluster
-    verifyServerCommunication(curlRequest, managedServerNames);
+    for (String managedServerName : managedServerNames) {
+      verifyConnectionBetweenClusterMembers(managedServerName, managedServerNames);
+    }
 
     // verify when a domain resource has spec.introspectVersion configured,
     // all WebLogic server pods will have a label "weblogic.introspectVersion"
     // set to the value of spec.introspectVersion.
     verifyIntrospectVersionLabelInPod(replicaCount);
+  }
+
+  private void verifyConnectionBetweenClusterMembers(String serverName, List<String> managedServerNames) {
+    String podName = domainUid + "-" + serverName;
+    final String command = String.format(
+        "kubectl exec -n " + introDomainNamespace + "  " + podName + " -- curl http://"
+            + ADMIN_USERNAME_DEFAULT
+            + ":"
+            + ADMIN_PASSWORD_DEFAULT
+            + "@" + podName + ":%s/clusterview/ClusterViewServlet"
+            + "\"?user=" + ADMIN_USERNAME_DEFAULT
+            + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"",managedServerPort);
+    verifyServerCommunication(command, serverName, managedServerNames);
   }
 
   /**
@@ -669,27 +656,11 @@ class ItIntrospectVersion {
 
     //verify admin server accessibility and the health of cluster members
     verifyMemberHealth(adminServerPodName, managedServerNames, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-
-    String curlRequest = null;
-    if (OKD) {
-      logger.info("cluster svc host = {0}", clusterRouteHost);
-      logger.info("Accessing the clusterview app through cluster route");
-      curlRequest = String.format("curl --silent --show-error --noproxy '*' "
-            + "http://%s/clusterview/ClusterViewServlet"
-            + "\"?user=" + ADMIN_USERNAME_DEFAULT
-            + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"", clusterRouteHost);
-    } else {
-      //access application in managed servers through NGINX load balancer
-      logger.info("Accessing the clusterview app through NGINX load balancer");
-      curlRequest = String.format("curl --silent --show-error --noproxy '*' "
-                   + "-H 'host: %s' http://%s:%s/clusterview/ClusterViewServlet"
-                   + "\"?user=" + ADMIN_USERNAME_DEFAULT
-                   + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"",
-               domainUid + "." + introDomainNamespace + "." + clusterName + ".test", K8S_NODEPORT_HOST, nodeportshttp);
-    }
-
+    
     // verify each managed server can see other member in the cluster
-    verifyServerCommunication(curlRequest, managedServerNames);
+    for (String managedServerName : managedServerNames) {
+      verifyConnectionBetweenClusterMembers(managedServerName, managedServerNames);
+    }
 
     // verify when a domain/cluster is rolling restarted without changing the spec.introspectVersion,
     // all server pods' weblogic.introspectVersion label stay unchanged after the pods are restarted.
@@ -1337,22 +1308,6 @@ class ItIntrospectVersion {
         assertTrue(entry.getValue().equals(introspectVersion),
             "Failed to set " + wlsIntroVersion + " to " + introspectVersion);
       }
-    }
-  }
-
-  /**
-   * Uninstall Nginx.
-   * The cleanup framework does not uninstall Nginx release.
-   * Do it here for now.
-   */
-  @AfterAll
-  public void tearDownAll() {
-    // uninstall NGINX release
-    if (nginxHelmParams != null) {
-      assertThat(uninstallNginx(nginxHelmParams))
-          .as("Test uninstallNginx returns true")
-          .withFailMessage("uninstallNginx() did not return true")
-          .isTrue();
     }
   }
 

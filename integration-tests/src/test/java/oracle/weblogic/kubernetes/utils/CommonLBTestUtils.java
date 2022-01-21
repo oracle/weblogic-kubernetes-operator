@@ -93,8 +93,18 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * The common utility class for LoadBalancer tests.
  */
 public class CommonLBTestUtils {
+
   /**
-   * Create two domains on PV using WLST.
+   * Create multiple domains on PV using WLST.
+   * @param domainNamespace domain namespace
+   * @param wlSecretName wls secret name
+   * @param testClassName test class name which will call this method
+   * @param numberOfDomains number of domains to create
+   * @param domainUids list of domain uids
+   * @param replicaCount replica count of the domain cluster
+   * @param clusterName cluster name of the domain
+   * @param adminServerPort admin server port
+   * @param managedServerPort managed server port
    */
   public static void createMultipleDomainsSharingPVUsingWlstAndVerify(String domainNamespace,
                                                                       String wlSecretName,
@@ -181,7 +191,7 @@ public class CommonLBTestUtils {
 
       getLogger().info("Validating WebLogic admin server access by login to console");
       assertTrue(assertDoesNotThrow(
-          () -> adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
+          () -> adminNodePortAccessible(serviceNodePort),
           "Access to admin server node port failed"), "Console login validation failed");
     }
   }
@@ -199,6 +209,11 @@ public class CommonLBTestUtils {
    * @param domainNamespace the namespace in which the domain will be created
    * @param domainScriptConfigMapName the configMap name for domain script
    * @param createDomainInPVJobName the job name for creating domain in PV
+   * @param testClassName the test class name which calls this method
+   * @param clusterName cluster name of the domain
+   * @param adminServerPort admin server port
+   * @param managedServerPort managed server port
+   * @param t3ChannelPort t3 channel port for admin server
    */
   private static void runCreateDomainOnPVJobUsingWlst(String pvName,
                                                       String pvcName,
@@ -295,6 +310,9 @@ public class CommonLBTestUtils {
    * @param pvName name of persistence volume
    * @param pvcName name of persistence volume claim
    * @param t3ChannelPort t3 channel port for admin server
+   * @param wlSecretName wls secret name
+   * @param clusterName cluster name of the domain
+   * @param replicaCount replica count of the cluster
    * @return oracle.weblogic.domain.Domain object
    */
   private static Domain createDomainCustomResource(String domainUid,
@@ -351,7 +369,7 @@ public class CommonLBTestUtils {
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
-                        .nodePort(0))
+                        .nodePort(getNextFreePort()))
                     .addChannelsItem(new Channel()
                         .channelName("T3Channel")
                         .nodePort(t3ChannelPort))))
@@ -368,25 +386,22 @@ public class CommonLBTestUtils {
    * using the node port and validate its the Home page.
    *
    * @param nodePort the node port that needs to be tested for access
-   * @param userName WebLogic administration server user name
-   * @param password WebLogic administration server password
    * @return true if login to WebLogic administration console is successful
    * @throws IOException when connection to console fails
    */
-  private static boolean adminNodePortAccessible(int nodePort, String userName, String password)
+  private static boolean adminNodePortAccessible(int nodePort)
       throws IOException {
     if (WEBLOGIC_SLIM) {
       getLogger().info("Check REST Console for WebLogic slim image");
-      StringBuffer curlCmd  = null;
-      curlCmd  = new StringBuffer("status=$(curl --user ");
-      curlCmd.append(userName)
+      StringBuffer curlCmd = new StringBuffer("status=$(curl --user ");
+      curlCmd.append(ADMIN_USERNAME_DEFAULT)
           .append(":")
-          .append(password)
-          .append(" http://" + K8S_NODEPORT_HOST + ":" + nodePort)
-          .append("/management/tenant-monitoring/servers/")
-          .append(" --silent --show-error ")
-          .append(" -o /dev/null")
-          .append(" -w %{http_code});")
+          .append(ADMIN_PASSWORD_DEFAULT)
+          .append(" http://")
+          .append(K8S_NODEPORT_HOST)
+          .append(":")
+          .append(nodePort)
+          .append("/management/tenant-monitoring/servers/ --silent --show-error -o /dev/null -w %{http_code}); ")
           .append("echo ${status}");
       getLogger().info("checkRestConsole : curl command {0}", new String(curlCmd));
       try {
@@ -394,11 +409,7 @@ public class CommonLBTestUtils {
         String response = result.stdout().trim();
         getLogger().info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
             result.exitValue(), response, result.stderr());
-        if (response.contains("200")) {
-          return true;
-        } else {
-          return false;
-        }
+        return response.contains("200");
       } catch (IOException | InterruptedException ex) {
         getLogger().info("Exception in checkRestConsole {0}", ex);
         return false;
@@ -420,8 +431,8 @@ public class CommonLBTestUtils {
         final HtmlPage loginPage = assertDoesNotThrow(() -> webClient.getPage(consoleUrl),
             "connection to the WebLogic admin console failed");
         HtmlForm form = loginPage.getFormByName("loginData");
-        form.getInputByName("j_username").type(userName);
-        form.getInputByName("j_password").type(password);
+        form.getInputByName("j_username").type(ADMIN_USERNAME_DEFAULT);
+        form.getInputByName("j_password").type(ADMIN_PASSWORD_DEFAULT);
         HtmlElement submit = form.getOneHtmlElementByAttribute("input", "type", "submit");
         getLogger().info("Clicking login button");
         HtmlPage home = submit.click();
@@ -439,6 +450,10 @@ public class CommonLBTestUtils {
    * Create a properties file for WebLogic domain configuration.
    * @param wlstPropertiesFile path of the properties file
    * @param domainUid the WebLogic domain for which the properties file is created
+   * @param clusterName cluster name of the domain
+   * @param adminServerPort admin server port
+   * @param managedServerPort managed server port
+   * @param t3ChannelPort t3 channel port of the admin server
    */
   private static void createDomainProperties(Path wlstPropertiesFile,
                                              String domainUid,

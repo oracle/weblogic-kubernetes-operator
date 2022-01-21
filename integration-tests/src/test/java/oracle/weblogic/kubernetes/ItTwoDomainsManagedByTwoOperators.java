@@ -95,6 +95,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.startDomain;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.domainDoesNotExist;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotChanged;
+import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.createMultipleDomainsSharingPVUsingWlstAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.scaleAndVerifyCluster;
@@ -246,7 +247,9 @@ class ItTwoDomainsManagedByTwoOperators {
   @Test
   void testTwoDomainsManagedByOneOperatorSharingPV() {
     // create two domains sharing one PV in default namespace
-    createTwoDomainsSharingPVUsingWlstAndVerify();
+    createMultipleDomainsSharingPVUsingWlstAndVerify(
+        defaultNamespace, wlSecretName, ItTwoDomainsManagedByTwoOperators.class.getSimpleName(), numberOfDomains,
+        domainUids, replicaCount, clusterName, ADMIN_SERVER_PORT, MANAGED_SERVER_PORT);
 
     // get the domain1 and domain2 pods original creation timestamps
     List<String> domainNamespaces = new ArrayList<>();
@@ -770,87 +773,6 @@ class ItTwoDomainsManagedByTwoOperators {
                 .serverStartState("RUNNING")));
     setPodAntiAffinity(domain);
     return domain;
-  }
-
-  /**
-   * Create two domains on PV using WLST.
-   */
-  private void createTwoDomainsSharingPVUsingWlstAndVerify() {
-    // create pull secrets for WebLogic image
-    // this secret is used only for non-kind cluster
-    createSecretForBaseImages(defaultNamespace);
-
-    // create WebLogic credentials secret
-    createSecretWithUsernamePassword(wlSecretName, defaultNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
-    Path pvHostPath = get(PV_ROOT, this.getClass().getSimpleName(), "default-sharing-persistentVolume");
-
-    V1PersistentVolume v1pv = new V1PersistentVolume()
-        .spec(new V1PersistentVolumeSpec()
-            .addAccessModesItem("ReadWriteMany")
-            .volumeMode("Filesystem")
-            .putCapacityItem("storage", Quantity.fromString("6Gi"))
-            .persistentVolumeReclaimPolicy("Retain"))
-        .metadata(new V1ObjectMetaBuilder()
-            .withName(defaultSharingPvName)
-            .build()
-            .putLabelsItem("sharing-pv", "true"));
-
-    V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
-        .spec(new V1PersistentVolumeClaimSpec()
-            .addAccessModesItem("ReadWriteMany")
-            .volumeName(defaultSharingPvName)
-            .resources(new V1ResourceRequirements()
-                .putRequestsItem("storage", Quantity.fromString("6Gi"))))
-        .metadata(new V1ObjectMetaBuilder()
-            .withName(defaultSharingPvcName)
-            .withNamespace(defaultNamespace)
-            .build()
-            .putLabelsItem("sharing-pvc", "true"));
-
-    // create pv and pvc
-    String labelSelector = String.format("sharing-pv in (%s)", "true");
-    createPVPVCAndVerify(v1pv, v1pvc, labelSelector,
-        defaultNamespace, "default-sharing-weblogic-domain-storage-class", pvHostPath);
-
-    for (int i = 1; i <= numberOfDomains; i++) {
-      String domainUid = domainUids.get(i - 1);
-      String domainScriptConfigMapName = "create-domain" + i + "-scripts-cm";
-      String createDomainInPVJobName = "create-domain" + i + "-onpv-job";
-
-      t3ChannelPort = getNextFreePort();
-      logger.info("t3ChannelPort for domain {0} is {1}", domainUid, t3ChannelPort);
-
-      // run create a domain on PV job using WLST
-      runCreateDomainOnPVJobUsingWlst(defaultSharingPvName, defaultSharingPvcName, domainUid, defaultNamespace,
-          domainScriptConfigMapName, createDomainInPVJobName);
-
-      // create the domain custom resource configuration object
-      logger.info("Creating domain custom resource");
-      Domain domain = createDomainCustomResource(domainUid, defaultNamespace, defaultSharingPvName,
-          defaultSharingPvcName, t3ChannelPort);
-
-      logger.info("Creating domain custom resource {0} in namespace {1}", domainUid, defaultNamespace);
-      createDomainAndVerify(domain, defaultNamespace);
-
-      String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
-      // check admin server pod is ready and service exists in domain namespace
-      checkPodReadyAndServiceExists(adminServerPodName, domainUid, defaultNamespace);
-
-      // check for managed server pods are ready and services exist in domain namespace
-      for (int j = 1; j <= replicaCount; j++) {
-        String managedServerPodName = domainUid + "-" + MANAGED_SERVER_NAME_BASE + j;
-        checkPodReadyAndServiceExists(managedServerPodName, domainUid, defaultNamespace);
-      }
-
-      int serviceNodePort =
-          getServiceNodePort(defaultNamespace, getExternalServicePodName(adminServerPodName), "default");
-      logger.info("Getting admin service node port: {0}", serviceNodePort);
-
-      logger.info("Validating WebLogic admin server access by login to console");
-      assertTrue(assertDoesNotThrow(
-          () -> adminNodePortAccessible(serviceNodePort, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
-          "Access to admin server node port failed"), "Console login validation failed");
-    }
   }
 
   /**

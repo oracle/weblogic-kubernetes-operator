@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -10,7 +10,6 @@ import java.nio.file.StandardCopyOption;
 import java.util.List;
 import java.util.Map;
 
-import oracle.weblogic.domain.Domain;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.annotations.IntegrationTest;
@@ -19,6 +18,7 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import oracle.weblogic.kubernetes.utils.ExecResult;
 import org.apache.commons.io.FileUtils;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.Disabled;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
@@ -30,18 +30,14 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_IMAGES_REPO;
 import static oracle.weblogic.kubernetes.TestConstants.MII_AUXILIARY_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
-import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
-import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.dockerPush;
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
-import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createDomainResourceWithAuxiliaryImageClusterScope;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.patchDomainClusterWithAuxImageAndVerify;
 import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.readFilesInPod;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkSystemResourceConfiguration;
-import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.FileUtils.unzipWDTInstallationFile;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createOcirRepoSecret;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
@@ -57,6 +53,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @DisplayName("Test to create model in image domain using auxiliary image containing the cluster configuration")
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @IntegrationTest
+@Disabled("Temporarily disabled due to auxiliary image 4.0 changes.")
 class ItMiiAuxiliaryImageCluster {
 
   private static String opNamespace = null;
@@ -176,6 +173,7 @@ class ItMiiAuxiliaryImageCluster {
     // create domain custom resource using 3 auxiliary images
     logger.info("Creating domain custom resource with domainUid {0} and auxiliary images {1} {2}",
         domainUid, auxiliaryImageDomainScopeNames.toString(), auxiliaryImageClusterScopeNames.toString());
+    /* Commented out due to auxiliary image 4.0 changes.
     Domain domainCR = createDomainResourceWithAuxiliaryImageClusterScope(domainUid, domainNamespace,
         WEBLOGIC_IMAGE_TO_USE_IN_SPEC, adminSecretName, OCIR_SECRET_NAME,
         encryptionSecretName, replicaCount, clusterName,
@@ -188,6 +186,7 @@ class ItMiiAuxiliaryImageCluster {
         auxiliaryImageClusterScopeNames.toString(), domainNamespace);
     createDomainAndVerify(domainUid, domainCR, domainNamespace,
         adminServerPodName, managedServerPrefix, replicaCount);
+     */
 
     // verify that plain text files only copied to servers in the cluster but not copied to admin server
     fileNames.forEach((filePath, fileContent) -> {
