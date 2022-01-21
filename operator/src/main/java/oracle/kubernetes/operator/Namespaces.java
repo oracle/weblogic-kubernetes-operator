@@ -117,9 +117,7 @@ public class Namespaces {
         // although filtering is done by Kubernetes list call, there is a race condition where readExistingNamespaces
         // may give us a namespace that does not match the required label selector when the operator's selection
         // strategy is changed from List to LabelSelector when the operator is running.
-        String[] selectors = getLabelSelectors();
-
-        return matchSpecifiedLabelSelectors(namespace.getMetadata(), selectors);
+        return matchSpecifiedLabelSelectors(namespace.getMetadata(), getLabelSelectors());
       }
 
       private String[] getLabelSelectors() {
