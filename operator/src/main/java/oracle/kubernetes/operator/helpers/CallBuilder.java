@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -399,6 +399,17 @@ public class CallBuilder {
                   requestParams.namespace,
                   (V1DeleteOptions) requestParams.body,
                   callback));
+  private final SynchronousCallFactory<V1Pod> patchPodCall =
+      (client, requestParams) ->
+          new CoreV1Api(client)
+              .patchNamespacedPod(
+                  requestParams.name,
+                    requestParams.namespace,
+                    (V1Patch) requestParams.body,
+                    pretty,
+                    dryRun,
+                    null,
+                    null);
   private final SynchronousCallFactory<DomainList> listDomainCall =
       (client, requestParams) ->
           new WeblogicApi(client)
@@ -1336,6 +1347,21 @@ public class CallBuilder {
     String[] localVarAuthNames = new String[]{"BearerToken"};
     return client.buildCall(localVarPath, "DELETE", localVarQueryParams, localVarCollectionQueryParams, body,
         localVarHeaderParams, localVarCookieParams, localVarFormParams, localVarAuthNames, callback);
+  }
+
+  /**
+   * Synchronous step for patching a pod.
+   *
+   * @param name Name
+   * @param namespace Namespace
+   * @param domainUid Identifier of the domain that the pod is associated with
+   * @param patchBody instructions on what to patch
+   * @return the patched pod
+   */
+  public V1Pod patchPod(String name, String namespace, String domainUid, V1Patch patchBody) throws ApiException {
+    RequestParams requestParams =
+        new RequestParams("patchPod", namespace, name, patchBody, domainUid);
+    return executeSynchronousCall(requestParams, patchPodCall);
   }
 
   private Call patchPodAsync(
