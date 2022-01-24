@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -20,7 +20,6 @@ import java.util.concurrent.ThreadFactory;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
-import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 
 import io.kubernetes.client.openapi.models.CoreV1EventList;
@@ -85,8 +84,7 @@ public class Main {
   private NamespaceWatcher namespaceWatcher;
   protected OperatorEventWatcher operatorNamespaceEventWatcher;
   private boolean warnedOfCrdAbsence;
-  private static NextStepFactory NEXT_STEP_FACTORY =
-          (next) -> createInitializeInternalIdentityStep(next);
+  private static final NextStepFactory NEXT_STEP_FACTORY = Main::createInitializeInternalIdentityStep;
 
   private static String getConfiguredServiceAccount() {
     return TuningParameters.getInstance().get("serviceaccount");
@@ -187,8 +185,7 @@ public class Main {
     }
 
     private void logConfiguredNamespaces(LoggingFacade loggingFacade, Collection<String> configuredDomainNamespaces) {
-      loggingFacade.info(MessageKeys.OP_CONFIG_DOMAIN_NAMESPACES,
-          configuredDomainNamespaces.stream().collect(Collectors.joining(", ")));
+      loggingFacade.info(MessageKeys.OP_CONFIG_DOMAIN_NAMESPACES, String.join(", ", configuredDomainNamespaces));
     }
 
     @Override
@@ -526,7 +523,6 @@ public class Main {
     return NamespaceWatcher.create(
         threadFactory,
         initialResourceVersion,
-        Namespaces.getLabelSelectors(),
         TuningParameters.getInstance().getWatchTuning(),
         this::dispatchNamespaceWatch,
         new AtomicBoolean(false));
@@ -534,13 +530,14 @@ public class Main {
 
   void dispatchNamespaceWatch(Watch.Response<V1Namespace> item) {
     String ns = Optional.ofNullable(item.object).map(V1Namespace::getMetadata).map(V1ObjectMeta::getName).orElse(null);
+
     if (ns == null) {
       return;
     }
 
     switch (item.type) {
       case "ADDED":
-        if (!Namespaces.isDomainNamespace(ns)) {
+        if (!Namespaces.isDomainNamespace(item.object)) {
           return;
         }
 
