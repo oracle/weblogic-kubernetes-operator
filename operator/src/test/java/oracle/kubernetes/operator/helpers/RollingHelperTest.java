@@ -190,9 +190,13 @@ class RollingHelperTest {
     V1Pod pod = createPodModel(serverName);
 
     testSupport.defineResources(pod);
-    pod.setStatus(new V1PodStatus().phase("Running")
-                                   .addConditionsItem(new V1PodCondition().type("Ready").status("True")));
+    setPodStatusReady(pod);
     domainPresenceInfo.setServerPod(serverName, pod);
+  }
+
+  private void setPodStatusReady(V1Pod pod) {
+    pod.setStatus(new V1PodStatus().phase("Running")
+          .addConditionsItem(new V1PodCondition().type("Ready").status("True")));
   }
 
   @Test
@@ -305,6 +309,7 @@ class RollingHelperTest {
     testSupport.addToPacket(SERVERS_TO_ROLL, rolling);
     testSupport.addToPacket(SERVER_STATE_MAP, SERVER_NAMES.stream().collect(Collectors.toMap(k -> k, k -> "RUNNING")));
     testSupport.addToPacket(DOMAIN_ROLL_START_EVENT_GENERATED, "true");
+    testSupport.doOnCreate(KubernetesTestSupport.POD, p -> setPodStatusReady((V1Pod) p));
     SERVER_NAMES.forEach(s ->
         rolling.put(s, createRollingStepAndPacket(modifyRestartVersion(createPodModel(s), "V3"), s)));
 
@@ -365,16 +370,14 @@ class RollingHelperTest {
   }
 
   private V1Pod modifyRestartVersion(V1Pod pod, String restartVersion) {
-    pod.setStatus(new V1PodStatus().phase("Running").addConditionsItem(
-        new V1PodCondition().type("Ready").status("True")));
+    setPodStatusReady(pod);
     pod.getMetadata().getLabels().remove(LabelConstants.DOMAINRESTARTVERSION_LABEL);
     pod.getMetadata().getLabels().put(LabelConstants.DOMAINRESTARTVERSION_LABEL, restartVersion);
     return pod;
   }
 
   private V1Pod modifyDomainHome(V1Pod pod, String domainHome) {
-    pod.setStatus(new V1PodStatus().phase("Running").addConditionsItem(
-        new V1PodCondition().type("Ready").status("True")));
+    setPodStatusReady(pod);
     List<V1EnvVar> envList = pod.getSpec().getContainers().get(0).getEnv();
     for (V1EnvVar env : envList) {
       if (env.getName().equals("DOMAIN_HOME")) {
