@@ -1376,11 +1376,10 @@ public class DomainProcessorImpl implements DomainProcessor {
     private class DomainPresenceInfoStep extends Step {
       @Override
       public NextAction apply(Packet packet) {
-        DomainPresenceInfo info =
-            Optional.ofNullable(DOMAINS.get(getNamespace())).map(n -> n.get(getDomainUid())).orElse(null);
-        if (info != null) {
-          info.addToPacket(packet);
-        }
+        Optional.ofNullable(DOMAINS.get(getNamespace()))
+            .map(n -> n.get(getDomainUid()))
+            .ifPresent(i -> i.addToPacket(packet));
+
         return doNext(packet);
       }
     }
