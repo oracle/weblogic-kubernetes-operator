@@ -14,8 +14,9 @@ You are responsible for configuring Kibana and Elasticsearch, then configuring t
 As part of the Elastic Stack integration, Logstash configuration occurs for each deployed operator instance.  You can use the following configuration values to configure the integration:
 
 * Set `elkIntegrationEnabled` is `true` to enable the integration.
-* Set `logStashImage` to override the default version of Logstash to be used (`logstash:6.2`).
+* Set `logStashImage` to override the default version of Logstash to be used (`logstash:6.6.0`).
 * Set `elasticSearchHost` and `elasticSearchPort` to override the default location where Elasticsearch is running (`elasticsearch2.default.svc.cluster.local:9201`). This will configure Logstash to send the operator's log contents there.
+* Set `createLogStashConfigMap` to `true` to use the default Logstash configuration, or set it to `false` and create a ConfigMap named `weblogic-operator-logstash-cm` in the operator's namespace with your own Logstash pipeline configuration.
 
 For additional details, see [Elastic Stack integration]({{< relref "/userguide/managing-operators/using-helm#elastic-stack-integration" >}}) Helm commands.
 
