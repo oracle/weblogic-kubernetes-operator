@@ -70,16 +70,6 @@ public class EventHelper {
   /**
    * Factory for {@link Step} that asynchronously create an event.
    *
-   * @param eventItem event item
-   * @return Step for creating an event
-   */
-  public static Step createEventStep(EventItem eventItem) {
-    return createEventStep(new EventData(eventItem));
-  }
-
-  /**
-   * Factory for {@link Step} that asynchronously create an event.
-   *
    * @param eventData event data
    * @return Step for creating an event
    */
@@ -90,24 +80,13 @@ public class EventHelper {
   /**
    * Factory for {@link Step} that asynchronously create an event.
    *
-   * @param domainNamespaces DomainSpaces instance
+   * @param domainNamespaces DomainNamespaces instance
    * @param eventData event item
    * @param next next step
    * @return Step for creating an event
    */
   public static Step createEventStep(DomainNamespaces domainNamespaces, EventData eventData, Step next) {
     return new CreateEventStep(domainNamespaces, eventData, next);
-  }
-
-  /**
-   * Factory for {@link Step} that asynchronously create an event.
-   *
-   * @param eventData event item
-   * @param next next step
-   * @return Step for creating an event
-   */
-  public static Step createEventStep(EventData eventData, Step next) {
-    return new CreateEventStep(null, eventData, next);
   }
 
   public static class CreateEventStep extends Step {
