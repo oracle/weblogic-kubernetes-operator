@@ -529,9 +529,9 @@ public class Main {
   }
 
   void dispatchNamespaceWatch(Watch.Response<V1Namespace> item) {
-    V1ObjectMeta metadata = Optional.ofNullable(item.object).map(V1Namespace::getMetadata).orElse(null);
-    String ns = Optional.ofNullable(metadata).map(V1ObjectMeta::getName).orElse(null);
-    if (metadata == null || ns == null) {
+    String ns = Optional.ofNullable(item.object).map(V1Namespace::getMetadata).map(V1ObjectMeta::getName).orElse(null);
+
+    if (ns == null) {
       return;
     }
 
