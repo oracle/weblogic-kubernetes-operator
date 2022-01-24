@@ -750,7 +750,7 @@ public class DomainStatusUpdater {
 
         private boolean allIntendedServersReady() {
           return haveServerData()
-              && allStartedServersAreReady()
+              && allStartedServersAreComplete()
               && allNonStartedServersAreShutdown()
               && serversMarkedForRoll().isEmpty();
         }
@@ -978,8 +978,8 @@ public class DomainStatusUpdater {
             .orElse(Collections.emptyMap());
       }
 
-      private boolean allStartedServersAreReady() {
-        return expectedRunningServers.stream().allMatch(this::isReady);
+      private boolean allStartedServersAreComplete() {
+        return expectedRunningServers.stream().allMatch(this::isServerComplete);
       }
 
       private boolean allNonStartedServersAreShutdown() {
@@ -1027,9 +1027,12 @@ public class DomainStatusUpdater {
         return Optional.ofNullable(scan).map(Scan::getWlsDomainConfig);
       }
 
-      // A server is ready if it is in the running state and does not need to roll to accommodate changes to the domain.
-      private boolean isReady(@Nonnull String serverName) {
-        return RUNNING_STATE.equals(getRunningState(serverName)) && isNotMarkedForRoll(serverName);
+      // A server is complete if it is ready, is in the WLS running state and
+      // does not need to roll to accommodate changes to the domain.
+      private boolean isServerComplete(@Nonnull String serverName) {
+        return RUNNING_STATE.equals(getRunningState(serverName))
+               && PodHelper.getReadyStatus(getInfo().getServerPod(serverName))
+               && isNotMarkedForRoll(serverName);
       }
 
       // returns true if the server pod does not have a label indicating that it needs to be rolled
