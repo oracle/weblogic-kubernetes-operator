@@ -40,6 +40,7 @@ import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.ClusterStatus;
+import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainCondition;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
@@ -491,6 +492,36 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @Test
+  void whenAnyServerLacksReadyState_establishCompletedConditionFalse() {
+    defineScenario().withCluster("cluster1", "ms1", "ms2", "ms3").build();
+    deactivateServer("ms1");
+    deactivateServer("ms2");
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus(FALSE));
+    assertThat(
+        getRecordedDomain().getApiVersion(),
+        equalTo(KubernetesConstants.API_VERSION_WEBLOGIC_ORACLE));
+  }
+
+  private void deactivateServer(String serverName) {
+    Optional.of(getPod(serverName))
+          .map(V1Pod::getStatus)
+          .map(V1PodStatus::getConditions).orElse(Collections.emptyList()).stream()
+          .filter(this::isReadyTrue)
+          .forEach(this::setNotReady);
+  }
+
+  private boolean isReadyTrue(V1PodCondition condition) {
+    return "Ready".equals(condition.getType()) && "True".equals(condition.getStatus());
+  }
+
+  private void setNotReady(V1PodCondition condition) {
+    condition.status("False");
+  }
+
+  @Test
   void whenAnyServerHasRollNeededLabel_establishCompletedConditionFalse() {
     defineScenario().withCluster("cluster1", "ms1", "ms2", "ms3").build();
     addRollNeededLabel("ms1");
@@ -888,8 +919,8 @@ abstract class DomainStatusUpdateTestBase {
     defineScenario()
           .withServers("server0")
           .withCluster("clusterA", "server1", "server2")
-          .withServersReachingState(STANDBY_STATE, "server0")
           .build();
+    deactivateServer("server0");
 
     updateDomainStatus();
 
@@ -950,12 +981,13 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @Test
-  void whenNoServersRunningInCluster_domainIsNotAvailable() {
+  void whenNoServersReadyInCluster_domainIsNotAvailable() {
     configureDomain().configureCluster("clusterA").withMaxUnavailable(2);
     defineScenario()
           .withCluster("clusterA", "server1", "server2")
-          .withServersReachingState(SHUTDOWN_STATE, "server1", "server2")
           .build();
+    deactivateServer("server1");
+    deactivateServer("server2");
 
     updateDomainStatus();
 
@@ -969,8 +1001,9 @@ abstract class DomainStatusUpdateTestBase {
     configureDomain().configureCluster("clusterA").withMaxUnavailable(2);
     defineScenario()
           .withCluster("clusterA", "server1", "server2")
-          .withServersReachingState(SHUTDOWN_STATE, "server1", "server2")
           .build();
+    deactivateServer("server1");
+    deactivateServer("server2");
 
     updateDomainStatus();
 
@@ -1193,7 +1226,49 @@ abstract class DomainStatusUpdateTestBase {
     assertThat(getRecordedDomain(), not(hasCondition(ConfigChangesPendingRestart)));
   }
 
-  //todo generate needed events from status update
+  @Test
+  void whenAdminOnly_availableIsFalse() {
+    configureDomain().withDefaultServerStartPolicy(ConfigurationConstants.START_ADMIN_ONLY);
+    defineScenario().build();
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(Available).withStatus(FALSE));
+  }
+
+  @Test
+  void whenAdminOnly_completedIsTrue() {
+    configureDomain().withDefaultServerStartPolicy(ConfigurationConstants.START_ADMIN_ONLY);
+    defineScenario().build();
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus(TRUE));
+  }
+
+  @Test
+  void whenAdminOnlyAndAdminIsNotYetRunning_completedIsFalse() {
+    configureDomain().withDefaultServerStartPolicy(ConfigurationConstants.START_ADMIN_ONLY);
+    defineScenario().build();
+
+    deactivateServer(ADMIN);
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus(FALSE));
+  }
+
+  @Test
+  void whenAdminOnlyAndAManagedServersShuttingDown_completedIsFalse() {
+    configureDomain().withDefaultServerStartPolicy(ConfigurationConstants.START_ADMIN_ONLY);
+    defineScenario()
+          .withServers("server1", "server2")
+          .withServersReachingState(SHUTTING_DOWN_STATE, "server1", "server2")
+          .build();
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(Completed).withStatus(FALSE));
+  }
 
   @SuppressWarnings("SameParameterValue")
   private ScenarioBuilder defineScenario() {
@@ -1221,6 +1296,7 @@ abstract class DomainStatusUpdateTestBase {
       configSupport = new WlsDomainConfigSupport("testDomain");
       configSupport.setAdminServerName(ADMIN);
       defineServerPod(ADMIN);
+      activateServer(ADMIN);
     }
 
     // Adds a cluster to the topology, along with its servers
@@ -1287,7 +1363,7 @@ abstract class DomainStatusUpdateTestBase {
       testSupport.addToPacket(SERVER_HEALTH_MAP, createHealthMap());
       processTopology(domainConfig);
       info.setServerStartupInfo(createServerStartupInfo(domainConfig));
-      getLiveServers().forEach(this::activateServer);
+      liveServers.forEach(this::activateServer);
       terminatingServers.forEach(this::markServerTerminating);
     }
 
