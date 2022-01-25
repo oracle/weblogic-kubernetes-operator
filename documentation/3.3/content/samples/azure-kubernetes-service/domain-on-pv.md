@@ -293,7 +293,7 @@ You need to set up the domain configuration for the WebLogic domain.
    troubleshoot the reason and resolve it before proceeding to the next
    step.
 
-    {{% notice note %}} This sample creates WebLogic Server pods with reasonable values for memory, CPU, and JVM heap size (as a percentage of memory). You can supply different values. Edit `~/azure/weblogic-on-aks/domain1.yaml` and set the desired values for `serverPodMemoryRequest`, `serverPodMemoryLimit`, `serverPodCpuRequest`, `serverPodCpuLimit` and `javaOptions` before running `./create-domain.sh -i ~/azure/weblogic-on-aks/domain1.yaml -o ~/azure -e -v`.
+    {{% notice note %}} This sample creates WebLogic Server Pods with reasonable values for memory, CPU, and JVM heap size (as a percentage of memory). These settings were determined by running a skeleton WebLogic domain with minimal or no deployed services and applications on potentially limited or heavily shared container environments. For advice about tuning CPU and memory requests and limits for broader use cases or in a production environment, see the [Pod memory and CPU resources](https://oracle.github.io/weblogic-kubernetes-operator/faq/resource-settings/) FAQ. To supply different values, edit `~/azure/weblogic-on-aks/domain1.yaml` and set the desired values for `serverPodMemoryRequest`, `serverPodMemoryLimit`, `serverPodCpuRequest`, `serverPodCpuLimit` and `javaOptions` before running `./create-domain.sh -i ~/azure/weblogic-on-aks/domain1.yaml -o ~/azure -e -v`.
     {{% /notice%}}
 
     Here is an excerpt showing reasonable values:
