@@ -26,7 +26,7 @@ This sample demonstrates how to use the [WebLogic Kubernetes Operator](/weblogic
 
 ##### Clone WebLogic Kubernetes Operator repository
 
-Clone the [WebLogic Kubernetes Operator repository](https://github.com/oracle/weblogic-kubernetes-operator) to your machine. We will use several scripts in this repository to create a WebLogic domain. This sample was tested with v3.3.7, but should work with the latest release.
+Clone the [WebLogic Kubernetes Operator repository](https://github.com/oracle/weblogic-kubernetes-operator) to your machine. You will use several scripts in this repository to create a WebLogic domain. This sample was tested with v3.3.7, but should work with the latest release.
 
 ```shell
 $ git clone --branch v{{< latestVersion >}} https://github.com/oracle/weblogic-kubernetes-operator.git
@@ -85,11 +85,11 @@ weblogic-operator-56654bcdb7-qww7f                1/1     Running     0         
   - [Create secrets](#create-secrets)
   - [Create WebLogic Domain](#create-weblogic-domain-1)
 
-Now that we have created the AKS cluster, installed the operator, and verified that the operator is ready to go, we can have the operator create a WLS domain.
+Now that You have created the AKS cluster, installed the operator, and verified that the operator is ready to go, you can have the operator create a WLS domain.
 
 ##### Create secrets
 
-We will use the `kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh` script to create the domain credentials as a Kubernetes secret. Please run:
+You will use the `kubernetes/samples/scripts/create-weblogic-domain-credentials/create-weblogic-credentials.sh` script to create the domain credentials as a Kubernetes secret. Please run:
 
 ```
 # cd kubernetes/samples/scripts/create-weblogic-domain-credentials
@@ -102,8 +102,7 @@ secret/domain1-weblogic-credentials created
 secret/domain1-weblogic-credentials labeled
 The secret domain1-weblogic-credentials has been successfully created in the default namespace.
 ```
-
-We will use the `kubernetes/samples/scripts/create-kubernetes-secrets/create-docker-credentials-secret.sh` script to create the Docker credentials as a Kubernetes secret. Please run:
+You will use the `kubernetes/samples/scripts/create-kubernetes-secrets/create-docker-credentials-secret.sh` script to create the Docker credentials as a Kubernetes secret. Please run:
 
 ```shell
 # Please change imagePullSecretNameSuffix if you change pre-defined value "regcred" before generating the configuration files.
@@ -139,12 +138,12 @@ weblogic-operator-secrets                 Opaque                                
 **Note**: If the `NAME` column in your output is missing any of the values shown above, please reexamine your execution of the preceding steps in this sample to ensure that you correctly followed all of them.  The `default-token-mwdj8` shown above will have a different ending in your output.
 
 ##### Create WebLogic Domain
-We will use the `kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain.sh` script to create the WLS domain in the persistent volume we created previously.
+You will use the `kubernetes/samples/scripts/create-weblogic-domain/domain-home-on-pv/create-domain.sh` script to create the WLS domain in the persistent volume you created previously.
 
 {{% notice note %}} The `create-domain.sh` script and its inputs file are for demonstration purposes _only_; its contents and the domain resource file that it generates for you might change without notice. In production, we strongly recommend that you use the WebLogic Image Tool and WebLogic Deploy Tooling (when applicable), and directly work with domain resource files instead.
 {{% /notice%}}
 
-We need to set up the domain configuration for the WebLogic domain.
+You need to set up the domain configuration for the WebLogic domain.
 
 1. Check if resources are ready.
 
@@ -337,7 +336,7 @@ We need to set up the domain configuration for the WebLogic domain.
      type: LoadBalancer
    ```
 
-   Use the sample configuration file `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/domain-on-pv/cluster-lb.yaml` to create a load balancer service for the Managed Servers. If you are choosing not to use the predefined YAML file and instead created new one with customized values, then substitute the following content with you domain values.
+   Use the sample configuration file `kubernetes/samples/scripts/create-weblogic-domain-on-azure-kubernetes-service/domain-on-pv/cluster-lb.yaml` to create a load balancer service for the Managed Servers. If you are choosing not to use the predefined YAML file and instead created new one with customized values, then substitute the following content with your domain values.
 
    ```yaml
    apiVersion: v1
@@ -521,7 +520,7 @@ $ ./create-domain-on-aks.sh -i my-create-domain-on-aks-inputs.yaml -o ~/azure -e
 
 The script will print the Administration Server address after a successful deployment.  The default user name for the Administration Console is `weblogic` and the default password is `welcome1`.  Please change this for production deployments.  To interact with the cluster using `kubectl`, use `az aks get-credentials` as shown in the script output.
 
-{{% notice info %}} You now have created an AKS cluster with Azure Fils NFS share to contain the WLS domain configuration files.  Using those artifacts, you have used the operator to create a WLS domain.
+{{% notice info %}} You now have created an AKS cluster with Azure Files NFS share to contain the WLS domain configuration files.  Using those artifacts, you have used the operator to create a WLS domain.
 {{% /notice %}}
 
 #### Deploy sample application
@@ -571,16 +570,16 @@ The test application will list the server host and server IP on the page.
 
 There are several approaches to validate the NFS volume:
 
-- Use Azure Storage bowser, make sure you have permission to access the NFS server, see [Azure Storage firewalls and virtual networks document](https://docs.microsoft.com/en-us/azure/storage/common/storage-network-security?tabs=azure-portal)
-- Mount the same NFS share in an existing virtual machine from Azure, access files from the mounted path, see [Mount Azure NFS file share to Linux](https://docs.microsoft.com/en-us/azure/storage/files/storage-files-how-to-mount-nfs-shares).
+- Use Azure Storage browser. Make sure you have permission to access the NFS server, see [Azure Storage firewalls and virtual networks document](https://docs.microsoft.com/en-us/azure/storage/common/storage-network-security?tabs=azure-portal)
+- Mount the same NFS share in an existing virtual machine from Azure. Access files from the mounted path, see [Mount Azure NFS file share to Linux](https://docs.microsoft.com/en-us/azure/storage/files/storage-files-how-to-mount-nfs-shares).
 
-We will use `kubectl exec` to enter the admin server pod to check file system status:
+Use `kubectl exec` to enter the admin server pod to check file system status:
 
 ```shell
 kubectl exec -it domain1-admin-server -- df -h
 ```
 
-You should find output like the following, with filesystem `${AKS_PERS_STORAGE_ACCOUNT_NAME}.file.core.windows.net:/${AKS_PERS_STORAGE_ACCOUNT_NAME}/${AKS_PERS_SHARE_NAME}`, size `100G`, and mounted on `/shared`:
+You will find output like the following, with filesystem `${AKS_PERS_STORAGE_ACCOUNT_NAME}.file.core.windows.net:/${AKS_PERS_STORAGE_ACCOUNT_NAME}/${AKS_PERS_SHARE_NAME}`, size `100G`, and mounted on `/shared`:
 
 ```text
 Filesystem                                                                                Size  Used Avail Use% Mounted on
