@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # Description
@@ -26,19 +26,19 @@ script="${BASH_SOURCE[0]}"
 #
 # Function to exit and print an error message
 # $1 - text of message
-function fail {
+fail() {
   echo [ERROR] $*
   exit 1
 }
 
 # Try to execute kubectl to see whether kubectl is available
-function validateKubectlAvailable {
+validateKubectlAvailable() {
   if ! [ -x "$(command -v kubectl)" ]; then
     fail "kubectl is not installed"
   fi
 }
 
-function usage {
+usage() {
   echo usage: ${script} -u username -p password -a sysuser -q syspassword [-d domainUID] [-n namespace] [-s secretName] [-h]
   echo "  -u username for schema owner (regular user), must be specified."
   echo "  -p password for schema owner (regular user), must be specified."

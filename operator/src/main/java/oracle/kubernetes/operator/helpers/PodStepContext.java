@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -63,7 +63,6 @@ import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
-import oracle.kubernetes.weblogic.domain.model.AuxiliaryImageEnvVars;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainStatus;
 import oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars;
@@ -94,6 +93,7 @@ import static oracle.kubernetes.operator.helpers.CompatibilityCheck.Compatibilit
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_STARTING;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.POD_CYCLE_STARTING;
 import static oracle.kubernetes.operator.helpers.LegalNames.LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_MOUNT_PATH;
 
 public abstract class PodStepContext extends BasePodStepContext {
 
@@ -172,7 +172,7 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   abstract Map<String, String> getPodAnnotations();
 
-  private String getNamespace() {
+  String getNamespace() {
     return info.getNamespace();
   }
 
@@ -838,13 +838,13 @@ public abstract class PodStepContext extends BasePodStepContext {
     for (V1Volume additionalVolume : getVolumes(getDomainUid())) {
       podSpec.addVolumesItem(additionalVolume);
     }
-    addEmptyDirVolume(podSpec, info.getDomain().getAuxiliaryImageVolumes());
+    Optional.ofNullable(getAuxiliaryImages()).ifPresent(auxImages -> podSpec.addVolumesItem(createEmptyDirVolume()));
     return podSpec;
   }
 
   private List<V1Container> getInitContainers(TuningParameters tuningParameters) {
     List<V1Container> initContainers = new ArrayList<>();
-    Optional.ofNullable(getServerSpec().getAuxiliaryImages()).ifPresent(auxiliaryImages ->
+    Optional.ofNullable(getAuxiliaryImages()).ifPresent(auxiliaryImages ->
             getAuxiliaryImageInitContainers(auxiliaryImages, initContainers));
     initContainers.addAll(getServerSpec().getInitContainers().stream()
             .map(c -> c.env(createEnv(c, tuningParameters))).collect(Collectors.toList()));
@@ -895,8 +895,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     for (V1VolumeMount additionalVolumeMount : getVolumeMounts()) {
       v1Container.addVolumeMountsItem(additionalVolumeMount);
     }
-    Optional.ofNullable(getServerSpec().getAuxiliaryImages()).ifPresent(auxiliaryImages ->
-            auxiliaryImages.forEach(cm -> addVolumeMount(v1Container, cm)));
+    Optional.ofNullable(getAuxiliaryImages()).ifPresent(auxiliaryImages -> addVolumeMountIfMissing(v1Container));
     return v1Container;
   }
 
@@ -957,7 +956,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     addEnvVar(vars, ServerEnvVars.SERVICE_NAME, LegalNames.toServerServiceName(getDomainUid(), getServerName()));
     addEnvVar(vars, ServerEnvVars.AS_SERVICE_NAME, LegalNames.toServerServiceName(getDomainUid(), getAsName()));
     Optional.ofNullable(getDataHome()).ifPresent(v -> addEnvVar(vars, ServerEnvVars.DATA_HOME, v));
-    Optional.ofNullable(getServerSpec().getAuxiliaryImages()).ifPresent(cm -> addAuxiliaryImageEnv(cm, vars));
+    Optional.ofNullable(getAuxiliaryImages()).ifPresent(ais -> addAuxiliaryImageEnv(ais, vars));
     addEnvVarIfTrue(mockWls(), vars, "MOCK_WLS");
     Optional.ofNullable(getKubernetesPlatform(tuningParameters)).ifPresent(v ->
             addEnvVar(vars, ServerEnvVars.KUBERNETES_PLATFORM, v));
@@ -967,8 +966,9 @@ public abstract class PodStepContext extends BasePodStepContext {
     Optional.ofNullable(auxiliaryImageList).ifPresent(auxiliaryImages -> {
       addEnvVar(vars, IntrospectorJobEnvVars.WDT_INSTALL_HOME, getWdtInstallHome());
       addEnvVar(vars, IntrospectorJobEnvVars.WDT_MODEL_HOME, getModelHome());
-      Optional.ofNullable(getAuxiliaryImagePaths(auxiliaryImageList, getDomain().getAuxiliaryImageVolumes()))
-              .ifPresent(c -> addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATHS, c));
+      if (auxiliaryImages.size() > 0) {
+        addEnvVar(vars, AUXILIARY_IMAGE_MOUNT_PATH, getDomain().getAuxiliaryImageVolumeMountPath());
+      }
     });
   }
 
@@ -982,6 +982,10 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   private String getModelHome() {
     return getDomain().getModelHome();
+  }
+
+  private List<AuxiliaryImage> getAuxiliaryImages() {
+    return getDomain().getAuxiliaryImages();
   }
 
   private boolean distributeOverridesDynamically() {

@@ -1,8 +1,9 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -16,6 +17,8 @@ import java.util.stream.Collectors;
 import javax.annotation.Nonnull;
 import javax.annotation.Nullable;
 
+import io.kubernetes.client.openapi.models.V1Namespace;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.operator.helpers.EventHelper.EventData;
 import oracle.kubernetes.operator.helpers.HelmAccess;
@@ -27,6 +30,7 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import org.apache.commons.lang3.ArrayUtils;
 
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.NAMESPACE_WATCHING_STOPPED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.STOP_MANAGING_NAMESPACE;
@@ -47,11 +51,11 @@ public class Namespaces {
   private static final String ALL_DOMAIN_NAMESPACES = "ALL_DOMAIN_NAMESPACES";
 
   /**
-   * Returns true if the specified string is the name of a domain namespace.
-   * @param ns a namespace name
+   * Returns true if the specified namespace is managed by the operator.
+   * @param namespace namespace object to check
    */
-  static boolean isDomainNamespace(String ns) {
-    return getSelectionStrategy().isDomainNamespace(ns);
+  static boolean isDomainNamespace(@Nonnull V1Namespace namespace) {
+    return getSelectionStrategy().isDomainNamespace(namespace);
   }
 
   /**
@@ -68,13 +72,6 @@ public class Namespaces {
     return getSelectionStrategy().getFoundDomainNamespaces(packet);
   }
 
-  /**
-   * Returns an array of the label selectors that will determine that a namespace is being used to manage domains.
-   */
-  static String[] getLabelSelectors() {
-    return getSelectionStrategy().getLabelSelectors();
-  }
-
   static <R> R getSelection(NamespaceStrategyVisitor<R> visitor) {
     return getSelectionStrategy().getSelection(visitor);
   }
@@ -82,8 +79,8 @@ public class Namespaces {
   public enum SelectionStrategy {
     List {
       @Override
-      public boolean isDomainNamespace(@Nonnull String namespaceName) {
-        return getConfiguredDomainNamespaces().contains(namespaceName);
+      public boolean isDomainNamespace(@Nonnull V1Namespace namespace) {
+        return getConfiguredDomainNamespaces().contains(getNSName(namespace));
       }
 
       @Override
@@ -111,25 +108,46 @@ public class Namespaces {
     },
     LabelSelector {
       @Override
-      public String[] getLabelSelectors() {
-        return new String[]{TuningParameters.getInstance().get("domainNamespaceLabelSelector")};
-      }
-
-      @Override
       public <V> V getSelection(NamespaceStrategyVisitor<V> visitor) {
         return visitor.getLabelSelectorStrategySelection();
       }
 
       @Override
-      public boolean isDomainNamespace(@Nonnull String namespaceName) {
-        return true;  // filtering is done by Kubernetes list call
+      public boolean isDomainNamespace(@Nonnull V1Namespace namespace) {
+        return matchSpecifiedLabelSelectors(namespace.getMetadata(), getLabelSelectors());
+      }
+
+      private String[] getLabelSelectors() {
+        return Optional.ofNullable(TuningParameters.getInstance().get("domainNamespaceLabelSelector"))
+            .map(s -> new String[]{s})
+            .orElse(new String[0]);
+      }
+
+      private boolean matchSpecifiedLabelSelectors(@NotNull V1ObjectMeta nsMetadata, String[] selectors) {
+        return ArrayUtils.isEmpty(selectors) || hasLabels(nsMetadata, selectors);
+      }
+
+      private boolean hasLabels(@NotNull V1ObjectMeta metadata, String[] selectors) {
+        return Arrays.stream(selectors).allMatch(s -> hasLabel(metadata, s));
+      }
+
+      private boolean hasLabel(@Nonnull V1ObjectMeta metadata, String selector) {
+        String[] split = selector.split("=");
+        return includesLabel(metadata.getLabels(), split[0], split.length == 1 ? null : split[1]);
+      }
+
+      private boolean includesLabel(Map<String, String> labels, String key, String value) {
+        if (labels == null || !labels.containsKey(key)) {
+          return false;
+        }
+        return value == null || value.equals(labels.get(key));
       }
     },
     RegExp {
       @Override
-      public boolean isDomainNamespace(@Nonnull String namespaceName) {
+      public boolean isDomainNamespace(@Nonnull V1Namespace namespace) {
         try {
-          return getCompiledPattern(getRegExp()).matcher(namespaceName).find();
+          return getCompiledPattern(getRegExp()).matcher(getNSName(namespace)).find();
         } catch (PatternSyntaxException e) {
           LOGGER.severe(MessageKeys.EXCEPTION, e);
           return false;
@@ -151,8 +169,8 @@ public class Namespaces {
     },
     Dedicated {
       @Override
-      public boolean isDomainNamespace(@Nonnull String namespaceName) {
-        return namespaceName.equals(getOperatorNamespace());
+      public boolean isDomainNamespace(@Nonnull V1Namespace namespace) {
+        return getNSName(namespace).equals(getOperatorNamespace());
       }
 
       @Override
@@ -171,13 +189,7 @@ public class Namespaces {
       }
     };
 
-    static final String[] NO_SELECTORS = new String[0];
-
-    public abstract boolean isDomainNamespace(@Nonnull String namespaceName);
-
-    public String[] getLabelSelectors() {
-      return NO_SELECTORS;
-    }
+    public abstract boolean isDomainNamespace(@Nonnull V1Namespace namespace);
 
     public @Nullable Collection<String> getConfiguredDomainNamespaces() {
       return null;
@@ -186,6 +198,10 @@ public class Namespaces {
     public abstract <V> V getSelection(NamespaceStrategyVisitor<V> visitor);
 
     private static final Map<String, Pattern> compiledPatterns = new WeakHashMap<>();
+
+    String getNSName(V1Namespace namespace) {
+      return Optional.ofNullable(namespace).map(V1Namespace::getMetadata).map(V1ObjectMeta::getName).orElse(null);
+    }
 
     /**
      * Returns a modifiable collection of found namespace names in a packet.
