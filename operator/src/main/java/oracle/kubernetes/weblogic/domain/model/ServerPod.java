@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -220,17 +220,6 @@ class ServerPod extends KubernetesResource {
       + "See `kubectl explain pods.spec.containers.volumeMounts`.")
   private final List<V1VolumeMount> volumeMounts = new ArrayList<>();
 
-  /**
-   * The auxiliary image.
-   *
-   */
-  @Description("Use an auxiliary image to automatically include directory content from additional images. "
-          + "This is a useful alternative for including Model in Image model files, or other types of files, in a pod "
-          + "without requiring modifications to the pod's base image 'domain.spec.image'. "
-          + "This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share "
-          + "the files from the additional images with the pod.")
-  private List<AuxiliaryImage> auxiliaryImages;
-
   private static void copyValues(V1ResourceRequirements to, V1ResourceRequirements from) {
     if (from != null) {
       if (from.getRequests() != null) {
@@ -420,14 +409,6 @@ class ServerPod extends KubernetesResource {
         .failureThreshold(failureThreshold);
   }
 
-  List<AuxiliaryImage> getAuxiliaryImages() {
-    return this.auxiliaryImages;
-  }
-
-  void setAuxiliaryImages(List<AuxiliaryImage> auxiliaryImages) {
-    this.auxiliaryImages = auxiliaryImages;
-  }
-
   ProbeTuning getLivenessProbeTuning() {
     return this.livenessProbe;
   }
@@ -452,7 +433,6 @@ class ServerPod extends KubernetesResource {
     livenessProbe.copyValues(serverPod1.livenessProbe);
     readinessProbe.copyValues(serverPod1.readinessProbe);
     shutdown.copyValues(serverPod1.shutdown);
-    addAuxiliaryImage(serverPod1);
     for (V1Volume var : serverPod1.getAdditionalVolumes()) {
       addIfMissing(var);
     }
@@ -496,18 +476,6 @@ class ServerPod extends KubernetesResource {
     }
     tolerations.addAll(serverPod1.tolerations);
     hostAliases.addAll(serverPod1.hostAliases);
-  }
-
-  private void addAuxiliaryImage(ServerPod serverPod1) {
-    if (serverPod1.auxiliaryImages != null) {
-      if (auxiliaryImages == null) {
-        auxiliaryImages = new ArrayList<>(serverPod1.auxiliaryImages);
-      } else {
-        auxiliaryImages = Stream.of(serverPod1.auxiliaryImages, auxiliaryImages)
-                .flatMap(c -> c.stream())
-                .collect(Collectors.toList());
-      }
-    }
   }
 
   private V1Container createWithEnvCopy(V1Container c) {
@@ -821,7 +789,6 @@ class ServerPod extends KubernetesResource {
         .append("tolerations", tolerations)
         .append("hostAliases", hostAliases)
         .append("serviceAccountName", serviceAccountName)
-        .append("auxiliaryImages", auxiliaryImages)
         .toString();
   }
 
@@ -867,7 +834,6 @@ class ServerPod extends KubernetesResource {
         .append(tolerations, that.tolerations)
         .append(hostAliases, that.hostAliases)
         .append(serviceAccountName, that.serviceAccountName)
-        .append(auxiliaryImages, that.auxiliaryImages)
         .isEquals();
   }
 
@@ -897,7 +863,6 @@ class ServerPod extends KubernetesResource {
         .append(tolerations)
         .append(hostAliases)
         .append(serviceAccountName)
-        .append(auxiliaryImages)
         .toHashCode();
   }
 }
