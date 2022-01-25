@@ -8,7 +8,9 @@
 
 # AUXILIARY_IMAGE_PATH arg:
 #   Parent location for Model in Image model and WDT installation files.
-#   Default '/auxiliary'.
+#   The default is '/auxiliary', which matches the parent directory in the default values for
+#   'domain.spec.configuration.model.auxiliaryImages.sourceModelHome' and
+#   'domain.spec.configuration.model.auxiliaryImages.sourceWDTInstallHome', respectively.
 #
 
 FROM busybox
