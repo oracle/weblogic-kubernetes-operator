@@ -919,8 +919,8 @@ abstract class DomainStatusUpdateTestBase {
     defineScenario()
           .withServers("server0")
           .withCluster("clusterA", "server1", "server2")
-          .withServersReachingState(STANDBY_STATE, "server0")
           .build();
+    deactivateServer("server0");
 
     updateDomainStatus();
 
@@ -981,12 +981,13 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @Test
-  void whenNoServersRunningInCluster_domainIsNotAvailable() {
+  void whenNoServersReadyInCluster_domainIsNotAvailable() {
     configureDomain().configureCluster("clusterA").withMaxUnavailable(2);
     defineScenario()
           .withCluster("clusterA", "server1", "server2")
-          .withServersReachingState(SHUTDOWN_STATE, "server1", "server2")
           .build();
+    deactivateServer("server1");
+    deactivateServer("server2");
 
     updateDomainStatus();
 
@@ -1000,8 +1001,9 @@ abstract class DomainStatusUpdateTestBase {
     configureDomain().configureCluster("clusterA").withMaxUnavailable(2);
     defineScenario()
           .withCluster("clusterA", "server1", "server2")
-          .withServersReachingState(SHUTDOWN_STATE, "server1", "server2")
           .build();
+    deactivateServer("server1");
+    deactivateServer("server2");
 
     updateDomainStatus();
 
