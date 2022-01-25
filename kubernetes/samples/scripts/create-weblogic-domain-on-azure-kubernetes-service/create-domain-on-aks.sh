@@ -327,7 +327,7 @@ createFileShare() {
   nameAvailable=$(echo "$ret" | grep "nameAvailable" | grep "false")
   if [ -n "$nameAvailable" ]; then
     echo $ret
-    fail "Storage account ${aksClusterName} is unavaliable."
+    fail "Storage account ${aksClusterName} is unavailable."
   fi
 
   echo Creating Azure Storage Account ${storageAccountName}.
@@ -367,18 +367,18 @@ createFileShare() {
 
 configureStorageAccountNetwork() {
   # get the resource group name of the AKS managed resources
-  aksMCRGName=$(az aks show --name $aksClusterName --resource-group $azureResourceGroupName -o tsv --query "nodeResourceGroup")
+  local aksMCRGName=$(az aks show --name $aksClusterName --resource-group $azureResourceGroupName -o tsv --query "nodeResourceGroup")
   echo ${aksMCRGName}
 
   # get network name of AKS cluster
-  aksNetworkName=$(az resource list --resource-group ${aksMCRGName} --resource-type Microsoft.Network/virtualNetworks -o tsv --query '[*].name')
+  local aksNetworkName=$(az resource list --resource-group ${aksMCRGName} --resource-type Microsoft.Network/virtualNetworks -o tsv --query '[*].name')
   echo ${aksNetworkName}
 
   # get subnet name of AKS agent pool
-  aksSubnetName=$(az network vnet subnet list --resource-group ${aksMCRGName} --vnet-name ${aksNetworkName} -o tsv --query "[*].name")
+  local aksSubnetName=$(az network vnet subnet list --resource-group ${aksMCRGName} --vnet-name ${aksNetworkName} -o tsv --query "[*].name")
   echo ${aksSubnetName}
 
-  aksSubnetId=$(az network vnet subnet list --resource-group ${aksMCRGName} --vnet-name ${aksNetworkName} -o tsv --query "[*].id")
+  local aksSubnetId=$(az network vnet subnet list --resource-group ${aksMCRGName} --vnet-name ${aksNetworkName} -o tsv --query "[*].id")
   echo ${aksSubnetId}
 
   az network vnet subnet update \
@@ -427,8 +427,8 @@ createWebLogicDomain() {
 }
 
 waitForJobComplete() {
-  attempts=0
-  svcState="running"
+  local attempts=0
+  local svcState="running"
   while [ ! "$svcState" == "completed" ] && [ ! $attempts -eq 30 ]; do
     svcState="completed"
     attempts=$((attempts + 1))
@@ -439,17 +439,17 @@ waitForJobComplete() {
     #    ${domainUID}-${adminServerName}, e.g. domain1-admin-server
     #    ${domainUID}-${adminServerName}-ext, e.g. domain1-admin-server-ext
     #    ${domainUID}-${adminServerName}-external-lb, e.g domain1-admin-server-external-lb
-    adminServiceCount=$(kubectl get svc | grep -c "${domainUID}-${adminServerName}")
+    local adminServiceCount=$(kubectl get svc | grep -c "${domainUID}-${adminServerName}")
     if [ ${adminServiceCount} -lt 3 ]; then svcState="running"; fi
 
     # If the job is completed, there should have the following services created, .assuming initialManagedServerReplicas=2
     #    ${domainUID}-${managedServerNameBase}1, e.g. domain1-managed-server1
     #    ${domainUID}-${managedServerNameBase}2, e.g. domain1-managed-server2
-    managedServiceCount=$(kubectl get svc | grep -c "${domainUID}-${managedServerNameBase}")
+    local managedServiceCount=$(kubectl get svc | grep -c "${domainUID}-${managedServerNameBase}")
     if [ ${managedServiceCount} -lt ${initialManagedServerReplicas} ]; then svcState="running"; fi
 
     # If the job is completed, there should have no service in pending status.
-    pendingCount=$(kubectl get svc | grep -c "pending")
+    local pendingCount=$(kubectl get svc | grep -c "pending")
     if [ ${pendingCount} -ne 0 ]; then svcState="running"; fi
 
     # If the job is completed, there should have the following pods running
@@ -457,7 +457,7 @@ waitForJobComplete() {
     #    ${domainUID}-${managedServerNameBase}1, e.g. domain1-managed-server1
     #    to
     #    ${domainUID}-${managedServerNameBase}n, e.g. domain1-managed-servern, n = initialManagedServerReplicas
-    runningPodCount=$(kubectl get pods | grep "${domainUID}" | grep -c "Running")
+    local runningPodCount=$(kubectl get pods | grep "${domainUID}" | grep -c "Running")
     if [[ $runningPodCount -le ${initialManagedServerReplicas} ]]; then svcState="running"; fi
 
     echo ==============================Current Status==========================================
