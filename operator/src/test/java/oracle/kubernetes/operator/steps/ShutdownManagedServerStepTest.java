@@ -27,6 +27,7 @@ import oracle.kubernetes.operator.helpers.DomainPresenceInfo;
 import oracle.kubernetes.operator.helpers.KubernetesTestSupport;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.LegalNames;
+import oracle.kubernetes.operator.helpers.PodHelper;
 import oracle.kubernetes.operator.helpers.TuningParametersStub;
 import oracle.kubernetes.operator.http.HttpAsyncRequestStep;
 import oracle.kubernetes.operator.http.HttpAsyncTestSupport;
@@ -307,7 +308,9 @@ class ShutdownManagedServerStepTest {
   void verifyShutdownManagedServerProcessing_requestTimeout() {
     ShutdownManagedServerProcessing processing = new ShutdownManagedServerProcessing(testSupport.getPacket(),
         configuredServerService, configuredManagedServer1);
-    assertThat(processing.getRequestTimeoutSeconds(), equalTo(Shutdown.DEFAULT_TIMEOUT));
+    assertThat(
+        processing.getRequestTimeoutSeconds(),
+        equalTo(Shutdown.DEFAULT_TIMEOUT + PodHelper.DEFAULT_ADDITIONAL_DELETE_TIME));
   }
 
   @Test

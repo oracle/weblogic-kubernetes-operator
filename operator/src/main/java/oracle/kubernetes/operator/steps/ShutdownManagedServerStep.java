@@ -205,7 +205,9 @@ public class ShutdownManagedServerStep extends Step {
     }
 
     Long getRequestTimeoutSeconds() {
-      return timeout;
+      // Add a 10 second fudge factor here to account for any delay in
+      // connecting and issuing the shutdown request.
+      return timeout + PodHelper.DEFAULT_ADDITIONAL_DELETE_TIME;
     }
 
     private String getRequestUrl(Boolean isGracefulShutdown) {
