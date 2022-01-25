@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -38,7 +38,9 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
@@ -866,7 +868,7 @@ class ItUsabilityOperatorHelmChart {
     // create secret for admin credentials
     logger.info("Creating secret for admin credentials");
     String adminSecretName = "weblogic-credentials-" + domainUid;
-    createSecretWithUsernamePassword(adminSecretName, domainNamespace, "weblogic", "welcome1");
+    createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create encryption secret
     logger.info("Creating encryption secret");
@@ -1183,8 +1185,12 @@ class ItUsabilityOperatorHelmChart {
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     String hostAndPort = getHostAndPort(adminSvcExtRouteHost, adminServiceNodePort);
-    StringBuffer checkCluster = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
-    checkCluster.append("http://" + hostAndPort)
+    StringBuffer checkCluster = new StringBuffer("status=$(curl --user ")
+        .append(ADMIN_USERNAME_DEFAULT)
+        .append(":")
+        .append(ADMIN_PASSWORD_DEFAULT)
+        .append(" ")
+        .append("http://" + hostAndPort)
         .append("/management/tenant-monitoring/servers/")
         .append(managedServer)
         .append(" --silent --show-error ")
