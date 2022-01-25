@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import io.kubernetes.client.custom.V1Patch;
+import io.kubernetes.client.openapi.ApiException;
 import io.kubernetes.client.openapi.models.CoreV1Event;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EnvVar;
@@ -58,6 +59,7 @@ import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.createNamespace;
 import static oracle.weblogic.kubernetes.actions.TestActions.deleteDomainCustomResource;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolume;
 import static oracle.weblogic.kubernetes.actions.TestActions.deletePersistentVolumeClaim;
@@ -262,7 +264,7 @@ class ItKubernetesEvents {
     assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
 
-    logger.info("verify the DomainCompleted event is generated");
+    logger.info("verify the DomainChanged event is generated");
     checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_CHANGED, "Normal", timestamp);
   }
 
@@ -432,6 +434,10 @@ class ItKubernetesEvents {
       V1Patch patch = new V1Patch(patchStr);
       assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
           "Failed to patch domain");
+
+      logger.info("verify the DomainCompleted event is generated");
+      checkEvent(opNamespace, domainNamespace1, domainUid, DOMAIN_COMPLETED, "Normal", timestamp);
+
     }
   }
 
@@ -818,6 +824,33 @@ class ItKubernetesEvents {
     logger.info("verify NamespaceWatchingStopped event is logged in namespace {0}", domainNamespace3);
     checkNamespaceWatchingStoppedEvent(opNamespace, domainNamespace3, null, "Normal", timestamp,
         enableClusterRoleBinding);
+
+    if (enableClusterRoleBinding) {
+      String newNSWithoutLabels = "ns-newnamespace1";
+      String newNSWithLabels = "ns-newnamespace2";
+
+      assertDoesNotThrow(() -> createNamespaces(newNSWithoutLabels, newNSWithLabels),
+          "Failed to create new namespaces");
+
+      new Command()
+          .withParams(new CommandParams()
+              .command("kubectl label ns " + newNSWithLabels + " weblogic-operator=enabled --overwrite"))
+          .execute();
+
+      logger.info("verify NamespaceWatchingStarted event is logged in namespace {0}", newNSWithLabels);
+      checkEvent(opNamespace, newNSWithLabels, null, NAMESPACE_WATCHING_STARTED, "Normal", timestamp);
+
+      // verify there is no event logged in domainNamespace4
+      logger.info("verify NamespaceWatchingStarted event is not logged in {0}", domainNamespace4);
+      assertFalse(domainEventExists(opNamespace, newNSWithoutLabels, null, NAMESPACE_WATCHING_STARTED,
+          "Normal", timestamp), "domain event " + NAMESPACE_WATCHING_STARTED + " is logged in "
+          + newNSWithoutLabels + ", expected no such event will be logged");
+    }
+  }
+
+  private void createNamespaces(String newNSWithoutLabels, String newNSWithLabels) throws ApiException {
+    createNamespace(newNSWithoutLabels);
+    createNamespace(newNSWithLabels);
   }
 
   /**

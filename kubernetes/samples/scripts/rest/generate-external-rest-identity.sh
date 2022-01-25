@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # When the customer enables the operator's external REST api (by setting
@@ -69,7 +69,7 @@ if [ -z $TEMP_DIR ]; then
   exit 1
 fi
 
-function cleanup {
+cleanup() {
   rm -r $TEMP_DIR
   if [[ $SUCCEEDED != "true" ]]; then
     exit 1
