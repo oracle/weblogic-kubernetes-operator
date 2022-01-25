@@ -338,7 +338,7 @@ class ItMiiDomain {
                 MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
 
     // set low introspectorJobActiveDeadlineSeconds and verify introspector retries on timeouts
-    domain.getSpec().configuration().introspectorJobActiveDeadlineSeconds(100L);
+    domain.getSpec().configuration().introspectorJobActiveDeadlineSeconds(90L);
 
     // create model in image domain
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",
