@@ -811,7 +811,7 @@ public class DomainStatusUpdater {
         }
 
         private boolean sufficientServersReady() {
-          return numServersRunning() >= getSufficientServerCount();
+          return numServersReady() >= getSufficientServerCount();
         }
 
         private long getSufficientServerCount() {
@@ -826,7 +826,7 @@ public class DomainStatusUpdater {
           return getDomain().isAllowReplicasBelowMinDynClusterSize(clusterName) ? 0 : minReplicaCount;
         }
 
-        private long numServersRunning() {
+        private long numServersReady() {
           return startedServers.stream()
               .filter(StatusUpdateContext.this::isServerReady)
               .count();
