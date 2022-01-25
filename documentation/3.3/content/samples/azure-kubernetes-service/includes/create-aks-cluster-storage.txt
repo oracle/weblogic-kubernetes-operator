@@ -195,7 +195,7 @@ EOF
 ```
 
 We have provided another configuration file `pvc.yaml` for the `PersistentVolumeClaim`.  The `pvc.yaml` file have exactly the same Storage Class name as created previously. This is required. 
-The following command outputs the YAML content of `pvc.yaml`.
+The following command displays the YAML content of `pvc.yaml`.
 
 ```shell
 cat <<EOF
