@@ -191,7 +191,7 @@ function checkPvState {
 # $2 - expected state of volume claim
 function checkPvcState {
   echo "Checking if the persistent volume claim ${1:?} is ${2:?}"
-  local end_secs=$(SECONDS + 10)
+  local end_secs=$((SECONDS + 30))
   local pvc_state=`kubectl get pvc $1 -o jsonpath='{.status.phase}'`
   while [ ! "$pvc_state" = "$2" ] && [ $SECONDS -le $end_secs ]; do
     sleep 1
