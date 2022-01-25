@@ -4,6 +4,7 @@
 package oracle.kubernetes.operator.helpers;
 
 import java.util.Arrays;
+import java.util.Map;
 import java.util.Objects;
 
 import com.google.common.collect.ImmutableMap;
@@ -13,6 +14,8 @@ import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1ContainerPort;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1PodSecurityContext;
+import io.kubernetes.client.openapi.models.V1PodSpec;
 import io.kubernetes.client.openapi.models.V1Probe;
 import io.kubernetes.client.openapi.models.V1ResourceRequirements;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
@@ -444,6 +447,22 @@ class PodCompatibilityTest {
         compatibility.getScopedIncompatibility(UNKNOWN), both(containsString("aa")).and(containsString("bb")));
     assertThat(
         compatibility.getScopedIncompatibility(POD), both(containsString("aa")).and(containsString("bb")));
+  }
+
+  @Test
+  void whenSecurityContextsDontMatch_createDomainAndPodScopeErrorMessage() {
+    PodCompatibility.PodSpecCompatibility compatibility =
+          new PodCompatibility.PodSpecCompatibility(
+                createPodSpecWithRunAsUser(0L),
+                createPodSpecWithRunAsUser(1000L));
+
+    assertThat(compatibility.isCompatible(), is(false));
+  }
+
+  private V1PodSpec createPodSpecWithRunAsUser(long runAsUser) {
+    return new V1PodSpec()
+          .securityContext(new V1PodSecurityContext().runAsUser(1000L))
+          .nodeSelector(Map.of());
   }
 
   @Test
