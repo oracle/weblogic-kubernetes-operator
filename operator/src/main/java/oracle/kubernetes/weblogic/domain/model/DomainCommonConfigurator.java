@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -57,12 +57,26 @@ public class DomainCommonConfigurator extends DomainConfigurator {
   }
 
   @Override
-  public void withAuxiliaryImages(List<AuxiliaryImage> auxiliaryImages) {
-    getDomainSpec().setAuxiliaryImages(auxiliaryImages);
+  public DomainConfigurator withAuxiliaryImages(List<AuxiliaryImage> auxiliaryImages) {
+    getOrCreateModel().withAuxiliaryImages(auxiliaryImages);
+    return this;
   }
 
-  public DomainConfigurator withAuxiliaryImageVolumes(List<AuxiliaryImageVolume> auxiliaryImageVolumes) {
-    getDomainSpec().setAuxiliaryImageVolumes(auxiliaryImageVolumes);
+  @Override
+  public DomainConfigurator withAuxiliaryImageVolumeMountPath(String auxiliaryImageVolumeMountPath) {
+    getOrCreateModel().withAuxiliaryImageVolumeMountPath(auxiliaryImageVolumeMountPath);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withAuxiliaryImageVolumeMedium(String auxiliaryImageVolumeMedium) {
+    getOrCreateModel().withAuxiliaryImageVolumeMedium(auxiliaryImageVolumeMedium);
+    return this;
+  }
+
+  @Override
+  public DomainConfigurator withAuxiliaryImageVolumeSizeLimit(String auxiliaryImageVolumeSizeLimit) {
+    getOrCreateModel().withAuxiliaryImageVolumeSizeLimit(auxiliaryImageVolumeSizeLimit);
     return this;
   }
 
@@ -524,12 +538,6 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     }
 
     @Override
-    public ServerConfigurator withAuxiliaryImages(List<AuxiliaryImage> auxiliaryImages) {
-      server.setAuxiliaryImages(auxiliaryImages);
-      return this;
-    }
-
-    @Override
     public ServerConfigurator withNodeSelector(String labelKey, String labelValue) {
       server.addNodeSelector(labelKey, labelValue);
       return this;
@@ -806,12 +814,6 @@ public class DomainCommonConfigurator extends DomainConfigurator {
     @Override
     public ClusterConfigurator withAffinity(V1Affinity affinity) {
       cluster.setAffinity(affinity);
-      return this;
-    }
-
-    @Override
-    public ClusterConfigurator withAuxiliaryImages(List<AuxiliaryImage> auxiliaryImages) {
-      cluster.setAuxiliaryImages(auxiliaryImages);
       return this;
     }
 

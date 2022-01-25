@@ -1,11 +1,11 @@
 #!/bin/bash
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 
 # Perform preparation based on the specified cluster type
 
-function usage {
+usage() {
   echo usage: ${script} -i file -t type [-h]
   echo "  -i Directory, must be specified."
   echo "  -t Domain Type [JRF or RestrictedJRF] , must be specified."
