@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -23,6 +23,7 @@ public interface LabelConstants {
   String INTROSPECTION_STATE_LABEL = "weblogic.introspectVersion";
   String MII_UPDATED_RESTART_REQUIRED_LABEL = "weblogic.configChangesPendingRestart";
   String INTROSPECTION_DOMAIN_SPEC_GENERATION = "weblogic.domainSpecGeneration";
+  String TO_BE_ROLLED_LABEL = "weblogic.awaitingPodRoll";
 
   static String forDomainUidSelector(String uid) {
     return String.format("%s=%s", DOMAINUID_LABEL, uid);

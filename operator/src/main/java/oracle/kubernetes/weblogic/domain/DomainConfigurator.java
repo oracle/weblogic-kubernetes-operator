@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain;
@@ -20,7 +20,6 @@ import io.kubernetes.client.openapi.models.V1Toleration;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
-import oracle.kubernetes.weblogic.domain.model.AuxiliaryImageVolume;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 
@@ -78,6 +77,16 @@ public abstract class DomainConfigurator {
 
   public DomainConfigurator withDomainHomeSourceType(DomainSourceType domainHomeSourceType) {
     getDomainSpec().setDomainHomeSourceType(domainHomeSourceType);
+    return this;
+  }
+
+  public DomainConfigurator withWDTInstallationHome(String wdtInstallationHome) {
+    getDomainSpec().setWdtInstallHome(wdtInstallationHome);
+    return this;
+  }
+
+  public DomainConfigurator withModelHome(String modelHome) {
+    getDomainSpec().setModelHome(modelHome);
     return this;
   }
 
@@ -253,15 +262,23 @@ public abstract class DomainConfigurator {
 
   /**
    * Add auxiliary images for the domain resource.
-   *
    */
-  public abstract void withAuxiliaryImages(List<AuxiliaryImage> ai);
+  public abstract DomainConfigurator withAuxiliaryImages(List<AuxiliaryImage> ai);
 
   /**
-   * Add auxiliary image volumes for the domain resource.
-   *
+   * Configure auxiliary image volume mount path.
    */
-  public abstract DomainConfigurator withAuxiliaryImageVolumes(List<AuxiliaryImageVolume> auxiliaryImageVolume);
+  public abstract DomainConfigurator withAuxiliaryImageVolumeMountPath(String auxiliaryImageVolumeMountPath);
+
+  /**
+   * Configure auxiliary image volume withAuxiliaryImageVolumeMedium.
+   */
+  public abstract DomainConfigurator withAuxiliaryImageVolumeMedium(String auxiliaryImageVolumeMedium);
+
+  /**
+   * Configure auxiliary image volume size limit.
+   */
+  public abstract DomainConfigurator withAuxiliaryImageVolumeSizeLimit(String auxiliaryImageSizeLimit);
 
   /**
    * Sets the default settings for the liveness probe. Any settings left null will default to the

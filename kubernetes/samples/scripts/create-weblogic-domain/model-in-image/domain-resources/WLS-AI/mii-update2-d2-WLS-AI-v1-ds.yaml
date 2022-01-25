@@ -1,4 +1,4 @@
-# Copyright (c) 2021, Oracle and/or its affiliates.
+# Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at http://oss.oracle.com/licenses/upl.
 #
 # This is an example of how to define a Domain resource.
@@ -50,11 +50,6 @@ spec:
   # - "IF_NEEDED" will start all non-clustered servers, including the administration server, and clustered servers up to their replica count.
   serverStartPolicy: "IF_NEEDED"
 
-  # Settings for auxiliary image volume(s), see also 'serverPod.auxiliaryImages'.
-  auxiliaryImageVolumes:
-  - name: auxiliaryImageVolume1
-    mountPath: "/auxiliary"
-
   # Settings for all server pods in the domain including the introspector job pod
   serverPod:
     # Optional new or overridden environment variables for the domain's pods
@@ -71,15 +66,6 @@ spec:
       requests:
         cpu: "250m"
         memory: "768Mi"
-
-    # Auxiliary image(s) containing WDT model, archives and install. See also:
-    #    'spec.auxiliaryImageVolumes'.
-    #    'spec.configuration.model.modelHome'
-    #    'spec.configuration.model.wdtInstallHome'
-    auxiliaryImages:
-    - image: "model-in-image:WLS-AI-v1"
-      imagePullPolicy: IfNotPresent
-      volume: auxiliaryImageVolume1
 
     # Optional volumes and mounts for the domain's pods. See also 'logHome'.
     #volumes:
@@ -142,8 +128,21 @@ spec:
     model:
       # Valid model domain types are 'WLS', 'JRF', and 'RestrictedJRF', default is 'WLS'
       domainType: "WLS"
-      modelHome: "/auxiliary/models"
-      wdtInstallHome: "/auxiliary/weblogic-deploy"
+
+      # Optional auxiliary image(s) containing WDT model, archives, and install.
+      # Files are copied from `sourceModelHome` in the aux image to the `/aux/models` directory
+      # in running WebLogic Server pods, and files are copied from `sourceWDTInstallHome` 
+      # to the `/aux/weblogic-deploy` directory. Set `sourceModelHome` and/or `sourceWDTInstallHome` 
+      # to "None" if you want skip such copies.
+      #   `image`                - Image location
+      #   `imagePullPolicy`      - Pull policy, default `IfNotPresent`
+      #   `sourceModelHome`      - Model file directory in image, default `/auxiliary/models`.
+      #   `sourceWDTInstallHome` - WDT install directory in image, default `/auxiliary/weblogic-deploy`.
+      auxiliaryImages:
+      - image: "model-in-image:WLS-AI-v1"
+        #imagePullPolicy: IfNotPresent
+        #sourceWDTInstallHome: /auxiliary/weblogic-deploy
+        #sourceModelHome: /auxiliary/models
 
       # Optional configmap for additional models and variable files
       configMap: sample-domain2-wdt-config-map
