@@ -63,12 +63,14 @@ import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
 import static oracle.weblogic.kubernetes.TestConstants.DB_OPERATOR_YAML_URL;
+import static oracle.weblogic.kubernetes.TestConstants.NFS_SERVER;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_DB_19C_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_DB_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_REGISTRY;
 import static oracle.weblogic.kubernetes.TestConstants.OCR_SECRET_NAME;
 //import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
+import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.SIDB_YAML_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.DOWNLOAD_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -775,7 +777,11 @@ public class DbUtils {
 
     createOcrRepoSecret(namespace);
 
-    createHostPathProvisioner(namespace, hostPath);
+    if(OKD){
+      createNfsPathProvisioner(namespace);
+    } else{
+      createHostPathProvisioner(namespace, hostPath);
+    }
 
     String dbYamlUrl = SIDB_YAML_URL;
 
@@ -859,6 +865,27 @@ public class DbUtils {
     params.command("kubectl create -f " + hpYamlFile.toString());
     boolean response = Command.withParams(params).execute();
     assertTrue(response, "Failed to create hostpath provisioner");
+  }
+
+  // create nfs path provisioner
+  private static void createNfsPathProvisioner(String namespace) throws ApiException, IOException {
+    CommandParams params = new CommandParams().defaults();
+    params.command("oc adm policy add-scc-to-user hostmount-anyuid system:serviceaccount:"
+        + namespace + ":nfs-client-provisioner");
+    boolean response = Command.withParams(params).execute();
+    assertTrue(response, "Failed to add policy");
+
+    Path hpYamlFileTemplate = Paths.get(RESOURCE_DIR, "storageclass", "nfs-path-provisioner.yaml");
+    Path hpYamlFile = Paths.get(DOWNLOAD_DIR, namespace, "nfs-path-provisioner.yaml");
+    Files.copy(hpYamlFileTemplate, hpYamlFile, REPLACE_EXISTING);
+    replaceStringInFile(hpYamlFile.toString(), "@@NAMESPACE@@", namespace);
+    replaceStringInFile(hpYamlFile.toString(), "@@NFS_SERVER@@", NFS_SERVER);
+    replaceStringInFile(hpYamlFile.toString(), "@@PV_ROOT@@", PV_ROOT);
+    getLogger().info(Files.readString(hpYamlFile));
+    params = new CommandParams().defaults();
+    params.command("kubectl create -f " + hpYamlFile.toString());
+    response = Command.withParams(params).execute();
+    assertTrue(response, "Failed to create nfs path provisioner");
   }
 
   /**
