@@ -1021,7 +1021,6 @@ public abstract class PodStepContext extends BasePodStepContext {
       boolean istioEnabled = getDomain().isIstioEnabled();
       if (istioEnabled) {
         int istioReadinessPort = getDomain().getIstioReadinessPort();
-        int localAdminPort = getLocalAdminProtocolChannelPort();
         // if admin port enabled (whether it is domain wide or per server, it must use the admin port
         // for readiness probe instead of the istio readiness port otherwise the ready app reject the
         // request.
