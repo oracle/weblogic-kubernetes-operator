@@ -85,7 +85,7 @@ weblogic-operator-56654bcdb7-qww7f                1/1     Running     0         
   - [Create secrets](#create-secrets)
   - [Create WebLogic Domain](#create-weblogic-domain-1)
 
-Now that You have created the AKS cluster, installed the operator, and verified that the operator is ready to go, you can have the operator create a WLS domain.
+Now that you have created the AKS cluster, installed the operator, and verified that the operator is ready to go, you can have the operator create a WLS domain.
 
 ##### Create secrets
 
