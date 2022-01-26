@@ -39,8 +39,6 @@ import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.verifyClusterLo
 import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.verifyHeadersInAdminServerLog;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyNginx;
-import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
-import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithTLSCertKey;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -49,12 +47,13 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
- * Test operator manages multiple domains.
+ * Test a single operator can manage multiple WebLogic domains with a single NGINX fronted loadbalancer.
+ * Create two domains using WLST with domain-on-pv type.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Verify operator manages multiple domains")
+@DisplayName("Verify Nginx load balancer handles traffic to two background WebLogic domains")
 @IntegrationTest
-class ItLBNginx {
+class ItLBTwoDomainsNginx {
 
   private static final int numberOfDomains = 2;
   private static final String wlSecretName = "weblogic-credentials";
@@ -103,34 +102,28 @@ class ItLBNginx {
     // install and verify operator with REST API
     installAndVerifyOperator(opNamespace, opServiceAccount, true, 0, domainNamespace);
 
-    // This test uses the operator restAPI to scale the domain. To do this in OKD cluster,
-    // we need to expose the external service as route and set tls termination to  passthrough
-    logger.info("Create a route for the operator external service - only for OKD");
-    createRouteForOKD("external-weblogic-operator-svc", opNamespace);
-    // Patch the route just created to set tls termination to passthrough
-    setTlsTerminationForRoute("external-weblogic-operator-svc", opNamespace);
-
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
     createSecretForBaseImages(domainNamespace);
 
     for (int i = 1; i <= numberOfDomains; i++) {
-      domainUids.add("wls-domain" + i);
+      domainUids.add("wls-nginx-domain" + i);
     }
 
     createMultipleDomainsSharingPVUsingWlstAndVerify(
-        domainNamespace, wlSecretName, ItLBNginx.class.getSimpleName(), numberOfDomains, domainUids,
+        domainNamespace, wlSecretName, ItLBTwoDomainsNginx.class.getSimpleName(), numberOfDomains, domainUids,
         replicaCount, clusterName, ADMIN_SERVER_PORT, MANAGED_SERVER_PORT);
 
     // build and deploy app to be used by all test cases
     buildAndDeployClusterviewApp(domainNamespace, domainUids);
 
     // install Nginx ingress controller for all test cases using Nginx
-    installIngressController();
+    installNginxIngressController();
   }
 
   /**
-   * Verify WebLogic admin console is accessible through NGINX path routing with HTTPS protocol.
+   *  Verify the WebLogic Administration Console from both domains is accessible through a path routing
+   *  based single NGIX LoadBalancer using HTTP protocol.
    */
   @Test
   @DisplayName("Verify WebLogic admin console is accessible through NGINX path routing with HTTPS protocol")
@@ -435,7 +428,7 @@ class ItLBNginx {
     return getServiceNodePort(nginxNamespace, nginxServiceName, channelName);
   }
 
-  private static void installIngressController() {
+  private static void installNginxIngressController() {
     // install and verify Nginx
     logger.info("Installing Nginx controller using helm");
     nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);

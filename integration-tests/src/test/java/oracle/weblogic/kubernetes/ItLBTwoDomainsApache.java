@@ -48,8 +48,6 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.createMiiDomai
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyApache;
-import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
-import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVPVCAndVerify;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -57,12 +55,16 @@ import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
 /**
- * Test operator manages multiple domains.
+ * Test Apache load balancer handles traffic to one or two backend Weblogic domains.
+ * It contains two usecases.
+ * One is configuring the Apache webtier as a load balancer for a WebLogic domain using the default configuration.
+ * Another is configuring the Apache webtier as a load balancer for multiple WebLogic domains
+ * using a custom configuration.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Verify operator manages multiple domains")
+@DisplayName("Verify Apache load balancer handles traffic to one or two backend Weblogic domains")
 @IntegrationTest
-class ItLBApache {
+class ItLBTwoDomainsApache {
 
   private static final int numberOfDomains = 2;
   private static final String wlSecretName = "weblogic-credentials";
@@ -70,6 +72,7 @@ class ItLBApache {
   private static final String apachePvName = "apache-custom-file-pv";
 
   private static List<String> domainUids = new ArrayList<>();
+  private static String miiDomainUid = null;
   private static String domainNamespace = null;
   private static String apacheNamespace = null;
   private static LoggingFacade logger = null;
@@ -111,19 +114,12 @@ class ItLBApache {
     // install and verify operator with REST API
     installAndVerifyOperator(opNamespace, opServiceAccount, true, 0, domainNamespace, apacheNamespace);
 
-    // This test uses the operator restAPI to scale the domain. To do this in OKD cluster,
-    // we need to expose the external service as route and set tls termination to  passthrough
-    logger.info("Create a route for the operator external service - only for OKD");
-    createRouteForOKD("external-weblogic-operator-svc", opNamespace);
-    // Patch the route just created to set tls termination to passthrough
-    setTlsTerminationForRoute("external-weblogic-operator-svc", opNamespace);
-
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
     createSecretForBaseImages(domainNamespace);
 
     for (int i = 1; i <= numberOfDomains; i++) {
-      domainUids.add("wls-domain" + i);
+      domainUids.add("wls-apache-domain" + i);
     }
 
     if (KIND_REPO != null) {
@@ -145,27 +141,28 @@ class ItLBApache {
           APACHE_IMAGE);
     }
 
-    // create one domain in apache namespace for Apache default sample
+    // create one domain with model-in-image type in apache namespace for Apache default configuration usecase
+    miiDomainUid = "wls-domain1";
     createMiiDomainAndVerify(
         apacheNamespace,
-        domainUids.get(0),
+        miiDomainUid,
         MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG,
-        domainUids.get(0) + "-admin-server",
-        domainUids.get(0) + "-managed-server",
+        miiDomainUid + "-admin-server",
+        miiDomainUid + "-managed-server",
         replicaCount);
 
-    // create two domains for Apache custom sample
+    // create two domains with domain-on-pv type in domain namespace for Apache custom configuration usecase
     createMultipleDomainsSharingPVUsingWlstAndVerify(
-        domainNamespace, wlSecretName, ItLBApache.class.getSimpleName(), numberOfDomains, domainUids,
+        domainNamespace, wlSecretName, ItLBTwoDomainsApache.class.getSimpleName(), numberOfDomains, domainUids,
         replicaCount, clusterName, ADMIN_SERVER_PORT, MANAGED_SERVER_PORT);
 
     // build and deploy app to be used by Apache custom sample
     buildAndDeployClusterviewApp(domainNamespace, domainUids);
     // build and deploy app to be used by Apache default sample
-    buildAndDeployClusterviewApp(apacheNamespace, Collections.singletonList("wls-domain1"));
+    buildAndDeployClusterviewApp(apacheNamespace, Collections.singletonList(miiDomainUid));
 
     // install Apache ingress controller for all test cases using Apache
-    installIngressController();
+    installApacheIngressController();
   }
 
   /**
@@ -181,7 +178,7 @@ class ItLBApache {
     // verify Apache default sample
     logger.info("Verifying Apache default sample");
     int httpNodePort = getApacheNodePort(apacheNamespace, "http");
-    verifyClusterLoadbalancing(domainUids.get(0), "", "http", httpNodePort, replicaCount, false, "/weblogic");
+    verifyClusterLoadbalancing(miiDomainUid, "", "http", httpNodePort, replicaCount, false, "/weblogic");
   }
 
   /**
@@ -208,13 +205,13 @@ class ItLBApache {
     }
   }
 
-  private static void installIngressController() {
-    // install and verify Apache for default sample
+  private static void installApacheIngressController() {
+    // install and verify Apache for default configuration
     logger.info("Installing Apache controller using helm");
     assertDoesNotThrow(() ->
-        installAndVerifyApache(apacheNamespace, kindRepoApacheImage, 0, 0, 8001, domainUids.get(0)));
+        installAndVerifyApache(apacheNamespace, kindRepoApacheImage, 0, 0, 8001, miiDomainUid));
 
-    // install and verify Apache for custom sample
+    // install and verify Apache for custom configuration
     LinkedHashMap<String, String> clusterNamePortMap = new LinkedHashMap<>();
     for (int i = 0; i < numberOfDomains; i++) {
       clusterNamePortMap.put(domainUids.get(i) + "-cluster-cluster-1", "" + MANAGED_SERVER_PORT);
@@ -239,7 +236,7 @@ class ItLBApache {
    * @param apacheNamespace namespace in which to create PVC
    */
   private static void createPVPVCForApacheCustomConfiguration(String apacheNamespace) {
-    Path pvHostPath = get(PV_ROOT, ItLBApache.class.getSimpleName(), "apache-persistentVolume");
+    Path pvHostPath = get(PV_ROOT, ItLBTwoDomainsApache.class.getSimpleName(), "apache-persistentVolume");
 
     V1PersistentVolume v1pv = new V1PersistentVolume()
         .spec(new V1PersistentVolumeSpec()

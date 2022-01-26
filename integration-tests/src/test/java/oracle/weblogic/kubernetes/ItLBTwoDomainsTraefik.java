@@ -32,8 +32,6 @@ import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.verifyAdminServ
 import static oracle.weblogic.kubernetes.utils.CommonLBTestUtils.verifyClusterLoadbalancing;
 import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
 import static oracle.weblogic.kubernetes.utils.LoadBalancerUtils.installAndVerifyTraefik;
-import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
-import static oracle.weblogic.kubernetes.utils.OKDUtils.setTlsTerminationForRoute;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithTLSCertKey;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -43,12 +41,12 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 /**
- * Test operator manages multiple domains.
+ * Test a single operator can manage multiple WebLogic domains with as single Traefik fronted loadbalancer.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Verify operator manages multiple domains")
+@DisplayName("Verify a single operator manages multiple WebLogic domains with as single Traefik fronted loadbalancer")
 @IntegrationTest
-class ItLBTraefik {
+class ItLBTwoDomainsTraefik {
 
   private static final int numberOfDomains = 2;
   private static final String wlSecretName = "weblogic-credentials";
@@ -97,30 +95,23 @@ class ItLBTraefik {
     // install and verify operator with REST API
     installAndVerifyOperator(opNamespace, opServiceAccount, true, 0, domainNamespace);
 
-    // This test uses the operator restAPI to scale the domain. To do this in OKD cluster,
-    // we need to expose the external service as route and set tls termination to  passthrough
-    logger.info("Create a route for the operator external service - only for OKD");
-    createRouteForOKD("external-weblogic-operator-svc", opNamespace);
-    // Patch the route just created to set tls termination to passthrough
-    setTlsTerminationForRoute("external-weblogic-operator-svc", opNamespace);
-
     // create pull secrets for WebLogic image when running in non Kind Kubernetes cluster
     // this secret is used only for non-kind cluster
     createSecretForBaseImages(domainNamespace);
 
     for (int i = 1; i <= numberOfDomains; i++) {
-      domainUids.add("wls-domain" + i);
+      domainUids.add("wls-traefik-domain" + i);
     }
 
     createMultipleDomainsSharingPVUsingWlstAndVerify(
-        domainNamespace, wlSecretName, ItLBTraefik.class.getSimpleName(), numberOfDomains, domainUids,
+        domainNamespace, wlSecretName, ItLBTwoDomainsTraefik.class.getSimpleName(), numberOfDomains, domainUids,
         replicaCount, clusterName, ADMIN_SERVER_PORT, MANAGED_SERVER_PORT);
 
     // build and deploy app to be used by all test cases
     buildAndDeployClusterviewApp(domainNamespace, domainUids);
 
     // install Traefik ingress controller for all test cases using Traefik
-    installIngressController();
+    installTraefikIngressController();
   }
 
   /**
@@ -179,7 +170,7 @@ class ItLBTraefik {
     logger.info("Verifying Traefik path routing with HTTP protocol across two domains");
     for (String domainUid : domainUids) {
       verifyClusterLoadbalancing(domainUid, "", "http", getTraefikLbNodePort(false),
-          replicaCount, false, "/" + domainUid.substring(4));
+          replicaCount, false, "/" + domainUid.substring(12));
     }
   }
 
@@ -194,7 +185,7 @@ class ItLBTraefik {
     });
   }
 
-  private static void installIngressController() {
+  private static void installTraefikIngressController() {
     // install and verify Traefik
     logger.info("Installing Traefik controller using helm");
     traefikHelmParams = installAndVerifyTraefik(traefikNamespace, 0, 0);
