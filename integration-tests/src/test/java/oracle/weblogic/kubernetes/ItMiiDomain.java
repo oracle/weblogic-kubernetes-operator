@@ -41,6 +41,7 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -306,6 +307,7 @@ class ItMiiDomain {
   @Test
   @Order(2)
   @DisplayName("Create a second domain with the image from the the first test")
+  @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   void testCreateMiiSecondDomainDiffNSSameImage() {
     // admin/managed server name here should match with model yaml in MII_BASIC_WDT_MODEL_FILE
     final String adminServerPodName = domainUid1 + "-admin-server";
@@ -338,7 +340,7 @@ class ItMiiDomain {
                 MII_BASIC_IMAGE_NAME + ":" + MII_BASIC_IMAGE_TAG);
 
     // set low introspectorJobActiveDeadlineSeconds and verify introspector retries on timeouts
-    domain.getSpec().configuration().introspectorJobActiveDeadlineSeconds(45L);
+    domain.getSpec().configuration().introspectorJobActiveDeadlineSeconds(30L);
 
     // create model in image domain
     logger.info("Creating model in image domain {0} in namespace {1} using docker image {2}",

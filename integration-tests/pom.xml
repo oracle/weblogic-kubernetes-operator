@@ -432,7 +432,7 @@
             </properties>
         </profile>
         <profile>
-            <id>wko-okd-crio-job</id>
+            <id>wko-okd-srg</id>
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>
@@ -441,16 +441,10 @@
                   **/ItMiiDomain,
                   **/ItMiiDynamicUpdate,
                   **/ItMiiNewCreateAuxImage,
-                  **/ItMiiSampleWlsAux,
-                  **/ItMiiSampleWlsMain,
-                  **/ItMiiSampleFmwMain,
-                  **/ItMiiSampleFmwAux,
-                  **/ItMiiServiceMigration,
                   **/ItParameterizedDomain,
                   **/ItPodsShutdownOption,
-                  **/ItProductionSecureMode,
-                  **/ItSessionMigration,
                   **/ItSystemResOverrides,
+                  **/ItFmwDynamicDomainInPV,
                   **/ItFmwMiiDomain
                 </includes-failsafe>
             </properties>
