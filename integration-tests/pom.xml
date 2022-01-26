@@ -338,5 +338,15 @@
                 </includes-failsafe>
             </properties>
         </profile>
+        <profile>
+            <id>wls-srg</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                    **/ItParameterizedDomainSrg,
+                    **/ItMiiAuxiliaryImage
+                </includes-failsafe>
+            </properties>
+        </profile>
     </profiles>
 </project>
