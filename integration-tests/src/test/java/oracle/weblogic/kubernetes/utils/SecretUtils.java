@@ -14,7 +14,6 @@ import java.util.Map;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1ObjectReference;
 import io.kubernetes.client.openapi.models.V1Secret;
-import io.kubernetes.client.openapi.models.V1SecretList;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServiceAccountList;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
@@ -25,7 +24,6 @@ import oracle.weblogic.kubernetes.logging.LoggingFacade;
 import static oracle.weblogic.kubernetes.TestConstants.GEN_EXTERNAL_REST_IDENTITY_FILE;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.actions.TestActions.createSecret;
-import static oracle.weblogic.kubernetes.actions.impl.primitive.Kubernetes.listSecrets;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
 import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
@@ -77,17 +75,7 @@ public class SecretUtils {
                                                       String namespace,
                                                       String username,
                                                       String password) {
-    // skip if the secret already exists
-    LoggingFacade logger = getLogger();
-    V1SecretList listSecrets = listSecrets(namespace);
-    if (listSecrets != null) {
-      for (V1Secret item : listSecrets.getItems()) {
-        if (item.getMetadata().getName().equals(secretName)) {
-          logger.info("Secret {0} already exists in namespace {1}, skipping secret creation", secretName, namespace);
-          return;
-        }
-      }
-    }
+
     Map<String, String> secretMap = new HashMap<>();
     secretMap.put("username", username);
     secretMap.put("password", password);
