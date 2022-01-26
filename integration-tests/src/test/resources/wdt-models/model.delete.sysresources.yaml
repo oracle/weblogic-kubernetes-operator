@@ -3,13 +3,13 @@
 
 resources:
     FileStore:
-        !TestClusterFileStore:
+        '!TestClusterFileStore':
     JMSServer:
-        !TestClusterJmsServer:
+        '!TestClusterJmsServer':
     JMSSystemResource:
-        !TestClusterJmsModule:
+        '!TestClusterJmsModule':
     JDBCSystemResource:
-        !TestDataSource:
+        '!TestDataSource':
 appDeployments:
     Application:
-        !myear:
+        '!myear':

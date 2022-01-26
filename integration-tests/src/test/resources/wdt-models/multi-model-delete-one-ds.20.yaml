@@ -20,4 +20,4 @@ resources:
                     Properties:
                         user:
                             Value: j2ee
-        !TestDataSource2:
+        '!TestDataSource2':
