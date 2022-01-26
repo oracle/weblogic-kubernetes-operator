@@ -913,6 +913,7 @@ class ItUsabilityOperatorHelmChart {
                         .nodePort(0))))
             .clusters(clusters)
             .configuration(new Configuration()
+                .introspectorJobActiveDeadlineSeconds(280L)
                 .model(new Model()
                     .domainType(WLS_DOMAIN_TYPE)
                     .runtimeEncryptionSecret(encryptionSecretName))));
