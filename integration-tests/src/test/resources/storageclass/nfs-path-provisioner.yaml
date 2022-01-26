@@ -70,7 +70,7 @@ roleRef:
   kind: Role
   name: leader-locking-nfs-client-provisioner
   apiGroup: rbac.authorization.k8s.io
-  
+---  
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -110,3 +110,11 @@ spec:
           nfs:
             server: @@NFS_SERVER@@
             path: @@PV_ROOT@@
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: dboperatorsc  #This is the storage class name
+provisioner: nfs-storage # or choose another name, must match deployment's env PROVISIONER_NAME'
+parameters:
+  archiveOnDelete: "false"
