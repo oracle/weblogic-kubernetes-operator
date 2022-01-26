@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -80,6 +80,7 @@ import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
+import org.apache.commons.lang3.ArrayUtils;
 import org.apache.commons.lang3.builder.ToStringBuilder;
 import org.jetbrains.annotations.NotNull;
 
@@ -801,7 +802,7 @@ public class KubernetesTestSupport extends FiberTestSupport {
     }
 
     private Predicate<Object> withLabels(String[] labelSelectors) {
-      return o -> labelSelectors == null || hasLabels(getMetadata(o), labelSelectors);
+      return o -> (ArrayUtils.isEmpty(labelSelectors) || hasLabels(getMetadata(o), labelSelectors));
     }
 
     private boolean hasLabels(V1ObjectMeta metadata, String[] selectors) {

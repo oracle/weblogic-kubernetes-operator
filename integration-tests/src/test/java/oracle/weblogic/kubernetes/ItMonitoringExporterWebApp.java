@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -43,8 +43,8 @@ import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CHART_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MODEL_DIR;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
@@ -72,6 +72,7 @@ import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installVerifyGraf
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.uninstallPrometheusGrafana;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.verifyMonExpAppAccess;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.verifyMonExpAppAccessThroughNginx;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPvAndPvc;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -132,6 +133,7 @@ class ItMonitoringExporterWebApp {
   private static String prometheusReleaseName = "prometheus" + releaseSuffix;
   private static String grafanaReleaseName = "grafana" + releaseSuffix;
   private static  String monitoringExporterDir;
+  private static String hostPortPrometheus = null;
 
 
   /**
@@ -187,13 +189,15 @@ class ItMonitoringExporterWebApp {
     logger.info("create and verify WebLogic domain image using model in image with model files");
     miiImage = MonitoringUtils.createAndVerifyMiiImage(monitoringExporterAppDir, MODEL_DIR + "/" + MONEXP_MODEL_FILE,
         SESSMIGR_APP_NAME, MONEXP_IMAGE_NAME);
+    if (!OKD) {
+      // install and verify NGINX
+      nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
 
-    // install and verify NGINX
-    nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
-    String nginxServiceName = nginxHelmParams.getReleaseName() + "-ingress-nginx-controller";
-    logger.info("NGINX service name: {0}", nginxServiceName);
-    nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
-    nodeportshttps = getServiceNodePort(nginxNamespace, nginxServiceName, "https");
+      String nginxServiceName = nginxHelmParams.getReleaseName() + "-ingress-nginx-controller";
+      logger.info("NGINX service name: {0}", nginxServiceName);
+      nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
+      nodeportshttps = getServiceNodePort(nginxNamespace, nginxServiceName, "https");
+    }
     logger.info("NGINX http node port: {0}", nodeportshttp);
     logger.info("NGINX https node port: {0}", nodeportshttps);
     clusterNameMsPortMap = new HashMap<>();
@@ -203,15 +207,17 @@ class ItMonitoringExporterWebApp {
     clusterNames.add(cluster2Name);
 
     exporterUrl = String.format("http://%s:%s/wls-exporter/",K8S_NODEPORT_HOST,nodeportshttp);
-    logger.info("create pv and pvc for monitoring");
     HashMap<String, String> labels = new HashMap<>();
     labels.put("app", "monitoring");
     labels.put("weblogic.domainUid", "test");
-    String pvDir = PV_ROOT + "/ItMonitoringExporterWebApp/monexp-persistentVolume/";
-    assertDoesNotThrow(() -> createPvAndPvc(prometheusReleaseName, monitoringNS, labels, pvDir));
-    assertDoesNotThrow(() -> createPvAndPvc("alertmanager" + releaseSuffix, monitoringNS, labels, pvDir));
-    assertDoesNotThrow(() -> createPvAndPvc(grafanaReleaseName, monitoringNS, labels,pvDir));
-    cleanupPromGrafanaClusterRoles(prometheusReleaseName,grafanaReleaseName);
+    String className = "ItMonitoringExporterWebApp";
+    if (!OKD) {
+      logger.info("create pv and pvc for monitoring");
+      assertDoesNotThrow(() -> createPvAndPvc(prometheusReleaseName, monitoringNS, labels, className));
+      assertDoesNotThrow(() -> createPvAndPvc("alertmanager" + releaseSuffix, monitoringNS, labels, className));
+      assertDoesNotThrow(() -> createPvAndPvc(grafanaReleaseName, monitoringNS, labels, className));
+      cleanupPromGrafanaClusterRoles(prometheusReleaseName, grafanaReleaseName);
+    }
   }
 
 
@@ -233,13 +239,24 @@ class ItMonitoringExporterWebApp {
 
       // create ingress for the domain
       logger.info("Creating ingress for domain {0} in namespace {1}", domain1Uid, domain1Namespace);
-      ingressHost1List =
-          createIngressForDomainAndVerify(domain1Uid, domain1Namespace, clusterNameMsPortMap, false);
-      verifyMonExpAppAccessThroughNginx(ingressHost1List.get(0), 1, nodeportshttp);
-      installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
-          domain1Namespace,
-          domain1Uid);
-
+      String adminServerPodName = domain1Uid + "-admin-server";
+      String clusterService = domain1Uid + "-cluster-cluster-1";
+      if (!OKD) {
+        ingressHost1List =
+            createIngressForDomainAndVerify(domain1Uid, domain1Namespace, clusterNameMsPortMap, false);
+        verifyMonExpAppAccessThroughNginx(ingressHost1List.get(0), 1, nodeportshttp);
+        // Need to expose the admin server external service to access the console in OKD cluster only
+      } else {
+        String hostName = createRouteForOKD(clusterService, domain1Namespace);
+        logger.info("hostName = {0} ", hostName);
+        verifyMonExpAppAccess(1,hostName);
+        exporterUrl = String.format("http://%s/wls-exporter/",hostName);
+      }
+      if (!OKD) {
+        installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
+            domain1Namespace,
+            domain1Uid);
+      }
       logger.info("Testing replace configuration");
       replaceConfiguration();
       logger.info("Testing append configuration");
@@ -393,6 +410,11 @@ class ItMonitoringExporterWebApp {
       assertNotNull(promHelmParams, " Failed to install prometheus");
       prometheusDomainRegexValue = prometheusRegexValue;
       nodeportPrometheus = promHelmParams.getNodePortServer();
+      hostPortPrometheus = K8S_NODEPORT_HOST + ":" + nodeportPrometheus;
+      if (OKD) {
+        hostPortPrometheus = createRouteForOKD("prometheus" + releaseSuffix
+            + "-service", monitoringNS) + ":" + nodeportPrometheus;
+      }
     }
     //if prometheus already installed change CM for specified domain
     if (!prometheusRegexValue.equals(prometheusDomainRegexValue)) {
@@ -410,7 +432,11 @@ class ItMonitoringExporterWebApp {
               monitoringExporterEndToEndDir + "/grafana/values.yaml",
               grafanaChartVersion);
       assertNotNull(grafanaHelmParams, "Grafana failed to install");
-      installVerifyGrafanaDashBoard(grafanaHelmParams.getNodePort(), monitoringExporterEndToEndDir);
+      String hostPortGrafana = K8S_NODEPORT_HOST + ":" + grafanaHelmParams.getNodePort();
+      if (OKD) {
+        hostPortGrafana = createRouteForOKD(grafanaReleaseName, monitoringNS) + ":" + grafanaHelmParams.getNodePort();
+      }
+      installVerifyGrafanaDashBoard(hostPortGrafana, monitoringExporterEndToEndDir);
     }
     logger.info("Grafana is running");
   }
@@ -431,15 +457,16 @@ class ItMonitoringExporterWebApp {
     if (miiImage != null) {
       deleteImage(miiImage);
     }
+    if (!OKD) {
+      uninstallPrometheusGrafana(promHelmParams.getHelmParams(), grafanaHelmParams);
 
-    uninstallPrometheusGrafana(promHelmParams.getHelmParams(), grafanaHelmParams);
-
-    deletePersistentVolumeClaim("pvc-alertmanager" + releaseSuffix,monitoringNS);
-    deletePersistentVolume("pv-testalertmanager" + releaseSuffix);
-    deletePersistentVolumeClaim("pvc-" + prometheusReleaseName, monitoringNS);
-    deletePersistentVolume("pv-test" + prometheusReleaseName);
-    deletePersistentVolumeClaim("pvc-" + grafanaReleaseName, monitoringNS);
-    deletePersistentVolume("pv-test" + grafanaReleaseName);
+      deletePersistentVolumeClaim("pvc-alertmanager" + releaseSuffix, monitoringNS);
+      deletePersistentVolume("pv-testalertmanager" + releaseSuffix);
+      deletePersistentVolumeClaim("pvc-" + prometheusReleaseName, monitoringNS);
+      deletePersistentVolume("pv-test" + prometheusReleaseName);
+      deletePersistentVolumeClaim("pvc-" + grafanaReleaseName, monitoringNS);
+      deletePersistentVolume("pv-test" + grafanaReleaseName);
+    }
     deleteNamespace(monitoringNS);
     deleteMonitoringExporterTempDir(monitoringExporterDir);
   }
@@ -562,11 +589,13 @@ class ItMonitoringExporterWebApp {
         "Page does not contain expected JVMRuntime configuration");
     assertFalse(page.asText().contains("WebAppComponentRuntime"),
         "Page contains unexpected WebAppComponentRuntime configuration");
-    //needs 20 secs to fetch the metrics to prometheus
-    Thread.sleep(20 * 1000);
-    // "heap_free_current{name="managed-server1"}[15s]" search for results for last 15secs
-    checkMetricsViaPrometheus("heap_free_current%7Bname%3D%22" + cluster1Name + "-managed-server1%22%7D%5B15s%5D",
-        cluster1Name + "-managed-server1",nodeportPrometheus);
+    if (!OKD) {
+      //needs 20 secs to fetch the metrics to prometheus
+      Thread.sleep(20 * 1000);
+      // "heap_free_current{name="managed-server1"}[15s]" search for results for last 15secs
+      checkMetricsViaPrometheus("heap_free_current%7Bname%3D%22" + cluster1Name + "-managed-server1%22%7D%5B15s%5D",
+          cluster1Name + "-managed-server1", hostPortPrometheus);
+    }
 
   }
 
@@ -583,10 +612,11 @@ class ItMonitoringExporterWebApp {
             "Page does not contain expected WebAppComponentRuntime configuration");
     // check previous config is there
     assertTrue(page.asText().contains("JVMRuntime"), "Page does not contain expected JVMRuntime configuration");
-
-    String sessionAppPrometheusSearchKey =
-            "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
-    checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr",nodeportPrometheus);
+    if (!OKD) {
+      String sessionAppPrometheusSearchKey =
+          "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
+      checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr", hostPortPrometheus);
+    }
   }
 
   /**
@@ -724,8 +754,10 @@ class ItMonitoringExporterWebApp {
             submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/rest_snakecasefalse.yaml");
     assertNotNull(page);
     assertFalse(page.asText().contains("metricsNameSnakeCase"));
-    String searchKey = "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D";
-    checkMetricsViaPrometheus(searchKey, "sessmigr",nodeportPrometheus);
+    if (!OKD) {
+      String searchKey = "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D";
+      checkMetricsViaPrometheus(searchKey, "sessmigr", hostPortPrometheus);
+    }
   }
 
   /**
@@ -739,13 +771,15 @@ class ItMonitoringExporterWebApp {
         submitConfigureForm(exporterUrl, "replace", RESOURCE_DIR + "/exporter/norestport.yaml");
     assertNotNull(page);
     assertFalse(page.asText().contains("restPort"));
-    //needs 20 secs to fetch the metrics to prometheus
-    Thread.sleep(20 * 1000);
-    // "heap_free_current{name="managed-server1"}[15s]" search for results for last 15secs
+    if (!OKD) {
+      //needs 20 secs to fetch the metrics to prometheus
+      Thread.sleep(20 * 1000);
+      // "heap_free_current{name="managed-server1"}[15s]" search for results for last 15secs
 
-    String prometheusSearchKey1 =
-        "heap_free_current";
-    checkMetricsViaPrometheus(prometheusSearchKey1, "managed-server1",nodeportPrometheus);
+      String prometheusSearchKey1 =
+          "heap_free_current";
+      checkMetricsViaPrometheus(prometheusSearchKey1, "managed-server1", hostPortPrometheus);
+    }
   }
 
   /**
@@ -760,9 +794,10 @@ class ItMonitoringExporterWebApp {
     assertNotNull(page);
     logger.info("page - " + page.asText());
     assertTrue(page.asText().contains("domainQualifier"));
-
-    String searchKey = "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D";
-    checkMetricsViaPrometheus(searchKey, "\"domain\":\"wls-monexp-domain-1" + "\"",nodeportPrometheus);
+    if (!OKD) {
+      String searchKey = "wls_servlet_executionTimeAverage%7Bapp%3D%22myear%22%7D%5B15s%5D";
+      checkMetricsViaPrometheus(searchKey, "\"domain\":\"wls-monexp-domain-1" + "\"", hostPortPrometheus);
+    }
   }
 
   /**
@@ -853,11 +888,11 @@ class ItMonitoringExporterWebApp {
     try {
       copyFileToPod(domainNS, adminServerPodName, null,
           Paths.get(RESOURCE_DIR, "python-scripts", "changeListenPort.py"),
-          Paths.get("/u01/oracle/changeListenPort.py"));
+          Paths.get("/u01/changeListenPort.py"));
 
       copyFileToPod(domainNS, adminServerPodName, null,
           Paths.get(RESOURCE_DIR, "bash-scripts", "callpyscript.sh"),
-          Paths.get("/u01/oracle/callpyscript.sh"));
+          Paths.get("/u01/callpyscript.sh"));
     } catch (ApiException apex) {
       logger.severe("Got ApiException while copying file to admin pod {0}", apex.getResponseBody());
       return false;
@@ -868,12 +903,12 @@ class ItMonitoringExporterWebApp {
 
     logger.info("Adding execute mode for callpyscript.sh");
     ExecResult result = exec(adminPod, null, true,
-        "/bin/sh", "-c", "chmod +x /u01/oracle/callpyscript.sh");
+        "/bin/sh", "-c", "chmod +x /u01/callpyscript.sh");
     if (result.exitValue() != 0) {
       return false;
     }
     logger.info("Changing ListenPortEnabled");
-    String command = new StringBuffer("/u01/oracle/callpyscript.sh /u01/oracle/changeListenPort.py ")
+    String command = new StringBuffer("/u01/callpyscript.sh /u01/changeListenPort.py ")
         .append(ADMIN_USERNAME_DEFAULT)
         .append(" ")
         .append(ADMIN_PASSWORD_DEFAULT)

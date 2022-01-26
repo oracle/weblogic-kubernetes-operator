@@ -34,7 +34,7 @@ Use the **Basics** blade to provide the basic configuration details for deployin
 
 | Field | Description |
 |-------|-------------|
-| Subscription | Select a subscription to use for the charges accrued by this offer. You must have a valid active subscription associated with the Azure account that is currently logged in. If you don’t have it already, follow the steps described in [Associate or add an Azure subscription to your Azure Active Directory tenant](https://docs.microsoft.com/en-us/azure/active-directory/fundamentals/active-directory-how-subscriptions-associated-directory).| 
+| Subscription | Select a subscription to use for the charges accrued by this offer. You must have a valid active subscription associated with the Azure account that is currently logged in. If you don’t have it already, follow the steps described in [Associate or add an Azure subscription to your Azure Active Directory tenant](https://docs.microsoft.com/en-us/azure/active-directory/fundamentals/active-directory-how-subscriptions-associated-directory).|
 | Resource group | A resource group is a container that holds related resources for an Azure solution. The resource group includes those resources that you want to manage as a group. You decide which resources belong in a resource group based on what makes the most sense for your organization. If you have an existing resource group into which you want to deploy this solution, you can enter its name here; however, the resource group must have no pre-existing resources in it. Alternatively, you can click the **Create new**, and enter the name so that Azure creates a new resource group before provisioning the resources.  For more information about resource groups, see the [Azure documentation](https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-group-overview#resource-groups). |
 
 ##### Instance details
@@ -50,7 +50,7 @@ Use the **Basics** blade to provide the basic configuration details for deployin
 | Username for WebLogic Administrator | Enter a user name to access the WebLogic Server Administration Console which is started automatically after the provisioning. For more information about the WebLogic Server Administration Console, see [Overview of Administration Consoles](https://docs.oracle.com/pls/topic/lookup?ctx=en/middleware/standalone/weblogic-server/wlazu&id=INTRO-GUID-CC01963A-6073-4ABD-BC5F-5C509CA1EA90) in _Understanding Oracle WebLogic Server_. |
 | Password for WebLogic Administrator | Enter a password to access the WebLogic Server Administration Console. |
 | Confirm password | Re-enter the value of the preceding field. |
-| Password for WebLogic Deploy Tooling runtime encrytion | The deployment uses Weblogic Deploy Tooling, including the capability to encrypt the model. This password is used for that encrption. For more information, see [Encrypt Model Tool](https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/encrypt/) and the [WebLogic Deploy Tooling documentation](https://oracle.github.io/weblogic-deploy-tooling/userguide/tools/encrypt/).|
+| Password for WebLogic Deploy Tooling runtime encryption | The deployment uses the WebLogic Kubernetes Operator encryption feature, including the capability to encrypt the domain. This password is used for that encryption. For more information, see [Encryption]({{< relref "/security/encryption.md" >}}).|
 | Confirm password | Re-enter the value of the preceding field. |
 | User assigned managed identity | The deployment requires a user-assigned managed identity with the **Contributor** or **Owner** role in the subscription referenced previously.  For more information, please see [Create, list, delete, or assign a role to a user-assigned managed identity using the Azure portal](https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/how-to-manage-ua-identity-portal). |
 
@@ -95,7 +95,7 @@ In this section, you can configure the image that is deployed using the model-in
 | Select existing ACR instance | This option is shown only if **Use a pre-existing WebLogic Server Docker image from Oracle Container Registry?** is set to **No**. If visible, select an existing Acure Container Registry instance. |
 | Please provide the image path | This option is shown only if **Use a pre-existing WebLogic Server Docker image from Oracle Container Registry?** is set to **No**. If visible, the value must be a fully qualified Docker tag of an image within the specified ACR. |
 | Username for Oracle Single Sign-On authentication | The Oracle Single Sign-on account user name for which the Terms and Restrictions for the selected WebLogic Server image have been accepted. |
-| Password for Oracle Single Sign-On authentication | The password for that account. | 
+| Password for Oracle Single Sign-On authentication | The password for that account. |
 | Confirm password | Re-enter the value of the preceding field. |
 | Select WebLogic Server Docker tag | Select one of the supported images. |
 
@@ -105,7 +105,7 @@ In this section you can deploy a Java EE Application along with the WebLogic Ser
 
 | Field | Description |
 |-------|-------------|
-| Deploy your application package? | If set to **Yes**, you must specify a Java EE WAR, EAR, or JAR file suitable for deployment with the selected version of WebLogic Server. If set to **No**, no application is deployed.| 
+| Deploy your application package? | If set to **Yes**, you must specify a Java EE WAR, EAR, or JAR file suitable for deployment with the selected version of WebLogic Server. If set to **No**, no application is deployed.|
 | Application package (.war,.ear,.jar) | With the **Browse** button, you can select a file from a pre-existing Azure Storage Account and Storage Container within that account.  To learn how to create a Storage Account and Container, see [Create a storage account](https://docs.microsoft.com/en-us/azure/storage/common/storage-account-create?tabs=azure-portal). |
 | Fail deployment if application does not become ACTIVE. | If selected, the deployment will wait for the deployed application to reach the **ACTIVE** state and fail the deployment if it does not. For more details, see the [Oracle documentation](https://aka.ms/wls-aks-deployment-state). |
 | Number of WebLogic Managed Server replicas | The initial value of the `replicas` field of the Domain. For information, see [Scaling]({{< relref "/userguide/managing-domains/domain-lifecycle/scaling.md" >}}). |
@@ -276,4 +276,3 @@ In the **Review + create blade**, review the details you provided for deploying 
 If you want to use this template to automate the deployment, download it by selecting **Download a template for automation**.
 
 Click **Create** to create this offer. This process may take 30 to 60 minutes.
-

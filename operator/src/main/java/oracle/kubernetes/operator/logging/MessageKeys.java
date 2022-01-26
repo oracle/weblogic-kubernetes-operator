@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.logging;
@@ -170,11 +170,6 @@ public class MessageKeys {
   public static final String ILLEGAL_EXTERNAL_SERVICE_NAME_LENGTH = "WLSDO-0019";
   public static final String MII_DOMAIN_UPDATED_POD_RESTART_REQUIRED = "WLSDO-0020";
   public static final String NO_AVAILABLE_PORT_TO_USE_FOR_REST = "WLSDO-0021";
-  public static final String NO_MATCHING_AUXILIARY_IMAGE_VOLUME_DEFINED = "WLSDO-0022";
-  public static final String NO_AUXILIARY_IMAGE_VOLUME_DEFINED = "WLSDO-0023";
-  public static final String DUPLICATE_AUXILIARY_IMAGE_PATH_FOUND = "WLSDO-0024";
-  public static final String DUPLICATE_AUXILIARY_IMAGE_VOLUME_FOUND = "WLSDO-0025";
-  public static final String AUXILIARY_IMAGE_VOLUME_NAME_NOT_DEFINED = "WLSDO-0026";
   public static final String MONITORING_EXPORTER_CONFLICT_SERVER = "WLSDO-0027";
   public static final String MONITORING_EXPORTER_CONFLICT_DYNAMIC_CLUSTER = "WLSDO-0028";
   public static final String INVALID_LIVENESS_PROBE_SUCCESS_THRESHOLD_VALUE = "WLSDO-0029";
@@ -184,6 +179,10 @@ public class MessageKeys {
   public static final String K8S_REQUEST_FAILURE = "WLSDO-0033";
   public static final String SERVER_POD_FAILURE = "WLSDO-0034";
   public static final String TOO_MANY_REPLICAS_FAILURE = "WLSDO-0035";
+  public static final String MOUNT_PATH_FOR_AUXILIARY_IMAGE_ALREADY_IN_USE = "WLSDO-0036";
+  public static final String MORE_THAN_ONE_AUXILIARY_IMAGE_CONFIGURED_WDT_INSTALL_HOME = "WLSDO-0037";
+  public static final String INVALID_WDT_INSTALL_HOME = "WLSDO-0038";
+  public static final String INVALID_MODEL_HOME = "WLSDO-0039";
 
   private MessageKeys() {
   }

@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -44,6 +44,6 @@ class NamespaceWatcherTest extends WatcherTestBase
 
   @Override
   protected NamespaceWatcher createWatcher(String ns, AtomicBoolean stopping, BigInteger rv) {
-    return NamespaceWatcher.create(this, rv.toString(), null, tuning, this, stopping);
+    return NamespaceWatcher.create(this, rv.toString(), tuning, this, stopping);
   }
 }

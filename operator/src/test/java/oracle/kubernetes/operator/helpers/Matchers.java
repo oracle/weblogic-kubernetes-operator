@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -26,14 +26,15 @@ import org.hamcrest.Description;
 import org.hamcrest.Matcher;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 
-import static oracle.kubernetes.operator.helpers.DomainIntrospectorJobTest.TEST_VOLUME_NAME;
 import static oracle.kubernetes.operator.helpers.Matchers.EnvVarMatcher.envVarWithName;
 import static oracle.kubernetes.operator.helpers.Matchers.EnvVarMatcher.envVarWithNameAndValue;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.SCRIPTS_MOUNTS_PATH;
 import static oracle.kubernetes.operator.helpers.StepContextConstants.SCRIPTS_VOLUME;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_SOURCE_MODEL_HOME;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_TARGET_PATH;
-import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_VOLUME_NAME_PREFIX;
 import static org.hamcrest.Matchers.hasEntry;
 import static org.hamcrest.Matchers.hasItem;
 
@@ -50,13 +51,21 @@ public class Matchers {
   }
 
   public static Matcher<Iterable<? super V1Container>> hasAuxiliaryImageInitContainer(
-          String name, String image, String imagePullPolicy, String command) {
-    return hasAuxiliaryImageInitContainer(name, image, imagePullPolicy, command, TEST_VOLUME_NAME);
+          String name, String image, String imagePullPolicy) {
+    return hasAuxiliaryImageInitContainer(name, image, imagePullPolicy, AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME,
+            AUXILIARY_IMAGE_DEFAULT_SOURCE_MODEL_HOME);
   }
 
   public static Matcher<Iterable<? super V1Container>> hasAuxiliaryImageInitContainer(
-          String name, String image, String imagePullPolicy, String command, String volumeName) {
-    return hasItem(createAuxiliaryImageInitContainer(name, image, imagePullPolicy, command, volumeName));
+          String name, String image, String imagePullPolicy, String sourceWDTInstallHome) {
+    return hasAuxiliaryImageInitContainer(name, image, imagePullPolicy, sourceWDTInstallHome,
+            AUXILIARY_IMAGE_DEFAULT_SOURCE_MODEL_HOME);
+  }
+
+  public static Matcher<Iterable<? super V1Container>> hasAuxiliaryImageInitContainer(
+          String name, String image, String imagePullPolicy, String sourceWDTInstallHome, String sourceModelHome) {
+    return hasItem(createAuxiliaryImageInitContainer(name, image, imagePullPolicy, sourceWDTInstallHome,
+            sourceModelHome));
   }
 
   public static Matcher<Iterable<? super V1Container>> hasInitContainerWithEnvVar(
@@ -113,14 +122,14 @@ public class Matchers {
   }
 
   private static V1Container createAuxiliaryImageInitContainer(String name, String image, String imagePullPolicy,
-                                                               String command, String volumeName) {
+                                                               String sourceWDTInstallHome, String sourceModelHome) {
     return new V1Container().name(name).image(image).imagePullPolicy(imagePullPolicy)
         .command(Arrays.asList(AUXILIARY_IMAGE_INIT_CONTAINER_WRAPPER_SCRIPT)).args(null)
         .volumeMounts(Arrays.asList(
-            new V1VolumeMount().name(AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + volumeName)
+            new V1VolumeMount().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME)
                 .mountPath(AUXILIARY_IMAGE_TARGET_PATH),
                     new V1VolumeMount().name(SCRIPTS_VOLUME).mountPath(SCRIPTS_MOUNTS_PATH)))
-        .env(PodHelperTestBase.getAuxiliaryImageEnvVariables(image, command, name));
+        .env(PodHelperTestBase.getAuxiliaryImageEnvVariables(image, sourceWDTInstallHome, sourceModelHome, name));
   }
 
   private static V1Container createInitContainer(String name, String image, String serverName, String... command) {
