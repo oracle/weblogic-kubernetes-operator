@@ -11,7 +11,4 @@ spec:
   storageClassName: %STORAGE_CLASS_NAME%
   resources:
     requests:
-      storage: 10Gi
-  selector:
-    matchLabels:
-      usage: %PERSISTENT_VOLUME_CLAIM_NAME%
+      storage: 100Gi
