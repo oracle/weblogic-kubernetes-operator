@@ -222,7 +222,7 @@ class ItDBOperator {
     assertDoesNotThrow(() -> createOpsswalletpasswordSecret(
         opsswalletpassSecretName,
         fmwDomainNamespace,
-        ADMIN_USERNAME_DEFAULT),
+        ADMIN_PASSWORD_DEFAULT),
         String.format("createSecret failed for %s", opsswalletpassSecretName));
 
     logger.info("Create an image with jrf model file");
