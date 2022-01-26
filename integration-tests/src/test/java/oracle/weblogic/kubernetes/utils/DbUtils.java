@@ -777,9 +777,9 @@ public class DbUtils {
 
     createOcrRepoSecret(namespace);
 
-    if(OKD){
+    if (OKD) {
       createNfsPathProvisioner(namespace);
-    } else{
+    } else {
       createHostPathProvisioner(namespace, hostPath);
     }
 
