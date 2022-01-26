@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -12,12 +12,14 @@ import java.util.Map;
 import java.util.Optional;
 import javax.annotation.Nonnull;
 
+import io.kubernetes.client.common.KubernetesObject;
 import io.kubernetes.client.openapi.models.V1Affinity;
 import io.kubernetes.client.openapi.models.V1Container;
 import io.kubernetes.client.openapi.models.V1EmptyDirVolumeSource;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LabelSelector;
 import io.kubernetes.client.openapi.models.V1LabelSelectorRequirement;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
 import io.kubernetes.client.openapi.models.V1Pod;
 import io.kubernetes.client.openapi.models.V1PodAffinityTerm;
 import io.kubernetes.client.openapi.models.V1PodAntiAffinity;
@@ -38,6 +40,7 @@ import org.junit.jupiter.api.Test;
 
 import static oracle.kubernetes.operator.DomainFailureReason.DomainInvalid;
 import static oracle.kubernetes.operator.EventConstants.DOMAIN_INVALID_ERROR;
+import static oracle.kubernetes.operator.LabelConstants.TO_BE_ROLLED_LABEL;
 import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
@@ -60,9 +63,9 @@ import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_REPLACE
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.utils.LogMatcher.containsSevere;
-import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
-import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImageVolume.DEFAULT_AUXILIARY_IMAGE_PATH;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
+import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.anEmptyMap;
 import static org.hamcrest.Matchers.both;
@@ -147,6 +150,34 @@ class ManagedPodHelperTest extends PodHelperTestBase {
   @Override
   List<String> createStartCommand() {
     return Collections.singletonList("/weblogic-operator/scripts/startServer.sh");
+  }
+
+  @Test
+  void whenPodNeedsToRoll_addRollLabel() {
+    initializeExistingPod();
+    configureServer().withRestartVersion("123");
+
+    assertThat(getCreatedPod().getMetadata().getLabels(), hasEntry(TO_BE_ROLLED_LABEL, "true"));
+  }
+
+  @Test
+  void whenPodNeedsToRollAndAlreadyMarkedForRoll_dontUpdateRollLabel() {
+    initializeExistingPod();
+    configureServer().withRestartVersion("123");
+    final V1Pod pod = (V1Pod) testSupport.getResources(KubernetesTestSupport.POD).get(0);
+    pod.getMetadata().putLabelsItem(TO_BE_ROLLED_LABEL, "true");
+    testSupport.doOnUpdate(KubernetesTestSupport.POD, this::reportUnexpectedUpdate);
+
+    assertThat(getCreatedPod().getMetadata().getLabels(), hasEntry(TO_BE_ROLLED_LABEL, "true"));
+  }
+
+  private void reportUnexpectedUpdate(@Nonnull Object object) {
+    throw new RuntimeException("unexpected update to pod " + getPodName((KubernetesObject) object));
+  }
+
+  @Nonnull
+  private String getPodName(@Nonnull KubernetesObject object) {
+    return Optional.ofNullable(object.getMetadata()).map(V1ObjectMeta::getName).orElse("<unknown>");
   }
 
   @Test
@@ -1078,40 +1109,32 @@ class ManagedPodHelperTest extends PodHelperTestBase {
   }
 
   @Test
-  void whenDomainAndClusterHaveAuxImages_createManagedPodsWithInitContainersInCorrectOrderAndVolumeMounts() {
+  void whenDomainHasAuxImages_createManagedPodsWithInitContainersInCorrectOrderAndVolumeMounts() {
     getConfigurator()
-            .withAuxiliaryImageVolumes(getAuxiliaryImageVolume())
-            .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")));
-    getConfigurator()
-            .withAuxiliaryImageVolumes(getAuxiliaryImageVolume())
-            .configureCluster(CLUSTER_NAME)
-            .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v2")));
+            .withAuxiliaryImages(getAuxiliaryImages("wdt-image:v1", "wdt-image:v2"));
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
 
     assertThat(getCreatedPodSpecInitContainers(),
             allOf(Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
-                "wdt-image:v1",
-                "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND),
+                "wdt-image:v1", "IfNotPresent"),
                 Matchers.hasAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 2,
-                    "wdt-image:v2",
-                    "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND)));
+                        "wdt-image:v2", "IfNotPresent")));
     assertThat(getCreatedPod().getSpec().getVolumes(),
-            hasItem(new V1Volume().name(getAuxiliaryImageVolumeName()).emptyDir(
+            hasItem(new V1Volume().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME).emptyDir(
                     new V1EmptyDirVolumeSource())));
     assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
-            hasItem(new V1VolumeMount().name(getAuxiliaryImageVolumeName()).mountPath(DEFAULT_AUXILIARY_IMAGE_PATH)));
+            hasItem(new V1VolumeMount().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME)
+                    .mountPath(DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH)));
   }
 
   @Test
-  void whenClusterHasAuxiliaryImageAndVolumeHasMountPath_volumeMountsCreatedWithSpecifiedMountPath() {
-    getConfigurator()
-            .withAuxiliaryImageVolumes(getAuxiliaryImageVolume(CUSTOM_MOUNT_PATH2))
-            .configureCluster(CLUSTER_NAME)
+  void whenDomainHasAuxiliaryImageAndVolumeHasMountPath_volumeMountsCreatedWithSpecifiedMountPath() {
+    getConfigurator().withAuxiliaryImageVolumeMountPath(CUSTOM_MOUNT_PATH2)
             .withAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v2")));
     testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
 
     assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
-            hasItem(new V1VolumeMount().name(getAuxiliaryImageVolumeName()).mountPath(CUSTOM_MOUNT_PATH2)));
+            hasItem(new V1VolumeMount().name(AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME).mountPath(CUSTOM_MOUNT_PATH2)));
   }
 
   @Test

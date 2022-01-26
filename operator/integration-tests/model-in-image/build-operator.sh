@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # 'build-wl-operator.sh'
@@ -32,7 +32,7 @@ echo "OPER_IMAGE_NAME=$OPER_IMAGE_NAME"
 echo "OPER_IMAGE_TAG=$OPER_IMAGE_TAG"
 echo "OPER_JAR_VERSION=$OPER_JAR_VERSION"
 
-function latest_cksum() {
+latest_cksum() {
   # force a rebuild even if only image name/tag/ver changes...
   echo "$OPER_IMAGE_NAME $OPER_IMAGE_TAG $OPER_JAR_VERSION"
 
@@ -43,11 +43,11 @@ function latest_cksum() {
   find "$SRCDIR/operator/src/main" -name "*.[jsp]*" | xargs cat | cksum
 }
 
-function save_cksum() {
+save_cksum() {
   latest_cksum > $SRCDIR/operator/src/main.cksum
 }
 
-function old_cksum() {
+old_cksum() {
   [ -f $SRCDIR/operator/src/main.cksum ] && cat $SRCDIR/operator/src/main.cksum
 }
 

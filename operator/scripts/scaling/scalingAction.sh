@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2017,2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # script parameters
@@ -19,7 +19,7 @@ log_file_name="scalingAction.log"
 # timestamp
 #   purpose:  echo timestamp in the form yyyy-mm-ddThh:mm:ss.nnnnnnZ
 #   example:  2018-10-01T14:00:00.000001Z
-function timestamp() {
+timestamp() {
   local timestamp="`date --utc '+%Y-%m-%dT%H:%M:%S.%NZ' 2>&1`"
   if [ ! "${timestamp/illegal/xyz}" = "${timestamp}" ]; then
     # old shell versions don't support %N or --utc
@@ -28,11 +28,11 @@ function timestamp() {
   echo "${timestamp}"
 }
 
-function trace() {
+trace() {
   echo "@[$(timestamp)][$wls_domain_namespace][$wls_domain_uid][$wls_cluster_name][INFO]" "$@" >> ${log_file_name}
 }
 
-function print_usage() {
+print_usage() {
   echo "Usage: scalingAction.sh --action=[scaleUp | scaleDown] --domain_uid=<domain uid> --cluster_name=<cluster name> [--kubernetes_master=https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}] [--access_token=<access_token>] [--wls_domain_namespace=default] [--operator_namespace=weblogic-operator] [--operator_service_name=weblogic-operator] [--scaling_size=1] [--no_op]"
   echo "  where"
   echo "    action - scaleUp or scaleDown"
@@ -50,14 +50,14 @@ function print_usage() {
 }
 
 # Retrieve WebLogic Operator Service Account Token for Authorization
-function initialize_access_token() {
+initialize_access_token() {
   if [ -z "$access_token" ]
   then
     access_token=`cat /var/run/secrets/kubernetes.io/serviceaccount/token`
   fi
 }
 
-function logScalingParameters() {
+logScalingParameters() {
   trace "scaling_action: $scaling_action"
   trace "wls_domain_uid: $wls_domain_uid"
   trace "wls_cluster_name: $wls_cluster_name"
@@ -68,7 +68,7 @@ function logScalingParameters() {
   trace "scaling_size: $scaling_size"
 }
 
-function jq_available() {
+jq_available() {
   if [ -x "$(command -v jq)" ] && [ -z "$DONT_USE_JQ" ]; then
     return;
   fi
@@ -76,7 +76,7 @@ function jq_available() {
 }
 
 # Query WebLogic Operator Service Port
-function get_operator_internal_rest_port() {
+get_operator_internal_rest_port() {
   local STATUS=$(curl \
     -v \
     --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
@@ -106,7 +106,7 @@ port=$(echo "${STATUS}" | python cmds-$$.py 2>> ${log_file_name})
 }
 
 # Retrieve the api version of the deployed Custom Resource Domain
-function get_domain_api_version() {
+get_domain_api_version() {
   # Retrieve Custom Resource Definition for WebLogic domain
   local APIS=$(curl \
     -v \
@@ -139,7 +139,7 @@ domain_api_version=`echo ${APIS} | python cmds-$$.py 2>> ${log_file_name}`
 }
 
 # Retrieve Custom Resource Domain
-function get_custom_resource_domain() {
+get_custom_resource_domain() {
   local DOMAIN=$(curl \
     -v \
     --cacert /var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
@@ -155,7 +155,7 @@ function get_custom_resource_domain() {
 # Verify if cluster is defined in clusters of the Custom Resource Domain
 # args:
 # $1 Custom Resource Domain
-function is_defined_in_clusters() {
+is_defined_in_clusters() {
   local DOMAIN="$1"
   local in_cluster_startup="False"
 
@@ -185,7 +185,7 @@ in_cluster_startup=`echo ${DOMAIN} | python cmds-$$.py 2>> ${log_file_name}`
 # Gets the current replica count of the cluster
 # args:
 # $1 Custom Resource Domain
-function get_num_ms_in_cluster() {
+get_num_ms_in_cluster() {
   local DOMAIN="$1"
   local num_ms
   if jq_available; then
@@ -211,7 +211,7 @@ INPUT
 # Gets the replica count at the Domain level
 # args:
 # $1 Custom Resource Domain
-function get_num_ms_domain_scope() {
+get_num_ms_domain_scope() {
   local DOMAIN="$1"
   local num_ms
   if jq_available; then
@@ -238,7 +238,7 @@ INPUT
 # $2 - Name of the cluster
 # $3 - Return value containing minimum replica count
 #
-function get_min_replicas {
+get_min_replicas() {
   local domainJson=$1
   local clusterName=$2
   local __result=$3
@@ -266,7 +266,7 @@ INPUT
 # args:
 # $1 "True" if WLS cluster configuration defined in CRD, "False" otherwise
 # $2 Custom Resource Domain
-function get_replica_count() {
+get_replica_count() {
   local in_cluster_startup="$1"
   local DOMAIN="$2"
   local num_ms
@@ -293,7 +293,7 @@ function get_replica_count() {
 # $1 scaling action (scaleUp or scaleDown)
 # $2 current replica count
 # $3 scaling increment value
-function calculate_new_ms_count() {
+calculate_new_ms_count() {
   local scaling_action="$1"
   local current_replica_count="$2"
   local scaling_size="$3"
@@ -316,7 +316,7 @@ function calculate_new_ms_count() {
 # $1 Managed server count
 # $2 Custom Resource Domain
 # $3 Cluster name
-function verify_minimum_ms_count_for_cluster() {
+verify_minimum_ms_count_for_cluster() {
   local new_ms="$1"
   local domainJson="$2"
   local clusterName="$3"
@@ -332,7 +332,7 @@ function verify_minimum_ms_count_for_cluster() {
 # Create the REST endpoint CA certificate in PEM format
 # args:
 # $1 certificate file name to create
-function create_ssl_certificate_file() {
+create_ssl_certificate_file() {
   local pem_filename="$1"
   if [ ${INTERNAL_OPERATOR_CERT} ];
   then
@@ -346,7 +346,7 @@ function create_ssl_certificate_file() {
 # Create request body for scaling request
 # args:
 # $1 replica count
-function get_request_body() {
+get_request_body() {
 local new_ms="$1"
 local request_body=$(cat <<EOF
 {

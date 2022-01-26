@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # Description
@@ -29,7 +29,7 @@ scriptDir="$( cd "$( dirname "${script}" )" && pwd )"
 source ${scriptDir}/../common/utility.sh
 source ${scriptDir}/../common/validate.sh
 
-function usage {
+usage() {
   echo usage: ${script} -i file -o dir [-u uid] [-e] [-d] [-h]
   echo "  -i Parameter inputs file, must be specified."
   echo "  -o Output directory for the generated yaml files, must be specified."
@@ -84,7 +84,7 @@ fi
 #
 # Function to exit and print an error message
 # $1 - text of message
-function fail {
+fail() {
   echo [ERROR] $*
   exit 1
 }
@@ -93,7 +93,7 @@ function fail {
 # Function to initialize and validate the output directory
 # for the generated yaml files for this domain.
 #
-function initOutputDir {
+initOutputDir() {
   aksOutputDir="$outputDir/weblogic-on-aks"
 
   pvOutput="${aksOutputDir}/pv.yaml"
@@ -113,7 +113,7 @@ function initOutputDir {
 #
 # Function to setup the environment to run the create Azure resource and domain job
 #
-function initialize {
+initialize() {
 
   # Validate the required files exist
   validateErrors=false
@@ -172,7 +172,7 @@ function initialize {
 #
 # Function to generate the yaml files for creating Azure resources and WebLogic Server domain
 #
-function createYamlFiles {
+createYamlFiles() {
 
   # Create a directory for this domain's output files
   mkdir -p ${aksOutputDir}
@@ -264,7 +264,7 @@ function createYamlFiles {
   rm -f ${aksOutputDir}/*.yaml-e
 }
 
-function loginAzure {
+loginAzure() {
     # login with a service principal
     az login --service-principal --username $azureServicePrincipalAppId \
     --password $azureServicePrincipalClientSecret \
@@ -276,7 +276,7 @@ function loginAzure {
     fi
 }
 
-function createResourceGroup {
+createResourceGroup() {
     # Create a resource group
     echo Check if ${azureResourceGroupName} exists
     ret=$(az group exists --name ${azureResourceGroupName})
@@ -288,7 +288,7 @@ function createResourceGroup {
     az group create --name $azureResourceGroupName --location $azureLocation
 }
 
-function createAndConnectToAKSCluster {
+createAndConnectToAKSCluster() {
     # Create aks cluster
     echo Check if ${aksClusterName} exists
     ret=$(az aks list -g ${azureResourceGroupName} | grep "${aksClusterName}")
@@ -313,7 +313,7 @@ function createAndConnectToAKSCluster {
     az aks get-credentials --resource-group $azureResourceGroupName --name $aksClusterName
 }
 
-function createFileShare {
+createFileShare() {
     # Create a storage account
     echo Check if the storage account ${storageAccountName} exists.
     ret=$(az storage account check-name --name ${storageAccountName})
@@ -368,14 +368,14 @@ function createFileShare {
     kubectl get pvc ${persistentVolumeClaimName} -o yaml
 }
 
-function installWebLogicOperator {
+installWebLogicOperator() {
     echo `helm version`
     helm repo add weblogic-operator https://oracle.github.io/weblogic-kubernetes-operator/charts
     helm repo update
     helm install weblogic-operator weblogic-operator/weblogic-operator --version "3.0.0"
 }
 
-function createWebLogicDomain {
+createWebLogicDomain() {
     # Create WebLogic Server Domain Credentials.
     echo Creating WebLogic Server Domain credentials, with user ${weblogicUserName}, domainUID ${domainUID}
     bash ${dirCreateDomainCredentials}/create-weblogic-credentials.sh -u ${weblogicUserName} \
@@ -397,7 +397,7 @@ function createWebLogicDomain {
     kubectl  apply -f ${clusterLbOutput}
 }
 
-function waitForJobComplete {
+waitForJobComplete() {
    attempts=0
    svcState="running"
    while [ ! "$svcState" == "completed" ] && [ ! $attempts -eq 30 ]; do
@@ -449,7 +449,7 @@ function waitForJobComplete {
   fi
 }
 
-function printSummary {
+printSummary() {
   if [ "${executeIt}" = true ]; then
     regionJsonExcerpt=`az group list --query "[?name=='${azureResourceGroupName}']" | grep location`
     tokens=($(IFS='"'; for word in $regionJsonExcerpt; do echo "$word"; done))

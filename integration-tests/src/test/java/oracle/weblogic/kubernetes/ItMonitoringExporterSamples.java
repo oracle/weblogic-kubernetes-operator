@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -51,8 +51,8 @@ import static oracle.weblogic.kubernetes.TestConstants.GRAFANA_CHART_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_CHART_VERSION;
-import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TAG;
@@ -90,7 +90,9 @@ import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installAndVerifyP
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installMonitoringExporter;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.installVerifyGrafanaDashBoard;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.uninstallPrometheusGrafana;
+import static oracle.weblogic.kubernetes.utils.MonitoringUtils.verifyMonExpAppAccess;
 import static oracle.weblogic.kubernetes.utils.MonitoringUtils.verifyMonExpAppAccessThroughNginx;
+import static oracle.weblogic.kubernetes.utils.OKDUtils.createRouteForOKD;
 import static oracle.weblogic.kubernetes.utils.OperatorUtils.installAndVerifyOperator;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPvAndPvc;
 import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
@@ -150,7 +152,6 @@ class ItMonitoringExporterSamples {
   private static String  coordinatorImage = null;
   private static int managedServerPort = 8001;
   private static int nodeportPrometheus;
-  private static String exporterUrl = null;
   private static String prometheusDomainRegexValue = null;
   private static Map<String, Integer> clusterNameMsPortMap;
   private static LoggingFacade logger = null;
@@ -162,6 +163,7 @@ class ItMonitoringExporterSamples {
   private static  String monitoringExporterSrcDir;
   private static  String monitoringExporterEndToEndDir;
   private static  String monitoringExporterAppDir;
+  private static String hostPortPrometheus;
 
 
   /**
@@ -217,31 +219,33 @@ class ItMonitoringExporterSamples {
     logger.info("create and verify WebLogic domain image using model in image with model files");
     miiImage = createAndVerifyMiiImage(monitoringExporterAppDir, MODEL_DIR + "/" + MONEXP_MODEL_FILE,
         SESSMIGR_APP_NAME, MONEXP_IMAGE_NAME);
-
-    // install and verify NGINX
-    nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
-    String nginxServiceName = nginxHelmParams.getReleaseName() + "-ingress-nginx-controller";
-    logger.info("NGINX service name: {0}", nginxServiceName);
-    nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
-    nodeportshttps = getServiceNodePort(nginxNamespace, nginxServiceName, "https");
-    logger.info("NGINX http node port: {0}", nodeportshttp);
-    logger.info("NGINX https node port: {0}", nodeportshttps);
+    if (!OKD) {
+      // install and verify NGINX
+      nginxHelmParams = installAndVerifyNginx(nginxNamespace, 0, 0);
+      String nginxServiceName = nginxHelmParams.getReleaseName() + "-ingress-nginx-controller";
+      logger.info("NGINX service name: {0}", nginxServiceName);
+      nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
+      nodeportshttps = getServiceNodePort(nginxNamespace, nginxServiceName, "https");
+      logger.info("NGINX http node port: {0}", nodeportshttp);
+      logger.info("NGINX https node port: {0}", nodeportshttps);
+    }
     clusterNameMsPortMap = new HashMap<>();
     clusterNameMsPortMap.put(cluster1Name, managedServerPort);
     clusterNameMsPortMap.put(cluster2Name, managedServerPort);
     clusterNames.add(cluster1Name);
     clusterNames.add(cluster2Name);
 
-    exporterUrl = String.format("http://%s:%s/wls-exporter/",K8S_NODEPORT_HOST,nodeportshttp);
-    logger.info("create pv and pvc for monitoring");
     HashMap<String, String> labels = new HashMap<>();
     labels.put("app", "monitoring");
     labels.put("weblogic.domainUid", domain1Uid);
-    String pvDir = PV_ROOT + "/ItMonitoringExporterSamples/monexp-persistentVolume/";
-    assertDoesNotThrow(() -> createPvAndPvc(prometheusReleaseName, monitoringNS, labels,pvDir));
-    assertDoesNotThrow(() -> createPvAndPvc("alertmanager" + releaseSuffix, monitoringNS, labels,pvDir));
-    assertDoesNotThrow(() -> createPvAndPvc(grafanaReleaseName, monitoringNS, labels,pvDir));
-    cleanupPromGrafanaClusterRoles(prometheusReleaseName, grafanaReleaseName);
+    if (!OKD) {
+      logger.info("create pv and pvc for monitoring");
+      String className = "ItMonitoringExporterSamples";
+      assertDoesNotThrow(() -> createPvAndPvc(prometheusReleaseName, monitoringNS, labels, className));
+      assertDoesNotThrow(() -> createPvAndPvc("alertmanager" + releaseSuffix, monitoringNS, labels, className));
+      assertDoesNotThrow(() -> createPvAndPvc(grafanaReleaseName, monitoringNS, labels, className));
+      cleanupPromGrafanaClusterRoles(prometheusReleaseName, grafanaReleaseName);
+    }
   }
 
   /**
@@ -261,39 +265,51 @@ class ItMonitoringExporterSamples {
       logger.info("Create wdt domain and verify that it's running");
       createAndVerifyDomain(wdtImage, domain2Uid, domain2Namespace, "Image", replicaCount,
           false, null, null);
-      ingressHost2List =
-          createIngressForDomainAndVerify(domain2Uid, domain2Namespace, clusterNameMsPortMap);
-      logger.info("Installing Prometheus and Grafana");
-      installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
-          domain2Namespace,
-          domain2Uid);
+
+      if (!OKD) {
+        ingressHost2List =
+            createIngressForDomainAndVerify(domain2Uid, domain2Namespace, clusterNameMsPortMap);
+        logger.info("verify access to Monitoring Exporter");
+        verifyMonExpAppAccessThroughNginx(ingressHost2List.get(0), managedServersCount, nodeportshttp);
+      } else {
+        String clusterService = domain2Uid + "-cluster-cluster-1";
+        String hostName = createRouteForOKD(clusterService, domain2Namespace);
+        logger.info("hostName = {0} ", hostName);
+        verifyMonExpAppAccess(managedServersCount,hostName);
+      }
+      if (!OKD) {
+        logger.info("Installing Prometheus and Grafana");
+        installPrometheusGrafana(PROMETHEUS_CHART_VERSION, GRAFANA_CHART_VERSION,
+            domain2Namespace,
+            domain2Uid);
+      }
 
       installWebhook();
       installCoordinator(domain2Namespace);
+      if (!OKD) {
+        logger.info("verify metrics via prometheus");
+        String testappPrometheusSearchKey =
+            "wls_servlet_invocation_total_count%7Bapp%3D%22test-webapp%22%7D%5B15s%5D";
+        checkMetricsViaPrometheus(testappPrometheusSearchKey, "test-webapp", hostPortPrometheus);
+        logger.info("fire alert by scaling down");
+        fireAlert();
 
-      logger.info("verify access to Monitoring Exporter");
-      verifyMonExpAppAccessThroughNginx(ingressHost2List.get(0), managedServersCount, nodeportshttp);
-      logger.info("verify metrics via prometheus");
-      String testappPrometheusSearchKey =
-          "wls_servlet_invocation_total_count%7Bapp%3D%22test-webapp%22%7D%5B15s%5D";
-      checkMetricsViaPrometheus(testappPrometheusSearchKey, "test-webapp", nodeportPrometheus);
-      logger.info("fire alert by scaling down");
-      fireAlert();
-      logger.info("switch to monitor another domain");
-      logger.info("create and verify WebLogic domain image using model in image with model files");
+        logger.info("switch to monitor another domain");
+        logger.info("create and verify WebLogic domain image using model in image with model files");
 
-      // create and verify one cluster mii domain
-      logger.info("Create domain and verify that it's running");
-      createAndVerifyDomain(miiImage, domain1Uid, domain1Namespace, "FromModel", 1,
-          true, null, null);
+        // create and verify one cluster mii domain
+        logger.info("Create domain and verify that it's running");
+        createAndVerifyDomain(miiImage, domain1Uid, domain1Namespace, "FromModel", 1,
+            true, null, null);
 
-      String oldRegex = String.format("regex: %s;%s", domain2Namespace, domain2Uid);
-      String newRegex = String.format("regex: %s;%s", domain1Namespace, domain1Uid);
-      editPrometheusCM(oldRegex, newRegex, monitoringNS, prometheusReleaseName + "-server");
-      String sessionAppPrometheusSearchKey =
-          "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
-      checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr", nodeportPrometheus);
-      checkPromGrafanaLatestVersion();
+        String oldRegex = String.format("regex: %s;%s", domain2Namespace, domain2Uid);
+        String newRegex = String.format("regex: %s;%s", domain1Namespace, domain1Uid);
+        editPrometheusCM(oldRegex, newRegex, monitoringNS, prometheusReleaseName + "-server");
+        String sessionAppPrometheusSearchKey =
+            "wls_servlet_invocation_total_count%7Bapp%3D%22myear%22%7D%5B15s%5D";
+        checkMetricsViaPrometheus(sessionAppPrometheusSearchKey, "sessmigr", hostPortPrometheus);
+        checkPromGrafanaLatestVersion();
+      }
     } finally {
       shutdownDomain(domain1Namespace, domain1Uid);
       shutdownDomain(domain2Namespace, domain2Uid);
@@ -317,14 +333,15 @@ class ItMonitoringExporterSamples {
         domain2Namespace,
         domain2Uid);
 
-
-    //verify access to Monitoring Exporter
-    logger.info("verify http access");
-    verifyMonExpAppAccessThroughNginx(ingressHost2List.get(0),managedServersCount, nodeportshttp);
+    if (!OKD) {
+      //verify access to Monitoring Exporter
+      logger.info("verify http access");
+      verifyMonExpAppAccessThroughNginx(ingressHost2List.get(0), managedServersCount, nodeportshttp);
+    }
     //verify metrics via prometheus
     String testappPrometheusSearchKey =
         "wls_servlet_invocation_total_count%7Bapp%3D%22test-webapp%22%7D%5B15s%5D";
-    checkMetricsViaPrometheus(testappPrometheusSearchKey, "test-webapp",nodeportPrometheus);
+    checkMetricsViaPrometheus(testappPrometheusSearchKey, "test-webapp",hostPortPrometheus);
   }
 
   private void fireAlert() throws ApiException {
@@ -384,6 +401,11 @@ class ItMonitoringExporterSamples {
       assertNotNull(promHelmParams, " Failed to install prometheus");
       nodeportPrometheus = promHelmParams.getNodePortServer();
       prometheusDomainRegexValue = prometheusRegexValue;
+      hostPortPrometheus = K8S_NODEPORT_HOST + ":" + nodeportPrometheus;
+      if (OKD) {
+        hostPortPrometheus = createRouteForOKD("prometheus" + releaseSuffix
+            + "-service", monitoringNS) + ":" + nodeportPrometheus;
+      }
     }
     //if prometheus already installed change CM for specified domain
     if (!prometheusRegexValue.equals(prometheusDomainRegexValue)) {
@@ -400,7 +422,11 @@ class ItMonitoringExporterSamples {
           monitoringExporterEndToEndDir + "/grafana/values.yaml",
           grafanaChartVersion);
       assertNotNull(grafanaHelmParams, "Grafana failed to install");
-      installVerifyGrafanaDashBoard(grafanaHelmParams.getNodePort(), monitoringExporterEndToEndDir);
+      String hostPortGrafana = K8S_NODEPORT_HOST + ":" + grafanaHelmParams.getNodePort();
+      if (OKD) {
+        hostPortGrafana = createRouteForOKD(grafanaReleaseName, monitoringNS) + ":" + grafanaHelmParams.getNodePort();
+      }
+      installVerifyGrafanaDashBoard(hostPortGrafana, monitoringExporterEndToEndDir);
     }
     logger.info("Grafana is running");
   }

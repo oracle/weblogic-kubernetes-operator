@@ -16,7 +16,6 @@ The specification of the operation of the WebLogic domain. Required.
 | --- | --- | --- |
 | `adminServer` | [Admin Server](#admin-server) | Lifecycle options for the Administration Server, including Java options, environment variables, additional Pod content, and which channels or network access points should be exposed using a NodePort Service. |
 | `allowReplicasBelowMinDynClusterSize` | Boolean | Whether to allow the number of running cluster member Managed Server instances to drop below the minimum dynamic cluster size configured in the WebLogic domain configuration, if this is not specified for a specific cluster under the `clusters` field. Defaults to true. |
-| `auxiliaryImageVolumes` | Array of [Auxiliary Image Volume](#auxiliary-image-volume) | Configure auxiliary image volumes including their respective mount paths. Auxiliary image volumes are in turn referenced by one or more `serverPod.auxiliaryImages` mounts, and are internally implemented using a Kubernetes `emptyDir` volume. |
 | `clusters` | Array of [Cluster](#cluster) | Lifecycle options for all of the Managed Server members of a WebLogic cluster, including Java options, environment variables, additional Pod content, and the ability to explicitly start, stop, or restart cluster members. The `clusterName` field of each entry must match a cluster that already exists in the WebLogic domain configuration. |
 | `configOverrides` | string | Deprecated. Use `configuration.overridesConfigMap` instead. Ignored if `configuration.overridesConfigMap` is specified. The name of the ConfigMap for optional WebLogic configuration overrides. |
 | `configOverrideSecrets` | Array of string | Deprecated. Use `configuration.secrets` instead. Ignored if `configuration.secrets` is specified. A list of names of the Secrets for optional WebLogic configuration overrides. |
@@ -75,15 +74,6 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | `serverStartPolicy` | string | The strategy for deciding whether to start a WebLogic Server instance. Legal values are ALWAYS, NEVER, or IF_NEEDED. Defaults to IF_NEEDED. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-lifecycle/startup/#starting-and-stopping-servers. |
 | `serverStartState` | string | The WebLogic runtime state in which the server is to be started. Use ADMIN if the server should start in the admin state. Defaults to RUNNING. |
 
-### Auxiliary Image Volume
-
-| Name | Type | Description |
-| --- | --- | --- |
-| `medium` | string | The emptyDir volume medium. This is an advanced setting that rarely needs to be configured. Defaults to unset, which means the volume's files are stored on the local node's file system for the life of the pod. |
-| `mountPath` | string | The mount path. The files in the path are populated from the same named directory in the images supplied by each container in `serverPod.auxiliaryImages`. Each volume must be configured with a different mount path. Defaults to '/auxiliary'. |
-| `name` | string | The name of the volume. Required. |
-| `sizeLimit` | string | The emptyDir volume size limit. Defaults to unset. |
-
 ### Cluster
 
 | Name | Type | Description |
@@ -139,7 +129,6 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | --- | --- | --- |
 | `affinity` | [Affinity](k8s1.13.5.md#affinity) | If specified, the Pod's scheduling constraints. See `kubectl explain pods.spec.affinity` |
 | `annotations` | Map | The annotations to be added to generated resources. |
-| `auxiliaryImages` | Array of [Auxiliary Image](#auxiliary-image) | Use an auxiliary image to automatically include directory content from additional images. This is a useful alternative for including Model in Image model files, or other types of files, in a pod without requiring modifications to the pod's base image 'domain.spec.image'. This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share the files from the additional images with the pod. |
 | `containers` | Array of [Container](k8s1.13.5.md#container) | Additional containers to be included in the server Pod. See `kubectl explain pods.spec.containers`. |
 | `containerSecurityContext` | [Security Context](k8s1.13.5.md#security-context) | Container-level security attributes. Will override any matching Pod-level attributes. See `kubectl explain pods.spec.containers.securityContext`. |
 | `env` | Array of [Env Var](k8s1.13.5.md#env-var) | A list of environment variables to set in the container running a WebLogic Server instance. More info: https://oracle.github.io/weblogic-kubernetes-operator/userguide/managing-domains/domain-resource/#jvm-memory-and-java-option-environment-variables. See `kubectl explain pods.spec.containers.env`. |
@@ -233,12 +222,16 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 
 | Name | Type | Description |
 | --- | --- | --- |
+| `auxiliaryImages` | Array of [Auxiliary Image](#auxiliary-image) | Optionally, use auxiliary images to provide Model in Image model, application archive, and WebLogic Deploy Tooling files. This is a useful alternative for providing these files without requiring modifications to the pod's base image `domain.spec.image`. This feature internally uses a Kubernetes emptyDir volume and Kubernetes init containers to share the files from the additional images with the pod. |
+| `auxiliaryImageVolumeMedium` | string | The emptyDir volume medium. This is an advanced setting that rarely needs to be configured. Defaults to unset, which means the volume's files are stored on the local node's file system for the life of the pod. |
+| `auxiliaryImageVolumeMountPath` | string | The auxiliary image volume mount path. This is an advanced setting that rarely needs to be configured. Defaults to `/aux`, which means the emptyDir volume will be mounted at `/aux` path in the WebLogic-Server container within every pod. The defaults for `modelHome` and `wdtInstallHome` will start with the new mount path, and files from `sourceModelHome` and `sourceWDTInstallHome` will be copied to the new default locations. |
+| `auxiliaryImageVolumeSizeLimit` | string | The emptyDir volume size limit. This is an advanced setting that rarely needs to be configured. Defaults to unset. |
 | `configMap` | string | Name of a ConfigMap containing the WebLogic Deploy Tooling model. |
 | `domainType` | string | WebLogic Deploy Tooling domain type. Legal values: WLS, RestrictedJRF, JRF. Defaults to WLS. |
-| `modelHome` | string | Location of the WebLogic Deploy Tooling model home. Defaults to /u01/wdt/models. |
+| `modelHome` | string | Location of the WebLogic Deploy Tooling model home. Defaults to `/u01/wdt/models` if no `spec.configuration.model.AuxiliaryImages` are specified, and to `/aux/models` otherwise. |
 | `onlineUpdate` | [Online Update](#online-update) | Online update option for Model In Image dynamic update. |
 | `runtimeEncryptionSecret` | string | Runtime encryption secret. Required when `domainHomeSourceType` is set to FromModel. |
-| `wdtInstallHome` | string | Location of the WebLogic Deploy Tooling installation. Defaults to /u01/wdt/weblogic-deploy. |
+| `wdtInstallHome` | string | Location of the WebLogic Deploy Tooling installation. Defaults to `/u01/wdt/weblogic-deploy` if no `spec.configuration.model.AuxiliaryImages` are specified, and to `/aux/weblogic-deploy` otherwise. |
 
 ### Opss
 
@@ -246,15 +239,6 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | --- | --- | --- |
 | `walletFileSecret` | string | Name of a Secret containing the OPSS key wallet file, which must be in a field named `walletFile`. Use this to allow a JRF domain to reuse its entries in the RCU database. This allows you to specify a wallet file that was obtained from the domain home after the domain was booted for the first time. |
 | `walletPasswordSecret` | string | Name of a Secret containing the OPSS key passphrase, which must be in a field named `walletPassword`. Used to encrypt and decrypt the wallet that is used for accessing the domain's entries in its RCU database. |
-
-### Auxiliary Image
-
-| Name | Type | Description |
-| --- | --- | --- |
-| `command` | string | The command for this init container. Defaults to `cp -R $AUXILIARY_IMAGE_PATH/* $AUXILIARY_IMAGE_TARGET_PATH`. This is an advanced setting for customizing the container command for copying files from the container image to the auxiliary image emptyDir volume. Use the `$AUXILIARY_IMAGE_PATH` environment variable to reference the value configured in `spec.auxiliaryImageVolumes.mountPath`, which defaults to "/auxiliary". Use '$AUXILIARY_IMAGE_TARGET_PATH' to refer to the temporary directory created by the operator that resolves to the auxiliary image's internal emptyDir volume. |
-| `image` | string | The name of an image with files located in the directory specified by `spec.auxiliaryImageVolumes.mountPath` of the auxiliary image volume referenced by `serverPod.auxiliaryImages.volume`, which defaults to "/auxiliary". |
-| `imagePullPolicy` | string | The image pull policy for the container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise. |
-| `volume` | string | The name of an auxiliary image volume defined in `spec.auxiliaryImageVolumes`. Required. |
 
 ### Probe Tuning
 
@@ -288,6 +272,15 @@ The current status of the operation of the WebLogic domain. Updated automaticall
 | --- | --- | --- |
 | `channelName` | string | Name of the channel. The "default" value refers to the Administration Server's default channel, which is configured using the ServerMBean's ListenPort. The "default-secure" value refers to the Administration Server's default secure channel, which is configured using the ServerMBean's SSLMBean's ListenPort. The "default-admin" value refers to the Administration Server's default administrative channel, which is configured using the DomainMBean's AdministrationPort. Otherwise, provide the name of one of the Administration Server's network access points, which is configured using the ServerMBean's NetworkAccessMBeans. The "default", "default-secure", and "default-admin" channels may not be specified here when using Istio. |
 | `nodePort` | number | Specifies the port number used to access the WebLogic channel outside of the Kubernetes cluster. If not specified, defaults to the port defined by the WebLogic channel. |
+
+### Auxiliary Image
+
+| Name | Type | Description |
+| --- | --- | --- |
+| `image` | string | The auxiliary image containing Model in Image model files, application archive files, and/or WebLogic Deploying Tooling installation files. Required. |
+| `imagePullPolicy` | string | The image pull policy for the container image. Legal values are Always, Never, and IfNotPresent. Defaults to Always if image ends in :latest; IfNotPresent, otherwise. |
+| `sourceModelHome` | string | The source location of the WebLogic Deploy Tooling model home within the auxiliary image that will be made available in the `/aux/models` directory of the WebLogic Server container in all pods. Defaults to `/auxiliary/models`. If the value is set to `None` or no files are found at the default location, then the source directory is ignored. If specifying multiple auxiliary images with model files in their respective `sourceModelHome` directories, then model files are merged. |
+| `sourceWDTInstallHome` | string | The source location of the WebLogic Deploy Tooling installation within the auxiliary image that will be made available in the `/aux/weblogic-deploy` directory of the WebLogic Server container in all pods. Defaults to `/auxiliary/weblogic-deploy`. If the value is set to `None` or no files are found at the default location, then the source directory is ignored. When specifying multiple auxiliary images, ensure that only one of the images supplies a WDT install home; if more than one WDT install home is provided, then the domain deployment will fail. |
 
 ### Online Update
 

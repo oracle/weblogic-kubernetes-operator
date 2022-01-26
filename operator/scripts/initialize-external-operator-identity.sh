@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # do not turn on 'set -x' since it can print sensitive info, like secrets and private keys, to the operator log
@@ -31,13 +31,13 @@ CACERT='/var/run/secrets/kubernetes.io/serviceaccount/ca.crt'
 TOKEN=`cat /var/run/secrets/kubernetes.io/serviceaccount/token`
 KUBERNETES_MASTER="https://${KUBERNETES_SERVICE_HOST}:${KUBERNETES_SERVICE_PORT}"
 
-function cleanup {
+cleanup() {
   if [[ $SUCCEEDED != "true" ]]; then
     exit 1
   fi
 }
 
-function getExternalIdentity {
+getExternalIdentity() {
   SECRET_NAME=`cat ${EXTERNAL_CERT_SECRET}`
 
   curl -s \
@@ -59,7 +59,7 @@ function getExternalIdentity {
     >> ${EXTERNAL_KEY_PEM}
 }
 
-function getLegacyExternalIdentity {
+getLegacyExternalIdentity() {
   cp ${LEGACY_CERT_BASE64_PEM} ${EXTERNAL_CERT_PEM}
   cp ${LEGACY_KEY_PEM} ${EXTERNAL_KEY_PEM}
 }

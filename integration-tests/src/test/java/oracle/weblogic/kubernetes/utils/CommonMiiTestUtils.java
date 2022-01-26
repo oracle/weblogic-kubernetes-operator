@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.utils;
@@ -12,7 +12,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import io.kubernetes.client.custom.Quantity;
 import io.kubernetes.client.custom.V1Patch;
@@ -385,11 +384,13 @@ public class CommonMiiTestUtils {
         .withModelHome(auxiliaryImagePath + "/models")
         .withWdtInstallHome(auxiliaryImagePath + "/weblogic-deploy");
     for (String cmImageName: auxiliaryImageName) {
+      /* Commented out due to auxiliary image 4.0 changes
       domainCR.spec().serverPod()
           .addAuxiliaryImagesItem(new AuxiliaryImage()
-              .image(cmImageName)
-              .volume(auxiliaryImageVolumeName)
-              .imagePullPolicy("IfNotPresent"));
+                  .image(cmImageName)
+                  .volume(auxiliaryImageVolumeName)
+                  .imagePullPolicy("IfNotPresent"));
+       */
     }
     return domainCR;
   }
@@ -433,7 +434,9 @@ public class CommonMiiTestUtils {
     }
 
     for (AuxiliaryImage auxiliaryImage : auxiliaryImages) {
+      /* Commented out due to auxiliary image 4.0 changes
       domainCR.spec().serverPod().addAuxiliaryImagesItem(auxiliaryImage);
+       */
     }
 
     return domainCR;
@@ -536,6 +539,7 @@ public class CommonMiiTestUtils {
             .withModelHome(auxiliaryImagePath + "/models")
             .withWdtInstallHome(auxiliaryImagePath + "/weblogic-deploy");
 
+        /* Commented out due to auxiliary image 4.0 changes.
         for (String auxiliaryImageName: auxiliaryImageDomainScopeNames) {
           domainCR.spec().serverPod()
               .addAuxiliaryImagesItem(new AuxiliaryImage()
@@ -554,9 +558,197 @@ public class CommonMiiTestUtils {
                   .volume(auxiliaryImageVolumeName)
                   .imagePullPolicy("IfNotPresent")));
         }
+         */
       }
     });
 
+    return domainCR;
+  }
+
+  /**
+   * Create a domain object for a Kubernetes domain custom resource using the basic model-in-image
+   * image.
+   *
+   * @param domainResourceName name of the domain resource
+   * @param domNamespace Kubernetes namespace that the domain is hosted
+   * @param imageName name of the image including its tag
+   * @param adminSecretName name of the new WebLogic admin credentials secret
+   * @param repoSecretName name of the secret for pulling the WebLogic image
+   * @param encryptionSecretName name of the secret used to encrypt the models
+   * @param replicaCount number of managed servers to start
+   * @param clusterName name of the cluster to add in domain
+   * @return domain object of the domain resource
+   */
+  public static Domain createDomainResource40(
+      String domainResourceName,
+      String domNamespace,
+      String imageName,
+      String adminSecretName,
+      String repoSecretName,
+      String encryptionSecretName,
+      int replicaCount,
+      String clusterName) {
+
+    // create the domain CR
+    Domain domain = CommonMiiTestUtils.createDomainResource40(domainResourceName, domNamespace,
+        imageName, adminSecretName, repoSecretName,
+        encryptionSecretName, replicaCount, List.of(clusterName));
+    setPodAntiAffinity(domain);
+
+    return domain;
+  }
+
+  /**
+   * Create a domain object for a Kubernetes domain custom resource using the basic model-in-image
+   * image.
+   *
+   * @param domainResourceName name of the domain resource
+   * @param domNamespace Kubernetes namespace that the domain is hosted
+   * @param imageName name of the image including its tag
+   * @param adminSecretName name of the new WebLogic admin credentials secret
+   * @param repoSecretName name of the secret for pulling the WebLogic image
+   * @param encryptionSecretName name of the secret used to encrypt the models
+   * @param replicaCount number of managed servers to start
+   * @param clusterNames a list of the cluster name to add in domain
+   * @return domain object of the domain resource
+   */
+  public static Domain createDomainResource40(
+      String domainResourceName,
+      String domNamespace,
+      String imageName,
+      String adminSecretName,
+      String repoSecretName,
+      String encryptionSecretName,
+      int replicaCount,
+      List<String> clusterNames) {
+
+    // create the domain CR
+    Domain domain = new Domain()
+            .apiVersion(DOMAIN_API_VERSION)
+            .kind("Domain")
+            .metadata(new io.kubernetes.client.openapi.models.V1ObjectMeta()
+                    .name(domainResourceName)
+                    .namespace(domNamespace))
+            .spec(new oracle.weblogic.domain.DomainSpec()
+                    .domainUid(domainResourceName)
+                    .domainHomeSourceType("FromModel")
+                    .image(imageName)
+                    .addImagePullSecretsItem(new io.kubernetes.client.openapi.models.V1LocalObjectReference()
+                            .name(repoSecretName))
+                    .webLogicCredentialsSecret(new io.kubernetes.client.openapi.models.V1SecretReference()
+                            .name(adminSecretName)
+                            .namespace(domNamespace))
+                    .includeServerOutInPodLog(true)
+                    .serverStartPolicy("IF_NEEDED")
+                    .serverPod(new oracle.weblogic.domain.ServerPod()
+                            .addEnvItem(new io.kubernetes.client.openapi.models.V1EnvVar()
+                                    .name("JAVA_OPTIONS")
+                                    .value("-Dweblogic.StdoutDebugEnabled=false"))
+                            .addEnvItem(new io.kubernetes.client.openapi.models.V1EnvVar()
+                                    .name("USER_MEM_ARGS")
+                                    .value("-Djava.security.egd=file:/dev/./urandom ")))
+                    .adminServer(new oracle.weblogic.domain.AdminServer()
+                            .serverStartState("RUNNING")
+                            .adminService(new oracle.weblogic.domain.AdminService()
+                                    .addChannelsItem(new oracle.weblogic.domain.Channel()
+                                            .channelName("default")
+                                            .nodePort(0))))
+                    .configuration(new oracle.weblogic.domain.Configuration()
+                            .model(new oracle.weblogic.domain.Model()
+                                    .domainType("WLS")
+                                    .runtimeEncryptionSecret(encryptionSecretName))
+                            .introspectorJobActiveDeadlineSeconds(600L)));
+    for (String clusterName : clusterNames) {
+      domain.spec()
+              .addClustersItem(new oracle.weblogic.domain.Cluster()
+                      .clusterName(clusterName)
+                      .replicas(replicaCount)
+                      .serverStartState("RUNNING"));
+    }
+
+    setPodAntiAffinity(domain);
+    return domain;
+  }
+
+  /**
+   * Create a domain object for a Kubernetes domain custom resource using the basic WLS image and MII auxiliary image
+   * image.
+   *
+   * @param domainResourceName name of the domain resource
+   * @param domNamespace Kubernetes namespace that the domain is hosted
+   * @param baseImageName name of the base image to use
+   * @param adminSecretName name of the new WebLogic admin credentials secret
+   * @param repoSecretName name of the secret for pulling the WebLogic image
+   * @param encryptionSecretName name of the secret used to encrypt the models
+   * @param replicaCount number of managed servers to start
+   * @param clusterName name of the cluster to add in domain
+   * @param auxiliaryImagePath auxiliary image path, parent location for Model in Image model and WDT installation files
+   * @param auxiliaryImageName image names including tags, image contains the domain model, application archive if any
+   *                   and WDT installation files
+   * @return domain object of the domain resource
+   */
+  public static Domain createDomainResource40(
+      String domainResourceName,
+      String domNamespace,
+      String baseImageName,
+      String adminSecretName,
+      String repoSecretName,
+      String encryptionSecretName,
+      int replicaCount,
+      String clusterName,
+      String auxiliaryImagePath,
+      String... auxiliaryImageName) {
+
+    Domain domainCR = CommonMiiTestUtils.createDomainResourceWithAuxiliaryImage40(domainResourceName,
+        domNamespace, baseImageName, adminSecretName, repoSecretName, encryptionSecretName, replicaCount,
+        List.of(clusterName), auxiliaryImagePath, auxiliaryImageName);
+
+    return domainCR;
+  }
+
+  /**
+   * Create a domain object for a Kubernetes domain custom resource using the basic WLS image and MII auxiliary image
+   * image.
+   *
+   * @param domainResourceName name of the domain resource
+   * @param domNamespace Kubernetes namespace that the domain is hosted
+   * @param baseImageName name of the base image to use
+   * @param adminSecretName name of the new WebLogic admin credentials secret
+   * @param repoSecretName name of the secret for pulling the WebLogic image
+   * @param encryptionSecretName name of the secret used to encrypt the models
+   * @param replicaCount number of managed servers to start
+   * @param clusterNames a list of the cluster name to add in domain
+   * @param auxiliaryImagePath auxiliary image path, parent location for Model in Image model and WDT installation files
+   * @param auxiliaryImageName image names including tags, image contains the domain model, application archive if any
+   *                   and WDT installation files
+   * @return domain object of the domain resource
+   */
+  public static Domain createDomainResourceWithAuxiliaryImage40(
+      String domainResourceName,
+      String domNamespace,
+      String baseImageName,
+      String adminSecretName,
+      String repoSecretName,
+      String encryptionSecretName,
+      int replicaCount,
+      List<String> clusterNames,
+      String auxiliaryImagePath,
+      String... auxiliaryImageName) {
+
+    Domain domainCR = CommonMiiTestUtils.createDomainResource(domainResourceName, domNamespace,
+        baseImageName, adminSecretName, repoSecretName,
+        encryptionSecretName, replicaCount, clusterNames);
+    int index = 0;
+    for (String cmImageName: auxiliaryImageName) {
+      AuxiliaryImage auxImage = new AuxiliaryImage().image(cmImageName).imagePullPolicy("IfNotPresent");
+      //Only add the sourceWDTInstallHome and sourceModelHome for the first aux image.
+      if (index == 0) {
+        auxImage.sourceWDTInstallHome(auxiliaryImagePath + "/weblogic-deploy")
+                .sourceModelHome(auxiliaryImagePath + "/models");
+      }
+      domainCR.spec().configuration().model().withAuxiliaryImage(auxImage);
+      index++;
+    }
     return domainCR;
   }
 
@@ -1345,18 +1537,14 @@ public class CommonMiiTestUtils {
     // create patch string
     StringBuffer patchStr = new StringBuffer("[")
         .append("{\"op\":  \"" + addOrReplace + "\",")
-        .append(" \"path\": \"/spec/clusters/")
-        .append(clusterIndex)
-        .append("/serverPod/auxiliaryImages/")
+        .append(" \"path\": \"/spec/configuration/model")
+        .append("/auxiliaryImages/")
         .append(auxiliaryImageIndex)
         .append("\", ")
         .append("\"value\":  {\"image\": \"")
         .append(auxiliaryImageName)
         .append("\", ")
-        .append("\"imagePullPolicy\": \"IfNotPresent\", ")
-        .append("\"volume\": ")
-        .append("\"")
-        .append(auxiliaryImageVolumeName)
+        .append("\"imagePullPolicy\": \"IfNotPresent\" ")
         .append("\"}}]");
 
     logger.info("Patch domain with auxiliary image patch string: " + patchStr);
@@ -1372,6 +1560,7 @@ public class CommonMiiTestUtils {
         String.format("getDomainCustomResource failed with ApiException when tried to get domain %s in namespace %s",
         domainUid, domainNamespace));
     assertNotNull(domain1, "Got null domain resource after patching");
+    /*
     assertNotNull(domain1.getSpec().getClusters().get(clusterIndex).getServerPod().getAuxiliaryImages(),
         domain1 + "/spec/serverPod/auxiliaryImages is null");
 
@@ -1387,6 +1576,7 @@ public class CommonMiiTestUtils {
       }
     }
     assertTrue(doMainPatched, String.format("Image name %s should be patched", auxiliaryImageName));
+    */
 
     // verify the server pods in cluster are rolling restarted and back to ready state
     logger.info("Verifying rolling restart occurred for domain {0} in namespace {1}",

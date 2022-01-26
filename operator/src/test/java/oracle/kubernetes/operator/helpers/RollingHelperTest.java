@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -190,9 +190,13 @@ class RollingHelperTest {
     V1Pod pod = createPodModel(serverName);
 
     testSupport.defineResources(pod);
-    pod.setStatus(new V1PodStatus().phase("Running")
-                                   .addConditionsItem(new V1PodCondition().type("Ready").status("True")));
+    setPodStatusReady(pod);
     domainPresenceInfo.setServerPod(serverName, pod);
+  }
+
+  private void setPodStatusReady(V1Pod pod) {
+    pod.setStatus(new V1PodStatus().phase("Running")
+          .addConditionsItem(new V1PodCondition().type("Ready").status("True")));
   }
 
   @Test
@@ -222,12 +226,22 @@ class RollingHelperTest {
   }
 
   @Test
-  void afterRoll_domainRollCompletedEventCreated() {
+  void whenRoll_domainRollCompletedEventCreated() {
     initializeExistingPods();
     testSupport.addToPacket(SERVERS_TO_ROLL, rolling);
-    testSupport.addToPacket(DOMAIN_ROLL_START_EVENT_GENERATED, "true");
     SERVER_NAMES.forEach(s ->
         rolling.put(s, createRollingStepAndPacket(modifyRestartVersion(createPodModel(s), "V10"), s)));
+
+    testSupport.runSteps(RollingHelper.rollServers(rolling, terminalStep));
+    logRecords.clear();
+
+    assertContainsEventWithMessage(DOMAIN_ROLL_COMPLETED, UID);
+  }
+
+  @Test
+  void whenNoRoll_withDomainRollStartFlag_domainRollCompletedEventCreated() {
+    initializeExistingPods();
+    testSupport.addToPacket(DOMAIN_ROLL_START_EVENT_GENERATED, "true");
 
     testSupport.runSteps(RollingHelper.rollServers(rolling, terminalStep));
     logRecords.clear();
@@ -264,9 +278,28 @@ class RollingHelperTest {
     logRecords.clear();
 
     SERVER_NAMES.forEach(s -> assertThat(
-        "Expected Event " + DOMAIN_ROLL_STARTING + " expected with message not found",
+        "Expected Event " + POD_CYCLE_STARTING + " expected with message not found",
         getExpectedEventMessage(POD_CYCLE_STARTING, getPodName(s), NS),
         stringContainsInOrder("Replacing ", getPodName(s), "domain restart version changed")));
+    assertThat("Expected Event " + DOMAIN_ROLL_COMPLETED + " expected with message not found",
+        getExpectedEventMessage(DOMAIN_ROLL_COMPLETED, UID, NS),
+        stringContainsInOrder("Rolling restart of domain", UID, "completed"));
+  }
+
+  @Test
+  void whenRolling_domainRollCompletedEventCreatedWithCorrectMessage() {
+    initializeExistingPods();
+    testSupport.addToPacket(SERVERS_TO_ROLL, rolling);
+    testSupport.addToPacket(DOMAIN_ROLL_START_EVENT_GENERATED, "true");
+    SERVER_NAMES.forEach(s ->
+        rolling.put(s, createRollingStepAndPacket(modifyRestartVersion(createPodModel(s), "V3"), s)));
+
+    testSupport.runSteps(RollingHelper.rollServers(rolling, terminalStep));
+    logRecords.clear();
+
+    assertThat("Expected Event " + DOMAIN_ROLL_COMPLETED + " expected with message not found",
+        getExpectedEventMessage(DOMAIN_ROLL_COMPLETED, UID, NS),
+        stringContainsInOrder("Rolling restart of domain", UID, "completed"));
   }
 
   @Test
@@ -276,6 +309,7 @@ class RollingHelperTest {
     testSupport.addToPacket(SERVERS_TO_ROLL, rolling);
     testSupport.addToPacket(SERVER_STATE_MAP, SERVER_NAMES.stream().collect(Collectors.toMap(k -> k, k -> "RUNNING")));
     testSupport.addToPacket(DOMAIN_ROLL_START_EVENT_GENERATED, "true");
+    testSupport.doOnCreate(KubernetesTestSupport.POD, p -> setPodStatusReady((V1Pod) p));
     SERVER_NAMES.forEach(s ->
         rolling.put(s, createRollingStepAndPacket(modifyRestartVersion(createPodModel(s), "V3"), s)));
 
@@ -336,16 +370,14 @@ class RollingHelperTest {
   }
 
   private V1Pod modifyRestartVersion(V1Pod pod, String restartVersion) {
-    pod.setStatus(new V1PodStatus().phase("Running").addConditionsItem(
-        new V1PodCondition().type("Ready").status("True")));
+    setPodStatusReady(pod);
     pod.getMetadata().getLabels().remove(LabelConstants.DOMAINRESTARTVERSION_LABEL);
     pod.getMetadata().getLabels().put(LabelConstants.DOMAINRESTARTVERSION_LABEL, restartVersion);
     return pod;
   }
 
   private V1Pod modifyDomainHome(V1Pod pod, String domainHome) {
-    pod.setStatus(new V1PodStatus().phase("Running").addConditionsItem(
-        new V1PodCondition().type("Ready").status("True")));
+    setPodStatusReady(pod);
     List<V1EnvVar> envList = pod.getSpec().getContainers().get(0).getEnv();
     for (V1EnvVar env : envList) {
       if (env.getName().equals("DOMAIN_HOME")) {
