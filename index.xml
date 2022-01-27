@@ -128,7 +128,7 @@ $ kubectl create namespace domain-namespace-1 Replace domain-namespace-1 with na
       
       <guid>https://oracle.github.io/weblogic-kubernetes-operator/samples/azure-kubernetes-service/domain-on-pv/</guid>
       <description>This sample demonstrates how to use the WebLogic Kubernetes Operator (hereafter &amp;ldquo;the operator&amp;rdquo;) to set up a WebLogic Server (WLS) cluster on the Azure Kubernetes Service (AKS) using the model in persistence volume approach. After going through the steps, your WLS domain runs on an AKS cluster instance and you can manage your WLS domain by accessing the WebLogic Server Administration Console.
-Contents  Prerequisites Create an AKS cluster Install WebLogic Kubernetes Operator Create WebLogic domain Automation Deploy sample application Access WebLogic Server logs Clean up resources Troubleshooting Useful links  Prerequisites This sample assumes the following prerequisite environment.</description>
+Contents  Prerequisites Create an AKS cluster Install WebLogic Kubernetes Operator Create WebLogic domain Automation Deploy sample application Validate NFS volume Clean up resources Troubleshooting Useful links  Prerequisites This sample assumes the following prerequisite environment.</description>
     </item>
     
     <item>
