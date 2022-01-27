@@ -2,7 +2,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # This is a sample Dockerfile for supplying Model in Image model files
-# and a WDT install in a small separate auxiliary image
+# and a WDT installation in a small separate auxiliary image
 # image. This is an alternative to supplying the files directly
 # in the domain resource `domain.spec.image` image.
 

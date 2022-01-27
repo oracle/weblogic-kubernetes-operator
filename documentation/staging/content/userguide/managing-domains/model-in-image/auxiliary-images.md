@@ -11,13 +11,13 @@ description = "Auxiliary images are an alternative approach for supplying a doma
  - [Introduction](#introduction)
  - [References](#references)
  - [Configuration](#configuration)
-   - [Source Locations](#source-locations)
-   - [Multiple Auxiliary Images](#multiple-auxiliary-images)
-   - [Model and WDT Install Homes](#model-and-wdt-install-homes)
-   - [Configuration Examples](#configuration-examples)
-     - [Configuration Example 1: Basic Configuration](#configuration-example-1-basic-configuration)
-     - [Configuration Example 2: Source Locations](#configuration-example-2-source-locations)
-     - [Configuration Example 3: Multiple Images](#configuration-example-3-multiple-images)
+   - [Source locations](#source-locations)
+   - [Multiple auxiliary images](#multiple-auxiliary-images)
+   - [Model and WDT install homes](#model-and-wdt-install-homes)
+   - [Configuration examples](#configuration-examples)
+     - [Configuration example 1: basic configuration](#configuration-example-1-basic-configuration)
+     - [Configuration example 2: source locations](#configuration-example-2-source-locations)
+     - [Configuration example 3: multiple images](#configuration-example-3-multiple-images)
  - [Sample](#sample)
    - [Step 1: Prerequisites](#step-1-prerequisites)
    - [Step 2: Create the auxiliary image](#step-2-create-the-auxiliary-image)
@@ -27,7 +27,7 @@ description = "Auxiliary images are an alternative approach for supplying a doma
 ### Introduction
 
 Auxiliary images are an alternative approach for including Model in Image model files,
-application archive files, and WebLogic Deploying Tooling installation files, in your pods.
+application archive files, and WebLogic Deploy Tooling installation files, in your pods.
 This feature eliminates the need to provide these files in the image specified
 in `domain.spec.image`.
 
@@ -63,7 +63,7 @@ from additional images.
 
 ### Configuration
 
-Beginning with operator version 4.0, one or more auxiliary images can be configured in a domain resource
+Beginning with operator version 4.0, you can configure one or more auxiliary images in a domain resource
 `configuration.model.auxiliaryImages` array.
 Each array entry must define an `image` which is the name of an auxiliary image.
 Optionally, you can set the `imagePullPolicy`,
@@ -72,21 +72,22 @@ otherwise.
 If image pull secrets are required for pulling auxiliary images, then the secrets must be referenced using `domain.spec.imagePullSecrets`.
 
 Also, optionally, you can configure the [source locations](#source-locations) of the WebLogic Deploy Tooling model 
-and installation files in the auxiliary image using the `sourceModelHome` and `sourceWDTInstallHome` fields described 
-[below](#source-locations).
-For details 
-about each field, see the [schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md#auxiliary-image).
+and installation files in the auxiliary image using the `sourceModelHome` and `sourceWDTInstallHome` fields described in the following 
+[section](#source-locations).  
 
-See [Configuration Example 1: Basic Configuration](#configuration-example-1-basic-configuration).
+For details about each field, see the 
+[schema](https://github.com/oracle/weblogic-kubernetes-operator/blob/main/documentation/domains/Domain.md#auxiliary-image).
 
-#### Source Locations
+For a basic configuration example, see [Configuration example 1](#configuration-example-1-basic-configuration).
+
+#### Source locations
 Use the optional attributes `configuration.model.auxiliaryImages[].sourceModelHome` and
 `configuration.model.auxiliaryImages[].sourceWdtInstallHome` to specify non-default locations of 
 WebLogic Deploy Tooling model and installation files in your auxiliary image(s).
-- Allowed values for `sourceModelHome` and `sourceWdtInstallHome`:
-  - Unset - Default to `/auxiliary/models` and `/auxiliary/weblogic-deploy`, respectively.
-  - Set to a path - Must point to an existing location containing WDT model and installation files, respectively.
-  - `None` - Indicates that the image has no WDT models and installation files, respectively. 
+Allowed values for `sourceModelHome` and `sourceWdtInstallHome`:
+- Unset - Default to `/auxiliary/models` and `/auxiliary/weblogic-deploy`, respectively.
+- Set to a path - Must point to an existing location containing WDT model and installation files, respectively.
+- `None` - Indicates that the image has no WDT models or installation files, respectively. 
 
 If you set the `sourceModelHome` or `sourceWDTInstallHome` to `None` or,
 the source attributes are left unset and there are no files at the default locations,
@@ -99,9 +100,9 @@ then the domain deployment will fail.
 The files in `sourceModelHome` and `sourceWDTInstallHome` directories will be made available in `/aux/models` 
 and `/aux/weblogic-deploy` directories of the WebLogic Server container in all pods, respectively.
 
-See [Configuration Example 2: Source Locations](#configuration-example-2-source-locations).
+For example source locations, see [Configuration example 2](#configuration-example-2-source-locations).
 
-#### Multiple Auxiliary Images
+#### Multiple auxiliary images
 If specifying multiple auxiliary images with model files in their respective `configuration.model.auxiliaryImages[].sourceModelHome`
 directories, then model files are merged. 
 The operator will merge the model files from multiple auxiliary images in the same order in which images appear under `model.auxiliaryImages`. 
@@ -113,22 +114,24 @@ When specifying multiple auxiliary images, ensure that only one of the images su
 If you provide more than one WDT install home using `sourceWDTInstallHome`, then the domain deployment will fail.
 {{% /notice %}}
 
-See [Configuration Example 3: Multiple Images](#configuration-example-3-multiple-images).
+For an example of configuring multiple auxiliary images, see [Configuration example 3](#configuration-example-3-multiple-images).
 
-#### Model and WDT Install Homes
-If you are using auxiliary images, it normally should not be necessary to set `domain.spec.configuration.models.modelHome` and
+#### Model and WDT install homes
+If you are using auxiliary images, typically, it should not be necessary to set `domain.spec.configuration.models.modelHome` and
 `domain.spec.configuration.models.wdtInstallHome`. The model and WDT install files you supply in the auxiliary image
 (see [source locations](#source-locations)) are always placed in the `/aux/models` and `/aux/weblogic-deploy` directories,
-respectively, in all WebLogic server pods. When auxiliary image(s) are configured, the operator automatically changes
+respectively, in all WebLogic Server pods. When auxiliary image(s) are configured, the operator automatically changes
 the default for `modelHome` and `wdtInstallHome` to match.
 
 {{% notice warning %}}
-If you set modelHome and wdtInstallHome to a non-default value,
+If you set `modelHome` and `wdtInstallHome` to a non-default value,
 then the operator will ignore the WDT model and installation files from the auxiliary image(s).
 {{% /notice %}}
 
-#### Configuration Examples
-##### Configuration Example 1: Basic Configuration
+#### Configuration examples
+The following configuration examples illustrate each of the previously described sections.
+
+##### Configuration example 1: basic configuration
 This example specifies the required image parameter for the auxiliary image(s); all other fields are at default values.
 
 ```
@@ -139,7 +142,7 @@ spec:
       - image: model-in-image:v1
 ```
 
-##### Configuration Example 2: Source Locations
+##### Configuration example 2: source locations
 This example is same as Example 1 except that it specifies the source locations for the WebLogic Deploy Tooling model and installation files.
 ```
 spec:
@@ -151,10 +154,10 @@ spec:
         sourceWDTInstallHome: /bar/weblogic-deploy
 ```
 
-##### Configuration Example 3: Multiple Images
+##### Configuration example 3: multiple images
 This example is the same as Example 1, except it configures multiple auxiliary images and sets the `sourceWDTInstallHome` 
 for the second image to `None`.
-In this case, the source location of WebLogic Deploy Tooling installation from the second image `new-model-in-image:v1` will be ignored.
+In this case, the source location of the WebLogic Deploy Tooling installation from the second image `new-model-in-image:v1` will be ignored.
 
 ```
 spec:
@@ -181,7 +184,7 @@ container image.
   This will:
 
   - Set up the operator and a namespace for the domain.
-  - Download a WebLogic Deploy Tool ZIP installation.
+  - Download a WebLogic Deploy Tool ZIP file installation.
   - Deploy a domain _without_ auxiliary images.
 
 - Second, shut down the domain and wait for its pods to exit.
@@ -198,7 +201,7 @@ container image.
 Follow these steps to create an auxiliary image containing
 Model In Image model files, application archives, and the WDT installation files:
 
-1. Create a model ZIP application archive and place it in the same directory
+1. Create a model ZIP file application archive and place it in the same directory
    where the model YAML file and model properties files are already in place
    for the initial use case:
    ```shell
@@ -207,7 +210,7 @@ Model In Image model files, application archives, and the WDT installation files
    $ zip -r /tmp/mii-sample/model-images/model-in-image__WLS-AI-v1/archive.zip wlsdeploy
    ```
    The `rm -f` command is included in case there's an
-   old version of the archive ZIP from a
+   old version of the archive ZIP file from a
    previous run of this sample.
 
 1. Create a temporary directory for staging the auxiliary image's files and `cd` to this directory:
@@ -236,11 +239,11 @@ Model In Image model files, application archives, and the WDT installation files
        --wdtArchive ./models/archive.zip
      ```
   
-     If you don't see the `imagetool` directory under `/tmp/mii-sample/model-images` or the WDT installer is not in the ImageTool cache, then repeat the step to set up the WebLogic Image Tool in the [prerequisites]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}}).
+     If you don't see the `imagetool` directory under `/tmp/mii-sample/model-images` or the WDT installer is not in the Image Tool cache, then repeat the step to set up the WebLogic Image Tool in the [prerequisites]({{< relref "/samples/domains/model-in-image/prerequisites.md" >}}).
  
-     When you run this command, the image tool will create an auxiliary image with the specified model, variables, and archive files in the
+     When you run this command, the Image Tool will create an auxiliary image with the specified model, variables, and archive files in the
      image's `/auxiliary/models` directory. It will also add the latest version of the WDT installation in its `/auxiliary/weblogic-deploy` directory.
-     See [Create Auxiliary Image](https://oracle.github.io/weblogic-image-tool/userguide/tools/create-aux-image/) for additional image tool options.
+     See [Create Auxiliary Image](https://oracle.github.io/weblogic-image-tool/userguide/tools/create-aux-image/) for additional Image Tool options.
      The operator auxiliary image feature looks for WDT model and WDT install files in these specific directories by default; if you change
      the location of these directories, then change the corresponding domain resource auxiliary image [source locations attributes](#source-locations).
 
@@ -269,7 +272,7 @@ Model In Image model files, application archives, and the WDT installation files
        # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
        
        # This is a sample Dockerfile for supplying Model in Image model files
-       # and a WDT install in a small separate auxiliary image
+       # and a WDT installation in a small separate auxiliary image
        # image. This is an alternative to supplying the files directly
        # in the domain resource `domain.spec.image` image.
               
@@ -294,7 +297,7 @@ Model In Image model files, application archives, and the WDT installation files
        ```
        {{% /expand %}}
 
-1. If you have successfully created the image, then it should now be in your local machine's docker repository. For example:
+1. If you have successfully created the image, then it should now be in your local machine's Docker repository. For example:
 
     ```
     $ docker images model-in-image:WLS-AI-v1
