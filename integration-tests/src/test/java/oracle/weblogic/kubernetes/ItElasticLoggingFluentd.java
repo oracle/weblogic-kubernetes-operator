@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -48,6 +48,8 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.ELASTICSEARCH_HTTPS_PORT;
@@ -318,7 +320,7 @@ class ItElasticLoggingFluentd {
     logger.info("Create secret for admin credentials");
     final String adminSecretName = "weblogic-credentials";
     assertDoesNotThrow(() -> createSecretWithUsernamePasswordElk(adminSecretName, domainNamespace,
-        "weblogic", "welcome1", elasticSearchHost, elasticSearchPort),
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, elasticSearchHost, elasticSearchPort),
         String.format("create secret for admin credentials failed for %s", adminSecretName));
 
     // create encryption secret
