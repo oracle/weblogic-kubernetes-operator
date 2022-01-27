@@ -41,10 +41,10 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 /**
- * Test a single operator can manage multiple WebLogic domains with as single Traefik fronted loadbalancer.
+ * Test a single operator can manage multiple WebLogic domains with a single Traefik fronted loadbalancer.
  */
 @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
-@DisplayName("Verify a single operator manages multiple WebLogic domains with as single Traefik fronted loadbalancer")
+@DisplayName("Verify a single operator manages multiple WebLogic domains with a single Traefik fronted loadbalancer")
 @IntegrationTest
 class ItLBTwoDomainsTraefik {
 
@@ -100,7 +100,7 @@ class ItLBTwoDomainsTraefik {
     createSecretForBaseImages(domainNamespace);
 
     for (int i = 1; i <= numberOfDomains; i++) {
-      domainUids.add("wls-traefik-domain" + i);
+      domainUids.add("wls-traefik-domain-" + i);
     }
 
     createMultipleDomainsSharingPVUsingWlstAndVerify(
@@ -170,7 +170,7 @@ class ItLBTwoDomainsTraefik {
     logger.info("Verifying Traefik path routing with HTTP protocol across two domains");
     for (String domainUid : domainUids) {
       verifyClusterLoadbalancing(domainUid, "", "http", getTraefikLbNodePort(false),
-          replicaCount, false, "/" + domainUid.substring(12));
+          replicaCount, false, "/" + domainUid.substring(12).replace("-", ""));
     }
   }
 

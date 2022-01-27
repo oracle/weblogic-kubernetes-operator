@@ -119,7 +119,7 @@ class ItLBTwoDomainsApache {
     createSecretForBaseImages(domainNamespace);
 
     for (int i = 1; i <= numberOfDomains; i++) {
-      domainUids.add("wls-apache-domain" + i);
+      domainUids.add("wls-apache-domain-" + i);
     }
 
     if (KIND_REPO != null) {

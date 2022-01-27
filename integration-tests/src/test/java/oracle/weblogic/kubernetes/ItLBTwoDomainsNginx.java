@@ -107,7 +107,7 @@ class ItLBTwoDomainsNginx {
     createSecretForBaseImages(domainNamespace);
 
     for (int i = 1; i <= numberOfDomains; i++) {
-      domainUids.add("wls-nginx-domain" + i);
+      domainUids.add("wls-nginx-domain-" + i);
     }
 
     createMultipleDomainsSharingPVUsingWlstAndVerify(
