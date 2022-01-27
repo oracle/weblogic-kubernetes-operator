@@ -443,7 +443,6 @@
                   **/ItMiiNewCreateAuxImage,
                   **/ItParameterizedDomain,
                   **/ItPodsShutdownOption,
-                  **/ItSystemResOverrides,
                   **/ItFmwDynamicDomainInPV,
                   **/ItFmwMiiDomain
                 </includes-failsafe>
