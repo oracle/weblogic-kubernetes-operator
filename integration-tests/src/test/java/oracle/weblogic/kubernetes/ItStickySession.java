@@ -42,6 +42,8 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 import org.junit.jupiter.api.condition.EnabledIfEnvironmentVariable;
 
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.LOGS_DIR;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
@@ -284,7 +286,7 @@ class ItStickySession {
     logger.info("Create secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
     assertDoesNotThrow(() -> createSecretWithUsernamePassword(adminSecretName, domainNamespace,
-        "weblogic", "welcome1"),
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
         String.format("create secret for admin credentials failed for %s", adminSecretName));
 
     // create encryption secret

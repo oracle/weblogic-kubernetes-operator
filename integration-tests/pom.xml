@@ -400,7 +400,7 @@
                   **/ItProductionSecureMode,
                   **/ItRemoteConsole,
                   **/ItServerStartPolicy,
-		          **/ItServiceStartPolicyDynamicCluster,
+		  **/ItServiceStartPolicyDynamicCluster,
                   **/ItServerStartPolicyConfigCluster,
                   **/ItSessionMigration,
                   **/ItStickySession,
@@ -445,6 +445,22 @@
                     **/ItProductionSecureMode,
                     **/ItSessionMigration,
                     **/ItSystemResOverrides
+                </includes-failsafe>
+            </properties>
+        </profile>
+        <profile>
+            <id>toolkits-srg</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                    **/ItParameterizedDomain,
+                    **/ItMiiUpdateDomainConfig,
+                    **/ItMiiAuxiliaryImage40,
+                    **/ItMiiNewCreateAuxImage40,
+                    **/ItMiiDynamicUpdate*,
+                    **/ItMiiSampleWlsMain,
+                    **/ItMiiSampleWlsAux,
+                    **/ItMiiMultiModel
                 </includes-failsafe>
             </properties>
         </profile>
