@@ -307,7 +307,7 @@ class ItMiiDynamicUpdatePart3 {
     Path pathToDeleteDSYaml = Paths.get(WORK_DIR + "/deleteds.yaml");
     String yamlToDeleteDS = "resources:\n"
         + "  JDBCSystemResource:\n"
-        + "    !TestDataSource2:";
+        + "    '!TestDataSource2':";
 
     assertDoesNotThrow(() -> Files.write(pathToDeleteDSYaml, yamlToDeleteDS.getBytes()));
 
