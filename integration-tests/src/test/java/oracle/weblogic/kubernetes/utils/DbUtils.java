@@ -840,6 +840,7 @@ public class DbUtils {
 
   /**
    * Delete Oracle database created by operator.
+   *
    * @param namespace namespace in which DB is running.
    */
   public static void deleteOracleDB(String namespace, String dbName) {
@@ -847,7 +848,9 @@ public class DbUtils {
     CommandParams params = new CommandParams().defaults();
     params.command("kubectl delete -f " + dbYaml.toString());
     boolean response = Command.withParams(params).execute();
-    assertTrue(response, "Failed to delete Oracle database");
+    if (!response) {
+      getLogger().warning("Failed to delete Oracle database {0}", dbName);
+    }
     getLogger().info("Wait for the database {0} pod to be deleted in namespace {1}",
         dbName, namespace);
     PodUtils.checkPodDoesNotExist(dbName, null, namespace);
@@ -903,7 +906,9 @@ public class DbUtils {
     CommandParams params = new CommandParams().defaults();
     params.command("kubectl delete -f " + hpYamlFile.toString());
     boolean response = Command.withParams(params).execute();
-    assertTrue(response, "Failed to delete pv path provisioner");
+    if (!response) {
+      getLogger().warning("Failed to delete pv path provisioner");
+    }
   }
 
   // create hostpath provisioner using api.
