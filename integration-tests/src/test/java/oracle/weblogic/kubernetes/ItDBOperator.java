@@ -62,8 +62,8 @@ import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapAnd
 import static oracle.weblogic.kubernetes.utils.DbUtils.createOracleDBUsingOperator;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuAccessSecret;
 import static oracle.weblogic.kubernetes.utils.DbUtils.createRcuSchema;
-import static oracle.weblogic.kubernetes.utils.DbUtils.deleteHostPathProvisioner;
 import static oracle.weblogic.kubernetes.utils.DbUtils.deleteOracleDB;
+import static oracle.weblogic.kubernetes.utils.DbUtils.deletePVPathProvisioner;
 import static oracle.weblogic.kubernetes.utils.DbUtils.installDBOperator;
 import static oracle.weblogic.kubernetes.utils.DbUtils.uninstallDBOperator;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
@@ -464,7 +464,7 @@ class ItDBOperator {
         || (System.getenv("SKIP_CLEANUP") != null
         && System.getenv("SKIP_CLEANUP").equalsIgnoreCase("false"))) {
       deleteOracleDB(dbNamespace, dbName);
-      deleteHostPathProvisioner(dbNamespace);
+      deletePVPathProvisioner(dbNamespace);
       uninstallDBOperator(dbNamespace);
     }
   }

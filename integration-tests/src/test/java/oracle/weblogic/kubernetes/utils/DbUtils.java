@@ -890,14 +890,20 @@ public class DbUtils {
 
   /**
    * Delete hostpath provisioner.
+   *
    * @param namespace namespace
    */
-  public static void deleteHostPathProvisioner(String namespace) {
-    Path hpYamlFile = Paths.get(DOWNLOAD_DIR, namespace, "hostpath-provisioner.yaml");
+  public static void deletePVPathProvisioner(String namespace) {
+    Path hpYamlFile;
+    if (OKD) {
+      hpYamlFile = Paths.get(DOWNLOAD_DIR, namespace, "nfs-path-provisioner.yaml");
+    } else {
+      hpYamlFile = Paths.get(DOWNLOAD_DIR, namespace, "hostpath-provisioner.yaml");
+    }
     CommandParams params = new CommandParams().defaults();
     params.command("kubectl delete -f " + hpYamlFile.toString());
     boolean response = Command.withParams(params).execute();
-    assertTrue(response, "Failed to delete hostpath provisioner");
+    assertTrue(response, "Failed to delete pv path provisioner");
   }
 
   // create hostpath provisioner using api.
