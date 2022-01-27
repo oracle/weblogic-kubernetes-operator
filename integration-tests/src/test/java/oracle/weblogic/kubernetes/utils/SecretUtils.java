@@ -75,7 +75,6 @@ public class SecretUtils {
                                                       String namespace,
                                                       String username,
                                                       String password) {
-
     Map<String, String> secretMap = new HashMap<>();
     secretMap.put("username", username);
     secretMap.put("password", password);
