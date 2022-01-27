@@ -302,6 +302,18 @@
             </properties>
         </profile>
         <profile>
+            <id>fmw-srg</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                  **/ItFmwDomainInPVUsingWLST,
+                  **/ItFmwDomainInPVUsingWDT,
+                  **/ItFmwMiiDomain,
+                  **/ItFmwDiiSample
+                </includes-failsafe>
+            </properties>
+        </profile>
+        <profile>
             <id>oke-cert</id>
             <properties>
                 <skipITs>false</skipITs>
