@@ -338,5 +338,21 @@
                 </includes-failsafe>
             </properties>
         </profile>
+        <profile>
+            <id>toolkits-srg</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                    **/ItParameterizedDomain,
+                    **/ItMiiUpdateDomainConfig,
+                    **/ItMiiAuxiliaryImage,
+                    **/ItMiiNewCreateAuxImage,
+                    **/ItMiiDynamicUpdate,
+                    **/ItMiiSampleWlsMain,
+                    **/ItMiiSampleWlsAux,
+                    **/ItMiiMultiModel
+                </includes-failsafe>
+            </properties>
+        </profile>
     </profiles>
 </project>
