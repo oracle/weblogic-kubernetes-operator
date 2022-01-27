@@ -15,9 +15,9 @@ description = "Auxiliary images are an alternative approach for supplying a doma
    - [Multiple auxiliary images](#multiple-auxiliary-images)
    - [Model and WDT install homes](#model-and-wdt-install-homes)
    - [Configuration examples](#configuration-examples)
-     - [Configuration example 1: basic configuration](#configuration-example-1-basic-configuration)
-     - [Configuration example 2: source locations](#configuration-example-2-source-locations)
-     - [Configuration example 3: multiple images](#configuration-example-3-multiple-images)
+     - [Configuration example 1: Basic configuration](#configuration-example-1-basic-configuration)
+     - [Configuration example 2: Source locations](#configuration-example-2-source-locations)
+     - [Configuration example 3: Multiple images](#configuration-example-3-multiple-images)
  - [Sample](#sample)
    - [Step 1: Prerequisites](#step-1-prerequisites)
    - [Step 2: Create the auxiliary image](#step-2-create-the-auxiliary-image)
@@ -131,7 +131,7 @@ then the operator will ignore the WDT model and installation files from the auxi
 #### Configuration examples
 The following configuration examples illustrate each of the previously described sections.
 
-##### Configuration example 1: basic configuration
+##### Configuration example 1: Basic configuration
 This example specifies the required image parameter for the auxiliary image(s); all other fields are at default values.
 
 ```
@@ -142,7 +142,7 @@ spec:
       - image: model-in-image:v1
 ```
 
-##### Configuration example 2: source locations
+##### Configuration example 2: Source locations
 This example is same as Example 1 except that it specifies the source locations for the WebLogic Deploy Tooling model and installation files.
 ```
 spec:
@@ -154,7 +154,7 @@ spec:
         sourceWDTInstallHome: /bar/weblogic-deploy
 ```
 
-##### Configuration example 3: multiple images
+##### Configuration example 3: Multiple images
 This example is the same as Example 1, except it configures multiple auxiliary images and sets the `sourceWDTInstallHome` 
 for the second image to `None`.
 In this case, the source location of the WebLogic Deploy Tooling installation from the second image `new-model-in-image:v1` will be ignored.
