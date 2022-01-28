@@ -79,10 +79,10 @@ public class Operator {
           .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
           .toString();
     } else  {
-      // Remove (if needed) / from branch name and replace with - 
-      // e.g. replace release/3.x.y with release-3.x.y
+      // Remove all non-alphanumeric character(s) in the branch name 
+      // e.g. replace release/3.x.y with release3xy
       CommandParams params = Command.defaultCommandParams()
-          .command("git branch | grep \\* | cut -d ' ' -f2- | tr '/' '-' ")
+          .command("git branch|grep \\* |cut -d ' ' -f2- |tr -dc 'a-zA-Z0-9'")
           .saveResults(true)
           .redirect(false);
 
