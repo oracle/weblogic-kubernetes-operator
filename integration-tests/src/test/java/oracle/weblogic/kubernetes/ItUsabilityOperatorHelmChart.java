@@ -476,7 +476,7 @@ class ItUsabilityOperatorHelmChart {
    * Install operator1 with namespace op2Namespace.
    * Install operator2 with same namesapce op2Namespace.
    * Second operator should fail to install with following exception
-   * Error: rendered manifests contain a resource that already exists.
+   * rendered manifests contain a resource that already exists.
    * Unable to continue with install: existing resource conflict: existing resource conflict: namespace
    *
    */
@@ -521,7 +521,7 @@ class ItUsabilityOperatorHelmChart {
    * Install operator1 with Domain Namespace [domain2Namespace].
    * Install operator2 with same Domain Namespace [domain2Namespace].
    * Second operator should fail to install with following exception.
-   * Error: rendered manifests contain a resource that already exists.
+   * rendered manifests contain a resource that already exists.
    * Unable to continue with install: existing resource conflict: namespace.
    * Test fails when second operator installation does not fail.
    */
