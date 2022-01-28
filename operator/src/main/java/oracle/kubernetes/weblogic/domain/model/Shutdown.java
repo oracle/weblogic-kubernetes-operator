@@ -38,7 +38,7 @@ public class Shutdown {
 
   @Description(
       "For graceful shutdown only, set to true to wait for all HTTP sessions"
-          + " during inflight work handling; false to wait for non-persisted"
+          + " during in-flight work handling; false to wait for non-persisted"
           + " HTTP sessions only."
           + " Defaults to false.")
   private Boolean waitForAllSessions;

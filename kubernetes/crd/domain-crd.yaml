@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 0be6ddfee87449fdcf951811dd8d238a5b4cb00b030cf66be573d2eee7e718eb
+    weblogic.sha256: 6906c86f1d5ee2c883c607c47ae72dc4bc985a4ed15b04e441d147ddb63eab9a
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -2768,7 +2768,7 @@ spec:
                             type: number
                           waitForAllSessions:
                             description: For graceful shutdown only, set to true to
-                              wait for all HTTP sessions during inflight work handling;
+                              wait for all HTTP sessions during in-flight work handling;
                               false to wait for non-persisted HTTP sessions only.
                               Defaults to false.
                             type: boolean
@@ -5529,7 +5529,7 @@ spec:
                               type: number
                             waitForAllSessions:
                               description: For graceful shutdown only, set to true
-                                to wait for all HTTP sessions during inflight work
+                                to wait for all HTTP sessions during in-flight work
                                 handling; false to wait for non-persisted HTTP sessions
                                 only. Defaults to false.
                               type: boolean
@@ -8289,7 +8289,7 @@ spec:
                         type: number
                       waitForAllSessions:
                         description: For graceful shutdown only, set to true to wait
-                          for all HTTP sessions during inflight work handling; false
+                          for all HTTP sessions during in-flight work handling; false
                           to wait for non-persisted HTTP sessions only. Defaults to
                           false.
                         type: boolean
@@ -10930,7 +10930,7 @@ spec:
                               type: number
                             waitForAllSessions:
                               description: For graceful shutdown only, set to true
-                                to wait for all HTTP sessions during inflight work
+                                to wait for all HTTP sessions during in-flight work
                                 handling; false to wait for non-persisted HTTP sessions
                                 only. Defaults to false.
                               type: boolean

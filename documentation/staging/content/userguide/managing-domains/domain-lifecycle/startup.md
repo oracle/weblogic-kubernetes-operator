@@ -215,16 +215,16 @@ time, using the shutdown options set when the WebLogic Server instance Pod is cr
 | Field| Default Value | Supported Values | Description |
 | --- | --- | --- | --- |
 | `shutdownType` | `Graceful` | `Graceful` or `Forced` | Specifies how the operator will shut down server instances. |
-| `timeoutSeconds` | 30 | Whole number in seconds where 0 means no timeout | For graceful shutdown only, number of seconds to wait before aborting in-flight work and shutting down the server. |
+| `timeoutSeconds` | 30 | Whole number in seconds where 0 means no timeout. | For graceful shutdown only, number of seconds to wait before aborting in-flight work and shutting down the server. |
 | `ignoreSessions` | `false` | `true` or `false` | Boolean indicating if active sessions should be ignored; only applicable if shutdown is graceful. |
-| `waitForAllSessions` | `false` | `true` or `false` | For graceful shutdown only, set to `true` to wait for all HTTP sessions during inflight work handling; `false` to wait for non-persisted HTTP sessions only during inflight work handling. |
+| `waitForAllSessions` | `false` | `true` or `false` | For graceful shutdown only, set to `true` to wait for all HTTP sessions during in-flight work handling; `false` to wait for non-persisted HTTP sessions only during in-flight work handling. |
 
 {{% notice note %}}
 The `waitForAllSessions` property does not apply when the `ignoreSessions` property is `true`. When the
 `ignoreSessions` property is `false` then `waitForAllSessions` property is taken into account during 
 the WebLogic graceful shutdown process. When the`waitForAllSessions` is `true`, the graceful shutdown
-process will wait for all HTTP session to complete or be invalidated before proceeding. When `waitForAllSessions`
-is `false`, the graceful shutdown process will only wait for non-persisted HTTP sessions to complete 
+process will wait for all HTTP sessions to complete or be invalidated before proceeding. When `waitForAllSessions`
+is `false`, the graceful shutdown process will wait only for non-persisted HTTP sessions to complete 
 or be invalidated before proceeding.
 {{% /notice %}}
 
@@ -239,7 +239,7 @@ the operator will not override the environment variable based on the shutdown co
 | `SHUTDOWN_TYPE` | `Graceful` | `Graceful` or `Forced` |
 | `SHUTDOWN_TIMEOUT` | 30 | Whole number in seconds where 0 means no timeout |
 | `SHUTDOWN_IGNORE_SESSIONS` | `false` | Boolean indicating if active sessions should be ignored; only applicable if shutdown is graceful |
-| `SHUTDOWN_WAIT_FOR_ALL_SESSIONS` | `false` | `true` to wait for all HTTP sessions during inflight work handling; `false` to wait for non-persisted HTTP sessions only ; only applicable if shutdown is graceful |
+| `SHUTDOWN_WAIT_FOR_ALL_SESSIONS` | `false` | `true` to wait for all HTTP sessions during in-flight work handling; `false` to wait for non-persisted HTTP sessions only ; only applicable if shutdown is graceful |
 
 
 #### `shutdown` rules
