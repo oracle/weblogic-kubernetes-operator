@@ -34,8 +34,8 @@ Use the **Basics** blade to provide the basic configuration details for deployin
 
 | Field | Description |
 |-------|-------------|
-| Subscription | Select a subscription to use for the charges accrued by this offer. You must have a valid active subscription associated with the Azure account that is currently logged in. If you don’t have it already, follow the steps described in [Associate or add an Azure subscription to your Azure Active Directory tenant](https://docs.microsoft.com/en-us/azure/active-directory/fundamentals/active-directory-how-subscriptions-associated-directory).|
-| Resource group | A resource group is a container that holds related resources for an Azure solution. The resource group includes those resources that you want to manage as a group. You decide which resources belong in a resource group based on what makes the most sense for your organization. If you have an existing resource group into which you want to deploy this solution, you can enter its name here; however, the resource group must have no pre-existing resources in it. Alternatively, you can click the **Create new**, and enter the name so that Azure creates a new resource group before provisioning the resources.  For more information about resource groups, see the [Azure documentation](https://docs.microsoft.com/en-us/azure/azure-resource-manager/resource-group-overview#resource-groups). |
+| Subscription | Select a subscription to use for the charges accrued by this offer. You must have a valid active subscription associated with the Azure account that is currently logged in. If you don’t have it already, follow the steps described in [Associate or add an Azure subscription to your Azure Active Directory tenant](https://docs.microsoft.com/azure/active-directory/fundamentals/active-directory-how-subscriptions-associated-directory).|
+| Resource group | A resource group is a container that holds related resources for an Azure solution. The resource group includes those resources that you want to manage as a group. You decide which resources belong in a resource group based on what makes the most sense for your organization. If you have an existing resource group into which you want to deploy this solution, you can enter its name here; however, the resource group must have no pre-existing resources in it. Alternatively, you can click the **Create new**, and enter the name so that Azure creates a new resource group before provisioning the resources.  For more information about resource groups, see the [Azure documentation](https://docs.microsoft.com/azure/azure-resource-manager/resource-group-overview#resource-groups). |
 
 ##### Instance details
 
@@ -52,7 +52,7 @@ Use the **Basics** blade to provide the basic configuration details for deployin
 | Confirm password | Re-enter the value of the preceding field. |
 | Password for WebLogic Deploy Tooling runtime encryption | The deployment uses the WebLogic Kubernetes Operator encryption feature, including the capability to encrypt the domain. This password is used for that encryption. For more information, see [Encryption]({{< relref "/security/encryption.md" >}}).|
 | Confirm password | Re-enter the value of the preceding field. |
-| User assigned managed identity | The deployment requires a user-assigned managed identity with the **Contributor** or **Owner** role in the subscription referenced previously.  For more information, please see [Create, list, delete, or assign a role to a user-assigned managed identity using the Azure portal](https://docs.microsoft.com/en-us/azure/active-directory/managed-identities-azure-resources/how-to-manage-ua-identity-portal). |
+| User assigned managed identity | The deployment requires a user-assigned managed identity with the **Contributor** or **Owner** role in the subscription referenced previously.  For more information, please see [Create, list, delete, or assign a role to a user-assigned managed identity using the Azure portal](https://docs.microsoft.com/azure/active-directory/managed-identities-azure-resources/how-to-manage-ua-identity-portal). |
 
 ##### Optional Basic Configuration
 
@@ -78,9 +78,9 @@ In this section, you can configure some options about the AKS which will run Web
 |-------|-------------|
 |Create a new AKS cluster| If set to **Yes**, the deployment will create a new AKS cluster resource in the specified resource group. If set to **No**, you have the opportunity to select an existing AKS cluster, into which the deployment is configured. Note: the offer assumes the existing AKS cluster has no WebLogic related deployments. |
 | Node count | The initial number of nodes in the AKS cluster. This value can be changed after deployment. For information, see [Scaling]({{< relref "/userguide/managing-domains/domain-lifecycle/scaling.md" >}}). |
-| Node size | The default VM size is 2x Standard DSv2, 2 vcpus, 7 GB memory. If you want to select a different VM size, select **Change Size**, select the size from the list (for example, A3) on the Select a VM size page, and select **Select**. For more information about sizing the virtual machine, see the [Azure documentation on Sizes](https://docs.microsoft.com/en-us/azure/cloud-services/cloud-services-sizes-specs).|
+| Node size | The default VM size is 2x Standard DSv2, 2 vcpus, 7 GB memory. If you want to select a different VM size, select **Change Size**, select the size from the list (for example, A3) on the Select a VM size page, and select **Select**. For more information about sizing the virtual machine, see the [Azure documentation on Sizes](https://docs.microsoft.com/azure/cloud-services/cloud-services-sizes-specs).|
 |Enable Container insights| If selected, configure the necessary settings to integrate with Container insights. Container insights gives you performance visibility by collecting memory and processor metrics from controllers, nodes, and containers that are available in Kubernetes through the Metrics API. Container logs are also collected. Metrics are written to the metrics store and log data is written to the logs store associated with your Log Analytics workspace. For more information, see [Container insights overview](https://aka.ms/wls-aks-container-insights).|
-|Create Persistent Volume using Azure File share service|If selected, an Azure Storage Account and an Azure Files share will be provisioned; static persistent volume with the Azure Files share will be mounted the nodes of the AKS cluster. For more information, see [Oracle WebLogic Server persistent storage]({{< relref "/userguide/managing-domains/persistent-storage/_index.md" >}}) and [persistent volume with Azure Files share on AKS](https://docs.microsoft.com/azure/aks/azure-files-volume?WT.mc_id=Portal-Microsoft_Azure_CreateUIDef).|
+|Create Persistent Volume using Azure File share service|If selected, an Azure Storage Account and an Azure Files share will be provisioned; static persistent volume with the Azure Files share will be mounted the nodes of the AKS cluster. For more information, see [Oracle WebLogic Server persistent storage]({{< relref "/userguide/managing-domains/persistent-storage/_index.md" >}}) and [persistent volume with Azure Files share on AKS](https://docs.microsoft.com/azure/aks/azure-files-volume).|
 
 ##### Image selection
 
@@ -89,7 +89,7 @@ In this section, you can configure the image that is deployed using the model-in
 | Field | Description |
 |-------|-------------|
 | Use a pre-existing WebLogic Server Docker image from Oracle Container Registry (OCR)? | If set to **Yes**, the subsequent options are constrained to allow only selecting from a set of pre-existing WebLogic Server Docker images stored in the Oracle Container Registry. If set to **No**, the user may refer to a pre-existing Azure Container Registry, and must specify the Docker tag of the WebLogic Server image within that registry that will be used to create the domain. The specified image is assumed to be compatible with the WebLogic Kubernetes Operator. This allows the use of custom images, such as with a specific set patches (PSUs). For more about WebLogic Server images see [WebLogic Server images]({{< relref "/userguide/base-images/_index.md" >}}).|
-|Create a new Azure Container Registry to store application images?|If set to **Yes**, the offer will create a new Azure Container Registry (ACR) to hold the Docker images for use in the deployment.  If set to **No**, you must specify an existing ACR. In this case, you must be sure the selected ACR has the admin account enabled. For details, please see [Admin account](https://docs.microsoft.com/en-us/azure/container-registry/container-registry-authentication?WT.mc_id=Portal-Microsoft_Azure_CreateUIDef&tabs=azure-cli#admin-account). |
+|Create a new Azure Container Registry to store application images?|If set to **Yes**, the offer will create a new Azure Container Registry (ACR) to hold the Docker images for use in the deployment.  If set to **No**, you must specify an existing ACR. In this case, you must be sure the selected ACR has the admin account enabled. For details, please see [Admin account](https://docs.microsoft.com/azure/container-registry/container-registry-authentication?tabs=azure-cli#admin-account). |
 | Select existing ACR instance | This option is shown only if **Use a pre-existing WebLogic Server Docker image from Oracle Container Registry?** is set to **No**. If visible, select an existing Acure Container Registry instance. |
 | Please provide the image path | This option is shown only if **Use a pre-existing WebLogic Server Docker image from Oracle Container Registry?** is set to **No**. If visible, the value must be a fully qualified Docker tag of an image within the specified ACR. |
 | Username for Oracle Single Sign-On authentication | The Oracle Single Sign-on account user name for which the Terms and Restrictions for the selected WebLogic Server image have been accepted. |
@@ -105,7 +105,7 @@ In this section you can deploy a Java EE Application along with the WebLogic Ser
 | Field | Description |
 |-------|-------------|
 | Deploy your application package? | If set to **Yes**, you must specify a Java EE WAR, EAR, or JAR file suitable for deployment with the selected version of WebLogic Server. If set to **No**, no application is deployed.|
-| Application package (.war,.ear,.jar) | With the **Browse** button, you can select a file from a pre-existing Azure Storage Account and Storage Container within that account.  To learn how to create a Storage Account and Container, see [Create a storage account](https://docs.microsoft.com/en-us/azure/storage/common/storage-account-create?tabs=azure-portal) and [Create a Storage Container and upload application files](https://docs.microsoft.com/azure/storage/blobs/storage-quickstart-blobs-portal). |
+| Application package (.war,.ear,.jar) | With the **Browse** button, you can select a file from a pre-existing Azure Storage Account and Storage Container within that account.  To learn how to create a Storage Account and Container, see [Create a storage account](https://docs.microsoft.com/azure/storage/common/storage-account-create?tabs=azure-portal) and [Create a Storage Container and upload application files](https://docs.microsoft.com/azure/storage/blobs/storage-quickstart-blobs-portal). |
 | Fail deployment if application does not become ACTIVE. | If selected, the deployment will wait for the deployed application to reach the **ACTIVE** state and fail the deployment if it does not. For more details, see the [Oracle documentation](https://aka.ms/wls-aks-deployment-state). |
 | Number of WebLogic Managed Server replicas | The initial value of the `replicas` field of the Domain. For information, see [Scaling]({{< relref "/userguide/managing-domains/domain-lifecycle/scaling.md" >}}). |
 
@@ -173,11 +173,11 @@ You must select one of the following three options, each described in turn.
 
 | Field | Description |
 |-------|-------------|
-| Frontend TLS/SSL certificate(.pfx) | For information on how to create a certificate in PFX format, see [Overview of TLS termination and end to end TLS with Application Gateway](https://docs.microsoft.com/en-us/azure/application-gateway/ssl-overview). |
+| Frontend TLS/SSL certificate(.pfx) | For information on how to create a certificate in PFX format, see [Overview of TLS termination and end to end TLS with Application Gateway](https://docs.microsoft.com/azure/application-gateway/ssl-overview). |
 | Password | The password for the certificate |
 | Confirm password | Re-enter the value of the preceding field. |
 | Trusted root certificate(.cer, .cert) | A trusted root certificate is required to allow back-end instances in the application gateway. The root certificate is a Base-64 encoded X.509(.CER) format root certificate. |
-| Service Principal | A Base64 encoded JSON string of a service principal for the selected subscription. You can generate one with command `az ad sp create-for-rbac --sdk-auth | base64 -w0`. For more information, see [Create a service principal](https://docs.microsoft.com/en-us/cli/azure/create-an-azure-service-principal-azure-cli#create-a-service-principal). |
+| Service Principal | A Base64 encoded JSON string of a service principal for the selected subscription. You can generate one with command `az ad sp create-for-rbac --sdk-auth | base64 -w0`. For more information, see [Create a service principal](https://docs.microsoft.com/cli/azure/create-an-azure-service-principal-azure-cli#create-a-service-principal). |
 
 **Identify an Azure Key Vault**
 
@@ -187,20 +187,20 @@ You must select one of the following three options, each described in turn.
 | Name of the Azure KeyVault containing secrets for the Certificate for SSL Termination | Enter the name of the Azure Key Vault that stores the application gateway SSL certificate and the data required for SSL termination. |
 | The name of the secret in the specified KeyVault whose value is the SSL Certificate Data | Enter the name of the Azure Key Vault secret that holds the value of the SSL certificate data. |
 | The name of the secret in the specified KeyVault whose value is the password for the SSL Certificate | Enter the name of the Azure Key Vault secret that holds the value of the SSL certificate password. |
-| Service Principal | A Base64 encoded JSON string of a service principal for the selected subscription. You can generate one with command `az ad sp create-for-rbac --sdk-auth | base64 -w0`. For more information, see [Create a service principal](https://docs.microsoft.com/en-us/cli/azure/create-an-azure-service-principal-azure-cli#create-a-service-principal). |
+| Service Principal | A Base64 encoded JSON string of a service principal for the selected subscription. You can generate one with command `az ad sp create-for-rbac --sdk-auth | base64 -w0`. For more information, see [Create a service principal](https://docs.microsoft.com/cli/azure/create-an-azure-service-principal-azure-cli#create-a-service-principal). |
 
 **Generate a self-signed frontend certificate**
 
 | Field | Description |
 |-------|-------------|
 | Trusted root certificate(.cer, .cert) | A trusted root certificate is required to allow back-end instances in the application gateway. The root certificate is a Base-64 encoded X.509(.CER) format root certificate. |
-| Service Principal | A Base64 encoded JSON string of a service principal for the selected subscription. You can generate one with command `az ad sp create-for-rbac --sdk-auth | base64 -w0`. For more information, see [Create a service principal](https://docs.microsoft.com/en-us/cli/azure/create-an-azure-service-principal-azure-cli#create-a-service-principal). |
+| Service Principal | A Base64 encoded JSON string of a service principal for the selected subscription. You can generate one with command `az ad sp create-for-rbac --sdk-auth | base64 -w0`. For more information, see [Create a service principal](https://docs.microsoft.com/cli/azure/create-an-azure-service-principal-azure-cli#create-a-service-principal). |
 
 Regardless of how you provide the certificates, there are several other options when configuring the Application Gateway, as described next.
 
 | Field | Description |
 |-------|-------------|
-|Enable cookie based affinity | Select this box to enable cookie based affinity (sometimes called "sticky sessions"). For more information, see [Enable Cookie based affinity with an Application Gateway](https://docs.microsoft.com/en-us/azure/application-gateway/ingress-controller-cookie-affinity). |
+|Enable cookie based affinity | Select this box to enable cookie based affinity (sometimes called "sticky sessions"). For more information, see [Enable Cookie based affinity with an Application Gateway](https://docs.microsoft.com/azure/application-gateway/ingress-controller-cookie-affinity). |
 | Create ingress for Administration Console. | Select **Yes** to create an ingress for the Administration Console with the path `/console`. |
 | Create ingress for WebLogic Remote Console. | Select **Yes** to create an ingress for the Remote Console with the path `/remoteconsole`. |
 
@@ -213,7 +213,7 @@ With the **DNS Configuration** blade, you can provision the Oracle WebLogic Serv
 Select **Yes** or **No** for the option **Configure Custom DNS Alias?** based on your preference. If you select **No**, you don't have to provide any details, and can proceed by selecting **Next : Database >**. If you select **Yes**, you must choose either to configure a custom DNS alias based on an existing Azure DNS zone, or create an Azure DNS zone and a custom DNS alias. This can be done by selecting **Yes** or **No** for the option **Use an existing Azure DNS Zone**.
 
 {{% notice note %}}
-For more information about the DNS zones, see [Overview of DNS zones and records](https://docs.microsoft.com/en-us/azure/dns/dns-zones-records).
+For more information about the DNS zones, see [Overview of DNS zones and records](https://docs.microsoft.com/azure/dns/dns-zones-records).
 {{% /notice %}}
 
 If you choose to configure a custom DNS alias based on an existing Azure DNS zone, by selecting **Yes** for the option **Use an existing Azure DNS Zone**, you must specify the DNS configuration details by entering the values for the fields listed in the following table.
@@ -234,7 +234,7 @@ If you choose to create an Azure DNS zone and a custom DNS alias, by selecting *
 See the preceding table for the description of these fields.
 
 {{% notice note %}}
-In the case of creating an Azure DNS zone and a custom DNS alias, you must perform the DNS domain delegation at your DNS registry post deployment. See [Delegation of DNS zones with Azure DNS](https://docs.microsoft.com/en-us/azure/dns/dns-domain-delegation).
+In the case of creating an Azure DNS zone and a custom DNS alias, you must perform the DNS domain delegation at your DNS registry post deployment. See [Delegation of DNS zones with Azure DNS](https://docs.microsoft.com/azure/dns/dns-domain-delegation).
 {{% /notice %}}
 
 When you are satisfied with your selections, select **Next : Database**.
@@ -257,7 +257,7 @@ If you select **Other** as the database type, there are some additional values y
 
 | Field | Description |
 |-------|-------------|
-| DataSource driver (.jar) | Use the **Browse** button to upload the JAR file for the JDBC driver to a storage container. To learn how to create a Storage Account and Container, see [Create a storage account](https://docs.microsoft.com/en-us/azure/storage/common/storage-account-create?tabs=azure-portal). |
+| DataSource driver (.jar) | Use the **Browse** button to upload the JAR file for the JDBC driver to a storage container. To learn how to create a Storage Account and Container, see [Create a storage account](https://docs.microsoft.com/azure/storage/common/storage-account-create?tabs=azure-portal). |
 | DataSource driver name | The fully qualified Java class name of the JDBC driver. |
 | Test table name | The name of the database table to use when testing physical database connections. This value depends on the specified database. Some suggested values include the following. {{< line_break >}}{{< line_break >}} • For Oracle, use `SQL ISVALID`. {{< line_break >}} • For PostgreSQL, SQL Server and MariaDB use `SQL SELECT 1`. {{< line_break >}} • For Informix use `SYSTABLES`.|
 
