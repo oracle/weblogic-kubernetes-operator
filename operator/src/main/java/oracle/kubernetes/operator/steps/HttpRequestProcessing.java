@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -23,7 +23,7 @@ import oracle.kubernetes.operator.work.Packet;
 
 abstract class HttpRequestProcessing {
 
-  public static final Integer HTTP_TIMEOUT_SECONDS = 60;
+  public static final Long HTTP_TIMEOUT_SECONDS = 60L;
   protected final Packet packet;
   private final V1Service service;
   protected final V1Pod pod;
@@ -36,7 +36,7 @@ abstract class HttpRequestProcessing {
 
   static HttpAsyncRequestStep createRequestStep(HttpRequest request, HttpResponseStep responseStep) {
     return HttpAsyncRequestStep.create(request, responseStep)
-          .withTimeoutSeconds(HTTP_TIMEOUT_SECONDS);
+        .withTimeoutSeconds(HTTP_TIMEOUT_SECONDS);
   }
 
   @Nonnull
