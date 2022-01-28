@@ -345,6 +345,10 @@
                 <includes-failsafe>
                     **/ItParameterizedDomainSrg,
                     **/ItMiiAuxiliaryImage
+                </includes-failsafe>
+            </properties>
+        </profile>
+        <profile>
             <id>toolkits-srg</id>
             <properties>
                 <skipITs>false</skipITs>
