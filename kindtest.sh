@@ -57,7 +57,7 @@ function usage {
   echo "      (default: https://github.com/oracle/weblogic-deploy-tooling/releases/latest) "
   echo "  -i WIT download URL"
   echo "      (default: https://github.com/oracle/weblogic-image-tool/releases/latest) "
-  echo "  -l WLE download URLi
+  echo "  -l WLE download URL"
   echo "      (default: https://github.com/oracle/weblogic-logging-exporter/releases/latest) "
   echo "  -m Run integration-tests or wls-image-cert or fmw-image-cert"
   echo "      (default: integration-tests, supported values: wls-image-cert, fmw-image-cert) "
