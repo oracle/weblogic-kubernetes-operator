@@ -129,7 +129,7 @@ class ItMiiDynamicUpdatePart2 {
     Path pathToUndeployAppYaml = Paths.get(WORK_DIR + "/undeployapp.yaml");
     String yamlToUndeployApp = "appDeployments:\n"
         + "  Application:\n"
-        + "    !myear:";
+        + "    '!myear':";
 
     assertDoesNotThrow(() -> Files.write(pathToUndeployAppYaml, yamlToUndeployApp.getBytes()));
 
