@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -144,7 +144,6 @@ class DomainRecheck {
    */
   Step readExistingNamespaces() {
     return new CallBuilder()
-          .withLabelSelectors(Namespaces.getLabelSelectors())
           .listNamespaceAsync(new NamespaceListResponseStep());
   }
 
@@ -171,7 +170,7 @@ class DomainRecheck {
 
     @Override
     public NextAction onSuccess(Packet packet, CallResponse<V1NamespaceList> callResponse) {
-      final Set<String> domainNamespaces = getNamespacesToStart(getNames(callResponse.getResult()));
+      final Set<String> domainNamespaces = getNamespacesToStart(callResponse.getResult());
       Namespaces.getFoundDomainNamespaces(packet).addAll(domainNamespaces);
 
       return doContinueListOrNext(callResponse, packet, createNextSteps(domainNamespaces));
@@ -185,7 +184,7 @@ class DomainRecheck {
           nextSteps.add(createNamespaceReviewStep(namespacesToStartNow));
         }
         nextSteps.add(current);
-        current = Step.chain(nextSteps.toArray(new Step[0]));
+        current = Step.chain(nextSteps);
       }
       return current;
     }
@@ -194,16 +193,13 @@ class DomainRecheck {
       return Namespaces.getConfiguredDomainNamespaces() != null;
     }
 
-    private Set<String> getNamespacesToStart(List<String> namespaceNames) {
-      return namespaceNames.stream().filter(Namespaces::isDomainNamespace).collect(Collectors.toSet());
-    }
-
-    private List<String> getNames(V1NamespaceList result) {
-      return result.getItems().stream()
-            .map(V1Namespace::getMetadata)
-            .filter(Objects::nonNull)
-            .map(V1ObjectMeta::getName)
-            .collect(Collectors.toList());
+    private Set<String> getNamespacesToStart(V1NamespaceList namespaces) {
+      return namespaces.getItems().stream()
+          .filter(Namespaces::isDomainNamespace)
+          .map(V1Namespace::getMetadata)
+          .filter(Objects::nonNull)
+          .map(V1ObjectMeta::getName)
+          .collect(Collectors.toSet());
     }
   }
 
