@@ -35,8 +35,7 @@ public class DomainProcessorTestSetup {
 
   private static V1Secret createSecret() {
     return new V1Secret().metadata(new V1ObjectMeta().name(SECRET_NAME).namespace(NS))
-        .data(Map.of(USERNAME_KEY, "user".getBytes(),
-        PASSWORD_KEY, "password".getBytes()));
+        .data(Map.of(USERNAME_KEY, "user".getBytes(), PASSWORD_KEY, "password".getBytes()));
   }
 
   /**

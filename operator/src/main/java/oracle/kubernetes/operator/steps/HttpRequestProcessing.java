@@ -35,13 +35,8 @@ abstract class HttpRequestProcessing {
   }
 
   static HttpAsyncRequestStep createRequestStep(HttpRequest request, HttpResponseStep responseStep) {
-    return createRequestStep(request, responseStep, HTTP_TIMEOUT_SECONDS);
-  }
-
-  static HttpAsyncRequestStep createRequestStep(HttpRequest request, HttpResponseStep responseStep,
-      Long httpTimeoutSeconds) {
     return HttpAsyncRequestStep.create(request, responseStep)
-          .withTimeoutSeconds(httpTimeoutSeconds);
+        .withTimeoutSeconds(HTTP_TIMEOUT_SECONDS);
   }
 
   @Nonnull

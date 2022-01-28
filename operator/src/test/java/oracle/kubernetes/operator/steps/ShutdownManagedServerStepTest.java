@@ -101,17 +101,17 @@ class ShutdownManagedServerStepTest {
   private final KubernetesTestSupport testSupport = new KubernetesTestSupport();
   private final HttpAsyncTestSupport httpSupport = new HttpAsyncTestSupport();
   private final TerminalStep terminalStep = new TerminalStep();
-  private Step shutdownConfiguredManagedServer = ShutdownManagedServerStep
+  private final Step shutdownConfiguredManagedServer = ShutdownManagedServerStep
       .createShutdownManagedServerStep(terminalStep, CONFIGURED_MANAGED_SERVER1, configuredManagedServer1);
-  private Step shutdownStandaloneManagedServer = ShutdownManagedServerStep
+  private final Step shutdownStandaloneManagedServer = ShutdownManagedServerStep
       .createShutdownManagedServerStep(terminalStep, MANAGED_SERVER1, standaloneManagedServer1);
-  private Step shutdownDynamicManagedServer = ShutdownManagedServerStep
+  private final Step shutdownDynamicManagedServer = ShutdownManagedServerStep
       .createShutdownManagedServerStep(terminalStep, DYNAMIC_MANAGED_SERVER1, dynamicManagedServer1);
   private final Domain domain = DomainProcessorTestSetup.createTestDomain();
   private final DomainPresenceInfo info = new DomainPresenceInfo(domain);
 
   @BeforeEach
-  public void setup() throws NoSuchFieldException {
+  void setup() throws NoSuchFieldException {
     WlsDomainConfigSupport configSupport =
         new WlsDomainConfigSupport(DOMAIN_NAME)
             .withWlsServer(ADMIN_NAME, ADMIN_PORT_NUM)
@@ -149,21 +149,21 @@ class ShutdownManagedServerStepTest {
   }
 
   @AfterEach
-  public void tearDown() {
+  void tearDown() {
     mementos.forEach(Memento::revert);
   }
 
-  private void defineResponse(int status, String body, String url) {
-    defineResponse(true, status, body, url);
+  private void defineResponse(int status, String url) {
+    defineResponse(true, status, url);
   }
 
-  private void defineResponse(boolean gracefulShutdown, int status, String body, String url) {
+  private void defineResponse(boolean gracefulShutdown, int status, String url) {
     HttpRequest request = gracefulShutdown
         ? createExpectedRequest(Objects.requireNonNullElse(
             url, "http://127.0.0.1:7001"))
         : createExpectedRequestForcedShutdown(Objects.requireNonNullElse(
             url, "http://127.0.0.1:7001"));
-    httpSupport.defineResponse(request, createStub(HttpResponseStub.class, status, body));
+    httpSupport.defineResponse(request, createStub(HttpResponseStub.class, status, ""));
   }
 
   private HttpRequest createExpectedRequest(String url) {
@@ -213,7 +213,7 @@ class ShutdownManagedServerStepTest {
   void whenAuthorizedToInvokeShutdown_verifySecretSet() {
     selectServer(CONFIGURED_MANAGED_SERVER1, configuredServerService);
 
-    defineResponse(200, "", "http://test-domain-conf-managed-server1.namespace:7001");
+    defineResponse(200, "http://test-domain-conf-managed-server1.namespace:7001");
 
     // Validate not set before running steps
     assertThat(info.getWebLogicCredentialsSecret(), is(nullValue()));
@@ -229,7 +229,7 @@ class ShutdownManagedServerStepTest {
   void whenInvokeShutdown_configuredClusterServer_verifySuccess() {
     selectServer(CONFIGURED_MANAGED_SERVER1, configuredServerService);
 
-    defineResponse(200, "", "http://test-domain-conf-managed-server1.namespace:7001");
+    defineResponse(200, "http://test-domain-conf-managed-server1.namespace:7001");
 
     testSupport.runSteps(shutdownConfiguredManagedServer);
 
@@ -240,7 +240,7 @@ class ShutdownManagedServerStepTest {
   void whenInvokeShutdown_configuredClusterServer_verifyFailure() {
     selectServer(CONFIGURED_MANAGED_SERVER1, configuredServerService);
 
-    defineResponse(404, "", "http://test-domain-conf-managed-server1.namespace:7001");
+    defineResponse(404, "http://test-domain-conf-managed-server1.namespace:7001");
 
     testSupport.runSteps(shutdownConfiguredManagedServer);
 
@@ -251,7 +251,7 @@ class ShutdownManagedServerStepTest {
   void whenInvokeShutdown_standaloneServer_verifySuccess() {
     selectServer(MANAGED_SERVER1, standaloneServerService);
 
-    defineResponse(200, "", "http://test-domain-managed-server1.namespace:8001");
+    defineResponse(200, "http://test-domain-managed-server1.namespace:8001");
 
     testSupport.runSteps(shutdownStandaloneManagedServer);
 
@@ -262,7 +262,7 @@ class ShutdownManagedServerStepTest {
   void whenInvokeShutdown_standaloneServer_verifyFailure() {
     selectServer(MANAGED_SERVER1, standaloneServerService);
 
-    defineResponse(404, "", "http://test-domain-managed-server1.namespace:7001");
+    defineResponse(404, "http://test-domain-managed-server1.namespace:7001");
 
     testSupport.runSteps(shutdownStandaloneManagedServer);
 
@@ -273,7 +273,7 @@ class ShutdownManagedServerStepTest {
   void whenInvokeShutdown_dynamicServer_verifySuccess() {
     selectServer(DYNAMIC_MANAGED_SERVER1, dynamicServerService);
 
-    defineResponse(200, "", "http://test-domain-dyn-managed-server1.namespace:7001");
+    defineResponse(200, "http://test-domain-dyn-managed-server1.namespace:7001");
 
     testSupport.runSteps(shutdownDynamicManagedServer);
 
@@ -284,7 +284,7 @@ class ShutdownManagedServerStepTest {
   void whenInvokeShutdown_dynamicServer_verifyFailure() {
     selectServer(DYNAMIC_MANAGED_SERVER1, dynamicServerService);
 
-    defineResponse(404, "", "http://test-domain-dyn-managed-server1.namespace:8001");
+    defineResponse(404, "http://test-domain-dyn-managed-server1.namespace:8001");
 
     testSupport.runSteps(shutdownDynamicManagedServer);
 
@@ -296,7 +296,7 @@ class ShutdownManagedServerStepTest {
     selectServer(MANAGED_SERVER1, standaloneServerService);
     setForcedShutdownType(MANAGED_SERVER1);
 
-    defineResponse(false, 200, "", "http://test-domain-managed-server1.namespace:8001");
+    defineResponse(false, 200, "http://test-domain-managed-server1.namespace:8001");
 
     testSupport.runSteps(shutdownStandaloneManagedServer);
 
@@ -339,7 +339,7 @@ class ShutdownManagedServerStepTest {
 
     // Assert that we will retry due to exception
     responseStep.onFailure(p, null);
-    assertThat((Integer) p.get(SHUTDOWN_REQUEST_RETRY_COUNT), equalTo(1));
+    assertThat(p.get(SHUTDOWN_REQUEST_RETRY_COUNT), equalTo(1));
     assertThat(logRecords, containsFine(SERVER_SHUTDOWN_REST_RETRY));
 
     // Assert we only retry once
@@ -350,7 +350,7 @@ class ShutdownManagedServerStepTest {
 
   private void setForcedShutdownType(String serverName) {
     V1Pod serverPod = info.getServerPod(serverName);
-    List<V1EnvVar> vars = serverPod.getSpec().getContainers().stream()
+    List<V1EnvVar> vars = Objects.requireNonNull(serverPod.getSpec()).getContainers().stream()
         .filter(this::isK8sContainer).findFirst().map(V1Container::getEnv).get();
     for (V1EnvVar var : vars) {
       if (var.getName().equals("SHUTDOWN_TYPE")) {
@@ -391,7 +391,7 @@ class ShutdownManagedServerStepTest {
                 serverName));
 
     if (clusterName != null && !clusterName.isEmpty()) {
-      service.getMetadata().putLabelsItem(CLUSTERNAME_LABEL, clusterName);
+      Objects.requireNonNull(service.getMetadata()).putLabelsItem(CLUSTERNAME_LABEL, clusterName);
     }
 
     return AnnotationHelper.withSha256Hash(service);

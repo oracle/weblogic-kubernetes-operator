@@ -11,6 +11,7 @@ import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import org.jetbrains.annotations.NotNull;
 
 public class ServerDownStep extends Step {
   private final String serverName;
@@ -43,7 +44,12 @@ public class ServerDownStep extends Step {
       next = pw.waitForDelete(oldPod, new DomainPresenceInfoUpdateStep(serverName, next));
     }
 
-    return doNext(oldPod != null ? ShutdownManagedServerStep
-        .createShutdownManagedServerStep(PodHelper.deletePodStep(serverName, next), serverName, oldPod) : next, packet);
+    return doNext(oldPod != null ? createShutdownManagedServerStep(oldPod, next) : next, packet);
+  }
+
+  @NotNull
+  private Step createShutdownManagedServerStep(V1Pod oldPod, Step next) {
+    return ShutdownManagedServerStep
+        .createShutdownManagedServerStep(PodHelper.deletePodStep(serverName, next), serverName, oldPod);
   }
 }

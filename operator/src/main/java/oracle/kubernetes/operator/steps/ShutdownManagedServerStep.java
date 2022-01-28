@@ -5,6 +5,7 @@ package oracle.kubernetes.operator.steps;
 
 import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
@@ -63,14 +64,13 @@ public class ShutdownManagedServerStep extends Step {
    * @param pod server pod
    * @return asynchronous step
    */
-  public static Step createShutdownManagedServerStep(Step next, String serverName, V1Pod pod) {
+  static Step createShutdownManagedServerStep(Step next, String serverName, V1Pod pod) {
     return new ShutdownManagedServerStep(next, serverName, pod);
   }
 
   private static String getManagedServerShutdownPath(Boolean isGracefulShutdown) {
-    StringBuilder stringBuilder = new StringBuilder("/management/weblogic/latest/serverRuntime/");
     String shutdownString = isGracefulShutdown ? "shutdown" : "forceShutdown";
-    return stringBuilder.append(shutdownString).toString();
+    return "/management/weblogic/latest/serverRuntime/" + shutdownString;
   }
 
   private static String getManagedServerShutdownPayload(Boolean isGracefulShutdown,
@@ -79,16 +79,13 @@ public class ShutdownManagedServerStep extends Step {
       return "{}";
     }
 
-    StringBuilder stringBuilder = new StringBuilder();
-    stringBuilder.append("{  \"ignoreSessions\": ")
-        .append(ignoreSessions)
-        .append(", \"timeout\": ")
-        .append(timeout)
-        .append(", \"waitForAllSessions\": ")
-        .append(waitForAllSessions)
-        .append("}");
-
-    return stringBuilder.toString();
+    return "{  \"ignoreSessions\": "
+        + ignoreSessions
+        + ", \"timeout\": "
+        + timeout
+        + ", \"waitForAllSessions\": "
+        + waitForAllSessions
+        + "}";
   }
 
   @Override
@@ -120,16 +117,15 @@ public class ShutdownManagedServerStep extends Step {
     }
 
     private HttpRequest createRequest() {
-      HttpRequest request = createRequestBuilder(getRequestUrl(isGracefulShutdown))
+      return createRequestBuilder(getRequestUrl(isGracefulShutdown))
             .POST(HttpRequest.BodyPublishers.ofString(getManagedServerShutdownPayload(
                 isGracefulShutdown, ignoreSessions, timeout, waitForAllSessions))).build();
-      return request;
     }
 
     private void initializeRequestPayloadParameters() {
-      String serverName = pod.getMetadata().getLabels().get(LabelConstants.SERVERNAME_LABEL);
+      String serverName = getServerName();
       String clusterName = getClusterNameFromServiceLabel();
-      Optional<List<V1EnvVar>> envVarList = Optional.ofNullable(pod.getSpec()).flatMap(this::getEnvVars);
+      List<V1EnvVar> envVarList = getV1EnvVars();
 
       DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
       Shutdown shutdown = Optional.ofNullable(info.getDomain().getServer(serverName, clusterName))
@@ -141,15 +137,20 @@ public class ShutdownManagedServerStep extends Step {
       waitForAllSessions = getWaitForAllSessions(envVarList, shutdown);
     }
 
-    private Optional<List<V1EnvVar>> getEnvVars(V1PodSpec v1PodSpec) {
-      return getContainer(v1PodSpec).map(V1Container::getEnv);
+    private List<V1EnvVar> getV1EnvVars() {
+      return Optional.ofNullable(pod.getSpec())
+              .map(this::getEnvVars).orElse(Collections.emptyList());
     }
 
-    protected Optional<V1Container> getContainer(V1PodSpec v1PodSpec) {
+    private List<V1EnvVar> getEnvVars(V1PodSpec v1PodSpec) {
+      return getContainer(v1PodSpec).map(V1Container::getEnv).get();
+    }
+
+    Optional<V1Container> getContainer(V1PodSpec v1PodSpec) {
       return v1PodSpec.getContainers().stream().filter(this::isK8sContainer).findFirst();
     }
 
-    protected boolean isK8sContainer(V1Container c) {
+    boolean isK8sContainer(V1Container c) {
       return WLS_CONTAINER_NAME.equals(c.getName());
     }
 
@@ -162,11 +163,8 @@ public class ShutdownManagedServerStep extends Step {
       return null;
     }
 
-    private Boolean isGracefulShutdown(Optional<List<V1EnvVar>> envVarList, Shutdown shutdown) {
-      String shutdownType = null;
-      if (envVarList.isPresent()) {
-        shutdownType = getEnvValue(envVarList.get(), "SHUTDOWN_TYPE");
-      }
+    private Boolean isGracefulShutdown(List<V1EnvVar> envVarList, Shutdown shutdown) {
+      String shutdownType = getEnvValue(envVarList, "SHUTDOWN_TYPE");
 
       shutdownType = shutdownType == null ? Optional.ofNullable(shutdown).map(Shutdown::getShutdownType)
           .orElse(ShutdownType.Graceful.name()) : shutdownType;
@@ -175,31 +173,23 @@ public class ShutdownManagedServerStep extends Step {
       return shutdownType.equalsIgnoreCase(ShutdownType.Graceful.name());
     }
 
-    private Boolean getWaitForAllSessions(Optional<List<V1EnvVar>> envVarList, Shutdown shutdown) {
-      String waitForAllSessions = null;
-      if (envVarList.isPresent()) {
-        waitForAllSessions = getEnvValue(envVarList.get(), "SHUTDOWN_WAIT_FOR_ALL_SESSIONS");
-      }
+    private Boolean getWaitForAllSessions(List<V1EnvVar> envVarList, Shutdown shutdown) {
+      String waitForAllSessions = getEnvValue(envVarList, "SHUTDOWN_WAIT_FOR_ALL_SESSIONS");
 
       return waitForAllSessions == null ? Optional.ofNullable(shutdown).map(Shutdown::getWaitForAllSessions)
               .orElse(Shutdown.DEFAULT_WAIT_FOR_ALL_SESSIONS) : Boolean.valueOf(waitForAllSessions);
     }
 
-    private Boolean getIgnoreSessions(Optional<List<V1EnvVar>> envVarList, Shutdown shutdown) {
-      String ignoreSessions = null;
-      if (envVarList.isPresent()) {
-        ignoreSessions = getEnvValue(envVarList.get(), "SHUTDOWN_IGNORE_SESSIONS");
-      }
+    private Boolean getIgnoreSessions(List<V1EnvVar> envVarList, Shutdown shutdown) {
+      String ignoreSessions = getEnvValue(envVarList, "SHUTDOWN_IGNORE_SESSIONS");
 
       return ignoreSessions == null ? Optional.ofNullable(shutdown).map(Shutdown::getIgnoreSessions)
               .orElse(Shutdown.DEFAULT_IGNORESESSIONS) : Boolean.valueOf(ignoreSessions);
     }
 
-    private Long getTimeout(Optional<List<V1EnvVar>> envVarList, Shutdown shutdown) {
-      String timeout = null;
-      if (envVarList.isPresent()) {
-        timeout = getEnvValue(envVarList.get(), "SHUTDOWN_TIMEOUT");
-      }
+    private Long getTimeout(List<V1EnvVar> envVarList, Shutdown shutdown) {
+      String timeout = getEnvValue(envVarList, "SHUTDOWN_TIMEOUT");
+
       return timeout == null ? Optional.ofNullable(shutdown).map(Shutdown::getTimeoutSeconds)
               .orElse(Shutdown.DEFAULT_TIMEOUT) : Long.valueOf(timeout);
     }
@@ -239,7 +229,7 @@ public class ShutdownManagedServerStep extends Step {
           .filter(this::isTCPProtocol).findFirst().get().getContainerPort();
     }
 
-    protected boolean isTCPProtocol(V1ContainerPort port) {
+    boolean isTCPProtocol(V1ContainerPort port) {
       return "TCP".equals(port.getProtocol());
     }
 
@@ -288,10 +278,10 @@ public class ShutdownManagedServerStep extends Step {
       return domainConfig;
     }
 
-    public HttpAsyncRequestStep createRequestStep(
+    HttpAsyncRequestStep createRequestStep(
         ShutdownManagedServerResponseStep shutdownManagedServerResponseStep) {
-      HttpAsyncRequestStep requestStep = createRequestStep(createRequest(), shutdownManagedServerResponseStep,
-          getRequestTimeoutSeconds());
+      HttpAsyncRequestStep requestStep = HttpAsyncRequestStep.create(createRequest(),
+          shutdownManagedServerResponseStep).withTimeoutSeconds(getRequestTimeoutSeconds());
       shutdownManagedServerResponseStep.requestStep = requestStep;
       return requestStep;
     }
@@ -363,7 +353,7 @@ public class ShutdownManagedServerStep extends Step {
       return doNext(packet);
     }
 
-    private HttpResponse<String> getResponse(Packet packet) {
+    private HttpResponse getResponse(Packet packet) {
       return packet.getSpi(HttpResponse.class);
     }
 
@@ -383,7 +373,7 @@ public class ShutdownManagedServerStep extends Step {
       packet.remove(SHUTDOWN_REQUEST_RETRY_COUNT);
     }
 
-    public void setHttpAsyncRequestStep(HttpAsyncRequestStep requestStep) {
+    void setHttpAsyncRequestStep(HttpAsyncRequestStep requestStep) {
       this.requestStep = requestStep;
     }
   }
