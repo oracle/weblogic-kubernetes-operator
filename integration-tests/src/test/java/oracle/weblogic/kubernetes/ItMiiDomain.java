@@ -41,6 +41,7 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
+import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.MINUTES;
@@ -306,6 +307,7 @@ class ItMiiDomain {
   @Test
   @Order(2)
   @DisplayName("Create a second domain with the image from the the first test")
+  @DisabledIfEnvironmentVariable(named = "OKD", matches = "true")
   void testCreateMiiSecondDomainDiffNSSameImage() {
     // admin/managed server name here should match with model yaml in MII_BASIC_WDT_MODEL_FILE
     final String adminServerPodName = domainUid1 + "-admin-server";

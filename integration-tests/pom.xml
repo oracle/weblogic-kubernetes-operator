@@ -429,6 +429,23 @@
             </properties>
         </profile>
         <profile>
+            <id>wko-okd-srg</id>
+            <properties>
+                <skipITs>false</skipITs>
+                <includes-failsafe>
+                  **/ItConfigDistributionStrategy,
+                  **/ItMiiAuxiliaryImage,
+                  **/ItMiiDomain,
+                  **/ItMiiDynamicUpdate,
+                  **/ItMiiNewCreateAuxImage,
+                  **/ItParameterizedDomain,
+                  **/ItPodsShutdownOption,
+                  **/ItFmwDynamicDomainInPV,
+                  **/ItFmwMiiDomain
+                </includes-failsafe>
+            </properties>
+        </profile>
+        <profile>
             <id>fmw-pipeline</id>
             <properties>
                 <skipITs>false</skipITs>
