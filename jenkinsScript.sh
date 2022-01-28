@@ -134,6 +134,9 @@ kind version
 export TWO_CLUSTERS=false
 export RESULT_ROOT=${WORKSPACE}/RESULT_ROOT
 export BRANCH_NAME=${BRANCH}
+export MAVEN_PROFILE_NAME=${MAVEN_PROFILE_NAME}
+
+echo "MAVEN_PROFILE_NAME: ${MAVEN_PROFILE_NAME}
 
 cd $WORKSPACE
 [ -d ${WORKSPACE}/logdir ] && rm -rf ${WORKSPACE}/logdir && mkdir -p ${WORKSPACE}/logdir
