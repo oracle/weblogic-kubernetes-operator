@@ -147,6 +147,12 @@ public class MessageKeys {
   public static final String INTROSPECTOR_MAX_ERRORS_EXCEEDED = "WLSKO-0196";
   public static final String NON_FATAL_INTROSPECTOR_ERROR = "WLSKO-0197";
   public static final String DUMP_BREADCRUMBS = "WLSKO-0198";
+  public static final String BEGIN_SERVER_SHUTDOWN_REST = "WLSKO-0199";
+  public static final String SERVER_SHUTDOWN_REST_SUCCESS = "WLSKO-0200";
+  public static final String SERVER_SHUTDOWN_REST_FAILURE = "WLSKO-0201";
+  public static final String SERVER_SHUTDOWN_REST_TIMEOUT = "WLSKO-0202";
+  public static final String SERVER_SHUTDOWN_REST_THROWABLE = "WLSKO-0203";
+  public static final String SERVER_SHUTDOWN_REST_RETRY = "WLSKO-0204";
 
   // domain status messages
   public static final String DUPLICATE_SERVER_NAME_FOUND = "WLSDO-0001";

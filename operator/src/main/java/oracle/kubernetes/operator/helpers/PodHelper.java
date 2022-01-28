@@ -48,7 +48,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.SERVERS_TO_ROLL;
 
 @SuppressWarnings("ConstantConditions")
 public class PodHelper {
-  static final long DEFAULT_ADDITIONAL_DELETE_TIME = 10;
+  public static final long DEFAULT_ADDITIONAL_DELETE_TIME = 10;
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
 
   private PodHelper() {

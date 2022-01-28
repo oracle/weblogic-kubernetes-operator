@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.weblogic.domain.model;
@@ -18,6 +18,7 @@ public class Shutdown {
   // Default timeout must stay 30 seconds to match Kubernetes default
   public static final Long DEFAULT_TIMEOUT = 30L;
   public static final Boolean DEFAULT_IGNORESESSIONS = Boolean.FALSE;
+  public static final Boolean DEFAULT_WAIT_FOR_ALL_SESSIONS = Boolean.FALSE;
 
   @Description(
       "Specifies how the operator will shut down server instances."
@@ -35,6 +36,13 @@ public class Shutdown {
           + " Defaults to false.")
   private Boolean ignoreSessions;
 
+  @Description(
+      "For graceful shutdown only, set to true to wait for all HTTP sessions"
+          + " during in-flight work handling; false to wait for non-persisted"
+          + " HTTP sessions only."
+          + " Defaults to false.")
+  private Boolean waitForAllSessions;
+
   public Shutdown() {
   }
 
@@ -47,6 +55,10 @@ public class Shutdown {
     }
     if (ignoreSessions == null) {
       ignoreSessions(fromShutdown.ignoreSessions);
+    }
+
+    if (waitForAllSessions == null) {
+      waitForAllSessions(fromShutdown.waitForAllSessions);
     }
   }
 
@@ -77,12 +89,22 @@ public class Shutdown {
     return this;
   }
 
+  public Boolean getWaitForAllSessions() {
+    return Optional.ofNullable(waitForAllSessions).orElse(DEFAULT_WAIT_FOR_ALL_SESSIONS);
+  }
+
+  public Shutdown waitForAllSessions(Boolean waitForAllSessions) {
+    this.waitForAllSessions = waitForAllSessions;
+    return this;
+  }
+
   @Override
   public String toString() {
     return new ToStringBuilder(this)
         .append("shutdownType", shutdownType)
         .append("timeoutSeconds", timeoutSeconds)
         .append("ignoreSessions", ignoreSessions)
+        .append("waitForAllSessions", waitForAllSessions)
         .toString();
   }
 
@@ -102,6 +124,7 @@ public class Shutdown {
         .append(shutdownType, that.shutdownType)
         .append(timeoutSeconds, that.timeoutSeconds)
         .append(ignoreSessions, that.ignoreSessions)
+        .append(waitForAllSessions, that.waitForAllSessions)
         .isEquals();
   }
 
@@ -111,6 +134,7 @@ public class Shutdown {
         .append(shutdownType)
         .append(timeoutSeconds)
         .append(ignoreSessions)
+        .append(waitForAllSessions)
         .toHashCode();
   }
 }
