@@ -364,6 +364,7 @@ class WdtUpdateFilterCase(unittest.TestCase):
       istiorepl_nap = model['topology']['ServerTemplate']['cluster-1-template']['NetworkAccessPoint']['istiorepl']
       self.assertIsNotNone(istiorepl_nap, "Expected a NAP named \'istiorepl\' to be defined")
 
+      self.assertEqual(istiorepl_nap['TunnelingEnabled'], 'false')
       nap_listen_address = istiorepl_nap['ListenAddress']
       self.assertEqual('sample-domain1-managed-server${id}', nap_listen_address,
                        "Expected nap listen address to be \'sample-domain1-managed-server${id}\'")
