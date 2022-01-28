@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.steps;
@@ -11,6 +11,7 @@ import oracle.kubernetes.operator.helpers.ServiceHelper;
 import oracle.kubernetes.operator.work.NextAction;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
+import org.jetbrains.annotations.NotNull;
 
 public class ServerDownStep extends Step {
   private final String serverName;
@@ -43,6 +44,12 @@ public class ServerDownStep extends Step {
       next = pw.waitForDelete(oldPod, new DomainPresenceInfoUpdateStep(serverName, next));
     }
 
-    return doNext(oldPod != null ? PodHelper.deletePodStep(serverName, next) : next, packet);
+    return doNext(oldPod != null ? createShutdownManagedServerStep(oldPod, next) : next, packet);
+  }
+
+  @NotNull
+  private Step createShutdownManagedServerStep(V1Pod oldPod, Step next) {
+    return ShutdownManagedServerStep
+        .createShutdownManagedServerStep(PodHelper.deletePodStep(serverName, next), serverName, oldPod);
   }
 }

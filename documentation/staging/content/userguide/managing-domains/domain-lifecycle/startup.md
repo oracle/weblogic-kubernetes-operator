@@ -207,14 +207,26 @@ The server will count toward the cluster's `replicas` count.  Also, if you confi
 The Domain YAML file includes the field `serverPod` that is available under `spec`, `adminServer`, and each entry of
 `clusters` and `managedServers`. The `serverPod` field controls many details of how Pods are generated for WebLogic Server instances.
 
-The `shutdown` field of `serverPod` controls how servers will be shut down and has three fields:
-`shutdownType`, `timeoutSeconds`, and `ignoreSessions`.  The `shutdownType` field can be set to either `Graceful`, the default,
-or `Forced` specifying the type of shutdown.  The `timeoutSeconds` property configures how long the server is given to
-complete shutdown before the server is killed.  The `ignoreSessions` property, which is only applicable for graceful shutdown, when `false`,
-the default, allows the shutdown process to take longer to give time for any active sessions to complete up to the configured timeout.
-The operator runtime monitors this property but will not restart any server pods solely to adjust the shutdown options.
+The `shutdown` field of `serverPod` controls how managed servers will be shut down and has the following four properties:
+`shutdownType`, `timeoutSeconds`, `ignoreSessions` and `waitForAllSessions`. The operator runtime monitors these properties but will not restart any server pods solely to adjust the shutdown options.
 Instead, server pods created or restarted because of another property change will be configured to shutdown, at the appropriate
 time, using the shutdown options set when the WebLogic Server instance Pod is created.
+
+| Field| Default Value | Supported Values | Description |
+| --- | --- | --- | --- |
+| `shutdownType` | `Graceful` | `Graceful` or `Forced` | Specifies how the operator will shut down server instances. |
+| `timeoutSeconds` | 30 | Whole number in seconds where 0 means no timeout. | For graceful shutdown only, number of seconds to wait before aborting in-flight work and shutting down the server. |
+| `ignoreSessions` | `false` | `true` or `false` | Boolean indicating if active sessions should be ignored; only applicable if shutdown is graceful. |
+| `waitForAllSessions` | `false` | `true` or `false` | For graceful shutdown only, set to `true` to wait for all HTTP sessions during in-flight work handling; `false` to wait for non-persisted HTTP sessions only during in-flight work handling. |
+
+{{% notice note %}}
+The `waitForAllSessions` property does not apply when the `ignoreSessions` property is `true`. When the
+`ignoreSessions` property is `false` then `waitForAllSessions` property is taken into account during 
+the WebLogic graceful shutdown process. When the`waitForAllSessions` is `true`, the graceful shutdown
+process will wait for all HTTP sessions to complete or be invalidated before proceeding. When `waitForAllSessions`
+is `false`, the graceful shutdown process will wait only for non-persisted HTTP sessions to complete 
+or be invalidated before proceeding.
+{{% /notice %}}
 
 #### Shutdown environment variables
 
@@ -227,6 +239,8 @@ the operator will not override the environment variable based on the shutdown co
 | `SHUTDOWN_TYPE` | `Graceful` | `Graceful` or `Forced` |
 | `SHUTDOWN_TIMEOUT` | 30 | Whole number in seconds where 0 means no timeout |
 | `SHUTDOWN_IGNORE_SESSIONS` | `false` | Boolean indicating if active sessions should be ignored; only applicable if shutdown is graceful |
+| `SHUTDOWN_WAIT_FOR_ALL_SESSIONS` | `false` | `true` to wait for all HTTP sessions during in-flight work handling; `false` to wait for non-persisted HTTP sessions only ; only applicable if shutdown is graceful |
+
 
 #### `shutdown` rules
 
