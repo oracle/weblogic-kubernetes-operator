@@ -240,8 +240,8 @@ class ItIstioMonitoringExporter {
     assertDoesNotThrow(() -> createSecretWithUsernamePassword(
         adminSecretName,
         domainNamespace,
-        "weblogic",
-        "welcome1"),
+        ADMIN_USERNAME_DEFAULT,
+        ADMIN_PASSWORD_DEFAULT),
         String.format("createSecret failed for %s", adminSecretName));
 
     // create encryption secret
