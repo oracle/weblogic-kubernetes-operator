@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -25,6 +25,8 @@ import org.junit.jupiter.api.Test;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DB_IMAGE_TO_USE_IN_SPEC;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
@@ -163,8 +165,8 @@ class ItFmwBigCMMiiDomain {
     assertDoesNotThrow(() -> createSecretWithUsernamePassword(
         adminSecretName,
         jrfDomainNamespace,
-        "weblogic",
-        "welcome1"),
+        ADMIN_USERNAME_DEFAULT,
+        ADMIN_PASSWORD_DEFAULT),
         String.format("createSecret failed for %s", adminSecretName));
 
     // create encryption secret
@@ -191,7 +193,7 @@ class ItFmwBigCMMiiDomain {
     assertDoesNotThrow(() -> createOpsswalletpasswordSecret(
         opsswalletpassSecretName,
         jrfDomainNamespace,
-        "welcome1"),
+        ADMIN_PASSWORD_DEFAULT),
         String.format("createSecret failed for %s", opsswalletpassSecretName));
 
     logger.info("Create an image with jrf model file");
