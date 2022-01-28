@@ -66,6 +66,8 @@ import oracle.kubernetes.operator.helpers.UnitTestHash;
 import oracle.kubernetes.operator.http.HttpAsyncTestSupport;
 import oracle.kubernetes.operator.http.HttpResponseStub;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.rest.Scan;
+import oracle.kubernetes.operator.rest.ScanCache;
 import oracle.kubernetes.operator.rest.ScanCacheStub;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
@@ -242,6 +244,7 @@ class DomainProcessorTest {
     testSupport.defineResources(newDomain);
     IntrospectionTestUtils.defineResources(testSupport, createDomainConfig(), jobStatusSupplier);
     DomainProcessorTestSetup.defineRequiredResources(testSupport);
+    ScanCache.INSTANCE.registerScan(NS,UID, new Scan(domainConfig, SystemClock.now()));
   }
 
   @AfterEach
@@ -540,6 +543,7 @@ class DomainProcessorTest {
     defineServerResources(ADMIN_NAME);
     Arrays.stream(MANAGED_SERVER_NAMES).forEach(this::defineServerResources);
     testSupport.defineResources(createNonOperatorPodDisruptionBudget());
+
 
     DomainPresenceInfo info = new DomainPresenceInfo(domain);
     processor.createMakeRightOperation(info).interrupt().withExplicitRecheck().execute();
@@ -1696,7 +1700,7 @@ class DomainProcessorTest {
   }
 
   private void defineServerResources(String serverName, String clusterName) {
-    testSupport.defineResources(createServerPod(serverName, clusterName), createServerService(serverName));
+    testSupport.defineResources(createServerPod(serverName, clusterName), createServerService(serverName, clusterName));
   }
 
   /**/
@@ -1731,16 +1735,25 @@ class DomainProcessorTest {
   }
   
   private V1Service createServerService(String serverName) {
-    return AnnotationHelper.withSha256Hash(
-        new V1Service()
-            .metadata(
-                withServerLabels(
-                    new V1ObjectMeta()
-                        .name(
-                            LegalNames.toServerServiceName(
-                                DomainProcessorTestSetup.UID, serverName))
-                        .namespace(NS),
-                    serverName)));
+    return createServerService(serverName, null);
+  }
+
+  private V1Service createServerService(String serverName, String clusterName) {
+    V1Service service = new V1Service()
+        .metadata(
+            withServerLabels(
+                new V1ObjectMeta()
+                    .name(
+                        LegalNames.toServerServiceName(
+                            DomainProcessorTestSetup.UID, serverName))
+                    .namespace(NS),
+                serverName));
+
+    if (clusterName != null && !clusterName.isEmpty()) {
+      service.getMetadata().putLabelsItem(CLUSTERNAME_LABEL, clusterName);
+    }
+
+    return AnnotationHelper.withSha256Hash(service);
   }
 
   private void assertServerPodAndServicePresent(DomainPresenceInfo info, String serverName) {
