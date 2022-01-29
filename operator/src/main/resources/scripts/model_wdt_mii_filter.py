@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # ------------
@@ -531,12 +531,12 @@ def customizeIstioReplicationChannel(server, name, listen_address):
     _writeIstioNAP(name='istiorepl', server=server, listen_address=listen_address,
                  listen_port=istio_repl_listen_port, protocol='t3', http_enabled="true",
                  bind_to_localhost="true", use_fast_serialization='true',
-                 tunneling_enabled='true')
+                 tunneling_enabled='false')
   else:
     _writeIstioNAP(name='istiorepl', server=server, listen_address=listen_address,
                    listen_port=istio_repl_listen_port, protocol='t3', http_enabled="true",
                    bind_to_localhost="false", use_fast_serialization='true',
-                   tunneling_enabled='true')
+                   tunneling_enabled='false')
 
 def raise_replication_port_conflict(name, listen_port, replication_port, SSL):
   raise ValueError('Server/ServerTemplate %s %s listen port %s conflicts with default replication channel port %s when '
