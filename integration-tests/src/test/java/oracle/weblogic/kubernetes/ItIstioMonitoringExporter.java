@@ -1,4 +1,4 @@
-// Copyright (c) 2021, Oracle and/or its affiliates.
+// Copyright (c) 2021, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -249,8 +249,8 @@ class ItIstioMonitoringExporter {
     assertDoesNotThrow(() -> createSecretWithUsernamePassword(
         adminSecretName,
         domainNamespace,
-        "weblogic",
-        "welcome1"),
+        ADMIN_USERNAME_DEFAULT,
+        ADMIN_PASSWORD_DEFAULT),
         String.format("createSecret failed for %s", adminSecretName));
 
     // create encryption secret

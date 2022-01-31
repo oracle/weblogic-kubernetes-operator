@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -46,6 +46,8 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
@@ -166,8 +168,8 @@ class ItServerStartPolicy {
     // create secret for admin credentials
     logger.info("Create secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
-    assertDoesNotThrow(() -> createDomainSecret(adminSecretName,"weblogic",
-            "welcome1", domainNamespace),
+    assertDoesNotThrow(() -> createDomainSecret(adminSecretName, 
+            ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT, domainNamespace),
             String.format("createSecret failed for %s", adminSecretName));
 
     // create encryption secret
@@ -1553,8 +1555,12 @@ class ItServerStartPolicy {
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     String url = OKD ? ingressHost : K8S_NODEPORT_HOST + ":" + adminServiceNodePort;
     logger.info("url = {0}", url);
-    StringBuffer checkCluster = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
-    checkCluster.append("http://" + url)
+    StringBuffer checkCluster = new StringBuffer("status=$(curl --user ")
+          .append(ADMIN_USERNAME_DEFAULT)
+          .append(":")
+          .append(ADMIN_PASSWORD_DEFAULT)
+          .append(" ")
+          .append("http://" + url)
           .append("/management/tenant-monitoring/servers/")
           .append(managedServer)
           .append(" --silent --show-error ")

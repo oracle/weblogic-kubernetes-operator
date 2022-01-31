@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -1499,8 +1499,8 @@ class ItMonitoringExporter {
     createOcirRepoSecret(namespace);
     logger.info("Create secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
-    assertDoesNotThrow(() -> createSecretWithUsernamePassword(adminSecretName, namespace,
-        "weblogic", "welcome1"),
+    assertDoesNotThrow(() -> createSecretWithUsernamePassword(adminSecretName, 
+        namespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
         String.format("create secret for admin credentials failed for %s", adminSecretName));
 
     // create encryption secret
@@ -1708,10 +1708,12 @@ class ItMonitoringExporter {
         "Copying file to pod failed");
     execInPod(exporterPod, "monitoring-exporter", true,
         "curl -X PUT -H \"content-type: application/yaml\" --data-binary \"@/tmp/"
-        + configYaml + "\" -i -u weblogic:welcome1 http://localhost:8080/configuration");
+        + configYaml + "\" -i -u " + ADMIN_USERNAME_DEFAULT + ":" 
+        + ADMIN_PASSWORD_DEFAULT  
+        + "http://localhost:8080/configuration");
     execInPod(exporterPod, "monitoring-exporter", true, "curl -X GET  "
-         + " -i -u weblogic:welcome1 http://localhost:8080/metrics");
-
+         + " -i -u " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT 
+         + "http://localhost:8080/metrics");
   }
 
   /**

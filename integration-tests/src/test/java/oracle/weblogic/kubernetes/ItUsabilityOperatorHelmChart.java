@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -40,7 +40,9 @@ import org.junit.jupiter.api.TestMethodOrder;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
@@ -460,7 +462,7 @@ class ItUsabilityOperatorHelmChart {
    * Install operator1 with namespace op2Namespace.
    * Install operator2 with same namesapce op2Namespace.
    * Second operator should fail to install with following exception
-   * Error: rendered manifests contain a resource that already exists.
+   * rendered manifests contain a resource that already exists.
    * Unable to continue with install: existing resource conflict: existing resource conflict: namespace
    *
    */
@@ -483,7 +485,7 @@ class ItUsabilityOperatorHelmChart {
     // install and verify operator will fail with expected error message
     logger.info("Installing and verifying operator will fail with expected error message");
     try {
-      String expectedError = "Error: rendered manifests contain a resource that already exists."
+      String expectedError = "rendered manifests contain a resource that already exists."
           + " Unable to continue with install";
       HelmParams opHelmParam2 = installOperatorHelmChart(opNamespace, opServiceAccount, true, false,
           false,expectedError,"failed", 0,
@@ -502,7 +504,7 @@ class ItUsabilityOperatorHelmChart {
    * Install operator1 with Domain Namespace [domain2Namespace].
    * Install operator2 with same Domain Namespace [domain2Namespace].
    * Second operator should fail to install with following exception.
-   * Error: rendered manifests contain a resource that already exists.
+   * rendered manifests contain a resource that already exists.
    * Unable to continue with install: existing resource conflict: namespace.
    * Test fails when second operator installation does not fail.
    */
@@ -527,7 +529,7 @@ class ItUsabilityOperatorHelmChart {
     logger.info("Installing and verifying operator2 will fail with expected error message");
     String opServiceAccount = op2Namespace + "-sa2";
     try {
-      String expectedError = "Error: rendered manifests contain a resource that already exists."
+      String expectedError = "rendered manifests contain a resource that already exists."
           + " Unable to continue with install";
       HelmParams opHelmParam2 = installOperatorHelmChart(op2Namespace, opServiceAccount, true, false, false,
           expectedError,"failed", 0, op2HelmParams,  domain2Namespace);
@@ -570,7 +572,7 @@ class ItUsabilityOperatorHelmChart {
     // install and verify operator2 will fail
     logger.info("Installing and verifying operator2 fails");
     try {
-      String expectedError = "Error: Service \"external-weblogic-operator-svc\" "
+      String expectedError = "Service \"external-weblogic-operator-svc\" "
           + "is invalid: spec.ports[0].nodePort: Invalid value";
       HelmParams opHelmParam2 = installOperatorHelmChart(op2Namespace, op2ServiceAccount,
           true, true, true,
@@ -604,7 +606,7 @@ class ItUsabilityOperatorHelmChart {
     logger.info("Installing and verifying operator will fail with expected error message");
     String opServiceAccount = op2Namespace + "-sa2";
     try {
-      String expectedError = "Error: create: failed to create: namespaces \"ns-somens\" not found";
+      String expectedError = "create: failed to create: namespaces \"ns-somens\" not found";
       HelmParams opHelmParam2 = installOperatorHelmChart("ns-somens", opServiceAccount, false, false,
           false, expectedError,"failed", 0, op2HelmParams,  domain2Namespace);
       assertNull(opHelmParam2, "FAILURE: Helm installs operator in the same namespace as first operator installed ");
@@ -863,7 +865,7 @@ class ItUsabilityOperatorHelmChart {
     // create secret for admin credentials
     logger.info("Creating secret for admin credentials");
     String adminSecretName = "weblogic-credentials-" + domainUid;
-    createSecretWithUsernamePassword(adminSecretName, domainNamespace, "weblogic", "welcome1");
+    createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create encryption secret
     logger.info("Creating encryption secret");
@@ -1183,8 +1185,12 @@ class ItUsabilityOperatorHelmChart {
     String managedServer = "managed-server1";
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
-    StringBuffer checkCluster = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
-    checkCluster.append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
+    StringBuffer checkCluster = new StringBuffer("status=$(curl --user ")
+        .append(ADMIN_USERNAME_DEFAULT)
+        .append(":")
+        .append(ADMIN_PASSWORD_DEFAULT)
+        .append(" ")
+        .append("http://" + K8S_NODEPORT_HOST + ":" + adminServiceNodePort)
         .append("/management/tenant-monitoring/servers/")
         .append(managedServer)
         .append(" --silent --show-error ")
