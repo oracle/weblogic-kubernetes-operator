@@ -343,8 +343,9 @@
             <properties>
                 <skipITs>false</skipITs>
                 <includes-failsafe>
-                    **/ItParameterizedDomainSrg,
-                    **/ItMiiAuxiliaryImage
+                    **/ItKubernetesEvents,
+                    **/ItMiiAuxiliaryImage,
+                    **/ItParameterizedDomainSrg
                 </includes-failsafe>
             </properties>
         </profile>
