@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # This script provisions a OKE Kubernetes cluster using terraform (https://www.terraform.io/) and runs the new
@@ -178,6 +178,6 @@ if [ "${maven_profile_name}" = "oke-cert" ]; then
   echo "Running mvn -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -Dwle.download.url=${wle_download_url} -Djdk.tls.client.protocols=TLSv1.2 -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee ${RESULT_ROOT}/oke.log"
   mvn -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -Djdk.tls.client.protocols=TLSv1.2 -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/oke.log"
 else
-  echo "Running mvn -Dit.test=${test_filter}, !ItExternalRmiTunneling, !ItSamples, !ItMiiSample, !ItTwoDomainsLoadBalancers, !ItMonitoringExporter, !ItPodRestart -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -Dwle.download.url=${wle_download_url} -Djdk.tls.client.protocols=TLSv1.2 -pl integration-tests -P integration-tests verify 2>&1 | tee ${RESULT_ROOT}/oke.log"
-  mvn -Dit.test="${test_filter}, !ItExternalRmiTunneling, !ItSamples, !ItMiiSample, !ItTwoDomainsLoadBalancers, !ItMonitoringExporter, !ItPodRestart" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -Djdk.tls.client.protocols=TLSv1.2 -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/oke.log"
+  echo "Running mvn -Dit.test=${test_filter}, !ItExternalRmiTunneling, !ItSamples, !ItMiiSample, !ItLBTwoDomainsApache, !ItLBTwoDomainsNginx, !ItLBTwoDomainsTraefik, !ItTwoDomainsManagedByTwoOperators, !ItMonitoringExporter, !ItPodRestart -Dwdt.download.url=${wdt_download_url} -Dwit.download.url=${wit_download_url} -Dwle.download.url=${wle_download_url} -Djdk.tls.client.protocols=TLSv1.2 -pl integration-tests -P integration-tests verify 2>&1 | tee ${RESULT_ROOT}/oke.log"
+  mvn -Dit.test="${test_filter}, !ItExternalRmiTunneling, !ItSamples, !ItMiiSample, !ItLBTwoDomainsApache, !ItLBTwoDomainsNginx, !ItLBTwoDomainsTraefik, !ItTwoDomainsManagedByTwoOperators, !ItMonitoringExporter, !ItPodRestart" -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -Djdk.tls.client.protocols=TLSv1.2 -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/oke.log"
 fi
