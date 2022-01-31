@@ -1,4 +1,4 @@
-# Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2017, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 # This is called by the preStop hook script (stopServer.sh) that is specified
@@ -194,6 +194,7 @@ local_admin_port = getEnvVar('SHUTDOWN_PORT_ARG')
 local_admin_protocol = getEnvVar('SHUTDOWN_PROTOCOL_ARG')
 timeout = getEnvVar('SHUTDOWN_TIMEOUT_ARG')
 ignore_sessions = getEnvVar('SHUTDOWN_IGNORE_SESSIONS_ARG')
+wait_for_all_sessions = getEnvVar('SHUTDOWN_WAIT_FOR_ALL_SESSIONS_ARG')
 shutdown_type = getEnvVar('SHUTDOWN_TYPE_ARG')
 admin_port = getEnvVar('ADMIN_PORT')
 admin_host = getEnvVar('AS_SERVICE_NAME')
@@ -250,7 +251,7 @@ while (stayInConnectLoop):
       cohSafe = True
 
     print('Shutdown: Calling server shutdown with force = ' + force)
-    shutdown(server_name, 'Server', ignoreSessions=ignore_sessions, timeOut=int(timeout), block='true', force=force)
+    shutdown(server_name, 'Server', ignoreSessions=ignore_sessions, timeOut=int(timeout), force=force, block='true', properties=None, waitForAllSessions=wait_for_all_sessions)
     print('Shutdown: Successfully shutdown the server')
 
   except Exception, e:

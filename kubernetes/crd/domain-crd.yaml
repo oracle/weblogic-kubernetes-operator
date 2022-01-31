@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: 7ce4921e0f3e6653b2a55a94e68b8872c7e91cd65cf0cbe2da8818aa28762a0a
+    weblogic.sha256: 2d01cfd389ef81b6a514a4b58bb1e49b1c88e80bf8712940e33751932e3823a6
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -2798,6 +2798,12 @@ spec:
                               to wait before aborting in-flight work and shutting
                               down the server. Defaults to 30 seconds.
                             type: number
+                          waitForAllSessions:
+                            description: For graceful shutdown only, set to true to
+                              wait for all HTTP sessions during in-flight work handling;
+                              false to wait for non-persisted HTTP sessions only.
+                              Defaults to false.
+                            type: boolean
                         type: object
                       affinity:
                         description: If specified, the Pod's scheduling constraints.
@@ -5677,6 +5683,12 @@ spec:
                                 to wait before aborting in-flight work and shutting
                                 down the server. Defaults to 30 seconds.
                               type: number
+                            waitForAllSessions:
+                              description: For graceful shutdown only, set to true
+                                to wait for all HTTP sessions during in-flight work
+                                handling; false to wait for non-persisted HTTP sessions
+                                only. Defaults to false.
+                              type: boolean
                         affinity:
                           description: If specified, the Pod's scheduling constraints.
                             See `kubectl explain pods.spec.affinity`
@@ -8555,6 +8567,12 @@ spec:
                           to wait before aborting in-flight work and shutting down
                           the server. Defaults to 30 seconds.
                         type: number
+                      waitForAllSessions:
+                        description: For graceful shutdown only, set to true to wait
+                          for all HTTP sessions during in-flight work handling; false
+                          to wait for non-persisted HTTP sessions only. Defaults to
+                          false.
+                        type: boolean
                     type: object
                   affinity:
                     description: If specified, the Pod's scheduling constraints. See
@@ -11314,6 +11332,12 @@ spec:
                                 to wait before aborting in-flight work and shutting
                                 down the server. Defaults to 30 seconds.
                               type: number
+                            waitForAllSessions:
+                              description: For graceful shutdown only, set to true
+                                to wait for all HTTP sessions during in-flight work
+                                handling; false to wait for non-persisted HTTP sessions
+                                only. Defaults to false.
+                              type: boolean
                         affinity:
                           description: If specified, the Pod's scheduling constraints.
                             See `kubectl explain pods.spec.affinity`

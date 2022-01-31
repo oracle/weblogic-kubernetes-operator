@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes;
@@ -12,6 +12,7 @@ import java.util.Map;
 import io.kubernetes.client.openapi.models.V1EnvVar;
 import io.kubernetes.client.openapi.models.V1LocalObjectReference;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1Secret;
 import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1ServiceAccount;
 import io.kubernetes.client.openapi.models.V1ServiceAccountList;
@@ -38,7 +39,9 @@ import org.junit.jupiter.api.MethodOrderer;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.TestMethodOrder;
 
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.DEFAULT_EXTERNAL_REST_IDENTITY_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
 import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
@@ -58,6 +61,7 @@ import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimes
 import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
 import static oracle.weblogic.kubernetes.actions.TestActions.helmValuesToString;
 import static oracle.weblogic.kubernetes.actions.TestActions.installOperator;
+import static oracle.weblogic.kubernetes.actions.TestActions.listSecrets;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallOperator;
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.checkHelmReleaseStatus;
@@ -202,81 +206,87 @@ class ItUsabilityOperatorHelmChart {
   @DisplayName("install operator helm chart and domain, "
       + " then uninstall operator helm chart and verify the domain is still running")
   void testDeleteOperatorButNotDomain() {
-    // install and verify operator
-    logger.info("Installing and verifying operator");
-    HelmParams opHelmParams = installAndVerifyOperator(opNamespace, domain1Namespace).getHelmParams();
-    if (!isDomain1Running) {
-      logger.info("Installing and verifying domain");
-      assertTrue(createVerifyDomain(domain1Namespace, domain1Uid),
-          "can't start or verify domain in namespace " + domain1Namespace);
-      isDomain1Running = true;
-    }
-    // get the admin server pod original creation timestamp
-    logger.info("Getting admin server pod original creation timestamp");
-    String adminServerPodName = domain1Uid + adminServerPrefix;
-    OffsetDateTime adminPodOriginalTimestamp =
-        assertDoesNotThrow(() -> getPodCreationTimestamp(domain1Namespace, "", adminServerPodName),
-            String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
-                adminServerPodName, domain1Namespace));
-    adminSvcExtRouteHost = createRouteForOKD(adminServerPodName + "-ext", domain1Namespace);
-
-    // get the managed server pods original creation timestamps
-    logger.info("Getting managed server pods original creation timestamps");
-    List<OffsetDateTime> managedServerPodOriginalTimestampList = new ArrayList<>();
-    for (int i = 1; i <= replicaCountDomain1; i++) {
-      final String managedServerPodName = domain1Uid + managedServerPrefix + i;
-      managedServerPodOriginalTimestampList.add(
-          assertDoesNotThrow(() -> getPodCreationTimestamp(domain1Namespace, "", managedServerPodName),
-              String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
-                  managedServerPodName, domain1Namespace)));
-    }
-    // delete operator
-    logger.info("Uninstalling operator");
-    uninstallOperator(opHelmParams);
-    cleanUpSA(opNamespace);
-    deleteSecret(OCIR_SECRET_NAME,opNamespace);
-
-    // verify the operator pod does not exist in the operator namespace
-    logger.info("Checking that operator pod does not exist in operator namespace");
-    checkPodDoesNotExist("weblogic-operator-", null, opNamespace);
-
-    // verify the operator service does not exist in the operator namespace
-    logger.info("Checking that operator service does not exist in operator namespace");
-    checkServiceDoesNotExist(OPERATOR_SERVICE_NAME, opNamespace);
-
-    // check that the state of admin server pod in the domain was not changed
-    // wait some time here to ensure the pod state is not changed
     try {
-      Thread.sleep(15000);
-    } catch (InterruptedException e) {
-      // ignore
-    }
+      // install and verify operator
+      logger.info("Installing and verifying operator");
+      HelmParams opHelmParams = installAndVerifyOperator(opNamespace, domain1Namespace).getHelmParams();
+      if (!isDomain1Running) {
+        logger.info("Installing and verifying domain");
+        assertTrue(createVerifyDomain(domain1Namespace, domain1Uid),
+            "can't start or verify domain in namespace " + domain1Namespace);
+        isDomain1Running = true;
+      }
+      // get the admin server pod original creation timestamp
+      logger.info("Getting admin server pod original creation timestamp");
+      String adminServerPodName = domain1Uid + adminServerPrefix;
+      OffsetDateTime adminPodOriginalTimestamp =
+          assertDoesNotThrow(() -> getPodCreationTimestamp(domain1Namespace, "", adminServerPodName),
+              String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
+                  adminServerPodName, domain1Namespace));
+      adminSvcExtRouteHost = createRouteForOKD(adminServerPodName + "-ext", domain1Namespace);
 
-    logger.info("Checking that the admin server pod state was not changed after the operator was deleted");
-    assertThat(podStateNotChanged(adminServerPodName, domain1Uid,
-        domain1Namespace, adminPodOriginalTimestamp))
-        .as("Test state of pod {0} was not changed in namespace {1}", adminServerPodName, domain1Namespace)
-        .withFailMessage("State of pod {0} was changed in namespace {1}",
-            adminServerPodName, domain1Namespace)
-        .isTrue();
+      // get the managed server pods original creation timestamps
+      logger.info("Getting managed server pods original creation timestamps");
+      List<OffsetDateTime> managedServerPodOriginalTimestampList = new ArrayList<>();
+      for (int i = 1; i <= replicaCountDomain1; i++) {
+        final String managedServerPodName = domain1Uid + managedServerPrefix + i;
+        managedServerPodOriginalTimestampList.add(
+            assertDoesNotThrow(() -> getPodCreationTimestamp(domain1Namespace, "", managedServerPodName),
+                String.format("getPodCreationTimestamp failed with ApiException for pod %s in namespace %s",
+                    managedServerPodName, domain1Namespace)));
+      }
+      // delete operator
+      logger.info("Uninstalling operator");
+      uninstallOperator(opHelmParams);
+      cleanUpSA(opNamespace);
+      deleteSecret(OCIR_SECRET_NAME, opNamespace);
 
-    // check that the states of managed server pods in the domain were not changed
-    logger.info("Checking that the managed server pod state was not changed after the operator was deleted");
-    for (int i = 1; i <= replicaCountDomain1; i++) {
-      String managedServerPodName = managedServerPrefix + i;
-      assertThat(podStateNotChanged(managedServerPodName, domain1Uid, domain1Namespace,
-              managedServerPodOriginalTimestampList.get(i - 1)))
-          .as("Test state of pod {0} was not changed in namespace {1}",
-              managedServerPodName, domain1Namespace)
+      // verify the operator pod does not exist in the operator namespace
+      logger.info("Checking that operator pod does not exist in operator namespace");
+      checkPodDoesNotExist("weblogic-operator-", null, opNamespace);
+
+      // verify the operator service does not exist in the operator namespace
+      logger.info("Checking that operator service does not exist in operator namespace");
+      checkServiceDoesNotExist(OPERATOR_SERVICE_NAME, opNamespace);
+
+      // check that the state of admin server pod in the domain was not changed
+      // wait some time here to ensure the pod state is not changed
+      try {
+        Thread.sleep(15000);
+      } catch (InterruptedException e) {
+        // ignore
+      }
+
+      logger.info("Checking that the admin server pod state was not changed after the operator was deleted");
+      assertThat(podStateNotChanged(adminServerPodName, domain1Uid,
+          domain1Namespace, adminPodOriginalTimestamp))
+          .as("Test state of pod {0} was not changed in namespace {1}", adminServerPodName, domain1Namespace)
           .withFailMessage("State of pod {0} was changed in namespace {1}",
-              managedServerPodName, domain1Namespace)
+              adminServerPodName, domain1Namespace)
           .isTrue();
-    }
 
-    // verify the managed server Mbean is still accessible via rest api
-    logger.info("Verify the managed server1 MBean configuration through rest API "
-        + "after the operator was deleted");
-    assertTrue(checkManagedServerConfiguration(domain1Namespace, domain1Uid));
+      // check that the states of managed server pods in the domain were not changed
+      logger.info("Checking that the managed server pod state was not changed after the operator was deleted");
+      for (int i = 1; i <= replicaCountDomain1; i++) {
+        String managedServerPodName = managedServerPrefix + i;
+        assertThat(podStateNotChanged(managedServerPodName, domain1Uid, domain1Namespace,
+            managedServerPodOriginalTimestampList.get(i - 1)))
+            .as("Test state of pod {0} was not changed in namespace {1}",
+                managedServerPodName, domain1Namespace)
+            .withFailMessage("State of pod {0} was changed in namespace {1}",
+                managedServerPodName, domain1Namespace)
+            .isTrue();
+      }
+
+      // verify the managed server Mbean is still accessible via rest api
+      logger.info("Verify the managed server1 MBean configuration through rest API "
+          + "after the operator was deleted");
+      assertTrue(checkManagedServerConfiguration(domain1Namespace, domain1Uid));
+    } finally {
+      if (!isDomain1Running) {
+        cleanUpDomainSecrets(domain1Namespace);
+      }
+    }
 
   }
 
@@ -341,6 +351,10 @@ class ItUsabilityOperatorHelmChart {
       uninstallOperator(op1HelmParams);
       deleteSecret(OCIR_SECRET_NAME,opNamespace);
       cleanUpSA(opNamespace);
+      if (!isDomain1Running) {
+        cleanUpDomainSecrets(domain1Namespace);
+      }
+
     }
   }
 
@@ -452,15 +466,17 @@ class ItUsabilityOperatorHelmChart {
       uninstallOperator(op1HelmParams);
       deleteSecret(OCIR_SECRET_NAME,op2Namespace);
       cleanUpSA(op2Namespace);
+      if (!isDomain2Running) {
+        cleanUpDomainSecrets(domain2Namespace);
+      }
     }
   }
-
 
   /**
    * Install operator1 with namespace op2Namespace.
    * Install operator2 with same namesapce op2Namespace.
    * Second operator should fail to install with following exception
-   * Error: rendered manifests contain a resource that already exists.
+   * rendered manifests contain a resource that already exists.
    * Unable to continue with install: existing resource conflict: existing resource conflict: namespace
    *
    */
@@ -483,7 +499,7 @@ class ItUsabilityOperatorHelmChart {
     // install and verify operator will fail with expected error message
     logger.info("Installing and verifying operator will fail with expected error message");
     try {
-      String expectedError = "Error: rendered manifests contain a resource that already exists."
+      String expectedError = "rendered manifests contain a resource that already exists."
           + " Unable to continue with install";
       HelmParams opHelmParam2 = installOperatorHelmChart(opNamespace, opServiceAccount, true, false,
           false,expectedError,"failed", 0,
@@ -495,6 +511,9 @@ class ItUsabilityOperatorHelmChart {
       uninstallOperator(op2HelmParams);
       deleteSecret(OCIR_SECRET_NAME,opNamespace);
       cleanUpSA(opNamespace);
+      if (!isDomain1Running) {
+        cleanUpDomainSecrets(domain1Namespace);
+      }
     }
   }
 
@@ -502,7 +521,7 @@ class ItUsabilityOperatorHelmChart {
    * Install operator1 with Domain Namespace [domain2Namespace].
    * Install operator2 with same Domain Namespace [domain2Namespace].
    * Second operator should fail to install with following exception.
-   * Error: rendered manifests contain a resource that already exists.
+   * rendered manifests contain a resource that already exists.
    * Unable to continue with install: existing resource conflict: namespace.
    * Test fails when second operator installation does not fail.
    */
@@ -527,7 +546,7 @@ class ItUsabilityOperatorHelmChart {
     logger.info("Installing and verifying operator2 will fail with expected error message");
     String opServiceAccount = op2Namespace + "-sa2";
     try {
-      String expectedError = "Error: rendered manifests contain a resource that already exists."
+      String expectedError = "rendered manifests contain a resource that already exists."
           + " Unable to continue with install";
       HelmParams opHelmParam2 = installOperatorHelmChart(op2Namespace, opServiceAccount, true, false, false,
           expectedError,"failed", 0, op2HelmParams,  domain2Namespace);
@@ -538,6 +557,9 @@ class ItUsabilityOperatorHelmChart {
       deleteSecret(OCIR_SECRET_NAME,opNamespace);
       cleanUpSA(opNamespace);
       cleanUpSA(op2Namespace);
+      if (!isDomain2Running) {
+        cleanUpDomainSecrets(domain2Namespace);
+      }
     }
   }
 
@@ -570,7 +592,7 @@ class ItUsabilityOperatorHelmChart {
     // install and verify operator2 will fail
     logger.info("Installing and verifying operator2 fails");
     try {
-      String expectedError = "Error: Service \"external-weblogic-operator-svc\" "
+      String expectedError = "Service \"external-weblogic-operator-svc\" "
           + "is invalid: spec.ports[0].nodePort: Invalid value";
       HelmParams opHelmParam2 = installOperatorHelmChart(op2Namespace, op2ServiceAccount,
           true, true, true,
@@ -604,7 +626,7 @@ class ItUsabilityOperatorHelmChart {
     logger.info("Installing and verifying operator will fail with expected error message");
     String opServiceAccount = op2Namespace + "-sa2";
     try {
-      String expectedError = "Error: create: failed to create: namespaces \"ns-somens\" not found";
+      String expectedError = "create: failed to create: namespaces \"ns-somens\" not found";
       HelmParams opHelmParam2 = installOperatorHelmChart("ns-somens", opServiceAccount, false, false,
           false, expectedError,"failed", 0, op2HelmParams,  domain2Namespace);
       assertNull(opHelmParam2, "FAILURE: Helm installs operator in the same namespace as first operator installed ");
@@ -678,6 +700,9 @@ class ItUsabilityOperatorHelmChart {
       uninstallOperator(op2HelmParams);
       deleteSecret(OCIR_SECRET_NAME,op2Namespace);
       cleanUpSA(op2Namespace);
+      if (!isDomain2Running) {
+        cleanUpDomainSecrets(domain2Namespace);
+      }
     }
   }
 
@@ -866,7 +891,7 @@ class ItUsabilityOperatorHelmChart {
     // create secret for admin credentials
     logger.info("Creating secret for admin credentials");
     String adminSecretName = "weblogic-credentials-" + domainUid;
-    createSecretWithUsernamePassword(adminSecretName, domainNamespace, "weblogic", "welcome1");
+    createSecretWithUsernamePassword(adminSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
 
     // create encryption secret
     logger.info("Creating encryption secret");
@@ -913,6 +938,7 @@ class ItUsabilityOperatorHelmChart {
                         .nodePort(0))))
             .clusters(clusters)
             .configuration(new Configuration()
+                .introspectorJobActiveDeadlineSeconds(280L)
                 .model(new Model()
                     .domainType(WLS_DOMAIN_TYPE)
                     .runtimeEncryptionSecret(encryptionSecretName))));
@@ -1183,8 +1209,12 @@ class ItUsabilityOperatorHelmChart {
     int adminServiceNodePort
         = getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
     String hostAndPort = getHostAndPort(adminSvcExtRouteHost, adminServiceNodePort);
-    StringBuffer checkCluster = new StringBuffer("status=$(curl --user weblogic:welcome1 ");
-    checkCluster.append("http://" + hostAndPort)
+    StringBuffer checkCluster = new StringBuffer("status=$(curl --user ")
+        .append(ADMIN_USERNAME_DEFAULT)
+        .append(":")
+        .append(ADMIN_PASSWORD_DEFAULT)
+        .append(" ")
+        .append("http://" + hostAndPort)
         .append("/management/tenant-monitoring/servers/")
         .append(managedServer)
         .append(" --silent --show-error ")
@@ -1203,6 +1233,16 @@ class ItUsabilityOperatorHelmChart {
       return true;
     } else {
       return false;
+    }
+  }
+
+  private void cleanUpDomainSecrets(String domainNamespace) {
+    //cleanup created artifacts for failed domain creation
+    for (V1Secret secret : listSecrets(domainNamespace).getItems()) {
+      if (secret.getMetadata() != null) {
+        String name = secret.getMetadata().getName();
+        Kubernetes.deleteSecret(name, domainNamespace);
+      }
     }
   }
 }

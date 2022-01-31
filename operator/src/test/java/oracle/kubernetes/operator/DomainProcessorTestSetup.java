@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -34,7 +34,8 @@ public class DomainProcessorTestSetup {
   }
 
   private static V1Secret createSecret() {
-    return new V1Secret().metadata(new V1ObjectMeta().name(SECRET_NAME).namespace(NS));
+    return new V1Secret().metadata(new V1ObjectMeta().name(SECRET_NAME).namespace(NS))
+        .data(Map.of(USERNAME_KEY, "user".getBytes(), PASSWORD_KEY, "password".getBytes()));
   }
 
   /**

@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.weblogic.kubernetes.actions.impl;
@@ -79,8 +79,10 @@ public class Operator {
           .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
           .toString();
     } else  {
+      // Remove all non-alphanumeric character(s) in the branch name 
+      // e.g. replace release/3.x.y with release3xy
       CommandParams params = Command.defaultCommandParams()
-          .command("git branch | grep \\* | cut -d ' ' -f2-")
+          .command("git branch|grep \\* |cut -d ' ' -f2- |tr -dc 'a-zA-Z0-9'")
           .saveResults(true)
           .redirect(false);
 

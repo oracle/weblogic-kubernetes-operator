@@ -18,13 +18,21 @@ validate_script() {
 }
 
 
-find . -type f -name '*.sh' -print0 | while IFS= read -r -d '' file; do
-    retval=$(validate_script "$file" )
-    if [ -n "$retval" ]; then
-      echo "$retval"
-      exit 1
-    fi
-done
+EXCLUDE_PATH="*/docker-images/*"
+
+find "$(pwd -P)" -type f -name '*.sh' -not -path "$EXCLUDE_PATH" -print0 | {
+
+  return_code=0
+
+  while IFS= read -r -d '' file; do
+      retval=$(validate_script "$file" )
+      if [ -n "$retval" ]; then
+        echo "$retval"
+        return_code=1;
+      fi
+  done
+  exit $return_code
+}
 
 found_error=$?
 
