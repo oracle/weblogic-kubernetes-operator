@@ -6,14 +6,18 @@ package oracle.weblogic.kubernetes.utils;
 import java.io.IOException;
 import java.net.Socket;
 import java.text.DateFormat;
+import java.text.MessageFormat;
 import java.text.SimpleDateFormat;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.Callable;
+import java.util.stream.Stream;
 
 import io.kubernetes.client.openapi.ApiException;
 import oracle.weblogic.domain.Cluster;
@@ -21,7 +25,11 @@ import oracle.weblogic.kubernetes.actions.TestActions;
 import oracle.weblogic.kubernetes.actions.impl.primitive.Command;
 import oracle.weblogic.kubernetes.actions.impl.primitive.CommandParams;
 import oracle.weblogic.kubernetes.logging.LoggingFacade;
+import org.awaitility.core.ConditionEvaluationListener;
 import org.awaitility.core.ConditionFactory;
+import org.awaitility.core.ConditionTimeoutException;
+import org.awaitility.core.EvaluatedCondition;
+import org.awaitility.core.TimeoutEvent;
 
 import static java.util.concurrent.TimeUnit.MINUTES;
 import static java.util.concurrent.TimeUnit.SECONDS;
@@ -61,6 +69,69 @@ public class CommonTestUtils {
   public static ConditionFactory withQuickRetryPolicy = with().pollDelay(0, SECONDS)
       .and().with().pollInterval(3, SECONDS)
       .atMost(120, SECONDS).await();
+
+  /**
+   * Test assertion using standard retry policy over time until it passes or the timeout expires.
+   * @param conditionEvaluator Condition evaluator
+   * @param logger Logger
+   * @param msg Message for logging
+   * @param params Parameter to message for logging
+   */
+  public static void testUntil(Callable<Boolean> conditionEvaluator,
+                               LoggingFacade logger, String msg, Object... params) {
+    testUntil(withStandardRetryPolicy, conditionEvaluator, logger, msg, params);
+  }
+
+  /**
+   * Test assertion over time until it passes or the timeout expires.
+   * @param conditionFactory Configuration for Awaitility condition factory
+   * @param conditionEvaluator Condition evaluator
+   * @param logger Logger
+   * @param msg Message for logging
+   * @param params Parameter to message for logging
+   */
+  public static void testUntil(ConditionFactory conditionFactory, Callable<Boolean> conditionEvaluator,
+                               LoggingFacade logger, String msg, Object... params) {
+    try {
+      conditionFactory
+          .conditionEvaluationListener(createConditionEvaluationListener(logger, msg, params))
+          .until(conditionEvaluator);
+    } catch (ConditionTimeoutException timeout) {
+      throw new TimeoutException(MessageFormat.format("Timed out waiting for: " + msg, params), timeout);
+    }
+  }
+
+  private static <T> ConditionEvaluationListener<T> createConditionEvaluationListener(
+      LoggingFacade logger, String msg, Object... params) {
+    return new ConditionEvaluationListener<T>() {
+      @Override
+      public void conditionEvaluated(EvaluatedCondition condition) {
+        int paramsSize = params != null ? params.length : 0;
+        String preamble;
+        String timeInfo;
+        if (condition.isSatisfied()) {
+          preamble = "Completed: ";
+          timeInfo = " (elapsed time {" + paramsSize + "} ms)";
+        } else {
+          preamble = "Waiting for: ";
+          timeInfo = " (elapsed time {" + paramsSize + "} ms, remaining time {" + (paramsSize + 1) + "} ms)";
+        }
+        logger.info(preamble + msg + timeInfo,
+            Stream.concat(
+                Optional.ofNullable(params).map(Arrays::asList).orElse(Collections.emptyList()).stream(),
+                Stream.of(condition.getElapsedTimeInMS(), condition.getRemainingTimeInMS())).toArray());
+      }
+
+      @Override
+      public void onTimeout(TimeoutEvent timeoutEvent) {
+        int paramsSize = params != null ? params.length : 0;
+        logger.info("Timed out waiting for: " + msg + " (elapsed time {" + paramsSize + "} ms)",
+            Stream.concat(
+                Optional.ofNullable(params).map(Arrays::asList).orElse(Collections.emptyList()).stream(),
+                Stream.of(timeoutEvent.getElapsedTimeInMS())).toArray());
+      }
+    };
+  }
 
   /**
    * Check pod is ready and service exists in the specified namespace.

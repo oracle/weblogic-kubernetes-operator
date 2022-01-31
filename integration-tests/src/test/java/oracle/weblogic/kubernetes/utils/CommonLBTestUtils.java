@@ -1,0 +1,739 @@
+// Copyright (c) 2022, Oracle and/or its affiliates.
+// Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
+
+package oracle.weblogic.kubernetes.utils;
+
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardCopyOption;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Properties;
+import java.util.concurrent.TimeUnit;
+
+import com.gargoylesoftware.htmlunit.WebClient;
+import com.gargoylesoftware.htmlunit.html.HtmlElement;
+import com.gargoylesoftware.htmlunit.html.HtmlForm;
+import com.gargoylesoftware.htmlunit.html.HtmlPage;
+import io.kubernetes.client.custom.Quantity;
+import io.kubernetes.client.openapi.models.V1ConfigMapVolumeSource;
+import io.kubernetes.client.openapi.models.V1Container;
+import io.kubernetes.client.openapi.models.V1ContainerPort;
+import io.kubernetes.client.openapi.models.V1EnvVar;
+import io.kubernetes.client.openapi.models.V1Job;
+import io.kubernetes.client.openapi.models.V1JobSpec;
+import io.kubernetes.client.openapi.models.V1LocalObjectReference;
+import io.kubernetes.client.openapi.models.V1ObjectMeta;
+import io.kubernetes.client.openapi.models.V1ObjectMetaBuilder;
+import io.kubernetes.client.openapi.models.V1PersistentVolume;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaim;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimSpec;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeClaimVolumeSource;
+import io.kubernetes.client.openapi.models.V1PersistentVolumeSpec;
+import io.kubernetes.client.openapi.models.V1PodSpec;
+import io.kubernetes.client.openapi.models.V1PodTemplateSpec;
+import io.kubernetes.client.openapi.models.V1ResourceRequirements;
+import io.kubernetes.client.openapi.models.V1SecretReference;
+import io.kubernetes.client.openapi.models.V1Volume;
+import io.kubernetes.client.openapi.models.V1VolumeMount;
+import oracle.weblogic.domain.AdminServer;
+import oracle.weblogic.domain.AdminService;
+import oracle.weblogic.domain.Channel;
+import oracle.weblogic.domain.Cluster;
+import oracle.weblogic.domain.Domain;
+import oracle.weblogic.domain.DomainSpec;
+import oracle.weblogic.domain.ServerPod;
+
+import static java.nio.file.Files.copy;
+import static java.nio.file.Files.createDirectories;
+import static java.nio.file.Paths.get;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
+import static oracle.weblogic.kubernetes.TestConstants.BASE_IMAGES_REPO_SECRET;
+import static oracle.weblogic.kubernetes.TestConstants.DOMAIN_API_VERSION;
+import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.MANAGED_SERVER_NAME_BASE;
+import static oracle.weblogic.kubernetes.TestConstants.PV_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_IMAGE_TO_USE_IN_SPEC;
+import static oracle.weblogic.kubernetes.TestConstants.WEBLOGIC_SLIM;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.APP_DIR;
+import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
+import static oracle.weblogic.kubernetes.actions.TestActions.getPodLog;
+import static oracle.weblogic.kubernetes.actions.TestActions.getServiceNodePort;
+import static oracle.weblogic.kubernetes.utils.ApplicationUtils.callWebAppAndWaitTillReady;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyServerCommunication;
+import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapFromFiles;
+import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
+import static oracle.weblogic.kubernetes.utils.ImageUtils.createSecretForBaseImages;
+import static oracle.weblogic.kubernetes.utils.JobUtils.createJobAndWaitUntilComplete;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVPVCAndVerify;
+import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createfixPVCOwnerContainer;
+import static oracle.weblogic.kubernetes.utils.PodUtils.getExternalServicePodName;
+import static oracle.weblogic.kubernetes.utils.PodUtils.setPodAntiAffinity;
+import static oracle.weblogic.kubernetes.utils.SecretUtils.createSecretWithUsernamePassword;
+import static oracle.weblogic.kubernetes.utils.ThreadSafeLogger.getLogger;
+import static org.apache.commons.io.FileUtils.deleteDirectory;
+import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
+
+/**
+ * The common utility class for LoadBalancer tests.
+ */
+public class CommonLBTestUtils {
+
+  /**
+   * Create multiple domains on PV using WLST.
+   * @param domainNamespace domain namespace
+   * @param wlSecretName wls secret name
+   * @param testClassName test class name which will call this method
+   * @param numberOfDomains number of domains to create
+   * @param domainUids list of domain uids
+   * @param replicaCount replica count of the domain cluster
+   * @param clusterName cluster name of the domain
+   * @param adminServerPort admin server port
+   * @param managedServerPort managed server port
+   */
+  public static void createMultipleDomainsSharingPVUsingWlstAndVerify(String domainNamespace,
+                                                                      String wlSecretName,
+                                                                      String testClassName,
+                                                                      int numberOfDomains,
+                                                                      List<String> domainUids,
+                                                                      int replicaCount,
+                                                                      String clusterName,
+                                                                      int adminServerPort,
+                                                                      int managedServerPort) {
+    // create pull secrets for WebLogic image
+    // this secret is used only for non-kind cluster
+    createSecretForBaseImages(domainNamespace);
+
+    // create WebLogic credentials secret
+    createSecretWithUsernamePassword(wlSecretName, domainNamespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT);
+    Path pvHostPath = get(PV_ROOT, testClassName, "sharing-persistentVolume");
+
+    String sharingPvName = domainNamespace + "-sharing-pv";
+    String sharingPvcName = domainNamespace + "-sharing-pvc";
+
+    V1PersistentVolume v1pv = new V1PersistentVolume()
+        .spec(new V1PersistentVolumeSpec()
+            .addAccessModesItem("ReadWriteMany")
+            .volumeMode("Filesystem")
+            .putCapacityItem("storage", Quantity.fromString("6Gi"))
+            .persistentVolumeReclaimPolicy("Retain"))
+        .metadata(new V1ObjectMetaBuilder()
+            .withName(sharingPvName)
+            .build()
+            .putLabelsItem("sharing-pv", "true"));
+
+    V1PersistentVolumeClaim v1pvc = new V1PersistentVolumeClaim()
+        .spec(new V1PersistentVolumeClaimSpec()
+            .addAccessModesItem("ReadWriteMany")
+            .volumeName(sharingPvName)
+            .resources(new V1ResourceRequirements()
+                .putRequestsItem("storage", Quantity.fromString("6Gi"))))
+        .metadata(new V1ObjectMetaBuilder()
+            .withName(sharingPvcName)
+            .withNamespace(domainNamespace)
+            .build()
+            .putLabelsItem("sharing-pvc", "true"));
+
+    // create pv and pvc
+    String labelSelector = String.format("sharing-pv in (%s)", "true");
+    createPVPVCAndVerify(v1pv, v1pvc, labelSelector,
+        domainNamespace, "default-sharing-weblogic-domain-storage-class", pvHostPath);
+
+    for (int i = 0; i < numberOfDomains; i++) {
+      String domainUid = domainUids.get(i);
+      String domainScriptConfigMapName = "create-domain" + i + "-scripts-cm";
+      String createDomainInPVJobName = "create-domain" + i + "-onpv-job";
+
+      int t3ChannelPort = getNextFreePort();
+      getLogger().info("t3ChannelPort for domain {0} is {1}", domainUid, t3ChannelPort);
+
+      // run create a domain on PV job using WLST
+      runCreateDomainOnPVJobUsingWlst(sharingPvName, sharingPvcName, domainUid, domainNamespace,
+          domainScriptConfigMapName, createDomainInPVJobName, testClassName, clusterName, adminServerPort,
+          managedServerPort, t3ChannelPort);
+
+      // create the domain custom resource configuration object
+      getLogger().info("Creating domain custom resource");
+      Domain domain = createDomainCustomResource(domainUid, domainNamespace, sharingPvName,
+          sharingPvcName, t3ChannelPort, wlSecretName, clusterName, replicaCount);
+
+      getLogger().info("Creating domain custom resource {0} in namespace {1}", domainUid, domainNamespace);
+      createDomainAndVerify(domain, domainNamespace);
+
+      String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
+      // check admin server pod is ready and service exists in domain namespace
+      checkPodReadyAndServiceExists(adminServerPodName, domainUid, domainNamespace);
+
+      // check for managed server pods are ready and services exist in domain namespace
+      for (int j = 1; j <= replicaCount; j++) {
+        String managedServerPodName = domainUid + "-" + MANAGED_SERVER_NAME_BASE + j;
+        checkPodReadyAndServiceExists(managedServerPodName, domainUid, domainNamespace);
+      }
+
+      int serviceNodePort =
+          getServiceNodePort(domainNamespace, getExternalServicePodName(adminServerPodName), "default");
+      getLogger().info("Getting admin service node port: {0}", serviceNodePort);
+
+      getLogger().info("Validating WebLogic admin server access by login to console");
+      assertTrue(assertDoesNotThrow(
+          () -> adminNodePortAccessible(serviceNodePort),
+          "Access to admin server node port failed"), "Console login validation failed");
+    }
+  }
+
+  /**
+   * Run a job to create a WebLogic domain on a persistent volume by doing the following.
+   * Copies the WLST domain script to a temp location.
+   * Creates a domain properties in the temp location.
+   * Creates a configmap containing domain scripts and property files.
+   * Runs a job to create domain on persistent volume.
+   *
+   * @param pvName persistence volume on which the WebLogic domain home will be hosted
+   * @param pvcName persistence volume claim for the WebLogic domain
+   * @param domainUid the Uid of the domain to create
+   * @param domainNamespace the namespace in which the domain will be created
+   * @param domainScriptConfigMapName the configMap name for domain script
+   * @param createDomainInPVJobName the job name for creating domain in PV
+   * @param testClassName the test class name which calls this method
+   * @param clusterName cluster name of the domain
+   * @param adminServerPort admin server port
+   * @param managedServerPort managed server port
+   * @param t3ChannelPort t3 channel port for admin server
+   */
+  private static void runCreateDomainOnPVJobUsingWlst(String pvName,
+                                                      String pvcName,
+                                                      String domainUid,
+                                                      String domainNamespace,
+                                                      String domainScriptConfigMapName,
+                                                      String createDomainInPVJobName,
+                                                      String testClassName,
+                                                      String clusterName,
+                                                      int adminServerPort,
+                                                      int managedServerPort,
+                                                      int t3ChannelPort) {
+
+    getLogger().info("Creating a staging location for domain creation scripts");
+    Path pvTemp = get(RESULTS_ROOT, testClassName, "domainCreateTempPV");
+    assertDoesNotThrow(() -> deleteDirectory(pvTemp.toFile()),"deleteDirectory failed with IOException");
+    assertDoesNotThrow(() -> createDirectories(pvTemp), "createDirectories failed with IOException");
+
+    getLogger().info("Copying the domain creation WLST script to staging location");
+    Path srcWlstScript = get(RESOURCE_DIR, "python-scripts", "wlst-create-domain-onpv.py");
+    Path targetWlstScript = get(pvTemp.toString(), "create-domain.py");
+    assertDoesNotThrow(() -> copy(srcWlstScript, targetWlstScript, StandardCopyOption.REPLACE_EXISTING),
+        "copy failed with IOException");
+
+    getLogger().info("Creating WebLogic domain properties file");
+    Path domainPropertiesFile = get(pvTemp.toString(), "domain.properties");
+    createDomainProperties(
+        domainPropertiesFile, domainUid, clusterName, adminServerPort, managedServerPort, t3ChannelPort);
+
+    getLogger().info("Adding files to a ConfigMap for domain creation job");
+    List<Path> domainScriptFiles = new ArrayList<>();
+    domainScriptFiles.add(targetWlstScript);
+    domainScriptFiles.add(domainPropertiesFile);
+
+    getLogger().info("Creating a ConfigMap to hold domain creation scripts");
+    createConfigMapFromFiles(domainScriptConfigMapName, domainScriptFiles, domainNamespace);
+
+    getLogger().info("Running a Kubernetes job to create the domain");
+    V1Job jobBody = new V1Job()
+        .metadata(
+            new V1ObjectMeta()
+                .name(createDomainInPVJobName)
+                .namespace(domainNamespace))
+        .spec(new V1JobSpec()
+            .backoffLimit(0) // try only once
+            .template(new V1PodTemplateSpec()
+                .spec(new V1PodSpec()
+                    .restartPolicy("Never")
+                    .initContainers(Collections.singletonList(createfixPVCOwnerContainer(pvName, "/shared")))
+                    .containers(Collections.singletonList(new V1Container()
+                        .name("create-weblogic-domain-onpv-container")
+                        .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
+                        .ports(Collections.singletonList(new V1ContainerPort()
+                            .containerPort(adminServerPort)))
+                        .volumeMounts(Arrays.asList(
+                            new V1VolumeMount()
+                                .name("create-weblogic-domain-job-cm-volume") // domain creation scripts volume
+                                .mountPath("/u01/weblogic"), // availble under /u01/weblogic inside pod
+                            new V1VolumeMount()
+                                .name(pvName) // location to write domain
+                                .mountPath("/shared"))) // mounted under /shared inside pod
+                        .addCommandItem("/bin/sh") //call wlst.sh script with py and properties file
+                        .addArgsItem("/u01/oracle/oracle_common/common/bin/wlst.sh")
+                        .addArgsItem("/u01/weblogic/create-domain.py")
+                        .addArgsItem("-skipWLSModuleScanning")
+                        .addArgsItem("-loadProperties")
+                        .addArgsItem("/u01/weblogic/domain.properties")))
+                    .volumes(Arrays.asList(
+                        new V1Volume()
+                            .name(pvName)
+                            .persistentVolumeClaim(
+                                new V1PersistentVolumeClaimVolumeSource()
+                                    .claimName(pvcName)),
+                        new V1Volume()
+                            .name("create-weblogic-domain-job-cm-volume")
+                            .configMap(
+                                new V1ConfigMapVolumeSource()
+                                    .name(domainScriptConfigMapName))))  //ConfigMap containing domain scripts
+                    .imagePullSecrets(Collections.singletonList(
+                        new V1LocalObjectReference()
+                            .name(BASE_IMAGES_REPO_SECRET))))));  // this secret is used only for non-kind cluster
+
+    assertNotNull(jobBody.getMetadata());
+    getLogger().info("Running a job {0} to create a domain on PV for domain {1} in namespace {2}",
+        jobBody.getMetadata().getName(), domainUid, domainNamespace);
+    createJobAndWaitUntilComplete(jobBody, domainNamespace);
+  }
+
+  /**
+   * Create a domain custom resource object.
+   *
+   * @param domainUid uid of the domain
+   * @param domainNamespace namespace of the domain
+   * @param pvName name of persistence volume
+   * @param pvcName name of persistence volume claim
+   * @param t3ChannelPort t3 channel port for admin server
+   * @param wlSecretName wls secret name
+   * @param clusterName cluster name of the domain
+   * @param replicaCount replica count of the cluster
+   * @return oracle.weblogic.domain.Domain object
+   */
+  private static Domain createDomainCustomResource(String domainUid,
+                                                   String domainNamespace,
+                                                   String pvName,
+                                                   String pvcName,
+                                                   int t3ChannelPort,
+                                                   String wlSecretName,
+                                                   String clusterName,
+                                                   int replicaCount) {
+    Domain domain = new Domain()
+        .apiVersion(DOMAIN_API_VERSION)
+        .kind("Domain")
+        .metadata(new V1ObjectMeta()
+            .name(domainUid)
+            .namespace(domainNamespace))
+        .spec(new DomainSpec()
+            .domainUid(domainUid)
+            .domainHome("/shared/domains/" + domainUid)
+            .domainHomeSourceType("PersistentVolume")
+            .image(WEBLOGIC_IMAGE_TO_USE_IN_SPEC)
+            .imagePullSecrets(Collections.singletonList(
+                new V1LocalObjectReference()
+                    .name(BASE_IMAGES_REPO_SECRET)))  // this secret is used only for non-kind cluster
+            .webLogicCredentialsSecret(new V1SecretReference()
+                .name(wlSecretName)
+                .namespace(domainNamespace))
+            .includeServerOutInPodLog(true)
+            .logHomeEnabled(Boolean.TRUE)
+            .logHome("/shared/logs/" + domainUid)
+            .dataHome("")
+            .serverStartPolicy("IF_NEEDED")
+            .serverPod(new ServerPod()
+                .addEnvItem(new V1EnvVar()
+                    .name("JAVA_OPTIONS")
+                    .value("-Dweblogic.StdoutDebugEnabled=true "
+                        + "-Dweblogic.http.isWLProxyHeadersAccessible=true "
+                        + "-Dweblogic.debug.DebugHttp=true "
+                        + "-Dweblogic.rjvm.allowUnknownHost=true "
+                        + "-Dweblogic.ResolveDNSName=true "
+                        + "-Dweblogic.MaxMessageSize=20000000"))
+                .addEnvItem(new V1EnvVar()
+                    .name("USER_MEM_ARGS")
+                    .value("-Djava.security.egd=file:/dev/./urandom "))
+                .addVolumesItem(new V1Volume()
+                    .name(pvName)
+                    .persistentVolumeClaim(new V1PersistentVolumeClaimVolumeSource()
+                        .claimName(pvcName)))
+                .addVolumeMountsItem(new V1VolumeMount()
+                    .mountPath("/shared")
+                    .name(pvName)))
+            .adminServer(new AdminServer()
+                .serverStartState("RUNNING")
+                .adminService(new AdminService()
+                    .addChannelsItem(new Channel()
+                        .channelName("default")
+                        .nodePort(getNextFreePort()))
+                    .addChannelsItem(new Channel()
+                        .channelName("T3Channel")
+                        .nodePort(t3ChannelPort))))
+            .addClustersItem(new Cluster()
+                .clusterName(clusterName)
+                .replicas(replicaCount)
+                .serverStartState("RUNNING")));
+    setPodAntiAffinity(domain);
+    return domain;
+  }
+
+  /**
+   * Verify admin node port(default/t3channel) is accessible by login to WebLogic console
+   * using the node port and validate its the Home page.
+   *
+   * @param nodePort the node port that needs to be tested for access
+   * @return true if login to WebLogic administration console is successful
+   * @throws IOException when connection to console fails
+   */
+  private static boolean adminNodePortAccessible(int nodePort)
+      throws IOException {
+    if (WEBLOGIC_SLIM) {
+      getLogger().info("Check REST Console for WebLogic slim image");
+      StringBuffer curlCmd = new StringBuffer("status=$(curl --user ");
+      curlCmd.append(ADMIN_USERNAME_DEFAULT)
+          .append(":")
+          .append(ADMIN_PASSWORD_DEFAULT)
+          .append(" http://")
+          .append(K8S_NODEPORT_HOST)
+          .append(":")
+          .append(nodePort)
+          .append("/management/tenant-monitoring/servers/ --silent --show-error -o /dev/null -w %{http_code}); ")
+          .append("echo ${status}");
+      getLogger().info("checkRestConsole : curl command {0}", new String(curlCmd));
+      try {
+        ExecResult result = ExecCommand.exec(new String(curlCmd), true);
+        String response = result.stdout().trim();
+        getLogger().info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
+            result.exitValue(), response, result.stderr());
+        return response.contains("200");
+      } catch (IOException | InterruptedException ex) {
+        getLogger().info("Exception in checkRestConsole {0}", ex);
+        return false;
+      }
+    } else {
+      // generic/dev Image
+      getLogger().info("Check administration Console for generic/dev image");
+      String consoleUrl = new StringBuffer()
+          .append("http://")
+          .append(K8S_NODEPORT_HOST)
+          .append(":")
+          .append(nodePort)
+          .append("/console/login/LoginForm.jsp").toString();
+
+      boolean adminAccessible = false;
+      for (int i = 1; i <= 10; i++) {
+        getLogger().info("Iteration {0} out of 10: Accessing WebLogic console with url {1}", i, consoleUrl);
+        final WebClient webClient = new WebClient();
+        final HtmlPage loginPage = assertDoesNotThrow(() -> webClient.getPage(consoleUrl),
+            "connection to the WebLogic admin console failed");
+        HtmlForm form = loginPage.getFormByName("loginData");
+        form.getInputByName("j_username").type(ADMIN_USERNAME_DEFAULT);
+        form.getInputByName("j_password").type(ADMIN_PASSWORD_DEFAULT);
+        HtmlElement submit = form.getOneHtmlElementByAttribute("input", "type", "submit");
+        getLogger().info("Clicking login button");
+        HtmlPage home = submit.click();
+        if (home.asText().contains("Persistent Stores")) {
+          getLogger().info("Console login passed");
+          adminAccessible = true;
+          break;
+        }
+      }
+      return adminAccessible;
+    }
+  }
+
+  /**
+   * Create a properties file for WebLogic domain configuration.
+   * @param wlstPropertiesFile path of the properties file
+   * @param domainUid the WebLogic domain for which the properties file is created
+   * @param clusterName cluster name of the domain
+   * @param adminServerPort admin server port
+   * @param managedServerPort managed server port
+   * @param t3ChannelPort t3 channel port of the admin server
+   */
+  private static void createDomainProperties(Path wlstPropertiesFile,
+                                             String domainUid,
+                                             String clusterName,
+                                             int adminServerPort,
+                                             int managedServerPort,
+                                             int t3ChannelPort) {
+    // create a list of properties for the WebLogic domain configuration
+    Properties p = new Properties();
+
+    p.setProperty("domain_path", "/shared/domains");
+    p.setProperty("domain_name", domainUid);
+    p.setProperty("cluster_name", clusterName);
+    p.setProperty("admin_server_name", ADMIN_SERVER_NAME_BASE);
+    p.setProperty("managed_server_port", "" + managedServerPort);
+    p.setProperty("admin_server_port", "" + adminServerPort);
+    p.setProperty("admin_username", ADMIN_USERNAME_DEFAULT);
+    p.setProperty("admin_password", ADMIN_PASSWORD_DEFAULT);
+    p.setProperty("admin_t3_public_address", K8S_NODEPORT_HOST);
+    p.setProperty("admin_t3_channel_port", Integer.toString(t3ChannelPort));
+    p.setProperty("number_of_ms", "4");
+    p.setProperty("managed_server_name_base", MANAGED_SERVER_NAME_BASE);
+    p.setProperty("domain_logs", "/shared/logs");
+    p.setProperty("production_mode_enabled", "true");
+
+    FileOutputStream fileOutputStream =
+        assertDoesNotThrow(() -> new FileOutputStream(wlstPropertiesFile.toFile()),
+            "new FileOutputStream failed with FileNotFoundException");
+    assertDoesNotThrow(() -> p.store(fileOutputStream, "WLST properties file"),
+        "Writing the property list to the specified output stream failed with IOException");
+  }
+
+  /**
+   * Build and deplopy ClusterView app to the domains.
+   * @param domainNamespace domain namespace
+   * @param domainUids uid of the domains
+   */
+  public static void buildAndDeployClusterviewApp(String domainNamespace, List<String> domainUids) {
+    // build the clusterview application
+    getLogger().info("Building clusterview application");
+    Path distDir = BuildApplication.buildApplication(Paths.get(APP_DIR, "clusterview"),
+        null, null, "dist", domainNamespace);
+    assertTrue(Paths.get(distDir.toString(),
+        "clusterview.war").toFile().exists(),
+        "Application archive is not available");
+    Path clusterViewAppPath = Paths.get(distDir.toString(), "clusterview.war");
+
+    // deploy clusterview application in namespace
+    for (String domainUid : domainUids) {
+      // admin/managed server name here should match with model yaml in MII_BASIC_WDT_MODEL_FILE
+      String adminServerPodName = domainUid + "-admin-server";
+      deployApplication(domainNamespace, domainUid, adminServerPodName, clusterViewAppPath);
+    }
+  }
+
+  private static void deployApplication(String namespace, String domainUid, String adminServerPodName,
+                                        Path clusterViewAppPath) {
+    getLogger().info("Getting node port for admin server default channel");
+    int serviceNodePort = assertDoesNotThrow(() ->
+            getServiceNodePort(namespace, getExternalServicePodName(adminServerPodName), "default"),
+        "Getting admin server node port failed");
+    assertNotEquals(-1, serviceNodePort, "admin server default node port is not valid");
+    getLogger().info("Deploying application {0} to domain {1} cluster target cluster-1 in namespace {2}",
+        clusterViewAppPath, domainUid, namespace);
+    String targets = "{ identity: [ clusters, 'cluster-1' ] }";
+    ExecResult result = DeployUtil.deployUsingRest(K8S_NODEPORT_HOST,
+        String.valueOf(serviceNodePort),
+        ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT,
+        targets, clusterViewAppPath, null, domainUid + "clusterview");
+    assertNotNull(result, "Application deployment failed");
+    getLogger().info("Application deployment returned {0}", result.toString());
+    assertEquals("202", result.stdout(), "Deployment didn't return HTTP status code 202");
+  }
+
+  /**
+   * Verify headers in admin server log.
+   * @param podName admin server pod name
+   * @param namespace domain namespace
+   */
+  public static void verifyHeadersInAdminServerLog(String podName, String namespace) {
+    getLogger().info("Getting admin server pod log from pod {0} in namespace {1}", podName, namespace);
+
+    testUntil(
+        () -> assertDoesNotThrow(() ->
+            getPodLog(podName, namespace, "weblogic-server", null, 120)) != null,
+        getLogger(),
+        "Getting admin server pod log {0} in namespace {1}",
+        podName,
+        namespace);
+
+    String adminServerPodLog0 = assertDoesNotThrow(() ->
+        getPodLog(podName, namespace, "weblogic-server", null, 120));
+
+    assertNotNull(adminServerPodLog0,
+        String.format("failed to get admin server log from pod %s in namespace %s, returned null",
+            podName, namespace));
+
+    String adminServerPodLog = adminServerPodLog0.toLowerCase();
+
+    // verify the admin server log does not contain WL-Proxy-Client-IP header
+    getLogger().info("Checking that the admin server log does not contain 'WL-Proxy-Client-IP' header");
+    assertFalse(adminServerPodLog.contains("WL-Proxy-Client-IP".toLowerCase()),
+        String.format("found WL-Proxy-Client-IP in the admin server pod log, pod: %s; namespace: %s; pod log: %s",
+            podName, namespace, adminServerPodLog0));
+
+    // verify the admin server log does not contain header "WL-Proxy-SSL: false"
+    getLogger().info("Checking that the admin server log does not contain header 'WL-Proxy-SSL: false'");
+    assertFalse(adminServerPodLog.contains("WL-Proxy-SSL: false".toLowerCase()),
+        String.format("found 'WL-Proxy-SSL: false' in the admin server pod log, pod: %s; namespace: %s; pod log: %s",
+            podName, namespace, adminServerPodLog0));
+
+    // verify the admin server log contains header "WL-Proxy-SSL: true"
+    getLogger().info("Checking that the admin server log contains header 'WL-Proxy-SSL: true'");
+    assertTrue(adminServerPodLog.contains("WL-Proxy-SSL: true".toLowerCase()),
+        String.format(
+            "Did not find 'WL-Proxy-SSL: true' in the admin server pod log, pod: %s; namespace: %s; pod log: %s",
+            podName, namespace, adminServerPodLog0));
+  }
+
+  /**
+   * Check whether the ingress is ready.
+   * @param isHostRouting whether it is a host routing
+   * @param ingressHost ingress host
+   * @param isTLS whether the ingress is tls type
+   * @param httpNodeport http nodeport
+   * @param httpsNodeport https nodeport
+   * @param pathString path string in path routing
+   */
+  public static void checkIngressReady(boolean isHostRouting, String ingressHost, boolean isTLS,
+                                        int httpNodeport, int httpsNodeport, String pathString) {
+    // check the ingress is ready to route the app to the server pod
+    if (httpNodeport != 0 && httpsNodeport != 0) {
+      String curlCmd;
+      if (isHostRouting) {
+        if (isTLS) {
+          curlCmd = "curl -k --silent --show-error --noproxy '*' -H 'host: " + ingressHost
+              + "' https://" + K8S_NODEPORT_HOST + ":" + httpsNodeport
+              + "/weblogic/ready --write-out %{http_code} -o /dev/null";
+        } else {
+          curlCmd = "curl --silent --show-error --noproxy '*' -H 'host: " + ingressHost
+              + "' http://" + K8S_NODEPORT_HOST + ":" + httpNodeport
+              + "/weblogic/ready --write-out %{http_code} -o /dev/null";
+        }
+      } else {
+        if (isTLS) {
+          curlCmd = "curl -k --silent --show-error --noproxy '*' https://" + K8S_NODEPORT_HOST + ":" + httpsNodeport
+              + "/" + pathString + "/weblogic/ready --write-out %{http_code} -o /dev/null";
+        } else {
+          curlCmd = "curl --silent --show-error --noproxy '*' http://" + K8S_NODEPORT_HOST + ":" + httpNodeport
+              + "/" + pathString + "/weblogic/ready --write-out %{http_code} -o /dev/null";
+        }
+      }
+      getLogger().info("Executing curl command {0}", curlCmd);
+      assertTrue(callWebAppAndWaitTillReady(curlCmd, 60));
+    }
+  }
+
+  /**
+   * Verify cluster load balancing with ClusterViewServlet app.
+   *
+   * @param domainUid uid of the domain in which the cluster exists
+   * @param ingressHostName ingress host name
+   * @param protocol protocol used to test, accepted value: http or https
+   * @param lbPort  load balancer service port
+   * @param replicaCount replica count of the managed servers in the cluster
+   * @param hostRouting whether it is a host base routing
+   * @param locationString location string in apache configuration or path prefix in path routing
+   */
+  public static void verifyClusterLoadbalancing(String domainUid,
+                                          String ingressHostName,
+                                          String protocol,
+                                          int lbPort,
+                                          int replicaCount,
+                                          boolean hostRouting,
+                                          String locationString) {
+    // access application in managed servers through load balancer
+    getLogger().info("Accessing the clusterview app through load balancer to verify all servers in cluster");
+    String curlRequest;
+    if (hostRouting) {
+      curlRequest = String.format("curl --show-error -ks --noproxy '*' "
+              + "-H 'host: %s' %s://%s:%s/clusterview/ClusterViewServlet"
+              + "\"?user=" + ADMIN_USERNAME_DEFAULT
+              + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"",
+          ingressHostName, protocol, K8S_NODEPORT_HOST, lbPort);
+    } else {
+      curlRequest = String.format("curl --show-error -ks --noproxy '*' "
+              + "%s://%s:%s" + locationString + "/clusterview/ClusterViewServlet"
+              + "\"?user=" + ADMIN_USERNAME_DEFAULT
+              + "&password=" + ADMIN_PASSWORD_DEFAULT + "\"",
+          protocol, K8S_NODEPORT_HOST, lbPort);
+    }
+
+    List<String> managedServers = new ArrayList<>();
+    for (int i = 1; i <= replicaCount; i++) {
+      managedServers.add(MANAGED_SERVER_NAME_BASE + i);
+    }
+
+    // verify each managed server can see other member in the cluster
+    verifyServerCommunication(curlRequest, managedServers);
+
+
+    boolean containsCorrectDomainUid = false;
+    getLogger().info("Verifying the requests are routed to correct domain and cluster");
+    for (int i = 0; i < 10; i++) {
+      ExecResult result;
+      try {
+        getLogger().info("executing curl command: {0}", curlRequest);
+        result = ExecCommand.exec(curlRequest, true);
+        String response = result.stdout().trim();
+        getLogger().info("Response for iteration {0}: exitValue {1}, stdout {2}, stderr {3}",
+            i, result.exitValue(), response, result.stderr());
+        if (response.contains(domainUid)) {
+          containsCorrectDomainUid = true;
+          break;
+        }
+      } catch (IOException | InterruptedException ex) {
+        // ignore
+      }
+    }
+    assertTrue(containsCorrectDomainUid, "The request was not routed to the correct domain");
+  }
+
+  /**
+   * Verify the admin server access.
+   * @param isTLS whether is TLS
+   * @param lbNodePort loadbalancer node port
+   * @param isHostRouting whether it is host routing
+   * @param ingressHostName ingress host name
+   * @param pathLocation path location in the console url
+   */
+  public static void verifyAdminServerAccess(boolean isTLS,
+                                             int lbNodePort,
+                                             boolean isHostRouting,
+                                             String ingressHostName,
+                                             String pathLocation) {
+    StringBuffer consoleUrl = new StringBuffer();
+    if (isTLS) {
+      consoleUrl.append("https://");
+    } else {
+      consoleUrl.append("http://");
+    }
+    consoleUrl.append(K8S_NODEPORT_HOST)
+        .append(":")
+        .append(lbNodePort);
+    if (!isHostRouting) {
+      consoleUrl.append(pathLocation);
+    }
+
+    consoleUrl.append("/console/login/LoginForm.jsp");
+    String curlCmd;
+    if (isHostRouting) {
+      curlCmd = String.format("curl -ks --show-error --noproxy '*' -H 'host: %s' %s",
+          ingressHostName, consoleUrl.toString());
+    } else {
+      if (isTLS) {
+        curlCmd = String.format("curl -ks --show-error --noproxy '*' -H 'WL-Proxy-Client-IP: 1.2.3.4' "
+            + "-H 'WL-Proxy-SSL: false' %s", consoleUrl.toString());
+      } else {
+        curlCmd = String.format("curl -ks --show-error --noproxy '*' %s", consoleUrl.toString());
+      }
+    }
+
+    boolean consoleAccessible = false;
+    for (int i = 0; i < 10; i++) {
+      assertDoesNotThrow(() -> TimeUnit.SECONDS.sleep(1));
+      ExecResult result;
+      try {
+        getLogger().info("Accessing console using curl request, iteration {0}: {1}", i, curlCmd);
+        result = ExecCommand.exec(curlCmd, true);
+        String response = result.stdout().trim();
+        getLogger().info("exitCode: {0}, \nstdout: {1}, \nstderr: {2}",
+            result.exitValue(), response, result.stderr());
+        if (response.contains("login")) {
+          consoleAccessible = true;
+          break;
+        }
+      } catch (IOException | InterruptedException ex) {
+        getLogger().severe(ex.getMessage());
+      }
+    }
+    assertTrue(consoleAccessible, "Couldn't access admin server console");
+  }
+}
