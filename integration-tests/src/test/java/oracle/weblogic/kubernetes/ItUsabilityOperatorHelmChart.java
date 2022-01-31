@@ -462,7 +462,7 @@ class ItUsabilityOperatorHelmChart {
    * Install operator1 with namespace op2Namespace.
    * Install operator2 with same namesapce op2Namespace.
    * Second operator should fail to install with following exception
-   * Error: rendered manifests contain a resource that already exists.
+   * rendered manifests contain a resource that already exists.
    * Unable to continue with install: existing resource conflict: existing resource conflict: namespace
    *
    */
@@ -485,7 +485,7 @@ class ItUsabilityOperatorHelmChart {
     // install and verify operator will fail with expected error message
     logger.info("Installing and verifying operator will fail with expected error message");
     try {
-      String expectedError = "Error: rendered manifests contain a resource that already exists."
+      String expectedError = "rendered manifests contain a resource that already exists."
           + " Unable to continue with install";
       HelmParams opHelmParam2 = installOperatorHelmChart(opNamespace, opServiceAccount, true, false,
           false,expectedError,"failed", 0,
@@ -504,7 +504,7 @@ class ItUsabilityOperatorHelmChart {
    * Install operator1 with Domain Namespace [domain2Namespace].
    * Install operator2 with same Domain Namespace [domain2Namespace].
    * Second operator should fail to install with following exception.
-   * Error: rendered manifests contain a resource that already exists.
+   * rendered manifests contain a resource that already exists.
    * Unable to continue with install: existing resource conflict: namespace.
    * Test fails when second operator installation does not fail.
    */
@@ -529,7 +529,7 @@ class ItUsabilityOperatorHelmChart {
     logger.info("Installing and verifying operator2 will fail with expected error message");
     String opServiceAccount = op2Namespace + "-sa2";
     try {
-      String expectedError = "Error: rendered manifests contain a resource that already exists."
+      String expectedError = "rendered manifests contain a resource that already exists."
           + " Unable to continue with install";
       HelmParams opHelmParam2 = installOperatorHelmChart(op2Namespace, opServiceAccount, true, false, false,
           expectedError,"failed", 0, op2HelmParams,  domain2Namespace);
@@ -572,7 +572,7 @@ class ItUsabilityOperatorHelmChart {
     // install and verify operator2 will fail
     logger.info("Installing and verifying operator2 fails");
     try {
-      String expectedError = "Error: Service \"external-weblogic-operator-svc\" "
+      String expectedError = "Service \"external-weblogic-operator-svc\" "
           + "is invalid: spec.ports[0].nodePort: Invalid value";
       HelmParams opHelmParam2 = installOperatorHelmChart(op2Namespace, op2ServiceAccount,
           true, true, true,
@@ -606,7 +606,7 @@ class ItUsabilityOperatorHelmChart {
     logger.info("Installing and verifying operator will fail with expected error message");
     String opServiceAccount = op2Namespace + "-sa2";
     try {
-      String expectedError = "Error: create: failed to create: namespaces \"ns-somens\" not found";
+      String expectedError = "create: failed to create: namespaces \"ns-somens\" not found";
       HelmParams opHelmParam2 = installOperatorHelmChart("ns-somens", opServiceAccount, false, false,
           false, expectedError,"failed", 0, op2HelmParams,  domain2Namespace);
       assertNull(opHelmParam2, "FAILURE: Helm installs operator in the same namespace as first operator installed ");
