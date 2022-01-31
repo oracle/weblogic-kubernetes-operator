@@ -107,6 +107,7 @@ import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOpe
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
@@ -1213,6 +1214,14 @@ class ItKubernetesEvents {
         + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": " + replicaCount + "}" + "]");
     assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
+    if (testType != null) {
+      if (testType.equals("scale up")) {
+        checkPodReady(managedServerPodNamePrefix + replicaCount, domainUid, domainNamespace1);
+      }
+      if (testType.equals("scale down")) {
+        checkPodDeleted(managedServerPodNamePrefix + replicaCount + 1, domainUid, domainNamespace1);
+      }
+    }
     if (verify) {
       logger.info("Verify the DomainCompleted event is generated after " + testType);
       checkEventWithCount(
