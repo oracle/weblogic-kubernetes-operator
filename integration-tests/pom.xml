@@ -309,7 +309,6 @@
                   **/ItFmwDomainInPVUsingWLST,
                   **/ItFmwDomainInPVUsingWDT,
                   **/ItFmwMiiDomain,
-                  **/ItFmwDiiSample
                 </includes-failsafe>
             </properties>
         </profile>
