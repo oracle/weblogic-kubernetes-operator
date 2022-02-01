@@ -163,7 +163,7 @@ public interface TestConstants {
   public static final String GCR_NGINX_IMAGE_NAME = "k8s.gcr.io/ingress-nginx/controller";
 
   // Traefik constants
-  public static final String TRAEFIK_REPO_URL = "https://containous.github.io/traefik-helm-chart";
+  public static final String TRAEFIK_REPO_URL = "https://github.com/traefik/traefik-helm-chart";
   public static final String TRAEFIK_REPO_NAME = "traefik";
   public static final String TRAEFIK_RELEASE_NAME = "traefik-release" + BUILD_ID;
   public static final String TRAEFIK_CHART_NAME = "traefik";

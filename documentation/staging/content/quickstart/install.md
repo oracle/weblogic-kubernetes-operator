@@ -10,7 +10,7 @@ weight: 4
 First, set up Helm:
 
 ```shell
-$ helm repo add traefik https://containous.github.io/traefik-helm-chart/ --force-update
+$ helm repo add traefik https://helm.traefik.io/traefik --force-update
 ```
 
 #### Create a Traefik ingress controller.

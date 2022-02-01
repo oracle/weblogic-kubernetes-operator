@@ -176,10 +176,10 @@ createTraefik() {
 
   createNameSpace $ns || true
   if [ "$(helm search repo traefik/traefik | grep traefik |  wc -l)" = 0 ]; then
-    # https://containous.github.io/traefik-helm-chart/
-    # https://docs.traefik.io/getting-started/install-traefik/
+    # https://helm.traefik.io/traefik
+    # https://doc.traefik.io/traefik/getting-started/install-traefik/#use-the-helm-chart
     printInfo "Add Traefik chart repository"
-    helm repo add traefik https://containous.github.io/traefik-helm-chart
+    helm repo add traefik https://helm.traefik.io/traefik
     helm repo update
   else
     printInfo "Traefik chart repository is already added."
@@ -187,8 +187,7 @@ createTraefik() {
 
   if [ "$(helm list -q -n ${ns} | grep $chart | wc -l)" = 0 ]; then
     printInfo "Installing Traefik controller on namespace ${ns}"
-    # https://github.com/containous/traefik-helm-chart/blob/master/traefik/values.yaml
-    purgeDefaultResources || true 
+    purgeDefaultResources || true
     helm install $chart traefik/traefik --namespace ${ns} \
      --set image.tag=${rel} \
      --values ${UTILDIR}/../traefik/values.yaml 
