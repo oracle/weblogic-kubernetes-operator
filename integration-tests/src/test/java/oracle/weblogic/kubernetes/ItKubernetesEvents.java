@@ -1219,7 +1219,8 @@ class ItKubernetesEvents {
         checkPodReady(managedServerPodNamePrefix + replicaCount, domainUid, domainNamespace1);
       }
       if (testType.equals("scale down")) {
-        checkPodDeleted(managedServerPodNamePrefix + replicaCount + 1, domainUid, domainNamespace1);
+        int serverNumber = replicaCount + 1;
+        checkPodDeleted(managedServerPodNamePrefix + serverNumber, domainUid, domainNamespace1);
       }
     }
     if (verify) {
