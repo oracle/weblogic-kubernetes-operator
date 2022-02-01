@@ -45,7 +45,7 @@ public class LegalNames {
       "ScopeName",          // V1ScopedResourceSelectorRequirement
       "SecretName",         // V1SecretVolumeSource, etc
       "ServiceAccountName", // V1PodSpec
-      "ServiceName",        // NetworkingV1beta1IngressBackend, etc
+      "ServiceName",        // V1IngressBackend, etc
       "SingularName",       // V1APIResource
       "StorageClassName",   // V1PersistentVolumeSpec, V1PersistentVolumeClaimSpec
       "VolumeName"         // V1PersistentVolumeClaimSpec, etc

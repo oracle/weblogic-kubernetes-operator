@@ -2717,7 +2717,7 @@ public class Kubernetes {
    * List Ingresses in the given namespace.
    *
    * @param namespace name of the namespace
-   * @return NetworkingV1beta1IngressList list of {@link V1Ingress} objects
+   * @return V1IngressList list of {@link V1Ingress} objects
    * @throws ApiException when listing fails
    */
   public static V1IngressList listNamespacedIngresses(String namespace) throws ApiException {
@@ -2778,7 +2778,7 @@ public class Kubernetes {
    *
    * @param namespace name of the namespace
    * @param name name of the Ingress object
-   * @return NetworkingV1beta1Ingress Ingress object when found, otherwise null
+   * @return V1Ingress Ingress object when found, otherwise null
    * @throws ApiException when get fails
    */
   public static V1Ingress getNamespacedIngress(String namespace, String name)
@@ -2905,7 +2905,7 @@ public class Kubernetes {
    * Create an Ingress in the specified namespace.
    *
    * @param namespace the namespace in which the ingress will be created
-   * @param ingressBody NetworkingV1beta1Ingress object, representing the ingress details
+   * @param ingressBody V1Ingress object, representing the ingress details
    * @return the ingress created
    * @throws ApiException if Kubernetes client API call fails
    */
@@ -2916,7 +2916,7 @@ public class Kubernetes {
       NetworkingV1Api apiInstance = new NetworkingV1Api(apiClient);
       ingress = apiInstance.createNamespacedIngress(
           namespace, //namespace
-          ingressBody, // NetworkingV1beta1Ingress object, representing the ingress details
+          ingressBody, // V1Ingress object, representing the ingress details
           PRETTY, // pretty print output
           null, // when present, indicates that modifications should not be persisted
           null // a name associated with the actor or entity that is making these changes

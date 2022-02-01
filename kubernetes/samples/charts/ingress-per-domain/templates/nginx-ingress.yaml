@@ -3,20 +3,21 @@
 
 {{- if eq .Values.type "NGINX" }}
 ---
-apiVersion: networking.k8s.io/v1beta1
+apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   name: {{ .Values.wlsDomain.domainUID }}-nginx
   namespace: {{ .Release.Namespace }}
-  annotations:
-    kubernetes.io/ingress.class: nginx
 spec:
+  ingressClassName: nginx
   rules:
   - host: '{{ .Values.nginx.hostname }}'
     http:
       paths:
       - path:
         backend:
-          serviceName: '{{ .Values.wlsDomain.domainUID }}-cluster-{{ .Values.wlsDomain.clusterName | lower | replace "_" "-" }}'
-          servicePort: {{ .Values.wlsDomain.managedServerPort }}
+          service:
+            name: '{{ .Values.wlsDomain.domainUID }}-cluster-{{ .Values.wlsDomain.clusterName | lower | replace "_" "-" }}'
+            port:
+              number: {{ .Values.wlsDomain.managedServerPort }}
 {{- end }}
