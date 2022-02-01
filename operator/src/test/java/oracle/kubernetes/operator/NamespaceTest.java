@@ -64,13 +64,13 @@ class NamespaceTest {
   private final DomainNamespaces domainNamespaces = new DomainNamespaces(null);
   private final DomainProcessorStub dp = Stub.createNiceStub(DomainProcessorStub.class);
   private final MainDelegateStub delegate = createStrictStub(MainDelegateStub.class, dp, domainNamespaces);
-  private final TestUtils.ConsoleHandlerMemento loggerControl = TestUtils.silenceOperatorLogger();
+  private TestUtils.ConsoleHandlerMemento loggerControl;
   private final Collection<LogRecord> logRecords = new ArrayList<>();
   private final EventRetryStrategyStub retryStrategy = createStrictStub(EventRetryStrategyStub.class);
 
   @BeforeEach
   public void setUp() throws Exception {
-    mementos.add(TestUtils.silenceOperatorLogger());
+    mementos.add(loggerControl = TestUtils.silenceOperatorLogger());
     mementos.add(StubWatchFactory.install());
     mementos.add(NoopWatcherStarter.install());
     mementos.add(HelmAccessStub.install());

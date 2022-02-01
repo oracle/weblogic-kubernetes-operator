@@ -114,13 +114,13 @@ class EventHelperTest {
   private final MakeRightDomainOperation makeRightOperation
       = processor.createMakeRightOperation(info);
   private final String jobPodName = LegalNames.toJobIntrospectorName(UID);
-  private final TestUtils.ConsoleHandlerMemento loggerControl = TestUtils.silenceOperatorLogger();
+  private TestUtils.ConsoleHandlerMemento loggerControl;
   private final Collection<LogRecord> logRecords = new ArrayList<>();
   private final EventRetryStrategyStub retryStrategy = createStrictStub(EventRetryStrategyStub.class);
 
   @BeforeEach
   public void setUp() throws Exception {
-    mementos.add(TestUtils.silenceOperatorLogger());
+    mementos.add(loggerControl = TestUtils.silenceOperatorLogger());
     mementos.add(testSupport.install());
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "DOMAINS", presenceInfoMap));
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domainEventK8SObjects", domainEventObjects));

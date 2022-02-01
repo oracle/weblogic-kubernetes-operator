@@ -224,7 +224,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   private Memento hashMemento;
   private final Map<String, Map<String, KubernetesEventObjects>> domainEventObjects = new ConcurrentHashMap<>();
 
-  private TestUtils.ConsoleHandlerMemento consoleHandlerMemento = TestUtils.silenceOperatorLogger();
+  private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
 
   PodHelperTestBase(String serverName, int listenPort) {
     this.serverName = serverName;
@@ -302,8 +302,8 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     mementos.add(hashMemento = UnitTestHash.install());
     mementos.add(InMemoryCertificates.install());
     mementos.add(setProductVersion(TEST_PRODUCT_VERSION));
-    mementos.add(
-        TestUtils.silenceOperatorLogger()
+    mementos.add(consoleHandlerMemento
+          = TestUtils.silenceOperatorLogger()
             .collectLogMessages(logRecords, getMessageKeys())
             .withLogLevel(Level.FINE)
             .ignoringLoggedExceptions(ApiException.class));
@@ -326,6 +326,10 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
         ProcessingConstants.PODWATCHER_COMPONENT_NAME,
         PodAwaiterStepFactory.class,
         new PassthroughPodAwaiterStepFactory());
+  }
+
+  TestUtils.ConsoleHandlerMemento getConsoleHandlerMemento() {
+    return consoleHandlerMemento;
   }
 
   private Memento setProductVersion(String productVersion) throws NoSuchFieldException {
@@ -2153,7 +2157,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   @Test
   void whenImageChanged_expectedLogMessageFound()
       throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-    consoleHandlerMemento.collectLogMessages(logRecords, getDomainRollStartingKey());
+    getConsoleHandlerMemento().collectLogMessages(logRecords, getDomainRollStartingKey());
     initializeExistingPod();
     getConfiguredDomainSpec().setImage("adfgg");
 
@@ -2245,7 +2249,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   @Test
   void whenImageDomainHomeAndRestartVersionChanged_expectedLogMessageFound()
       throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-    consoleHandlerMemento.collectLogMessages(logRecords, getDomainRollStartingKey());
+    getConsoleHandlerMemento().collectLogMessages(logRecords, getDomainRollStartingKey());
     initializeExistingPod();
     getConfiguredDomainSpec().setImage("adfgg");
     getConfiguredDomainSpec().setDomainHome("12345");
@@ -2260,7 +2264,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   @Test
   void whenImageDomainHomeAndRestartVersionChanged_domainRollStartEventCreatedWithCorrectMessage()
       throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-    consoleHandlerMemento.collectLogMessages(logRecords, getDomainRollStartingKey());
+    getConsoleHandlerMemento().collectLogMessages(logRecords, getDomainRollStartingKey());
     initializeExistingPod();
     getConfiguredDomainSpec().setImage("adfgg");
     getConfiguredDomainSpec().setDomainHome("12345");
@@ -2287,7 +2291,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   @Test
   void whenImageDomainHomeAndWebLogicZipHashChanged_domainRollStartEventCreatedWithCorrectMessage()
       throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-    consoleHandlerMemento.collectLogMessages(logRecords, getDomainRollStartingKey());
+    getConsoleHandlerMemento().collectLogMessages(logRecords, getDomainRollStartingKey());
     initializeExistingPod();
     getConfiguredDomainSpec().setImage("adfgg");
     getConfiguredDomainSpec().setDomainHome("12345");

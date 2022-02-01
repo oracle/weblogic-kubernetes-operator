@@ -24,7 +24,6 @@ import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.work.FiberTestSupport;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
-import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import org.junit.jupiter.api.Test;
 
@@ -73,8 +72,6 @@ class AdminPodHelperTest extends PodHelperTestBase {
   private static final String END_MOUNT_PATH_1 = "/u01/oracle/user_projects/domains/servers/ADMIN_SERVER";
   public static final String CUSTOM_MOUNT_PATH2 = "/common1";
   public static final String TEST_MEDIUM = "TestMedium";
-
-  private TestUtils.ConsoleHandlerMemento consoleHandlerMemento = TestUtils.silenceOperatorLogger();
 
   public AdminPodHelperTest() {
     super(ADMIN_SERVER, ADMIN_PORT);
@@ -831,7 +828,7 @@ class AdminPodHelperTest extends PodHelperTestBase {
   @Test
   void whenDomainHomeChanged_generateExpectedLogMessage()
       throws NoSuchMethodException, IllegalAccessException, InvocationTargetException {
-    consoleHandlerMemento.collectLogMessages(logRecords, getCyclePodKey());
+    getConsoleHandlerMemento().collectLogMessages(logRecords, getCyclePodKey(), getReplacedMessageKey());
     initializeExistingPod();
     getConfiguredDomainSpec().setDomainHome("adfgg");
 
