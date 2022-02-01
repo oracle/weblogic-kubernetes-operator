@@ -356,7 +356,8 @@
                 <includes-failsafe>
                     **/ItKubernetesEvents,
                     **/ItMiiAuxiliaryImage,
-                    **/ItParameterizedDomainSrg,
+                    **/ItParameterizedDomainNoLB,
+                    **/ItPodsRestart,
                     **/ItTwoDomainsManagedByTwoOperators
                 </includes-failsafe>
             </properties>
