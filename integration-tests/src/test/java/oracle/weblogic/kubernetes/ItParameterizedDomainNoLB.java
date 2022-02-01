@@ -140,7 +140,7 @@ import static org.junit.jupiter.api.Assumptions.assumeFalse;
 @DisplayName("Verify scaling the clusters in the domain with different domain types, and "
         + "rolling restart behavior in a MII domain")
 @IntegrationTest
-class ItParameterizedDomainSrg {
+class ItParameterizedDomainNoLB {
 
   // domain constants
   private static final String clusterName = "cluster-1";
@@ -406,7 +406,7 @@ class ItParameterizedDomainSrg {
     // create persistent volume and persistent volume claim for domain
     // these resources should be labeled with domainUid for cleanup after testing
     Path pvHostPath =
-        get(PV_ROOT, ItParameterizedDomainSrg.class.getSimpleName(), pvcName);
+        get(PV_ROOT, ItParameterizedDomainNoLB.class.getSimpleName(), pvcName);
 
     V1PersistentVolume v1pv = new V1PersistentVolume()
         .spec(new V1PersistentVolumeSpec()
@@ -656,7 +656,7 @@ class ItParameterizedDomainSrg {
     logger.info("Creating ConfigMap {0}", configMapName);
 
     Path domainScriptsDir = createDirectories(
-        get(TestConstants.LOGS_DIR, ItParameterizedDomainSrg.class.getSimpleName(), namespace));
+        get(TestConstants.LOGS_DIR, ItParameterizedDomainNoLB.class.getSimpleName(), namespace));
 
     // add domain creation scripts and properties files to the configmap
     Map<String, String> data = new HashMap<>();
