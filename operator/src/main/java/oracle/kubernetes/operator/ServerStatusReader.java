@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -291,11 +291,14 @@ public class ServerStatusReader {
 
     @Override
     public NextAction apply(Packet packet) {
-      DomainPresenceInfo info = packet.getSpi(DomainPresenceInfo.class);
-      return doNext(
-          createDomainStatusReaderStep(
-              info, timeoutSeconds, DomainStatusUpdater.createStatusUpdateStep(getNext())),
-          packet);
+      return doNext(getNextStep(packet.getSpi(DomainPresenceInfo.class)), packet);
+    }
+
+    private Step getNextStep(DomainPresenceInfo info) {
+      return Optional.ofNullable(info)
+          .map(i -> createDomainStatusReaderStep(i, timeoutSeconds,
+              DomainStatusUpdater.createStatusUpdateStep(getNext())))
+          .orElse(getNext());
     }
   }
 }
