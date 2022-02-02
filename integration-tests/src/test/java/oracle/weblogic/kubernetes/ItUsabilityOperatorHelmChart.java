@@ -72,6 +72,7 @@ import static oracle.weblogic.kubernetes.assertions.TestAssertions.podStateNotCh
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
 import static oracle.weblogic.kubernetes.utils.ExecCommand.exec;
@@ -935,7 +936,7 @@ class ItUsabilityOperatorHelmChart {
                 .adminService(new oracle.weblogic.domain.AdminService()
                     .addChannelsItem(new oracle.weblogic.domain.Channel()
                         .channelName("default")
-                        .nodePort(0))))
+                        .nodePort(getNextFreePort()))))
             .clusters(clusters)
             .configuration(new Configuration()
                 .introspectorJobActiveDeadlineSeconds(280L)

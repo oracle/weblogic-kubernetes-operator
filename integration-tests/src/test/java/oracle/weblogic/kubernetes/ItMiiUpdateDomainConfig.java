@@ -74,6 +74,7 @@ import static oracle.weblogic.kubernetes.utils.CommonMiiTestUtils.verifyUpdateWe
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getHostAndPort;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifyCommandResultContainsMsg;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.verifySystemResourceConfiguration;
@@ -853,7 +854,7 @@ class ItMiiUpdateDomainConfig {
                             .adminService(new AdminService()
                                     .addChannelsItem(new Channel()
                                             .channelName("default")
-                                            .nodePort(0))))
+                                            .nodePort(getNextFreePort()))))
                     .addClustersItem(new Cluster()
                             .clusterName("cluster-1")
                             .replicas(replicaCount)
