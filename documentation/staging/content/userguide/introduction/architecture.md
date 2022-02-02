@@ -62,7 +62,7 @@ The Kubernetes cluster has several namespaces. Components may be deployed into n
       its own namespace.
   * There is no limit on the number of domains or namespaces that an operator can manage.  
   * If the Elastic Stack integration option is configured to monitor the operator,
-    then a Logstash pod will also be deployed in the operator’s namespace.
+    then a Logstash container will also be created in the operator’s pod.
 * WebLogic domain resources deployed into various namespaces. 
   * There can be more than one domain in a namespace, if desired.
   * Every domain resource must be configured with a [domain unique identifier](#domain-uid).

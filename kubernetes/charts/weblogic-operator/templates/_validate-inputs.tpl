@@ -45,6 +45,7 @@
 {{-     $ignore := include "utils.verifyString" (list $scope "logStashImage") -}}
 {{-     $ignore := include "utils.verifyString" (list $scope "elasticSearchHost") -}}
 {{-     $ignore := include "utils.verifyInteger" (list $scope "elasticSearchPort") -}}
+{{-     $ignore := include "utils.verifyBoolean" (list $scope "createLogStashConfigMap") -}}
 {{-   end -}}
 {{- end -}}
 {{- $ignore := include "utils.verifyOptionalBoolean" (list $scope "dedicated") -}}
