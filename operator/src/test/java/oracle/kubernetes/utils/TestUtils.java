@@ -1,4 +1,4 @@
-// Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.utils;
@@ -29,6 +29,7 @@ public class TestUtils {
    */
   public static ConsoleHandlerMemento silenceOperatorLogger() {
     Logger logger = LoggingFactory.getLogger("Operator", "Operator").getUnderlyingLogger();
+    Arrays.stream(logger.getHandlers()).filter(TestUtils::isTestLogHandler).forEach(TestUtils::rejectCall);
     List<Handler> savedHandlers = new ArrayList<>();
     for (Handler handler : logger.getHandlers()) {
       if (handler instanceof ConsoleHandler) {
@@ -44,6 +45,14 @@ public class TestUtils {
     logger.addHandler(testHandler);
 
     return new ConsoleHandlerMemento(logger, testHandler, savedHandlers);
+  }                                                                                                
+
+  private static boolean isTestLogHandler(Handler handler) {
+    return handler instanceof TestLogHandler;
+  }
+
+  private static void rejectCall(Handler handler) {
+    throw new IllegalStateException("silenceOperatorLogger may only called once");
   }
 
   /**
