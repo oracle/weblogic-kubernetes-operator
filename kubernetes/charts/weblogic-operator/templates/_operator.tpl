@@ -1,4 +1,4 @@
-# Copyright (c) 2018, 2021, Oracle and/or its affiliates.
+# Copyright (c) 2018, 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 {{- define "operator.operator" -}}
@@ -18,6 +18,9 @@
 {{- include "operator.operatorRole" . }}
 {{- include "operator.operatorRoleBinding" . }}
 {{- include "operator.operatorConfigMap" . }}
+{{- if and .elkIntegrationEnabled .createLogStashConfigMap }}
+{{-   include "operator.logStashConfigMap" . }}
+{{- end }}
 {{- include "operator.operatorSecrets" . }}
 {{- include "operator.operatorDeployment" . }}
 {{- include "operator.operatorInternalService" . }}
