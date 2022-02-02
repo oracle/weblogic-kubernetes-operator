@@ -200,8 +200,6 @@ class DomainProcessorTest {
     consoleHandlerMemento = TestUtils.silenceOperatorLogger()
             .collectLogMessages(logRecords, NOT_STARTING_DOMAINUID_THREAD).withLogLevel(Level.FINE);
     mementos.add(consoleHandlerMemento);
-    mementos.add(TestUtils.silenceOperatorLogger()
-          .collectLogMessages(logRecords, NOT_STARTING_DOMAINUID_THREAD).withLogLevel(Level.FINE));
     mementos.add(testSupport.install());
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "DOMAINS", presenceInfoMap));
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domainEventK8SObjects", domainEventObjects));
