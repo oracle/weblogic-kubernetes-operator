@@ -1,4 +1,4 @@
-// Copyright (c) 2020, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2020, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.helpers;
@@ -116,13 +116,13 @@ class EventHelperTest {
   private final MakeRightDomainOperation makeRightOperation
       = processor.createMakeRightOperation(info);
   private final String jobPodName = LegalNames.toJobIntrospectorName(UID);
-  private final TestUtils.ConsoleHandlerMemento loggerControl = TestUtils.silenceOperatorLogger();
   private final Collection<LogRecord> logRecords = new ArrayList<>();
   private final OnConflictRetryStrategyStub retryStrategy = createStrictStub(OnConflictRetryStrategyStub.class);
+  private TestUtils.ConsoleHandlerMemento loggerControl;
 
   @BeforeEach
   void setUp() throws Exception {
-    mementos.add(TestUtils.silenceOperatorLogger());
+    mementos.add(loggerControl = TestUtils.silenceOperatorLogger());
     mementos.add(testSupport.install());
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "DOMAINS", presenceInfoMap));
     mementos.add(StaticStubSupport.install(DomainProcessorImpl.class, "domainEventK8SObjects", domainEventObjects));
