@@ -613,11 +613,9 @@ public class LoadBalancerUtils {
     final String ingressNginxClass = "nginx";
     String ingressName = domainUid + "-" + domainNamespace + "-" + ingressNginxClass;
 
-    HashMap<String, String> annotations = new HashMap<>();
-    annotations.put("kubernetes.io/ingress.class", ingressNginxClass);
-
     List<String> ingressHostList =
-        createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap, annotations, setIngressHost,
+        createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap, null,
+            ingressNginxClass, setIngressHost,
             null, enableAdminServerRouting, adminServerPort);
 
     assertNotNull(ingressHostList,
@@ -672,12 +670,9 @@ public class LoadBalancerUtils {
     final String ingressTraefikClass = "traefik";
     String ingressName = domainUid + "-" + ingressTraefikClass;
 
-    HashMap<String, String> annotations = new HashMap<>();
-    annotations.put("kubernetes.io/ingress.class", ingressTraefikClass);
-
     List<String> ingressHostList =
         createIngress(ingressName, domainNamespace, domainUid,
-            clusterNameMSPortMap, annotations, setIngressHost, tlsSecret);
+            clusterNameMSPortMap, null, ingressTraefikClass, setIngressHost, tlsSecret);
 
     assertNotNull(ingressHostList,
         String.format("Ingress creation failed for domain %s in namespace %s", domainUid, domainNamespace));
@@ -713,6 +708,7 @@ public class LoadBalancerUtils {
    * @param ingressName ingress name
    * @param namespace namespace in which the ingress will be created
    * @param annotations annotations of the ingress
+   * @param ingressClassName Ingress class name
    * @param ingressRules a list of ingress rules
    * @param tlsList list of ingress tls
    */
@@ -721,14 +717,15 @@ public class LoadBalancerUtils {
                                                  String ingressName,
                                                  String namespace,
                                                  Map<String, String> annotations,
+                                                 String ingressClassName,
                                                  List<V1IngressRule> ingressRules,
                                                  List<V1IngressTLS> tlsList) {
     for (int i = 0; i < maxRetries; i++) {
       try {
         if (isTLS) {
-          createIngress(ingressName, namespace, annotations, ingressRules, tlsList);
+          createIngress(ingressName, namespace, annotations, ingressClassName, ingressRules, tlsList);
         } else {
-          createIngress(ingressName, namespace, annotations, ingressRules, null);
+          createIngress(ingressName, namespace, annotations, ingressClassName, ingressRules, null);
         }
         break;
       } catch (ApiException apiEx) {
@@ -783,11 +780,11 @@ public class LoadBalancerUtils {
     HashMap<String, String> annotations = new HashMap<>();
     annotations.put("ingress.appscode.com/type", ingressType);
     annotations.put("ingress.appscode.com/affinity", ingressAffinity);
-    annotations.put("kubernetes.io/ingress.class", ingressClass);
 
     // create an ingress in domain namespace
     List<String> ingressHostList =
-        createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap, annotations, true, tlsSecret);
+        createIngress(ingressName, domainNamespace, domainUid, clusterNameMSPortMap, annotations,
+            ingressClass, true, tlsSecret);
 
     // wait until the Voyager ingress pod is ready.
     testUntil(

@@ -694,12 +694,14 @@ spec:
     http:
       paths:
       - path: /
+        pathType: Prefix
         backend:
           service:
             name: sample-domain1-cluster-cluster-1
             port:
               number: 8001
       - path: /console
+        pathType: Prefix
         backend:
           service:
             name: sample-domain1-admin-server

@@ -25,7 +25,8 @@ spec:
   - host: 'INGRESS_HOST' 
     http:
       paths:
-      - path: 
+      - path:
+        pathType: ImplementationSpecific
         backend:
           service:
             name: DOMAIN_UID-cluster-CLUSTER

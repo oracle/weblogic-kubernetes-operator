@@ -537,6 +537,7 @@ public class TestActions {
    * @param domainUid WebLogic domainUid which is backend to the ingress
    * @param clusterNameMsPortMap the map with key as cluster name and value as managed server port of the cluster
    * @param annotations annotations to create ingress resource
+   * @param ingressClassName Ingress class name
    * @param setIngressHost if true set to specific host or all
    * @param tlsSecret TLS secret name if any
    * @return list of ingress hosts or null if got ApiException when calling Kubernetes client API to create ingress
@@ -547,13 +548,14 @@ public class TestActions {
       String domainUid,
       Map<String, Integer> clusterNameMsPortMap,
       Map<String, String> annotations,
+      String ingressClassName,
       boolean setIngressHost,
       String tlsSecret) {
     return Ingress.createIngress(ingressName,
             domainNamespace,
             domainUid,
             clusterNameMsPortMap,
-            annotations, setIngressHost, tlsSecret, false, 0);
+            annotations, ingressClassName, setIngressHost, tlsSecret, false, 0);
   }
 
   /**
@@ -565,6 +567,7 @@ public class TestActions {
    * @param domainUid WebLogic domainUid which is backend to the ingress
    * @param clusterNameMsPortMap the map with key as cluster name and value as managed server port of the cluster
    * @param annotations annotations to create ingress resource
+   * @param ingressClassName Ingress class name
    * @param setIngressHost if true set to specific host or all
    * @param tlsSecret TLS secret name if any
    * @param enableAdminServerRouting enable the ingress rule to admin server
@@ -576,12 +579,13 @@ public class TestActions {
                                            String domainUid,
                                            Map<String, Integer> clusterNameMsPortMap,
                                            Map<String, String> annotations,
+                                           String ingressClassName,
                                            boolean setIngressHost,
                                            String tlsSecret,
                                            boolean enableAdminServerRouting,
                                            int adminServerPort) {
     return Ingress.createIngress(ingressName, domainNamespace, domainUid, clusterNameMsPortMap,
-        annotations, setIngressHost, tlsSecret, enableAdminServerRouting, adminServerPort);
+        annotations, ingressClassName, setIngressHost, tlsSecret, enableAdminServerRouting, adminServerPort);
   }
 
   /**
@@ -589,6 +593,7 @@ public class TestActions {
    * @param ingressName ingress name
    * @param namespace namespace in which the ingress will be created
    * @param annotations annotations of the ingress
+   * @param ingressClassName Ingress class name
    * @param ingressRules a list of ingress rules
    * @param tlsList list of ingress tls
    * @throws ApiException if Kubernetes API call fails
@@ -596,9 +601,10 @@ public class TestActions {
   public static void createIngress(String ingressName,
                                    String namespace,
                                    Map<String, String> annotations,
+                                   String ingressClassName,
                                    List<V1IngressRule> ingressRules,
                                    List<V1IngressTLS> tlsList) throws ApiException {
-    Ingress.createIngress(ingressName, namespace, annotations, ingressRules, tlsList);
+    Ingress.createIngress(ingressName, namespace, annotations, ingressClassName, ingressRules, tlsList);
   }
 
   /**

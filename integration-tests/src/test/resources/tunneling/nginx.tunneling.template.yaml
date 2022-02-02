@@ -17,7 +17,9 @@ spec:
   - host: 
     http:
       paths:
-      - backend:
+      - path:
+        pathType: ImplementationSpecific
+        backend:
           service:
             name: DOMAIN_UID-cluster-CLUSTER
             port:

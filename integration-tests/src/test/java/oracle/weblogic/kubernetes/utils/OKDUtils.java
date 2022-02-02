@@ -265,6 +265,7 @@ public class OKDUtils {
 
     V1HTTPIngressPath httpIngressPath = new V1HTTPIngressPath()
         .path("/")
+        .pathType("Prefix")
         .backend(new V1IngressBackend()
             .service(new V1IngressServiceBackend()
                 .name(asExtSvcName)
@@ -280,7 +281,7 @@ public class OKDUtils {
 
     ingressRules.add(ingressRule);
 
-    assertDoesNotThrow(() -> createIngress(ingressName, namespace, null, ingressRules, null));
+    assertDoesNotThrow(() -> createIngress(ingressName, namespace, null, null, ingressRules, null));
 
     // check the ingress was found in the domain namespace
     assertThat(assertDoesNotThrow(() -> listIngresses(namespace)))
@@ -311,6 +312,7 @@ public class OKDUtils {
 
     V1HTTPIngressPath httpIngressPath = new V1HTTPIngressPath()
         .path("/")
+        .pathType("Prefix")
         .backend(new V1IngressBackend()
             .service(new V1IngressServiceBackend()
                 .name(svcName)
@@ -326,7 +328,7 @@ public class OKDUtils {
 
     ingressRules.add(ingressRule);
 
-    assertDoesNotThrow(() -> createIngress(ingressName, namespace, null, ingressRules, null));
+    assertDoesNotThrow(() -> createIngress(ingressName, namespace, null, null, ingressRules, null));
 
     // check the ingress was found in the domain namespace
     assertThat(assertDoesNotThrow(() -> listIngresses(namespace)))

@@ -12,7 +12,8 @@ spec:
   - host: domain1.org
     http:
       paths:
-      - path: 
+      - path:
+        pathType: ImplementationSpecific
         backend:
           service:
             name: domain1-cluster-cluster-1
@@ -30,7 +31,8 @@ spec:
   - host: domain2.org
     http:
       paths:
-      - path: 
+      - path:
+        pathType: ImplementationSpecific
         backend:
           service:
             name: domain2-cluster-cluster-1

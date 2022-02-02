@@ -165,6 +165,7 @@ spec:
     http:
       paths:
       - path: /console
+        pathType: Prefix
         backend:
           service:
             name: domain1-adminserver

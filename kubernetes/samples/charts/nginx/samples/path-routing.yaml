@@ -15,6 +15,7 @@ spec:
     http:
       paths:
       - path: /domain1(.+)
+        pathType: ImplementationSpecific
         backend:
           service:
             name: domain1-cluster-cluster-1
@@ -35,6 +36,7 @@ spec:
     http:
       paths:
       - path: /domain2(.+)
+        pathType: ImplementationSpecific
         backend:
           service:
             name: domain2-cluster-cluster-1

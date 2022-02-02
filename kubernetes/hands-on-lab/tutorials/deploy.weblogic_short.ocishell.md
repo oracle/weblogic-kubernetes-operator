@@ -85,6 +85,7 @@ spec:
     http:
       paths:
       - path: /
+        pathType: Prefix
         backend:
           service:
             name: sample-domain1-cluster-cluster-1

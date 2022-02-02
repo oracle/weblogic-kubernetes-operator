@@ -16,7 +16,9 @@ spec:
   - host: domain1.org 
     http:
       paths:
-      - backend:
+      - path:
+        pathType: ImplementationSpecific
+        backend:
           service:
             name: domain1-cluster-cluster-1
             port:
@@ -37,7 +39,9 @@ spec:
   - host: domain2.org
     http:
       paths:
-      - backend:
+      - path:
+        pathType: ImplementationSpecific
+        backend:
           service:
             name: domain2-cluster-cluster-1
             port:

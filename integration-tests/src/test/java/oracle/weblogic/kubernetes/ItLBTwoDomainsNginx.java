@@ -232,8 +232,7 @@ class ItLBTwoDomainsNginx {
       ingressName = domainNamespace + "-nginx-host-routing";
     }
 
-    HashMap<String, String> annotations = new HashMap<>();
-    annotations.put("kubernetes.io/ingress.class", "nginx");
+    String ingressClassName = "nginx";
 
     // create ingress rules for two domains
     List<V1IngressRule> ingressRules = new ArrayList<>();
@@ -242,6 +241,7 @@ class ItLBTwoDomainsNginx {
 
       V1HTTPIngressPath httpIngressPath = new V1HTTPIngressPath()
           .path(null)
+          .pathType("ImplementationSpecific")
           .backend(new V1IngressBackend()
               .service(new V1IngressServiceBackend()
                   .name(domainUid + "-cluster-cluster-1")
@@ -273,11 +273,8 @@ class ItLBTwoDomainsNginx {
       }
     }
 
-    if (isTLS) {
-      assertDoesNotThrow(() -> createIngress(ingressName, domainNamespace, annotations, ingressRules, tlsList));
-    } else {
-      assertDoesNotThrow(() -> createIngress(ingressName, domainNamespace, annotations, ingressRules, null));
-    }
+    assertDoesNotThrow(() -> createIngress(ingressName, domainNamespace, null,
+        ingressClassName, ingressRules, (isTLS ? tlsList : null)));
 
     // check the ingress was found in the domain namespace
     assertThat(assertDoesNotThrow(() -> listIngresses(domainNamespace)))
@@ -307,8 +304,9 @@ class ItLBTwoDomainsNginx {
     String ingressName = domainNamespace + "-nginx-path-routing";
 
     HashMap<String, String> annotations = new HashMap<>();
-    annotations.put("kubernetes.io/ingress.class", "nginx");
     annotations.put("nginx.ingress.kubernetes.io/rewrite-target", "/$1");
+
+    String ingressClassName = "nginx";
 
     // create ingress rules for two domains
     List<V1IngressRule> ingressRules = new ArrayList<>();
@@ -317,6 +315,7 @@ class ItLBTwoDomainsNginx {
     for (String domainUid : domainUids) {
       V1HTTPIngressPath httpIngressPath = new V1HTTPIngressPath()
           .path("/" + domainUid.substring(4) + "(.+)")
+          .pathType("ImplementationSpecific")
           .backend(new V1IngressBackend()
               .service(new V1IngressServiceBackend()
                   .name(domainUid + "-cluster-cluster-1")
@@ -333,7 +332,8 @@ class ItLBTwoDomainsNginx {
 
     ingressRules.add(ingressRule);
 
-    assertDoesNotThrow(() -> createIngress(ingressName, domainNamespace, annotations, ingressRules, null));
+    assertDoesNotThrow(() -> createIngress(ingressName, domainNamespace, annotations,
+        ingressClassName, ingressRules, null));
 
     // check the ingress was found in the domain namespace
     assertThat(assertDoesNotThrow(() -> listIngresses(domainNamespace)))
@@ -355,7 +355,6 @@ class ItLBTwoDomainsNginx {
     String ingressName = domainNamespace + "-nginx-tls-pathrouting";
 
     HashMap<String, String> annotations = new HashMap<>();
-    annotations.put("kubernetes.io/ingress.class", "nginx");
     annotations.put("nginx.ingress.kubernetes.io/rewrite-target", "/$1");
     String configurationSnippet =
         new StringBuffer()
@@ -366,6 +365,8 @@ class ItLBTwoDomainsNginx {
     annotations.put("nginx.ingress.kubernetes.io/configuration-snippet", configurationSnippet);
     annotations.put("nginx.ingress.kubernetes.io/ingress.allow-http", "false");
 
+    String ingressClassName = "nginx";
+
     // create ingress rules for two domains
     List<V1IngressRule> ingressRules = new ArrayList<>();
     List<V1HTTPIngressPath> httpIngressPaths = new ArrayList<>();
@@ -373,6 +374,7 @@ class ItLBTwoDomainsNginx {
     for (String domainUid : domainUids) {
       V1HTTPIngressPath httpIngressAdminConsolePath = new V1HTTPIngressPath()
           .path("/" + domainUid.substring(4) + "console(.+)")
+          .pathType("ImplementationSpecific")
           .backend(new V1IngressBackend()
               .service(new V1IngressServiceBackend()
                   .name(domainUid + "-" + ADMIN_SERVER_NAME_BASE)
@@ -382,6 +384,7 @@ class ItLBTwoDomainsNginx {
       httpIngressPaths.add(httpIngressAdminConsolePath);
       V1HTTPIngressPath httpIngressPath = new V1HTTPIngressPath()
           .path("/" + domainUid.substring(4) + "(.+)")
+          .pathType("ImplementationSpecific")
           .backend(new V1IngressBackend()
               .service(new V1IngressServiceBackend()
                   .name(domainUid + "-cluster-cluster-1")
@@ -407,7 +410,8 @@ class ItLBTwoDomainsNginx {
         .secretName(tlsSecretName);
     tlsList.add(tls);
 
-    assertDoesNotThrow(() -> createIngress(ingressName, domainNamespace, annotations, ingressRules, tlsList));
+    assertDoesNotThrow(() -> createIngress(ingressName, domainNamespace, annotations,
+        ingressClassName, ingressRules, tlsList));
 
     // check the ingress was found in the domain namespace
     assertThat(assertDoesNotThrow(() -> listIngresses(domainNamespace)))

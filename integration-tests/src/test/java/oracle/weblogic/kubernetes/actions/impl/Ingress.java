@@ -41,6 +41,7 @@ public class Ingress {
    * @param domainUid the WebLogic domainUid which is backend to the ingress
    * @param clusterNameMsPortMap the map with key as cluster name and value as managed server port of the cluster
    * @param annotations annotations to create ingress resource
+   * @param ingressClassName Ingress class name
    * @param setIngressHost if false does not set ingress host
    * @param tlsSecret name of the TLS secret if any
    * @param enableAdminServerRouting enable the ingress rule to admin server
@@ -52,6 +53,7 @@ public class Ingress {
                                            String domainUid,
                                            Map<String, Integer> clusterNameMsPortMap,
                                            Map<String, String> annotations,
+                                           String ingressClassName,
                                            boolean setIngressHost,
                                            String tlsSecret,
                                            boolean enableAdminServerRouting,
@@ -64,6 +66,7 @@ public class Ingress {
     if (enableAdminServerRouting) {
       V1HTTPIngressPath httpIngressPath = new V1HTTPIngressPath()
           .path(null)
+          .pathType("ImplementationSpecific")
           .backend(new V1IngressBackend()
               .service(new V1IngressServiceBackend()
                   .name(domainUid + "-admin-server")
@@ -93,6 +96,7 @@ public class Ingress {
       // set the http ingress paths
       V1HTTPIngressPath httpIngressPath1 = new V1HTTPIngressPath()
               .path(null)
+              .pathType("ImplementationSpecific")
               .backend(new V1IngressBackend()
                   .service(new V1IngressServiceBackend()
                       .name(domainUid + "-cluster-" + clusterName.toLowerCase().replace("_", "-"))
@@ -138,7 +142,8 @@ public class Ingress {
             .namespace(domainNamespace)
             .annotations(annotations))
         .spec(new V1IngressSpec()
-            .rules(ingressRules));
+            .rules(ingressRules)
+            .ingressClassName(ingressClassName));
     if (tlsSecret != null) {
       V1IngressSpec spec = ingress.getSpec().tls(tlsList);
       ingress.setSpec(spec);
@@ -160,6 +165,7 @@ public class Ingress {
    * @param ingressName ingress name
    * @param namespace namespace in which the ingress will be created
    * @param annotations annotations of the ingress
+   * @param ingressClassName Ingress class name
    * @param ingressRules a list of ingress rules
    * @param tlsList list of ingress tls
    * @throws ApiException if Kubernetes API call fails
@@ -167,6 +173,7 @@ public class Ingress {
   public static void createIngress(String ingressName,
                                    String namespace,
                                    Map<String, String> annotations,
+                                   String ingressClassName,
                                    List<V1IngressRule> ingressRules,
                                    List<V1IngressTLS> tlsList) throws ApiException {
 
@@ -179,7 +186,8 @@ public class Ingress {
             .namespace(namespace)
             .annotations(annotations))
         .spec(new V1IngressSpec()
-            .rules(ingressRules));
+            .rules(ingressRules)
+            .ingressClassName(ingressClassName));
 
     if (tlsList != null) {
       V1IngressSpec spec = ingress.getSpec().tls(tlsList);

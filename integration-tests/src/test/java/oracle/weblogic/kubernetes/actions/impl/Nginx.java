@@ -4,7 +4,6 @@
 package oracle.weblogic.kubernetes.actions.impl;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -99,10 +98,6 @@ public class Nginx {
                                            Map<String, Integer> clusterNameMsPortMap,
                                            boolean setIngressHost) {
 
-    // set the annotation for kubernetes.io/ingress.class to "nginx"
-    HashMap<String, String> annotation = new HashMap<>();
-    annotation.put("kubernetes.io/ingress.class", INGRESS_NGINX_CLASS);
-
     List<String> ingressHostList = new ArrayList<>();
     ArrayList<V1IngressRule> ingressRules = new ArrayList<>();
     clusterNameMsPortMap.forEach((clusterName, managedServerPort) -> {
@@ -140,10 +135,10 @@ public class Nginx {
             .kind(INGRESS_KIND)
             .metadata(new V1ObjectMeta()
                     .name(ingressName)
-                    .namespace(domainNamespace)
-                    .annotations(annotation))
+                    .namespace(domainNamespace))
             .spec(new V1IngressSpec()
-                    .rules(ingressRules));
+                    .rules(ingressRules)
+                .ingressClassName(INGRESS_NGINX_CLASS));
 
     // create the ingress
     try {

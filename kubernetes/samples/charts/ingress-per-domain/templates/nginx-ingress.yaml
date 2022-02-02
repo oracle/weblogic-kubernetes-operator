@@ -15,6 +15,7 @@ spec:
     http:
       paths:
       - path:
+        pathType: ImplementationSpecific
         backend:
           service:
             name: '{{ .Values.wlsDomain.domainUID }}-cluster-{{ .Values.wlsDomain.clusterName | lower | replace "_" "-" }}'

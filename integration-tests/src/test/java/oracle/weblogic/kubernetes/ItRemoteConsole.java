@@ -9,7 +9,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import io.kubernetes.client.openapi.models.V1HTTPIngressPath;
@@ -277,8 +276,7 @@ class ItRemoteConsole {
     // create an ingress in domain namespace
     String ingressName = domainNamespace + "-nginx-path-routing";
 
-    HashMap<String, String> annotations = new HashMap<>();
-    annotations.put("kubernetes.io/ingress.class", "nginx");
+    String ingressClassName = "nginx";
 
     // create ingress rules for two domains
     List<V1IngressRule> ingressRules = new ArrayList<>();
@@ -286,6 +284,7 @@ class ItRemoteConsole {
 
     V1HTTPIngressPath httpIngressPath = new V1HTTPIngressPath()
         .path("/")
+        .pathType("Prefix")
         .backend(new V1IngressBackend()
             .service(new V1IngressServiceBackend()
                 .name(domainUid + "-admin-server")
@@ -301,7 +300,7 @@ class ItRemoteConsole {
 
     ingressRules.add(ingressRule);
 
-    createIngressAndRetryIfFail(60, false, ingressName, domainNamespace, annotations, ingressRules, null);
+    createIngressAndRetryIfFail(60, false, ingressName, domainNamespace, null, ingressClassName, ingressRules, null);
 
     // check the ingress was found in the domain namespace
     assertThat(assertDoesNotThrow(() -> listIngresses(domainNamespace)))
