@@ -15,12 +15,12 @@ UTILDIR="$(dirname "$(readlink -f "$0")")"
 kubernetesCli=${KUBERNETES_CLI:-kubectl}
 
 # https://github.com/containous/traefik/releases
-DefaultTraefikVersion=2.2.1
+DefaultTraefikVersion=2.6.0
 
-#https://artifacthub.io/packages/helm/ingress-nginx/ingress-nginx
-#https://docs.nginx.com/nginx-ingress-controller/installation/installation-with-helm/
+# https://artifacthub.io/packages/helm/ingress-nginx/ingress-nginx
+# https://docs.nginx.com/nginx-ingress-controller/installation/installation-with-helm/
 # https://github.com/kubernetes/ingress-nginx/releases
-DefaultNginxVersion=2.16.0
+DefaultNginxVersion=4.0.16
 
 action=""
 ingressType=""
@@ -179,8 +179,7 @@ createTraefik() {
     # https://helm.traefik.io/traefik
     # https://doc.traefik.io/traefik/getting-started/install-traefik/#use-the-helm-chart
     printInfo "Add Traefik chart repository"
-    helm repo add traefik https://helm.traefik.io/traefik
-    helm repo update
+    helm repo add traefik https://helm.traefik.io/traefik --force-update
   else
     printInfo "Traefik chart repository is already added."
   fi
@@ -261,8 +260,7 @@ createNginx() {
 
   if [ "$(helm search repo ingress-nginx | grep nginx | wc -l)" = 0 ]; then
     printInfo "Add Nginx chart repository"
-    helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx
-    helm repo update
+    helm repo add ingress-nginx https://kubernetes.github.io/ingress-nginx --force-update
   else
     printInfo "Nginx chart repository is already added."
   fi
