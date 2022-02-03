@@ -86,10 +86,6 @@ public class Main {
   private boolean warnedOfCrdAbsence;
   private static final NextStepFactory NEXT_STEP_FACTORY = Main::createInitializeInternalIdentityStep;
 
-  private static String getConfiguredServiceAccount() {
-    return TuningParameters.getInstance().get("serviceaccount");
-  }
-
   static {
     try {
       // suppress System.err since we catch all necessary output with Logger
@@ -99,11 +95,20 @@ public class Main {
 
       ClientPool.initialize(threadFactory);
 
-      TuningParameters.initializeInstance(wrappedExecutorService, "/operator/config");
+      String mountPoint = System.getenv("OPERATOR_CONFIG_MOUNT");
+      if (mountPoint == null) {
+        mountPoint = "/operator/config";
+      }
+
+      TuningParameters.initializeInstance(wrappedExecutorService, mountPoint);
     } catch (IOException e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
       throw new RuntimeException(e);
     }
+  }
+
+  private static String getConfiguredServiceAccount() {
+    return TuningParameters.getInstance().get("serviceaccount");
   }
 
   static {
