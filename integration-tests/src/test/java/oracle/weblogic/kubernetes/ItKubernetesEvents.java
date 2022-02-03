@@ -107,6 +107,7 @@ import static oracle.weblogic.kubernetes.utils.OperatorUtils.upgradeAndVerifyOpe
 import static oracle.weblogic.kubernetes.utils.PatchDomainUtils.patchDomainResource;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPV;
 import static oracle.weblogic.kubernetes.utils.PersistentVolumeUtils.createPVC;
+import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDeleted;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodDoesNotExist;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodExists;
 import static oracle.weblogic.kubernetes.utils.PodUtils.checkPodReady;
@@ -165,6 +166,12 @@ class ItKubernetesEvents {
   public static ConditionFactory withLongRetryPolicy = with().pollDelay(2, SECONDS)
       .and().with().pollInterval(10, SECONDS)
       .atMost(10, MINUTES).await();
+
+  public enum ScaleAction {
+    scaleUp,
+    scaleDown,
+    reset
+  }
 
   /**
    * Assigns unique namespaces for operator and domains.
@@ -450,8 +457,8 @@ class ItKubernetesEvents {
   @DisplayName("Test domain completed event when domain is scaled.")
   void testScaleDomainAndVerifyCompletedEvent() {
     try {
-      scaleDomainAndVerifyCompletedEvent(1, "scale down", true);
-      scaleDomainAndVerifyCompletedEvent(2, "scale up", true);
+      scaleDomainAndVerifyCompletedEvent(1, ScaleAction.scaleDown, true);
+      scaleDomainAndVerifyCompletedEvent(2, ScaleAction.scaleUp, true);
     } finally {
       scaleDomain(2);
     }
@@ -1205,7 +1212,7 @@ class ItKubernetesEvents {
     }
   }
 
-  private void scaleDomainAndVerifyCompletedEvent(int replicaCount, String testType, boolean verify) {
+  private void scaleDomainAndVerifyCompletedEvent(int replicaCount, ScaleAction testType, boolean verify) {
     OffsetDateTime timestamp = now();
     logger.info("Updating domain resource to set the replicas for cluster " + cluster1Name + " to " + replicaCount);
     int countBefore = getDomainEventCount(domainNamespace1, domainUid, DOMAIN_COMPLETED, "Normal");
@@ -1213,6 +1220,22 @@ class ItKubernetesEvents {
         + "{\"op\": \"replace\", \"path\": \"/spec/clusters/0/replicas\", \"value\": " + replicaCount + "}" + "]");
     assertTrue(patchDomainCustomResource(domainUid, domainNamespace1, patch, V1Patch.PATCH_FORMAT_JSON_PATCH),
         "Failed to patch domain");
+    int serverNumber = replicaCount + 1;
+
+    switch (testType) {
+      case scaleUp:
+        checkPodReady(managedServerPodNamePrefix + replicaCount, domainUid, domainNamespace1);
+        break;
+      case scaleDown:
+        checkPodDeleted(managedServerPodNamePrefix + serverNumber, domainUid, domainNamespace1);
+        break;
+      case reset:
+        checkPodReady(managedServerPodNamePrefix + replicaCount, domainUid, domainNamespace1);
+        checkPodDeleted(managedServerPodNamePrefix + serverNumber, domainUid, domainNamespace1);
+        break;
+      default:
+    }
+
     if (verify) {
       logger.info("Verify the DomainCompleted event is generated after " + testType);
       checkEventWithCount(
@@ -1221,7 +1244,7 @@ class ItKubernetesEvents {
   }
 
   private void scaleDomain(int replicaCount) {
-    scaleDomainAndVerifyCompletedEvent(replicaCount, null, false);
+    scaleDomainAndVerifyCompletedEvent(replicaCount, ScaleAction.reset, false);
   }
 
 }
