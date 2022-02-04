@@ -120,7 +120,7 @@ fi
 
 echo "Persistent volume files, if any, will be in ${PV_ROOT}"
 
-echo "cleaning up"
+echo "cleaning up k8s artifacts"
 kubectl get ns --no-headers | awk '$1 ~ /^ns-/{print $1}' | xargs kubectl delete ns || true
 kubectl get ns --no-headers | awk '/weblogic/{print $1}' | xargs kubectl delete ns || true
 kubectl get ns --no-headers | awk '/test-/{print $1}' | xargs kubectl delete ns || true
@@ -172,8 +172,8 @@ mvn clean install -Dskip.unit.tests=true
 echo 'IT_TEST = ${IT_TEST}'
 echo 'Run tests...'
 
-if [ ${IT_TEST} != "**/It*" ]; then
-  mvn -Dwdt.download.url="${WDT_DOWNLOAD_URL}" -Dwit.download.url="${WIT_DOWNLOAD_URL}" -Dit.test="${IT_TEST}" -pl integration-tests -P ${MVN_PROFILE} verify 2>&1 | tee "${RESULT_ROOT}/okdtest.log"
+if [ "${test_filter}" != "**/It*" ]; then
+  mvn -Dwdt.download.url="${WDT_DOWNLOAD_URL}" -Dwit.download.url="${WIT_DOWNLOAD_URL}" -Dit.test="${test_filter}" -pl integration-tests -P ${MVN_PROFILE} verify 2>&1 | tee "${RESULT_ROOT}/okdtest.log"
 else
   mvn -Dwdt.download.url="${WDT_DOWNLOAD_URL}" -Dwit.download.url="${WIT_DOWNLOAD_URL}" -pl integration-tests -P ${MVN_PROFILE} verify 2>&1 | tee "${RESULT_ROOT}/okdtest.log"
 fi
