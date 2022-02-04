@@ -156,9 +156,7 @@ For more information, see [Domain events]({{< relref "/userguide/managing-domain
 
 ### Monitoring a domain
 
-Use the WebLogic Monitoring Exporter, a [Prometheus](https://prometheus.io/)-compatible exporter of metrics from WebLogic Server instances, which it obtains by using the [WLS RESTful Management API](https://docs.oracle.com/en/middleware/fusion-middleware/weblogic-server/12.2.1.4/wlrur/overview.html#GUID-B193E8EF-1912-48D1-8FB9-99C5ADACCC3B), available in version 12.2.1 or later. Metrics are selected using a [YAML configuration file](https://github.com/oracle/weblogic-monitoring-exporter/blob/89796bba357642e51387ef1bc17a2626f29d0b2f/README.md#Configuration).
-
-The exporter is available as a [separate process](https://github.com/oracle/weblogic-monitoring-exporter/blob/89796bba357642e51387ef1bc17a2626f29d0b2f/README.md#sidecar) that is run alongside a server instance. You supply the configuration to such a process with a PUT command.  Operator versions 3.2 and later have special support for the exporter in this form. For more information, see [Use the Monitoring Exporter with WebLogic Kubernetes Operator](https://github.com/oracle/weblogic-monitoring-exporter/blob/89796bba357642e51387ef1bc17a2626f29d0b2f/README.md#use-the-monitoring-exporter-with-weblogic-kubernetes-operator).
+The operator can export Prometheus-compatible metrics by embedding a WebLogic Monitoring Exporter configuration in its domain specification. For more details, see the WebLogic Monitoring Exporter document, [Use the Monitoring Exporter with WebLogic Kubernetes Operator](https://github.com/oracle/weblogic-monitoring-exporter#use-the-monitoring-exporter-with-weblogic-kubernetes-operator).
 
 
 ### Log files
