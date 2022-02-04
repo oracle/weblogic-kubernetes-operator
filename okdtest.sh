@@ -173,7 +173,7 @@ echo 'IT_TEST = ${IT_TEST}'
 echo 'Run tests...'
 
 if [ "${test_filter}" != "**/It*" ]; then
-  mvn -Dwdt.download.url="${WDT_DOWNLOAD_URL}" -Dwit.download.url="${WIT_DOWNLOAD_URL}" -Dit.test="${test_filter}" -pl integration-tests -P ${MVN_PROFILE} verify 2>&1 | tee "${RESULT_ROOT}/okdtest.log"
+  mvn -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -Dit.test="${test_filter}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/okdtest.log"
 else
-  mvn -Dwdt.download.url="${WDT_DOWNLOAD_URL}" -Dwit.download.url="${WIT_DOWNLOAD_URL}" -pl integration-tests -P ${MVN_PROFILE} verify 2>&1 | tee "${RESULT_ROOT}/okdtest.log"
+  mvn -Dwdt.download.url="${wdt_download_url}" -Dwit.download.url="${wit_download_url}" -Dwle.download.url="${wle_download_url}" -DPARALLEL_CLASSES="${parallel_run}" -DNUMBER_OF_THREADS="${threads}" -pl integration-tests -P ${maven_profile_name} verify 2>&1 | tee "${RESULT_ROOT}/okdtest.log"
 fi
