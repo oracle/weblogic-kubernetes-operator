@@ -8,8 +8,10 @@ import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
+import java.security.Provider;
 import java.security.PublicKey;
 import java.security.SecureRandom;
+import java.security.Security;
 import java.security.cert.CertificateException;
 import java.security.cert.X509Certificate;
 import java.security.spec.InvalidKeySpecException;
@@ -50,6 +52,7 @@ import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorName
 public final class SelfSignedCertUtils {
 
   public static final String INTERNAL_WEBLOGIC_OPERATOR_SVC = "internal-weblogic-operator-svc";
+  public static final String INTERNAL_WEBLOGIC_OPERATOR_WEBHOOK_SVC = "internal-weblogic-operator-webhook-svc";
 
   /**
    * Generates a key pair using the BouncyCastle lib.
@@ -97,6 +100,10 @@ public final class SelfSignedCertUtils {
   public static X509Certificate generateCertificate(KeyPair keyPair, String hashAlgorithm, String commonName,
                                                     int certificateValidityDays)
           throws OperatorCreationException, CertificateException, CertIOException {
+
+    Provider bcProvider = new BouncyCastleProvider();
+    Security.addProvider(bcProvider);
+
     Instant now = Instant.now();
     Date notBefore = Date.from(now);
     Date notAfter = Date.from(now.plus(Duration.ofDays(certificateValidityDays)));
@@ -114,17 +121,22 @@ public final class SelfSignedCertUtils {
                     .addExtension(Extension.subjectAlternativeName, false, getSAN());
 
     return new JcaX509CertificateConverter()
-            .setProvider(new BouncyCastleProvider()).getCertificate(certificateBuilder.build(contentSigner));
+            .setProvider(bcProvider).getCertificate(certificateBuilder.build(contentSigner));
   }
 
   @NotNull
   private static GeneralNames getSAN() {
     String host = INTERNAL_WEBLOGIC_OPERATOR_SVC;
+    String hostWebhook = INTERNAL_WEBLOGIC_OPERATOR_WEBHOOK_SVC;
     return new GeneralNames(new GeneralName[] {
         new GeneralName(GeneralName.dNSName, host),
         new GeneralName(GeneralName.dNSName, host + "." + getOperatorNamespace()),
         new GeneralName(GeneralName.dNSName, host + "." + getOperatorNamespace() + ".svc"),
-        new GeneralName(GeneralName.dNSName, host + "." + getOperatorNamespace() + ".svc.cluster.local")});
+        new GeneralName(GeneralName.dNSName, host + "." + getOperatorNamespace() + ".svc.cluster.local"),
+        new GeneralName(GeneralName.dNSName, hostWebhook),
+        new GeneralName(GeneralName.dNSName, hostWebhook + "." + getOperatorNamespace()),
+        new GeneralName(GeneralName.dNSName, hostWebhook + "." + getOperatorNamespace() + ".svc"),
+        new GeneralName(GeneralName.dNSName, hostWebhook + "." + getOperatorNamespace() + ".svc.cluster.local")});
   }
 
   private static X500NameBuilder createX500NameBuilder(String commonName) {

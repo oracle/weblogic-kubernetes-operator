@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.weblogic.domain.model;
 
+import java.util.List;
+
 public class ManagedServerSpecCommonImpl extends ServerSpecCommonImpl {
   /**
    * Constructs an object to return the effective configuration for a managed server.
@@ -24,6 +26,11 @@ public class ManagedServerSpecCommonImpl extends ServerSpecCommonImpl {
       return false;
     }
     return super.shouldStart(currentReplicas);
+  }
+
+  @Override
+  public List<AuxiliaryImage> getAuxiliaryImages() {
+    return null;
   }
 
   @Override

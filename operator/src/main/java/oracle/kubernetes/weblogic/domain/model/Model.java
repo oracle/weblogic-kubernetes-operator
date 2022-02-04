@@ -17,7 +17,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 
 public class Model {
   static final String DEFAULT_WDT_MODEL_HOME = "/u01/wdt/models";
-  static final String DEFAULT_WDT_INSTALL_HOME = "/u01/wdt/weblogic-deploy";
+  public static final String DEFAULT_WDT_INSTALL_HOME = "/u01/wdt/weblogic-deploy";
   public static final String DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH = "/aux";
 
   @EnumClass(value = ModelInImageDomainType.class)

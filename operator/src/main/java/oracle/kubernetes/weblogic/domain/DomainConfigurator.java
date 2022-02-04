@@ -20,6 +20,7 @@ import io.kubernetes.client.openapi.models.V1Toleration;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.OverrideDistributionStrategy;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
+import oracle.kubernetes.weblogic.domain.model.AuxiliaryImageVolume;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 
@@ -264,6 +265,11 @@ public abstract class DomainConfigurator {
    * Add auxiliary images for the domain resource.
    */
   public abstract DomainConfigurator withAuxiliaryImages(List<AuxiliaryImage> ai);
+
+  /**
+   * Add auxiliary images for the domain resource.
+   */
+  public abstract DomainConfigurator withLegacyAuxiliaryImages(List<AuxiliaryImage> ai);
 
   /**
    * Configure auxiliary image volume mount path.
@@ -610,4 +616,10 @@ public abstract class DomainConfigurator {
    * @return this object
    */
   public abstract DomainConfigurator withDomainType(String type);
+
+  /**
+   * Add auxiliary image volumes for the domain resource.
+   *
+   */
+  public abstract DomainConfigurator withAuxiliaryImageVolumes(List<AuxiliaryImageVolume> auxiliaryImageVolume);
 }

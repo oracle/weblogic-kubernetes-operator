@@ -156,6 +156,11 @@ public class Cluster extends BaseConfiguration implements Comparable<Cluster> {
     maxConcurrentShutdown = value;
   }
 
+  @Override
+  public ServerPod getServerPod() {
+    return super.serverPod;
+  }
+
   @Nullable
   @Override
   public String getServerStartPolicy() {

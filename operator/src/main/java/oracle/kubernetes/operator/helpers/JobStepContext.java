@@ -9,6 +9,7 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import javax.annotation.Nonnull;
 
@@ -52,6 +53,7 @@ import org.jetbrains.annotations.Nullable;
 
 import static oracle.kubernetes.operator.DomainStatusUpdater.createKubernetesFailureSteps;
 import static oracle.kubernetes.utils.OperatorUtils.emptyToNull;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATHS;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_USE_ONLINE_UPDATE;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_ACTIVATE_TIMEOUT;
 import static oracle.kubernetes.weblogic.domain.model.IntrospectorJobEnvVars.MII_WDT_CONNECT_TIMEOUT;
@@ -337,8 +339,7 @@ public class JobStepContext extends BasePodStepContext {
     V1PodTemplateSpec podTemplateSpec = new V1PodTemplateSpec()
           .metadata(createPodTemplateMetadata())
           .spec(createPodSpec(tuningParameters));
-    Optional.ofNullable(getAuxiliaryImages()).ifPresent(auxiliaryImages ->
-            addAuxiliaryImageInitContainers(podTemplateSpec.getSpec(), auxiliaryImages));
+    addInitContainers(podTemplateSpec.getSpec(), tuningParameters);
     Optional.ofNullable(getAuxiliaryImages())
             .ifPresent(p -> podTemplateSpec.getSpec().addVolumesItem(createEmptyDirVolume()));
 
@@ -361,13 +362,27 @@ public class JobStepContext extends BasePodStepContext {
     return metadata;
   }
 
-  protected void addAuxiliaryImageInitContainers(V1PodSpec podSpec, List<AuxiliaryImage> auxiliaryImages) {
-    Optional.ofNullable(auxiliaryImages).ifPresent(cl -> addInitContainers(podSpec, cl));
+  protected void addInitContainers(V1PodSpec podSpec, TuningParameters tuningParameters) {
+    List<V1Container> initContainers = new ArrayList<>();
+    Optional.ofNullable(getAuxiliaryImages()).ifPresent(cl -> addInitContainers(initContainers, cl));
+    initContainers.addAll(getServerSpec().getInitContainers().stream()
+            .map(c -> c.env(createEnv(c, tuningParameters))).collect(Collectors.toList()));
+    podSpec.initContainers(initContainers);
   }
 
-  private void addInitContainers(V1PodSpec podSpec, List<AuxiliaryImage> auxiliaryImages) {
+  private void addInitContainers(List<V1Container> initContainers, List<AuxiliaryImage> auxiliaryImages) {
     IntStream.range(0, auxiliaryImages.size()).forEach(idx ->
-        podSpec.addInitContainersItem(createInitContainerForAuxiliaryImage(auxiliaryImages.get(idx), idx)));
+            initContainers.add(createInitContainerForAuxiliaryImage(auxiliaryImages.get(idx), idx)));
+  }
+
+  @Override
+  protected List<V1EnvVar> createEnv(V1Container c, TuningParameters tuningParameters) {
+    List<V1EnvVar> initContainerEnvVars = new ArrayList<>();
+    Optional.ofNullable(c.getEnv()).ifPresent(initContainerEnvVars::addAll);
+    getEnvironmentVariables(tuningParameters).stream()
+            .filter(v -> AUXILIARY_IMAGE_PATHS.equals(v.getName()))
+            .forEach(var -> addIfMissing(initContainerEnvVars, var.getName(), var.getValue(), var.getValueFrom()));
+    return initContainerEnvVars;
   }
 
   protected V1PodSpec createPodSpec(TuningParameters tuningParameters) {

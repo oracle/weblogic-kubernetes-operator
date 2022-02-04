@@ -735,3 +735,64 @@ checkAuxiliaryImage() {
   [ "${severe_found}" = "true" ] && return 1
   return 0
 }
+
+#
+# checkAuxiliaryImage
+#   purpose: If the AUXILIARY_IMAGE_PATH directory exists, it echoes the contents of output files
+#            in ${AUXILIARY_IMAGE_PATH}/auxiliaryImagetLogs dir. It returns 1 if a SEVERE message
+#            is found in any of the output files in ${AUXILIARY_IMAGE_PATH}/initContainerAuxImageLogs dirs.
+#            It also returns 1 if 'successfully' message is not found in the output files
+#            or if the AUXILIARY_IMAGE_PATH directory is empty. Otherwise it returns 0 (success).
+#            See also 'auxImage.sh'.
+#            See also initAuxiliaryImage in 'utils_base.sh'.
+#
+checkInitContainersWithAuxImages() {
+  # check auxiliary image results (if any)
+  if [ -z "$AUXILIARY_IMAGE_PATHS" ]; then
+    trace FINE "Auxiliary Image: No init containers with auxiliary images configured."
+    return
+  fi
+
+  trace FINE "Auxiliary Image: AUXILIARY_IMAGE_PATHS is '$AUXILIARY_IMAGE_PATHS'."
+  for AUXILIARY_IMAGE_PATH in ${AUXILIARY_IMAGE_PATHS/,/ }; do
+    trace FINE "Auxiliary Image: AUXILIARY_IMAGE_PATH is '$AUXILIARY_IMAGE_PATH'."
+    traceDirs $AUXILIARY_IMAGE_PATH
+    touch ${AUXILIARY_IMAGE_PATH}/testaccess.tmp
+    if [ $? -ne 0 ]; then
+      trace SEVERE "Auxiliary Image: Cannot write to the AUXILIARY_IMAGE_PATH '${AUXILIARY_IMAGE_PATH}'. " \
+                   "This path is configurable using the domain resource 'spec.auxiliaryImageVolumes.mountPath' " \
+                   "attribute." && return 1
+    fi
+    rm -f ${AUXILIARY_IMAGE_PATH}/testaccess.tmp || return 1
+
+    # The container .out files embed their container name, the names will sort in the same order in which the containers ran
+    out_files=$(ls -1 $AUXILIARY_IMAGE_PATH/initContainerAuxImageLogs/*.out 2>/dev/null | sort --version-sort)
+    if [ -z "${out_files}" ]; then
+      trace SEVERE "Auxiliary Image: Assertion failure. No files found in '$AUXILIARY_IMAGE_PATH/initContainerAuxImageLogs/*.out'"
+      return 1
+    fi
+    severe_found=false
+    for out_file in $out_files; do
+      if [ "$(grep -c SEVERE $out_file)" != "0" ]; then
+        trace FINE "Auxiliary Image: Error found in file '${out_file}' while initializing auxiliaryImage."
+        severe_found=true
+      elif [ "$(grep -c successfully $out_file)" = "0" ]; then
+        trace SEVERE "Auxiliary Image: Command execution was unsuccessful in file '${out_file}' while initializing auxiliaryImage. " \
+                     "Contents of '${out_file}':"
+        cat $out_file
+        severe_found=true
+        continue
+      fi
+      trace "Auxiliary Image: Contents of '${out_file}':"
+      cat $out_file
+      trace "Auxiliary Image: End of '${out_file}' contents"
+    done
+    [ "${severe_found}" = "true" ] && return 1
+    [ -z "$(ls -A $AUXILIARY_IMAGE_PATH 2>/dev/null | grep -v initContainerAuxImageLogs)" ] \
+      && trace SEVERE "Auxiliary Image: No files found in '$AUXILIARY_IMAGE_PATH'. " \
+       "Do your auxiliary images have files in their '$AUXILIARY_IMAGE_PATH' directories? " \
+       "This path is configurable using the domain resource 'spec.auxiliaryImageVolumes.mountPath' attribute." \
+      && return 1
+  done
+  return 0
+}

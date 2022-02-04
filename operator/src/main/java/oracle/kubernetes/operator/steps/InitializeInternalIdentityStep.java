@@ -14,6 +14,7 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -33,6 +34,7 @@ import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTERNAL_IDENTITY_INITIALIZATION_FAILED;
+import static oracle.kubernetes.operator.steps.ManagedServerUpIteratorStep.SCHEDULING_DETECTION_DELAY;
 import static oracle.kubernetes.operator.utils.Certificates.INTERNAL_CERTIFICATE;
 import static oracle.kubernetes.operator.utils.Certificates.INTERNAL_CERTIFICATE_KEY;
 import static oracle.kubernetes.operator.utils.Certificates.OPERATOR_DIR;
@@ -58,12 +60,17 @@ public class InitializeInternalIdentityStep extends Step {
   public NextAction apply(Packet packet) {
     try {
       if (internalCertFile.exists() && internalKeyFile.exists()) {
+        LOGGER.info("DEBUG: In InitializeInternalIdentityStep.. file exists. Reuse it.");
         // The operator's internal ssl identity has already been created.
         reuseInternalIdentity();
         return doNext(getNext(), packet);
-      } else {
+      } else if (getNext() != null) {
+        LOGGER.info("DEBUG: In InitializeInternalIdentityStep.. file doesn't exists. Create Internal Identity.");
         // The operator's internal ssl identity hasn't been created yet.
         return createInternalIdentity(packet);
+      } else {
+        LOGGER.info("DEBUG: In InitializeInternalIdentityStep.. delaying for 100 seconds");
+        return doDelay(this, packet, SCHEDULING_DETECTION_DELAY, TimeUnit.MILLISECONDS);
       }
     } catch (Exception e) {
       LOGGER.warning(INTERNAL_IDENTITY_INITIALIZATION_FAILED, e.toString());

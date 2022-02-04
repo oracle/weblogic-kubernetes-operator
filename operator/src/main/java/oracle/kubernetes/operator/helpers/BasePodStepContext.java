@@ -116,6 +116,14 @@ public abstract class BasePodStepContext extends StepContextBase {
     return AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + (index + 1);
   }
 
+  protected List<V1EnvVar> createEnv(V1Container c, TuningParameters tuningParameters) {
+    List<V1EnvVar> initContainerEnvVars = new ArrayList<>();
+    Optional.ofNullable(c.getEnv()).ifPresent(initContainerEnvVars::addAll);
+    getEnvironmentVariables(tuningParameters).forEach(envVar ->
+            addIfMissing(initContainerEnvVars, envVar.getName(), envVar.getValue(), envVar.getValueFrom()));
+    return initContainerEnvVars;
+  }
+
   protected List<V1EnvVar> createEnv(AuxiliaryImage auxiliaryImage, String name) {
     List<V1EnvVar> vars = new ArrayList<>();
     addEnvVar(vars, AuxiliaryImageEnvVars.AUXILIARY_IMAGE_TARGET_PATH, AUXILIARY_IMAGE_TARGET_PATH);

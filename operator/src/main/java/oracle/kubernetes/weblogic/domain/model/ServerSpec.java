@@ -154,6 +154,8 @@ public interface ServerSpec {
 
   V1ResourceRequirements getResources();
 
+  List<AuxiliaryImage> getAuxiliaryImages();
+
   V1PodSecurityContext getPodSecurityContext();
 
   V1SecurityContext getContainerSecurityContext();

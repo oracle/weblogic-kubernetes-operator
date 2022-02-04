@@ -94,6 +94,7 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_RO
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.POD_CYCLE_STARTING;
 import static oracle.kubernetes.operator.helpers.LegalNames.LEGAL_CONTAINER_PORT_NAME_MAX_LENGTH;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_MOUNT_PATH;
+import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_INSTALL_HOME;
 
 public abstract class PodStepContext extends BasePodStepContext {
 
@@ -257,12 +258,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     return domainTopology
         .getServerConfig(domainTopology.getAdminServerName())
         .getLocalAdminProtocolChannelPort();
-  }
-
-  boolean isDomainWideAdminPortEnabled() {
-    return domainTopology
-        .getServerConfig(domainTopology.getAdminServerName())
-        .isAdminPortEnabled();
   }
 
   private String getDataHome() {
@@ -763,7 +758,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     addDefaultEnvVarIfMissing(env, "SHUTDOWN_TYPE", shutdown.getShutdownType());
     addDefaultEnvVarIfMissing(env, "SHUTDOWN_TIMEOUT", String.valueOf(shutdown.getTimeoutSeconds()));
     addDefaultEnvVarIfMissing(env, "SHUTDOWN_IGNORE_SESSIONS", String.valueOf(shutdown.getIgnoreSessions()));
-    addDefaultEnvVarIfMissing(env, "SHUTDOWN_WAIT_FOR_ALL_SESSIONS", String.valueOf(shutdown.getWaitForAllSessions()));
   }
 
   private Shutdown getShutdownSpec() {
@@ -858,14 +852,6 @@ public abstract class PodStepContext extends BasePodStepContext {
             initContainers.add(createInitContainerForAuxiliaryImage(cl.get(idx), idx))));
   }
 
-  private List<V1EnvVar> createEnv(V1Container c, TuningParameters tuningParameters) {
-    List<V1EnvVar> initContainerEnvVars = new ArrayList<>();
-    Optional.ofNullable(c.getEnv()).ifPresent(initContainerEnvVars::addAll);
-    getEnvironmentVariables(tuningParameters).forEach(envVar ->
-            addIfMissing(initContainerEnvVars, envVar.getName(), envVar.getValue(), envVar.getValueFrom()));
-    return initContainerEnvVars;
-  }
-
   // ---------------------- model methods ------------------------------
 
   private List<V1PodReadinessGate> getReadinessGates() {
@@ -956,7 +942,12 @@ public abstract class PodStepContext extends BasePodStepContext {
     addEnvVar(vars, ServerEnvVars.SERVER_OUT_IN_POD_LOG, isIncludeServerOutInPodLog());
     addEnvVar(vars, ServerEnvVars.SERVICE_NAME, LegalNames.toServerServiceName(getDomainUid(), getServerName()));
     addEnvVar(vars, ServerEnvVars.AS_SERVICE_NAME, LegalNames.toServerServiceName(getDomainUid(), getAsName()));
+    //addEnvVar(vars, IntrospectorJobEnvVars.WDT_INSTALL_HOME, getWdtInstallHome());
     Optional.ofNullable(getDataHome()).ifPresent(v -> addEnvVar(vars, ServerEnvVars.DATA_HOME, v));
+    String wdtInstallHome = getWdtInstallHome();
+    if (wdtInstallHome != null && !wdtInstallHome.isEmpty() && !wdtInstallHome.equals(DEFAULT_WDT_INSTALL_HOME)) {
+      addEnvVar(vars, IntrospectorJobEnvVars.WDT_INSTALL_HOME, wdtInstallHome);
+    }
     Optional.ofNullable(getAuxiliaryImages()).ifPresent(ais -> addAuxiliaryImageEnv(ais, vars));
     addEnvVarIfTrue(mockWls(), vars, "MOCK_WLS");
     Optional.ofNullable(getKubernetesPlatform(tuningParameters)).ifPresent(v ->
@@ -965,7 +956,6 @@ public abstract class PodStepContext extends BasePodStepContext {
 
   protected void addAuxiliaryImageEnv(List<AuxiliaryImage> auxiliaryImageList, List<V1EnvVar> vars) {
     Optional.ofNullable(auxiliaryImageList).ifPresent(auxiliaryImages -> {
-      addEnvVar(vars, IntrospectorJobEnvVars.WDT_INSTALL_HOME, getWdtInstallHome());
       addEnvVar(vars, IntrospectorJobEnvVars.WDT_MODEL_HOME, getModelHome());
       if (auxiliaryImages.size() > 0) {
         addEnvVar(vars, AUXILIARY_IMAGE_MOUNT_PATH, getDomain().getAuxiliaryImageVolumeMountPath());
@@ -1022,22 +1012,8 @@ public abstract class PodStepContext extends BasePodStepContext {
       boolean istioEnabled = getDomain().isIstioEnabled();
       if (istioEnabled) {
         int istioReadinessPort = getDomain().getIstioReadinessPort();
-        // if admin port enabled (whether it is domain wide or per server, it must use the admin port
-        // for readiness probe instead of the istio readiness port otherwise the ready app reject the
-        // request.
-        //
-        if (isDomainWideAdminPortEnabled()) {
-          readinessProbe =
-              readinessProbe.httpGet(
-                  httpGetAction(
-                      READINESS_PATH,
-                      getLocalAdminProtocolChannelPort(),
-                      isLocalAdminProtocolChannelSecure()));
-        } else {
-          readinessProbe =
-              readinessProbe.httpGet(httpGetAction(READINESS_PATH, istioReadinessPort,
-                  false));
-        }
+        readinessProbe =
+            readinessProbe.httpGet(httpGetAction(READINESS_PATH, istioReadinessPort, false));
       } else {
         readinessProbe =
             readinessProbe.httpGet(

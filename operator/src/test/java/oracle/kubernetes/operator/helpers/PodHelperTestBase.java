@@ -66,6 +66,7 @@ import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderImpl;
 import oracle.kubernetes.operator.logging.MessageKeys;
+import oracle.kubernetes.operator.utils.DomainResourceMigrationUtils;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
@@ -82,6 +83,7 @@ import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.ServerConfigurator;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImageEnvVars;
+import oracle.kubernetes.weblogic.domain.model.AuxiliaryImageVolume;
 import oracle.kubernetes.weblogic.domain.model.Domain;
 import oracle.kubernetes.weblogic.domain.model.DomainSpec;
 import oracle.kubernetes.weblogic.domain.model.DomainValidationBaseTest;
@@ -118,6 +120,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.WLS_CONTAINER_NAME;
 import static oracle.kubernetes.operator.LabelConstants.MII_UPDATED_RESTART_REQUIRED_LABEL;
 import static oracle.kubernetes.operator.LabelConstants.OPERATOR_VERSION;
 import static oracle.kubernetes.operator.ProcessingConstants.DOMAIN_ROLL_START_EVENT_GENERATED;
+import static oracle.kubernetes.operator.ProcessingConstants.ENVVARS;
 import static oracle.kubernetes.operator.ProcessingConstants.MAKE_RIGHT_DOMAIN_OPERATION;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE;
 import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_RESTART_REQUIRED;
@@ -125,6 +128,7 @@ import static oracle.kubernetes.operator.ProcessingConstants.MII_DYNAMIC_UPDATE_
 import static oracle.kubernetes.operator.ProcessingConstants.SERVER_SCAN;
 import static oracle.kubernetes.operator.helpers.AnnotationHelper.SHA256_ANNOTATION;
 import static oracle.kubernetes.operator.helpers.BasePodStepContext.KUBERNETES_PLATFORM_HELM_VARIABLE;
+import static oracle.kubernetes.operator.helpers.DomainIntrospectorJobTest.TEST_VOLUME_NAME;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_STARTING;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
@@ -152,9 +156,13 @@ import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_
 import static oracle.kubernetes.operator.helpers.TuningParametersStub.READINESS_TIMEOUT;
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_TARGET_PATH;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_VOLUME_NAME_PREFIX;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATHS;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImageVolume.DEFAULT_AUXILIARY_IMAGE_PATH;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
@@ -207,6 +215,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   private static final String NOOP_EXPORTER_CONFIG = "queries:\n";
   public static final String LONG_CHANNEL_NAME = "Very_Long_Channel_Name";
   public static final String TRUNCATED_PORT_NAME_PREFIX = "very-long-ch";
+  public static final String CUSTOM_COMMAND_SCRIPT = "customScript.sh";
 
   final TerminalStep terminalStep = new TerminalStep();
   private final Domain domain = createDomain();
@@ -226,6 +235,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   private Memento hashMemento;
   private final Map<String, Map<String, KubernetesEventObjects>> domainEventObjects = new ConcurrentHashMap<>();
   private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
+  private final DomainResourceMigrationUtils conversionUtils = new DomainResourceMigrationUtils();
 
   PodHelperTestBase(String serverName, int listenPort) {
     this.serverName = serverName;
@@ -277,6 +287,17 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
     envVars.add(createEnvVar(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_SOURCE_MODEL_HOME, sourceModelHome));
     envVars.add(createEnvVar(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_IMAGE, image));
     envVars.add(createEnvVar(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_NAME, name));
+    return envVars;
+  }
+
+  static List<V1EnvVar> getLegacyAuxiliaryImageEnvVariables(String image, String name, String command) {
+    List<V1EnvVar> envVars = new ArrayList<>();
+    envVars.add(createEnvVar(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_PATH, DEFAULT_AUXILIARY_IMAGE_PATH));
+    envVars.add(createEnvVar(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_TARGET_PATH, AUXILIARY_IMAGE_TARGET_PATH));
+    envVars.add(createEnvVar(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_COMMAND, command));
+    envVars.add(createEnvVar(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_IMAGE, image));
+    envVars.add(createEnvVar(AuxiliaryImageEnvVars.AUXILIARY_IMAGE_CONTAINER_NAME, name));
+    envVars.add(createEnvVar(AUXILIARY_IMAGE_PATHS, DEFAULT_AUXILIARY_IMAGE_PATH));
     return envVars;
   }
 
@@ -849,17 +870,147 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
                     .mountPath(DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH)));
   }
 
+  @Test
+  void whenDomainHasLegacyAuxiliaryImage_createPodsWithInitContainerEmptyDirVolumeAndVolumeMounts() {
+    getConfigurator()
+            .withAuxiliaryImageVolumes(getAuxiliaryImageVolume(DEFAULT_AUXILIARY_IMAGE_PATH))
+            .withLegacyAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")));
+
+    convertLegacyDomain();
+    assertThat(getCreatedPodSpecInitContainers(),
+            allOf(Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+                    "wdt-image:v1",
+                    "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND, serverName)));
+    assertThat(getCreatedPod().getSpec().getVolumes(),
+            hasItem(new V1Volume().name(getAuxiliaryImageVolumeName()).emptyDir(
+                    new V1EmptyDirVolumeSource())));
+    assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
+            hasItem(new V1VolumeMount().name(getAuxiliaryImageVolumeName()).mountPath(DEFAULT_AUXILIARY_IMAGE_PATH)));
+  }
+
+  @NotNull
+  protected String getAuxiliaryImageVolumeName() {
+    return getAuxiliaryImageVolumeName(TEST_VOLUME_NAME);
+  }
+
+  @NotNull
+  protected String getAuxiliaryImageVolumeName(String testVolumeName) {
+    return AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + testVolumeName;
+  }
+
+  @Test
+  void whenDomainHasLegacyAuxiliaryImageAndVolumeWithCustomMountPath_createPodsWithVolumeMountHavingCustomMountPath() {
+    getConfigurator()
+            .withAuxiliaryImageVolumes(getAuxiliaryImageVolume(CUSTOM_MOUNT_PATH))
+            .withLegacyAuxiliaryImages(getAuxiliaryImages("wdt-image:v1"));
+
+    convertLegacyDomain();
+    assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
+            hasItem(new V1VolumeMount().name(getAuxiliaryImageVolumeName()).mountPath(CUSTOM_MOUNT_PATH)));
+  }
+
+  @Test
+  void whenDomainHasLegacyAuxiliaryImageVolumeWithMedium_createPodsWithVolumeHavingSpecifiedMedium() {
+    getConfigurator()
+            .withAuxiliaryImageVolumes(Collections.singletonList(
+                    new AuxiliaryImageVolume().name(TEST_VOLUME_NAME).medium("Memory")))
+            .withLegacyAuxiliaryImages(getAuxiliaryImages("wdt-image:v1"));
+
+    convertLegacyDomain();
+    assertThat(getCreatedPod().getSpec().getVolumes(),
+            hasItem(new V1Volume().name(getAuxiliaryImageVolumeName()).emptyDir(
+                    new V1EmptyDirVolumeSource().medium("Memory"))));
+  }
+
+  @Test
+  void whenDomainHasLegacyAuxiliaryImageVolumeWithSizeLimit_createPodsWithVolumeHavingSpecifiedSizeLimit() {
+    getConfigurator()
+            .withAuxiliaryImageVolumes(Collections.singletonList(
+                    new AuxiliaryImageVolume().name(TEST_VOLUME_NAME).sizeLimit("100G")))
+            .withLegacyAuxiliaryImages(getAuxiliaryImages());
+
+    convertLegacyDomain();
+    assertThat(getCreatedPod().getSpec().getVolumes(),
+            hasItem(new V1Volume().name(getAuxiliaryImageVolumeName()).emptyDir(
+                    new V1EmptyDirVolumeSource().sizeLimit(Quantity.fromString("100G")))));
+  }
+
+  @Test
+  void whenDomainHasLegacyAuxiliaryImagesWithImagePullPolicy_createPodsWithAIInitContainerHavingImagePullPolicy() {
+    getConfigurator()
+            .withAuxiliaryImageVolumes(getAuxiliaryImageVolume(DEFAULT_AUXILIARY_IMAGE_PATH))
+            .withLegacyAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")
+                    .imagePullPolicy("ALWAYS").volume(TEST_VOLUME_NAME)));
+
+    convertLegacyDomain();
+    assertThat(getCreatedPodSpecInitContainers(),
+            allOf(Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+                    "wdt-image:v1", "ALWAYS",
+                    AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND, serverName)));
+  }
+
+  void convertLegacyDomain() {
+    conversionUtils.convertDomain(domain);
+    addAuxiliaryImagePathsEnvToPacket();
+  }
+
+  @Test
+  void whenDomainLegacyHasAuxImagesWithCustomCommand_createPodsWithAuxImageInitContainerHavingCustomCommand() {
+    getConfigurator()
+            .withAuxiliaryImageVolumes(Collections.singletonList(
+                    new AuxiliaryImageVolume().mountPath(DEFAULT_AUXILIARY_IMAGE_PATH).name(TEST_VOLUME_NAME)))
+            .withLegacyAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")
+                    .command(CUSTOM_COMMAND_SCRIPT)));
+
+    convertLegacyDomain();
+    assertThat(getCreatedPodSpecInitContainers(),
+            allOf(Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+                    "wdt-image:v1", "IfNotPresent", CUSTOM_COMMAND_SCRIPT, serverName)));
+  }
+
+  private void addAuxiliaryImagePathsEnvToPacket() {
+    testSupport.addToPacket(ENVVARS,
+            Arrays.asList(new V1EnvVar().name(AUXILIARY_IMAGE_PATHS).value(DEFAULT_AUXILIARY_IMAGE_PATH)));
+  }
+
+  @Test
+  void whenDomainHasMultipleLegacyAuxiliaryImages_createPodsWithAuxiliaryImageInitContainersInCorrectOrder() {
+    getConfigurator()
+            .withAuxiliaryImageVolumes(Collections.singletonList(
+                    new AuxiliaryImageVolume().mountPath(DEFAULT_AUXILIARY_IMAGE_PATH).name(TEST_VOLUME_NAME)))
+            .withLegacyAuxiliaryImages(getAuxiliaryImages("wdt-image1:v1", "wdt-image2:v1"));
+
+    convertLegacyDomain();
+    assertThat(getCreatedPodSpecInitContainers(),
+            allOf(Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+                    "wdt-image1:v1",
+                    "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND, serverName),
+                    Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 2,
+                            "wdt-image2:v1",
+                            "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND, serverName)));
+    assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(), hasSize(4));
+    assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
+            hasItem(new V1VolumeMount().name(AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME)
+                    .mountPath(DEFAULT_AUXILIARY_IMAGE_PATH)));
+  }
+
   @NotNull
   List<AuxiliaryImage> getAuxiliaryImages(String... images) {
     List<AuxiliaryImage> auxiliaryImageList = new ArrayList<>();
     Arrays.stream(images).forEach(image -> auxiliaryImageList
-            .add(new AuxiliaryImage().image(image)));
+            .add(new AuxiliaryImage().image(image).volume(TEST_VOLUME_NAME)));
     return auxiliaryImageList;
   }
 
   @NotNull
+  List<AuxiliaryImageVolume> getAuxiliaryImageVolume(String... mountPath) {
+    AuxiliaryImageVolume cmv = new AuxiliaryImageVolume().name(TEST_VOLUME_NAME);
+    return Collections.singletonList(mountPath.length > 0 ? cmv.mountPath(mountPath[0]) : cmv);
+  }
+
+  @NotNull
   public static AuxiliaryImage getAuxiliaryImage(String image) {
-    return new AuxiliaryImage().image(image);
+    return new AuxiliaryImage().image(image).volume(TEST_VOLUME_NAME);
   }
 
   @Test

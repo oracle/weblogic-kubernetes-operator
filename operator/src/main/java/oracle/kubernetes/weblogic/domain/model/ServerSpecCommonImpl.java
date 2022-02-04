@@ -230,6 +230,11 @@ public abstract class ServerSpecCommonImpl extends ServerSpecBase {
   }
 
   @Override
+  public List<AuxiliaryImage> getAuxiliaryImages() {
+    return server.getLegacyAuxiliaryImages();
+  }
+
+  @Override
   public V1PodSecurityContext getPodSecurityContext() {
     return server.getPodSecurityContext();
   }

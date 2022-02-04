@@ -41,6 +41,7 @@ import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderI
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.rest.ScanCacheStub;
+import oracle.kubernetes.operator.utils.DomainResourceMigrationUtils;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -53,6 +54,7 @@ import oracle.kubernetes.utils.TestUtils;
 import oracle.kubernetes.weblogic.domain.DomainConfigurator;
 import oracle.kubernetes.weblogic.domain.DomainConfiguratorFactory;
 import oracle.kubernetes.weblogic.domain.model.AuxiliaryImage;
+import oracle.kubernetes.weblogic.domain.model.AuxiliaryImageVolume;
 import oracle.kubernetes.weblogic.domain.model.Cluster;
 import oracle.kubernetes.weblogic.domain.model.Configuration;
 import oracle.kubernetes.weblogic.domain.model.ConfigurationConstants;
@@ -86,6 +88,7 @@ import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FA
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.DOMAIN;
 import static oracle.kubernetes.operator.helpers.KubernetesTestSupport.JOB;
 import static oracle.kubernetes.operator.helpers.Matchers.hasEnvVar;
+import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CUSTOM_COMMAND_SCRIPT;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CUSTOM_MODEL_SOURCE_HOME;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CUSTOM_MOUNT_PATH;
 import static oracle.kubernetes.operator.helpers.PodHelperTestBase.CUSTOM_WDT_INSTALL_SOURCE_HOME;
@@ -100,9 +103,12 @@ import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.utils.LogMatcher.containsWarning;
 import static oracle.kubernetes.utils.OperatorUtils.onSeparateLines;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_SOURCE_WDT_INSTALL_HOME;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_VOLUME_NAME_PREFIX;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImageVolume.DEFAULT_AUXILIARY_IMAGE_PATH;
 import static oracle.kubernetes.weblogic.domain.model.ConfigurationConstants.START_NEVER;
 import static oracle.kubernetes.weblogic.domain.model.DomainConditionType.Failed;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
@@ -141,6 +147,8 @@ class DomainIntrospectorJobTest {
   private static final String INFO_MESSAGE = "@[INFO] just letting you know";
   private static final String JOB_UID = "FAILED_JOB";
   private static final String JOB_NAME = UID + "-introspector";
+  public static final String TEST_VOLUME_NAME = "test";
+
   private final TerminalStep terminalStep = new TerminalStep();
   private final Domain domain = createDomain();
   private final DomainPresenceInfo domainPresenceInfo = createDomainPresenceInfo(domain);
@@ -151,6 +159,8 @@ class DomainIntrospectorJobTest {
   private final RetryStrategyStub retryStrategy = createStrictStub(RetryStrategyStub.class);
   private final String jobPodName = LegalNames.toJobIntrospectorName(UID);
   private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
+  private final DomainResourceMigrationUtils conversionUtils = new DomainResourceMigrationUtils();
+
   private boolean jobDeleted;
 
   public DomainIntrospectorJobTest() {
@@ -421,14 +431,13 @@ class DomainIntrospectorJobTest {
   @NotNull
   private List<AuxiliaryImage> getAuxiliaryImages(String...images) {
     List<AuxiliaryImage> auxiliaryImageList = new ArrayList<>();
-    Arrays.stream(images).forEach(image -> auxiliaryImageList.add(new AuxiliaryImage().image(image)));
+    Arrays.stream(images).forEach(image -> auxiliaryImageList.add(getAuxiliaryImage(image)));
     return auxiliaryImageList;
   }
 
   @NotNull
   public static AuxiliaryImage getAuxiliaryImage(String image) {
-    //return new AuxiliaryImage().image(image).volume(TEST_VOLUME_NAME);
-    return new AuxiliaryImage().image(image);
+    return new AuxiliaryImage().image(image).volume(TEST_VOLUME_NAME);
   }
 
   @Test
@@ -954,6 +963,131 @@ class DomainIntrospectorJobTest {
     final DomainStatus status = new DomainStatus();
     status.withIntrospectJobFailureCount(failureCount);
     return status;
+  }
+
+  @Test
+  void whenJobCreatedWithLegacyAuxiliaryImageDefined_hasAuxiliaryImageInitContainerVolumeAndMounts() {
+    getConfigurator()
+            .withAuxiliaryImageVolumes(getAuxiliaryImageVolume(DEFAULT_AUXILIARY_IMAGE_PATH))
+            .withLegacyAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")));
+
+    convertLegacyDomain();
+    V1Job job = runStepsAndGetJobs().get(0);
+    List<V1Container> podTemplateInitContainers = getPodTemplateInitContainers(job);
+
+    assertThat(
+            podTemplateInitContainers,
+            allOf(Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+                    "wdt-image:v1",
+                    "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND)));
+    assertThat(getJobPodSpec(job).getVolumes(),
+            hasItem(new V1Volume().name(AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME).emptyDir(
+                    new V1EmptyDirVolumeSource())));
+    assertThat(getPodTemplateContainers(job).get(0).getVolumeMounts(),
+            hasItem(new V1VolumeMount().name(AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME)
+                    .mountPath(DEFAULT_AUXILIARY_IMAGE_PATH)));
+  }
+
+  @NotNull
+  List<AuxiliaryImageVolume> getAuxiliaryImageVolume(String mountPath) {
+    return Collections.singletonList(new AuxiliaryImageVolume().mountPath(mountPath).name(TEST_VOLUME_NAME));
+  }
+
+  @Test
+  void whenJobCreatedWithLegacyAuxiliaryImageAndVolumeHavingAuxiliaryImagePath_hasVolumeMountWithAuxiliaryImagePath() {
+    DomainConfiguratorFactory.forDomain(domain)
+            .withAuxiliaryImageVolumes(getAuxiliaryImageVolume(CUSTOM_MOUNT_PATH))
+            .withLegacyAuxiliaryImages(getAuxiliaryImages("wdt-image:v1"));
+
+    convertLegacyDomain();
+    List<V1Job> jobs = runStepsAndGetJobs();
+    assertThat(getCreatedPodSpecContainers(jobs).get(0).getVolumeMounts(),
+            hasItem(new V1VolumeMount().name(AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME)
+                    .mountPath(CUSTOM_MOUNT_PATH)));
+  }
+
+  @Test
+  void whenJobCreatedWithLegacyAuxiliaryImageVolumeWithMedium_createdJobPodsHasVolumeWithSpecifiedMedium() {
+    getConfigurator()
+            .withAuxiliaryImageVolumes(Collections.singletonList(
+                    new AuxiliaryImageVolume().name(TEST_VOLUME_NAME).medium("Memory")))
+            .withLegacyAuxiliaryImages(getAuxiliaryImages("wdt-image:v1"));
+
+    convertLegacyDomain();
+    V1Job job = runStepsAndGetJobs().get(0);
+    assertThat(getJobPodSpec(job).getVolumes(),
+            hasItem(new V1Volume().name(AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME).emptyDir(
+                    new V1EmptyDirVolumeSource().medium("Memory"))));
+  }
+
+
+  @Test
+  void whenJobCreatedWithLegacyAuxiliaryImageVolumeWithSizeLimit_createdJobPodsHasVolumeWithSpecifiedSizeLimit() {
+    getConfigurator()
+            .withAuxiliaryImageVolumes(Collections.singletonList(
+                    new AuxiliaryImageVolume().name(TEST_VOLUME_NAME).sizeLimit("100G")))
+            .withLegacyAuxiliaryImages(getAuxiliaryImages());
+
+    convertLegacyDomain();
+    V1Job job = runStepsAndGetJobs().get(0);
+    assertThat(getJobPodSpec(job).getVolumes(),
+            hasItem(new V1Volume().name(AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME).emptyDir(
+                    new V1EmptyDirVolumeSource().sizeLimit(Quantity.fromString("100G")))));
+  }
+
+  @Test
+  void whenJobCreatedWithLegacyAuxiliaryImageWithImagePullPolicy_createJobPodHasImagePullPolicy() {
+    getConfigurator()
+            .withAuxiliaryImageVolumes(getAuxiliaryImageVolume(DEFAULT_AUXILIARY_IMAGE_PATH))
+            .withLegacyAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")
+                    .imagePullPolicy("ALWAYS")));
+
+    convertLegacyDomain();
+    V1Job job = runStepsAndGetJobs().get(0);
+    assertThat(getPodTemplateInitContainers(job),
+            org.hamcrest.Matchers.allOf(
+                    Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+                            "wdt-image:v1", "ALWAYS", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND)));
+  }
+
+  @Test
+  void whenJobCreatedWithLegacyAuxiliaryImageAndCustomCommand_createJobPodsWithInitContainerHavingCustomCommand() {
+    getConfigurator()
+            .withAuxiliaryImageVolumes(getAuxiliaryImageVolume(DEFAULT_AUXILIARY_IMAGE_PATH))
+            .withLegacyAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")
+                    .command(CUSTOM_COMMAND_SCRIPT)));
+
+    convertLegacyDomain();
+    V1Job job = runStepsAndGetJobs().get(0);
+    assertThat(getPodTemplateInitContainers(job),
+            org.hamcrest.Matchers.allOf(
+                    Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+                            "wdt-image:v1", "IfNotPresent", CUSTOM_COMMAND_SCRIPT)));
+  }
+
+  @Test
+  void whenJobCreatedWithMultipleLegacyAuxiliaryImages_createdJobPodsHasMultipleInitContainers() {
+    getConfigurator()
+            .withAuxiliaryImageVolumes(getAuxiliaryImageVolume(DEFAULT_AUXILIARY_IMAGE_PATH))
+            .withLegacyAuxiliaryImages(getAuxiliaryImages("wdt-image1:v1", "wdt-image2:v1"));
+
+    convertLegacyDomain();
+    V1Job job = runStepsAndGetJobs().get(0);
+    assertThat(getPodTemplateInitContainers(job),
+            org.hamcrest.Matchers.allOf(
+                    Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+                            "wdt-image1:v1", "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND),
+                    Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 2,
+                            "wdt-image2:v1",
+                            "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND)));
+    assertThat(getPodTemplateContainers(job).get(0).getVolumeMounts(), hasSize(7));
+    assertThat(getPodTemplateContainers(job).get(0).getVolumeMounts(),
+            hasItem(new V1VolumeMount().name(AUXILIARY_IMAGE_VOLUME_NAME_PREFIX + TEST_VOLUME_NAME)
+                    .mountPath(DEFAULT_AUXILIARY_IMAGE_PATH)));
+  }
+
+  private void convertLegacyDomain() {
+    conversionUtils.convertDomain(domain);
   }
 
   // create job

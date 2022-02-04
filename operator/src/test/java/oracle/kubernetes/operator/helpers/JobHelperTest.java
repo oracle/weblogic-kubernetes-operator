@@ -764,8 +764,7 @@ class JobHelperTest extends DomainValidationBaseTest {
     V1JobSpec jobSpec = createJobSpec();
 
     assertThat(
-        getPodSpec(jobSpec).getInitContainers(),
-        nullValue());
+        getPodSpec(jobSpec).getInitContainers().size(), equalTo(1));
   }
 
   @Test

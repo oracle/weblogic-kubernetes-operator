@@ -32,8 +32,20 @@ UNKNOWN_SHELL=true
 
 checkEnv AUXILIARY_IMAGE_TARGET_PATH AUXILIARY_IMAGE_CONTAINER_NAME || exit 1
 
-initAuxiliaryImage > /tmp/auxiliaryImage.out 2>&1
-cat /tmp/auxiliaryImage.out
-mkdir -p ${AUXILIARY_IMAGE_TARGET_PATH}/auxiliaryImageLogs
-cp /tmp/auxiliaryImage.out ${AUXILIARY_IMAGE_TARGET_PATH}/auxiliaryImageLogs/${AUXILIARY_IMAGE_CONTAINER_NAME}.out
+echo "DEBUG: First argument is $1"
+
+if [ -z "$1" ]; then
+  initAuxiliaryImage > /tmp/auxiliaryImage.out 2>&1
+  cat /tmp/auxiliaryImage.out
+
+  mkdir -p ${AUXILIARY_IMAGE_TARGET_PATH}/auxiliaryImageLogs
+  cp /tmp/auxiliaryImage.out ${AUXILIARY_IMAGE_TARGET_PATH}/auxiliaryImageLogs/${AUXILIARY_IMAGE_CONTAINER_NAME}.out
+elif [ "$1" == "webhook_generated" ]; then
+  echo "DEBUG: First argument found -> webhook_generated"
+  initContainerAuxiliaryImages > /tmp/initContainerAuxImages.out 2>&1
+  cat /tmp/initContainerAuxImages.out
+
+  mkdir -p ${AUXILIARY_IMAGE_TARGET_PATH}/initContainerAuxImageLogs
+  cp /tmp/initContainerAuxImages.out ${AUXILIARY_IMAGE_TARGET_PATH}/initContainerAuxImageLogs/${AUXILIARY_IMAGE_CONTAINER_NAME}.out
+fi
 exit

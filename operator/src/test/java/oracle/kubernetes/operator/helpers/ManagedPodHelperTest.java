@@ -63,8 +63,10 @@ import static oracle.kubernetes.operator.logging.MessageKeys.MANAGED_POD_REPLACE
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.utils.LogMatcher.containsSevere;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImageVolume.DEFAULT_AUXILIARY_IMAGE_PATH;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.anEmptyMap;
@@ -1106,6 +1108,45 @@ class ManagedPodHelperTest extends PodHelperTestBase {
 
     containers.forEach(c -> assertThat(c.getResources().getLimits(), hasResourceQuantity("cpu", "1Gi")));
     containers.forEach(c -> assertThat(c.getResources().getRequests(), hasResourceQuantity("memory", "250m")));
+  }
+
+  @Test
+  void whenDomainAndClusterHaveLegacyAuxImages_createManagedPodsWithInitContainersInCorrectOrderAndVolumeMounts() {
+    getConfigurator()
+            .withAuxiliaryImageVolumes(getAuxiliaryImageVolume())
+            .withLegacyAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")));
+    getConfigurator()
+            .withAuxiliaryImageVolumes(getAuxiliaryImageVolume())
+            .configureCluster(CLUSTER_NAME)
+            .withLegacyAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v2")));
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+
+    convertLegacyDomain();
+    assertThat(getCreatedPodSpecInitContainers(),
+            allOf(Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+                    "wdt-image:v1",
+                    "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND, SERVER_NAME),
+                    Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 2,
+                            "wdt-image:v2",
+                            "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND, SERVER_NAME)));
+    assertThat(getCreatedPod().getSpec().getVolumes(),
+            hasItem(new V1Volume().name(getAuxiliaryImageVolumeName()).emptyDir(
+                    new V1EmptyDirVolumeSource())));
+    assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
+            hasItem(new V1VolumeMount().name(getAuxiliaryImageVolumeName()).mountPath(DEFAULT_AUXILIARY_IMAGE_PATH)));
+  }
+
+  @Test
+  void whenClusterHasAuxiliaryImageAndVolumeHasMountPath_volumeMountsCreatedWithSpecifiedMountPath() {
+    getConfigurator()
+            .withAuxiliaryImageVolumes(getAuxiliaryImageVolume(CUSTOM_MOUNT_PATH2))
+            .configureCluster(CLUSTER_NAME)
+            .withLegacyAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v2")));
+    testSupport.addToPacket(ProcessingConstants.CLUSTER_NAME, CLUSTER_NAME);
+
+    convertLegacyDomain();
+    assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
+            hasItem(new V1VolumeMount().name(getAuxiliaryImageVolumeName()).mountPath(CUSTOM_MOUNT_PATH2)));
   }
 
   @Test

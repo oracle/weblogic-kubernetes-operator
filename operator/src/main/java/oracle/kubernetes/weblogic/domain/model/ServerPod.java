@@ -39,6 +39,8 @@ import io.kubernetes.client.openapi.models.V1VolumeMount;
 import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
 import jakarta.validation.Valid;
 import oracle.kubernetes.json.Description;
+import oracle.kubernetes.json.Feature;
+import oracle.kubernetes.json.PreserveUnknown;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -46,7 +48,7 @@ import org.apache.commons.lang3.builder.ToStringBuilder;
 import static java.util.Collections.emptyList;
 import static oracle.kubernetes.operator.helpers.PodHelper.createCopy;
 
-class ServerPod extends KubernetesResource {
+public class ServerPod extends KubernetesResource {
 
   private static final Comparator<V1EnvVar> ENV_VAR_COMPARATOR =
       Comparator.comparing(V1EnvVar::getName);
@@ -203,6 +205,10 @@ class ServerPod extends KubernetesResource {
           + "See `kubectl explain pods.spec.containers.securityContext`.")
   private V1SecurityContext containerSecurityContext = new V1SecurityContext();
 
+  public List<V1Volume> getVolumes() {
+    return volumes;
+  }
+
   /**
    * The additional volumes.
    *
@@ -210,6 +216,18 @@ class ServerPod extends KubernetesResource {
    */
   @Description("Additional volumes to be created in the server Pod. See `kubectl explain pods.spec.volumes`.")
   private final List<V1Volume> volumes = new ArrayList<>();
+
+  public List<V1VolumeMount> getVolumeMounts() {
+    return volumeMounts;
+  }
+
+  public void setVolumeMounts(List<V1VolumeMount> volumeMounts) {
+    this.volumeMounts.addAll(volumeMounts);
+  }
+
+  public void setVolumes(List<V1Volume> volumes) {
+    this.volumes.addAll(volumes);
+  }
 
   /**
    * The additional volume mounts.
@@ -219,6 +237,20 @@ class ServerPod extends KubernetesResource {
   @Description("Additional volume mounts for the container running a WebLogic Server instance. "
       + "See `kubectl explain pods.spec.containers.volumeMounts`.")
   private final List<V1VolumeMount> volumeMounts = new ArrayList<>();
+
+  @Feature("Disabled")
+  @Description("Deprecated. Use `configuration.secrets` instead. Ignored if `configuration.secrets` is specified."
+          + " A list of names of the Secrets for optional WebLogic configuration overrides.")
+  @PreserveUnknown
+  private List<AuxiliaryImage> auxiliaryImages;
+
+  public List<AuxiliaryImage> getAuxiliaryImages() {
+    return this.auxiliaryImages;
+  }
+
+  public void setAuxiliaryImages(List<AuxiliaryImage> auxiliaryImages) {
+    this.auxiliaryImages = auxiliaryImages;
+  }
 
   private static void copyValues(V1ResourceRequirements to, V1ResourceRequirements from) {
     if (from != null) {
@@ -385,13 +417,11 @@ class ServerPod extends KubernetesResource {
     return this.shutdown;
   }
 
-  void setShutdown(String shutdownType, Long timeoutSeconds, Boolean ignoreSessions,
-      Boolean waitForAllSessions) {
+  void setShutdown(String shutdownType, Long timeoutSeconds, Boolean ignoreSessions) {
     this.shutdown
         .shutdownType(shutdownType)
         .timeoutSeconds(timeoutSeconds)
-        .ignoreSessions(ignoreSessions)
-        .waitForAllSessions(waitForAllSessions);
+        .ignoreSessions(ignoreSessions);
   }
 
   ProbeTuning getReadinessProbeTuning() {
@@ -566,7 +596,7 @@ class ServerPod extends KubernetesResource {
     return false;
   }
 
-  List<V1EnvVar> getEnv() {
+  public List<V1EnvVar> getEnv() {
     return this.env;
   }
 
@@ -617,7 +647,7 @@ class ServerPod extends KubernetesResource {
     this.initContainers = initContainers;
   }
 
-  void addInitContainer(V1Container initContainer) {
+  public void addInitContainer(V1Container initContainer) {
     initContainers.add(initContainer);
   }
 

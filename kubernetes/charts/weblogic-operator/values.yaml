@@ -180,6 +180,18 @@ internalDebugHttpPort: 30999
 # Otherwise, it is ignored.
 externalDebugHttpPort: 30999
 
+# internalWebhookDebugHttpPort specifies the port number inside the Kubernetes cluster for the operator's Java
+# remote debug interface.
+# This parameter is required if 'remoteDebugNodePortEnabled' is true.
+# Otherwise, it is ignored.
+internalWebhookDebugHttpPort: 31999
+
+# externalDebugHttpPort specifies the node port that should be allocated for the operator's
+# Java remote debug interface.
+# This parameter is required if 'remoteDebugNodePortEnabled' is true.
+# Otherwise, it is ignored.
+externalWebhookDebugHttpPort: 31999
+
 # dns1123Fields overrides the default list of field names that the operator
 # converts to DNS-1123 legal values when replacing variable references in the 
 # Domain resource. The default list can be found inside the class LegalNames

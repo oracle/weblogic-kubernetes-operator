@@ -17,6 +17,7 @@ import java.util.logging.LogRecord;
 
 import com.meterware.simplestub.Memento;
 import com.meterware.simplestub.StaticStubSupport;
+import io.kubernetes.client.openapi.models.V1CustomResourceConversion;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinition;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinitionNames;
 import io.kubernetes.client.openapi.models.V1CustomResourceDefinitionSpec;
@@ -196,15 +197,29 @@ class CrdHelperTest {
   @Test
   void whenExistingCrdHasFutureVersion_dontReplaceIt() {
     V1CustomResourceDefinition existing = defineCrd(PRODUCT_VERSION_FUTURE);
-    existing
-        .getSpec()
-        .addVersionsItem(
-            new V1CustomResourceDefinitionVersion()
-                .served(true)
-                .name(KubernetesConstants.DOMAIN_VERSION));
+    existing.getSpec().addVersionsItem(
+            new V1CustomResourceDefinitionVersion().served(true).name(KubernetesConstants.DOMAIN_VERSION))
+            .conversion(new V1CustomResourceConversion().strategy("Webhook"));
     testSupport.defineResources(existing);
 
     testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION));
+  }
+
+  @Test
+  void whenExistingCrdHasFutureVersionButNoneConversionStrategy_replaceIt() {
+    V1CustomResourceDefinition existing = defineCrd(PRODUCT_VERSION_FUTURE);
+    existing
+            .getSpec()
+            .addVersionsItem(
+                    new V1CustomResourceDefinitionVersion()
+                            .served(true)
+                            .name(KubernetesConstants.DOMAIN_VERSION))
+            .conversion(new V1CustomResourceConversion().strategy("None"));
+    testSupport.defineResources(existing);
+
+    testSupport.runSteps(CrdHelper.createDomainCrdStep(KUBERNETES_VERSION_16, PRODUCT_VERSION));
+
+    assertThat(logRecords, containsInfo(CREATING_CRD));
   }
 
   @Test

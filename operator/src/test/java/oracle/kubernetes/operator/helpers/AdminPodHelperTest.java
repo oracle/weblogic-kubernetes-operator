@@ -36,6 +36,7 @@ import static oracle.kubernetes.operator.KubernetesConstants.HTTP_NOT_FOUND;
 import static oracle.kubernetes.operator.KubernetesConstants.HTTP_UNAUTHORIZED;
 import static oracle.kubernetes.operator.WebLogicConstants.ADMIN_STATE;
 import static oracle.kubernetes.operator.WebLogicConstants.RUNNING_STATE;
+import static oracle.kubernetes.operator.helpers.DomainIntrospectorJobTest.TEST_VOLUME_NAME;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_FAILED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.DOMAIN_ROLL_COMPLETED;
 import static oracle.kubernetes.operator.helpers.EventHelper.EventItem.POD_CYCLE_STARTING;
@@ -55,8 +56,10 @@ import static oracle.kubernetes.operator.logging.MessageKeys.DOMAIN_VALIDATION_F
 import static oracle.kubernetes.utils.LogMatcher.containsFine;
 import static oracle.kubernetes.utils.LogMatcher.containsInfo;
 import static oracle.kubernetes.utils.LogMatcher.containsSevere;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX;
 import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImage.AUXILIARY_IMAGE_INTERNAL_VOLUME_NAME;
+import static oracle.kubernetes.weblogic.domain.model.AuxiliaryImageVolume.DEFAULT_AUXILIARY_IMAGE_PATH;
 import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_AUXILIARY_IMAGE_MOUNT_PATH;
 import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.contains;
@@ -589,6 +592,44 @@ class AdminPodHelperTest extends PodHelperTestBase {
         allOf(
             hasInitContainer("container1", "busybox", ADMIN_SERVER, "sh", "-c", "echo admin server && sleep 120"),
             hasInitContainer("container2", "oraclelinux", ADMIN_SERVER, "ls /oracle")));
+  }
+
+  @Test
+  void whenDomainAndServerHaveAuxiliaryImages_createAdminPodWithInitContainersInCorrectOrderAndVolumeMounts() {
+    getConfigurator()
+            .withAuxiliaryImageVolumes(getAuxiliaryImageVolume())
+            .withLegacyAuxiliaryImages(Collections.singletonList(getAuxiliaryImage("wdt-image:v1")));
+    getConfigurator()
+            .withAuxiliaryImageVolumes(getAuxiliaryImageVolume())
+            .configureAdminServer()
+            .withLegacyAuxiliaryImages(Collections.singletonList((getAuxiliaryImage("wdt-image:v2"))));
+
+    convertLegacyDomain();
+    assertThat(getCreatedPodSpecInitContainers(),
+            allOf(Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 1,
+                    "wdt-image:v1",
+                    "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND, ADMIN_SERVER),
+                    Matchers.hasLegacyAuxiliaryImageInitContainer(AUXILIARY_IMAGE_INIT_CONTAINER_NAME_PREFIX + 2,
+                            "wdt-image:v2",
+                            "IfNotPresent", AUXILIARY_IMAGE_DEFAULT_INIT_CONTAINER_COMMAND, ADMIN_SERVER)));
+    assertThat(getCreatedPod().getSpec().getVolumes(),
+            hasItem(new V1Volume().name(getAuxiliaryImageVolumeName(TEST_VOLUME_NAME)).emptyDir(
+                    new V1EmptyDirVolumeSource())));
+    assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
+            hasItem(new V1VolumeMount().name(getAuxiliaryImageVolumeName(TEST_VOLUME_NAME))
+                    .mountPath(DEFAULT_AUXILIARY_IMAGE_PATH)));
+  }
+
+  @Test
+  void whenServerHasAuxiliaryImageVolumeWithMountPath_createPodWithVolumeMountHavingCorrectMountPath() {
+    getConfigurator()
+            .withAuxiliaryImageVolumes(getAuxiliaryImageVolume(CUSTOM_MOUNT_PATH))
+            .configureAdminServer()
+            .withLegacyAuxiliaryImages(Collections.singletonList((getAuxiliaryImage("wdt-image:v2"))));
+
+    convertLegacyDomain();
+    assertThat(getCreatedPodSpecContainers().get(0).getVolumeMounts(),
+            hasItem(new V1VolumeMount().name(getAuxiliaryImageVolumeName()).mountPath(CUSTOM_MOUNT_PATH)));
   }
 
   @Test

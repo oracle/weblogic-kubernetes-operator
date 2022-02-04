@@ -18,7 +18,9 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotNull;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
+import oracle.kubernetes.json.Feature;
 import oracle.kubernetes.json.Pattern;
+import oracle.kubernetes.json.PreserveUnknown;
 import oracle.kubernetes.json.Range;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.ImagePullPolicy;
@@ -42,6 +44,11 @@ import static oracle.kubernetes.weblogic.domain.model.Model.DEFAULT_WDT_MODEL_HO
 /** DomainSpec is a description of a domain. */
 @Description("The specification of the operation of the WebLogic domain. Required.")
 public class DomainSpec extends BaseConfiguration {
+
+  @Override
+  public ServerPod getServerPod() {
+    return super.serverPod;
+  }
 
   /** Domain unique identifier. Must be unique across the Kubernetes cluster. */
   @Description(
@@ -301,6 +308,20 @@ public class DomainSpec extends BaseConfiguration {
       + " A list of names of the Secrets for optional WebLogic configuration overrides.")
   private List<String> configOverrideSecrets;
 
+  @Feature("Disabled")
+  @Description("Deprecated. Use `configuration.secrets` instead. Ignored if `configuration.secrets` is specified."
+          + " A list of names of the Secrets for optional WebLogic configuration overrides.")
+  @PreserveUnknown
+  private List<AuxiliaryImageVolume> auxiliaryImageVolumes;
+
+  public List<AuxiliaryImageVolume> getAuxiliaryImageVolumes() {
+    return auxiliaryImageVolumes;
+  }
+
+  public void setAuxiliaryImageVolumes(List<AuxiliaryImageVolume> auxiliaryImageVolumes) {
+    this.auxiliaryImageVolumes = auxiliaryImageVolumes;
+  }
+
   /**
    * The WebLogic Monitoring Exporter configuration.
    *
@@ -430,7 +451,7 @@ public class DomainSpec extends BaseConfiguration {
   }
 
   @SuppressWarnings("unused")
-  EffectiveConfigurationFactory getEffectiveConfigurationFactory(
+  public EffectiveConfigurationFactory getEffectiveConfigurationFactory(
       String apiVersion) {
     return new CommonEffectiveConfigurationFactory();
   }
