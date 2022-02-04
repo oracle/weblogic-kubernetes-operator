@@ -102,7 +102,7 @@ externalRestHttpsPort: 31001
 # elkIntegrationEnabled specifies whether or not ELK integration is enabled.
 elkIntegrationEnabled: false
 
-# logStashImage specifies the container image containing logstash.
+# logStashImage specifies the container image containing Logstash.
 # This parameter is ignored if 'elkIntegrationEnabled' is false.
 logStashImage: "logstash:6.6.0"
 
@@ -113,6 +113,18 @@ elasticSearchHost: "elasticsearch.default.svc.cluster.local"
 # elasticSearchPort specifies the port number of where elasticsearch is running.
 # This parameter is ignored if 'elkIntegrationEnabled' is false.
 elasticSearchPort: 9200
+
+# createlogStashConfigMap specifies whether a ConfigMap named
+# weblogic-operator-logstash-cm should be created during helm install.
+# The ConfigMap contains the Logstash pipeline configuration for the Logstash
+# container running in the operator pod.
+# If set to true, a ConfigMap will be created during heml install using the
+# logstash.conf file in the kubernetes/samples/charts/weblogic-operator directory.
+# Set createLogStashConfigMap to false if the ConfigMap
+# already exists in the operator's namespace with the Logstash 
+# configuration provided by the customer.
+# This parameter is ignored if 'elkIntegrationEnabled' is false.
+createLogStashConfigMap: true
 
 # featureGates specifies a set of key=value pairs separated by commas that describe whether a given
 # operator feature is enabled. You enable a feature by including a key=value pair where the key is the

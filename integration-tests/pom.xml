@@ -477,6 +477,9 @@
                     **/ItMiiDynamicUpdate*,
                     **/ItMiiSampleWlsMain,
                     **/ItMiiSampleWlsAux,
+                    **/ItMiiSampleFmwAux,
+                    **/ItFmwSample,
+                    **/ItWlsSamples,
                     **/ItMiiMultiModel
                 </includes-failsafe>
             </properties>

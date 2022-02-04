@@ -61,7 +61,6 @@ fi
 
 LOGGING="-Djava.util.logging.config.file=${LOGGING_CONFIG}"
 mkdir -m 777 -p /logs
-cp /operator/logstash.conf /logs/logstash.conf
 # assumption is that we have mounted a volume on /logs which is also visible to
 # the logstash container/pod.
 
