@@ -113,8 +113,6 @@ echo "Results will be in ${RESULT_ROOT}"
 
 if [ -d "${PV_ROOT}" ]; then
   rm -Rf "${PV_ROOT}/*"
-else
-  mkdir -m777 "${PV_ROOT}"
 fi
 
 echo "Persistent volume files, if any, will be in ${PV_ROOT}"
