@@ -111,7 +111,6 @@ fi
 
 echo "Results will be in ${RESULT_ROOT}"
 
-export PV_ROOT="${outdir}/k8s-pvroot"
 if [ -d "${PV_ROOT}" ]; then
   rm -Rf "${PV_ROOT}/*"
 else
