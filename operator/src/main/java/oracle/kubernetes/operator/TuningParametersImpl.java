@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -36,7 +37,7 @@ public class TuningParametersImpl extends ConfigMapConsumer implements TuningPar
     super(executorService);
   }
 
-  static synchronized TuningParameters initializeInstance(ScheduledExecutorService executorService, String mountPoint) {
+  static synchronized TuningParameters initializeInstance(ScheduledExecutorService executorService, File mountPoint) {
     if (INSTANCE == null) {
       final TuningParametersImpl impl = new TuningParametersImpl(executorService);
       INSTANCE = impl;

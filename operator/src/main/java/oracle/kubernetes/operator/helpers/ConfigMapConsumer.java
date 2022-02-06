@@ -43,9 +43,9 @@ public class ConfigMapConsumer implements Map<String, String> {
     this.threadPool = executorService;
   }
 
-  protected void scheduleUpdates(String mountPoint, Runnable onUpdate) {
+  protected void scheduleUpdates(File mountPoint, Runnable onUpdate) {
     this.onUpdate = onUpdate;
-    this.mountPointDir = new File(mountPoint);
+    this.mountPointDir = mountPoint;
     if (mountPointDir.exists()) {
       onUpdate.run();
       schedule();
