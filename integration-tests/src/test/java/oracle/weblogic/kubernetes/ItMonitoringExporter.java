@@ -91,7 +91,10 @@ import org.awaitility.core.ConditionFactory;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.MethodOrderer;
+import org.junit.jupiter.api.Order;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.TestMethodOrder;
 import org.yaml.snakeyaml.Yaml;
 
 import static java.nio.file.Files.createDirectories;
@@ -173,6 +176,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * Verify WebLogic metrics can be accessed via Prometheus
  */
 @DisplayName("Verify WebLogic Metric is processed as expected by MonitoringExporter via Prometheus and Grafana")
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
 @IntegrationTest
 class ItMonitoringExporter {
 
@@ -551,6 +555,7 @@ class ItMonitoringExporter {
    * Check generated monitoring exporter WebLogic metrics via Prometheus, Grafana.
    * Check basic functionality of monitoring exporter.
    */
+  @Order(1)
   @Test
   @DisplayName("Test Basic Functionality of Monitoring Exporter.")
   void testBasicFunctionality() throws Exception {
@@ -1499,7 +1504,7 @@ class ItMonitoringExporter {
     createOcirRepoSecret(namespace);
     logger.info("Create secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
-    assertDoesNotThrow(() -> createSecretWithUsernamePassword(adminSecretName, 
+    assertDoesNotThrow(() -> createSecretWithUsernamePassword(adminSecretName,
         namespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
         String.format("create secret for admin credentials failed for %s", adminSecretName));
 
@@ -1708,11 +1713,11 @@ class ItMonitoringExporter {
         "Copying file to pod failed");
     execInPod(exporterPod, "monitoring-exporter", true,
         "curl -X PUT -H \"content-type: application/yaml\" --data-binary \"@/tmp/"
-        + configYaml + "\" -i -u " + ADMIN_USERNAME_DEFAULT + ":" 
-        + ADMIN_PASSWORD_DEFAULT  
+        + configYaml + "\" -i -u " + ADMIN_USERNAME_DEFAULT + ":"
+        + ADMIN_PASSWORD_DEFAULT
         + "http://localhost:8080/configuration");
     execInPod(exporterPod, "monitoring-exporter", true, "curl -X GET  "
-         + " -i -u " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT 
+         + " -i -u " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
          + "http://localhost:8080/metrics");
   }
 
