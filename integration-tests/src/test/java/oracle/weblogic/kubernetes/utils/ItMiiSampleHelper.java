@@ -25,6 +25,7 @@ import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.FMWINFRA_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
 import static oracle.weblogic.kubernetes.TestConstants.KIND_REPO;
+import static oracle.weblogic.kubernetes.TestConstants.MII_BASIC_IMAGE_TAG;
 import static oracle.weblogic.kubernetes.TestConstants.OCIR_SECRET_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.TestConstants.RESULTS_ROOT;
@@ -48,27 +49,19 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 @IntegrationTest
 public class ItMiiSampleHelper {
 
-  private static final String MII_SAMPLES_WORK_DIR = RESULTS_ROOT
-      + "/model-in-image-sample-work-dir";
-  private static final String MII_SAMPLES_SCRIPT =
-      "../operator/integration-tests/model-in-image/run-test.sh";
+  private final String miiSampleScript = "../operator/integration-tests/model-in-image/run-test.sh";
+  private final String currentDateTime = getDateAndTimeStamp();
+  private final String successSearchString = "Finished without errors";
 
-  private static final String CURRENT_DATE_TIME = getDateAndTimeStamp();
-  private static final String MII_SAMPLE_WLS_IMAGE_NAME_V1 = DOMAIN_IMAGES_REPO + "mii-" + CURRENT_DATE_TIME + "-wlsv1";
-  private static final String MII_SAMPLE_WLS_IMAGE_NAME_V2 = DOMAIN_IMAGES_REPO + "mii-" + CURRENT_DATE_TIME + "-wlsv2";
-  private static final String MII_SAMPLE_JRF_IMAGE_NAME_V1 = DOMAIN_IMAGES_REPO + "mii-" + CURRENT_DATE_TIME + "-jrfv1";
-  private static final String MII_SAMPLE_JRF_IMAGE_NAME_V2 = DOMAIN_IMAGES_REPO + "mii-" + CURRENT_DATE_TIME + "-jrfv2";
-  private static final String SUCCESS_SEARCH_STRING = "Finished without errors";
-
-  private static String opNamespace = null;
-  private static String domainNamespace = null;
-  private static String traefikNamespace = null;
-  private static String dbNamespace = null;
-  private static Map<String, String> envMap = null;
-  private static LoggingFacade logger = null;
-  private static boolean previousTestSuccessful = true;
-  private static DomainType domainType = null;
-  private static ImageType imageType = null;
+  private String opNamespace = null;
+  private String domainNamespace = null;
+  private String traefikNamespace = null;
+  private String dbNamespace = null;
+  private Map<String, String> envMap = null;
+  private LoggingFacade logger = null;
+  private boolean previousTestSuccessful = true;
+  private DomainType domainType = null;
+  private ImageType imageType = null;
 
   public enum DomainType {
     JRF,
@@ -80,6 +73,12 @@ public class ItMiiSampleHelper {
     AUX
   }
 
+  private String getModelImageName(String suffix) {
+    return new StringBuffer(DOMAIN_IMAGES_REPO)
+        .append("mii-")
+        .append(suffix).toString();
+  }
+
   /**
    * Install Operator.
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
@@ -87,10 +86,10 @@ public class ItMiiSampleHelper {
    * @param domainTypeParam domain type names
    * @param imageTypeParam image type names
    */
-  public static void initAll(List<String> namespaces, DomainType domainTypeParam, ImageType imageTypeParam) {
+  public void initAll(List<String> namespaces, DomainType domainTypeParam, ImageType imageTypeParam) {
     logger = getLogger();
-    ItMiiSampleHelper.domainType = domainTypeParam;
-    ItMiiSampleHelper.imageType = imageTypeParam;
+    domainType = domainTypeParam;
+    imageType = imageTypeParam;
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
@@ -107,13 +106,16 @@ public class ItMiiSampleHelper {
     // install and verify operator
     installAndVerifyOperator(opNamespace, domainNamespace);
 
+    String miiSampleWorkDir =
+        RESULTS_ROOT + "/" + domainNamespace + "/model-in-image-sample-work-dir";
+
     // env variables to override default values in sample scripts
-    envMap = new HashMap<String, String>();
+    envMap = new HashMap<>();
     envMap.put("DOMAIN_NAMESPACE", domainNamespace);
     envMap.put("TRAEFIK_NAMESPACE", traefikNamespace);
     envMap.put("TRAEFIK_HTTP_NODEPORT", "0"); // 0-->dynamically choose the np
     envMap.put("TRAEFIK_HTTPS_NODEPORT", "0"); // 0-->dynamically choose the np
-    envMap.put("WORKDIR", MII_SAMPLES_WORK_DIR);
+    envMap.put("WORKDIR", miiSampleWorkDir);
     envMap.put("BASE_IMAGE_NAME", WEBLOGIC_IMAGE_TO_USE_IN_SPEC
         .substring(0, WEBLOGIC_IMAGE_TO_USE_IN_SPEC.lastIndexOf(":")));
     envMap.put("BASE_IMAGE_TAG", WEBLOGIC_IMAGE_TAG);
@@ -168,22 +170,22 @@ public class ItMiiSampleHelper {
   /**
    * Verify that the image exists and push it to docker registry if necessary.
    */
-  public static void assertImageExistsAndPushIfNeeded() {
+  public void assertImageExistsAndPushIfNeeded() {
     String imageName = envMap.get("MODEL_IMAGE_NAME");
     String imageVer = "notset";
     String decoration = (envMap.get("DO_AI") != null && envMap.get("DO_AI").equalsIgnoreCase("true"))  ? "AI-" : "";
 
-    if (imageName.equals(MII_SAMPLE_WLS_IMAGE_NAME_V1)) {
-      imageVer = "WLS-" + decoration + "v1";
+    if (imageName.contains("-wlsv1")) {
+      imageVer = MII_BASIC_IMAGE_TAG + "-WLS-" + decoration + "v1";
     }
-    if (imageName.equals(MII_SAMPLE_WLS_IMAGE_NAME_V2)) {
-      imageVer = "WLS-" + decoration + "v2";
+    if (imageName.contains("-wlsv2")) {
+      imageVer = MII_BASIC_IMAGE_TAG + "-WLS-" + decoration + "v2";
     }
-    if (imageName.equals(MII_SAMPLE_JRF_IMAGE_NAME_V1)) {
-      imageVer = "JRF-" + decoration + "v1";
+    if (imageName.contains("-jrfv1")) {
+      imageVer = MII_BASIC_IMAGE_TAG + "-JRF-" + decoration + "v1";
     }
-    if (imageName.equals(MII_SAMPLE_JRF_IMAGE_NAME_V2)) {
-      imageVer = "JRF-" + decoration + "v2";
+    if (imageName.contains("-jrfv2")) {
+      imageVer = MII_BASIC_IMAGE_TAG + "-JRF-" + decoration + "v2";
     }
 
     String image = imageName + ":" + imageVer;
@@ -201,7 +203,7 @@ public class ItMiiSampleHelper {
    * @param args arguments to execute script
    * @param errString a string of detailed error
    */
-  public static void execTestScriptAndAssertSuccess(DomainType domainType,
+  public void execTestScriptAndAssertSuccess(DomainType domainType,
                                                     String args,
                                                     String errString) {
     for (String arg : args.split(",")) {
@@ -212,7 +214,7 @@ public class ItMiiSampleHelper {
         assertImageExistsAndPushIfNeeded();
 
       } else {
-        String command = MII_SAMPLES_SCRIPT
+        String command = miiSampleScript
             + " "
             + arg
             + (domainType == DomainType.JRF ? " -jrf " : "");
@@ -228,7 +230,7 @@ public class ItMiiSampleHelper {
             result != null
                 && result.exitValue() == 0
                 && result.stdout() != null
-                && result.stdout().contains(SUCCESS_SEARCH_STRING);
+                && result.stdout().contains(successSearchString);
 
         String outStr = errString;
         outStr += ", domainType=" + domainType + "\n";
@@ -246,12 +248,17 @@ public class ItMiiSampleHelper {
 
   /**
    * Test MII sample WLS or JRF initial use case.
+   * @param testClassName the test class name
    */
-  public static void callInitialUseCase() {
+  public void callInitialUseCase(String testClassName) {
     String imageName = (domainType.equals(DomainType.WLS))
-        ? MII_SAMPLE_WLS_IMAGE_NAME_V1 : MII_SAMPLE_JRF_IMAGE_NAME_V1;
+        ? getModelImageName(testClassName + "-wlsv1") : getModelImageName(testClassName + "-jrfv1");
     previousTestSuccessful = true;
     envMap.put("MODEL_IMAGE_NAME", imageName);
+    String decoration = (envMap.get("DO_AI") != null && envMap.get("DO_AI").equalsIgnoreCase("true"))  ? "AI-" : "";
+    envMap.put("MODEL_IMAGE_TAG",
+        MII_BASIC_IMAGE_TAG + "-" + domainType + "-" + decoration + "v1");
+    envMap.put("MODEL_DIR", "model-images/model-in-image__" + domainType + "-v1");
 
     if (domainType.equals(DomainType.JRF)) {
       String dbImageName = (KIND_REPO != null
@@ -284,13 +291,19 @@ public class ItMiiSampleHelper {
 
   /**
    * Test MII sample WLS or JRF update1 use case.
+   * @param args test arguments
+   * @param errString a string of detailed error
+   * @param testClassName the test class name which will call this method
    */
-  public static void callUpdateUseCase(String args,
-                                       String errString) {
+  public void callUpdateUseCase(String args, String errString, String testClassName) {
+
     if (args.contains("update3")) {
       String imageName = (domainType.equals(DomainType.WLS))
-          ? MII_SAMPLE_WLS_IMAGE_NAME_V2 : MII_SAMPLE_JRF_IMAGE_NAME_V2;
+          ? getModelImageName(testClassName + "-wlsv2") : getModelImageName(testClassName + "-jrfv2");
       envMap.put("MODEL_IMAGE_NAME", imageName);
+      String decoration = (envMap.get("DO_AI") != null && envMap.get("DO_AI").equalsIgnoreCase("true"))  ? "AI-" : "";
+      envMap.put("MODEL_IMAGE_TAG", MII_BASIC_IMAGE_TAG + "-" + domainType + "-" + decoration + "v2");
+      envMap.put("MODEL_DIR", "model-images/model-in-image__" + domainType + "-v2");
     }
 
     execTestScriptAndAssertSuccess(domainType, args, errString);
@@ -299,14 +312,8 @@ public class ItMiiSampleHelper {
   /**
    * Test MII sample WLS or JRF update1 use case.
    */
-  public static void callCheckMiiSampleSource(String args,
+  public void callCheckMiiSampleSource(String args,
                                               String errString) {
-    /*
-    final String baseImageNameKey = "BASE_IMAGE_NAME";
-    envMap.remove(baseImageNameKey);
-    execTestScriptAndAssertSuccess(domainType, args, errString);
-    envMap.put(baseImageNameKey, WEBLOGIC_IMAGE_NAME);*/
-
     final String baseImageNameKey = "BASE_IMAGE_NAME";
     final String origImageName = envMap.get(baseImageNameKey);
     try {
@@ -320,7 +327,7 @@ public class ItMiiSampleHelper {
   /**
    * Delete DB deployment for FMW test cases and Uninstall traefik.
    */
-  public static void tearDownAll() {
+  public void tearDownAll() {
     logger = getLogger();
     // uninstall traefik
     if (traefikNamespace != null) {
@@ -334,7 +341,7 @@ public class ItMiiSampleHelper {
     if (domainType.equals(DomainType.JRF) && envMap != null) {
       logger.info("Running samples DB cleanup");
       Command.withParams(new CommandParams()
-          .command(MII_SAMPLES_SCRIPT + " -precleandb")
+          .command(miiSampleScript + " -precleandb")
           .env(envMap)
           .redirect(true)).execute();
     }
