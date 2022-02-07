@@ -260,6 +260,12 @@ public abstract class PodStepContext extends BasePodStepContext {
         .getLocalAdminProtocolChannelPort();
   }
 
+  boolean isDomainWideAdminPortEnabled() {
+    return domainTopology
+            .getServerConfig(domainTopology.getAdminServerName())
+            .isAdminPortEnabled();
+  }
+
   private String getDataHome() {
     String dataHome = getDomain().getDataHome();
     return dataHome != null && !dataHome.isEmpty() ? dataHome + File.separator + getDomainUid() : null;
@@ -758,6 +764,7 @@ public abstract class PodStepContext extends BasePodStepContext {
     addDefaultEnvVarIfMissing(env, "SHUTDOWN_TYPE", shutdown.getShutdownType());
     addDefaultEnvVarIfMissing(env, "SHUTDOWN_TIMEOUT", String.valueOf(shutdown.getTimeoutSeconds()));
     addDefaultEnvVarIfMissing(env, "SHUTDOWN_IGNORE_SESSIONS", String.valueOf(shutdown.getIgnoreSessions()));
+    addDefaultEnvVarIfMissing(env, "SHUTDOWN_WAIT_FOR_ALL_SESSIONS", String.valueOf(shutdown.getWaitForAllSessions()));
   }
 
   private Shutdown getShutdownSpec() {
@@ -852,6 +859,14 @@ public abstract class PodStepContext extends BasePodStepContext {
             initContainers.add(createInitContainerForAuxiliaryImage(cl.get(idx), idx))));
   }
 
+  protected List<V1EnvVar> createEnv(V1Container c, TuningParameters tuningParameters) {
+    List<V1EnvVar> initContainerEnvVars = new ArrayList<>();
+    Optional.ofNullable(c.getEnv()).ifPresent(initContainerEnvVars::addAll);
+    getEnvironmentVariables(tuningParameters).forEach(envVar ->
+            addIfMissing(initContainerEnvVars, envVar.getName(), envVar.getValue(), envVar.getValueFrom()));
+    return initContainerEnvVars;
+  }
+
   // ---------------------- model methods ------------------------------
 
   private List<V1PodReadinessGate> getReadinessGates() {
@@ -942,7 +957,6 @@ public abstract class PodStepContext extends BasePodStepContext {
     addEnvVar(vars, ServerEnvVars.SERVER_OUT_IN_POD_LOG, isIncludeServerOutInPodLog());
     addEnvVar(vars, ServerEnvVars.SERVICE_NAME, LegalNames.toServerServiceName(getDomainUid(), getServerName()));
     addEnvVar(vars, ServerEnvVars.AS_SERVICE_NAME, LegalNames.toServerServiceName(getDomainUid(), getAsName()));
-    //addEnvVar(vars, IntrospectorJobEnvVars.WDT_INSTALL_HOME, getWdtInstallHome());
     Optional.ofNullable(getDataHome()).ifPresent(v -> addEnvVar(vars, ServerEnvVars.DATA_HOME, v));
     String wdtInstallHome = getWdtInstallHome();
     if (wdtInstallHome != null && !wdtInstallHome.isEmpty() && !wdtInstallHome.equals(DEFAULT_WDT_INSTALL_HOME)) {
@@ -1012,8 +1026,22 @@ public abstract class PodStepContext extends BasePodStepContext {
       boolean istioEnabled = getDomain().isIstioEnabled();
       if (istioEnabled) {
         int istioReadinessPort = getDomain().getIstioReadinessPort();
-        readinessProbe =
-            readinessProbe.httpGet(httpGetAction(READINESS_PATH, istioReadinessPort, false));
+        // if admin port enabled (whether it is domain wide or per server, it must use the admin port
+        // for readiness probe instead of the istio readiness port otherwise the ready app reject the
+        // request.
+        //
+        if (isDomainWideAdminPortEnabled()) {
+          readinessProbe =
+              readinessProbe.httpGet(
+                  httpGetAction(
+                      READINESS_PATH,
+                      getLocalAdminProtocolChannelPort(),
+                      isLocalAdminProtocolChannelSecure()));
+        } else {
+          readinessProbe =
+              readinessProbe.httpGet(httpGetAction(READINESS_PATH, istioReadinessPort,
+                      false));
+        }
       } else {
         readinessProbe =
             readinessProbe.httpGet(

@@ -3,6 +3,7 @@
 
 package oracle.kubernetes.operator;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -31,7 +32,6 @@ import oracle.kubernetes.operator.calls.CallResponse;
 import oracle.kubernetes.operator.calls.UnrecoverableCallException;
 import oracle.kubernetes.operator.helpers.CallBuilder;
 import oracle.kubernetes.operator.helpers.ClientPool;
-import oracle.kubernetes.operator.helpers.CrdHelper;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper;
 import oracle.kubernetes.operator.helpers.KubernetesUtils;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
@@ -45,7 +45,7 @@ import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.rest.RestConfigImpl;
 import oracle.kubernetes.operator.rest.RestServer;
 import oracle.kubernetes.operator.steps.DefaultResponseStep;
-import oracle.kubernetes.operator.steps.InitializeInternalIdentityStep;
+import oracle.kubernetes.operator.steps.InitializeIdentityStep;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Container;
 import oracle.kubernetes.operator.work.ContainerResolver;
@@ -61,6 +61,9 @@ import oracle.kubernetes.utils.SystemClock;
 import oracle.kubernetes.weblogic.domain.model.DomainList;
 
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
+import static oracle.kubernetes.operator.utils.Certificates.INTERNAL_CERTIFICATE;
+import static oracle.kubernetes.operator.utils.Certificates.INTERNAL_CERTIFICATE_KEY;
+import static oracle.kubernetes.operator.utils.Certificates.OPERATOR_DIR;
 
 /** A Kubernetes Operator for WebLogic. */
 public class Main {
@@ -85,6 +88,8 @@ public class Main {
   protected OperatorEventWatcher operatorNamespaceEventWatcher;
   private boolean warnedOfCrdAbsence;
   private static final NextStepFactory NEXT_STEP_FACTORY = Main::createInitializeInternalIdentityStep;
+  /** The interval in msec that the operator will wait to ensure that CRD has been created. */
+  private static final long CRD_DETECTION_DELAY = 100;
 
   private static String getConfiguredServiceAccount() {
     return TuningParameters.getInstance().get("serviceaccount");
@@ -433,7 +438,6 @@ public class Main {
     final DomainRecheck domainRecheck = new DomainRecheck(delegate, isFullRecheck);
     return Step.chain(
         domainRecheck.createOperatorNamespaceReview(),
-        CrdHelper.createDomainCrdStep(delegate.getKubernetesVersion(), delegate.getProductVersion()),
         createCRDPresenceCheck(),
         domainRecheck.createReadNamespacesStep());
   }
@@ -456,11 +460,11 @@ public class Main {
 
     @Override
     public NextAction onFailure(Packet packet, CallResponse<DomainList> callResponse) {
-      if (!warnedOfCrdAbsence) {
-        LOGGER.severe(MessageKeys.CRD_NOT_INSTALLED);
-        warnedOfCrdAbsence = true;
-      }
-      return doNext(null, packet);
+      //if (!warnedOfCrdAbsence) {
+      LOGGER.info(MessageKeys.CRD_NOT_INSTALLED);
+      //  warnedOfCrdAbsence = true;
+      //}
+      return doDelay(createCRDPresenceCheck(), packet, CRD_DETECTION_DELAY, TimeUnit.MILLISECONDS);
     }
   }
 
@@ -607,6 +611,15 @@ public class Main {
   // an interface to provide a hook for unit testing.
   interface NextStepFactory {
     Step createInternalInitializationStep(Step next);
+  }
+
+  private static class InitializeInternalIdentityStep extends InitializeIdentityStep {
+    public static final File internalCertFile = new File(OPERATOR_DIR + "/config/internalOperatorCert");
+    public static final File internalKeyFile = new File(OPERATOR_DIR + "/secrets/internalOperatorKey");
+
+    public InitializeInternalIdentityStep(Step next) {
+      super(next, internalCertFile, internalKeyFile, INTERNAL_CERTIFICATE, INTERNAL_CERTIFICATE_KEY);
+    }
   }
 
 }

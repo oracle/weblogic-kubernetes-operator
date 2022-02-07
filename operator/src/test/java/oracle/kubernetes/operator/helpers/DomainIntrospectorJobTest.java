@@ -41,7 +41,7 @@ import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderI
 import oracle.kubernetes.operator.logging.LoggingFacade;
 import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.rest.ScanCacheStub;
-import oracle.kubernetes.operator.utils.DomainResourceMigrationUtils;
+import oracle.kubernetes.operator.utils.MigrationUtils;
 import oracle.kubernetes.operator.wlsconfig.WlsClusterConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
 import oracle.kubernetes.operator.wlsconfig.WlsServerConfig;
@@ -159,7 +159,7 @@ class DomainIntrospectorJobTest {
   private final RetryStrategyStub retryStrategy = createStrictStub(RetryStrategyStub.class);
   private final String jobPodName = LegalNames.toJobIntrospectorName(UID);
   private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
-  private final DomainResourceMigrationUtils conversionUtils = new DomainResourceMigrationUtils();
+  private final MigrationUtils conversionUtils = new MigrationUtils();
 
   private boolean jobDeleted;
 

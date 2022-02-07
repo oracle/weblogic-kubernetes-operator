@@ -66,8 +66,8 @@ import oracle.kubernetes.operator.PodAwaiterStepFactory;
 import oracle.kubernetes.operator.ProcessingConstants;
 import oracle.kubernetes.operator.calls.unprocessable.UnrecoverableErrorBuilderImpl;
 import oracle.kubernetes.operator.logging.MessageKeys;
-import oracle.kubernetes.operator.utils.DomainResourceMigrationUtils;
 import oracle.kubernetes.operator.utils.InMemoryCertificates;
+import oracle.kubernetes.operator.utils.MigrationUtils;
 import oracle.kubernetes.operator.utils.WlsDomainConfigSupport;
 import oracle.kubernetes.operator.wlsconfig.NetworkAccessPoint;
 import oracle.kubernetes.operator.wlsconfig.WlsDomainConfig;
@@ -235,7 +235,7 @@ public abstract class PodHelperTestBase extends DomainValidationBaseTest {
   private Memento hashMemento;
   private final Map<String, Map<String, KubernetesEventObjects>> domainEventObjects = new ConcurrentHashMap<>();
   private TestUtils.ConsoleHandlerMemento consoleHandlerMemento;
-  private final DomainResourceMigrationUtils conversionUtils = new DomainResourceMigrationUtils();
+  private final MigrationUtils conversionUtils = new MigrationUtils();
 
   PodHelperTestBase(String serverName, int listenPort) {
     this.serverName = serverName;

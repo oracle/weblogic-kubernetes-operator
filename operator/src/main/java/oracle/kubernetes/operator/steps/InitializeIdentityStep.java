@@ -14,7 +14,6 @@ import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 
 import io.kubernetes.client.custom.V1Patch;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
@@ -34,43 +33,53 @@ import org.bouncycastle.openssl.jcajce.JcaPEMWriter;
 
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
 import static oracle.kubernetes.operator.logging.MessageKeys.INTERNAL_IDENTITY_INITIALIZATION_FAILED;
-import static oracle.kubernetes.operator.steps.ManagedServerUpIteratorStep.SCHEDULING_DETECTION_DELAY;
-import static oracle.kubernetes.operator.utils.Certificates.INTERNAL_CERTIFICATE;
-import static oracle.kubernetes.operator.utils.Certificates.INTERNAL_CERTIFICATE_KEY;
-import static oracle.kubernetes.operator.utils.Certificates.OPERATOR_DIR;
+import static oracle.kubernetes.operator.utils.Certificates.WEBHOOK_CERTIFICATE;
 import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.createKeyPair;
 import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.generateCertificate;
 
-public class InitializeInternalIdentityStep extends Step {
+public class InitializeIdentityStep extends Step {
 
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   private static final String OPERATOR_CM = "weblogic-operator-cm";
   private static final String OPERATOR_SECRETS = "weblogic-operator-secrets";
   private static final String SHA_256_WITH_RSA = "SHA256withRSA";
   private static final String COMMON_NAME = "weblogic-operator";
-  private static final File internalCertFile = new File(OPERATOR_DIR + "/config/internalOperatorCert");
-  private static final File internalKeyFile = new File(OPERATOR_DIR + "/secrets/internalOperatorKey");
   private static final int CERTIFICATE_VALIDITY_DAYS = 3650;
 
-  public InitializeInternalIdentityStep(Step next) {
+  private final File certFile;
+  private final File keyFile;
+  private final String certificate;
+  private final String certificateKey;
+
+  /**
+   * Constructor for the InitializeIdentityStep.
+   * @param next Next step to be executed.
+   * @param certFile Certificate file.
+   * @param keyFile Key file.
+   * @param certificate certificate file name.
+   * @param certificateKey certificate key file name.
+   */
+  public InitializeIdentityStep(Step next, File certFile, File keyFile, String certificate, String certificateKey) {
     super(next);
+    this.certFile = certFile;
+    this.keyFile = keyFile;
+    this.certificate = certificate;
+    this.certificateKey = certificateKey;
   }
 
   @Override
   public NextAction apply(Packet packet) {
     try {
-      if (internalCertFile.exists() && internalKeyFile.exists()) {
-        LOGGER.info("DEBUG: In InitializeInternalIdentityStep.. file exists. Reuse it.");
+      if (certFile.exists() && keyFile.exists()) {
+        LOGGER.info("DEBUG: In InitializeInternalIdentityStep.. file " + certFile + "exists. Reuse it.");
         // The operator's internal ssl identity has already been created.
-        reuseInternalIdentity();
+        reuseIdentity();
         return doNext(getNext(), packet);
-      } else if (getNext() != null) {
-        LOGGER.info("DEBUG: In InitializeInternalIdentityStep.. file doesn't exists. Create Internal Identity.");
-        // The operator's internal ssl identity hasn't been created yet.
-        return createInternalIdentity(packet);
       } else {
-        LOGGER.info("DEBUG: In InitializeInternalIdentityStep.. delaying for 100 seconds");
-        return doDelay(this, packet, SCHEDULING_DETECTION_DELAY, TimeUnit.MILLISECONDS);
+        LOGGER.info("DEBUG: In InitializeInternalIdentityStep.. file " + certFile
+                + "doesn't exists. Create Internal Identity.");
+        // The operator's internal ssl identity hasn't been created yet.
+        return createIdentity(packet);
       }
     } catch (Exception e) {
       LOGGER.warning(INTERNAL_IDENTITY_INITIALIZATION_FAILED, e.toString());
@@ -78,22 +87,24 @@ public class InitializeInternalIdentityStep extends Step {
     }
   }
 
-  private void reuseInternalIdentity() throws IOException {
+  private void reuseIdentity() throws IOException {
     // copy the certificate and key from the operator's config map and secret
     // to the locations the operator runtime expects
-    FileUtils.copyFile(internalCertFile, new File(INTERNAL_CERTIFICATE));
-    FileUtils.copyFile(internalKeyFile, new File(INTERNAL_CERTIFICATE_KEY));
+    LOGGER.info("DEBUG: In InitializeInternalIdentityStep.. reuse " + certFile);
+    FileUtils.copyFile(certFile, new File(certificate));
+    FileUtils.copyFile(keyFile, new File(certificateKey));
   }
 
-  private NextAction createInternalIdentity(Packet packet) throws Exception {
+  private NextAction createIdentity(Packet packet) throws Exception {
     KeyPair keyPair = createKeyPair();
     String key = convertToPEM(keyPair.getPrivate());
-    writeToFile(key, new File(INTERNAL_CERTIFICATE_KEY));
-    X509Certificate cert = generateCertificate(keyPair, SHA_256_WITH_RSA, COMMON_NAME, CERTIFICATE_VALIDITY_DAYS);
-    writeToFile(getBase64Encoded(cert), new File(INTERNAL_CERTIFICATE));
+    writeToFile(key, new File(certificateKey));
+    X509Certificate cert = generateCertificate(certificate, keyPair, SHA_256_WITH_RSA, COMMON_NAME,
+            CERTIFICATE_VALIDITY_DAYS);
+    writeToFile(getBase64Encoded(cert), new File(certificate));
     // put the new certificate in the operator's config map so that it will be available
     // the next time the operator is started
-    return doNext(recordInternalOperatorCert(cert,
+    return doNext(recordInternalOperatorCert(certificate, cert,
             recordInternalOperatorKey(key, getNext())), packet);
   }
 
@@ -118,9 +129,16 @@ public class InitializeInternalIdentityStep extends Step {
     return Base64.getEncoder().encodeToString(convertToPEM(cert).getBytes());
   }
 
-  private static Step recordInternalOperatorCert(X509Certificate cert, Step next) throws IOException {
+  private static Step recordInternalOperatorCert(String certName, X509Certificate cert, Step next) throws IOException {
     JsonPatchBuilder patchBuilder = Json.createPatchBuilder();
-    patchBuilder.add("/data/internalOperatorCert", getBase64Encoded(cert));
+    LOGGER.info("DEBUG: In recordInternalOperatorCert.. name is " + certName);
+    if (WEBHOOK_CERTIFICATE.equals(certName)) {
+      LOGGER.info("DEBUG: In recordInternalOperatorCert.. adding webhook cert");
+      patchBuilder.add("/data/webhookCert", getBase64Encoded(cert));
+    } else {
+      LOGGER.info("DEBUG: In recordInternalOperatorCert.. adding internal cert");
+      patchBuilder.add("/data/internalOperatorCert", getBase64Encoded(cert));
+    }
 
     return new CallBuilder()
             .patchConfigMapAsync(OPERATOR_CM, getOperatorNamespace(),

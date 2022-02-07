@@ -1,13 +1,15 @@
-// Copyright (c) 2017, 2022, Oracle and/or its affiliates.
+// Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
 
+import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.io.PrintStream;
+import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.concurrent.ScheduledExecutorService;
@@ -19,6 +21,7 @@ import javax.annotation.Nonnull;
 
 import oracle.kubernetes.operator.calls.UnrecoverableCallException;
 import oracle.kubernetes.operator.helpers.ClientPool;
+import oracle.kubernetes.operator.helpers.CrdHelper;
 import oracle.kubernetes.operator.helpers.HealthCheckHelper;
 import oracle.kubernetes.operator.helpers.KubernetesVersion;
 import oracle.kubernetes.operator.helpers.PodHelper;
@@ -28,21 +31,23 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 import oracle.kubernetes.operator.rest.RestWebhookConfigImpl;
 import oracle.kubernetes.operator.rest.RestWebhookServer;
-import oracle.kubernetes.operator.steps.InitializeInternalIdentityStep;
+import oracle.kubernetes.operator.steps.InitializeIdentityStep;
 import oracle.kubernetes.operator.work.Component;
 import oracle.kubernetes.operator.work.Container;
 import oracle.kubernetes.operator.work.ContainerResolver;
 import oracle.kubernetes.operator.work.Engine;
 import oracle.kubernetes.operator.work.Fiber;
 import oracle.kubernetes.operator.work.Fiber.CompletionCallback;
-import oracle.kubernetes.operator.work.FiberGate;
 import oracle.kubernetes.operator.work.Packet;
 import oracle.kubernetes.operator.work.Step;
 import oracle.kubernetes.operator.work.ThreadFactorySingleton;
 
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
+import static oracle.kubernetes.operator.utils.Certificates.OPERATOR_DIR;
+import static oracle.kubernetes.operator.utils.Certificates.WEBHOOK_CERTIFICATE;
+import static oracle.kubernetes.operator.utils.Certificates.WEBHOOK_CERTIFICATE_KEY;
 
-/** A Kubernetes Operator for WebLogic. */
+/** A Conversion Webhook for WebLogic Kubernetes Operator. */
 public class ConversionWebhookMain {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   static final String GIT_BUILD_VERSION_KEY = "git.build.version";
@@ -56,9 +61,8 @@ public class ConversionWebhookMain {
       Engine.wrappedExecutorService("operator", container);
   private static final Semaphore shutdownSignal = new Semaphore(0);
 
-  private final MainDelegate delegate;
-  private boolean warnedOfCrdAbsence;
-  private static final NextStepFactory NEXT_STEP_FACTORY = ConversionWebhookMain::createInitializeInternalIdentityStep;
+  private final WebhookMainDelegateImpl delegate;
+  private static final NextStepFactory NEXT_STEP_FACTORY = ConversionWebhookMain::createInitializeWebhookIdentityStep;
 
   private static String getConfiguredServiceAccount() {
     return TuningParameters.getInstance().get("serviceaccount");
@@ -94,7 +98,7 @@ public class ConversionWebhookMain {
                 threadFactory));
   }
 
-  static class MainDelegateImpl implements MainDelegate, DomainProcessorDelegate {
+  static class WebhookMainDelegateImpl implements WebhookMainDelegate {
 
     private final String serviceAccountName = Optional.ofNullable(getConfiguredServiceAccount()).orElse("default");
     private final String principal = "system:serviceaccount:" + getOperatorNamespace() + ":" + serviceAccountName;
@@ -105,10 +109,8 @@ public class ConversionWebhookMain {
     private final SemanticVersion productVersion;
     private final KubernetesVersion kubernetesVersion;
     private final Engine engine;
-    private final DomainProcessor domainProcessor;
-    private final DomainNamespaces domainNamespaces;
 
-    public MainDelegateImpl(Properties buildProps, ScheduledExecutorService scheduledExecutorService) {
+    public WebhookMainDelegateImpl(Properties buildProps, ScheduledExecutorService scheduledExecutorService) {
       buildVersion = getBuildVersion(buildProps);
       operatorImpl = getBranch(buildProps) + "." + getCommit(buildProps);
       operatorBuildTime = getBuildTime(buildProps);
@@ -117,9 +119,6 @@ public class ConversionWebhookMain {
       kubernetesVersion = HealthCheckHelper.performK8sVersionCheck();
 
       engine = new Engine(scheduledExecutorService);
-      domainProcessor = new DomainProcessorImpl(this, productVersion);
-
-      domainNamespaces = new DomainNamespaces(productVersion);
 
       PodHelper.setProductVersion(productVersion.toString());
     }
@@ -145,9 +144,8 @@ public class ConversionWebhookMain {
     }
 
     private void logStartup() {
-      ConversionWebhookMain.LOGGER.info(MessageKeys.OPERATOR_STARTED, buildVersion, operatorImpl, operatorBuildTime);
-      Optional.ofNullable(TuningParameters.getInstance().getFeatureGates().getEnabledFeatures())
-          .ifPresent(ef -> ConversionWebhookMain.LOGGER.info(MessageKeys.ENABLED_FEATURES, ef));
+      ConversionWebhookMain.LOGGER.info(MessageKeys.OPERATOR_WEBHOOK_STARTED, buildVersion,
+              operatorImpl, operatorBuildTime);
       ConversionWebhookMain.LOGGER.info(MessageKeys.OP_CONFIG_NAMESPACE, getOperatorNamespace());
       ConversionWebhookMain.LOGGER.info(MessageKeys.OP_CONFIG_SERVICE_ACCOUNT, serviceAccountName);
     }
@@ -168,49 +166,14 @@ public class ConversionWebhookMain {
     }
 
     @Override
-    public void runSteps(Packet packet, Step firstStep) {
-      runSteps(packet, firstStep, null);
-    }
-
-    @Override
     public void runSteps(Packet packet, Step firstStep, Runnable completionAction) {
       Fiber f = engine.createFiber();
       f.start(firstStep, packet, andThenDo(completionAction));
     }
 
     @Override
-    public DomainProcessor getDomainProcessor() {
-      return domainProcessor;
-    }
-
-    @Override
-    public DomainNamespaces getDomainNamespaces() {
-      return domainNamespaces;
-    }
-
-    @Override
     public KubernetesVersion getKubernetesVersion() {
       return kubernetesVersion;
-    }
-
-    @Override
-    public PodAwaiterStepFactory getPodAwaiterStepFactory(String namespace) {
-      return domainNamespaces.getPodWatcher(namespace);
-    }
-
-    @Override
-    public JobAwaiterStepFactory getJobAwaiterStepFactory(String namespace) {
-      return domainNamespaces.getJobWatcher(namespace);
-    }
-
-    @Override
-    public boolean isNamespaceRunning(String namespace) {
-      return !domainNamespaces.isStopping(namespace).get();
-    }
-
-    @Override
-    public FiberGate createFiberGate() {
-      return new FiberGate(engine);
     }
 
     @Override
@@ -255,13 +218,13 @@ public class ConversionWebhookMain {
   }
 
   static ConversionWebhookMain createMain(Properties buildProps) {
-    final MainDelegateImpl delegate = new MainDelegateImpl(buildProps, wrappedExecutorService);
+    final WebhookMainDelegateImpl delegate = new WebhookMainDelegateImpl(buildProps, wrappedExecutorService);
 
     delegate.logStartup();
     return new ConversionWebhookMain(delegate);
   }
 
-  ConversionWebhookMain(MainDelegate delegate) {
+  ConversionWebhookMain(WebhookMainDelegateImpl delegate) {
     this.delegate = delegate;
   }
 
@@ -276,28 +239,40 @@ public class ConversionWebhookMain {
   private Step createStartupSteps() {
 
     //return NEXT_STEP_FACTORY.createInternalInitializationStep(createDomainCrdRecheckSteps());
-    return NEXT_STEP_FACTORY.createInternalInitializationStep(null);
+    return NEXT_STEP_FACTORY.createInternalInitializationStep(
+            CrdHelper.createDomainCrdStep(delegate.getKubernetesVersion(), delegate.getProductVersion()));
   }
 
-  private static Step createInitializeInternalIdentityStep(Step next) {
-    return new InitializeInternalIdentityStep(next);
+  private static Step createInitializeWebhookIdentityStep(Step next) {
+    return new InitializeWebhookIdentityStep(next);
   }
 
   private void completeBegin() {
     try {
       // start the REST server
-      //startRestServer(delegate.getPrincipal());
       startRestWebhookServer();
 
       // start periodic retry and recheck
-      //int recheckInterval = TuningParameters.getInstance().getMainTuning().domainNamespaceRecheckIntervalSeconds;
-      //delegate.scheduleWithFixedDelay(recheckCrd(), recheckInterval, recheckInterval, TimeUnit.SECONDS);
+      int recheckInterval = TuningParameters.getInstance().getMainTuning().domainNamespaceRecheckIntervalSeconds;
+      delegate.scheduleWithFixedDelay(recheckCrd(), recheckInterval, recheckInterval, TimeUnit.SECONDS);
 
       markReadyAndStartLivenessThread();
 
     } catch (Throwable e) {
       LOGGER.warning(MessageKeys.EXCEPTION, e);
     }
+  }
+
+  private Runnable recheckCrd() {
+    return () -> delegate.runSteps(createDomainCRD());
+  }
+
+  private Step createDomainCRD() {
+    return createCRDRecheckSteps(OffsetDateTime.now());
+  }
+
+  private Step createCRDRecheckSteps(OffsetDateTime now) {
+    return CrdHelper.createDomainCrdStep(delegate.getKubernetesVersion(), delegate.getProductVersion());
   }
 
   private static NullCompletionCallback andThenDo(Runnable completionAction) {
@@ -387,4 +362,13 @@ public class ConversionWebhookMain {
     Step createInternalInitializationStep(Step next);
   }
 
+  private static class InitializeWebhookIdentityStep extends InitializeIdentityStep {
+
+    private static final File webhookCertFile = new File(OPERATOR_DIR + "/config/webhookCert");
+    private static final File webhookKeyFile = new File(OPERATOR_DIR + "/secrets/webhookKey");
+
+    public InitializeWebhookIdentityStep(Step next) {
+      super(next, webhookCertFile, webhookKeyFile, WEBHOOK_CERTIFICATE, WEBHOOK_CERTIFICATE_KEY);
+    }
+  }
 }

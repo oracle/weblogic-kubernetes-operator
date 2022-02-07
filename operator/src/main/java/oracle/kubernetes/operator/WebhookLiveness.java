@@ -1,4 +1,4 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -12,7 +12,7 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 import oracle.kubernetes.operator.logging.MessageKeys;
 
 /**
- * This task maintains the "liveness" indicator so that Kubernetes knows the Operator is still
+ * This task maintains the "liveness" indicator so that Kubernetes knows the Webhook is still
  * alive.
  */
 public class WebhookLiveness implements Runnable {
@@ -26,7 +26,7 @@ public class WebhookLiveness implements Runnable {
       try {
         livenessFile.createNewFile();
       } catch (IOException ioe) {
-        LOGGER.warning(MessageKeys.COULD_NOT_CREATE_LIVENESS_FILE);
+        LOGGER.warning(MessageKeys.COULD_NOT_CREATE_WEBHOOK_LIVENESS_FILE);
       }
     }
     livenessFile.setLastModified(new Date().getTime());

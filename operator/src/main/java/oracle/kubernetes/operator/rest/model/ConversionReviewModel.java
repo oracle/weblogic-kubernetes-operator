@@ -44,51 +44,22 @@ public class ConversionReviewModel {
     return this;
   }
 
-  /**
-   * Get the response.
-   *
-   * @return
-   *     The request
-   */
   public ConversionRequest getRequest() {
     return request;
   }
 
-  /**
-   * Set the request.
-   *
-   * @param request
-   *     The request
-   */
   public void setRequest(ConversionRequest request) {
     this.request = request;
   }
 
-  /**
-   * Get the response.
-   * @return
-   *     The response
-   */
   public ConversionResponse getResponse() {
     return response;
   }
 
-  /**
-   * Set the response.
-   *
-   * @param response
-   *     The response
-   */
   public void setResponse(ConversionResponse response) {
     this.response = response;
   }
 
-  /**
-   * Set the response.
-   *
-   * @param response
-   *     The response
-   */
   public ConversionReviewModel response(ConversionResponse response) {
     this.response = response;
     return this;

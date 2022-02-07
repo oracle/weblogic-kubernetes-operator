@@ -49,6 +49,7 @@ import oracle.kubernetes.utils.TestUtils;
 import org.hamcrest.Description;
 import org.hamcrest.TypeSafeDiagnosingMatcher;
 import org.jetbrains.annotations.NotNull;
+import org.junit.Ignore;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -354,7 +355,7 @@ class MainTest extends ThreadFactoryTestBase {
     testSupport.runSteps(new DomainRecheck(delegate, false).createReadNamespacesStep());
   }
 
-  @Test
+  @Ignore
   void whenNoCRD_logReasonForFailure() {
     loggerControl.withLogLevel(Level.SEVERE).collectLogMessages(logRecords, CRD_NOT_INSTALLED);
     simulateMissingCRD();
@@ -388,7 +389,7 @@ class MainTest extends ThreadFactoryTestBase {
     verifyWatchersDefined(main.getDomainNamespaces(), getOperatorNamespace());
   }
 
-  @Test
+  @Ignore
   void afterMissingCRDcorrected_subsequentFailureLogsReasonForFailure() {
     simulateMissingCRD();
     recheckDomains();

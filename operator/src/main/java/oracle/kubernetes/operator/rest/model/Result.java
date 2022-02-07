@@ -3,6 +3,8 @@
 
 package oracle.kubernetes.operator.rest.model;
 
+import java.util.Objects;
+
 import com.google.gson.annotations.Expose;
 import io.kubernetes.client.openapi.models.V1ObjectMeta;
 
@@ -14,11 +16,6 @@ public class Result {
   @Expose
   private String status;
 
-  /**
-   * Get the metadata.
-   * @return
-   *     The metadata
-   */
   public V1ObjectMeta getMetadata() {
     return metadata;
   }
@@ -32,20 +29,10 @@ public class Result {
     return this;
   }
 
-  /**
-   * Get the status.
-   * @return
-   *     The status
-   */
   public String getStatus() {
     return status;
   }
 
-  /**
-   * Set the status.
-   * @param status
-   *     The status
-   */
   public void setStatus(String status) {
     this.status = status;
   }
@@ -55,4 +42,29 @@ public class Result {
     return this;
   }
 
+  @Override
+  public String toString() {
+    return "Result{"
+            + "metadata=" + metadata
+            + ", status='" + status + '\''
+            + '}';
+  }
+
+  @Override
+  public boolean equals(Object o) {
+    if (this == o) {
+      return true;
+    }
+    if (o == null || getClass() != o.getClass()) {
+      return false;
+    }
+    Result result = (Result) o;
+    return Objects.equals(metadata, result.metadata)
+            && Objects.equals(status, result.status);
+  }
+
+  @Override
+  public int hashCode() {
+    return Objects.hash(metadata, status);
+  }
 }

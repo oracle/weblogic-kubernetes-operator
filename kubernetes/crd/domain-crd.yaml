@@ -5,7 +5,7 @@ apiVersion: apiextensions.k8s.io/v1
 kind: CustomResourceDefinition
 metadata:
   annotations:
-    weblogic.sha256: da7f5696fcc18ad06c7a68a0d4b0a862258c8c9219c67042656e51511565b1e4
+    weblogic.sha256: 6906c86f1d5ee2c883c607c47ae72dc4bc985a4ed15b04e441d147ddb63eab9a
   name: domains.weblogic.oracle
 spec:
   group: weblogic.oracle
@@ -11380,7 +11380,6 @@ spec:
                 type: array
             type: object
         type: object
-        x-kubernetes-preserve-unknown-fields: true
     served: true
     storage: true
     subresources:

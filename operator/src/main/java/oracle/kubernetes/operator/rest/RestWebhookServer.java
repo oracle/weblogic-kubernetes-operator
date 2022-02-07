@@ -35,21 +35,12 @@ import org.glassfish.jersey.server.ResourceConfig;
 
 
 /**
- * The RestServer runs the WebLogic operator's REST api.
+ * The Webhook RestServer that serves as endpoint for the conversion webhook for WebLogic operator.
  *
- * <p>It provides the following ports that host the WebLogic operator's REST api:
- *
- * <ul>
- *   <li>external http port - this port can be used both inside and outside of a Kubernetes cluster.
- *   <li>external https port - this port can be only be used outside of a Kubernetes cluster since
- *       its SSL certificate contains the external hostnames for contacting this port.
- *   <li>internal https port - this port can only be used inside of a Kubernetes cluster since its
- *       SSL certificate contains the the in-cluster hostnames for contacting this port.
- * </ul>
  */
 public class RestWebhookServer {
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
-  private static final int CORE_POOL_SIZE = 3;
+  private static final int CORE_POOL_SIZE = 2;
   private static final String SSL_PROTOCOL = "TLSv1.2";
   private static final String[] SSL_PROTOCOLS = {
     SSL_PROTOCOL
@@ -57,10 +48,8 @@ public class RestWebhookServer {
   private static RestWebhookServer INSTANCE = null;
   private final RestWebhookConfig config;
   // private String baseHttpUri;
-  private final String baseExternalHttpsUri;
-  private final String baseInternalHttpsUri;
-  private HttpServer externalHttpsServer;
-  private HttpServer internalHttpsServer;
+  private final String baseHttpsUri;
+  private HttpServer httpsServer;
 
   /**
    * Constructs the WebLogic Operator REST server.
@@ -72,8 +61,7 @@ public class RestWebhookServer {
   private RestWebhookServer(RestWebhookConfig config) {
     LOGGER.entering();
     this.config = config;
-    baseExternalHttpsUri = "https://" + config.getHost() + ":" + config.getExternalHttpsPort();
-    baseInternalHttpsUri = "https://" + config.getHost() + ":" + config.getInternalHttpsPort();
+    baseHttpsUri = "https://" + config.getHost() + ":" + config.getHttpsPort();
     LOGGER.exiting();
   }
 
@@ -163,25 +151,16 @@ public class RestWebhookServer {
   }
 
   /**
-   * Returns the in-pod URI of the externally available https REST port.
+   * Returns the in-pod URI of the available https REST port.
    *
    * @return the uri
    */
-  String getExternalHttpsUri() {
-    return baseExternalHttpsUri;
+  String getHttpsUri() {
+    return baseHttpsUri;
   }
 
   /**
-   * Returns the in-pod URI of the externally available https REST port.
-   *
-   * @return the uri
-   */
-  String getInternalHttpsUri() {
-    return baseInternalHttpsUri;
-  }
-
-  /**
-   * Starts WebLogic operator's REST api.
+   * Starts Webhook REST api for WebLogic operator.
    *
    * <p>If a port has not been configured, then it logs that fact, does not start that port, and
    * continues (v.s. throwing an exception and not starting any ports).
@@ -193,33 +172,16 @@ public class RestWebhookServer {
    */
   public void start(Container container) throws Exception {
     LOGGER.entering();
-    if (externalHttpsServer != null || internalHttpsServer != null) {
+    if (httpsServer != null) {
       throw new AssertionError("Already started");
     }
     boolean fullyStarted = false;
     try {
-      if (isExternalSslConfigured()) {
-        externalHttpsServer = createExternalHttpsServer(container);
-        LOGGER.info(
-            "Started the external ssl REST server on "
-                + getExternalHttpsUri()
-                + "/operator"); // TBD .fine ?
-      } else {
-        LOGGER.fine(
-            "Did not start the external ssl REST server because external ssl has not been configured.");
-      }
-
-      if (isInternalSslConfigured()) {
-        internalHttpsServer = createInternalHttpsServer(container);
-        LOGGER.info(
-            "Started the internal ssl REST server on "
-                + getInternalHttpsUri()
-                + "/operator"); // TBD .fine ?
-      } else {
-        LOGGER.fine(
-            "Did not start the internal ssl REST server because internal ssl has not been configured.");
-      }
-
+      httpsServer = createHttpsServer(container);
+      LOGGER.info(
+          "Started the Webhook REST server on "
+              + getHttpsUri()
+              + "/webhook"); // TBD .fine ?
       fullyStarted = true;
     } finally {
       if (!fullyStarted) {
@@ -239,47 +201,26 @@ public class RestWebhookServer {
    */
   public void stop() {
     LOGGER.entering();
-    if (externalHttpsServer != null) {
-      externalHttpsServer.shutdownNow();
-      externalHttpsServer = null;
-      LOGGER.fine("Stopped the external ssl REST server");
-    }
-    if (internalHttpsServer != null) {
-      internalHttpsServer.shutdownNow();
-      internalHttpsServer = null;
-      LOGGER.fine("Stopped the internal ssl REST server");
+    if (httpsServer != null) {
+      httpsServer.shutdownNow();
+      httpsServer = null;
+      LOGGER.fine("Stopped the webhook REST server");
     }
     LOGGER.exiting();
   }
 
-  private HttpServer createExternalHttpsServer(Container container) throws Exception {
+  private HttpServer createHttpsServer(Container container) throws Exception {
     LOGGER.entering();
     HttpServer result =
         createHttpsServer(
             container,
             createSslContext(
                 createKeyManagers(
-                    config.getOperatorExternalCertificateData(),
-                    config.getOperatorExternalCertificateFile(),
-                    config.getOperatorExternalKeyData(),
-                    config.getOperatorExternalKeyFile())),
-            getExternalHttpsUri());
-    LOGGER.exiting();
-    return result;
-  }
-
-  private HttpServer createInternalHttpsServer(Container container) throws Exception {
-    LOGGER.entering();
-    HttpServer result =
-        createHttpsServer(
-            container,
-            createSslContext(
-                createKeyManagers(
-                    config.getOperatorInternalCertificateData(),
-                    config.getOperatorInternalCertificateFile(),
-                    config.getOperatorInternalKeyData(),
-                    config.getOperatorInternalKeyFile())),
-            getInternalHttpsUri());
+                    config.getWebhookCertificateData(),
+                    config.getWebhookCertificateFile(),
+                    config.getWebhookKeyData(),
+                    config.getWebhookKeyFile())),
+            getHttpsUri());
     LOGGER.exiting();
     return result;
   }
@@ -377,48 +318,6 @@ public class RestWebhookServer {
             null // pass phrase of the temp keystore
             );
     LOGGER.exiting(result);
-    return result;
-  }
-
-  private boolean isExternalSslConfigured() {
-    return isSslConfigured(
-        config.getOperatorExternalCertificateData(),
-        config.getOperatorExternalCertificateFile(),
-        config.getOperatorExternalKeyData(),
-        config.getOperatorExternalKeyFile());
-  }
-
-  private boolean isInternalSslConfigured() {
-    return isSslConfigured(
-        config.getOperatorInternalCertificateData(),
-        config.getOperatorInternalCertificateFile(),
-        config.getOperatorInternalKeyData(),
-        config.getOperatorInternalKeyFile());
-  }
-
-  private boolean isSslConfigured(
-      String certificateData, String certificateFile, String keyData, String keyFile) {
-    // don't log keyData since it can contain sensitive data
-    LOGGER.entering(certificateData, certificateFile, keyFile);
-    boolean certConfigured = isPemConfigured(certificateData, certificateFile);
-    boolean keyConfigured = isPemConfigured(keyData, keyFile);
-    LOGGER.finer("certConfigured=" + certConfigured);
-    LOGGER.finer("keyConfigured=" + keyConfigured);
-    boolean result = (certConfigured && keyConfigured);
-    LOGGER.exiting(result);
-    return result;
-  }
-
-  private boolean isPemConfigured(String data, String path) {
-    boolean result = false;
-    if (data != null && data.length() > 0) {
-      result = true;
-    } else if (path != null) {
-      File f = new File(path);
-      if (f.exists() && f.isFile()) {
-        result = true;
-      }
-    }
     return result;
   }
 }

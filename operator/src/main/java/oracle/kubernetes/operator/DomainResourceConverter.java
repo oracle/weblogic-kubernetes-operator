@@ -6,25 +6,38 @@ package oracle.kubernetes.operator;
 import java.io.File;
 import java.io.IOException;
 
-import oracle.kubernetes.operator.utils.DomainResourceMigrationUtils;
+import oracle.kubernetes.operator.utils.MigrationUtils;
 
 public class DomainResourceConverter {
 
-  private static final DomainResourceMigrationUtils sct = new DomainResourceMigrationUtils();
+  private static final MigrationUtils migrationUtils = new MigrationUtils();
 
   /**
    * Entry point of the DomainResourceConverter.
    * @param args The arguments for domain resource converter.
-   * 
+   *
    */
   public static void main(String[] args) throws IOException {
+    String outputDir = null;
+    String outputFileName = null;
+
     if (args.length < 1) {
-      System.out.println("No input file provided. Please provide an input file.");
+      System.out.println("No input file provided. Please provide an input file.\n"
+              + "Usage: java DomainResourceConverter ${input_file_name} \n"
+              + "Exiting.");
       return;
+    } else if (args.length == 1) {
+      outputDir = new File(args[0]).getParent();
+      outputFileName = "Generated_" + new File(args[0]).getName();
+    } else if (args.length > 1) {
+      outputDir = args[1];
+      outputFileName = "Generated_" + new File(args[0]).getName();
+    } else if (args.length > 2) {
+      outputDir = args[1];
+      outputFileName = args[2];
     }
 
-    sct.writeDomain(sct.convertDomain(sct.readDomain(args[0])),
-            new File(args[0]).getParent() + "/converted.yaml");
+    migrationUtils.writeDomain(migrationUtils.convertDomain(migrationUtils.readDomain(args[0])),
+            outputDir + "/" + outputFileName);
   }
-
 }

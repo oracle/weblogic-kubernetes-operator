@@ -1,17 +1,17 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest;
 
 import oracle.kubernetes.operator.utils.Certificates;
 
-/** RestConfigImpl provides the WebLogic Operator REST api configuration. */
+/** RestConfigImpl provides the REST api configuration for Webhook for WebLogic Operator. */
 public class RestWebhookConfigImpl implements RestWebhookConfig {
 
-  public static final int INTERNAL_HTTPS_PORT = 8084;
+  public static final int HTTPS_PORT = 8084;
 
   /**
-   * Constructs a RestConfigImpl.
+   * Constructs a RestWebhookConfigImpl.
    */
   public RestWebhookConfigImpl() {
   }
@@ -22,53 +22,28 @@ public class RestWebhookConfigImpl implements RestWebhookConfig {
   }
 
   @Override
-  public int getExternalHttpsPort() {
-    return 8083;
+  public int getHttpsPort() {
+    return HTTPS_PORT;
   }
 
   @Override
-  public int getInternalHttpsPort() {
-    return INTERNAL_HTTPS_PORT;
+  public String getWebhookCertificateData() {
+    return Certificates.getWebhookCertificateData();
   }
 
   @Override
-  public String getOperatorExternalCertificateData() {
-    return Certificates.getOperatorExternalCertificateData();
-  }
-
-  @Override
-  public String getOperatorInternalCertificateData() {
-    return Certificates.getOperatorInternalCertificateData();
-  }
-
-  @Override
-  public String getOperatorExternalCertificateFile() {
+  public String getWebhookCertificateFile() {
     return null;
   }
 
   @Override
-  public String getOperatorInternalCertificateFile() {
+  public String getWebhookKeyData() {
     return null;
   }
 
   @Override
-  public String getOperatorExternalKeyData() {
-    return null;
-  }
-
-  @Override
-  public String getOperatorInternalKeyData() {
-    return null;
-  }
-
-  @Override
-  public String getOperatorExternalKeyFile() {
-    return Certificates.getOperatorExternalKeyFile();
-  }
-
-  @Override
-  public String getOperatorInternalKeyFile() {
-    return Certificates.getOperatorInternalKeyFile();
+  public String getWebhookKeyFile() {
+    return Certificates.getWebhookKeyFile();
   }
 
 }

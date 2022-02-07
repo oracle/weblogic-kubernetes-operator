@@ -56,7 +56,7 @@ import org.apache.commons.codec.binary.Base64;
 import org.yaml.snakeyaml.constructor.SafeConstructor;
 
 import static oracle.kubernetes.operator.helpers.NamespaceHelper.getOperatorNamespace;
-import static oracle.kubernetes.operator.rest.RestWebhookConfigImpl.INTERNAL_HTTPS_PORT;
+import static oracle.kubernetes.operator.rest.RestWebhookConfigImpl.HTTPS_PORT;
 import static oracle.kubernetes.operator.utils.SelfSignedCertUtils.INTERNAL_WEBLOGIC_OPERATOR_WEBHOOK_SVC;
 import static oracle.kubernetes.weblogic.domain.model.CrdSchemaGenerator.createCrdSchemaGenerator;
 
@@ -213,7 +213,7 @@ public class CrdHelper {
     }
 
     private static V1CustomResourceConversion createConversionWebhook() {
-      return Optional.ofNullable(Certificates.getOperatorInternalCertificateData())
+      return Optional.ofNullable(Certificates.getWebhookCertificateData())
               .map(cd -> Base64.decodeBase64(cd)).map(caBundle -> createConversionWebhook(caBundle)).orElse(null);
     }
 
@@ -222,7 +222,7 @@ public class CrdHelper {
               .webhook(new V1WebhookConversion().conversionReviewVersions(
                       Arrays.asList("v1")).clientConfig(new ApiextensionsV1WebhookClientConfig()
                       .service(new ApiextensionsV1ServiceReference().name(INTERNAL_WEBLOGIC_OPERATOR_WEBHOOK_SVC)
-                              .namespace(getOperatorNamespace()).port(INTERNAL_HTTPS_PORT)
+                              .namespace(getOperatorNamespace()).port(HTTPS_PORT)
                               .path("/webhook"))
                       .caBundle(caBundle)));
     }
@@ -287,8 +287,7 @@ public class CrdHelper {
     }
 
     static V1CustomResourceValidation createSchemaValidation() {
-      return new V1CustomResourceValidation().openAPIV3Schema(createOpenApiV3Schema()
-              .xKubernetesPreserveUnknownFields(true));
+      return new V1CustomResourceValidation().openAPIV3Schema(createOpenApiV3Schema());
     }
 
     static V1JSONSchemaProps createOpenApiV3Schema() {
@@ -371,7 +370,7 @@ public class CrdHelper {
       V1CustomResourceConversion customResourceConversion = createConversionWebhook();
       existingCrd.getSpec().conversion(customResourceConversion);
 
-      LOGGER.info("DEBUG: updating ExistingCrdWithConversion. existingCrd is " + existingCrd);
+      LOGGER.info("DEBUG: updating ExistingCrdWithConversion. existingCrd is " + customResourceConversion);
       return new CallBuilder().replaceCustomResourceDefinitionAsync(
               existingCrd.getMetadata().getName(), existingCrd, createReplaceResponseStep(next));
     }

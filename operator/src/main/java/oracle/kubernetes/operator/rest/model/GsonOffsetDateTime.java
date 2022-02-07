@@ -22,13 +22,11 @@ public class GsonOffsetDateTime implements JsonSerializer<OffsetDateTime>, JsonD
                                     JsonDeserializationContext jsonDeserializationContext) throws JsonParseException {
     String ldtString = jsonElement.getAsString();
     return OffsetDateTime.parse(ldtString,DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-    //return OffsetDateTime.parse("2022-01-28T19:51:27Z", DateTimeFormatter.ISO_OFFSET_DATE_TIME);
-    //return OffsetDateTime.parse("2022-02-01T22:08:20.275396", DateTimeFormatter.ISO_LOCAL_DATE_TIME);
   }
 
   @Override
   public JsonElement serialize(OffsetDateTime localDateTime, Type type,
                                JsonSerializationContext jsonSerializationContext) {
-    return new JsonPrimitive(localDateTime.format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+    return new JsonPrimitive(localDateTime.format(DateTimeFormatter.ISO_OFFSET_DATE_TIME));
   }
 }

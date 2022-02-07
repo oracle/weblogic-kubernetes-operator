@@ -1,97 +1,58 @@
-// Copyright (c) 2017, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator.rest;
 
 /**
- * The RestConfig interface is used to pass the WebLogic Operator's REST configuration to the
- * RestServer.
+ * The RestWebhookConfig interface is used to pass the WebLogic Operator's WebHook REST configuration to the
+ * RestWebhookServer.
  */
 public interface RestWebhookConfig {
 
   /**
-   * Gets the in-pod hostname of the WebLogic operator REST api.
+   * Gets the in-pod hostname of the WebLogic operator webhook REST api.
    *
    * @return the in-pod hostname
    */
   String getHost();
 
   /**
-   * Gets the external https port's in-pod port number.
+   * Gets the https port's in-pod port number.
    *
    * @return the port number
    */
-  int getExternalHttpsPort();
+  int getHttpsPort();
 
   /**
-   * Gets the internal https port's in-pod port number.
-   *
-   * @return the port number
-   */
-  int getInternalHttpsPort();
-
-  /**
-   * Gets the external https port's certificate.
+   * Gets the https port's certificate.
    *
    * @return base64 encoded PEM containing the certificate, or null if
-   *     getOperatorExternalCertificateFile should be used instead to get the certificate.
+   *     getWebhookCertificateFile should be used instead to get the certificate.
    */
-  String getOperatorExternalCertificateData();
-
-  /**
-   * Gets the internal https port's certificate.
-   *
-   * @return base64 encoded PEM containing the certificate, or null if
-   *     getOperatorInternalCertificateFile should be used instead to get the certificate.
-   */
-  String getOperatorInternalCertificateData();
-
-  /**
-   * Gets external https port's certificate.
-   *
-   * @return the pathname of a PEM file containing the certificate or null if
-   *     getOperatorExternalCertificateData should be used instead to get the certificate.
-   */
-  String getOperatorExternalCertificateFile();
+  String getWebhookCertificateData();
 
   /**
    * Gets internal https port's certificate.
    *
    * @return the pathname of a PEM file containing the certificate or null if
-   *     getOperatorInternalCertificateData should be used instead to get the certificate.
+   *     getWebhookCertificateData should be used instead to get the certificate.
    */
-  String getOperatorInternalCertificateFile();
-
-  /**
-   * Gets the external https port's private key.
-   *
-   * @return base64 encoded PEM containing the private key, or null if getOperatorExternalKeyFile
-   *     should be used instead to get the private key.
-   */
-  String getOperatorExternalKeyData();
+  String getWebhookCertificateFile();
 
   /**
    * Gets the internal https port's private key.
    *
-   * @return base64 encoded PEM containing the private key, or null if getOperatorInternalKeyFile
+   * @return base64 encoded PEM containing the private key, or null if getWebhookKeyFile
    *     should be used instead to get the private key.
    */
-  String getOperatorInternalKeyData();
-
-  /**
-   * Gets external https port's private key.
-   *
-   * @return the pathname of a PEM file containing the private key or null if
-   *     getOperatorExternalKeyData should be used instead to get the private key.
-   */
-  String getOperatorExternalKeyFile();
+  String getWebhookKeyData();
 
   /**
    * Gets internal https port's private key.
    *
    * @return the pathname of a PEM file containing the private key or null if
-   *     getOperatorInternalKeyData should be used instead to get the private key.
+   *     getWebhookKeyData should be used instead to get the private key.
    */
-  String getOperatorInternalKeyFile();
+  String getWebhookKeyFile();
 
 }

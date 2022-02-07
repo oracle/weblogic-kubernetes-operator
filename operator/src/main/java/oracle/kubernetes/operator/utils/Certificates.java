@@ -14,15 +14,18 @@ import oracle.kubernetes.operator.logging.LoggingFactory;
 
 import static oracle.kubernetes.operator.logging.MessageKeys.NO_EXTERNAL_CERTIFICATE;
 import static oracle.kubernetes.operator.logging.MessageKeys.NO_INTERNAL_CERTIFICATE;
+import static oracle.kubernetes.operator.logging.MessageKeys.NO_WEBHOOK_CERTIFICATE;
 
 public class Certificates {
   public static final String OPERATOR_DIR = "/operator/";
   private static final String EXTERNAL_ID_DIR = OPERATOR_DIR + "external-identity/";
   static final String EXTERNAL_CERTIFICATE_KEY = EXTERNAL_ID_DIR + "externalOperatorKey";
   static final String EXTERNAL_CERTIFICATE = EXTERNAL_ID_DIR + "externalOperatorCert";
-  private static final String INTERNAL_ID_DIR = OPERATOR_DIR + "internal-identity/";
+  public static final String INTERNAL_ID_DIR = OPERATOR_DIR + "internal-identity/";
   public static final String INTERNAL_CERTIFICATE_KEY = INTERNAL_ID_DIR + "internalOperatorKey";
   public static final String INTERNAL_CERTIFICATE = INTERNAL_ID_DIR + "internalOperatorCert";
+  public static final String WEBHOOK_CERTIFICATE_KEY = INTERNAL_ID_DIR + "webhookKey";
+  public static final String WEBHOOK_CERTIFICATE = INTERNAL_ID_DIR + "webhookCert";
   private static final LoggingFacade LOGGER = LoggingFactory.getLogger("Operator", "Operator");
   @SuppressWarnings({"FieldMayBeFinal", "CanBeFinal"})
   private static Function<String, Path> GET_PATH = Paths::get;
@@ -32,7 +35,11 @@ public class Certificates {
   }
 
   public static String getOperatorInternalKeyFile() {
-    return getKeyOrNull(Certificates.INTERNAL_CERTIFICATE_KEY);
+    return getKeyOrNull(INTERNAL_CERTIFICATE_KEY);
+  }
+
+  public static String getWebhookKeyFile() {
+    return getKeyOrNull(WEBHOOK_CERTIFICATE_KEY);
   }
 
   private static String getKeyOrNull(String path) {
@@ -44,7 +51,11 @@ public class Certificates {
   }
 
   public static String getOperatorInternalCertificateData() {
-    return getCertificate(Certificates.INTERNAL_CERTIFICATE, NO_INTERNAL_CERTIFICATE);
+    return getCertificate(INTERNAL_CERTIFICATE, NO_INTERNAL_CERTIFICATE);
+  }
+
+  public static String getWebhookCertificateData() {
+    return getCertificate(WEBHOOK_CERTIFICATE, NO_WEBHOOK_CERTIFICATE);
   }
 
   private static String getCertificate(String path, String failureMessage) {

@@ -182,6 +182,10 @@ public class JobStepContext extends BasePodStepContext {
     return getDomain().getSpec().getAdditionalVolumeMounts();
   }
 
+  private List<V1Container> getAdditionalInitContainers() {
+    return getDomain().getSpec().getInitContainers();
+  }
+
   /**
    * Creates the specified new pod and performs any additional needed processing.
    *
@@ -365,7 +369,7 @@ public class JobStepContext extends BasePodStepContext {
   protected void addInitContainers(V1PodSpec podSpec, TuningParameters tuningParameters) {
     List<V1Container> initContainers = new ArrayList<>();
     Optional.ofNullable(getAuxiliaryImages()).ifPresent(cl -> addInitContainers(initContainers, cl));
-    initContainers.addAll(getServerSpec().getInitContainers().stream()
+    initContainers.addAll(getAdditionalInitContainers().stream()
             .map(c -> c.env(createEnv(c, tuningParameters))).collect(Collectors.toList()));
     podSpec.initContainers(initContainers);
   }
@@ -375,7 +379,6 @@ public class JobStepContext extends BasePodStepContext {
             initContainers.add(createInitContainerForAuxiliaryImage(auxiliaryImages.get(idx), idx)));
   }
 
-  @Override
   protected List<V1EnvVar> createEnv(V1Container c, TuningParameters tuningParameters) {
     List<V1EnvVar> initContainerEnvVars = new ArrayList<>();
     Optional.ofNullable(c.getEnv()).ifPresent(initContainerEnvVars::addAll);
