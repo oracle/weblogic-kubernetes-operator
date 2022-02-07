@@ -322,9 +322,11 @@ class ItMiiAuxiliaryImage40 {
 
   /**
    * Create a domain using multiple auxiliary images using different WDT versions.
-   * Use Case 1: One auxiliary image sourceWDTInstallHome set to default and the other auxiliary image
+   * Use Case 1: Both the AI's have WDT install files but different versions.
+   * One auxiliary image sourceWDTInstallHome set to default and the other auxiliary image
    * sourceWDTInstallHome set to None. The WDT install files from the second AI should be ignored.
-   * Use Case 2: Both the auxiliary images sourceWDTInstallHome set to default. Introspector should log a error message.
+   * Use Case 2: Both the auxiliary images sourceWDTInstallHome set to default.
+   * Introspector should log an error message.
    */
   @Test
   @DisplayName("Test to create domain using multiple auxiliary images and different WDT installations")
@@ -484,8 +486,9 @@ class ItMiiAuxiliaryImage40 {
   }
 
   /**
-   * Negative test. Create a domain using multiple auxiliary images with sourceWdtInstallHome set.
-   * Verify operator log contains the expected error message and domain status and condition.
+   * Negative test. Create a domain using multiple auxiliary images with specified(custom) sourceWdtInstallHome.
+   * Verify operator log contains the expected error message and domain status and condition. This is a validation
+   * check.
    */
   @Test
   @DisplayName("Test to create domain using multiple auxiliary images with specified sourceWdtInstallHome")
@@ -625,14 +628,14 @@ class ItMiiAuxiliaryImage40 {
   private static void createAuxiliaryImageWithDomainConfig(String imageName, String auxiliaryImagePath) {
     // create stage dir for auxiliary image
     Path aiPath = Paths.get(RESULTS_ROOT,
-        Thread.currentThread().getStackTrace()[1].getClassName(), "ai"
+        ItMiiAuxiliaryImage40.class.getSimpleName(), "ai"
             + imageName.substring(imageName.length() - 1));
     assertDoesNotThrow(() -> FileUtils.deleteDirectory(aiPath.toFile()),
         "Delete directory failed");
     assertDoesNotThrow(() -> Files.createDirectories(aiPath),
         "Create directory failed");
     Path aiPathToFile =
-        Paths.get(RESULTS_ROOT, Thread.currentThread().getStackTrace()[1].getClassName(),
+        Paths.get(RESULTS_ROOT, ItMiiAuxiliaryImage40.class.getSimpleName(),
             "ai" + imageName.substring(imageName.length() - 1) + "/test.txt");
     String content = "1";
     assertDoesNotThrow(() -> Files.write(aiPathToFile, content.getBytes()),
@@ -679,7 +682,7 @@ class ItMiiAuxiliaryImage40 {
   private static void createAuxiliaryImageWithJmsConfig(String imageName, String auxiliaryImagePath) {
 
     // create stage dir for second auxiliary image
-    Path aiPath = Paths.get(RESULTS_ROOT, Thread.currentThread().getStackTrace()[1].getClassName(),
+    Path aiPath = Paths.get(RESULTS_ROOT, ItMiiAuxiliaryImage40.class.getSimpleName(),
         "ai" + imageName.substring(imageName.length() - 1));
     assertDoesNotThrow(() -> FileUtils.deleteDirectory(aiPath.toFile()),
         "Delete directory failed");
@@ -690,7 +693,7 @@ class ItMiiAuxiliaryImage40 {
     Path modelsPath = Paths.get(aiPath.toString(), "models");
     assertDoesNotThrow(() -> Files.createDirectories(modelsPath));
     Path aiPathToFile =
-        Paths.get(RESULTS_ROOT, Thread.currentThread().getStackTrace()[1].getClassName(),
+        Paths.get(RESULTS_ROOT, ItMiiAuxiliaryImage40.class.getSimpleName(),
             "ai" + imageName.substring(imageName.length() - 1) + "/test.txt");
     String content2 = "2";
     assertDoesNotThrow(() -> Files.write(aiPathToFile, content2.getBytes()),
