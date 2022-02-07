@@ -1306,7 +1306,7 @@ class ItMonitoringExporter {
 
     String monitoringExporterBranch = Optional.ofNullable(System.getenv("MONITORING_EXPORTER_BRANCH"))
         .orElse("main");
-    //adding ability to build monitoring exporter if branch is not master
+    //adding ability to build monitoring exporter if branch is not main
     boolean toBuildMonitoringExporter = (!monitoringExporterBranch.equalsIgnoreCase(("main")));
     monitoringExporterAppDir = monitoringApp.toString();
     String monitoringExporterAppNoRestPortDir = monitoringAppNoRestPort.toString();
