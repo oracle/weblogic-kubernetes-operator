@@ -163,7 +163,6 @@ class ItManagedCoherence {
       final String cluster1IngressHost = createRouteForOKD(cluster1HostName, domainNamespace);
       final String cluster2IngressHost = createRouteForOKD(cluster2HostName, domainNamespace);
 
-      
       // test adding data to the cache and retrieving them from the cache
       boolean testCompletedSuccessfully = assertDoesNotThrow(()
           -> coherenceCacheTest(cluster1IngressHost), "Test Coherence cache failed");
@@ -182,7 +181,7 @@ class ItManagedCoherence {
       // get ingress service Nodeport
       String ingressServiceName = traefikHelmParams.getReleaseName();
       String traefikNamespace = traefikHelmParams.getNamespace();
-      
+
       int ingressServiceNodePort = assertDoesNotThrow(()
               -> getServiceNodePort(traefikNamespace, ingressServiceName, "web"),
           "Getting Ingress Service node port failed");
@@ -330,7 +329,6 @@ class ItManagedCoherence {
     String hostAndPort = getHostAndPort(hostName, ingressServiceNodePort);
     logger.info("hostAndPort = {0} ", hostAndPort);
 
-
     // add the data to cache
     String[] firstNameList = {"Frodo", "Samwise", "Bilbo", "peregrin", "Meriadoc", "Gandalf"};
     String[] secondNameList = {"Baggins", "Gamgee", "Baggins", "Took", "Brandybuck", "TheGrey"};
@@ -338,7 +336,7 @@ class ItManagedCoherence {
     for (int i = 0; i < firstNameList.length; i++) {
       result = addDataToCache(firstNameList[i], secondNameList[i], hostName, hostAndPort);
       assertTrue(result.stdout().contains(firstNameList[i]), "Did not add the expected record");
-      logger.info("Data added to the cache " + result.stdout());
+      logger.info("Data added to the cache: {0}", result.stdout());
     }
 
     // check if cache size is 6
