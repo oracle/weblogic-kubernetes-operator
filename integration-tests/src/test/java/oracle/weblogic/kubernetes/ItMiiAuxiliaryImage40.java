@@ -201,7 +201,8 @@ class ItMiiAuxiliaryImage40 {
   @Order(2)
   @DisplayName("Test to update data source url in the  domain using auxiliary image")
   void testUpdateDataSourceInDomainUsingAuxiliaryImage() {
-    Path multipleAIPath1 = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(), "multipleauxiliaryimage1");
+    Path multipleAIPath1 = Paths.get(RESULTS_ROOT, this.getClass().getSimpleName(),
+        "ai" + miiAuxiliaryImage1.substring(miiAuxiliaryImage1.length() - 1));
     Path modelsPath1 = Paths.get(multipleAIPath1.toString(), "models");
 
     // create stage dir for auxiliary image with image3
