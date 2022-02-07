@@ -1305,9 +1305,9 @@ class ItMonitoringExporter {
     monitoringExporterEndToEndDir = monitoringTemp + "/samples/kubernetes/end2end/";
 
     String monitoringExporterBranch = Optional.ofNullable(System.getenv("MONITORING_EXPORTER_BRANCH"))
-        .orElse("master");
+        .orElse("main");
     //adding ability to build monitoring exporter if branch is not master
-    boolean toBuildMonitoringExporter = (!monitoringExporterBranch.equalsIgnoreCase(("master")));
+    boolean toBuildMonitoringExporter = (!monitoringExporterBranch.equalsIgnoreCase(("main")));
     monitoringExporterAppDir = monitoringApp.toString();
     String monitoringExporterAppNoRestPortDir = monitoringAppNoRestPort.toString();
 

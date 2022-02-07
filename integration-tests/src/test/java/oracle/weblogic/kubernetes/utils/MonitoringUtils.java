@@ -111,7 +111,7 @@ public class MonitoringUtils {
    */
   public static void buildMonitoringExporterApp(String monitoringExporterSrcDir, String configFile, String appDir) {
 
-    String command = String.format("cd %s && mvn clean install -Dmaven.test.skip=true -Dconfiguration=%s",
+    String command = String.format("cd %s && mvn clean install -Dmaven.test.skip=true",
         monitoringExporterSrcDir,
         RESOURCE_DIR,
         configFile);
