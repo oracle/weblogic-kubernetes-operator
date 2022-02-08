@@ -34,7 +34,6 @@ import static oracle.weblogic.kubernetes.TestConstants.MONITORING_EXPORTER_WEBAP
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_NAME;
 import static oracle.weblogic.kubernetes.TestConstants.PROMETHEUS_REPO_URL;
 import static oracle.weblogic.kubernetes.actions.ActionConstants.MONITORING_EXPORTER_DOWNLOAD_URL;
-import static oracle.weblogic.kubernetes.actions.ActionConstants.RESOURCE_DIR;
 import static oracle.weblogic.kubernetes.actions.TestActions.installGrafana;
 import static oracle.weblogic.kubernetes.actions.TestActions.installPrometheus;
 import static oracle.weblogic.kubernetes.actions.TestActions.uninstallGrafana;
@@ -113,7 +112,6 @@ public class MonitoringUtils {
 
     String command = String.format("cd %s && mvn clean install -Dmaven.test.skip=true -Dconfiguration=%s",
         monitoringExporterSrcDir,
-        RESOURCE_DIR,
         configFile);
     LoggingFacade logger = getLogger();
     logger.info("Executing command " + command);
