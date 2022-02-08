@@ -3,9 +3,7 @@
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # This script checks for the below required environment variables on Jenkins and runs the integration tests
-# APACHE_MAVEN_HOME
-# HELM_VERSION
-# KUBECTL_VERSION
+# MVN_HOME
 # #IIT_TEST
 # WDT_DOWNLOAD_URL
 # WIT_DOWNLOAD_URL
@@ -56,9 +54,7 @@ checkJavaVersion() {
 echo "WORKSPACE ${WORKSPACE}"
 
 checkEnvVars  \
-   APACHE_MAVEN_HOME  \
-   HELM_VERSION  \
-   KUBECTL_VERSION \
+   MVN_HOME  \
    IT_TEST  \
    WDT_DOWNLOAD_URL  \
    WIT_DOWNLOAD_URL  \
