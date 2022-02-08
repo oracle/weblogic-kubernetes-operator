@@ -25,8 +25,6 @@ import org.junit.jupiter.api.condition.DisabledIfEnvironmentVariable;
 @IntegrationTest
 class ItMiiSampleWlsMain {
 
-  private static ItMiiSampleHelper myItMiiSampleHelper = null;
-
   /**
    * Install Operator.
    * @param namespaces list of namespaces created by the IntegrationTestWatcher by the
@@ -34,8 +32,7 @@ class ItMiiSampleWlsMain {
    */
   @BeforeAll
   public static void init(@Namespaces(3) List<String> namespaces) {
-    myItMiiSampleHelper = new ItMiiSampleHelper();
-    myItMiiSampleHelper.initAll(namespaces, ItMiiSampleHelper.DomainType.WLS, ItMiiSampleHelper.ImageType.MAIN);
+    ItMiiSampleHelper.initAll(namespaces, ItMiiSampleHelper.DomainType.WLS, ItMiiSampleHelper.ImageType.MAIN);
   }
 
   /**
@@ -47,15 +44,15 @@ class ItMiiSampleWlsMain {
   @DisabledIfEnvironmentVariable(named = "SKIP_CHECK_SAMPLE", matches = "true")
   @DisplayName("Test to verify MII Sample source")
   void testCheckMiiSampleSource() {
-    myItMiiSampleHelper.callCheckMiiSampleSource("-check-sample",
+    ItMiiSampleHelper.callCheckMiiSampleSource("-check-sample",
         "Sample source doesn't match with the generated source");
   }
 
   /**
-   * Test to verify MII sample WLS initial use case.
+   * Test to verify MII sample WLS initial use case. 
    * Builds image required for the initial use case, creates secrets, and
    * creates domain resource.
-   * Verifies all WebLogic Server pods are ready, are at the expected
+   * Verifies all WebLogic Server pods are ready, are at the expected 
    * restartVersion, and have the expected image.
    * Verifies the sample application is running
    * (response includes "Hello World!").
@@ -65,14 +62,14 @@ class ItMiiSampleWlsMain {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS initial use case")
   void testWlsInitialUseCase() {
-    myItMiiSampleHelper.callInitialUseCase(this.getClass().getSimpleName().toLowerCase());
+    ItMiiSampleHelper.callInitialUseCase();
   }
 
   /**
-   * Test to verify WLS update1 use case.
-   * Adds a data source to initial domain via a configmap and updates the
+   * Test to verify WLS update1 use case. 
+   * Adds a data source to initial domain via a configmap and updates the 
    * domain resource restartVersion.
-   * Verifies all WebLogic Server pods roll to ready, roll to the expected
+   * Verifies all WebLogic Server pods roll to ready, roll to the expected 
    * restartVersion, and have the expected image.
    * Verifies the sample application is running
    * and detects the new datasource (response includes
@@ -83,8 +80,7 @@ class ItMiiSampleWlsMain {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update1 use case")
   void testWlsUpdate1UseCase() {
-    myItMiiSampleHelper
-        .callUpdateUseCase("-update1", "Update1 use case failed", this.getClass().getSimpleName().toLowerCase());
+    ItMiiSampleHelper.callUpdateUseCase("-update1", "Update1 use case failed");
   }
 
   /**
@@ -102,8 +98,7 @@ class ItMiiSampleWlsMain {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update2 use case")
   void testWlsUpdate2UseCase() {
-    myItMiiSampleHelper
-        .callUpdateUseCase("-update2", "Update2 use case failed", this.getClass().getSimpleName().toLowerCase());
+    ItMiiSampleHelper.callUpdateUseCase("-update2", "Update2 use case failed");
   }
 
   /**
@@ -111,7 +106,7 @@ class ItMiiSampleWlsMain {
    * Deploys an updated WebLogic application to the running
    * domain from update1 using an updated Docker image,
    * and updates the domain resource restartVersion.
-   * Verifies all WebLogic Server pods roll to ready, roll to the expected
+   * Verifies all WebLogic Server pods roll to ready, roll to the expected 
    * restartVersion, and have the expected image.
    * Verifies the sample application is running
    * and is at the new version (response includes "v2").
@@ -121,8 +116,8 @@ class ItMiiSampleWlsMain {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update3 use case")
   void testWlsUpdate3UseCase() {
-    myItMiiSampleHelper.callUpdateUseCase("-update3-image,-check-image-and-push,-update3-main",
-        "Update3 use case failed", this.getClass().getSimpleName().toLowerCase());
+    ItMiiSampleHelper.callUpdateUseCase("-update3-image,-check-image-and-push,-update3-main",
+        "Update3 use case failed");
   }
 
   /**
@@ -137,8 +132,7 @@ class ItMiiSampleWlsMain {
   @DisabledIfEnvironmentVariable(named = "SKIP_WLS_SAMPLES", matches = "true")
   @DisplayName("Test to verify MII sample WLS update4 use case")
   void testWlsUpdate4UseCase() {
-    myItMiiSampleHelper
-        .callUpdateUseCase("-update4", "Update4 use case failed", this.getClass().getSimpleName().toLowerCase());
+    ItMiiSampleHelper.callUpdateUseCase("-update4", "Update4 use case failed");
   }
 
   /**
@@ -147,6 +141,6 @@ class ItMiiSampleWlsMain {
   @AfterAll
   public void tearDown() {
     // uninstall traefik
-    myItMiiSampleHelper.tearDownAll();
+    ItMiiSampleHelper.tearDownAll();
   }
 }
