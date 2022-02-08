@@ -73,8 +73,6 @@ checkEnvVars  \
    PV_ROOT  \
    OKD  \
 
-
-
 mkdir -p ${WORKSPACE}/bin
 
 export PATH=${JAVA_HOME}/bin:${APACHE_MAVEN_HOME}/bin:${WORKSPACE}/bin:$PATH
