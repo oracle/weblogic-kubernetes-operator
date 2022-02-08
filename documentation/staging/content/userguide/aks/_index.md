@@ -177,7 +177,7 @@ You must select one of the following three options, each described in turn.
 | Password | The password for the certificate |
 | Confirm password | Re-enter the value of the preceding field. |
 | Trusted root certificate(.cer, .cert) | A trusted root certificate is required to allow back-end instances in the application gateway. The root certificate is a Base-64 encoded X.509(.CER) format root certificate. |
-| Service Principal | A Base64 encoded JSON string of a service principal for the selected subscription. You can generate one with command `az ad sp create-for-rbac --role Contributor --sdk-auth | base64 -w0`. For more information, see [Create a service principal](https://docs.microsoft.com/cli/azure/create-an-azure-service-principal-azure-cli#create-a-service-principal). |
+| Service Principal | A Base64 encoded JSON string of a service principal for the selected subscription. You can generate one with command `az ad sp create-for-rbac --role Contributor --sdk-auth | base64 -w0`. On macOS omit the `-w0`. For more information, see [Create a service principal](https://docs.microsoft.com/cli/azure/create-an-azure-service-principal-azure-cli#create-a-service-principal). |
 
 **Identify an Azure Key Vault**
 
@@ -187,14 +187,14 @@ You must select one of the following three options, each described in turn.
 | Name of the Azure KeyVault containing secrets for the Certificate for SSL Termination | Enter the name of the Azure Key Vault that stores the application gateway SSL certificate and the data required for SSL termination. |
 | The name of the secret in the specified KeyVault whose value is the SSL Certificate Data | Enter the name of the Azure Key Vault secret that holds the value of the SSL certificate data. |
 | The name of the secret in the specified KeyVault whose value is the password for the SSL Certificate | Enter the name of the Azure Key Vault secret that holds the value of the SSL certificate password. |
-| Service Principal | A Base64 encoded JSON string of a service principal for the selected subscription. You can generate one with command `az ad sp create-for-rbac --role Contributor --sdk-auth | base64 -w0`. For more information, see [Create a service principal](https://docs.microsoft.com/cli/azure/create-an-azure-service-principal-azure-cli#create-a-service-principal). |
+| Service Principal | A Base64 encoded JSON string of a service principal for the selected subscription. You can generate one with command `az ad sp create-for-rbac --role Contributor --sdk-auth | base64 -w0`. On macOS omit the `-w0`. For more information, see [Create a service principal](https://docs.microsoft.com/cli/azure/create-an-azure-service-principal-azure-cli#create-a-service-principal). |
 
 **Generate a self-signed frontend certificate**
 
 | Field | Description |
 |-------|-------------|
 | Trusted root certificate(.cer, .cert) | A trusted root certificate is required to allow back-end instances in the application gateway. The root certificate is a Base-64 encoded X.509(.CER) format root certificate. |
-| Service Principal | A Base64 encoded JSON string of a service principal for the selected subscription. You can generate one with command `az ad sp create-for-rbac --role Contributor --sdk-auth | base64 -w0`. For more information, see [Create a service principal](https://docs.microsoft.com/cli/azure/create-an-azure-service-principal-azure-cli#create-a-service-principal). |
+| Service Principal | A Base64 encoded JSON string of a service principal for the selected subscription. You can generate one with command `az ad sp create-for-rbac --role Contributor --sdk-auth | base64 -w0`. On macOS omit the `-w0`. For more information, see [Create a service principal](https://docs.microsoft.com/cli/azure/create-an-azure-service-principal-azure-cli#create-a-service-principal). |
 
 Regardless of how you provide the certificates, there are several other options when configuring the Application Gateway, as described next.
 
