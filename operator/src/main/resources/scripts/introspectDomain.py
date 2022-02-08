@@ -451,6 +451,8 @@ class TopologyGenerator(Generator):
       self.validateNonDynamicClusterAutoMigrationDisabled(cluster)
       if self.isConsensusLeasing(cluster):
         self.validateNonDynamicClusterNotUsingLeasing(cluster)
+      else:
+        self.validateAutoMigrationDataSourceConfigured(cluster)
 
   def validateNonDynamicClusterReferencedByAtLeastOneServer(self, cluster):
     for server in self.env.getDomain().getServers():
@@ -563,6 +565,8 @@ class TopologyGenerator(Generator):
       self.validateDynamicClusterAutoMigrationDisabled(cluster)
       if self.isConsensusLeasing(cluster):
         self.validateDynamicClusterNotUsingLeasing(cluster)
+      else:
+        self.validateAutoMigrationDataSourceConfigured(cluster)
 
   def validateDynamicClusterReferencedByOneServerTemplate(self, cluster):
     server_template=None
@@ -610,9 +614,12 @@ class TopologyGenerator(Generator):
 
   def validateAutoMigrationDisabled(self, server_or_template, cluster):
     if server_or_template.isAutoMigrationEnabled() == True:
-      self.addError("Automatic whole server migration is enabled in cluster " + self.name(cluster) +
-                    " but the feature is not supported by the WebLogic Kubernetes Operator. " +
-                    "Set SKIP_LEASING_VALIDATIONS environment variable to 'True' to skip this validation.")
+      self.addMigrationError("Automatic whole server migration is enabled in cluster " + self.name(cluster) +
+                             " but the feature is not supported by the WebLogic Kubernetes Operator.")
+
+  def validateAutoMigrationDataSourceConfigured(self, cluster):
+    if cluster.getDataSourceForAutomaticMigration() is None:
+      self.addMigrationError("DataSource for database leasing is not configued in cluster " + self.name(cluster) + ".")
 
   def validateNoSingletonServices(self, cluster):
     singletonServices = self.env.getDomain().getSingletonServices()
@@ -627,6 +634,9 @@ class TopologyGenerator(Generator):
       if migrationPolicy is not None and migrationPolicy != "manual":
         self.addConsensusLeasingError("JTA migratable target in " + type_str + " " + self.name(server_or_template)
                                       + " in cluster " + self.name(cluster) + " requires automatic service migration")
+
+  def addMigrationError(self, message):
+    self.addError(message + " Set SKIP_LEASING_VALIDATIONS environment variable to 'True' to skip this validation.")
 
   def addConsensusLeasingError(self, message):
     self.addError(message + ", but cluster is configured to use consensus leasing which is not " +
