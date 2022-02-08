@@ -73,6 +73,7 @@ import static oracle.weblogic.kubernetes.actions.impl.Domain.patchDomainCustomRe
 import static oracle.weblogic.kubernetes.assertions.TestAssertions.verifyRollingRestartOccurred;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkPodReadyAndServiceExists;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.checkServiceExists;
+import static oracle.weblogic.kubernetes.utils.CommonTestUtils.getNextFreePort;
 import static oracle.weblogic.kubernetes.utils.CommonTestUtils.testUntil;
 import static oracle.weblogic.kubernetes.utils.ConfigMapUtils.createConfigMapForDomainCreation;
 import static oracle.weblogic.kubernetes.utils.DomainUtils.createDomainAndVerify;
@@ -1089,7 +1090,7 @@ class ItKubernetesEvents {
                 .adminService(new AdminService()
                     .addChannelsItem(new Channel()
                         .channelName("default")
-                        .nodePort(0))))
+                        .nodePort(getNextFreePort()))))
             .addClustersItem(new Cluster() //cluster
                 .clusterName(cluster1Name)
                 .replicas(replicaCount)
