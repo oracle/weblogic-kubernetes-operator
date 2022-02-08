@@ -1300,9 +1300,9 @@ class ItMonitoringExporter {
     monitoringExporterEndToEndDir = monitoringTemp + "/samples/kubernetes/end2end/";
 
     String monitoringExporterBranch = Optional.ofNullable(System.getenv("MONITORING_EXPORTER_BRANCH"))
-        .orElse("master");
-    //adding ability to build monitoring exporter if branch is not master
-    boolean toBuildMonitoringExporter = (!monitoringExporterBranch.equalsIgnoreCase(("master")));
+        .orElse("main");
+    //adding ability to build monitoring exporter if branch is not main
+    boolean toBuildMonitoringExporter = (!monitoringExporterBranch.equalsIgnoreCase(("main")));
     monitoringExporterAppDir = monitoringApp.toString();
     String monitoringExporterAppNoRestPortDir = monitoringAppNoRestPort.toString();
 
@@ -1499,7 +1499,7 @@ class ItMonitoringExporter {
     createOcirRepoSecret(namespace);
     logger.info("Create secret for admin credentials");
     String adminSecretName = "weblogic-credentials";
-    assertDoesNotThrow(() -> createSecretWithUsernamePassword(adminSecretName, 
+    assertDoesNotThrow(() -> createSecretWithUsernamePassword(adminSecretName,
         namespace, ADMIN_USERNAME_DEFAULT, ADMIN_PASSWORD_DEFAULT),
         String.format("create secret for admin credentials failed for %s", adminSecretName));
 
@@ -1650,7 +1650,7 @@ class ItMonitoringExporter {
             ADMIN_PASSWORD_DEFAULT,
             K8S_NODEPORT_HOST,
             nodeportshttp);
-    assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, managedServerNames, 50))
+    assertThat(callWebAppAndCheckForServerNameInResponse(curlCmd, managedServerNames, 100))
         .as("Verify NGINX can access the monitoring exporter metrics "
             + "from all managed servers in the domain via http")
         .withFailMessage("NGINX can not access the monitoring exporter metrics "
@@ -1708,11 +1708,11 @@ class ItMonitoringExporter {
         "Copying file to pod failed");
     execInPod(exporterPod, "monitoring-exporter", true,
         "curl -X PUT -H \"content-type: application/yaml\" --data-binary \"@/tmp/"
-        + configYaml + "\" -i -u " + ADMIN_USERNAME_DEFAULT + ":" 
-        + ADMIN_PASSWORD_DEFAULT  
+        + configYaml + "\" -i -u " + ADMIN_USERNAME_DEFAULT + ":"
+        + ADMIN_PASSWORD_DEFAULT
         + "http://localhost:8080/configuration");
     execInPod(exporterPod, "monitoring-exporter", true, "curl -X GET  "
-         + " -i -u " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT 
+         + " -i -u " + ADMIN_USERNAME_DEFAULT + ":" + ADMIN_PASSWORD_DEFAULT
          + "http://localhost:8080/metrics");
   }
 

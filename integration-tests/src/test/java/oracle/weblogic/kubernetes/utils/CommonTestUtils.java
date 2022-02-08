@@ -36,6 +36,7 @@ import static java.util.concurrent.TimeUnit.SECONDS;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_PASSWORD_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.ADMIN_USERNAME_DEFAULT;
 import static oracle.weblogic.kubernetes.TestConstants.K8S_NODEPORT_HOST;
+import static oracle.weblogic.kubernetes.TestConstants.OKD;
 import static oracle.weblogic.kubernetes.actions.TestActions.getPodCreationTimestamp;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleCluster;
 import static oracle.weblogic.kubernetes.actions.TestActions.scaleClusterWithRestApi;
@@ -836,6 +837,20 @@ public class CommonTestUtils {
         }
       }
     }
+  }
+
+  /**
+   * Evaluates the route host name for OKD env, and host:serviceport for othe env's.
+   *
+   * @param hostName - in OKD it is host name when svc is exposed as a route, null otherwise
+   * @param servicePort - port of the service to access
+   * @return host and port for all env, route hostname for OKD
+   */
+  public static String getHostAndPort(String hostName, int servicePort) {
+    LoggingFacade logger = getLogger();
+    String hostAndPort = ((OKD) ? hostName : K8S_NODEPORT_HOST + ":" + servicePort);
+    logger.info("hostAndPort = {0} ", hostAndPort);
+    return hostAndPort;
   }
 
   /**
