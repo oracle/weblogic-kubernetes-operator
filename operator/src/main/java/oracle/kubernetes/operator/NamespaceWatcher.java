@@ -1,4 +1,4 @@
-// Copyright (c) 2019, 2021, Oracle and/or its affiliates.
+// Copyright (c) 2019, 2022, Oracle and/or its affiliates.
 // Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 
 package oracle.kubernetes.operator;
@@ -19,23 +19,19 @@ import oracle.kubernetes.operator.watcher.WatchListener;
  * the operator for processing.
  */
 public class NamespaceWatcher extends Watcher<V1Namespace> {
-  private final String[] labelSelectors;
 
   private NamespaceWatcher(
       String initialResourceVersion,
-      String[] labelSelectors,
       WatchTuning tuning,
       WatchListener<V1Namespace> listener,
       AtomicBoolean isStopping) {
     super(initialResourceVersion, tuning, isStopping, listener);
-    this.labelSelectors = labelSelectors;
   }
 
   /**
    * Create a namespace watcher.
    * @param factory the ThreadFactory to run the watcher
    * @param initialResourceVersion at which to start returning watch events
-   * @param labelSelector label selector
    * @param tuning any WatchTuning parameters
    * @param listener the WatchListener
    * @param isStopping whether the watcher is stopping
@@ -44,13 +40,11 @@ public class NamespaceWatcher extends Watcher<V1Namespace> {
   public static NamespaceWatcher create(
       ThreadFactory factory,
       String initialResourceVersion,
-      String[] labelSelector,
       WatchTuning tuning,
       WatchListener<V1Namespace> listener,
       AtomicBoolean isStopping) {
 
-    NamespaceWatcher watcher =
-        new NamespaceWatcher(initialResourceVersion, labelSelector, tuning, listener, isStopping);
+    NamespaceWatcher watcher = new NamespaceWatcher(initialResourceVersion, tuning, listener, isStopping);
     watcher.start(factory);
     return watcher;
   }
@@ -58,7 +52,6 @@ public class NamespaceWatcher extends Watcher<V1Namespace> {
   @Override
   public Watchable<V1Namespace> initiateWatch(WatchBuilder watchBuilder) throws ApiException {
     return watchBuilder
-        .withLabelSelectors(labelSelectors)
         .createNamespacesWatch();
   }
 

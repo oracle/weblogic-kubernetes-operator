@@ -1371,12 +1371,9 @@ class SitConfigGenerator(Generator):
     self.writeln('<d:public-address %s>%s.%s</d:public-address>' % (action, listen_address,
                                     self.env.getEnvOrDef("ISTIO_POD_NAMESPACE", "default")))
     self.writeln('<d:listen-port %s>%s</d:listen-port>' % (action, listen_port))
-    self.writeln('<d:http-enabled-for-this-protocol %s>true</d:http-enabled-for-this-protocol>' %
-                 (action))
     self.writeln('<d:enabled %s>true</d:enabled>' % action)
     self.writeln('<d:outbound-enabled %s>false</d:outbound-enabled>' % action)
     self.writeln('<d:use-fast-serialization %s>true</d:use-fast-serialization>' % action)
-    self.writeln('<d:tunneling-enabled %s>true</d:tunneling-enabled>' % action)
     self.undent()
     self.writeln('</d:network-access-point>')
 
