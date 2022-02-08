@@ -33,7 +33,7 @@ class ItMiiSampleWlsMain {
    *        JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void init(@Namespaces(4) List<String> namespaces) {
+  public static void init(@Namespaces(3) List<String> namespaces) {
     myItMiiSampleHelper = new ItMiiSampleHelper();
     myItMiiSampleHelper.initAll(namespaces, ItMiiSampleHelper.DomainType.WLS, ItMiiSampleHelper.ImageType.MAIN);
   }
@@ -47,7 +47,7 @@ class ItMiiSampleWlsMain {
   @DisabledIfEnvironmentVariable(named = "SKIP_CHECK_SAMPLE", matches = "true")
   @DisplayName("Test to verify MII Sample source")
   void testCheckMiiSampleSource() {
-    ItMiiSampleHelper.callCheckMiiSampleSource("-check-sample",
+    myItMiiSampleHelper.callCheckMiiSampleSource("-check-sample",
         "Sample source doesn't match with the generated source");
   }
 
@@ -147,6 +147,6 @@ class ItMiiSampleWlsMain {
   @AfterAll
   public void tearDown() {
     // uninstall traefik
-    ItMiiSampleHelper.tearDownAll();
+    myItMiiSampleHelper.tearDownAll();
   }
 }

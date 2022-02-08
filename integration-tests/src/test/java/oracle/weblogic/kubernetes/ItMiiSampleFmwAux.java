@@ -116,6 +116,6 @@ class ItMiiSampleFmwAux {
   @AfterAll
   public void tearDown() {
     // db cleanup or deletion and uninstall traefik
-    ItMiiSampleHelper.tearDownAll();
+    myItMiiSampleHelper.tearDownAll();
   }
 }

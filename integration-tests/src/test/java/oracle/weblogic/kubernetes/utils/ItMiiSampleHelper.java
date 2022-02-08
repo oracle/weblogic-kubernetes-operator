@@ -54,15 +54,15 @@ public class ItMiiSampleHelper {
       "../operator/integration-tests/model-in-image/run-test.sh";
   private static final String SUCCESS_SEARCH_STRING = "Finished without errors";
 
-  private static String opNamespace = null;
-  private static String domainNamespace = null;
-  private static String traefikNamespace = null;
-  private static String dbNamespace = null;
-  private static Map<String, String> envMap = null;
-  private static LoggingFacade logger = null;
-  private static boolean previousTestSuccessful = true;
-  private static DomainType domainType = null;
-  private static ImageType imageType = null;
+  private String opNamespace = null;
+  private String domainNamespace = null;
+  private String traefikNamespace = null;
+  private String dbNamespace = null;
+  private Map<String, String> envMap = null;
+  private LoggingFacade logger = null;
+  private boolean previousTestSuccessful = true;
+  private DomainType domainType = null;
+  private ImageType imageType = null;
 
   public enum DomainType {
     JRF,
@@ -87,10 +87,11 @@ public class ItMiiSampleHelper {
    * @param domainTypeParam domain type names
    * @param imageTypeParam image type names
    */
-  public static void initAll(List<String> namespaces, DomainType domainTypeParam, ImageType imageTypeParam) {
+  public void initAll(List<String> namespaces, DomainType domainTypeParam, ImageType imageTypeParam) {
     logger = getLogger();
-    ItMiiSampleHelper.domainType = domainTypeParam;
-    ItMiiSampleHelper.imageType = imageTypeParam;
+    domainType = domainTypeParam;
+    imageType = imageTypeParam;
+
     // get a new unique opNamespace
     logger.info("Creating unique namespace for Operator");
     assertNotNull(namespaces.get(0), "Namespace list is null");
@@ -168,7 +169,7 @@ public class ItMiiSampleHelper {
   /**
    * Verify that the image exists and push it to docker registry if necessary.
    */
-  public static void assertImageExistsAndPushIfNeeded() {
+  public void assertImageExistsAndPushIfNeeded() {
     String imageName = envMap.get("MODEL_IMAGE_NAME");
     String imageVer = "notset";
     String decoration = (envMap.get("DO_AI") != null && envMap.get("DO_AI").equalsIgnoreCase("true"))  ? "AI-" : "";
@@ -201,7 +202,7 @@ public class ItMiiSampleHelper {
    * @param args arguments to execute script
    * @param errString a string of detailed error
    */
-  public static void execTestScriptAndAssertSuccess(DomainType domainType,
+  public void execTestScriptAndAssertSuccess(DomainType domainType,
                                                     String args,
                                                     String errString) {
     for (String arg : args.split(",")) {
@@ -310,7 +311,7 @@ public class ItMiiSampleHelper {
   /**
    * Test MII sample WLS or JRF update1 use case.
    */
-  public static void callCheckMiiSampleSource(String args,
+  public void callCheckMiiSampleSource(String args,
                                               String errString) {
     /*
     final String baseImageNameKey = "BASE_IMAGE_NAME";
@@ -331,7 +332,7 @@ public class ItMiiSampleHelper {
   /**
    * Delete DB deployment for FMW test cases and Uninstall traefik.
    */
-  public static void tearDownAll() {
+  public void tearDownAll() {
     logger = getLogger();
     // uninstall traefik
     if (traefikNamespace != null) {

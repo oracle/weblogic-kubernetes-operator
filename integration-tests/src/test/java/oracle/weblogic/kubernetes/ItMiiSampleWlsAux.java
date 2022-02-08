@@ -33,7 +33,7 @@ class ItMiiSampleWlsAux {
    *        JUnit engine parameter resolution mechanism
    */
   @BeforeAll
-  public static void init(@Namespaces(4) List<String> namespaces) {
+  public static void init(@Namespaces(3) List<String> namespaces) {
     myItMiiSampleHelper = new ItMiiSampleHelper();
     myItMiiSampleHelper.initAll(namespaces, ItMiiSampleHelper.DomainType.WLS, ItMiiSampleHelper.ImageType.AUX);
   }
@@ -134,6 +134,6 @@ class ItMiiSampleWlsAux {
   @AfterAll
   public void tearDown() {
     // uninstall traefik
-    ItMiiSampleHelper.tearDownAll();
+    myItMiiSampleHelper.tearDownAll();
   }
 }
