@@ -162,9 +162,13 @@ import static org.junit.jupiter.api.Assertions.fail;
 import static org.junit.jupiter.api.Assumptions.assumeFalse;
 
 /**
- * Verify scaling up and down the clusters in the domain with different domain types.
+ * The tests class creates WebLogic domains with three models.
+ *  domain-on-pv ( using WDT )
+ *  domain-in-image ( using WDT )
+ *  model-in-image
+ * Verify the basic lifecycle operations of the WebLogic server pods by scaling the domain and
+ * triggering rolling ( in case of mii domain )
  * Also verify the sample application can be accessed via NGINX ingress controller.
- * Also verify the rolling restart behavior in a multi-cluster MII domain.
  */
 @DisplayName("Verify scaling the clusters in the domain with different domain types, "
         + "rolling restart behavior in a multi-cluster MII domain and "
@@ -198,13 +202,10 @@ class ItParameterizedDomainWithLoadBalancer {
   private static Domain miiDomain = null;
   private static Domain domainInImage = null;
   private static Domain domainOnPV = null;
-  private static int t3ChannelPort = 0;
   private static String miiDomainNamespace = null;
   private static String miiDomainNegativeNamespace = null;
   private static String miiImage = null;
   private static String encryptionSecretName = "encryptionsecret";
-  private static Map<String, Quantity> resourceRequest = new HashMap<>();
-  private static Map<String, Quantity> resourceLimit = new HashMap<>();
 
   private String curlCmd = null;
 
@@ -264,12 +265,6 @@ class ItParameterizedDomainWithLoadBalancer {
     logger.info("NGINX service name: {0}", nginxServiceName);
     nodeportshttp = getServiceNodePort(nginxNamespace, nginxServiceName, "http");
     logger.info("NGINX http node port: {0}", nodeportshttp);
-
-    // set resource request and limit
-    resourceRequest.put("cpu", new Quantity("250m"));
-    resourceRequest.put("memory", new Quantity("768Mi"));
-    resourceLimit.put("cpu", new Quantity("2"));
-    resourceLimit.put("memory", new Quantity("2Gi"));
 
     // create model in image domain with multiple clusters
     miiDomain = createMiiDomainWithMultiClusters(miiDomainUid, miiDomainNamespace);
@@ -729,7 +724,7 @@ class ItParameterizedDomainWithLoadBalancer {
    */
   @Test
   @DisplayName("Verify server pods are restarted only once by changing the imagePullPolicy in multi-cluster domain")
-  void testMultiClustersRollingRestart() {
+  void testMiiMultiClustersRollingRestart() {
     OffsetDateTime timestamp = now();
 
     // get the original domain resource before update
@@ -932,10 +927,7 @@ class ItParameterizedDomainWithLoadBalancer {
                     .value("-Dweblogic.StdoutDebugEnabled=false"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom "))
-                .resources(new V1ResourceRequirements()
-                    .requests(resourceRequest)
-                    .limits(resourceLimit)))
+                    .value("-Djava.security.egd=file:/dev/./urandom ")))
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING")
                 .adminService(new AdminService()
@@ -985,7 +977,7 @@ class ItParameterizedDomainWithLoadBalancer {
     final String adminServerPodName = domainUid + "-" + ADMIN_SERVER_NAME_BASE;
     String managedServerPodNamePrefix = domainUid + "-" + MANAGED_SERVER_NAME_BASE;
 
-    t3ChannelPort = getNextFreePort();
+    int t3ChannelPort = getNextFreePort();
 
     final String pvName = domainUid + "-pv"; // name of the persistent volume
     final String pvcName = domainUid + "-pvc"; // name of the persistent volume claim
@@ -1098,10 +1090,7 @@ class ItParameterizedDomainWithLoadBalancer {
                         .claimName(pvcName)))
                 .addVolumeMountsItem(new V1VolumeMount()
                     .mountPath("/u01/shared")
-                    .name(pvName))
-                .resources(new V1ResourceRequirements()
-                    .limits(resourceLimit)
-                    .requests(resourceRequest)))
+                    .name(pvName)))
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING")
                 .adminService(new AdminService()
@@ -1437,10 +1426,7 @@ class ItParameterizedDomainWithLoadBalancer {
                     .value("-Dweblogic.StdoutDebugEnabled=false"))
                 .addEnvItem(new V1EnvVar()
                     .name("USER_MEM_ARGS")
-                    .value("-Djava.security.egd=file:/dev/./urandom "))
-                .resources(new V1ResourceRequirements()
-                    .limits(resourceLimit)
-                    .requests(resourceRequest)))
+                    .value("-Djava.security.egd=file:/dev/./urandom ")))
             .adminServer(new AdminServer()
                 .serverStartState("RUNNING")
                 .adminService(new AdminService()

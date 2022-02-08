@@ -267,28 +267,6 @@
             </properties>
         </profile>
         <profile>
-            <id>crio-pipeline</id>
-            <properties>
-                <skipITs>false</skipITs>
-                <includes-failsafe>
-                    **/ItConfigDistributionStrategy,
-                    **/ItIstioDomainInPV,
-                    **/ItIstioMiiDomain,
-                    **/ItMiiSampleWlsAux,
-                    **/ItMiiServiceMigration,
-                    **/ItMiiDomain,
-                    **/ItMiiDynamicUpdate,
-                    **/ItMiiSampleWlsMain,
-                    **/ItMonitoringExporter,
-                    **/ItPodsShutdownOption,
-                    **/ItProductionSecureMode,
-                    **/ItWlsSamples,
-                    **/ItSessionMigration,
-                    **/ItSystemResOverrides
-                </includes-failsafe>
-            </properties>
-        </profile>
-        <profile>
             <id>fmw-image-cert</id>
             <properties>
                 <skipITs>false</skipITs>
