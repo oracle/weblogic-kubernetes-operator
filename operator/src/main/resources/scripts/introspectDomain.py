@@ -633,7 +633,7 @@ class TopologyGenerator(Generator):
       self.validateJMSResourceConsensusLeasing(fileStore, "FileStore")
 
   def validateJMSResourceConsensusLeasing(self, jmsResource, typeStr):
-    if jmsResource.getMigrationPolicy() != None and jmsResource.getMigrationPolicy != "off":
+    if jmsResource.getMigrationPolicy() != None and jmsResource.getMigrationPolicy() != "Off":
       targets = jmsResource.getTargets();
       for target in targets:
         self.validateJMSResourceTargetConsensusLeasing(target, jmsResource, typeStr)
