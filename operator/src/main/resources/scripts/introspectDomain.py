@@ -157,6 +157,9 @@ class OfflineWlstEnv(object):
     self.CUSTOM_SITCFG_PATH      = self.getEnvOrDef('CUSTOM_SITCFG_PATH', '/weblogic-operator/config-overrides')
     self.NM_HOST                 = self.getEnvOrDef('NM_HOST', 'localhost')
 
+    # Check environment variable that bypass consensus leasing validation
+    self.ALLOW_CONSENSUS_LEASING = self.getEnvOrDef('ALLOW_CONSENSUS_LEASING', "False")
+
     # maintain a list of errors that we include in topology.yaml on completion, if any
 
     self.errors             = []
@@ -225,6 +228,9 @@ class OfflineWlstEnv(object):
 
   def isAccessLogInLogHome(self):
     return self.ACCESS_LOG_IN_LOG_HOME == 'true';
+
+  def allowConsensusLeasing(self):
+    return self.ALLOW_CONSENSUS_LEASING.lower() == 'true'
 
   def addError(self, error):
     self.errors.append(error)
@@ -441,7 +447,7 @@ class TopologyGenerator(Generator):
     self.validateNonDynamicClusterNotReferencedByAnyServerTemplates(cluster)
     self.validateNonDynamicClusterServersHaveSameListenPort(cluster)
     self.validateNonDynamicClusterServerHaveSameCustomChannels(cluster)
-    if self.isConsensusLeasing(cluster):
+    if self.isConsensusLeasing(cluster) and not self.env.allowConsensusLeasing():
       self.validateNonDynamicClusterNotUsingLeasing(cluster)
 
   def validateNonDynamicClusterReferencedByAtLeastOneServer(self, cluster):
@@ -547,7 +553,7 @@ class TopologyGenerator(Generator):
     self.validateDynamicClusterReferencedByOneServerTemplate(cluster)
     self.validateDynamicClusterDynamicServersDoNotUseCalculatedListenPorts(cluster)
     self.validateDynamicClusterNotReferencedByAnyServers(cluster)
-    if self.isConsensusLeasing(cluster):
+    if self.isConsensusLeasing(cluster) and not self.env.allowConsensusLeasing():
       self.validateDynamicClusterNotUsingLeasing(cluster)
 
   def validateDynamicClusterReferencedByOneServerTemplate(self, cluster):
@@ -625,12 +631,13 @@ class TopologyGenerator(Generator):
 
   def validateJMSResources(self):
     domain = self.env.getDomain()
-    for messagingBridge in domain.getMessagingBridges():
-      self.validateJMSResourceConsensusLeasing(messagingBridge, "Messaging bridge")
-    for jdbcStore in domain.getJDBCStores():
-      self.validateJMSResourceConsensusLeasing(jdbcStore, "JDBCStore")
-    for fileStore in domain.getFileStores():
-      self.validateJMSResourceConsensusLeasing(fileStore, "FileStore")
+    if not self.env.allowConsensusLeasing():
+      for messagingBridge in domain.getMessagingBridges():
+        self.validateJMSResourceConsensusLeasing(messagingBridge, "Messaging bridge")
+      for jdbcStore in domain.getJDBCStores():
+        self.validateJMSResourceConsensusLeasing(jdbcStore, "JDBCStore")
+      for fileStore in domain.getFileStores():
+        self.validateJMSResourceConsensusLeasing(fileStore, "FileStore")
 
   def validateJMSResourceConsensusLeasing(self, jmsResource, typeStr):
     if jmsResource.getMigrationPolicy() != None and jmsResource.getMigrationPolicy() != "Off":
