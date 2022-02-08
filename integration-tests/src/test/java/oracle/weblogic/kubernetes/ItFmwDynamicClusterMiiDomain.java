@@ -266,7 +266,7 @@ class ItFmwDynamicClusterMiiDomain {
                     .adminService(new AdminService()
                         .addChannelsItem(new Channel()
                             .channelName("default")
-                            .nodePort(0))))
+                            .nodePort(getNextFreePort()))))
                 .addClustersItem(new Cluster()
                     .clusterName("cluster-1")
                     .replicas(replicaCount)
