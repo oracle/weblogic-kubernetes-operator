@@ -18,6 +18,10 @@
 # PV_ROOT
 # OKD
 
+whoami
+
+uname -a
+
 set -o errexit
 set -o pipefail
 
@@ -69,9 +73,8 @@ checkEnvVars  \
    PV_ROOT  \
    OKD  \
 
-mkdir -p ${WORKSPACE}/bin
-
-export PATH=${JAVA_HOME}/bin:${APACHE_MAVEN_HOME}/bin:${WORKSPACE}/bin:$PATH
+export PATH=${JAVA_HOME}/bin:${MVN_HOME}/bin:$PATH
+echo "PATH=$PATH"
 
 which java
 java -version
@@ -91,4 +94,7 @@ pwd
 ls
 
 echo "Info: Run tests.."
+echo " PWD is: ${PWD}"
+chmod 777 ${WORKSPACE}/okdtest.sh
+
 sh -x ./okdtest.sh -t "${IT_TEST}" -v ${KUBE_VERSION} -p ${PARALLEL_RUN} -d ${WDT_DOWNLOAD_URL} -i ${WIT_DOWNLOAD_URL} -x ${NUMBER_OF_THREADS} -m ${MAVEN_PROFILE_NAME}
