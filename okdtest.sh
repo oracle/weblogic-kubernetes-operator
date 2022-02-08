@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2020, 2022, Oracle and/or its affiliates.
+# Copyright (c) 2022, Oracle and/or its affiliates.
 # Licensed under the Universal Permissive License v 1.0 as shown at https://oss.oracle.com/licenses/upl.
 #
 # As of May 6, 2020, the tests are clean on Kubernetes 1.16 with the following JDK workarounds:
