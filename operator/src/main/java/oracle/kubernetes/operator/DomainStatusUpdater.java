@@ -653,7 +653,7 @@ public class DomainStatusUpdater {
         Conditions newConditions = new Conditions(status);
         newConditions.apply();
 
-        if (isHasFailedPod()) {
+        if (isHasFailedPod() || hasUnreadyServerAndPod(newConditions)) {
           status.addCondition(new DomainCondition(Failed).withStatus(true).withReason(ServerPod));
         } else {
           status.removeConditionsMatching(c -> c.hasType(Failed) && ServerPod.name().equals(c.getReason()));
@@ -665,6 +665,10 @@ public class DomainStatusUpdater {
         if (miiNondynamicRestartRequired() && isCommitUpdateOnly()) {
           setOnlineUpdateNeedRestartCondition(status);
         }
+      }
+
+      private boolean hasUnreadyServerAndPod(Conditions newConditions) {
+        return hasPodNotReady() && newConditions.hasIntendedServersNotReady();
       }
 
       private boolean haveServerData() {
@@ -754,6 +758,14 @@ public class DomainStatusUpdater {
               && allNonStartedServersAreShutdown()
               && serversMarkedForRoll().isEmpty();
         }
+
+        private boolean hasIntendedServersNotReady() {
+          return haveServerData()
+              && hasStartedServersNotReady()
+              && allNonStartedServersAreShutdown()
+              && serversMarkedForRoll().isEmpty();
+        }
+
 
         private boolean sufficientServersRunning() {
           return atLeastOneApplicationServerStarted() && allNonClusteredServersRunning() && allClustersAvailable();
@@ -977,6 +989,18 @@ public class DomainStatusUpdater {
         return expectedRunningServers.stream().allMatch(this::isServerComplete);
       }
 
+      private boolean hasStartedServersNotReady() {
+        return hasStartedServersNotRunning() && noPendingServerToRoll();
+      }
+
+      private boolean noPendingServerToRoll() {
+        return expectedRunningServers.stream().allMatch(this::isNotMarkedForRoll);
+      }
+
+      private boolean hasStartedServersNotRunning() {
+        return expectedRunningServers.stream().anyMatch(this::isNotRunning);
+      }
+
       private boolean allNonStartedServersAreShutdown() {
         return getNonStartedServersWithState().stream().allMatch(this::isShutDown);
       }
@@ -1029,6 +1053,10 @@ public class DomainStatusUpdater {
               && isNotMarkedForRoll(serverName);
       }
 
+      private boolean isNotRunning(@Nonnull String serverName) {
+        return !RUNNING_STATE.equals(getRunningState(serverName));
+      }
+
       private boolean isServerReady(@Nonnull String serverName) {
         return RUNNING_STATE.equals(getRunningState(serverName))
               && PodHelper.getReadyStatus(getInfo().getServerPod(serverName));
@@ -1049,6 +1077,10 @@ public class DomainStatusUpdater {
 
       private boolean isHasFailedPod() {
         return getInfo().getServerPods().anyMatch(PodHelper::isFailed);
+      }
+
+      private boolean hasPodNotReady() {
+        return !getInfo().getServerPods().allMatch(PodHelper::isReady);
       }
 
       private String getRunningState(String serverName) {

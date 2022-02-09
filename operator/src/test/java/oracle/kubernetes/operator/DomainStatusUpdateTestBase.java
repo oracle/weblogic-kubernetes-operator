@@ -293,6 +293,40 @@ abstract class DomainStatusUpdateTestBase {
   }
 
   @Test
+  void whenServerIntentionallyNotStarted_reportDomainFailedCondition() {
+    defineScenario()
+        .withCluster("clusterB", "server1", "server2")
+        .withServersReachingState(RUNNING_STATE, "server1", "server2")
+        .build();
+    deactivateServerAndPod(0);
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(Failed));
+  }
+
+  @Test
+  void whenServerIntentionallyNotStarted_1_reportDomainFailedCondition() {
+    defineScenario()
+        .withCluster("clusterB", "server1", "server2")
+        .withServersReachingState(RUNNING_STATE, "server1", "server2")
+        .build();
+    deactivateServerAndPod(1);
+
+    updateDomainStatus();
+
+    assertThat(getRecordedDomain(), hasCondition(Failed));
+  }
+
+  protected void deactivateServerAndPod(int i) {
+    String serverName = liveServers.get(i);
+    Map<String, String> servers = getServerStateMap();
+    servers.put(serverName, UNKNOWN_STATE);
+    testSupport.addToPacket(SERVER_STATE_MAP, servers);
+    deactivateServer(serverName);
+  }
+
+  @Test
   void statusStep_containsValidationWarnings() {
     info.addValidationWarning(validationWarning);
     defineScenario().build();
