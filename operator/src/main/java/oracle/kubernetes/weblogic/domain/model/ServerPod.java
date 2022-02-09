@@ -40,7 +40,6 @@ import io.kubernetes.client.openapi.models.V1WeightedPodAffinityTerm;
 import jakarta.validation.Valid;
 import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.Feature;
-import oracle.kubernetes.json.PreserveUnknown;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.builder.ToStringBuilder;
@@ -239,9 +238,6 @@ public class ServerPod extends KubernetesResource {
   private final List<V1VolumeMount> volumeMounts = new ArrayList<>();
 
   @Feature("Disabled")
-  @Description("Deprecated. Use `configuration.secrets` instead. Ignored if `configuration.secrets` is specified."
-          + " A list of names of the Secrets for optional WebLogic configuration overrides.")
-  @PreserveUnknown
   private List<AuxiliaryImage> auxiliaryImages;
 
   public List<AuxiliaryImage> getAuxiliaryImages() {

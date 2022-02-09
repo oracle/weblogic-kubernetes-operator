@@ -20,7 +20,6 @@ import oracle.kubernetes.json.Description;
 import oracle.kubernetes.json.EnumClass;
 import oracle.kubernetes.json.Feature;
 import oracle.kubernetes.json.Pattern;
-import oracle.kubernetes.json.PreserveUnknown;
 import oracle.kubernetes.json.Range;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.ImagePullPolicy;
@@ -309,9 +308,6 @@ public class DomainSpec extends BaseConfiguration {
   private List<String> configOverrideSecrets;
 
   @Feature("Disabled")
-  @Description("Deprecated. Use `configuration.secrets` instead. Ignored if `configuration.secrets` is specified."
-          + " A list of names of the Secrets for optional WebLogic configuration overrides.")
-  @PreserveUnknown
   private List<AuxiliaryImageVolume> auxiliaryImageVolumes;
 
   public List<AuxiliaryImageVolume> getAuxiliaryImageVolumes() {

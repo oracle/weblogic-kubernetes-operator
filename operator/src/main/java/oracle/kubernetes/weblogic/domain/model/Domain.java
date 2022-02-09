@@ -30,7 +30,6 @@ import io.kubernetes.client.openapi.models.V1SecretReference;
 import io.kubernetes.client.openapi.models.V1VolumeMount;
 import jakarta.validation.Valid;
 import oracle.kubernetes.json.Description;
-import oracle.kubernetes.json.PreserveUnknown;
 import oracle.kubernetes.operator.DomainSourceType;
 import oracle.kubernetes.operator.MIINonDynamicChangesMethod;
 import oracle.kubernetes.operator.ModelInImageDomainType;
@@ -114,7 +113,6 @@ public class Domain implements KubernetesObject, Upgradable<Domain> {
   @Valid
   @Description("The specification of the operation of the WebLogic domain. Required.")
   @Nonnull
-  @PreserveUnknown
   private DomainSpec spec = new DomainSpec();
 
   /**
