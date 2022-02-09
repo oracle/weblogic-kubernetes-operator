@@ -27,7 +27,7 @@ usage() {
   echo "  -l WLE download URL"
   echo "      (default: https://github.com/oracle/weblogic-logging-exporter/releases/latest) "
   echo "  -m Run integration-tests or wko-okd-wls-cert or wko-okd-fmw-cert"
-  echo "      (default: integration-tests, supported values: wko-okd-wls-cert, wko-okd-fmw-cert) "
+  echo "      (default: wko-okd-wls-cert, supported values: wko-okd-wls-cert, wko-okd-fmw-cert) "
   echo "  -h Help"
   exit $1
 }
@@ -144,10 +144,10 @@ kubectl get clusterrolebindings --no-headers | awk '/appscode/{print $1}' | xarg
 kubectl get clusterrolebindings --no-headers | awk '/nginx-/{print $1}' | xargs kubectl delete clusterrolebindings || true
 kubectl get clusterrolebindings --no-headers | awk '/traefik-/{print $1}' | xargs kubectl delete clusterrolebindings || true
 
-
 sudo rm -rf ${PV_ROOT}/*
 
 dockerLogin
+export OKD=true
 
 echo 'docker info'
 docker info

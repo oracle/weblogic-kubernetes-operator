@@ -16,7 +16,6 @@
 # OCIR_EMAIL
 # NFS_SERVER
 # PV_ROOT
-# OKD
 
 whoami
 
@@ -70,8 +69,7 @@ checkEnvVars  \
    OCIR_PASSWORD  \
    OCIR_EMAIL  \
    NFS_SERVER  \
-   PV_ROOT  \
-   OKD  \
+   PV_ROOT  
 
 export PATH=${JAVA_HOME}/bin:${MVN_HOME}/bin:$PATH
 echo "PATH=$PATH"
@@ -87,9 +85,6 @@ docker version
 
 export RESULT_ROOT=${WORKSPACE}/RESULT_ROOT
 export BRANCH_NAME=${BRANCH}
-#export IT_TEST=**/It*
-#export MAVEN_PROFILE_NAME=wko-okd-fmw-cert
-#export PARALLEL_RUN=true
 
 if [[ -z "${WORKSPACE}" ]]; then
   export WORKSPACE=${PWD}
