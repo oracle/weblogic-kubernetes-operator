@@ -890,12 +890,6 @@ public class CommonTestUtils {
    */
   public static void verifyServerCommunication(String curlRequest, List<String> managedServerNames) {
     LoggingFacade logger = getLogger();
-
-    ConditionFactory withStandardRetryPolicy
-        = with().pollDelay(2, SECONDS)
-        .and().with().pollInterval(10, SECONDS)
-        .atMost(10, MINUTES).await();
-
     HashMap<String, Boolean> managedServers = new HashMap<>();
     managedServerNames.forEach(managedServerName -> managedServers.put(managedServerName, false));
 
